@@ -1,0 +1,24 @@
+﻿<Window x:Class="ImportGoogleSpreadSheets.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ImportGoogleSpreadSheets"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800" Icon="/import.png">
+    <Grid>
+        <Button x:Name="btnConnect" Content="Connect" HorizontalAlignment="Left" Margin="55,29,0,0" VerticalAlignment="Top" Width="60" Click="btnConnect_Click"/>
+        <ListBox HorizontalAlignment="Left" Margin="55,94,0,195" Name="cblFiles" Width="236" SelectionMode="Multiple"
+                 ItemsSource="{Binding Files}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected}" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <Label Content="File to import" HorizontalAlignment="Left" Margin="55,59,0,0" VerticalAlignment="Top"/>
+        <Button x:Name="btnGenerateData" Content="Genereta data" HorizontalAlignment="Left" Margin="500,29,0,0" VerticalAlignment="Top" Width="105" Click="btnGenerateData_Click"/>
+        <TextBox x:Name="edtPath" HorizontalAlignment="Left" Margin="500,85,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="255" Text="F:\dev\Projetos\Financial\data"/>
+        <Label Content="Path" HorizontalAlignment="Left" Margin="500,54,0,0" VerticalAlignment="Top"/>
+    </Grid>
+</Window>
