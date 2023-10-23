@@ -3,3 +3,12 @@ data
 .vs
 bin
 obj
+
+#infrastructure
+.terraform
+terraform*
+.terraform*
+
+
+#specific files
+.gitignore.bak
