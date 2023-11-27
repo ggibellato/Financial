@@ -1,14 +1,18 @@
-using Financial.Common;
-using Financial.Model;
 using FinancialModel.Infrastructure;
 using FluentAssertions;
-using System.Text.Json;
 
 namespace Financial.Infrastructure.Tests;
 
 public class JSONRepositoryTests
 {
     private readonly JSONRepository _sut = new JSONRepository();
+
+    [Fact]
+    public void GetAllAssetsFullName_ShouldReturn_Values()
+    {
+        var result = _sut.GetAllAssetsFullName();
+        result.Should().NotBeEmpty();
+    }
 
     [Theory]
     [InlineData(null, 0)]

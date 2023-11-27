@@ -16,23 +16,7 @@ internal class JSONRepository : IRepository
         _investiments = LoadModel();
     }
 
-    public IEnumerable<Asset> GetAssetsByBroker(string name)
-    {
-        return _investiments.Brokers.Where(b => b.Name == name).SelectMany(b => b.Portifolios.SelectMany(p => p.Assets));
-    }
-
-    public IEnumerable<Asset> GetAssetsByPortifolio(string name)
-    {
-        return _investiments.Brokers.SelectMany(b => b.Portifolios.Where(p => p.Name == name).SelectMany(p => p.Assets));
-    }
-
-    public IEnumerable<Asset> GetAssetsByAssetName(string name)
-    {
-        return _investiments.Brokers.SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Name == name)));
-    }
-
-
-    private List<string> GetAllAssets()
+    public List<string> GetAllAssetsFullName()
     {
         var investiments = LoadModel();
         var result = new List<string>();
@@ -47,6 +31,21 @@ internal class JSONRepository : IRepository
             });
         });
         return result;
+    }
+
+    public IEnumerable<Asset> GetAssetsByBroker(string name)
+    {
+        return _investiments.Brokers.Where(b => b.Name == name).SelectMany(b => b.Portifolios.SelectMany(p => p.Assets));
+    }
+
+    public IEnumerable<Asset> GetAssetsByPortifolio(string name)
+    {
+        return _investiments.Brokers.SelectMany(b => b.Portifolios.Where(p => p.Name == name).SelectMany(p => p.Assets));
+    }
+
+    public IEnumerable<Asset> GetAssetsByAssetName(string name)
+    {
+        return _investiments.Brokers.SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Name == name)));
     }
 
     private Investments LoadModel()
