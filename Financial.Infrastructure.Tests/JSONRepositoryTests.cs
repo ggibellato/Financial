@@ -10,34 +10,36 @@ public class JSONRepositoryTests
 {
     private readonly JSONRepository _sut = new JSONRepository();
 
-    [Fact]
-    public void GetAllAssets_ShouldReturn_Values()
+    [Theory]
+    [InlineData(null, 0)]
+    [InlineData("", 0)]
+    [InlineData("NOTEXIST", 0)]
+    [InlineData("FreeTrade", 14)]
+    public void GetAssets_By_Broker(string name, int records)
     {
-        var result = _sut.GetAllAssets();
-        result.Should().NotBeEmpty();
+        var result = _sut.GetAssetsByBroker(name);
+        result.Should().HaveCount(records);
     }
 
-    [Fact]
-    public void Test2()
+    [Theory]
+    [InlineData(null, 0)]
+    [InlineData("", 0)]
+    [InlineData("NOTEXIST", 0)]
+    [InlineData("Gold", 1)]
+    public void GetAssets_By_Portifolio(string name, int records)
     {
-        var json = "{\r\n\"Date\": \"2023-02-24T00:00:00\",\r\n\"Type\": \"Sell\",\r\n\"Quantity\": 0.0351,\r\n\"UnitPrice\": 56.9778,\r\n\"Fees\": 0.00000000\r\n}";
-        var options = new JsonSerializerOptions
-        {
-            TypeInfoResolver = new PrivateConstructorContractResolver()
-        };
-
-        var operation = JsonSerializer.Deserialize<Operation>(json, options);
+        var result = _sut.GetAssetsByPortifolio(name);
+        result.Should().HaveCount(records);
     }
 
-    [Fact]
-    public void Test3()
+    [Theory]
+    [InlineData(null, 0)]
+    [InlineData("", 0)]
+    [InlineData("NOTEXIST", 0)]
+    [InlineData("FTSE100", 1)]
+    public void GetAssets_By_Name(string name, int records)
     {
-        var json = "{\"Name\":\"Test\",\"Portifolios\": []}";
-        var options = new JsonSerializerOptions
-        {
-            TypeInfoResolver = new PrivateConstructorContractResolver()
-        };
-
-        var broker = JsonSerializer.Deserialize<Broker>(json, options);
+        var result = _sut.GetAssetsByAssetName(name);
+        result.Should().HaveCount(records);
     }
 }
