@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33530.505
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FinancialUI", "FinancialUI\FinancialUI.csproj", "{3A0DCB35-AF61-406D-A999-31A2BDCA2AFA}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Model", "FinancialModel\Financial.Model.csproj", "{B5D5080D-E931-4321-B878-3D1FBF9012E0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FinancialToolSupport", "FinancialToolSupport\FinancialToolSupport.csproj", "{8721D950-228B-4F04-999C-1BF706F37FC9}"
@@ -27,16 +25,16 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Common", "Financi
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FinancialModel", "FinancialModel", "{0C976C0E-7E1C-4098-85CB-9D88F9E4E86B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharesDividendCheck", "SharesDividendCheck\SharesDividendCheck.csproj", "{C7707B9A-B9A3-4287-8D07-98AC68CC797B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebPageParser", "WebPageParser\WebPageParser.csproj", "{18D5A041-D4F7-4CF9-870C-D9E481EBD308}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{3A0DCB35-AF61-406D-A999-31A2BDCA2AFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3A0DCB35-AF61-406D-A999-31A2BDCA2AFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3A0DCB35-AF61-406D-A999-31A2BDCA2AFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3A0DCB35-AF61-406D-A999-31A2BDCA2AFA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B5D5080D-E931-4321-B878-3D1FBF9012E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B5D5080D-E931-4321-B878-3D1FBF9012E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B5D5080D-E931-4321-B878-3D1FBF9012E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -69,6 +67,14 @@ Global
 		{366A0FD8-60D4-4F4B-9996-33B6FC545C4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{366A0FD8-60D4-4F4B-9996-33B6FC545C4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{366A0FD8-60D4-4F4B-9996-33B6FC545C4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7707B9A-B9A3-4287-8D07-98AC68CC797B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7707B9A-B9A3-4287-8D07-98AC68CC797B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7707B9A-B9A3-4287-8D07-98AC68CC797B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7707B9A-B9A3-4287-8D07-98AC68CC797B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18D5A041-D4F7-4CF9-870C-D9E481EBD308}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18D5A041-D4F7-4CF9-870C-D9E481EBD308}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18D5A041-D4F7-4CF9-870C-D9E481EBD308}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18D5A041-D4F7-4CF9-870C-D9E481EBD308}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -82,6 +88,8 @@ Global
 		{F16F338C-4DC3-4786-8E75-71B61845A4EB} = {0C976C0E-7E1C-4098-85CB-9D88F9E4E86B}
 		{2FA7B609-B4BC-4239-8CA1-531DAB307E81} = {C9704CC9-9915-4F92-8A23-1346A8F30C22}
 		{366A0FD8-60D4-4F4B-9996-33B6FC545C4C} = {0C976C0E-7E1C-4098-85CB-9D88F9E4E86B}
+		{C7707B9A-B9A3-4287-8D07-98AC68CC797B} = {619A5074-96E5-42D4-9325-20E431AD9AFF}
+		{18D5A041-D4F7-4CF9-870C-D9E481EBD308} = {619A5074-96E5-42D4-9325-20E431AD9AFF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DD1461E2-FA4C-4504-BA04-EE3D1D679B7A}

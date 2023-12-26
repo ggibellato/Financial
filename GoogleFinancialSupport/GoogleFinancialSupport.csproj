@@ -5,11 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Apis" Version="1.61.0" />
-    <PackageReference Include="Google.Apis.Auth" Version="1.61.0" />
-    <PackageReference Include="Google.Apis.Core" Version="1.61.0" />
-    <PackageReference Include="Google.Apis.Drive.v3" Version="1.61.0.3155" />
-    <PackageReference Include="Google.Apis.Sheets.v4" Version="1.61.0.3148" />
+    <PackageReference Include="Google.Apis" Version="1.64.0" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.64.0" />
+    <PackageReference Include="Google.Apis.Core" Version="1.64.0" />
+    <PackageReference Include="Google.Apis.Drive.v3" Version="1.64.0.3256" />
+    <PackageReference Include="Google.Apis.Sheets.v4" Version="1.64.0.3148" />
   </ItemGroup>
 
   <ItemGroup>
