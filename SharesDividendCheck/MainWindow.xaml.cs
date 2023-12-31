@@ -1,4 +1,7 @@
-﻿using Microsoft.VisualBasic.FileIO;
+﻿using Financial.Common;
+using FinancialModel.Application;
+using FinancialModel.Infrastructure;
+using Microsoft.VisualBasic.FileIO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,20 +25,11 @@ namespace SharesDividendCheck
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly IRepository _sut = new JSONRepository();
+
         public MainWindow()
         {
             InitializeComponent();
-
-            //< ComboBoxItem Content = "KLBN4" />
-            //< ComboBoxItem Content = "TASA4" />
-            //< ComboBoxItem Content = "TAEE3" />
-            //< ComboBoxItem Content = "UNIP6" />
-            //< ComboBoxItem Content = "CMIG4" />
-            //< ComboBoxItem Content = "TRPL4" />
-            //< ComboBoxItem Content = "BBAS3" />
-            //< ComboBoxItem Content = "CSAN3" />
-
-
             List < Option> options = new List<Option>
             {
                 new Option { Group = "Ja possuidas", Name = "KLBN4" },
@@ -46,23 +40,22 @@ namespace SharesDividendCheck
                 new Option { Group = "Outras Barse", Name = "TRPL4" },
                 new Option { Group = "Outras Barse", Name = "BBAS3" },
                 new Option { Group = "Outras", Name = "CSAN3" },
-                // Add more options and groups as needed
             };
 
             var groupedOptions = new ListCollectionView(options);
             groupedOptions.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
             txtTicker.ItemsSource = groupedOptions;
-        }
+    }
 
         public class Option
         {
-            public string Group { get; set; }
-            public string Name { get; set; }
+            public required string Group { get; set; }
+            public required string Name { get; set; }
         }
 
         private void btnCheck_Click(object sender, RoutedEventArgs e)
         {
-            var value = GoogleFinance.GetFinancialInfo(txtTicker.Text);
+            var value = GoogleFinance.GetFinancialInfo("BVMF", txtTicker.Text);
             var dividends = DadosMercadoDividend.GetDividendInfo(txtTicker.Text);
             dividendDataGrid.ItemsSource = dividends;
 
@@ -97,6 +90,17 @@ namespace SharesDividendCheck
                     dataGridColumn.Binding.StringFormat = "dd/MM/yyyy";
                 }
             }
+        }
+
+        private void btnCheckFIIS_Click(object sender, RoutedEventArgs e)
+        {
+            var assets = _sut.GetAssetsByBrokerPortifolio("XPI", "Default");
+            var list = new List<AssetValue>();
+            foreach (var asset in assets) {
+                var value = GoogleFinance.GetFinancialInfo(asset.Exchange, asset.Ticker);
+                list.Add(value);
+            }
+            fiisPriceDataGrid.ItemsSource = list;
         }
     }
 }

@@ -5,57 +5,87 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SharesDividendCheck"
         mc:Ignorable="d"
-        Title="Shares Dividend check" Height="450" Width="800">
+        Title="Financial tools" Height="450" Width="800">
     <Grid>
-        <Label Content="Ticker" HorizontalAlignment="Left" Margin="10,18,0,0" VerticalAlignment="Top"/>
-        <ComboBox x:Name="txtTicker" DisplayMemberPath="Name" HorizontalAlignment="Left" Margin="10,49,0,0" VerticalAlignment="Top" Width="120" SelectedIndex="0">
-            <ComboBox.GroupStyle>
-                <GroupStyle>
-                    <GroupStyle.HeaderTemplate>
-                        <DataTemplate>
-                            <Border BorderBrush="Black" BorderThickness="0,0,0,1">
-                                <TextBlock FontWeight="Bold" Text="{Binding Name}" />
-                            </Border>
-                        </DataTemplate>
-                    </GroupStyle.HeaderTemplate>
-                </GroupStyle>
-            </ComboBox.GroupStyle>
-        </ComboBox>
-        <Button x:Name="btnCheck" Content="Check" HorizontalAlignment="Left" Margin="10,89,0,0" VerticalAlignment="Top" Click="btnCheck_Click" Width="41" />
-        <Label x:Name="lblName" Content="XXXX XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" HorizontalAlignment="Left" Margin="158,42,0,0" VerticalAlignment="Top" FontWeight="Bold" FontSize="20" Foreground="Black" Width="632" />
-        <Label x:Name="lblPrice" Content="99.99" HorizontalAlignment="Left" Margin="158,73,0,0" VerticalAlignment="Top" FontWeight="Bold" Height="26"/>
-        <Label x:Name="lblAverageDividend" Content="9.99" HorizontalAlignment="Left" Margin="158,93,0,0" VerticalAlignment="Top" FontWeight="Bold" Height="26" Width="292"/>
-        <Label x:Name="lblPriceMax" Content="99.99" HorizontalAlignment="Left" Margin="158,113,0,0" VerticalAlignment="Top" FontWeight="Bold" Height="26" Width="292"/>
-        <Grid Margin="158,154,135,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="397*"/>
-                <ColumnDefinition Width="110*"/>
-            </Grid.ColumnDefinitions>
-            <Label FontWeight="Bold" Margin="0,0,160,189" Content="Dividends information" />
-            <DataGrid Name="dividendDataGrid" AutoGenerateColumns="True" AutoGeneratingColumn="DividendDataGrid_AutoGeneratingColumn" Margin="0,36,143,10" FontSize="14" AlternatingRowBackground="#E1E1E1">
-                <DataGrid.RowStyle>
-                    <Style TargetType="DataGridRow">
-                        <Style.Triggers>
-                            <Trigger Property="ItemsControl.AlternationIndex" Value="1">
-                                <Setter Property="Background" Value="White" />
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </DataGrid.RowStyle>
-            </DataGrid>
-            <Label FontWeight="Bold" Margin="332,0,44,189" Content="by year" Grid.ColumnSpan="2"/>
-            <DataGrid Name="dividendByYearDataGrid" AutoGenerateColumns="True" Margin="332,36,25,10" FontSize="14" Grid.ColumnSpan="2" AlternatingRowBackground="#E1E1E1">
-                <DataGrid.RowStyle>
-                    <Style TargetType="DataGridRow">
-                        <Style.Triggers>
-                            <Trigger Property="ItemsControl.AlternationIndex" Value="1">
-                                <Setter Property="Background" Value="White" />
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </DataGrid.RowStyle>
-            </DataGrid>
-        </Grid>
+        <TabControl SelectedIndex="1">
+            <TabItem Header="Shares Dividend check">
+                <Grid>
+                    <Label Content="Ticker" HorizontalAlignment="Left" Margin="10,18,0,0" VerticalAlignment="Top"/>
+                    <ComboBox x:Name="txtTicker" DisplayMemberPath="Name" IsEditable="True"
+                        ItemsSource="{Binding}" HorizontalAlignment="Left" Margin="10,49,0,0" VerticalAlignment="Top" Width="120" SelectedIndex="0">
+                        <ComboBox.GroupStyle>
+                            <GroupStyle>
+                                <GroupStyle.HeaderTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="Black" BorderThickness="0,0,0,1">
+                                            <TextBlock FontWeight="Bold" Text="{Binding Name}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </GroupStyle.HeaderTemplate>
+                            </GroupStyle>
+                        </ComboBox.GroupStyle>
+                    </ComboBox>
+                    <Button x:Name="btnCheck" Content="Check" HorizontalAlignment="Left" Margin="10,89,0,0" VerticalAlignment="Top" Click="btnCheck_Click" Width="41" />
+                    <Label x:Name="lblName" Content="XXXX XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" HorizontalAlignment="Left" Margin="158,42,0,0" VerticalAlignment="Top" FontWeight="Bold" FontSize="20" Foreground="Black" Width="632" />
+                    <Label x:Name="lblPrice" Content="99.99" HorizontalAlignment="Left" Margin="158,73,0,0" VerticalAlignment="Top" FontWeight="Bold" Height="26"/>
+                    <Label x:Name="lblAverageDividend" Content="9.99" HorizontalAlignment="Left" Margin="158,93,0,0" VerticalAlignment="Top" FontWeight="Bold" Height="26" Width="292"/>
+                    <Label x:Name="lblPriceMax" Content="99.99" HorizontalAlignment="Left" Margin="158,113,0,0" VerticalAlignment="Top" FontWeight="Bold" Height="26" Width="292"/>
+                    <Grid Margin="158,154,135,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="397*"/>
+                            <ColumnDefinition Width="110*"/>
+                        </Grid.ColumnDefinitions>
+                        <Label FontWeight="Bold" Margin="0,0,160,189" Content="Dividends information" />
+                        <DataGrid Name="dividendDataGrid" AutoGenerateColumns="True" AutoGeneratingColumn="DividendDataGrid_AutoGeneratingColumn" Margin="0,36,143,10" FontSize="14" AlternatingRowBackground="#E1E1E1">
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Style.Triggers>
+                                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                            <Setter Property="Background" Value="White" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+                        </DataGrid>
+                        <Label FontWeight="Bold" Margin="332,0,44,189" Content="by year" Grid.ColumnSpan="2"/>
+                        <DataGrid Name="dividendByYearDataGrid" AutoGenerateColumns="True" Margin="332,36,25,10" FontSize="14" Grid.ColumnSpan="2" AlternatingRowBackground="#E1E1E1">
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Style.Triggers>
+                                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                            <Setter Property="Background" Value="White" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+                        </DataGrid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Read FIIs current values">
+                <Grid>
+                    <Button x:Name="btnCheckFIIS" Content="Check" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="41" Click="btnCheckFIIS_Click" />
+                    <Grid Margin="10,44,130,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="397*"/>
+                            <ColumnDefinition Width="110*"/>
+                        </Grid.ColumnDefinitions>
+                        <Label FontWeight="Bold" Margin="0,0,160,189" Content="FIIs current price" />
+                        <DataGrid Name="fiisPriceDataGrid" AutoGenerateColumns="True" FontSize="14" AlternatingRowBackground="#E1E1E1" Grid.ColumnSpan="2">
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Style.Triggers>
+                                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                            <Setter Property="Background" Value="White" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+                        </DataGrid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+        </TabControl>
     </Grid>
 
 </Window>

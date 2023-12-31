@@ -2,11 +2,12 @@
 using FinancialModel.Application;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Xml.Linq;
 
 [assembly: InternalsVisibleTo("Financial.Infrastructure.Tests")]
 namespace FinancialModel.Infrastructure;
 
-internal class JSONRepository : IRepository
+public class JSONRepository : IRepository
 {
 
     private Investments _investiments;
@@ -37,6 +38,13 @@ internal class JSONRepository : IRepository
     {
         return _investiments.Brokers.Where(b => b.Name == name).SelectMany(b => b.Portifolios.SelectMany(p => p.Assets));
     }
+
+    public IEnumerable<Asset> GetAssetsByBrokerPortifolio(string broker, string protifolio)
+    {
+        return _investiments.Brokers.Where(b => b.Name == broker)
+            .SelectMany(b => b.Portifolios.Where(p => p.Name == protifolio).SelectMany(p => p.Assets));
+    }
+
 
     public IEnumerable<Asset> GetAssetsByPortifolio(string name)
     {

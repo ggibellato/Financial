@@ -27,6 +27,7 @@ public class GoogleGenerator : IGenerator
         {"XPI_cc0000", "Fundos Investimento" },
         {"XPI_222222", "Encerradas" },
         {"FreeTrade_222222", "Encerradas" },
+        {"Trading 212_222222", "Encerradas" },
     };
 
     public Dictionary<string, string> ExchangeCurrency = new Dictionary<string, string>() {
@@ -61,14 +62,36 @@ public class GoogleGenerator : IGenerator
                 {
                     continue;
                 }
-                var asset = Asset.Create(spreadsheet.Name);
+
                 var portifolioName = string.IsNullOrWhiteSpace(spreadsheet.Color) ? "Default" : spreadsheet.Color;
-                if(PortifolioName.TryGetValue($"{fileName}_{portifolioName}", out string name))
+                if (PortifolioName.TryGetValue($"{fileName}_{portifolioName}", out string name))
                 {
                     portifolioName = name;
                 }
 
                 var potifolio = exchange.AddPortifolio(portifolioName);
+
+
+                var isin = "";
+                var exchangeId = "";
+                var ticker = "";
+                switch (fileName)
+                {
+                    case "XPI":
+                        {
+                            exchangeId = "BVMF";
+                            ticker = spreadsheet.Name;
+                            break;
+                        }
+                    default:
+                        {
+                            GetAssetData(file.Id, spreadsheet.Name, out isin, out exchangeId, out ticker);
+                            break;
+                        }
+                }
+
+
+                var asset = Asset.Create(spreadsheet.Name, isin, exchangeId, ticker);
                 potifolio.Assets.Add(asset);
 
                 asset.Operations.AddRange(CreateOperations(file.Id, spreadsheet.Name));
@@ -77,6 +100,26 @@ public class GoogleGenerator : IGenerator
             }
         }
         Save(data);
+    }
+
+    private void GetAssetData(string id, string spreadSheetName, out string isin, out string exchangeId, out string ticker)
+    {
+        var values = _service.GetSpreadSheetData(id, $"{spreadSheetName}!Q2:S2");
+        isin = "";
+        exchangeId = "";
+        ticker = "";
+        try
+        {
+            if(values is not null)
+            {
+                var data = values.FirstOrDefault();
+                exchangeId = (string)data[0];
+                ticker = (string)data[1];
+                isin = (string)data[2];
+            }
+        }
+        catch {
+        }
     }
 
     private void Save(Investments data)

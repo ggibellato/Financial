@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Financial.Infrastructure\Financial.Infrastructure.csproj" />
     <ProjectReference Include="..\WebPageParser\WebPageParser.csproj" />
   </ItemGroup>
 </Project>

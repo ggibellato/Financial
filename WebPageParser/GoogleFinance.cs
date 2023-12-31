@@ -5,9 +5,9 @@ namespace WebPageParser;
 
 public static class GoogleFinance
 {
-    public static AssetValue GetFinancialInfo(string ticker)
+    public static AssetValue GetFinancialInfo(string exchange, string ticker)
     {
-        var googleTickerSearch = $"https://www.google.com/finance/quote/{ticker}:BVMF";
+        var googleTickerSearch = $"https://www.google.com/finance/quote/{ticker}:{exchange}";
         //var content = await HTMLHelper.LoadPage(googleTickerSearch);
         try
         {
