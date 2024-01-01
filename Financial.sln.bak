@@ -25,7 +25,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Common", "Financi
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FinancialModel", "FinancialModel", "{0C976C0E-7E1C-4098-85CB-9D88F9E4E86B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FinanacialTools", "FinanacialTools\FinanacialTools.csproj", "{C7707B9A-B9A3-4287-8D07-98AC68CC797B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FinanacialTools", "SharesDividendCheck\FinanacialTools.csproj", "{C7707B9A-B9A3-4287-8D07-98AC68CC797B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebPageParser", "WebPageParser\WebPageParser.csproj", "{18D5A041-D4F7-4CF9-870C-D9E481EBD308}"
 EndProject

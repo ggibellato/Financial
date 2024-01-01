@@ -1,4 +1,5 @@
 ﻿using Financial.Common;
+using Financial.Model;
 using FinancialModel.Application;
 using FinancialModel.Infrastructure;
 using Microsoft.VisualBasic.FileIO;
@@ -94,7 +95,9 @@ namespace SharesDividendCheck
 
         private void btnCheckFIIS_Click(object sender, RoutedEventArgs e)
         {
-            var assets = _sut.GetAssetsByBrokerPortifolio("XPI", "Default");
+            var assets = _sut.GetAssetsByBrokerPortifolio("XPI", "Default").ToList();
+            var acoes = _sut.GetAssetsByBrokerPortifolio("XPI", "Acoes");
+            assets.AddRange(acoes);
             var list = new List<AssetValue>();
             foreach (var asset in assets) {
                 var value = GoogleFinance.GetFinancialInfo(asset.Exchange, asset.Ticker);

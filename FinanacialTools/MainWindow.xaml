@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="Financial tools" Height="450" Width="800">
     <Grid>
-        <TabControl SelectedIndex="1">
+        <TabControl SelectedIndex="0">
             <TabItem Header="Shares Dividend check">
                 <Grid>
                     <Label Content="Ticker" HorizontalAlignment="Left" Margin="10,18,0,0" VerticalAlignment="Top"/>
