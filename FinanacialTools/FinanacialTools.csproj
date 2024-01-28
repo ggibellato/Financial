@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Financial.Infrastructure\Financial.Infrastructure.csproj" />
+    <ProjectReference Include="..\FinancialToolSupport\FinancialToolSupport.csproj" />
     <ProjectReference Include="..\WebPageParser\WebPageParser.csproj" />
   </ItemGroup>
 </Project>

@@ -85,6 +85,13 @@
                     </Grid>
                 </Grid>
             </TabItem>
+            <TabItem Header="Brokers totals">
+                <Grid>
+                    <TabControl x:Name="tcBrokerTotals">
+                        
+                    </TabControl>
+                </Grid>
+            </TabItem>
         </TabControl>
     </Grid>
 

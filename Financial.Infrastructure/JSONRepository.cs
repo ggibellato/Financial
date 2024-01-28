@@ -56,6 +56,34 @@ public class JSONRepository : IRepository
         return _investiments.Brokers.SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Name == name)));
     }
 
+    public IEnumerable<Broker> GetBrokerList()
+    {
+        return _investiments.Brokers;
+    }
+
+    public decimal GetTotalBoughtByBroker(string brokerName)
+    {
+        return _investiments.Brokers.Where(b => b.Name == brokerName)
+            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.SelectMany(a => a.Operations)))
+            .Where(o => o.Type == Operation.OperationType.Buy)
+            .Sum(o => o.UnitPrice * o.Quantity + o.Fees);
+    }
+
+    public decimal GetTotalSoldByBroker(string brokerName)
+    {
+        return _investiments.Brokers.Where(b => b.Name == brokerName)
+            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.SelectMany(a => a.Operations)))
+            .Where(o => o.Type == Operation.OperationType.Sell)
+            .Sum(o => o.UnitPrice * o.Quantity + o.Fees);
+    }
+
+    public decimal GetTotalCreditsByBroker(string brokerName)
+    {
+        return _investiments.Brokers.Where(b => b.Name == brokerName)
+            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.SelectMany(a => a.Credits)))
+            .Sum(o => o.Value);
+    }
+
     private Investments LoadModel()
     {
         var modelJson = LoadEmbeddedResource("Data.data.json");

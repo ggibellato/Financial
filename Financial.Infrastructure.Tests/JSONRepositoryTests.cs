@@ -1,5 +1,6 @@
 using FinancialModel.Infrastructure;
 using FluentAssertions;
+using System.Globalization;
 
 namespace Financial.Infrastructure.Tests;
 
@@ -19,7 +20,7 @@ public class JSONRepositoryTests
     [InlineData("", 0)]
     [InlineData("NOTEXIST", 0)]
     [InlineData("FreeTrade", 14)]
-    public void GetAssets_By_Broker(string name, int records)
+    public void GetAssets_By_BrokerTest(string name, int records)
     {
         var result = _sut.GetAssetsByBroker(name);
         result.Should().HaveCount(records);
@@ -30,7 +31,7 @@ public class JSONRepositoryTests
     [InlineData("", 0)]
     [InlineData("NOTEXIST", 0)]
     [InlineData("Fundos Investimento", 4)]
-    public void GetAssets_By_Portifolio(string name, int records)
+    public void GetAssets_By_PortifolioTest(string name, int records)
     {
         var result = _sut.GetAssetsByPortifolio(name);
         result.Should().HaveCount(records);
@@ -41,9 +42,18 @@ public class JSONRepositoryTests
     [InlineData("", 0)]
     [InlineData("NOTEXIST", 0)]
     [InlineData("FTSE100", 1)]
-    public void GetAssets_By_Name(string name, int records)
+    public void GetAssets_By_NameTest(string name, int records)
     {
         var result = _sut.GetAssetsByAssetName(name);
         result.Should().HaveCount(records);
     }
+
+    [Theory]
+    [InlineData("Trading 212")]
+    public void Get_Total_Bought_By_BrokerTest(string brokerName)
+    {
+        var result = _sut.GetTotalBoughtByBroker(brokerName);
+    }
+    
+
 }

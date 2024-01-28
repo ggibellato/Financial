@@ -9,4 +9,8 @@ public interface IRepository
     IEnumerable<Asset> GetAssetsByBrokerPortifolio(string broker, string protifolio);
     IEnumerable<Asset> GetAssetsByPortifolio(string name);
     IEnumerable<Asset> GetAssetsByAssetName(string name);
+    IEnumerable<Broker> GetBrokerList();
+    decimal GetTotalBoughtByBroker(string brokerName);
+    decimal GetTotalSoldByBroker(string brokerName);
+    decimal GetTotalCreditsByBroker(string brokerName);
 }
