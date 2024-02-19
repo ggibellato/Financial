@@ -7,8 +7,9 @@ namespace Financial.Model;
 
 public class Investments
 {
+    private List<Broker> _brokers = new List<Broker>();
     [JsonInclude]
-    public List<Broker> Brokers { get; private set; } = new List<Broker>();
+    public IReadOnlyCollection<Broker> Brokers { get { return _brokers.AsReadOnly(); } }
 
     [JsonConstructor]
     private Investments() {}
@@ -38,4 +39,10 @@ public class Investments
         var investments = JsonSerializer.Deserialize<Investments>(json, options);
         return investments;
     }
+
+    public void AddBroker(Broker broker)
+    {
+        _brokers.Add(broker);
+    }
+
 }

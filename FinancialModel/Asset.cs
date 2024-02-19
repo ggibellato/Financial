@@ -18,10 +18,25 @@ public class Asset
     public string Ticker { get; private set; }
 
     [JsonInclude]
-    public List<Operation> Operations { get; private set; } = new List<Operation>();
+    public decimal Quantity{ get; private set; }
 
     [JsonInclude]
-    public List<Credit> Credits { get; private set; } = new List<Credit>();
+    public bool Active
+    {
+        get
+        {
+            return Quantity > 0;
+        }
+    }
+
+    private List<Operation> _operations = new List<Operation>();
+    [JsonInclude]
+    public IReadOnlyCollection<Operation> Operations { get { return _operations.AsReadOnly(); } }
+
+    private List<Credit> _credits = new List<Credit>();
+    [JsonInclude]
+    public IReadOnlyCollection<Credit> Credits { get { return _credits.AsReadOnly(); } }
+
 
     [JsonConstructor]
     private Asset() {}
@@ -35,4 +50,27 @@ public class Asset
     }
 
     public static Asset Create(string name, string isin, string exchange, string ticker) => new(name, isin, exchange, ticker);
+
+    public void AddOperation(Operation operation)
+    {
+        Quantity += (operation.Type == Operation.OperationType.Buy 
+            ? operation.Quantity : -operation.Quantity);
+        _operations.Add(operation);
+    }
+    public void AddOperations(IEnumerable<Operation> operations)
+    {
+        foreach (var operation in operations)
+        {
+            AddOperation(operation);
+        }
+    }
+
+    public void AddCredit(Credit credit)
+    {
+        _credits.Add(credit);
+    }
+    public void AddCredits(IEnumerable<Credit> credits)
+    {
+        _credits.AddRange(credits);
+    }
 }

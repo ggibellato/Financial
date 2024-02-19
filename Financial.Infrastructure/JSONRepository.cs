@@ -21,11 +21,11 @@ public class JSONRepository : IRepository
     {
         var investiments = LoadModel();
         var result = new List<string>();
-        investiments.Brokers.ForEach(b =>
+        investiments.Brokers.ToList().ForEach(b =>
         {
             b.Portifolios.ForEach(p =>
             {
-                p.Assets.ForEach(a =>
+                p.Assets.ToList().ForEach(a =>
                 {
                     result.Add($"{b.Name}/{p.Name}/{a.Name}");
                 });

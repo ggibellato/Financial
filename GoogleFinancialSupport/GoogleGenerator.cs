@@ -51,7 +51,7 @@ public class GoogleGenerator : IGenerator
         foreach (var fileName in fileNames)
         {
             var exchange = Broker.Create(fileName, ExchangeCurrency[fileName]);
-            data.Brokers.Add(exchange);
+            data.AddBroker(exchange);
             var files = _service.GetFilesName();
             var file = files.FirstOrDefault(f => f.Name == fileName);
 
@@ -92,10 +92,11 @@ public class GoogleGenerator : IGenerator
 
 
                 var asset = Asset.Create(spreadsheet.Name, isin, exchangeId, ticker);
-                potifolio.Assets.Add(asset);
+                potifolio.AddAsset(asset);
 
-                asset.Operations.AddRange(CreateOperations(file.Id, spreadsheet.Name));
-                asset.Credits.AddRange(CreateCredits(file.Id, spreadsheet.Name));
+                asset.AddOperations(CreateOperations(file.Id, spreadsheet.Name));
+
+                asset.AddCredits(CreateCredits(file.Id, spreadsheet.Name));
                 Thread.Sleep(3000);
             }
         }
