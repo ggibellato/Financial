@@ -36,10 +36,18 @@ namespace FinanacialTools
             var totalBought = _repository.GetTotalBoughtByBroker(_broker.Name);
             var totalSold = _repository.GetTotalSoldByBroker(_broker.Name);
             var totalCredits = _repository.GetTotalCreditsByBroker(_broker.Name);
+
+            var totalActiveBought = _repository.GetTotalActiveBoughtByBroker(_broker.Name);
+            var totalActiveSold = _repository.GetTotalActiveSoldByBroker(_broker.Name);
+            var totalActiveCredits = _repository.GetTotalActiveCreditsByBroker(_broker.Name);
+
             lblTotalBought.Content = totalBought.FormatCurrency(_broker.Currency);
             lblTotalSold.Content = totalSold.FormatCurrency(_broker.Currency);
             lblTotalCredits.Content = totalCredits.FormatCurrency(_broker.Currency);
-            lblCurrentInvested.Content = (totalBought - totalSold + totalCredits).FormatCurrency(_broker.Currency);
+
+            lblTotalActiveBought.Content = totalActiveBought.FormatCurrency(_broker.Currency);
+            lblTotalActiveSold.Content = totalActiveSold.FormatCurrency(_broker.Currency);
+            lblTotalActiveCredits.Content = totalActiveCredits.FormatCurrency(_broker.Currency);
         }
     }
 }

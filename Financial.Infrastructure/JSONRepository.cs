@@ -61,26 +61,57 @@ public class JSONRepository : IRepository
 
     public decimal GetTotalBoughtByBroker(string brokerName)
     {
-        return _investiments.Brokers.Where(b => b.Name == brokerName)
-            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.SelectMany(a => a.Operations)))
-            .Where(o => o.Type == Operation.OperationType.Buy)
-            .Sum(o => o.UnitPrice * o.Quantity + o.Fees);
+        return GetTotalBoughtByBroker(brokerName, false);
     }
 
     public decimal GetTotalSoldByBroker(string brokerName)
     {
-        return _investiments.Brokers.Where(b => b.Name == brokerName)
-            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.SelectMany(a => a.Operations)))
-            .Where(o => o.Type == Operation.OperationType.Sell)
-            .Sum(o => o.UnitPrice * o.Quantity + o.Fees);
+        return GetTotalSoldByBroker(brokerName, false);
     }
 
     public decimal GetTotalCreditsByBroker(string brokerName)
     {
+        return GetTotalCreditsByBroker(brokerName, false);
+    }
+
+    public decimal GetTotalActiveBoughtByBroker(string brokerName)
+    {
+        return GetTotalBoughtByBroker(brokerName, true);
+    }
+
+    public decimal GetTotalActiveSoldByBroker(string brokerName)
+    {
+        return GetTotalSoldByBroker(brokerName, true);
+    }
+
+    public decimal GetTotalActiveCreditsByBroker(string brokerName)
+    {
+        return GetTotalCreditsByBroker(brokerName, true);
+    }
+
+    private decimal GetTotalBoughtByBroker(string brokerName, bool active)
+    {
         return _investiments.Brokers.Where(b => b.Name == brokerName)
-            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.SelectMany(a => a.Credits)))
+            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Operations)))
+            .Where(o => o.Type == Operation.OperationType.Buy)
+            .Sum(o => o.UnitPrice * o.Quantity + o.Fees);
+    }
+
+    private decimal GetTotalSoldByBroker(string brokerName, bool active)
+    {
+        return _investiments.Brokers.Where(b => b.Name == brokerName)
+            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Operations)))
+            .Where(o => o.Type == Operation.OperationType.Sell)
+            .Sum(o => o.UnitPrice * o.Quantity + o.Fees);
+    }
+
+    private decimal GetTotalCreditsByBroker(string brokerName, bool active)
+    {
+        return _investiments.Brokers.Where(b => b.Name == brokerName)
+            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Credits)))
             .Sum(o => o.Value);
     }
+
 
     private Investments LoadModel()
     {

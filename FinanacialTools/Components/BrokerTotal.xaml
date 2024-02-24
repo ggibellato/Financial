@@ -16,8 +16,12 @@
         <Label x:Name="lblTotalSold" Content="TotalSold" HorizontalAlignment="Left" Margin="210,146,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
         <Label Content="Total Credits" HorizontalAlignment="Left" Margin="39,172,0,0" VerticalAlignment="Top" FontWeight="Bold" />
         <Label x:Name="lblTotalCredits" Content="TotalCredit" HorizontalAlignment="Left" Margin="210,177,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
-        <Separator HorizontalAlignment="Left" Margin="39,215,0,0" VerticalAlignment="Top" Height="10" Width="296"/>
-        <Label Content="Current Invested" HorizontalAlignment="Left" Margin="39,230,0,0" VerticalAlignment="Top" FontWeight="Bold" />
-        <Label x:Name="lblCurrentInvested" Content="CurrentInvested" HorizontalAlignment="Left" Margin="210,230,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
+
+        <Label Content="Total Active Bought" HorizontalAlignment="Left" Margin="474,115,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+        <Label x:Name="lblTotalActiveBought" Content="TotalActiveBought" HorizontalAlignment="Left" Margin="655,115,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
+        <Label Content="Total Active Sold" HorizontalAlignment="Left" Margin="474,141,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+        <Label x:Name="lblTotalActiveSold" Content="TotalActiveSold" HorizontalAlignment="Left" Margin="655,146,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
+        <Label Content="Total Active Credits" HorizontalAlignment="Left" Margin="474,172,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+        <Label x:Name="lblTotalActiveCredits" Content="TotalActiveCredit" HorizontalAlignment="Left" Margin="655,177,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
     </Grid>
 </UserControl>
