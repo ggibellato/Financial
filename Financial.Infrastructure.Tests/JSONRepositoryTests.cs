@@ -1,6 +1,5 @@
 using FinancialModel.Infrastructure;
 using FluentAssertions;
-using System.Globalization;
 
 namespace Financial.Infrastructure.Tests;
 
@@ -54,6 +53,11 @@ public class JSONRepositoryTests
     {
         var result = _sut.GetTotalBoughtByBroker(brokerName);
     }
-    
 
+    [Fact]
+    public void Get_LoadModel()
+    {
+        var result = new JSONRepository();
+        result.Should().NotBeNull();
+    }
 }

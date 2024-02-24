@@ -2,7 +2,6 @@
 using FinancialModel.Application;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Xml.Linq;
 
 [assembly: InternalsVisibleTo("Financial.Infrastructure.Tests")]
 namespace FinancialModel.Infrastructure;
@@ -19,9 +18,8 @@ public class JSONRepository : IRepository
 
     public List<string> GetAllAssetsFullName()
     {
-        var investiments = LoadModel();
         var result = new List<string>();
-        investiments.Brokers.ToList().ForEach(b =>
+        _investiments.Brokers.ToList().ForEach(b =>
         {
             b.Portifolios.ForEach(p =>
             {

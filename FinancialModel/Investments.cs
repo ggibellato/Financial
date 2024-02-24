@@ -2,6 +2,7 @@
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using Financial.Common;
+using System;
 
 namespace Financial.Model;
 
@@ -9,7 +10,12 @@ public class Investments
 {
     private List<Broker> _brokers = new List<Broker>();
     [JsonInclude]
-    public IReadOnlyCollection<Broker> Brokers { get { return _brokers.AsReadOnly(); } }
+    public IReadOnlyCollection<Broker> Brokers { get => _brokers.AsReadOnly(); set => SetBrokers(value); }
+    private void SetBrokers(IReadOnlyCollection<Broker> data)
+    {
+        _brokers.Clear();
+        _brokers.AddRange(data);
+    }
 
     [JsonConstructor]
     private Investments() {}
@@ -44,5 +50,4 @@ public class Investments
     {
         _brokers.Add(broker);
     }
-
 }
