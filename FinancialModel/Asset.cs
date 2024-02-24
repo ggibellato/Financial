@@ -17,11 +17,38 @@ public class Asset
     [JsonInclude]
     public string Ticker { get; private set; }
 
-    [JsonInclude]
-    public List<Operation> Operations { get; private set; } = new List<Operation>();
+    [JsonIgnore]
+    public decimal Quantity { get; private set; }
 
+    [JsonIgnore]
+    public bool Active
+    {
+        get
+        {
+            return Quantity > 0;
+        }
+    }
+
+    private List<Operation> _operations = new List<Operation>();
     [JsonInclude]
-    public List<Credit> Credits { get; private set; } = new List<Credit>();
+    public IReadOnlyCollection<Operation> Operations { get => _operations.AsReadOnly(); set => SetOperations(value); }
+    private void SetOperations(IReadOnlyCollection<Operation> data)
+    {
+        _operations.Clear();
+        foreach (var operation in data)
+        {
+            AddOperation(operation);
+        }
+    }
+
+    private List<Credit> _credits = new List<Credit>();
+    [JsonInclude]
+    public IReadOnlyCollection<Credit> Credits { get => _credits.AsReadOnly(); set => SetCredits(value); }
+    private void SetCredits(IReadOnlyCollection<Credit> data)
+    {
+        _credits.Clear();
+        _credits.AddRange(data);
+    }
 
     [JsonConstructor]
     private Asset() {}
@@ -35,4 +62,27 @@ public class Asset
     }
 
     public static Asset Create(string name, string isin, string exchange, string ticker) => new(name, isin, exchange, ticker);
+
+    public void AddOperation(Operation operation)
+    {
+        Quantity += (operation.Type == Operation.OperationType.Buy 
+            ? operation.Quantity : -operation.Quantity);
+        _operations.Add(operation);
+    }
+    public void AddOperations(IEnumerable<Operation> operations)
+    {
+        foreach (var operation in operations)
+        {
+            AddOperation(operation);
+        }
+    }
+
+    public void AddCredit(Credit credit)
+    {
+        _credits.Add(credit);
+    }
+    public void AddCredits(IEnumerable<Credit> credits)
+    {
+        _credits.AddRange(credits);
+    }
 }

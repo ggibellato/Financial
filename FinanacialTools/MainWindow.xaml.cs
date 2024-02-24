@@ -1,4 +1,5 @@
-﻿using Financial.Common;
+﻿using FinanacialTools;
+using Financial.Common;
 using Financial.Model;
 using FinancialModel.Application;
 using FinancialModel.Infrastructure;
@@ -26,12 +27,12 @@ namespace SharesDividendCheck
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly IRepository _sut = new JSONRepository();
+        private readonly IRepository _repository = new JSONRepository();
 
         public MainWindow()
         {
             InitializeComponent();
-            List < Option> options = new List<Option>
+            List<Option> options = new List<Option>
             {
                 new Option { Group = "Ja possuidas", Name = "KLBN4" },
                 new Option { Group = "Ja possuidas", Name = "TASA4" },
@@ -46,13 +47,28 @@ namespace SharesDividendCheck
             var groupedOptions = new ListCollectionView(options);
             groupedOptions.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
             txtTicker.ItemsSource = groupedOptions;
-    }
+
+            LoadBrokersTotals();
+        }
 
         public class Option
         {
             public required string Group { get; set; }
             public required string Name { get; set; }
         }
+
+        private void LoadBrokersTotals()
+        {
+            var brokers = _repository.GetBrokerList();
+            foreach (var broker in brokers) {
+                var brokerTotalControl = new BrokerTotal(broker, _repository);
+                TabItem tabItem = new TabItem();
+                tabItem.Header = broker.Name;
+                tabItem.Content = brokerTotalControl;
+                tcBrokerTotals.Items.Add(tabItem);
+            }
+        }
+
 
         private void btnCheck_Click(object sender, RoutedEventArgs e)
         {
@@ -95,8 +111,8 @@ namespace SharesDividendCheck
 
         private void btnCheckFIIS_Click(object sender, RoutedEventArgs e)
         {
-            var assets = _sut.GetAssetsByBrokerPortifolio("XPI", "Default").ToList();
-            var acoes = _sut.GetAssetsByBrokerPortifolio("XPI", "Acoes");
+            var assets = _repository.GetAssetsByBrokerPortifolio("XPI", "Default").ToList();
+            var acoes = _repository.GetAssetsByBrokerPortifolio("XPI", "Acoes");
             assets.AddRange(acoes);
             var list = new List<AssetValue>();
             foreach (var asset in assets) {

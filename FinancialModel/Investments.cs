@@ -2,13 +2,20 @@
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using Financial.Common;
+using System;
 
 namespace Financial.Model;
 
 public class Investments
 {
+    private List<Broker> _brokers = new List<Broker>();
     [JsonInclude]
-    public List<Broker> Brokers { get; private set; } = new List<Broker>();
+    public IReadOnlyCollection<Broker> Brokers { get => _brokers.AsReadOnly(); set => SetBrokers(value); }
+    private void SetBrokers(IReadOnlyCollection<Broker> data)
+    {
+        _brokers.Clear();
+        _brokers.AddRange(data);
+    }
 
     [JsonConstructor]
     private Investments() {}
@@ -37,5 +44,10 @@ public class Investments
         };
         var investments = JsonSerializer.Deserialize<Investments>(json, options);
         return investments;
+    }
+
+    public void AddBroker(Broker broker)
+    {
+        _brokers.Add(broker);
     }
 }
