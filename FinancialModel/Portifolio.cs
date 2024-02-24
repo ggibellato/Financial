@@ -10,8 +10,12 @@ public class Portifolio
 
     private List<Asset> _assets = new List<Asset>();
     [JsonInclude]
-    public IReadOnlyCollection<Asset> Assets { get { return _assets.AsReadOnly(); } }
-
+    public IReadOnlyCollection<Asset> Assets { get => _assets.AsReadOnly(); set => SetAssets(value); }
+    private void SetAssets(IReadOnlyCollection<Asset> data)
+    {
+        _assets.Clear();
+        _assets.AddRange(data);
+    }
 
     [JsonConstructor]
     private Portifolio()

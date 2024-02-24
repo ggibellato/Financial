@@ -10,8 +10,16 @@ public class Broker
     public string Name { get; private set; }
     [JsonInclude]
     public string Currency { get; private set; }
+
+    private List<Portifolio> _portifolios = new List<Portifolio>();
     [JsonInclude]
-    public List<Portifolio> Portifolios { get; private set; } = new List<Portifolio>();
+    public IReadOnlyCollection<Portifolio> Portifolios { get => _portifolios.AsReadOnly(); set => SetPortifolios(value); }
+    private void SetPortifolios(IReadOnlyCollection<Portifolio> data)
+    {
+        _portifolios.Clear();
+        _portifolios.AddRange(data);
+    }
+
 
     [JsonConstructor]
     private Broker() {}
@@ -30,7 +38,7 @@ public class Broker
         if (portifolio is null)
         {
             portifolio = Portifolio.Create(name);
-            Portifolios.Add(portifolio);
+            _portifolios.Add(portifolio);
         }
         return portifolio;
     }

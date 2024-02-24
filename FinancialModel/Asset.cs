@@ -17,10 +17,10 @@ public class Asset
     [JsonInclude]
     public string Ticker { get; private set; }
 
-    [JsonInclude]
-    public decimal Quantity{ get; private set; }
+    [JsonIgnore]
+    public decimal Quantity { get; private set; }
 
-    [JsonInclude]
+    [JsonIgnore]
     public bool Active
     {
         get
@@ -31,12 +31,24 @@ public class Asset
 
     private List<Operation> _operations = new List<Operation>();
     [JsonInclude]
-    public IReadOnlyCollection<Operation> Operations { get { return _operations.AsReadOnly(); } }
+    public IReadOnlyCollection<Operation> Operations { get => _operations.AsReadOnly(); set => SetOperations(value); }
+    private void SetOperations(IReadOnlyCollection<Operation> data)
+    {
+        _operations.Clear();
+        foreach (var operation in data)
+        {
+            AddOperation(operation);
+        }
+    }
 
     private List<Credit> _credits = new List<Credit>();
     [JsonInclude]
-    public IReadOnlyCollection<Credit> Credits { get { return _credits.AsReadOnly(); } }
-
+    public IReadOnlyCollection<Credit> Credits { get => _credits.AsReadOnly(); set => SetCredits(value); }
+    private void SetCredits(IReadOnlyCollection<Credit> data)
+    {
+        _credits.Clear();
+        _credits.AddRange(data);
+    }
 
     [JsonConstructor]
     private Asset() {}

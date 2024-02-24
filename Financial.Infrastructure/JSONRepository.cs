@@ -21,7 +21,7 @@ public class JSONRepository : IRepository
         var result = new List<string>();
         _investiments.Brokers.ToList().ForEach(b =>
         {
-            b.Portifolios.ForEach(p =>
+            b.Portifolios.ToList().ForEach(p =>
             {
                 p.Assets.ToList().ForEach(a =>
                 {
