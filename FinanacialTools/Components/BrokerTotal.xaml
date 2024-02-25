@@ -7,7 +7,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <Button x:Name="btnLoad" Content="Load data" HorizontalAlignment="Left" Margin="37,10,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.502,3.006" Width="103" Click="btnLoad_Click" Height="40" Foreground="#FF0C35DA" FontWeight="Bold" FontSize="18"/>
+        <Button x:Name="btnLoad" Content="Load broker" HorizontalAlignment="Left" Margin="37,10,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.502,3.006" Width="126" Click="btnLoad_Click" Height="40" Foreground="#FF0C35DA" FontWeight="Bold" FontSize="18"/>
         <Label Content="Currency" HorizontalAlignment="Left" Margin="37,84,0,0" VerticalAlignment="Top" FontWeight="Bold" />
         <Label x:Name="lblCurrency" Content="Currency" HorizontalAlignment="Left" Margin="210,84,0,0" VerticalAlignment="Top" FontWeight="Bold" />
         <Label Content="Total Bought" HorizontalAlignment="Left" Margin="37,115,0,0" VerticalAlignment="Top" FontWeight="Bold" />
@@ -38,5 +38,6 @@
                 </GroupStyle>
             </ComboBox.GroupStyle>
         </ComboBox>
+        <Button x:Name="btnLoadAsset" Content="Load asset" HorizontalAlignment="Left" Margin="177,256,0,0" VerticalAlignment="Top" Width="85" Height="22" />
     </Grid>
 </UserControl>

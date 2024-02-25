@@ -1,4 +1,5 @@
-﻿using Financial.Model;
+﻿using Financial.Application.DTO;
+using Financial.Model;
 using FinancialModel.Application;
 using System;
 using System.Reflection;
@@ -60,34 +61,18 @@ public class JSONRepository : IRepository
         return _investiments.Brokers;
     }
 
-    public decimal GetTotalBoughtByBroker(string brokerName)
+    public BrokerInfoDTO GetBrokerInfo(string brokerName)
     {
-        return GetTotalBoughtByBroker(brokerName, false);
-    }
-
-    public decimal GetTotalSoldByBroker(string brokerName)
-    {
-        return GetTotalSoldByBroker(brokerName, false);
-    }
-
-    public decimal GetTotalCreditsByBroker(string brokerName)
-    {
-        return GetTotalCreditsByBroker(brokerName, false);
-    }
-
-    public decimal GetTotalActiveBoughtByBroker(string brokerName)
-    {
-        return GetTotalBoughtByBroker(brokerName, true);
-    }
-
-    public decimal GetTotalActiveSoldByBroker(string brokerName)
-    {
-        return GetTotalSoldByBroker(brokerName, true);
-    }
-
-    public decimal GetTotalActiveCreditsByBroker(string brokerName)
-    {
-        return GetTotalCreditsByBroker(brokerName, true);
+        var ret = new BrokerInfoDTO();
+        ret.TotalBought = GetTotalBoughtByBroker(brokerName, false);
+        ret.TotalSold = GetTotalSoldByBroker(brokerName, false);
+        ret.TotalCredits = GetTotalCreditsByBroker(brokerName, false);
+        ret.TotalBoughtActive = GetTotalBoughtByBroker(brokerName, false);
+        ret.TotalSoldActive = GetTotalSoldByBroker(brokerName, false);
+        ret.TotalCreditsActive = GetTotalCreditsByBroker(brokerName, false);
+        ret.AssetsActive = GetAssetsByBroker(brokerName, true);
+        ret.AssetsInactive = GetAssetsByBroker(brokerName, false);
+        return ret;
     }
 
     private decimal GetTotalBoughtByBroker(string brokerName, bool active)
@@ -113,16 +98,10 @@ public class JSONRepository : IRepository
             .Sum(o => o.Value);
     }
 
-    public List<string> GetActiveAssetsByBroker(string brokerName)
+    private List<string> GetAssetsByBroker(string brokerName, bool active)
     {
         return _investiments.Brokers.Where(b => b.Name == brokerName)
-            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active).Select(a => a.Name))).ToList();
-    }
-
-    public List<string> GetInactiveAssetsByBroker(string brokerName)
-    {
-        return _investiments.Brokers.Where(b => b.Name == brokerName)
-            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => !a.Active).Select(a => a.Name))).ToList();
+            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active == active).Select(a => a.Name))).ToList();
     }
 
 

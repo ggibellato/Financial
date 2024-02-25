@@ -1,9 +1,7 @@
 ﻿using Financial.Model;
 using FinancialModel.Application;
 using FinancialToolSupport;
-using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Windows.Controls;
 using System.Windows.Data;
 using static SharesDividendCheck.MainWindow;
@@ -35,28 +33,22 @@ namespace FinanacialTools
 
         private void btnLoad_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            var totalBought = _repository.GetTotalBoughtByBroker(_broker.Name);
-            var totalSold = _repository.GetTotalSoldByBroker(_broker.Name);
-            var totalCredits = _repository.GetTotalCreditsByBroker(_broker.Name);
+            var brokerInfo = _repository.GetBrokerInfo(_broker.Name);
 
-            var totalActiveBought = _repository.GetTotalActiveBoughtByBroker(_broker.Name);
-            var totalActiveSold = _repository.GetTotalActiveSoldByBroker(_broker.Name);
-            var totalActiveCredits = _repository.GetTotalActiveCreditsByBroker(_broker.Name);
+            lblTotalBought.Content = brokerInfo.TotalBought.FormatCurrency(_broker.Currency);
+            lblTotalSold.Content = brokerInfo.TotalSold.FormatCurrency(_broker.Currency);
+            lblTotalCredits.Content = brokerInfo.TotalCredits.FormatCurrency(_broker.Currency);
 
-            lblTotalBought.Content = totalBought.FormatCurrency(_broker.Currency);
-            lblTotalSold.Content = totalSold.FormatCurrency(_broker.Currency);
-            lblTotalCredits.Content = totalCredits.FormatCurrency(_broker.Currency);
-
-            lblTotalActiveBought.Content = totalActiveBought.FormatCurrency(_broker.Currency);
-            lblTotalActiveSold.Content = totalActiveSold.FormatCurrency(_broker.Currency);
-            lblTotalActiveCredits.Content = totalActiveCredits.FormatCurrency(_broker.Currency);
+            lblTotalActiveBought.Content = brokerInfo.TotalBoughtActive.FormatCurrency(_broker.Currency);
+            lblTotalActiveSold.Content = brokerInfo.TotalSoldActive.FormatCurrency(_broker.Currency);
+            lblTotalActiveCredits.Content = brokerInfo.TotalCreditsActive.FormatCurrency(_broker.Currency);
 
             List<Option> options = new List<Option>();
-            foreach ( var asset in _repository.GetActiveAssetsByBroker(_broker.Name))
+            foreach ( var asset in brokerInfo.AssetsActive)
             {
                 options.Add(new Option { Group = "Active", Name = asset });
             }
-            foreach (var asset in _repository.GetInactiveAssetsByBroker(_broker.Name))
+            foreach (var asset in brokerInfo.AssetsInactive)
             {
                 options.Add(new Option { Group = "Inactive", Name = asset });
             }
