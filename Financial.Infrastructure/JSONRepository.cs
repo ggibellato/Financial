@@ -1,5 +1,6 @@
 ﻿using Financial.Model;
 using FinancialModel.Application;
+using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -110,6 +111,18 @@ public class JSONRepository : IRepository
         return _investiments.Brokers.Where(b => b.Name == brokerName)
             .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Credits)))
             .Sum(o => o.Value);
+    }
+
+    public List<string> GetActiveAssetsByBroker(string brokerName)
+    {
+        return _investiments.Brokers.Where(b => b.Name == brokerName)
+            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active).Select(a => a.Name))).ToList();
+    }
+
+    public List<string> GetInactiveAssetsByBroker(string brokerName)
+    {
+        return _investiments.Brokers.Where(b => b.Name == brokerName)
+            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => !a.Active).Select(a => a.Name))).ToList();
     }
 
 

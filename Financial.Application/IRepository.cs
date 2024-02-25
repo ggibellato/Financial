@@ -16,4 +16,7 @@ public interface IRepository
     decimal GetTotalBoughtByBroker(string brokerName);
     decimal GetTotalSoldByBroker(string brokerName);
     decimal GetTotalCreditsByBroker(string brokerName);
+
+    List<string> GetActiveAssetsByBroker(string brokerName);
+    List<string> GetInactiveAssetsByBroker(string brokerName);
 }

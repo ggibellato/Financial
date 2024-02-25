@@ -23,5 +23,20 @@
         <Label x:Name="lblTotalActiveSold" Content="TotalActiveSold" HorizontalAlignment="Left" Margin="655,146,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
         <Label Content="Total Active Credits" HorizontalAlignment="Left" Margin="474,172,0,0" VerticalAlignment="Top" FontWeight="Bold" />
         <Label x:Name="lblTotalActiveCredits" Content="TotalActiveCredit" HorizontalAlignment="Left" Margin="655,177,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
+        <Label Content="Assets" HorizontalAlignment="Left" Margin="43,225,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+        <ComboBox x:Name="txtAssets" HorizontalAlignment="Left" Margin="43,256,0,0" VerticalAlignment="Top" Width="120" DisplayMemberPath="Name" IsEditable="False"
+                        ItemsSource="{Binding}" SelectedIndex="0">
+            <ComboBox.GroupStyle>
+                <GroupStyle>
+                    <GroupStyle.HeaderTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="Black" BorderThickness="0,0,0,1">
+                                <TextBlock FontWeight="Bold" Text="{Binding Name}" />
+                            </Border>
+                        </DataTemplate>
+                    </GroupStyle.HeaderTemplate>
+                </GroupStyle>
+            </ComboBox.GroupStyle>
+        </ComboBox>
     </Grid>
 </UserControl>

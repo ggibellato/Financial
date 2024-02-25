@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Windows.Controls;
+using System.Windows.Data;
+using static SharesDividendCheck.MainWindow;
 
 namespace FinanacialTools
 {
@@ -48,6 +50,19 @@ namespace FinanacialTools
             lblTotalActiveBought.Content = totalActiveBought.FormatCurrency(_broker.Currency);
             lblTotalActiveSold.Content = totalActiveSold.FormatCurrency(_broker.Currency);
             lblTotalActiveCredits.Content = totalActiveCredits.FormatCurrency(_broker.Currency);
+
+            List<Option> options = new List<Option>();
+            foreach ( var asset in _repository.GetActiveAssetsByBroker(_broker.Name))
+            {
+                options.Add(new Option { Group = "Active", Name = asset });
+            }
+            foreach (var asset in _repository.GetInactiveAssetsByBroker(_broker.Name))
+            {
+                options.Add(new Option { Group = "Inactive", Name = asset });
+            }
+            var groupedOptions = new ListCollectionView(options);
+            groupedOptions.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
+            txtAssets.ItemsSource = groupedOptions;
         }
     }
 }
