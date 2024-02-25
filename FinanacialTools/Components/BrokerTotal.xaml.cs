@@ -2,6 +2,7 @@
 using FinancialModel.Application;
 using FinancialToolSupport;
 using System.Collections.Generic;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using static SharesDividendCheck.MainWindow;
@@ -68,6 +69,20 @@ namespace FinanacialTools
             var groupedOptions = new ListCollectionView(options);
             groupedOptions.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
             txtPortifolioAssets.ItemsSource = groupedOptions;
+        }
+
+        private void btnLoadAsset_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if(txtPortifolioAssets.SelectedItem is not null)
+            {
+                var selected = (PortifolioOption)txtPortifolioAssets.SelectedItem;
+                var assetInfo = _repository.GetAssetInfo(_broker.Name, selected.PortifolioName, selected.AssetName);
+
+                lblQuantity.Content = $"{assetInfo.Quantity:n6}";
+                lblAssetTotalBought.Content = assetInfo.TotalBought.FormatCurrency(_broker.Currency);
+                lblAssetTotalSold.Content = assetInfo.TotalSold.FormatCurrency(_broker.Currency);
+                lblAssetTotalCredits.Content = assetInfo.TotalCredits.FormatCurrency(_broker.Currency);
+            }
         }
     }
 }

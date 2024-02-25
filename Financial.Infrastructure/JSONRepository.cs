@@ -79,19 +79,16 @@ public class JSONRepository : IRepository
     public AssetInfoDTO GetAssetInfo(string brokerName, string portifolio, string assetName)
     {
         var ret = new AssetInfoDTO();
-        //Asset asset = GetAsset(brokerName, assetName);
+        var asset = _investiments.Brokers
+            .First(b => b.Name == brokerName)
+            .Portifolios.First(p => p.Name == portifolio)
+            .Assets.First(a => a.Name == assetName);
 
-
+        ret.Quantity = asset.Quantity;
+        ret.TotalBought = asset.Operations.Where(o => o.Type == Operation.OperationType.Buy).Sum(o => o.UnitPrice * o.Quantity + o.Fees);
+        ret.TotalSold = asset.Operations.Where(o => o.Type == Operation.OperationType.Sell).Sum(o => o.UnitPrice * o.Quantity + o.Fees);
+        ret.TotalCredits = asset.Credits.Sum(o => o.Value);
         return ret;
-    }
-
-    private Asset GetAsset(string brokerName, string portifolioName, string assetName, bool active)
-    {
-        _investiments.Brokers.Where(b => b.Name == brokerName)
-                    .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Operations)))
-                    .Where(o => o.Type == Operation.OperationType.Buy)
-                    .Sum(o => o.UnitPrice * o.Quantity + o.Fees);
-        return null;
     }
 
     private decimal GetTotalBoughtByBroker(string brokerName, bool active)

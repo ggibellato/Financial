@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Financial.Application.DTO
+﻿namespace Financial.Application.DTO
 {
     public class AssetInfoDTO
     {
+        public decimal TotalBought { get; set; }
+        public decimal TotalSold { get; set; }
+        public decimal TotalCredits { get; set; }
+        public decimal Quantity { get; set; }
     }
 }
