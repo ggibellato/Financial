@@ -22,6 +22,13 @@ namespace FinanacialTools
             {"BRL", "BR"}
         };
 
+        public class PortifolioOption
+        {
+            public required string Group { get; set; }
+            public required string PortifolioName { get; set; }
+            public required string AssetName { get; set; }
+        }
+
 
         public BrokerTotal(Broker broker, IRepository repository)
         {
@@ -43,18 +50,24 @@ namespace FinanacialTools
             lblTotalActiveSold.Content = brokerInfo.TotalSoldActive.FormatCurrency(_broker.Currency);
             lblTotalActiveCredits.Content = brokerInfo.TotalCreditsActive.FormatCurrency(_broker.Currency);
 
-            List<Option> options = new List<Option>();
-            foreach ( var asset in brokerInfo.AssetsActive)
+            List<PortifolioOption> options = new List<PortifolioOption>();
+            foreach ( var portifolio in brokerInfo.PortifiliosActive)
             {
-                options.Add(new Option { Group = "Active", Name = asset });
+                foreach(var asset in portifolio.Assets)
+                {
+                    options.Add(new PortifolioOption { Group = "Active", PortifolioName = portifolio.Name, AssetName = asset });
+                }
             }
-            foreach (var asset in brokerInfo.AssetsInactive)
+            foreach (var portifolio in brokerInfo.PortifiliosInactive)
             {
-                options.Add(new Option { Group = "Inactive", Name = asset });
+                foreach (var asset in portifolio.Assets)
+                {
+                    options.Add(new PortifolioOption { Group = "Inactive", PortifolioName = portifolio.Name, AssetName = asset });
+                }
             }
             var groupedOptions = new ListCollectionView(options);
             groupedOptions.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
-            txtAssets.ItemsSource = groupedOptions;
+            txtPortifolioAssets.ItemsSource = groupedOptions;
         }
     }
 }

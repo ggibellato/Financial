@@ -70,9 +70,28 @@ public class JSONRepository : IRepository
         ret.TotalBoughtActive = GetTotalBoughtByBroker(brokerName, false);
         ret.TotalSoldActive = GetTotalSoldByBroker(brokerName, false);
         ret.TotalCreditsActive = GetTotalCreditsByBroker(brokerName, false);
-        ret.AssetsActive = GetAssetsByBroker(brokerName, true);
-        ret.AssetsInactive = GetAssetsByBroker(brokerName, false);
+        ret.PortifiliosActive = GetPortifolioAssetsByBroker(brokerName, true);
+        ret.PortifiliosInactive = GetPortifolioAssetsByBroker(brokerName, false);
         return ret;
+    }
+
+
+    public AssetInfoDTO GetAssetInfo(string brokerName, string portifolio, string assetName)
+    {
+        var ret = new AssetInfoDTO();
+        //Asset asset = GetAsset(brokerName, assetName);
+
+
+        return ret;
+    }
+
+    private Asset GetAsset(string brokerName, string portifolioName, string assetName, bool active)
+    {
+        _investiments.Brokers.Where(b => b.Name == brokerName)
+                    .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Operations)))
+                    .Where(o => o.Type == Operation.OperationType.Buy)
+                    .Sum(o => o.UnitPrice * o.Quantity + o.Fees);
+        return null;
     }
 
     private decimal GetTotalBoughtByBroker(string brokerName, bool active)
@@ -98,10 +117,24 @@ public class JSONRepository : IRepository
             .Sum(o => o.Value);
     }
 
-    private List<string> GetAssetsByBroker(string brokerName, bool active)
+    private List<PortifolioDTO> GetPortifolioAssetsByBroker(string brokerName, bool active)
     {
-        return _investiments.Brokers.Where(b => b.Name == brokerName)
-            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active == active).Select(a => a.Name))).ToList();
+        var ret = new List<PortifolioDTO>();
+        var broker = _investiments.Brokers.Where(b => b.Name == brokerName).First();
+        foreach(var p in broker.Portifolios)
+        {
+            var assets = p.Assets.Where(a => a.Active == active);
+            if(assets.Any())
+            {
+                var pDTO = new PortifolioDTO
+                {
+                    Name = p.Name, 
+                    Assets = assets.Select(a => a.Name).ToList()
+                };
+                ret.Add(pDTO);
+            }
+        }
+        return ret;
     }
 
 

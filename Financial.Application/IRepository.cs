@@ -13,4 +13,5 @@ public interface IRepository
     IEnumerable<Broker> GetBrokerList();
 
     BrokerInfoDTO GetBrokerInfo(string brokerName);
+    AssetInfoDTO GetAssetInfo(string brokerName, string portifolio, string assetName);
 }

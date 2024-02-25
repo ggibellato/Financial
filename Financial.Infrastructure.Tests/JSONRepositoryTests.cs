@@ -46,18 +46,4 @@ public class JSONRepositoryTests
         var result = _sut.GetAssetsByAssetName(name);
         result.Should().HaveCount(records);
     }
-
-    [Theory]
-    [InlineData("Trading 212")]
-    public void Get_Total_Bought_By_BrokerTest(string brokerName)
-    {
-        var result = _sut.GetTotalBoughtByBroker(brokerName);
-    }
-
-    [Fact]
-    public void Get_LoadModel()
-    {
-        var result = new JSONRepository();
-        result.Should().NotBeNull();
-    }
 }

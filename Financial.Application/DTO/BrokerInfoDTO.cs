@@ -8,7 +8,7 @@
         public decimal TotalCreditsActive { get; set; }
         public decimal TotalBoughtActive { get; set; }
         public decimal TotalSoldActive { get; set; }
-        public List<string> AssetsActive { get; set; } = new List<string>();
-        public List<string> AssetsInactive { get; set; } = new List<string>();
+        public List<PortifolioDTO> PortifiliosActive { get; set; } = new List<PortifolioDTO>();
+        public List<PortifolioDTO> PortifiliosInactive { get; set; } = new List<PortifolioDTO>();
     }
 }

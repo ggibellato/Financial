@@ -7,37 +7,52 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <Button x:Name="btnLoad" Content="Load broker" HorizontalAlignment="Left" Margin="37,10,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.502,3.006" Width="126" Click="btnLoad_Click" Height="40" Foreground="#FF0C35DA" FontWeight="Bold" FontSize="18"/>
-        <Label Content="Currency" HorizontalAlignment="Left" Margin="37,84,0,0" VerticalAlignment="Top" FontWeight="Bold" />
-        <Label x:Name="lblCurrency" Content="Currency" HorizontalAlignment="Left" Margin="210,84,0,0" VerticalAlignment="Top" FontWeight="Bold" />
-        <Label Content="Total Bought" HorizontalAlignment="Left" Margin="37,115,0,0" VerticalAlignment="Top" FontWeight="Bold" />
-        <Label x:Name="lblTotalBought" Content="TotalBought" HorizontalAlignment="Left" Margin="210,115,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
-        <Label Content="Total Sold" HorizontalAlignment="Left" Margin="37,141,0,0" VerticalAlignment="Top" FontWeight="Bold" />
-        <Label x:Name="lblTotalSold" Content="TotalSold" HorizontalAlignment="Left" Margin="210,146,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
-        <Label Content="Total Credits" HorizontalAlignment="Left" Margin="39,172,0,0" VerticalAlignment="Top" FontWeight="Bold" />
-        <Label x:Name="lblTotalCredits" Content="TotalCredit" HorizontalAlignment="Left" Margin="210,177,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
-
-        <Label Content="Total Active Bought" HorizontalAlignment="Left" Margin="474,115,0,0" VerticalAlignment="Top" FontWeight="Bold" />
-        <Label x:Name="lblTotalActiveBought" Content="TotalActiveBought" HorizontalAlignment="Left" Margin="655,115,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
-        <Label Content="Total Active Sold" HorizontalAlignment="Left" Margin="474,141,0,0" VerticalAlignment="Top" FontWeight="Bold" />
-        <Label x:Name="lblTotalActiveSold" Content="TotalActiveSold" HorizontalAlignment="Left" Margin="655,146,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
-        <Label Content="Total Active Credits" HorizontalAlignment="Left" Margin="474,172,0,0" VerticalAlignment="Top" FontWeight="Bold" />
-        <Label x:Name="lblTotalActiveCredits" Content="TotalActiveCredit" HorizontalAlignment="Left" Margin="655,177,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
-        <Label Content="Assets" HorizontalAlignment="Left" Margin="43,225,0,0" VerticalAlignment="Top" FontWeight="Bold" />
-        <ComboBox x:Name="txtAssets" HorizontalAlignment="Left" Margin="43,256,0,0" VerticalAlignment="Top" Width="120" DisplayMemberPath="Name" IsEditable="False"
-                        ItemsSource="{Binding}" SelectedIndex="0">
-            <ComboBox.GroupStyle>
-                <GroupStyle>
-                    <GroupStyle.HeaderTemplate>
-                        <DataTemplate>
-                            <Border BorderBrush="Black" BorderThickness="0,0,0,1">
-                                <TextBlock FontWeight="Bold" Text="{Binding Name}" />
-                            </Border>
-                        </DataTemplate>
-                    </GroupStyle.HeaderTemplate>
-                </GroupStyle>
-            </ComboBox.GroupStyle>
-        </ComboBox>
-        <Button x:Name="btnLoadAsset" Content="Load asset" HorizontalAlignment="Left" Margin="177,256,0,0" VerticalAlignment="Top" Width="85" Height="22" />
+        <Grid>
+            <Button x:Name="btnLoad" Content="Load broker" HorizontalAlignment="Left" Margin="37,10,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.502,3.006" Width="126" Click="btnLoad_Click" Height="40" Foreground="#FF0C35DA" FontWeight="Bold" FontSize="18"/>
+            <Label Content="Currency" HorizontalAlignment="Left" Margin="37,84,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+            <Label x:Name="lblCurrency" Content="Currency" HorizontalAlignment="Left" Margin="210,84,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+        </Grid>
+        <Grid Margin="10,125,445,215">
+            <Label Content="Total Bought" HorizontalAlignment="Left" Margin="22,20,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+            <Label x:Name="lblTotalBought" Content="TotalBought" HorizontalAlignment="Left" Margin="195,20,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
+            <Label Content="Total Sold" HorizontalAlignment="Left" Margin="22,46,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+            <Label x:Name="lblTotalSold" Content="TotalSold" HorizontalAlignment="Left" Margin="195,51,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
+            <Label Content="Total Credits" HorizontalAlignment="Left" Margin="24,77,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+            <Label x:Name="lblTotalCredits" Content="TotalCredit" HorizontalAlignment="Left" Margin="195,82,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
+        </Grid>
+        <Grid Margin="440,125,65,215">
+            <Label Content="Total Active Bought" HorizontalAlignment="Left" Margin="22,20,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+            <Label x:Name="lblTotalActiveBought" Content="TotalActiveBought" HorizontalAlignment="Left" Margin="200,20,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
+            <Label Content="Total Active Sold" HorizontalAlignment="Left" Margin="22,46,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+            <Label x:Name="lblTotalActiveSold" Content="TotalActiveSold" HorizontalAlignment="Left" Margin="200,51,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
+            <Label Content="Total Active Credits" HorizontalAlignment="Left" Margin="24,77,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+            <Label x:Name="lblTotalActiveCredits" Content="TotalActiveCredit" HorizontalAlignment="Left" Margin="195,82,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
+        </Grid>
+        <Grid Margin="10,250,10,75">
+            <Label Content="Assets" HorizontalAlignment="Left" Margin="26,14,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+            <ComboBox x:Name="txtPortifolioAssets" IsEditable="False"
+                    ItemsSource="{Binding}" HorizontalAlignment="Left" Margin="26,45,0,0" VerticalAlignment="Top" Width="204" SelectedIndex="0">
+                <ComboBox.GroupStyle>
+                    <GroupStyle>
+                        <GroupStyle.HeaderTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="Black" BorderThickness="0,0,0,1">
+                                    <TextBlock FontWeight="Bold" Text="{Binding Name}" />
+                                </Border>
+                            </DataTemplate>
+                        </GroupStyle.HeaderTemplate>
+                    </GroupStyle>
+                </ComboBox.GroupStyle>
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding PortifolioName}" Margin="2,0,2,0" Width="80"/>
+                            <TextBlock Text="{Binding AssetName}" Margin="2,0,0,0" Width="200"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <Button x:Name="btnLoadAsset" Content="Load asset" HorizontalAlignment="Left" Margin="245,45,0,0" VerticalAlignment="Top" Width="85" Height="22" />
+        </Grid>
     </Grid>
 </UserControl>
