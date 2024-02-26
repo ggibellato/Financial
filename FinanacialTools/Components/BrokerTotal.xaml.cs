@@ -2,6 +2,7 @@
 using FinancialModel.Application;
 using FinancialToolSupport;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -81,7 +82,8 @@ namespace FinanacialTools
                 lblQuantity.Content = $"{assetInfo.Quantity:n6}";
                 lblAssetTotalBought.Content = assetInfo.TotalBought.FormatCurrency(_broker.Currency);
                 lblAssetTotalSold.Content = assetInfo.TotalSold.FormatCurrency(_broker.Currency);
-                lblAssetTotalCredits.Content = assetInfo.TotalCredits.FormatCurrency(_broker.Currency);
+                lblAssetTotalCredits.Content = assetInfo.Credits.Total.FormatCurrency(_broker.Currency);
+                var x = assetInfo.Credits.CreditsByMonth.Sum(cm => cm.Value);
             }
         }
     }

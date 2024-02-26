@@ -87,7 +87,11 @@ public class JSONRepository : IRepository
         ret.Quantity = asset.Quantity;
         ret.TotalBought = asset.Operations.Where(o => o.Type == Operation.OperationType.Buy).Sum(o => o.UnitPrice * o.Quantity + o.Fees);
         ret.TotalSold = asset.Operations.Where(o => o.Type == Operation.OperationType.Sell).Sum(o => o.UnitPrice * o.Quantity + o.Fees);
-        ret.TotalCredits = asset.Credits.Sum(o => o.Value);
+        var creditsInfo = new CreditInfoDTO();
+        creditsInfo.Total = asset.Credits.Sum(o => o.Value);
+        creditsInfo.CreditsByMonth = asset.Credits.GroupBy(c => new DateOnly(c.Date.Year, c.Date.Month, 1))
+            .ToDictionary(g => g.Key, g => g.Sum(c => c.Value));
+        ret.Credits = creditsInfo;
         return ret;
     }
 
