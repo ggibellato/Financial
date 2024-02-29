@@ -67,9 +67,11 @@ public class JSONRepository : IRepository
         ret.TotalBought = GetTotalBoughtByBroker(brokerName, false);
         ret.TotalSold = GetTotalSoldByBroker(brokerName, false);
         ret.TotalCredits = GetTotalCreditsByBroker(brokerName, false);
-        ret.TotalBoughtActive = GetTotalBoughtByBroker(brokerName, false);
-        ret.TotalSoldActive = GetTotalSoldByBroker(brokerName, false);
-        ret.TotalCreditsActive = GetTotalCreditsByBroker(brokerName, false);
+
+        ret.TotalBoughtActive = GetTotalBoughtByBroker(brokerName, true);
+        ret.TotalSoldActive = GetTotalSoldByBroker(brokerName, true);
+        ret.TotalCreditsActive = GetTotalCreditsByBroker(brokerName, true);
+
         ret.PortifiliosActive = GetPortifolioAssetsByBroker(brokerName, true);
         ret.PortifiliosInactive = GetPortifolioAssetsByBroker(brokerName, false);
         return ret;
@@ -111,11 +113,16 @@ public class JSONRepository : IRepository
             .Sum(o => o.UnitPrice * o.Quantity + o.Fees);
     }
 
-    private decimal GetTotalCreditsByBroker(string brokerName, bool active)
+    private  CreditInfoDTO GetTotalCreditsByBroker(string brokerName, bool active)
     {
-        return _investiments.Brokers.Where(b => b.Name == brokerName)
-            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Credits)))
-            .Sum(o => o.Value);
+        var creditsInfo = new CreditInfoDTO();
+        var credits = _investiments.Brokers.Where(b => b.Name == brokerName)
+            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Credits)));
+        creditsInfo.Total = credits.Sum(o => o.Value);
+        creditsInfo.CreditsByMonth = credits
+            .GroupBy(c => new DateOnly(c.Date.Year, c.Date.Month, 1))
+            .ToDictionary(g => g.Key, g => g.Sum(c => c.Value));
+        return creditsInfo;
     }
 
     private List<PortifolioDTO> GetPortifolioAssetsByBroker(string brokerName, bool active)

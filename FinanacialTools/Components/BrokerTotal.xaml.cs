@@ -46,11 +46,11 @@ namespace FinanacialTools
 
             lblTotalBought.Content = brokerInfo.TotalBought.FormatCurrency(_broker.Currency);
             lblTotalSold.Content = brokerInfo.TotalSold.FormatCurrency(_broker.Currency);
-            lblTotalCredits.Content = brokerInfo.TotalCredits.FormatCurrency(_broker.Currency);
+            lblTotalCredits.Content = brokerInfo.TotalCredits.Total.FormatCurrency(_broker.Currency);
 
             lblTotalActiveBought.Content = brokerInfo.TotalBoughtActive.FormatCurrency(_broker.Currency);
             lblTotalActiveSold.Content = brokerInfo.TotalSoldActive.FormatCurrency(_broker.Currency);
-            lblTotalActiveCredits.Content = brokerInfo.TotalCreditsActive.FormatCurrency(_broker.Currency);
+            lblTotalActiveCredits.Content = brokerInfo.TotalCreditsActive.Total.FormatCurrency(_broker.Currency);
 
             List<PortifolioOption> options = new List<PortifolioOption>();
             foreach ( var portifolio in brokerInfo.PortifiliosActive)
