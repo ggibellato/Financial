@@ -1,0 +1,49 @@
+﻿<UserControl
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:FinanacialTools"
+             xmlns:Components="clr-namespace:FinanacialTools.Components" x:Class="FinanacialTools.BrokerTotal"
+             mc:Ignorable="d" d:DesignWidth="800" Height="485">
+    <Grid>
+        <Grid>
+            <Button x:Name="btnLoad" Content="Load broker" HorizontalAlignment="Left" Margin="37,10,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.502,3.006" Width="126" Click="btnLoad_Click" Height="40" Foreground="#FF0C35DA" FontWeight="Bold" FontSize="18"/>
+            <Label Content="Currency" HorizontalAlignment="Left" Margin="37,69,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+            <Label x:Name="lblCurrency" Content="Currency" HorizontalAlignment="Left" Margin="210,69,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+            <Components:Totals x:Name="Total" HorizontalAlignment="Left" Margin="37,139,0,0" VerticalAlignment="Top"/>
+            <Components:Totals x:Name="ActiveTotal" HorizontalAlignment="Left" Margin="435,139,0,0" VerticalAlignment="Top"/>
+            <Label Content="Geral&#xD;&#xA;" HorizontalAlignment="Left" Margin="40,110,0,0" VerticalAlignment="Top" FontWeight="Bold" Width="137" Height="29" />
+            <Label Content="Active&#xA;" HorizontalAlignment="Left" Margin="438,110,0,0" VerticalAlignment="Top" FontWeight="Bold" Width="137" Height="29" />
+        </Grid>
+        <Grid Margin="10,250,10,10">
+            <Label Content="Assets" HorizontalAlignment="Left" Margin="26,14,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+            <ComboBox x:Name="txtPortifolioAssets" IsEditable="False"
+                    ItemsSource="{Binding}" HorizontalAlignment="Left" Margin="26,45,0,0" VerticalAlignment="Top" Width="204" SelectedIndex="0">
+                <ComboBox.GroupStyle>
+                    <GroupStyle>
+                        <GroupStyle.HeaderTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="Black" BorderThickness="0,0,0,1">
+                                    <TextBlock FontWeight="Bold" Text="{Binding Name}" />
+                                </Border>
+                            </DataTemplate>
+                        </GroupStyle.HeaderTemplate>
+                    </GroupStyle>
+                </ComboBox.GroupStyle>
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding PortifolioName}" Margin="2,0,2,0" Width="80"/>
+                            <TextBlock Text="{Binding AssetName}" Margin="2,0,0,0" Width="200"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <Button x:Name="btnLoadAsset" Content="Load asset" HorizontalAlignment="Left" Margin="245,45,0,0" VerticalAlignment="Top" Width="85" Height="22" Click="btnLoadAsset_Click" />
+            <Label Content="Quantity" HorizontalAlignment="Left" Margin="22,86,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+            <Label x:Name="lblQuantity" Content="Quantity" HorizontalAlignment="Left" Margin="200,86,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
+            <Components:Totals x:Name="AssetTotal" HorizontalAlignment="Left" Margin="22,112,0,0" VerticalAlignment="Top"/>
+        </Grid>
+    </Grid>
+</UserControl>

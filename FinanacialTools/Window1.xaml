@@ -1,0 +1,15 @@
+﻿<Window x:Class="YourNamespace.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:datavis="clr-namespace:System.Windows.Controls.DataVisualization.Charting;assembly=DotNetProjects.DataVisualization.Toolkit"
+        Title="Your Window Title" Height="450" Width="800">
+    <Grid>
+        <datavis:Chart Title="Bar Chart Example">
+            <datavis:Chart.Series>
+                <datavis:ColumnSeries Title="Series 1" ItemsSource="{Binding Data}" 
+                                      DependentValueBinding="{Binding Value}" 
+                                      IndependentValueBinding="{Binding Category}"/>
+            </datavis:Chart.Series>
+        </datavis:Chart>
+    </Grid>
+</Window>

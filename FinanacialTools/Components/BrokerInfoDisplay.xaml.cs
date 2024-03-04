@@ -1,4 +1,5 @@
-﻿using Financial.Model;
+﻿using FinanacialTools.Components;
+using Financial.Model;
 using FinancialModel.Application;
 using FinancialToolSupport;
 using System.Collections.Generic;
@@ -44,13 +45,13 @@ namespace FinanacialTools
         {
             var brokerInfo = _repository.GetBrokerInfo(_broker.Name);
 
-            lblTotalBought.Content = brokerInfo.TotalBought.FormatCurrency(_broker.Currency);
-            lblTotalSold.Content = brokerInfo.TotalSold.FormatCurrency(_broker.Currency);
-            lblTotalCredits.Content = brokerInfo.TotalCredits.Total.FormatCurrency(_broker.Currency);
+            Total.lblTotalBought.Content = brokerInfo.TotalBought.FormatCurrency(_broker.Currency);
+            Total.lblTotalSold.Content = brokerInfo.TotalSold.FormatCurrency(_broker.Currency);
+            Total.lblTotalCredits.Content = brokerInfo.TotalCredits.Total.FormatCurrency(_broker.Currency);
 
-            lblTotalActiveBought.Content = brokerInfo.TotalBoughtActive.FormatCurrency(_broker.Currency);
-            lblTotalActiveSold.Content = brokerInfo.TotalSoldActive.FormatCurrency(_broker.Currency);
-            lblTotalActiveCredits.Content = brokerInfo.TotalCreditsActive.Total.FormatCurrency(_broker.Currency);
+            ActiveTotal.lblTotalBought.Content = brokerInfo.TotalBoughtActive.FormatCurrency(_broker.Currency);
+            ActiveTotal.lblTotalSold.Content = brokerInfo.TotalSoldActive.FormatCurrency(_broker.Currency);
+            ActiveTotal.lblTotalCredits.Content = brokerInfo.TotalCreditsActive.Total.FormatCurrency(_broker.Currency);
 
             List<PortifolioOption> options = new List<PortifolioOption>();
             foreach ( var portifolio in brokerInfo.PortifiliosActive)
@@ -80,9 +81,9 @@ namespace FinanacialTools
                 var assetInfo = _repository.GetAssetInfo(_broker.Name, selected.PortifolioName, selected.AssetName);
 
                 lblQuantity.Content = $"{assetInfo.Quantity:n6}";
-                lblAssetTotalBought.Content = assetInfo.TotalBought.FormatCurrency(_broker.Currency);
-                lblAssetTotalSold.Content = assetInfo.TotalSold.FormatCurrency(_broker.Currency);
-                lblAssetTotalCredits.Content = assetInfo.Credits.Total.FormatCurrency(_broker.Currency);
+                AssetTotal.lblTotalBought.Content = assetInfo.TotalBought.FormatCurrency(_broker.Currency);
+                AssetTotal.lblTotalSold.Content = assetInfo.TotalSold.FormatCurrency(_broker.Currency);
+                AssetTotal.lblTotalCredits.Content = assetInfo.Credits.Total.FormatCurrency(_broker.Currency);
                 var x = assetInfo.Credits.CreditsByMonth.Sum(cm => cm.Value);
             }
         }
