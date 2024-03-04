@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SharesDividendCheck"
         mc:Ignorable="d"
-        Title="Financial tools" Height="450" Width="800">
+        Title="Financial tools" Height="640" Width="935">
     <Grid>
         <TabControl SelectedIndex="0">
             <TabItem Header="Shares Dividend check">
@@ -32,11 +32,10 @@
                     <Label x:Name="lblPriceMax" Content="99.99" HorizontalAlignment="Left" Margin="158,113,0,0" VerticalAlignment="Top" FontWeight="Bold" Height="26" Width="292"/>
                     <Grid Margin="158,154,135,10">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="397*"/>
-                            <ColumnDefinition Width="110*"/>
+                            <ColumnDefinition/>
                         </Grid.ColumnDefinitions>
-                        <Label FontWeight="Bold" Margin="0,0,160,189" Content="Dividends information" />
-                        <DataGrid Name="dividendDataGrid" AutoGenerateColumns="True" AutoGeneratingColumn="DividendDataGrid_AutoGeneratingColumn" Margin="0,36,143,10" FontSize="14" AlternatingRowBackground="#E1E1E1">
+                        <Label FontWeight="Bold" Margin="0,0,298,189" Content="Dividends information" />
+                        <DataGrid Name="dividendDataGrid" AutoGenerateColumns="True" AutoGeneratingColumn="DividendDataGrid_AutoGeneratingColumn" Margin="0,36,327,10" FontSize="14" AlternatingRowBackground="#E1E1E1">
                             <DataGrid.RowStyle>
                                 <Style TargetType="DataGridRow">
                                     <Style.Triggers>
@@ -47,8 +46,8 @@
                                 </Style>
                             </DataGrid.RowStyle>
                         </DataGrid>
-                        <Label FontWeight="Bold" Margin="332,0,44,189" Content="by year" Grid.ColumnSpan="2"/>
-                        <DataGrid Name="dividendByYearDataGrid" AutoGenerateColumns="True" Margin="332,36,25,10" FontSize="14" Grid.ColumnSpan="2" AlternatingRowBackground="#E1E1E1">
+                        <Label FontWeight="Bold" Margin="332,0,44,189" Content="by year"/>
+                        <DataGrid Name="dividendByYearDataGrid" AutoGenerateColumns="True" Margin="332,36,25,10" FontSize="14" AlternatingRowBackground="#E1E1E1">
                             <DataGrid.RowStyle>
                                 <Style TargetType="DataGridRow">
                                     <Style.Triggers>
@@ -67,11 +66,10 @@
                     <Button x:Name="btnCheckFIIS" Content="Check" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="41" Click="btnCheckFIIS_Click" />
                     <Grid Margin="10,44,130,20">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="397*"/>
-                            <ColumnDefinition Width="110*"/>
+                            <ColumnDefinition/>
                         </Grid.ColumnDefinitions>
-                        <Label FontWeight="Bold" Margin="0,0,160,189" Content="FIIs current price" />
-                        <DataGrid Name="fiisPriceDataGrid" AutoGenerateColumns="True" FontSize="14" AlternatingRowBackground="#E1E1E1" Grid.ColumnSpan="2">
+                        <Label FontWeight="Bold" Margin="0,0,331,189" Content="FIIs current price" />
+                        <DataGrid Name="fiisPriceDataGrid" AutoGenerateColumns="True" FontSize="14" AlternatingRowBackground="#E1E1E1">
                             <DataGrid.RowStyle>
                                 <Style TargetType="DataGridRow">
                                     <Style.Triggers>
@@ -88,7 +86,7 @@
             <TabItem Header="Brokers totals">
                 <Grid>
                     <TabControl x:Name="tcBrokerTotals">
-                        
+
                     </TabControl>
                 </Grid>
             </TabItem>

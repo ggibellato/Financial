@@ -1,4 +1,5 @@
 ﻿using Financial.Model;
+using Financial.Application.DTO;
 
 namespace FinancialModel.Application;
 
@@ -10,10 +11,7 @@ public interface IRepository
     IEnumerable<Asset> GetAssetsByPortifolio(string name);
     IEnumerable<Asset> GetAssetsByAssetName(string name);
     IEnumerable<Broker> GetBrokerList();
-    decimal GetTotalActiveBoughtByBroker(string brokerName);
-    decimal GetTotalActiveSoldByBroker(string brokerName);
-    decimal GetTotalActiveCreditsByBroker(string brokerName);
-    decimal GetTotalBoughtByBroker(string brokerName);
-    decimal GetTotalSoldByBroker(string brokerName);
-    decimal GetTotalCreditsByBroker(string brokerName);
+
+    BrokerInfoDTO GetBrokerInfo(string brokerName);
+    AssetInfoDTO GetAssetInfo(string brokerName, string portifolio, string assetName);
 }
