@@ -2,10 +2,13 @@
 using Financial.Model;
 using FinancialModel.Application;
 using FinancialToolSupport;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.DataVisualization.Charting;
 using System.Windows.Data;
 using static SharesDividendCheck.MainWindow;
 
@@ -18,6 +21,7 @@ namespace FinanacialTools
     {
         private readonly Broker _broker;
         private readonly IRepository _repository;
+        public ObservableCollection<KeyValuePair<DateOnly, decimal>> _chartData { get; set; } = new ObservableCollection<KeyValuePair<DateOnly, decimal>>();
 
         private Dictionary<string, string> _currencyRegionInfo = new Dictionary<string, string>()
         {
@@ -39,6 +43,8 @@ namespace FinanacialTools
             _repository = repository;
             InitializeComponent();
             lblCurrency.Content = broker.Currency;
+
+            ((ColumnSeries)AssetCredits.Series[0]).ItemsSource = _chartData;
         }
 
         private void btnLoad_Click(object sender, System.Windows.RoutedEventArgs e)
@@ -53,38 +59,26 @@ namespace FinanacialTools
             ActiveTotal.lblTotalSold.Content = brokerInfo.TotalSoldActive.FormatCurrency(_broker.Currency);
             ActiveTotal.lblTotalCredits.Content = brokerInfo.TotalCreditsActive.Total.FormatCurrency(_broker.Currency);
 
-            List<PortifolioOption> options = new List<PortifolioOption>();
-            foreach ( var portifolio in brokerInfo.PortifiliosActive)
-            {
-                foreach(var asset in portifolio.Assets)
-                {
-                    options.Add(new PortifolioOption { Group = "Active", PortifolioName = portifolio.Name, AssetName = asset });
-                }
-            }
-            foreach (var portifolio in brokerInfo.PortifiliosInactive)
-            {
-                foreach (var asset in portifolio.Assets)
-                {
-                    options.Add(new PortifolioOption { Group = "Inactive", PortifolioName = portifolio.Name, AssetName = asset });
-                }
-            }
-            var groupedOptions = new ListCollectionView(options);
-            groupedOptions.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
-            txtPortifolioAssets.ItemsSource = groupedOptions;
+            AssetInfo.LoadAssets(brokerInfo);
         }
 
-        private void btnLoadAsset_Click(object sender, System.Windows.RoutedEventArgs e)
+        private void AssetInfo_ButtonClicked(object sender, System.EventArgs e)
         {
-            if(txtPortifolioAssets.SelectedItem is not null)
+            if (AssetInfo.txtPortifolioAssets.SelectedItem is not null)
             {
-                var selected = (PortifolioOption)txtPortifolioAssets.SelectedItem;
+                var selected = (PortifolioOption)AssetInfo.txtPortifolioAssets.SelectedItem;
                 var assetInfo = _repository.GetAssetInfo(_broker.Name, selected.PortifolioName, selected.AssetName);
 
-                lblQuantity.Content = $"{assetInfo.Quantity:n6}";
-                AssetTotal.lblTotalBought.Content = assetInfo.TotalBought.FormatCurrency(_broker.Currency);
-                AssetTotal.lblTotalSold.Content = assetInfo.TotalSold.FormatCurrency(_broker.Currency);
-                AssetTotal.lblTotalCredits.Content = assetInfo.Credits.Total.FormatCurrency(_broker.Currency);
-                var x = assetInfo.Credits.CreditsByMonth.Sum(cm => cm.Value);
+                AssetInfo.lblQuantity.Content = $"{assetInfo.Quantity:n6}";
+                AssetInfo.AssetTotal.lblTotalBought.Content = assetInfo.TotalBought.FormatCurrency(_broker.Currency);
+                AssetInfo.AssetTotal.lblTotalSold.Content = assetInfo.TotalSold.FormatCurrency(_broker.Currency);
+                AssetInfo.AssetTotal.lblTotalCredits.Content = assetInfo.Credits.Total.FormatCurrency(_broker.Currency);
+
+                _chartData.Clear();
+                foreach (var item in assetInfo.Credits.CreditsByMonth)
+                {
+                    _chartData.Add(new KeyValuePair<DateOnly, decimal>(item.Key, item.Value));
+                }
             }
         }
     }

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SharesDividendCheck"
         mc:Ignorable="d"
-        Title="Financial tools" Height="640" Width="935">
+        Title="Financial tools" Height="755" Width="1170">
     <Grid>
         <TabControl SelectedIndex="0">
             <TabItem Header="Shares Dividend check">

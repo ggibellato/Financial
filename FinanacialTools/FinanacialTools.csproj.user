@@ -7,7 +7,10 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="Components\BrokerInfoDisplay.xaml.cs">
+    <Compile Update="Components\AssetInfo.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Components\BrokerInfo.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Components\Totals.xaml.cs">
@@ -18,7 +21,10 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Components\BrokerInfoDisplay.xaml">
+    <Page Update="Components\AssetInfo.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Components\BrokerInfo.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Components\Totals.xaml">

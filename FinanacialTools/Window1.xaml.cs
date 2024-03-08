@@ -21,7 +21,7 @@ namespace FinanacialTools
     {
         public Window1()
         {
-            InitializeComponent();
+            //InitializeComponent();
         }
     }
 }
