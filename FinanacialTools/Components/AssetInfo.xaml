@@ -4,11 +4,11 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:FinanacialTools.Components"
-             mc:Ignorable="d" Height="210" Width="315">
-    <Grid>
-        <Label Content="Assets" HorizontalAlignment="Left" Margin="6,6,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+             mc:Ignorable="d">
+    <Grid Width="300">
+        <Label Content="Assets" HorizontalAlignment="Left" VerticalAlignment="Top" FontWeight="Bold" />
         <ComboBox x:Name="txtPortifolioAssets" IsEditable="False"
-                    ItemsSource="{Binding}" HorizontalAlignment="Left" Margin="6,35,0,0" VerticalAlignment="Top" Width="204" SelectedIndex="0">
+                    ItemsSource="{Binding}" HorizontalAlignment="Left" Margin="6,35,0,0" VerticalAlignment="Top" Width="194" SelectedIndex="0">
             <ComboBox.GroupStyle>
                 <GroupStyle>
                     <GroupStyle.HeaderTemplate>
@@ -29,9 +29,9 @@
                 </DataTemplate>
             </ComboBox.ItemTemplate>
         </ComboBox>
-        <Button x:Name="btnLoadAsset" Content="Load asset" HorizontalAlignment="Left" Margin="225,35,0,0" VerticalAlignment="Top" Width="85" Height="22" Click="btnLoadAsset_Click" />
-        <Label Content="Quantity" HorizontalAlignment="Left" Margin="6,81,0,0" VerticalAlignment="Top" FontWeight="Bold" />
-        <Label x:Name="lblQuantity" Content="Quantity" HorizontalAlignment="Left" Margin="184,81,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
-        <local:Totals x:Name="AssetTotal" HorizontalAlignment="Left" Margin="6,107,0,0" VerticalAlignment="Top"/>
+        <Button x:Name="btnLoadAsset" Content="Load asset" HorizontalAlignment="Left" Margin="210,35,0,0" VerticalAlignment="Top" Width="85" Height="22" Click="btnLoadAsset_Click" />
+        <Label Content="Quantity" HorizontalAlignment="Left" Margin="0,73,0,0" VerticalAlignment="Top" FontWeight="Bold" />
+        <Label x:Name="lblQuantity" Content="Quantity" HorizontalAlignment="Left" Margin="175,73,0,0" VerticalAlignment="Top" FontWeight="Bold" HorizontalContentAlignment="Right" Width="105" />
+        <local:Totals x:Name="AssetTotal" HorizontalAlignment="Left" Margin="0,99,0,0" VerticalAlignment="Top"/>
     </Grid>
 </UserControl>

@@ -6,5 +6,6 @@
         public decimal TotalSold { get; set; }
         public CreditInfoDTO Credits { get; set; } = new CreditInfoDTO();
         public decimal Quantity { get; set; }
+        public Dictionary<DateOnly, decimal> InvestedHistory { get; set; } = new();
     }
 }

@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SharesDividendCheck"
         mc:Ignorable="d"
-        Title="Financial tools" Height="755" Width="1170">
+        Title="Financial tools" Height="800" Width="1200">
     <Grid>
-        <TabControl SelectedIndex="0">
+        <TabControl SelectedIndex="0" Grid.ColumnSpan="2">
             <TabItem Header="Shares Dividend check">
                 <Grid>
                     <Label Content="Ticker" HorizontalAlignment="Left" Margin="10,18,0,0" VerticalAlignment="Top"/>
@@ -30,46 +30,75 @@
                     <Label x:Name="lblPrice" Content="99.99" HorizontalAlignment="Left" Margin="158,73,0,0" VerticalAlignment="Top" FontWeight="Bold" Height="26"/>
                     <Label x:Name="lblAverageDividend" Content="9.99" HorizontalAlignment="Left" Margin="158,93,0,0" VerticalAlignment="Top" FontWeight="Bold" Height="26" Width="292"/>
                     <Label x:Name="lblPriceMax" Content="99.99" HorizontalAlignment="Left" Margin="158,113,0,0" VerticalAlignment="Top" FontWeight="Bold" Height="26" Width="292"/>
-                    <Grid Margin="158,154,135,10">
+                    <Grid Margin="158,154,0,0">
+                        <Grid.Resources >
+                            <Style TargetType="{x:Type Grid}">
+                                <Setter Property="Margin" Value="10 0 0 10"/>
+                            </Style>
+                        </Grid.Resources>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition/>
+                            <ColumnDefinition Width="240"></ColumnDefinition>
+                            <ColumnDefinition Width="140"></ColumnDefinition>
+                            <ColumnDefinition Width="*"></ColumnDefinition>
                         </Grid.ColumnDefinitions>
-                        <Label FontWeight="Bold" Margin="0,0,298,189" Content="Dividends information" />
-                        <DataGrid Name="dividendDataGrid" AutoGenerateColumns="True" AutoGeneratingColumn="DividendDataGrid_AutoGeneratingColumn" Margin="0,36,327,10" FontSize="14" AlternatingRowBackground="#E1E1E1">
-                            <DataGrid.RowStyle>
-                                <Style TargetType="DataGridRow">
-                                    <Style.Triggers>
-                                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
-                                            <Setter Property="Background" Value="White" />
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </DataGrid.RowStyle>
-                        </DataGrid>
-                        <Label FontWeight="Bold" Margin="332,0,44,189" Content="by year"/>
-                        <DataGrid Name="dividendByYearDataGrid" AutoGenerateColumns="True" Margin="332,36,25,10" FontSize="14" AlternatingRowBackground="#E1E1E1">
-                            <DataGrid.RowStyle>
-                                <Style TargetType="DataGridRow">
-                                    <Style.Triggers>
-                                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
-                                            <Setter Property="Background" Value="White" />
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </DataGrid.RowStyle>
-                        </DataGrid>
+                        <Grid Grid.Column="0" Grid.Row="0">
+                            <Label FontWeight="Bold" Content="Dividends information" />
+                            <DataGrid Name="dividendDataGrid" AutoGenerateColumns="True" AutoGeneratingColumn="DividendDataGrid_AutoGeneratingColumn" FontSize="14" AlternatingRowBackground="#E1E1E1" Margin="0,35,0,0" IsReadOnly="True">
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Style.Triggers>
+                                            <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                                <Setter Property="Background" Value="White" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                            </DataGrid>
+                        </Grid>
+                        <Grid Grid.Column="1" Grid.Row="0">
+                            <Label FontWeight="Bold" Content="by year"/>
+                            <DataGrid Name="dividendByYearDataGrid" AutoGenerateColumns="True" FontSize="14" AlternatingRowBackground="#E1E1E1" Margin="0,35,0,0" IsReadOnly="True">
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Style.Triggers>
+                                            <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                                <Setter Property="Background" Value="White" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                            </DataGrid>
+                        </Grid>
                     </Grid>
                 </Grid>
             </TabItem>
             <TabItem Header="Read FIIs current values">
                 <Grid>
-                    <Button x:Name="btnCheckFIIS" Content="Check" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="41" Click="btnCheckFIIS_Click" />
-                    <Grid Margin="10,44,130,20">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition/>
-                        </Grid.ColumnDefinitions>
-                        <Label FontWeight="Bold" Margin="0,0,331,189" Content="FIIs current price" />
-                        <DataGrid Name="fiisPriceDataGrid" AutoGenerateColumns="True" FontSize="14" AlternatingRowBackground="#E1E1E1">
+                    <Grid.Resources >
+                        <Style TargetType="{x:Type Grid}">
+                            <Setter Property="Margin" Value="10 0 0 10"/>
+                        </Style>
+                    </Grid.Resources>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="490"></ColumnDefinition>
+                        <ColumnDefinition Width="*"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+
+                    <Grid Grid.Column="0" Grid.Row="0">
+                        <Button x:Name="btnCheckFIIS" Content="Check" HorizontalAlignment="Left" Margin="0,10,0,0" VerticalAlignment="Top" Width="41" Click="btnCheckFIIS_Click" />
+                        <Label FontWeight="Bold" Content="FIIs current price" HorizontalAlignment="Left" Margin="0,35,0,0" VerticalAlignment="Top"/>
+                        <DataGrid Name="fiisPriceDataGrid" AutoGenerateColumns="False" FontSize="14" AlternatingRowBackground="#E1E1E1" Margin="0,66,0,0" IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Binding="{Binding Ticker}" Header="Ticker" />
+                                <DataGridTextColumn Binding="{Binding Name}" Header="Name" />
+                                <DataGridTextColumn Binding="{Binding Price}" Header="Price">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
                             <DataGrid.RowStyle>
                                 <Style TargetType="DataGridRow">
                                     <Style.Triggers>
@@ -86,7 +115,6 @@
             <TabItem Header="Brokers totals">
                 <Grid>
                     <TabControl x:Name="tcBrokerTotals">
-
                     </TabControl>
                 </Grid>
             </TabItem>
@@ -94,3 +122,5 @@
     </Grid>
 
 </Window>
+
+    

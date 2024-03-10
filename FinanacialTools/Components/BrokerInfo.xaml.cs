@@ -21,9 +21,10 @@ namespace FinanacialTools
     {
         private readonly Broker _broker;
         private readonly IRepository _repository;
-        public ObservableCollection<KeyValuePair<DateOnly, decimal>> _chartData { get; set; } = new ObservableCollection<KeyValuePair<DateOnly, decimal>>();
+        public ObservableCollection<KeyValuePair<string, decimal>> _creditsData { get; set; } = new();
+        public ObservableCollection<KeyValuePair<string, decimal>> _investedData { get; set; } = new();
 
-        private Dictionary<string, string> _currencyRegionInfo = new Dictionary<string, string>()
+        private Dictionary<string, string> _currencyRegionInfo = new()
         {
             {"GBP", "UK"},
             {"BRL", "BR"}
@@ -44,7 +45,8 @@ namespace FinanacialTools
             InitializeComponent();
             lblCurrency.Content = broker.Currency;
 
-            ((ColumnSeries)AssetCredits.Series[0]).ItemsSource = _chartData;
+            ((ColumnSeries)AssetCredits.Series[0]).ItemsSource = _creditsData;
+            ((LineSeries)AssetInvested.Series[0]).ItemsSource = _investedData;
         }
 
         private void btnLoad_Click(object sender, System.Windows.RoutedEventArgs e)
@@ -74,12 +76,19 @@ namespace FinanacialTools
                 AssetInfo.AssetTotal.lblTotalSold.Content = assetInfo.TotalSold.FormatCurrency(_broker.Currency);
                 AssetInfo.AssetTotal.lblTotalCredits.Content = assetInfo.Credits.Total.FormatCurrency(_broker.Currency);
 
-                _chartData.Clear();
+                _creditsData.Clear();
                 foreach (var item in assetInfo.Credits.CreditsByMonth)
                 {
-                    _chartData.Add(new KeyValuePair<DateOnly, decimal>(item.Key, item.Value));
+                    _creditsData.Add(new KeyValuePair<string, decimal>(item.Key.ToString("MM/yyyy"), item.Value));
+                }
+
+                _investedData.Clear();
+                foreach (var item in assetInfo.InvestedHistory)
+                {
+                    _investedData.Add(new KeyValuePair<string, decimal>(item.Key.ToString("MM/yyyy"), item.Value));
                 }
             }
         }
     }
 }
+

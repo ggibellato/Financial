@@ -6,9 +6,9 @@
              xmlns:local="clr-namespace:FinanacialTools"
              xmlns:Components="clr-namespace:FinanacialTools.Components"
              xmlns:datavis="clr-namespace:System.Windows.Controls.DataVisualization.Charting;assembly=DotNetProjects.DataVisualization.Toolkit"
-             mc:Ignorable="d" Height="485" Width="1070">
+             mc:Ignorable="d" Height="750" Width="1545">
     <Grid>
-        <Grid Margin="0,0,0,255">
+        <Grid x:Name="BrokerInfoGrid">
             <Button x:Name="btnLoad" Content="Load broker" HorizontalAlignment="Left" Margin="37,10,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.502,3.006" Width="126" Click="btnLoad_Click" Height="40" Foreground="#FF0C35DA" FontWeight="Bold" FontSize="18"/>
             <Label Content="Currency" HorizontalAlignment="Left" Margin="37,69,0,0" VerticalAlignment="Top" FontWeight="Bold" />
             <Label x:Name="lblCurrency" Content="Currency" HorizontalAlignment="Left" Margin="210,69,0,0" VerticalAlignment="Top" FontWeight="Bold" />
@@ -17,10 +17,23 @@
             <Label Content="Geral&#xD;&#xA;" HorizontalAlignment="Left" Margin="40,110,0,0" VerticalAlignment="Top" FontWeight="Bold" Width="137" Height="29" />
             <Label Content="Active&#xA;" HorizontalAlignment="Left" Margin="438,110,0,0" VerticalAlignment="Top" FontWeight="Bold" Width="137" Height="29" />
         </Grid>
-        <Grid Margin="10,250,10,10">
-            <Components:AssetInfo x:Name="AssetInfo" Margin="8,7,0,0" ButtonClicked="AssetInfo_ButtonClicked" HorizontalAlignment="Left" Width="314" Height="210" VerticalAlignment="Top" />
-            <Grid Margin="445,0,0,0">
-                <datavis:Chart x:Name="AssetCredits" Title="Credits" >
+        <Grid Margin="10,250,10,10" x:Name="AssetInfoGrid">
+            <Grid.Resources >
+                <Style TargetType="{x:Type Grid}">
+                    <Setter Property="Margin" Value="10 0 0 10"/>
+                </Style>
+            </Grid.Resources>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="400"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <Components:AssetInfo x:Name="AssetInfo" ButtonClicked="AssetInfo_ButtonClicked" HorizontalAlignment="Center" VerticalAlignment="Center" Height="490" Width="400" />
+            <Grid x:Name="GraphsGrid" Grid.Column="1" Grid.Row="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="50*"></RowDefinition>
+                    <RowDefinition Height="50*"></RowDefinition>
+                </Grid.RowDefinitions>
+                <datavis:Chart x:Name="AssetCredits" Title="Credits" Grid.Row="0">
                     <datavis:Chart.LegendStyle>
                         <Style TargetType="Control">
                             <Setter Property="Width" Value="0" />
@@ -28,6 +41,15 @@
                         </Style>
                     </datavis:Chart.LegendStyle>
                     <datavis:ColumnSeries Title="" DependentValuePath="Value" IndependentValuePath="Key" ItemsSource="{Binding}" />
+                </datavis:Chart>
+                <datavis:Chart x:Name="AssetInvested" Title="Invested" Grid.Row="1">
+                    <datavis:Chart.LegendStyle>
+                        <Style TargetType="Control">
+                            <Setter Property="Width" Value="0" />
+                            <Setter Property="Height" Value="0" />
+                        </Style>
+                    </datavis:Chart.LegendStyle>
+                    <datavis:LineSeries Title="" DependentValuePath="Value" IndependentValuePath="Key" ItemsSource="{Binding}" />
                 </datavis:Chart>
             </Grid>
         </Grid>
