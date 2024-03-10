@@ -1,0 +1,17 @@
+﻿<UserControl x:Class="FinanacialTools.Components.Totals"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:FinanacialTools.Components"
+             mc:Ignorable="d" 
+             d:DesignHeight="95" d:DesignWidth="290">
+    <Grid>
+        <Label Content="Total Bought" HorizontalAlignment="Left" Margin="2,3,0,0" VerticalAlignment="Top"  />
+        <Label x:Name="lblTotalBought" Content="TotalBought" HorizontalAlignment="Left" Margin="175,3,0,0" VerticalAlignment="Top" HorizontalContentAlignment="Right" Width="105" />
+        <Label Content="Total Sold" HorizontalAlignment="Left" Margin="2,34,0,0" VerticalAlignment="Top"  />
+        <Label x:Name="lblTotalSold" Content="TotalSold" HorizontalAlignment="Left" Margin="175,34,0,0" VerticalAlignment="Top" HorizontalContentAlignment="Right" Width="105" />
+        <Label Content="Total Credits" HorizontalAlignment="Left" Margin="4,65,0,0" VerticalAlignment="Top" />
+        <Label x:Name="lblTotalCredits" Content="TotalCredit" HorizontalAlignment="Left" Margin="175,65,0,0" VerticalAlignment="Top" HorizontalContentAlignment="Right" Width="105" />
+    </Grid>
+</UserControl>

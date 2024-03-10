@@ -60,7 +60,7 @@ namespace SharesDividendCheck
         private void LoadBrokersTotals()
         {
             var brokers = _repository.GetBrokerList();
-            foreach (var broker in brokers) {
+            foreach (var broker in brokers.OrderBy(b => b.Name)) {
                 var brokerTotalControl = new BrokerTotal(broker, _repository);
                 TabItem tabItem = new TabItem();
                 tabItem.Header = broker.Name;
@@ -68,7 +68,6 @@ namespace SharesDividendCheck
                 tcBrokerTotals.Items.Add(tabItem);
             }
         }
-
 
         private void btnCheck_Click(object sender, RoutedEventArgs e)
         {

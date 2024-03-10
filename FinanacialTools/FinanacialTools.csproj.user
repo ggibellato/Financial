@@ -7,15 +7,33 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="Components\BrokerTotal.xaml.cs">
+    <Compile Update="Components\AssetInfo.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Components\BrokerInfo.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Components\Totals.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Window1.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Components\BrokerTotal.xaml">
+    <Page Update="Components\AssetInfo.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Components\BrokerInfo.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Components\Totals.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="MainWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Window1.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

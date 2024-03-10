@@ -94,6 +94,14 @@ public class JSONRepository : IRepository
         creditsInfo.CreditsByMonth = asset.Credits.GroupBy(c => new DateOnly(c.Date.Year, c.Date.Month, 1))
             .ToDictionary(g => g.Key, g => g.Sum(c => c.Value));
         ret.Credits = creditsInfo;
+
+        decimal currentVlw = 0;
+        foreach (var item in asset.Operations)
+        {
+            var key = new DateOnly(item.Date.Year, item.Date.Month, 1);
+            currentVlw += (item.UnitPrice * item.Quantity + item.Fees) * (item.Type == Operation.OperationType.Buy ? 1 : -1);
+            ret.InvestedHistory[key] = currentVlw;
+        }
         return ret;
     }
 
