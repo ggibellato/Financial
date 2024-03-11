@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.DataVisualization.Charting;
 using System.Windows.Data;
+using WebPageParser;
 using static SharesDividendCheck.MainWindow;
 
 namespace FinanacialTools
@@ -70,8 +71,8 @@ namespace FinanacialTools
             {
                 var selected = (PortifolioOption)AssetInfo.txtPortifolioAssets.SelectedItem;
                 var assetInfo = _repository.GetAssetInfo(_broker.Name, selected.PortifolioName, selected.AssetName);
+                assetInfo.CurrentValue = GoogleFinance.GetFinancialInfo(assetInfo.Exchange, assetInfo.Ticker).Price;
                 AssetInfo.LoadData(assetInfo, _broker.Currency);
-
 
                 _creditsData.Clear();
                 foreach (var item in assetInfo.Credits.CreditsByMonth)

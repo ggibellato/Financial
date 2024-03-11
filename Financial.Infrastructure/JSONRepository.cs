@@ -86,6 +86,8 @@ public class JSONRepository : IRepository
             .Portifolios.First(p => p.Name == portifolio)
             .Assets.First(a => a.Name == assetName);
 
+        ret.Exchange = asset.Exchange;
+        ret.Ticker = asset.Ticker;
         ret.Quantity = asset.Quantity;
         ret.AvaragePrice = asset.AvargePrice;
         ret.TotalBought = asset.Operations.Where(o => o.Type == Operation.OperationType.Buy).Sum(o => o.TotalPrice);

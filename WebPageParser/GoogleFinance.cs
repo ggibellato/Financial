@@ -16,8 +16,13 @@ public static class GoogleFinance
 
             var mainData = htmlDoc.DocumentNode.SelectNodes("//body/c-wiz")[1].SelectNodes("//main")[0];
             var name = mainData.ChildNodes[0].ChildNodes[0].ChildNodes[1].InnerText;
-            var value = decimal.Parse(mainData.ChildNodes[1].ChildNodes[0].ChildNodes[0].ChildNodes[0]
-                .ChildNodes[0].ChildNodes[0].ChildNodes[0].ChildNodes[0].ChildNodes[0].InnerText.Replace("R$", ""));
+            var nodeString = mainData.ChildNodes[1].ChildNodes[0].ChildNodes[0].ChildNodes[0]
+                .ChildNodes[0].ChildNodes[0].ChildNodes[0].ChildNodes[0].ChildNodes[0].InnerText;
+            var value = decimal.Parse(nodeString.Replace("R$", "").Replace("£", "").Replace("$", "").Replace("GBX", "").Trim());
+            if(nodeString.Contains("GBX"))
+            {
+                value /= 100;
+            }
             var financialData = mainData.ChildNodes[1];
             return new AssetValue(ticker, name, value);
         }

@@ -63,6 +63,8 @@ namespace FinanacialTools.Components
         {
             lblQuantity.Content = $"{assetInfo.Quantity:n6}";
             lblAveragePrice.Content = assetInfo.AvaragePrice.FormatCurrency(currency);
+            lblCurrentPrice.Content = assetInfo.CurrentValue.FormatCurrency(currency);
+            lblResult.Content = String.Format("{0:P2}", (assetInfo.CurrentValue / assetInfo.AvaragePrice)-1);
             AssetTotal.lblTotalBought.Content = assetInfo.TotalBought.FormatCurrency(currency);
             AssetTotal.lblTotalSold.Content = assetInfo.TotalSold.FormatCurrency(currency);
             AssetTotal.lblTotalCredits.Content = assetInfo.Credits.Total.FormatCurrency(currency);
