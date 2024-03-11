@@ -1,4 +1,6 @@
 ﻿using Financial.Application.DTO;
+using Financial.Model;
+using FinancialToolSupport;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -55,6 +57,15 @@ namespace FinanacialTools.Components
         private void btnLoadAsset_Click(object sender, RoutedEventArgs e)
         {
             ButtonClicked?.Invoke(this, EventArgs.Empty);
+        }
+
+        internal void LoadData(AssetInfoDTO assetInfo, string currency)
+        {
+            lblQuantity.Content = $"{assetInfo.Quantity:n6}";
+            lblAveragePrice.Content = assetInfo.AvaragePrice.FormatCurrency(currency);
+            AssetTotal.lblTotalBought.Content = assetInfo.TotalBought.FormatCurrency(currency);
+            AssetTotal.lblTotalSold.Content = assetInfo.TotalSold.FormatCurrency(currency);
+            AssetTotal.lblTotalCredits.Content = assetInfo.Credits.Total.FormatCurrency(currency);
         }
     }
 }

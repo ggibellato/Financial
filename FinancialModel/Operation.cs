@@ -19,6 +19,10 @@ public class Operation
     [JsonInclude]
     public decimal Fees { get; private set; }
 
+    [JsonIgnore]
+    public decimal TotalPrice => UnitPrice * Quantity + Fees;
+
+
     [JsonConstructor]
     private Operation() { }
 

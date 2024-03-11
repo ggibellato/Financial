@@ -70,11 +70,8 @@ namespace FinanacialTools
             {
                 var selected = (PortifolioOption)AssetInfo.txtPortifolioAssets.SelectedItem;
                 var assetInfo = _repository.GetAssetInfo(_broker.Name, selected.PortifolioName, selected.AssetName);
+                AssetInfo.LoadData(assetInfo, _broker.Currency);
 
-                AssetInfo.lblQuantity.Content = $"{assetInfo.Quantity:n6}";
-                AssetInfo.AssetTotal.lblTotalBought.Content = assetInfo.TotalBought.FormatCurrency(_broker.Currency);
-                AssetInfo.AssetTotal.lblTotalSold.Content = assetInfo.TotalSold.FormatCurrency(_broker.Currency);
-                AssetInfo.AssetTotal.lblTotalCredits.Content = assetInfo.Credits.Total.FormatCurrency(_broker.Currency);
 
                 _creditsData.Clear();
                 foreach (var item in assetInfo.Credits.CreditsByMonth)
