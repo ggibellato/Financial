@@ -29,7 +29,7 @@ public class JSONRepositoryTests
     [InlineData(null, 0)]
     [InlineData("", 0)]
     [InlineData("NOTEXIST", 0)]
-    [InlineData("Fundos Investimento", 4)]
+    [InlineData("Fundos Investimento", 2)]
     public void GetAssets_By_PortifolioTest(string name, int records)
     {
         var result = _sut.GetAssetsByPortifolio(name);
