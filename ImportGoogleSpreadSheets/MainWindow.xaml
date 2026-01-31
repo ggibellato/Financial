@@ -5,20 +5,54 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ImportGoogleSpreadSheets"
         mc:Ignorable="d"
-        Title="Import Google" Height="450" Width="800" Icon="/import.png">
-    <Grid>
-        <Button x:Name="btnConnect" Content="Connect" HorizontalAlignment="Left" Margin="55,29,0,0" VerticalAlignment="Top" Width="60" Click="btnConnect_Click"/>
-        <ListBox HorizontalAlignment="Left" Margin="55,94,0,195" Name="cblFiles" Width="236" SelectionMode="Multiple"
-                 ItemsSource="{Binding Files}">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected}" />
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-        <Label Content="File to import" HorizontalAlignment="Left" Margin="55,59,0,0" VerticalAlignment="Top"/>
-        <Button x:Name="btnGenerateData" Content="Genereta data" HorizontalAlignment="Left" Margin="500,29,0,0" VerticalAlignment="Top" Width="105" Click="btnGenerateData_Click"/>
-        <TextBox x:Name="edtPath" HorizontalAlignment="Left" Margin="500,85,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="255" Text="F:\dev\Projetos\Financial\data"/>
-        <Label Content="Path" HorizontalAlignment="Left" Margin="500,54,0,0" VerticalAlignment="Top"/>
+        Title="Import Google" Height="500" Width="850" Icon="/import.png">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left Section -->
+        <StackPanel Grid.Row="0" Grid.Column="0" Grid.RowSpan="3">
+            <Button x:Name="btnConnect" Content="Connect to Google Drive" Height="35" Click="btnConnect_Click" Margin="0,0,0,10"/>
+            <Label Content="Files to import:" FontWeight="Bold"/>
+            <ListBox Name="cblFiles" Height="280" SelectionMode="Multiple" Margin="0,5,10,0"
+                     ItemsSource="{Binding Files}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected}" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
+
+        <!-- Right Section -->
+        <StackPanel Grid.Row="0" Grid.Column="1" Margin="10,0,0,0">
+            <Button x:Name="btnGenerateData" Content="Generate Data" Height="35" Click="btnGenerateData_Click" Margin="0,0,0,10"/>
+            <Label Content="Output Path:" FontWeight="Bold"/>
+            <TextBox x:Name="edtPath" Height="25" Margin="0,5,0,10" 
+                     Text="E:\dev\Projetos\Financial\data" VerticalContentAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Progress Section -->
+        <StackPanel Grid.Row="1" Grid.Column="1" Margin="10,20,0,0">
+            <Label Content="Status:" FontWeight="Bold"/>
+            <TextBlock x:Name="txtStatus" Text="Ready" Margin="0,5,0,10" TextWrapping="Wrap"/>
+            <ProgressBar x:Name="progressBar" Height="20" Minimum="0" Maximum="100" Visibility="Collapsed"/>
+        </StackPanel>
+
+        <!-- Status Bar -->
+        <StatusBar Grid.Row="4" Grid.ColumnSpan="2" Height="30">
+            <StatusBarItem>
+                <TextBlock x:Name="txtStatusBar" Text="Ready to import"/>
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Window>
