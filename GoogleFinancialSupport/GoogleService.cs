@@ -6,6 +6,10 @@ using GoogleFinancialSupport.DTO;
 using System.Collections.Generic;
 using System.IO;
 using System.Drawing;
+using System.Threading.Tasks;
+using System;
+using Google;
+using System.Net;
 
 namespace GoogleFinancialSupport;
 
@@ -20,50 +24,61 @@ public class GoogleService
         FileName = fileName;
     }
 
-    public List<SpreadSheetDTO> GetFilesName()
+    public async Task<List<SpreadSheetDTO>> GetFilesNameAsync()
     {
-        var service = GetDriveService();
-        var request = service.Files.List();
-        request.PageSize = 100;
-        request.Fields = "nextPageToken, files(webViewLink, name, id)";
-        var result = new List<SpreadSheetDTO>();
-        foreach (var file in request.Execute().Files)
+        return await ExecuteWithRetryAsync(async () =>
         {
-            result.Add(new SpreadSheetDTO() { Name = file.Name, Id = file.Id });
-        }
-        return result;
-    }
-
-    public List<SheetDTO> GetSpreadSheet(string spreadSheetLink)
-    {
-        var result = new List<SheetDTO>();
-        var service = GetSheetsService();
-        var request = service.Spreadsheets.Get(spreadSheetLink);
-        request.Fields = "sheets(properties/sheetId,properties/title,properties/tabColor)";
-        foreach (var sheet in request.Execute().Sheets)
-        {
-            string nearestColor = "";
-            var tabColor = sheet.Properties.TabColor;
-            if (tabColor != null)
+            var service = GetDriveService();
+            var request = service.Files.List();
+            request.PageSize = 100;
+            request.Fields = "nextPageToken, files(webViewLink, name, id)";
+            var result = new List<SpreadSheetDTO>();
+            var response = await request.ExecuteAsync();
+            foreach (var file in response.Files)
             {
-                Color color = Color.FromArgb((int)((tabColor.Alpha ?? 0)  * 255), (int)((tabColor.Red ?? 0) * 255), (int)((tabColor.Green ?? 0) * 255), (int)((tabColor.Blue ?? 0) * 255));
-                nearestColor = color.Name;
+                result.Add(new SpreadSheetDTO() { Name = file.Name, Id = file.Id });
             }
-            result.Add(new SheetDTO() { Name = sheet.Properties.Title, Id = sheet.Properties.SheetId ?? 0, Color = nearestColor });
-        }
-        return result;
+            return result;
+        });
+    }
+
+    public async Task<List<SheetDTO>> GetSpreadSheetAsync(string spreadSheetLink)
+    {
+        return await ExecuteWithRetryAsync(async () =>
+        {
+            var result = new List<SheetDTO>();
+            var service = GetSheetsService();
+            var request = service.Spreadsheets.Get(spreadSheetLink);
+            request.Fields = "sheets(properties/sheetId,properties/title,properties/tabColor)";
+            var response = await request.ExecuteAsync();
+            foreach (var sheet in response.Sheets)
+            {
+                string nearestColor = "";
+                var tabColor = sheet.Properties.TabColor;
+                if (tabColor != null)
+                {
+                    Color color = Color.FromArgb((int)((tabColor.Alpha ?? 0)  * 255), (int)((tabColor.Red ?? 0) * 255), (int)((tabColor.Green ?? 0) * 255), (int)((tabColor.Blue ?? 0) * 255));
+                    nearestColor = color.Name;
+                }
+                result.Add(new SheetDTO() { Name = sheet.Properties.Title, Id = sheet.Properties.SheetId ?? 0, Color = nearestColor });
+            }
+            return result;
+        });
     }
 
 
-    public IList<IList<object>> GetSpreadSheetData(string spreadSheetId, string range)
+    public async Task<IList<IList<object>>> GetSpreadSheetDataAsync(string spreadSheetId, string range)
     {
-        var result = new List<SheetDTO>();
-        var service = GetSheetsService();
-        var request = service.Spreadsheets.Values.Get(spreadSheetId, range);
-        request.ValueRenderOption = SpreadsheetsResource.ValuesResource.GetRequest.ValueRenderOptionEnum.UNFORMATTEDVALUE;
-        var response = request.Execute();
-        IList<IList<object>> values = response.Values;
-        return values;
+        return await ExecuteWithRetryAsync(async () =>
+        {
+            var result = new List<SheetDTO>();
+            var service = GetSheetsService();
+            var request = service.Spreadsheets.Values.Get(spreadSheetId, range);
+            request.ValueRenderOption = SpreadsheetsResource.ValuesResource.GetRequest.ValueRenderOptionEnum.UNFORMATTEDVALUE;
+            var response = await request.ExecuteAsync();
+            IList<IList<object>> values = response.Values;
+            return values;
+        });
     }
 
     private DriveService GetDriveService()
@@ -98,5 +113,30 @@ public class GoogleService
             HttpClientInitializer = credential,
             ApplicationName = "Financial",
         });
+    }
+
+    private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action, int maxRetries = 5)
+    {
+        int retryCount = 0;
+        int delayMs = 2000; // Start with 2 seconds
+
+        while (true)
+        {
+            try
+            {
+                return await action();
+            }
+            catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.TooManyRequests && retryCount < maxRetries)
+            {
+                retryCount++;
+                var waitTime = delayMs * (int)Math.Pow(2, retryCount - 1); // Exponential backoff
+                Console.WriteLine($"Rate limit hit. Retry {retryCount}/{maxRetries}. Waiting {waitTime}ms...");
+                await Task.Delay(waitTime);
+            }
+            catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.TooManyRequests)
+            {
+                throw new Exception($"API rate limit exceeded after {maxRetries} retries. Please wait a few minutes and try again.", ex);
+            }
+        }
     }
 }

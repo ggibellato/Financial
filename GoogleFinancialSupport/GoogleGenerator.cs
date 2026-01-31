@@ -5,12 +5,17 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace GoogleFinancialSupport;
 
 public class GoogleGenerator : IGenerator
 {
+    // Rate limiting configuration to avoid API quota issues
+    private const int DelayBetweenSheetsMs = 3000;  // 3 seconds between each sheet
+    private const int DelayBetweenBrokersMs = 5000; // 5 seconds between each broker
+    private const int DelayBetweenOperationsMs = 1500; // 1.5 seconds between reading operations and credits
+
     public List<string> IgnoreSpreadSheet = new List<string> {
         "Totais",
         "Totais com cotacao",
@@ -44,24 +49,43 @@ public class GoogleGenerator : IGenerator
         _path = path;
     }
 
-    public void Generate(List<string> fileNames)
+    public async Task GenerateAsync(List<string> fileNames, IProgress<string> progress = null)
     {
         var data = Investments.Create();
 
+        int brokerIndex = 0;
         foreach (var fileName in fileNames)
         {
+            brokerIndex++;
+            progress?.Report($"Processing broker {brokerIndex}/{fileNames.Count}: {fileName}");
+            
+            // Add delay between brokers to avoid rate limiting (except for first broker)
+            if (brokerIndex > 1)
+            {
+                progress?.Report($"Waiting {DelayBetweenBrokersMs/1000} seconds before next broker...");
+                await Task.Delay(DelayBetweenBrokersMs);
+            }
+            
             var exchange = Broker.Create(fileName, ExchangeCurrency[fileName]);
             data.AddBroker(exchange);
-            var files = _service.GetFilesName();
+            var files = await _service.GetFilesNameAsync();
             var file = files.FirstOrDefault(f => f.Name == fileName);
 
-            var spreadSheets = _service.GetSpreadSheet(file.Id);
+            progress?.Report($"Getting spreadsheets for: {fileName}");
+            var spreadSheets = await _service.GetSpreadSheetAsync(file.Id);
+            
+            int sheetCount = 0;
+            int totalSheets = spreadSheets.Count(s => !IgnoreSpreadSheet.Contains(s.Name));
+            
             foreach (var spreadsheet in spreadSheets)
             {
                 if (IgnoreSpreadSheet.Contains(spreadsheet.Name))
                 {
                     continue;
                 }
+
+                sheetCount++;
+                progress?.Report($"[{fileName}] Processing sheet {sheetCount}/{totalSheets}: {spreadsheet.Name}");
 
                 var portifolioName = string.IsNullOrWhiteSpace(spreadsheet.Color) ? "Default" : spreadsheet.Color;
                 if (PortifolioName.TryGetValue($"{fileName}_{portifolioName}", out string name))
@@ -85,7 +109,10 @@ public class GoogleGenerator : IGenerator
                         }
                     default:
                         {
-                            GetAssetData(file.Id, spreadsheet.Name, out isin, out exchangeId, out ticker);
+                            var assetData = await GetAssetDataAsync(file.Id, spreadsheet.Name);
+                            isin = assetData.isin;
+                            exchangeId = assetData.exchangeId;
+                            ticker = assetData.ticker;
                             break;
                         }
                 }
@@ -94,21 +121,32 @@ public class GoogleGenerator : IGenerator
                 var asset = Asset.Create(spreadsheet.Name, isin, exchangeId, ticker);
                 potifolio.AddAsset(asset);
 
-                asset.AddOperations(CreateOperations(file.Id, spreadsheet.Name));
+                asset.AddOperations(await CreateOperationsAsync(file.Id, spreadsheet.Name));
+                
+                // Small delay between operations and credits
+                await Task.Delay(DelayBetweenOperationsMs);
 
-                asset.AddCredits(CreateCredits(file.Id, spreadsheet.Name));
-                Thread.Sleep(3000);
+                asset.AddCredits(await CreateCreditsAsync(file.Id, spreadsheet.Name));
+                
+                // Delay between sheets to avoid rate limiting
+                if (sheetCount < totalSheets)
+                {
+                    progress?.Report($"[{fileName}] Waiting {DelayBetweenSheetsMs/1000} seconds before next sheet...");
+                    await Task.Delay(DelayBetweenSheetsMs);
+                }
             }
         }
+        progress?.Report("Saving data...");
         Save(data);
+        progress?.Report("Complete!");
     }
 
-    private void GetAssetData(string id, string spreadSheetName, out string isin, out string exchangeId, out string ticker)
+    private async Task<(string isin, string exchangeId, string ticker)> GetAssetDataAsync(string id, string spreadSheetName)
     {
-        var values = _service.GetSpreadSheetData(id, $"{spreadSheetName}!Q2:S2");
-        isin = "";
-        exchangeId = "";
-        ticker = "";
+        var values = await _service.GetSpreadSheetDataAsync(id, $"{spreadSheetName}!Q2:S2");
+        string isin = "";
+        string exchangeId = "";
+        string ticker = "";
         try
         {
             if(values is not null)
@@ -121,6 +159,7 @@ public class GoogleGenerator : IGenerator
         }
         catch {
         }
+        return (isin, exchangeId, ticker);
     }
 
     private void Save(Investments data)
@@ -129,10 +168,11 @@ public class GoogleGenerator : IGenerator
         File.WriteAllText(Path.Combine(_path, "data.json"), json);
     }
 
-    private List<Operation> CreateOperations(string id, string spreadSheetName)
+    private async Task<List<Operation>> CreateOperationsAsync(string id, string spreadSheetName)
     {
         var operations = new List<Operation>();
-        var values = _service.GetSpreadSheetData(id, $"{spreadSheetName}!A3:G100");
+        // Use open-ended range to get all rows with data dynamically
+        var values = await _service.GetSpreadSheetDataAsync(id, $"{spreadSheetName}!A3:G");
         var previousDate = 0L;
 
         foreach (var value in values)
@@ -156,10 +196,11 @@ public class GoogleGenerator : IGenerator
         return operations;
     }
 
-    private List<Credit> CreateCredits(string id, string spreadSheetName)
+    private async Task<List<Credit>> CreateCreditsAsync(string id, string spreadSheetName)
     {
         var credits = new List<Credit>();
-        var values = _service.GetSpreadSheetData(id, $"{spreadSheetName}!K3:N100");
+        // Use open-ended range to get all rows with data dynamically
+        var values = await _service.GetSpreadSheetDataAsync(id, $"{spreadSheetName}!K3:N");
 
         if (values == null)
         {
