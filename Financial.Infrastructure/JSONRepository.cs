@@ -86,9 +86,12 @@ public class JSONRepository : IRepository
             .Portifolios.First(p => p.Name == portifolio)
             .Assets.First(a => a.Name == assetName);
 
+        ret.Exchange = asset.Exchange;
+        ret.Ticker = asset.Ticker;
         ret.Quantity = asset.Quantity;
-        ret.TotalBought = asset.Operations.Where(o => o.Type == Operation.OperationType.Buy).Sum(o => o.UnitPrice * o.Quantity + o.Fees);
-        ret.TotalSold = asset.Operations.Where(o => o.Type == Operation.OperationType.Sell).Sum(o => o.UnitPrice * o.Quantity + o.Fees);
+        ret.AvaragePrice = asset.AvargePrice;
+        ret.TotalBought = asset.Operations.Where(o => o.Type == Operation.OperationType.Buy).Sum(o => o.TotalPrice);
+        ret.TotalSold = asset.Operations.Where(o => o.Type == Operation.OperationType.Sell).Sum(o => o.TotalPrice);
         var creditsInfo = new CreditInfoDTO();
         creditsInfo.Total = asset.Credits.Sum(o => o.Value);
         creditsInfo.CreditsByMonth = asset.Credits.GroupBy(c => new DateOnly(c.Date.Year, c.Date.Month, 1))
@@ -99,7 +102,7 @@ public class JSONRepository : IRepository
         foreach (var item in asset.Operations)
         {
             var key = new DateOnly(item.Date.Year, item.Date.Month, 1);
-            currentVlw += (item.UnitPrice * item.Quantity + item.Fees) * (item.Type == Operation.OperationType.Buy ? 1 : -1);
+            currentVlw += (item.TotalPrice) * (item.Type == Operation.OperationType.Buy ? 1 : -1);
             ret.InvestedHistory[key] = currentVlw;
         }
         return ret;
@@ -110,7 +113,7 @@ public class JSONRepository : IRepository
         return _investiments.Brokers.Where(b => b.Name == brokerName)
             .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Operations)))
             .Where(o => o.Type == Operation.OperationType.Buy)
-            .Sum(o => o.UnitPrice * o.Quantity + o.Fees);
+            .Sum(o => o.TotalPrice);
     }
 
     private decimal GetTotalSoldByBroker(string brokerName, bool active)
@@ -118,7 +121,7 @@ public class JSONRepository : IRepository
         return _investiments.Brokers.Where(b => b.Name == brokerName)
             .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Operations)))
             .Where(o => o.Type == Operation.OperationType.Sell)
-            .Sum(o => o.UnitPrice * o.Quantity + o.Fees);
+            .Sum(o => o.TotalPrice);
     }
 
     private  CreditInfoDTO GetTotalCreditsByBroker(string brokerName, bool active)

@@ -29,6 +29,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FinanacialTools", "Finanaci
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebPageParser", "WebPageParser\WebPageParser.csproj", "{18D5A041-D4F7-4CF9-870C-D9E481EBD308}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Financial.Model.Specs", "Financial.Model.Specs\Financial.Model.Specs.csproj", "{47FF8A4B-2E92-45E9-AA05-A169EA20A09A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -75,6 +77,10 @@ Global
 		{18D5A041-D4F7-4CF9-870C-D9E481EBD308}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18D5A041-D4F7-4CF9-870C-D9E481EBD308}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{18D5A041-D4F7-4CF9-870C-D9E481EBD308}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47FF8A4B-2E92-45E9-AA05-A169EA20A09A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47FF8A4B-2E92-45E9-AA05-A169EA20A09A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47FF8A4B-2E92-45E9-AA05-A169EA20A09A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47FF8A4B-2E92-45E9-AA05-A169EA20A09A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -90,6 +96,7 @@ Global
 		{366A0FD8-60D4-4F4B-9996-33B6FC545C4C} = {0C976C0E-7E1C-4098-85CB-9D88F9E4E86B}
 		{C7707B9A-B9A3-4287-8D07-98AC68CC797B} = {619A5074-96E5-42D4-9325-20E431AD9AFF}
 		{18D5A041-D4F7-4CF9-870C-D9E481EBD308} = {619A5074-96E5-42D4-9325-20E431AD9AFF}
+		{47FF8A4B-2E92-45E9-AA05-A169EA20A09A} = {C9704CC9-9915-4F92-8A23-1346A8F30C22}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DD1461E2-FA4C-4504-BA04-EE3D1D679B7A}

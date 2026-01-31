@@ -26,7 +26,7 @@ public class DadosMercadoDividend
                 var dividend = new DividendValue(
                     data[0].InnerText == "Dividendo" ? DividendType.Dividend : DividendType.JCP,
                     DateTime.Parse(data[4].InnerText),
-                    decimal.Parse(data[1].InnerText.Replace(",", "."))
+                    decimal.Parse(data[1].InnerText.Replace(",", ".").Replace("* ", ""))
                 );
                 result.Add(dividend);
             }

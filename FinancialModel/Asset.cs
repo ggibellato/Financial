@@ -18,6 +18,9 @@ public class Asset
     public string Ticker { get; private set; }
 
     [JsonIgnore]
+    public decimal AvargePrice { get; private set; } = 0;
+
+    [JsonIgnore]
     public decimal Quantity { get; private set; }
 
     [JsonIgnore]
@@ -65,6 +68,10 @@ public class Asset
 
     public void AddOperation(Operation operation)
     {
+        if (operation.Type == Operation.OperationType.Buy)
+        {
+            AvargePrice = (AvargePrice * Quantity + operation.TotalPrice) / (Quantity + operation.Quantity);
+        }
         Quantity += (operation.Type == Operation.OperationType.Buy 
             ? operation.Quantity : -operation.Quantity);
         _operations.Add(operation);

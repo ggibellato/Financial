@@ -85,7 +85,7 @@ namespace SharesDividendCheck
                 .OrderByDescending(dy => dy.Year);
             dividendByYearDataGrid.ItemsSource = dividendsByYear;
 
-            var averageDividend = dividendsByYear.Where(dy => dy.Year != DateTime.Now.Year).Take(5).Average(dy => dy.Total);
+            var averageDividend = dividendsByYear.Where(dy => dy.Year < DateTime.Now.Year).Take(5).Average(dy => dy.Total);
             var priceMax = averageDividend / (decimal)0.06;
             var priceDiscountPer = (1 - value.Price / priceMax)*100;
 
