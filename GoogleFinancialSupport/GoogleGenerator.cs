@@ -171,7 +171,8 @@ public class GoogleGenerator : IGenerator
     private async Task<List<Operation>> CreateOperationsAsync(string id, string spreadSheetName)
     {
         var operations = new List<Operation>();
-        var values = await _service.GetSpreadSheetDataAsync(id, $"{spreadSheetName}!A3:G100");
+        // Use open-ended range to get all rows with data dynamically
+        var values = await _service.GetSpreadSheetDataAsync(id, $"{spreadSheetName}!A3:G");
         var previousDate = 0L;
 
         foreach (var value in values)
@@ -198,7 +199,8 @@ public class GoogleGenerator : IGenerator
     private async Task<List<Credit>> CreateCreditsAsync(string id, string spreadSheetName)
     {
         var credits = new List<Credit>();
-        var values = await _service.GetSpreadSheetDataAsync(id, $"{spreadSheetName}!K3:N100");
+        // Use open-ended range to get all rows with data dynamically
+        var values = await _service.GetSpreadSheetDataAsync(id, $"{spreadSheetName}!K3:N");
 
         if (values == null)
         {
