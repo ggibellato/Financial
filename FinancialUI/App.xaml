@@ -1,9 +1,7 @@
-﻿<Application x:Class="SharesDividendCheck.App"
+<Application x:Class="FinancialUI.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:SharesDividendCheck"
-             xmlns:converters="clr-namespace:SharesDividendCheck.Converters"
-             StartupUri="MainWindow.xaml">
+             xmlns:converters="clr-namespace:FinancialUI.Converters">
     <Application.Resources>
         <!-- Value Converters -->
         <converters:BoolToIconConverter x:Key="BoolToIconConverter"/>
@@ -15,6 +13,16 @@
         <converters:NodeTypeToVisibilityConverter x:Key="NodeTypeToVisibilityConverter"/>
         
         <!-- Global Styles -->
+        <Style TargetType="TreeView">
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="5"/>
+        </Style>
+        
+        <Style TargetType="TabControl">
+            <Setter Property="Padding" Value="5"/>
+        </Style>
+        
         <Style TargetType="DataGrid">
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="IsReadOnly" Value="True"/>

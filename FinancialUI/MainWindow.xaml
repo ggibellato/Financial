@@ -1,0 +1,285 @@
+<Window x:Class="FinancialUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:converters="clr-namespace:FinancialUI.Converters"
+        mc:Ignorable="d"
+        Title="Financial Portfolio Navigator" 
+        Height="700" Width="1200"
+        WindowStartupLocation="CenterScreen">
+    
+    <Window.Resources>
+        <converters:BoolToIconConverter x:Key="BoolToIconConverter"/>
+        <converters:CurrencyFormatConverter x:Key="CurrencyConverter"/>
+        <converters:DateFormatConverter x:Key="DateConverter"/>
+        <converters:OperationTypeToColorConverter x:Key="OperationColorConverter"/>
+    </Window.Resources>
+    
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300" MinWidth="200"/>
+            <ColumnDefinition Width="5"/>
+            <ColumnDefinition Width="*" MinWidth="400"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left Panel: Navigation Tree -->
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            
+            <TextBlock Grid.Row="0" 
+                       Text="Investments" 
+                       FontSize="16" 
+                       FontWeight="Bold" 
+                       Margin="10"
+                       Foreground="#333333"/>
+            
+            <TreeView Grid.Row="1" 
+                      ItemsSource="{Binding RootNodes}"
+                      Margin="10,0,10,10"
+                      VirtualizingPanel.IsVirtualizing="True"
+                      VirtualizingPanel.VirtualizationMode="Recycling">
+                <TreeView.ItemContainerStyle>
+                    <Style TargetType="TreeViewItem">
+                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                    </Style>
+                </TreeView.ItemContainerStyle>
+                
+                <TreeView.ItemTemplate>
+                    <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                        <StackPanel Orientation="Horizontal">
+                            <!-- Icon for Asset nodes based on Active status -->
+                            <TextBlock Text="{Binding Metadata[IsActive], Converter={StaticResource BoolToIconConverter}}"
+                                       Visibility="{Binding NodeType, Converter={StaticResource NodeTypeToVisibilityConverter}}"
+                                       Margin="0,0,5,0"
+                                       FontSize="14"
+                                       VerticalAlignment="Center"/>
+                            
+                            <TextBlock Text="{Binding DisplayName}" 
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </HierarchicalDataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
+
+            <!-- Loading Indicator -->
+            <Grid Grid.Row="1" 
+                  Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+                  Background="#80FFFFFF">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ProgressBar IsIndeterminate="True" Width="200" Height="20"/>
+                    <TextBlock Text="Loading..." 
+                               HorizontalAlignment="Center" 
+                               Margin="0,10,0,0"
+                               FontSize="14"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <!-- Splitter -->
+        <GridSplitter Grid.Column="1" 
+                      Width="5" 
+                      HorizontalAlignment="Stretch" 
+                      Background="#E0E0E0"/>
+
+        <!-- Right Panel: Asset Details -->
+        <Grid Grid.Column="2" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Asset Header -->
+            <Border Grid.Row="0" 
+                    BorderBrush="#CCCCCC" 
+                    BorderThickness="0,0,0,1" 
+                    Padding="0,0,0,10"
+                    Margin="0,0,0,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="{Binding AssetDetails.AssetName, Mode=OneWay}" 
+                                   FontSize="20" 
+                                   FontWeight="Bold"
+                                   Foreground="#333333"/>
+                        <TextBlock Margin="0,5,0,0">
+                            <Run Text="{Binding AssetDetails.Ticker, Mode=OneWay}"/>
+                            <Run Text=" • "/>
+                            <Run Text="{Binding AssetDetails.Exchange, Mode=OneWay}"/>
+                            <Run Text=" • "/>
+                            <Run Text="{Binding AssetDetails.BrokerName, Mode=OneWay}"/>
+                            <Run Text=" / "/>
+                            <Run Text="{Binding AssetDetails.PortfolioName, Mode=OneWay}"/>
+                        </TextBlock>
+                    </StackPanel>
+                    
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                        <TextBlock Text="{Binding AssetDetails.IsActive, Mode=OneWay, Converter={StaticResource BoolToIconConverter}}"
+                                   FontSize="24"
+                                   HorizontalAlignment="Right"/>
+                        <TextBlock Text="{Binding AssetDetails.IsActive, Mode=OneWay, StringFormat='Status: {0}'}"
+                                   FontSize="11"
+                                   Foreground="#666666"
+                                   HorizontalAlignment="Right"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Tab Control for Details -->
+            <TabControl Grid.Row="1">
+                <!-- Summary Tab -->
+                <TabItem Header="Summary">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <Grid Margin="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Row 0: Quantity & Average Price -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Quantity:" FontWeight="Bold" Margin="0,5"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AssetDetails.Quantity, Mode=OneWay, StringFormat=N2}" Margin="10,5"/>
+                            
+                            <TextBlock Grid.Row="0" Grid.Column="2" Text="Average Price:" FontWeight="Bold" Margin="20,5,0,5"/>
+                            <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding AssetDetails.AveragePrice, Mode=OneWay, StringFormat=N2}" Margin="10,5"/>
+
+                            <!-- Row 1: ISIN -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="ISIN:" FontWeight="Bold" Margin="0,5"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding AssetDetails.ISIN, Mode=OneWay}" Margin="10,5"/>
+
+                            <!-- Separator -->
+                            <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" 
+                                    BorderBrush="#EEEEEE" BorderThickness="0,1,0,0" Margin="0,15,0,15"/>
+
+                            <!-- Row 3: Total Bought & Total Sold -->
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Total Bought:" FontWeight="Bold" Margin="0,5"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" 
+                                       Text="{Binding AssetDetails.TotalBought, Mode=OneWay, StringFormat=N2}" 
+                                       Margin="10,5"
+                                       Foreground="Green"/>
+                            
+                            <TextBlock Grid.Row="3" Grid.Column="2" Text="Total Sold:" FontWeight="Bold" Margin="20,5,0,5"/>
+                            <TextBlock Grid.Row="3" Grid.Column="3" 
+                                       Text="{Binding AssetDetails.TotalSold, Mode=OneWay, StringFormat=N2}" 
+                                       Margin="10,5"
+                                       Foreground="Red"/>
+
+                            <!-- Row 4: Total Credits -->
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Total Credits:" FontWeight="Bold" Margin="0,5"/>
+                            <TextBlock Grid.Row="4" Grid.Column="1" 
+                                       Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}" 
+                                       Margin="10,5"
+                                       Foreground="Blue"/>
+
+                            <!-- Row 5: Operations Count -->
+                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Operations:" FontWeight="Bold" Margin="0,5"/>
+                            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding AssetDetails.Operations.Count, Mode=OneWay}" Margin="10,5"/>
+
+                            <!-- Row 6: Credits Count -->
+                            <TextBlock Grid.Row="6" Grid.Column="0" Text="Credit Entries:" FontWeight="Bold" Margin="0,5"/>
+                            <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding AssetDetails.Credits.Count, Mode=OneWay}" Margin="10,5"/>
+                        </Grid>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- Operations Tab -->
+                <TabItem Header="Operations">
+                    <DataGrid ItemsSource="{Binding AssetDetails.Operations}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Date" 
+                                                Binding="{Binding Date, Converter={StaticResource DateConverter}, ConverterParameter='d'}" 
+                                                Width="Auto"/>
+                            <DataGridTextColumn Header="Type" 
+                                                Binding="{Binding Type}" 
+                                                Width="Auto">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" 
+                                                Value="{Binding Type, Converter={StaticResource OperationColorConverter}}"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Quantity" 
+                                                Binding="{Binding Quantity, StringFormat=N2}" 
+                                                Width="Auto"/>
+                            <DataGridTextColumn Header="Unit Price" 
+                                                Binding="{Binding UnitPrice, StringFormat=N2}" 
+                                                Width="Auto"/>
+                            <DataGridTextColumn Header="Fees" 
+                                                Binding="{Binding Fees, StringFormat=N2}" 
+                                                Width="Auto"/>
+                            <DataGridTextColumn Header="Total" 
+                                                Binding="{Binding TotalPrice, StringFormat=N2}" 
+                                                Width="*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
+
+                <!-- Credits Tab -->
+                <TabItem Header="Credits">
+                    <DataGrid ItemsSource="{Binding AssetDetails.Credits}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Date" 
+                                                Binding="{Binding Date, Converter={StaticResource DateConverter}, ConverterParameter='d'}" 
+                                                Width="Auto"/>
+                            <DataGridTextColumn Header="Type" 
+                                                Binding="{Binding Type}" 
+                                                Width="Auto"/>
+                            <DataGridTextColumn Header="Value" 
+                                                Binding="{Binding Value, StringFormat=N2}" 
+                                                Width="*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="Foreground" Value="Blue"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
+            </TabControl>
+
+            <!-- Empty State -->
+            <StackPanel Grid.Row="1" 
+                        HorizontalAlignment="Center" 
+                        VerticalAlignment="Center"
+                        Visibility="{Binding AssetDetails.AssetName, Mode=OneWay, Converter={StaticResource EmptyStringToVisibilityConverter}}">
+                <TextBlock Text="Select an asset to view details" 
+                           FontSize="16" 
+                           Foreground="#999999"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
