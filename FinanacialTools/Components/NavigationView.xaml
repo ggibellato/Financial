@@ -126,7 +126,7 @@
                         <TextBlock Text="{Binding AssetDetails.IsActive, Mode=OneWay, Converter={StaticResource BoolToIconConverter}}"
                                    FontSize="24"
                                    HorizontalAlignment="Right"/>
-                        <TextBlock Text="{Binding AssetDetails.IsActive, Mode=OneWay, StringFormat='Status: {0}'}"
+                        <TextBlock Text="{Binding AssetDetails.IsActive, Mode=OneWay, Converter={StaticResource BoolToActiveStatusConverter}}"
                                    FontSize="11"
                                    Foreground="#666666"
                                    HorizontalAlignment="Right"/>

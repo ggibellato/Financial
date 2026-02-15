@@ -7,6 +7,7 @@
     <Application.Resources>
         <!-- Value Converters -->
         <converters:BoolToIconConverter x:Key="BoolToIconConverter"/>
+        <converters:BoolToActiveStatusConverter x:Key="BoolToActiveStatusConverter"/>
         <converters:CurrencyFormatConverter x:Key="CurrencyFormatConverter"/>
         <converters:DateFormatConverter x:Key="DateFormatConverter"/>
         <converters:OperationTypeToColorConverter x:Key="OperationTypeToColorConverter"/>
