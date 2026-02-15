@@ -57,8 +57,6 @@ namespace SharesDividendCheck
             var groupedOptions = new ListCollectionView(options);
             groupedOptions.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
             txtTicker.ItemsSource = groupedOptions;
-
-            LoadBrokersTotals();
             
             // Load navigation tree asynchronously
             Loaded += async (s, e) => 
@@ -95,18 +93,6 @@ namespace SharesDividendCheck
             public required string Name { get; set; }
         }
 
-        private void LoadBrokersTotals()
-        {
-            var brokers = _repository.GetBrokerList();
-            foreach (var broker in brokers.OrderBy(b => b.Name)) {
-                var brokerTotalControl = new BrokerTotal(broker, _repository);
-                TabItem tabItem = new TabItem();
-                tabItem.Header = broker.Name;
-                tabItem.Content = brokerTotalControl;
-                tcBrokerTotals.Items.Add(tabItem);
-            }
-        }
-
         private void btnCheck_Click(object sender, RoutedEventArgs e)
         {
             var value = GoogleFinance.GetFinancialInfo("BVMF", txtTicker.Text);
@@ -127,10 +113,10 @@ namespace SharesDividendCheck
             var priceMax = averageDividend / (decimal)0.06;
             var priceDiscountPer = (1 - value.Price / priceMax)*100;
 
-            lblName.Content = $"{value.Ticker} - {value.Name}";
-            lblPrice.Content = $"Current price: {value.Price}";
-            lblAverageDividend.Content = $"Average Dividend: {averageDividend.ToString("F2")} (last 5 years)";
-            lblPriceMax.Content = $"Price max buy: {priceMax.ToString("F2")}   Discount {priceDiscountPer.ToString("F2")}%";
+            lblName.Text = $"{value.Ticker} - {value.Name}";
+            lblPrice.Text = $"Current price: {value.Price:N2}";
+            lblAverageDividend.Text = $"Average Dividend: {averageDividend:F2} (last 5 years)";
+            lblPriceMax.Text = $"Price max buy: {priceMax:F2}   Discount {priceDiscountPer:F2}%";
             lblPriceMax.Foreground = priceMax > value.Price ? Brushes.Green : Brushes.Red;
         }
 
@@ -146,17 +132,59 @@ namespace SharesDividendCheck
             }
         }
 
-        private void btnCheckFIIS_Click(object sender, RoutedEventArgs e)
+        private async void btnCheckFIIS_Click(object sender, RoutedEventArgs e)
         {
-            var assets = _repository.GetAssetsByBrokerPortifolio("XPI", "Default").ToList();
-            var acoes = _repository.GetAssetsByBrokerPortifolio("XPI", "Acoes");
-            assets.AddRange(acoes);
-            var list = new List<AssetValue>();
-            foreach (var asset in assets) {
-                var value = GoogleFinance.GetFinancialInfo(asset.Exchange, asset.Ticker);
-                list.Add(value);
+            // Disable button and show progress
+            btnCheckFIIS.IsEnabled = false;
+            pnlFIIsProgress.Visibility = Visibility.Visible;
+            fiisPriceDataGrid.ItemsSource = null;
+
+            try
+            {
+                var assets = _repository.GetAssetsByBrokerPortifolio("XPI", "Default").ToList();
+                var acoes = _repository.GetAssetsByBrokerPortifolio("XPI", "Acoes");
+                assets.AddRange(acoes);
+
+                var list = new List<AssetValue>();
+                var totalAssets = assets.Count;
+                var currentAsset = 0;
+
+                foreach (var asset in assets)
+                {
+                    currentAsset++;
+                    
+                    // Update progress
+                    var progressPercent = (currentAsset * 100.0) / totalAssets;
+                    pgFIIsProgress.Value = progressPercent;
+                    lblFIIsProgress.Text = $"Fetching {currentAsset} of {totalAssets}: {asset.Ticker}...";
+
+                    // Force UI update
+                    await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+
+                    // Fetch price asynchronously (wrapped in Task.Run to avoid blocking)
+                    var value = await Task.Run(() => GoogleFinance.GetFinancialInfo(asset.Exchange, asset.Ticker));
+                    list.Add(value);
+
+                    // Update DataGrid progressively to show results as they come
+                    fiisPriceDataGrid.ItemsSource = null;
+                    fiisPriceDataGrid.ItemsSource = list;
+                }
+
+                lblFIIsProgress.Text = $"Completed! Loaded {totalAssets} assets.";
             }
-            fiisPriceDataGrid.ItemsSource = list;
+            catch (Exception ex)
+            {
+                lblFIIsProgress.Text = $"Error: {ex.Message}";
+                MessageBox.Show($"An error occurred while fetching prices:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                // Re-enable button after a short delay
+                await Task.Delay(2000);
+                btnCheckFIIS.IsEnabled = true;
+                pnlFIIsProgress.Visibility = Visibility.Collapsed;
+                pgFIIsProgress.Value = 0;
+            }
         }
     }
 }
