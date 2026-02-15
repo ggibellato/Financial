@@ -12,3 +12,7 @@ terraform*
 
 #specific files
 .gitignore.bak
+
+
+#prompts to remove
+prompt.md
