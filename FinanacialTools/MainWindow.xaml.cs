@@ -57,8 +57,6 @@ namespace SharesDividendCheck
             var groupedOptions = new ListCollectionView(options);
             groupedOptions.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
             txtTicker.ItemsSource = groupedOptions;
-
-            LoadBrokersTotals();
             
             // Load navigation tree asynchronously
             Loaded += async (s, e) => 
@@ -95,18 +93,6 @@ namespace SharesDividendCheck
             public required string Name { get; set; }
         }
 
-        private void LoadBrokersTotals()
-        {
-            var brokers = _repository.GetBrokerList();
-            foreach (var broker in brokers.OrderBy(b => b.Name)) {
-                var brokerTotalControl = new BrokerTotal(broker, _repository);
-                TabItem tabItem = new TabItem();
-                tabItem.Header = broker.Name;
-                tabItem.Content = brokerTotalControl;
-                tcBrokerTotals.Items.Add(tabItem);
-            }
-        }
-
         private void btnCheck_Click(object sender, RoutedEventArgs e)
         {
             var value = GoogleFinance.GetFinancialInfo("BVMF", txtTicker.Text);
@@ -127,10 +113,10 @@ namespace SharesDividendCheck
             var priceMax = averageDividend / (decimal)0.06;
             var priceDiscountPer = (1 - value.Price / priceMax)*100;
 
-            lblName.Content = $"{value.Ticker} - {value.Name}";
-            lblPrice.Content = $"Current price: {value.Price}";
-            lblAverageDividend.Content = $"Average Dividend: {averageDividend.ToString("F2")} (last 5 years)";
-            lblPriceMax.Content = $"Price max buy: {priceMax.ToString("F2")}   Discount {priceDiscountPer.ToString("F2")}%";
+            lblName.Text = $"{value.Ticker} - {value.Name}";
+            lblPrice.Text = $"Current price: {value.Price:N2}";
+            lblAverageDividend.Text = $"Average Dividend: {averageDividend:F2} (last 5 years)";
+            lblPriceMax.Text = $"Price max buy: {priceMax:F2}   Discount {priceDiscountPer:F2}%";
             lblPriceMax.Foreground = priceMax > value.Price ? Brushes.Green : Brushes.Red;
         }
 
