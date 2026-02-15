@@ -248,15 +248,49 @@ All 3 tabs now share:
 ### Files Modified
 
 1. **E:\dev\Projetos\Financial\FinanacialTools\MainWindow.xaml**
-   - Removed Brokers Totals tab (lines 121-126)
-   - Completely redesigned Shares Dividend Check tab
-   - Completely redesigned Read FIIs Current Values tab
+   - Removed Brokers Totals tab
+   - Completely redesigned Shares Dividend Check tab (213 lines)
+   - Completely redesigned Read FIIs Current Values tab (97 lines)
+   - Added progress indicator UI for async operations
 
 2. **E:\dev\Projetos\Financial\FinanacialTools\MainWindow.xaml.cs**
-   - Removed `LoadBrokersTotals()` method (lines 98-108)
-   - Removed method call from constructor (line 61)
-   - Updated `btnCheck_Click` to use TextBlock `.Text` instead of Label `.Content`
+   - Removed `LoadBrokersTotals()` method
+   - Removed method call from constructor
+   - Updated `btnCheck_Click` to use TextBlock properties
+   - Converted `btnCheckFIIS_Click` to async with progress tracking
    - Added proper formatting (`:N2`, `:F2`) for decimal values
+
+3. **E:\dev\Projetos\Financial\FinanacialTools\Components\NavigationView.xaml**
+   - Added inactive selection color fix to TreeView
+
+### Bonus Improvements (User Requested)
+
+#### Bonus Fix 1: Inactive Selection Visibility ✅
+
+**Problem:** Selected rows changed from blue to gray when clicking outside the app, making them hard to see.
+
+**Solution:**
+- Added style resources to maintain blue selection (`#007ACC`) when controls lose focus
+- Applied to TreeView in Portfolio Navigator
+- Applied to all DataGrids in all tabs
+
+**Result:** Selection stays bright blue at all times, easy to see even when working in other apps.
+
+#### Bonus Fix 2: Async Progress Indicator ✅
+
+**Problem:** "Check Prices" button froze the UI for 10-30 seconds with no feedback.
+
+**Solution:**
+- Converted to async/await pattern
+- Added visual progress indicator:
+  - ProgressBar (0-100%)
+  - Status text: "Fetching 3 of 15: HGLG11..."
+- Button disabled during operation
+- Progressive results (DataGrid updates as prices arrive)
+- Error handling with user-friendly messages
+- Completion message: "Completed! Loaded 15 assets."
+
+**Result:** UI stays responsive, live progress feedback, results appear incrementally.
 
 ### Testing Results
 
