@@ -3,7 +3,10 @@ using Financial.Common;
 using Financial.Model;
 using FinancialModel.Application;
 using FinancialModel.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualBasic.FileIO;
+using SharesDividendCheck.Components;
+using SharesDividendCheck.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,10 +31,17 @@ namespace SharesDividendCheck
     public partial class MainWindow : Window
     {
         private readonly IRepository _repository = new JSONRepository();
+        private readonly MainNavigationViewModel _navigationViewModel;
+
+        public MainNavigationViewModel NavigationViewModel => _navigationViewModel;
 
         public MainWindow()
         {
             InitializeComponent();
+            
+            // Initialize navigation ViewModel from DI
+            _navigationViewModel = App.AppHost!.Services.GetRequiredService<MainNavigationViewModel>();
+            
             List<Option> options = new List<Option>
             {
                 new Option { Group = "Ja possuidas", Name = "KLBN4" },
@@ -49,6 +59,34 @@ namespace SharesDividendCheck
             txtTicker.ItemsSource = groupedOptions;
 
             LoadBrokersTotals();
+            
+            // Load navigation tree asynchronously
+            Loaded += async (s, e) => 
+            {
+                // Ensure DataContext is set before loading
+                var navView = FindNavigationView(this);
+                if (navView != null)
+                {
+                    navView.DataContext = _navigationViewModel;
+                }
+                await _navigationViewModel.LoadNavigationTreeAsync();
+            };
+        }
+
+        private NavigationView? FindNavigationView(DependencyObject parent)
+        {
+            int childCount = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < childCount; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is NavigationView navView)
+                    return navView;
+                
+                var result = FindNavigationView(child);
+                if (result != null)
+                    return result;
+            }
+            return null;
         }
 
         public class Option

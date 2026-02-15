@@ -9,9 +9,12 @@
 
   <ItemGroup>
     <PackageReference Include="DotNetProjects.WpfToolkit.DataVisualization" Version="6.1.94" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Financial.Application\Financial.Application.csproj" />
     <ProjectReference Include="..\Financial.Infrastructure\Financial.Infrastructure.csproj" />
     <ProjectReference Include="..\FinancialToolSupport\FinancialToolSupport.csproj" />
     <ProjectReference Include="..\WebPageParser\WebPageParser.csproj" />
