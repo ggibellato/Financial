@@ -132,17 +132,59 @@ namespace SharesDividendCheck
             }
         }
 
-        private void btnCheckFIIS_Click(object sender, RoutedEventArgs e)
+        private async void btnCheckFIIS_Click(object sender, RoutedEventArgs e)
         {
-            var assets = _repository.GetAssetsByBrokerPortifolio("XPI", "Default").ToList();
-            var acoes = _repository.GetAssetsByBrokerPortifolio("XPI", "Acoes");
-            assets.AddRange(acoes);
-            var list = new List<AssetValue>();
-            foreach (var asset in assets) {
-                var value = GoogleFinance.GetFinancialInfo(asset.Exchange, asset.Ticker);
-                list.Add(value);
+            // Disable button and show progress
+            btnCheckFIIS.IsEnabled = false;
+            pnlFIIsProgress.Visibility = Visibility.Visible;
+            fiisPriceDataGrid.ItemsSource = null;
+
+            try
+            {
+                var assets = _repository.GetAssetsByBrokerPortifolio("XPI", "Default").ToList();
+                var acoes = _repository.GetAssetsByBrokerPortifolio("XPI", "Acoes");
+                assets.AddRange(acoes);
+
+                var list = new List<AssetValue>();
+                var totalAssets = assets.Count;
+                var currentAsset = 0;
+
+                foreach (var asset in assets)
+                {
+                    currentAsset++;
+                    
+                    // Update progress
+                    var progressPercent = (currentAsset * 100.0) / totalAssets;
+                    pgFIIsProgress.Value = progressPercent;
+                    lblFIIsProgress.Text = $"Fetching {currentAsset} of {totalAssets}: {asset.Ticker}...";
+
+                    // Force UI update
+                    await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+
+                    // Fetch price asynchronously (wrapped in Task.Run to avoid blocking)
+                    var value = await Task.Run(() => GoogleFinance.GetFinancialInfo(asset.Exchange, asset.Ticker));
+                    list.Add(value);
+
+                    // Update DataGrid progressively to show results as they come
+                    fiisPriceDataGrid.ItemsSource = null;
+                    fiisPriceDataGrid.ItemsSource = list;
+                }
+
+                lblFIIsProgress.Text = $"Completed! Loaded {totalAssets} assets.";
             }
-            fiisPriceDataGrid.ItemsSource = list;
+            catch (Exception ex)
+            {
+                lblFIIsProgress.Text = $"Error: {ex.Message}";
+                MessageBox.Show($"An error occurred while fetching prices:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                // Re-enable button after a short delay
+                await Task.Delay(2000);
+                btnCheckFIIS.IsEnabled = true;
+                pnlFIIsProgress.Visibility = Visibility.Collapsed;
+                pgFIIsProgress.Value = 0;
+            }
         }
     }
 }

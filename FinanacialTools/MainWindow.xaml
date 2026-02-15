@@ -348,10 +348,31 @@
                                                 <Trigger Property="IsPressed" Value="True">
                                                     <Setter Property="Background" Value="#004578"/>
                                                 </Trigger>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Background" Value="#CCCCCC"/>
+                                                    <Setter Property="Foreground" Value="#666666"/>
+                                                </Trigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
                                 </Button>
+                                
+                                <!-- Progress Indicator -->
+                                <StackPanel x:Name="pnlFIIsProgress" 
+                                            Visibility="Collapsed"
+                                            Margin="0,15,0,0">
+                                    <ProgressBar x:Name="pgFIIsProgress" 
+                                                 Height="8" 
+                                                 Minimum="0" 
+                                                 Maximum="100" 
+                                                 Value="0"
+                                                 Foreground="#007ACC"/>
+                                    <TextBlock x:Name="lblFIIsProgress" 
+                                               Text="Loading..." 
+                                               FontSize="13" 
+                                               Foreground="#666666"
+                                               Margin="0,8,0,0"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
 
