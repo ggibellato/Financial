@@ -1,0 +1,37 @@
+{
+  "Brokers": [
+    {
+      "Name": "Sample Broker",
+      "Currency": "BRL",
+      "Portifolios": [
+        {
+          "Name": "Default",
+          "Assets": [
+            {
+              "Name": "Sample Asset",
+              "ISIN": "",
+              "Exchange": "BVMF",
+              "Ticker": "SAMPLE11",
+              "Operations": [
+                {
+                  "Date": "2024-01-01T00:00:00",
+                  "Type": "Buy",
+                  "Quantity": 1,
+                  "UnitPrice": 0,
+                  "Fees": 0
+                }
+              ],
+              "Credits": [
+                {
+                  "Date": "2024-01-15T00:00:00",
+                  "Type": "Dividend",
+                  "Value": 0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

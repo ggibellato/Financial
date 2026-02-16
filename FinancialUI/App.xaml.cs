@@ -17,7 +17,8 @@ public partial class App : Application
             .ConfigureServices((context, services) =>
             {
                 // Register Infrastructure services
-                services.AddSingleton<IRepository, JSONRepository>();
+                services.AddSingleton<IRepository>(_ =>
+                    new JSONRepository(context.Configuration[JSONRepository.DataJsonPathConfigurationKey]));
                 services.AddSingleton<INavigationService, NavigationService>();
 
                 // Register ViewModels

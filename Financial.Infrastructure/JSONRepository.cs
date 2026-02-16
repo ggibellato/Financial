@@ -2,8 +2,8 @@
 using Financial.Model;
 using FinancialModel.Application;
 using System;
-using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.IO;
 
 [assembly: InternalsVisibleTo("Financial.Infrastructure.Tests")]
 namespace FinancialModel.Infrastructure;
@@ -11,11 +11,20 @@ namespace FinancialModel.Infrastructure;
 public class JSONRepository : IRepository
 {
 
-    private Investments _investiments;
+    public const string DataJsonPathConfigurationKey = "DataJsonPath";
+    public const string DefaultDataFileName = "data.json";
 
-    public JSONRepository()
+    private Investments _investiments;
+    private readonly string _dataFilePath;
+
+    public JSONRepository() : this(null)
     {
-        _investiments = LoadModel();
+    }
+
+    public JSONRepository(string? dataFilePath)
+    {
+        _dataFilePath = ResolveDataFilePath(dataFilePath);
+        _investiments = LoadModel(_dataFilePath);
     }
 
     public List<string> GetAllAssetsFullName()
@@ -157,19 +166,35 @@ public class JSONRepository : IRepository
     }
 
 
-    private Investments LoadModel()
+    private static string ResolveDataFilePath(string? dataFilePath)
     {
-        var modelJson = LoadEmbeddedResource("Data.data.json");
-        return Investments.Deserialize(modelJson);
+        var resolvedPath = string.IsNullOrWhiteSpace(dataFilePath)
+            ? Path.Combine(AppContext.BaseDirectory, DefaultDataFileName)
+            : dataFilePath;
+
+        if (Directory.Exists(resolvedPath))
+        {
+            resolvedPath = Path.Combine(resolvedPath, DefaultDataFileName);
+        }
+
+        if (!Path.IsPathRooted(resolvedPath))
+        {
+            resolvedPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, resolvedPath));
+        }
+
+        return resolvedPath;
     }
 
-    static string LoadEmbeddedResource(string resourceName)
+    private static Investments LoadModel(string dataFilePath)
     {
-        Assembly assembly = Assembly.GetExecutingAssembly();
-        string fullResourceName = $"{assembly.GetName().Name}.{resourceName}";
+        if (!File.Exists(dataFilePath))
+        {
+            throw new FileNotFoundException(
+                $"Data file not found at '{dataFilePath}'. Configure '{DataJsonPathConfigurationKey}' or place '{DefaultDataFileName}' in the application directory.",
+                dataFilePath);
+        }
 
-        using Stream stream = assembly.GetManifestResourceStream(fullResourceName);
-        using StreamReader reader = new(stream);
-        return reader.ReadToEnd();
+        var modelJson = File.ReadAllText(dataFilePath);
+        return Investments.Deserialize(modelJson);
     }
 }

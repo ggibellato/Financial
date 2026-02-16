@@ -19,4 +19,10 @@
     <ProjectReference Include="..\FinancialToolSupport\FinancialToolSupport.csproj" />
     <ProjectReference Include="..\WebPageParser\WebPageParser.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>
