@@ -5,7 +5,7 @@ namespace Financial.Infrastructure.Tests;
 
 public class JSONRepositoryTests
 {
-    private readonly JSONRepository _sut = new JSONRepository();
+    private readonly JSONRepository _sut = new JSONRepository(TestDataPaths.DataJsonPath);
 
     [Fact]
     public void GetAllAssetsFullName_ShouldReturn_Values()
@@ -18,7 +18,7 @@ public class JSONRepositoryTests
     [InlineData(null, 0)]
     [InlineData("", 0)]
     [InlineData("NOTEXIST", 0)]
-    [InlineData("FreeTrade", 14)]
+    [InlineData("XPI", 1)]
     public void GetAssets_By_BrokerTest(string name, int records)
     {
         var result = _sut.GetAssetsByBroker(name);
@@ -29,7 +29,7 @@ public class JSONRepositoryTests
     [InlineData(null, 0)]
     [InlineData("", 0)]
     [InlineData("NOTEXIST", 0)]
-    [InlineData("Fundos Investimento", 2)]
+    [InlineData("Default", 1)]
     public void GetAssets_By_PortifolioTest(string name, int records)
     {
         var result = _sut.GetAssetsByPortifolio(name);
@@ -40,7 +40,7 @@ public class JSONRepositoryTests
     [InlineData(null, 0)]
     [InlineData("", 0)]
     [InlineData("NOTEXIST", 0)]
-    [InlineData("FTSE100", 1)]
+    [InlineData("BCIA11", 1)]
     public void GetAssets_By_NameTest(string name, int records)
     {
         var result = _sut.GetAssetsByAssetName(name);

@@ -30,7 +30,7 @@ namespace SharesDividendCheck
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly IRepository _repository = new JSONRepository();
+        private readonly IRepository _repository;
         private readonly MainNavigationViewModel _navigationViewModel;
 
         public MainNavigationViewModel NavigationViewModel => _navigationViewModel;
@@ -38,7 +38,9 @@ namespace SharesDividendCheck
         public MainWindow()
         {
             InitializeComponent();
-            
+
+            _repository = App.AppHost!.Services.GetRequiredService<IRepository>();
+
             // Initialize navigation ViewModel from DI
             _navigationViewModel = App.AppHost!.Services.GetRequiredService<MainNavigationViewModel>();
             

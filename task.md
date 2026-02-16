@@ -309,3 +309,32 @@ dotnet run
 ```
 
 The application now has a consistent, modern, professional appearance across all three tabs!
+
+
+Here is a clarified version of Task 3, aligned with your intent and with wording that will guide implementation and keep the file out of source control:
+
+***
+
+## Task 3: Make `data.json` configurable
+
+Currently, the data for the Financial Tools UI is stored as an application resource at  
+`E:\dev\Projetos\Financial\Financial.Infrastructure\Data\data.json`.  
+Any change to this file requires rebuilding the UI.
+
+Requirements:
+
+1. The `data.json` file must no longer be embedded or treated as an application resource.  
+   - The application should load the path to `data.json` from configuration at runtime (not hard-coded).  
+   - It should be possible to point to different `data.json` files for local usage, test runs, or alternative datasets. [reddit](https://www.reddit.com/r/dotnet/comments/198r4zl/how_am_i_supposed_to_store_environment_variables/)
+
+2. Introduce a configuration mechanism for the `data.json` path.  
+   - This configuration may be environment-based (for example, an environment variable or a `.env`-style file similar to Python’s `.env` approach) that is read at startup.  
+   - If no explicit configuration is supplied, a sensible local default path can be used. [dev](https://dev.to/rmaurodev/load-env-file-into-iconfiguration-provider-4fk0)
+
+3. The `data.json` file itself MUST NEVER be committed to the repository.  
+   - Ensure it is ignored by version control (for example, via `.gitignore`) and treated as local-only data.  
+   - If needed, a template/example file (for example, `data.example.json`) can be committed for reference, but it must not contain real data. [twalker](https://www.twalker.dev/avoid-committing-secrets-by-ignore-tracked-files-in-git/)
+
+4. The solution must keep the **business logic** and **data access** layers independent of any specific UI, so that the same configuration approach works for WPF, future web, or mobile frontends. [dusted](https://dusted.codes/dotenv-in-dotnet)
+
+***

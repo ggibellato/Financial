@@ -1,0 +1,49 @@
+{
+  "Brokers": [
+    {
+      "Name": "XPI",
+      "Currency": "BRL",
+      "Portifolios": [
+        {
+          "Name": "Default",
+          "Assets": [
+            {
+              "Name": "BCIA11",
+              "ISIN": "TESTISIN",
+              "Exchange": "BVMF",
+              "Ticker": "BCIA11",
+              "Operations": [
+                {
+                  "Date": "2024-01-01T00:00:00",
+                  "Type": "Buy",
+                  "Quantity": 10,
+                  "UnitPrice": 100,
+                  "Fees": 0
+                },
+                {
+                  "Date": "2024-06-01T00:00:00",
+                  "Type": "Sell",
+                  "Quantity": 2,
+                  "UnitPrice": 110,
+                  "Fees": 0
+                }
+              ],
+              "Credits": [
+                {
+                  "Date": "2024-02-01T00:00:00",
+                  "Type": "Dividend",
+                  "Value": 5
+                },
+                {
+                  "Date": "2024-03-01T00:00:00",
+                  "Type": "Dividend",
+                  "Value": 6
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

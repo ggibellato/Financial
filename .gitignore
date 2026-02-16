@@ -12,3 +12,4 @@ terraform*
 
 #specific files
 .gitignore.bak
+data.json
