@@ -1,0 +1,33 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build-importgooglespreadheets",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"ImportGoogleSpreadSheets/ImportGoogleSpreadSheets.sln"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$msCompile"
+			],
+			"group": "build"
+		},
+		{
+			"label": "build-finanacialtools",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"FinanacialTools/FinanacialTools.csproj"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$msCompile"
+			],
+			"group": "build"
+		}
+	]
+}

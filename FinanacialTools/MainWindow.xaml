@@ -6,7 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SharesDividendCheck.Components"
         mc:Ignorable="d"
-        Title="Financial tools" Height="800" Width="1200">
+        Title="Financial tools" Height="800" Width="1200" Icon="{StaticResource AppIcon}">
     <Grid>
         <TabControl SelectedIndex="0" Grid.ColumnSpan="2">
             <!-- NEW: Navigation Tab (Default) -->

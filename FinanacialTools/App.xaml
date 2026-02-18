@@ -13,6 +13,42 @@
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <converters:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
         <converters:NodeTypeToVisibilityConverter x:Key="NodeTypeToVisibilityConverter"/>
+
+        <DrawingImage x:Key="AppIcon">
+            <DrawingImage.Drawing>
+                <DrawingGroup>
+                    <GeometryDrawing Brush="#1D6FB7">
+                        <GeometryDrawing.Pen>
+                            <Pen Brush="#0F4E87" Thickness="1" />
+                        </GeometryDrawing.Pen>
+                        <GeometryDrawing.Geometry>
+                            <RectangleGeometry Rect="2,6,20,14" RadiusX="2" RadiusY="2" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <GeometryDrawing Brush="#2A82C6">
+                        <GeometryDrawing.Geometry>
+                            <RectangleGeometry Rect="2,4,20,4" RadiusX="2" RadiusY="2" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <GeometryDrawing Brush="#F2C94C">
+                        <GeometryDrawing.Pen>
+                            <Pen Brush="#C9971E" Thickness="1" />
+                        </GeometryDrawing.Pen>
+                        <GeometryDrawing.Geometry>
+                            <EllipseGeometry Center="18,13" RadiusX="3" RadiusY="3" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <GeometryDrawing>
+                        <GeometryDrawing.Pen>
+                            <Pen Brush="#0C2F4F" Thickness="2" />
+                        </GeometryDrawing.Pen>
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry Figures="M6,18 L9,14 L12,16 L16,11" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                </DrawingGroup>
+            </DrawingImage.Drawing>
+        </DrawingImage>
         
         <!-- Global Styles -->
         <Style TargetType="DataGrid">

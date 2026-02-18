@@ -4,6 +4,47 @@
              xmlns:local="clr-namespace:ImportGoogleSpreadSheets"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <DrawingImage x:Key="AppIcon">
+            <DrawingImage.Drawing>
+                <DrawingGroup>
+                    <GeometryDrawing Brush="#22A565">
+                        <GeometryDrawing.Pen>
+                            <Pen Brush="#1E7E4C" Thickness="1" />
+                        </GeometryDrawing.Pen>
+                        <GeometryDrawing.Geometry>
+                            <RectangleGeometry Rect="2,2,20,20" RadiusX="2" RadiusY="2" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <GeometryDrawing Brush="#86E0B5">
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry Figures="M16,2 L22,2 L22,8 Z" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <GeometryDrawing Brush="#1E7E4C">
+                        <GeometryDrawing.Geometry>
+                            <RectangleGeometry Rect="5,7,14,1" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <GeometryDrawing Brush="#1E7E4C">
+                        <GeometryDrawing.Geometry>
+                            <RectangleGeometry Rect="5,11,14,1" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <GeometryDrawing Brush="#1E7E4C">
+                        <GeometryDrawing.Geometry>
+                            <RectangleGeometry Rect="10,7,1,9" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <GeometryDrawing>
+                        <GeometryDrawing.Pen>
+                            <Pen Brush="#0F3D2E" Thickness="2" />
+                        </GeometryDrawing.Pen>
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry Figures="M5,16 L9,12 L12,14 L17,9" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                </DrawingGroup>
+            </DrawingImage.Drawing>
+        </DrawingImage>
     </Application.Resources>
 </Application>

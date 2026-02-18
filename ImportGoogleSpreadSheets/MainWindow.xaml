@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ImportGoogleSpreadSheets"
         mc:Ignorable="d"
-        Title="Import Google" Height="500" Width="850" Icon="/import.png">
+        Title="Import Google" Height="500" Width="850" Icon="{StaticResource AppIcon}">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

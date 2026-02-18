@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System;
 using System.Text.Json.Serialization.Metadata;
 using System.Text.Json;
 
@@ -16,7 +17,9 @@ public class PrivateConstructorContractResolver : DefaultJsonTypeInfoResolver
             {
                 // The type doesn't have public constructors
                 jsonTypeInfo.CreateObject = () =>
-                    Activator.CreateInstance(jsonTypeInfo.Type, true);
+                    Activator.CreateInstance(jsonTypeInfo.Type, true)
+                    ?? throw new InvalidOperationException(
+                        $"Failed to create instance of {jsonTypeInfo.Type}.");
             }
         }
         return jsonTypeInfo;

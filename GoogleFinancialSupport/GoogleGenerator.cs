@@ -39,6 +39,7 @@ public class GoogleGenerator : IGenerator
         {"Trading 212", "GBP" },
         {"XPI", "BRL" },
         {"FreeTrade", "GBP" },
+        {"Coinbase", "GBP" },
     };
 
     private readonly GoogleService _service;
