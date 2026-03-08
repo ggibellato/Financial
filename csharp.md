@@ -1,1 +1,0 @@
-../../prompts/base/role/csharp.md

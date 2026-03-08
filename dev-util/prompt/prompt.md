@@ -14,16 +14,22 @@ The portfolio covers various asset classes, including **Bitcoin, REITs (fundos i
 
 Always ensuring that the **business logic** and **data access** layers are isolated from the presentation layer so that the tool can use different  frontends (web, mobile apps, etc.) without duplicating logic.
 
+# **Behaviour**
+Whenever you need to create new `.md` files, save them under `Financial/dev-util/prompt/md/`.
+Follow the behaviour defined in `Financial/dev-util/prompt/behaviour.md`.
+
 # **Role**
-The role configuration is defined in csharp.md
+The role configuration is defined in Financial\dev-util\prompt\csharp.md
 Refer to that document for language-specific behavior, code conventions, and development guidelines.
 
 # **Code analyzer**
-Execute code analyzer agen based on the information bellow
-
-If the file discovery-findings.md does not exist, execute the process defined in codebase-analyzer-agent.md to perform a codebase scan and generate findings.
-
 If discovery-findings.md does exist, read its contents and incorporate the information into the current context.
+
+If the file Financial\dev-util\prompt\md\discovery-findings.md does not exist, execute the process defined in Financial\dev-util\prompt\codebase-analyzer-agent.md to perform a codebase scan and generate findings and store the file information Financial\dev-util\prompt\md\discovery-findings.md
+
+Here’s a cleaned-up version that should be easier for Copilot (and humans) to follow:
+
+***
 
 # Workflow
 
