@@ -1,0 +1,7 @@
+namespace FinancialModel.Application;
+
+public sealed record RepositorySelectionOptions(
+    RepositoryProvider Provider,
+    string? LocalDataPath,
+    string? GoogleDriveCredentialsPath,
+    string? GoogleDriveFilePath);

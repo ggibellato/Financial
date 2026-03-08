@@ -3,9 +3,9 @@ using FluentAssertions;
 
 namespace Financial.Infrastructure.Tests;
 
-public class JSONRepositoryTests
+public class LocalJSONRepositoryTests
 {
-    private readonly JSONRepository _sut = new JSONRepository(TestDataPaths.DataJsonPath);
+    private readonly LocalJSONRepository _sut = new LocalJSONRepository(TestDataPaths.DataJsonPath);
 
     [Fact]
     public void GetAllAssetsFullName_ShouldReturn_Values()

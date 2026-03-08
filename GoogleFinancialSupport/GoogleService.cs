@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System;
 using Google;
 using System.Net;
+using System.Linq;
 
 namespace GoogleFinancialSupport;
 
@@ -79,6 +80,70 @@ public class GoogleService
             IList<IList<object>> values = response.Values;
             return values;
         });
+    }
+
+    public string DownloadFileContent(string drivePath)
+    {
+        if (string.IsNullOrWhiteSpace(drivePath))
+        {
+            throw new ArgumentException("Drive path must be provided.", nameof(drivePath));
+        }
+
+        var service = GetDriveService();
+        var fileId = ResolveFileId(service, drivePath);
+
+        using var stream = new MemoryStream();
+        var request = service.Files.Get(fileId);
+        request.Download(stream);
+        stream.Position = 0;
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+
+    private static string ResolveFileId(DriveService service, string drivePath)
+    {
+        var segments = drivePath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length == 0)
+        {
+            throw new ArgumentException("Drive path must include at least one segment.", nameof(drivePath));
+        }
+
+        var parentId = "root";
+        for (int i = 0; i < segments.Length; i++)
+        {
+            var segment = segments[i];
+            var listRequest = service.Files.List();
+            listRequest.PageSize = 2;
+            listRequest.Fields = "files(id, name, mimeType)";
+            listRequest.Q = $"name = '{EscapeDriveQuery(segment)}' and '{parentId}' in parents and trashed = false";
+
+            var result = listRequest.Execute();
+            var file = result.Files.FirstOrDefault();
+            if (file == null)
+            {
+                throw new FileNotFoundException($"Drive path segment '{segment}' not found in '{drivePath}'.");
+            }
+
+            bool isLast = i == segments.Length - 1;
+            if (!isLast)
+            {
+                if (file.MimeType != "application/vnd.google-apps.folder")
+                {
+                    throw new DirectoryNotFoundException($"Drive path segment '{segment}' is not a folder in '{drivePath}'.");
+                }
+                parentId = file.Id;
+                continue;
+            }
+
+            return file.Id;
+        }
+
+        throw new FileNotFoundException($"Drive path '{drivePath}' not found.");
+    }
+
+    private static string EscapeDriveQuery(string value)
+    {
+        return value.Replace("'", "\\'");
     }
 
     private DriveService GetDriveService()

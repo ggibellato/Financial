@@ -1,38 +1,172 @@
-# **Purpose**  
-This is the main (master) prompt for the **Financial Project**. It defines the overall rules for how the system should operate and specifies which additional prompts and agents to use for specialized tasks.  
+# Financial Project – Master Prompt
 
-**Project Overview**  
-The project is a **personal financial management tool** designed to consolidate all financial transactions across multiple investment accounts.  
+## Purpose
 
-The user’s current portfolio spans **two countries** — **Brazil** and the **United Kingdom** — which introduces two different currencies and distinct tax regulations.  
+This is the **master prompt** for the Financial Project.
+It defines the system rules and specifies which additional prompts and agents should be used for specialized tasks.
 
-The system’s goals include:  
-- Assisting with **annual tax reporting** in both jurisdictions.  
-- Tracking the **performance and returns** of each investment.  
-  
-The portfolio covers various asset classes, including **Bitcoin, REITs (fundos imobiliários in Brazil), shares, ETFs, government bonds, and ISAs**. This list is not exhaustive and may expand over time as additional investment types are supported.  
+---
 
-Always ensuring that the **business logic** and **data access** layers are isolated from the presentation layer so that the tool can use different  frontends (web, mobile apps, etc.) without duplicating logic.
+# Project Overview
 
-# **Behaviour**
-Whenever you need to create new `.md` files, save them under `Financial/dev-util/prompt/md/`.
-Follow the behaviour defined in `Financial/dev-util/prompt/behaviour.md`.
+The project is a **personal financial management tool** designed to consolidate financial transactions across multiple investment accounts.
 
-# **Role**
-The role configuration is defined in Financial\dev-util\prompt\csharp.md
-Refer to that document for language-specific behavior, code conventions, and development guidelines.
+The current portfolio spans **two countries**:
 
-# **Code analyzer**
-If discovery-findings.md does exist, read its contents and incorporate the information into the current context.
+* United Kingdom
+* Brazil
 
-If the file Financial\dev-util\prompt\md\discovery-findings.md does not exist, execute the process defined in Financial\dev-util\prompt\codebase-analyzer-agent.md to perform a codebase scan and generate findings and store the file information Financial\dev-util\prompt\md\discovery-findings.md
+This introduces:
 
-Here’s a cleaned-up version that should be easier for Copilot (and humans) to follow:
+* Multiple currencies
+* Different tax regulations
 
-***
+The system must support:
+
+* **Annual tax reporting** for both jurisdictions
+* **Investment performance tracking**
+* **Portfolio analytics**
+
+Supported asset classes include:
+
+* Bitcoin
+* REITs (Fundos Imobiliários)
+* Shares
+* ETFs
+* Government bonds
+* ISAs
+
+The system must be flexible so that **new asset classes can be added in the future**.
+
+---
+
+# Behaviour
+
+Whenever new `.md` files are created, they must be stored in:
+
+Financial/dev-util/prompt/md/
+
+Follow the behaviour rules defined in:
+
+Financial/dev-util/prompt/behaviour.md
+
+---
+
+# Architecture
+
+The architectural rules for this project are defined in:
+
+Financial/dev-util/prompt/architecture.md
+
+Before implementing any code changes, read this file and follow its rules.
+
+These rules define:
+
+* the system layers
+* dependency direction
+* where business logic must live
+* repository and infrastructure responsibilities
+
+The architecture rules must **never be violated**.
+
+If a requested change would break these rules, stop and ask the developer before proceeding.
+
+---
+
+# Development Role
+
+Development rules and C# coding conventions are defined in:
+
+Financial/dev-util/prompt/csharp.md
+
+Always follow those guidelines when writing or modifying code.
+
+---
+
+# Codebase Analyzer
+
+The system must maintain a persistent understanding of the codebase.
+
+Check if the file exists:
+
+Financial/dev-util/prompt/md/discovery-findings.md
+
+If the file exists:
+
+* Read its contents
+* Incorporate the information into the current context
+
+If the file does not exist:
+
+* Execute the process defined in
+
+Financial/dev-util/prompt/codebase-analyzer-agent.md
+
+* Generate the discovery findings
+* Save them to:
+
+Financial/dev-util/prompt/md/discovery-findings.md
+
+---
+
+# Agents
+
+This project uses specialized agents to assist development.
+
+The following agents are available:
+
+Task Planner  
+Responsible for transforming tasks into step-by-step implementation plans.
+
+See:
+Financial/dev-util/prompt/task-planner-agent.md
+
+Codebase Analyzer  
+Responsible for discovering patterns and conventions in the codebase.
+
+See:
+Financial/dev-util/prompt/codebase-analyzer-agent.md
+
+Code Review Agent  
+Responsible for reviewing generated code to ensure quality and architecture compliance.
+
+See:
+Financial/dev-util/prompt/code-review-agent.md
+
+---
+
+# Agent Usage Rules
+
+Each agent has a **clear trigger and purpose**:
+
+1. **Codebase Analyzer**
+   - Trigger: Only run if `discovery-findings.md` does not exist or is outdated.
+   - Action: Analyze the codebase and generate discovery-findings.md.
+   - Output: Provides architecture, patterns, and conventions for context.
+
+2. **Task Planner**
+   - Trigger: Always run before implementing a new task.
+   - Action: Convert the current task into a **step-by-step plan**.
+   - Output: Atomic steps for safe execution.
+
+3. **Code Review Agent**
+   - Trigger: Always run **after executing a plan step**.
+   - Action: Review all code changes for:
+       - Architecture compliance
+       - Pattern consistency
+       - Quality and maintainability
+   - Output: Approve or request changes before proceeding.
+
+---
 
 # Workflow
 
-1 - Start by follow what is on the Code analyzer section
-2 - Follow the task.md to know what need to be done
-3 - Keep a self record of which tasks has been completed and relevant information as this project it will use many sessions
+Always follow this workflow order:
+
+1. Run the Codebase Analyzer if discovery findings do not exist.
+2. Read the architecture guidelines.
+3. Read the current Financial/dev-util/prompt/task.md definition.
+4. Use the Task Planner agent to create an implementation plan.
+5. Execute the plan step by step.
+6. Use the Code Review agent to review changes.
+7. Record progress in the task log, and store at the Financial/dev-util/prompt/md/task-progress.md

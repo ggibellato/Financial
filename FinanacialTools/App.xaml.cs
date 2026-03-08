@@ -23,7 +23,7 @@ namespace SharesDividendCheck
                 {
                     // Register Infrastructure services
                     services.AddSingleton<IRepository>(_ =>
-                        new JSONRepository(context.Configuration[JSONRepository.DataJsonPathConfigurationKey]));
+                        new LocalJSONRepository(context.Configuration[LocalJSONRepository.DataJsonPathConfigurationKey]));
                     services.AddSingleton<INavigationService, NavigationService>();
 
                     // Register ViewModels
@@ -44,7 +44,7 @@ namespace SharesDividendCheck
             catch (FileNotFoundException ex)
             {
                 MessageBox.Show(
-                    $"{ex.Message}\n\nSet '{JSONRepository.DataJsonPathConfigurationKey}' or place '{JSONRepository.DefaultDataFileName}' in the application directory.",
+                    $"{ex.Message}\n\nSet '{LocalJSONRepository.DataJsonPathConfigurationKey}' or place '{LocalJSONRepository.DefaultDataFileName}' in the application directory.",
                     "Missing data file",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);

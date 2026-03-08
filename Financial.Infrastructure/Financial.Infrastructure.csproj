@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Financial.Application\Financial.Application.csproj" />
     <ProjectReference Include="..\FinancialModel\Financial.Model.csproj" />
+    <ProjectReference Include="..\GoogleFinancialSupport\GoogleFinancialSupport.csproj" />
   </ItemGroup>
 
 </Project>

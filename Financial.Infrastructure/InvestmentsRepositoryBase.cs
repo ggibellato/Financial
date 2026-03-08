@@ -1,30 +1,19 @@
-﻿using Financial.Application.DTO;
+using Financial.Application.DTO;
 using Financial.Model;
 using FinancialModel.Application;
 using System;
-using System.Runtime.CompilerServices;
-using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 
-[assembly: InternalsVisibleTo("Financial.Infrastructure.Tests")]
 namespace FinancialModel.Infrastructure;
 
-public class JSONRepository : IRepository
+public abstract class InvestmentsRepositoryBase : IRepository
 {
+    protected Investments _investiments;
 
-    public const string DataJsonPathConfigurationKey = "DataJsonPath";
-    public const string DefaultDataFileName = "data.json";
-
-    private Investments _investiments;
-    private readonly string _dataFilePath;
-
-    public JSONRepository() : this(null)
+    protected InvestmentsRepositoryBase(Investments investiments)
     {
-    }
-
-    public JSONRepository(string? dataFilePath)
-    {
-        _dataFilePath = ResolveDataFilePath(dataFilePath);
-        _investiments = LoadModel(_dataFilePath);
+        _investiments = investiments ?? throw new ArgumentNullException(nameof(investiments));
     }
 
     public List<string> GetAllAssetsFullName()
@@ -53,7 +42,6 @@ public class JSONRepository : IRepository
         return _investiments.Brokers.Where(b => b.Name == broker)
             .SelectMany(b => b.Portifolios.Where(p => p.Name == protifolio).SelectMany(p => p.Assets));
     }
-
 
     public IEnumerable<Asset> GetAssetsByPortifolio(string name)
     {
@@ -85,7 +73,6 @@ public class JSONRepository : IRepository
         ret.PortifiliosInactive = GetPortifolioAssetsByBroker(brokerName, false);
         return ret;
     }
-
 
     public AssetInfoDTO GetAssetInfo(string brokerName, string portifolio, string assetName)
     {
@@ -133,7 +120,7 @@ public class JSONRepository : IRepository
             .Sum(o => o.TotalPrice);
     }
 
-    private  CreditInfoDTO GetTotalCreditsByBroker(string brokerName, bool active)
+    private CreditInfoDTO GetTotalCreditsByBroker(string brokerName, bool active)
     {
         var creditsInfo = new CreditInfoDTO();
         var credits = _investiments.Brokers.Where(b => b.Name == brokerName)
@@ -149,52 +136,19 @@ public class JSONRepository : IRepository
     {
         var ret = new List<PortifolioDTO>();
         var broker = _investiments.Brokers.Where(b => b.Name == brokerName).First();
-        foreach(var p in broker.Portifolios)
+        foreach (var p in broker.Portifolios)
         {
             var assets = p.Assets.Where(a => a.Active == active);
-            if(assets.Any())
+            if (assets.Any())
             {
                 var pDTO = new PortifolioDTO
                 {
-                    Name = p.Name, 
+                    Name = p.Name,
                     Assets = assets.Select(a => a.Name).ToList()
                 };
                 ret.Add(pDTO);
             }
         }
         return ret;
-    }
-
-
-    private static string ResolveDataFilePath(string? dataFilePath)
-    {
-        var resolvedPath = string.IsNullOrWhiteSpace(dataFilePath)
-            ? Path.Combine(AppContext.BaseDirectory, DefaultDataFileName)
-            : dataFilePath;
-
-        if (Directory.Exists(resolvedPath))
-        {
-            resolvedPath = Path.Combine(resolvedPath, DefaultDataFileName);
-        }
-
-        if (!Path.IsPathRooted(resolvedPath))
-        {
-            resolvedPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, resolvedPath));
-        }
-
-        return resolvedPath;
-    }
-
-    private static Investments LoadModel(string dataFilePath)
-    {
-        if (!File.Exists(dataFilePath))
-        {
-            throw new FileNotFoundException(
-                $"Data file not found at '{dataFilePath}'. Configure '{DataJsonPathConfigurationKey}' or place '{DefaultDataFileName}' in the application directory.",
-                dataFilePath);
-        }
-
-        var modelJson = File.ReadAllText(dataFilePath);
-        return Investments.Deserialize(modelJson);
     }
 }

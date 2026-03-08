@@ -7,7 +7,7 @@ namespace Financial.Infrastructure.Tests;
 
 public class NavigationServiceTests
 {
-    private readonly IRepository _repository = new JSONRepository(TestDataPaths.DataJsonPath);
+    private readonly IRepository _repository = new LocalJSONRepository(TestDataPaths.DataJsonPath);
     private readonly NavigationService _sut;
 
     public NavigationServiceTests()
