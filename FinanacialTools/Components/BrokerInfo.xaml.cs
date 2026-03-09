@@ -31,10 +31,10 @@ namespace FinanacialTools
             {"BRL", "BR"}
         };
 
-        public class PortifolioOption
+        public class PortfolioOption
         {
             public required string Group { get; set; }
-            public required string PortifolioName { get; set; }
+            public required string PortfolioName { get; set; }
             public required string AssetName { get; set; }
         }
 
@@ -67,10 +67,10 @@ namespace FinanacialTools
 
         private void AssetInfo_ButtonClicked(object sender, System.EventArgs e)
         {
-            if (AssetInfo.txtPortifolioAssets.SelectedItem is not null)
+            if (AssetInfo.txtPortfolioAssets.SelectedItem is not null)
             {
-                var selected = (PortifolioOption)AssetInfo.txtPortifolioAssets.SelectedItem;
-                var assetInfo = _repository.GetAssetInfo(_broker.Name, selected.PortifolioName, selected.AssetName);
+                var selected = (PortfolioOption)AssetInfo.txtPortfolioAssets.SelectedItem;
+                var assetInfo = _repository.GetAssetInfo(_broker.Name, selected.PortfolioName, selected.AssetName);
                 assetInfo.CurrentValue = GoogleFinance.GetFinancialInfo(assetInfo.Exchange, assetInfo.Ticker).Price;
                 AssetInfo.LoadData(assetInfo, _broker.Currency);
 

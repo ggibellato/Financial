@@ -11,13 +11,13 @@ public class Broker
     [JsonInclude]
     public string Currency { get; private set; }
 
-    private List<Portifolio> _portifolios = new List<Portifolio>();
+    private List<Portfolio> _portfolios = new List<Portfolio>();
     [JsonInclude]
-    public IReadOnlyCollection<Portifolio> Portifolios { get => _portifolios.AsReadOnly(); set => SetPortifolios(value); }
-    private void SetPortifolios(IReadOnlyCollection<Portifolio> data)
+    public IReadOnlyCollection<Portfolio> Portfolios { get => _portfolios.AsReadOnly(); set => SetPortfolios(value); }
+    private void SetPortfolios(IReadOnlyCollection<Portfolio> data)
     {
-        _portifolios.Clear();
-        _portifolios.AddRange(data);
+        _portfolios.Clear();
+        _portfolios.AddRange(data);
     }
 
 
@@ -32,14 +32,14 @@ public class Broker
 
     public static Broker Create(string name, string currency) => new(name, currency);
 
-    public Portifolio AddPortifolio(string name)
+    public Portfolio AddPortfolio(string name)
     {
-        var portifolio = Portifolios.FirstOrDefault(p => p.Name == name);
-        if (portifolio is null)
+        var portfolio = Portfolios.FirstOrDefault(p => p.Name == name);
+        if (portfolio is null)
         {
-            portifolio = Portifolio.Create(name);
-            _portifolios.Add(portifolio);
+            portfolio = Portfolio.Create(name);
+            _portfolios.Add(portfolio);
         }
-        return portifolio;
+        return portfolio;
     }
 }

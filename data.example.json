@@ -3,7 +3,7 @@
     {
       "Name": "Sample Broker",
       "Currency": "BRL",
-      "Portifolios": [
+      "Portfolios": [
         {
           "Name": "Default",
           "Assets": [

@@ -34,24 +34,24 @@ namespace FinanacialTools.Components
 
         internal void LoadAssets(BrokerInfoDTO brokerInfo)
         {
-            List<PortifolioOption> options = new List<PortifolioOption>();
-            foreach (var portifolio in brokerInfo.PortifiliosActive)
+            List<PortfolioOption> options = new List<PortfolioOption>();
+            foreach (var portfolio in brokerInfo.PortfoliosActive)
             {
-                foreach (var asset in portifolio.Assets)
+                foreach (var asset in portfolio.Assets)
                 {
-                    options.Add(new PortifolioOption { Group = "Active", PortifolioName = portifolio.Name, AssetName = asset });
+                    options.Add(new PortfolioOption { Group = "Active", PortfolioName = portfolio.Name, AssetName = asset });
                 }
             }
-            foreach (var portifolio in brokerInfo.PortifiliosInactive)
+            foreach (var portfolio in brokerInfo.PortfoliosInactive)
             {
-                foreach (var asset in portifolio.Assets)
+                foreach (var asset in portfolio.Assets)
                 {
-                    options.Add(new PortifolioOption { Group = "Inactive", PortifolioName = portifolio.Name, AssetName = asset });
+                    options.Add(new PortfolioOption { Group = "Inactive", PortfolioName = portfolio.Name, AssetName = asset });
                 }
             }
             var groupedOptions = new ListCollectionView(options);
             groupedOptions.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
-            txtPortifolioAssets.ItemsSource = groupedOptions;
+            txtPortfolioAssets.ItemsSource = groupedOptions;
         }
 
         private void btnLoadAsset_Click(object sender, RoutedEventArgs e)

@@ -143,8 +143,8 @@ namespace SharesDividendCheck
 
             try
             {
-                var assets = _repository.GetAssetsByBrokerPortifolio("XPI", "Default").ToList();
-                var acoes = _repository.GetAssetsByBrokerPortifolio("XPI", "Acoes");
+                var assets = _repository.GetAssetsByBrokerPortfolio("XPI", "Default").ToList();
+                var acoes = _repository.GetAssetsByBrokerPortfolio("XPI", "Acoes");
                 assets.AddRange(acoes);
 
                 var list = new List<AssetValue>();

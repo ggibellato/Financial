@@ -30,9 +30,9 @@ public class LocalJSONRepositoryTests
     [InlineData("", 0)]
     [InlineData("NOTEXIST", 0)]
     [InlineData("Default", 1)]
-    public void GetAssets_By_PortifolioTest(string name, int records)
+    public void GetAssets_By_PortfolioTest(string name, int records)
     {
-        var result = _sut.GetAssetsByPortifolio(name);
+        var result = _sut.GetAssetsByPortfolio(name);
         result.Should().HaveCount(records);
     }
 

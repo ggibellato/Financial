@@ -24,7 +24,7 @@ public class GoogleGenerator : IGenerator
         "Opcoes"
     };
 
-    public Dictionary<string, string> PortifolioName = new Dictionary<string, string>() {
+    public Dictionary<string, string> PortfolioName = new Dictionary<string, string>() {
         {"Trading 212_76a5af", "Fantastic Five Divid" },
         {"Trading 212_ffd966", "Almost Daily Dividen" },
         {"XPI_f4cccc", "Gold" },
@@ -88,13 +88,13 @@ public class GoogleGenerator : IGenerator
                 sheetCount++;
                 progress?.Report($"[{fileName}] Processing sheet {sheetCount}/{totalSheets}: {spreadsheet.Name}");
 
-                var portifolioName = string.IsNullOrWhiteSpace(spreadsheet.Color) ? "Default" : spreadsheet.Color;
-                if (PortifolioName.TryGetValue($"{fileName}_{portifolioName}", out string name))
+                var portfolioName = string.IsNullOrWhiteSpace(spreadsheet.Color) ? "Default" : spreadsheet.Color;
+                if (PortfolioName.TryGetValue($"{fileName}_{portfolioName}", out string name))
                 {
-                    portifolioName = name;
+                    portfolioName = name;
                 }
 
-                var potifolio = exchange.AddPortifolio(portifolioName);
+                var portfolio = exchange.AddPortfolio(portfolioName);
 
 
                 var isin = "";
@@ -120,7 +120,7 @@ public class GoogleGenerator : IGenerator
 
 
                 var asset = Asset.Create(spreadsheet.Name, isin, exchangeId, ticker);
-                potifolio.AddAsset(asset);
+                portfolio.AddAsset(asset);
 
                 asset.AddOperations(await CreateOperationsAsync(file.Id, spreadsheet.Name));
                 

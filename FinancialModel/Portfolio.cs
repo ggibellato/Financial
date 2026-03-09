@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Financial.Model;
 
-public class Portifolio
+public class Portfolio
 {
     [JsonInclude]
     public string Name { get; private set; }
@@ -18,16 +18,16 @@ public class Portifolio
     }
 
     [JsonConstructor]
-    private Portifolio()
+    private Portfolio()
     {
     }
 
-    private Portifolio(string name) : this()
+    private Portfolio(string name) : this()
     {
         Name = name;
     }
 
-    internal static Portifolio Create(string name) => new Portifolio(name);
+    internal static Portfolio Create(string name) => new Portfolio(name);
 
     public void AddAsset(Asset asset)
     {

@@ -103,7 +103,7 @@ public class NavigationService : INavigationService
             return null;
         }
 
-        var assets = _repository.GetAssetsByBrokerPortifolio(brokerName, portfolioName);
+        var assets = _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName);
         var asset = assets.FirstOrDefault(a => a.Name == assetName);
 
         if (asset == null)
@@ -171,9 +171,9 @@ public class NavigationService : INavigationService
         {
             Name = broker.Name,
             Currency = broker.Currency,
-            PortfolioCount = broker.Portifolios.Count,
-            TotalAssets = broker.Portifolios.Sum(p => p.Assets.Count),
-            Portfolios = broker.Portifolios.Select(portfolio => new PortfolioNodeDTO
+            PortfolioCount = broker.Portfolios.Count,
+            TotalAssets = broker.Portfolios.Sum(p => p.Assets.Count),
+            Portfolios = broker.Portfolios.Select(portfolio => new PortfolioNodeDTO
             {
                 Name = portfolio.Name,
                 AssetCount = portfolio.Assets.Count,

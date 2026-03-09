@@ -21,7 +21,7 @@ public abstract class InvestmentsRepositoryBase : IRepository
         var result = new List<string>();
         _investiments.Brokers.ToList().ForEach(b =>
         {
-            b.Portifolios.ToList().ForEach(p =>
+            b.Portfolios.ToList().ForEach(p =>
             {
                 p.Assets.ToList().ForEach(a =>
                 {
@@ -34,23 +34,23 @@ public abstract class InvestmentsRepositoryBase : IRepository
 
     public IEnumerable<Asset> GetAssetsByBroker(string name)
     {
-        return _investiments.Brokers.Where(b => b.Name == name).SelectMany(b => b.Portifolios.SelectMany(p => p.Assets));
+        return _investiments.Brokers.Where(b => b.Name == name).SelectMany(b => b.Portfolios.SelectMany(p => p.Assets));
     }
 
-    public IEnumerable<Asset> GetAssetsByBrokerPortifolio(string broker, string protifolio)
+    public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio)
     {
         return _investiments.Brokers.Where(b => b.Name == broker)
-            .SelectMany(b => b.Portifolios.Where(p => p.Name == protifolio).SelectMany(p => p.Assets));
+            .SelectMany(b => b.Portfolios.Where(p => p.Name == portfolio).SelectMany(p => p.Assets));
     }
 
-    public IEnumerable<Asset> GetAssetsByPortifolio(string name)
+    public IEnumerable<Asset> GetAssetsByPortfolio(string name)
     {
-        return _investiments.Brokers.SelectMany(b => b.Portifolios.Where(p => p.Name == name).SelectMany(p => p.Assets));
+        return _investiments.Brokers.SelectMany(b => b.Portfolios.Where(p => p.Name == name).SelectMany(p => p.Assets));
     }
 
     public IEnumerable<Asset> GetAssetsByAssetName(string name)
     {
-        return _investiments.Brokers.SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Name == name)));
+        return _investiments.Brokers.SelectMany(b => b.Portfolios.SelectMany(p => p.Assets.Where(a => a.Name == name)));
     }
 
     public IEnumerable<Broker> GetBrokerList()
@@ -69,17 +69,17 @@ public abstract class InvestmentsRepositoryBase : IRepository
         ret.TotalSoldActive = GetTotalSoldByBroker(brokerName, true);
         ret.TotalCreditsActive = GetTotalCreditsByBroker(brokerName, true);
 
-        ret.PortifiliosActive = GetPortifolioAssetsByBroker(brokerName, true);
-        ret.PortifiliosInactive = GetPortifolioAssetsByBroker(brokerName, false);
+        ret.PortfoliosActive = GetPortfolioAssetsByBroker(brokerName, true);
+        ret.PortfoliosInactive = GetPortfolioAssetsByBroker(brokerName, false);
         return ret;
     }
 
-    public AssetInfoDTO GetAssetInfo(string brokerName, string portifolio, string assetName)
+    public AssetInfoDTO GetAssetInfo(string brokerName, string portfolio, string assetName)
     {
         var ret = new AssetInfoDTO();
         var asset = _investiments.Brokers
             .First(b => b.Name == brokerName)
-            .Portifolios.First(p => p.Name == portifolio)
+            .Portfolios.First(p => p.Name == portfolio)
             .Assets.First(a => a.Name == assetName);
 
         ret.Exchange = asset.Exchange;
@@ -107,7 +107,7 @@ public abstract class InvestmentsRepositoryBase : IRepository
     private decimal GetTotalBoughtByBroker(string brokerName, bool active)
     {
         return _investiments.Brokers.Where(b => b.Name == brokerName)
-            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Operations)))
+            .SelectMany(b => b.Portfolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Operations)))
             .Where(o => o.Type == Operation.OperationType.Buy)
             .Sum(o => o.TotalPrice);
     }
@@ -115,7 +115,7 @@ public abstract class InvestmentsRepositoryBase : IRepository
     private decimal GetTotalSoldByBroker(string brokerName, bool active)
     {
         return _investiments.Brokers.Where(b => b.Name == brokerName)
-            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Operations)))
+            .SelectMany(b => b.Portfolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Operations)))
             .Where(o => o.Type == Operation.OperationType.Sell)
             .Sum(o => o.TotalPrice);
     }
@@ -124,7 +124,7 @@ public abstract class InvestmentsRepositoryBase : IRepository
     {
         var creditsInfo = new CreditInfoDTO();
         var credits = _investiments.Brokers.Where(b => b.Name == brokerName)
-            .SelectMany(b => b.Portifolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Credits)));
+            .SelectMany(b => b.Portfolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Credits)));
         creditsInfo.Total = credits.Sum(o => o.Value);
         creditsInfo.CreditsByMonth = credits
             .GroupBy(c => new DateOnly(c.Date.Year, c.Date.Month, 1))
@@ -132,16 +132,16 @@ public abstract class InvestmentsRepositoryBase : IRepository
         return creditsInfo;
     }
 
-    private List<PortifolioDTO> GetPortifolioAssetsByBroker(string brokerName, bool active)
+    private List<PortfolioDTO> GetPortfolioAssetsByBroker(string brokerName, bool active)
     {
-        var ret = new List<PortifolioDTO>();
+        var ret = new List<PortfolioDTO>();
         var broker = _investiments.Brokers.Where(b => b.Name == brokerName).First();
-        foreach (var p in broker.Portifolios)
+        foreach (var p in broker.Portfolios)
         {
             var assets = p.Assets.Where(a => a.Active == active);
             if (assets.Any())
             {
-                var pDTO = new PortifolioDTO
+                var pDTO = new PortfolioDTO
                 {
                     Name = p.Name,
                     Assets = assets.Select(a => a.Name).ToList()
