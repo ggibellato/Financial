@@ -33,7 +33,7 @@ public partial class App : Application
 
                     var options = new RepositorySelectionOptions(
                         provider,
-                        context.Configuration[LocalJSONRepository.DataJsonPathConfigurationKey],
+                        context.Configuration[LocalJSONRepository.DataJsonFileConfigurationKey],
                         context.Configuration[GoogleDriveJSONRepository.CredentialsPathConfigurationKey],
                         context.Configuration[GoogleDriveJSONRepository.FilePathConfigurationKey]);
 

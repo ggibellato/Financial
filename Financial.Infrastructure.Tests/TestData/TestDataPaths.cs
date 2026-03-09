@@ -5,6 +5,6 @@ namespace Financial.Infrastructure.Tests;
 
 internal static class TestDataPaths
 {
-    public static string DataJsonPath =>
+    public static string DataJsonFile =>
         Path.Combine(AppContext.BaseDirectory, "TestData", "data.test.json");
 }

@@ -37,7 +37,7 @@ namespace SharesDividendCheck
 
                         var options = new RepositorySelectionOptions(
                             provider,
-                            context.Configuration[LocalJSONRepository.DataJsonPathConfigurationKey],
+                            context.Configuration[LocalJSONRepository.DataJsonFileConfigurationKey],
                             context.Configuration[GoogleDriveJSONRepository.CredentialsPathConfigurationKey],
                             context.Configuration[GoogleDriveJSONRepository.FilePathConfigurationKey]);
 
@@ -64,7 +64,7 @@ namespace SharesDividendCheck
             catch (FileNotFoundException ex)
             {
                 MessageBox.Show(
-                    $"{ex.Message}\n\nSet '{LocalJSONRepository.DataJsonPathConfigurationKey}' or place '{LocalJSONRepository.DefaultDataFileName}' in the application directory.",
+                    $"{ex.Message}\n\nSet '{LocalJSONRepository.DataJsonFileConfigurationKey}' or place '{LocalJSONRepository.DefaultDataFileName}' in the application directory.",
                     "Missing data file",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);

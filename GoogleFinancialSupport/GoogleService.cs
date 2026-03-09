@@ -18,6 +18,7 @@ public class GoogleService
 {
     static readonly string[] Scopes1 = { SheetsService.Scope.Spreadsheets };
     static readonly string[] Scopes2 = { DriveService.Scope.DriveReadonly };
+    private const string DefaultDataFileName = "data.json";
     public string FileName { get; }
 
     public GoogleService(string fileName)
@@ -112,13 +113,7 @@ public class GoogleService
         for (int i = 0; i < segments.Length; i++)
         {
             var segment = segments[i];
-            var listRequest = service.Files.List();
-            listRequest.PageSize = 2;
-            listRequest.Fields = "files(id, name, mimeType)";
-            listRequest.Q = $"name = '{EscapeDriveQuery(segment)}' and '{parentId}' in parents and trashed = false";
-
-            var result = listRequest.Execute();
-            var file = result.Files.FirstOrDefault();
+            var file = FindFileByName(service, parentId, segment);
             if (file == null)
             {
                 throw new FileNotFoundException($"Drive path segment '{segment}' not found in '{drivePath}'.");
@@ -135,6 +130,18 @@ public class GoogleService
                 continue;
             }
 
+            if (file.MimeType == "application/vnd.google-apps.folder")
+            {
+                parentId = file.Id;
+                var dataFile = FindFileByName(service, parentId, DefaultDataFileName);
+                if (dataFile == null)
+                {
+                    throw new FileNotFoundException(
+                        $"Drive path '{drivePath}' points to a folder. '{DefaultDataFileName}' was not found inside it.");
+                }
+                return dataFile.Id;
+            }
+
             return file.Id;
         }
 
@@ -144,6 +151,17 @@ public class GoogleService
     private static string EscapeDriveQuery(string value)
     {
         return value.Replace("'", "\\'");
+    }
+
+    private static Google.Apis.Drive.v3.Data.File? FindFileByName(DriveService service, string parentId, string name)
+    {
+        var listRequest = service.Files.List();
+        listRequest.PageSize = 2;
+        listRequest.Fields = "files(id, name, mimeType)";
+        listRequest.Q = $"name = '{EscapeDriveQuery(name)}' and '{parentId}' in parents and trashed = false";
+
+        var result = listRequest.Execute();
+        return result.Files.FirstOrDefault();
     }
 
     private DriveService GetDriveService()

@@ -9,7 +9,7 @@ public class GoogleDriveJSONRepository : InvestmentsRepositoryBase
 {
     public const string CredentialsPathConfigurationKey = "GoogleDrive:CredentialsPath";
     public const string FilePathConfigurationKey = "GoogleDrive:FilePath";
-    public const string DefaultDriveFilePath = "Pessoais/Gleison/Financeiros/data.json";
+    public const string DefaultDriveFilePath = "Pessoais/Gleison/Financeiros";
 
     private readonly string _credentialsPath;
     private readonly string _driveFilePath;

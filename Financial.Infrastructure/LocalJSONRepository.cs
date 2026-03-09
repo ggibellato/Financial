@@ -9,7 +9,7 @@ namespace FinancialModel.Infrastructure;
 public class LocalJSONRepository : InvestmentsRepositoryBase
 {
 
-    public const string DataJsonPathConfigurationKey = "DataJsonPath";
+    public const string DataJsonFileConfigurationKey = "DataJsonFile";
     public const string DefaultDataFileName = "data.json";
 
     private readonly string _dataFilePath;
@@ -54,7 +54,7 @@ public class LocalJSONRepository : InvestmentsRepositoryBase
         if (!File.Exists(dataFilePath))
         {
             throw new FileNotFoundException(
-                $"Data file not found at '{dataFilePath}'. Configure '{DataJsonPathConfigurationKey}' or place '{DefaultDataFileName}' in the application directory.",
+                $"Data file not found at '{dataFilePath}'. Configure '{DataJsonFileConfigurationKey}' or place '{DefaultDataFileName}' in the application directory.",
                 dataFilePath);
         }
 

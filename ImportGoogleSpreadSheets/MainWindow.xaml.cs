@@ -101,10 +101,14 @@ public partial class MainWindow : Window
             SetUIBusy(true, "Connecting to Google Drive...");
             
             var files = await _service.GetFilesNameAsync();
+            var filteredFiles = files
+                .Where(f => !string.Equals(f.Name, "data.json", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
             Files.Clear();
-            files.ForEach(f => { Files.Add(new FilesInfo { Id = f.Id, Name = f.Name, IsSelected = false}); });
+            filteredFiles.ForEach(f => { Files.Add(new FilesInfo { Id = f.Id, Name = f.Name, IsSelected = false}); });
             
-            UpdateStatus($"Connected! Found {files.Count} files.", "Ready to generate data");
+            UpdateStatus($"Connected! Found {filteredFiles.Count} files.", "Ready to generate data");
         }
         catch (Exception ex)
         {

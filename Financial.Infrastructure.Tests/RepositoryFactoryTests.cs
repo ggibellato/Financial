@@ -12,7 +12,7 @@ public class RepositoryFactoryTests
     {
         var options = new RepositorySelectionOptions(
             RepositoryProvider.LocalJson,
-            TestDataPaths.DataJsonPath,
+            TestDataPaths.DataJsonFile,
             null,
             null);
 
@@ -30,7 +30,7 @@ public class RepositoryFactoryTests
             RepositoryProvider.GoogleDriveJson,
             null,
             null,
-            "Pessoais/Gleison/Financeiros/data.json");
+            "Pessoais/Gleison/Financeiros");
 
         var factory = new RepositoryFactory();
 

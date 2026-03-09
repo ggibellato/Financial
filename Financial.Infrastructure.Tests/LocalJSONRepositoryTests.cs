@@ -5,7 +5,7 @@ namespace Financial.Infrastructure.Tests;
 
 public class LocalJSONRepositoryTests
 {
-    private readonly LocalJSONRepository _sut = new LocalJSONRepository(TestDataPaths.DataJsonPath);
+    private readonly LocalJSONRepository _sut = new LocalJSONRepository(TestDataPaths.DataJsonFile);
 
     [Fact]
     public void GetAllAssetsFullName_ShouldReturn_Values()
