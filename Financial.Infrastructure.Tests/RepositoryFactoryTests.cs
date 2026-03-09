@@ -8,7 +8,7 @@ namespace Financial.Infrastructure.Tests;
 public class RepositoryFactoryTests
 {
     [Fact]
-    public void Create_WithLocalJsonProvider_ReturnsLocalRepository()
+    public void Create_WithLocalJsonProvider_ReturnsJsonRepository()
     {
         var options = new RepositorySelectionOptions(
             RepositoryProvider.LocalJson,
@@ -20,7 +20,7 @@ public class RepositoryFactoryTests
 
         var result = factory.Create(options);
 
-        result.Should().BeOfType<LocalJSONRepository>();
+        result.Should().BeOfType<JSONRepository>();
     }
 
     [Fact]

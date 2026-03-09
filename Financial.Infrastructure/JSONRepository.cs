@@ -7,13 +7,15 @@ using System.Linq;
 
 namespace FinancialModel.Infrastructure;
 
-public abstract class InvestmentsRepositoryBase : IRepository
+public sealed class JSONRepository : IRepository
 {
-    protected Investments _investiments;
+    private readonly IJsonStorage _storage;
+    private readonly Investments _investiments;
 
-    protected InvestmentsRepositoryBase(Investments investiments)
+    public JSONRepository(IJsonStorage storage)
     {
-        _investiments = investiments ?? throw new ArgumentNullException(nameof(investiments));
+        _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+        _investiments = LoadInvestments(_storage);
     }
 
     public List<string> GetAllAssetsFullName()
@@ -34,7 +36,8 @@ public abstract class InvestmentsRepositoryBase : IRepository
 
     public IEnumerable<Asset> GetAssetsByBroker(string name)
     {
-        return _investiments.Brokers.Where(b => b.Name == name).SelectMany(b => b.Portfolios.SelectMany(p => p.Assets));
+        return _investiments.Brokers.Where(b => b.Name == name)
+            .SelectMany(b => b.Portfolios.SelectMany(p => p.Assets));
     }
 
     public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio)
@@ -45,12 +48,14 @@ public abstract class InvestmentsRepositoryBase : IRepository
 
     public IEnumerable<Asset> GetAssetsByPortfolio(string name)
     {
-        return _investiments.Brokers.SelectMany(b => b.Portfolios.Where(p => p.Name == name).SelectMany(p => p.Assets));
+        return _investiments.Brokers
+            .SelectMany(b => b.Portfolios.Where(p => p.Name == name).SelectMany(p => p.Assets));
     }
 
     public IEnumerable<Asset> GetAssetsByAssetName(string name)
     {
-        return _investiments.Brokers.SelectMany(b => b.Portfolios.SelectMany(p => p.Assets.Where(a => a.Name == name)));
+        return _investiments.Brokers
+            .SelectMany(b => b.Portfolios.SelectMany(p => p.Assets.Where(a => a.Name == name)));
     }
 
     public IEnumerable<Broker> GetBrokerList()
@@ -102,6 +107,16 @@ public abstract class InvestmentsRepositoryBase : IRepository
             ret.InvestedHistory[key] = currentVlw;
         }
         return ret;
+    }
+
+    private static Investments LoadInvestments(IJsonStorage storage)
+    {
+        var json = storage.ReadAsync()
+            .ConfigureAwait(false)
+            .GetAwaiter()
+            .GetResult();
+
+        return Investments.Deserialize(json);
     }
 
     private decimal GetTotalBoughtByBroker(string brokerName, bool active)

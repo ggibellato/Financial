@@ -2,6 +2,7 @@
 using Google.Apis.Drive.v3;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
+using Google.Apis.Upload;
 using GoogleFinancialSupport.DTO;
 using System.Collections.Generic;
 using System.IO;
@@ -11,6 +12,7 @@ using System;
 using Google;
 using System.Net;
 using System.Linq;
+using System.Text;
 
 namespace GoogleFinancialSupport;
 
@@ -18,6 +20,7 @@ public class GoogleService
 {
     static readonly string[] Scopes1 = { SheetsService.Scope.Spreadsheets };
     static readonly string[] Scopes2 = { DriveService.Scope.DriveReadonly };
+    static readonly string[] Scopes3 = { DriveService.Scope.Drive };
     private const string DefaultDataFileName = "data.json";
     private const string FolderMimeType = "application/vnd.google-apps.folder";
     private const string ShortcutMimeType = "application/vnd.google-apps.shortcut";
@@ -103,6 +106,29 @@ public class GoogleService
         return reader.ReadToEnd();
     }
 
+    public void UploadFileContent(string drivePath, string content)
+    {
+        if (string.IsNullOrWhiteSpace(drivePath))
+        {
+            throw new ArgumentException("Drive path must be provided.", nameof(drivePath));
+        }
+
+        var service = GetDriveServiceWithWriteAccess();
+        var fileId = ResolveFileId(service, drivePath);
+
+        var payload = Encoding.UTF8.GetBytes(content ?? string.Empty);
+        using var stream = new MemoryStream(payload);
+        var fileMetadata = new Google.Apis.Drive.v3.Data.File();
+        var request = service.Files.Update(fileMetadata, fileId, stream, "application/json");
+        var result = request.Upload();
+        if (result.Status != UploadStatus.Completed)
+        {
+            throw new InvalidOperationException(
+                $"Failed to upload file to '{drivePath}' (status: {result.Status}).",
+                result.Exception);
+        }
+    }
+
     private static string ResolveFileId(DriveService service, string drivePath)
     {
         var segments = drivePath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
@@ -157,12 +183,22 @@ public class GoogleService
 
     private DriveService GetDriveService()
     {
+        return CreateDriveService(Scopes2);
+    }
+
+    private DriveService GetDriveServiceWithWriteAccess()
+    {
+        return CreateDriveService(Scopes3);
+    }
+
+    private DriveService CreateDriveService(string[] scopes)
+    {
         GoogleCredential credential;
         //Reading Credentials File...
         using (var stream = new FileStream(FileName, FileMode.Open, FileAccess.Read))
         {
             credential = GoogleCredential.FromStream(stream)
-                .CreateScoped(Scopes2);
+                .CreateScoped(scopes);
         }
         // Creating Google Sheets API service...
         return new DriveService(new BaseClientService.Initializer()

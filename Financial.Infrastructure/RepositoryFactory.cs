@@ -14,8 +14,8 @@ public sealed class RepositoryFactory : IRepositoryFactory
 
         return options.Provider switch
         {
-            RepositoryProvider.LocalJson => new LocalJSONRepository(options.LocalDataPath),
-            RepositoryProvider.GoogleDriveJson => new GoogleDriveJSONRepository(options.GoogleDriveCredentialsPath, options.GoogleDriveFilePath),
+            RepositoryProvider.LocalJson => new JSONRepository(new LocalJsonStorage(options.LocalDataPath)),
+            RepositoryProvider.GoogleDriveJson => new JSONRepository(new GoogleDriveJsonStorage(options.GoogleDriveCredentialsPath, options.GoogleDriveFilePath)),
             _ => throw new ArgumentOutOfRangeException(nameof(options.Provider), options.Provider, "Unsupported repository provider.")
         };
     }

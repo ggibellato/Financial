@@ -1,11 +1,12 @@
-using Financial.Model;
+using FinancialModel.Application;
 using GoogleFinancialSupport;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace FinancialModel.Infrastructure;
 
-public class GoogleDriveJSONRepository : InvestmentsRepositoryBase
+public sealed class GoogleDriveJsonStorage : IJsonStorage
 {
     public const string CredentialsPathConfigurationKey = "GoogleDrive:CredentialsPath";
     public const string FilePathConfigurationKey = "GoogleDrive:FilePath";
@@ -14,21 +15,28 @@ public class GoogleDriveJSONRepository : InvestmentsRepositoryBase
     private readonly string _credentialsPath;
     private readonly string _driveFilePath;
 
-    public GoogleDriveJSONRepository(string? credentialsPath, string? driveFilePath)
-        : base(LoadModel(credentialsPath, driveFilePath, out var resolvedCredentials, out var resolvedDrivePath))
+    public GoogleDriveJsonStorage(string? credentialsPath, string? driveFilePath)
     {
-        _credentialsPath = resolvedCredentials;
-        _driveFilePath = resolvedDrivePath;
+        _credentialsPath = ResolveCredentialsPath(credentialsPath);
+        _driveFilePath = ResolveDriveFilePath(driveFilePath);
     }
 
-    private static Investments LoadModel(string? credentialsPath, string? driveFilePath, out string resolvedCredentials, out string resolvedDrivePath)
+    public Task<string> ReadAsync()
     {
-        resolvedCredentials = ResolveCredentialsPath(credentialsPath);
-        resolvedDrivePath = ResolveDriveFilePath(driveFilePath);
+        return Task.Run(() =>
+        {
+            var service = new GoogleService(_credentialsPath);
+            return service.DownloadFileContent(_driveFilePath);
+        });
+    }
 
-        var service = new GoogleService(resolvedCredentials);
-        var json = service.DownloadFileContent(resolvedDrivePath);
-        return Investments.Deserialize(json);
+    public Task WriteAsync(string json)
+    {
+        return Task.Run(() =>
+        {
+            var service = new GoogleService(_credentialsPath);
+            service.UploadFileContent(_driveFilePath, json);
+        });
     }
 
     private static string ResolveCredentialsPath(string? credentialsPath)

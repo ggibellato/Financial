@@ -33,9 +33,9 @@ public partial class App : Application
 
                     var options = new RepositorySelectionOptions(
                         provider,
-                        context.Configuration[LocalJSONRepository.DataJsonFileConfigurationKey],
-                        context.Configuration[GoogleDriveJSONRepository.CredentialsPathConfigurationKey],
-                        context.Configuration[GoogleDriveJSONRepository.FilePathConfigurationKey]);
+                        context.Configuration[LocalJsonStorage.DataJsonFileConfigurationKey],
+                        context.Configuration[GoogleDriveJsonStorage.CredentialsPathConfigurationKey],
+                        context.Configuration[GoogleDriveJsonStorage.FilePathConfigurationKey]);
 
                     var factory = sp.GetRequiredService<IRepositoryFactory>();
                     return factory.Create(options);

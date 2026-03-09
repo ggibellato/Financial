@@ -2,13 +2,7 @@
 
 This file contains tasks to be executed.
 
-1 - At the Financial tools UI few improvements
-- on the Operations's grid the quantity need 8 decimal places
-- on the Operations's grid when a line is selected the colour is blue, but this colour does not work well with the column Type (green for buy and red for sell), find a more suitable colour 
-- on the Summay there also the quantity should use 8 decimal places
-
-
-2 - LocalJSONRepository and GoogleDriveJSONRepository are very close both inherited from InvestmentsRepositoryBase
+1 - LocalJSONRepository and GoogleDriveJSONRepository are very close both inherited from InvestmentsRepositoryBase
 
 I want apply a better design on this.
 
