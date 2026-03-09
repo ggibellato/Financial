@@ -15,6 +15,7 @@ namespace SharesDividendCheck
     public partial class App : Application
     {
         public static IHost? AppHost { get; private set; }
+        private const string RepositoryProviderConfigurationKey = "Repository:Provider";
 
         public App()
         {
@@ -22,8 +23,27 @@ namespace SharesDividendCheck
                 .ConfigureServices((context, services) =>
                 {
                     // Register Infrastructure services
-                    services.AddSingleton<IRepository>(_ =>
-                        new LocalJSONRepository(context.Configuration[LocalJSONRepository.DataJsonPathConfigurationKey]));
+                    services.AddSingleton<IRepositoryFactory, RepositoryFactory>();
+                    services.AddSingleton<IRepository>(sp =>
+                    {
+                        var providerValue = context.Configuration[RepositoryProviderConfigurationKey]
+                            ?? nameof(RepositoryProvider.LocalJson);
+                        if (!Enum.TryParse(providerValue, true, out RepositoryProvider provider))
+                        {
+                            throw new InvalidOperationException(
+                                $"Repository provider '{providerValue}' is not supported. " +
+                                $"Valid values: {string.Join(", ", Enum.GetNames<RepositoryProvider>())}.");
+                        }
+
+                        var options = new RepositorySelectionOptions(
+                            provider,
+                            context.Configuration[LocalJSONRepository.DataJsonPathConfigurationKey],
+                            context.Configuration[GoogleDriveJSONRepository.CredentialsPathConfigurationKey],
+                            context.Configuration[GoogleDriveJSONRepository.FilePathConfigurationKey]);
+
+                        var factory = sp.GetRequiredService<IRepositoryFactory>();
+                        return factory.Create(options);
+                    });
                     services.AddSingleton<INavigationService, NavigationService>();
 
                     // Register ViewModels
