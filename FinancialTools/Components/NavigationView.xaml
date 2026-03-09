@@ -282,6 +282,7 @@
                                 <Style.Triggers>
                                     <Trigger Property="IsSelected" Value="True">
                                         <Setter Property="Background" Value="LightYellow"/>
+                                        <Setter Property="Foreground" Value="Black"/>
                                     </Trigger>
                                     <MultiTrigger>
                                         <MultiTrigger.Conditions>
@@ -289,6 +290,7 @@
                                             <Condition Property="primitives:Selector.IsSelectionActive" Value="False"/>
                                         </MultiTrigger.Conditions>
                                         <Setter Property="Background" Value="LightYellow"/>
+                                        <Setter Property="Foreground" Value="Black"/>
                                     </MultiTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -341,6 +343,7 @@
                                 <Style.Triggers>
                                     <Trigger Property="IsSelected" Value="True">
                                         <Setter Property="Background" Value="LightYellow"/>
+                                        <Setter Property="Foreground" Value="Black"/>
                                     </Trigger>
                                     <MultiTrigger>
                                         <MultiTrigger.Conditions>
@@ -348,6 +351,7 @@
                                             <Condition Property="primitives:Selector.IsSelectionActive" Value="False"/>
                                         </MultiTrigger.Conditions>
                                         <Setter Property="Background" Value="LightYellow"/>
+                                        <Setter Property="Foreground" Value="Black"/>
                                     </MultiTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -369,6 +373,8 @@
         </Grid>
     </Grid>
 </UserControl>
+
+
 
 
 

@@ -1,4 +1,4 @@
-﻿using Financial.Application.DTO;
+using Financial.Application.DTO;
 using Financial.Model;
 using FinancialToolSupport;
 using System;
@@ -15,16 +15,16 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using static FinanacialTools.BrokerTotal;
+using static FinancialTools.BrokerTotal;
 
-namespace FinanacialTools.Components
+namespace FinancialTools.Components
 {
     /// <summary>
     /// Interaction logic for AssetInfo.xaml
     /// </summary>
     public partial class AssetInfo : UserControl
     {
-        public event EventHandler ButtonClicked;
+        public event EventHandler? ButtonClicked;
 
 
         public AssetInfo()
@@ -71,3 +71,5 @@ namespace FinanacialTools.Components
         }
     }
 }
+
+

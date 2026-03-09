@@ -1,4 +1,4 @@
-﻿using FinanacialTools.Components;
+using FinancialTools.Components;
 using Financial.Model;
 using FinancialModel.Application;
 using FinancialToolSupport;
@@ -13,7 +13,7 @@ using System.Windows.Data;
 using WebPageParser;
 using static SharesDividendCheck.MainWindow;
 
-namespace FinanacialTools
+namespace FinancialTools
 {
     /// <summary>
     /// Interaction logic for BrokerTotal.xaml
@@ -89,4 +89,5 @@ namespace FinanacialTools
         }
     }
 }
+
 

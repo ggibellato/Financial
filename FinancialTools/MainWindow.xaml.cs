@@ -1,4 +1,4 @@
-﻿using FinanacialTools;
+using FinancialTools;
 using Financial.Common;
 using Financial.Model;
 using FinancialModel.Application;
@@ -190,3 +190,4 @@ namespace SharesDividendCheck
         }
     }
 }
+
