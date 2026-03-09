@@ -19,6 +19,8 @@ public class GoogleService
     static readonly string[] Scopes1 = { SheetsService.Scope.Spreadsheets };
     static readonly string[] Scopes2 = { DriveService.Scope.DriveReadonly };
     private const string DefaultDataFileName = "data.json";
+    private const string FolderMimeType = "application/vnd.google-apps.folder";
+    private const string ShortcutMimeType = "application/vnd.google-apps.shortcut";
     public string FileName { get; }
 
     public GoogleService(string fileName)
@@ -109,43 +111,15 @@ public class GoogleService
             throw new ArgumentException("Drive path must include at least one segment.", nameof(drivePath));
         }
 
-        var parentId = "root";
-        for (int i = 0; i < segments.Length; i++)
+        // for now try get based on file name directly, but this only works if there is only one file with the name at google drive
+        var segment = segments.Last();
+        var file = FindFileByName(service, segment);
+        if (file == null)
         {
-            var segment = segments[i];
-            var file = FindFileByName(service, parentId, segment);
-            if (file == null)
-            {
-                throw new FileNotFoundException($"Drive path segment '{segment}' not found in '{drivePath}'.");
-            }
-
-            bool isLast = i == segments.Length - 1;
-            if (!isLast)
-            {
-                if (file.MimeType != "application/vnd.google-apps.folder")
-                {
-                    throw new DirectoryNotFoundException($"Drive path segment '{segment}' is not a folder in '{drivePath}'.");
-                }
-                parentId = file.Id;
-                continue;
-            }
-
-            if (file.MimeType == "application/vnd.google-apps.folder")
-            {
-                parentId = file.Id;
-                var dataFile = FindFileByName(service, parentId, DefaultDataFileName);
-                if (dataFile == null)
-                {
-                    throw new FileNotFoundException(
-                        $"Drive path '{drivePath}' points to a folder. '{DefaultDataFileName}' was not found inside it.");
-                }
-                return dataFile.Id;
-            }
-
-            return file.Id;
+            throw new FileNotFoundException($"Drive path segment '{segment}' not found in '{drivePath}'.");
         }
 
-        throw new FileNotFoundException($"Drive path '{drivePath}' not found.");
+        return ResolveShortcutTargetId(file);
     }
 
     private static string EscapeDriveQuery(string value)
@@ -153,15 +127,32 @@ public class GoogleService
         return value.Replace("'", "\\'");
     }
 
-    private static Google.Apis.Drive.v3.Data.File? FindFileByName(DriveService service, string parentId, string name)
+    private static Google.Apis.Drive.v3.Data.File? FindFileByName(DriveService service, string name)
     {
         var listRequest = service.Files.List();
-        listRequest.PageSize = 2;
-        listRequest.Fields = "files(id, name, mimeType)";
-        listRequest.Q = $"name = '{EscapeDriveQuery(name)}' and '{parentId}' in parents and trashed = false";
+        listRequest.PageSize = 10;
+        listRequest.Fields = "files(id, name, mimeType, shortcutDetails(targetId, targetMimeType))";
+        listRequest.Q = $"name = '{EscapeDriveQuery(name)}' and trashed = false";
+        listRequest.SupportsAllDrives = true;
+        listRequest.IncludeItemsFromAllDrives = true;
+        listRequest.Spaces = "drive";
 
         var result = listRequest.Execute();
+        if(result.Files.Count>1)
+        {
+            throw new InvalidOperationException($"Multiple files '{name}' found when only one was expected.");
+        }
         return result.Files.FirstOrDefault();
+    }
+
+    private static string ResolveShortcutTargetId(Google.Apis.Drive.v3.Data.File file)
+    {
+        if (file.MimeType == ShortcutMimeType && !string.IsNullOrWhiteSpace(file.ShortcutDetails?.TargetId))
+        {
+            return file.ShortcutDetails.TargetId;
+        }
+
+        return file.Id;
     }
 
     private DriveService GetDriveService()
