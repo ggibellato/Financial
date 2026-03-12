@@ -3,31 +3,31 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33530.505
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Model", "FinancialModel\Financial.Model.csproj", "{B5D5080D-E931-4321-B878-3D1FBF9012E0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Domain", "Domain\Financial.Domain.csproj", "{B5D5080D-E931-4321-B878-3D1FBF9012E0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FinancialToolSupport", "FinancialToolSupport\FinancialToolSupport.csproj", "{8721D950-228B-4F04-999C-1BF706F37FC9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Infrastructure.Integrations.FinancialToolSupport", "Infrastructure\Integrations\FinancialToolSupport\FinancialToolSupport.csproj", "{8721D950-228B-4F04-999C-1BF706F37FC9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GoogleFinancialSupport", "GoogleFinancialSupport\GoogleFinancialSupport.csproj", "{DF59917E-EF15-4916-9039-0860D86F31FC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Infrastructure.Integrations.GoogleFinancialSupport", "Infrastructure\Integrations\GoogleFinancialSupport\GoogleFinancialSupport.csproj", "{DF59917E-EF15-4916-9039-0860D86F31FC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImportGoogleSpreadSheets", "ImportGoogleSpreadSheets\ImportGoogleSpreadSheets.csproj", "{CF13930F-0C44-489A-966F-F32912D8133F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Infrastructure.Integrations.ImportGoogleSpreadSheets", "Infrastructure\Integrations\ImportGoogleSpreadSheets\ImportGoogleSpreadSheets.csproj", "{CF13930F-0C44-489A-966F-F32912D8133F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{619A5074-96E5-42D4-9325-20E431AD9AFF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{C9704CC9-9915-4F92-8A23-1346A8F30C22}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Application", "Financial.Application\Financial.Application.csproj", "{56A64CA2-2B66-4E7E-9EA6-1BB232F78B0F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Application", "Application\Financial.Application.csproj", "{56A64CA2-2B66-4E7E-9EA6-1BB232F78B0F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Infrastructure", "Financial.Infrastructure\Financial.Infrastructure.csproj", "{F16F338C-4DC3-4786-8E75-71B61845A4EB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Infrastructure", "Infrastructure\Financial.Infrastructure.csproj", "{F16F338C-4DC3-4786-8E75-71B61845A4EB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Infrastructure.Tests", "Financial.Infrastructure.Tests\Financial.Infrastructure.Tests.csproj", "{2FA7B609-B4BC-4239-8CA1-531DAB307E81}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Infrastructure.Tests", "Tests\Financial.Infrastructure.Tests\Financial.Infrastructure.Tests.csproj", "{2FA7B609-B4BC-4239-8CA1-531DAB307E81}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Common", "Financial.Common\Financial.Common.csproj", "{366A0FD8-60D4-4F4B-9996-33B6FC545C4C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FinancialModel", "FinancialModel", "{0C976C0E-7E1C-4098-85CB-9D88F9E4E86B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FinancialTools", "FinancialTools\FinancialTools.csproj", "{C7707B9A-B9A3-4287-8D07-98AC68CC797B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Presentation.Tools", "Presentation\Tools\FinancialTools.csproj", "{C7707B9A-B9A3-4287-8D07-98AC68CC797B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebPageParser", "WebPageParser\WebPageParser.csproj", "{18D5A041-D4F7-4CF9-870C-D9E481EBD308}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Financial.Infrastructure.Integrations.WebPageParser", "Infrastructure\Integrations\WebPageParser\WebPageParser.csproj", "{18D5A041-D4F7-4CF9-870C-D9E481EBD308}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

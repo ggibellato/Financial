@@ -2,37 +2,34 @@
 
 This file contains tasks to be executed.
 
-1 - LocalJSONRepository and GoogleDriveJSONRepository are very close both inherited from InvestmentsRepositoryBase
+1  - This is just to update the folder strutuctre
 
-I want apply a better design on this.
+first it will need recognize where it file/class sits and then move arround
+update the domain 
+update the depency classes domain
 
-This is the idea
+this is the folder structure I want to achieve
 
-Create a 
-public sealed class LocalJsonStorage : IJsonStorage
-{
-    // path via ctor
-    public Task<string> ReadAsync(...) { /* File.ReadAllTextAsync */ }
-    public Task WriteAsync(string json, ...) { /* File.WriteAllTextAsync */ }
-}
+Financial
+ ├─ Domain
+ │   ├─ Entities
+ │   ├─ ValueObjects
+ │   ├─ Services
+ │
+ ├─ Application
+ │   ├─ Services
+ │   ├─ DTOs
+ │   ├─ Interfaces
+ │
+ ├─ Infrastructure
+ │   ├─ Persistence
+ │   ├─ Repositories
+ │   ├─ Integrations
+ │
+ ├─ Web
+ │   ├─ Controllers
+ │
+ └─ Tests
 
 
-Implement 
-public sealed class LocalJsonStorage : IJsonStorage
-{
-    // path via ctor
-    public Task<string> ReadAsync(...) { /* File.ReadAllTextAsync */ }
-    public Task WriteAsync(string json, ...) { /* File.WriteAllTextAsync */ }
-}
-
-public sealed class GoogleDriveJsonStorage : IJsonStorage
-{
-    // drive file id + client via ctor
-    public Task<string> ReadAsync(...) { /* download from Drive */ }
-    public Task WriteAsync(string json, ...) { /* upload to Drive */ }
-}
-
-Go back to have one JSONRepository class, that need a IJsonStorage
-
-Make the storage injection depending on the Repository:Provider
-
+ This folder structure is more inline with the architecture I want to use.
