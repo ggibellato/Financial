@@ -14,6 +14,7 @@
         <converters:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
         <converters:NodeTypeToVisibilityConverter x:Key="NodeTypeToVisibilityConverter"/>
         <converters:SignedValueToBrushConverter x:Key="SignedValueToBrushConverter"/>
+        <converters:BetweenTextSeparatorConverter x:Key="BetweenTextSeparatorConverter"/>
 
         <DrawingImage x:Key="AppIcon">
             <DrawingImage.Drawing>

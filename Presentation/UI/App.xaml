@@ -12,6 +12,7 @@
         <converters:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
         <converters:NodeTypeToVisibilityConverter x:Key="NodeTypeToVisibilityConverter"/>
         <converters:SignedValueToBrushConverter x:Key="SignedValueToBrushConverter"/>
+        <converters:BetweenTextSeparatorConverter x:Key="BetweenTextSeparatorConverter"/>
         
         <!-- Global Styles -->
         <Style TargetType="TreeView">

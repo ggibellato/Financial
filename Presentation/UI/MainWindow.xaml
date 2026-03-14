@@ -122,9 +122,23 @@
                         </StackPanel>
                         <TextBlock Margin="0,5,0,0">
                             <Run Text="{Binding AssetDetails.Ticker, Mode=OneWay}"/>
-                            <Run Text=" &#x00B7; " FontFamily="Segoe UI Symbol"/>
+                            <Run FontFamily="Segoe UI Symbol">
+                                <Run.Text>
+                                    <MultiBinding Converter="{StaticResource BetweenTextSeparatorConverter}" ConverterParameter=" · " Mode="OneWay">
+                                        <Binding Path="AssetDetails.Ticker" Mode="OneWay"/>
+                                        <Binding Path="AssetDetails.Exchange" Mode="OneWay"/>
+                                    </MultiBinding>
+                                </Run.Text>
+                            </Run>
                             <Run Text="{Binding AssetDetails.Exchange, Mode=OneWay}"/>
-                            <Run Text=" &#x00B7; " FontFamily="Segoe UI Symbol"/>
+                            <Run FontFamily="Segoe UI Symbol">
+                                <Run.Text>
+                                    <MultiBinding Converter="{StaticResource BetweenTextSeparatorConverter}" ConverterParameter=" · " Mode="OneWay">
+                                        <Binding Path="AssetDetails.Exchange" Mode="OneWay"/>
+                                        <Binding Path="AssetDetails.BrokerName" Mode="OneWay"/>
+                                    </MultiBinding>
+                                </Run.Text>
+                            </Run>
                             <Run Text="{Binding AssetDetails.BrokerName, Mode=OneWay}"/>
                             <Run Text=" / "/>
                             <Run Text="{Binding AssetDetails.PortfolioName, Mode=OneWay}"/>
