@@ -14,19 +14,21 @@ public class DateFormatConverter : IValueConverter
     {
         if (value is DateTime dateTime)
         {
+            var effectiveCulture = CultureInfo.CurrentCulture;
             var format = parameter as string;
             if (string.IsNullOrWhiteSpace(format) || string.Equals(format, "d", StringComparison.OrdinalIgnoreCase))
             {
-                format = GetPaddedShortDatePattern(culture);
+                format = GetPaddedShortDatePattern(effectiveCulture);
             }
-            return dateTime.ToString(format, culture);
+            return dateTime.ToString(format, effectiveCulture);
         }
         return string.Empty;
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is string str && DateTime.TryParse(str, culture, DateTimeStyles.None, out DateTime result))
+        var effectiveCulture = CultureInfo.CurrentCulture;
+        if (value is string str && DateTime.TryParse(str, effectiveCulture, DateTimeStyles.None, out DateTime result))
         {
             return result;
         }
