@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows;
-using System.Threading;
 using System.Threading.Tasks;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
@@ -18,6 +16,7 @@ public class AssetDetailsViewModel : ViewModelBase
     private readonly IOperationService? _operationService;
     private readonly ICreditService? _creditService;
     private readonly IAssetPriceService? _assetPriceService;
+    private readonly TodayInfoTracker _todayInfo;
     private readonly RelayCommand _addOperationCommand;
     private readonly RelayCommand _updateOperationCommand;
     private readonly RelayCommand _deleteOperationCommand;
@@ -41,11 +40,6 @@ public class AssetDetailsViewModel : ViewModelBase
     private decimal _todayCurrentValue;
     private string _todayCurrentValueAsOf = string.Empty;
     private string _todayInfoMessage = string.Empty;
-    private bool _todayInfoAttempted;
-    private bool _isTodayInfoLoading;
-    private string _todayInfoAssetKey = string.Empty;
-    private readonly SemaphoreSlim _todayInfoLock = new(1, 1);
-    private readonly Dictionary<string, TodayInfoSnapshot> _todayInfoCache = new();
     private OperationDTO? _selectedOperation;
     private CreditDTO? _selectedCredit;
 
@@ -252,6 +246,7 @@ public class AssetDetailsViewModel : ViewModelBase
         _operationService = operationService;
         _creditService = creditService;
         _assetPriceService = assetPriceService;
+        _todayInfo = new TodayInfoTracker(ApplyTodayInfo, ResetTodayInfo, UpdateCommandStates);
         _addOperationCommand = new RelayCommand(AddOperation, CanEditOperations);
         _updateOperationCommand = new RelayCommand(UpdateOperation, CanUpdateOperation);
         _deleteOperationCommand = new RelayCommand(DeleteOperation, CanDeleteOperation);
@@ -268,21 +263,7 @@ public class AssetDetailsViewModel : ViewModelBase
     public void LoadAssetDetails(AssetDetailsDTO details)
     {
         var assetKey = BuildAssetKey(details.BrokerName, details.PortfolioName, details.Name);
-        if (!string.Equals(_todayInfoAssetKey, assetKey, StringComparison.Ordinal))
-        {
-            _todayInfoAssetKey = assetKey;
-            _isTodayInfoLoading = false;
-            if (_todayInfoCache.TryGetValue(assetKey, out var cachedInfo))
-            {
-                ApplyTodayInfo(cachedInfo);
-                _todayInfoAttempted = true;
-            }
-            else
-            {
-                _todayInfoAttempted = false;
-                ResetTodayInfo();
-            }
-        }
+        _todayInfo.UpdateAssetKey(assetKey);
 
         AssetName = details.Name;
         BrokerName = details.BrokerName;
@@ -331,10 +312,7 @@ public class AssetDetailsViewModel : ViewModelBase
         TotalBought = 0;
         TotalSold = 0;
         TotalCredits = 0;
-        _todayInfoAssetKey = string.Empty;
-        _todayInfoAttempted = false;
-        _isTodayInfoLoading = false;
-        ResetTodayInfo();
+        _todayInfo.Clear();
         Operations.Clear();
         Credits.Clear();
         SelectedOperation = null;
@@ -367,7 +345,7 @@ public class AssetDetailsViewModel : ViewModelBase
     private bool CanDeleteCredit(object? parameter) =>
         HasCreditContext && (parameter is CreditDTO || SelectedCredit != null);
 
-    private bool CanRefreshTodayInfo() => HasAssetContext && !_isTodayInfoLoading;
+    private bool CanRefreshTodayInfo() => _todayInfo.CanRefresh(HasAssetContext);
 
     private bool CanCopyAssetName() => HasAssetContext;
 
@@ -392,72 +370,15 @@ public class AssetDetailsViewModel : ViewModelBase
         await RefreshTodayInfoAsync(forceRefresh: true);
     }
 
-    private async Task RefreshTodayInfoAsync(bool forceRefresh)
+    private Task RefreshTodayInfoAsync(bool forceRefresh)
     {
-        if (!HasAssetContext)
-        {
-            TodayInfoMessage = "Select an asset to load current values.";
-            return;
-        }
-
-        if (_assetPriceService == null)
-        {
-            TodayInfoMessage = "Current value service is not available.";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(Exchange) || string.IsNullOrWhiteSpace(Ticker))
-        {
-            TodayInfoMessage = "Asset exchange or ticker is missing.";
-            return;
-        }
-
-        await _todayInfoLock.WaitAsync();
-        var assetKey = _todayInfoAssetKey;
-        try
-        {
-            if (!forceRefresh && _todayInfoAttempted)
-            {
-                return;
-            }
-
-            _todayInfoAttempted = true;
-            _isTodayInfoLoading = true;
-            UpdateCommandStates();
-
-            var request = new AssetPriceRequestDTO
-            {
-                Exchange = Exchange,
-                Ticker = Ticker
-            };
-
-            var price = await Task.Run(() => _assetPriceService.GetCurrentPrice(request));
-            if (!string.Equals(_todayInfoAssetKey, assetKey, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            var asOf = price.AsOf?.ToLocalTime().ToString("g") ?? string.Empty;
-            TodayCurrentValue = price.Price;
-            TodayCurrentValueAsOf = asOf;
-            TodayInfoMessage = string.Empty;
-            _todayInfoCache[assetKey] = new TodayInfoSnapshot(price.Price, asOf);
-        }
-        catch (Exception ex)
-        {
-            if (!string.Equals(_todayInfoAssetKey, assetKey, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            TodayInfoMessage = $"Error: {ex.Message}";
-        }
-        finally
-        {
-            _isTodayInfoLoading = false;
-            UpdateCommandStates();
-            _todayInfoLock.Release();
-        }
+        return _todayInfo.RefreshAsync(
+            forceRefresh,
+            HasAssetContext,
+            _assetPriceService,
+            Exchange,
+            Ticker,
+            message => TodayInfoMessage = message);
     }
 
     private void ResetTodayInfo()
@@ -485,8 +406,6 @@ public class AssetDetailsViewModel : ViewModelBase
 
     private static string BuildAssetKey(string brokerName, string portfolioName, string assetName) =>
         $"{brokerName}|{portfolioName}|{assetName}";
-
-    private sealed record TodayInfoSnapshot(decimal Price, string AsOf);
 
     private void AddOperation()
     {

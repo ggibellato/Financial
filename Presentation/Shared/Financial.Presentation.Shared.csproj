@@ -9,4 +9,8 @@
     <AssemblyName>Financial.Presentation.Shared</AssemblyName>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Application\Financial.Application.csproj" />
+  </ItemGroup>
+
 </Project>
