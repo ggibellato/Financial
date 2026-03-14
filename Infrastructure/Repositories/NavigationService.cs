@@ -127,6 +127,7 @@ public class NavigationService : INavigationService
         // Map credits
         var credits = asset.Credits.Select(c => new CreditDTO
         {
+            Id = c.Id,
             Date = c.Date,
             Type = c.Type.ToString(),
             Value = c.Value

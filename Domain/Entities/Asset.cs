@@ -59,7 +59,10 @@ public class Asset
     private void SetCredits(IReadOnlyCollection<Credit> data)
     {
         _credits.Clear();
-        _credits.AddRange(data);
+        foreach (var credit in data)
+        {
+            AddCredit(credit);
+        }
     }
 
     [JsonConstructor]
@@ -144,10 +147,58 @@ public class Asset
 
     public void AddCredit(Credit credit)
     {
+        if (credit == null)
+        {
+            throw new ArgumentNullException(nameof(credit));
+        }
+
+        credit.EnsureId();
         _credits.Add(credit);
+    }
+
+    public bool UpdateCredit(Credit updatedCredit)
+    {
+        if (updatedCredit == null)
+        {
+            throw new ArgumentNullException(nameof(updatedCredit));
+        }
+
+        if (updatedCredit.Id == Guid.Empty)
+        {
+            throw new ArgumentException("Credit Id is required for update.", nameof(updatedCredit));
+        }
+
+        var index = _credits.FindIndex(credit => credit.Id == updatedCredit.Id);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        _credits[index] = updatedCredit;
+        return true;
+    }
+
+    public bool RemoveCredit(Guid creditId)
+    {
+        if (creditId == Guid.Empty)
+        {
+            throw new ArgumentException("Credit Id is required for delete.", nameof(creditId));
+        }
+
+        var index = _credits.FindIndex(credit => credit.Id == creditId);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        _credits.RemoveAt(index);
+        return true;
     }
     public void AddCredits(IEnumerable<Credit> credits)
     {
-        _credits.AddRange(credits);
+        foreach (var credit in credits)
+        {
+            AddCredit(credit);
+        }
     }
 }

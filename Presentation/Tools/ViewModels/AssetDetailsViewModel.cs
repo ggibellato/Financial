@@ -13,9 +13,13 @@ namespace Financial.Presentation.Tools.ViewModels;
 public class AssetDetailsViewModel : ViewModelBase
 {
     private readonly IOperationService? _operationService;
+    private readonly ICreditService? _creditService;
     private readonly RelayCommand _addOperationCommand;
     private readonly RelayCommand _updateOperationCommand;
     private readonly RelayCommand _deleteOperationCommand;
+    private readonly RelayCommand _addCreditCommand;
+    private readonly RelayCommand _updateCreditCommand;
+    private readonly RelayCommand _deleteCreditCommand;
     private string _assetName = string.Empty;
     private string _brokerName = string.Empty;
     private string _portfolioName = string.Empty;
@@ -29,6 +33,7 @@ public class AssetDetailsViewModel : ViewModelBase
     private decimal _totalSold;
     private decimal _totalCredits;
     private OperationDTO? _selectedOperation;
+    private CreditDTO? _selectedCredit;
 
     public string AssetName
     {
@@ -117,16 +122,35 @@ public class AssetDetailsViewModel : ViewModelBase
         }
     }
 
+    public CreditDTO? SelectedCredit
+    {
+        get => _selectedCredit;
+        set
+        {
+            if (SetProperty(ref _selectedCredit, value))
+            {
+                UpdateCommandStates();
+            }
+        }
+    }
+
     public RelayCommand AddOperationCommand => _addOperationCommand;
     public RelayCommand UpdateOperationCommand => _updateOperationCommand;
     public RelayCommand DeleteOperationCommand => _deleteOperationCommand;
+    public RelayCommand AddCreditCommand => _addCreditCommand;
+    public RelayCommand UpdateCreditCommand => _updateCreditCommand;
+    public RelayCommand DeleteCreditCommand => _deleteCreditCommand;
 
-    public AssetDetailsViewModel(IOperationService? operationService = null)
+    public AssetDetailsViewModel(IOperationService? operationService = null, ICreditService? creditService = null)
     {
         _operationService = operationService;
+        _creditService = creditService;
         _addOperationCommand = new RelayCommand(AddOperation, CanEditOperations);
         _updateOperationCommand = new RelayCommand(UpdateOperation, CanUpdateOperation);
         _deleteOperationCommand = new RelayCommand(DeleteOperation, CanDeleteOperation);
+        _addCreditCommand = new RelayCommand(AddCredit, CanEditCredits);
+        _updateCreditCommand = new RelayCommand(UpdateCredit, CanUpdateCredit);
+        _deleteCreditCommand = new RelayCommand(DeleteCredit, CanDeleteCredit);
     }
 
     /// <summary>
@@ -160,6 +184,7 @@ public class AssetDetailsViewModel : ViewModelBase
         }
 
         SelectedOperation = null;
+        SelectedCredit = null;
         UpdateCommandStates();
     }
 
@@ -183,14 +208,18 @@ public class AssetDetailsViewModel : ViewModelBase
         Operations.Clear();
         Credits.Clear();
         SelectedOperation = null;
+        SelectedCredit = null;
         UpdateCommandStates();
     }
 
-    private bool HasOperationContext =>
-        _operationService != null &&
+    private bool HasAssetContext =>
         !string.IsNullOrWhiteSpace(BrokerName) &&
         !string.IsNullOrWhiteSpace(PortfolioName) &&
         !string.IsNullOrWhiteSpace(AssetName);
+
+    private bool HasOperationContext => _operationService != null && HasAssetContext;
+
+    private bool HasCreditContext => _creditService != null && HasAssetContext;
 
     private bool CanEditOperations() => HasOperationContext;
 
@@ -199,6 +228,14 @@ public class AssetDetailsViewModel : ViewModelBase
 
     private bool CanDeleteOperation(object? parameter) =>
         HasOperationContext && (parameter is OperationDTO || SelectedOperation != null);
+
+    private bool CanEditCredits() => HasCreditContext;
+
+    private bool CanUpdateCredit(object? parameter) =>
+        HasCreditContext && (parameter is CreditDTO || SelectedCredit != null);
+
+    private bool CanDeleteCredit(object? parameter) =>
+        HasCreditContext && (parameter is CreditDTO || SelectedCredit != null);
 
     private void AddOperation()
     {
@@ -240,6 +277,50 @@ public class AssetDetailsViewModel : ViewModelBase
         if (updatedDetails == null)
         {
             MessageBox.Show("Operation could not be added. Check the values and try again.", "Operation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        LoadAssetDetails(updatedDetails);
+    }
+
+    private void AddCredit()
+    {
+        if (!HasCreditContext)
+        {
+            MessageBox.Show("Select an asset before adding a credit.", "Credit", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (_creditService == null)
+        {
+            return;
+        }
+
+        var dialogViewModel = CreditDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        if (!ShowCreditDialog(dialogViewModel))
+        {
+            return;
+        }
+
+        if (!TryNormalizeCreditType(dialogViewModel.Type, out var normalizedType))
+        {
+            MessageBox.Show("Credit type must be 'Dividend' or 'Rent'.", "Credit", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var updatedDetails = _creditService.AddCredit(new CreditCreateDTO
+        {
+            BrokerName = BrokerName,
+            PortfolioName = PortfolioName,
+            AssetName = AssetName,
+            Date = dialogViewModel.Date,
+            Type = normalizedType,
+            Value = dialogViewModel.Value
+        });
+
+        if (updatedDetails == null)
+        {
+            MessageBox.Show("Credit could not be added. Check the values and try again.", "Credit", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -308,6 +389,64 @@ public class AssetDetailsViewModel : ViewModelBase
         LoadAssetDetails(updatedDetails);
     }
 
+    private void UpdateCredit(object? parameter)
+    {
+        if (parameter is CreditDTO credit)
+        {
+            SelectedCredit = credit;
+        }
+
+        if (_creditService == null || SelectedCredit == null)
+        {
+            return;
+        }
+
+        if (SelectedCredit.Id == Guid.Empty)
+        {
+            MessageBox.Show("Select a saved credit to update.", "Credit", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var dialogViewModel = CreditDialogViewModel.CreateForUpdate(
+            BrokerName,
+            PortfolioName,
+            AssetName,
+            SelectedCredit.Id,
+            SelectedCredit.Date,
+            SelectedCredit.Type,
+            SelectedCredit.Value);
+
+        if (!ShowCreditDialog(dialogViewModel))
+        {
+            return;
+        }
+
+        if (!TryNormalizeCreditType(dialogViewModel.Type, out var normalizedType))
+        {
+            MessageBox.Show("Credit type must be 'Dividend' or 'Rent'.", "Credit", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var updatedDetails = _creditService.UpdateCredit(new CreditUpdateDTO
+        {
+            BrokerName = BrokerName,
+            PortfolioName = PortfolioName,
+            AssetName = AssetName,
+            Id = dialogViewModel.CreditId,
+            Date = dialogViewModel.Date,
+            Type = normalizedType,
+            Value = dialogViewModel.Value
+        });
+
+        if (updatedDetails == null)
+        {
+            MessageBox.Show("Credit could not be updated. Check the values and try again.", "Credit", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        LoadAssetDetails(updatedDetails);
+    }
+
     private void DeleteOperation(object? parameter)
     {
         if (parameter is OperationDTO operation)
@@ -364,16 +503,83 @@ public class AssetDetailsViewModel : ViewModelBase
         LoadAssetDetails(updatedDetails);
     }
 
+    private void DeleteCredit(object? parameter)
+    {
+        if (parameter is CreditDTO credit)
+        {
+            SelectedCredit = credit;
+        }
+
+        if (SelectedCredit == null)
+        {
+            return;
+        }
+
+        if (_creditService == null)
+        {
+            return;
+        }
+
+        if (SelectedCredit.Id == Guid.Empty)
+        {
+            MessageBox.Show("Select a saved credit to delete.", "Credit", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var dialogViewModel = CreditDialogViewModel.CreateForDelete(
+            BrokerName,
+            PortfolioName,
+            AssetName,
+            SelectedCredit.Id,
+            SelectedCredit.Date,
+            SelectedCredit.Type,
+            SelectedCredit.Value);
+
+        if (!ShowCreditDialog(dialogViewModel))
+        {
+            return;
+        }
+
+        var updatedDetails = _creditService.DeleteCredit(new CreditDeleteDTO
+        {
+            BrokerName = BrokerName,
+            PortfolioName = PortfolioName,
+            AssetName = AssetName,
+            Id = SelectedCredit.Id
+        });
+
+        if (updatedDetails == null)
+        {
+            MessageBox.Show("Credit could not be deleted. Check the values and try again.", "Credit", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        LoadAssetDetails(updatedDetails);
+    }
+
     private void UpdateCommandStates()
     {
         _addOperationCommand.RaiseCanExecuteChanged();
         _updateOperationCommand.RaiseCanExecuteChanged();
         _deleteOperationCommand.RaiseCanExecuteChanged();
+        _addCreditCommand.RaiseCanExecuteChanged();
+        _updateCreditCommand.RaiseCanExecuteChanged();
+        _deleteCreditCommand.RaiseCanExecuteChanged();
     }
 
     private bool ShowOperationDialog(OperationDialogViewModel viewModel)
     {
         var dialog = new OperationDialog(viewModel)
+        {
+            Owner = System.Windows.Application.Current?.MainWindow
+        };
+
+        return dialog.ShowDialog() == true;
+    }
+
+    private bool ShowCreditDialog(CreditDialogViewModel viewModel)
+    {
+        var dialog = new CreditDialog(viewModel)
         {
             Owner = System.Windows.Application.Current?.MainWindow
         };
@@ -392,6 +598,24 @@ public class AssetDetailsViewModel : ViewModelBase
         if (string.Equals(value, "Sell", StringComparison.OrdinalIgnoreCase))
         {
             normalized = "Sell";
+            return true;
+        }
+
+        normalized = string.Empty;
+        return false;
+    }
+
+    private static bool TryNormalizeCreditType(string? value, out string normalized)
+    {
+        if (string.Equals(value, "Dividend", StringComparison.OrdinalIgnoreCase))
+        {
+            normalized = "Dividend";
+            return true;
+        }
+
+        if (string.Equals(value, "Rent", StringComparison.OrdinalIgnoreCase))
+        {
+            normalized = "Rent";
             return true;
         }
 

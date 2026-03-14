@@ -12,4 +12,6 @@
 
 3 - The dates on the grids Operations and credits in fact all the dates should follow the windows configuration. My machine is UK date format but the grids are displaying the dates I believe in US format. Preferable use the format that add zeros when the day or the month has only one digit (done)
 
-4 - Instead use buttons lets add icons at the lines to update or delete and just one for insert, it can be called new in this case
+4 - Instead use buttons lets add icons at the lines to update or delete and just one for insert, it can be called new in this case (done)
+
+5 - The operations CRUD is done, now do all the same for the Credits

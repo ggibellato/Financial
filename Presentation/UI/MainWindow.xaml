@@ -283,28 +283,65 @@
 
                 <!-- Credits Tab -->
                 <TabItem Header="Credits">
-                    <DataGrid ItemsSource="{Binding AssetDetails.Credits}"
-                              AutoGenerateColumns="False"
-                              CanUserAddRows="False">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Date" 
-                                                Binding="{Binding Date, Converter={StaticResource DateConverter}, ConverterParameter='d'}" 
-                                                Width="Auto"/>
-                            <DataGridTextColumn Header="Type" 
-                                                Binding="{Binding Type}" 
-                                                Width="Auto"/>
-                            <DataGridTextColumn Header="Value" 
-                                                Binding="{Binding Value, StringFormat=N2}" 
-                                                Width="*">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="FontWeight" Value="Bold"/>
-                                        <Setter Property="Foreground" Value="Blue"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <DockPanel>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,8">
+                            <Button Command="{Binding AssetDetails.AddCreditCommand}" ToolTip="New credit">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE710;" Margin="0,0,6,0"/>
+                                    <TextBlock Text="New"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                        <DataGrid ItemsSource="{Binding AssetDetails.Credits}"
+                                  SelectedItem="{Binding AssetDetails.SelectedCredit, Mode=TwoWay}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True">
+                            <DataGrid.InputBindings>
+                                <MouseBinding MouseAction="LeftDoubleClick"
+                                              Command="{Binding AssetDetails.UpdateCreditCommand}"/>
+                            </DataGrid.InputBindings>
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="" Width="Auto">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Command="{Binding DataContext.AssetDetails.UpdateCreditCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Update"
+                                                        Padding="2"
+                                                        Margin="0,0,4,0">
+                                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE70F;"/>
+                                                </Button>
+                                                <Button Command="{Binding DataContext.AssetDetails.DeleteCreditCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Delete"
+                                                        Padding="2">
+                                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE74D;"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Date" 
+                                                    Binding="{Binding Date, Converter={StaticResource DateConverter}, ConverterParameter='d'}" 
+                                                    Width="Auto"/>
+                                <DataGridTextColumn Header="Type" 
+                                                    Binding="{Binding Type}" 
+                                                    Width="Auto"/>
+                                <DataGridTextColumn Header="Value" 
+                                                    Binding="{Binding Value, StringFormat=N2}" 
+                                                    Width="*">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                            <Setter Property="Foreground" Value="Blue"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
                 </TabItem>
             </TabControl>
 

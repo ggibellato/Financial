@@ -43,6 +43,7 @@ public partial class App : System.Windows.Application
                 });
                 services.AddSingleton<INavigationService, NavigationService>();
                 services.AddSingleton<IOperationService, OperationService>();
+                services.AddSingleton<ICreditService, CreditService>();
 
                 // Register ViewModels
                 services.AddTransient<MainNavigationViewModel>();

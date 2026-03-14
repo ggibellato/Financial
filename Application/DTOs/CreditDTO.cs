@@ -1,3 +1,5 @@
+using System;
+
 namespace Financial.Application.DTOs;
 
 /// <summary>
@@ -5,6 +7,11 @@ namespace Financial.Application.DTOs;
 /// </summary>
 public class CreditDTO
 {
+    /// <summary>
+    /// Credit identifier
+    /// </summary>
+    public Guid Id { get; set; }
+
     /// <summary>
     /// Date the credit was received
     /// </summary>
