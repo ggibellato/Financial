@@ -57,7 +57,7 @@ The line size or font size is not required to change, but colors it should chang
 Finally rename the tab Read FIIs current values and its title to Read Assets current values
 
 
-# 7
+# 7 (done)
  At the Tabs Shares Dividend Check and Read Assets current values, the scroll bar should be at the grid only and not at the whole tab
 
  

@@ -1,5 +1,5 @@
-using System;
-using System.Linq;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Financial.Common;
 using HtmlAgilityPack;
 
@@ -16,7 +16,6 @@ public static class GoogleFinance
     public static AssetValueSnapshot GetFinancialInfoSnapshot(string exchange, string ticker)
     {
         var googleTickerSearch = $"https://www.google.com/finance/quote/{ticker}:{exchange}";
-        //var content = await HTMLHelper.LoadPage(googleTickerSearch);
         try
         {
             HtmlWeb htmlWeb = new HtmlWeb();
@@ -32,7 +31,11 @@ public static class GoogleFinance
                 value /= 100;
             }
 
-            var asOf = TryParseAsOf(htmlDoc) ?? DateTimeOffset.Now;
+            var asOfText = mainData.ChildNodes[1].ChildNodes[0].ChildNodes[0].ChildNodes[0]
+                .ChildNodes[0].ChildNodes[0].ChildNodes[0].ChildNodes[1].ChildNodes[0].InnerText;
+            asOfText = asOfText.Substring(0, asOfText.IndexOf("&middot;")).Trim();
+            var asOf = TryParseGoogleFinanceAsOf(asOfText)
+                ?? DateTimeOffset.Now;
             return new AssetValueSnapshot(ticker, name, value, asOf);
         }
         catch (Exception ex)
@@ -41,36 +44,131 @@ public static class GoogleFinance
         }
     }
 
-    private static DateTimeOffset? TryParseAsOf(HtmlDocument htmlDoc)
+    private static DateTimeOffset? TryParseGoogleFinanceAsOf(string? rawValue)
     {
-        var lastUpdated = htmlDoc.DocumentNode.Descendants()
-            .Select(node => node.GetAttributeValue("data-last-updated", null))
-            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
-
-        if (long.TryParse(lastUpdated, out var lastUpdatedMs))
+        if (string.IsNullOrWhiteSpace(rawValue))
         {
-            return DateTimeOffset.FromUnixTimeMilliseconds(lastUpdatedMs);
+            return null;
         }
 
-        var asOfText = htmlDoc.DocumentNode.Descendants()
-            .Select(node => node.InnerText?.Trim())
-            .FirstOrDefault(text => !string.IsNullOrWhiteSpace(text) &&
-                                    text.Contains("As of", StringComparison.OrdinalIgnoreCase));
-
-        if (!string.IsNullOrWhiteSpace(asOfText))
+        var candidate = NormalizeAsOfCandidate(rawValue);
+        var parsed = default(DateTimeOffset);
+        if (TryParseUtcOffsetStamp(candidate, out parsed))
         {
-            var index = asOfText.IndexOf("As of", StringComparison.OrdinalIgnoreCase);
-            if (index >= 0)
-            {
-                var candidate = asOfText[(index + "As of".Length)..].Trim().TrimStart(':').Trim();
-                if (DateTimeOffset.TryParse(candidate, out var asOf))
-                {
-                    return asOf;
-                }
-            }
+            return parsed;
+        }
+
+        var formats = new[]
+        {
+            "MMM d, h:mm:ss tt",
+            "MMM dd, h:mm:ss tt",
+            "MMM d, hh:mm:ss tt",
+            "MMM dd, hh:mm:ss tt",
+            "MMM d, h:mm:ss tt UTC zzz",
+            "MMM dd, h:mm:ss tt UTC zzz",
+            "MMM d, hh:mm:ss tt UTC zzz",
+            "MMM dd, hh:mm:ss tt UTC zzz"
+        };
+
+        if (DateTimeOffset.TryParseExact(candidate,
+                formats,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeLocal,
+                out parsed))
+        {
+            return parsed;
+        }
+
+        if (DateTimeOffset.TryParse(candidate, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out parsed))
+        {
+            return parsed;
+        }
+
+        if (DateTimeOffset.TryParse(candidate, CultureInfo.GetCultureInfo("en-US"), DateTimeStyles.AllowWhiteSpaces, out parsed))
+        {
+            return parsed;
         }
 
         return null;
+    }
+
+    private static bool TryParseUtcOffsetStamp(string candidate, out DateTimeOffset parsed)
+    {
+        var match = Regex.Match(candidate,
+            @"^(?<date>.+?)\s+(UTC|GMT)(?<sign>[+-])(?<hours>\d{1,2})(:(?<minutes>\d{2}))?$",
+            RegexOptions.IgnoreCase);
+        if (match.Success)
+        {
+            var datePart = match.Groups["date"].Value.Trim();
+            var sign = match.Groups["sign"].Value == "-" ? -1 : 1;
+            var hours = int.Parse(match.Groups["hours"].Value, CultureInfo.InvariantCulture);
+            var minutes = match.Groups["minutes"].Success
+                ? int.Parse(match.Groups["minutes"].Value, CultureInfo.InvariantCulture)
+                : 0;
+            var dateFormats = new[]
+            {
+                "MMM d, h:mm:ss tt",
+                "MMM dd, h:mm:ss tt",
+                "MMM d, hh:mm:ss tt",
+                "MMM dd, hh:mm:ss tt"
+            };
+            if (DateTime.TryParseExact(datePart, dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var dateTime))
+            {
+                var offset = TimeSpan.FromMinutes(sign * (hours * 60 + minutes));
+                parsed = new DateTimeOffset(dateTime, offset);
+                return true;
+            }
+        }
+
+        parsed = default;
+        return false;
+    }
+
+    private static string NormalizeAsOfCandidate(string value)
+    {
+        var candidate = value.Trim()
+            .Replace('\u202F', ' ')
+            .Replace('\u00A0', ' ')
+            .Replace('\u2212', '-')
+            .Replace('\u2010', '-')
+            .Replace('\u2011', '-')
+            .Replace('\u2012', '-')
+            .Replace('\u2013', '-')
+            .Replace('\u2014', '-');
+
+        var asOfIndex = candidate.IndexOf("As of", StringComparison.OrdinalIgnoreCase);
+        if (asOfIndex >= 0)
+        {
+            candidate = candidate[(asOfIndex + "As of".Length)..].Trim().TrimStart(':').Trim();
+        }
+
+        var middotIndex = candidate.IndexOf("&middot;", StringComparison.OrdinalIgnoreCase);
+        if (middotIndex >= 0)
+        {
+            candidate = candidate[..middotIndex].Trim();
+        }
+
+        var bulletIndex = candidate.IndexOf('·');
+        if (bulletIndex >= 0)
+        {
+            candidate = candidate[..bulletIndex].Trim();
+        }
+
+        candidate = Regex.Replace(candidate,
+            @"(?:UTC|GMT)(?<sign>[+-])(?<hours>\d{1,2})(:(?<minutes>\d{2}))?\b",
+            match =>
+            {
+                var sign = match.Groups["sign"].Value;
+                var hours = int.Parse(match.Groups["hours"].Value, CultureInfo.InvariantCulture);
+                var minutes = match.Groups["minutes"].Success
+                    ? int.Parse(match.Groups["minutes"].Value, CultureInfo.InvariantCulture)
+                    : 0;
+                var offsetFormatted = $"{sign}{hours:00}:{minutes:00}";
+                return $"UTC{offsetFormatted}";
+            },
+            RegexOptions.IgnoreCase);
+
+        return candidate;
     }
 }
 
