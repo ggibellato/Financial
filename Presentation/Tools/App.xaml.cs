@@ -48,6 +48,7 @@ namespace Financial.Presentation.Tools
                     services.AddSingleton<INavigationService, NavigationService>();
                     services.AddSingleton<IOperationService, OperationService>();
                     services.AddSingleton<ICreditService, CreditService>();
+                    services.AddSingleton<IAssetPriceService, AssetPriceService>();
 
                     // Register ViewModels
                     services.AddTransient<MainNavigationViewModel>();

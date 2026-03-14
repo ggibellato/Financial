@@ -5,6 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Financial.Presentation.Tools.Components"
+        xmlns:primitives="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="Financial tools" Height="800" Width="1200" Icon="{StaticResource AppIcon}">
     <Grid>
@@ -15,7 +16,6 @@
             </TabItem>
             
             <TabItem Header="Shares Dividend check">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <Grid Margin="20">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -196,7 +196,8 @@
                                               HeadersVisibility="Column"
                                               GridLinesVisibility="Horizontal"
                                               BorderBrush="#CCCCCC"
-                                              BorderThickness="1">
+                                              BorderThickness="1"
+                                              ScrollViewer.VerticalScrollBarVisibility="Auto">
                                         <DataGrid.ColumnHeaderStyle>
                                             <Style TargetType="DataGridColumnHeader">
                                                 <Setter Property="Background" Value="#F0F0F0"/>
@@ -214,6 +215,16 @@
                                                     <Trigger Property="ItemsControl.AlternationIndex" Value="1">
                                                         <Setter Property="Background" Value="#F5F5F5"/>
                                                     </Trigger>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter Property="Background" Value="LightYellow"/>
+                                                    </Trigger>
+                                                    <MultiTrigger>
+                                                        <MultiTrigger.Conditions>
+                                                            <Condition Property="IsSelected" Value="True"/>
+                                                            <Condition Property="primitives:Selector.IsSelectionActive" Value="False"/>
+                                                        </MultiTrigger.Conditions>
+                                                        <Setter Property="Background" Value="LightYellow"/>
+                                                    </MultiTrigger>
                                                 </Style.Triggers>
                                                 <!-- Keep selection color when control loses focus -->
                                                 <Style.Resources>
@@ -222,6 +233,24 @@
                                                 </Style.Resources>
                                             </Style>
                                         </DataGrid.RowStyle>
+                                        <DataGrid.CellStyle>
+                                            <Style TargetType="DataGridCell">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter Property="Background" Value="LightYellow"/>
+                                                        <Setter Property="Foreground" Value="Black"/>
+                                                    </Trigger>
+                                                    <MultiTrigger>
+                                                        <MultiTrigger.Conditions>
+                                                            <Condition Property="IsSelected" Value="True"/>
+                                                            <Condition Property="primitives:Selector.IsSelectionActive" Value="False"/>
+                                                        </MultiTrigger.Conditions>
+                                                        <Setter Property="Background" Value="LightYellow"/>
+                                                        <Setter Property="Foreground" Value="Black"/>
+                                                    </MultiTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DataGrid.CellStyle>
                                     </DataGrid>
                                 </Grid>
                             </Border>
@@ -245,13 +274,15 @@
                                     <DataGrid Grid.Row="1"
                                               Name="dividendByYearDataGrid" 
                                               AutoGenerateColumns="True" 
+                                              AutoGeneratingColumn="DividendByYearDataGrid_AutoGeneratingColumn"
                                               FontSize="13" 
                                               AlternatingRowBackground="#F5F5F5"
                                               IsReadOnly="True"
                                               HeadersVisibility="Column"
                                               GridLinesVisibility="Horizontal"
                                               BorderBrush="#CCCCCC"
-                                              BorderThickness="1">
+                                              BorderThickness="1"
+                                              ScrollViewer.VerticalScrollBarVisibility="Auto">
                                         <DataGrid.ColumnHeaderStyle>
                                             <Style TargetType="DataGridColumnHeader">
                                                 <Setter Property="Background" Value="#F0F0F0"/>
@@ -269,6 +300,16 @@
                                                     <Trigger Property="ItemsControl.AlternationIndex" Value="1">
                                                         <Setter Property="Background" Value="#F5F5F5"/>
                                                     </Trigger>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter Property="Background" Value="LightYellow"/>
+                                                    </Trigger>
+                                                    <MultiTrigger>
+                                                        <MultiTrigger.Conditions>
+                                                            <Condition Property="IsSelected" Value="True"/>
+                                                            <Condition Property="primitives:Selector.IsSelectionActive" Value="False"/>
+                                                        </MultiTrigger.Conditions>
+                                                        <Setter Property="Background" Value="LightYellow"/>
+                                                    </MultiTrigger>
                                                 </Style.Triggers>
                                                 <!-- Keep selection color when control loses focus -->
                                                 <Style.Resources>
@@ -277,15 +318,31 @@
                                                 </Style.Resources>
                                             </Style>
                                         </DataGrid.RowStyle>
+                                        <DataGrid.CellStyle>
+                                            <Style TargetType="DataGridCell">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter Property="Background" Value="LightYellow"/>
+                                                        <Setter Property="Foreground" Value="Black"/>
+                                                    </Trigger>
+                                                    <MultiTrigger>
+                                                        <MultiTrigger.Conditions>
+                                                            <Condition Property="IsSelected" Value="True"/>
+                                                            <Condition Property="primitives:Selector.IsSelectionActive" Value="False"/>
+                                                        </MultiTrigger.Conditions>
+                                                        <Setter Property="Background" Value="LightYellow"/>
+                                                        <Setter Property="Foreground" Value="Black"/>
+                                                    </MultiTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DataGrid.CellStyle>
                                     </DataGrid>
                                 </Grid>
                             </Border>
                         </Grid>
                     </Grid>
-                </ScrollViewer>
             </TabItem>
-            <TabItem Header="Read FIIs current values">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <TabItem Header="Read Assets current values">
                     <Grid Margin="20">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -295,7 +352,7 @@
 
                         <!-- Header Section -->
                         <TextBlock Grid.Row="0" 
-                                   Text="Read FIIs Current Values" 
+                                   Text="Read Assets Current Values" 
                                    FontSize="20" 
                                    FontWeight="Bold" 
                                    Foreground="#333333"
@@ -387,7 +444,7 @@
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" 
-                                           Text="FIIs Current Prices" 
+                                           Text="Assets Current Prices" 
                                            FontSize="16" 
                                            FontWeight="Bold" 
                                            Foreground="#333333"
@@ -401,7 +458,8 @@
                                           HeadersVisibility="Column"
                                           GridLinesVisibility="Horizontal"
                                           BorderBrush="#CCCCCC"
-                                          BorderThickness="1">
+                                          BorderThickness="1"
+                                          ScrollViewer.VerticalScrollBarVisibility="Auto">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Binding="{Binding Ticker}" 
                                                             Header="Ticker" 
@@ -429,7 +487,7 @@
                                                     <Setter Property="HorizontalAlignment" Value="Right"/>
                                                     <Setter Property="Padding" Value="8"/>
                                                     <Setter Property="FontWeight" Value="Bold"/>
-                                                    <Setter Property="Foreground" Value="Green"/>
+                                                    <Setter Property="Foreground" Value="Black"/>
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
@@ -451,6 +509,16 @@
                                                 <Trigger Property="ItemsControl.AlternationIndex" Value="1">
                                                     <Setter Property="Background" Value="#F5F5F5"/>
                                                 </Trigger>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Background" Value="LightYellow"/>
+                                                </Trigger>
+                                                <MultiTrigger>
+                                                    <MultiTrigger.Conditions>
+                                                        <Condition Property="IsSelected" Value="True"/>
+                                                        <Condition Property="primitives:Selector.IsSelectionActive" Value="False"/>
+                                                    </MultiTrigger.Conditions>
+                                                    <Setter Property="Background" Value="LightYellow"/>
+                                                </MultiTrigger>
                                             </Style.Triggers>
                                             <!-- Keep selection color when control loses focus -->
                                             <Style.Resources>
@@ -459,11 +527,28 @@
                                             </Style.Resources>
                                         </Style>
                                     </DataGrid.RowStyle>
+                                    <DataGrid.CellStyle>
+                                        <Style TargetType="DataGridCell">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Background" Value="LightYellow"/>
+                                                    <Setter Property="Foreground" Value="Black"/>
+                                                </Trigger>
+                                                <MultiTrigger>
+                                                    <MultiTrigger.Conditions>
+                                                        <Condition Property="IsSelected" Value="True"/>
+                                                        <Condition Property="primitives:Selector.IsSelectionActive" Value="False"/>
+                                                    </MultiTrigger.Conditions>
+                                                    <Setter Property="Background" Value="LightYellow"/>
+                                                    <Setter Property="Foreground" Value="Black"/>
+                                                </MultiTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.CellStyle>
                                 </DataGrid>
                             </Grid>
                         </Border>
                     </Grid>
-                </ScrollViewer>
             </TabItem>
         </TabControl>
     </Grid>

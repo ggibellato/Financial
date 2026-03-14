@@ -133,6 +133,41 @@ namespace Financial.Presentation.Tools
                     dataGridColumn.Binding.StringFormat = GetPaddedShortDatePattern();
                 }
             }
+
+            ApplyValueColumnStyle(e, "Value");
+        }
+
+        private void DividendByYearDataGrid_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
+        {
+            ApplyValueColumnStyle(e, "Total");
+        }
+
+        private static void ApplyValueColumnStyle(DataGridAutoGeneratingColumnEventArgs e, string propertyName)
+        {
+            if (!string.Equals(e.PropertyName, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (e.Column is not DataGridTextColumn dataGridColumn)
+            {
+                return;
+            }
+
+            if (dataGridColumn.Binding is Binding binding)
+            {
+                binding.StringFormat = "N2";
+            }
+            else
+            {
+                dataGridColumn.Binding = new Binding(propertyName) { StringFormat = "N2" };
+            }
+
+            var style = new Style(typeof(TextBlock));
+            style.Setters.Add(new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Right));
+            style.Setters.Add(new Setter(TextBlock.FontWeightProperty, FontWeights.Bold));
+            style.Setters.Add(new Setter(TextBlock.ForegroundProperty, Brushes.Black));
+            dataGridColumn.ElementStyle = style;
         }
 
         private static string GetPaddedShortDatePattern()

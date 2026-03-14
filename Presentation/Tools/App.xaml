@@ -13,6 +13,7 @@
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <converters:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
         <converters:NodeTypeToVisibilityConverter x:Key="NodeTypeToVisibilityConverter"/>
+        <converters:SignedValueToBrushConverter x:Key="SignedValueToBrushConverter"/>
 
         <DrawingImage x:Key="AppIcon">
             <DrawingImage.Drawing>

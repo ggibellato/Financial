@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
@@ -14,12 +17,15 @@ public class AssetDetailsViewModel : ViewModelBase
 {
     private readonly IOperationService? _operationService;
     private readonly ICreditService? _creditService;
+    private readonly IAssetPriceService? _assetPriceService;
     private readonly RelayCommand _addOperationCommand;
     private readonly RelayCommand _updateOperationCommand;
     private readonly RelayCommand _deleteOperationCommand;
     private readonly RelayCommand _addCreditCommand;
     private readonly RelayCommand _updateCreditCommand;
     private readonly RelayCommand _deleteCreditCommand;
+    private readonly RelayCommand _refreshTodayInfoCommand;
+    private readonly RelayCommand _copyAssetNameCommand;
     private string _assetName = string.Empty;
     private string _brokerName = string.Empty;
     private string _portfolioName = string.Empty;
@@ -32,6 +38,14 @@ public class AssetDetailsViewModel : ViewModelBase
     private decimal _totalBought;
     private decimal _totalSold;
     private decimal _totalCredits;
+    private decimal _todayCurrentValue;
+    private string _todayCurrentValueAsOf = string.Empty;
+    private string _todayInfoMessage = string.Empty;
+    private bool _todayInfoAttempted;
+    private bool _isTodayInfoLoading;
+    private string _todayInfoAssetKey = string.Empty;
+    private readonly SemaphoreSlim _todayInfoLock = new(1, 1);
+    private readonly Dictionary<string, TodayInfoSnapshot> _todayInfoCache = new();
     private OperationDTO? _selectedOperation;
     private CreditDTO? _selectedCredit;
 
@@ -74,13 +88,25 @@ public class AssetDetailsViewModel : ViewModelBase
     public decimal Quantity
     {
         get => _quantity;
-        private set => SetProperty(ref _quantity, value);
+        private set
+        {
+            if (SetProperty(ref _quantity, value))
+            {
+                NotifyCurrentValueChanged();
+            }
+        }
     }
 
     public decimal AveragePrice
     {
         get => _averagePrice;
-        private set => SetProperty(ref _averagePrice, value);
+        private set
+        {
+            if (SetProperty(ref _averagePrice, value))
+            {
+                NotifyCurrentValueChanged();
+            }
+        }
     }
 
     public bool IsActive
@@ -92,20 +118,98 @@ public class AssetDetailsViewModel : ViewModelBase
     public decimal TotalBought
     {
         get => _totalBought;
-        private set => SetProperty(ref _totalBought, value);
+        private set
+        {
+            if (SetProperty(ref _totalBought, value))
+            {
+                OnPropertyChanged(nameof(Balance));
+            }
+        }
     }
 
     public decimal TotalSold
     {
         get => _totalSold;
-        private set => SetProperty(ref _totalSold, value);
+        private set
+        {
+            if (SetProperty(ref _totalSold, value))
+            {
+                OnPropertyChanged(nameof(Balance));
+            }
+        }
     }
 
     public decimal TotalCredits
     {
         get => _totalCredits;
-        private set => SetProperty(ref _totalCredits, value);
+        private set
+        {
+            if (SetProperty(ref _totalCredits, value))
+            {
+                NotifyCurrentValueChanged();
+            }
+        }
     }
+
+    public decimal Balance => TotalBought - TotalSold;
+
+    public decimal TodayCurrentValue
+    {
+        get => _todayCurrentValue;
+        private set
+        {
+            if (SetProperty(ref _todayCurrentValue, value))
+            {
+                NotifyCurrentValueChanged();
+            }
+        }
+    }
+
+    public string TodayCurrentValueAsOf
+    {
+        get => _todayCurrentValueAsOf;
+        private set => SetProperty(ref _todayCurrentValueAsOf, value);
+    }
+
+    public string TodayInfoMessage
+    {
+        get => _todayInfoMessage;
+        private set => SetProperty(ref _todayInfoMessage, value);
+    }
+
+    public decimal TotalCurrentValue => TodayCurrentValue * Quantity;
+
+    public decimal ResultPercent
+    {
+        get
+        {
+            if (!HasAveragePrice)
+            {
+                return 0;
+            }
+
+            var investedTotal = AveragePrice * Quantity;
+            return investedTotal == 0 ? 0 : (TotalCurrentValue / investedTotal) - 1;
+        }
+    }
+
+    public decimal TotalCurrentValueWithCredits => TotalCurrentValue + TotalCredits;
+
+    public decimal ResultPercentWithCredits
+    {
+        get
+        {
+            if (!HasAveragePrice)
+            {
+                return 0;
+            }
+
+            var investedTotal = AveragePrice * Quantity;
+            return investedTotal == 0 ? 0 : (TotalCurrentValueWithCredits / investedTotal) - 1;
+        }
+    }
+
+    public bool HasAveragePrice => AveragePrice > 0 && Quantity > 0;
 
     public ObservableCollection<OperationDTO> Operations { get; } = new();
     public ObservableCollection<CreditDTO> Credits { get; } = new();
@@ -140,17 +244,22 @@ public class AssetDetailsViewModel : ViewModelBase
     public RelayCommand AddCreditCommand => _addCreditCommand;
     public RelayCommand UpdateCreditCommand => _updateCreditCommand;
     public RelayCommand DeleteCreditCommand => _deleteCreditCommand;
+    public RelayCommand RefreshTodayInfoCommand => _refreshTodayInfoCommand;
+    public RelayCommand CopyAssetNameCommand => _copyAssetNameCommand;
 
-    public AssetDetailsViewModel(IOperationService? operationService = null, ICreditService? creditService = null)
+    public AssetDetailsViewModel(IOperationService? operationService = null, ICreditService? creditService = null, IAssetPriceService? assetPriceService = null)
     {
         _operationService = operationService;
         _creditService = creditService;
+        _assetPriceService = assetPriceService;
         _addOperationCommand = new RelayCommand(AddOperation, CanEditOperations);
         _updateOperationCommand = new RelayCommand(UpdateOperation, CanUpdateOperation);
         _deleteOperationCommand = new RelayCommand(DeleteOperation, CanDeleteOperation);
         _addCreditCommand = new RelayCommand(AddCredit, CanEditCredits);
         _updateCreditCommand = new RelayCommand(UpdateCredit, CanUpdateCredit);
         _deleteCreditCommand = new RelayCommand(DeleteCredit, CanDeleteCredit);
+        _refreshTodayInfoCommand = new RelayCommand(RefreshTodayInfo, CanRefreshTodayInfo);
+        _copyAssetNameCommand = new RelayCommand(CopyAssetName, CanCopyAssetName);
     }
 
     /// <summary>
@@ -158,6 +267,23 @@ public class AssetDetailsViewModel : ViewModelBase
     /// </summary>
     public void LoadAssetDetails(AssetDetailsDTO details)
     {
+        var assetKey = BuildAssetKey(details.BrokerName, details.PortfolioName, details.Name);
+        if (!string.Equals(_todayInfoAssetKey, assetKey, StringComparison.Ordinal))
+        {
+            _todayInfoAssetKey = assetKey;
+            _isTodayInfoLoading = false;
+            if (_todayInfoCache.TryGetValue(assetKey, out var cachedInfo))
+            {
+                ApplyTodayInfo(cachedInfo);
+                _todayInfoAttempted = true;
+            }
+            else
+            {
+                _todayInfoAttempted = false;
+                ResetTodayInfo();
+            }
+        }
+
         AssetName = details.Name;
         BrokerName = details.BrokerName;
         PortfolioName = details.PortfolioName;
@@ -205,6 +331,10 @@ public class AssetDetailsViewModel : ViewModelBase
         TotalBought = 0;
         TotalSold = 0;
         TotalCredits = 0;
+        _todayInfoAssetKey = string.Empty;
+        _todayInfoAttempted = false;
+        _isTodayInfoLoading = false;
+        ResetTodayInfo();
         Operations.Clear();
         Credits.Clear();
         SelectedOperation = null;
@@ -236,6 +366,127 @@ public class AssetDetailsViewModel : ViewModelBase
 
     private bool CanDeleteCredit(object? parameter) =>
         HasCreditContext && (parameter is CreditDTO || SelectedCredit != null);
+
+    private bool CanRefreshTodayInfo() => HasAssetContext && !_isTodayInfoLoading;
+
+    private bool CanCopyAssetName() => HasAssetContext;
+
+    private void CopyAssetName()
+    {
+        if (!HasAssetContext)
+        {
+            MessageBox.Show("Select an asset before copying.", "Copy Asset", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        Clipboard.SetText(AssetName);
+    }
+
+    public Task EnsureTodayInfoLoadedAsync()
+    {
+        return RefreshTodayInfoAsync(forceRefresh: false);
+    }
+
+    private async void RefreshTodayInfo()
+    {
+        await RefreshTodayInfoAsync(forceRefresh: true);
+    }
+
+    private async Task RefreshTodayInfoAsync(bool forceRefresh)
+    {
+        if (!HasAssetContext)
+        {
+            TodayInfoMessage = "Select an asset to load current values.";
+            return;
+        }
+
+        if (_assetPriceService == null)
+        {
+            TodayInfoMessage = "Current value service is not available.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Exchange) || string.IsNullOrWhiteSpace(Ticker))
+        {
+            TodayInfoMessage = "Asset exchange or ticker is missing.";
+            return;
+        }
+
+        await _todayInfoLock.WaitAsync();
+        var assetKey = _todayInfoAssetKey;
+        try
+        {
+            if (!forceRefresh && _todayInfoAttempted)
+            {
+                return;
+            }
+
+            _todayInfoAttempted = true;
+            _isTodayInfoLoading = true;
+            UpdateCommandStates();
+
+            var request = new AssetPriceRequestDTO
+            {
+                Exchange = Exchange,
+                Ticker = Ticker
+            };
+
+            var price = await Task.Run(() => _assetPriceService.GetCurrentPrice(request));
+            if (!string.Equals(_todayInfoAssetKey, assetKey, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            var asOf = price.AsOf?.ToLocalTime().ToString("g") ?? string.Empty;
+            TodayCurrentValue = price.Price;
+            TodayCurrentValueAsOf = asOf;
+            TodayInfoMessage = string.Empty;
+            _todayInfoCache[assetKey] = new TodayInfoSnapshot(price.Price, asOf);
+        }
+        catch (Exception ex)
+        {
+            if (!string.Equals(_todayInfoAssetKey, assetKey, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            TodayInfoMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isTodayInfoLoading = false;
+            UpdateCommandStates();
+            _todayInfoLock.Release();
+        }
+    }
+
+    private void ResetTodayInfo()
+    {
+        TodayCurrentValue = 0;
+        TodayCurrentValueAsOf = string.Empty;
+        TodayInfoMessage = string.Empty;
+    }
+
+    private void ApplyTodayInfo(TodayInfoSnapshot snapshot)
+    {
+        TodayCurrentValue = snapshot.Price;
+        TodayCurrentValueAsOf = snapshot.AsOf;
+        TodayInfoMessage = string.Empty;
+    }
+
+    private void NotifyCurrentValueChanged()
+    {
+        OnPropertyChanged(nameof(TotalCurrentValue));
+        OnPropertyChanged(nameof(ResultPercent));
+        OnPropertyChanged(nameof(HasAveragePrice));
+        OnPropertyChanged(nameof(TotalCurrentValueWithCredits));
+        OnPropertyChanged(nameof(ResultPercentWithCredits));
+    }
+
+    private static string BuildAssetKey(string brokerName, string portfolioName, string assetName) =>
+        $"{brokerName}|{portfolioName}|{assetName}";
+
+    private sealed record TodayInfoSnapshot(decimal Price, string AsOf);
 
     private void AddOperation()
     {
@@ -565,6 +816,8 @@ public class AssetDetailsViewModel : ViewModelBase
         _addCreditCommand.RaiseCanExecuteChanged();
         _updateCreditCommand.RaiseCanExecuteChanged();
         _deleteCreditCommand.RaiseCanExecuteChanged();
+        _refreshTodayInfoCommand.RaiseCanExecuteChanged();
+        _copyAssetNameCommand.RaiseCanExecuteChanged();
     }
 
     private bool ShowOperationDialog(OperationDialogViewModel viewModel)

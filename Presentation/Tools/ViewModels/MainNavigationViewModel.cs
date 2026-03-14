@@ -14,6 +14,7 @@ public class MainNavigationViewModel : ViewModelBase
     private readonly INavigationService _navigationService;
     private readonly IOperationService _operationService;
     private readonly ICreditService _creditService;
+    private readonly IAssetPriceService _assetPriceService;
     private TreeNodeViewModel? _selectedNode;
     private bool _isLoading;
 
@@ -38,12 +39,13 @@ public class MainNavigationViewModel : ViewModelBase
         set => SetProperty(ref _isLoading, value);
     }
 
-    public MainNavigationViewModel(INavigationService navigationService, IOperationService operationService, ICreditService creditService)
+    public MainNavigationViewModel(INavigationService navigationService, IOperationService operationService, ICreditService creditService, IAssetPriceService assetPriceService)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _operationService = operationService ?? throw new ArgumentNullException(nameof(operationService));
         _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
-        AssetDetails = new AssetDetailsViewModel(_operationService, _creditService);
+        _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
+        AssetDetails = new AssetDetailsViewModel(_operationService, _creditService, _assetPriceService);
     }
 
     /// <summary>
@@ -143,6 +145,7 @@ public class MainNavigationViewModel : ViewModelBase
         if (details != null)
         {
             AssetDetails.LoadAssetDetails(details);
+            _ = AssetDetails.EnsureTodayInfoLoadedAsync();
         }
     }
 }

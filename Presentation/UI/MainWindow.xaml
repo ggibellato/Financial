@@ -6,7 +6,7 @@
         xmlns:converters="clr-namespace:Financial.Presentation.UI.Converters"
         mc:Ignorable="d"
         Title="Financial Portfolio Navigator" 
-        Height="700" Width="1200"
+        Height="800" Width="938"
         WindowStartupLocation="CenterScreen">
     
     <Window.Resources>
@@ -106,10 +106,20 @@
                     </Grid.ColumnDefinitions>
                     
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="{Binding AssetDetails.AssetName, Mode=OneWay}" 
-                                   FontSize="20" 
-                                   FontWeight="Bold"
-                                   Foreground="#333333"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding AssetDetails.AssetName, Mode=OneWay}" 
+                                       FontSize="20" 
+                                       FontWeight="Bold"
+                                       Foreground="#333333"/>
+                            <Button Command="{Binding AssetDetails.CopyAssetNameCommand}"
+                                    ToolTip="Copy asset name"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Padding="2"
+                                    Margin="4,0,0,0">
+                                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8C8;" FontSize="14" Foreground="#666666"/>
+                            </Button>
+                        </StackPanel>
                         <TextBlock Margin="0,5,0,0">
                             <Run Text="{Binding AssetDetails.Ticker, Mode=OneWay}"/>
                             <Run Text=" &#x00B7; " FontFamily="Segoe UI Symbol"/>
@@ -153,14 +163,19 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
                             <!-- Row 0: Quantity & Average Price -->
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Quantity:" FontWeight="Bold" Margin="0,5"/>
-                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AssetDetails.Quantity, Mode=OneWay, StringFormat=N2}" Margin="10,5"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AssetDetails.Quantity, Mode=OneWay, StringFormat=N2}" TextAlignment="Right" FontFamily="Consolas" Margin="10,5"/>
                             
                             <TextBlock Grid.Row="0" Grid.Column="2" Text="Average Price:" FontWeight="Bold" Margin="20,5,0,5"/>
-                            <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding AssetDetails.AveragePrice, Mode=OneWay, StringFormat=N2}" Margin="10,5"/>
+                            <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding AssetDetails.AveragePrice, Mode=OneWay, StringFormat=N2}" TextAlignment="Right" FontFamily="Consolas" Margin="10,5"/>
 
                             <!-- Row 1: ISIN -->
                             <TextBlock Grid.Row="1" Grid.Column="0" Text="ISIN:" FontWeight="Bold" Margin="0,5"/>
@@ -174,6 +189,8 @@
                             <TextBlock Grid.Row="3" Grid.Column="0" Text="Total Bought:" FontWeight="Bold" Margin="0,5"/>
                             <TextBlock Grid.Row="3" Grid.Column="1" 
                                        Text="{Binding AssetDetails.TotalBought, Mode=OneWay, StringFormat=N2}" 
+                                       TextAlignment="Right"
+                                       FontFamily="Consolas"
                                        Margin="10,5"
                                        Foreground="Green"/>
                             
@@ -187,16 +204,79 @@
                             <TextBlock Grid.Row="4" Grid.Column="0" Text="Total Credits:" FontWeight="Bold" Margin="0,5"/>
                             <TextBlock Grid.Row="4" Grid.Column="1" 
                                        Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}" 
+                                       TextAlignment="Right"
+                                       FontFamily="Consolas"
                                        Margin="10,5"
                                        Foreground="Blue"/>
 
-                            <!-- Row 5: Operations Count -->
-                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Operations:" FontWeight="Bold" Margin="0,5"/>
-                            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding AssetDetails.Operations.Count, Mode=OneWay}" Margin="10,5"/>
+                            <!-- Separator -->
+                            <Border Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="4" 
+                                    BorderBrush="#EEEEEE" BorderThickness="0,1,0,0" Margin="0,15,0,15"/>
 
-                            <!-- Row 6: Credits Count -->
-                            <TextBlock Grid.Row="6" Grid.Column="0" Text="Credit Entries:" FontWeight="Bold" Margin="0,5"/>
-                            <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding AssetDetails.Credits.Count, Mode=OneWay}" Margin="10,5"/>
+                            <!-- Row 6: Current Header -->
+                            <TextBlock Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Text="Current" FontWeight="Bold" FontSize="13" Margin="0,5"/>
+                            <Button Grid.Row="6" Grid.Column="2" Grid.ColumnSpan="2"
+                                    Command="{Binding AssetDetails.RefreshTodayInfoCommand}"
+                                    Content="Refresh"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,5"/>
+
+                            <!-- Row 7: Current Value & As Of -->
+                            <TextBlock Grid.Row="7" Grid.Column="0" Text="Current Value:" FontWeight="Bold" Margin="0,5"/>
+                            <TextBlock Grid.Row="7" Grid.Column="1" 
+                                       Text="{Binding AssetDetails.TodayCurrentValue, Mode=OneWay, StringFormat=N2}" 
+                                       TextAlignment="Right"
+                                       FontFamily="Consolas"
+                                       Margin="10,5"/>
+                            <TextBlock Grid.Row="7" Grid.Column="2" Text="As of:" FontWeight="Bold" Margin="20,5,0,5"/>
+                            <TextBlock Grid.Row="7" Grid.Column="3" 
+                                       Text="{Binding AssetDetails.TodayCurrentValueAsOf, Mode=OneWay}" 
+                                       Margin="10,5"/>
+
+                            <!-- Row 8: Total Current Value & Result % -->
+                            <TextBlock Grid.Row="8" Grid.Column="0" Text="Total Current Value:" FontWeight="Bold" Margin="0,5"
+                                       Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            <TextBlock Grid.Row="8" Grid.Column="1" 
+                                       Text="{Binding AssetDetails.TotalCurrentValue, Mode=OneWay, StringFormat=N2}" 
+                                       TextAlignment="Right"
+                                       FontFamily="Consolas"
+                                       Margin="10,5"
+                                       Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            <TextBlock Grid.Row="8" Grid.Column="2" Text="Result %:" FontWeight="Bold" Margin="20,5,0,5"
+                                       Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            <TextBlock Grid.Row="8" Grid.Column="3" 
+                                       Text="{Binding AssetDetails.ResultPercent, Mode=OneWay, StringFormat=P2}" 
+                                       TextAlignment="Right"
+                                       FontFamily="Consolas"
+                                       Foreground="{Binding AssetDetails.ResultPercent, Converter={StaticResource SignedValueToBrushConverter}}"
+                                       Margin="10,5"
+                                       Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                            <!-- Row 9: Total Current + Credits & Result % -->
+                            <TextBlock Grid.Row="9" Grid.Column="0" Text="Total Current + Credits:" FontWeight="Bold" Margin="0,5"
+                                       Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            <TextBlock Grid.Row="9" Grid.Column="1" 
+                                       Text="{Binding AssetDetails.TotalCurrentValueWithCredits, Mode=OneWay, StringFormat=N2}" 
+                                       TextAlignment="Right"
+                                       FontFamily="Consolas"
+                                       Margin="10,5"
+                                       Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            <TextBlock Grid.Row="9" Grid.Column="2" Text="Result %:" FontWeight="Bold" Margin="20,5,0,5"
+                                       Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            <TextBlock Grid.Row="9" Grid.Column="3" 
+                                       Text="{Binding AssetDetails.ResultPercentWithCredits, Mode=OneWay, StringFormat=P2}" 
+                                       TextAlignment="Right"
+                                       FontFamily="Consolas"
+                                       Foreground="{Binding AssetDetails.ResultPercentWithCredits, Converter={StaticResource SignedValueToBrushConverter}}"
+                                       Margin="10,5"
+                                       Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                            <!-- Row 10: Status/Error -->
+                            <TextBlock Grid.Row="10" Grid.Column="0" Text="Status:" FontWeight="Bold" Margin="0,5"/>
+                            <TextBlock Grid.Row="10" Grid.Column="1" Grid.ColumnSpan="3"
+                                       Text="{Binding AssetDetails.TodayInfoMessage, Mode=OneWay}" 
+                                       Margin="10,5"
+                                       Foreground="DarkRed"/>
                         </Grid>
                     </ScrollViewer>
                 </TabItem>
@@ -334,8 +414,9 @@
                                                     Width="*">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
+                                            <Setter Property="TextAlignment" Value="Right"/>
                                             <Setter Property="FontWeight" Value="Bold"/>
-                                            <Setter Property="Foreground" Value="Blue"/>
+                                            <Setter Property="Foreground" Value="Black"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
