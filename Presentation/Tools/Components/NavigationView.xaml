@@ -205,79 +205,116 @@
 
                 <!-- Operations Tab -->
                 <TabItem Header="Operations">
-                    <DataGrid ItemsSource="{Binding AssetDetails.Operations}"
-                              AutoGenerateColumns="False"
-                              CanUserAddRows="False">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Date" 
-                                                Binding="{Binding Date, Converter={StaticResource DateFormatConverter}, ConverterParameter='d'}" 
-                                                Width="Auto"/>
-                            <DataGridTextColumn Header="Type" 
-                                                Binding="{Binding Type}" 
-                                                Width="Auto">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" 
-                                                Value="{Binding Type, Converter={StaticResource OperationTypeToColorConverter}}"/>
-                                        <Setter Property="FontWeight" Value="Bold"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Quantity" 
-                                                Binding="{Binding Quantity, StringFormat=N8}" 
-                                                Width="Auto">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="TextAlignment" Value="Right"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Unit Price" 
-                                                Binding="{Binding UnitPrice, StringFormat=N2}" 
-                                                Width="Auto">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="TextAlignment" Value="Right"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Fees" 
-                                                Binding="{Binding Fees, StringFormat=N2}" 
-                                                Width="Auto">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="TextAlignment" Value="Right"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Total" 
-                                                Binding="{Binding TotalPrice, StringFormat=N2}" 
-                                                Width="*">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="TextAlignment" Value="Right"/>
-                                        <Setter Property="FontWeight" Value="Bold"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                        </DataGrid.Columns>
-                        <DataGrid.RowStyle>
-                            <Style TargetType="DataGridRow">
-                                <Style.Triggers>
-                                    <Trigger Property="IsSelected" Value="True">
-                                        <Setter Property="Background" Value="LightYellow"/>
-                                    </Trigger>
-                                    <MultiTrigger>
-                                        <MultiTrigger.Conditions>
-                                            <Condition Property="IsSelected" Value="True"/>
-                                            <Condition Property="primitives:Selector.IsSelectionActive" Value="False"/>
-                                        </MultiTrigger.Conditions>
-                                        <Setter Property="Background" Value="LightYellow"/>
-                                    </MultiTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </DataGrid.RowStyle>
-                        <DataGrid.CellStyle>
+                    <DockPanel>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,8">
+                            <Button Command="{Binding AssetDetails.AddOperationCommand}" ToolTip="New operation">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE710;" Margin="0,0,6,0"/>
+                                    <TextBlock Text="New"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                        <DataGrid ItemsSource="{Binding AssetDetails.Operations}"
+                                  SelectedItem="{Binding AssetDetails.SelectedOperation, Mode=TwoWay}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True">
+                            <DataGrid.InputBindings>
+                                <MouseBinding MouseAction="LeftDoubleClick"
+                                              Command="{Binding AssetDetails.UpdateOperationCommand}"/>
+                            </DataGrid.InputBindings>
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="" Width="Auto">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Command="{Binding DataContext.AssetDetails.UpdateOperationCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Update"
+                                                        Padding="2"
+                                                        Margin="0,0,4,0">
+                                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE70F;"/>
+                                                </Button>
+                                                <Button Command="{Binding DataContext.AssetDetails.DeleteOperationCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Delete"
+                                                        Padding="2">
+                                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE74D;"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Date" 
+                                                    Binding="{Binding Date, Converter={StaticResource DateFormatConverter}, ConverterParameter='d'}" 
+                                                    Width="Auto"/>
+                                <DataGridTextColumn Header="Type" 
+                                                    Binding="{Binding Type}" 
+                                                    Width="Auto">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" 
+                                                    Value="{Binding Type, Converter={StaticResource OperationTypeToColorConverter}}"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Quantity" 
+                                                    Binding="{Binding Quantity, StringFormat=N8}" 
+                                                    Width="Auto">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="TextAlignment" Value="Right"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Unit Price" 
+                                                    Binding="{Binding UnitPrice, StringFormat=N2}" 
+                                                    Width="Auto">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="TextAlignment" Value="Right"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Fees" 
+                                                    Binding="{Binding Fees, StringFormat=N2}" 
+                                                    Width="Auto">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="TextAlignment" Value="Right"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Total" 
+                                                    Binding="{Binding TotalPrice, StringFormat=N2}" 
+                                                    Width="*"
+                                                    IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="TextAlignment" Value="Right"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="LightYellow"/>
+                                        </Trigger>
+                                        <MultiTrigger>
+                                            <MultiTrigger.Conditions>
+                                                <Condition Property="IsSelected" Value="True"/>
+                                                <Condition Property="primitives:Selector.IsSelectionActive" Value="False"/>
+                                            </MultiTrigger.Conditions>
+                                            <Setter Property="Background" Value="LightYellow"/>
+                                        </MultiTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+                            <DataGrid.CellStyle>
                             <Style TargetType="DataGridCell">
                                 <Style.Triggers>
                                     <Trigger Property="IsSelected" Value="True">
@@ -296,7 +333,8 @@
                             </Style>
                         </DataGrid.CellStyle>
                     </DataGrid>
-                </TabItem>
+                </DockPanel>
+            </TabItem>
 
                 <!-- Credits Tab -->
                 <TabItem Header="Credits">

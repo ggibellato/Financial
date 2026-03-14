@@ -58,6 +58,14 @@ public sealed class JSONRepository : IRepository
             .SelectMany(b => b.Portfolios.SelectMany(p => p.Assets.Where(a => a.Name == name)));
     }
 
+    public Asset? GetAsset(string brokerName, string portfolioName, string assetName)
+    {
+        return _investiments.Brokers
+            .Where(b => b.Name == brokerName)
+            .SelectMany(b => b.Portfolios.Where(p => p.Name == portfolioName).SelectMany(p => p.Assets))
+            .FirstOrDefault(a => a.Name == assetName);
+    }
+
     public IEnumerable<Broker> GetBrokerList()
     {
         return _investiments.Brokers;
@@ -107,6 +115,15 @@ public sealed class JSONRepository : IRepository
             ret.InvestedHistory[key] = currentVlw;
         }
         return ret;
+    }
+
+    public void SaveChanges()
+    {
+        var json = _investiments.Serialize();
+        _storage.WriteAsync(json)
+            .ConfigureAwait(false)
+            .GetAwaiter()
+            .GetResult();
     }
 
     private static Investments LoadInvestments(IJsonStorage storage)

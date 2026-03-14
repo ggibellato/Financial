@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Financial.Domain.Entities;
@@ -37,8 +38,16 @@ public class Asset
     public IReadOnlyCollection<Operation> Operations { get => _operations.AsReadOnly(); set => SetOperations(value); }
     private void SetOperations(IReadOnlyCollection<Operation> data)
     {
+        RebuildOperations(data);
+    }
+
+    private void RebuildOperations(IEnumerable<Operation> operations)
+    {
+        var operationList = new List<Operation>(operations);
         _operations.Clear();
-        foreach (var operation in data)
+        AvargePrice = 0;
+        Quantity = 0;
+        foreach (var operation in operationList)
         {
             AddOperation(operation);
         }
@@ -68,6 +77,12 @@ public class Asset
 
     public void AddOperation(Operation operation)
     {
+        if (operation == null)
+        {
+            throw new ArgumentNullException(nameof(operation));
+        }
+
+        operation.EnsureId();
         if (operation.Type == Operation.OperationType.Buy)
         {
             AvargePrice = (AvargePrice * Quantity + operation.TotalPrice) / (Quantity + operation.Quantity);
@@ -82,6 +97,49 @@ public class Asset
         {
             AddOperation(operation);
         }
+    }
+
+    public bool UpdateOperation(Operation updatedOperation)
+    {
+        if (updatedOperation == null)
+        {
+            throw new ArgumentNullException(nameof(updatedOperation));
+        }
+
+        if (updatedOperation.Id == Guid.Empty)
+        {
+            throw new ArgumentException("Operation Id is required for update.", nameof(updatedOperation));
+        }
+
+        var index = _operations.FindIndex(op => op.Id == updatedOperation.Id);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        var operations = new List<Operation>(_operations);
+        operations[index] = updatedOperation;
+        RebuildOperations(operations);
+        return true;
+    }
+
+    public bool RemoveOperation(Guid operationId)
+    {
+        if (operationId == Guid.Empty)
+        {
+            throw new ArgumentException("Operation Id is required for delete.", nameof(operationId));
+        }
+
+        var index = _operations.FindIndex(op => op.Id == operationId);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        var operations = new List<Operation>(_operations);
+        operations.RemoveAt(index);
+        RebuildOperations(operations);
+        return true;
     }
 
     public void AddCredit(Credit credit)

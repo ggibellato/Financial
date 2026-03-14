@@ -6,6 +6,11 @@ namespace Financial.Application.DTOs;
 public class OperationDTO
 {
     /// <summary>
+    /// Operation identifier
+    /// </summary>
+    public Guid Id { get; set; }
+
+    /// <summary>
     /// Date of the operation
     /// </summary>
     public DateTime Date { get; set; }

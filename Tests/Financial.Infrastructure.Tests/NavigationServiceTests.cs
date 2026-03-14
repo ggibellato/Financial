@@ -1,5 +1,6 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
+using Financial.Domain.Entities;
 using Financial.Infrastructure.Repositories;
 using Financial.Infrastructure.Persistence;
 using FluentAssertions;
@@ -280,6 +281,110 @@ public class NavigationServiceTests
                 result.Credits[i].Date.Should().BeOnOrAfter(result.Credits[i + 1].Date);
             }
         }
+    }
+
+    [Fact]
+    public void GetBrokers_ShouldOrderByNameWithEncerradasLast()
+    {
+        // Arrange
+        var repository = new StubRepository(new[]
+        {
+            BuildBroker("Zeta"),
+            BuildBroker("Encerradas"),
+            BuildBroker("Alpha")
+        });
+        var sut = new NavigationService(repository);
+
+        // Act
+        var brokerNames = sut.GetBrokers().Select(broker => broker.Name).ToList();
+
+        // Assert
+        brokerNames.Should().ContainInOrder("Alpha", "Zeta", "Encerradas");
+    }
+
+    [Fact]
+    public void GetBrokers_PortfoliosShouldOrderByNameWithEncerradasLast()
+    {
+        // Arrange
+        var broker = BuildBroker("Broker", "USD",
+            ("Zeta", new[] { "B" }),
+            ("Encerradas", new[] { "C" }),
+            ("Alpha", new[] { "A" }));
+        var repository = new StubRepository(new[] { broker });
+        var sut = new NavigationService(repository);
+
+        // Act
+        var portfolioNames = sut.GetBrokers().Single().Portfolios.Select(portfolio => portfolio.Name).ToList();
+
+        // Assert
+        portfolioNames.Should().ContainInOrder("Alpha", "Zeta", "Encerradas");
+    }
+
+    [Fact]
+    public void GetBrokers_AssetsShouldOrderByNameWithEncerradasLast()
+    {
+        // Arrange
+        var broker = BuildBroker("Broker", "USD",
+            ("Portfolio", new[] { "Zeta", "Encerradas", "Alpha" }));
+        var repository = new StubRepository(new[] { broker });
+        var sut = new NavigationService(repository);
+
+        // Act
+        var assetNames = sut.GetBrokers()
+            .Single()
+            .Portfolios.Single()
+            .Assets.Select(asset => asset.Name)
+            .ToList();
+
+        // Assert
+        assetNames.Should().ContainInOrder("Alpha", "Zeta", "Encerradas");
+    }
+
+    private static Broker BuildBroker(string name, string currency = "USD",
+        params (string PortfolioName, string[] AssetNames)[] portfolios)
+    {
+        var broker = Broker.Create(name, currency);
+
+        foreach (var (portfolioName, assetNames) in portfolios)
+        {
+            var portfolio = broker.AddPortfolio(portfolioName);
+            foreach (var assetName in assetNames)
+            {
+                portfolio.AddAsset(Asset.Create(assetName, "ISIN", "EX", "TICKER"));
+            }
+        }
+
+        return broker;
+    }
+
+    private sealed class StubRepository : IRepository
+    {
+        private readonly List<Broker> _brokers;
+
+        public StubRepository(IEnumerable<Broker> brokers)
+        {
+            _brokers = brokers.ToList();
+        }
+
+        public List<string> GetAllAssetsFullName() => throw new NotImplementedException();
+
+        public IEnumerable<Asset> GetAssetsByBroker(string name) => throw new NotImplementedException();
+
+        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio) => throw new NotImplementedException();
+
+        public IEnumerable<Asset> GetAssetsByPortfolio(string name) => throw new NotImplementedException();
+
+        public IEnumerable<Asset> GetAssetsByAssetName(string name) => throw new NotImplementedException();
+
+        public IEnumerable<Broker> GetBrokerList() => _brokers;
+
+        public Asset? GetAsset(string brokerName, string portfolioName, string assetName) => throw new NotImplementedException();
+
+        public BrokerInfoDTO GetBrokerInfo(string brokerName) => throw new NotImplementedException();
+
+        public AssetInfoDTO GetAssetInfo(string brokerName, string portfolio, string assetName) => throw new NotImplementedException();
+
+        public void SaveChanges() => throw new NotImplementedException();
     }
 }
 

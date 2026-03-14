@@ -10,6 +10,7 @@ namespace Financial.Infrastructure.Repositories;
 /// </summary>
 public class NavigationService : INavigationService
 {
+    private const string EncerradasName = "Encerradas";
     private readonly IRepository _repository;
 
     public NavigationService(IRepository repository)
@@ -114,6 +115,7 @@ public class NavigationService : INavigationService
         // Map operations
         var operations = asset.Operations.Select(op => new OperationDTO
         {
+            Id = op.Id,
             Date = op.Date,
             Type = op.Type.ToString(),
             Quantity = op.Quantity,
@@ -165,7 +167,7 @@ public class NavigationService : INavigationService
     /// </summary>
     public IEnumerable<BrokerNodeDTO> GetBrokers()
     {
-        var brokers = _repository.GetBrokerList();
+        var brokers = OrderByNameWithEncerradasLast(_repository.GetBrokerList(), broker => broker.Name);
 
         return brokers.Select(broker => new BrokerNodeDTO
         {
@@ -173,24 +175,38 @@ public class NavigationService : INavigationService
             Currency = broker.Currency,
             PortfolioCount = broker.Portfolios.Count,
             TotalAssets = broker.Portfolios.Sum(p => p.Assets.Count),
-            Portfolios = broker.Portfolios.Select(portfolio => new PortfolioNodeDTO
+            Portfolios = OrderByNameWithEncerradasLast(broker.Portfolios, portfolio => portfolio.Name)
+                .Select(portfolio => new PortfolioNodeDTO
             {
                 Name = portfolio.Name,
                 AssetCount = portfolio.Assets.Count,
                 ActiveAssetCount = portfolio.Assets.Count(a => a.Active),
-                Assets = portfolio.Assets.Select(asset => new AssetNodeDTO
-                {
-                    Name = asset.Name,
-                    Ticker = asset.Ticker,
-                    Exchange = asset.Exchange,
-                    ISIN = asset.ISIN,
-                    Quantity = asset.Quantity,
-                    AveragePrice = asset.AvargePrice,
-                    IsActive = asset.Active,
-                    OperationCount = asset.Operations.Count,
-                    CreditCount = asset.Credits.Count
-                }).ToList()
+                Assets = OrderByNameWithEncerradasLast(portfolio.Assets, asset => asset.Name)
+                    .Select(asset => new AssetNodeDTO
+                    {
+                        Name = asset.Name,
+                        Ticker = asset.Ticker,
+                        Exchange = asset.Exchange,
+                        ISIN = asset.ISIN,
+                        Quantity = asset.Quantity,
+                        AveragePrice = asset.AvargePrice,
+                        IsActive = asset.Active,
+                        OperationCount = asset.Operations.Count,
+                        CreditCount = asset.Credits.Count
+                    }).ToList()
             }).ToList()
         }).ToList();
+    }
+
+    private static IEnumerable<T> OrderByNameWithEncerradasLast<T>(IEnumerable<T> source, Func<T, string> nameSelector)
+    {
+        return source
+            .OrderBy(item => IsEncerradas(nameSelector(item)) ? 1 : 0)
+            .ThenBy(item => nameSelector(item) ?? string.Empty, StringComparer.CurrentCultureIgnoreCase);
+    }
+
+    private static bool IsEncerradas(string? name)
+    {
+        return string.Equals(name?.Trim(), EncerradasName, StringComparison.CurrentCultureIgnoreCase);
     }
 }

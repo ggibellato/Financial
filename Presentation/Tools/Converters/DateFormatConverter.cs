@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Text;
 using System.Windows.Data;
 
 namespace Financial.Presentation.Tools.Converters;
@@ -13,7 +14,11 @@ public class DateFormatConverter : IValueConverter
     {
         if (value is DateTime dateTime)
         {
-            var format = parameter as string ?? "d"; // Short date by default
+            var format = parameter as string;
+            if (string.IsNullOrWhiteSpace(format) || string.Equals(format, "d", StringComparison.OrdinalIgnoreCase))
+            {
+                format = GetPaddedShortDatePattern(culture);
+            }
             return dateTime.ToString(format, culture);
         }
         return string.Empty;
@@ -26,6 +31,67 @@ public class DateFormatConverter : IValueConverter
             return result;
         }
         return DateTime.MinValue;
+    }
+
+    private static string GetPaddedShortDatePattern(CultureInfo culture)
+    {
+        return PadDayMonthTokens(culture.DateTimeFormat.ShortDatePattern);
+    }
+
+    private static string PadDayMonthTokens(string pattern)
+    {
+        var sb = new StringBuilder();
+        bool inQuote = false;
+
+        for (int i = 0; i < pattern.Length; i++)
+        {
+            var ch = pattern[i];
+            if (ch == '\'')
+            {
+                sb.Append(ch);
+                if (i + 1 < pattern.Length && pattern[i + 1] == '\'')
+                {
+                    sb.Append(pattern[i + 1]);
+                    i++;
+                }
+                else
+                {
+                    inQuote = !inQuote;
+                }
+                continue;
+            }
+
+            if (inQuote)
+            {
+                sb.Append(ch);
+                continue;
+            }
+
+            if (ch == 'd' || ch == 'M')
+            {
+                int count = 1;
+                while (i + count < pattern.Length && pattern[i + count] == ch)
+                {
+                    count++;
+                }
+
+                if (count == 1)
+                {
+                    sb.Append(ch, 2);
+                }
+                else
+                {
+                    sb.Append(ch, count);
+                }
+
+                i += count - 1;
+                continue;
+            }
+
+            sb.Append(ch);
+        }
+
+        return sb.ToString();
     }
 }
 

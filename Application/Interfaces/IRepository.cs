@@ -11,7 +11,10 @@ public interface IRepository
     IEnumerable<Asset> GetAssetsByPortfolio(string name);
     IEnumerable<Asset> GetAssetsByAssetName(string name);
     IEnumerable<Broker> GetBrokerList();
+    Asset? GetAsset(string brokerName, string portfolioName, string assetName);
 
     BrokerInfoDTO GetBrokerInfo(string brokerName);
     AssetInfoDTO GetAssetInfo(string brokerName, string portfolio, string assetName);
+
+    void SaveChanges();
 }

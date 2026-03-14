@@ -46,6 +46,7 @@ namespace Financial.Presentation.Tools
                         return factory.Create(options);
                     });
                     services.AddSingleton<INavigationService, NavigationService>();
+                    services.AddSingleton<IOperationService, OperationService>();
 
                     // Register ViewModels
                     services.AddTransient<MainNavigationViewModel>();

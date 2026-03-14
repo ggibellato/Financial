@@ -12,6 +12,7 @@ namespace Financial.Presentation.Tools.ViewModels;
 public class MainNavigationViewModel : ViewModelBase
 {
     private readonly INavigationService _navigationService;
+    private readonly IOperationService _operationService;
     private TreeNodeViewModel? _selectedNode;
     private bool _isLoading;
 
@@ -36,10 +37,11 @@ public class MainNavigationViewModel : ViewModelBase
         set => SetProperty(ref _isLoading, value);
     }
 
-    public MainNavigationViewModel(INavigationService navigationService)
+    public MainNavigationViewModel(INavigationService navigationService, IOperationService operationService)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
-        AssetDetails = new AssetDetailsViewModel();
+        _operationService = operationService ?? throw new ArgumentNullException(nameof(operationService));
+        AssetDetails = new AssetDetailsViewModel(_operationService);
     }
 
     /// <summary>

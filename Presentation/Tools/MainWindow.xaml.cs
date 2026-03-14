@@ -9,6 +9,7 @@ using Financial.Presentation.Tools.Components;
 using Financial.Presentation.Tools.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -129,9 +130,71 @@ namespace Financial.Presentation.Tools
                 var dataGridColumn = e.Column as DataGridTextColumn;
                 if (dataGridColumn != null)
                 {
-                    dataGridColumn.Binding.StringFormat = "dd/MM/yyyy";
+                    dataGridColumn.Binding.StringFormat = GetPaddedShortDatePattern();
                 }
             }
+        }
+
+        private static string GetPaddedShortDatePattern()
+        {
+            var pattern = CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern;
+            return PadDayMonthTokens(pattern);
+        }
+
+        private static string PadDayMonthTokens(string pattern)
+        {
+            var sb = new StringBuilder();
+            bool inQuote = false;
+
+            for (int i = 0; i < pattern.Length; i++)
+            {
+                var ch = pattern[i];
+                if (ch == '\'')
+                {
+                    sb.Append(ch);
+                    if (i + 1 < pattern.Length && pattern[i + 1] == '\'')
+                    {
+                        sb.Append(pattern[i + 1]);
+                        i++;
+                    }
+                    else
+                    {
+                        inQuote = !inQuote;
+                    }
+                    continue;
+                }
+
+                if (inQuote)
+                {
+                    sb.Append(ch);
+                    continue;
+                }
+
+                if (ch == 'd' || ch == 'M')
+                {
+                    int count = 1;
+                    while (i + count < pattern.Length && pattern[i + count] == ch)
+                    {
+                        count++;
+                    }
+
+                    if (count == 1)
+                    {
+                        sb.Append(ch, 2);
+                    }
+                    else
+                    {
+                        sb.Append(ch, count);
+                    }
+
+                    i += count - 1;
+                    continue;
+                }
+
+                sb.Append(ch);
+            }
+
+            return sb.ToString();
         }
 
         private async void btnCheckFIIS_Click(object sender, RoutedEventArgs e)
