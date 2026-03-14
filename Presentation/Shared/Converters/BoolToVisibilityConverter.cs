@@ -1,9 +1,8 @@
-using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-namespace Financial.Presentation.Tools.Converters;
+namespace Financial.Presentation.Shared.Converters;
 
 /// <summary>
 /// Converts boolean to Visibility (true = Visible, false = Collapsed)

@@ -1,9 +1,7 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace Financial.Presentation.Tools.ViewModels;
+namespace Financial.Presentation.Shared.ViewModels;
 
 /// <summary>
 /// Base class for all ViewModels, providing INotifyPropertyChanged implementation

@@ -1,20 +1,21 @@
 using System.Globalization;
+using System.Windows;
 using System.Windows.Data;
 
-namespace Financial.Presentation.UI.Converters;
+namespace Financial.Presentation.Shared.Converters;
 
 /// <summary>
-/// Converts boolean active status to icon symbol (● for active, ○ for inactive)
+/// Shows icon only for Asset node types
 /// </summary>
-public class BoolToIconConverter : IValueConverter
+public class NodeTypeToVisibilityConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is bool isActive)
+        if (value is string nodeType && nodeType == "Asset")
         {
-            return isActive ? "●" : "○";
+            return Visibility.Visible;
         }
-        return "○";
+        return Visibility.Collapsed;
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

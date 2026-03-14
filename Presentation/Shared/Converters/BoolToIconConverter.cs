@@ -1,8 +1,7 @@
-using System;
 using System.Globalization;
 using System.Windows.Data;
 
-namespace Financial.Presentation.Tools.Converters;
+namespace Financial.Presentation.Shared.Converters;
 
 /// <summary>
 /// Converts boolean active status to icon symbol (● for active, ○ for inactive)

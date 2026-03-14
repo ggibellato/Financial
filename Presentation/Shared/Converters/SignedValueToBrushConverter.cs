@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace Financial.Presentation.UI.Converters;
+namespace Financial.Presentation.Shared.Converters;
 
 public class SignedValueToBrushConverter : IValueConverter
 {

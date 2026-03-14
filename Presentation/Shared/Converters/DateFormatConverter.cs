@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Windows.Data;
 
-namespace Financial.Presentation.UI.Converters;
+namespace Financial.Presentation.Shared.Converters;
 
 /// <summary>
 /// Converts DateTime to localized date string

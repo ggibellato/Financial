@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Windows.Data;
 
-namespace Financial.Presentation.UI.Converters;
+namespace Financial.Presentation.Shared.Converters;
 
 /// <summary>
 /// Converts decimal values to currency format strings

@@ -1,6 +1,6 @@
 using System.Windows.Input;
 
-namespace Financial.Presentation.UI.ViewModels;
+namespace Financial.Presentation.Shared.ViewModels;
 
 /// <summary>
 /// Simple ICommand implementation for use in ViewModels

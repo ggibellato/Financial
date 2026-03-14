@@ -2,20 +2,21 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-namespace Financial.Presentation.UI.Converters;
+namespace Financial.Presentation.Shared.Converters;
 
 /// <summary>
-/// Shows icon only for Asset node types
+/// Converts empty string to Visibility (empty = Visible, not empty = Collapsed)
+/// Used to show "empty state" messages
 /// </summary>
-public class NodeTypeToVisibilityConverter : IValueConverter
+public class EmptyStringToVisibilityConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is string nodeType && nodeType == "Asset")
+        if (value is string str)
         {
-            return Visibility.Visible;
+            return string.IsNullOrEmpty(str) ? Visibility.Visible : Visibility.Collapsed;
         }
-        return Visibility.Collapsed;
+        return Visibility.Visible;
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

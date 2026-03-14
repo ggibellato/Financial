@@ -1,24 +1,22 @@
-using System;
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace Financial.Presentation.Tools.Converters;
+namespace Financial.Presentation.Shared.Converters;
 
-public class SignedValueToBrushConverter : IValueConverter
+/// <summary>
+/// Converts operation type (Buy/Sell) to color brush
+/// </summary>
+public class OperationTypeToColorConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is decimal dec)
+        if (value is string operationType)
         {
-            return dec >= 0 ? Brushes.Green : Brushes.Red;
+            return operationType.Equals("Buy", StringComparison.OrdinalIgnoreCase)
+                ? Brushes.Green
+                : Brushes.Red;
         }
-
-        if (value is double dbl)
-        {
-            return dbl >= 0 ? Brushes.Green : Brushes.Red;
-        }
-
         return Brushes.Black;
     }
 
@@ -27,3 +25,4 @@ public class SignedValueToBrushConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+
