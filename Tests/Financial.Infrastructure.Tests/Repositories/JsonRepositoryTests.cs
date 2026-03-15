@@ -2,7 +2,7 @@ using Financial.Infrastructure.Repositories;
 using Financial.Infrastructure.Persistence;
 using FluentAssertions;
 
-namespace Financial.Infrastructure.Tests;
+namespace Financial.Infrastructure.Tests.Repositories;
 
 public class JsonRepositoryTests
 {

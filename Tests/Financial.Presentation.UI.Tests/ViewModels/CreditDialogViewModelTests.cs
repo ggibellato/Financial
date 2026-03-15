@@ -2,7 +2,7 @@ using System;
 using Financial.Presentation.UI.ViewModels;
 using FluentAssertions;
 
-namespace Financial.Infrastructure.Tests;
+namespace Financial.Presentation.UI.Tests.ViewModels;
 
 public class CreditDialogViewModelTests
 {

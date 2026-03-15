@@ -9,8 +9,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Financial.Application\Financial.Application.csproj" />
     <ProjectReference Include="..\Financial.Domain\Financial.Domain.csproj" />
-    <ProjectReference Include="Integrations\GoogleFinancialSupport\GoogleFinancialSupport.csproj" />
-    <ProjectReference Include="Integrations\WebPageParser\WebPageParser.csproj" />
+    <ProjectReference Include="..\Integrations\GoogleFinancialSupport\GoogleFinancialSupport.csproj" />
+    <ProjectReference Include="..\Integrations\WebPageParser\WebPageParser.csproj" />
   </ItemGroup>
 
   <ItemGroup>

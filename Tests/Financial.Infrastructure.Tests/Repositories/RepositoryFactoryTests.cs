@@ -4,7 +4,7 @@ using FluentAssertions;
 using System;
 using System.IO;
 
-namespace Financial.Infrastructure.Tests;
+namespace Financial.Infrastructure.Tests.Repositories;
 
 public class RepositoryFactoryTests
 {
