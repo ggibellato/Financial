@@ -6,27 +6,18 @@ namespace Financial.Infrastructure.Integrations.FinancialToolSupport;
 
 public static class HTMLHelper
 {
-    public async static Task<string> LoadPage(string url)
+    private static readonly HttpClient HttpClient = new HttpClient();
+
+    public static async Task<string> LoadPage(string url)
     {
-        using (HttpClient client = new HttpClient())
+        if (string.IsNullOrWhiteSpace(url))
         {
-            try
-            {
-                HttpResponseMessage response = await client.GetAsync(url);
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content.ReadAsStringAsync();
-                }
-                else
-                {
-                    throw new Exception($"Error: {response.StatusCode} - {response.ReasonPhrase}");
-                }
-            }
-            catch (HttpRequestException ex)
-            {
-                throw new Exception($"Exception: {ex.Message}");
-            }
+            throw new ArgumentException("Url must be provided.", nameof(url));
         }
+
+        using var response = await HttpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync();
     }
 }
 
