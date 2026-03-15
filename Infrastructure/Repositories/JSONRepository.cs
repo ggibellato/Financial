@@ -20,18 +20,9 @@ public sealed class JSONRepository : IRepository
 
     public List<string> GetAllAssetsFullName()
     {
-        var result = new List<string>();
-        _investiments.Brokers.ToList().ForEach(b =>
-        {
-            b.Portfolios.ToList().ForEach(p =>
-            {
-                p.Assets.ToList().ForEach(a =>
-                {
-                    result.Add($"{b.Name}/{p.Name}/{a.Name}");
-                });
-            });
-        });
-        return result;
+        return _investiments.Brokers
+            .SelectMany(b => b.Portfolios.SelectMany(p => p.Assets.Select(a => $"{b.Name}/{p.Name}/{a.Name}")))
+            .ToList();
     }
 
     public IEnumerable<Asset> GetAssetsByBroker(string name)
@@ -87,27 +78,21 @@ public sealed class JSONRepository : IRepository
 
     public AssetInfoDTO GetAssetInfo(string brokerName, string portfolio, string assetName)
     {
-        var ret = new AssetInfoDTO();
         var asset = GetBrokerOrThrow(brokerName)
             .Portfolios.First(p => p.Name == portfolio)
             .Assets.First(a => a.Name == assetName);
 
-        ret.Exchange = asset.Exchange;
-        ret.Ticker = asset.Ticker;
-        ret.Quantity = asset.Quantity;
-        ret.AvaragePrice = asset.AvargePrice;
-        ret.TotalBought = asset.Operations.Where(o => o.Type == Operation.OperationType.Buy).Sum(o => o.TotalPrice);
-        ret.TotalSold = asset.Operations.Where(o => o.Type == Operation.OperationType.Sell).Sum(o => o.TotalPrice);
-        ret.Credits = BuildCreditInfo(asset.Credits);
-
-        decimal currentVlw = 0;
-        foreach (var item in asset.Operations)
+        return new AssetInfoDTO
         {
-            var key = new DateOnly(item.Date.Year, item.Date.Month, 1);
-            currentVlw += (item.TotalPrice) * (item.Type == Operation.OperationType.Buy ? 1 : -1);
-            ret.InvestedHistory[key] = currentVlw;
-        }
-        return ret;
+            Exchange = asset.Exchange,
+            Ticker = asset.Ticker,
+            Quantity = asset.Quantity,
+            AvaragePrice = asset.AvargePrice,
+            TotalBought = SumOperationsByType(asset.Operations, Operation.OperationType.Buy),
+            TotalSold = SumOperationsByType(asset.Operations, Operation.OperationType.Sell),
+            Credits = BuildCreditInfo(asset.Credits),
+            InvestedHistory = BuildInvestedHistory(asset.Operations)
+        };
     }
 
     public void SaveChanges()
@@ -170,21 +155,38 @@ public sealed class JSONRepository : IRepository
 
     private decimal GetTotalBoughtByBroker(string brokerName, bool active)
     {
-        return GetOperationsByBroker(brokerName, active)
-            .Where(o => o.Type == Operation.OperationType.Buy)
-            .Sum(o => o.TotalPrice);
+        return SumOperationsByType(GetOperationsByBroker(brokerName, active), Operation.OperationType.Buy);
     }
 
     private decimal GetTotalSoldByBroker(string brokerName, bool active)
     {
-        return GetOperationsByBroker(brokerName, active)
-            .Where(o => o.Type == Operation.OperationType.Sell)
-            .Sum(o => o.TotalPrice);
+        return SumOperationsByType(GetOperationsByBroker(brokerName, active), Operation.OperationType.Sell);
     }
 
     private CreditInfoDTO GetTotalCreditsByBroker(string brokerName, bool active)
     {
         return BuildCreditInfo(GetCreditsByBroker(brokerName, active));
+    }
+
+    private static decimal SumOperationsByType(IEnumerable<Operation> operations, Operation.OperationType type)
+    {
+        return operations
+            .Where(o => o.Type == type)
+            .Sum(o => o.TotalPrice);
+    }
+
+    private static Dictionary<DateOnly, decimal> BuildInvestedHistory(IEnumerable<Operation> operations)
+    {
+        var history = new Dictionary<DateOnly, decimal>();
+        decimal currentValue = 0;
+        foreach (var operation in operations.OrderBy(o => o.Date))
+        {
+            var key = new DateOnly(operation.Date.Year, operation.Date.Month, 1);
+            currentValue += operation.TotalPrice * (operation.Type == Operation.OperationType.Buy ? 1 : -1);
+            history[key] = currentValue;
+        }
+
+        return history;
     }
 
     private List<PortfolioDTO> GetPortfolioAssetsByBroker(string brokerName, bool active)
