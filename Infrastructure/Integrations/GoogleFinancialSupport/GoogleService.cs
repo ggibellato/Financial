@@ -60,13 +60,7 @@ public class GoogleService
             var response = await request.ExecuteAsync();
             foreach (var sheet in response.Sheets)
             {
-                string nearestColor = "";
-                var tabColor = sheet.Properties.TabColor;
-                if (tabColor != null)
-                {
-                    Color color = Color.FromArgb((int)((tabColor.Alpha ?? 0)  * 255), (int)((tabColor.Red ?? 0) * 255), (int)((tabColor.Green ?? 0) * 255), (int)((tabColor.Blue ?? 0) * 255));
-                    nearestColor = color.Name;
-                }
+                var nearestColor = GetTabColorName(sheet.Properties.TabColor);
                 result.Add(new SheetDTO() { Name = sheet.Properties.Title, Id = sheet.Properties.SheetId ?? 0, Color = nearestColor });
             }
             return result;
@@ -78,7 +72,6 @@ public class GoogleService
     {
         return await ExecuteWithRetryAsync(async () =>
         {
-            var result = new List<SheetDTO>();
             var service = GetSheetsService();
             var request = service.Spreadsheets.Values.Get(spreadSheetId, range);
             request.ValueRenderOption = SpreadsheetsResource.ValuesResource.GetRequest.ValueRenderOptionEnum.UNFORMATTEDVALUE;
@@ -193,36 +186,45 @@ public class GoogleService
 
     private DriveService CreateDriveService(string[] scopes)
     {
-        GoogleCredential credential;
-        //Reading Credentials File...
-        using (var stream = new FileStream(FileName, FileMode.Open, FileAccess.Read))
-        {
-            credential = GoogleCredential.FromStream(stream)
-                .CreateScoped(scopes);
-        }
-        // Creating Google Sheets API service...
-        return new DriveService(new BaseClientService.Initializer()
-        {
-            HttpClientInitializer = credential,
-            ApplicationName = "Financial",
-        });
+        var credential = CreateCredential(scopes);
+        return new DriveService(CreateInitializer(credential));
     }
 
     private SheetsService GetSheetsService()
     {
-        GoogleCredential credential;
-        //Reading Credentials File...
-        using (var stream = new FileStream(FileName, FileMode.Open, FileAccess.Read))
-        {
-            credential = GoogleCredential.FromStream(stream)
-                .CreateScoped(Scopes1);
-        }
-        // Creating Google Sheets API service...
-        return new SheetsService(new BaseClientService.Initializer()
+        var credential = CreateCredential(Scopes1);
+        return new SheetsService(CreateInitializer(credential));
+    }
+
+    private GoogleCredential CreateCredential(string[] scopes)
+    {
+        using var stream = new FileStream(FileName, FileMode.Open, FileAccess.Read);
+        return GoogleCredential.FromStream(stream)
+            .CreateScoped(scopes);
+    }
+
+    private static BaseClientService.Initializer CreateInitializer(GoogleCredential credential)
+    {
+        return new BaseClientService.Initializer()
         {
             HttpClientInitializer = credential,
             ApplicationName = "Financial",
-        });
+        };
+    }
+
+    private static string GetTabColorName(Google.Apis.Sheets.v4.Data.Color? tabColor)
+    {
+        if (tabColor == null)
+        {
+            return string.Empty;
+        }
+
+        var color = Color.FromArgb(
+            (int)((tabColor.Alpha ?? 0) * 255),
+            (int)((tabColor.Red ?? 0) * 255),
+            (int)((tabColor.Green ?? 0) * 255),
+            (int)((tabColor.Blue ?? 0) * 255));
+        return color.Name;
     }
 
     private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action, int maxRetries = 5)
