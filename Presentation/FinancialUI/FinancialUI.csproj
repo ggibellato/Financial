@@ -11,9 +11,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Application\Financial.Application.csproj" />
-    <ProjectReference Include="..\..\Infrastructure\Financial.Infrastructure.csproj" />
-    <ProjectReference Include="..\Shared\Financial.Presentation.Shared.csproj" />
+    <ProjectReference Include="..\..\Financial.Application\Financial.Application.csproj" />
+    <ProjectReference Include="..\..\Financial.Infrastructure\Financial.Infrastructure.csproj" />
+    <ProjectReference Include="..\Financial.Presentation.Shared\Financial.Presentation.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,3 +22,6 @@
   </ItemGroup>
 
 </Project>
+
+
+

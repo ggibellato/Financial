@@ -16,3 +16,6 @@
     <ProjectReference Include="..\..\..\Financial.Common\Financial.Common.csproj" />
   </ItemGroup>
 </Project>
+
+
+
