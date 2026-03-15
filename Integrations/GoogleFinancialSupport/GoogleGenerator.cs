@@ -1,6 +1,5 @@
 using Financial.Domain.Entities;
 using Financial.Infrastructure.Integrations.FinancialToolSupport;
-using Google.Apis.Sheets.v4.Data;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -181,9 +180,9 @@ public class GoogleGenerator : IGenerator
             var date = value[0] is long ? (long)value[0] : previousDate;
             previousDate = date;
             var type = (string)value[2];
-            var quantity = ToDecimal(value[3]);
-            var unitPrice = ToDecimal(value[5]);
-            var fees = ToDecimal(value[6]) - (unitPrice * quantity);
+                var quantity = GoogleSheetValueParser.ToDecimal(value[3]);
+                var unitPrice = GoogleSheetValueParser.ToDecimal(value[5]);
+                var fees = GoogleSheetValueParser.ToDecimal(value[6]) - (unitPrice * quantity);
 
             var operation = Operation.Create(
                     DateTime.FromOADate(date),
@@ -216,25 +215,12 @@ public class GoogleGenerator : IGenerator
                 var credit = Credit.Create(
                     DateTime.FromOADate((long)value[0]),
                     type == "Aluguel" ? Credit.CreditType.Rent : Credit.CreditType.Dividend,
-                    ToDecimal(value[1])
+                    GoogleSheetValueParser.ToDecimal(value[1])
                  );
                 credits.Add(credit);
             }
         }
         return credits;
-    }
-
-    private decimal ToDecimal(object toDecimal)
-    {
-        if(toDecimal is ExtendedValue extendedValue && extendedValue.NumberValue != null)
-        {
-            return (decimal)extendedValue.NumberValue;
-        }
-        else
-        {
-            var value = toDecimal.ToString().Replace(",", "");
-            return decimal.Parse(value);
-        }
     }
 }
 
