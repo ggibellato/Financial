@@ -21,21 +21,13 @@ public static class GoogleFinance
             HtmlWeb htmlWeb = new HtmlWeb();
             HtmlDocument htmlDoc = htmlWeb.Load(googleTickerSearch);
 
-            var mainData = htmlDoc.DocumentNode.SelectNodes("//body/c-wiz")[1].SelectNodes("//main")[0];
-            var name = mainData.ChildNodes[0].ChildNodes[0].ChildNodes[1].InnerText;
-            var nodeString = mainData.ChildNodes[1].ChildNodes[0].ChildNodes[0].ChildNodes[0]
-                .ChildNodes[0].ChildNodes[0].ChildNodes[0].ChildNodes[0].ChildNodes[0].InnerText;
-            var value = decimal.Parse(nodeString.Replace("R$", "").Replace("?", "").Replace("$", "").Replace("GBX", "").Replace("£", "").Trim());
-            if (nodeString.Contains("GBX"))
-            {
-                value /= 100;
-            }
+            var mainData = GetMainData(htmlDoc);
+            var name = ReadAssetName(mainData);
+            var priceText = ReadPriceText(mainData);
+            var value = ParsePriceValue(priceText);
 
-            var asOfText = mainData.ChildNodes[1].ChildNodes[0].ChildNodes[0].ChildNodes[0]
-                .ChildNodes[0].ChildNodes[0].ChildNodes[0].ChildNodes[1].ChildNodes[0].InnerText;
-            asOfText = asOfText.Substring(0, asOfText.IndexOf("&middot;")).Trim();
-            var asOf = TryParseGoogleFinanceAsOf(asOfText)
-                ?? DateTimeOffset.Now;
+            var asOfText = ReadAsOfText(mainData);
+            var asOf = TryParseGoogleFinanceAsOf(asOfText) ?? DateTimeOffset.Now;
             return new AssetValueSnapshot(ticker, name, value, asOf);
         }
         catch (Exception ex)
@@ -90,6 +82,46 @@ public static class GoogleFinance
         }
 
         return null;
+    }
+
+    private static HtmlNode GetMainData(HtmlDocument document)
+    {
+        return document.DocumentNode.SelectNodes("//body/c-wiz")[1].SelectNodes("//main")[0];
+    }
+
+    private static string ReadAssetName(HtmlNode mainData)
+    {
+        return mainData.ChildNodes[0].ChildNodes[0].ChildNodes[1].InnerText;
+    }
+
+    private static string ReadPriceText(HtmlNode mainData)
+    {
+        return mainData.ChildNodes[1].ChildNodes[0].ChildNodes[0].ChildNodes[0]
+            .ChildNodes[0].ChildNodes[0].ChildNodes[0].ChildNodes[0].ChildNodes[0].InnerText;
+    }
+
+    private static decimal ParsePriceValue(string rawValue)
+    {
+        var cleaned = rawValue
+            .Replace("R$", "")
+            .Replace("?", "")
+            .Replace("$", "")
+            .Replace("GBX", "")
+            .Replace("£", "")
+            .Trim();
+        var value = decimal.Parse(cleaned);
+        if (rawValue.Contains("GBX"))
+        {
+            value /= 100;
+        }
+
+        return value;
+    }
+
+    private static string ReadAsOfText(HtmlNode mainData)
+    {
+        return mainData.ChildNodes[1].ChildNodes[0].ChildNodes[0].ChildNodes[0]
+            .ChildNodes[0].ChildNodes[0].ChildNodes[0].ChildNodes[1].ChildNodes[0].InnerText;
     }
 
     private static bool TryParseUtcOffsetStamp(string candidate, out DateTimeOffset parsed)
