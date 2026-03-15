@@ -1,3 +1,4 @@
+using System;
 using Financial.Infrastructure.Repositories;
 using Financial.Infrastructure.Persistence;
 using FluentAssertions;
@@ -46,6 +47,30 @@ public class JsonRepositoryTests
     {
         var result = _sut.GetAssetsByAssetName(name ?? string.Empty);
         result.Should().HaveCount(records);
+    }
+
+    [Fact]
+    public void GetBrokerInfo_WithKnownData_ReturnsExpectedTotals()
+    {
+        var result = _sut.GetBrokerInfo("XPI");
+
+        result.TotalBought.Should().Be(1000m);
+        result.TotalSold.Should().Be(220m);
+        result.TotalCredits.Total.Should().Be(11m);
+        result.TotalBoughtActive.Should().Be(1000m);
+        result.TotalSoldActive.Should().Be(220m);
+        result.TotalCreditsActive.Total.Should().Be(11m);
+        result.PortfoliosActive.Should().ContainSingle(p => p.Name == "Default" && p.Assets.Contains("BCIA11"));
+    }
+
+    [Fact]
+    public void GetAssetInfo_WithKnownData_ReturnsInvestedHistory()
+    {
+        var result = _sut.GetAssetInfo("XPI", "Default", "BCIA11");
+
+        result.InvestedHistory.Should().HaveCount(2);
+        result.InvestedHistory.Should().ContainKey(new DateOnly(2024, 1, 1)).WhoseValue.Should().Be(1000m);
+        result.InvestedHistory.Should().ContainKey(new DateOnly(2024, 6, 1)).WhoseValue.Should().Be(780m);
     }
 }
 

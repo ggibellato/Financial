@@ -135,13 +135,18 @@ public sealed class JSONRepository : IRepository
     private static IEnumerable<Asset> FilterActiveAssets(IEnumerable<Asset> assets, bool activeOnly) =>
         activeOnly ? assets.Where(a => a.Active) : assets;
 
-    private IEnumerable<Operation> GetOperationsByBroker(string brokerName, bool activeOnly) =>
+    private IEnumerable<TItem> GetAssetItemsByBroker<TItem>(
+        string brokerName,
+        bool activeOnly,
+        Func<Asset, IEnumerable<TItem>> selector) =>
         FilterActiveAssets(GetAssetsByBrokerInternal(brokerName), activeOnly)
-            .SelectMany(a => a.Operations);
+            .SelectMany(selector);
+
+    private IEnumerable<Operation> GetOperationsByBroker(string brokerName, bool activeOnly) =>
+        GetAssetItemsByBroker(brokerName, activeOnly, asset => asset.Operations);
 
     private IEnumerable<Credit> GetCreditsByBroker(string brokerName, bool activeOnly) =>
-        FilterActiveAssets(GetAssetsByBrokerInternal(brokerName), activeOnly)
-            .SelectMany(a => a.Credits);
+        GetAssetItemsByBroker(brokerName, activeOnly, asset => asset.Credits);
 
     private static CreditInfoDTO BuildCreditInfo(IEnumerable<Credit> credits)
     {
@@ -155,17 +160,22 @@ public sealed class JSONRepository : IRepository
 
     private decimal GetTotalBoughtByBroker(string brokerName, bool active)
     {
-        return SumOperationsByType(GetOperationsByBroker(brokerName, active), Operation.OperationType.Buy);
+        return GetTotalOperationsByBroker(brokerName, active, Operation.OperationType.Buy);
     }
 
     private decimal GetTotalSoldByBroker(string brokerName, bool active)
     {
-        return SumOperationsByType(GetOperationsByBroker(brokerName, active), Operation.OperationType.Sell);
+        return GetTotalOperationsByBroker(brokerName, active, Operation.OperationType.Sell);
     }
 
     private CreditInfoDTO GetTotalCreditsByBroker(string brokerName, bool active)
     {
         return BuildCreditInfo(GetCreditsByBroker(brokerName, active));
+    }
+
+    private decimal GetTotalOperationsByBroker(string brokerName, bool active, Operation.OperationType type)
+    {
+        return SumOperationsByType(GetOperationsByBroker(brokerName, active), type);
     }
 
     private static decimal SumOperationsByType(IEnumerable<Operation> operations, Operation.OperationType type)
