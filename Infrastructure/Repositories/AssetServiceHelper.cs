@@ -14,17 +14,6 @@ internal static class AssetServiceHelper
                string.IsNullOrWhiteSpace(assetName);
     }
 
-    public static bool TryParseEnum<TEnum>(string? value, out TEnum parsed) where TEnum : struct, Enum
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            parsed = default;
-            return false;
-        }
-
-        return Enum.TryParse(value, true, out parsed);
-    }
-
     public static AssetDetailsDTO? ExecuteAssetMutation(
         IRepository repository,
         INavigationService navigationService,

@@ -1,5 +1,6 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
+using Financial.Application.Validation;
 using Financial.Domain.Entities;
 using System;
 
@@ -18,7 +19,7 @@ public sealed class CreditService : ICreditService
 
     public AssetDetailsDTO? AddCredit(CreditCreateDTO request)
     {
-        if (!AssetServiceHelper.TryParseEnum(request.Type, out Credit.CreditType creditType))
+        if (!CreditTypeParser.TryParse(request.Type, out Credit.CreditType creditType))
         {
             return null;
         }
@@ -40,7 +41,7 @@ public sealed class CreditService : ICreditService
     public AssetDetailsDTO? UpdateCredit(CreditUpdateDTO request)
     {
         if (request.Id == Guid.Empty ||
-            !AssetServiceHelper.TryParseEnum(request.Type, out Credit.CreditType creditType))
+            !CreditTypeParser.TryParse(request.Type, out Credit.CreditType creditType))
         {
             return null;
         }

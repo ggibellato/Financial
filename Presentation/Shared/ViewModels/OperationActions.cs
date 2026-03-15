@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
+using Financial.Application.Validation;
 
 namespace Financial.Presentation.Shared.ViewModels;
 
@@ -52,7 +53,7 @@ public sealed class OperationActions
             return;
         }
 
-        if (!TryNormalizeOperationType(dialogData.Value.Type, out var normalizedType))
+        if (!OperationTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
         {
             ShowWarning("Operation type must be 'Buy' or 'Sell'.");
             return;
@@ -98,7 +99,7 @@ public sealed class OperationActions
             return;
         }
 
-        if (!TryNormalizeOperationType(dialogData.Value.Type, out var normalizedType))
+        if (!OperationTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
         {
             ShowWarning("Operation type must be 'Buy' or 'Sell'.");
             return;
@@ -164,24 +165,6 @@ public sealed class OperationActions
         }
 
         _applyDetails(updatedDetails);
-    }
-
-    internal static bool TryNormalizeOperationType(string? value, out string normalized)
-    {
-        if (string.Equals(value, "Buy", StringComparison.OrdinalIgnoreCase))
-        {
-            normalized = "Buy";
-            return true;
-        }
-
-        if (string.Equals(value, "Sell", StringComparison.OrdinalIgnoreCase))
-        {
-            normalized = "Sell";
-            return true;
-        }
-
-        normalized = string.Empty;
-        return false;
     }
 
     private void ShowInfo(string message)

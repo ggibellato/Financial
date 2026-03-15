@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
+using Financial.Application.Validation;
 
 namespace Financial.Presentation.Shared.ViewModels;
 
@@ -52,7 +53,7 @@ public sealed class CreditActions
             return;
         }
 
-        if (!TryNormalizeCreditType(dialogData.Value.Type, out var normalizedType))
+        if (!CreditTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
         {
             ShowWarning("Credit type must be 'Dividend' or 'Rent'.");
             return;
@@ -96,7 +97,7 @@ public sealed class CreditActions
             return;
         }
 
-        if (!TryNormalizeCreditType(dialogData.Value.Type, out var normalizedType))
+        if (!CreditTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
         {
             ShowWarning("Credit type must be 'Dividend' or 'Rent'.");
             return;
@@ -160,24 +161,6 @@ public sealed class CreditActions
         }
 
         _applyDetails(updatedDetails);
-    }
-
-    internal static bool TryNormalizeCreditType(string? value, out string normalized)
-    {
-        if (string.Equals(value, "Dividend", StringComparison.OrdinalIgnoreCase))
-        {
-            normalized = "Dividend";
-            return true;
-        }
-
-        if (string.Equals(value, "Rent", StringComparison.OrdinalIgnoreCase))
-        {
-            normalized = "Rent";
-            return true;
-        }
-
-        normalized = string.Empty;
-        return false;
     }
 
     private void ShowInfo(string message)

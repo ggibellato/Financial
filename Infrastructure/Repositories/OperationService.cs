@@ -1,5 +1,6 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
+using Financial.Application.Validation;
 using Financial.Domain.Entities;
 using System;
 
@@ -18,7 +19,7 @@ public sealed class OperationService : IOperationService
 
     public AssetDetailsDTO? AddOperation(OperationCreateDTO request)
     {
-        if (!AssetServiceHelper.TryParseEnum(request.Type, out Operation.OperationType operationType))
+        if (!OperationTypeParser.TryParse(request.Type, out Operation.OperationType operationType))
         {
             return null;
         }
@@ -40,7 +41,7 @@ public sealed class OperationService : IOperationService
     public AssetDetailsDTO? UpdateOperation(OperationUpdateDTO request)
     {
         if (request.Id == Guid.Empty ||
-            !AssetServiceHelper.TryParseEnum(request.Type, out Operation.OperationType operationType))
+            !OperationTypeParser.TryParse(request.Type, out Operation.OperationType operationType))
         {
             return null;
         }
