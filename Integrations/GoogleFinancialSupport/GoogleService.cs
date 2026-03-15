@@ -18,9 +18,9 @@ namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 
 public class GoogleService
 {
-    static readonly string[] Scopes1 = { SheetsService.Scope.Spreadsheets };
-    static readonly string[] Scopes2 = { DriveService.Scope.DriveReadonly };
-    static readonly string[] Scopes3 = { DriveService.Scope.Drive };
+    private static readonly string[] SheetsScopes = { SheetsService.Scope.Spreadsheets };
+    private static readonly string[] DriveReadOnlyScopes = { DriveService.Scope.DriveReadonly };
+    private static readonly string[] DriveReadWriteScopes = { DriveService.Scope.Drive };
     private const string DefaultDataFileName = "data.json";
     private const string FolderMimeType = "application/vnd.google-apps.folder";
     private const string ShortcutMimeType = "application/vnd.google-apps.shortcut";
@@ -176,12 +176,12 @@ public class GoogleService
 
     private DriveService GetDriveService()
     {
-        return CreateDriveService(Scopes2);
+        return CreateDriveService(DriveReadOnlyScopes);
     }
 
     private DriveService GetDriveServiceWithWriteAccess()
     {
-        return CreateDriveService(Scopes3);
+        return CreateDriveService(DriveReadWriteScopes);
     }
 
     private DriveService CreateDriveService(string[] scopes)
@@ -192,8 +192,7 @@ public class GoogleService
 
     private SheetsService GetSheetsService()
     {
-        var credential = CreateCredential(Scopes1);
-        return new SheetsService(CreateInitializer(credential));
+        return CreateSheetsService(SheetsScopes);
     }
 
     private GoogleCredential CreateCredential(string[] scopes)
@@ -201,6 +200,12 @@ public class GoogleService
         using var stream = new FileStream(FileName, FileMode.Open, FileAccess.Read);
         return GoogleCredential.FromStream(stream)
             .CreateScoped(scopes);
+    }
+
+    private SheetsService CreateSheetsService(string[] scopes)
+    {
+        var credential = CreateCredential(scopes);
+        return new SheetsService(CreateInitializer(credential));
     }
 
     private static BaseClientService.Initializer CreateInitializer(GoogleCredential credential)

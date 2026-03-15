@@ -1,5 +1,6 @@
 using Financial.Domain.Entities;
 using Financial.Infrastructure.Integrations.FinancialToolSupport;
+using Financial.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,6 +15,7 @@ public class GoogleGenerator : IGenerator
     private const int DelayBetweenSheetsMs = 3000;  // 3 seconds between each sheet
     private const int DelayBetweenBrokersMs = 5000; // 5 seconds between each broker
     private const int DelayBetweenOperationsMs = 1500; // 1.5 seconds between reading operations and credits
+    private const string DefaultPortfolioName = "Default";
 
     public List<string> IgnoreSpreadSheet = new List<string> {
         "Totais",
@@ -52,6 +54,7 @@ public class GoogleGenerator : IGenerator
     public async Task GenerateAsync(List<string> fileNames, IProgress<string> progress = null)
     {
         var data = Investments.Create();
+        var files = await _service.GetFilesNameAsync();
 
         int brokerIndex = 0;
         foreach (var fileName in fileNames)
@@ -68,7 +71,6 @@ public class GoogleGenerator : IGenerator
             
             var exchange = Broker.Create(fileName, ExchangeCurrency[fileName]);
             data.AddBroker(exchange);
-            var files = await _service.GetFilesNameAsync();
             var file = files.FirstOrDefault(f => f.Name == fileName);
 
             progress?.Report($"Getting spreadsheets for: {fileName}");
@@ -87,38 +89,11 @@ public class GoogleGenerator : IGenerator
                 sheetCount++;
                 progress?.Report($"[{fileName}] Processing sheet {sheetCount}/{totalSheets}: {spreadsheet.Name}");
 
-                var portfolioName = string.IsNullOrWhiteSpace(spreadsheet.Color) ? "Default" : spreadsheet.Color;
-                if (PortfolioName.TryGetValue($"{fileName}_{portfolioName}", out string name))
-                {
-                    portfolioName = name;
-                }
-
+                var portfolioName = ResolvePortfolioName(fileName, spreadsheet);
                 var portfolio = exchange.AddPortfolio(portfolioName);
 
-
-                var isin = "";
-                var exchangeId = "";
-                var ticker = "";
-                switch (fileName)
-                {
-                    case "XPI":
-                        {
-                            exchangeId = "BVMF";
-                            ticker = spreadsheet.Name;
-                            break;
-                        }
-                    default:
-                        {
-                            var assetData = await GetAssetDataAsync(file.Id, spreadsheet.Name);
-                            isin = assetData.isin;
-                            exchangeId = assetData.exchangeId;
-                            ticker = assetData.ticker;
-                            break;
-                        }
-                }
-
-
-                var asset = Asset.Create(spreadsheet.Name, isin, exchangeId, ticker);
+                var assetData = await ResolveAssetMetadataAsync(fileName, file!.Id, spreadsheet.Name);
+                var asset = Asset.Create(spreadsheet.Name, assetData.isin, assetData.exchangeId, assetData.ticker);
                 portfolio.AddAsset(asset);
 
                 asset.AddOperations(await CreateOperationsAsync(file.Id, spreadsheet.Name));
@@ -160,6 +135,30 @@ public class GoogleGenerator : IGenerator
         catch {
         }
         return (isin, exchangeId, ticker);
+    }
+
+    private string ResolvePortfolioName(string brokerName, SheetDTO spreadsheet)
+    {
+        var portfolioName = string.IsNullOrWhiteSpace(spreadsheet.Color) ? DefaultPortfolioName : spreadsheet.Color;
+        if (PortfolioName.TryGetValue($"{brokerName}_{portfolioName}", out var name))
+        {
+            portfolioName = name;
+        }
+
+        return portfolioName;
+    }
+
+    private async Task<(string isin, string exchangeId, string ticker)> ResolveAssetMetadataAsync(
+        string brokerName,
+        string fileId,
+        string spreadsheetName)
+    {
+        if (brokerName == "XPI")
+        {
+            return (string.Empty, "BVMF", spreadsheetName);
+        }
+
+        return await GetAssetDataAsync(fileId, spreadsheetName);
     }
 
     private void Save(Investments data)
