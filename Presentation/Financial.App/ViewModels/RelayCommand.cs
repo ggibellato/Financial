@@ -1,6 +1,6 @@
 using System.Windows.Input;
 
-namespace Financial.Presentation.Shared.ViewModels;
+namespace Financial.Presentation.App.ViewModels;
 
 /// <summary>
 /// Simple ICommand implementation for use in ViewModels
@@ -55,4 +55,5 @@ public class RelayCommand : ICommand
         CommandManager.InvalidateRequerySuggested();
     }
 }
+
 

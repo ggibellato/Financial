@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Financial.Application.Interfaces;
 
-namespace Financial.Presentation.Shared.ViewModels;
+namespace Financial.Presentation.App.ViewModels;
 
 /// <summary>
 /// Shared navigation view model logic for UI and Tools
@@ -144,3 +144,4 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         }
     }
 }
+

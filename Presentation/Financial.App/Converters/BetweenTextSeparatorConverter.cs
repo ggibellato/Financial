@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows.Data;
 
-namespace Financial.Presentation.Shared.Converters;
+namespace Financial.Presentation.App.Converters;
 
 public class BetweenTextSeparatorConverter : IMultiValueConverter
 {
@@ -29,3 +29,4 @@ public class BetweenTextSeparatorConverter : IMultiValueConverter
         throw new NotImplementedException();
     }
 }
+

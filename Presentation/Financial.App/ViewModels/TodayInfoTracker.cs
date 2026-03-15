@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 
-namespace Financial.Presentation.Shared.ViewModels;
+namespace Financial.Presentation.App.ViewModels;
 
 public sealed class TodayInfoTracker
 {
@@ -133,3 +133,4 @@ public sealed class TodayInfoTracker
 }
 
 public sealed record TodayInfoSnapshot(decimal Price, string AsOf);
+

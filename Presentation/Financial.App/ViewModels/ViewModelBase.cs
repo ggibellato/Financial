@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace Financial.Presentation.Shared.ViewModels;
+namespace Financial.Presentation.App.ViewModels;
 
 /// <summary>
 /// Base class for all ViewModels, providing INotifyPropertyChanged implementation
@@ -39,4 +39,5 @@ public abstract class ViewModelBase : INotifyPropertyChanged
         return true;
     }
 }
+
 

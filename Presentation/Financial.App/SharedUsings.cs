@@ -1,2 +1,3 @@
-global using Financial.Presentation.Shared.ViewModels;
+global using Financial.Presentation.App.ViewModels;
+
 

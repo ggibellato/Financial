@@ -201,7 +201,7 @@ public partial class MainWindow : Window
         txtStatusBar.Text = statusBarText;
     }
 
-    private static string? GetCredentialsPathFromConfig()
+    private static string GetCredentialsPathFromConfig()
     {
         var settingsPath = Path.Combine(AppContext.BaseDirectory, AppSettingsFileName);
         if (!File.Exists(settingsPath))

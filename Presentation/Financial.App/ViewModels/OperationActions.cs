@@ -4,7 +4,7 @@ using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Application.Validation;
 
-namespace Financial.Presentation.Shared.ViewModels;
+namespace Financial.Presentation.App.ViewModels;
 
 public sealed class OperationActions
 {
@@ -185,3 +185,4 @@ public readonly record struct OperationDialogData(
     decimal Quantity,
     decimal UnitPrice,
     decimal Fees);
+

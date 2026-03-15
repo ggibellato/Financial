@@ -146,7 +146,7 @@ public class GoogleService
         return value.Replace("'", "\\'");
     }
 
-    private static Google.Apis.Drive.v3.Data.File? FindFileByName(DriveService service, string name)
+    private static Google.Apis.Drive.v3.Data.File FindFileByName(DriveService service, string name)
     {
         var listRequest = service.Files.List();
         listRequest.PageSize = 10;
@@ -212,7 +212,7 @@ public class GoogleService
         };
     }
 
-    private static string GetTabColorName(Google.Apis.Sheets.v4.Data.Color? tabColor)
+    private static string GetTabColorName(Google.Apis.Sheets.v4.Data.Color tabColor)
     {
         if (tabColor == null)
         {

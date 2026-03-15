@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-namespace Financial.Presentation.Shared.Converters;
+namespace Financial.Presentation.App.Converters;
 
 /// <summary>
 /// Converts boolean to Visibility (true = Visible, false = Collapsed)
@@ -27,4 +27,5 @@ public class BoolToVisibilityConverter : IValueConverter
         return false;
     }
 }
+
 

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
-using Financial.Presentation.Shared.ViewModels;
+using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App;
 
 namespace Financial.Presentation.App.ViewModels;
@@ -619,6 +619,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     }
 
 }
+
 
 
 

@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace Financial.Presentation.Shared.Converters;
+namespace Financial.Presentation.App.Converters;
 
 public class SignedValueToBrushConverter : IValueConverter
 {
@@ -27,3 +27,4 @@ public class SignedValueToBrushConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+

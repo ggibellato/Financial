@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Financial.Application.DTOs;
 
-namespace Financial.Presentation.Shared.ViewModels;
+namespace Financial.Presentation.App.ViewModels;
 
 public interface IAssetDetailsViewModel
 {
@@ -9,3 +9,4 @@ public interface IAssetDetailsViewModel
     void Clear();
     Task EnsureTodayInfoLoadedAsync();
 }
+

@@ -2,7 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Financial.Presentation.Shared.Input;
+using Financial.Presentation.App.Input;
 using Financial.Presentation.App.ViewModels;
 
 namespace Financial.Presentation.App;
@@ -73,4 +73,5 @@ public partial class OperationDialog : Window
         }
     }
 }
+
 

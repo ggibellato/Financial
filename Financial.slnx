@@ -6,7 +6,6 @@
 		<Project Path="Integrations/WebPageParser/WebPageParser.csproj" />
 	</Folder>
 	<Folder Name="/Presentation/">
-		<Project Path="Presentation/Financial.Presentation.Shared/Financial.Presentation.Shared.csproj" />
 		<Project Path="Presentation/Financial.App/Financial.App.csproj" />
 	</Folder>
 	<Folder Name="/Tests/">

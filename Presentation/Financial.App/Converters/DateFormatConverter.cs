@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Windows.Data;
 
-namespace Financial.Presentation.Shared.Converters;
+namespace Financial.Presentation.App.Converters;
 
 /// <summary>
 /// Converts DateTime to localized date string
@@ -95,4 +95,5 @@ public class DateFormatConverter : IValueConverter
         return sb.ToString();
     }
 }
+
 

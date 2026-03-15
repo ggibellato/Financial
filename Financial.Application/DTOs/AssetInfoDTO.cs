@@ -2,8 +2,8 @@ namespace Financial.Application.DTOs
 {
     public class AssetInfoDTO
     {
-        public string Ticker { get; set; }
-        public string Exchange { get; set; }
+        public string Ticker { get; set; } = string.Empty;
+        public string Exchange { get; set; } = string.Empty;
         public decimal TotalBought { get; set; }
         public decimal TotalSold { get; set; }
         public CreditInfoDTO Credits { get; set; } = new CreditInfoDTO();

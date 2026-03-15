@@ -4,7 +4,7 @@ using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Application.Validation;
 
-namespace Financial.Presentation.Shared.ViewModels;
+namespace Financial.Presentation.App.ViewModels;
 
 public sealed class CreditActions
 {
@@ -179,3 +179,4 @@ public readonly record struct CreditDialogData(
     DateTime Date,
     string Type,
     decimal Value);
+

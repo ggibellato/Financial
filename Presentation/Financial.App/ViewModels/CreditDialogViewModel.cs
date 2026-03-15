@@ -1,5 +1,5 @@
 using System;
-using Financial.Presentation.Shared.ViewModels;
+using Financial.Presentation.App.ViewModels;
 namespace Financial.Presentation.App.ViewModels;
 
 public enum CreditDialogMode
@@ -189,4 +189,5 @@ public sealed class CreditDialogViewModel : ViewModelBase
         ConfirmCommand.RaiseCanExecuteChanged();
     }
 }
+
 

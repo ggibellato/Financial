@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Financial.Presentation.Shared.ViewModels;
+namespace Financial.Presentation.App.ViewModels;
 
 public static class OperationDialogValidation
 {
@@ -48,3 +48,4 @@ public static string BuildValidationMessage(bool isDeleteMode, DateTime date, st
                string.Equals(value, "Sell", StringComparison.OrdinalIgnoreCase);
     }
 }
+

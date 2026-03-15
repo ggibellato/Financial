@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace Financial.Presentation.Shared.Converters;
+namespace Financial.Presentation.App.Converters;
 
 /// <summary>
 /// Converts operation type (Buy/Sell) to color brush
@@ -25,4 +25,5 @@ public class OperationTypeToColorConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+
 

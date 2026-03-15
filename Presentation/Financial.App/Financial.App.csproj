@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -28,7 +28,6 @@
     <ProjectReference Include="..\..\Financial.Infrastructure\Financial.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Integrations\FinancialToolSupport\FinancialToolSupport.csproj" />
     <ProjectReference Include="..\..\Integrations\WebPageParser\WebPageParser.csproj" />
-    <ProjectReference Include="..\Financial.Presentation.Shared\Financial.Presentation.Shared.csproj" />
   </ItemGroup>
 </Project>
 

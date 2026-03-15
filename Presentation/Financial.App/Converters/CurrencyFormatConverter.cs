@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Windows.Data;
 
-namespace Financial.Presentation.Shared.Converters;
+namespace Financial.Presentation.App.Converters;
 
 /// <summary>
 /// Converts decimal values to currency format strings
@@ -35,4 +35,5 @@ public class CurrencyFormatConverter : IValueConverter
         return 0m;
     }
 }
+
 

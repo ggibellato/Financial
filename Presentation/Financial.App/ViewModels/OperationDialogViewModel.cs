@@ -1,5 +1,5 @@
 using System;
-using Financial.Presentation.Shared.ViewModels;
+using Financial.Presentation.App.ViewModels;
 
 namespace Financial.Presentation.App.ViewModels;
 
@@ -233,4 +233,5 @@ public sealed class OperationDialogViewModel : ViewModelBase
         ConfirmCommand.RaiseCanExecuteChanged();
     }
 }
+
 

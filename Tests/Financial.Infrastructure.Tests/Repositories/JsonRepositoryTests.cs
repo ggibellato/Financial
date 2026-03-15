@@ -20,9 +20,9 @@ public class JsonRepositoryTests
     [InlineData("", 0)]
     [InlineData("NOTEXIST", 0)]
     [InlineData("XPI", 1)]
-    public void GetAssets_By_BrokerTest(string name, int records)
+    public void GetAssets_By_BrokerTest(string? name, int records)
     {
-        var result = _sut.GetAssetsByBroker(name);
+        var result = _sut.GetAssetsByBroker(name ?? string.Empty);
         result.Should().HaveCount(records);
     }
 
@@ -31,9 +31,9 @@ public class JsonRepositoryTests
     [InlineData("", 0)]
     [InlineData("NOTEXIST", 0)]
     [InlineData("Default", 1)]
-    public void GetAssets_By_PortfolioTest(string name, int records)
+    public void GetAssets_By_PortfolioTest(string? name, int records)
     {
-        var result = _sut.GetAssetsByPortfolio(name);
+        var result = _sut.GetAssetsByPortfolio(name ?? string.Empty);
         result.Should().HaveCount(records);
     }
 
@@ -42,9 +42,9 @@ public class JsonRepositoryTests
     [InlineData("", 0)]
     [InlineData("NOTEXIST", 0)]
     [InlineData("BCIA11", 1)]
-    public void GetAssets_By_NameTest(string name, int records)
+    public void GetAssets_By_NameTest(string? name, int records)
     {
-        var result = _sut.GetAssetsByAssetName(name);
+        var result = _sut.GetAssetsByAssetName(name ?? string.Empty);
         result.Should().HaveCount(records);
     }
 }

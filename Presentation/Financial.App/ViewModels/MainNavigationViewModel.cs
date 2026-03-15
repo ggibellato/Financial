@@ -1,6 +1,6 @@
 using System;
 using Financial.Application.Interfaces;
-using Financial.Presentation.Shared.ViewModels;
+using Financial.Presentation.App.ViewModels;
 
 namespace Financial.Presentation.App.ViewModels;
 
@@ -19,6 +19,7 @@ public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsV
     {
     }
 }
+
 
 
 

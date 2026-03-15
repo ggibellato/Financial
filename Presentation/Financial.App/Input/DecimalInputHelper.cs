@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Windows.Controls;
 
-namespace Financial.Presentation.Shared.Input;
+namespace Financial.Presentation.App.Input;
 
 public static class DecimalInputHelper
 {
@@ -70,3 +70,4 @@ public static class DecimalInputHelper
             : text.Replace(".", separator);
     }
 }
+

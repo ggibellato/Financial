@@ -1,4 +1,4 @@
-namespace Financial.Presentation.Shared.ViewModels;
+namespace Financial.Presentation.App.ViewModels;
 
 public static class AssetDetailsCalculations
 {
@@ -34,3 +34,4 @@ public static class AssetDetailsCalculations
         return averagePrice > 0 && quantity > 0;
     }
 }
+
