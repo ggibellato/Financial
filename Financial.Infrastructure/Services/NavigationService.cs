@@ -97,33 +97,7 @@ public class NavigationService : INavigationService
     {
         var brokers = OrderByNameWithEncerradasLast(_repository.GetBrokerList(), broker => broker.Name);
 
-        return brokers.Select(broker => new BrokerNodeDTO
-        {
-            Name = broker.Name,
-            Currency = broker.Currency,
-            PortfolioCount = broker.Portfolios.Count,
-            TotalAssets = broker.Portfolios.Sum(p => p.Assets.Count),
-            Portfolios = OrderByNameWithEncerradasLast(broker.Portfolios, portfolio => portfolio.Name)
-                .Select(portfolio => new PortfolioNodeDTO
-            {
-                Name = portfolio.Name,
-                AssetCount = portfolio.Assets.Count,
-                ActiveAssetCount = portfolio.Assets.Count(a => a.Active),
-                Assets = OrderByNameWithEncerradasLast(portfolio.Assets, asset => asset.Name)
-                    .Select(asset => new AssetNodeDTO
-                    {
-                        Name = asset.Name,
-                        Ticker = asset.Ticker,
-                        Exchange = asset.Exchange,
-                        ISIN = asset.ISIN,
-                        Quantity = asset.Quantity,
-                        AveragePrice = asset.AvargePrice,
-                        IsActive = asset.Active,
-                        OperationCount = asset.Operations.Count,
-                        CreditCount = asset.Credits.Count
-                    }).ToList()
-            }).ToList()
-        }).ToList();
+        return brokers.Select(MapBroker).ToList();
     }
 
     private static TreeNodeDTO BuildBrokerTreeNode(BrokerNodeDTO broker)
@@ -189,6 +163,57 @@ public class NavigationService : INavigationService
                 ["OperationCount"] = asset.OperationCount,
                 ["CreditCount"] = asset.CreditCount
             }
+        };
+    }
+
+    private static BrokerNodeDTO MapBroker(Broker broker)
+    {
+        return new BrokerNodeDTO
+        {
+            Name = broker.Name,
+            Currency = broker.Currency,
+            PortfolioCount = broker.Portfolios.Count,
+            TotalAssets = broker.Portfolios.Sum(p => p.Assets.Count),
+            Portfolios = MapPortfolios(broker.Portfolios).ToList()
+        };
+    }
+
+    private static IEnumerable<PortfolioNodeDTO> MapPortfolios(IEnumerable<Portfolio> portfolios)
+    {
+        return OrderByNameWithEncerradasLast(portfolios, portfolio => portfolio.Name)
+            .Select(MapPortfolio);
+    }
+
+    private static PortfolioNodeDTO MapPortfolio(Portfolio portfolio)
+    {
+        return new PortfolioNodeDTO
+        {
+            Name = portfolio.Name,
+            AssetCount = portfolio.Assets.Count,
+            ActiveAssetCount = portfolio.Assets.Count(a => a.Active),
+            Assets = MapAssets(portfolio.Assets).ToList()
+        };
+    }
+
+    private static IEnumerable<AssetNodeDTO> MapAssets(IEnumerable<Asset> assets)
+    {
+        return OrderByNameWithEncerradasLast(assets, asset => asset.Name)
+            .Select(MapAsset);
+    }
+
+    private static AssetNodeDTO MapAsset(Asset asset)
+    {
+        return new AssetNodeDTO
+        {
+            Name = asset.Name,
+            Ticker = asset.Ticker,
+            Exchange = asset.Exchange,
+            ISIN = asset.ISIN,
+            Quantity = asset.Quantity,
+            AveragePrice = asset.AvargePrice,
+            IsActive = asset.Active,
+            OperationCount = asset.Operations.Count,
+            CreditCount = asset.Credits.Count
         };
     }
 
