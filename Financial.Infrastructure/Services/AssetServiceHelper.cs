@@ -3,7 +3,7 @@ using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 
-namespace Financial.Infrastructure.Repositories;
+namespace Financial.Infrastructure.Services;
 
 internal static class AssetServiceHelper
 {
@@ -42,3 +42,4 @@ internal static class AssetServiceHelper
         return navigationService.GetAssetDetails(brokerName!, portfolioName!, assetName!);
     }
 }
+

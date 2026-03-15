@@ -4,9 +4,10 @@ using System.Linq;
 using Financial.Application.DTOs;
 using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
+using Financial.Infrastructure.Services;
 using FluentAssertions;
 
-namespace Financial.Infrastructure.Tests;
+namespace Financial.Infrastructure.Tests.Services;
 
 public class OperationServiceTests
 {
@@ -139,3 +140,5 @@ public class OperationServiceTests
         return (service, tempFile);
     }
 }
+
+

@@ -3,7 +3,7 @@ using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Infrastructure.Integrations.WebPageParser;
 
-namespace Financial.Infrastructure.Repositories;
+namespace Financial.Infrastructure.Services;
 
 public sealed class AssetPriceService : IAssetPriceService
 {
@@ -30,3 +30,4 @@ public sealed class AssetPriceService : IAssetPriceService
         };
     }
 }
+

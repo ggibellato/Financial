@@ -2,10 +2,11 @@ using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using Financial.Infrastructure.Repositories;
+using Financial.Infrastructure.Services;
 using Financial.Infrastructure.Persistence;
 using FluentAssertions;
 
-namespace Financial.Infrastructure.Tests;
+namespace Financial.Infrastructure.Tests.Services;
 
 public class NavigationServiceTests
 {
@@ -387,4 +388,6 @@ public class NavigationServiceTests
         public void SaveChanges() => throw new NotImplementedException();
     }
 }
+
+
 

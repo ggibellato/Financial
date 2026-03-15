@@ -2,7 +2,7 @@ using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 
-namespace Financial.Infrastructure.Repositories;
+namespace Financial.Infrastructure.Services;
 
 /// <summary>
 /// Implementation of INavigationService that provides hierarchical navigation
@@ -244,3 +244,4 @@ public class NavigationService : INavigationService
         return string.Equals(name?.Trim(), EncerradasName, StringComparison.CurrentCultureIgnoreCase);
     }
 }
+

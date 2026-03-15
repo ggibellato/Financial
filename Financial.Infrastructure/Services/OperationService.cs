@@ -4,22 +4,22 @@ using Financial.Application.Validation;
 using Financial.Domain.Entities;
 using System;
 
-namespace Financial.Infrastructure.Repositories;
+namespace Financial.Infrastructure.Services;
 
-public sealed class CreditService : ICreditService
+public sealed class OperationService : IOperationService
 {
     private readonly IRepository _repository;
     private readonly INavigationService _navigationService;
 
-    public CreditService(IRepository repository, INavigationService navigationService)
+    public OperationService(IRepository repository, INavigationService navigationService)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
     }
 
-    public AssetDetailsDTO? AddCredit(CreditCreateDTO request)
+    public AssetDetailsDTO? AddOperation(OperationCreateDTO request)
     {
-        if (!CreditTypeParser.TryParse(request.Type, out Credit.CreditType creditType))
+        if (!OperationTypeParser.TryParse(request.Type, out Operation.OperationType operationType))
         {
             return null;
         }
@@ -32,16 +32,16 @@ public sealed class CreditService : ICreditService
             request.AssetName,
             asset =>
             {
-                var credit = Credit.Create(request.Date, creditType, request.Value);
-                asset.AddCredit(credit);
+                var operation = Operation.Create(request.Date, operationType, request.Quantity, request.UnitPrice, request.Fees);
+                asset.AddOperation(operation);
                 return true;
             });
     }
 
-    public AssetDetailsDTO? UpdateCredit(CreditUpdateDTO request)
+    public AssetDetailsDTO? UpdateOperation(OperationUpdateDTO request)
     {
         if (request.Id == Guid.Empty ||
-            !CreditTypeParser.TryParse(request.Type, out Credit.CreditType creditType))
+            !OperationTypeParser.TryParse(request.Type, out Operation.OperationType operationType))
         {
             return null;
         }
@@ -54,12 +54,12 @@ public sealed class CreditService : ICreditService
             request.AssetName,
             asset =>
             {
-                var updatedCredit = Credit.CreateWithId(request.Id, request.Date, creditType, request.Value);
-                return asset.UpdateCredit(updatedCredit);
+                var updatedOperation = Operation.CreateWithId(request.Id, request.Date, operationType, request.Quantity, request.UnitPrice, request.Fees);
+                return asset.UpdateOperation(updatedOperation);
             });
     }
 
-    public AssetDetailsDTO? DeleteCredit(CreditDeleteDTO request)
+    public AssetDetailsDTO? DeleteOperation(OperationDeleteDTO request)
     {
         if (request.Id == Guid.Empty)
         {
@@ -72,6 +72,7 @@ public sealed class CreditService : ICreditService
             request.BrokerName,
             request.PortfolioName,
             request.AssetName,
-            asset => asset.RemoveCredit(request.Id));
+            asset => asset.RemoveOperation(request.Id));
     }
 }
+
