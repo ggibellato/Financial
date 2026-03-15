@@ -36,33 +36,31 @@ public sealed class JSONRepository : IRepository
 
     public IEnumerable<Asset> GetAssetsByBroker(string name)
     {
-        return _investiments.Brokers.Where(b => b.Name == name)
-            .SelectMany(b => b.Portfolios.SelectMany(p => p.Assets));
+        return GetAssetsByBrokerInternal(name);
     }
 
     public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio)
     {
-        return _investiments.Brokers.Where(b => b.Name == broker)
-            .SelectMany(b => b.Portfolios.Where(p => p.Name == portfolio).SelectMany(p => p.Assets));
+        return GetPortfoliosByBroker(broker)
+            .Where(p => p.Name == portfolio)
+            .SelectMany(p => p.Assets);
     }
 
     public IEnumerable<Asset> GetAssetsByPortfolio(string name)
     {
-        return _investiments.Brokers
-            .SelectMany(b => b.Portfolios.Where(p => p.Name == name).SelectMany(p => p.Assets));
+        return GetPortfoliosByName(name)
+            .SelectMany(p => p.Assets);
     }
 
     public IEnumerable<Asset> GetAssetsByAssetName(string name)
     {
-        return _investiments.Brokers
-            .SelectMany(b => b.Portfolios.SelectMany(p => p.Assets.Where(a => a.Name == name)));
+        return GetAllAssetsInternal()
+            .Where(a => a.Name == name);
     }
 
     public Asset? GetAsset(string brokerName, string portfolioName, string assetName)
     {
-        return _investiments.Brokers
-            .Where(b => b.Name == brokerName)
-            .SelectMany(b => b.Portfolios.Where(p => p.Name == portfolioName).SelectMany(p => p.Assets))
+        return GetAssetsByBrokerPortfolio(brokerName, portfolioName)
             .FirstOrDefault(a => a.Name == assetName);
     }
 
@@ -90,8 +88,7 @@ public sealed class JSONRepository : IRepository
     public AssetInfoDTO GetAssetInfo(string brokerName, string portfolio, string assetName)
     {
         var ret = new AssetInfoDTO();
-        var asset = _investiments.Brokers
-            .First(b => b.Name == brokerName)
+        var asset = GetBrokerOrThrow(brokerName)
             .Portfolios.First(p => p.Name == portfolio)
             .Assets.First(a => a.Name == assetName);
 
@@ -101,11 +98,7 @@ public sealed class JSONRepository : IRepository
         ret.AvaragePrice = asset.AvargePrice;
         ret.TotalBought = asset.Operations.Where(o => o.Type == Operation.OperationType.Buy).Sum(o => o.TotalPrice);
         ret.TotalSold = asset.Operations.Where(o => o.Type == Operation.OperationType.Sell).Sum(o => o.TotalPrice);
-        var creditsInfo = new CreditInfoDTO();
-        creditsInfo.Total = asset.Credits.Sum(o => o.Value);
-        creditsInfo.CreditsByMonth = asset.Credits.GroupBy(c => new DateOnly(c.Date.Year, c.Date.Month, 1))
-            .ToDictionary(g => g.Key, g => g.Sum(c => c.Value));
-        ret.Credits = creditsInfo;
+        ret.Credits = BuildCreditInfo(asset.Credits);
 
         decimal currentVlw = 0;
         foreach (var item in asset.Operations)
@@ -136,27 +129,38 @@ public sealed class JSONRepository : IRepository
         return Investments.Deserialize(json);
     }
 
-    private decimal GetTotalBoughtByBroker(string brokerName, bool active)
-    {
-        return _investiments.Brokers.Where(b => b.Name == brokerName)
-            .SelectMany(b => b.Portfolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Operations)))
-            .Where(o => o.Type == Operation.OperationType.Buy)
-            .Sum(o => o.TotalPrice);
-    }
+    private IEnumerable<Broker> GetBrokersByName(string brokerName) =>
+        _investiments.Brokers.Where(b => b.Name == brokerName);
 
-    private decimal GetTotalSoldByBroker(string brokerName, bool active)
-    {
-        return _investiments.Brokers.Where(b => b.Name == brokerName)
-            .SelectMany(b => b.Portfolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Operations)))
-            .Where(o => o.Type == Operation.OperationType.Sell)
-            .Sum(o => o.TotalPrice);
-    }
+    private Broker GetBrokerOrThrow(string brokerName) =>
+        _investiments.Brokers.First(b => b.Name == brokerName);
 
-    private CreditInfoDTO GetTotalCreditsByBroker(string brokerName, bool active)
+    private IEnumerable<Portfolio> GetPortfoliosByBroker(string brokerName) =>
+        GetBrokersByName(brokerName).SelectMany(b => b.Portfolios);
+
+    private IEnumerable<Asset> GetAssetsByBrokerInternal(string brokerName) =>
+        GetPortfoliosByBroker(brokerName).SelectMany(p => p.Assets);
+
+    private IEnumerable<Portfolio> GetPortfoliosByName(string portfolioName) =>
+        _investiments.Brokers.SelectMany(b => b.Portfolios.Where(p => p.Name == portfolioName));
+
+    private IEnumerable<Asset> GetAllAssetsInternal() =>
+        _investiments.Brokers.SelectMany(b => b.Portfolios.SelectMany(p => p.Assets));
+
+    private static IEnumerable<Asset> FilterActiveAssets(IEnumerable<Asset> assets, bool activeOnly) =>
+        activeOnly ? assets.Where(a => a.Active) : assets;
+
+    private IEnumerable<Operation> GetOperationsByBroker(string brokerName, bool activeOnly) =>
+        FilterActiveAssets(GetAssetsByBrokerInternal(brokerName), activeOnly)
+            .SelectMany(a => a.Operations);
+
+    private IEnumerable<Credit> GetCreditsByBroker(string brokerName, bool activeOnly) =>
+        FilterActiveAssets(GetAssetsByBrokerInternal(brokerName), activeOnly)
+            .SelectMany(a => a.Credits);
+
+    private static CreditInfoDTO BuildCreditInfo(IEnumerable<Credit> credits)
     {
         var creditsInfo = new CreditInfoDTO();
-        var credits = _investiments.Brokers.Where(b => b.Name == brokerName)
-            .SelectMany(b => b.Portfolios.SelectMany(p => p.Assets.Where(a => a.Active || !active).SelectMany(a => a.Credits)));
         creditsInfo.Total = credits.Sum(o => o.Value);
         creditsInfo.CreditsByMonth = credits
             .GroupBy(c => new DateOnly(c.Date.Year, c.Date.Month, 1))
@@ -164,10 +168,29 @@ public sealed class JSONRepository : IRepository
         return creditsInfo;
     }
 
+    private decimal GetTotalBoughtByBroker(string brokerName, bool active)
+    {
+        return GetOperationsByBroker(brokerName, active)
+            .Where(o => o.Type == Operation.OperationType.Buy)
+            .Sum(o => o.TotalPrice);
+    }
+
+    private decimal GetTotalSoldByBroker(string brokerName, bool active)
+    {
+        return GetOperationsByBroker(brokerName, active)
+            .Where(o => o.Type == Operation.OperationType.Sell)
+            .Sum(o => o.TotalPrice);
+    }
+
+    private CreditInfoDTO GetTotalCreditsByBroker(string brokerName, bool active)
+    {
+        return BuildCreditInfo(GetCreditsByBroker(brokerName, active));
+    }
+
     private List<PortfolioDTO> GetPortfolioAssetsByBroker(string brokerName, bool active)
     {
         var ret = new List<PortfolioDTO>();
-        var broker = _investiments.Brokers.Where(b => b.Name == brokerName).First();
+        var broker = GetBrokerOrThrow(brokerName);
         foreach (var p in broker.Portfolios)
         {
             var assets = p.Assets.Where(a => a.Active == active);

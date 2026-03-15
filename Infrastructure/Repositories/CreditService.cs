@@ -18,88 +18,59 @@ public sealed class CreditService : ICreditService
 
     public AssetDetailsDTO? AddCredit(CreditCreateDTO request)
     {
-        if (IsInvalidContext(request.BrokerName, request.PortfolioName, request.AssetName) ||
-            !TryParseCreditType(request.Type, out var creditType))
+        if (!AssetServiceHelper.TryParseEnum(request.Type, out Credit.CreditType creditType))
         {
             return null;
         }
 
-        var asset = _repository.GetAsset(request.BrokerName, request.PortfolioName, request.AssetName);
-        if (asset == null)
-        {
-            return null;
-        }
-
-        var credit = Credit.Create(request.Date, creditType, request.Value);
-        asset.AddCredit(credit);
-        _repository.SaveChanges();
-
-        return _navigationService.GetAssetDetails(request.BrokerName, request.PortfolioName, request.AssetName);
+        return AssetServiceHelper.ExecuteAssetMutation(
+            _repository,
+            _navigationService,
+            request.BrokerName,
+            request.PortfolioName,
+            request.AssetName,
+            asset =>
+            {
+                var credit = Credit.Create(request.Date, creditType, request.Value);
+                asset.AddCredit(credit);
+                return true;
+            });
     }
 
     public AssetDetailsDTO? UpdateCredit(CreditUpdateDTO request)
     {
-        if (IsInvalidContext(request.BrokerName, request.PortfolioName, request.AssetName) ||
-            request.Id == Guid.Empty ||
-            !TryParseCreditType(request.Type, out var creditType))
+        if (request.Id == Guid.Empty ||
+            !AssetServiceHelper.TryParseEnum(request.Type, out Credit.CreditType creditType))
         {
             return null;
         }
 
-        var asset = _repository.GetAsset(request.BrokerName, request.PortfolioName, request.AssetName);
-        if (asset == null)
-        {
-            return null;
-        }
-
-        var updatedCredit = Credit.CreateWithId(request.Id, request.Date, creditType, request.Value);
-        if (!asset.UpdateCredit(updatedCredit))
-        {
-            return null;
-        }
-
-        _repository.SaveChanges();
-        return _navigationService.GetAssetDetails(request.BrokerName, request.PortfolioName, request.AssetName);
+        return AssetServiceHelper.ExecuteAssetMutation(
+            _repository,
+            _navigationService,
+            request.BrokerName,
+            request.PortfolioName,
+            request.AssetName,
+            asset =>
+            {
+                var updatedCredit = Credit.CreateWithId(request.Id, request.Date, creditType, request.Value);
+                return asset.UpdateCredit(updatedCredit);
+            });
     }
 
     public AssetDetailsDTO? DeleteCredit(CreditDeleteDTO request)
     {
-        if (IsInvalidContext(request.BrokerName, request.PortfolioName, request.AssetName) ||
-            request.Id == Guid.Empty)
+        if (request.Id == Guid.Empty)
         {
             return null;
         }
 
-        var asset = _repository.GetAsset(request.BrokerName, request.PortfolioName, request.AssetName);
-        if (asset == null)
-        {
-            return null;
-        }
-
-        if (!asset.RemoveCredit(request.Id))
-        {
-            return null;
-        }
-
-        _repository.SaveChanges();
-        return _navigationService.GetAssetDetails(request.BrokerName, request.PortfolioName, request.AssetName);
-    }
-
-    private static bool IsInvalidContext(string? brokerName, string? portfolioName, string? assetName)
-    {
-        return string.IsNullOrWhiteSpace(brokerName) ||
-               string.IsNullOrWhiteSpace(portfolioName) ||
-               string.IsNullOrWhiteSpace(assetName);
-    }
-
-    private static bool TryParseCreditType(string? value, out Credit.CreditType creditType)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            creditType = default;
-            return false;
-        }
-
-        return Enum.TryParse(value, true, out creditType);
+        return AssetServiceHelper.ExecuteAssetMutation(
+            _repository,
+            _navigationService,
+            request.BrokerName,
+            request.PortfolioName,
+            request.AssetName,
+            asset => asset.RemoveCredit(request.Id));
     }
 }
