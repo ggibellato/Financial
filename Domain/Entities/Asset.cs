@@ -25,13 +25,7 @@ public class Asset
     public decimal Quantity { get; private set; }
 
     [JsonIgnore]
-    public bool Active
-    {
-        get
-        {
-            return Quantity > 0;
-        }
-    }
+    public bool Active => Quantity > 0;
 
     private List<Operation> _operations = new List<Operation>();
     [JsonInclude]
@@ -109,10 +103,7 @@ public class Asset
             throw new ArgumentNullException(nameof(updatedOperation));
         }
 
-        if (updatedOperation.Id == Guid.Empty)
-        {
-            throw new ArgumentException("Operation Id is required for update.", nameof(updatedOperation));
-        }
+        EnsureNotEmptyId(updatedOperation.Id, "Operation Id is required for update.", nameof(updatedOperation));
 
         var index = _operations.FindIndex(op => op.Id == updatedOperation.Id);
         if (index < 0)
@@ -128,10 +119,7 @@ public class Asset
 
     public bool RemoveOperation(Guid operationId)
     {
-        if (operationId == Guid.Empty)
-        {
-            throw new ArgumentException("Operation Id is required for delete.", nameof(operationId));
-        }
+        EnsureNotEmptyId(operationId, "Operation Id is required for delete.", nameof(operationId));
 
         var index = _operations.FindIndex(op => op.Id == operationId);
         if (index < 0)
@@ -163,10 +151,7 @@ public class Asset
             throw new ArgumentNullException(nameof(updatedCredit));
         }
 
-        if (updatedCredit.Id == Guid.Empty)
-        {
-            throw new ArgumentException("Credit Id is required for update.", nameof(updatedCredit));
-        }
+        EnsureNotEmptyId(updatedCredit.Id, "Credit Id is required for update.", nameof(updatedCredit));
 
         var index = _credits.FindIndex(credit => credit.Id == updatedCredit.Id);
         if (index < 0)
@@ -180,10 +165,7 @@ public class Asset
 
     public bool RemoveCredit(Guid creditId)
     {
-        if (creditId == Guid.Empty)
-        {
-            throw new ArgumentException("Credit Id is required for delete.", nameof(creditId));
-        }
+        EnsureNotEmptyId(creditId, "Credit Id is required for delete.", nameof(creditId));
 
         var index = _credits.FindIndex(credit => credit.Id == creditId);
         if (index < 0)
@@ -199,6 +181,14 @@ public class Asset
         foreach (var credit in credits)
         {
             AddCredit(credit);
+        }
+    }
+
+    private static void EnsureNotEmptyId(Guid id, string message, string paramName)
+    {
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException(message, paramName);
         }
     }
 }

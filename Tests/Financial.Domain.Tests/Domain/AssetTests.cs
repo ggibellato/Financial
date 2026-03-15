@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json;
 using FluentAssertions;
 using Financial.Domain.Entities;
 
@@ -75,6 +76,19 @@ public class AssetTests
     }
 
     [Fact]
+    public void UpdateOperation_EmptyId_Throws()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        // Use JSON deserialization to preserve Guid.Empty because Operation.CreateWithId replaces empty IDs.
+        var operation = JsonSerializer.Deserialize<Operation>(
+            "{\"Id\":\"00000000-0000-0000-0000-000000000000\",\"Date\":\"2024-01-01T00:00:00\",\"Type\":\"Buy\",\"Quantity\":1,\"UnitPrice\":1,\"Fees\":0}")!;
+
+        Action act = () => asset.UpdateOperation(operation);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
     public void RemoveOperation_UnknownId_ReturnsFalse()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
@@ -112,6 +126,17 @@ public class AssetTests
         var result = asset.UpdateCredit(Credit.CreateWithId(Guid.NewGuid(), new DateTime(2024, 2, 1), Credit.CreditType.Dividend, 10m));
 
         result.Should().BeFalse();
+    }
+
+    [Fact]
+    public void UpdateCredit_EmptyId_Throws()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var credit = Credit.CreateWithId(Guid.Empty, new DateTime(2024, 2, 1), Credit.CreditType.Dividend, 10m);
+
+        Action act = () => asset.UpdateCredit(credit);
+
+        act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
