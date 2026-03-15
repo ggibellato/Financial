@@ -19,18 +19,15 @@ public sealed class OperationService : IOperationService
 
     public AssetDetailsDTO? AddOperation(OperationCreateDTO request)
     {
-        if (!OperationTypeParser.TryParse(request.Type, out Operation.OperationType operationType))
-        {
-            return null;
-        }
-
-        return AssetServiceHelper.ExecuteAssetMutation(
+        return AssetServiceHelper.ExecuteParsedMutation<Operation.OperationType>(
             _repository,
             _navigationService,
             request.BrokerName,
             request.PortfolioName,
             request.AssetName,
-            asset =>
+            request.Type,
+            OperationTypeParser.TryParse,
+            (asset, operationType) =>
             {
                 var operation = Operation.Create(request.Date, operationType, request.Quantity, request.UnitPrice, request.Fees);
                 asset.AddOperation(operation);
@@ -40,19 +37,20 @@ public sealed class OperationService : IOperationService
 
     public AssetDetailsDTO? UpdateOperation(OperationUpdateDTO request)
     {
-        if (request.Id == Guid.Empty ||
-            !OperationTypeParser.TryParse(request.Type, out Operation.OperationType operationType))
+        if (request.Id == Guid.Empty)
         {
             return null;
         }
 
-        return AssetServiceHelper.ExecuteAssetMutation(
+        return AssetServiceHelper.ExecuteParsedMutation<Operation.OperationType>(
             _repository,
             _navigationService,
             request.BrokerName,
             request.PortfolioName,
             request.AssetName,
-            asset =>
+            request.Type,
+            OperationTypeParser.TryParse,
+            (asset, operationType) =>
             {
                 var updatedOperation = Operation.CreateWithId(request.Id, request.Date, operationType, request.Quantity, request.UnitPrice, request.Fees);
                 return asset.UpdateOperation(updatedOperation);

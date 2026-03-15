@@ -19,18 +19,15 @@ public sealed class CreditService : ICreditService
 
     public AssetDetailsDTO? AddCredit(CreditCreateDTO request)
     {
-        if (!CreditTypeParser.TryParse(request.Type, out Credit.CreditType creditType))
-        {
-            return null;
-        }
-
-        return AssetServiceHelper.ExecuteAssetMutation(
+        return AssetServiceHelper.ExecuteParsedMutation<Credit.CreditType>(
             _repository,
             _navigationService,
             request.BrokerName,
             request.PortfolioName,
             request.AssetName,
-            asset =>
+            request.Type,
+            CreditTypeParser.TryParse,
+            (asset, creditType) =>
             {
                 var credit = Credit.Create(request.Date, creditType, request.Value);
                 asset.AddCredit(credit);
@@ -40,19 +37,20 @@ public sealed class CreditService : ICreditService
 
     public AssetDetailsDTO? UpdateCredit(CreditUpdateDTO request)
     {
-        if (request.Id == Guid.Empty ||
-            !CreditTypeParser.TryParse(request.Type, out Credit.CreditType creditType))
+        if (request.Id == Guid.Empty)
         {
             return null;
         }
 
-        return AssetServiceHelper.ExecuteAssetMutation(
+        return AssetServiceHelper.ExecuteParsedMutation<Credit.CreditType>(
             _repository,
             _navigationService,
             request.BrokerName,
             request.PortfolioName,
             request.AssetName,
-            asset =>
+            request.Type,
+            CreditTypeParser.TryParse,
+            (asset, creditType) =>
             {
                 var updatedCredit = Credit.CreateWithId(request.Id, request.Date, creditType, request.Value);
                 return asset.UpdateCredit(updatedCredit);
