@@ -5,17 +5,16 @@
 		<Project Path="Integrations/ImportGoogleSpreadSheets/ImportGoogleSpreadSheets.csproj" />
 		<Project Path="Integrations/WebPageParser/WebPageParser.csproj" />
 	</Folder>
-	<Folder Name="/Presentation/">
-		<Project Path="Presentation/Financial.App/Financial.App.csproj" />
-	</Folder>
 	<Folder Name="/Tests/">
 		<Project Path="Tests/Financial.Application.Tests/Financial.Application.Tests.csproj" />
 		<Project Path="Tests/Financial.Domain.Tests/Financial.Domain.Tests.csproj" />
 		<Project Path="Tests/Financial.Infrastructure.Tests/Financial.Infrastructure.Tests.csproj" />
 	</Folder>
+	<Project Path="Financial.App/Financial.App.csproj" />
 	<Project Path="Financial.Application/Financial.Application.csproj" />
 	<Project Path="Financial.Common/Financial.Common.csproj" />
 	<Project Path="Financial.Domain/Financial.Domain.csproj" />
 	<Project Path="Financial.Infrastructure/Financial.Infrastructure.csproj" />
 </Solution>
+
 
