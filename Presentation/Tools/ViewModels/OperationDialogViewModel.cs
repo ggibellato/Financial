@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using Financial.Presentation.Shared.ViewModels;
 
 namespace Financial.Presentation.Tools.ViewModels;
 
@@ -223,47 +223,13 @@ public sealed class OperationDialogViewModel : ViewModelBase
 
     private void Validate()
     {
-        if (Mode == OperationDialogMode.Delete)
-        {
-            ValidationMessage = string.Empty;
-            ConfirmCommand.RaiseCanExecuteChanged();
-            return;
-        }
-
-        var errors = new List<string>();
-
-        if (Date == DateTime.MinValue)
-        {
-            errors.Add("Date is required.");
-        }
-
-        if (!IsValidOperationType(Type))
-        {
-            errors.Add("Type must be Buy or Sell.");
-        }
-
-        if (Quantity <= 0)
-        {
-            errors.Add("Quantity must be greater than zero.");
-        }
-
-        if (UnitPrice < 0)
-        {
-            errors.Add("Unit price cannot be negative.");
-        }
-
-        if (Fees < 0)
-        {
-            errors.Add("Fees cannot be negative.");
-        }
-
-        ValidationMessage = string.Join(Environment.NewLine, errors);
+        ValidationMessage = OperationDialogValidation.BuildValidationMessage(
+            Mode == OperationDialogMode.Delete,
+            Date,
+            Type,
+            Quantity,
+            UnitPrice,
+            Fees);
         ConfirmCommand.RaiseCanExecuteChanged();
-    }
-
-    private static bool IsValidOperationType(string? value)
-    {
-        return string.Equals(value, "Buy", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(value, "Sell", StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
+using Financial.Presentation.Shared.ViewModels;
 using Financial.Presentation.Tools;
 
 namespace Financial.Presentation.Tools.ViewModels;
@@ -11,7 +12,7 @@ namespace Financial.Presentation.Tools.ViewModels;
 /// <summary>
 /// ViewModel for displaying asset details with operations and credits in tabs
 /// </summary>
-public class AssetDetailsViewModel : ViewModelBase
+public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 {
     private readonly IOperationService? _operationService;
     private readonly ICreditService? _creditService;
@@ -173,39 +174,17 @@ public class AssetDetailsViewModel : ViewModelBase
         private set => SetProperty(ref _todayInfoMessage, value);
     }
 
-    public decimal TotalCurrentValue => TodayCurrentValue * Quantity;
+    public decimal TotalCurrentValue => AssetDetailsCalculations.CalculateTotalCurrentValue(TodayCurrentValue, Quantity);
 
-    public decimal ResultPercent
-    {
-        get
-        {
-            if (!HasAveragePrice)
-            {
-                return 0;
-            }
-
-            var investedTotal = AveragePrice * Quantity;
-            return investedTotal == 0 ? 0 : (TotalCurrentValue / investedTotal) - 1;
-        }
-    }
+    public decimal ResultPercent =>
+        AssetDetailsCalculations.CalculateResultPercent(AveragePrice, Quantity, TotalCurrentValue);
 
     public decimal TotalCurrentValueWithCredits => TotalCurrentValue + TotalCredits;
 
-    public decimal ResultPercentWithCredits
-    {
-        get
-        {
-            if (!HasAveragePrice)
-            {
-                return 0;
-            }
+    public decimal ResultPercentWithCredits =>
+        AssetDetailsCalculations.CalculateResultPercentWithCredits(AveragePrice, Quantity, TotalCurrentValueWithCredits);
 
-            var investedTotal = AveragePrice * Quantity;
-            return investedTotal == 0 ? 0 : (TotalCurrentValueWithCredits / investedTotal) - 1;
-        }
-    }
-
-    public bool HasAveragePrice => AveragePrice > 0 && Quantity > 0;
+    public bool HasAveragePrice => AssetDetailsCalculations.HasAveragePrice(AveragePrice, Quantity);
 
     public ObservableCollection<OperationDTO> Operations { get; } = new();
     public ObservableCollection<CreditDTO> Credits { get; } = new();

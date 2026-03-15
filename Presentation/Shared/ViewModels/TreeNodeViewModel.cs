@@ -1,7 +1,9 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Financial.Application.DTOs;
 
-namespace Financial.Presentation.UI.ViewModels;
+namespace Financial.Presentation.Shared.ViewModels;
 
 /// <summary>
 /// ViewModel for hierarchical tree nodes (Broker, Portfolio, Asset)
@@ -104,5 +106,3 @@ public class TreeNodeViewModel : ViewModelBase
         return defaultValue;
     }
 }
-
-

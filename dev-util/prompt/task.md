@@ -30,10 +30,5 @@
 
 # Task 2
 
-Re arange the folders on the project
-
-
-# Task 3
-
 Identify instrument type for each asset, 
 FIIs, REIT, ETF, SHARES, ACOES, Pensao privada, Fundos

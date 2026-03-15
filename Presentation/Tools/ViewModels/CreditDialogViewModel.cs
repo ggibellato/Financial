@@ -1,6 +1,5 @@
 using System;
-using System.Collections.Generic;
-
+using Financial.Presentation.Shared.ViewModels;
 namespace Financial.Presentation.Tools.ViewModels;
 
 public enum CreditDialogMode
@@ -182,37 +181,11 @@ public sealed class CreditDialogViewModel : ViewModelBase
 
     private void Validate()
     {
-        if (Mode == CreditDialogMode.Delete)
-        {
-            ValidationMessage = string.Empty;
-            ConfirmCommand.RaiseCanExecuteChanged();
-            return;
-        }
-
-        var errors = new List<string>();
-
-        if (Date == DateTime.MinValue)
-        {
-            errors.Add("Date is required.");
-        }
-
-        if (!IsValidCreditType(Type))
-        {
-            errors.Add("Type must be Dividend or Rent.");
-        }
-
-        if (Value <= 0)
-        {
-            errors.Add("Value must be greater than zero.");
-        }
-
-        ValidationMessage = string.Join(Environment.NewLine, errors);
+        ValidationMessage = CreditDialogValidation.BuildValidationMessage(
+            Mode == CreditDialogMode.Delete,
+            Date,
+            Type,
+            Value);
         ConfirmCommand.RaiseCanExecuteChanged();
-    }
-
-    private static bool IsValidCreditType(string? value)
-    {
-        return string.Equals(value, "Dividend", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(value, "Rent", StringComparison.OrdinalIgnoreCase);
     }
 }
