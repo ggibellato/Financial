@@ -7,7 +7,7 @@
 	</Folder>
 	<Folder Name="/Presentation/">
 		<Project Path="Presentation/Financial.Presentation.Shared/Financial.Presentation.Shared.csproj" />
-		<Project Path="Presentation/FinancialTools/FinancialTools.csproj" />
+		<Project Path="Presentation/Financial.App/Financial.App.csproj" />
 		<Project Path="Presentation/FinancialUI/FinancialUI.csproj" />
 	</Folder>
 	<Folder Name="/Tests/">
@@ -21,3 +21,4 @@
 	<Project Path="Financial.Domain/Financial.Domain.csproj" />
 	<Project Path="Financial.Infrastructure/Financial.Infrastructure.csproj" />
 </Solution>
+

@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <RootNamespace>Financial.Presentation.App</RootNamespace>
+    <AssemblyName>Financial.Presentation.App</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DotNetProjects.WpfToolkit.DataVisualization" Version="6.1.94" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Financial.Application\Financial.Application.csproj" />
+    <ProjectReference Include="..\..\Financial.Infrastructure\Financial.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Integrations\FinancialToolSupport\FinancialToolSupport.csproj" />
+    <ProjectReference Include="..\..\Integrations\WebPageParser\WebPageParser.csproj" />
+    <ProjectReference Include="..\Financial.Presentation.Shared\Financial.Presentation.Shared.csproj" />
+  </ItemGroup>
+</Project>
+
+
+
+

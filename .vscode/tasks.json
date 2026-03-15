@@ -21,7 +21,7 @@
 			"command": "dotnet",
 			"args": [
 				"build",
-				"FinancialTools/FinancialTools.csproj"
+				"Financial.App/Financial.App.csproj"
 			],
 			"isBackground": false,
 			"problemMatcher": [
@@ -31,4 +31,5 @@
 		}
 	]
 }
+
 
