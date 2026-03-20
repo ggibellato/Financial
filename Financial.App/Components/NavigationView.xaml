@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:primitives="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework"
+             xmlns:datavis="clr-namespace:System.Windows.Controls.DataVisualization.Charting;assembly=DotNetProjects.DataVisualization.Toolkit"
              mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="1200">
     <Grid>
@@ -439,8 +440,14 @@
 
                 <!-- Credits Tab -->
                 <TabItem Header="Credits">
-                    <DockPanel>
-                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="2*"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
                             <Button Command="{Binding AssetDetails.AddCreditCommand}" ToolTip="New credit">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE710;" Margin="0,0,6,0"/>
@@ -448,7 +455,8 @@
                                 </StackPanel>
                             </Button>
                         </StackPanel>
-                        <DataGrid ItemsSource="{Binding AssetDetails.Credits}"
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding AssetDetails.Credits}"
                                   SelectedItem="{Binding AssetDetails.SelectedCredit, Mode=TwoWay}"
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
@@ -532,7 +540,26 @@
                                 </Style>
                             </DataGrid.CellStyle>
                         </DataGrid>
-                    </DockPanel>
+                        <GridSplitter Grid.Row="2"
+                                      Height="6"
+                                      HorizontalAlignment="Stretch"
+                                      Background="#E0E0E0"
+                                      ResizeDirection="Rows"
+                                      ResizeBehavior="PreviousAndNext"/>
+                        <datavis:Chart Grid.Row="3"
+                                       Title="Credits by Month">
+                            <datavis:Chart.LegendStyle>
+                                <Style TargetType="Control">
+                                    <Setter Property="Width" Value="0" />
+                                    <Setter Property="Height" Value="0" />
+                                </Style>
+                            </datavis:Chart.LegendStyle>
+                            <datavis:ColumnSeries Title=""
+                                                  DependentValuePath="Value"
+                                                  IndependentValuePath="Key"
+                                                  ItemsSource="{Binding AssetDetails.CreditsByMonthChart}"/>
+                        </datavis:Chart>
+                    </Grid>
                 </TabItem>
             </TabControl>
 

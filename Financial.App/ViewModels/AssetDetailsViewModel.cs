@@ -1,5 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using Financial.Application.DTOs;
@@ -188,6 +190,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     public ObservableCollection<OperationDTO> Operations { get; } = new();
     public ObservableCollection<CreditDTO> Credits { get; } = new();
+    public ObservableCollection<KeyValuePair<string, decimal>> CreditsByMonthChart { get; } = new();
 
     public OperationDTO? SelectedOperation
     {
@@ -286,6 +289,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         {
             Credits.Add(credit);
         }
+        RefreshCreditsByMonthChart(details.Credits);
 
         SelectedOperation = null;
         SelectedCredit = null;
@@ -312,6 +316,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _todayInfo.Clear();
         Operations.Clear();
         Credits.Clear();
+        CreditsByMonthChart.Clear();
         SelectedOperation = null;
         SelectedCredit = null;
         UpdateCommandStates();
@@ -399,6 +404,21 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         OnPropertyChanged(nameof(HasAveragePrice));
         OnPropertyChanged(nameof(TotalCurrentValueWithCredits));
         OnPropertyChanged(nameof(ResultPercentWithCredits));
+    }
+
+    private void RefreshCreditsByMonthChart(IEnumerable<CreditDTO> credits)
+    {
+        CreditsByMonthChart.Clear();
+        var grouped = credits
+            .GroupBy(credit => new DateTime(credit.Date.Year, credit.Date.Month, 1))
+            .OrderBy(group => group.Key);
+
+        foreach (var group in grouped)
+        {
+            CreditsByMonthChart.Add(new KeyValuePair<string, decimal>(
+                group.Key.ToString("MM/yyyy"),
+                group.Sum(credit => credit.Value)));
+        }
     }
 
     private static string BuildAssetKey(string brokerName, string portfolioName, string assetName) =>
