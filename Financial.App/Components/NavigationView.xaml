@@ -440,194 +440,298 @@
 
                 <!-- Credits Tab -->
                 <TabItem Header="Credits">
-                    <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="2*"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
-                            <Button Command="{Binding AssetDetails.AddCreditCommand}" ToolTip="New credit">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE710;" Margin="0,0,6,0"/>
-                                    <TextBlock Text="New"/>
-                                </StackPanel>
-                            </Button>
-                        </StackPanel>
-                        <DataGrid Grid.Row="1"
-                                  ItemsSource="{Binding AssetDetails.Credits}"
-                                  SelectedItem="{Binding AssetDetails.SelectedCredit, Mode=TwoWay}"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  IsReadOnly="True">
-                            <DataGrid.InputBindings>
-                                <MouseBinding MouseAction="LeftDoubleClick"
-                                              Command="{Binding AssetDetails.UpdateCreditCommand}"/>
-                            </DataGrid.InputBindings>
-                            <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="" Width="Auto">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Button Command="{Binding DataContext.AssetDetails.UpdateCreditCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                        CommandParameter="{Binding}"
-                                                        ToolTip="Update"
-                                                        Padding="2"
-                                                        Margin="0,0,4,0">
-                                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE70F;"/>
-                                                </Button>
-                                                <Button Command="{Binding DataContext.AssetDetails.DeleteCreditCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                        CommandParameter="{Binding}"
-                                                        ToolTip="Delete"
-                                                        Padding="2">
-                                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE74D;"/>
-                                                </Button>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Date" 
-                                                    Binding="{Binding Date, Converter={StaticResource DateFormatConverter}, ConverterParameter='d'}" 
-                                                    Width="Auto"/>
-                                <DataGridTextColumn Header="Type" 
-                                                    Binding="{Binding Type}" 
-                                                    Width="Auto"/>
-                                <DataGridTextColumn Header="Value" 
-                                                    Binding="{Binding Value, StringFormat=N2}" 
-                                                    Width="*">
-                                    <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="TextAlignment" Value="Right"/>
-                                            <Setter Property="FontWeight" Value="Bold"/>
-                                            <Setter Property="Foreground" Value="Black"/>
-                                        </Style>
-                                    </DataGridTextColumn.ElementStyle>
-                                </DataGridTextColumn>
-                            </DataGrid.Columns>
-                            <DataGrid.RowStyle>
-                                <Style TargetType="DataGridRow">
-                                    <Style.Triggers>
-                                        <Trigger Property="IsSelected" Value="True">
-                                            <Setter Property="Background" Value="LightYellow"/>
-                                        </Trigger>
-                                        <MultiTrigger>
-                                            <MultiTrigger.Conditions>
-                                                <Condition Property="IsSelected" Value="True"/>
-                                                <Condition Property="primitives:Selector.IsSelectionActive" Value="False"/>
-                                            </MultiTrigger.Conditions>
-                                            <Setter Property="Background" Value="LightYellow"/>
-                                        </MultiTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </DataGrid.RowStyle>
-                            <DataGrid.CellStyle>
-                                <Style TargetType="DataGridCell">
-                                    <Style.Triggers>
-                                        <Trigger Property="IsSelected" Value="True">
-                                            <Setter Property="Background" Value="LightYellow"/>
-                                            <Setter Property="Foreground" Value="Black"/>
-                                        </Trigger>
-                                        <MultiTrigger>
-                                            <MultiTrigger.Conditions>
-                                                <Condition Property="IsSelected" Value="True"/>
-                                                <Condition Property="primitives:Selector.IsSelectionActive" Value="False"/>
-                                            </MultiTrigger.Conditions>
-                                            <Setter Property="Background" Value="LightYellow"/>
-                                            <Setter Property="Foreground" Value="Black"/>
-                                        </MultiTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </DataGrid.CellStyle>
-                        </DataGrid>
-                        <GridSplitter Grid.Row="2"
-                                      Height="6"
-                                      HorizontalAlignment="Stretch"
-                                      Background="#E0E0E0"
-                                      ResizeDirection="Rows"
-                                      ResizeBehavior="PreviousAndNext"/>
-                        <oxy:PlotView Grid.Row="3"
-                                      Model="{Binding AssetDetails.CreditsPlotModel}"
-                                      Background="Transparent"
-                                      SizeChanged="OnCreditsPlotSizeChanged" />
-                        <StackPanel Grid.Row="4"
-                                    Orientation="Horizontal"
-                                    HorizontalAlignment="Center"
-                                    Margin="0,8,0,0">
-                            <TextBlock Text="View:" Margin="0,0,8,0" Foreground="#666666"/>
-                            <ItemsControl ItemsSource="{Binding AssetDetails.CreditsTypeModes}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Horizontal"/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Command="{Binding DataContext.AssetDetails.SelectCreditsTypeModeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                CommandParameter="{Binding}"
-                                                Background="Transparent"
-                                                BorderThickness="0"
-                                                Padding="4,0"
-                                                Margin="0,0,12,0">
-                                            <TextBlock Text="{Binding Label}">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="#007ACC"/>
-                                                        <Setter Property="TextDecorations" Value="Underline"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                                <Setter Property="Foreground" Value="Black"/>
-                                                                <Setter Property="TextDecorations" Value="{x:Null}"/>
-                                                                <Setter Property="FontWeight" Value="Bold"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                        <ItemsControl Grid.Row="5"
-                                      ItemsSource="{Binding AssetDetails.CreditsFilters}"
-                                      HorizontalAlignment="Center"
-                                      Margin="0,6,0,0">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Button Command="{Binding DataContext.AssetDetails.SelectCreditsFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                            CommandParameter="{Binding}"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            Padding="4,0"
-                                            Margin="0,0,12,0">
-                                        <TextBlock Text="{Binding Label}">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Foreground" Value="#007ACC"/>
-                                                    <Setter Property="TextDecorations" Value="Underline"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter Property="Foreground" Value="Black"/>
-                                                            <Setter Property="TextDecorations" Value="{x:Null}"/>
-                                                            <Setter Property="FontWeight" Value="Bold"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
+                    <TabItem.Resources>
+                        <DataTemplate x:Key="CreditsAssetTemplate">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="2*"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
+                                    <Button Command="{Binding AssetDetails.AddCreditCommand}" ToolTip="New credit">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE710;" Margin="0,0,6,0"/>
+                                            <TextBlock Text="New"/>
+                                        </StackPanel>
                                     </Button>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </Grid>
+                                </StackPanel>
+                                <DataGrid Grid.Row="1"
+                                          ItemsSource="{Binding AssetDetails.Credits}"
+                                          SelectedItem="{Binding AssetDetails.SelectedCredit, Mode=TwoWay}"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          IsReadOnly="True">
+                                    <DataGrid.InputBindings>
+                                        <MouseBinding MouseAction="LeftDoubleClick"
+                                                      Command="{Binding AssetDetails.UpdateCreditCommand}"/>
+                                    </DataGrid.InputBindings>
+                                    <DataGrid.Columns>
+                                        <DataGridTemplateColumn Header="" Width="Auto">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Button Command="{Binding DataContext.AssetDetails.UpdateCreditCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                                CommandParameter="{Binding}"
+                                                                ToolTip="Update"
+                                                                Padding="2"
+                                                                Margin="0,0,4,0">
+                                                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE70F;"/>
+                                                        </Button>
+                                                        <Button Command="{Binding DataContext.AssetDetails.DeleteCreditCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                                CommandParameter="{Binding}"
+                                                                ToolTip="Delete"
+                                                                Padding="2">
+                                                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE74D;"/>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTextColumn Header="Date" 
+                                                            Binding="{Binding Date, Converter={StaticResource DateFormatConverter}, ConverterParameter='d'}" 
+                                                            Width="Auto"/>
+                                        <DataGridTextColumn Header="Type" 
+                                                            Binding="{Binding Type}" 
+                                                            Width="Auto"/>
+                                        <DataGridTextColumn Header="Value" 
+                                                            Binding="{Binding Value, StringFormat=N2}" 
+                                                            Width="*">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextAlignment" Value="Right"/>
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                    <Setter Property="Foreground" Value="Black"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                    </DataGrid.Columns>
+                                    <DataGrid.RowStyle>
+                                        <Style TargetType="DataGridRow">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Background" Value="LightYellow"/>
+                                                </Trigger>
+                                                <MultiTrigger>
+                                                    <MultiTrigger.Conditions>
+                                                        <Condition Property="IsSelected" Value="True"/>
+                                                        <Condition Property="primitives:Selector.IsSelectionActive" Value="False"/>
+                                                    </MultiTrigger.Conditions>
+                                                    <Setter Property="Background" Value="LightYellow"/>
+                                                </MultiTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.RowStyle>
+                                    <DataGrid.CellStyle>
+                                        <Style TargetType="DataGridCell">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Background" Value="LightYellow"/>
+                                                    <Setter Property="Foreground" Value="Black"/>
+                                                </Trigger>
+                                                <MultiTrigger>
+                                                    <MultiTrigger.Conditions>
+                                                        <Condition Property="IsSelected" Value="True"/>
+                                                        <Condition Property="primitives:Selector.IsSelectionActive" Value="False"/>
+                                                    </MultiTrigger.Conditions>
+                                                    <Setter Property="Background" Value="LightYellow"/>
+                                                    <Setter Property="Foreground" Value="Black"/>
+                                                </MultiTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.CellStyle>
+                                </DataGrid>
+                                <GridSplitter Grid.Row="2"
+                                              Height="6"
+                                              HorizontalAlignment="Stretch"
+                                              Background="#E0E0E0"
+                                              ResizeDirection="Rows"
+                                              ResizeBehavior="PreviousAndNext"/>
+                                <oxy:PlotView Grid.Row="3"
+                                              Background="Transparent"
+                                              Model="{Binding AssetDetails.CreditsPlotModel}"
+                                              SizeChanged="OnCreditsPlotSizeChanged" />
+                                <StackPanel Grid.Row="4"
+                                            Orientation="Horizontal"
+                                            HorizontalAlignment="Center"
+                                            Margin="0,8,0,0">
+                                    <TextBlock Text="View:" Margin="0,0,8,0" Foreground="#666666"/>
+                                    <ItemsControl ItemsSource="{Binding AssetDetails.CreditsTypeModes}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Command="{Binding DataContext.AssetDetails.SelectCreditsTypeModeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Padding="4,0"
+                                                        Margin="0,0,12,0">
+                                                    <TextBlock Text="{Binding Label}">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="#007ACC"/>
+                                                                <Setter Property="TextDecorations" Value="Underline"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                        <Setter Property="Foreground" Value="Black"/>
+                                                                        <Setter Property="TextDecorations" Value="{x:Null}"/>
+                                                                        <Setter Property="FontWeight" Value="Bold"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                                <ItemsControl Grid.Row="5"
+                                              ItemsSource="{Binding AssetDetails.CreditsFilters}"
+                                              HorizontalAlignment="Center"
+                                              Margin="0,6,0,0">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Command="{Binding DataContext.AssetDetails.SelectCreditsFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Padding="4,0"
+                                                    Margin="0,0,12,0">
+                                                <TextBlock Text="{Binding Label}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="#007ACC"/>
+                                                            <Setter Property="TextDecorations" Value="Underline"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                    <Setter Property="Foreground" Value="Black"/>
+                                                                    <Setter Property="TextDecorations" Value="{x:Null}"/>
+                                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </DataTemplate>
+                        <DataTemplate x:Key="CreditsAggregateTemplate">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <oxy:PlotView Grid.Row="0"
+                                              Background="Transparent"
+                                              Model="{Binding AssetDetails.CreditsPlotModel}"
+                                              SizeChanged="OnCreditsPlotSizeChanged" />
+                                <StackPanel Grid.Row="1"
+                                            Orientation="Horizontal"
+                                            HorizontalAlignment="Center"
+                                            Margin="0,8,0,0">
+                                    <TextBlock Text="View:" Margin="0,0,8,0" Foreground="#666666"/>
+                                    <ItemsControl ItemsSource="{Binding AssetDetails.CreditsTypeModes}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Command="{Binding DataContext.AssetDetails.SelectCreditsTypeModeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Padding="4,0"
+                                                        Margin="0,0,12,0">
+                                                    <TextBlock Text="{Binding Label}">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="#007ACC"/>
+                                                                <Setter Property="TextDecorations" Value="Underline"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                        <Setter Property="Foreground" Value="Black"/>
+                                                                        <Setter Property="TextDecorations" Value="{x:Null}"/>
+                                                                        <Setter Property="FontWeight" Value="Bold"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                                <ItemsControl Grid.Row="2"
+                                              ItemsSource="{Binding AssetDetails.CreditsFilters}"
+                                              HorizontalAlignment="Center"
+                                              Margin="0,6,0,0">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Command="{Binding DataContext.AssetDetails.SelectCreditsFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Padding="4,0"
+                                                    Margin="0,0,12,0">
+                                                <TextBlock Text="{Binding Label}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="#007ACC"/>
+                                                            <Setter Property="TextDecorations" Value="Underline"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                    <Setter Property="Foreground" Value="Black"/>
+                                                                    <Setter Property="TextDecorations" Value="{x:Null}"/>
+                                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </DataTemplate>
+                    </TabItem.Resources>
+                    <ContentControl Content="{Binding}">
+                        <ContentControl.Style>
+                            <Style TargetType="ContentControl">
+                                <Setter Property="ContentTemplate" Value="{StaticResource CreditsAssetTemplate}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding AssetDetails.IsCreditsAggregateView}" Value="True">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource CreditsAggregateTemplate}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ContentControl.Style>
+                    </ContentControl>
                 </TabItem>
             </TabControl>
 
@@ -635,7 +739,7 @@
             <StackPanel Grid.Row="1" 
                         HorizontalAlignment="Center" 
                         VerticalAlignment="Center"
-                        Visibility="{Binding AssetDetails.AssetName, Mode=OneWay, Converter={StaticResource EmptyStringToVisibilityConverter}}">
+                        Visibility="{Binding AssetDetails.ShouldShowEmptyState, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock Text="Select an asset to view details" 
                            FontSize="16" 
                            Foreground="#999999"

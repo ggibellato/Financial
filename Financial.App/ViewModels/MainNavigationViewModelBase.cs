@@ -91,27 +91,41 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
     private void OnTreeNodeSelected(object? sender, TreeNodeViewModel selectedNode)
     {
-        // Only load details for Asset nodes
-        if (selectedNode.NodeType == "Asset")
-        {
-            LoadAssetDetails(selectedNode);
-        }
-        else
-        {
-            AssetDetails.Clear();
-        }
+        LoadSelectionDetails(selectedNode);
     }
 
     private void OnNodeSelectionChanged()
     {
-        if (SelectedNode?.NodeType == "Asset")
-        {
-            LoadAssetDetails(SelectedNode);
-        }
-        else
+        if (SelectedNode == null)
         {
             AssetDetails.Clear();
+            return;
         }
+
+        LoadSelectionDetails(SelectedNode);
+    }
+
+    private void LoadSelectionDetails(TreeNodeViewModel selectedNode)
+    {
+        if (selectedNode.NodeType == "Asset")
+        {
+            LoadAssetDetails(selectedNode);
+            return;
+        }
+
+        if (selectedNode.NodeType == "Portfolio")
+        {
+            LoadPortfolioCredits(selectedNode);
+            return;
+        }
+
+        if (selectedNode.NodeType == "Broker")
+        {
+            LoadBrokerCredits(selectedNode);
+            return;
+        }
+
+        AssetDetails.Clear();
     }
 
     private void LoadAssetDetails(TreeNodeViewModel assetNode)
@@ -142,6 +156,41 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             AssetDetails.LoadAssetDetails(details);
             _ = AssetDetails.EnsureTodayInfoLoadedAsync();
         }
+    }
+
+    private void LoadPortfolioCredits(TreeNodeViewModel portfolioNode)
+    {
+        var portfolioName = portfolioNode.GetMetadata<string>("PortfolioName");
+        var brokerNode = portfolioNode.Parent;
+
+        if (portfolioName == null || brokerNode == null)
+        {
+            AssetDetails.Clear();
+            return;
+        }
+
+        var brokerName = brokerNode.GetMetadata<string>("BrokerName");
+        if (brokerName == null)
+        {
+            AssetDetails.Clear();
+            return;
+        }
+
+        var credits = _navigationService.GetCreditsByPortfolio(brokerName, portfolioName);
+        AssetDetails.LoadPortfolioCredits(brokerName, portfolioName, credits);
+    }
+
+    private void LoadBrokerCredits(TreeNodeViewModel brokerNode)
+    {
+        var brokerName = brokerNode.GetMetadata<string>("BrokerName");
+        if (brokerName == null)
+        {
+            AssetDetails.Clear();
+            return;
+        }
+
+        var credits = _navigationService.GetCreditsByBroker(brokerName);
+        AssetDetails.LoadBrokerCredits(brokerName, credits);
     }
 }
 

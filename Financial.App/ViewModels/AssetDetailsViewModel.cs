@@ -54,7 +54,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private PlotModel? _creditsPlotModel;
     private CreditsFilter _selectedCreditsFilter = CreditsFilter.LastYear;
     private CreditsTypeChartMode _selectedCreditsTypeMode = CreditsTypeChartMode.Stacked;
+    private const string DefaultCreditsContextKey = "default";
+    private readonly Dictionary<string, CreditsViewState> _creditsViewStateByKey = new(StringComparer.OrdinalIgnoreCase);
+    private string _creditsContextKey = DefaultCreditsContextKey;
     private double _creditsPlotWidth;
+    private bool _isCreditsAggregateView;
+    private bool _hasCreditsContext;
     private OperationDTO? _selectedOperation;
     private CreditDTO? _selectedCredit;
     private IReadOnlyList<CreditsMonthTypeTotals> _creditsChartMonths = Array.Empty<CreditsMonthTypeTotals>();
@@ -168,6 +173,35 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         get => _creditsPlotModel;
         private set => SetProperty(ref _creditsPlotModel, value);
     }
+
+    public bool IsCreditsAggregateView
+    {
+        get => _isCreditsAggregateView;
+        private set
+        {
+            if (SetProperty(ref _isCreditsAggregateView, value))
+            {
+                OnPropertyChanged(nameof(IsCreditsAssetView));
+            }
+        }
+    }
+
+    public bool HasCreditsContext
+    {
+        get => _hasCreditsContext;
+        private set
+        {
+            if (SetProperty(ref _hasCreditsContext, value))
+            {
+                OnPropertyChanged(nameof(IsCreditsAssetView));
+                OnPropertyChanged(nameof(ShouldShowEmptyState));
+            }
+        }
+    }
+
+    public bool IsCreditsAssetView => HasCreditsContext && !IsCreditsAggregateView;
+
+    public bool ShouldShowEmptyState => !HasCreditsContext;
 
     public decimal Balance => TotalBought - TotalSold;
 
@@ -304,6 +338,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalBought = details.TotalBought;
         TotalSold = details.TotalSold;
         TotalCredits = details.TotalCredits;
+        IsCreditsAggregateView = false;
+        HasCreditsContext = true;
+        SetCreditsContext(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), rebuild: false);
 
         Operations.Clear();
         foreach (var op in details.Operations)
@@ -345,9 +382,22 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         Credits.Clear();
         CreditsByMonthChart.Clear();
         CreditsPlotModel = null;
+        IsCreditsAggregateView = false;
+        HasCreditsContext = false;
+        _creditsContextKey = DefaultCreditsContextKey;
         SelectedOperation = null;
         SelectedCredit = null;
         UpdateCommandStates();
+    }
+
+    public void LoadBrokerCredits(string brokerName, IReadOnlyList<CreditDTO> credits)
+    {
+        LoadAggregateCredits(BuildBrokerKey(brokerName), credits);
+    }
+
+    public void LoadPortfolioCredits(string brokerName, string portfolioName, IReadOnlyList<CreditDTO> credits)
+    {
+        LoadAggregateCredits(BuildPortfolioKey(brokerName, portfolioName), credits);
     }
 
     private bool HasAssetContext =>
@@ -434,6 +484,44 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         OnPropertyChanged(nameof(ResultPercentWithCredits));
     }
 
+    private void LoadAggregateCredits(string contextKey, IReadOnlyList<CreditDTO> credits)
+    {
+        ClearAssetContext();
+        IsCreditsAggregateView = true;
+        HasCreditsContext = true;
+        SetCreditsContext(contextKey, rebuild: false);
+
+        Credits.Clear();
+        foreach (var credit in credits)
+        {
+            Credits.Add(credit);
+        }
+        TotalCredits = credits.Sum(credit => credit.Value);
+        ApplyCreditsFilter();
+
+        SelectedOperation = null;
+        SelectedCredit = null;
+        UpdateCommandStates();
+    }
+
+    private void ClearAssetContext()
+    {
+        AssetName = string.Empty;
+        BrokerName = string.Empty;
+        PortfolioName = string.Empty;
+        Ticker = string.Empty;
+        ISIN = string.Empty;
+        Exchange = string.Empty;
+        Quantity = 0;
+        AveragePrice = 0;
+        IsActive = false;
+        TotalBought = 0;
+        TotalSold = 0;
+        TotalCredits = 0;
+        _todayInfo.Clear();
+        Operations.Clear();
+    }
+
     public void UpdateCreditsPlotWidth(double plotWidth)
     {
         if (plotWidth <= 0)
@@ -502,6 +590,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
         _selectedCreditsFilter = filter;
         UpdateCreditsFilterSelection();
+        UpdateCreditsViewState();
 
         if (rebuild)
         {
@@ -519,6 +608,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
         _selectedCreditsTypeMode = mode;
         UpdateCreditsTypeModeSelection();
+        UpdateCreditsViewState();
 
         if (rebuild)
         {
@@ -830,8 +920,57 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         CreditsPlotModel?.Annotations.Add(annotation);
     }
 
+    private void SetCreditsContext(string contextKey, bool rebuild = true)
+    {
+        _creditsContextKey = string.IsNullOrWhiteSpace(contextKey) ? DefaultCreditsContextKey : contextKey;
+        var state = GetCreditsViewState(_creditsContextKey);
+        ApplyCreditsViewState(state, rebuild);
+    }
+
+    private CreditsViewState GetCreditsViewState(string contextKey)
+    {
+        if (_creditsViewStateByKey.TryGetValue(contextKey, out var state))
+        {
+            return state;
+        }
+
+        state = new CreditsViewState(CreditsFilter.LastYear, CreditsTypeChartMode.Stacked);
+        _creditsViewStateByKey[contextKey] = state;
+        return state;
+    }
+
+    private void ApplyCreditsViewState(CreditsViewState state, bool rebuild)
+    {
+        SetCreditsFilter(state.Filter, rebuild: false);
+        SetCreditsTypeMode(state.Mode, rebuild: false);
+
+        if (rebuild)
+        {
+            ApplyCreditsFilter();
+        }
+    }
+
+    private void UpdateCreditsViewState()
+    {
+        if (string.IsNullOrWhiteSpace(_creditsContextKey))
+        {
+            return;
+        }
+
+        _creditsViewStateByKey[_creditsContextKey] = new CreditsViewState(_selectedCreditsFilter, _selectedCreditsTypeMode);
+    }
+
     private static string BuildAssetKey(string brokerName, string portfolioName, string assetName) =>
         $"{brokerName}|{portfolioName}|{assetName}";
+
+    private static string BuildCreditsAssetKey(string brokerName, string portfolioName, string assetName) =>
+        $"Asset|{brokerName}|{portfolioName}|{assetName}";
+
+    private static string BuildPortfolioKey(string brokerName, string portfolioName) =>
+        $"Portfolio|{brokerName}|{portfolioName}";
+
+    private static string BuildBrokerKey(string brokerName) =>
+        $"Broker|{brokerName}";
 
     private void AddOperation()
     {
@@ -1104,6 +1243,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         }
     }
 
+    private readonly record struct CreditsViewState(CreditsFilter Filter, CreditsTypeChartMode Mode);
+
     private sealed class CreditsMonthTypeTotals
     {
         public CreditsMonthTypeTotals(DateTime month, IReadOnlyDictionary<string, decimal> totalsByType)
@@ -1118,7 +1259,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
         public decimal Total => TotalsByType.Values.Sum();
     }
-
 }
 
 

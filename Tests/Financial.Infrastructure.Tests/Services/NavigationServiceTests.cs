@@ -284,6 +284,90 @@ public class NavigationServiceTests
         }
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void GetCreditsByBroker_WithInvalidParameters_ReturnsEmpty(string? brokerName)
+    {
+        // Act
+        var result = _sut.GetCreditsByBroker(brokerName!);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(null, "Default")]
+    [InlineData("", "Default")]
+    [InlineData("XPI", null)]
+    [InlineData("XPI", "")]
+    public void GetCreditsByPortfolio_WithInvalidParameters_ReturnsEmpty(string? brokerName, string? portfolioName)
+    {
+        // Act
+        var result = _sut.GetCreditsByPortfolio(brokerName!, portfolioName!);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetCreditsByBroker_ShouldReturnCredits()
+    {
+        // Arrange
+        const string brokerName = "XPI";
+
+        // Act
+        var result = _sut.GetCreditsByBroker(brokerName);
+
+        // Assert
+        result.Should().NotBeEmpty();
+        result.Should().HaveCount(2);
+        result.Should().AllSatisfy(credit =>
+        {
+            credit.Type.Should().NotBeNullOrWhiteSpace();
+            credit.Value.Should().BeGreaterThan(0);
+        });
+    }
+
+    [Fact]
+    public void GetCreditsByPortfolio_ShouldReturnCredits()
+    {
+        // Arrange
+        const string brokerName = "XPI";
+        const string portfolioName = "Default";
+
+        // Act
+        var result = _sut.GetCreditsByPortfolio(brokerName, portfolioName);
+
+        // Assert
+        result.Should().NotBeEmpty();
+        result.Should().HaveCount(2);
+        result.Should().AllSatisfy(credit =>
+        {
+            credit.Type.Should().NotBeNullOrWhiteSpace();
+            credit.Value.Should().BeGreaterThan(0);
+        });
+    }
+
+    [Fact]
+    public void GetCreditsByBroker_CreditsShouldBeOrderedByDateDescending()
+    {
+        // Arrange
+        const string brokerName = "XPI";
+
+        // Act
+        var result = _sut.GetCreditsByBroker(brokerName);
+
+        // Assert
+        if (result.Count > 1)
+        {
+            for (int i = 0; i < result.Count - 1; i++)
+            {
+                result[i].Date.Should().BeOnOrAfter(result[i + 1].Date);
+            }
+        }
+    }
+
     [Fact]
     public void GetBrokers_ShouldOrderByNameWithEncerradasLast()
     {

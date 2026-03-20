@@ -100,6 +100,42 @@ public class NavigationService : INavigationService
         return brokers.Select(MapBroker).ToList();
     }
 
+    /// <summary>
+    /// Gets credits for all assets under a broker
+    /// </summary>
+    public IReadOnlyList<CreditDTO> GetCreditsByBroker(string brokerName)
+    {
+        if (string.IsNullOrWhiteSpace(brokerName))
+        {
+            return Array.Empty<CreditDTO>();
+        }
+
+        return _repository.GetAssetsByBroker(brokerName)
+            .Where(asset => asset.Active)
+            .SelectMany(asset => asset.Credits)
+            .Select(MapCredit)
+            .OrderByDescending(credit => credit.Date)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Gets credits for all assets under a broker portfolio
+    /// </summary>
+    public IReadOnlyList<CreditDTO> GetCreditsByPortfolio(string brokerName, string portfolioName)
+    {
+        if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
+        {
+            return Array.Empty<CreditDTO>();
+        }
+
+        return _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName)
+            .Where(asset => asset.Active)
+            .SelectMany(asset => asset.Credits)
+            .Select(MapCredit)
+            .OrderByDescending(credit => credit.Date)
+            .ToList();
+    }
+
     private static TreeNodeDTO BuildBrokerTreeNode(BrokerNodeDTO broker)
     {
         var brokerNode = new TreeNodeDTO

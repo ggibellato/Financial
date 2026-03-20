@@ -27,4 +27,19 @@ public interface INavigationService
     /// </summary>
     /// <returns>Collection of broker nodes</returns>
     IEnumerable<BrokerNodeDTO> GetBrokers();
+
+    /// <summary>
+    /// Gets credits for all assets under a broker
+    /// </summary>
+    /// <param name="brokerName">Name of the broker</param>
+    /// <returns>Credits list (may be empty)</returns>
+    IReadOnlyList<CreditDTO> GetCreditsByBroker(string brokerName);
+
+    /// <summary>
+    /// Gets credits for all assets under a broker portfolio
+    /// </summary>
+    /// <param name="brokerName">Name of the broker</param>
+    /// <param name="portfolioName">Name of the portfolio</param>
+    /// <returns>Credits list (may be empty)</returns>
+    IReadOnlyList<CreditDTO> GetCreditsByPortfolio(string brokerName, string portfolioName);
 }
