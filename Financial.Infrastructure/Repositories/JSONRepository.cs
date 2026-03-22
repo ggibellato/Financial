@@ -86,6 +86,9 @@ public sealed class JSONRepository : IRepository
         {
             Exchange = asset.Exchange,
             Ticker = asset.Ticker,
+            Country = asset.Country,
+            LocalTypeCode = asset.LocalTypeCode,
+            Class = asset.Class,
             Quantity = asset.Quantity,
             AvaragePrice = asset.AvargePrice,
             TotalBought = SumOperationsByType(asset.Operations, Operation.OperationType.Buy),

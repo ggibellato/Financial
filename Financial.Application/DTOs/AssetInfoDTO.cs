@@ -1,9 +1,14 @@
+using Financial.Domain.Entities;
+
 namespace Financial.Application.DTOs
 {
     public class AssetInfoDTO
     {
         public string Ticker { get; set; } = string.Empty;
         public string Exchange { get; set; } = string.Empty;
+        public CountryCode Country { get; set; } = CountryCode.Unknown;
+        public string LocalTypeCode { get; set; } = string.Empty;
+        public GlobalAssetClass Class { get; set; } = GlobalAssetClass.Unknown;
         public decimal TotalBought { get; set; }
         public decimal TotalSold { get; set; }
         public CreditInfoDTO Credits { get; set; } = new CreditInfoDTO();

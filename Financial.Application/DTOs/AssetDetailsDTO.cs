@@ -1,3 +1,5 @@
+using Financial.Domain.Entities;
+
 namespace Financial.Application.DTOs;
 
 /// <summary>
@@ -34,6 +36,21 @@ public class AssetDetailsDTO
     /// Exchange
     /// </summary>
     public string Exchange { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Asset country of origin
+    /// </summary>
+    public CountryCode Country { get; set; } = CountryCode.Unknown;
+
+    /// <summary>
+    /// Local asset type code (per-country)
+    /// </summary>
+    public string LocalTypeCode { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Global asset classification
+    /// </summary>
+    public GlobalAssetClass Class { get; set; } = GlobalAssetClass.Unknown;
 
     /// <summary>
     /// Current quantity held

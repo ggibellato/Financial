@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
+using Financial.Domain.Entities;
 using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App;
 using OxyPlot;
@@ -42,6 +43,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private string _ticker = string.Empty;
     private string _isin = string.Empty;
     private string _exchange = string.Empty;
+    private CountryCode _country = CountryCode.Unknown;
+    private string _localTypeCode = string.Empty;
+    private GlobalAssetClass _class = GlobalAssetClass.Unknown;
     private decimal _quantity;
     private decimal _averagePrice;
     private bool _isActive;
@@ -100,6 +104,24 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         get => _exchange;
         private set => SetProperty(ref _exchange, value);
+    }
+
+    public CountryCode Country
+    {
+        get => _country;
+        private set => SetProperty(ref _country, value);
+    }
+
+    public string LocalTypeCode
+    {
+        get => _localTypeCode;
+        private set => SetProperty(ref _localTypeCode, value);
+    }
+
+    public GlobalAssetClass Class
+    {
+        get => _class;
+        private set => SetProperty(ref _class, value);
     }
 
     public decimal Quantity
@@ -332,6 +354,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         Ticker = details.Ticker;
         ISIN = details.ISIN;
         Exchange = details.Exchange;
+        Country = details.Country;
+        LocalTypeCode = details.LocalTypeCode;
+        Class = details.Class;
         Quantity = details.Quantity;
         AveragePrice = details.AveragePrice;
         IsActive = details.IsActive;
@@ -371,6 +396,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         Ticker = string.Empty;
         ISIN = string.Empty;
         Exchange = string.Empty;
+        Country = CountryCode.Unknown;
+        LocalTypeCode = string.Empty;
+        Class = GlobalAssetClass.Unknown;
         Quantity = 0;
         AveragePrice = 0;
         IsActive = false;

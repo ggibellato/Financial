@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
+using Financial.Domain.Entities;
 
 namespace Financial.Presentation.App.ViewModels;
 
@@ -15,8 +19,11 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     private readonly INavigationService _navigationService;
     private TreeNodeViewModel? _selectedNode;
     private bool _isLoading;
+    private TreeNodeDTO? _fullTree;
+    private AssetClassFilterOptionViewModel? _selectedAssetClassFilter;
 
     public ObservableCollection<TreeNodeViewModel> RootNodes { get; } = new();
+    public ObservableCollection<AssetClassFilterOptionViewModel> AssetClassFilters { get; } = new();
     public TAssetDetailsViewModel AssetDetails { get; }
 
     public TreeNodeViewModel? SelectedNode
@@ -37,10 +44,23 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         set => SetProperty(ref _isLoading, value);
     }
 
+    public AssetClassFilterOptionViewModel? SelectedAssetClassFilter
+    {
+        get => _selectedAssetClassFilter;
+        set
+        {
+            if (SetProperty(ref _selectedAssetClassFilter, value))
+            {
+                ApplyAssetClassFilter();
+            }
+        }
+    }
+
     protected MainNavigationViewModelBase(INavigationService navigationService, TAssetDetailsViewModel assetDetails)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         AssetDetails = assetDetails ?? throw new ArgumentNullException(nameof(assetDetails));
+        InitializeAssetClassFilters();
     }
 
     /// <summary>
@@ -53,25 +73,8 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         {
             await Task.Run(() =>
             {
-                var tree = _navigationService.GetNavigationTree();
-
-                // Run UI updates on UI thread
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                {
-                    RootNodes.Clear();
-
-                    // Create root tree node
-                    var rootViewModel = new TreeNodeViewModel(tree);
-
-                    // Subscribe to selection events from all nodes
-                    SubscribeToNodeEvents(rootViewModel);
-
-                    // Add broker nodes directly (skip root "Investments" node)
-                    foreach (var brokerNode in rootViewModel.Children)
-                    {
-                        RootNodes.Add(brokerNode);
-                    }
-                });
+                _fullTree = _navigationService.GetNavigationTree();
+                ApplyAssetClassFilter();
             });
         }
         finally
@@ -87,6 +90,106 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         {
             SubscribeToNodeEvents(child);
         }
+    }
+
+    private void ApplyAssetClassFilter()
+    {
+        if (_fullTree == null)
+        {
+            return;
+        }
+
+        var filter = SelectedAssetClassFilter?.Filter;
+        var filteredTree = filter == null ? _fullTree : FilterTreeNode(_fullTree, filter.Value);
+
+        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        {
+            UpdateRootNodes(filteredTree);
+        });
+    }
+
+    private static TreeNodeDTO? FilterTreeNode(TreeNodeDTO node, GlobalAssetClass filter)
+    {
+        if (node.NodeType == "Asset")
+        {
+            if (node.Metadata.TryGetValue("GlobalAssetClass", out var value) && value is GlobalAssetClass assetClass)
+            {
+                return assetClass == filter ? node : null;
+            }
+
+            return filter == GlobalAssetClass.Unknown ? node : null;
+        }
+
+        var filteredChildren = node.Children
+            .Select(child => FilterTreeNode(child, filter))
+            .Where(child => child != null)
+            .Select(child => child!)
+            .ToList();
+
+        if (filteredChildren.Count == 0)
+        {
+            return null;
+        }
+
+        return new TreeNodeDTO
+        {
+            NodeType = node.NodeType,
+            DisplayName = node.DisplayName,
+            Metadata = node.Metadata,
+            Children = filteredChildren
+        };
+    }
+
+    private void UpdateRootNodes(TreeNodeDTO? tree)
+    {
+        RootNodes.Clear();
+        SelectedNode = null;
+        if (tree == null)
+        {
+            return;
+        }
+
+        var rootViewModel = new TreeNodeViewModel(tree);
+        SubscribeToNodeEvents(rootViewModel);
+
+        foreach (var brokerNode in rootViewModel.Children)
+        {
+            RootNodes.Add(brokerNode);
+        }
+    }
+
+    private void InitializeAssetClassFilters()
+    {
+        AssetClassFilters.Clear();
+        AssetClassFilters.Add(new AssetClassFilterOptionViewModel("All", null));
+
+        foreach (var assetClass in Enum.GetValues<GlobalAssetClass>())
+        {
+            AssetClassFilters.Add(new AssetClassFilterOptionViewModel(BuildAssetClassLabel(assetClass), assetClass));
+        }
+
+        SelectedAssetClassFilter = AssetClassFilters.FirstOrDefault();
+    }
+
+    private static string BuildAssetClassLabel(GlobalAssetClass assetClass)
+    {
+        return assetClass switch
+        {
+            GlobalAssetClass.RealEstate => "Real Estate",
+            _ => assetClass.ToString()
+        };
+    }
+
+    public sealed class AssetClassFilterOptionViewModel : ViewModelBase
+    {
+        public AssetClassFilterOptionViewModel(string label, GlobalAssetClass? filter)
+        {
+            Label = label;
+            Filter = filter;
+        }
+
+        public string Label { get; }
+        public GlobalAssetClass? Filter { get; }
     }
 
     private void OnTreeNodeSelected(object? sender, TreeNodeViewModel selectedNode)

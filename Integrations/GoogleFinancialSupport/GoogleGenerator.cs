@@ -1,3 +1,5 @@
+using Financial.Application.DTOs;
+using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using Financial.Infrastructure.Integrations.FinancialToolSupport;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
@@ -45,10 +47,12 @@ public class GoogleGenerator : IGenerator
 
     private readonly GoogleService _service;
     private readonly string _path;
+    private readonly IAssetTypeLookup _assetTypeLookup;
 
-    public GoogleGenerator(GoogleService service, string path) {
-        _service = service;
+    public GoogleGenerator(GoogleService service, string path, IAssetTypeLookup assetTypeLookup) {
+        _service = service ?? throw new ArgumentNullException(nameof(service));
         _path = path;
+        _assetTypeLookup = assetTypeLookup ?? throw new ArgumentNullException(nameof(assetTypeLookup));
     }
 
     public async Task GenerateAsync(List<string> fileNames, IProgress<string> progress = null)
@@ -93,7 +97,13 @@ public class GoogleGenerator : IGenerator
                 var portfolio = exchange.AddPortfolio(portfolioName);
 
                 var assetData = await ResolveAssetMetadataAsync(fileName, file!.Id, spreadsheet.Name);
-                var asset = Asset.Create(spreadsheet.Name, assetData.isin, assetData.exchangeId, assetData.ticker);
+                var asset = Asset.Create(
+                    spreadsheet.Name,
+                    assetData.isin,
+                    assetData.exchangeId,
+                    assetData.ticker,
+                    assetData.country,
+                    assetData.localTypeCode);
                 portfolio.AddAsset(asset);
 
                 asset.AddOperations(await CreateOperationsAsync(file.Id, spreadsheet.Name));
@@ -148,17 +158,53 @@ public class GoogleGenerator : IGenerator
         return portfolioName;
     }
 
-    private async Task<(string isin, string exchangeId, string ticker)> ResolveAssetMetadataAsync(
+    private async Task<(string isin, string exchangeId, string ticker, CountryCode country, string localTypeCode)> ResolveAssetMetadataAsync(
         string brokerName,
         string fileId,
         string spreadsheetName)
     {
+        (string isin, string exchangeId, string ticker) baseData;
         if (brokerName == "XPI")
         {
-            return (string.Empty, "BVMF", spreadsheetName);
+            baseData = (string.Empty, "BVMF", spreadsheetName);
+        }
+        else
+        {
+            baseData = await GetAssetDataAsync(fileId, spreadsheetName);
         }
 
-        return await GetAssetDataAsync(fileId, spreadsheetName);
+        var brokerCountry = ResolveBrokerCountry(brokerName);
+        var lookupResult = await _assetTypeLookup.LookupAsync(new AssetTypeLookupRequestDTO
+        {
+            Name = spreadsheetName,
+            Ticker = baseData.ticker,
+            ISIN = baseData.isin,
+            Exchange = baseData.exchangeId,
+            FallbackCountry = brokerCountry
+        });
+
+        var country = lookupResult.Country != CountryCode.Unknown
+            ? lookupResult.Country
+            : brokerCountry;
+        var localTypeCode = lookupResult.LocalTypeCode;
+
+        return (baseData.isin, baseData.exchangeId, baseData.ticker, country, localTypeCode);
+    }
+
+    private CountryCode ResolveBrokerCountry(string brokerName)
+    {
+        if (!ExchangeCurrency.TryGetValue(brokerName, out var currency))
+        {
+            return CountryCode.Unknown;
+        }
+
+        return currency.ToUpperInvariant() switch
+        {
+            "BRL" => CountryCode.BR,
+            "GBP" => CountryCode.UK,
+            "USD" => CountryCode.US,
+            _ => CountryCode.Unknown
+        };
     }
 
     private void Save(Investments data)

@@ -16,6 +16,9 @@ public class AssetTests
         asset.ISIN.Should().Be("ISIN123");
         asset.Exchange.Should().Be("NYSE");
         asset.Ticker.Should().Be("AAA");
+        asset.Country.Should().Be(CountryCode.Unknown);
+        asset.LocalTypeCode.Should().BeEmpty();
+        asset.Class.Should().Be(GlobalAssetClass.Unknown);
     }
 
     [Fact]

@@ -1,3 +1,5 @@
+using Financial.Domain.Entities;
+
 namespace Financial.Application.DTOs;
 
 /// <summary>
@@ -19,6 +21,21 @@ public class AssetNodeDTO
     /// Exchange where the asset is traded (e.g., "BVMF", "LSE")
     /// </summary>
     public string Exchange { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Asset country of origin
+    /// </summary>
+    public CountryCode Country { get; set; } = CountryCode.Unknown;
+
+    /// <summary>
+    /// Local asset type code (per-country)
+    /// </summary>
+    public string LocalTypeCode { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Global asset classification
+    /// </summary>
+    public GlobalAssetClass Class { get; set; } = GlobalAssetClass.Unknown;
 
     /// <summary>
     /// ISIN code (if available)

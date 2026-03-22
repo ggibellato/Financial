@@ -18,6 +18,15 @@ public class Asset
     [JsonInclude]
     public string Ticker { get; private set; }
 
+    [JsonInclude]
+    public CountryCode Country { get; private set; } = CountryCode.Unknown;
+
+    [JsonInclude]
+    public string LocalTypeCode { get; private set; } = string.Empty;
+
+    [JsonInclude]
+    public GlobalAssetClass Class { get; private set; } = GlobalAssetClass.Unknown;
+
     [JsonIgnore]
     public decimal AvargePrice { get; private set; } = 0;
 
@@ -62,15 +71,26 @@ public class Asset
     [JsonConstructor]
     private Asset() {}
 
-    private Asset(string name, string isin, string exchange, string ticker) : this()
+    private Asset(string name, string isin, string exchange, string ticker, CountryCode country, string localTypeCode, GlobalAssetClass assetClass) : this()
     {
         Name = name;
         ISIN = isin;
         Exchange = exchange;
         Ticker = ticker;
+        Country = country;
+        LocalTypeCode = NormalizeLocalTypeCode(localTypeCode);
+        Class = assetClass;
     }
 
-    public static Asset Create(string name, string isin, string exchange, string ticker) => new(name, isin, exchange, ticker);
+    public static Asset Create(string name, string isin, string exchange, string ticker) =>
+        new(name, isin, exchange, ticker, CountryCode.Unknown, string.Empty, GlobalAssetClass.Unknown);
+
+    public static Asset Create(string name, string isin, string exchange, string ticker, CountryCode country, string localTypeCode)
+    {
+        var normalizedLocalTypeCode = NormalizeLocalTypeCode(localTypeCode);
+        var assetClass = GlobalAssetClassMapping.Resolve(country, normalizedLocalTypeCode);
+        return new Asset(name, isin, exchange, ticker, country, normalizedLocalTypeCode, assetClass);
+    }
 
     public void AddOperation(Operation operation)
     {
@@ -190,5 +210,10 @@ public class Asset
         {
             throw new ArgumentException(message, paramName);
         }
+    }
+
+    private static string NormalizeLocalTypeCode(string localTypeCode)
+    {
+        return string.IsNullOrWhiteSpace(localTypeCode) ? string.Empty : localTypeCode.Trim();
     }
 }
