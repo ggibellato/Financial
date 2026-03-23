@@ -137,7 +137,7 @@ public partial class MainWindow : Window
         {
             SetUIBusy(true, "Starting data generation...");
             
-            IGenerator generator = new GoogleGenerator(_service, edtPath.Text, new AssetTypeLookup());
+            IGenerator generator = new GoogleGenerator(_service, edtPath.Text);
             var fileNames = selectedFiles.Select(f => f.Name).ToList();
 
             var progress = new Progress<string>(status =>

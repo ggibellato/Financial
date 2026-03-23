@@ -1,5 +1,3 @@
-using Financial.Application.DTOs;
-using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using Financial.Infrastructure.Integrations.FinancialToolSupport;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
@@ -47,12 +45,10 @@ public class GoogleGenerator : IGenerator
 
     private readonly GoogleService _service;
     private readonly string _path;
-    private readonly IAssetTypeLookup _assetTypeLookup;
 
-    public GoogleGenerator(GoogleService service, string path, IAssetTypeLookup assetTypeLookup) {
+    public GoogleGenerator(GoogleService service, string path) {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         _path = path;
-        _assetTypeLookup = assetTypeLookup ?? throw new ArgumentNullException(nameof(assetTypeLookup));
     }
 
     public async Task GenerateAsync(List<string> fileNames, IProgress<string> progress = null)
@@ -103,7 +99,8 @@ public class GoogleGenerator : IGenerator
                     assetData.exchangeId,
                     assetData.ticker,
                     assetData.country,
-                    assetData.localTypeCode);
+                    assetData.localTypeCode,
+                    assetData.assetClass);
                 portfolio.AddAsset(asset);
 
                 asset.AddOperations(await CreateOperationsAsync(file.Id, spreadsheet.Name));
@@ -158,7 +155,7 @@ public class GoogleGenerator : IGenerator
         return portfolioName;
     }
 
-    private async Task<(string isin, string exchangeId, string ticker, CountryCode country, string localTypeCode)> ResolveAssetMetadataAsync(
+    private async Task<(string isin, string exchangeId, string ticker, CountryCode country, string localTypeCode, GlobalAssetClass assetClass)> ResolveAssetMetadataAsync(
         string brokerName,
         string fileId,
         string spreadsheetName)
@@ -174,21 +171,22 @@ public class GoogleGenerator : IGenerator
         }
 
         var brokerCountry = ResolveBrokerCountry(brokerName);
-        var lookupResult = await _assetTypeLookup.LookupAsync(new AssetTypeLookupRequestDTO
-        {
-            Name = spreadsheetName,
-            Ticker = baseData.ticker,
-            ISIN = baseData.isin,
-            Exchange = baseData.exchangeId,
-            FallbackCountry = brokerCountry
-        });
-
-        var country = lookupResult.Country != CountryCode.Unknown
-            ? lookupResult.Country
+        var classification = ResolveAssetClassification(spreadsheetName, brokerCountry);
+        var country = classification.Country != CountryCode.Unknown
+            ? classification.Country
             : brokerCountry;
-        var localTypeCode = lookupResult.LocalTypeCode;
 
-        return (baseData.isin, baseData.exchangeId, baseData.ticker, country, localTypeCode);
+        return (baseData.isin, baseData.exchangeId, baseData.ticker, country, classification.LocalTypeCode, classification.Class);
+    }
+
+    private static AssetClassificationEntry ResolveAssetClassification(string assetName, CountryCode brokerCountry)
+    {
+        if (HardcodedAssetClassificationLookup.TryGet(assetName, out var classification))
+        {
+            return classification;
+        }
+
+        return new AssetClassificationEntry(brokerCountry, string.Empty, GlobalAssetClass.Unknown);
     }
 
     private CountryCode ResolveBrokerCountry(string brokerName)

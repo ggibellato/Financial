@@ -92,6 +92,19 @@ public class Asset
         return new Asset(name, isin, exchange, ticker, country, normalizedLocalTypeCode, assetClass);
     }
 
+    public static Asset Create(
+        string name,
+        string isin,
+        string exchange,
+        string ticker,
+        CountryCode country,
+        string localTypeCode,
+        GlobalAssetClass assetClass)
+    {
+        var normalizedLocalTypeCode = NormalizeLocalTypeCode(localTypeCode);
+        return new Asset(name, isin, exchange, ticker, country, normalizedLocalTypeCode, assetClass);
+    }
+
     public void AddOperation(Operation operation)
     {
         if (operation == null)

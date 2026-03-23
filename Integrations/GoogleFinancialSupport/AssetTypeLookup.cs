@@ -1,12 +1,13 @@
+using Financial.Application.DTOs;
+using Financial.Application.Interfaces;
+using Financial.Domain.Entities;
+using Financial.Infrastructure.Integrations.WebPageParser;
+using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Financial.Application.DTOs;
-using Financial.Application.Interfaces;
-using Financial.Domain.Entities;
-using Financial.Infrastructure.Integrations.WebPageParser;
 
 namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 
@@ -99,6 +100,11 @@ public sealed class AssetTypeLookup : IAssetTypeLookup
     private static IEnumerable<string> BuildGoogleFinanceUrls(AssetTypeLookupRequestDTO request, string ticker)
     {
         var urls = new List<string>();
+        if (!string.IsNullOrWhiteSpace(request.ISIN))
+        {
+            urls.Add(BuildGoogleFinanceQuoteUrl(request.ISIN));
+        }
+
         if (!string.IsNullOrWhiteSpace(ticker))
         {
             if (!string.IsNullOrWhiteSpace(request.Exchange))
@@ -107,11 +113,6 @@ public sealed class AssetTypeLookup : IAssetTypeLookup
             }
 
             urls.Add(BuildGoogleFinanceQuoteUrl(ticker));
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.ISIN))
-        {
-            urls.Add(BuildGoogleFinanceQuoteUrl(request.ISIN));
         }
 
         if (!string.IsNullOrWhiteSpace(request.Name))
