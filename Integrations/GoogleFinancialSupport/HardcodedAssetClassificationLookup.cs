@@ -123,7 +123,7 @@ internal static class HardcodedAssetClassificationLookup
             ["Royal Bank of Canada"] = new AssetClassificationEntry(CountryCode.UK, "", GlobalAssetClass.Unknown),
             ["S&P 500"] = new AssetClassificationEntry(CountryCode.UK, "ETF", GlobalAssetClass.ETF),
             ["S2TA34"] = new AssetClassificationEntry(CountryCode.BR, "Acoes", GlobalAssetClass.Equity),
-            ["Shell"] = new AssetClassificationEntry(CountryCode.UK, "", GlobalAssetClass.Unknown),
+            ["Shell"] = new AssetClassificationEntry(CountryCode.UK, "Stock", GlobalAssetClass.Equity),
             ["SPDR S&P UK Dividend"] = new AssetClassificationEntry(CountryCode.UK, "", GlobalAssetClass.Unknown),
             ["SPDR S&P US Dividend"] = new AssetClassificationEntry(CountryCode.UK, "", GlobalAssetClass.Unknown),
             ["SPXB11"] = new AssetClassificationEntry(CountryCode.BR, "ETF", GlobalAssetClass.ETF),
