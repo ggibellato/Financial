@@ -1,0 +1,6 @@
+@Financial.Api_HostAddress = http://localhost:5190
+
+GET {{Financial.Api_HostAddress}}/api/v1/financial/health
+Accept: application/json
+
+###
