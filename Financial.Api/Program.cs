@@ -2,7 +2,6 @@ using Financial.Application.Interfaces;
 using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
 using Financial.Infrastructure.Services;
-using Financial.Api;
 using System;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,12 +46,8 @@ builder.Services.AddSingleton<IRepository>(sp =>
             $"Valid values: {string.Join(", ", Enum.GetNames<RepositoryProvider>())}.");
     }
 
-    var dataJsonFile = PathResolver.ResolveContentRootPath(
-        builder.Environment.ContentRootPath,
-        configuration[LocalJsonStorage.DataJsonFileConfigurationKey]);
-    var credentialsPath = PathResolver.ResolveContentRootPath(
-        builder.Environment.ContentRootPath,
-        configuration[GoogleDriveJsonStorage.CredentialsPathConfigurationKey]);
+    var dataJsonFile = configuration[LocalJsonStorage.DataJsonFileConfigurationKey];
+    var credentialsPath = configuration[GoogleDriveJsonStorage.CredentialsPathConfigurationKey];
 
     var options = new RepositorySelectionOptions(
         provider,
