@@ -12,6 +12,7 @@ function App() {
         </div>
         <nav className="app__nav" aria-label="Primary">
           <NavLink to="/brokers">Brokers</NavLink>
+          <NavLink to="/navigation">Navigation</NavLink>
         </nav>
       </header>
       <main className="app__content">
