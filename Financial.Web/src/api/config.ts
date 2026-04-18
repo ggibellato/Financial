@@ -1,4 +1,4 @@
-export const DEFAULT_API_BASE_URL = 'http://localhost:5190/api/v1/financial'
+export const DEFAULT_API_BASE_URL = 'https://localhost:7256/api/v1/financial'
 
 export function resolveApiBaseUrl(baseUrl?: string): string {
   const candidate = baseUrl?.trim()
