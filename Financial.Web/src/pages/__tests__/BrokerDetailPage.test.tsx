@@ -28,7 +28,22 @@ describe('BrokerDetailPage', () => {
             name: 'Default',
             assetCount: 2,
             activeAssetCount: 2,
-            assets: [],
+            assets: [
+              {
+                name: 'BCIA11',
+                ticker: 'BCIA11',
+                exchange: 'BVMF',
+                country: 0,
+                localTypeCode: '',
+                class: 0,
+                isin: 'TEST',
+                quantity: 10,
+                averagePrice: 100,
+                isActive: true,
+                operationCount: 1,
+                creditCount: 1,
+              },
+            ],
           },
         ],
       },
@@ -45,6 +60,10 @@ describe('BrokerDetailPage', () => {
     expect(await screen.findByRole('heading', { name: 'XPI' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Portfolios' })).toBeInTheDocument()
     expect(screen.getByText(/Default/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'BCIA11' })).toHaveAttribute(
+      'href',
+      '/assets/XPI/Default/BCIA11',
+    )
   })
 
   it('shows error state when broker is missing', async () => {

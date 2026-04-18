@@ -5,6 +5,7 @@ import './index.css'
 import App from './App'
 import BrokerDetailPage from './pages/BrokerDetailPage'
 import BrokersPage from './pages/BrokersPage'
+import AssetDetailPage from './pages/AssetDetailPage'
 import NavigationTreePage from './pages/NavigationTreePage'
 
 createRoot(document.getElementById('root')!).render(
@@ -15,6 +16,7 @@ createRoot(document.getElementById('root')!).render(
           <Route index element={<Navigate to="/brokers" replace />} />
           <Route path="brokers" element={<BrokersPage />} />
           <Route path="brokers/:brokerName" element={<BrokerDetailPage />} />
+          <Route path="assets/:brokerName/:portfolioName/:assetName" element={<AssetDetailPage />} />
           <Route path="navigation" element={<NavigationTreePage />} />
           <Route path="*" element={<div>Page not found.</div>} />
         </Route>

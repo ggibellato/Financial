@@ -75,6 +75,21 @@ export default function BrokerDetailPage() {
           {broker.portfolios.map((portfolio) => (
             <li key={portfolio.name}>
               <strong>{portfolio.name}</strong> — {portfolio.assetCount} assets ({portfolio.activeAssetCount} active)
+              {portfolio.assets.length > 0 ? (
+                <ul>
+                  {portfolio.assets.map((asset) => (
+                    <li key={asset.name}>
+                      <Link
+                        to={`/assets/${encodeURIComponent(broker.name)}/${encodeURIComponent(
+                          portfolio.name,
+                        )}/${encodeURIComponent(asset.name)}`}
+                      >
+                        {asset.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </li>
           ))}
         </ul>
