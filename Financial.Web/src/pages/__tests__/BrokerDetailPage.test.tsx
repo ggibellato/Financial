@@ -60,9 +60,17 @@ describe('BrokerDetailPage', () => {
     expect(await screen.findByRole('heading', { name: 'XPI' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Portfolios' })).toBeInTheDocument()
     expect(screen.getByText(/Default/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'View broker credits' })).toHaveAttribute(
+      'href',
+      '/credits/XPI',
+    )
     expect(screen.getByRole('link', { name: 'BCIA11' })).toHaveAttribute(
       'href',
       '/assets/XPI/Default/BCIA11',
+    )
+    expect(screen.getByRole('link', { name: 'View credits' })).toHaveAttribute(
+      'href',
+      '/credits/XPI/Default',
     )
   })
 

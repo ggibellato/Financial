@@ -67,6 +67,9 @@ export default function BrokerDetailPage() {
         Portfolios: <strong>{broker.portfolioCount}</strong> · Total assets:{' '}
         <strong>{broker.totalAssets}</strong>
       </p>
+      <p>
+        <Link to={`/credits/${encodeURIComponent(broker.name)}`}>View broker credits</Link>
+      </p>
       <h3>Portfolios</h3>
       {broker.portfolios.length === 0 ? (
         <p>No portfolios available.</p>
@@ -90,6 +93,13 @@ export default function BrokerDetailPage() {
                   ))}
                 </ul>
               ) : null}
+              <div>
+                <Link
+                  to={`/credits/${encodeURIComponent(broker.name)}/${encodeURIComponent(portfolio.name)}`}
+                >
+                  View credits
+                </Link>
+              </div>
             </li>
           ))}
         </ul>
