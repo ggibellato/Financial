@@ -13,10 +13,12 @@
 	</Folder>
 	<Folder Name="/Tests/">
 		<Project Path="Tests/Financial.Application.Tests/Financial.Application.Tests.csproj" />
+		<Project Path="Tests/Financial.Api.Tests/Financial.Api.Tests.csproj" />
 		<Project Path="Tests/Financial.Domain.Tests/Financial.Domain.Tests.csproj" />
 		<Project Path="Tests/Financial.Infrastructure.Tests/Financial.Infrastructure.Tests.csproj" />
 	</Folder>
 	<Project Path="Financial.App/Financial.App.csproj" />
+	<Project Path="Financial.Api/Financial.Api.csproj" />
 </Solution>
 
 
