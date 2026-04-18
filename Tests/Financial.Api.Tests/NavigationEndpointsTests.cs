@@ -12,7 +12,7 @@ public class NavigationEndpointsTests
     [Fact]
     public async Task GetNavigationTree_ReturnsOk()
     {
-        await using var factory = ApiTestFactory.CreateFactory();
+        await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
         var response = await client.GetAsync("/api/v1/financial/navigation/tree");
 
@@ -27,7 +27,7 @@ public class NavigationEndpointsTests
     [Fact]
     public async Task GetBrokers_ReturnsOk()
     {
-        await using var factory = ApiTestFactory.CreateFactory();
+        await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
         var response = await client.GetAsync("/api/v1/financial/navigation/brokers");
 

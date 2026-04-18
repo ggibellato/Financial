@@ -12,7 +12,7 @@ public class CreditEndpointsTests
     [Fact]
     public async Task GetCreditsByBroker_ReturnsOk()
     {
-        await using var factory = ApiTestFactory.CreateFactory();
+        await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
         var response = await client.GetAsync("/api/v1/financial/credits/broker/XPI");
 
@@ -26,7 +26,7 @@ public class CreditEndpointsTests
     [Fact]
     public async Task GetCreditsByPortfolio_ReturnsOk()
     {
-        await using var factory = ApiTestFactory.CreateFactory();
+        await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
         var response = await client.GetAsync("/api/v1/financial/credits/portfolio/XPI/Default");
 

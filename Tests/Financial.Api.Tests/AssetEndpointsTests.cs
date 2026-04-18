@@ -12,7 +12,7 @@ public class AssetEndpointsTests
     [Fact]
     public async Task GetAssetDetails_ReturnsOk()
     {
-        await using var factory = ApiTestFactory.CreateFactory();
+        await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
         var response = await client.GetAsync("/api/v1/financial/assets/XPI/Default/BCIA11");
 

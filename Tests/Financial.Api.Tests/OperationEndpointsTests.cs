@@ -13,7 +13,7 @@ public class OperationEndpointsTests
     [Fact]
     public async Task AddOperation_ReturnsOk()
     {
-        await using var factory = ApiTestFactory.CreateFactory();
+        await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
         var request = new OperationCreateDTO
         {
