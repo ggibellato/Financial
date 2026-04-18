@@ -25,4 +25,14 @@ public sealed class CreditsController : ControllerBase
         var credits = _navigationService.GetCreditsByBroker(brokerName);
         return Ok(credits);
     }
+
+    [HttpGet("portfolio/{brokerName}/{portfolioName}")]
+    [ProducesResponseType(typeof(IReadOnlyList<CreditDTO>), StatusCodes.Status200OK)]
+    public ActionResult<IReadOnlyList<CreditDTO>> GetCreditsByPortfolio(
+        string brokerName,
+        string portfolioName)
+    {
+        var credits = _navigationService.GetCreditsByPortfolio(brokerName, portfolioName);
+        return Ok(credits);
+    }
 }

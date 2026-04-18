@@ -22,4 +22,18 @@ public class CreditEndpointsTests
         credits.Should().NotBeNull();
         credits!.Length.Should().BeGreaterThan(0);
     }
+
+    [Fact]
+    public async Task GetCreditsByPortfolio_ReturnsOk()
+    {
+        await using var factory = ApiTestFactory.CreateFactory();
+        using var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/v1/financial/credits/portfolio/XPI/Default");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var credits = await response.Content.ReadFromJsonAsync<CreditDTO[]>();
+        credits.Should().NotBeNull();
+        credits!.Length.Should().BeGreaterThan(0);
+    }
 }
