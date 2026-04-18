@@ -4,6 +4,9 @@ data
 bin
 obj
 dev-util/prompt/md
+.vite
+node_modules
+dist
 
 #infrastructure
 .terraform
