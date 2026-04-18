@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { resolveApiBaseUrl } from './config'
+import { DEFAULT_API_BASE_URL, resolveApiBaseUrl } from './config'
 import { createFinancialApiClient } from './financialApiClient'
 import type { AssetDetailsDto, TreeNodeDto } from './types'
 
@@ -21,7 +21,7 @@ const errorResponse = () =>
 
 describe('resolveApiBaseUrl', () => {
   it('uses the default when empty', () => {
-    expect(resolveApiBaseUrl('')).toBe('http://localhost:5190/api/v1/financial')
+    expect(resolveApiBaseUrl('')).toBe(DEFAULT_API_BASE_URL)
   })
 
   it('trims trailing slash', () => {
@@ -40,7 +40,7 @@ describe('financialApiClient', () => {
 
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({
-      baseUrl: 'http://localhost:5190/api/v1/financial',
+      baseUrl: DEFAULT_API_BASE_URL,
       fetch: fetchMock,
     })
 
@@ -48,19 +48,17 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe('http://localhost:5190/api/v1/financial/navigation/tree')
-    expect(init?.headers).toEqual(
-      expect.objectContaining({
-        Accept: 'application/json',
-      }),
-    )
+    expect(url).toBe(`${DEFAULT_API_BASE_URL}/navigation/tree`)
+    const headers = init?.headers as Headers
+    expect(headers.get('Accept')).toBe('application/json')
+    expect(headers.get('Content-Type')).toBeNull()
   })
 
   it('posts a new operation', async () => {
     const responseBody = { name: 'BCIA11' } as AssetDetailsDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({
-      baseUrl: 'http://localhost:5190/api/v1/financial',
+      baseUrl: DEFAULT_API_BASE_URL,
       fetch: fetchMock,
     })
 
@@ -76,8 +74,10 @@ describe('financialApiClient', () => {
     })
 
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe('http://localhost:5190/api/v1/financial/operations')
+    expect(url).toBe(`${DEFAULT_API_BASE_URL}/operations`)
     expect(init?.method).toBe('POST')
+    const headers = init?.headers as Headers
+    expect(headers.get('Content-Type')).toBe('application/json')
     expect(init?.body).toBe(
       JSON.stringify({
         brokerName: 'XPI',
@@ -95,7 +95,7 @@ describe('financialApiClient', () => {
   it('throws when the API returns an error', async () => {
     const fetchMock = vi.fn().mockResolvedValue(errorResponse())
     const client = createFinancialApiClient({
-      baseUrl: 'http://localhost:5190/api/v1/financial',
+      baseUrl: DEFAULT_API_BASE_URL,
       fetch: fetchMock,
     })
 

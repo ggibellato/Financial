@@ -26,17 +26,32 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
   const fetcher = options.fetch ?? fetch
 
   const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
-    const response = await fetcher(`${baseUrl}${path}`, {
+    const url = `${baseUrl}${path}`
+    const headers = new Headers(init?.headers)
+    if (!headers.has('Accept')) {
+      headers.set('Accept', 'application/json')
+    }
+    if (init?.body !== undefined && init?.body !== null && !headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json')
+    }
+
+    const response = await fetcher(url, {
       ...init,
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        ...(init?.headers ?? {}),
-      },
+      headers,
     })
 
     if (!response.ok) {
-      throw new Error(`API request failed (${response.status} ${response.statusText})`)
+      let errorDetail = response.statusText
+      try {
+        const body = await response.text()
+        if (body) {
+          errorDetail = body
+        }
+      } catch {
+        // Ignore response body failures; status text is enough.
+      }
+      const method = init?.method ?? 'GET'
+      throw new Error(`API request failed: ${method} ${url} (${response.status} ${errorDetail})`)
     }
 
     return (await response.json()) as T
