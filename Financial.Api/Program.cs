@@ -50,19 +50,10 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 var api = app.MapGroup("/api/v1/financial");
-api.MapGet("/health", () => Results.Ok(new { status = "ok" }))
-    .WithName("Health");
-if (app.Environment.IsDevelopment())
-{
-    api.MapGet("/config/repository", (IConfiguration config) => Results.Ok(new
-    {
-        provider = config[RepositoryProviderConfigurationKey],
-        dataJsonFile = config[LocalJsonStorage.DataJsonFileConfigurationKey],
-        googleDriveCredentialsPath = config[GoogleDriveJsonStorage.CredentialsPathConfigurationKey],
-        googleDriveFilePath = config[GoogleDriveJsonStorage.FilePathConfigurationKey]
-    }))
-    .WithName("RepositoryConfig");
-}
 api.MapControllers();
 
 app.Run();
+
+public partial class Program
+{
+}
