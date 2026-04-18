@@ -77,7 +77,7 @@ If a requested change would break these rules, stop and ask the developer before
 
 Development rules and C# coding conventions are defined in:
 
-Financial/dev-util/prompt/csharp.md
+Financial/dev-util/prompt/development-role.md
 
 Always follow those guidelines when writing or modifying code.
 

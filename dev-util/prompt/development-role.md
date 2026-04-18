@@ -1,0 +1,1 @@
+E:/dev/prompts/base/role/csharp-react.md
