@@ -24,4 +24,12 @@ public sealed class NavigationController : ControllerBase
         var tree = _navigationService.GetNavigationTree();
         return Ok(tree);
     }
+
+    [HttpGet("brokers")]
+    [ProducesResponseType(typeof(IEnumerable<BrokerNodeDTO>), StatusCodes.Status200OK)]
+    public ActionResult<IEnumerable<BrokerNodeDTO>> GetBrokers()
+    {
+        var brokers = _navigationService.GetBrokers();
+        return Ok(brokers);
+    }
 }
