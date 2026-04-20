@@ -21,7 +21,7 @@ Use `data.example.json` as a template and copy it to `data.json` locally (the re
    `cd Financial.Web`
    `npm install`
    `npm run dev`
-3. Optional: set `VITE_API_BASE_URL` (default: `http://localhost:5190/api/v1/financial`).
+3. Optional: set `VITE_API_BASE_URL` (default: `https://localhost:7256/api/v1/financial`).
 4. The dev server listens on `http://localhost:5173`.
 
 ### WPF (Financial.App)
