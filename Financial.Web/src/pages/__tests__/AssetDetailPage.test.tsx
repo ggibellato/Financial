@@ -112,6 +112,7 @@ describe('AssetDetailPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'BCIA11' })).toBeInTheDocument()
 
+    fireEvent.click(await screen.findByRole('tab', { name: 'Operations' }))
     fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2024-01-02' } })
     fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'Buy' } })
     fireEvent.change(screen.getByLabelText('Quantity'), { target: { value: '2' } })

@@ -10,6 +10,8 @@
   flex-direction: column;
   gap: 16px;
   text-align: left;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
 }
 
 .app__eyebrow {
@@ -47,6 +49,7 @@
   grid-template-columns: minmax(220px, 320px) 1fr;
   gap: 24px;
   align-items: start;
+  margin-top: 8px;
 }
 
 .app__sidebar {
@@ -59,6 +62,16 @@
 
 .app__detail {
   text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+
+.app__detail > section {
+  display: grid;
+  gap: 16px;
 }
 
 .nav-tree {
@@ -85,14 +98,55 @@
   margin: 6px 0;
 }
 
+.nav-tree__label,
+.nav-tree__link {
+  color: var(--text-h);
+  text-decoration: none;
+}
+
+.nav-tree__link:hover {
+  text-decoration: underline;
+}
+
 .nav-tree__label em {
   font-style: normal;
   color: var(--text);
   opacity: 0.7;
 }
 
+.detail-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  margin: 16px 0;
+}
+
+.detail-tab {
+  border: none;
+  background: none;
+  padding: 8px 12px;
+  font: inherit;
+  color: var(--text-h);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.detail-tab[aria-selected='true'] {
+  border-bottom-color: var(--accent);
+}
+
+.detail-panel {
+  display: grid;
+  gap: 12px;
+}
+
 @media (max-width: 900px) {
   .app__shell {
     grid-template-columns: 1fr;
+  }
+
+  .app__detail {
+    padding: 16px;
   }
 }
