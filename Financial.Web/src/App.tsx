@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import NavigationTreePanel from './components/NavigationTreePanel'
 import './App.css'
 
 function App() {
@@ -15,9 +16,14 @@ function App() {
           <NavLink to="/navigation">Navigation</NavLink>
         </nav>
       </header>
-      <main className="app__content">
-        <Outlet />
-      </main>
+      <div className="app__shell">
+        <aside className="app__sidebar" aria-label="Navigation tree">
+          <NavigationTreePanel title="Navigation" />
+        </aside>
+        <main className="app__detail">
+          <Outlet />
+        </main>
+      </div>
     </div>
   )
 }
