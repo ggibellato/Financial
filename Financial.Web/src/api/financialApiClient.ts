@@ -2,8 +2,13 @@ import { resolveApiBaseUrl } from './config'
 import type {
   AssetDetailsDto,
   BrokerNodeDto,
+  CreditCreateDto,
+  CreditDeleteDto,
   CreditDto,
+  CreditUpdateDto,
   OperationCreateDto,
+  OperationDeleteDto,
+  OperationUpdateDto,
   TreeNodeDto,
 } from './types'
 
@@ -14,6 +19,11 @@ export interface FinancialApiClient {
   getCreditsByBroker: (brokerName: string) => Promise<CreditDto[]>
   getCreditsByPortfolio: (brokerName: string, portfolioName: string) => Promise<CreditDto[]>
   addOperation: (request: OperationCreateDto) => Promise<AssetDetailsDto>
+  updateOperation: (request: OperationUpdateDto) => Promise<AssetDetailsDto>
+  deleteOperation: (request: OperationDeleteDto) => Promise<AssetDetailsDto>
+  addCredit: (request: CreditCreateDto) => Promise<AssetDetailsDto>
+  updateCredit: (request: CreditUpdateDto) => Promise<AssetDetailsDto>
+  deleteCredit: (request: CreditDeleteDto) => Promise<AssetDetailsDto>
 }
 
 export interface FinancialApiClientOptions {
@@ -73,6 +83,31 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     addOperation: (requestBody) =>
       request<AssetDetailsDto>('/operations', {
         method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    updateOperation: (requestBody) =>
+      request<AssetDetailsDto>('/operations', {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    deleteOperation: (requestBody) =>
+      request<AssetDetailsDto>('/operations', {
+        method: 'DELETE',
+        body: JSON.stringify(requestBody),
+      }),
+    addCredit: (requestBody) =>
+      request<AssetDetailsDto>('/credits', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    updateCredit: (requestBody) =>
+      request<AssetDetailsDto>('/credits', {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    deleteCredit: (requestBody) =>
+      request<AssetDetailsDto>('/credits', {
+        method: 'DELETE',
         body: JSON.stringify(requestBody),
       }),
   }

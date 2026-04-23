@@ -35,4 +35,42 @@ public sealed class OperationsController : ControllerBase
 
         return Ok(asset);
     }
+
+    [HttpPut]
+    [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult<AssetDetailsDTO> UpdateOperation([FromBody] OperationUpdateDTO request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var asset = _operationService.UpdateOperation(request);
+        if (asset is null)
+        {
+            return BadRequest();
+        }
+
+        return Ok(asset);
+    }
+
+    [HttpDelete]
+    [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult<AssetDetailsDTO> DeleteOperation([FromBody] OperationDeleteDTO request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var asset = _operationService.DeleteOperation(request);
+        if (asset is null)
+        {
+            return BadRequest();
+        }
+
+        return Ok(asset);
+    }
 }

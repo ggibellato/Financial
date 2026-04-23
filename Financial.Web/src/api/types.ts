@@ -82,3 +82,48 @@ export interface OperationCreateDto {
   unitPrice: number
   fees: number
 }
+
+export interface OperationUpdateDto {
+  brokerName: string
+  portfolioName: string
+  assetName: string
+  id: string
+  date: string
+  type: string
+  quantity: number
+  unitPrice: number
+  fees: number
+}
+
+export interface OperationDeleteDto {
+  brokerName: string
+  portfolioName: string
+  assetName: string
+  id: string
+}
+
+export interface CreditCreateDto {
+  brokerName: string
+  portfolioName: string
+  assetName: string
+  date: string
+  type: string
+  value: number
+}
+
+export interface CreditUpdateDto {
+  brokerName: string
+  portfolioName: string
+  assetName: string
+  id: string
+  date: string
+  type: string
+  value: number
+}
+
+export interface CreditDeleteDto {
+  brokerName: string
+  portfolioName: string
+  assetName: string
+  id: string
+}
