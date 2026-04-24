@@ -199,6 +199,98 @@
   height: 260px;
 }
 
+.dividend-check {
+  display: grid;
+  gap: 20px;
+}
+
+.dividend-check__header p {
+  color: var(--text);
+}
+
+.dividend-check__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.dividend-check__field {
+  display: grid;
+  gap: 6px;
+}
+
+.dividend-check__field input {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.dividend-check__summary {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--social-bg);
+}
+
+.summary-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.summary-label {
+  color: var(--text);
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.summary-value {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.summary-value--positive {
+  color: #1b8b4d;
+}
+
+.summary-value--negative {
+  color: #b42318;
+}
+
+.dividend-check__tables {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.dividend-check__tables table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border);
+}
+
+.dividend-check__tables th,
+.dividend-check__tables td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dividend-check__tables th {
+  text-align: left;
+  color: var(--text-h);
+}
+
+.table-number {
+  text-align: right;
+  font-weight: 600;
+}
+
+.dividend-check__placeholder {
+  color: var(--text);
+}
+
 @media (max-width: 900px) {
   .app__shell {
     grid-template-columns: 1fr;

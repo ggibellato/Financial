@@ -14,6 +14,7 @@ function App() {
         <nav className="app__nav" aria-label="Primary">
           <NavLink to="/brokers">Brokers</NavLink>
           <NavLink to="/navigation">Navigation</NavLink>
+          <NavLink to="/dividends-check">Dividend check</NavLink>
         </nav>
       </header>
       <div className="app__shell">

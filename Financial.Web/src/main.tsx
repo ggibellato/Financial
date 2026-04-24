@@ -8,6 +8,7 @@ import BrokersPage from './pages/BrokersPage'
 import AssetDetailPage from './pages/AssetDetailPage'
 import CreditsPage from './pages/CreditsPage'
 import NavigationTreePage from './pages/NavigationTreePage'
+import DividendCheckPage from './pages/DividendCheckPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -21,6 +22,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="credits/:brokerName" element={<CreditsPage />} />
           <Route path="credits/:brokerName/:portfolioName" element={<CreditsPage />} />
           <Route path="navigation" element={<NavigationTreePage />} />
+          <Route path="dividends-check" element={<DividendCheckPage />} />
           <Route path="*" element={<div>Page not found.</div>} />
         </Route>
       </Routes>

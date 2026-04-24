@@ -127,3 +127,26 @@ export interface CreditDeleteDto {
   assetName: string
   id: string
 }
+
+export interface DividendHistoryItemDto {
+  type: string
+  date: string
+  value: number
+}
+
+export interface DividendYearTotalDto {
+  year: number
+  total: number
+}
+
+export interface DividendSummaryDto {
+  exchange: string
+  ticker: string
+  name: string
+  currentPrice: number
+  priceAsOf: string
+  averageDividendLastFiveYears: number
+  priceMaxBuy: number
+  discountPercent: number
+  yearTotals: DividendYearTotalDto[]
+}

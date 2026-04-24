@@ -6,6 +6,8 @@ import type {
   CreditDeleteDto,
   CreditDto,
   CreditUpdateDto,
+  DividendHistoryItemDto,
+  DividendSummaryDto,
   OperationCreateDto,
   OperationDeleteDto,
   OperationUpdateDto,
@@ -24,6 +26,8 @@ export interface FinancialApiClient {
   addCredit: (request: CreditCreateDto) => Promise<AssetDetailsDto>
   updateCredit: (request: CreditUpdateDto) => Promise<AssetDetailsDto>
   deleteCredit: (request: CreditDeleteDto) => Promise<AssetDetailsDto>
+  getDividendHistory: (ticker: string, exchange?: string) => Promise<DividendHistoryItemDto[]>
+  getDividendSummary: (ticker: string, exchange?: string) => Promise<DividendSummaryDto>
 }
 
 export interface FinancialApiClientOptions {
@@ -65,6 +69,11 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     }
 
     return (await response.json()) as T
+  }
+
+  const buildExchangeQuery = (exchange?: string) => {
+    const trimmed = exchange?.trim()
+    return trimmed && trimmed.length > 0 ? `?exchange=${encodeURIComponent(trimmed)}` : ''
   }
 
   return {
@@ -110,5 +119,13 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         method: 'DELETE',
         body: JSON.stringify(requestBody),
       }),
+    getDividendHistory: (ticker, exchange) =>
+      request<DividendHistoryItemDto[]>(
+        `/dividends/${encodeURIComponent(ticker)}/history${buildExchangeQuery(exchange)}`,
+      ),
+    getDividendSummary: (ticker, exchange) =>
+      request<DividendSummaryDto>(
+        `/dividends/${encodeURIComponent(ticker)}/summary${buildExchangeQuery(exchange)}`,
+      ),
   }
 }
