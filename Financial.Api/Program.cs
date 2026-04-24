@@ -62,6 +62,7 @@ builder.Services.AddSingleton<INavigationService, NavigationService>();
 builder.Services.AddSingleton<IOperationService, OperationService>();
 builder.Services.AddSingleton<ICreditService, CreditService>();
 builder.Services.AddSingleton<IAssetPriceService, AssetPriceService>();
+builder.Services.AddSingleton<IDividendService, DividendService>();
 
 var app = builder.Build();
 

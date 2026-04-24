@@ -64,6 +64,51 @@ describe('AssetDetailPage', () => {
     expect(screen.getByText(/Ticker/)).toBeInTheDocument()
   })
 
+  it('renders credit chart controls', async () => {
+    getAssetDetailsMock.mockResolvedValue({
+      name: 'BCIA11',
+      brokerName: 'XPI',
+      portfolioName: 'Default',
+      ticker: 'BCIA11',
+      isin: 'TEST',
+      exchange: 'BVMF',
+      country: 0,
+      localTypeCode: '',
+      class: 0,
+      quantity: 10,
+      averagePrice: 100,
+      isActive: true,
+      totalBought: 1000,
+      totalSold: 0,
+      totalCredits: 11,
+      operations: [],
+      credits: [
+        {
+          id: 'cr-0',
+          date: '2024-02-01T00:00:00',
+          type: 'Dividend',
+          value: 5,
+        },
+      ],
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/assets/XPI/Default/BCIA11']}>
+        <Routes>
+          <Route path="/assets/:brokerName/:portfolioName/:assetName" element={<AssetDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('heading', { name: 'BCIA11' })).toBeInTheDocument()
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'Credits' }))
+    expect(screen.getByText('View:')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Stacked' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Grouped' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Last year' })).toBeInTheDocument()
+  })
+
   it('submits a new operation', async () => {
     getAssetDetailsMock.mockResolvedValue({
       name: 'BCIA11',

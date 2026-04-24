@@ -1,9 +1,52 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { AssetDetailsDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+
+const buildBluePalette = (count: number) => {
+  if (count <= 0) {
+    return []
+  }
+  if (count === 1) {
+    return ['#4682b4']
+  }
+  const start = { r: 173, g: 216, b: 230 }
+  const end = { r: 8, g: 81, b: 156 }
+  return Array.from({ length: count }, (_, index) => {
+    const t = index / (count - 1)
+    const r = Math.round(start.r + (end.r - start.r) * t)
+    const g = Math.round(start.g + (end.g - start.g) * t)
+    const b = Math.round(start.b + (end.b - start.b) * t)
+    return `rgb(${r}, ${g}, ${b})`
+  })
+}
+
+const creditsFilters = [
+  { id: 'this-month', label: 'This month', monthsBack: 0 },
+  { id: 'last-3-months', label: 'Last 3 months', monthsBack: 2 },
+  { id: 'last-6-months', label: 'Last 6 months', monthsBack: 5 },
+  { id: 'last-year', label: 'Last year', monthsBack: 11 },
+  { id: 'all', label: 'All', monthsBack: null },
+] as const
+type CreditsFilterId = (typeof creditsFilters)[number]['id']
+
+const creditsTypeModes = [
+  { id: 'stacked', label: 'Stacked' },
+  { id: 'grouped', label: 'Grouped' },
+] as const
+type CreditsTypeModeId = (typeof creditsTypeModes)[number]['id']
 
 export default function AssetDetailPage() {
   const { brokerName, portfolioName, assetName } = useParams()
@@ -32,6 +75,8 @@ export default function AssetDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<AssetTab>(() => resolveDefaultTab(location.state))
+  const [creditsFilter, setCreditsFilter] = useState<CreditsFilterId>('last-year')
+  const [creditsMode, setCreditsMode] = useState<CreditsTypeModeId>('stacked')
   const [operationEditId, setOperationEditId] = useState<string | null>(null)
   const [operationDate, setOperationDate] = useState('')
   const [operationType, setOperationType] = useState('Buy')
@@ -46,6 +91,70 @@ export default function AssetDetailPage() {
   const [creditValue, setCreditValue] = useState('')
   const [creditError, setCreditError] = useState<string | null>(null)
   const [isCreditSubmitting, setIsCreditSubmitting] = useState(false)
+  const creditValueFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+    [],
+  )
+  const filteredCredits = useMemo(() => {
+    if (!asset) {
+      return []
+    }
+    const filterOption = creditsFilters.find((filter) => filter.id === creditsFilter)
+    if (!filterOption || filterOption.monthsBack === null) {
+      return asset.credits
+    }
+    const today = new Date()
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+    const start = new Date(currentMonthStart)
+    start.setMonth(start.getMonth() - filterOption.monthsBack)
+    const endExclusive = new Date(currentMonthStart)
+    endExclusive.setMonth(endExclusive.getMonth() + 1)
+    return asset.credits.filter((credit) => {
+      const parsed = new Date(credit.date)
+      if (Number.isNaN(parsed.getTime())) {
+        return false
+      }
+      return parsed >= start && parsed < endExclusive
+    })
+  }, [asset, creditsFilter, creditsFilters])
+  const { chartData, chartTypes } = useMemo(() => {
+    const grouped = new Map<string, { month: Date; totals: Record<string, number> }>()
+    for (const credit of filteredCredits) {
+      const parsed = new Date(credit.date)
+      if (Number.isNaN(parsed.getTime())) {
+        continue
+      }
+      const month = new Date(parsed.getFullYear(), parsed.getMonth(), 1)
+      const key = month.toISOString()
+      const entry = grouped.get(key) ?? { month, totals: {} }
+      const typeKey = credit.type
+      entry.totals[typeKey] = (entry.totals[typeKey] ?? 0) + Number(credit.value)
+      grouped.set(key, entry)
+    }
+    const ordered = Array.from(grouped.values()).sort((a, b) => a.month.getTime() - b.month.getTime())
+    const types = Array.from(
+      ordered.reduce((set, entry) => {
+        Object.keys(entry.totals).forEach((type) => set.add(type))
+        return set
+      }, new Set<string>()),
+    ).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+    const data = ordered.map((entry) => {
+      const monthLabel = `${entry.month.getMonth() + 1}`.padStart(2, '0') + `/${entry.month.getFullYear()}`
+      return types.reduce<Record<string, number | string>>(
+        (acc, type) => {
+          acc[type] = entry.totals[type] ?? 0
+          return acc
+        },
+        { month: monthLabel },
+      )
+    })
+    return { chartData: data, chartTypes: types }
+  }, [filteredCredits])
+  const chartColors = useMemo(() => buildBluePalette(chartTypes.length), [chartTypes.length])
 
   const loadAsset = useCallback(async () => {
     if (!brokerName || !portfolioName || !assetName) {
@@ -321,6 +430,8 @@ export default function AssetDetailPage() {
     resetCreditForm()
     setFormError(null)
     setCreditError(null)
+    setCreditsFilter('last-year')
+    setCreditsMode('stacked')
   }, [assetName, brokerName, portfolioName, location.state, resetOperationForm, resetCreditForm])
 
   if (isLoading) {
@@ -490,6 +601,64 @@ export default function AssetDetailPage() {
         hidden={activeTab !== 'credits'}
         className="detail-panel"
       >
+        <div className="credits-chart">
+          <div className="credits-controls">
+            <span className="credits-controls__label">View:</span>
+            {creditsTypeModes.map((mode) => {
+              const isActive = creditsMode === mode.id
+              return (
+                <button
+                  key={mode.id}
+                  type="button"
+                  className={`credits-option${isActive ? ' credits-option--active' : ''}`}
+                  onClick={() => setCreditsMode(mode.id)}
+                  aria-pressed={isActive}
+                >
+                  {mode.label}
+                </button>
+              )
+            })}
+          </div>
+          <div className="credits-controls credits-controls--filters">
+            {creditsFilters.map((filter) => {
+              const isActive = creditsFilter === filter.id
+              return (
+                <button
+                  key={filter.id}
+                  type="button"
+                  className={`credits-option${isActive ? ' credits-option--active' : ''}`}
+                  onClick={() => setCreditsFilter(filter.id)}
+                  aria-pressed={isActive}
+                >
+                  {filter.label}
+                </button>
+              )
+            })}
+          </div>
+          {chartData.length === 0 || chartTypes.length === 0 ? (
+            <p>No credits available for the selected period.</p>
+          ) : (
+            <div className="credits-chart__canvas">
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis tickFormatter={(value) => creditValueFormatter.format(Number(value))} />
+                  <Tooltip formatter={(value) => creditValueFormatter.format(Number(value))} />
+                  <Legend />
+                  {chartTypes.map((type, index) => (
+                    <Bar
+                      key={type}
+                      dataKey={type}
+                      stackId={creditsMode === 'stacked' ? 'credits' : undefined}
+                      fill={chartColors[index] ?? '#4682b4'}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
         <h3>Credits</h3>
         {asset.credits.length === 0 ? (
           <p>No credits recorded.</p>
