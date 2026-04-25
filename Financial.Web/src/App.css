@@ -291,6 +291,61 @@
   color: var(--text);
 }
 
+.current-values {
+  display: grid;
+  gap: 20px;
+}
+
+.current-values__header p {
+  color: var(--text);
+}
+
+.current-values__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.current-values__field {
+  display: grid;
+  gap: 6px;
+}
+
+.current-values__field select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.current-values__progress {
+  display: grid;
+  gap: 8px;
+}
+
+.current-values__progress progress {
+  width: 100%;
+  height: 8px;
+}
+
+.current-values__results table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border);
+}
+
+.current-values__results th,
+.current-values__results td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.current-values__results th {
+  text-align: left;
+  color: var(--text-h);
+}
+
 @media (max-width: 900px) {
   .app__shell {
     grid-template-columns: 1fr;

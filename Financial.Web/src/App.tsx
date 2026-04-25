@@ -15,6 +15,7 @@ function App() {
           <NavLink to="/brokers">Brokers</NavLink>
           <NavLink to="/navigation">Navigation</NavLink>
           <NavLink to="/dividends-check">Dividend check</NavLink>
+          <NavLink to="/current-values">Current values</NavLink>
         </nav>
       </header>
       <div className="app__shell">

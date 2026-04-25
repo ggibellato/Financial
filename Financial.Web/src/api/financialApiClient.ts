@@ -1,6 +1,7 @@
 import { resolveApiBaseUrl } from './config'
 import type {
   AssetDetailsDto,
+  AssetPriceDto,
   BrokerNodeDto,
   CreditCreateDto,
   CreditDeleteDto,
@@ -28,6 +29,7 @@ export interface FinancialApiClient {
   deleteCredit: (request: CreditDeleteDto) => Promise<AssetDetailsDto>
   getDividendHistory: (ticker: string, exchange?: string) => Promise<DividendHistoryItemDto[]>
   getDividendSummary: (ticker: string, exchange?: string) => Promise<DividendSummaryDto>
+  getCurrentPrice: (exchange: string, ticker: string) => Promise<AssetPriceDto>
 }
 
 export interface FinancialApiClientOptions {
@@ -126,6 +128,10 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getDividendSummary: (ticker, exchange) =>
       request<DividendSummaryDto>(
         `/dividends/${encodeURIComponent(ticker)}/summary${buildExchangeQuery(exchange)}`,
+      ),
+    getCurrentPrice: (exchange, ticker) =>
+      request<AssetPriceDto>(
+        `/prices/current?exchange=${encodeURIComponent(exchange)}&ticker=${encodeURIComponent(ticker)}`,
       ),
   }
 }

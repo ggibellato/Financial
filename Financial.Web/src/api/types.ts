@@ -150,3 +150,11 @@ export interface DividendSummaryDto {
   discountPercent: number
   yearTotals: DividendYearTotalDto[]
 }
+
+export interface AssetPriceDto {
+  exchange: string
+  ticker: string
+  name: string
+  price: number
+  asOf: string | null
+}
