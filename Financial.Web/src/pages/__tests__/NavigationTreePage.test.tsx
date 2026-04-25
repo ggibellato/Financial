@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import NavigationTreePage from '../NavigationTreePage'
 
@@ -30,7 +31,11 @@ describe('NavigationTreePage', () => {
       ],
     })
 
-    render(<NavigationTreePage />)
+    render(
+      <MemoryRouter>
+        <NavigationTreePage />
+      </MemoryRouter>,
+    )
 
     expect(await screen.findByRole('heading', { name: 'Navigation Tree' })).toBeInTheDocument()
     expect(screen.getByText(/All Investments/)).toBeInTheDocument()
@@ -40,7 +45,11 @@ describe('NavigationTreePage', () => {
   it('shows error state when request fails', async () => {
     getNavigationTreeMock.mockRejectedValue(new Error('Boom'))
 
-    render(<NavigationTreePage />)
+    render(
+      <MemoryRouter>
+        <NavigationTreePage />
+      </MemoryRouter>,
+    )
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Boom')
   })

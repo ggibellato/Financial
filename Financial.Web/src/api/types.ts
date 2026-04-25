@@ -82,3 +82,79 @@ export interface OperationCreateDto {
   unitPrice: number
   fees: number
 }
+
+export interface OperationUpdateDto {
+  brokerName: string
+  portfolioName: string
+  assetName: string
+  id: string
+  date: string
+  type: string
+  quantity: number
+  unitPrice: number
+  fees: number
+}
+
+export interface OperationDeleteDto {
+  brokerName: string
+  portfolioName: string
+  assetName: string
+  id: string
+}
+
+export interface CreditCreateDto {
+  brokerName: string
+  portfolioName: string
+  assetName: string
+  date: string
+  type: string
+  value: number
+}
+
+export interface CreditUpdateDto {
+  brokerName: string
+  portfolioName: string
+  assetName: string
+  id: string
+  date: string
+  type: string
+  value: number
+}
+
+export interface CreditDeleteDto {
+  brokerName: string
+  portfolioName: string
+  assetName: string
+  id: string
+}
+
+export interface DividendHistoryItemDto {
+  type: string
+  date: string
+  value: number
+}
+
+export interface DividendYearTotalDto {
+  year: number
+  total: number
+}
+
+export interface DividendSummaryDto {
+  exchange: string
+  ticker: string
+  name: string
+  currentPrice: number
+  priceAsOf: string
+  averageDividendLastFiveYears: number
+  priceMaxBuy: number
+  discountPercent: number
+  yearTotals: DividendYearTotalDto[]
+}
+
+export interface AssetPriceDto {
+  exchange: string
+  ticker: string
+  name: string
+  price: number
+  asOf: string | null
+}

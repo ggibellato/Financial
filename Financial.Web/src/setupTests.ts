@@ -5,3 +5,14 @@ import { afterEach } from 'vitest'
 afterEach(() => {
   cleanup()
 })
+
+if (!('ResizeObserver' in globalThis)) {
+  class ResizeObserverMock {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+
+  ;(globalThis as typeof globalThis & { ResizeObserver: typeof ResizeObserverMock }).ResizeObserver =
+    ResizeObserverMock
+}

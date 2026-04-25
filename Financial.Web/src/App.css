@@ -10,6 +10,8 @@
   flex-direction: column;
   gap: 16px;
   text-align: left;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
 }
 
 .app__eyebrow {
@@ -42,6 +44,314 @@
   border-bottom-color: var(--accent);
 }
 
-.app__content {
+.app__shell {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) 1fr;
+  gap: 24px;
+  align-items: start;
+  margin-top: 8px;
+}
+
+.app__sidebar {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  background: var(--social-bg);
+  box-shadow: var(--shadow);
+}
+
+.app__detail {
   text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+
+.app__detail > section {
+  display: grid;
+  gap: 16px;
+}
+
+.nav-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nav-tree__header h2 {
+  margin: 0;
+}
+
+.nav-tree__list {
+  list-style: none;
+  margin: 0;
+  padding-left: 16px;
+}
+
+.nav-tree > .nav-tree__list {
+  padding-left: 0;
+}
+
+.nav-tree__node {
+  margin: 6px 0;
+}
+
+.nav-tree__label,
+.nav-tree__link {
+  color: var(--text-h);
+  text-decoration: none;
+}
+
+.nav-tree__link:hover {
+  text-decoration: underline;
+}
+
+.nav-tree__label em {
+  font-style: normal;
+  color: var(--text);
+  opacity: 0.7;
+}
+
+.detail-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  margin: 16px 0;
+}
+
+.detail-tab {
+  border: none;
+  background: none;
+  padding: 8px 12px;
+  font: inherit;
+  color: var(--text-h);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.detail-tab[aria-selected='true'] {
+  border-bottom-color: var(--accent);
+}
+
+.detail-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.detail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.detail-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.credits-chart {
+  display: grid;
+  gap: 12px;
+}
+
+.credits-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.credits-controls__label {
+  color: var(--text);
+}
+
+.credits-option {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.credits-option--active {
+  color: var(--text-h);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.credits-chart__canvas {
+  width: 100%;
+  height: 260px;
+}
+
+.dividend-check {
+  display: grid;
+  gap: 20px;
+}
+
+.dividend-check__header p {
+  color: var(--text);
+}
+
+.dividend-check__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.dividend-check__field {
+  display: grid;
+  gap: 6px;
+}
+
+.dividend-check__field input {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.dividend-check__summary {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--social-bg);
+}
+
+.summary-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.summary-label {
+  color: var(--text);
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.summary-value {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.summary-value--positive {
+  color: #1b8b4d;
+}
+
+.summary-value--negative {
+  color: #b42318;
+}
+
+.dividend-check__tables {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.dividend-check__tables table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border);
+}
+
+.dividend-check__tables th,
+.dividend-check__tables td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dividend-check__tables th {
+  text-align: left;
+  color: var(--text-h);
+}
+
+.table-number {
+  text-align: right;
+  font-weight: 600;
+}
+
+.dividend-check__placeholder {
+  color: var(--text);
+}
+
+.current-values {
+  display: grid;
+  gap: 20px;
+}
+
+.current-values__header p {
+  color: var(--text);
+}
+
+.current-values__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.current-values__field {
+  display: grid;
+  gap: 6px;
+}
+
+.current-values__field select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.current-values__progress {
+  display: grid;
+  gap: 8px;
+}
+
+.current-values__progress progress {
+  width: 100%;
+  height: 8px;
+}
+
+.current-values__results table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border);
+}
+
+.current-values__results th,
+.current-values__results td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.current-values__results th {
+  text-align: left;
+  color: var(--text-h);
+}
+
+@media (max-width: 900px) {
+  .app__shell {
+    grid-template-columns: 1fr;
+  }
+
+  .app__detail {
+    padding: 16px;
+  }
 }

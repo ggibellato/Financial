@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { DEFAULT_API_BASE_URL, resolveApiBaseUrl } from './config'
 import { createFinancialApiClient } from './financialApiClient'
-import type { AssetDetailsDto, TreeNodeDto } from './types'
+import type { AssetDetailsDto, AssetPriceDto, TreeNodeDto } from './types'
 
 const okResponse = <T,>(payload: T) =>
   ({
@@ -90,6 +90,28 @@ describe('financialApiClient', () => {
         fees: 0,
       }),
     )
+  })
+
+  it('calls current price endpoint', async () => {
+    const responseBody = {
+      exchange: 'BVMF',
+      ticker: 'BCIA11',
+      name: 'Sample Asset',
+      price: 10.5,
+      asOf: '2024-02-01T00:00:00Z',
+    } satisfies AssetPriceDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({
+      baseUrl: DEFAULT_API_BASE_URL,
+      fetch: fetchMock,
+    })
+
+    const result = await client.getCurrentPrice('BVMF', 'BCIA11')
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${DEFAULT_API_BASE_URL}/prices/current?exchange=BVMF&ticker=BCIA11`)
+    expect(init?.method).toBeUndefined()
   })
 
   it('throws when the API returns an error', async () => {

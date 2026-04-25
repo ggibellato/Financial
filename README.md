@@ -28,3 +28,18 @@ Use `data.example.json` as a template and copy it to `data.json` locally (the re
 1. Ensure `Financial.App\appsettings.json` has the correct `DataJsonFile` path.
 2. Run:
    `dotnet run --project Financial.App`
+
+## Build and test
+
+### .NET
+1. Run all tests:
+   `dotnet test Financial.slnx`
+2. Build the API explicitly (optional):
+   `dotnet build Financial.Api`
+
+### Web (Financial.Web)
+1. Run unit tests:
+   `cd Financial.Web`
+   `npm test`
+2. Build the web app:
+   `npm run build`

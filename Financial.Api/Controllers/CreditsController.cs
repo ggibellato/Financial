@@ -12,10 +12,69 @@ namespace Financial.Api.Controllers;
 public sealed class CreditsController : ControllerBase
 {
     private readonly INavigationService _navigationService;
+    private readonly ICreditService _creditService;
 
-    public CreditsController(INavigationService navigationService)
+    public CreditsController(INavigationService navigationService, ICreditService creditService)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+        _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
+    }
+
+    [HttpPost]
+    [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult<AssetDetailsDTO> AddCredit([FromBody] CreditCreateDTO request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var asset = _creditService.AddCredit(request);
+        if (asset is null)
+        {
+            return BadRequest();
+        }
+
+        return Ok(asset);
+    }
+
+    [HttpPut]
+    [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult<AssetDetailsDTO> UpdateCredit([FromBody] CreditUpdateDTO request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var asset = _creditService.UpdateCredit(request);
+        if (asset is null)
+        {
+            return BadRequest();
+        }
+
+        return Ok(asset);
+    }
+
+    [HttpDelete]
+    [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult<AssetDetailsDTO> DeleteCredit([FromBody] CreditDeleteDTO request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var asset = _creditService.DeleteCredit(request);
+        if (asset is null)
+        {
+            return BadRequest();
+        }
+
+        return Ok(asset);
     }
 
     [HttpGet("broker/{brokerName}")]
