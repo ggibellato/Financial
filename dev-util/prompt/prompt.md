@@ -165,7 +165,8 @@ Always follow this workflow order:
 
 1. Run the Codebase Analyzer if discovery findings do not exist.
 2. Read the architecture guidelines.
-3. Read the current Financial/dev-util/prompt/task.md definition.
+3. Read the current Financial/dev-util/prompt/plan.md definition.
+   3.1 Check what is already implemented
 4. Use the Task Planner agent to create an implementation plan.
 5. Execute the plan step by step.
 6. Use the Code Review agent to review changes.
