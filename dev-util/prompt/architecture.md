@@ -1,1 +1,0 @@
-E:/dev/prompts/base/architecture.md
