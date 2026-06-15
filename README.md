@@ -1,45 +1,57 @@
 # Financial
-Financial investments control
 
-## data.json configuration
-The apps load investment data from a JSON file path configured via `DataJsonFile` (environment variable or `appsettings.json`).
-If not set, the default is `data.json` in the application directory.
-Use `data.example.json` as a template and copy it to `data.json` locally (the real file is ignored by git).
+Personal financial management tool for consolidating investment transactions across brokers in Brazil and the United Kingdom.
 
-## Development run instructions
+## Prerequisites
+
+- .NET 10.0 SDK
+- Node.js 24.13+
+
+## Data file
+
+The apps load investment data from a JSON file. Copy `data.example.json` to `data.json` locally (the real file is git-ignored).
+
+Configure the path via the `DataJsonFile` environment variable or `appsettings.json`. If not set, defaults to `data.json` in the application directory.
+
+## Run
 
 ### API (Financial.Api)
-1. Ensure `Financial.Api\appsettings.Development.json` has the correct `DataJsonFile` path (or set `DataJsonFile` as an environment variable).
-2. Run:
-   `dotnet run --project Financial.Api`
-3. The API listens on `http://localhost:5190` (see `Financial.Api\Properties\launchSettings.json`).
-4. Health check: `http://localhost:5190/api/v1/financial/health`.
+
+```bash
+dotnet run --project Financial.Api
+```
+
+Listens on `http://localhost:5190`. Health check: `http://localhost:5190/health`.
 
 ### Web (Financial.Web)
-1. Ensure Node.js 24.13+.
-2. Run:
-   `cd Financial.Web`
-   `npm install`
-   `npm run dev`
-3. Optional: set `VITE_API_BASE_URL` (default: `https://localhost:7256/api/v1/financial`).
-4. The dev server listens on `http://localhost:5173`.
 
-### WPF (Financial.App)
-1. Ensure `Financial.App\appsettings.json` has the correct `DataJsonFile` path.
-2. Run:
-   `dotnet run --project Financial.App`
+```bash
+cd Financial.Web
+npm install
+npm run dev
+```
+
+Listens on `http://localhost:5173`. Copy `Financial.Web/.env.example` to `Financial.Web/.env` and set `API_BASE_URL` to point at the API.
+
+### Desktop (Financial.App)
+
+```bash
+dotnet run --project Financial.App
+```
+
+`dotnet run` and Visual Studio set `DOTNET_ENVIRONMENT=Development` automatically via `launchSettings.json`, which loads `Financial.App/appsettings.Development.json` with a relative path to the shared `data/data.json`. Running the compiled `.exe` directly requires setting `DOTNET_ENVIRONMENT=Development` in your system environment variables.
 
 ## Build and test
 
-### .NET
-1. Run all tests:
-   `dotnet test Financial.slnx`
-2. Build the API explicitly (optional):
-   `dotnet build Financial.Api`
+```bash
+# .NET
+dotnet restore
+dotnet build Financial.slnx
+dotnet test Financial.slnx
 
-### Web (Financial.Web)
-1. Run unit tests:
-   `cd Financial.Web`
-   `npm test`
-2. Build the web app:
-   `npm run build`
+# Web
+cd Financial.Web
+npm ci
+npm test
+npm run build
+```

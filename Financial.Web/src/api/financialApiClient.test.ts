@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { DEFAULT_API_BASE_URL, resolveApiBaseUrl } from './config'
+import { API_BASE_URL } from './config'
 import { createFinancialApiClient } from './financialApiClient'
 import type { AssetDetailsDto, AssetPriceDto, TreeNodeDto } from './types'
 
@@ -19,16 +19,6 @@ const errorResponse = () =>
     json: async () => ({}),
   }) as Response
 
-describe('resolveApiBaseUrl', () => {
-  it('uses the default when empty', () => {
-    expect(resolveApiBaseUrl('')).toBe(DEFAULT_API_BASE_URL)
-  })
-
-  it('trims trailing slash', () => {
-    expect(resolveApiBaseUrl('http://example/api/')).toBe('http://example/api')
-  })
-})
-
 describe('financialApiClient', () => {
   it('calls navigation tree endpoint', async () => {
     const responseBody: TreeNodeDto = {
@@ -40,7 +30,7 @@ describe('financialApiClient', () => {
 
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({
-      baseUrl: DEFAULT_API_BASE_URL,
+      baseUrl: API_BASE_URL,
       fetch: fetchMock,
     })
 
@@ -48,7 +38,7 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${DEFAULT_API_BASE_URL}/navigation/tree`)
+    expect(url).toBe(`${API_BASE_URL}/navigation/tree`)
     const headers = init?.headers as Headers
     expect(headers.get('Accept')).toBe('application/json')
     expect(headers.get('Content-Type')).toBeNull()
@@ -58,7 +48,7 @@ describe('financialApiClient', () => {
     const responseBody = { name: 'BCIA11' } as AssetDetailsDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({
-      baseUrl: DEFAULT_API_BASE_URL,
+      baseUrl: API_BASE_URL,
       fetch: fetchMock,
     })
 
@@ -74,7 +64,7 @@ describe('financialApiClient', () => {
     })
 
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${DEFAULT_API_BASE_URL}/operations`)
+    expect(url).toBe(`${API_BASE_URL}/operations`)
     expect(init?.method).toBe('POST')
     const headers = init?.headers as Headers
     expect(headers.get('Content-Type')).toBe('application/json')
@@ -102,7 +92,7 @@ describe('financialApiClient', () => {
     } satisfies AssetPriceDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({
-      baseUrl: DEFAULT_API_BASE_URL,
+      baseUrl: API_BASE_URL,
       fetch: fetchMock,
     })
 
@@ -110,14 +100,14 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${DEFAULT_API_BASE_URL}/prices/current?exchange=BVMF&ticker=BCIA11`)
+    expect(url).toBe(`${API_BASE_URL}/prices/current?exchange=BVMF&ticker=BCIA11`)
     expect(init?.method).toBeUndefined()
   })
 
   it('throws when the API returns an error', async () => {
     const fetchMock = vi.fn().mockResolvedValue(errorResponse())
     const client = createFinancialApiClient({
-      baseUrl: DEFAULT_API_BASE_URL,
+      baseUrl: API_BASE_URL,
       fetch: fetchMock,
     })
 
