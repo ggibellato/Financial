@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Financial.App": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

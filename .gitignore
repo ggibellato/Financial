@@ -3,7 +3,6 @@ data
 .vs
 bin
 obj
-dev-util/prompt/md
 .vite
 node_modules
 dist
@@ -17,3 +16,5 @@ terraform*
 #specific files
 .gitignore.bak
 data.json
+.env*.local
+Financial.Web/.env

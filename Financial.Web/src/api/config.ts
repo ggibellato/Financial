@@ -1,7 +1,4 @@
-export const DEFAULT_API_BASE_URL = 'https://localhost:7256/api/v1/financial'
+const rawUrl = import.meta.env.API_BASE_URL
+if (!rawUrl) throw new Error('API_BASE_URL is not set — copy .env.example to .env')
 
-export function resolveApiBaseUrl(baseUrl?: string): string {
-  const candidate = baseUrl?.trim()
-  const resolved = candidate && candidate.length > 0 ? candidate : DEFAULT_API_BASE_URL
-  return resolved.endsWith('/') ? resolved.slice(0, -1) : resolved
-}
+export const API_BASE_URL = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl

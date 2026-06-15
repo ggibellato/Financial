@@ -1,4 +1,4 @@
-import { resolveApiBaseUrl } from './config'
+import { API_BASE_URL } from './config'
 import type {
   AssetDetailsDto,
   AssetPriceDto,
@@ -38,7 +38,9 @@ export interface FinancialApiClientOptions {
 }
 
 export function createFinancialApiClient(options: FinancialApiClientOptions = {}): FinancialApiClient {
-  const baseUrl = resolveApiBaseUrl(options.baseUrl ?? import.meta.env.VITE_API_BASE_URL)
+  const baseUrl = options.baseUrl !== undefined
+    ? options.baseUrl.replace(/\/$/, '')
+    : API_BASE_URL
   const fetcher = options.fetch ?? fetch
 
   const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
