@@ -1,3 +1,4 @@
+using Financial.Application.Configuration;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Presentation.App.Components;
@@ -5,7 +6,6 @@ using Financial.Presentation.App.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -99,40 +99,18 @@ namespace Financial.Presentation.App
         private void btnCheck_Click(object sender, RoutedEventArgs e)
         {
             var ticker = txtTicker.Text.ToUpperInvariant();
+            var request = new DividendLookupRequestDTO { Exchange = BvmfExchange, Ticker = ticker };
 
-            var value = _assetPriceService.GetCurrentPrice(new AssetPriceRequestDTO
-            {
-                Exchange = BvmfExchange,
-                Ticker = ticker,
-            });
+            var summary = _dividendService.GetDividendSummary(request);
 
-            var dividends = _dividendService.GetDividendHistory(new DividendLookupRequestDTO
-            {
-                Exchange = BvmfExchange,
-                Ticker = ticker,
-            });
+            dividendDataGrid.ItemsSource = summary.History;
+            dividendByYearDataGrid.ItemsSource = summary.YearTotals;
 
-            dividendDataGrid.ItemsSource = dividends;
-
-            var dividendsByYear = dividends
-                .GroupBy(d => d.Date.Year)
-                .Select(g => new
-                {
-                    Year = g.Key,
-                    Total = g.Sum(gi => gi.Value)
-                })
-                .OrderByDescending(dy => dy.Year);
-            dividendByYearDataGrid.ItemsSource = dividendsByYear;
-
-            var averageDividend = dividendsByYear.Where(dy => dy.Year < DateTime.Now.Year).Take(5).Average(dy => dy.Total);
-            var priceMax = averageDividend / (decimal)0.06;
-            var priceDiscountPer = (1 - value.Price / priceMax) * 100;
-
-            lblName.Text = $"{value.Ticker} - {value.Name}";
-            lblPrice.Text = $"Current price: {value.Price:N2}";
-            lblAverageDividend.Text = $"Average Dividend: {averageDividend:F2} (last 5 years)";
-            lblPriceMax.Text = $"Price max buy: {priceMax:F2}   Discount {priceDiscountPer:F2}%";
-            lblPriceMax.Foreground = priceMax > value.Price ? Brushes.Green : Brushes.Red;
+            lblName.Text = $"{summary.Ticker} - {summary.Name}";
+            lblPrice.Text = $"Current price: {summary.CurrentPrice:N2}";
+            lblAverageDividend.Text = $"Average Dividend: {summary.AverageDividendPerYear:F2} (last {DividendValuationRules.DividendYearsLookback} years)";
+            lblPriceMax.Text = $"Price max buy: {summary.PriceMaxBuy:F2}   Discount {summary.DiscountPercent:F2}%";
+            lblPriceMax.Foreground = summary.PriceMaxBuy > summary.CurrentPrice ? Brushes.Green : Brushes.Red;
         }
 
         private void DividendDataGrid_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)

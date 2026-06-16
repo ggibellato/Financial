@@ -10,5 +10,6 @@ public class DividendSummaryDTO
     public decimal AverageDividendPerYear { get; set; }
     public decimal PriceMaxBuy { get; set; }
     public decimal DiscountPercent { get; set; }
+    public required IReadOnlyList<DividendHistoryItemDTO> History { get; set; }
     public required IReadOnlyList<DividendYearTotalDTO> YearTotals { get; set; }
 }
