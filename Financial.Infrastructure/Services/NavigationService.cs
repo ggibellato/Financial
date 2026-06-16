@@ -59,9 +59,9 @@ public class NavigationService : INavigationService
             return null;
         }
 
-        var operations = asset.Operations
-            .Select(MapOperation)
-            .OrderByDescending(op => op.Date)
+        var transactions = asset.Transactions
+            .Select(MapTransaction)
+            .OrderByDescending(t => t.Date)
             .ToList();
 
         var credits = asset.Credits
@@ -88,7 +88,7 @@ public class NavigationService : INavigationService
             TotalBought = totalBought,
             TotalSold = totalSold,
             TotalCredits = totalCredits,
-            Operations = operations,
+            Transactions = transactions,
             Credits = credits
         };
     }
@@ -202,7 +202,7 @@ public class NavigationService : INavigationService
                 ["Quantity"] = asset.Quantity,
                 ["AveragePrice"] = asset.AveragePrice,
                 ["IsActive"] = asset.IsActive,
-                ["OperationCount"] = asset.OperationCount,
+                ["TransactionCount"] = asset.TransactionCount,
                 ["CreditCount"] = asset.CreditCount
             }
         };
@@ -257,22 +257,22 @@ public class NavigationService : INavigationService
             Quantity = asset.Quantity,
             AveragePrice = asset.AvargePrice,
             IsActive = asset.Active,
-            OperationCount = asset.Operations.Count,
+            TransactionCount = asset.Transactions.Count,
             CreditCount = asset.Credits.Count
         };
     }
 
-    private static OperationDTO MapOperation(Operation operation)
+    private static TransactionDTO MapTransaction(Transaction transaction)
     {
-        return new OperationDTO
+        return new TransactionDTO
         {
-            Id = operation.Id,
-            Date = operation.Date,
-            Type = operation.Type.ToString(),
-            Quantity = operation.Quantity,
-            UnitPrice = operation.UnitPrice,
-            Fees = operation.Fees,
-            TotalPrice = operation.TotalPrice
+            Id = transaction.Id,
+            Date = transaction.Date,
+            Type = transaction.Type.ToString(),
+            Quantity = transaction.Quantity,
+            UnitPrice = transaction.UnitPrice,
+            Fees = transaction.Fees,
+            TotalPrice = transaction.TotalPrice
         };
     }
 
@@ -289,13 +289,13 @@ public class NavigationService : INavigationService
 
     private static (decimal TotalBought, decimal TotalSold, decimal TotalCredits) CalculateTotals(Asset asset)
     {
-        var totalBought = asset.Operations
-            .Where(op => op.Type == Operation.OperationType.Buy)
-            .Sum(op => op.TotalPrice);
+        var totalBought = asset.Transactions
+            .Where(t => t.Type == Transaction.TransactionType.Buy)
+            .Sum(t => t.TotalPrice);
 
-        var totalSold = asset.Operations
-            .Where(op => op.Type == Operation.OperationType.Sell)
-            .Sum(op => op.TotalPrice);
+        var totalSold = asset.Transactions
+            .Where(t => t.Type == Transaction.TransactionType.Sell)
+            .Sum(t => t.TotalPrice);
 
         var totalCredits = asset.Credits.Sum(c => c.Value);
 

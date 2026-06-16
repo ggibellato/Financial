@@ -12,7 +12,7 @@
               "ISIN": "TESTISIN",
               "Exchange": "BVMF",
               "Ticker": "BCIA11",
-              "Operations": [
+              "Transactions": [
                 {
                   "Date": "2024-01-01T00:00:00",
                   "Type": "Buy",

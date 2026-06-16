@@ -103,7 +103,7 @@ public class GoogleGenerator : IGenerator
                     assetData.assetClass);
                 portfolio.AddAsset(asset);
 
-                asset.AddOperations(await CreateOperationsAsync(file.Id, spreadsheet.Name));
+                asset.AddTransactions(await CreateTransactionsAsync(file.Id, spreadsheet.Name));
                 
                 // Small delay between operations and credits
                 await Task.Delay(DelayBetweenOperationsMs);
@@ -211,9 +211,9 @@ public class GoogleGenerator : IGenerator
         File.WriteAllText(Path.Combine(_path, "data.json"), json);
     }
 
-    private async Task<List<Operation>> CreateOperationsAsync(string id, string spreadSheetName)
+    private async Task<List<Transaction>> CreateTransactionsAsync(string id, string spreadSheetName)
     {
-        var operations = new List<Operation>();
+        var transactions = new List<Transaction>();
         // Use open-ended range to get all rows with data dynamically
         var values = await _service.GetSpreadSheetDataAsync(id, $"{spreadSheetName}!A3:G");
         var previousDate = 0L;
@@ -227,16 +227,16 @@ public class GoogleGenerator : IGenerator
                 var unitPrice = GoogleSheetValueParser.ToDecimal(value[5]);
                 var fees = GoogleSheetValueParser.ToDecimal(value[6]) - (unitPrice * quantity);
 
-            var operation = Operation.Create(
+            var transaction = Transaction.Create(
                     DateTime.FromOADate(date),
-                    type == "V" ? Operation.OperationType.Sell : Operation.OperationType.Buy,
+                    type == "V" ? Transaction.TransactionType.Sell : Transaction.TransactionType.Buy,
                     quantity,
                     unitPrice,
                     fees < 0 ? 0 : fees
                 );
-            operations.Add(operation);
+            transactions.Add(transaction);
         }
-        return operations;
+        return transactions;
     }
 
     private async Task<List<Credit>> CreateCreditsAsync(string id, string spreadSheetName)

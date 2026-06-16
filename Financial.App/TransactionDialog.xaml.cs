@@ -7,9 +7,9 @@ using Financial.Presentation.App.ViewModels;
 
 namespace Financial.Presentation.App;
 
-public partial class OperationDialog : Window
+public partial class TransactionDialog : Window
 {
-    public OperationDialog(OperationDialogViewModel viewModel)
+    public TransactionDialog(TransactionDialogViewModel viewModel)
     {
         InitializeComponent();
         DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
@@ -18,7 +18,7 @@ public partial class OperationDialog : Window
 
     private void OnCloseRequested(object? sender, bool? dialogResult)
     {
-        if (sender is OperationDialogViewModel viewModel)
+        if (sender is TransactionDialogViewModel viewModel)
         {
             viewModel.CloseRequested -= OnCloseRequested;
         }
@@ -73,5 +73,3 @@ public partial class OperationDialog : Window
         }
     }
 }
-
-

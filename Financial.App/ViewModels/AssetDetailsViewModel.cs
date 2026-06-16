@@ -21,15 +21,15 @@ namespace Financial.Presentation.App.ViewModels;
 /// </summary>
 public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 {
-    private readonly IOperationService? _operationService;
+    private readonly ITransactionService? _transactionService;
     private readonly ICreditService? _creditService;
     private readonly IAssetPriceService? _assetPriceService;
     private readonly TodayInfoTracker _todayInfo;
-    private readonly OperationActions _operationActions;
+    private readonly TransactionActions _transactionActions;
     private readonly CreditActions _creditActions;
-    private readonly RelayCommand _addOperationCommand;
-    private readonly RelayCommand _updateOperationCommand;
-    private readonly RelayCommand _deleteOperationCommand;
+    private readonly RelayCommand _addTransactionCommand;
+    private readonly RelayCommand _updateTransactionCommand;
+    private readonly RelayCommand _deleteTransactionCommand;
     private readonly RelayCommand _addCreditCommand;
     private readonly RelayCommand _updateCreditCommand;
     private readonly RelayCommand _deleteCreditCommand;
@@ -64,7 +64,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private double _creditsPlotWidth;
     private bool _isCreditsAggregateView;
     private bool _hasCreditsContext;
-    private OperationDTO? _selectedOperation;
+    private TransactionDTO? _selectedTransaction;
     private CreditDTO? _selectedCredit;
     private IReadOnlyList<CreditsMonthTypeTotals> _creditsChartMonths = Array.Empty<CreditsMonthTypeTotals>();
     private IReadOnlyList<string> _creditsChartTypes = Array.Empty<string>();
@@ -263,18 +263,18 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     public bool HasAveragePrice => AssetDetailsCalculations.HasAveragePrice(AveragePrice, Quantity);
 
-    public ObservableCollection<OperationDTO> Operations { get; } = new();
+    public ObservableCollection<TransactionDTO> Transactions { get; } = new();
     public ObservableCollection<CreditDTO> Credits { get; } = new();
     public ObservableCollection<KeyValuePair<string, decimal>> CreditsByMonthChart { get; } = new();
     public ObservableCollection<CreditsFilterOptionViewModel> CreditsFilters { get; } = new();
     public ObservableCollection<CreditsTypeModeOptionViewModel> CreditsTypeModes { get; } = new();
 
-    public OperationDTO? SelectedOperation
+    public TransactionDTO? SelectedTransaction
     {
-        get => _selectedOperation;
+        get => _selectedTransaction;
         set
         {
-            if (SetProperty(ref _selectedOperation, value))
+            if (SetProperty(ref _selectedTransaction, value))
             {
                 UpdateCommandStates();
             }
@@ -293,9 +293,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         }
     }
 
-    public RelayCommand AddOperationCommand => _addOperationCommand;
-    public RelayCommand UpdateOperationCommand => _updateOperationCommand;
-    public RelayCommand DeleteOperationCommand => _deleteOperationCommand;
+    public RelayCommand AddTransactionCommand => _addTransactionCommand;
+    public RelayCommand UpdateTransactionCommand => _updateTransactionCommand;
+    public RelayCommand DeleteTransactionCommand => _deleteTransactionCommand;
     public RelayCommand AddCreditCommand => _addCreditCommand;
     public RelayCommand UpdateCreditCommand => _updateCreditCommand;
     public RelayCommand DeleteCreditCommand => _deleteCreditCommand;
@@ -304,15 +304,15 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public RelayCommand SelectCreditsFilterCommand => _selectCreditsFilterCommand;
     public RelayCommand SelectCreditsTypeModeCommand => _selectCreditsTypeModeCommand;
 
-    public AssetDetailsViewModel(IOperationService? operationService = null, ICreditService? creditService = null, IAssetPriceService? assetPriceService = null)
+    public AssetDetailsViewModel(ITransactionService? transactionService = null, ICreditService? creditService = null, IAssetPriceService? assetPriceService = null)
     {
-        _operationService = operationService;
+        _transactionService = transactionService;
         _creditService = creditService;
         _assetPriceService = assetPriceService;
         _todayInfo = new TodayInfoTracker(ApplyTodayInfo, ResetTodayInfo, UpdateCommandStates);
-        _operationActions = new OperationActions(
-            _operationService,
-            () => HasOperationContext,
+        _transactionActions = new TransactionActions(
+            _transactionService,
+            () => HasTransactionContext,
             () => BrokerName,
             () => PortfolioName,
             () => AssetName,
@@ -326,9 +326,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             () => AssetName,
             LoadAssetDetails,
             (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
-        _addOperationCommand = new RelayCommand(AddOperation, CanEditOperations);
-        _updateOperationCommand = new RelayCommand(UpdateOperation, CanUpdateOperation);
-        _deleteOperationCommand = new RelayCommand(DeleteOperation, CanDeleteOperation);
+        _addTransactionCommand = new RelayCommand(AddTransaction, CanEditTransactions);
+        _updateTransactionCommand = new RelayCommand(UpdateTransaction, CanUpdateTransaction);
+        _deleteTransactionCommand = new RelayCommand(DeleteTransaction, CanDeleteTransaction);
         _addCreditCommand = new RelayCommand(AddCredit, CanEditCredits);
         _updateCreditCommand = new RelayCommand(UpdateCredit, CanUpdateCredit);
         _deleteCreditCommand = new RelayCommand(DeleteCredit, CanDeleteCredit);
@@ -367,10 +367,10 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         HasCreditsContext = true;
         SetCreditsContext(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), rebuild: false);
 
-        Operations.Clear();
-        foreach (var op in details.Operations)
+        Transactions.Clear();
+        foreach (var tx in details.Transactions)
         {
-            Operations.Add(op);
+            Transactions.Add(tx);
         }
 
         Credits.Clear();
@@ -380,7 +380,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         }
         ApplyCreditsFilter();
 
-        SelectedOperation = null;
+        SelectedTransaction = null;
         SelectedCredit = null;
         UpdateCommandStates();
     }
@@ -406,14 +406,14 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalSold = 0;
         TotalCredits = 0;
         _todayInfo.Clear();
-        Operations.Clear();
+        Transactions.Clear();
         Credits.Clear();
         CreditsByMonthChart.Clear();
         CreditsPlotModel = null;
         IsCreditsAggregateView = false;
         HasCreditsContext = false;
         _creditsContextKey = DefaultCreditsContextKey;
-        SelectedOperation = null;
+        SelectedTransaction = null;
         SelectedCredit = null;
         UpdateCommandStates();
     }
@@ -433,17 +433,17 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         !string.IsNullOrWhiteSpace(PortfolioName) &&
         !string.IsNullOrWhiteSpace(AssetName);
 
-    private bool HasOperationContext => _operationService != null && HasAssetContext;
+    private bool HasTransactionContext => _transactionService != null && HasAssetContext;
 
     private bool HasCreditContext => _creditService != null && HasAssetContext;
 
-    private bool CanEditOperations() => HasOperationContext;
+    private bool CanEditTransactions() => HasTransactionContext;
 
-    private bool CanUpdateOperation(object? parameter) =>
-        HasOperationContext && (parameter is OperationDTO || SelectedOperation != null);
+    private bool CanUpdateTransaction(object? parameter) =>
+        HasTransactionContext && (parameter is TransactionDTO || SelectedTransaction != null);
 
-    private bool CanDeleteOperation(object? parameter) =>
-        HasOperationContext && (parameter is OperationDTO || SelectedOperation != null);
+    private bool CanDeleteTransaction(object? parameter) =>
+        HasTransactionContext && (parameter is TransactionDTO || SelectedTransaction != null);
 
     private bool CanEditCredits() => HasCreditContext;
 
@@ -527,7 +527,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalCredits = credits.Sum(credit => credit.Value);
         ApplyCreditsFilter();
 
-        SelectedOperation = null;
+        SelectedTransaction = null;
         SelectedCredit = null;
         UpdateCommandStates();
     }
@@ -547,7 +547,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalSold = 0;
         TotalCredits = 0;
         _todayInfo.Clear();
-        Operations.Clear();
+        Transactions.Clear();
     }
 
     public void UpdateCreditsPlotWidth(double plotWidth)
@@ -1000,9 +1000,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private static string BuildBrokerKey(string brokerName) =>
         $"Broker|{brokerName}";
 
-    private void AddOperation()
+    private void AddTransaction()
     {
-        _operationActions.Add(ShowAddOperationDialog);
+        _transactionActions.Add(ShowAddTransactionDialog);
     }
 
     private void AddCredit()
@@ -1010,14 +1010,14 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _creditActions.Add(ShowAddCreditDialog);
     }
 
-    private void UpdateOperation(object? parameter)
+    private void UpdateTransaction(object? parameter)
     {
-        if (parameter is OperationDTO operation)
+        if (parameter is TransactionDTO transaction)
         {
-            SelectedOperation = operation;
+            SelectedTransaction = transaction;
         }
 
-        _operationActions.Update(SelectedOperation, ShowUpdateOperationDialog);
+        _transactionActions.Update(SelectedTransaction, ShowUpdateTransactionDialog);
     }
 
     private void UpdateCredit(object? parameter)
@@ -1030,14 +1030,14 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _creditActions.Update(SelectedCredit, ShowUpdateCreditDialog);
     }
 
-    private void DeleteOperation(object? parameter)
+    private void DeleteTransaction(object? parameter)
     {
-        if (parameter is OperationDTO operation)
+        if (parameter is TransactionDTO transaction)
         {
-            SelectedOperation = operation;
+            SelectedTransaction = transaction;
         }
 
-        _operationActions.Delete(SelectedOperation, ShowDeleteOperationDialog);
+        _transactionActions.Delete(SelectedTransaction, ShowDeleteTransactionDialog);
     }
 
     private void DeleteCredit(object? parameter)
@@ -1052,9 +1052,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     private void UpdateCommandStates()
     {
-        _addOperationCommand.RaiseCanExecuteChanged();
-        _updateOperationCommand.RaiseCanExecuteChanged();
-        _deleteOperationCommand.RaiseCanExecuteChanged();
+        _addTransactionCommand.RaiseCanExecuteChanged();
+        _updateTransactionCommand.RaiseCanExecuteChanged();
+        _deleteTransactionCommand.RaiseCanExecuteChanged();
         _addCreditCommand.RaiseCanExecuteChanged();
         _updateCreditCommand.RaiseCanExecuteChanged();
         _deleteCreditCommand.RaiseCanExecuteChanged();
@@ -1062,9 +1062,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _copyAssetNameCommand.RaiseCanExecuteChanged();
     }
 
-    private bool ShowOperationDialog(OperationDialogViewModel viewModel)
+    private bool ShowTransactionDialog(TransactionDialogViewModel viewModel)
     {
-        var dialog = new OperationDialog(viewModel)
+        var dialog = new TransactionDialog(viewModel)
         {
             Owner = System.Windows.Application.Current?.MainWindow
         };
@@ -1072,16 +1072,16 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         return dialog.ShowDialog() == true;
     }
 
-    private OperationDialogData? ShowAddOperationDialog()
+    private TransactionDialogData? ShowAddTransactionDialog()
     {
-        var dialogViewModel = OperationDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
-        if (!ShowOperationDialog(dialogViewModel))
+        var dialogViewModel = TransactionDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        if (!ShowTransactionDialog(dialogViewModel))
         {
             return null;
         }
 
-        return new OperationDialogData(
-            dialogViewModel.OperationId,
+        return new TransactionDialogData(
+            dialogViewModel.TransactionId,
             dialogViewModel.Date,
             dialogViewModel.Type,
             dialogViewModel.Quantity,
@@ -1089,31 +1089,31 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             dialogViewModel.Fees);
     }
 
-    private OperationDialogData? ShowUpdateOperationDialog()
+    private TransactionDialogData? ShowUpdateTransactionDialog()
     {
-        if (SelectedOperation == null)
+        if (SelectedTransaction == null)
         {
             return null;
         }
 
-        var dialogViewModel = OperationDialogViewModel.CreateForUpdate(
+        var dialogViewModel = TransactionDialogViewModel.CreateForUpdate(
             BrokerName,
             PortfolioName,
             AssetName,
-            SelectedOperation.Id,
-            SelectedOperation.Date,
-            SelectedOperation.Type,
-            SelectedOperation.Quantity,
-            SelectedOperation.UnitPrice,
-            SelectedOperation.Fees);
+            SelectedTransaction.Id,
+            SelectedTransaction.Date,
+            SelectedTransaction.Type,
+            SelectedTransaction.Quantity,
+            SelectedTransaction.UnitPrice,
+            SelectedTransaction.Fees);
 
-        if (!ShowOperationDialog(dialogViewModel))
+        if (!ShowTransactionDialog(dialogViewModel))
         {
             return null;
         }
 
-        return new OperationDialogData(
-            dialogViewModel.OperationId,
+        return new TransactionDialogData(
+            dialogViewModel.TransactionId,
             dialogViewModel.Date,
             dialogViewModel.Type,
             dialogViewModel.Quantity,
@@ -1121,25 +1121,25 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             dialogViewModel.Fees);
     }
 
-    private bool ShowDeleteOperationDialog()
+    private bool ShowDeleteTransactionDialog()
     {
-        if (SelectedOperation == null)
+        if (SelectedTransaction == null)
         {
             return false;
         }
 
-        var dialogViewModel = OperationDialogViewModel.CreateForDelete(
+        var dialogViewModel = TransactionDialogViewModel.CreateForDelete(
             BrokerName,
             PortfolioName,
             AssetName,
-            SelectedOperation.Id,
-            SelectedOperation.Date,
-            SelectedOperation.Type,
-            SelectedOperation.Quantity,
-            SelectedOperation.UnitPrice,
-            SelectedOperation.Fees);
+            SelectedTransaction.Id,
+            SelectedTransaction.Date,
+            SelectedTransaction.Type,
+            SelectedTransaction.Quantity,
+            SelectedTransaction.UnitPrice,
+            SelectedTransaction.Fees);
 
-        return ShowOperationDialog(dialogViewModel);
+        return ShowTransactionDialog(dialogViewModel);
     }
 
     private bool ShowCreditDialog(CreditDialogViewModel viewModel)

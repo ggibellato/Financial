@@ -5,15 +5,15 @@ using System.Windows.Media;
 namespace Financial.Presentation.App.Converters;
 
 /// <summary>
-/// Converts operation type (Buy/Sell) to color brush
+/// Converts transaction type (Buy/Sell) to color brush
 /// </summary>
-public class OperationTypeToColorConverter : IValueConverter
+public class TransactionTypeToColorConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is string operationType)
+        if (value is string transactionType)
         {
-            return operationType.Equals("Buy", StringComparison.OrdinalIgnoreCase)
+            return transactionType.Equals("Buy", StringComparison.OrdinalIgnoreCase)
                 ? Brushes.Green
                 : Brushes.Red;
         }
@@ -25,5 +25,3 @@ public class OperationTypeToColorConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
-
-

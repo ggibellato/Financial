@@ -83,9 +83,9 @@ public class AssetDetailsDTO
     public decimal TotalCredits { get; set; }
 
     /// <summary>
-    /// List of all operations (buy/sell)
+    /// List of all transactions (buy/sell)
     /// </summary>
-    public List<OperationDTO> Operations { get; set; } = new();
+    public List<TransactionDTO> Transactions { get; set; } = new();
 
     /// <summary>
     /// List of all credits (dividends/rent)

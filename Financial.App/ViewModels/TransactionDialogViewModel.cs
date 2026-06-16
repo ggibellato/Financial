@@ -3,14 +3,14 @@ using Financial.Presentation.App.ViewModels;
 
 namespace Financial.Presentation.App.ViewModels;
 
-public enum OperationDialogMode
+public enum TransactionDialogMode
 {
     Add,
     Update,
     Delete
 }
 
-public sealed class OperationDialogViewModel : ViewModelBase
+public sealed class TransactionDialogViewModel : ViewModelBase
 {
     private DateTime _date;
     private string _type = string.Empty;
@@ -19,29 +19,29 @@ public sealed class OperationDialogViewModel : ViewModelBase
     private decimal _fees;
     private string _validationMessage = string.Empty;
 
-    public OperationDialogMode Mode { get; }
-    public Guid OperationId { get; }
+    public TransactionDialogMode Mode { get; }
+    public Guid TransactionId { get; }
     public string BrokerName { get; }
     public string PortfolioName { get; }
     public string AssetName { get; }
 
     public string Title => Mode switch
     {
-        OperationDialogMode.Add => "Add Operation",
-        OperationDialogMode.Update => "Update Operation",
-        OperationDialogMode.Delete => "Delete Operation",
-        _ => "Operation"
+        TransactionDialogMode.Add => "Add Transaction",
+        TransactionDialogMode.Update => "Update Transaction",
+        TransactionDialogMode.Delete => "Delete Transaction",
+        _ => "Transaction"
     };
 
     public string ConfirmLabel => Mode switch
     {
-        OperationDialogMode.Add => "Add",
-        OperationDialogMode.Update => "Update",
-        OperationDialogMode.Delete => "Delete",
+        TransactionDialogMode.Add => "Add",
+        TransactionDialogMode.Update => "Update",
+        TransactionDialogMode.Delete => "Delete",
         _ => "Confirm"
     };
 
-    public bool IsReadOnly => Mode == OperationDialogMode.Delete;
+    public bool IsReadOnly => Mode == TransactionDialogMode.Delete;
     public bool IsEditable => !IsReadOnly;
 
     public DateTime Date
@@ -120,12 +120,12 @@ public sealed class OperationDialogViewModel : ViewModelBase
 
     public event EventHandler<bool?>? CloseRequested;
 
-    public OperationDialogViewModel(
-        OperationDialogMode mode,
+    public TransactionDialogViewModel(
+        TransactionDialogMode mode,
         string brokerName,
         string portfolioName,
         string assetName,
-        Guid operationId,
+        Guid transactionId,
         DateTime date,
         string type,
         decimal quantity,
@@ -136,7 +136,7 @@ public sealed class OperationDialogViewModel : ViewModelBase
         BrokerName = brokerName;
         PortfolioName = portfolioName;
         AssetName = assetName;
-        OperationId = operationId;
+        TransactionId = transactionId;
 
         _date = date;
         _type = type;
@@ -150,10 +150,10 @@ public sealed class OperationDialogViewModel : ViewModelBase
         Validate();
     }
 
-    public static OperationDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName)
+    public static TransactionDialogViewModel CreateForAdd(string brokerName, string portfolioName, string assetName)
     {
-        return new OperationDialogViewModel(
-            OperationDialogMode.Add,
+        return new TransactionDialogViewModel(
+            TransactionDialogMode.Add,
             brokerName,
             portfolioName,
             assetName,
@@ -165,10 +165,10 @@ public sealed class OperationDialogViewModel : ViewModelBase
             0);
     }
 
-    public static OperationDialogViewModel CreateForUpdate(string brokerName, string portfolioName, string assetName, Guid id, DateTime date, string type, decimal quantity, decimal unitPrice, decimal fees)
+    public static TransactionDialogViewModel CreateForUpdate(string brokerName, string portfolioName, string assetName, Guid id, DateTime date, string type, decimal quantity, decimal unitPrice, decimal fees)
     {
-        return new OperationDialogViewModel(
-            OperationDialogMode.Update,
+        return new TransactionDialogViewModel(
+            TransactionDialogMode.Update,
             brokerName,
             portfolioName,
             assetName,
@@ -180,10 +180,10 @@ public sealed class OperationDialogViewModel : ViewModelBase
             fees);
     }
 
-    public static OperationDialogViewModel CreateForDelete(string brokerName, string portfolioName, string assetName, Guid id, DateTime date, string type, decimal quantity, decimal unitPrice, decimal fees)
+    public static TransactionDialogViewModel CreateForDelete(string brokerName, string portfolioName, string assetName, Guid id, DateTime date, string type, decimal quantity, decimal unitPrice, decimal fees)
     {
-        return new OperationDialogViewModel(
-            OperationDialogMode.Delete,
+        return new TransactionDialogViewModel(
+            TransactionDialogMode.Delete,
             brokerName,
             portfolioName,
             assetName,
@@ -213,7 +213,7 @@ public sealed class OperationDialogViewModel : ViewModelBase
 
     private bool CanConfirm()
     {
-        if (Mode == OperationDialogMode.Delete)
+        if (Mode == TransactionDialogMode.Delete)
         {
             return true;
         }
@@ -223,8 +223,8 @@ public sealed class OperationDialogViewModel : ViewModelBase
 
     private void Validate()
     {
-        ValidationMessage = OperationDialogValidation.BuildValidationMessage(
-            Mode == OperationDialogMode.Delete,
+        ValidationMessage = TransactionDialogValidation.BuildValidationMessage(
+            Mode == TransactionDialogMode.Delete,
             Date,
             Type,
             Quantity,
@@ -233,5 +233,3 @@ public sealed class OperationDialogViewModel : ViewModelBase
         ConfirmCommand.RaiseCanExecuteChanged();
     }
 }
-
-

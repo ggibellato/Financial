@@ -47,7 +47,7 @@ namespace Financial.Presentation.App
                         return factory.Create(options);
                     });
                     services.AddSingleton<INavigationService, NavigationService>();
-                    services.AddSingleton<IOperationService, OperationService>();
+                    services.AddSingleton<ITransactionService, TransactionService>();
                     services.AddSingleton<ICreditService, CreditService>();
                     services.AddSingleton<IAssetPriceService, AssetPriceService>();
 

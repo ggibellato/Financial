@@ -91,10 +91,10 @@ public sealed class JSONRepository : IRepository
             Class = asset.Class,
             Quantity = asset.Quantity,
             AvaragePrice = asset.AvargePrice,
-            TotalBought = SumOperationsByType(asset.Operations, Operation.OperationType.Buy),
-            TotalSold = SumOperationsByType(asset.Operations, Operation.OperationType.Sell),
+            TotalBought = SumTransactionsByType(asset.Transactions, Transaction.TransactionType.Buy),
+            TotalSold = SumTransactionsByType(asset.Transactions, Transaction.TransactionType.Sell),
             Credits = BuildCreditInfo(asset.Credits),
-            InvestedHistory = BuildInvestedHistory(asset.Operations)
+            InvestedHistory = BuildInvestedHistory(asset.Transactions)
         };
     }
 
@@ -145,8 +145,8 @@ public sealed class JSONRepository : IRepository
         FilterActiveAssets(GetAssetsByBrokerInternal(brokerName), activeOnly)
             .SelectMany(selector);
 
-    private IEnumerable<Operation> GetOperationsByBroker(string brokerName, bool activeOnly) =>
-        GetAssetItemsByBroker(brokerName, activeOnly, asset => asset.Operations);
+    private IEnumerable<Transaction> GetTransactionsByBroker(string brokerName, bool activeOnly) =>
+        GetAssetItemsByBroker(brokerName, activeOnly, asset => asset.Transactions);
 
     private IEnumerable<Credit> GetCreditsByBroker(string brokerName, bool activeOnly) =>
         GetAssetItemsByBroker(brokerName, activeOnly, asset => asset.Credits);
@@ -163,12 +163,12 @@ public sealed class JSONRepository : IRepository
 
     private decimal GetTotalBoughtByBroker(string brokerName, bool active)
     {
-        return GetTotalOperationsByBroker(brokerName, active, Operation.OperationType.Buy);
+        return GetTotalTransactionsByBroker(brokerName, active, Transaction.TransactionType.Buy);
     }
 
     private decimal GetTotalSoldByBroker(string brokerName, bool active)
     {
-        return GetTotalOperationsByBroker(brokerName, active, Operation.OperationType.Sell);
+        return GetTotalTransactionsByBroker(brokerName, active, Transaction.TransactionType.Sell);
     }
 
     private CreditInfoDTO GetTotalCreditsByBroker(string brokerName, bool active)
@@ -176,26 +176,26 @@ public sealed class JSONRepository : IRepository
         return BuildCreditInfo(GetCreditsByBroker(brokerName, active));
     }
 
-    private decimal GetTotalOperationsByBroker(string brokerName, bool active, Operation.OperationType type)
+    private decimal GetTotalTransactionsByBroker(string brokerName, bool active, Transaction.TransactionType type)
     {
-        return SumOperationsByType(GetOperationsByBroker(brokerName, active), type);
+        return SumTransactionsByType(GetTransactionsByBroker(brokerName, active), type);
     }
 
-    private static decimal SumOperationsByType(IEnumerable<Operation> operations, Operation.OperationType type)
+    private static decimal SumTransactionsByType(IEnumerable<Transaction> transactions, Transaction.TransactionType type)
     {
-        return operations
-            .Where(o => o.Type == type)
-            .Sum(o => o.TotalPrice);
+        return transactions
+            .Where(t => t.Type == type)
+            .Sum(t => t.TotalPrice);
     }
 
-    private static Dictionary<DateOnly, decimal> BuildInvestedHistory(IEnumerable<Operation> operations)
+    private static Dictionary<DateOnly, decimal> BuildInvestedHistory(IEnumerable<Transaction> transactions)
     {
         var history = new Dictionary<DateOnly, decimal>();
         decimal currentValue = 0;
-        foreach (var operation in operations.OrderBy(o => o.Date))
+        foreach (var transaction in transactions.OrderBy(t => t.Date))
         {
-            var key = new DateOnly(operation.Date.Year, operation.Date.Month, 1);
-            currentValue += operation.TotalPrice * (operation.Type == Operation.OperationType.Buy ? 1 : -1);
+            var key = new DateOnly(transaction.Date.Year, transaction.Date.Month, 1);
+            currentValue += transaction.TotalPrice * (transaction.Type == Transaction.TransactionType.Buy ? 1 : -1);
             history[key] = currentValue;
         }
 

@@ -6,58 +6,58 @@ using System;
 
 namespace Financial.Infrastructure.Services;
 
-public sealed class OperationService : IOperationService
+public sealed class TransactionService : ITransactionService
 {
     private readonly IRepository _repository;
     private readonly INavigationService _navigationService;
 
-    public OperationService(IRepository repository, INavigationService navigationService)
+    public TransactionService(IRepository repository, INavigationService navigationService)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
     }
 
-    public AssetDetailsDTO? AddOperation(OperationCreateDTO request)
+    public AssetDetailsDTO? AddTransaction(TransactionCreateDTO request)
     {
-        return AssetServiceHelper.ExecuteParsedMutation<Operation.OperationType>(
+        return AssetServiceHelper.ExecuteParsedMutation<Transaction.TransactionType>(
             _repository,
             _navigationService,
             request.BrokerName,
             request.PortfolioName,
             request.AssetName,
             request.Type,
-            OperationTypeParser.TryParse,
-            (asset, operationType) =>
+            TransactionTypeParser.TryParse,
+            (asset, transactionType) =>
             {
-                var operation = Operation.Create(request.Date, operationType, request.Quantity, request.UnitPrice, request.Fees);
-                asset.AddOperation(operation);
+                var transaction = Transaction.Create(request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees);
+                asset.AddTransaction(transaction);
                 return true;
             });
     }
 
-    public AssetDetailsDTO? UpdateOperation(OperationUpdateDTO request)
+    public AssetDetailsDTO? UpdateTransaction(TransactionUpdateDTO request)
     {
         if (request.Id == Guid.Empty)
         {
             return null;
         }
 
-        return AssetServiceHelper.ExecuteParsedMutation<Operation.OperationType>(
+        return AssetServiceHelper.ExecuteParsedMutation<Transaction.TransactionType>(
             _repository,
             _navigationService,
             request.BrokerName,
             request.PortfolioName,
             request.AssetName,
             request.Type,
-            OperationTypeParser.TryParse,
-            (asset, operationType) =>
+            TransactionTypeParser.TryParse,
+            (asset, transactionType) =>
             {
-                var updatedOperation = Operation.CreateWithId(request.Id, request.Date, operationType, request.Quantity, request.UnitPrice, request.Fees);
-                return asset.UpdateOperation(updatedOperation);
+                var updatedTransaction = Transaction.CreateWithId(request.Id, request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees);
+                return asset.UpdateTransaction(updatedTransaction);
             });
     }
 
-    public AssetDetailsDTO? DeleteOperation(OperationDeleteDTO request)
+    public AssetDetailsDTO? DeleteTransaction(TransactionDeleteDTO request)
     {
         if (request.Id == Guid.Empty)
         {
@@ -70,7 +70,6 @@ public sealed class OperationService : IOperationService
             request.BrokerName,
             request.PortfolioName,
             request.AssetName,
-            asset => asset.RemoveOperation(request.Id));
+            asset => asset.RemoveTransaction(request.Id));
     }
 }
-
