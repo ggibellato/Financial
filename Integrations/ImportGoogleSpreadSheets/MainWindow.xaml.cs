@@ -1,14 +1,15 @@
 using Financial.Infrastructure.Integrations.FinancialToolSupport;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Text.Json;
 
 namespace Financial.Infrastructure.Integrations.ImportGoogleSpreadSheets;
 
@@ -137,7 +138,7 @@ public partial class MainWindow : Window
         {
             SetUIBusy(true, "Starting data generation...");
             
-            IGenerator generator = new GoogleGenerator(_service, edtPath.Text);
+            IGenerator generator = new GoogleGenerator(_service, new LocalJsonStorage(edtPath.Text));
             var fileNames = selectedFiles.Select(f => f.Name).ToList();
 
             var progress = new Progress<string>(status =>

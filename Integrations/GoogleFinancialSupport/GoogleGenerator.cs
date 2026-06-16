@@ -1,13 +1,12 @@
+using Financial.Application.Interfaces;
 using Financial.Common;
 using Financial.Domain.Entities;
 using Financial.Infrastructure.Integrations.FinancialToolSupport;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
@@ -47,11 +46,12 @@ public class GoogleGenerator : IGenerator
     };
 
     private readonly GoogleService _service;
-    private readonly string _path;
+    private readonly IJsonStorage _storage;
 
-    public GoogleGenerator(GoogleService service, string path) {
+    public GoogleGenerator(GoogleService service, IJsonStorage storage)
+    {
         _service = service ?? throw new ArgumentNullException(nameof(service));
-        _path = path;
+        _storage = storage ?? throw new ArgumentNullException(nameof(storage));
     }
 
     public async Task GenerateAsync(List<string> fileNames, IProgress<string> progress = null)
@@ -122,7 +122,7 @@ public class GoogleGenerator : IGenerator
             }
         }
         progress?.Report("Saving data...");
-        Save(data);
+        await SaveAsync(data);
         progress?.Report("Complete!");
     }
 
@@ -208,17 +208,10 @@ public class GoogleGenerator : IGenerator
         };
     }
 
-    private static readonly JsonSerializerOptions _serializerOptions = new()
+    private async Task SaveAsync(Investments data)
     {
-        Converters = { new JsonStringEnumConverter() },
-        WriteIndented = true,
-        TypeInfoResolver = new PrivateConstructorContractResolver()
-    };
-
-    private void Save(Investments data)
-    {
-        string json = JsonSerializer.Serialize(data, _serializerOptions);
-        File.WriteAllText(Path.Combine(_path, "data.json"), json);
+        var json = JsonSerializer.Serialize(data, InvestmentsSerializerOptions.Default);
+        await _storage.WriteAsync(json);
     }
 
     private async Task<List<Transaction>> CreateTransactionsAsync(string id, string spreadSheetName)
