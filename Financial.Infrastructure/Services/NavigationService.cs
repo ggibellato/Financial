@@ -27,7 +27,7 @@ public class NavigationService : INavigationService
 
         var rootNode = new TreeNodeDTO
         {
-            NodeType = "Investments",
+            NodeType = TreeNodeTypes.Investments,
             DisplayName = "All Investments"
         };
 
@@ -143,7 +143,7 @@ public class NavigationService : INavigationService
     {
         var brokerNode = new TreeNodeDTO
         {
-            NodeType = "Broker",
+            NodeType = TreeNodeTypes.Broker,
             DisplayName = $"{broker.Name} ({broker.Currency})",
             Metadata = new Dictionary<string, object>
             {
@@ -166,7 +166,7 @@ public class NavigationService : INavigationService
     {
         var portfolioNode = new TreeNodeDTO
         {
-            NodeType = "Portfolio",
+            NodeType = TreeNodeTypes.Portfolio,
             DisplayName = $"{portfolio.Name} ({portfolio.AssetCount} assets)",
             Metadata = new Dictionary<string, object>
             {
@@ -188,7 +188,7 @@ public class NavigationService : INavigationService
     {
         return new TreeNodeDTO
         {
-            NodeType = "Asset",
+            NodeType = TreeNodeTypes.Asset,
             DisplayName = asset.Name,
             Metadata = new Dictionary<string, object>
             {
