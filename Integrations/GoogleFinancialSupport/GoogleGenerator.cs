@@ -1,3 +1,4 @@
+using Financial.Common;
 using Financial.Domain.Entities;
 using Financial.Infrastructure.Integrations.FinancialToolSupport;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
@@ -5,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
@@ -205,9 +208,16 @@ public class GoogleGenerator : IGenerator
         };
     }
 
+    private static readonly JsonSerializerOptions _serializerOptions = new()
+    {
+        Converters = { new JsonStringEnumConverter() },
+        WriteIndented = true,
+        TypeInfoResolver = new PrivateConstructorContractResolver()
+    };
+
     private void Save(Investments data)
     {
-        string json = data.Serialize();
+        string json = JsonSerializer.Serialize(data, _serializerOptions);
         File.WriteAllText(Path.Combine(_path, "data.json"), json);
     }
 
