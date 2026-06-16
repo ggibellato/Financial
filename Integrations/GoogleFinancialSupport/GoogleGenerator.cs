@@ -184,7 +184,7 @@ public class GoogleGenerator : IGenerator
 
     private static AssetClassificationEntry ResolveAssetClassification(string assetName, CountryCode brokerCountry)
     {
-        if (HardcodedAssetClassificationLookup.TryGet(assetName, out var classification))
+        if (AssetClassificationLookup.TryGet(assetName, out var classification))
         {
             return classification;
         }

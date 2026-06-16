@@ -15,6 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="AssetClassifications.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Financial.Application\Financial.Application.csproj" />
     <ProjectReference Include="..\..\Financial.Domain\Financial.Domain.csproj" />
     <ProjectReference Include="..\FinancialToolSupport\FinancialToolSupport.csproj" />
