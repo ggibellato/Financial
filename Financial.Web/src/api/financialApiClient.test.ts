@@ -44,7 +44,7 @@ describe('financialApiClient', () => {
     expect(headers.get('Content-Type')).toBeNull()
   })
 
-  it('posts a new operation', async () => {
+  it('posts a new transaction', async () => {
     const responseBody = { name: 'BCIA11' } as AssetDetailsDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({
@@ -52,7 +52,7 @@ describe('financialApiClient', () => {
       fetch: fetchMock,
     })
 
-    await client.addOperation({
+    await client.addTransaction({
       brokerName: 'XPI',
       portfolioName: 'Default',
       assetName: 'BCIA11',
@@ -64,7 +64,7 @@ describe('financialApiClient', () => {
     })
 
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/operations`)
+    expect(url).toBe(`${API_BASE_URL}/transactions`)
     expect(init?.method).toBe('POST')
     const headers = init?.headers as Headers
     expect(headers.get('Content-Type')).toBe('application/json')

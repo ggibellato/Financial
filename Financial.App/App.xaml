@@ -9,7 +9,7 @@
         <converters:BoolToActiveStatusConverter x:Key="BoolToActiveStatusConverter"/>
         <converters:CurrencyFormatConverter x:Key="CurrencyFormatConverter"/>
         <converters:DateFormatConverter x:Key="DateFormatConverter"/>
-        <converters:OperationTypeToColorConverter x:Key="OperationTypeToColorConverter"/>
+        <converters:TransactionTypeToColorConverter x:Key="TransactionTypeToColorConverter"/>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <converters:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
         <converters:NodeTypeToVisibilityConverter x:Key="NodeTypeToVisibilityConverter"/>

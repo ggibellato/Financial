@@ -9,11 +9,11 @@ namespace Financial.Presentation.App.ViewModels;
 /// </summary>
 public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsViewModel>
 {
-    public MainNavigationViewModel(INavigationService navigationService, IOperationService operationService, ICreditService creditService, IAssetPriceService assetPriceService)
+    public MainNavigationViewModel(INavigationService navigationService, ITransactionService transactionService, ICreditService creditService, IAssetPriceService assetPriceService)
         : base(
             navigationService ?? throw new ArgumentNullException(nameof(navigationService)),
             new AssetDetailsViewModel(
-                operationService ?? throw new ArgumentNullException(nameof(operationService)),
+                transactionService ?? throw new ArgumentNullException(nameof(transactionService)),
                 creditService ?? throw new ArgumentNullException(nameof(creditService)),
                 assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService))))
     {

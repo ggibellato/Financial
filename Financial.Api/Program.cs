@@ -59,7 +59,7 @@ builder.Services.AddSingleton<IRepository>(sp =>
     return factory.Create(options);
 });
 builder.Services.AddSingleton<INavigationService, NavigationService>();
-builder.Services.AddSingleton<IOperationService, OperationService>();
+builder.Services.AddSingleton<ITransactionService, TransactionService>();
 builder.Services.AddSingleton<ICreditService, CreditService>();
 builder.Services.AddSingleton<IAssetPriceService, AssetPriceService>();
 builder.Services.AddSingleton<IDividendService, DividendService>();

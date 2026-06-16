@@ -52,7 +52,7 @@ export default function AssetDetailPage() {
   const { brokerName, portfolioName, assetName } = useParams()
   const tabs = [
     { id: 'summary', label: 'Summary' },
-    { id: 'operations', label: 'Operations' },
+    { id: 'transactions', label: 'Transactions' },
     { id: 'credits', label: 'Credits' },
   ] as const
   type AssetTab = (typeof tabs)[number]['id']
@@ -77,9 +77,9 @@ export default function AssetDetailPage() {
   const [activeTab, setActiveTab] = useState<AssetTab>(() => resolveDefaultTab(location.state))
   const [creditsFilter, setCreditsFilter] = useState<CreditsFilterId>('last-year')
   const [creditsMode, setCreditsMode] = useState<CreditsTypeModeId>('stacked')
-  const [operationEditId, setOperationEditId] = useState<string | null>(null)
-  const [operationDate, setOperationDate] = useState('')
-  const [operationType, setOperationType] = useState('Buy')
+  const [transactionEditId, setTransactionEditId] = useState<string | null>(null)
+  const [transactionDate, setTransactionDate] = useState('')
+  const [transactionType, setTransactionType] = useState('Buy')
   const [quantity, setQuantity] = useState('')
   const [unitPrice, setUnitPrice] = useState('')
   const [fees, setFees] = useState('0')
@@ -176,36 +176,36 @@ export default function AssetDetailPage() {
     }
   }, [apiClient, brokerName, portfolioName, assetName])
 
-  const resetOperationForm = useCallback(() => {
-    setOperationEditId(null)
-    setOperationDate('')
-    setOperationType('Buy')
+  const resetTransactionForm = useCallback(() => {
+    setTransactionEditId(null)
+    setTransactionDate('')
+    setTransactionType('Buy')
     setQuantity('')
     setUnitPrice('')
     setFees('0')
   }, [])
 
-  const startEditOperation = useCallback(
-    (operation: AssetDetailsDto['operations'][number]) => {
-      setOperationEditId(operation.id)
-      setOperationDate(toDateInputValue(operation.date))
-      setOperationType(operation.type)
-      setQuantity(operation.quantity.toString())
-      setUnitPrice(operation.unitPrice.toString())
-      setFees(operation.fees.toString())
+  const startEditTransaction = useCallback(
+    (transaction: AssetDetailsDto['transactions'][number]) => {
+      setTransactionEditId(transaction.id)
+      setTransactionDate(toDateInputValue(transaction.date))
+      setTransactionType(transaction.type)
+      setQuantity(transaction.quantity.toString())
+      setUnitPrice(transaction.unitPrice.toString())
+      setFees(transaction.fees.toString())
       setFormError(null)
     },
     [toDateInputValue],
   )
 
-  const submitOperation = useCallback(async () => {
+  const submitTransaction = useCallback(async () => {
     if (!brokerName || !portfolioName || !assetName) {
       setFormError('Asset route parameters are required.')
       return
     }
 
-    if (!operationDate) {
-      setFormError('Operation date is required.')
+    if (!transactionDate) {
+      setFormError('Transaction date is required.')
       return
     }
 
@@ -220,29 +220,29 @@ export default function AssetDetailPage() {
     setIsSubmitting(true)
     setFormError(null)
     try {
-      const normalizedDate = normalizeDateTime(operationDate)
+      const normalizedDate = normalizeDateTime(transactionDate)
       const request = {
         brokerName,
         portfolioName,
         assetName,
         date: normalizedDate,
-        type: operationType,
+        type: transactionType,
         quantity: parsedQuantity,
         unitPrice: parsedUnitPrice,
         fees: parsedFees,
       }
-      const updated = operationEditId
-        ? await apiClient.updateOperation({ ...request, id: operationEditId })
-        : await apiClient.addOperation(request)
+      const updated = transactionEditId
+        ? await apiClient.updateTransaction({ ...request, id: transactionEditId })
+        : await apiClient.addTransaction(request)
       setAsset(updated)
-      resetOperationForm()
+      resetTransactionForm()
     } catch (err) {
       const message =
         err instanceof Error
           ? err.message
-          : operationEditId
-            ? 'Unable to update operation.'
-            : 'Unable to add operation.'
+          : transactionEditId
+            ? 'Unable to update transaction.'
+            : 'Unable to add transaction.'
       setFormError(message)
     } finally {
       setIsSubmitting(false)
@@ -252,56 +252,56 @@ export default function AssetDetailPage() {
     assetName,
     brokerName,
     fees,
-    operationDate,
-    operationEditId,
-    operationType,
+    transactionDate,
+    transactionEditId,
+    transactionType,
     portfolioName,
     quantity,
-    resetOperationForm,
+    resetTransactionForm,
     unitPrice,
     normalizeDateTime,
   ])
 
-  const deleteOperation = useCallback(
+  const deleteTransaction = useCallback(
     async (id: string) => {
       if (!brokerName || !portfolioName || !assetName) {
         setFormError('Asset route parameters are required.')
         return
       }
 
-      if (!window.confirm('Delete this operation?')) {
+      if (!window.confirm('Delete this transaction?')) {
         return
       }
 
       setIsSubmitting(true)
       setFormError(null)
       try {
-        const updated = await apiClient.deleteOperation({
+        const updated = await apiClient.deleteTransaction({
           brokerName,
           portfolioName,
           assetName,
           id,
         })
         setAsset(updated)
-        if (operationEditId === id) {
-          resetOperationForm()
+        if (transactionEditId === id) {
+          resetTransactionForm()
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unable to delete operation.'
+        const message = err instanceof Error ? err.message : 'Unable to delete transaction.'
         setFormError(message)
       } finally {
         setIsSubmitting(false)
       }
     },
-    [apiClient, assetName, brokerName, operationEditId, portfolioName, resetOperationForm],
+    [apiClient, assetName, brokerName, transactionEditId, portfolioName, resetTransactionForm],
   )
 
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault()
-      void submitOperation()
+      void submitTransaction()
     },
-    [submitOperation],
+    [submitTransaction],
   )
 
   const resetCreditForm = useCallback(() => {
@@ -426,13 +426,13 @@ export default function AssetDetailPage() {
 
   useEffect(() => {
     setActiveTab(resolveDefaultTab(location.state))
-    resetOperationForm()
+    resetTransactionForm()
     resetCreditForm()
     setFormError(null)
     setCreditError(null)
     setCreditsFilter('last-year')
     setCreditsMode('stacked')
-  }, [assetName, brokerName, portfolioName, location.state, resetOperationForm, resetCreditForm])
+  }, [assetName, brokerName, portfolioName, location.state, resetTransactionForm, resetCreditForm])
 
   if (isLoading) {
     return <LoadingState message="Loading asset..." />
@@ -446,7 +446,7 @@ export default function AssetDetailPage() {
     return <p>Asset not found.</p>
   }
 
-  const isEditingOperation = operationEditId !== null
+  const isEditingTransaction = transactionEditId !== null
   const isEditingCredit = creditEditId !== null
 
   return (
@@ -494,38 +494,38 @@ export default function AssetDetailPage() {
       </div>
       <div
         role="tabpanel"
-        id="asset-tab-operations"
-        aria-labelledby="asset-tab-operations-button"
-        hidden={activeTab !== 'operations'}
+        id="asset-tab-transactions"
+        aria-labelledby="asset-tab-transactions-button"
+        hidden={activeTab !== 'transactions'}
         className="detail-panel"
       >
-        <h3>{isEditingOperation ? 'Edit operation' : 'New operation'}</h3>
-        <form onSubmit={handleSubmit} aria-label={isEditingOperation ? 'Edit operation' : 'New operation'}>
+        <h3>{isEditingTransaction ? 'Edit transaction' : 'New transaction'}</h3>
+        <form onSubmit={handleSubmit} aria-label={isEditingTransaction ? 'Edit transaction' : 'New transaction'}>
           <div>
-            <label htmlFor="operation-date">Date</label>
+            <label htmlFor="transaction-date">Date</label>
             <input
-              id="operation-date"
+              id="transaction-date"
               type="date"
-              value={operationDate}
-              onChange={(event) => setOperationDate(event.target.value)}
+              value={transactionDate}
+              onChange={(event) => setTransactionDate(event.target.value)}
               required
             />
           </div>
           <div>
-            <label htmlFor="operation-type">Type</label>
+            <label htmlFor="transaction-type">Type</label>
             <select
-              id="operation-type"
-              value={operationType}
-              onChange={(event) => setOperationType(event.target.value)}
+              id="transaction-type"
+              value={transactionType}
+              onChange={(event) => setTransactionType(event.target.value)}
             >
               <option value="Buy">Buy</option>
               <option value="Sell">Sell</option>
             </select>
           </div>
           <div>
-            <label htmlFor="operation-quantity">Quantity</label>
+            <label htmlFor="transaction-quantity">Quantity</label>
             <input
-              id="operation-quantity"
+              id="transaction-quantity"
               type="number"
               value={quantity}
               onChange={(event) => setQuantity(event.target.value)}
@@ -535,9 +535,9 @@ export default function AssetDetailPage() {
             />
           </div>
           <div>
-            <label htmlFor="operation-unit-price">Unit price</label>
+            <label htmlFor="transaction-unit-price">Unit price</label>
             <input
-              id="operation-unit-price"
+              id="transaction-unit-price"
               type="number"
               value={unitPrice}
               onChange={(event) => setUnitPrice(event.target.value)}
@@ -547,9 +547,9 @@ export default function AssetDetailPage() {
             />
           </div>
           <div>
-            <label htmlFor="operation-fees">Fees</label>
+            <label htmlFor="transaction-fees">Fees</label>
             <input
-              id="operation-fees"
+              id="transaction-fees"
               type="number"
               value={fees}
               onChange={(event) => setFees(event.target.value)}
@@ -559,32 +559,32 @@ export default function AssetDetailPage() {
           </div>
           <div className="detail-actions">
             <button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : isEditingOperation ? 'Update operation' : 'Add operation'}
+              {isSubmitting ? 'Saving...' : isEditingTransaction ? 'Update transaction' : 'Add transaction'}
             </button>
-            {isEditingOperation ? (
-              <button type="button" disabled={isSubmitting} onClick={resetOperationForm}>
+            {isEditingTransaction ? (
+              <button type="button" disabled={isSubmitting} onClick={resetTransactionForm}>
                 Cancel
               </button>
             ) : null}
           </div>
         </form>
         {formError ? <p role="alert">{formError}</p> : null}
-        <h3>Operations</h3>
-        {asset.operations.length === 0 ? (
-          <p>No operations recorded.</p>
+        <h3>Transactions</h3>
+        {asset.transactions.length === 0 ? (
+          <p>No transactions recorded.</p>
         ) : (
           <ul className="detail-list">
-            {asset.operations.map((operation) => (
-              <li key={operation.id}>
+            {asset.transactions.map((transaction) => (
+              <li key={transaction.id}>
                 <div className="detail-row">
                   <span>
-                    {operation.type} {operation.quantity} @ {operation.unitPrice} ({operation.date})
+                    {transaction.type} {transaction.quantity} @ {transaction.unitPrice} ({transaction.date})
                   </span>
                   <div className="detail-actions">
-                    <button type="button" disabled={isSubmitting} onClick={() => startEditOperation(operation)}>
+                    <button type="button" disabled={isSubmitting} onClick={() => startEditTransaction(transaction)}>
                       Edit
                     </button>
-                    <button type="button" disabled={isSubmitting} onClick={() => deleteOperation(operation.id)}>
+                    <button type="button" disabled={isSubmitting} onClick={() => deleteTransaction(transaction.id)}>
                       Delete
                     </button>
                   </div>

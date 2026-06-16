@@ -9,15 +9,15 @@ using FluentAssertions;
 
 namespace Financial.Infrastructure.Tests.Services;
 
-public class OperationServiceTests
+public class TransactionServiceTests
 {
     [Fact]
-    public void AddOperation_WithValidRequest_ReturnsDetailsWithNewOperation()
+    public void AddTransaction_WithValidRequest_ReturnsDetailsWithNewTransaction()
     {
         var (service, tempFile) = CreateService();
         try
         {
-            var request = new OperationCreateDTO
+            var request = new TransactionCreateDTO
             {
                 BrokerName = "XPI",
                 PortfolioName = "Default",
@@ -29,16 +29,16 @@ public class OperationServiceTests
                 Fees = 2.5m
             };
 
-            var result = service.AddOperation(request);
+            var result = service.AddTransaction(request);
 
             result.Should().NotBeNull();
-            result!.Operations.Should().ContainSingle(op =>
-                op.Date == request.Date &&
-                op.Type == request.Type &&
-                op.Quantity == request.Quantity &&
-                op.UnitPrice == request.UnitPrice &&
-                op.Fees == request.Fees &&
-                op.Id != Guid.Empty);
+            result!.Transactions.Should().ContainSingle(t =>
+                t.Date == request.Date &&
+                t.Type == request.Type &&
+                t.Quantity == request.Quantity &&
+                t.UnitPrice == request.UnitPrice &&
+                t.Fees == request.Fees &&
+                t.Id != Guid.Empty);
         }
         finally
         {
@@ -47,12 +47,12 @@ public class OperationServiceTests
     }
 
     [Fact]
-    public void UpdateOperation_WithValidRequest_UpdatesOperation()
+    public void UpdateTransaction_WithValidRequest_UpdatesTransaction()
     {
         var (service, tempFile) = CreateService();
         try
         {
-            var created = service.AddOperation(new OperationCreateDTO
+            var created = service.AddTransaction(new TransactionCreateDTO
             {
                 BrokerName = "XPI",
                 PortfolioName = "Default",
@@ -64,14 +64,14 @@ public class OperationServiceTests
                 Fees = 1m
             });
 
-            var operationId = created!.Operations.First(op => op.Date == new DateTime(2024, 1, 3)).Id;
+            var transactionId = created!.Transactions.First(t => t.Date == new DateTime(2024, 1, 3)).Id;
 
-            var updated = service.UpdateOperation(new OperationUpdateDTO
+            var updated = service.UpdateTransaction(new TransactionUpdateDTO
             {
                 BrokerName = "XPI",
                 PortfolioName = "Default",
                 AssetName = "BCIA11",
-                Id = operationId,
+                Id = transactionId,
                 Date = new DateTime(2024, 1, 3),
                 Type = "Buy",
                 Quantity = 3m,
@@ -80,10 +80,10 @@ public class OperationServiceTests
             });
 
             updated.Should().NotBeNull();
-            var updatedOperation = updated!.Operations.Single(op => op.Id == operationId);
-            updatedOperation.Quantity.Should().Be(3m);
-            updatedOperation.UnitPrice.Should().Be(55m);
-            updatedOperation.Fees.Should().Be(1.5m);
+            var updatedTransaction = updated!.Transactions.Single(t => t.Id == transactionId);
+            updatedTransaction.Quantity.Should().Be(3m);
+            updatedTransaction.UnitPrice.Should().Be(55m);
+            updatedTransaction.Fees.Should().Be(1.5m);
         }
         finally
         {
@@ -92,12 +92,12 @@ public class OperationServiceTests
     }
 
     [Fact]
-    public void DeleteOperation_WithValidRequest_RemovesOperation()
+    public void DeleteTransaction_WithValidRequest_RemovesTransaction()
     {
         var (service, tempFile) = CreateService();
         try
         {
-            var created = service.AddOperation(new OperationCreateDTO
+            var created = service.AddTransaction(new TransactionCreateDTO
             {
                 BrokerName = "XPI",
                 PortfolioName = "Default",
@@ -109,18 +109,18 @@ public class OperationServiceTests
                 Fees = 0m
             });
 
-            var operationId = created!.Operations.First(op => op.Date == new DateTime(2024, 1, 4)).Id;
+            var transactionId = created!.Transactions.First(t => t.Date == new DateTime(2024, 1, 4)).Id;
 
-            var updated = service.DeleteOperation(new OperationDeleteDTO
+            var updated = service.DeleteTransaction(new TransactionDeleteDTO
             {
                 BrokerName = "XPI",
                 PortfolioName = "Default",
                 AssetName = "BCIA11",
-                Id = operationId
+                Id = transactionId
             });
 
             updated.Should().NotBeNull();
-            updated!.Operations.Should().NotContain(op => op.Id == operationId);
+            updated!.Transactions.Should().NotContain(t => t.Id == transactionId);
         }
         finally
         {
@@ -128,17 +128,15 @@ public class OperationServiceTests
         }
     }
 
-    private static (OperationService Service, string TempFile) CreateService()
+    private static (TransactionService Service, string TempFile) CreateService()
     {
         var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
         File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
 
         var repository = new JSONRepository(new LocalJsonStorage(tempFile));
         var navigationService = new NavigationService(repository);
-        var service = new OperationService(repository, navigationService);
+        var service = new TransactionService(repository, navigationService);
 
         return (service, tempFile);
     }
 }
-
-

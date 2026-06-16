@@ -22,14 +22,14 @@ public class AssetTests
     }
 
     [Fact]
-    public void AddOperation_Buy_UpdatesAveragePriceAndQuantity()
+    public void AddTransaction_Buy_UpdatesAveragePriceAndQuantity()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
-        var first = Operation.Create(new DateTime(2024, 1, 1), Operation.OperationType.Buy, 10m, 5m, 0m);
-        var second = Operation.Create(new DateTime(2024, 1, 2), Operation.OperationType.Buy, 10m, 7m, 0m);
+        var first = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);
+        var second = Transaction.Create(new DateTime(2024, 1, 2), Transaction.TransactionType.Buy, 10m, 7m, 0m);
 
-        asset.AddOperation(first);
-        asset.AddOperation(second);
+        asset.AddTransaction(first);
+        asset.AddTransaction(second);
 
         asset.Quantity.Should().Be(20m);
         asset.AvargePrice.Should().Be(6m);
@@ -37,12 +37,12 @@ public class AssetTests
     }
 
     [Fact]
-    public void AddOperation_Sell_DecreasesQuantityAndKeepsAveragePrice()
+    public void AddTransaction_Sell_DecreasesQuantityAndKeepsAveragePrice()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
-        asset.AddOperation(Operation.Create(new DateTime(2024, 1, 1), Operation.OperationType.Buy, 5m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 5m, 10m, 0m));
 
-        asset.AddOperation(Operation.Create(new DateTime(2024, 1, 2), Operation.OperationType.Sell, 5m, 12m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 2), Transaction.TransactionType.Sell, 5m, 12m, 0m));
 
         asset.Quantity.Should().Be(0m);
         asset.AvargePrice.Should().Be(10m);
@@ -50,17 +50,17 @@ public class AssetTests
     }
 
     [Fact]
-    public void UpdateOperation_RebuildsOperationsAndRecalculates()
+    public void UpdateTransaction_RebuildsTransactionsAndRecalculates()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
-        var op1Id = Guid.NewGuid();
-        var op1 = Operation.CreateWithId(op1Id, new DateTime(2024, 1, 1), Operation.OperationType.Buy, 10m, 5m, 0m);
-        var op2 = Operation.CreateWithId(Guid.NewGuid(), new DateTime(2024, 1, 2), Operation.OperationType.Buy, 10m, 7m, 0m);
-        asset.AddOperation(op1);
-        asset.AddOperation(op2);
+        var tx1Id = Guid.NewGuid();
+        var tx1 = Transaction.CreateWithId(tx1Id, new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);
+        var tx2 = Transaction.CreateWithId(Guid.NewGuid(), new DateTime(2024, 1, 2), Transaction.TransactionType.Buy, 10m, 7m, 0m);
+        asset.AddTransaction(tx1);
+        asset.AddTransaction(tx2);
 
-        var updated = Operation.CreateWithId(op1Id, op1.Date, op1.Type, 20m, 5m, 0m);
-        var result = asset.UpdateOperation(updated);
+        var updated = Transaction.CreateWithId(tx1Id, tx1.Date, tx1.Type, 20m, 5m, 0m);
+        var result = asset.UpdateTransaction(updated);
 
         result.Should().BeTrue();
         asset.Quantity.Should().Be(30m);
@@ -69,42 +69,42 @@ public class AssetTests
     }
 
     [Fact]
-    public void UpdateOperation_UnknownId_ReturnsFalse()
+    public void UpdateTransaction_UnknownId_ReturnsFalse()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
 
-        var result = asset.UpdateOperation(Operation.CreateWithId(Guid.NewGuid(), new DateTime(2024, 1, 1), Operation.OperationType.Buy, 1m, 1m, 0m));
+        var result = asset.UpdateTransaction(Transaction.CreateWithId(Guid.NewGuid(), new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 1m, 1m, 0m));
 
         result.Should().BeFalse();
     }
 
     [Fact]
-    public void UpdateOperation_EmptyId_Throws()
+    public void UpdateTransaction_EmptyId_Throws()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
-        // Use JSON deserialization to preserve Guid.Empty because Operation.CreateWithId replaces empty IDs.
-        var operation = JsonSerializer.Deserialize<Operation>(
+        // Use JSON deserialization to preserve Guid.Empty because Transaction.CreateWithId replaces empty IDs.
+        var transaction = JsonSerializer.Deserialize<Transaction>(
             "{\"Id\":\"00000000-0000-0000-0000-000000000000\",\"Date\":\"2024-01-01T00:00:00\",\"Type\":\"Buy\",\"Quantity\":1,\"UnitPrice\":1,\"Fees\":0}")!;
 
-        Action act = () => asset.UpdateOperation(operation);
+        Action act = () => asset.UpdateTransaction(transaction);
 
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
-    public void RemoveOperation_UnknownId_ReturnsFalse()
+    public void RemoveTransaction_UnknownId_ReturnsFalse()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
 
-        asset.RemoveOperation(Guid.NewGuid()).Should().BeFalse();
+        asset.RemoveTransaction(Guid.NewGuid()).Should().BeFalse();
     }
 
     [Fact]
-    public void RemoveOperation_EmptyId_Throws()
+    public void RemoveTransaction_EmptyId_Throws()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
 
-        Action act = () => asset.RemoveOperation(Guid.Empty);
+        Action act = () => asset.RemoveTransaction(Guid.Empty);
 
         act.Should().Throw<ArgumentException>();
     }

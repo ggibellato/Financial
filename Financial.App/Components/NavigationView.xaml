@@ -321,39 +321,39 @@
                     </ScrollViewer>
                 </TabItem>
 
-                <!-- Operations Tab -->
-                <TabItem Header="Operations">
+                <!-- Transactions Tab -->
+                <TabItem Header="Transactions">
                     <DockPanel>
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,8">
-                            <Button Command="{Binding AssetDetails.AddOperationCommand}" ToolTip="New operation">
+                            <Button Command="{Binding AssetDetails.AddTransactionCommand}" ToolTip="New transaction">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE710;" Margin="0,0,6,0"/>
                                     <TextBlock Text="New"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>
-                        <DataGrid ItemsSource="{Binding AssetDetails.Operations}"
-                                  SelectedItem="{Binding AssetDetails.SelectedOperation, Mode=TwoWay}"
+                        <DataGrid ItemsSource="{Binding AssetDetails.Transactions}"
+                                  SelectedItem="{Binding AssetDetails.SelectedTransaction, Mode=TwoWay}"
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
                                   IsReadOnly="True">
                             <DataGrid.InputBindings>
                                 <MouseBinding MouseAction="LeftDoubleClick"
-                                              Command="{Binding AssetDetails.UpdateOperationCommand}"/>
+                                              Command="{Binding AssetDetails.UpdateTransactionCommand}"/>
                             </DataGrid.InputBindings>
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="" Width="Auto">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
-                                                <Button Command="{Binding DataContext.AssetDetails.UpdateOperationCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                <Button Command="{Binding DataContext.AssetDetails.UpdateTransactionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                         CommandParameter="{Binding}"
                                                         ToolTip="Update"
                                                         Padding="2"
                                                         Margin="0,0,4,0">
                                                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE70F;"/>
                                                 </Button>
-                                                <Button Command="{Binding DataContext.AssetDetails.DeleteOperationCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                <Button Command="{Binding DataContext.AssetDetails.DeleteTransactionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                         CommandParameter="{Binding}"
                                                         ToolTip="Delete"
                                                         Padding="2">
@@ -372,7 +372,7 @@
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" 
-                                                    Value="{Binding Type, Converter={StaticResource OperationTypeToColorConverter}}"/>
+                                                    Value="{Binding Type, Converter={StaticResource TransactionTypeToColorConverter}}"/>
                                             <Setter Property="FontWeight" Value="Bold"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>

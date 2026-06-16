@@ -2,7 +2,7 @@ using Financial.Domain.Entities;
 
 namespace Financial.Application.Validation;
 
-public static class OperationTypeParser
+public static class TransactionTypeParser
 {
     private static readonly string[] NormalizedValues = { "Buy", "Sell" };
 
@@ -11,8 +11,8 @@ public static class OperationTypeParser
         return EnumParser.TryNormalize(value, NormalizedValues, out normalized);
     }
 
-    public static bool TryParse(string? value, out Operation.OperationType operationType)
+    public static bool TryParse(string? value, out Transaction.TransactionType transactionType)
     {
-        return EnumParser.TryParseEnum(value, out operationType);
+        return EnumParser.TryParseEnum(value, out transactionType);
     }
 }

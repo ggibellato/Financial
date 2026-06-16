@@ -58,9 +58,9 @@ public class AssetNodeDTO
     public bool IsActive { get; set; }
 
     /// <summary>
-    /// Number of operations (buy/sell transactions)
+    /// Number of transactions (buy/sell)
     /// </summary>
-    public int OperationCount { get; set; }
+    public int TransactionCount { get; set; }
 
     /// <summary>
     /// Number of credit entries (dividends/rent)

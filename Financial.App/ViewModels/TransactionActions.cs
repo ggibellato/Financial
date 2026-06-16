@@ -6,9 +6,9 @@ using Financial.Application.Validation;
 
 namespace Financial.Presentation.App.ViewModels;
 
-public sealed class OperationActions
+public sealed class TransactionActions
 {
-    private readonly IOperationService? _service;
+    private readonly ITransactionService? _service;
     private readonly Func<bool> _hasContext;
     private readonly Func<string> _brokerName;
     private readonly Func<string> _portfolioName;
@@ -16,8 +16,8 @@ public sealed class OperationActions
     private readonly Action<AssetDetailsDTO> _applyDetails;
     private readonly Action<string, string, MessageBoxImage> _showMessage;
 
-    public OperationActions(
-        IOperationService? service,
+    public TransactionActions(
+        ITransactionService? service,
         Func<bool> hasContext,
         Func<string> brokerName,
         Func<string> portfolioName,
@@ -34,11 +34,11 @@ public sealed class OperationActions
         _showMessage = showMessage ?? throw new ArgumentNullException(nameof(showMessage));
     }
 
-    public void Add(Func<OperationDialogData?> showDialog)
+    public void Add(Func<TransactionDialogData?> showDialog)
     {
         if (!_hasContext())
         {
-            ShowInfo("Select an asset before adding an operation.");
+            ShowInfo("Select an asset before adding a transaction.");
             return;
         }
 
@@ -53,13 +53,13 @@ public sealed class OperationActions
             return;
         }
 
-        if (!OperationTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
+        if (!TransactionTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
         {
-            ShowWarning("Operation type must be 'Buy' or 'Sell'.");
+            ShowWarning("Transaction type must be 'Buy' or 'Sell'.");
             return;
         }
 
-        var updatedDetails = _service.AddOperation(new OperationCreateDTO
+        var updatedDetails = _service.AddTransaction(new TransactionCreateDTO
         {
             BrokerName = _brokerName(),
             PortfolioName = _portfolioName(),
@@ -73,23 +73,23 @@ public sealed class OperationActions
 
         if (updatedDetails == null)
         {
-            ShowWarning("Operation could not be added. Check the values and try again.");
+            ShowWarning("Transaction could not be added. Check the values and try again.");
             return;
         }
 
         _applyDetails(updatedDetails);
     }
 
-    public void Update(OperationDTO? selectedOperation, Func<OperationDialogData?> showDialog)
+    public void Update(TransactionDTO? selectedTransaction, Func<TransactionDialogData?> showDialog)
     {
-        if (_service == null || selectedOperation == null)
+        if (_service == null || selectedTransaction == null)
         {
             return;
         }
 
-        if (selectedOperation.Id == Guid.Empty)
+        if (selectedTransaction.Id == Guid.Empty)
         {
-            ShowWarning("Select a saved operation to update.");
+            ShowWarning("Select a saved transaction to update.");
             return;
         }
 
@@ -99,18 +99,18 @@ public sealed class OperationActions
             return;
         }
 
-        if (!OperationTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
+        if (!TransactionTypeParser.TryNormalize(dialogData.Value.Type, out var normalizedType))
         {
-            ShowWarning("Operation type must be 'Buy' or 'Sell'.");
+            ShowWarning("Transaction type must be 'Buy' or 'Sell'.");
             return;
         }
 
-        var updatedDetails = _service.UpdateOperation(new OperationUpdateDTO
+        var updatedDetails = _service.UpdateTransaction(new TransactionUpdateDTO
         {
             BrokerName = _brokerName(),
             PortfolioName = _portfolioName(),
             AssetName = _assetName(),
-            Id = dialogData.Value.OperationId,
+            Id = dialogData.Value.TransactionId,
             Date = dialogData.Value.Date,
             Type = normalizedType,
             Quantity = dialogData.Value.Quantity,
@@ -120,16 +120,16 @@ public sealed class OperationActions
 
         if (updatedDetails == null)
         {
-            ShowWarning("Operation could not be updated. Check the values and try again.");
+            ShowWarning("Transaction could not be updated. Check the values and try again.");
             return;
         }
 
         _applyDetails(updatedDetails);
     }
 
-    public void Delete(OperationDTO? selectedOperation, Func<bool> confirmDialog)
+    public void Delete(TransactionDTO? selectedTransaction, Func<bool> confirmDialog)
     {
-        if (selectedOperation == null)
+        if (selectedTransaction == null)
         {
             return;
         }
@@ -139,9 +139,9 @@ public sealed class OperationActions
             return;
         }
 
-        if (selectedOperation.Id == Guid.Empty)
+        if (selectedTransaction.Id == Guid.Empty)
         {
-            ShowWarning("Select a saved operation to delete.");
+            ShowWarning("Select a saved transaction to delete.");
             return;
         }
 
@@ -150,17 +150,17 @@ public sealed class OperationActions
             return;
         }
 
-        var updatedDetails = _service.DeleteOperation(new OperationDeleteDTO
+        var updatedDetails = _service.DeleteTransaction(new TransactionDeleteDTO
         {
             BrokerName = _brokerName(),
             PortfolioName = _portfolioName(),
             AssetName = _assetName(),
-            Id = selectedOperation.Id
+            Id = selectedTransaction.Id
         });
 
         if (updatedDetails == null)
         {
-            ShowWarning("Operation could not be deleted. Check the values and try again.");
+            ShowWarning("Transaction could not be deleted. Check the values and try again.");
             return;
         }
 
@@ -169,20 +169,19 @@ public sealed class OperationActions
 
     private void ShowInfo(string message)
     {
-        _showMessage(message, "Operation", MessageBoxImage.Information);
+        _showMessage(message, "Transaction", MessageBoxImage.Information);
     }
 
     private void ShowWarning(string message)
     {
-        _showMessage(message, "Operation", MessageBoxImage.Warning);
+        _showMessage(message, "Transaction", MessageBoxImage.Warning);
     }
 }
 
-public readonly record struct OperationDialogData(
-    Guid OperationId,
+public readonly record struct TransactionDialogData(
+    Guid TransactionId,
     DateTime Date,
     string Type,
     decimal Quantity,
     decimal UnitPrice,
     decimal Fees);
-

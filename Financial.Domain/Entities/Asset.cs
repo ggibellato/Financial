@@ -36,23 +36,23 @@ public class Asset
     [JsonIgnore]
     public bool Active => Quantity > 0;
 
-    private List<Operation> _operations = new List<Operation>();
+    private List<Transaction> _transactions = new List<Transaction>();
     [JsonInclude]
-    public IReadOnlyCollection<Operation> Operations { get => _operations.AsReadOnly(); set => SetOperations(value); }
-    private void SetOperations(IReadOnlyCollection<Operation> data)
+    public IReadOnlyCollection<Transaction> Transactions { get => _transactions.AsReadOnly(); set => SetTransactions(value); }
+    private void SetTransactions(IReadOnlyCollection<Transaction> data)
     {
-        RebuildOperations(data);
+        RebuildTransactions(data);
     }
 
-    private void RebuildOperations(IEnumerable<Operation> operations)
+    private void RebuildTransactions(IEnumerable<Transaction> transactions)
     {
-        var operationList = new List<Operation>(operations);
-        _operations.Clear();
+        var transactionList = new List<Transaction>(transactions);
+        _transactions.Clear();
         AvargePrice = 0;
         Quantity = 0;
-        foreach (var operation in operationList)
+        foreach (var transaction in transactionList)
         {
-            AddOperation(operation);
+            AddTransaction(transaction);
         }
     }
 
@@ -105,64 +105,64 @@ public class Asset
         return new Asset(name, isin, exchange, ticker, country, normalizedLocalTypeCode, assetClass);
     }
 
-    public void AddOperation(Operation operation)
+    public void AddTransaction(Transaction transaction)
     {
-        if (operation == null)
+        if (transaction == null)
         {
-            throw new ArgumentNullException(nameof(operation));
+            throw new ArgumentNullException(nameof(transaction));
         }
 
-        operation.EnsureId();
-        if (operation.Type == Operation.OperationType.Buy)
+        transaction.EnsureId();
+        if (transaction.Type == Transaction.TransactionType.Buy)
         {
-            AvargePrice = (AvargePrice * Quantity + operation.TotalPrice) / (Quantity + operation.Quantity);
+            AvargePrice = (AvargePrice * Quantity + transaction.TotalPrice) / (Quantity + transaction.Quantity);
         }
-        Quantity += (operation.Type == Operation.OperationType.Buy 
-            ? operation.Quantity : -operation.Quantity);
-        _operations.Add(operation);
+        Quantity += (transaction.Type == Transaction.TransactionType.Buy
+            ? transaction.Quantity : -transaction.Quantity);
+        _transactions.Add(transaction);
     }
-    public void AddOperations(IEnumerable<Operation> operations)
+    public void AddTransactions(IEnumerable<Transaction> transactions)
     {
-        foreach (var operation in operations)
+        foreach (var transaction in transactions)
         {
-            AddOperation(operation);
+            AddTransaction(transaction);
         }
     }
 
-    public bool UpdateOperation(Operation updatedOperation)
+    public bool UpdateTransaction(Transaction updatedTransaction)
     {
-        if (updatedOperation == null)
+        if (updatedTransaction == null)
         {
-            throw new ArgumentNullException(nameof(updatedOperation));
+            throw new ArgumentNullException(nameof(updatedTransaction));
         }
 
-        EnsureNotEmptyId(updatedOperation.Id, "Operation Id is required for update.", nameof(updatedOperation));
+        EnsureNotEmptyId(updatedTransaction.Id, "Transaction Id is required for update.", nameof(updatedTransaction));
 
-        var index = _operations.FindIndex(op => op.Id == updatedOperation.Id);
+        var index = _transactions.FindIndex(t => t.Id == updatedTransaction.Id);
         if (index < 0)
         {
             return false;
         }
 
-        var operations = new List<Operation>(_operations);
-        operations[index] = updatedOperation;
-        RebuildOperations(operations);
+        var transactions = new List<Transaction>(_transactions);
+        transactions[index] = updatedTransaction;
+        RebuildTransactions(transactions);
         return true;
     }
 
-    public bool RemoveOperation(Guid operationId)
+    public bool RemoveTransaction(Guid transactionId)
     {
-        EnsureNotEmptyId(operationId, "Operation Id is required for delete.", nameof(operationId));
+        EnsureNotEmptyId(transactionId, "Transaction Id is required for delete.", nameof(transactionId));
 
-        var index = _operations.FindIndex(op => op.Id == operationId);
+        var index = _transactions.FindIndex(t => t.Id == transactionId);
         if (index < 0)
         {
             return false;
         }
 
-        var operations = new List<Operation>(_operations);
-        operations.RemoveAt(index);
-        RebuildOperations(operations);
+        var transactions = new List<Transaction>(_transactions);
+        transactions.RemoveAt(index);
+        RebuildTransactions(transactions);
         return true;
     }
 

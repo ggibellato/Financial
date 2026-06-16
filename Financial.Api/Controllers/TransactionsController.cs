@@ -7,27 +7,27 @@ using System;
 namespace Financial.Api.Controllers;
 
 [ApiController]
-[Route("operations")]
-public sealed class OperationsController : ControllerBase
+[Route("transactions")]
+public sealed class TransactionsController : ControllerBase
 {
-    private readonly IOperationService _operationService;
+    private readonly ITransactionService _transactionService;
 
-    public OperationsController(IOperationService operationService)
+    public TransactionsController(ITransactionService transactionService)
     {
-        _operationService = operationService ?? throw new ArgumentNullException(nameof(operationService));
+        _transactionService = transactionService ?? throw new ArgumentNullException(nameof(transactionService));
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<AssetDetailsDTO> AddOperation([FromBody] OperationCreateDTO request)
+    public ActionResult<AssetDetailsDTO> AddTransaction([FromBody] TransactionCreateDTO request)
     {
         if (request is null)
         {
             return BadRequest();
         }
 
-        var asset = _operationService.AddOperation(request);
+        var asset = _transactionService.AddTransaction(request);
         if (asset is null)
         {
             return BadRequest();
@@ -39,14 +39,14 @@ public sealed class OperationsController : ControllerBase
     [HttpPut]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<AssetDetailsDTO> UpdateOperation([FromBody] OperationUpdateDTO request)
+    public ActionResult<AssetDetailsDTO> UpdateTransaction([FromBody] TransactionUpdateDTO request)
     {
         if (request is null)
         {
             return BadRequest();
         }
 
-        var asset = _operationService.UpdateOperation(request);
+        var asset = _transactionService.UpdateTransaction(request);
         if (asset is null)
         {
             return BadRequest();
@@ -58,14 +58,14 @@ public sealed class OperationsController : ControllerBase
     [HttpDelete]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<AssetDetailsDTO> DeleteOperation([FromBody] OperationDeleteDTO request)
+    public ActionResult<AssetDetailsDTO> DeleteTransaction([FromBody] TransactionDeleteDTO request)
     {
         if (request is null)
         {
             return BadRequest();
         }
 
-        var asset = _operationService.DeleteOperation(request);
+        var asset = _transactionService.DeleteTransaction(request);
         if (asset is null)
         {
             return BadRequest();

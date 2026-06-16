@@ -1,6 +1,6 @@
 namespace Financial.Application.DTOs;
 
-public class OperationDeleteDTO
+public class TransactionDeleteDTO
 {
     public required string BrokerName { get; set; }
     public required string PortfolioName { get; set; }

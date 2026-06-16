@@ -179,7 +179,7 @@ public class NavigationServiceTests
     }
 
     [Fact]
-    public void GetAssetDetails_ShouldIncludeOperations()
+    public void GetAssetDetails_ShouldIncludeTransactions()
     {
         // Arrange
         const string brokerName = "XPI";
@@ -191,11 +191,11 @@ public class NavigationServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result!.Operations.Should().NotBeEmpty();
-        result.Operations.Should().AllSatisfy(op =>
+        result!.Transactions.Should().NotBeEmpty();
+        result.Transactions.Should().AllSatisfy(t =>
         {
-            op.Type.Should().NotBeNullOrWhiteSpace();
-            op.Quantity.Should().BeGreaterThan(0);
+            t.Type.Should().NotBeNullOrWhiteSpace();
+            t.Quantity.Should().BeGreaterThan(0);
         });
     }
 
@@ -241,7 +241,7 @@ public class NavigationServiceTests
     }
 
     [Fact]
-    public void GetAssetDetails_OperationsShouldBeOrderedByDateDescending()
+    public void GetAssetDetails_TransactionsShouldBeOrderedByDateDescending()
     {
         // Arrange
         const string brokerName = "XPI";
@@ -253,11 +253,11 @@ public class NavigationServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        if (result!.Operations.Count > 1)
+        if (result!.Transactions.Count > 1)
         {
-            for (int i = 0; i < result.Operations.Count - 1; i++)
+            for (int i = 0; i < result.Transactions.Count - 1; i++)
             {
-                result.Operations[i].Date.Should().BeOnOrAfter(result.Operations[i + 1].Date);
+                result.Transactions[i].Date.Should().BeOnOrAfter(result.Transactions[i + 1].Date);
             }
         }
     }

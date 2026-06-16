@@ -1,22 +1,22 @@
 namespace Financial.Application.DTOs;
 
 /// <summary>
-/// Represents a buy or sell operation for an asset
+/// Represents a buy or sell transaction for an asset
 /// </summary>
-public class OperationDTO
+public class TransactionDTO
 {
     /// <summary>
-    /// Operation identifier
+    /// Transaction identifier
     /// </summary>
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Date of the operation
+    /// Date of the transaction
     /// </summary>
     public DateTime Date { get; set; }
 
     /// <summary>
-    /// Type of operation (Buy or Sell)
+    /// Type of transaction (Buy or Sell)
     /// </summary>
     public required string Type { get; set; }
 
@@ -40,4 +40,3 @@ public class OperationDTO
     /// </summary>
     public decimal TotalPrice { get; set; }
 }
-

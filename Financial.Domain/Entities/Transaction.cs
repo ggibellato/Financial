@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Text.Json.Serialization;
 
 namespace Financial.Domain.Entities;
 
-public class Operation
+public class Transaction
 {
-    public enum OperationType { Buy, Sell }
+    public enum TransactionType { Buy, Sell }
 
     [JsonInclude]
     public Guid Id { get; private set; }
@@ -13,7 +13,7 @@ public class Operation
     public DateTime Date { get; private set; }
     [JsonInclude]
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public OperationType Type { get; private set; }
+    public TransactionType Type { get; private set; }
     [JsonInclude]
     public decimal Quantity { get; private set; }
     [JsonInclude]
@@ -26,9 +26,9 @@ public class Operation
 
 
     [JsonConstructor]
-    private Operation() { }
+    private Transaction() { }
 
-    private Operation(Guid id, DateTime date, OperationType type, decimal quantity, decimal unitPrice, decimal fees)
+    private Transaction(Guid id, DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees)
     {
         Id = id == Guid.Empty ? Guid.NewGuid() : id;
         Date = date;
@@ -38,10 +38,10 @@ public class Operation
         Fees = fees;
     }
 
-    public static Operation Create(DateTime date, OperationType type, decimal quantity, decimal unitPrice, decimal fees) =>
+    public static Transaction Create(DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees) =>
         new(Guid.NewGuid(), date, type, quantity, unitPrice, fees);
 
-    public static Operation CreateWithId(Guid id, DateTime date, OperationType type, decimal quantity, decimal unitPrice, decimal fees) =>
+    public static Transaction CreateWithId(Guid id, DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees) =>
         new(id, date, type, quantity, unitPrice, fees);
 
     internal void EnsureId()
