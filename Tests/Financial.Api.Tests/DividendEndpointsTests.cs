@@ -81,7 +81,7 @@ public class DividendEndpointsTests
                 Name = "Sample Asset",
                 CurrentPrice = 10.5m,
                 PriceAsOf = new DateTimeOffset(2024, 2, 1, 0, 0, 0, TimeSpan.Zero),
-                AverageDividendLastFiveYears = 4m,
+                AverageDividendPerYear = 4m,
                 PriceMaxBuy = 66.67m,
                 DiscountPercent = 20m,
                 YearTotals = new[]

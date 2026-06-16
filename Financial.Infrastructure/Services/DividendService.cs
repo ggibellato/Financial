@@ -1,3 +1,4 @@
+using Financial.Application.Configuration;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Common;
@@ -10,7 +11,6 @@ namespace Financial.Infrastructure.Services;
 
 public sealed class DividendService : IDividendService
 {
-    private const decimal RequiredYield = 0.06m;
 
     public IReadOnlyList<DividendHistoryItemDTO> GetDividendHistory(DividendLookupRequestDTO request)
     {
@@ -43,12 +43,12 @@ public sealed class DividendService : IDividendService
         var averageDividend = yearTotals
             .Where(total => total.Year < DateTime.Today.Year)
             .OrderByDescending(total => total.Year)
-            .Take(5)
+            .Take(DividendValuationRules.DividendYearsLookback)
             .Select(total => total.Total)
             .DefaultIfEmpty(0m)
             .Average();
 
-        var priceMax = averageDividend > 0m ? averageDividend / RequiredYield : 0m;
+        var priceMax = averageDividend > 0m ? averageDividend / DividendValuationRules.RequiredYield : 0m;
         var discountPercent = priceMax > 0m ? (1m - (snapshot.Price / priceMax)) * 100m : 0m;
 
         return new DividendSummaryDTO
@@ -58,7 +58,7 @@ public sealed class DividendService : IDividendService
             Name = snapshot.Name,
             CurrentPrice = snapshot.Price,
             PriceAsOf = snapshot.AsOf,
-            AverageDividendLastFiveYears = averageDividend,
+            AverageDividendPerYear = averageDividend,
             PriceMaxBuy = priceMax,
             DiscountPercent = discountPercent,
             YearTotals = yearTotals
