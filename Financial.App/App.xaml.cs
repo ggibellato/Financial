@@ -1,58 +1,26 @@
+using Financial.Application.Configuration;
+using Financial.Infrastructure.DependencyInjection;
+using Financial.Presentation.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.IO;
 using System.Windows;
-using Financial.Application.Interfaces;
-using Financial.Infrastructure.Repositories;
-using Financial.Infrastructure.Services;
-using Financial.Infrastructure.Persistence;
-using Financial.Presentation.App.ViewModels;
 
 namespace Financial.Presentation.App
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
     public partial class App : System.Windows.Application
     {
         public static IHost? AppHost { get; private set; }
-        private const string RepositoryProviderConfigurationKey = "Repository:Provider";
 
         public App()
         {
             AppHost = Host.CreateDefaultBuilder()
                 .ConfigureServices((context, services) =>
                 {
-                    // Register Infrastructure services
-                    services.AddSingleton<IRepositoryFactory, RepositoryFactory>();
-                    services.AddSingleton<IRepository>(sp =>
-                    {
-                        var providerValue = context.Configuration[RepositoryProviderConfigurationKey]
-                            ?? nameof(RepositoryProvider.LocalJson);
-                        if (!Enum.TryParse(providerValue, true, out RepositoryProvider provider))
-                        {
-                            throw new InvalidOperationException(
-                                $"Repository provider '{providerValue}' is not supported. " +
-                                $"Valid values: {string.Join(", ", Enum.GetNames<RepositoryProvider>())}.");
-                        }
-
-                        var options = new RepositorySelectionOptions(
-                            provider,
-                            context.Configuration[LocalJsonStorage.DataJsonFileConfigurationKey],
-                            context.Configuration[GoogleDriveJsonStorage.CredentialsPathConfigurationKey],
-                            context.Configuration[GoogleDriveJsonStorage.FilePathConfigurationKey]);
-
-                        var factory = sp.GetRequiredService<IRepositoryFactory>();
-                        return factory.Create(options);
-                    });
-                    services.AddSingleton<INavigationService, NavigationService>();
-                    services.AddSingleton<ITransactionService, TransactionService>();
-                    services.AddSingleton<ICreditService, CreditService>();
-                    services.AddSingleton<IAssetPriceService, AssetPriceService>();
-
-                    // Register ViewModels
+                    services.AddFinancialInfrastructure(context.Configuration);
                     services.AddTransient<MainNavigationViewModel>();
+                    services.AddTransient<MainWindow>();
                 })
                 .Build();
         }
@@ -62,14 +30,14 @@ namespace Financial.Presentation.App
             await AppHost!.StartAsync();
             try
             {
-                var mainWindow = new MainWindow();
+                var mainWindow = AppHost.Services.GetRequiredService<MainWindow>();
                 MainWindow = mainWindow;
                 mainWindow.Show();
             }
             catch (FileNotFoundException ex)
             {
                 MessageBox.Show(
-                    $"{ex.Message}\n\nSet '{LocalJsonStorage.DataJsonFileConfigurationKey}' or place '{LocalJsonStorage.DefaultDataFileName}' in the application directory.",
+                    $"{ex.Message}\n\nSet '{RepositoryConfigurationKeys.LocalJsonDataFile}' or place '{RepositoryConfigurationKeys.LocalJsonDefaultFileName}' in the application directory.",
                     "Missing data file",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
@@ -101,8 +69,3 @@ namespace Financial.Presentation.App
         }
     }
 }
-
-
-
-
-

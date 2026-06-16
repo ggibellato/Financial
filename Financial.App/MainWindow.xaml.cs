@@ -1,10 +1,5 @@
-using Financial.Presentation.App;
-using Financial.Common;
-using Financial.Domain.Entities;
+using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
-using Financial.Infrastructure.Repositories;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualBasic.FileIO;
 using Financial.Presentation.App.Components;
 using Financial.Presentation.App.ViewModels;
 using System;
@@ -16,35 +11,34 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Financial.Infrastructure.Integrations.WebPageParser;
 
 namespace Financial.Presentation.App
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         private readonly IRepository _repository;
+        private readonly IAssetPriceService _assetPriceService;
+        private readonly IDividendService _dividendService;
         private readonly MainNavigationViewModel _navigationViewModel;
+
+        private const string BvmfExchange = "BVMF";
 
         public MainNavigationViewModel NavigationViewModel => _navigationViewModel;
 
-        public MainWindow()
+        public MainWindow(
+            IRepository repository,
+            IAssetPriceService assetPriceService,
+            IDividendService dividendService,
+            MainNavigationViewModel navigationViewModel)
         {
+            _repository = repository;
+            _assetPriceService = assetPriceService;
+            _dividendService = dividendService;
+            _navigationViewModel = navigationViewModel;
+
             InitializeComponent();
 
-            _repository = App.AppHost!.Services.GetRequiredService<IRepository>();
-
-            // Initialize navigation ViewModel from DI
-            _navigationViewModel = App.AppHost!.Services.GetRequiredService<MainNavigationViewModel>();
-            
             List<Option> options = new List<Option>
             {
                 new Option { Group = "Ja possuidas", Name = "KLBN4" },
@@ -60,11 +54,9 @@ namespace Financial.Presentation.App
             var groupedOptions = new ListCollectionView(options);
             groupedOptions.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
             txtTicker.ItemsSource = groupedOptions;
-            
-            // Load navigation tree asynchronously
-            Loaded += async (s, e) => 
+
+            Loaded += async (s, e) =>
             {
-                // Ensure DataContext is set before loading
                 var navView = FindNavigationView(this);
                 if (navView != null)
                 {
@@ -82,7 +74,7 @@ namespace Financial.Presentation.App
                 var child = VisualTreeHelper.GetChild(parent, i);
                 if (child is NavigationView navView)
                     return navView;
-                
+
                 var result = FindNavigationView(child);
                 if (result != null)
                     return result;
@@ -96,10 +88,30 @@ namespace Financial.Presentation.App
             public required string Name { get; set; }
         }
 
+        public class AssetValue
+        {
+            public required string Exchange { get; set; }
+            public required string Ticker { get; set; }
+            public required string Name { get; set; }
+            public decimal Price { get; set; }
+        }
+
         private void btnCheck_Click(object sender, RoutedEventArgs e)
         {
-            var value = GoogleFinance.GetFinancialInfo("BVMF", txtTicker.Text);
-            var dividends = DadosMercadoDividend.GetDividendInfo(txtTicker.Text);
+            var ticker = txtTicker.Text.ToUpperInvariant();
+
+            var value = _assetPriceService.GetCurrentPrice(new AssetPriceRequestDTO
+            {
+                Exchange = BvmfExchange,
+                Ticker = ticker,
+            });
+
+            var dividends = _dividendService.GetDividendHistory(new DividendLookupRequestDTO
+            {
+                Exchange = BvmfExchange,
+                Ticker = ticker,
+            });
+
             dividendDataGrid.ItemsSource = dividends;
 
             var dividendsByYear = dividends
@@ -114,7 +126,7 @@ namespace Financial.Presentation.App
 
             var averageDividend = dividendsByYear.Where(dy => dy.Year < DateTime.Now.Year).Take(5).Average(dy => dy.Total);
             var priceMax = averageDividend / (decimal)0.06;
-            var priceDiscountPer = (1 - value.Price / priceMax)*100;
+            var priceDiscountPer = (1 - value.Price / priceMax) * 100;
 
             lblName.Text = $"{value.Ticker} - {value.Name}";
             lblPrice.Text = $"Current price: {value.Price:N2}";
@@ -234,7 +246,6 @@ namespace Financial.Presentation.App
 
         private async void btnCheckFIIS_Click(object sender, RoutedEventArgs e)
         {
-            // Disable button and show progress
             btnCheckFIIS.IsEnabled = false;
             pnlFIIsProgress.Visibility = Visibility.Visible;
             fiisPriceDataGrid.ItemsSource = null;
@@ -252,20 +263,20 @@ namespace Financial.Presentation.App
                 foreach (var asset in assets)
                 {
                     currentAsset++;
-                    
-                    // Update progress
+
                     var progressPercent = (currentAsset * 100.0) / totalAssets;
                     pgFIIsProgress.Value = progressPercent;
                     lblFIIsProgress.Text = $"Fetching {currentAsset} of {totalAssets}: {asset.Ticker}...";
 
-                    // Force UI update
                     await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
 
-                    // Fetch price asynchronously (wrapped in Task.Run to avoid blocking)
-                    var value = await Task.Run(() => GoogleFinance.GetFinancialInfo(asset.Exchange, asset.Ticker));
-                    list.Add(value);
+                    var value = await Task.Run(() => _assetPriceService.GetCurrentPrice(new AssetPriceRequestDTO
+                    {
+                        Exchange = asset.Exchange,
+                        Ticker = asset.Ticker,
+                    }));
+                    list.Add(new AssetValue { Exchange = value.Exchange, Ticker = value.Ticker, Name = value.Name, Price = value.Price });
 
-                    // Update DataGrid progressively to show results as they come
                     fiisPriceDataGrid.ItemsSource = null;
                     fiisPriceDataGrid.ItemsSource = list;
                 }
@@ -279,7 +290,6 @@ namespace Financial.Presentation.App
             }
             finally
             {
-                // Re-enable button after a short delay
                 await Task.Delay(2000);
                 btnCheckFIIS.IsEnabled = true;
                 pnlFIIsProgress.Visibility = Visibility.Collapsed;
@@ -288,9 +298,3 @@ namespace Financial.Presentation.App
         }
     }
 }
-
-
-
-
-
-
