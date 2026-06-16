@@ -4,7 +4,7 @@ using System;
 
 namespace Financial.Infrastructure.Repositories;
 
-public sealed class RepositoryFactory : IRepositoryFactory
+public sealed class RepositoryFactory
 {
     public IRepository Create(RepositorySelectionOptions options)
     {
