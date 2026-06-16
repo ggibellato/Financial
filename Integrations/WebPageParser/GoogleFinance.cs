@@ -21,24 +21,17 @@ public static class GoogleFinance
     public static AssetValueSnapshot GetFinancialInfoSnapshot(string exchange, string ticker)
     {
         var googleTickerSearch = $"https://www.google.com/finance/quote/{ticker}:{exchange}";
-        try
-        {
-            HtmlWeb htmlWeb = new HtmlWeb();
-            HtmlDocument htmlDoc = htmlWeb.Load(googleTickerSearch);
+        HtmlWeb htmlWeb = new HtmlWeb();
+        HtmlDocument htmlDoc = htmlWeb.Load(googleTickerSearch);
 
-            var mainData = GetMainData(htmlDoc);
-            var name = ReadAssetName(mainData);
-            var priceText = ReadPriceText(mainData);
-            var value = GoogleFinanceParsing.ParsePriceValue(priceText);
+        var mainData = GetMainData(htmlDoc);
+        var name = ReadAssetName(mainData);
+        var priceText = ReadPriceText(mainData);
+        var value = GoogleFinanceParsing.ParsePriceValue(priceText);
 
-            var asOfText = ReadAsOfText(mainData);
-            var asOf = GoogleFinanceParsing.TryParseAsOf(asOfText) ?? DateTimeOffset.Now;
-            return new AssetValueSnapshot(ticker, name, value, asOf);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"Error: {ex.Message}", ex);
-        }
+        var asOfText = ReadAsOfText(mainData);
+        var asOf = GoogleFinanceParsing.TryParseAsOf(asOfText) ?? DateTimeOffset.Now;
+        return new AssetValueSnapshot(ticker, name, value, asOf);
     }
 
     private static HtmlNode GetMainData(HtmlDocument document)

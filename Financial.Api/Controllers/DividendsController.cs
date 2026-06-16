@@ -1,7 +1,9 @@
+using Financial.Application.Configuration;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 
@@ -11,12 +13,13 @@ namespace Financial.Api.Controllers;
 [Route("dividends")]
 public sealed class DividendsController : ControllerBase
 {
-    private const string DefaultExchange = "BVMF";
     private readonly IDividendService _dividendService;
+    private readonly string _defaultExchange;
 
-    public DividendsController(IDividendService dividendService)
+    public DividendsController(IDividendService dividendService, IConfiguration configuration)
     {
         _dividendService = dividendService ?? throw new ArgumentNullException(nameof(dividendService));
+        _defaultExchange = configuration[DividendConfigurationKeys.DefaultExchange] ?? "BVMF";
     }
 
     [HttpGet("{ticker}/history")]
@@ -53,9 +56,9 @@ public sealed class DividendsController : ControllerBase
         return Ok(summary);
     }
 
-    private static DividendLookupRequestDTO BuildRequest(string ticker, string? exchange)
+    private DividendLookupRequestDTO BuildRequest(string ticker, string? exchange)
     {
-        var resolvedExchange = string.IsNullOrWhiteSpace(exchange) ? DefaultExchange : exchange.Trim();
+        var resolvedExchange = string.IsNullOrWhiteSpace(exchange) ? _defaultExchange : exchange.Trim();
         return new DividendLookupRequestDTO
         {
             Exchange = resolvedExchange,

@@ -22,6 +22,6 @@ public static class DecimalExtensions
     private static string? GetISOCurrencySymbol(int lcid)
     {
         try { return new RegionInfo(lcid).ISOCurrencySymbol; }
-        catch { return null; }
+        catch (ArgumentException) { return null; } // neutral cultures (e.g. "en") have no region
     }
 }
