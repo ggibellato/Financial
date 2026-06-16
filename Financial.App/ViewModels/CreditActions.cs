@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
@@ -34,7 +35,7 @@ public sealed class CreditActions
         _showMessage = showMessage ?? throw new ArgumentNullException(nameof(showMessage));
     }
 
-    public void Add(Func<CreditDialogData?> showDialog)
+    public async Task Add(Func<CreditDialogData?> showDialog)
     {
         if (!_hasContext())
         {
@@ -59,7 +60,7 @@ public sealed class CreditActions
             return;
         }
 
-        var updatedDetails = _service.AddCredit(new CreditCreateDTO
+        var updatedDetails = await _service.AddCreditAsync(new CreditCreateDTO
         {
             BrokerName = _brokerName(),
             PortfolioName = _portfolioName(),
@@ -78,7 +79,7 @@ public sealed class CreditActions
         _applyDetails(updatedDetails);
     }
 
-    public void Update(CreditDTO? selectedCredit, Func<CreditDialogData?> showDialog)
+    public async Task Update(CreditDTO? selectedCredit, Func<CreditDialogData?> showDialog)
     {
         if (_service == null || selectedCredit == null)
         {
@@ -103,7 +104,7 @@ public sealed class CreditActions
             return;
         }
 
-        var updatedDetails = _service.UpdateCredit(new CreditUpdateDTO
+        var updatedDetails = await _service.UpdateCreditAsync(new CreditUpdateDTO
         {
             BrokerName = _brokerName(),
             PortfolioName = _portfolioName(),
@@ -123,7 +124,7 @@ public sealed class CreditActions
         _applyDetails(updatedDetails);
     }
 
-    public void Delete(CreditDTO? selectedCredit, Func<bool> confirmDialog)
+    public async Task Delete(CreditDTO? selectedCredit, Func<bool> confirmDialog)
     {
         if (selectedCredit == null)
         {
@@ -146,7 +147,7 @@ public sealed class CreditActions
             return;
         }
 
-        var updatedDetails = _service.DeleteCredit(new CreditDeleteDTO
+        var updatedDetails = await _service.DeleteCreditAsync(new CreditDeleteDTO
         {
             BrokerName = _brokerName(),
             PortfolioName = _portfolioName(),
@@ -179,4 +180,3 @@ public readonly record struct CreditDialogData(
     DateTime Date,
     string Type,
     decimal Value);
-

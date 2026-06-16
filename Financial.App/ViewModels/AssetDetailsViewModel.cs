@@ -1000,54 +1000,54 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private static string BuildBrokerKey(string brokerName) =>
         $"Broker|{brokerName}";
 
-    private void AddTransaction()
+    private async void AddTransaction()
     {
-        _transactionActions.Add(ShowAddTransactionDialog);
+        await _transactionActions.Add(ShowAddTransactionDialog);
     }
 
-    private void AddCredit()
+    private async void AddCredit()
     {
-        _creditActions.Add(ShowAddCreditDialog);
+        await _creditActions.Add(ShowAddCreditDialog);
     }
 
-    private void UpdateTransaction(object? parameter)
+    private async void UpdateTransaction(object? parameter)
     {
         if (parameter is TransactionDTO transaction)
         {
             SelectedTransaction = transaction;
         }
 
-        _transactionActions.Update(SelectedTransaction, ShowUpdateTransactionDialog);
+        await _transactionActions.Update(SelectedTransaction, ShowUpdateTransactionDialog);
     }
 
-    private void UpdateCredit(object? parameter)
+    private async void UpdateCredit(object? parameter)
     {
         if (parameter is CreditDTO credit)
         {
             SelectedCredit = credit;
         }
 
-        _creditActions.Update(SelectedCredit, ShowUpdateCreditDialog);
+        await _creditActions.Update(SelectedCredit, ShowUpdateCreditDialog);
     }
 
-    private void DeleteTransaction(object? parameter)
+    private async void DeleteTransaction(object? parameter)
     {
         if (parameter is TransactionDTO transaction)
         {
             SelectedTransaction = transaction;
         }
 
-        _transactionActions.Delete(SelectedTransaction, ShowDeleteTransactionDialog);
+        await _transactionActions.Delete(SelectedTransaction, ShowDeleteTransactionDialog);
     }
 
-    private void DeleteCredit(object? parameter)
+    private async void DeleteCredit(object? parameter)
     {
         if (parameter is CreditDTO credit)
         {
             SelectedCredit = credit;
         }
 
-        _creditActions.Delete(SelectedCredit, ShowDeleteCreditDialog);
+        await _creditActions.Delete(SelectedCredit, ShowDeleteCreditDialog);
     }
 
     private void UpdateCommandStates()

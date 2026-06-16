@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Financial.Application.DTOs;
 using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
@@ -12,7 +13,7 @@ namespace Financial.Infrastructure.Tests.Services;
 public class TransactionServiceTests
 {
     [Fact]
-    public void AddTransaction_WithValidRequest_ReturnsDetailsWithNewTransaction()
+    public async Task AddTransaction_WithValidRequest_ReturnsDetailsWithNewTransaction()
     {
         var (service, tempFile) = CreateService();
         try
@@ -29,7 +30,7 @@ public class TransactionServiceTests
                 Fees = 2.5m
             };
 
-            var result = service.AddTransaction(request);
+            var result = await service.AddTransactionAsync(request);
 
             result.Should().NotBeNull();
             result!.Transactions.Should().ContainSingle(t =>
@@ -47,12 +48,12 @@ public class TransactionServiceTests
     }
 
     [Fact]
-    public void UpdateTransaction_WithValidRequest_UpdatesTransaction()
+    public async Task UpdateTransaction_WithValidRequest_UpdatesTransaction()
     {
         var (service, tempFile) = CreateService();
         try
         {
-            var created = service.AddTransaction(new TransactionCreateDTO
+            var created = await service.AddTransactionAsync(new TransactionCreateDTO
             {
                 BrokerName = "XPI",
                 PortfolioName = "Default",
@@ -66,7 +67,7 @@ public class TransactionServiceTests
 
             var transactionId = created!.Transactions.First(t => t.Date == new DateTime(2024, 1, 3)).Id;
 
-            var updated = service.UpdateTransaction(new TransactionUpdateDTO
+            var updated = await service.UpdateTransactionAsync(new TransactionUpdateDTO
             {
                 BrokerName = "XPI",
                 PortfolioName = "Default",
@@ -92,12 +93,12 @@ public class TransactionServiceTests
     }
 
     [Fact]
-    public void DeleteTransaction_WithValidRequest_RemovesTransaction()
+    public async Task DeleteTransaction_WithValidRequest_RemovesTransaction()
     {
         var (service, tempFile) = CreateService();
         try
         {
-            var created = service.AddTransaction(new TransactionCreateDTO
+            var created = await service.AddTransactionAsync(new TransactionCreateDTO
             {
                 BrokerName = "XPI",
                 PortfolioName = "Default",
@@ -111,7 +112,7 @@ public class TransactionServiceTests
 
             var transactionId = created!.Transactions.First(t => t.Date == new DateTime(2024, 1, 4)).Id;
 
-            var updated = service.DeleteTransaction(new TransactionDeleteDTO
+            var updated = await service.DeleteTransactionAsync(new TransactionDeleteDTO
             {
                 BrokerName = "XPI",
                 PortfolioName = "Default",

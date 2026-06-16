@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
@@ -16,7 +17,7 @@ internal static class AssetServiceHelper
                string.IsNullOrWhiteSpace(assetName);
     }
 
-    public static AssetDetailsDTO? ExecuteParsedMutation<TEnum>(
+    public static async Task<AssetDetailsDTO?> ExecuteParsedMutationAsync<TEnum>(
         IRepository repository,
         INavigationService navigationService,
         string? brokerName,
@@ -31,16 +32,16 @@ internal static class AssetServiceHelper
             return null;
         }
 
-        return ExecuteAssetMutation(
+        return await ExecuteAssetMutationAsync(
             repository,
             navigationService,
             brokerName,
             portfolioName,
             assetName,
-            asset => mutation(asset, parsed));
+            asset => mutation(asset, parsed)).ConfigureAwait(false);
     }
 
-    public static AssetDetailsDTO? ExecuteAssetMutation(
+    public static async Task<AssetDetailsDTO?> ExecuteAssetMutationAsync(
         IRepository repository,
         INavigationService navigationService,
         string? brokerName,
@@ -64,8 +65,7 @@ internal static class AssetServiceHelper
             return null;
         }
 
-        repository.SaveChanges();
+        await repository.SaveChangesAsync().ConfigureAwait(false);
         return navigationService.GetAssetDetails(brokerName!, portfolioName!, assetName!);
     }
 }
-

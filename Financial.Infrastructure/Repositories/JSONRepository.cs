@@ -4,6 +4,7 @@ using Financial.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Financial.Infrastructure.Repositories;
 
@@ -60,13 +61,10 @@ public sealed class JSONRepository : IRepository
         return _investiments.Brokers;
     }
 
-    public void SaveChanges()
+    public async Task SaveChangesAsync()
     {
         var json = InvestmentsJsonSerializer.Serialize(_investiments);
-        _storage.WriteAsync(json)
-            .ConfigureAwait(false)
-            .GetAwaiter()
-            .GetResult();
+        await _storage.WriteAsync(json).ConfigureAwait(false);
     }
 
     private static Investments LoadInvestments(IJsonStorage storage)

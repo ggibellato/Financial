@@ -1,10 +1,11 @@
 using Financial.Application.DTOs;
+using System.Threading.Tasks;
 
 namespace Financial.Application.Interfaces;
 
 public interface ICreditService
 {
-    AssetDetailsDTO? AddCredit(CreditCreateDTO request);
-    AssetDetailsDTO? UpdateCredit(CreditUpdateDTO request);
-    AssetDetailsDTO? DeleteCredit(CreditDeleteDTO request);
+    Task<AssetDetailsDTO?> AddCreditAsync(CreditCreateDTO request);
+    Task<AssetDetailsDTO?> UpdateCreditAsync(CreditUpdateDTO request);
+    Task<AssetDetailsDTO?> DeleteCreditAsync(CreditDeleteDTO request);
 }

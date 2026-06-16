@@ -3,6 +3,7 @@ using Financial.Application.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Threading.Tasks;
 
 namespace Financial.Api.Controllers;
 
@@ -20,14 +21,14 @@ public sealed class TransactionsController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<AssetDetailsDTO> AddTransaction([FromBody] TransactionCreateDTO request)
+    public async Task<ActionResult<AssetDetailsDTO>> AddTransaction([FromBody] TransactionCreateDTO request)
     {
         if (request is null)
         {
             return BadRequest();
         }
 
-        var asset = _transactionService.AddTransaction(request);
+        var asset = await _transactionService.AddTransactionAsync(request);
         if (asset is null)
         {
             return BadRequest();
@@ -39,14 +40,14 @@ public sealed class TransactionsController : ControllerBase
     [HttpPut]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<AssetDetailsDTO> UpdateTransaction([FromBody] TransactionUpdateDTO request)
+    public async Task<ActionResult<AssetDetailsDTO>> UpdateTransaction([FromBody] TransactionUpdateDTO request)
     {
         if (request is null)
         {
             return BadRequest();
         }
 
-        var asset = _transactionService.UpdateTransaction(request);
+        var asset = await _transactionService.UpdateTransactionAsync(request);
         if (asset is null)
         {
             return BadRequest();
@@ -58,14 +59,14 @@ public sealed class TransactionsController : ControllerBase
     [HttpDelete]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<AssetDetailsDTO> DeleteTransaction([FromBody] TransactionDeleteDTO request)
+    public async Task<ActionResult<AssetDetailsDTO>> DeleteTransaction([FromBody] TransactionDeleteDTO request)
     {
         if (request is null)
         {
             return BadRequest();
         }
 
-        var asset = _transactionService.DeleteTransaction(request);
+        var asset = await _transactionService.DeleteTransactionAsync(request);
         if (asset is null)
         {
             return BadRequest();

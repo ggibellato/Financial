@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Financial.Api.Controllers;
 
@@ -23,14 +24,14 @@ public sealed class CreditsController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<AssetDetailsDTO> AddCredit([FromBody] CreditCreateDTO request)
+    public async Task<ActionResult<AssetDetailsDTO>> AddCredit([FromBody] CreditCreateDTO request)
     {
         if (request is null)
         {
             return BadRequest();
         }
 
-        var asset = _creditService.AddCredit(request);
+        var asset = await _creditService.AddCreditAsync(request);
         if (asset is null)
         {
             return BadRequest();
@@ -42,14 +43,14 @@ public sealed class CreditsController : ControllerBase
     [HttpPut]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<AssetDetailsDTO> UpdateCredit([FromBody] CreditUpdateDTO request)
+    public async Task<ActionResult<AssetDetailsDTO>> UpdateCredit([FromBody] CreditUpdateDTO request)
     {
         if (request is null)
         {
             return BadRequest();
         }
 
-        var asset = _creditService.UpdateCredit(request);
+        var asset = await _creditService.UpdateCreditAsync(request);
         if (asset is null)
         {
             return BadRequest();
@@ -61,14 +62,14 @@ public sealed class CreditsController : ControllerBase
     [HttpDelete]
     [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<AssetDetailsDTO> DeleteCredit([FromBody] CreditDeleteDTO request)
+    public async Task<ActionResult<AssetDetailsDTO>> DeleteCredit([FromBody] CreditDeleteDTO request)
     {
         if (request is null)
         {
             return BadRequest();
         }
 
-        var asset = _creditService.DeleteCredit(request);
+        var asset = await _creditService.DeleteCreditAsync(request);
         if (asset is null)
         {
             return BadRequest();
