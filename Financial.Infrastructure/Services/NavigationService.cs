@@ -83,7 +83,7 @@ public class NavigationService : INavigationService
             LocalTypeCode = asset.LocalTypeCode,
             Class = asset.Class,
             Quantity = asset.Quantity,
-            AveragePrice = asset.AvargePrice,
+            AveragePrice = asset.AveragePrice,
             IsActive = asset.Active,
             TotalBought = totalBought,
             TotalSold = totalSold,
@@ -255,7 +255,7 @@ public class NavigationService : INavigationService
             LocalTypeCode = asset.LocalTypeCode,
             Class = asset.Class,
             Quantity = asset.Quantity,
-            AveragePrice = asset.AvargePrice,
+            AveragePrice = asset.AveragePrice,
             IsActive = asset.Active,
             TransactionCount = asset.Transactions.Count,
             CreditCount = asset.Credits.Count

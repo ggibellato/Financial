@@ -28,7 +28,7 @@ public class Asset
     public GlobalAssetClass Class { get; private set; } = GlobalAssetClass.Unknown;
 
     [JsonIgnore]
-    public decimal AvargePrice { get; private set; } = 0;
+    public decimal AveragePrice { get; private set; } = 0;
 
     [JsonIgnore]
     public decimal Quantity { get; private set; }
@@ -48,7 +48,7 @@ public class Asset
     {
         var transactionList = new List<Transaction>(transactions);
         _transactions.Clear();
-        AvargePrice = 0;
+        AveragePrice = 0;
         Quantity = 0;
         foreach (var transaction in transactionList)
         {
@@ -115,7 +115,7 @@ public class Asset
         transaction.EnsureId();
         if (transaction.Type == Transaction.TransactionType.Buy)
         {
-            AvargePrice = (AvargePrice * Quantity + transaction.TotalPrice) / (Quantity + transaction.Quantity);
+            AveragePrice = (AveragePrice * Quantity + transaction.TotalPrice) / (Quantity + transaction.Quantity);
         }
         Quantity += (transaction.Type == Transaction.TransactionType.Buy
             ? transaction.Quantity : -transaction.Quantity);
