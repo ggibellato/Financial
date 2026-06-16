@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import AssetDetailPage from './pages/AssetDetailPage'
+import type { AssetDetailsDto, TreeNodeDto } from './api/types'
 
 const getNavigationTreeMock = vi.fn()
 const getAssetDetailsMock = vi.fn()
@@ -23,7 +24,7 @@ describe('App', () => {
       displayName: 'All Investments',
       metadata: {},
       children: [],
-    })
+    } satisfies TreeNodeDto)
   })
 
   it('renders the app header', () => {
@@ -78,7 +79,7 @@ describe('App', () => {
           ],
         },
       ],
-    })
+    } satisfies TreeNodeDto)
     getAssetDetailsMock.mockResolvedValue({
       name: 'BCIA11',
       brokerName: 'XPI',
@@ -97,7 +98,7 @@ describe('App', () => {
       totalCredits: 0,
       transactions: [],
       credits: [],
-    })
+    } satisfies AssetDetailsDto)
 
     render(
       <MemoryRouter initialEntries={['/brokers']}>

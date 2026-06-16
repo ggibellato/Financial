@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import BrokersPage from '../BrokersPage'
+import type { BrokerNodeDto } from '../../api/types'
 
 const getBrokersMock = vi.fn()
 
@@ -25,7 +26,7 @@ describe('BrokersPage', () => {
         totalAssets: 2,
         portfolios: [],
       },
-    ])
+    ] satisfies BrokerNodeDto[])
 
     render(
       <MemoryRouter>
