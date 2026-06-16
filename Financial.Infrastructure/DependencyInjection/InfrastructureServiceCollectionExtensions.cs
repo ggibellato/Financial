@@ -1,6 +1,5 @@
 using Financial.Application.Configuration;
 using Financial.Application.Interfaces;
-using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
 using Financial.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
@@ -15,8 +14,7 @@ public static class InfrastructureServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddSingleton<IRepositoryFactory, RepositoryFactory>();
-        services.AddSingleton<IRepository>(sp => CreateRepository(sp, configuration));
+        services.AddSingleton<IRepository>(sp => CreateRepository(configuration));
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<ITransactionService, TransactionService>();
         services.AddSingleton<ICreditService, CreditService>();
@@ -26,7 +24,7 @@ public static class InfrastructureServiceCollectionExtensions
         return services;
     }
 
-    private static IRepository CreateRepository(IServiceProvider sp, IConfiguration configuration)
+    private static IRepository CreateRepository(IConfiguration configuration)
     {
         var providerValue = configuration[RepositoryConfigurationKeys.Provider]
             ?? nameof(RepositoryProvider.LocalJson);
@@ -44,6 +42,6 @@ public static class InfrastructureServiceCollectionExtensions
             configuration[RepositoryConfigurationKeys.GoogleDriveCredentialsPath],
             configuration[RepositoryConfigurationKeys.GoogleDriveFilePath]);
 
-        return sp.GetRequiredService<IRepositoryFactory>().Create(options);
+        return new RepositoryFactory().Create(options);
     }
 }

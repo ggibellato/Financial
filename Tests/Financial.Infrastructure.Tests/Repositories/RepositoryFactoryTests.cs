@@ -1,4 +1,3 @@
-using Financial.Application.Interfaces;
 using Financial.Infrastructure.Repositories;
 using FluentAssertions;
 using System;

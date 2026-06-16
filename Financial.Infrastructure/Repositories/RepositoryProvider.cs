@@ -1,4 +1,4 @@
-namespace Financial.Application.Interfaces;
+namespace Financial.Infrastructure.Repositories;
 
 public enum RepositoryProvider
 {
