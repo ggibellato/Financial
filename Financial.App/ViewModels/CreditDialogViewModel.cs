@@ -1,5 +1,5 @@
 using System;
-using Financial.Presentation.App.ViewModels;
+
 namespace Financial.Presentation.App.ViewModels;
 
 public enum CreditDialogMode

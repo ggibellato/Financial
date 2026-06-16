@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Financial.Infrastructure.Integrations.WebPageParser;
 
-public class DadosMercadoDividend
+public sealed class DadosMercadoDividend
 {
     public static List<DividendValue> GetDividendInfo(string ticker)
     {
