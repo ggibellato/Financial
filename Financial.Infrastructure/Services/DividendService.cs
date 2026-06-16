@@ -30,6 +30,17 @@ public sealed class DividendService : IDividendService
     {
         var values = LoadDividends(request);
         var snapshot = GoogleFinance.GetFinancialInfoSnapshot(request.Exchange, request.Ticker);
+
+        var history = values
+            .OrderByDescending(dividend => dividend.Date)
+            .Select(dividend => new DividendHistoryItemDTO
+            {
+                Type = dividend.Type.ToString(),
+                Date = dividend.Date,
+                Value = dividend.Value
+            })
+            .ToList();
+
         var yearTotals = values
             .GroupBy(dividend => dividend.Date.Year)
             .Select(group => new DividendYearTotalDTO
@@ -61,6 +72,7 @@ public sealed class DividendService : IDividendService
             AverageDividendPerYear = averageDividend,
             PriceMaxBuy = priceMax,
             DiscountPercent = discountPercent,
+            History = history,
             YearTotals = yearTotals
         };
     }

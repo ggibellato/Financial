@@ -84,6 +84,15 @@ public class DividendEndpointsTests
                 AverageDividendPerYear = 4m,
                 PriceMaxBuy = 66.67m,
                 DiscountPercent = 20m,
+                History = new[]
+                {
+                    new DividendHistoryItemDTO
+                    {
+                        Type = "Dividend",
+                        Date = new DateTime(2023, 6, 1),
+                        Value = 4m
+                    }
+                },
                 YearTotals = new[]
                 {
                     new DividendYearTotalDTO
