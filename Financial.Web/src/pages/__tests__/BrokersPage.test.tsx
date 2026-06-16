@@ -2,13 +2,15 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import BrokersPage from '../BrokersPage'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { BrokerNodeDto } from '../../api/types'
 
 const getBrokersMock = vi.fn()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: () => ({
     getBrokers: getBrokersMock,
-  }),
+  } satisfies Partial<FinancialApiClient>),
 }))
 
 describe('BrokersPage', () => {
@@ -25,7 +27,7 @@ describe('BrokersPage', () => {
         totalAssets: 2,
         portfolios: [],
       },
-    ])
+    ] satisfies BrokerNodeDto[])
 
     render(
       <MemoryRouter>

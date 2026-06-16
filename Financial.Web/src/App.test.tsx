@@ -3,6 +3,8 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import AssetDetailPage from './pages/AssetDetailPage'
+import type { FinancialApiClient } from './api/financialApiClient'
+import type { AssetDetailsDto, TreeNodeDto } from './api/types'
 
 const getNavigationTreeMock = vi.fn()
 const getAssetDetailsMock = vi.fn()
@@ -11,7 +13,7 @@ vi.mock('./api/financialApiClient', () => ({
   createFinancialApiClient: () => ({
     getNavigationTree: getNavigationTreeMock,
     getAssetDetails: getAssetDetailsMock,
-  }),
+  } satisfies Partial<FinancialApiClient>),
 }))
 
 describe('App', () => {
@@ -23,7 +25,7 @@ describe('App', () => {
       displayName: 'All Investments',
       metadata: {},
       children: [],
-    })
+    } satisfies TreeNodeDto)
   })
 
   it('renders the app header', () => {
@@ -78,7 +80,7 @@ describe('App', () => {
           ],
         },
       ],
-    })
+    } satisfies TreeNodeDto)
     getAssetDetailsMock.mockResolvedValue({
       name: 'BCIA11',
       brokerName: 'XPI',
@@ -97,7 +99,7 @@ describe('App', () => {
       totalCredits: 0,
       transactions: [],
       credits: [],
-    })
+    } satisfies AssetDetailsDto)
 
     render(
       <MemoryRouter initialEntries={['/brokers']}>

@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import CurrentValuesPage from '../CurrentValuesPage'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { AssetPriceDto, BrokerNodeDto } from '../../api/types'
 
 const getBrokersMock = vi.fn()
 const getCurrentPriceMock = vi.fn()
@@ -9,7 +11,7 @@ vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: () => ({
     getBrokers: getBrokersMock,
     getCurrentPrice: getCurrentPriceMock,
-  }),
+  } satisfies Partial<FinancialApiClient>),
 }))
 
 describe('CurrentValuesPage', () => {
@@ -49,14 +51,14 @@ describe('CurrentValuesPage', () => {
           },
         ],
       },
-    ])
+    ] satisfies BrokerNodeDto[])
     getCurrentPriceMock.mockResolvedValue({
       exchange: 'BVMF',
       ticker: 'BCIA11',
       name: 'Sample Asset',
       price: 10.5,
       asOf: '2024-02-01T00:00:00Z',
-    })
+    } satisfies AssetPriceDto)
 
     render(<CurrentValuesPage />)
 

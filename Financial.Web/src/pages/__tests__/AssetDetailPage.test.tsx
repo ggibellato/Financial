@@ -2,24 +2,64 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AssetDetailPage from '../AssetDetailPage'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { AssetDetailsDto } from '../../api/types'
 
 const getAssetDetailsMock = vi.fn()
 const addTransactionMock = vi.fn()
 const updateTransactionMock = vi.fn()
 const deleteTransactionMock = vi.fn()
+const addCreditMock = vi.fn()
 const updateCreditMock = vi.fn()
 const deleteCreditMock = vi.fn()
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: () => ({
+  createFinancialApiClient: (): FinancialApiClient => ({
+    getNavigationTree: vi.fn(),
+    getBrokers: vi.fn(),
     getAssetDetails: getAssetDetailsMock,
+    getCreditsByBroker: vi.fn(),
+    getCreditsByPortfolio: vi.fn(),
     addTransaction: addTransactionMock,
     updateTransaction: updateTransactionMock,
     deleteTransaction: deleteTransactionMock,
+    addCredit: addCreditMock,
     updateCredit: updateCreditMock,
     deleteCredit: deleteCreditMock,
+    getDividendHistory: vi.fn(),
+    getDividendSummary: vi.fn(),
+    getCurrentPrice: vi.fn(),
   }),
 }))
+
+const baseAsset: AssetDetailsDto = {
+  name: 'BCIA11',
+  brokerName: 'XPI',
+  portfolioName: 'Default',
+  ticker: 'BCIA11',
+  isin: 'TEST',
+  exchange: 'BVMF',
+  country: 0,
+  localTypeCode: '',
+  class: 0,
+  quantity: 10,
+  averagePrice: 100,
+  isActive: true,
+  totalBought: 1000,
+  totalSold: 0,
+  totalCredits: 11,
+  transactions: [],
+  credits: [],
+}
+
+const renderAssetDetail = () =>
+  render(
+    <MemoryRouter initialEntries={['/assets/XPI/Default/BCIA11']}>
+      <Routes>
+        <Route path="/assets/:brokerName/:portfolioName/:assetName" element={<AssetDetailPage />} />
+      </Routes>
+    </MemoryRouter>,
+  )
 
 describe('AssetDetailPage', () => {
   beforeEach(() => {
@@ -27,38 +67,15 @@ describe('AssetDetailPage', () => {
     addTransactionMock.mockReset()
     updateTransactionMock.mockReset()
     deleteTransactionMock.mockReset()
+    addCreditMock.mockReset()
     updateCreditMock.mockReset()
     deleteCreditMock.mockReset()
   })
 
   it('renders asset details', async () => {
-    getAssetDetailsMock.mockResolvedValue({
-      name: 'BCIA11',
-      brokerName: 'XPI',
-      portfolioName: 'Default',
-      ticker: 'BCIA11',
-      isin: 'TEST',
-      exchange: 'BVMF',
-      country: 0,
-      localTypeCode: '',
-      class: 0,
-      quantity: 10,
-      averagePrice: 100,
-      isActive: true,
-      totalBought: 1000,
-      totalSold: 0,
-      totalCredits: 11,
-      transactions: [],
-      credits: [],
-    })
+    getAssetDetailsMock.mockResolvedValue(baseAsset)
 
-    render(
-      <MemoryRouter initialEntries={['/assets/XPI/Default/BCIA11']}>
-        <Routes>
-          <Route path="/assets/:brokerName/:portfolioName/:assetName" element={<AssetDetailPage />} />
-        </Routes>
-      </MemoryRouter>,
-    )
+    renderAssetDetail()
 
     expect(await screen.findByRole('heading', { name: 'BCIA11' })).toBeInTheDocument()
     expect(screen.getByText(/Ticker/)).toBeInTheDocument()
@@ -66,39 +83,11 @@ describe('AssetDetailPage', () => {
 
   it('renders credit chart controls', async () => {
     getAssetDetailsMock.mockResolvedValue({
-      name: 'BCIA11',
-      brokerName: 'XPI',
-      portfolioName: 'Default',
-      ticker: 'BCIA11',
-      isin: 'TEST',
-      exchange: 'BVMF',
-      country: 0,
-      localTypeCode: '',
-      class: 0,
-      quantity: 10,
-      averagePrice: 100,
-      isActive: true,
-      totalBought: 1000,
-      totalSold: 0,
-      totalCredits: 11,
-      transactions: [],
-      credits: [
-        {
-          id: 'cr-0',
-          date: '2024-02-01T00:00:00',
-          type: 'Dividend',
-          value: 5,
-        },
-      ],
-    })
+      ...baseAsset,
+      credits: [{ id: 'cr-0', date: '2024-02-01T00:00:00', type: 'Dividend', value: 5 }],
+    } satisfies AssetDetailsDto)
 
-    render(
-      <MemoryRouter initialEntries={['/assets/XPI/Default/BCIA11']}>
-        <Routes>
-          <Route path="/assets/:brokerName/:portfolioName/:assetName" element={<AssetDetailPage />} />
-        </Routes>
-      </MemoryRouter>,
-    )
+    renderAssetDetail()
 
     expect(await screen.findByRole('heading', { name: 'BCIA11' })).toBeInTheDocument()
 
@@ -110,62 +99,16 @@ describe('AssetDetailPage', () => {
   })
 
   it('submits a new transaction', async () => {
-    getAssetDetailsMock.mockResolvedValue({
-      name: 'BCIA11',
-      brokerName: 'XPI',
-      portfolioName: 'Default',
-      ticker: 'BCIA11',
-      isin: 'TEST',
-      exchange: 'BVMF',
-      country: 0,
-      localTypeCode: '',
-      class: 0,
-      quantity: 10,
-      averagePrice: 100,
-      isActive: true,
-      totalBought: 1000,
-      totalSold: 0,
-      totalCredits: 11,
-      transactions: [],
-      credits: [],
-    })
+    getAssetDetailsMock.mockResolvedValue(baseAsset)
     addTransactionMock.mockResolvedValue({
-      name: 'BCIA11',
-      brokerName: 'XPI',
-      portfolioName: 'Default',
-      ticker: 'BCIA11',
-      isin: 'TEST',
-      exchange: 'BVMF',
-      country: 0,
-      localTypeCode: '',
-      class: 0,
+      ...baseAsset,
       quantity: 12,
       averagePrice: 102,
-      isActive: true,
       totalBought: 1200,
-      totalSold: 0,
-      totalCredits: 11,
-      transactions: [
-        {
-          id: 'new-op',
-          date: '2024-01-02T00:00:00',
-          type: 'Buy',
-          quantity: 2,
-          unitPrice: 10,
-          fees: 1,
-          totalPrice: 21,
-        },
-      ],
-      credits: [],
-    })
+      transactions: [{ id: 'new-op', date: '2024-01-02T00:00:00', type: 'Buy', quantity: 2, unitPrice: 10, fees: 1, totalPrice: 21 }],
+    } satisfies AssetDetailsDto)
 
-    render(
-      <MemoryRouter initialEntries={['/assets/XPI/Default/BCIA11']}>
-        <Routes>
-          <Route path="/assets/:brokerName/:portfolioName/:assetName" element={<AssetDetailPage />} />
-        </Routes>
-      </MemoryRouter>,
-    )
+    renderAssetDetail()
 
     expect(await screen.findByRole('heading', { name: 'BCIA11' })).toBeInTheDocument()
 
@@ -193,71 +136,18 @@ describe('AssetDetailPage', () => {
 
   it('updates a transaction', async () => {
     getAssetDetailsMock.mockResolvedValue({
-      name: 'BCIA11',
-      brokerName: 'XPI',
-      portfolioName: 'Default',
-      ticker: 'BCIA11',
-      isin: 'TEST',
-      exchange: 'BVMF',
-      country: 0,
-      localTypeCode: '',
-      class: 0,
-      quantity: 10,
-      averagePrice: 100,
-      isActive: true,
-      totalBought: 1000,
-      totalSold: 0,
-      totalCredits: 11,
-      transactions: [
-        {
-          id: 'op-1',
-          date: '2024-01-05T00:00:00',
-          type: 'Buy',
-          quantity: 1,
-          unitPrice: 10,
-          fees: 0,
-          totalPrice: 10,
-        },
-      ],
-      credits: [],
-    })
+      ...baseAsset,
+      transactions: [{ id: 'op-1', date: '2024-01-05T00:00:00', type: 'Buy', quantity: 1, unitPrice: 10, fees: 0, totalPrice: 10 }],
+    } satisfies AssetDetailsDto)
     updateTransactionMock.mockResolvedValue({
-      name: 'BCIA11',
-      brokerName: 'XPI',
-      portfolioName: 'Default',
-      ticker: 'BCIA11',
-      isin: 'TEST',
-      exchange: 'BVMF',
-      country: 0,
-      localTypeCode: '',
-      class: 0,
+      ...baseAsset,
       quantity: 11,
       averagePrice: 101,
-      isActive: true,
       totalBought: 1010,
-      totalSold: 0,
-      totalCredits: 11,
-      transactions: [
-        {
-          id: 'op-1',
-          date: '2024-01-05T00:00:00',
-          type: 'Buy',
-          quantity: 2,
-          unitPrice: 12,
-          fees: 1,
-          totalPrice: 25,
-        },
-      ],
-      credits: [],
-    })
+      transactions: [{ id: 'op-1', date: '2024-01-05T00:00:00', type: 'Buy', quantity: 2, unitPrice: 12, fees: 1, totalPrice: 25 }],
+    } satisfies AssetDetailsDto)
 
-    render(
-      <MemoryRouter initialEntries={['/assets/XPI/Default/BCIA11']}>
-        <Routes>
-          <Route path="/assets/:brokerName/:portfolioName/:assetName" element={<AssetDetailPage />} />
-        </Routes>
-      </MemoryRouter>,
-    )
+    renderAssetDetail()
 
     expect(await screen.findByRole('heading', { name: 'BCIA11' })).toBeInTheDocument()
 
@@ -285,62 +175,13 @@ describe('AssetDetailPage', () => {
 
   it('deletes a transaction after confirmation', async () => {
     getAssetDetailsMock.mockResolvedValue({
-      name: 'BCIA11',
-      brokerName: 'XPI',
-      portfolioName: 'Default',
-      ticker: 'BCIA11',
-      isin: 'TEST',
-      exchange: 'BVMF',
-      country: 0,
-      localTypeCode: '',
-      class: 0,
-      quantity: 10,
-      averagePrice: 100,
-      isActive: true,
-      totalBought: 1000,
-      totalSold: 0,
-      totalCredits: 11,
-      transactions: [
-        {
-          id: 'op-2',
-          date: '2024-01-06T00:00:00',
-          type: 'Sell',
-          quantity: 1,
-          unitPrice: 15,
-          fees: 0,
-          totalPrice: 15,
-        },
-      ],
-      credits: [],
-    })
-    deleteTransactionMock.mockResolvedValue({
-      name: 'BCIA11',
-      brokerName: 'XPI',
-      portfolioName: 'Default',
-      ticker: 'BCIA11',
-      isin: 'TEST',
-      exchange: 'BVMF',
-      country: 0,
-      localTypeCode: '',
-      class: 0,
-      quantity: 9,
-      averagePrice: 100,
-      isActive: true,
-      totalBought: 1000,
-      totalSold: 0,
-      totalCredits: 11,
-      transactions: [],
-      credits: [],
-    })
+      ...baseAsset,
+      transactions: [{ id: 'op-2', date: '2024-01-06T00:00:00', type: 'Sell', quantity: 1, unitPrice: 15, fees: 0, totalPrice: 15 }],
+    } satisfies AssetDetailsDto)
+    deleteTransactionMock.mockResolvedValue({ ...baseAsset, quantity: 9 } satisfies AssetDetailsDto)
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
 
-    render(
-      <MemoryRouter initialEntries={['/assets/XPI/Default/BCIA11']}>
-        <Routes>
-          <Route path="/assets/:brokerName/:portfolioName/:assetName" element={<AssetDetailPage />} />
-        </Routes>
-      </MemoryRouter>,
-    )
+    renderAssetDetail()
 
     expect(await screen.findByRole('heading', { name: 'BCIA11' })).toBeInTheDocument()
 
@@ -361,65 +202,16 @@ describe('AssetDetailPage', () => {
 
   it('updates a credit', async () => {
     getAssetDetailsMock.mockResolvedValue({
-      name: 'BCIA11',
-      brokerName: 'XPI',
-      portfolioName: 'Default',
-      ticker: 'BCIA11',
-      isin: 'TEST',
-      exchange: 'BVMF',
-      country: 0,
-      localTypeCode: '',
-      class: 0,
-      quantity: 10,
-      averagePrice: 100,
-      isActive: true,
-      totalBought: 1000,
-      totalSold: 0,
-      totalCredits: 11,
-      transactions: [],
-      credits: [
-        {
-          id: 'cr-1',
-          date: '2024-02-01T00:00:00',
-          type: 'Dividend',
-          value: 5,
-        },
-      ],
-    })
+      ...baseAsset,
+      credits: [{ id: 'cr-1', date: '2024-02-01T00:00:00', type: 'Dividend', value: 5 }],
+    } satisfies AssetDetailsDto)
     updateCreditMock.mockResolvedValue({
-      name: 'BCIA11',
-      brokerName: 'XPI',
-      portfolioName: 'Default',
-      ticker: 'BCIA11',
-      isin: 'TEST',
-      exchange: 'BVMF',
-      country: 0,
-      localTypeCode: '',
-      class: 0,
-      quantity: 10,
-      averagePrice: 100,
-      isActive: true,
-      totalBought: 1000,
-      totalSold: 0,
+      ...baseAsset,
       totalCredits: 12,
-      transactions: [],
-      credits: [
-        {
-          id: 'cr-1',
-          date: '2024-02-01T00:00:00',
-          type: 'Rent',
-          value: 7,
-        },
-      ],
-    })
+      credits: [{ id: 'cr-1', date: '2024-02-01T00:00:00', type: 'Rent', value: 7 }],
+    } satisfies AssetDetailsDto)
 
-    render(
-      <MemoryRouter initialEntries={['/assets/XPI/Default/BCIA11']}>
-        <Routes>
-          <Route path="/assets/:brokerName/:portfolioName/:assetName" element={<AssetDetailPage />} />
-        </Routes>
-      </MemoryRouter>,
-    )
+    renderAssetDetail()
 
     expect(await screen.findByRole('heading', { name: 'BCIA11' })).toBeInTheDocument()
 
@@ -445,59 +237,13 @@ describe('AssetDetailPage', () => {
 
   it('deletes a credit after confirmation', async () => {
     getAssetDetailsMock.mockResolvedValue({
-      name: 'BCIA11',
-      brokerName: 'XPI',
-      portfolioName: 'Default',
-      ticker: 'BCIA11',
-      isin: 'TEST',
-      exchange: 'BVMF',
-      country: 0,
-      localTypeCode: '',
-      class: 0,
-      quantity: 10,
-      averagePrice: 100,
-      isActive: true,
-      totalBought: 1000,
-      totalSold: 0,
-      totalCredits: 11,
-      transactions: [],
-      credits: [
-        {
-          id: 'cr-2',
-          date: '2024-02-03T00:00:00',
-          type: 'Dividend',
-          value: 4,
-        },
-      ],
-    })
-    deleteCreditMock.mockResolvedValue({
-      name: 'BCIA11',
-      brokerName: 'XPI',
-      portfolioName: 'Default',
-      ticker: 'BCIA11',
-      isin: 'TEST',
-      exchange: 'BVMF',
-      country: 0,
-      localTypeCode: '',
-      class: 0,
-      quantity: 10,
-      averagePrice: 100,
-      isActive: true,
-      totalBought: 1000,
-      totalSold: 0,
-      totalCredits: 11,
-      transactions: [],
-      credits: [],
-    })
+      ...baseAsset,
+      credits: [{ id: 'cr-2', date: '2024-02-03T00:00:00', type: 'Dividend', value: 4 }],
+    } satisfies AssetDetailsDto)
+    deleteCreditMock.mockResolvedValue(baseAsset)
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
 
-    render(
-      <MemoryRouter initialEntries={['/assets/XPI/Default/BCIA11']}>
-        <Routes>
-          <Route path="/assets/:brokerName/:portfolioName/:assetName" element={<AssetDetailPage />} />
-        </Routes>
-      </MemoryRouter>,
-    )
+    renderAssetDetail()
 
     expect(await screen.findByRole('heading', { name: 'BCIA11' })).toBeInTheDocument()
 
@@ -519,13 +265,7 @@ describe('AssetDetailPage', () => {
   it('shows error state when request fails', async () => {
     getAssetDetailsMock.mockRejectedValue(new Error('Boom'))
 
-    render(
-      <MemoryRouter initialEntries={['/assets/XPI/Default/BCIA11']}>
-        <Routes>
-          <Route path="/assets/:brokerName/:portfolioName/:assetName" element={<AssetDetailPage />} />
-        </Routes>
-      </MemoryRouter>,
-    )
+    renderAssetDetail()
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Boom')
   })

@@ -2,13 +2,15 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import NavigationTreePage from '../NavigationTreePage'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { TreeNodeDto } from '../../api/types'
 
 const getNavigationTreeMock = vi.fn()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: () => ({
     getNavigationTree: getNavigationTreeMock,
-  }),
+  } satisfies Partial<FinancialApiClient>),
 }))
 
 describe('NavigationTreePage', () => {
@@ -29,7 +31,7 @@ describe('NavigationTreePage', () => {
           children: [],
         },
       ],
-    })
+    } satisfies TreeNodeDto)
 
     render(
       <MemoryRouter>
