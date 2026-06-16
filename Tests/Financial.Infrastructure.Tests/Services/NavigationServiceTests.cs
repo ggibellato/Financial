@@ -451,7 +451,7 @@ public class NavigationServiceTests
             _brokers = brokers.ToList();
         }
 
-        public List<string> GetAllAssetsFullName() => throw new NotImplementedException();
+        public IReadOnlyList<string> GetAllAssetsFullName() => throw new NotImplementedException();
 
         public IEnumerable<Asset> GetAssetsByBroker(string name) => throw new NotImplementedException();
 

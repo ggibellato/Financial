@@ -1,3 +1,4 @@
+using Financial.Application.Configuration;
 using Financial.Application.Interfaces;
 using System;
 using System.IO;
@@ -7,7 +8,6 @@ namespace Financial.Infrastructure.Persistence;
 
 public sealed class LocalJsonStorage : IJsonStorage
 {
-    public const string DataJsonFileConfigurationKey = "DataJsonFile";
     public const string DefaultDataFileName = "data.json";
 
     private readonly string _dataFilePath;
@@ -22,7 +22,7 @@ public sealed class LocalJsonStorage : IJsonStorage
         if (!File.Exists(_dataFilePath))
         {
             throw new FileNotFoundException(
-                $"Data file not found at '{_dataFilePath}'. Configure '{DataJsonFileConfigurationKey}' or place '{DefaultDataFileName}' in the application directory.",
+                $"Data file not found at '{_dataFilePath}'. Configure '{RepositoryConfigurationKeys.LocalJsonDataFile}' or place '{DefaultDataFileName}' in the application directory.",
                 _dataFilePath);
         }
 

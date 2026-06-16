@@ -19,7 +19,7 @@ public sealed class JSONRepository : IRepository
         _investiments = LoadInvestments(_storage);
     }
 
-    public List<string> GetAllAssetsFullName()
+    public IReadOnlyList<string> GetAllAssetsFullName()
     {
         return _investiments.Brokers
             .SelectMany(b => b.Portfolios.SelectMany(p => p.Assets.Select(a => $"{b.Name}/{p.Name}/{a.Name}")))
