@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import DividendCheckPage from '../DividendCheckPage'
+import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { DividendHistoryItemDto, DividendSummaryDto } from '../../api/types'
 
 const getDividendSummaryMock = vi.fn()
@@ -10,7 +11,7 @@ vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: () => ({
     getDividendSummary: getDividendSummaryMock,
     getDividendHistory: getDividendHistoryMock,
-  }),
+  } satisfies Partial<FinancialApiClient>),
 }))
 
 describe('DividendCheckPage', () => {

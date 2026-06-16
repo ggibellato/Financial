@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import CreditsPage from '../CreditsPage'
+import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CreditDto } from '../../api/types'
 
 const getCreditsByBrokerMock = vi.fn()
@@ -11,7 +12,7 @@ vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: () => ({
     getCreditsByBroker: getCreditsByBrokerMock,
     getCreditsByPortfolio: getCreditsByPortfolioMock,
-  }),
+  } satisfies Partial<FinancialApiClient>),
 }))
 
 describe('CreditsPage', () => {
