@@ -1,4 +1,3 @@
-using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using Financial.Infrastructure.Persistence;
@@ -61,44 +60,6 @@ public sealed class JSONRepository : IRepository
         return _investiments.Brokers;
     }
 
-    public BrokerInfoDTO GetBrokerInfo(string brokerName)
-    {
-        var ret = new BrokerInfoDTO();
-        ret.TotalBought = GetTotalBoughtByBroker(brokerName, false);
-        ret.TotalSold = GetTotalSoldByBroker(brokerName, false);
-        ret.TotalCredits = GetTotalCreditsByBroker(brokerName, false);
-
-        ret.TotalBoughtActive = GetTotalBoughtByBroker(brokerName, true);
-        ret.TotalSoldActive = GetTotalSoldByBroker(brokerName, true);
-        ret.TotalCreditsActive = GetTotalCreditsByBroker(brokerName, true);
-
-        ret.PortfoliosActive = GetPortfolioAssetsByBroker(brokerName, true);
-        ret.PortfoliosInactive = GetPortfolioAssetsByBroker(brokerName, false);
-        return ret;
-    }
-
-    public AssetInfoDTO GetAssetInfo(string brokerName, string portfolio, string assetName)
-    {
-        var asset = GetBrokerOrThrow(brokerName)
-            .Portfolios.First(p => p.Name == portfolio)
-            .Assets.First(a => a.Name == assetName);
-
-        return new AssetInfoDTO
-        {
-            Exchange = asset.Exchange,
-            Ticker = asset.Ticker,
-            Country = asset.Country,
-            LocalTypeCode = asset.LocalTypeCode,
-            Class = asset.Class,
-            Quantity = asset.Quantity,
-            AvaragePrice = asset.AvargePrice,
-            TotalBought = SumTransactionsByType(asset.Transactions, Transaction.TransactionType.Buy),
-            TotalSold = SumTransactionsByType(asset.Transactions, Transaction.TransactionType.Sell),
-            Credits = BuildCreditInfo(asset.Credits),
-            InvestedHistory = BuildInvestedHistory(asset.Transactions)
-        };
-    }
-
     public void SaveChanges()
     {
         var json = InvestmentsJsonSerializer.Serialize(_investiments);
@@ -121,9 +82,6 @@ public sealed class JSONRepository : IRepository
     private IEnumerable<Broker> GetBrokersByName(string brokerName) =>
         _investiments.Brokers.Where(b => b.Name == brokerName);
 
-    private Broker GetBrokerOrThrow(string brokerName) =>
-        _investiments.Brokers.First(b => b.Name == brokerName);
-
     private IEnumerable<Portfolio> GetPortfoliosByBroker(string brokerName) =>
         GetBrokersByName(brokerName).SelectMany(b => b.Portfolios);
 
@@ -135,91 +93,4 @@ public sealed class JSONRepository : IRepository
 
     private IEnumerable<Asset> GetAllAssetsInternal() =>
         _investiments.Brokers.SelectMany(b => b.Portfolios.SelectMany(p => p.Assets));
-
-    private static IEnumerable<Asset> FilterActiveAssets(IEnumerable<Asset> assets, bool activeOnly) =>
-        activeOnly ? assets.Where(a => a.Active) : assets;
-
-    private IEnumerable<TItem> GetAssetItemsByBroker<TItem>(
-        string brokerName,
-        bool activeOnly,
-        Func<Asset, IEnumerable<TItem>> selector) =>
-        FilterActiveAssets(GetAssetsByBrokerInternal(brokerName), activeOnly)
-            .SelectMany(selector);
-
-    private IEnumerable<Transaction> GetTransactionsByBroker(string brokerName, bool activeOnly) =>
-        GetAssetItemsByBroker(brokerName, activeOnly, asset => asset.Transactions);
-
-    private IEnumerable<Credit> GetCreditsByBroker(string brokerName, bool activeOnly) =>
-        GetAssetItemsByBroker(brokerName, activeOnly, asset => asset.Credits);
-
-    private static CreditInfoDTO BuildCreditInfo(IEnumerable<Credit> credits)
-    {
-        var creditsInfo = new CreditInfoDTO();
-        creditsInfo.Total = credits.Sum(o => o.Value);
-        creditsInfo.CreditsByMonth = credits
-            .GroupBy(c => new DateOnly(c.Date.Year, c.Date.Month, 1))
-            .ToDictionary(g => g.Key, g => g.Sum(c => c.Value));
-        return creditsInfo;
-    }
-
-    private decimal GetTotalBoughtByBroker(string brokerName, bool active)
-    {
-        return GetTotalTransactionsByBroker(brokerName, active, Transaction.TransactionType.Buy);
-    }
-
-    private decimal GetTotalSoldByBroker(string brokerName, bool active)
-    {
-        return GetTotalTransactionsByBroker(brokerName, active, Transaction.TransactionType.Sell);
-    }
-
-    private CreditInfoDTO GetTotalCreditsByBroker(string brokerName, bool active)
-    {
-        return BuildCreditInfo(GetCreditsByBroker(brokerName, active));
-    }
-
-    private decimal GetTotalTransactionsByBroker(string brokerName, bool active, Transaction.TransactionType type)
-    {
-        return SumTransactionsByType(GetTransactionsByBroker(brokerName, active), type);
-    }
-
-    private static decimal SumTransactionsByType(IEnumerable<Transaction> transactions, Transaction.TransactionType type)
-    {
-        return transactions
-            .Where(t => t.Type == type)
-            .Sum(t => t.TotalPrice);
-    }
-
-    private static Dictionary<DateOnly, decimal> BuildInvestedHistory(IEnumerable<Transaction> transactions)
-    {
-        var history = new Dictionary<DateOnly, decimal>();
-        decimal currentValue = 0;
-        foreach (var transaction in transactions.OrderBy(t => t.Date))
-        {
-            var key = new DateOnly(transaction.Date.Year, transaction.Date.Month, 1);
-            currentValue += transaction.TotalPrice * (transaction.Type == Transaction.TransactionType.Buy ? 1 : -1);
-            history[key] = currentValue;
-        }
-
-        return history;
-    }
-
-    private List<PortfolioDTO> GetPortfolioAssetsByBroker(string brokerName, bool active)
-    {
-        var ret = new List<PortfolioDTO>();
-        var broker = GetBrokerOrThrow(brokerName);
-        foreach (var p in broker.Portfolios)
-        {
-            var assets = p.Assets.Where(a => a.Active == active);
-            if (assets.Any())
-            {
-                var pDTO = new PortfolioDTO
-                {
-                    Name = p.Name,
-                    Assets = assets.Select(a => a.Name).ToList()
-                };
-                ret.Add(pDTO);
-            }
-        }
-        return ret;
-    }
 }

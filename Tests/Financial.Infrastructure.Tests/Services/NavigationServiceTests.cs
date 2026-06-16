@@ -1,4 +1,3 @@
-using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using Financial.Infrastructure.Repositories;
@@ -464,10 +463,6 @@ public class NavigationServiceTests
         public IEnumerable<Broker> GetBrokerList() => _brokers;
 
         public Asset? GetAsset(string brokerName, string portfolioName, string assetName) => throw new NotImplementedException();
-
-        public BrokerInfoDTO GetBrokerInfo(string brokerName) => throw new NotImplementedException();
-
-        public AssetInfoDTO GetAssetInfo(string brokerName, string portfolio, string assetName) => throw new NotImplementedException();
 
         public void SaveChanges() => throw new NotImplementedException();
     }
