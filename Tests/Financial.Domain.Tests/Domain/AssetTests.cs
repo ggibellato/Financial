@@ -32,7 +32,7 @@ public class AssetTests
         asset.AddTransaction(second);
 
         asset.Quantity.Should().Be(20m);
-        asset.AvargePrice.Should().Be(6m);
+        asset.AveragePrice.Should().Be(6m);
         asset.Active.Should().BeTrue();
     }
 
@@ -45,7 +45,7 @@ public class AssetTests
         asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 2), Transaction.TransactionType.Sell, 5m, 12m, 0m));
 
         asset.Quantity.Should().Be(0m);
-        asset.AvargePrice.Should().Be(10m);
+        asset.AveragePrice.Should().Be(10m);
         asset.Active.Should().BeFalse();
     }
 
@@ -65,7 +65,7 @@ public class AssetTests
         result.Should().BeTrue();
         asset.Quantity.Should().Be(30m);
         var expected = (20m * 5m + 10m * 7m) / 30m;
-        asset.AvargePrice.Should().Be(expected);
+        asset.AveragePrice.Should().Be(expected);
     }
 
     [Fact]
