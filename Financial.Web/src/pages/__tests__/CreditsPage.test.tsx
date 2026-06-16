@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import CreditsPage from '../CreditsPage'
+import type { CreditDto } from '../../api/types'
 
 const getCreditsByBrokerMock = vi.fn()
 const getCreditsByPortfolioMock = vi.fn()
@@ -27,7 +28,7 @@ describe('CreditsPage', () => {
         type: 'Dividend',
         value: 12.5,
       },
-    ])
+    ] satisfies CreditDto[])
 
     render(
       <MemoryRouter initialEntries={['/credits/XPI']}>
@@ -50,7 +51,7 @@ describe('CreditsPage', () => {
         type: 'Fee Refund',
         value: 4.2,
       },
-    ])
+    ] satisfies CreditDto[])
 
     render(
       <MemoryRouter initialEntries={['/credits/XPI/Default']}>

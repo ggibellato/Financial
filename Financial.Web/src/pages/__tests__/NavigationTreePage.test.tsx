@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import NavigationTreePage from '../NavigationTreePage'
+import type { TreeNodeDto } from '../../api/types'
 
 const getNavigationTreeMock = vi.fn()
 
@@ -29,7 +30,7 @@ describe('NavigationTreePage', () => {
           children: [],
         },
       ],
-    })
+    } satisfies TreeNodeDto)
 
     render(
       <MemoryRouter>

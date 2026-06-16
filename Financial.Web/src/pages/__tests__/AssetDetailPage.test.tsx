@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AssetDetailPage from '../AssetDetailPage'
+import type { AssetDetailsDto } from '../../api/types'
 
 const getAssetDetailsMock = vi.fn()
 const addOperationMock = vi.fn()
@@ -50,7 +51,7 @@ describe('AssetDetailPage', () => {
       totalCredits: 11,
       operations: [],
       credits: [],
-    })
+    } satisfies AssetDetailsDto)
 
     render(
       <MemoryRouter initialEntries={['/assets/XPI/Default/BCIA11']}>
@@ -90,7 +91,7 @@ describe('AssetDetailPage', () => {
           value: 5,
         },
       ],
-    })
+    } satisfies AssetDetailsDto)
 
     render(
       <MemoryRouter initialEntries={['/assets/XPI/Default/BCIA11']}>
@@ -128,7 +129,7 @@ describe('AssetDetailPage', () => {
       totalCredits: 11,
       operations: [],
       credits: [],
-    })
+    } satisfies AssetDetailsDto)
     addOperationMock.mockResolvedValue({
       name: 'BCIA11',
       brokerName: 'XPI',
@@ -157,7 +158,7 @@ describe('AssetDetailPage', () => {
         },
       ],
       credits: [],
-    })
+    } satisfies AssetDetailsDto)
 
     render(
       <MemoryRouter initialEntries={['/assets/XPI/Default/BCIA11']}>
@@ -220,7 +221,7 @@ describe('AssetDetailPage', () => {
         },
       ],
       credits: [],
-    })
+    } satisfies AssetDetailsDto)
     updateOperationMock.mockResolvedValue({
       name: 'BCIA11',
       brokerName: 'XPI',
@@ -249,7 +250,7 @@ describe('AssetDetailPage', () => {
         },
       ],
       credits: [],
-    })
+    } satisfies AssetDetailsDto)
 
     render(
       <MemoryRouter initialEntries={['/assets/XPI/Default/BCIA11']}>
@@ -312,7 +313,7 @@ describe('AssetDetailPage', () => {
         },
       ],
       credits: [],
-    })
+    } satisfies AssetDetailsDto)
     deleteOperationMock.mockResolvedValue({
       name: 'BCIA11',
       brokerName: 'XPI',
@@ -331,7 +332,7 @@ describe('AssetDetailPage', () => {
       totalCredits: 11,
       operations: [],
       credits: [],
-    })
+    } satisfies AssetDetailsDto)
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
 
     render(
@@ -385,7 +386,7 @@ describe('AssetDetailPage', () => {
           value: 5,
         },
       ],
-    })
+    } satisfies AssetDetailsDto)
     updateCreditMock.mockResolvedValue({
       name: 'BCIA11',
       brokerName: 'XPI',
@@ -411,7 +412,7 @@ describe('AssetDetailPage', () => {
           value: 7,
         },
       ],
-    })
+    } satisfies AssetDetailsDto)
 
     render(
       <MemoryRouter initialEntries={['/assets/XPI/Default/BCIA11']}>
@@ -469,7 +470,7 @@ describe('AssetDetailPage', () => {
           value: 4,
         },
       ],
-    })
+    } satisfies AssetDetailsDto)
     deleteCreditMock.mockResolvedValue({
       name: 'BCIA11',
       brokerName: 'XPI',
@@ -488,7 +489,7 @@ describe('AssetDetailPage', () => {
       totalCredits: 11,
       operations: [],
       credits: [],
-    })
+    } satisfies AssetDetailsDto)
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
 
     render(

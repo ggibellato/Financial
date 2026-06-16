@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import DividendCheckPage from '../DividendCheckPage'
+import type { DividendHistoryItemDto, DividendSummaryDto } from '../../api/types'
 
 const getDividendSummaryMock = vi.fn()
 const getDividendHistoryMock = vi.fn()
@@ -29,14 +30,14 @@ describe('DividendCheckPage', () => {
       priceMaxBuy: 66.67,
       discountPercent: 20,
       yearTotals: [{ year: 2023, total: 4 }],
-    })
+    } satisfies DividendSummaryDto)
     getDividendHistoryMock.mockResolvedValue([
       {
         type: 'Dividend',
         date: '2024-02-01T00:00:00Z',
         value: 1.23,
       },
-    ])
+    ] satisfies DividendHistoryItemDto[])
 
     render(<DividendCheckPage />)
 
