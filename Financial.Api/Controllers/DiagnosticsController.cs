@@ -1,4 +1,4 @@
-using Financial.Infrastructure.Persistence;
+using Financial.Application.Configuration;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -12,7 +12,6 @@ public sealed class DiagnosticsController : ControllerBase
 {
     private readonly IConfiguration _configuration;
     private readonly IHostEnvironment _environment;
-    private const string RepositoryProviderConfigurationKey = "Repository:Provider";
 
     public DiagnosticsController(IConfiguration configuration, IHostEnvironment environment)
     {
@@ -39,10 +38,10 @@ public sealed class DiagnosticsController : ControllerBase
 
         return Ok(new
         {
-            provider = _configuration[RepositoryProviderConfigurationKey],
-            dataJsonFile = _configuration[LocalJsonStorage.DataJsonFileConfigurationKey],
-            googleDriveCredentialsPath = _configuration[GoogleDriveJsonStorage.CredentialsPathConfigurationKey],
-            googleDriveFilePath = _configuration[GoogleDriveJsonStorage.FilePathConfigurationKey]
+            provider = _configuration[RepositoryConfigurationKeys.Provider],
+            dataJsonFile = _configuration[RepositoryConfigurationKeys.LocalJsonDataFile],
+            googleDriveCredentialsPath = _configuration[RepositoryConfigurationKeys.GoogleDriveCredentialsPath],
+            googleDriveFilePath = _configuration[RepositoryConfigurationKeys.GoogleDriveFilePath]
         });
     }
 }
