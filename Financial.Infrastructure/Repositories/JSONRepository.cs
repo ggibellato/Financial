@@ -1,6 +1,7 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
+using Financial.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -100,7 +101,7 @@ public sealed class JSONRepository : IRepository
 
     public void SaveChanges()
     {
-        var json = _investiments.Serialize();
+        var json = InvestmentsJsonSerializer.Serialize(_investiments);
         _storage.WriteAsync(json)
             .ConfigureAwait(false)
             .GetAwaiter()
@@ -114,7 +115,7 @@ public sealed class JSONRepository : IRepository
             .GetAwaiter()
             .GetResult();
 
-        return Investments.Deserialize(json);
+        return InvestmentsJsonSerializer.Deserialize(json);
     }
 
     private IEnumerable<Broker> GetBrokersByName(string brokerName) =>
