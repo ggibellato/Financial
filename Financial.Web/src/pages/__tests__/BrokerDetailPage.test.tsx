@@ -40,7 +40,7 @@ describe('BrokerDetailPage', () => {
                 quantity: 10,
                 averagePrice: 100,
                 isActive: true,
-                operationCount: 1,
+                transactionCount: 1,
                 creditCount: 1,
               },
             ],

@@ -4,18 +4,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AssetDetailPage from '../AssetDetailPage'
 
 const getAssetDetailsMock = vi.fn()
-const addOperationMock = vi.fn()
-const updateOperationMock = vi.fn()
-const deleteOperationMock = vi.fn()
+const addTransactionMock = vi.fn()
+const updateTransactionMock = vi.fn()
+const deleteTransactionMock = vi.fn()
 const updateCreditMock = vi.fn()
 const deleteCreditMock = vi.fn()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: () => ({
     getAssetDetails: getAssetDetailsMock,
-    addOperation: addOperationMock,
-    updateOperation: updateOperationMock,
-    deleteOperation: deleteOperationMock,
+    addTransaction: addTransactionMock,
+    updateTransaction: updateTransactionMock,
+    deleteTransaction: deleteTransactionMock,
     updateCredit: updateCreditMock,
     deleteCredit: deleteCreditMock,
   }),
@@ -24,9 +24,9 @@ vi.mock('../../api/financialApiClient', () => ({
 describe('AssetDetailPage', () => {
   beforeEach(() => {
     getAssetDetailsMock.mockReset()
-    addOperationMock.mockReset()
-    updateOperationMock.mockReset()
-    deleteOperationMock.mockReset()
+    addTransactionMock.mockReset()
+    updateTransactionMock.mockReset()
+    deleteTransactionMock.mockReset()
     updateCreditMock.mockReset()
     deleteCreditMock.mockReset()
   })
@@ -48,7 +48,7 @@ describe('AssetDetailPage', () => {
       totalBought: 1000,
       totalSold: 0,
       totalCredits: 11,
-      operations: [],
+      transactions: [],
       credits: [],
     })
 
@@ -81,7 +81,7 @@ describe('AssetDetailPage', () => {
       totalBought: 1000,
       totalSold: 0,
       totalCredits: 11,
-      operations: [],
+      transactions: [],
       credits: [
         {
           id: 'cr-0',
@@ -109,7 +109,7 @@ describe('AssetDetailPage', () => {
     expect(screen.getByRole('button', { name: 'Last year' })).toBeInTheDocument()
   })
 
-  it('submits a new operation', async () => {
+  it('submits a new transaction', async () => {
     getAssetDetailsMock.mockResolvedValue({
       name: 'BCIA11',
       brokerName: 'XPI',
@@ -126,10 +126,10 @@ describe('AssetDetailPage', () => {
       totalBought: 1000,
       totalSold: 0,
       totalCredits: 11,
-      operations: [],
+      transactions: [],
       credits: [],
     })
-    addOperationMock.mockResolvedValue({
+    addTransactionMock.mockResolvedValue({
       name: 'BCIA11',
       brokerName: 'XPI',
       portfolioName: 'Default',
@@ -145,7 +145,7 @@ describe('AssetDetailPage', () => {
       totalBought: 1200,
       totalSold: 0,
       totalCredits: 11,
-      operations: [
+      transactions: [
         {
           id: 'new-op',
           date: '2024-01-02T00:00:00',
@@ -169,16 +169,16 @@ describe('AssetDetailPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'BCIA11' })).toBeInTheDocument()
 
-    fireEvent.click(await screen.findByRole('tab', { name: 'Operations' }))
+    fireEvent.click(await screen.findByRole('tab', { name: 'Transactions' }))
     fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2024-01-02' } })
     fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'Buy' } })
     fireEvent.change(screen.getByLabelText('Quantity'), { target: { value: '2' } })
     fireEvent.change(screen.getByLabelText('Unit price'), { target: { value: '10' } })
     fireEvent.change(screen.getByLabelText('Fees'), { target: { value: '1' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Add operation' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add transaction' }))
 
     await waitFor(() => {
-      expect(addOperationMock).toHaveBeenCalledWith({
+      expect(addTransactionMock).toHaveBeenCalledWith({
         brokerName: 'XPI',
         portfolioName: 'Default',
         assetName: 'BCIA11',
@@ -191,7 +191,7 @@ describe('AssetDetailPage', () => {
     })
   })
 
-  it('updates an operation', async () => {
+  it('updates a transaction', async () => {
     getAssetDetailsMock.mockResolvedValue({
       name: 'BCIA11',
       brokerName: 'XPI',
@@ -208,7 +208,7 @@ describe('AssetDetailPage', () => {
       totalBought: 1000,
       totalSold: 0,
       totalCredits: 11,
-      operations: [
+      transactions: [
         {
           id: 'op-1',
           date: '2024-01-05T00:00:00',
@@ -221,7 +221,7 @@ describe('AssetDetailPage', () => {
       ],
       credits: [],
     })
-    updateOperationMock.mockResolvedValue({
+    updateTransactionMock.mockResolvedValue({
       name: 'BCIA11',
       brokerName: 'XPI',
       portfolioName: 'Default',
@@ -237,7 +237,7 @@ describe('AssetDetailPage', () => {
       totalBought: 1010,
       totalSold: 0,
       totalCredits: 11,
-      operations: [
+      transactions: [
         {
           id: 'op-1',
           date: '2024-01-05T00:00:00',
@@ -261,15 +261,15 @@ describe('AssetDetailPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'BCIA11' })).toBeInTheDocument()
 
-    fireEvent.click(await screen.findByRole('tab', { name: 'Operations' }))
+    fireEvent.click(await screen.findByRole('tab', { name: 'Transactions' }))
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
     fireEvent.change(screen.getByLabelText('Quantity'), { target: { value: '2' } })
     fireEvent.change(screen.getByLabelText('Unit price'), { target: { value: '12' } })
     fireEvent.change(screen.getByLabelText('Fees'), { target: { value: '1' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Update operation' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Update transaction' }))
 
     await waitFor(() => {
-      expect(updateOperationMock).toHaveBeenCalledWith({
+      expect(updateTransactionMock).toHaveBeenCalledWith({
         brokerName: 'XPI',
         portfolioName: 'Default',
         assetName: 'BCIA11',
@@ -283,7 +283,7 @@ describe('AssetDetailPage', () => {
     })
   })
 
-  it('deletes an operation after confirmation', async () => {
+  it('deletes a transaction after confirmation', async () => {
     getAssetDetailsMock.mockResolvedValue({
       name: 'BCIA11',
       brokerName: 'XPI',
@@ -300,7 +300,7 @@ describe('AssetDetailPage', () => {
       totalBought: 1000,
       totalSold: 0,
       totalCredits: 11,
-      operations: [
+      transactions: [
         {
           id: 'op-2',
           date: '2024-01-06T00:00:00',
@@ -313,7 +313,7 @@ describe('AssetDetailPage', () => {
       ],
       credits: [],
     })
-    deleteOperationMock.mockResolvedValue({
+    deleteTransactionMock.mockResolvedValue({
       name: 'BCIA11',
       brokerName: 'XPI',
       portfolioName: 'Default',
@@ -329,7 +329,7 @@ describe('AssetDetailPage', () => {
       totalBought: 1000,
       totalSold: 0,
       totalCredits: 11,
-      operations: [],
+      transactions: [],
       credits: [],
     })
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
@@ -344,11 +344,11 @@ describe('AssetDetailPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'BCIA11' })).toBeInTheDocument()
 
-    fireEvent.click(await screen.findByRole('tab', { name: 'Operations' }))
+    fireEvent.click(await screen.findByRole('tab', { name: 'Transactions' }))
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
 
     await waitFor(() => {
-      expect(deleteOperationMock).toHaveBeenCalledWith({
+      expect(deleteTransactionMock).toHaveBeenCalledWith({
         brokerName: 'XPI',
         portfolioName: 'Default',
         assetName: 'BCIA11',
@@ -376,7 +376,7 @@ describe('AssetDetailPage', () => {
       totalBought: 1000,
       totalSold: 0,
       totalCredits: 11,
-      operations: [],
+      transactions: [],
       credits: [
         {
           id: 'cr-1',
@@ -402,7 +402,7 @@ describe('AssetDetailPage', () => {
       totalBought: 1000,
       totalSold: 0,
       totalCredits: 12,
-      operations: [],
+      transactions: [],
       credits: [
         {
           id: 'cr-1',
@@ -460,7 +460,7 @@ describe('AssetDetailPage', () => {
       totalBought: 1000,
       totalSold: 0,
       totalCredits: 11,
-      operations: [],
+      transactions: [],
       credits: [
         {
           id: 'cr-2',
@@ -486,7 +486,7 @@ describe('AssetDetailPage', () => {
       totalBought: 1000,
       totalSold: 0,
       totalCredits: 11,
-      operations: [],
+      transactions: [],
       credits: [],
     })
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)

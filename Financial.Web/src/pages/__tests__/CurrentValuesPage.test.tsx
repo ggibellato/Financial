@@ -42,7 +42,7 @@ describe('CurrentValuesPage', () => {
                 quantity: 10,
                 averagePrice: 100,
                 isActive: true,
-                operationCount: 0,
+                transactionCount: 0,
                 creditCount: 0,
               },
             ],

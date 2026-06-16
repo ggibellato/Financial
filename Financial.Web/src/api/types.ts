@@ -31,11 +31,11 @@ export interface AssetNodeDto {
   quantity: number
   averagePrice: number
   isActive: boolean
-  operationCount: number
+  transactionCount: number
   creditCount: number
 }
 
-export interface OperationDto {
+export interface TransactionDto {
   id: string
   date: string
   type: string
@@ -68,11 +68,11 @@ export interface AssetDetailsDto {
   totalBought: number
   totalSold: number
   totalCredits: number
-  operations: OperationDto[]
+  transactions: TransactionDto[]
   credits: CreditDto[]
 }
 
-export interface OperationCreateDto {
+export interface TransactionCreateDto {
   brokerName: string
   portfolioName: string
   assetName: string
@@ -83,7 +83,7 @@ export interface OperationCreateDto {
   fees: number
 }
 
-export interface OperationUpdateDto {
+export interface TransactionUpdateDto {
   brokerName: string
   portfolioName: string
   assetName: string
@@ -95,7 +95,7 @@ export interface OperationUpdateDto {
   fees: number
 }
 
-export interface OperationDeleteDto {
+export interface TransactionDeleteDto {
   brokerName: string
   portfolioName: string
   assetName: string

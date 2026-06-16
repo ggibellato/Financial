@@ -9,9 +9,9 @@ import type {
   CreditUpdateDto,
   DividendHistoryItemDto,
   DividendSummaryDto,
-  OperationCreateDto,
-  OperationDeleteDto,
-  OperationUpdateDto,
+  TransactionCreateDto,
+  TransactionDeleteDto,
+  TransactionUpdateDto,
   TreeNodeDto,
 } from './types'
 
@@ -21,9 +21,9 @@ export interface FinancialApiClient {
   getAssetDetails: (brokerName: string, portfolioName: string, assetName: string) => Promise<AssetDetailsDto>
   getCreditsByBroker: (brokerName: string) => Promise<CreditDto[]>
   getCreditsByPortfolio: (brokerName: string, portfolioName: string) => Promise<CreditDto[]>
-  addOperation: (request: OperationCreateDto) => Promise<AssetDetailsDto>
-  updateOperation: (request: OperationUpdateDto) => Promise<AssetDetailsDto>
-  deleteOperation: (request: OperationDeleteDto) => Promise<AssetDetailsDto>
+  addTransaction: (request: TransactionCreateDto) => Promise<AssetDetailsDto>
+  updateTransaction: (request: TransactionUpdateDto) => Promise<AssetDetailsDto>
+  deleteTransaction: (request: TransactionDeleteDto) => Promise<AssetDetailsDto>
   addCredit: (request: CreditCreateDto) => Promise<AssetDetailsDto>
   updateCredit: (request: CreditUpdateDto) => Promise<AssetDetailsDto>
   deleteCredit: (request: CreditDeleteDto) => Promise<AssetDetailsDto>
@@ -93,18 +93,18 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<CreditDto[]>(
         `/credits/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}`,
       ),
-    addOperation: (requestBody) =>
-      request<AssetDetailsDto>('/operations', {
+    addTransaction: (requestBody) =>
+      request<AssetDetailsDto>('/transactions', {
         method: 'POST',
         body: JSON.stringify(requestBody),
       }),
-    updateOperation: (requestBody) =>
-      request<AssetDetailsDto>('/operations', {
+    updateTransaction: (requestBody) =>
+      request<AssetDetailsDto>('/transactions', {
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),
-    deleteOperation: (requestBody) =>
-      request<AssetDetailsDto>('/operations', {
+    deleteTransaction: (requestBody) =>
+      request<AssetDetailsDto>('/transactions', {
         method: 'DELETE',
         body: JSON.stringify(requestBody),
       }),

@@ -68,7 +68,7 @@ describe('App', () => {
                     Quantity: 10,
                     AveragePrice: 100,
                     IsActive: true,
-                    OperationCount: 0,
+                    TransactionCount: 0,
                     CreditCount: 0,
                   },
                   children: [],
@@ -95,7 +95,7 @@ describe('App', () => {
       totalBought: 1000,
       totalSold: 0,
       totalCredits: 0,
-      operations: [],
+      transactions: [],
       credits: [],
     })
 
