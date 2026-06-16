@@ -8,7 +8,7 @@ namespace Financial.Infrastructure.Services;
 /// Implementation of INavigationService that provides hierarchical navigation
 /// over financial data using the repository pattern
 /// </summary>
-public class NavigationService : INavigationService
+public sealed class NavigationService : INavigationService
 {
     private const string EncerradasName = "Encerradas";
     private readonly IRepository _repository;

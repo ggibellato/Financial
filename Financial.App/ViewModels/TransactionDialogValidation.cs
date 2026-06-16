@@ -1,3 +1,4 @@
+using Financial.Application.Validation;
 using System;
 using System.Collections.Generic;
 
@@ -5,7 +6,7 @@ namespace Financial.Presentation.App.ViewModels;
 
 public static class TransactionDialogValidation
 {
-public static string BuildValidationMessage(bool isDeleteMode, DateTime date, string? type, decimal quantity, decimal unitPrice, decimal fees)
+    public static string BuildValidationMessage(bool isDeleteMode, DateTime date, string? type, decimal quantity, decimal unitPrice, decimal fees)
     {
         if (isDeleteMode)
         {
@@ -42,9 +43,6 @@ public static string BuildValidationMessage(bool isDeleteMode, DateTime date, st
         return string.Join(Environment.NewLine, errors);
     }
 
-    public static bool IsValidTransactionType(string? value)
-    {
-        return string.Equals(value, "Buy", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(value, "Sell", StringComparison.OrdinalIgnoreCase);
-    }
+    public static bool IsValidTransactionType(string? value) =>
+        TransactionTypeParser.TryNormalize(value, out _);
 }

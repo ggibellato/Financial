@@ -1,3 +1,4 @@
+using Financial.Application.Validation;
 using System;
 using System.Collections.Generic;
 
@@ -5,7 +6,7 @@ namespace Financial.Presentation.App.ViewModels;
 
 public static class CreditDialogValidation
 {
-public static string BuildValidationMessage(bool isDeleteMode, DateTime date, string? type, decimal value)
+    public static string BuildValidationMessage(bool isDeleteMode, DateTime date, string? type, decimal value)
     {
         if (isDeleteMode)
         {
@@ -32,10 +33,6 @@ public static string BuildValidationMessage(bool isDeleteMode, DateTime date, st
         return string.Join(Environment.NewLine, errors);
     }
 
-    public static bool IsValidCreditType(string? value)
-    {
-        return string.Equals(value, "Dividend", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(value, "Rent", StringComparison.OrdinalIgnoreCase);
-    }
+    public static bool IsValidCreditType(string? value) =>
+        CreditTypeParser.TryNormalize(value, out _);
 }
-

@@ -16,7 +16,7 @@ using System.Text;
 
 namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 
-public class GoogleService
+public sealed class GoogleService
 {
     private static readonly string[] SheetsScopes = { SheetsService.Scope.Spreadsheets };
     private static readonly string[] DriveReadOnlyScopes = { DriveService.Scope.DriveReadonly };
