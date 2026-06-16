@@ -3,6 +3,7 @@ using Financial.Application.Interfaces;
 using Financial.Application.Validation;
 using Financial.Domain.Entities;
 using System;
+using System.Threading.Tasks;
 
 namespace Financial.Infrastructure.Services;
 
@@ -17,9 +18,9 @@ public sealed class TransactionService : ITransactionService
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
     }
 
-    public AssetDetailsDTO? AddTransaction(TransactionCreateDTO request)
+    public Task<AssetDetailsDTO?> AddTransactionAsync(TransactionCreateDTO request)
     {
-        return AssetServiceHelper.ExecuteParsedMutation<Transaction.TransactionType>(
+        return AssetServiceHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
             _repository,
             _navigationService,
             request.BrokerName,
@@ -35,14 +36,14 @@ public sealed class TransactionService : ITransactionService
             });
     }
 
-    public AssetDetailsDTO? UpdateTransaction(TransactionUpdateDTO request)
+    public Task<AssetDetailsDTO?> UpdateTransactionAsync(TransactionUpdateDTO request)
     {
         if (request.Id == Guid.Empty)
         {
-            return null;
+            return Task.FromResult<AssetDetailsDTO?>(null);
         }
 
-        return AssetServiceHelper.ExecuteParsedMutation<Transaction.TransactionType>(
+        return AssetServiceHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
             _repository,
             _navigationService,
             request.BrokerName,
@@ -57,14 +58,14 @@ public sealed class TransactionService : ITransactionService
             });
     }
 
-    public AssetDetailsDTO? DeleteTransaction(TransactionDeleteDTO request)
+    public Task<AssetDetailsDTO?> DeleteTransactionAsync(TransactionDeleteDTO request)
     {
         if (request.Id == Guid.Empty)
         {
-            return null;
+            return Task.FromResult<AssetDetailsDTO?>(null);
         }
 
-        return AssetServiceHelper.ExecuteAssetMutation(
+        return AssetServiceHelper.ExecuteAssetMutationAsync(
             _repository,
             _navigationService,
             request.BrokerName,

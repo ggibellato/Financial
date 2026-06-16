@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using Financial.Infrastructure.Repositories;
@@ -464,7 +465,7 @@ public class NavigationServiceTests
 
         public Asset? GetAsset(string brokerName, string portfolioName, string assetName) => throw new NotImplementedException();
 
-        public void SaveChanges() => throw new NotImplementedException();
+        public Task SaveChangesAsync() => throw new NotImplementedException();
     }
 }
 

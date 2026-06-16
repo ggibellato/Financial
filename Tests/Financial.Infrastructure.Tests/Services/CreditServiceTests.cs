@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Financial.Application.DTOs;
 using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
@@ -12,7 +13,7 @@ namespace Financial.Infrastructure.Tests.Services;
 public class CreditServiceTests
 {
     [Fact]
-    public void AddCredit_WithValidRequest_ReturnsDetailsWithNewCredit()
+    public async Task AddCredit_WithValidRequest_ReturnsDetailsWithNewCredit()
     {
         var (service, tempFile) = CreateService();
         try
@@ -27,7 +28,7 @@ public class CreditServiceTests
                 Value = 12.5m
             };
 
-            var result = service.AddCredit(request);
+            var result = await service.AddCreditAsync(request);
 
             result.Should().NotBeNull();
             result!.Credits.Should().ContainSingle(credit =>
@@ -43,12 +44,12 @@ public class CreditServiceTests
     }
 
     [Fact]
-    public void UpdateCredit_WithValidRequest_UpdatesCredit()
+    public async Task UpdateCredit_WithValidRequest_UpdatesCredit()
     {
         var (service, tempFile) = CreateService();
         try
         {
-            var created = service.AddCredit(new CreditCreateDTO
+            var created = await service.AddCreditAsync(new CreditCreateDTO
             {
                 BrokerName = "XPI",
                 PortfolioName = "Default",
@@ -60,7 +61,7 @@ public class CreditServiceTests
 
             var creditId = created!.Credits.First(credit => credit.Date == new DateTime(2024, 2, 2)).Id;
 
-            var updated = service.UpdateCredit(new CreditUpdateDTO
+            var updated = await service.UpdateCreditAsync(new CreditUpdateDTO
             {
                 BrokerName = "XPI",
                 PortfolioName = "Default",
@@ -83,12 +84,12 @@ public class CreditServiceTests
     }
 
     [Fact]
-    public void DeleteCredit_WithValidRequest_RemovesCredit()
+    public async Task DeleteCredit_WithValidRequest_RemovesCredit()
     {
         var (service, tempFile) = CreateService();
         try
         {
-            var created = service.AddCredit(new CreditCreateDTO
+            var created = await service.AddCreditAsync(new CreditCreateDTO
             {
                 BrokerName = "XPI",
                 PortfolioName = "Default",
@@ -100,7 +101,7 @@ public class CreditServiceTests
 
             var creditId = created!.Credits.First(credit => credit.Date == new DateTime(2024, 2, 3)).Id;
 
-            var updated = service.DeleteCredit(new CreditDeleteDTO
+            var updated = await service.DeleteCreditAsync(new CreditDeleteDTO
             {
                 BrokerName = "XPI",
                 PortfolioName = "Default",
@@ -129,5 +130,3 @@ public class CreditServiceTests
         return (service, tempFile);
     }
 }
-
-

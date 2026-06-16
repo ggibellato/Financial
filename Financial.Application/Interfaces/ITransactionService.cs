@@ -1,10 +1,11 @@
 using Financial.Application.DTOs;
+using System.Threading.Tasks;
 
 namespace Financial.Application.Interfaces;
 
 public interface ITransactionService
 {
-    AssetDetailsDTO? AddTransaction(TransactionCreateDTO request);
-    AssetDetailsDTO? UpdateTransaction(TransactionUpdateDTO request);
-    AssetDetailsDTO? DeleteTransaction(TransactionDeleteDTO request);
+    Task<AssetDetailsDTO?> AddTransactionAsync(TransactionCreateDTO request);
+    Task<AssetDetailsDTO?> UpdateTransactionAsync(TransactionUpdateDTO request);
+    Task<AssetDetailsDTO?> DeleteTransactionAsync(TransactionDeleteDTO request);
 }

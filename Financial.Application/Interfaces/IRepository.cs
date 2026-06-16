@@ -1,4 +1,5 @@
 ﻿using Financial.Domain.Entities;
+using System.Threading.Tasks;
 
 namespace Financial.Application.Interfaces;
 
@@ -12,5 +13,5 @@ public interface IRepository
     IEnumerable<Broker> GetBrokerList();
     Asset? GetAsset(string brokerName, string portfolioName, string assetName);
 
-    void SaveChanges();
+    Task SaveChangesAsync();
 }

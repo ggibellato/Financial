@@ -3,6 +3,7 @@ using Financial.Application.Interfaces;
 using Financial.Application.Validation;
 using Financial.Domain.Entities;
 using System;
+using System.Threading.Tasks;
 
 namespace Financial.Infrastructure.Services;
 
@@ -17,9 +18,9 @@ public sealed class CreditService : ICreditService
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
     }
 
-    public AssetDetailsDTO? AddCredit(CreditCreateDTO request)
+    public Task<AssetDetailsDTO?> AddCreditAsync(CreditCreateDTO request)
     {
-        return AssetServiceHelper.ExecuteParsedMutation<Credit.CreditType>(
+        return AssetServiceHelper.ExecuteParsedMutationAsync<Credit.CreditType>(
             _repository,
             _navigationService,
             request.BrokerName,
@@ -35,14 +36,14 @@ public sealed class CreditService : ICreditService
             });
     }
 
-    public AssetDetailsDTO? UpdateCredit(CreditUpdateDTO request)
+    public Task<AssetDetailsDTO?> UpdateCreditAsync(CreditUpdateDTO request)
     {
         if (request.Id == Guid.Empty)
         {
-            return null;
+            return Task.FromResult<AssetDetailsDTO?>(null);
         }
 
-        return AssetServiceHelper.ExecuteParsedMutation<Credit.CreditType>(
+        return AssetServiceHelper.ExecuteParsedMutationAsync<Credit.CreditType>(
             _repository,
             _navigationService,
             request.BrokerName,
@@ -57,14 +58,14 @@ public sealed class CreditService : ICreditService
             });
     }
 
-    public AssetDetailsDTO? DeleteCredit(CreditDeleteDTO request)
+    public Task<AssetDetailsDTO?> DeleteCreditAsync(CreditDeleteDTO request)
     {
         if (request.Id == Guid.Empty)
         {
-            return null;
+            return Task.FromResult<AssetDetailsDTO?>(null);
         }
 
-        return AssetServiceHelper.ExecuteAssetMutation(
+        return AssetServiceHelper.ExecuteAssetMutationAsync(
             _repository,
             _navigationService,
             request.BrokerName,
@@ -73,4 +74,3 @@ public sealed class CreditService : ICreditService
             asset => asset.RemoveCredit(request.Id));
     }
 }
-

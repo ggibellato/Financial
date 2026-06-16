@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
@@ -34,7 +35,7 @@ public sealed class TransactionActions
         _showMessage = showMessage ?? throw new ArgumentNullException(nameof(showMessage));
     }
 
-    public void Add(Func<TransactionDialogData?> showDialog)
+    public async Task Add(Func<TransactionDialogData?> showDialog)
     {
         if (!_hasContext())
         {
@@ -59,7 +60,7 @@ public sealed class TransactionActions
             return;
         }
 
-        var updatedDetails = _service.AddTransaction(new TransactionCreateDTO
+        var updatedDetails = await _service.AddTransactionAsync(new TransactionCreateDTO
         {
             BrokerName = _brokerName(),
             PortfolioName = _portfolioName(),
@@ -80,7 +81,7 @@ public sealed class TransactionActions
         _applyDetails(updatedDetails);
     }
 
-    public void Update(TransactionDTO? selectedTransaction, Func<TransactionDialogData?> showDialog)
+    public async Task Update(TransactionDTO? selectedTransaction, Func<TransactionDialogData?> showDialog)
     {
         if (_service == null || selectedTransaction == null)
         {
@@ -105,7 +106,7 @@ public sealed class TransactionActions
             return;
         }
 
-        var updatedDetails = _service.UpdateTransaction(new TransactionUpdateDTO
+        var updatedDetails = await _service.UpdateTransactionAsync(new TransactionUpdateDTO
         {
             BrokerName = _brokerName(),
             PortfolioName = _portfolioName(),
@@ -127,7 +128,7 @@ public sealed class TransactionActions
         _applyDetails(updatedDetails);
     }
 
-    public void Delete(TransactionDTO? selectedTransaction, Func<bool> confirmDialog)
+    public async Task Delete(TransactionDTO? selectedTransaction, Func<bool> confirmDialog)
     {
         if (selectedTransaction == null)
         {
@@ -150,7 +151,7 @@ public sealed class TransactionActions
             return;
         }
 
-        var updatedDetails = _service.DeleteTransaction(new TransactionDeleteDTO
+        var updatedDetails = await _service.DeleteTransactionAsync(new TransactionDeleteDTO
         {
             BrokerName = _brokerName(),
             PortfolioName = _portfolioName(),
