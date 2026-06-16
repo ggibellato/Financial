@@ -134,7 +134,7 @@ public class GoogleGenerator : IGenerator
         string ticker = "";
         try
         {
-            if(values is not null)
+            if (values is not null)
             {
                 var data = values.FirstOrDefault();
                 exchangeId = (string)data[0];
@@ -142,8 +142,8 @@ public class GoogleGenerator : IGenerator
                 isin = (string)data[2];
             }
         }
-        catch {
-        }
+        catch (InvalidCastException) { }
+        catch (ArgumentOutOfRangeException) { }
         return (isin, exchangeId, ticker);
     }
 

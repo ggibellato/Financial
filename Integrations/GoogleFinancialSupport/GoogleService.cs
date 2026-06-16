@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System;
 using Google;
 using System.Net;
+using System.Net.Http;
 using System.Linq;
 using System.Text;
 
@@ -252,7 +253,7 @@ public sealed class GoogleService
             }
             catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.TooManyRequests)
             {
-                throw new Exception($"API rate limit exceeded after {maxRetries} retries. Please wait a few minutes and try again.", ex);
+                throw new HttpRequestException($"API rate limit exceeded after {maxRetries} retries. Please wait a few minutes and try again.", ex);
             }
         }
     }

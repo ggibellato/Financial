@@ -16,13 +16,8 @@ namespace Financial.Infrastructure.Integrations.FinancialToolSupport
 
         private static string GetRegionISOCurrencySymbol(int lcid)
         {
-            try
-            {
-                return new RegionInfo(lcid).ISOCurrencySymbol;
-
-            }
-            catch { }
-            return null;
+            try { return new RegionInfo(lcid).ISOCurrencySymbol; }
+            catch (ArgumentException) { return null; } // neutral cultures (e.g. "en") have no region
         }
 
         public static string FormatCurrency(this decimal amount, string currencyCode)
