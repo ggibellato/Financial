@@ -59,13 +59,7 @@ internal sealed class AssetMetadataResolver
             return CountryCode.Unknown;
         }
 
-        return currency.ToUpperInvariant() switch
-        {
-            "BRL" => CountryCode.BR,
-            "GBP" => CountryCode.UK,
-            "USD" => CountryCode.US,
-            _ => CountryCode.Unknown
-        };
+        return CountryCodeResolver.FromCurrency(currency);
     }
 
     private static AssetClassificationEntry ResolveAssetClassification(string assetName, CountryCode brokerCountry)

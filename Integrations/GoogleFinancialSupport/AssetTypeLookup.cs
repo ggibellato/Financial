@@ -46,10 +46,9 @@ public sealed class AssetTypeLookup : IAssetTypeLookup
         var googleType = await TryResolveGoogleFinanceTypeAsync(request, ticker);
         if (!string.IsNullOrWhiteSpace(googleType))
         {
-            var inferredCountry = ResolveCountryFromExchange(request.Exchange);
             return new AssetTypeLookupResultDTO
             {
-                Country = inferredCountry,
+                Country = CountryCodeResolver.FromExchange(request.Exchange),
                 LocalTypeCode = googleType
             };
         }
@@ -146,21 +145,5 @@ public sealed class AssetTypeLookup : IAssetTypeLookup
     private static string NormalizeTicker(string ticker)
     {
         return string.IsNullOrWhiteSpace(ticker) ? string.Empty : ticker.Trim();
-    }
-
-    private static CountryCode ResolveCountryFromExchange(string exchange)
-    {
-        if (string.IsNullOrWhiteSpace(exchange))
-        {
-            return CountryCode.Unknown;
-        }
-
-        return exchange.Trim().ToUpperInvariant() switch
-        {
-            "BVMF" => CountryCode.BR,
-            "LON" or "LSE" => CountryCode.UK,
-            "NYSE" or "NASDAQ" or "AMEX" => CountryCode.US,
-            _ => CountryCode.Unknown
-        };
     }
 }
