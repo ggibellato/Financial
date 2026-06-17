@@ -8,6 +8,22 @@ namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 
 internal sealed class GoogleSheetsAssetReader
 {
+    private const int AssetExchangeIdColumn = 0;
+    private const int AssetTickerColumn = 1;
+    private const int AssetIsinColumn = 2;
+
+    private const int TransactionDateColumn = 0;
+    private const int TransactionTypeColumn = 2;
+    private const int TransactionQuantityColumn = 3;
+    private const int TransactionUnitPriceColumn = 5;
+    private const int TransactionFeesColumn = 6;
+    private const string SellTransactionCode = "V";
+
+    private const int CreditDateColumn = 0;
+    private const int CreditValueColumn = 1;
+    private const int CreditTypeColumn = 3;
+    private const string RentCreditType = "Aluguel";
+
     private readonly GoogleService _service;
 
     internal GoogleSheetsAssetReader(GoogleService service)
@@ -26,9 +42,9 @@ internal sealed class GoogleSheetsAssetReader
             if (values is not null)
             {
                 var row = values.FirstOrDefault();
-                exchangeId = (string)row[0];
-                ticker = (string)row[1];
-                isin = (string)row[2];
+                exchangeId = (string)row[AssetExchangeIdColumn];
+                ticker = (string)row[AssetTickerColumn];
+                isin = (string)row[AssetIsinColumn];
             }
         }
         catch (InvalidCastException) { }
@@ -44,16 +60,16 @@ internal sealed class GoogleSheetsAssetReader
 
         foreach (var value in values)
         {
-            var date = value[0] is long ? (long)value[0] : previousDate;
+            var date = value[TransactionDateColumn] is long ? (long)value[TransactionDateColumn] : previousDate;
             previousDate = date;
-            var type = (string)value[2];
-            var quantity = GoogleSheetValueParser.ToDecimal(value[3]);
-            var unitPrice = GoogleSheetValueParser.ToDecimal(value[5]);
-            var fees = GoogleSheetValueParser.ToDecimal(value[6]) - (unitPrice * quantity);
+            var type = (string)value[TransactionTypeColumn];
+            var quantity = GoogleSheetValueParser.ToDecimal(value[TransactionQuantityColumn]);
+            var unitPrice = GoogleSheetValueParser.ToDecimal(value[TransactionUnitPriceColumn]);
+            var fees = GoogleSheetValueParser.ToDecimal(value[TransactionFeesColumn]) - (unitPrice * quantity);
 
             transactions.Add(Transaction.Create(
                 DateTime.FromOADate(date),
-                type == "V" ? Transaction.TransactionType.Sell : Transaction.TransactionType.Buy,
+                type == SellTransactionCode ? Transaction.TransactionType.Sell : Transaction.TransactionType.Buy,
                 quantity,
                 unitPrice,
                 fees < 0 ? 0 : fees));
@@ -73,13 +89,13 @@ internal sealed class GoogleSheetsAssetReader
 
         foreach (var value in values)
         {
-            if (value.Count > 0 && !string.IsNullOrWhiteSpace(value[0].ToString()))
+            if (value.Count > 0 && !string.IsNullOrWhiteSpace(value[CreditDateColumn].ToString()))
             {
-                var type = value.Count > 3 ? (string)value[3] : string.Empty;
+                var type = value.Count > CreditTypeColumn ? (string)value[CreditTypeColumn] : string.Empty;
                 credits.Add(Credit.Create(
-                    DateTime.FromOADate((long)value[0]),
-                    type == "Aluguel" ? Credit.CreditType.Rent : Credit.CreditType.Dividend,
-                    GoogleSheetValueParser.ToDecimal(value[1])));
+                    DateTime.FromOADate((long)value[CreditDateColumn]),
+                    type == RentCreditType ? Credit.CreditType.Rent : Credit.CreditType.Dividend,
+                    GoogleSheetValueParser.ToDecimal(value[CreditValueColumn])));
             }
         }
         return credits;
