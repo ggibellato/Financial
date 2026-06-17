@@ -10,7 +10,7 @@ public static class InvestmentsJsonSerializer
 
     public static Investments Deserialize(string json)
     {
-        var investments = JsonSerializer.Deserialize<Investments>(json, InvestmentsSerializerOptions.Default);
-        return investments!;
+        return JsonSerializer.Deserialize<Investments>(json, InvestmentsSerializerOptions.Default)
+            ?? throw new InvalidOperationException("Failed to deserialize investments data: JSON produced a null result.");
     }
 }

@@ -13,6 +13,10 @@ namespace Financial.Infrastructure.Integrations.WebPageParser;
 /// </summary>
 public static class GoogleFinance
 {
+    private const int MinAssetNameLength = 5;
+    private const int MaxAssetNameLength = 100;
+    private const int MaxContainerTraversalDepth = 8;
+
     public static AssetValue GetFinancialInfo(string exchange, string ticker)
     {
         var snapshot = GetFinancialInfoSnapshot(exchange, ticker);
@@ -75,7 +79,7 @@ public static class GoogleFinance
     {
         // Traverse up to find a suitable container (typically 5-6 levels up)
         var container = priceNode.ParentNode;
-        for (int i = 0; i < 8 && container != null; i++)
+        for (int i = 0; i < MaxContainerTraversalDepth && container != null; i++)
         {
             var xpath = $".//div[contains(@class, '{GoogleFinanceSelectors.AssetName.PrimaryClass}')]";
             var nameNode = container.SelectSingleNode(xpath);
@@ -116,7 +120,7 @@ public static class GoogleFinance
         foreach (var div in divNodes.Take(10))
         {
             var text = div.InnerText.Trim();
-            if (!string.IsNullOrWhiteSpace(text) && text.Length > 5 && text.Length < 100)
+            if (!string.IsNullOrWhiteSpace(text) && text.Length > MinAssetNameLength && text.Length < MaxAssetNameLength)
                 return text;
         }
 
