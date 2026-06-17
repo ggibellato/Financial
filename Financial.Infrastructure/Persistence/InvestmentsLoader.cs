@@ -5,7 +5,9 @@ namespace Financial.Infrastructure.Persistence;
 
 public static class InvestmentsLoader
 {
-    public static Investments Load(IJsonStorage storage, IInvestmentsSerializer serializer)
+    // Intentionally synchronous: called from DI factory at startup before the app's async loop begins.
+    // ConfigureAwait(false) avoids SynchronizationContext deadlock in WPF startup context.
+    public static Investments LoadSync(IJsonStorage storage, IInvestmentsSerializer serializer)
     {
         var json = storage.ReadAsync()
             .ConfigureAwait(false)

@@ -67,7 +67,7 @@ public sealed class TransactionActions : AssetActionsBase
             return;
         }
 
-        _applyDetails(updatedDetails);
+        ApplyDetails(updatedDetails);
     }
 
     public async Task Update(TransactionDTO? selectedTransaction, Func<TransactionDialogData?> showDialog)
@@ -114,7 +114,7 @@ public sealed class TransactionActions : AssetActionsBase
             return;
         }
 
-        _applyDetails(updatedDetails);
+        ApplyDetails(updatedDetails);
     }
 
     public async Task Delete(TransactionDTO? selectedTransaction, Func<bool> confirmDialog)
@@ -154,7 +154,7 @@ public sealed class TransactionActions : AssetActionsBase
             return;
         }
 
-        _applyDetails(updatedDetails);
+        ApplyDetails(updatedDetails);
     }
 
 }

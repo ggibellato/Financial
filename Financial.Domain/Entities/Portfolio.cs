@@ -7,7 +7,7 @@ public class Portfolio
     public string Name { get; private set; }
 
     private List<Asset> _assets = new List<Asset>();
-    public IReadOnlyCollection<Asset> Assets { get => _assets.AsReadOnly(); set => SetAssets(value); }
+    public IReadOnlyCollection<Asset> Assets { get => _assets.AsReadOnly(); private set => SetAssets(value); }
     private void SetAssets(IReadOnlyCollection<Asset> data)
     {
         _assets.Clear();

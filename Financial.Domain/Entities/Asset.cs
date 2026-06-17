@@ -26,7 +26,7 @@ public class Asset
     public bool Active => Quantity > 0;
 
     private List<Transaction> _transactions = new List<Transaction>();
-    public IReadOnlyCollection<Transaction> Transactions { get => _transactions.AsReadOnly(); set => SetTransactions(value); }
+    public IReadOnlyCollection<Transaction> Transactions { get => _transactions.AsReadOnly(); private set => SetTransactions(value); }
     private void SetTransactions(IReadOnlyCollection<Transaction> data)
     {
         RebuildTransactions(data);
@@ -45,7 +45,7 @@ public class Asset
     }
 
     private List<Credit> _credits = new List<Credit>();
-    public IReadOnlyCollection<Credit> Credits { get => _credits.AsReadOnly(); set => SetCredits(value); }
+    public IReadOnlyCollection<Credit> Credits { get => _credits.AsReadOnly(); private set => SetCredits(value); }
     private void SetCredits(IReadOnlyCollection<Credit> data)
     {
         _credits.Clear();
@@ -98,7 +98,6 @@ public class Asset
             throw new ArgumentNullException(nameof(transaction));
         }
 
-        transaction.EnsureId();
         if (transaction.Type == Transaction.TransactionType.Buy)
         {
             AveragePrice = (AveragePrice * Quantity + transaction.TotalPrice) / (Quantity + transaction.Quantity);
@@ -159,7 +158,6 @@ public class Asset
             throw new ArgumentNullException(nameof(credit));
         }
 
-        credit.EnsureId();
         _credits.Add(credit);
     }
 

@@ -80,7 +80,7 @@ public sealed class DividendService : IDividendService
             throw new ArgumentException("Exchange and ticker are required.", nameof(request));
         }
 
-        return _dividendDataSource.GetDividends(request.Ticker);
+        return _dividendDataSource.GetDividends(request.Exchange, request.Ticker);
     }
 
     private static List<DividendHistoryItemDTO> MapToHistory(IReadOnlyList<DividendValue> values)

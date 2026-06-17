@@ -8,9 +8,8 @@ public static class ApplicationServiceCollectionExtensions
 {
     public static IServiceCollection AddFinancialApplication(this IServiceCollection services)
     {
-        services.AddSingleton<NavigationService>();
-        services.AddSingleton<INavigationService>(sp => sp.GetRequiredService<NavigationService>());
-        services.AddSingleton<ICreditQueryService>(sp => sp.GetRequiredService<NavigationService>());
+        services.AddSingleton<INavigationService, NavigationService>();
+        services.AddSingleton<ICreditQueryService, CreditQueryService>();
         services.AddSingleton<ITransactionService, TransactionService>();
         services.AddSingleton<ICreditService, CreditService>();
         services.AddSingleton<IDividendService, DividendService>();

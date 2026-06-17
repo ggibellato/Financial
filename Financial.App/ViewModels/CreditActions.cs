@@ -65,7 +65,7 @@ public sealed class CreditActions : AssetActionsBase
             return;
         }
 
-        _applyDetails(updatedDetails);
+        ApplyDetails(updatedDetails);
     }
 
     public async Task Update(CreditDTO? selectedCredit, Func<CreditDialogData?> showDialog)
@@ -110,7 +110,7 @@ public sealed class CreditActions : AssetActionsBase
             return;
         }
 
-        _applyDetails(updatedDetails);
+        ApplyDetails(updatedDetails);
     }
 
     public async Task Delete(CreditDTO? selectedCredit, Func<bool> confirmDialog)
@@ -150,7 +150,7 @@ public sealed class CreditActions : AssetActionsBase
             return;
         }
 
-        _applyDetails(updatedDetails);
+        ApplyDetails(updatedDetails);
     }
 
 }

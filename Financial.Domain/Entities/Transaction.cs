@@ -33,12 +33,4 @@ public class Transaction
     public static Transaction CreateWithId(Guid id, DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees) =>
         new(id, date, type, quantity, unitPrice, fees);
 
-    internal void EnsureId()
-    {
-        if (Id == Guid.Empty)
-        {
-            Id = Guid.NewGuid();
-        }
-    }
-
 }

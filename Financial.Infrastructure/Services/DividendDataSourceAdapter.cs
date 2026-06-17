@@ -7,6 +7,6 @@ namespace Financial.Infrastructure.Services;
 
 public sealed class DividendDataSourceAdapter : IDividendDataSource
 {
-    public IReadOnlyList<DividendValue> GetDividends(string ticker) =>
+    public IReadOnlyList<DividendValue> GetDividends(string exchange, string ticker) =>
         DadosMercadoDividend.GetDividendInfo(ticker);
 }

@@ -25,12 +25,10 @@ public class CreditTests
     }
 
     [Fact]
-    public void EnsureId_SetsWhenEmpty()
+    public void CreateWithId_EmptyGuid_StoresEmptyId()
     {
         var credit = Credit.CreateWithId(Guid.Empty, new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m);
 
-        credit.EnsureId();
-
-        credit.Id.Should().NotBe(Guid.Empty);
+        credit.Id.Should().Be(Guid.Empty);
     }
 }

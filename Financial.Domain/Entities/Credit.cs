@@ -27,11 +27,4 @@ public class Credit
     public static Credit CreateWithId(Guid id, DateTime date, CreditType type, decimal value) =>
         new(id, date, type, value);
 
-    public void EnsureId()
-    {
-        if (Id == Guid.Empty)
-        {
-            Id = Guid.NewGuid();
-        }
-    }
 }

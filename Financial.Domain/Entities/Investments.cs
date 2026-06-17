@@ -5,7 +5,7 @@ namespace Financial.Domain.Entities;
 public class Investments
 {
     private List<Broker> _brokers = new List<Broker>();
-    public IReadOnlyCollection<Broker> Brokers { get => _brokers.AsReadOnly(); set => SetBrokers(value); }
+    public IReadOnlyCollection<Broker> Brokers { get => _brokers.AsReadOnly(); private set => SetBrokers(value); }
     private void SetBrokers(IReadOnlyCollection<Broker> data)
     {
         _brokers.Clear();

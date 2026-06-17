@@ -9,7 +9,7 @@ public class Broker
     public string Currency { get; private set; }
 
     private List<Portfolio> _portfolios = new List<Portfolio>();
-    public IReadOnlyCollection<Portfolio> Portfolios { get => _portfolios.AsReadOnly(); set => SetPortfolios(value); }
+    public IReadOnlyCollection<Portfolio> Portfolios { get => _portfolios.AsReadOnly(); private set => SetPortfolios(value); }
     private void SetPortfolios(IReadOnlyCollection<Portfolio> data)
     {
         _portfolios.Clear();
