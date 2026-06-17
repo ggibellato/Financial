@@ -1,4 +1,4 @@
-namespace Financial.Application.Configuration;
+namespace Financial.Domain.Rules;
 
 public static class DividendValuationRules
 {
