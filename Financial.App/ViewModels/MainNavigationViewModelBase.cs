@@ -215,7 +215,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
     private void LoadSelectionDetails(TreeNodeViewModel selectedNode)
     {
-        if (selectedNode.NodeType == "Asset")
+        if (selectedNode.NodeType == TreeNodeTypes.Asset)
         {
             LoadAssetDetails(selectedNode);
             return;
