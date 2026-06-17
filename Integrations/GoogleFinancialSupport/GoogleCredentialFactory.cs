@@ -6,6 +6,8 @@ namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 
 internal sealed class GoogleCredentialFactory
 {
+    private const string GoogleApplicationName = "Financial";
+
     private readonly string _credentialsFilePath;
 
     internal GoogleCredentialFactory(string credentialsFilePath)
@@ -24,7 +26,7 @@ internal sealed class GoogleCredentialFactory
         return new BaseClientService.Initializer
         {
             HttpClientInitializer = credential,
-            ApplicationName = "Financial",
+            ApplicationName = GoogleApplicationName,
         };
     }
 }

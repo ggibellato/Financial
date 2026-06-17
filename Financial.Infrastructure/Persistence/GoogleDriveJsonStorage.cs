@@ -9,7 +9,6 @@ public sealed class GoogleDriveJsonStorage : IJsonStorage
 {
     public const string CredentialsPathConfigurationKey = "GoogleDrive:CredentialsPath";
     public const string FilePathConfigurationKey = "GoogleDrive:FilePath";
-    public const string DefaultDriveFilePath = "Pessoais/Gleison/Financeiros";
 
     private readonly GoogleService _service;
     private readonly string _driveFilePath;
@@ -26,6 +25,10 @@ public sealed class GoogleDriveJsonStorage : IJsonStorage
     public Task WriteAsync(string json) =>
         Task.Run(() => _service.UploadFileContent(_driveFilePath, json));
 
-    private static string ResolveDriveFilePath(string? driveFilePath) =>
-        string.IsNullOrWhiteSpace(driveFilePath) ? DefaultDriveFilePath : driveFilePath;
+    private static string ResolveDriveFilePath(string? driveFilePath)
+    {
+        if (string.IsNullOrWhiteSpace(driveFilePath))
+            throw new ArgumentException($"Drive file path must be configured via '{FilePathConfigurationKey}'.", nameof(driveFilePath));
+        return driveFilePath;
+    }
 }
