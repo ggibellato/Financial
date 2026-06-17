@@ -91,6 +91,13 @@ public sealed class NavigationService : INavigationService, ICreditQueryService
         return brokers.Select(NavigationMapper.MapBroker).ToList();
     }
 
+    public IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName)
+    {
+        return _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName)
+            .Select(NavigationMapper.MapAsset)
+            .ToList();
+    }
+
     public IReadOnlyList<CreditDTO> GetCreditsByBroker(string brokerName)
     {
         if (string.IsNullOrWhiteSpace(brokerName))

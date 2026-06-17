@@ -1,5 +1,4 @@
 using Financial.Application.Interfaces;
-using Financial.Application.Services;
 using Financial.Infrastructure.Configuration;
 using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
@@ -22,13 +21,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IRepository>(sp =>
             new RepositoryFactory(sp.GetRequiredService<IInvestmentsSerializer>())
                 .CreateFromConfiguration(configuration));
-        services.AddSingleton<NavigationService>();
-        services.AddSingleton<INavigationService>(sp => sp.GetRequiredService<NavigationService>());
-        services.AddSingleton<ICreditQueryService>(sp => sp.GetRequiredService<NavigationService>());
-        services.AddSingleton<ITransactionService, TransactionService>();
-        services.AddSingleton<ICreditService, CreditService>();
         services.AddSingleton<IAssetPriceService, AssetPriceService>();
-        services.AddSingleton<IDividendService, DividendService>();
 
         return services;
     }

@@ -154,7 +154,7 @@ internal static class NavigationMapper
         };
     }
 
-    private static AssetNodeDTO MapAsset(Asset asset)
+    internal static AssetNodeDTO MapAsset(Asset asset)
     {
         return new AssetNodeDTO
         {

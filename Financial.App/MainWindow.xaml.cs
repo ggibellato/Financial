@@ -17,7 +17,7 @@ namespace Financial.Presentation.App
 {
     public partial class MainWindow : Window
     {
-        private readonly IRepository _repository;
+        private readonly INavigationService _navigationService;
         private readonly IAssetPriceService _assetPriceService;
         private readonly IDividendService _dividendService;
         private readonly MainNavigationViewModel _navigationViewModel;
@@ -43,12 +43,12 @@ namespace Financial.Presentation.App
         public MainNavigationViewModel NavigationViewModel => _navigationViewModel;
 
         public MainWindow(
-            IRepository repository,
+            INavigationService navigationService,
             IAssetPriceService assetPriceService,
             IDividendService dividendService,
             MainNavigationViewModel navigationViewModel)
         {
-            _repository = repository;
+            _navigationService = navigationService;
             _assetPriceService = assetPriceService;
             _dividendService = dividendService;
             _navigationViewModel = navigationViewModel;
@@ -224,8 +224,8 @@ namespace Financial.Presentation.App
 
             try
             {
-                var assets = _repository.GetAssetsByBrokerPortfolio(XpiBrokerName, DefaultPortfolioName).ToList();
-                var acoes = _repository.GetAssetsByBrokerPortfolio(XpiBrokerName, AcoesPortfolioName);
+                var assets = _navigationService.GetAssetsByBrokerPortfolio(XpiBrokerName, DefaultPortfolioName).ToList();
+                var acoes = _navigationService.GetAssetsByBrokerPortfolio(XpiBrokerName, AcoesPortfolioName);
                 assets.AddRange(acoes);
 
                 var list = new List<AssetValue>();
