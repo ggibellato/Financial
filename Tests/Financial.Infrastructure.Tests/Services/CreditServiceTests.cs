@@ -123,7 +123,9 @@ public class CreditServiceTests
         var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
         File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
 
-        var repository = new JSONRepository(new LocalJsonStorage(tempFile), new InvestmentsSerializerAdapter());
+        var storage = new LocalJsonStorage(tempFile);
+        var serializer = new InvestmentsSerializerAdapter();
+        var repository = new JSONRepository(InvestmentsLoader.Load(storage, serializer), storage, serializer);
         var navigationService = new NavigationService(repository);
         var service = new CreditService(repository, navigationService);
 

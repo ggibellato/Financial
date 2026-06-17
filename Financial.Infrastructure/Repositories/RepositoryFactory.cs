@@ -20,11 +20,16 @@ public sealed class RepositoryFactory
             throw new ArgumentNullException(nameof(options));
         }
 
-        return options.Provider switch
+        var storage = CreateStorage(options);
+        var investments = InvestmentsLoader.Load(storage, _serializer);
+        return new JSONRepository(investments, storage, _serializer);
+    }
+
+    private static IJsonStorage CreateStorage(RepositorySelectionOptions options) =>
+        options.Provider switch
         {
-            RepositoryProvider.LocalJson => new JSONRepository(new LocalJsonStorage(options.LocalDataPath), _serializer),
-            RepositoryProvider.GoogleDriveJson => new JSONRepository(new GoogleDriveJsonStorage(options.GoogleDriveCredentialsPath, options.GoogleDriveFilePath), _serializer),
+            RepositoryProvider.LocalJson => new LocalJsonStorage(options.LocalDataPath),
+            RepositoryProvider.GoogleDriveJson => new GoogleDriveJsonStorage(options.GoogleDriveCredentialsPath, options.GoogleDriveFilePath),
             _ => throw new ArgumentOutOfRangeException(nameof(options.Provider), options.Provider, "Unsupported repository provider.")
         };
-    }
 }
