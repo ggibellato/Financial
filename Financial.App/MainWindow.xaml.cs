@@ -23,6 +23,22 @@ namespace Financial.Presentation.App
         private readonly MainNavigationViewModel _navigationViewModel;
 
         private const string BvmfExchange = "BVMF";
+        private const string XpiBrokerName = "XPI";
+        private const string DefaultPortfolioName = "Default";
+        private const string AcoesPortfolioName = "Acoes";
+        private const int ProgressHideDelayMs = 2000;
+
+        private static readonly IReadOnlyList<Option> DefaultDividendWatchlist = new[]
+        {
+            new Option { Group = "Ja possuidas", Name = "KLBN4" },
+            new Option { Group = "Ja possuidas", Name = "TASA4" },
+            new Option { Group = "Ja possuidas", Name = "TAEE3" },
+            new Option { Group = "Outras Barse", Name = "UNIP6" },
+            new Option { Group = "Outras Barse", Name = "CMIG4" },
+            new Option { Group = "Outras Barse", Name = "TRPL4" },
+            new Option { Group = "Outras Barse", Name = "BBAS3" },
+            new Option { Group = "Outras",        Name = "CSAN3" },
+        };
 
         public MainNavigationViewModel NavigationViewModel => _navigationViewModel;
 
@@ -39,19 +55,7 @@ namespace Financial.Presentation.App
 
             InitializeComponent();
 
-            List<Option> options = new List<Option>
-            {
-                new Option { Group = "Ja possuidas", Name = "KLBN4" },
-                new Option { Group = "Ja possuidas", Name = "TASA4" },
-                new Option { Group = "Ja possuidas", Name = "TAEE3" },
-                new Option { Group = "Outras Barse", Name = "UNIP6" },
-                new Option { Group = "Outras Barse", Name = "CMIG4" },
-                new Option { Group = "Outras Barse", Name = "TRPL4" },
-                new Option { Group = "Outras Barse", Name = "BBAS3" },
-                new Option { Group = "Outras", Name = "CSAN3" },
-            };
-
-            var groupedOptions = new ListCollectionView(options);
+            var groupedOptions = new ListCollectionView(new List<Option>(DefaultDividendWatchlist));
             groupedOptions.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
             txtTicker.ItemsSource = groupedOptions;
 
@@ -176,50 +180,40 @@ namespace Financial.Presentation.App
                 var ch = pattern[i];
                 if (ch == '\'')
                 {
-                    sb.Append(ch);
-                    if (i + 1 < pattern.Length && pattern[i + 1] == '\'')
-                    {
-                        sb.Append(pattern[i + 1]);
-                        i++;
-                    }
-                    else
-                    {
-                        inQuote = !inQuote;
-                    }
+                    i = HandleQuoteChar(pattern, i, sb, ref inQuote);
                     continue;
                 }
-
-                if (inQuote)
-                {
-                    sb.Append(ch);
-                    continue;
-                }
-
+                if (inQuote) { sb.Append(ch); continue; }
                 if (ch == 'd' || ch == 'M')
                 {
-                    int count = 1;
-                    while (i + count < pattern.Length && pattern[i + count] == ch)
-                    {
-                        count++;
-                    }
-
-                    if (count == 1)
-                    {
-                        sb.Append(ch, 2);
-                    }
-                    else
-                    {
-                        sb.Append(ch, count);
-                    }
-
-                    i += count - 1;
+                    i = HandleFormatToken(pattern, i, ch, sb);
                     continue;
                 }
-
                 sb.Append(ch);
             }
 
             return sb.ToString();
+        }
+
+        private static int HandleQuoteChar(string pattern, int i, StringBuilder sb, ref bool inQuote)
+        {
+            sb.Append('\'');
+            if (i + 1 < pattern.Length && pattern[i + 1] == '\'')
+            {
+                sb.Append(pattern[i + 1]);
+                return i + 1;
+            }
+            inQuote = !inQuote;
+            return i;
+        }
+
+        private static int HandleFormatToken(string pattern, int i, char ch, StringBuilder sb)
+        {
+            int count = 1;
+            while (i + count < pattern.Length && pattern[i + count] == ch)
+                count++;
+            sb.Append(ch, count < 2 ? 2 : count);
+            return i + count - 1;
         }
 
         private async void btnCheckFIIS_Click(object sender, RoutedEventArgs e)
@@ -230,8 +224,8 @@ namespace Financial.Presentation.App
 
             try
             {
-                var assets = _repository.GetAssetsByBrokerPortfolio("XPI", "Default").ToList();
-                var acoes = _repository.GetAssetsByBrokerPortfolio("XPI", "Acoes");
+                var assets = _repository.GetAssetsByBrokerPortfolio(XpiBrokerName, DefaultPortfolioName).ToList();
+                var acoes = _repository.GetAssetsByBrokerPortfolio(XpiBrokerName, AcoesPortfolioName);
                 assets.AddRange(acoes);
 
                 var list = new List<AssetValue>();
@@ -268,7 +262,7 @@ namespace Financial.Presentation.App
             }
             finally
             {
-                await Task.Delay(2000);
+                await Task.Delay(ProgressHideDelayMs);
                 btnCheckFIIS.IsEnabled = true;
                 pnlFIIsProgress.Visibility = Visibility.Collapsed;
                 pgFIIsProgress.Value = 0;
