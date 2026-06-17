@@ -1,7 +1,6 @@
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using Financial.Infrastructure.Integrations.FinancialToolSupport;
-using Financial.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,19 +13,21 @@ public sealed class GoogleGenerator : IGenerator
     private const int DelayBetweenSheetsMs = 3000;
     private const int DelayBetweenBrokersMs = 5000;
     private const int DelayBetweenOperationsMs = 1500;
-    private const string DefaultPortfolioName = "Default";
 
     private readonly GoogleService _service;
     private readonly IJsonStorage _storage;
-    private readonly GoogleGeneratorOptions _options;
     private readonly IInvestmentsSerializer _serializer;
+    private readonly GoogleSheetsAssetReader _sheetsReader;
+    private readonly AssetMetadataResolver _metadataResolver;
 
     public GoogleGenerator(GoogleService service, IJsonStorage storage, GoogleGeneratorOptions options, IInvestmentsSerializer serializer)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         _storage = storage ?? throw new ArgumentNullException(nameof(storage));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+        _ = options ?? throw new ArgumentNullException(nameof(options));
+        _sheetsReader = new GoogleSheetsAssetReader(service);
+        _metadataResolver = new AssetMetadataResolver(options, _sheetsReader);
     }
 
     public async Task GenerateAsync(List<string> fileNames, IProgress<string> progress = null)
@@ -39,38 +40,31 @@ public sealed class GoogleGenerator : IGenerator
         {
             brokerIndex++;
             progress?.Report($"Processing broker {brokerIndex}/{fileNames.Count}: {fileName}");
-            
-            // Add delay between brokers to avoid rate limiting (except for first broker)
+
             if (brokerIndex > 1)
             {
-                progress?.Report($"Waiting {DelayBetweenBrokersMs/1000} seconds before next broker...");
+                progress?.Report($"Waiting {DelayBetweenBrokersMs / 1000} seconds before next broker...");
                 await Task.Delay(DelayBetweenBrokersMs);
             }
-            
-            var exchange = Broker.Create(fileName, _options.BrokerCurrencyMap[fileName]);
-            data.AddBroker(exchange);
+
+            var broker = Broker.Create(fileName, _metadataResolver.ResolveBrokerCurrency(fileName));
+            data.AddBroker(broker);
             var file = files.FirstOrDefault(f => f.Name == fileName);
 
             progress?.Report($"Getting spreadsheets for: {fileName}");
             var spreadSheets = await _service.GetSpreadSheetAsync(file.Id);
-            
+            var activeSheets = spreadSheets.Where(s => !_metadataResolver.IsIgnoredSheet(s.Name)).ToList();
+
             int sheetCount = 0;
-            int totalSheets = spreadSheets.Count(s => !_options.IgnoreSheetNames.Contains(s.Name));
-
-            foreach (var spreadsheet in spreadSheets)
+            foreach (var spreadsheet in activeSheets)
             {
-                if (_options.IgnoreSheetNames.Contains(spreadsheet.Name))
-                {
-                    continue;
-                }
-
                 sheetCount++;
-                progress?.Report($"[{fileName}] Processing sheet {sheetCount}/{totalSheets}: {spreadsheet.Name}");
+                progress?.Report($"[{fileName}] Processing sheet {sheetCount}/{activeSheets.Count}: {spreadsheet.Name}");
 
-                var portfolioName = ResolvePortfolioName(fileName, spreadsheet);
-                var portfolio = exchange.AddPortfolio(portfolioName);
+                var portfolioName = _metadataResolver.ResolvePortfolioName(fileName, spreadsheet);
+                var portfolio = broker.AddPortfolio(portfolioName);
 
-                var assetData = await ResolveAssetMetadataAsync(fileName, file!.Id, spreadsheet.Name);
+                var assetData = await _metadataResolver.ResolveAssetMetadataAsync(fileName, file!.Id, spreadsheet.Name);
                 var asset = Asset.Create(
                     spreadsheet.Name,
                     assetData.isin,
@@ -81,167 +75,23 @@ public sealed class GoogleGenerator : IGenerator
                     assetData.assetClass);
                 portfolio.AddAsset(asset);
 
-                asset.AddTransactions(await CreateTransactionsAsync(file.Id, spreadsheet.Name));
-                
-                // Small delay between operations and credits
+                asset.AddTransactions(await _sheetsReader.ReadTransactionsAsync(file.Id, spreadsheet.Name));
+
                 await Task.Delay(DelayBetweenOperationsMs);
 
-                asset.AddCredits(await CreateCreditsAsync(file.Id, spreadsheet.Name));
-                
-                // Delay between sheets to avoid rate limiting
-                if (sheetCount < totalSheets)
+                asset.AddCredits(await _sheetsReader.ReadCreditsAsync(file.Id, spreadsheet.Name));
+
+                if (sheetCount < activeSheets.Count)
                 {
-                    progress?.Report($"[{fileName}] Waiting {DelayBetweenSheetsMs/1000} seconds before next sheet...");
+                    progress?.Report($"[{fileName}] Waiting {DelayBetweenSheetsMs / 1000} seconds before next sheet...");
                     await Task.Delay(DelayBetweenSheetsMs);
                 }
             }
         }
+
         progress?.Report("Saving data...");
-        await SaveAsync(data);
-        progress?.Report("Complete!");
-    }
-
-    private async Task<(string isin, string exchangeId, string ticker)> GetAssetDataAsync(string id, string spreadSheetName)
-    {
-        var values = await _service.GetSpreadSheetDataAsync(id, $"{spreadSheetName}!Q2:S2");
-        string isin = "";
-        string exchangeId = "";
-        string ticker = "";
-        try
-        {
-            if (values is not null)
-            {
-                var data = values.FirstOrDefault();
-                exchangeId = (string)data[0];
-                ticker = (string)data[1];
-                isin = (string)data[2];
-            }
-        }
-        catch (InvalidCastException) { }
-        catch (ArgumentOutOfRangeException) { }
-        return (isin, exchangeId, ticker);
-    }
-
-    private string ResolvePortfolioName(string brokerName, SheetDTO spreadsheet)
-    {
-        var portfolioName = string.IsNullOrWhiteSpace(spreadsheet.Color) ? DefaultPortfolioName : spreadsheet.Color;
-        if (_options.PortfolioNameMap.TryGetValue($"{brokerName}_{portfolioName}", out var name))
-        {
-            portfolioName = name;
-        }
-
-        return portfolioName;
-    }
-
-    private async Task<(string isin, string exchangeId, string ticker, CountryCode country, string localTypeCode, GlobalAssetClass assetClass)> ResolveAssetMetadataAsync(
-        string brokerName,
-        string fileId,
-        string spreadsheetName)
-    {
-        (string isin, string exchangeId, string ticker) baseData;
-        if (brokerName == "XPI")
-        {
-            baseData = (string.Empty, "BVMF", spreadsheetName);
-        }
-        else
-        {
-            baseData = await GetAssetDataAsync(fileId, spreadsheetName);
-        }
-
-        var brokerCountry = ResolveBrokerCountry(brokerName);
-        var classification = ResolveAssetClassification(spreadsheetName, brokerCountry);
-        var country = classification.Country != CountryCode.Unknown
-            ? classification.Country
-            : brokerCountry;
-
-        return (baseData.isin, baseData.exchangeId, baseData.ticker, country, classification.LocalTypeCode, classification.Class);
-    }
-
-    private static AssetClassificationEntry ResolveAssetClassification(string assetName, CountryCode brokerCountry)
-    {
-        if (AssetClassificationLookup.TryGet(assetName, out var classification))
-        {
-            return classification;
-        }
-
-        return new AssetClassificationEntry(brokerCountry, string.Empty, GlobalAssetClass.Unknown);
-    }
-
-    private CountryCode ResolveBrokerCountry(string brokerName)
-    {
-        if (!_options.BrokerCurrencyMap.TryGetValue(brokerName, out var currency))
-        {
-            return CountryCode.Unknown;
-        }
-
-        return currency.ToUpperInvariant() switch
-        {
-            "BRL" => CountryCode.BR,
-            "GBP" => CountryCode.UK,
-            "USD" => CountryCode.US,
-            _ => CountryCode.Unknown
-        };
-    }
-
-    private async Task SaveAsync(Investments data)
-    {
         var json = _serializer.Serialize(data);
         await _storage.WriteAsync(json);
-    }
-
-    private async Task<List<Transaction>> CreateTransactionsAsync(string id, string spreadSheetName)
-    {
-        var transactions = new List<Transaction>();
-        // Use open-ended range to get all rows with data dynamically
-        var values = await _service.GetSpreadSheetDataAsync(id, $"{spreadSheetName}!A3:G");
-        var previousDate = 0L;
-
-        foreach (var value in values)
-        {
-            var date = value[0] is long ? (long)value[0] : previousDate;
-            previousDate = date;
-            var type = (string)value[2];
-                var quantity = GoogleSheetValueParser.ToDecimal(value[3]);
-                var unitPrice = GoogleSheetValueParser.ToDecimal(value[5]);
-                var fees = GoogleSheetValueParser.ToDecimal(value[6]) - (unitPrice * quantity);
-
-            var transaction = Transaction.Create(
-                    DateTime.FromOADate(date),
-                    type == "V" ? Transaction.TransactionType.Sell : Transaction.TransactionType.Buy,
-                    quantity,
-                    unitPrice,
-                    fees < 0 ? 0 : fees
-                );
-            transactions.Add(transaction);
-        }
-        return transactions;
-    }
-
-    private async Task<List<Credit>> CreateCreditsAsync(string id, string spreadSheetName)
-    {
-        var credits = new List<Credit>();
-        // Use open-ended range to get all rows with data dynamically
-        var values = await _service.GetSpreadSheetDataAsync(id, $"{spreadSheetName}!K3:N");
-
-        if (values == null)
-        {
-            return credits;
-        }
-
-        foreach (var value in values)
-        {
-            if(value.Count > 0 && !string.IsNullOrWhiteSpace(value[0].ToString()))
-            {
-                var type = value.Count > 3 ? (string)value[3] : "";
-                var credit = Credit.Create(
-                    DateTime.FromOADate((long)value[0]),
-                    type == "Aluguel" ? Credit.CreditType.Rent : Credit.CreditType.Dividend,
-                    GoogleSheetValueParser.ToDecimal(value[1])
-                 );
-                credits.Add(credit);
-            }
-        }
-        return credits;
+        progress?.Report("Complete!");
     }
 }
-
