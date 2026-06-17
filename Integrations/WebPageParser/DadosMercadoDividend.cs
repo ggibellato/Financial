@@ -9,6 +9,12 @@ namespace Financial.Infrastructure.Integrations.WebPageParser;
 
 public sealed class DadosMercadoDividend
 {
+    private const int DividendTypeColumn = 0;
+    private const int DividendValueColumn = 1;
+    private const int DividendDateColumn = 4;
+    private const int MinimumColumnCount = 5;
+    private const string DividendTypeCode = "Dividendo";
+
     public static List<DividendValue> GetDividendInfo(string ticker)
     {
         var googleTickerSearch = $"https://www.dadosdemercado.com.br/bolsa/acoes/{ticker}/dividendos";
@@ -32,15 +38,15 @@ public sealed class DadosMercadoDividend
 
     internal static DividendValue ParseDividendRow(IReadOnlyList<HtmlNode> cells)
     {
-        if (cells.Count < 5)
+        if (cells.Count < MinimumColumnCount)
         {
             throw new InvalidOperationException("Dividend row does not contain expected columns.");
         }
 
-        var dividendType = cells[0].InnerText == "Dividendo" ? DividendType.Dividend : DividendType.JCP;
-        var date = DateTime.Parse(cells[4].InnerText);
+        var dividendType = cells[DividendTypeColumn].InnerText == DividendTypeCode ? DividendType.Dividend : DividendType.JCP;
+        var date = DateTime.Parse(cells[DividendDateColumn].InnerText);
         var value = decimal.Parse(
-            cells[1].InnerText.Replace(",", ".").Replace("* ", ""),
+            cells[DividendValueColumn].InnerText.Replace(",", ".").Replace("* ", ""),
             CultureInfo.InvariantCulture);
 
         return new DividendValue(dividendType, date, value);
