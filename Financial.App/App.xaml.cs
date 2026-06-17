@@ -1,6 +1,7 @@
 using Financial.Application.DependencyInjection;
 using Financial.Infrastructure.DependencyInjection;
 using Financial.Presentation.App.ViewModels;
+using Financial.Presentation.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -21,6 +22,8 @@ namespace Financial.Presentation.App
                     services.AddFinancialApplication();
                     services.AddFinancialInfrastructure(context.Configuration);
                     services.AddTransient<MainNavigationViewModel>();
+                    services.AddTransient<DividendCheckView>();
+                    services.AddTransient<AssetPriceView>();
                     services.AddTransient<MainWindow>();
                 })
                 .Build();
