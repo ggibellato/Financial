@@ -1,3 +1,4 @@
+using Financial.Application.Configuration;
 using Financial.Infrastructure.DependencyInjection;
 using System;
 
@@ -28,6 +29,7 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.Configure<DividendOptions>(configuration.GetSection(DividendOptions.SectionName));
 builder.Services.AddFinancialInfrastructure(configuration);
 
 var app = builder.Build();
