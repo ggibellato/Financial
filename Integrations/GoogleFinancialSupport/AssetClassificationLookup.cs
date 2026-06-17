@@ -38,7 +38,7 @@ internal static class AssetClassificationLookup
                 $"Embedded resource '{ResourceName}' was not found. " +
                 "Ensure AssetClassifications.json is marked as EmbeddedResource in the project file.");
 
-        var options = new JsonSerializerOptions { Converters = { new JsonStringEnumConverter() } };
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter() } };
         var jsonEntries = JsonSerializer.Deserialize<AssetClassificationJson[]>(stream, options)!;
 
         return jsonEntries.ToDictionary(

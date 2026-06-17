@@ -13,7 +13,7 @@ public class JsonRepositoryTests
     {
         var storage = new LocalJsonStorage(dataFile);
         var serializer = new InvestmentsSerializerAdapter();
-        return new JSONRepository(InvestmentsLoader.Load(storage, serializer), storage, serializer);
+        return new JSONRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
     }
 
     [Fact]

@@ -136,7 +136,7 @@ public class TransactionServiceTests
 
         var storage = new LocalJsonStorage(tempFile);
         var serializer = new InvestmentsSerializerAdapter();
-        var repository = new JSONRepository(InvestmentsLoader.Load(storage, serializer), storage, serializer);
+        var repository = new JSONRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
         var navigationService = new NavigationService(repository);
         var service = new TransactionService(repository, navigationService);
 

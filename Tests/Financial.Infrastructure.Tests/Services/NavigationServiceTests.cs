@@ -16,13 +16,15 @@ public class NavigationServiceTests
     {
         var storage = new LocalJsonStorage(TestDataPaths.DataJsonFile);
         var serializer = new InvestmentsSerializerAdapter();
-        return new JSONRepository(InvestmentsLoader.Load(storage, serializer), storage, serializer);
+        return new JSONRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
     }
     private readonly NavigationService _sut;
+    private readonly CreditQueryService _creditSut;
 
     public NavigationServiceTests()
     {
         _sut = new NavigationService(_repository);
+        _creditSut = new CreditQueryService(_repository);
     }
 
     [Fact]
@@ -297,7 +299,7 @@ public class NavigationServiceTests
     public void GetCreditsByBroker_WithInvalidParameters_ReturnsEmpty(string? brokerName)
     {
         // Act
-        var result = _sut.GetCreditsByBroker(brokerName!);
+        var result = _creditSut.GetCreditsByBroker(brokerName!);
 
         // Assert
         result.Should().BeEmpty();
@@ -311,7 +313,7 @@ public class NavigationServiceTests
     public void GetCreditsByPortfolio_WithInvalidParameters_ReturnsEmpty(string? brokerName, string? portfolioName)
     {
         // Act
-        var result = _sut.GetCreditsByPortfolio(brokerName!, portfolioName!);
+        var result = _creditSut.GetCreditsByPortfolio(brokerName!, portfolioName!);
 
         // Assert
         result.Should().BeEmpty();
@@ -324,7 +326,7 @@ public class NavigationServiceTests
         const string brokerName = "XPI";
 
         // Act
-        var result = _sut.GetCreditsByBroker(brokerName);
+        var result = _creditSut.GetCreditsByBroker(brokerName);
 
         // Assert
         result.Should().NotBeEmpty();
@@ -344,7 +346,7 @@ public class NavigationServiceTests
         const string portfolioName = "Default";
 
         // Act
-        var result = _sut.GetCreditsByPortfolio(brokerName, portfolioName);
+        var result = _creditSut.GetCreditsByPortfolio(brokerName, portfolioName);
 
         // Assert
         result.Should().NotBeEmpty();
@@ -363,7 +365,7 @@ public class NavigationServiceTests
         const string brokerName = "XPI";
 
         // Act
-        var result = _sut.GetCreditsByBroker(brokerName);
+        var result = _creditSut.GetCreditsByBroker(brokerName);
 
         // Assert
         if (result.Count > 1)
