@@ -3,7 +3,7 @@ using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 
@@ -16,10 +16,10 @@ public sealed class DividendsController : ControllerBase
     private readonly IDividendService _dividendService;
     private readonly string _defaultExchange;
 
-    public DividendsController(IDividendService dividendService, IConfiguration configuration)
+    public DividendsController(IDividendService dividendService, IOptions<DividendOptions> dividendOptions)
     {
         _dividendService = dividendService ?? throw new ArgumentNullException(nameof(dividendService));
-        _defaultExchange = configuration[DividendConfigurationKeys.DefaultExchange] ?? "BVMF";
+        _defaultExchange = (dividendOptions ?? throw new ArgumentNullException(nameof(dividendOptions))).Value.DefaultExchange;
     }
 
     [HttpGet("{ticker}/history")]
