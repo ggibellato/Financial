@@ -35,28 +35,28 @@ public static class GoogleFinance
         return new AssetValueSnapshot(ticker, name, value, asOf);
     }
 
-    private static HtmlNode GetMainData(HtmlDocument document)
-    {
-        // Strategy 1: Look for the main container which contains all financial data
-        var mainDataNode = document.DocumentNode.SelectSingleNode($"//div[@class='{GoogleFinanceSelectors.MainContainer.PrimaryClass}']");
-        if (mainDataNode != null)
-        {
-            return mainDataNode;
-        }
+    private static HtmlNode GetMainData(HtmlDocument document) =>
+        TryGetMainContainerByClass(document)
+        ?? TryGetMainContainerByPriceNode(document)
+        ?? TryGetMainFallbackTag(document)
+        ?? throw new InvalidOperationException("Google Finance main data node not found. The page structure may have changed.");
 
-        // Strategy 2a: Look for the price element with primary jsname and traverse up
-        var priceNode = document.DocumentNode.SelectSingleNode($"//span[@jsname='{GoogleFinanceSelectors.MainContainer.PriceJsName}']");
-        if (priceNode != null)
+    private static HtmlNode? TryGetMainContainerByClass(HtmlDocument document) =>
+        document.DocumentNode.SelectSingleNode($"//div[@class='{GoogleFinanceSelectors.MainContainer.PrimaryClass}']");
+
+    private static HtmlNode? TryGetMainContainerByPriceNode(HtmlDocument document)
+    {
+        var primaryNode = document.DocumentNode.SelectSingleNode($"//span[@jsname='{GoogleFinanceSelectors.MainContainer.PriceJsName}']");
+        if (primaryNode != null)
         {
-            var container = TraverseUpToFindContainer(priceNode);
+            var container = TraverseUpToFindContainer(primaryNode);
             if (container != null)
                 return container;
         }
 
-        // Strategy 2b: Try alternative jsname values for price element
         foreach (var alternativeJsName in GoogleFinanceSelectors.MainContainer.AlternativePriceJsNames)
         {
-            priceNode = document.DocumentNode.SelectSingleNode($"//span[@jsname='{alternativeJsName}']");
+            var priceNode = document.DocumentNode.SelectSingleNode($"//span[@jsname='{alternativeJsName}']");
             if (priceNode != null)
             {
                 var container = TraverseUpToFindContainer(priceNode);
@@ -65,15 +65,11 @@ public static class GoogleFinance
             }
         }
 
-        // Strategy 3: Fallback to main tag (less specific but more stable)
-        var mainTag = document.DocumentNode.SelectSingleNode("//main");
-        if (mainTag != null)
-        {
-            return mainTag;
-        }
-
-        throw new InvalidOperationException("Google Finance main data node not found. The page structure may have changed.");
+        return null;
     }
+
+    private static HtmlNode? TryGetMainFallbackTag(HtmlDocument document) =>
+        document.DocumentNode.SelectSingleNode("//main");
 
     private static HtmlNode? TraverseUpToFindContainer(HtmlNode priceNode)
     {
@@ -81,7 +77,6 @@ public static class GoogleFinance
         var container = priceNode.ParentNode;
         for (int i = 0; i < 8 && container != null; i++)
         {
-            // Look for a container that also has the asset name
             var xpath = $".//div[contains(@class, '{GoogleFinanceSelectors.AssetName.PrimaryClass}')]";
             var nameNode = container.SelectSingleNode(xpath);
             if (nameNode != null)
@@ -93,119 +88,110 @@ public static class GoogleFinance
         return null;
     }
 
-    private static string ReadAssetName(HtmlNode mainData)
+    private static string ReadAssetName(HtmlNode mainData) =>
+        TryReadAssetNameByClass(mainData)
+        ?? TryReadAssetNameByContainer(mainData)
+        ?? TryReadAssetNameByText(mainData)
+        ?? throw new InvalidOperationException("Asset name not found. The page structure may have changed.");
+
+    private static string? TryReadAssetNameByClass(HtmlNode mainData)
     {
-        // Strategy 1: Look for class which contains the asset name
         var nameNode = mainData.SelectSingleNode($".//div[@class='{GoogleFinanceSelectors.AssetName.PrimaryClass}']");
-        if (nameNode != null)
-        {
-            return nameNode.InnerText.Trim();
-        }
-
-        // Strategy 2: Look for container and get first child div
-        var containerNode = mainData.SelectSingleNode($".//div[@class='{GoogleFinanceSelectors.AssetName.ContainerClass}']");
-        if (containerNode != null)
-        {
-            var firstDiv = containerNode.SelectSingleNode(".//div");
-            if (firstDiv != null)
-            {
-                return firstDiv.InnerText.Trim();
-            }
-        }
-
-        // Strategy 3: Fallback - look for first substantial text in early divs
-        var divNodes = mainData.SelectNodes(".//div");
-        if (divNodes != null)
-        {
-            foreach (var div in divNodes.Take(10))
-            {
-                var text = div.InnerText.Trim();
-                if (!string.IsNullOrWhiteSpace(text) && text.Length > 5 && text.Length < 100)
-                {
-                    return text;
-                }
-            }
-        }
-
-        throw new InvalidOperationException("Asset name not found. The page structure may have changed.");
+        return nameNode?.InnerText.Trim();
     }
 
-    private static string ReadPriceText(HtmlNode mainData)
+    private static string? TryReadAssetNameByContainer(HtmlNode mainData)
     {
-        // Strategy 1a: Look for the price by primary jsname attribute (most stable)
-        var priceNode = mainData.SelectSingleNode($".//span[@jsname='{GoogleFinanceSelectors.Price.PrimaryJsName}']");
-        if (priceNode != null)
+        var containerNode = mainData.SelectSingleNode($".//div[@class='{GoogleFinanceSelectors.AssetName.ContainerClass}']");
+        var firstDiv = containerNode?.SelectSingleNode(".//div");
+        return firstDiv?.InnerText.Trim();
+    }
+
+    private static string? TryReadAssetNameByText(HtmlNode mainData)
+    {
+        var divNodes = mainData.SelectNodes(".//div");
+        if (divNodes == null)
+            return null;
+
+        foreach (var div in divNodes.Take(10))
         {
-            return priceNode.InnerText.Trim();
+            var text = div.InnerText.Trim();
+            if (!string.IsNullOrWhiteSpace(text) && text.Length > 5 && text.Length < 100)
+                return text;
         }
 
-        // Strategy 1b: Try alternative jsname values
+        return null;
+    }
+
+    private static string ReadPriceText(HtmlNode mainData) =>
+        TryReadPriceByJsName(mainData)
+        ?? TryReadPriceByContainer(mainData)
+        ?? TryReadPriceByPattern(mainData)
+        ?? throw new InvalidOperationException("Price not found. The page structure may have changed.");
+
+    private static string? TryReadPriceByJsName(HtmlNode mainData)
+    {
+        var priceNode = mainData.SelectSingleNode($".//span[@jsname='{GoogleFinanceSelectors.Price.PrimaryJsName}']");
+        if (priceNode != null)
+            return priceNode.InnerText.Trim();
+
         foreach (var alternativeJsName in GoogleFinanceSelectors.Price.AlternativeJsNames)
         {
             priceNode = mainData.SelectSingleNode($".//span[@jsname='{alternativeJsName}']");
             if (priceNode != null)
-            {
                 return priceNode.InnerText.Trim();
-            }
         }
 
-        // Strategy 2: Look for price container class
-        var priceContainer = mainData.SelectSingleNode($".//div[@class='{GoogleFinanceSelectors.Price.ContainerClass}']");
-        if (priceContainer != null)
-        {
-            var priceSpan = priceContainer.SelectSingleNode(".//span");
-            if (priceSpan != null)
-            {
-                return priceSpan.InnerText.Trim();
-            }
-        }
-
-        // Strategy 3: Look for common price patterns in the HTML
-        var allSpans = mainData.SelectNodes(".//span");
-        if (allSpans != null)
-        {
-            foreach (var span in allSpans)
-            {
-                var text = span.InnerText.Trim();
-                // Match patterns like: $123.45, R$19.17, £45.67, 123.45 GBX
-                if (Regex.IsMatch(text, GoogleFinanceSelectors.Price.PricePattern))
-                {
-                    return text;
-                }
-            }
-        }
-
-        throw new InvalidOperationException("Price not found. The page structure may have changed.");
+        return null;
     }
 
-    private static string ReadAsOfText(HtmlNode mainData)
+    private static string? TryReadPriceByContainer(HtmlNode mainData)
     {
-        // Strategy 1: Look for timestamp container class
-        var timeNode = mainData.SelectSingleNode($".//div[@class='{GoogleFinanceSelectors.Timestamp.PrimaryClass}']");
-        if (timeNode != null)
-        {
-            return timeNode.InnerText.Trim();
-        }
-
-        // Strategy 2: Look for text patterns that contain date/time information
-        var allDivs = mainData.SelectNodes(".//div");
-        if (allDivs != null)
-        {
-            foreach (var div in allDivs)
-            {
-                var text = div.InnerText.Trim();
-                // Look for patterns like "Jun 5, 10:44:17 PM UTC-3" or similar
-                if (Regex.IsMatch(text, GoogleFinanceSelectors.Timestamp.DatePattern, RegexOptions.IgnoreCase))
-                {
-                    return text;
-                }
-            }
-        }
-
-        // Strategy 3: Return empty string to trigger fallback to DateTimeOffset.Now in caller
-        return string.Empty;
+        var priceContainer = mainData.SelectSingleNode($".//div[@class='{GoogleFinanceSelectors.Price.ContainerClass}']");
+        var priceSpan = priceContainer?.SelectSingleNode(".//span");
+        return priceSpan?.InnerText.Trim();
     }
 
+    private static string? TryReadPriceByPattern(HtmlNode mainData)
+    {
+        var allSpans = mainData.SelectNodes(".//span");
+        if (allSpans == null)
+            return null;
+
+        foreach (var span in allSpans)
+        {
+            var text = span.InnerText.Trim();
+            if (Regex.IsMatch(text, GoogleFinanceSelectors.Price.PricePattern))
+                return text;
+        }
+
+        return null;
+    }
+
+    private static string ReadAsOfText(HtmlNode mainData) =>
+        TryReadAsOfByClass(mainData)
+        ?? TryReadAsOfByPattern(mainData)
+        ?? string.Empty;
+
+    private static string? TryReadAsOfByClass(HtmlNode mainData)
+    {
+        var timeNode = mainData.SelectSingleNode($".//div[@class='{GoogleFinanceSelectors.Timestamp.PrimaryClass}']");
+        return timeNode?.InnerText.Trim();
+    }
+
+    private static string? TryReadAsOfByPattern(HtmlNode mainData)
+    {
+        var allDivs = mainData.SelectNodes(".//div");
+        if (allDivs == null)
+            return null;
+
+        foreach (var div in allDivs)
+        {
+            var text = div.InnerText.Trim();
+            if (Regex.IsMatch(text, GoogleFinanceSelectors.Timestamp.DatePattern, RegexOptions.IgnoreCase))
+                return text;
+        }
+
+        return null;
+    }
 }
-
-
