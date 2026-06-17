@@ -41,10 +41,10 @@ public static class GoogleFinance
         ?? TryGetMainFallbackTag(document)
         ?? throw new InvalidOperationException("Google Finance main data node not found. The page structure may have changed.");
 
-    private static HtmlNode? TryGetMainContainerByClass(HtmlDocument document) =>
+    internal static HtmlNode? TryGetMainContainerByClass(HtmlDocument document) =>
         document.DocumentNode.SelectSingleNode($"//div[@class='{GoogleFinanceSelectors.MainContainer.PrimaryClass}']");
 
-    private static HtmlNode? TryGetMainContainerByPriceNode(HtmlDocument document)
+    internal static HtmlNode? TryGetMainContainerByPriceNode(HtmlDocument document)
     {
         var primaryNode = document.DocumentNode.SelectSingleNode($"//span[@jsname='{GoogleFinanceSelectors.MainContainer.PriceJsName}']");
         if (primaryNode != null)
@@ -68,7 +68,7 @@ public static class GoogleFinance
         return null;
     }
 
-    private static HtmlNode? TryGetMainFallbackTag(HtmlDocument document) =>
+    internal static HtmlNode? TryGetMainFallbackTag(HtmlDocument document) =>
         document.DocumentNode.SelectSingleNode("//main");
 
     private static HtmlNode? TraverseUpToFindContainer(HtmlNode priceNode)
@@ -94,20 +94,20 @@ public static class GoogleFinance
         ?? TryReadAssetNameByText(mainData)
         ?? throw new InvalidOperationException("Asset name not found. The page structure may have changed.");
 
-    private static string? TryReadAssetNameByClass(HtmlNode mainData)
+    internal static string? TryReadAssetNameByClass(HtmlNode mainData)
     {
         var nameNode = mainData.SelectSingleNode($".//div[@class='{GoogleFinanceSelectors.AssetName.PrimaryClass}']");
         return nameNode?.InnerText.Trim();
     }
 
-    private static string? TryReadAssetNameByContainer(HtmlNode mainData)
+    internal static string? TryReadAssetNameByContainer(HtmlNode mainData)
     {
         var containerNode = mainData.SelectSingleNode($".//div[@class='{GoogleFinanceSelectors.AssetName.ContainerClass}']");
         var firstDiv = containerNode?.SelectSingleNode(".//div");
         return firstDiv?.InnerText.Trim();
     }
 
-    private static string? TryReadAssetNameByText(HtmlNode mainData)
+    internal static string? TryReadAssetNameByText(HtmlNode mainData)
     {
         var divNodes = mainData.SelectNodes(".//div");
         if (divNodes == null)
@@ -129,7 +129,7 @@ public static class GoogleFinance
         ?? TryReadPriceByPattern(mainData)
         ?? throw new InvalidOperationException("Price not found. The page structure may have changed.");
 
-    private static string? TryReadPriceByJsName(HtmlNode mainData)
+    internal static string? TryReadPriceByJsName(HtmlNode mainData)
     {
         var priceNode = mainData.SelectSingleNode($".//span[@jsname='{GoogleFinanceSelectors.Price.PrimaryJsName}']");
         if (priceNode != null)
@@ -145,14 +145,14 @@ public static class GoogleFinance
         return null;
     }
 
-    private static string? TryReadPriceByContainer(HtmlNode mainData)
+    internal static string? TryReadPriceByContainer(HtmlNode mainData)
     {
         var priceContainer = mainData.SelectSingleNode($".//div[@class='{GoogleFinanceSelectors.Price.ContainerClass}']");
         var priceSpan = priceContainer?.SelectSingleNode(".//span");
         return priceSpan?.InnerText.Trim();
     }
 
-    private static string? TryReadPriceByPattern(HtmlNode mainData)
+    internal static string? TryReadPriceByPattern(HtmlNode mainData)
     {
         var allSpans = mainData.SelectNodes(".//span");
         if (allSpans == null)
@@ -173,13 +173,13 @@ public static class GoogleFinance
         ?? TryReadAsOfByPattern(mainData)
         ?? string.Empty;
 
-    private static string? TryReadAsOfByClass(HtmlNode mainData)
+    internal static string? TryReadAsOfByClass(HtmlNode mainData)
     {
         var timeNode = mainData.SelectSingleNode($".//div[@class='{GoogleFinanceSelectors.Timestamp.PrimaryClass}']");
         return timeNode?.InnerText.Trim();
     }
 
-    private static string? TryReadAsOfByPattern(HtmlNode mainData)
+    internal static string? TryReadAsOfByPattern(HtmlNode mainData)
     {
         var allDivs = mainData.SelectNodes(".//div");
         if (allDivs == null)
