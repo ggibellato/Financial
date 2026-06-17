@@ -1,10 +1,12 @@
 using Financial.Application.Interfaces;
 using Financial.Infrastructure.Configuration;
+using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
 using Financial.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net.Http;
 
 namespace Financial.Infrastructure.DependencyInjection;
 
@@ -22,6 +24,7 @@ public static class InfrastructureServiceCollectionExtensions
             new RepositoryFactory(sp.GetRequiredService<IInvestmentsSerializer>())
                 .CreateFromConfiguration(configuration));
         services.AddSingleton<IAssetPriceService, AssetPriceService>();
+        services.AddSingleton<IAssetTypeLookup>(_ => new AssetTypeLookup(new HttpClient()));
 
         return services;
     }

@@ -2,11 +2,11 @@ using Financial.Application.DTOs;
 using Financial.Domain.Rules;
 using Financial.Application.Interfaces;
 using Financial.Presentation.App.Components;
+using Financial.Presentation.App.Helpers;
+using Financial.Presentation.App.Options;
 using Financial.Presentation.App.ViewModels;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,18 +28,6 @@ namespace Financial.Presentation.App
         private const string AcoesPortfolioName = "Acoes";
         private const int ProgressHideDelayMs = 2000;
 
-        private static readonly IReadOnlyList<Option> DefaultDividendWatchlist = new[]
-        {
-            new Option { Group = "Ja possuidas", Name = "KLBN4" },
-            new Option { Group = "Ja possuidas", Name = "TASA4" },
-            new Option { Group = "Ja possuidas", Name = "TAEE3" },
-            new Option { Group = "Outras Barse", Name = "UNIP6" },
-            new Option { Group = "Outras Barse", Name = "CMIG4" },
-            new Option { Group = "Outras Barse", Name = "TRPL4" },
-            new Option { Group = "Outras Barse", Name = "BBAS3" },
-            new Option { Group = "Outras",        Name = "CSAN3" },
-        };
-
         public MainNavigationViewModel NavigationViewModel => _navigationViewModel;
 
         public MainWindow(
@@ -55,7 +43,7 @@ namespace Financial.Presentation.App
 
             InitializeComponent();
 
-            var groupedOptions = new ListCollectionView(new List<Option>(DefaultDividendWatchlist));
+            var groupedOptions = new ListCollectionView(new List<WatchlistItem>(WatchlistOptions.DefaultDividendWatchlist));
             groupedOptions.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
             txtTicker.ItemsSource = groupedOptions;
 
@@ -84,12 +72,6 @@ namespace Financial.Presentation.App
                     return result;
             }
             return null;
-        }
-
-        public class Option
-        {
-            public required string Group { get; set; }
-            public required string Name { get; set; }
         }
 
         public class AssetValue
@@ -124,7 +106,7 @@ namespace Financial.Presentation.App
                 var dataGridColumn = e.Column as DataGridTextColumn;
                 if (dataGridColumn != null)
                 {
-                    dataGridColumn.Binding.StringFormat = GetPaddedShortDatePattern();
+                    dataGridColumn.Binding.StringFormat = DateFormatHelper.GetPaddedShortDatePattern();
                 }
             }
 
@@ -162,58 +144,6 @@ namespace Financial.Presentation.App
             style.Setters.Add(new Setter(TextBlock.FontWeightProperty, FontWeights.Bold));
             style.Setters.Add(new Setter(TextBlock.ForegroundProperty, Brushes.Black));
             dataGridColumn.ElementStyle = style;
-        }
-
-        private static string GetPaddedShortDatePattern()
-        {
-            var pattern = CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern;
-            return PadDayMonthTokens(pattern);
-        }
-
-        private static string PadDayMonthTokens(string pattern)
-        {
-            var sb = new StringBuilder();
-            bool inQuote = false;
-
-            for (int i = 0; i < pattern.Length; i++)
-            {
-                var ch = pattern[i];
-                if (ch == '\'')
-                {
-                    i = HandleQuoteChar(pattern, i, sb, ref inQuote);
-                    continue;
-                }
-                if (inQuote) { sb.Append(ch); continue; }
-                if (ch == 'd' || ch == 'M')
-                {
-                    i = HandleFormatToken(pattern, i, ch, sb);
-                    continue;
-                }
-                sb.Append(ch);
-            }
-
-            return sb.ToString();
-        }
-
-        private static int HandleQuoteChar(string pattern, int i, StringBuilder sb, ref bool inQuote)
-        {
-            sb.Append('\'');
-            if (i + 1 < pattern.Length && pattern[i + 1] == '\'')
-            {
-                sb.Append(pattern[i + 1]);
-                return i + 1;
-            }
-            inQuote = !inQuote;
-            return i;
-        }
-
-        private static int HandleFormatToken(string pattern, int i, char ch, StringBuilder sb)
-        {
-            int count = 1;
-            while (i + count < pattern.Length && pattern[i + count] == ch)
-                count++;
-            sb.Append(ch, count < 2 ? 2 : count);
-            return i + count - 1;
         }
 
         private async void btnCheckFIIS_Click(object sender, RoutedEventArgs e)
