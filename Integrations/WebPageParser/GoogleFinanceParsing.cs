@@ -5,19 +5,27 @@ namespace Financial.Infrastructure.Integrations.WebPageParser;
 
 internal static class GoogleFinanceParsing
 {
+    private const string GbxCurrencyCode = "GBX";
+    private const decimal GbxPenceToGbpDivisor = 100m;
+
+    private static readonly char[] UnicodeDashes =
+    {
+        '−', '‐', '‑', '‒', '–', '—'
+    };
+
     internal static decimal ParsePriceValue(string rawValue)
     {
         var cleaned = rawValue
             .Replace("R$", "")
             .Replace("?", "")
             .Replace("$", "")
-            .Replace("GBX", "")
+            .Replace(GbxCurrencyCode, "")
             .Replace("£", "")
             .Trim();
         var value = decimal.Parse(cleaned);
-        if (rawValue.Contains("GBX"))
+        if (rawValue.Contains(GbxCurrencyCode))
         {
-            value /= 100;
+            value /= GbxPenceToGbpDivisor;
         }
 
         return value;
@@ -106,13 +114,12 @@ internal static class GoogleFinanceParsing
     {
         var candidate = value.Trim()
             .Replace('\u202F', ' ')
-            .Replace('\u00A0', ' ')
-            .Replace('\u2212', '-')
-            .Replace('\u2010', '-')
-            .Replace('\u2011', '-')
-            .Replace('\u2012', '-')
-            .Replace('\u2013', '-')
-            .Replace('\u2014', '-');
+            .Replace('\u00A0', ' ');
+
+        foreach (var dash in UnicodeDashes)
+        {
+            candidate = candidate.Replace(dash, '-');
+        }
 
         var asOfIndex = candidate.IndexOf("As of", StringComparison.OrdinalIgnoreCase);
         if (asOfIndex >= 0)
