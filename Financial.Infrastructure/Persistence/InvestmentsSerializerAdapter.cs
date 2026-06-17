@@ -7,4 +7,7 @@ public sealed class InvestmentsSerializerAdapter : IInvestmentsSerializer
 {
     public string Serialize(Investments investments) =>
         InvestmentsJsonSerializer.Serialize(investments);
+
+    public Investments Deserialize(string json) =>
+        InvestmentsJsonSerializer.Deserialize(json);
 }

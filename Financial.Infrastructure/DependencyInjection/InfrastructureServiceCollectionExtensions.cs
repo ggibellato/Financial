@@ -20,7 +20,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IInvestmentsSerializer, InvestmentsSerializerAdapter>();
         services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
         services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();
-        services.AddSingleton<IRepository>(sp => CreateRepository(configuration));
+        services.AddSingleton<IRepository>(sp => CreateRepository(configuration, sp.GetRequiredService<IInvestmentsSerializer>()));
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<ITransactionService, TransactionService>();
         services.AddSingleton<ICreditService, CreditService>();
@@ -30,7 +30,7 @@ public static class InfrastructureServiceCollectionExtensions
         return services;
     }
 
-    private static IRepository CreateRepository(IConfiguration configuration)
+    private static IRepository CreateRepository(IConfiguration configuration, IInvestmentsSerializer serializer)
     {
         var providerValue = configuration[RepositoryConfigurationKeys.Provider]
             ?? nameof(RepositoryProvider.LocalJson);
@@ -48,6 +48,6 @@ public static class InfrastructureServiceCollectionExtensions
             configuration[RepositoryConfigurationKeys.GoogleDriveCredentialsPath],
             configuration[RepositoryConfigurationKeys.GoogleDriveFilePath]);
 
-        return new RepositoryFactory().Create(options);
+        return new RepositoryFactory(serializer).Create(options);
     }
 }

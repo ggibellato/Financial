@@ -11,12 +11,14 @@ namespace Financial.Infrastructure.Repositories;
 public sealed class JSONRepository : IRepository
 {
     private readonly IJsonStorage _storage;
+    private readonly IInvestmentsSerializer _serializer;
     private readonly Investments _investiments;
 
-    public JSONRepository(IJsonStorage storage)
+    public JSONRepository(IJsonStorage storage, IInvestmentsSerializer serializer)
     {
         _storage = storage ?? throw new ArgumentNullException(nameof(storage));
-        _investiments = LoadInvestments(_storage);
+        _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+        _investiments = LoadInvestments(_storage, _serializer);
     }
 
     public IReadOnlyList<string> GetAllAssetsFullName()
@@ -63,18 +65,18 @@ public sealed class JSONRepository : IRepository
 
     public async Task SaveChangesAsync()
     {
-        var json = InvestmentsJsonSerializer.Serialize(_investiments);
+        var json = _serializer.Serialize(_investiments);
         await _storage.WriteAsync(json).ConfigureAwait(false);
     }
 
-    private static Investments LoadInvestments(IJsonStorage storage)
+    private static Investments LoadInvestments(IJsonStorage storage, IInvestmentsSerializer serializer)
     {
         var json = storage.ReadAsync()
             .ConfigureAwait(false)
             .GetAwaiter()
             .GetResult();
 
-        return InvestmentsJsonSerializer.Deserialize(json);
+        return serializer.Deserialize(json);
     }
 
     private IEnumerable<Broker> GetBrokersByName(string brokerName) =>

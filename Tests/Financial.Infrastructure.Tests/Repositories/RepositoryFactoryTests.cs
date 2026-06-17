@@ -16,7 +16,7 @@ public class RepositoryFactoryTests
             null,
             null);
 
-        var factory = new RepositoryFactory();
+        var factory = new RepositoryFactory(new Financial.Infrastructure.Persistence.InvestmentsSerializerAdapter());
 
         var result = factory.Create(options);
 
@@ -32,7 +32,7 @@ public class RepositoryFactoryTests
             null,
             "Pessoais/Gleison/Financeiros");
 
-        var factory = new RepositoryFactory();
+        var factory = new RepositoryFactory(new Financial.Infrastructure.Persistence.InvestmentsSerializerAdapter());
 
         Action act = () => factory.Create(options);
 

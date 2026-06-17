@@ -134,7 +134,7 @@ public class TransactionServiceTests
         var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
         File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
 
-        var repository = new JSONRepository(new LocalJsonStorage(tempFile));
+        var repository = new JSONRepository(new LocalJsonStorage(tempFile), new InvestmentsSerializerAdapter());
         var navigationService = new NavigationService(repository);
         var service = new TransactionService(repository, navigationService);
 
