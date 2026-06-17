@@ -6,10 +6,10 @@ namespace Financial.Presentation.App.ViewModels;
 
 public abstract class AssetActionsBase
 {
-    protected readonly Func<bool> _hasContext;
-    protected readonly Func<string> _brokerName;
-    protected readonly Func<string> _portfolioName;
-    protected readonly Func<string> _assetName;
+    private readonly Func<bool> _hasContext;
+    private readonly Func<string> _brokerName;
+    private readonly Func<string> _portfolioName;
+    private readonly Func<string> _assetName;
     protected readonly Action<AssetDetailsDTO> _applyDetails;
     private readonly Action<string, string, MessageBoxImage> _showMessage;
     private readonly string _title;
@@ -31,6 +31,11 @@ public abstract class AssetActionsBase
         _showMessage = showMessage ?? throw new ArgumentNullException(nameof(showMessage));
         _title = title;
     }
+
+    protected bool HasContext() => _hasContext();
+    protected string GetBrokerName() => _brokerName();
+    protected string GetPortfolioName() => _portfolioName();
+    protected string GetAssetName() => _assetName();
 
     protected void ShowInfo(string message) =>
         _showMessage(message, _title, MessageBoxImage.Information);

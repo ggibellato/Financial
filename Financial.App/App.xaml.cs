@@ -1,6 +1,8 @@
 using Financial.Application.DependencyInjection;
 using Financial.Infrastructure.DependencyInjection;
+using Financial.Presentation.App.Options;
 using Financial.Presentation.App.ViewModels;
+using Financial.Presentation.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -20,7 +22,13 @@ namespace Financial.Presentation.App
                 {
                     services.AddFinancialApplication();
                     services.AddFinancialInfrastructure(context.Configuration);
+                    services.Configure<WatchlistOptions>(context.Configuration.GetSection(WatchlistOptions.SectionName));
+                    services.Configure<AssetPriceFetchOptions>(context.Configuration.GetSection(AssetPriceFetchOptions.SectionName));
                     services.AddTransient<MainNavigationViewModel>();
+                    services.AddTransient<DividendCheckViewModel>();
+                    services.AddTransient<AssetPriceFetchViewModel>();
+                    services.AddTransient<DividendCheckView>();
+                    services.AddTransient<AssetPriceView>();
                     services.AddTransient<MainWindow>();
                 })
                 .Build();
@@ -35,23 +43,9 @@ namespace Financial.Presentation.App
                 MainWindow = mainWindow;
                 mainWindow.Show();
             }
-            catch (FileNotFoundException ex)
-            {
-                MessageBox.Show(
-                    ex.Message,
-                    "Missing data file",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-                Shutdown();
-                return;
-            }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    $"Application failed to start:\n{ex.Message}",
-                    "Startup error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                ShowStartupError(ex);
                 Shutdown();
                 return;
             }
@@ -67,6 +61,15 @@ namespace Financial.Presentation.App
                 AppHost.Dispose();
             }
             base.OnExit(e);
+        }
+
+        private static void ShowStartupError(Exception ex)
+        {
+            var (title, message) = ex is FileNotFoundException
+                ? ("Missing data file", ex.Message)
+                : ("Startup error", $"Application failed to start:\n{ex.Message}");
+
+            MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }

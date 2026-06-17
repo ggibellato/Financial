@@ -26,7 +26,7 @@ public sealed class CreditActions : AssetActionsBase
 
     public async Task Add(Func<CreditDialogData?> showDialog)
     {
-        if (!_hasContext())
+        if (!HasContext())
         {
             ShowInfo("Select an asset before adding a credit.");
             return;
@@ -51,9 +51,9 @@ public sealed class CreditActions : AssetActionsBase
 
         var updatedDetails = await _service.AddCreditAsync(new CreditCreateDTO
         {
-            BrokerName = _brokerName(),
-            PortfolioName = _portfolioName(),
-            AssetName = _assetName(),
+            BrokerName = GetBrokerName(),
+            PortfolioName = GetPortfolioName(),
+            AssetName = GetAssetName(),
             Date = dialogData.Value.Date,
             Type = normalizedType,
             Value = dialogData.Value.Value
@@ -95,9 +95,9 @@ public sealed class CreditActions : AssetActionsBase
 
         var updatedDetails = await _service.UpdateCreditAsync(new CreditUpdateDTO
         {
-            BrokerName = _brokerName(),
-            PortfolioName = _portfolioName(),
-            AssetName = _assetName(),
+            BrokerName = GetBrokerName(),
+            PortfolioName = GetPortfolioName(),
+            AssetName = GetAssetName(),
             Id = dialogData.Value.CreditId,
             Date = dialogData.Value.Date,
             Type = normalizedType,
@@ -138,9 +138,9 @@ public sealed class CreditActions : AssetActionsBase
 
         var updatedDetails = await _service.DeleteCreditAsync(new CreditDeleteDTO
         {
-            BrokerName = _brokerName(),
-            PortfolioName = _portfolioName(),
-            AssetName = _assetName(),
+            BrokerName = GetBrokerName(),
+            PortfolioName = GetPortfolioName(),
+            AssetName = GetAssetName(),
             Id = selectedCredit.Id
         });
 

@@ -10,5 +10,6 @@ public interface IAssetDetailsViewModel
     void LoadPortfolioCredits(string brokerName, string portfolioName, IReadOnlyList<CreditDTO> credits);
     void Clear();
     Task EnsureTodayInfoLoadedAsync();
+    void UpdateCreditsPlotWidth(double plotWidth);
 }
 
