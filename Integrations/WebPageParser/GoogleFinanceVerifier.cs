@@ -1,6 +1,5 @@
 using Financial.Infrastructure.Integrations.WebPageParser;
 using HtmlAgilityPack;
-using System.Text.RegularExpressions;
 
 namespace Financial.Infrastructure.Integrations;
 
@@ -79,7 +78,6 @@ public static class GoogleFinanceVerifier
             HtmlWeb htmlWeb = new HtmlWeb();
             HtmlDocument htmlDoc = htmlWeb.Load(url);
 
-            // Test Main Container
             result.MainContainerStrategy = TryGetMainData(htmlDoc, out var mainData);
             if (mainData == null)
             {
@@ -88,20 +86,17 @@ public static class GoogleFinanceVerifier
                 return result;
             }
 
-            // Test Asset Name
             result.AssetNameStrategy = TryReadAssetName(mainData, out var assetName);
             result.AssetName = assetName;
 
-            // Test Price
             result.PriceStrategy = TryReadPriceText(mainData, out var priceText);
             result.Price = priceText;
 
-            // Test Timestamp
             result.TimestampStrategy = TryReadAsOfText(mainData, out var timestamp);
             result.Timestamp = timestamp;
 
-            result.Success = !string.IsNullOrWhiteSpace(assetName) && 
-                            !string.IsNullOrWhiteSpace(priceText);
+            result.Success = !string.IsNullOrWhiteSpace(assetName) &&
+                             !string.IsNullOrWhiteSpace(priceText);
         }
         catch (Exception ex)
         {
@@ -114,144 +109,72 @@ public static class GoogleFinanceVerifier
 
     private static string TryGetMainData(HtmlDocument document, out HtmlNode? mainData)
     {
-        // Strategy 1: PrimaryClass
-        mainData = document.DocumentNode.SelectSingleNode($"//div[@class='{GoogleFinanceSelectors.MainContainer.PrimaryClass}']");
-        if (mainData != null)
-            return "Strategy 1: PrimaryClass (KycIzb)";
-
-        // Strategy 2: Via PriceJsName
-        var priceNode = document.DocumentNode.SelectSingleNode($"//span[@jsname='{GoogleFinanceSelectors.MainContainer.PriceJsName}']");
-        if (priceNode != null)
-        {
-            var container = priceNode.ParentNode;
-            for (int i = 0; i < 8 && container != null; i++)
-            {
-                var xpath = $".//div[contains(@class, '{GoogleFinanceSelectors.AssetName.PrimaryClass}')]";
-                var nameNode = container.SelectSingleNode(xpath);
-                if (nameNode != null)
-                {
-                    mainData = container;
-                    return "Strategy 2: Via PriceJsName traversal";
-                }
-                container = container.ParentNode;
-            }
-        }
-
-        // Strategy 3: Main tag
-        mainData = document.DocumentNode.SelectSingleNode("//main");
-        if (mainData != null)
+        if ((mainData = GoogleFinance.TryGetMainContainerByClass(document)) != null)
+            return "Strategy 1: PrimaryClass";
+        if ((mainData = GoogleFinance.TryGetMainContainerByPriceNode(document)) != null)
+            return "Strategy 2: Via PriceJsName traversal";
+        if ((mainData = GoogleFinance.TryGetMainFallbackTag(document)) != null)
             return "Strategy 3: Fallback to <main> tag";
-
         return "FAILED: No strategy worked";
     }
 
     private static string TryReadAssetName(HtmlNode mainData, out string assetName)
     {
-        // Strategy 1: PrimaryClass
-        var nameNode = mainData.SelectSingleNode($".//div[@class='{GoogleFinanceSelectors.AssetName.PrimaryClass}']");
-        if (nameNode != null)
+        string? result;
+        if ((result = GoogleFinance.TryReadAssetNameByClass(mainData)) != null)
         {
-            assetName = nameNode.InnerText.Trim();
-            return "Strategy 1: PrimaryClass (gO24Ff)";
+            assetName = result;
+            return "Strategy 1: PrimaryClass";
         }
-
-        // Strategy 2: ContainerClass
-        var containerNode = mainData.SelectSingleNode($".//div[@class='{GoogleFinanceSelectors.AssetName.ContainerClass}']");
-        if (containerNode != null)
+        if ((result = GoogleFinance.TryReadAssetNameByContainer(mainData)) != null)
         {
-            var firstDiv = containerNode.SelectSingleNode(".//div");
-            if (firstDiv != null)
-            {
-                assetName = firstDiv.InnerText.Trim();
-                return "Strategy 2: ContainerClass (YTGvuc)";
-            }
+            assetName = result;
+            return "Strategy 2: ContainerClass";
         }
-
-        // Strategy 3: Pattern matching
-        var divNodes = mainData.SelectNodes(".//div");
-        if (divNodes != null)
+        if ((result = GoogleFinance.TryReadAssetNameByText(mainData)) != null)
         {
-            foreach (var div in divNodes.Take(10))
-            {
-                var text = div.InnerText.Trim();
-                if (!string.IsNullOrWhiteSpace(text) && text.Length > 5 && text.Length < 100)
-                {
-                    assetName = text;
-                    return "Strategy 3: Pattern matching (first substantial text)";
-                }
-            }
+            assetName = result;
+            return "Strategy 3: Pattern matching (first substantial text)";
         }
-
         assetName = string.Empty;
         return "FAILED: No strategy worked";
     }
 
     private static string TryReadPriceText(HtmlNode mainData, out string priceText)
     {
-        // Strategy 1: PrimaryJsName
-        var priceNode = mainData.SelectSingleNode($".//span[@jsname='{GoogleFinanceSelectors.Price.PrimaryJsName}']");
-        if (priceNode != null)
+        string? result;
+        if ((result = GoogleFinance.TryReadPriceByJsName(mainData)) != null)
         {
-            priceText = priceNode.InnerText.Trim();
-            return "Strategy 1: PrimaryJsName (Pdsbrc)";
+            priceText = result;
+            return "Strategy 1: PrimaryJsName";
         }
-
-        // Strategy 2: ContainerClass
-        var priceContainer = mainData.SelectSingleNode($".//div[@class='{GoogleFinanceSelectors.Price.ContainerClass}']");
-        if (priceContainer != null)
+        if ((result = GoogleFinance.TryReadPriceByContainer(mainData)) != null)
         {
-            var priceSpan = priceContainer.SelectSingleNode(".//span");
-            if (priceSpan != null)
-            {
-                priceText = priceSpan.InnerText.Trim();
-                return "Strategy 2: ContainerClass (N6SYTe)";
-            }
+            priceText = result;
+            return "Strategy 2: ContainerClass";
         }
-
-        // Strategy 3: Regex pattern
-        var allSpans = mainData.SelectNodes(".//span");
-        if (allSpans != null)
+        if ((result = GoogleFinance.TryReadPriceByPattern(mainData)) != null)
         {
-            foreach (var span in allSpans)
-            {
-                var text = span.InnerText.Trim();
-                if (Regex.IsMatch(text, GoogleFinanceSelectors.Price.PricePattern))
-                {
-                    priceText = text;
-                    return "Strategy 3: Regex pattern matching";
-                }
-            }
+            priceText = result;
+            return "Strategy 3: Regex pattern matching";
         }
-
         priceText = string.Empty;
         return "FAILED: No strategy worked";
     }
 
     private static string TryReadAsOfText(HtmlNode mainData, out string timestamp)
     {
-        // Strategy 1: PrimaryClass
-        var timeNode = mainData.SelectSingleNode($".//div[@class='{GoogleFinanceSelectors.Timestamp.PrimaryClass}']");
-        if (timeNode != null)
+        string? result;
+        if ((result = GoogleFinance.TryReadAsOfByClass(mainData)) != null)
         {
-            timestamp = timeNode.InnerText.Trim();
-            return "Strategy 1: PrimaryClass (jZZ2de)";
+            timestamp = result;
+            return "Strategy 1: PrimaryClass";
         }
-
-        // Strategy 2: Date pattern
-        var allDivs = mainData.SelectNodes(".//div");
-        if (allDivs != null)
+        if ((result = GoogleFinance.TryReadAsOfByPattern(mainData)) != null)
         {
-            foreach (var div in allDivs)
-            {
-                var text = div.InnerText.Trim();
-                if (Regex.IsMatch(text, GoogleFinanceSelectors.Timestamp.DatePattern, RegexOptions.IgnoreCase))
-                {
-                    timestamp = text;
-                    return "Strategy 2: Date pattern regex";
-                }
-            }
+            timestamp = result;
+            return "Strategy 2: Date pattern regex";
         }
-
         timestamp = string.Empty;
         return "Strategy 3: Empty (will use DateTimeOffset.Now)";
     }
