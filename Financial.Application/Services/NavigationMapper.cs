@@ -1,0 +1,178 @@
+using Financial.Application.DTOs;
+using Financial.Domain.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Financial.Application.Services;
+
+internal static class NavigationMapper
+{
+    private const string EncerradasName = "Encerradas";
+
+    internal static TreeNodeDTO BuildBrokerTreeNode(BrokerNodeDTO broker)
+    {
+        var brokerNode = new TreeNodeDTO
+        {
+            NodeType = TreeNodeTypes.Broker,
+            DisplayName = $"{broker.Name} ({broker.Currency})",
+            Metadata = new Dictionary<string, object>
+            {
+                ["BrokerName"] = broker.Name,
+                ["Currency"] = broker.Currency,
+                ["PortfolioCount"] = broker.PortfolioCount,
+                ["TotalAssets"] = broker.TotalAssets
+            }
+        };
+
+        foreach (var portfolio in broker.Portfolios)
+        {
+            brokerNode.Children.Add(BuildPortfolioTreeNode(portfolio));
+        }
+
+        return brokerNode;
+    }
+
+    internal static TreeNodeDTO BuildPortfolioTreeNode(PortfolioNodeDTO portfolio)
+    {
+        var portfolioNode = new TreeNodeDTO
+        {
+            NodeType = TreeNodeTypes.Portfolio,
+            DisplayName = $"{portfolio.Name} ({portfolio.AssetCount} assets)",
+            Metadata = new Dictionary<string, object>
+            {
+                ["PortfolioName"] = portfolio.Name,
+                ["AssetCount"] = portfolio.AssetCount,
+                ["ActiveAssetCount"] = portfolio.ActiveAssetCount
+            }
+        };
+
+        foreach (var asset in portfolio.Assets)
+        {
+            portfolioNode.Children.Add(BuildAssetTreeNode(asset));
+        }
+
+        return portfolioNode;
+    }
+
+    internal static TreeNodeDTO BuildAssetTreeNode(AssetNodeDTO asset)
+    {
+        return new TreeNodeDTO
+        {
+            NodeType = TreeNodeTypes.Asset,
+            DisplayName = asset.Name,
+            Metadata = new Dictionary<string, object>
+            {
+                ["AssetName"] = asset.Name,
+                ["Ticker"] = asset.Ticker,
+                ["Exchange"] = asset.Exchange,
+                ["ISIN"] = asset.ISIN,
+                ["Country"] = asset.Country,
+                ["LocalTypeCode"] = asset.LocalTypeCode,
+                ["GlobalAssetClass"] = asset.Class,
+                ["Quantity"] = asset.Quantity,
+                ["AveragePrice"] = asset.AveragePrice,
+                ["IsActive"] = asset.IsActive,
+                ["TransactionCount"] = asset.TransactionCount,
+                ["CreditCount"] = asset.CreditCount
+            }
+        };
+    }
+
+    internal static BrokerNodeDTO MapBroker(Broker broker)
+    {
+        return new BrokerNodeDTO
+        {
+            Name = broker.Name,
+            Currency = broker.Currency,
+            PortfolioCount = broker.Portfolios.Count,
+            TotalAssets = broker.Portfolios.Sum(p => p.Assets.Count),
+            Portfolios = MapPortfolios(broker.Portfolios).ToList()
+        };
+    }
+
+    internal static TransactionDTO MapTransaction(Transaction transaction)
+    {
+        return new TransactionDTO
+        {
+            Id = transaction.Id,
+            Date = transaction.Date,
+            Type = transaction.Type.ToString(),
+            Quantity = transaction.Quantity,
+            UnitPrice = transaction.UnitPrice,
+            Fees = transaction.Fees,
+            TotalPrice = transaction.TotalPrice
+        };
+    }
+
+    internal static CreditDTO MapCredit(Credit credit)
+    {
+        return new CreditDTO
+        {
+            Id = credit.Id,
+            Date = credit.Date,
+            Type = credit.Type.ToString(),
+            Value = credit.Value
+        };
+    }
+
+    internal static (decimal TotalBought, decimal TotalSold, decimal TotalCredits) CalculateTotals(Asset asset)
+    {
+        var totalBought = asset.Transactions
+            .Where(t => t.Type == Transaction.TransactionType.Buy)
+            .Sum(t => t.TotalPrice);
+
+        var totalSold = asset.Transactions
+            .Where(t => t.Type == Transaction.TransactionType.Sell)
+            .Sum(t => t.TotalPrice);
+
+        var totalCredits = asset.Credits.Sum(c => c.Value);
+
+        return (totalBought, totalSold, totalCredits);
+    }
+
+    internal static IEnumerable<T> OrderByNameWithEncerradasLast<T>(IEnumerable<T> source, Func<T, string> nameSelector)
+    {
+        return source
+            .OrderBy(item => IsEncerradas(nameSelector(item)) ? 1 : 0)
+            .ThenBy(item => nameSelector(item) ?? string.Empty, StringComparer.CurrentCultureIgnoreCase);
+    }
+
+    private static IEnumerable<PortfolioNodeDTO> MapPortfolios(IEnumerable<Portfolio> portfolios)
+    {
+        return OrderByNameWithEncerradasLast(portfolios, p => p.Name).Select(MapPortfolio);
+    }
+
+    private static PortfolioNodeDTO MapPortfolio(Portfolio portfolio)
+    {
+        return new PortfolioNodeDTO
+        {
+            Name = portfolio.Name,
+            AssetCount = portfolio.Assets.Count,
+            ActiveAssetCount = portfolio.Assets.Count(a => a.Active),
+            Assets = OrderByNameWithEncerradasLast(portfolio.Assets, a => a.Name).Select(MapAsset).ToList()
+        };
+    }
+
+    private static AssetNodeDTO MapAsset(Asset asset)
+    {
+        return new AssetNodeDTO
+        {
+            Name = asset.Name,
+            Ticker = asset.Ticker,
+            Exchange = asset.Exchange,
+            ISIN = asset.ISIN,
+            Country = asset.Country,
+            LocalTypeCode = asset.LocalTypeCode,
+            Class = asset.Class,
+            Quantity = asset.Quantity,
+            AveragePrice = asset.AveragePrice,
+            IsActive = asset.Active,
+            TransactionCount = asset.Transactions.Count,
+            CreditCount = asset.Credits.Count
+        };
+    }
+
+    private static bool IsEncerradas(string? name) =>
+        string.Equals(name?.Trim(), EncerradasName, StringComparison.CurrentCultureIgnoreCase);
+}
