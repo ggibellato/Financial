@@ -16,7 +16,7 @@ namespace Financial.Presentation.App.Components
 
         private void OnCreditsPlotSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (DataContext is MainNavigationViewModel viewModel)
+            if (DataContext is IMainNavigationViewModel viewModel)
             {
                 viewModel.AssetDetails.UpdateCreditsPlotWidth(e.NewSize.Width);
             }

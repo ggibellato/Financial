@@ -7,23 +7,16 @@ using System.Windows;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
-using Financial.Presentation.App.ViewModels;
-using Financial.Presentation.App;
 using OxyPlot;
 using OxyPlot.Axes;
-using OxyPlot.Annotations;
-using OxyPlot.Series;
 
 namespace Financial.Presentation.App.ViewModels;
 
-/// <summary>
-/// ViewModel for displaying asset details with operations and credits in tabs
-/// </summary>
 public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 {
-    private readonly ITransactionService? _transactionService;
-    private readonly ICreditService? _creditService;
-    private readonly IAssetPriceService? _assetPriceService;
+    private readonly ITransactionService _transactionService;
+    private readonly ICreditService _creditService;
+    private readonly IAssetPriceService _assetPriceService;
     private readonly TodayInfoTracker _todayInfo;
     private readonly TransactionActions _transactionActions;
     private readonly CreditActions _creditActions;
@@ -59,8 +52,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private CreditsFilter _selectedCreditsFilter = CreditsFilter.LastYear;
     private CreditsTypeChartMode _selectedCreditsTypeMode = CreditsTypeChartMode.Stacked;
     private const string DefaultCreditsContextKey = "default";
-    private const string CreditsValueLabelTag = "CreditsValueLabel";
-    private const double BarGroupWidth = 0.8;
     private readonly Dictionary<string, CreditsViewState> _creditsViewStateByKey = new(StringComparer.OrdinalIgnoreCase);
     private string _creditsContextKey = DefaultCreditsContextKey;
     private double _creditsPlotWidth;
@@ -71,142 +62,54 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private IReadOnlyList<CreditsMonthTypeTotals> _creditsChartMonths = Array.Empty<CreditsMonthTypeTotals>();
     private IReadOnlyList<string> _creditsChartTypes = Array.Empty<string>();
 
-    public string AssetName
-    {
-        get => _assetName;
-        private set => SetProperty(ref _assetName, value);
-    }
-
-    public string BrokerName
-    {
-        get => _brokerName;
-        private set => SetProperty(ref _brokerName, value);
-    }
-
-    public string PortfolioName
-    {
-        get => _portfolioName;
-        private set => SetProperty(ref _portfolioName, value);
-    }
-
-    public string Ticker
-    {
-        get => _ticker;
-        private set => SetProperty(ref _ticker, value);
-    }
-
-    public string ISIN
-    {
-        get => _isin;
-        private set => SetProperty(ref _isin, value);
-    }
-
-    public string Exchange
-    {
-        get => _exchange;
-        private set => SetProperty(ref _exchange, value);
-    }
-
-    public CountryCode Country
-    {
-        get => _country;
-        private set => SetProperty(ref _country, value);
-    }
-
-    public string LocalTypeCode
-    {
-        get => _localTypeCode;
-        private set => SetProperty(ref _localTypeCode, value);
-    }
-
-    public GlobalAssetClass Class
-    {
-        get => _class;
-        private set => SetProperty(ref _class, value);
-    }
+    public string AssetName { get => _assetName; private set => SetProperty(ref _assetName, value); }
+    public string BrokerName { get => _brokerName; private set => SetProperty(ref _brokerName, value); }
+    public string PortfolioName { get => _portfolioName; private set => SetProperty(ref _portfolioName, value); }
+    public string Ticker { get => _ticker; private set => SetProperty(ref _ticker, value); }
+    public string ISIN { get => _isin; private set => SetProperty(ref _isin, value); }
+    public string Exchange { get => _exchange; private set => SetProperty(ref _exchange, value); }
+    public CountryCode Country { get => _country; private set => SetProperty(ref _country, value); }
+    public string LocalTypeCode { get => _localTypeCode; private set => SetProperty(ref _localTypeCode, value); }
+    public GlobalAssetClass Class { get => _class; private set => SetProperty(ref _class, value); }
 
     public decimal Quantity
     {
         get => _quantity;
-        private set
-        {
-            if (SetProperty(ref _quantity, value))
-            {
-                NotifyCurrentValueChanged();
-            }
-        }
+        private set { if (SetProperty(ref _quantity, value)) NotifyCurrentValueChanged(); }
     }
 
     public decimal AveragePrice
     {
         get => _averagePrice;
-        private set
-        {
-            if (SetProperty(ref _averagePrice, value))
-            {
-                NotifyCurrentValueChanged();
-            }
-        }
+        private set { if (SetProperty(ref _averagePrice, value)) NotifyCurrentValueChanged(); }
     }
 
-    public bool IsActive
-    {
-        get => _isActive;
-        private set => SetProperty(ref _isActive, value);
-    }
+    public bool IsActive { get => _isActive; private set => SetProperty(ref _isActive, value); }
 
     public decimal TotalBought
     {
         get => _totalBought;
-        private set
-        {
-            if (SetProperty(ref _totalBought, value))
-            {
-                OnPropertyChanged(nameof(Balance));
-            }
-        }
+        private set { if (SetProperty(ref _totalBought, value)) OnPropertyChanged(nameof(Balance)); }
     }
 
     public decimal TotalSold
     {
         get => _totalSold;
-        private set
-        {
-            if (SetProperty(ref _totalSold, value))
-            {
-                OnPropertyChanged(nameof(Balance));
-            }
-        }
+        private set { if (SetProperty(ref _totalSold, value)) OnPropertyChanged(nameof(Balance)); }
     }
 
     public decimal TotalCredits
     {
         get => _totalCredits;
-        private set
-        {
-            if (SetProperty(ref _totalCredits, value))
-            {
-                NotifyCurrentValueChanged();
-            }
-        }
+        private set { if (SetProperty(ref _totalCredits, value)) NotifyCurrentValueChanged(); }
     }
 
-    public PlotModel? CreditsPlotModel
-    {
-        get => _creditsPlotModel;
-        private set => SetProperty(ref _creditsPlotModel, value);
-    }
+    public PlotModel? CreditsPlotModel { get => _creditsPlotModel; private set => SetProperty(ref _creditsPlotModel, value); }
 
     public bool IsCreditsAggregateView
     {
         get => _isCreditsAggregateView;
-        private set
-        {
-            if (SetProperty(ref _isCreditsAggregateView, value))
-            {
-                OnPropertyChanged(nameof(IsCreditsAssetView));
-            }
-        }
+        private set { if (SetProperty(ref _isCreditsAggregateView, value)) OnPropertyChanged(nameof(IsCreditsAssetView)); }
     }
 
     public bool HasCreditsContext
@@ -223,45 +126,22 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     }
 
     public bool IsCreditsAssetView => HasCreditsContext && !IsCreditsAggregateView;
-
     public bool ShouldShowEmptyState => !HasCreditsContext;
-
     public decimal Balance => TotalBought - TotalSold;
 
     public decimal TodayCurrentValue
     {
         get => _todayCurrentValue;
-        private set
-        {
-            if (SetProperty(ref _todayCurrentValue, value))
-            {
-                NotifyCurrentValueChanged();
-            }
-        }
+        private set { if (SetProperty(ref _todayCurrentValue, value)) NotifyCurrentValueChanged(); }
     }
 
-    public string TodayCurrentValueAsOf
-    {
-        get => _todayCurrentValueAsOf;
-        private set => SetProperty(ref _todayCurrentValueAsOf, value);
-    }
-
-    public string TodayInfoMessage
-    {
-        get => _todayInfoMessage;
-        private set => SetProperty(ref _todayInfoMessage, value);
-    }
+    public string TodayCurrentValueAsOf { get => _todayCurrentValueAsOf; private set => SetProperty(ref _todayCurrentValueAsOf, value); }
+    public string TodayInfoMessage { get => _todayInfoMessage; private set => SetProperty(ref _todayInfoMessage, value); }
 
     public decimal TotalCurrentValue => AssetDetailsCalculations.CalculateTotalCurrentValue(TodayCurrentValue, Quantity);
-
-    public decimal ResultPercent =>
-        AssetDetailsCalculations.CalculateResultPercent(AveragePrice, Quantity, TotalCurrentValue);
-
+    public decimal ResultPercent => AssetDetailsCalculations.CalculateResultPercent(AveragePrice, Quantity, TotalCurrentValue);
     public decimal TotalCurrentValueWithCredits => TotalCurrentValue + TotalCredits;
-
-    public decimal ResultPercentWithCredits =>
-        AssetDetailsCalculations.CalculateResultPercentWithCredits(AveragePrice, Quantity, TotalCurrentValueWithCredits);
-
+    public decimal ResultPercentWithCredits => AssetDetailsCalculations.CalculateResultPercentWithCredits(AveragePrice, Quantity, TotalCurrentValueWithCredits);
     public bool HasAveragePrice => AssetDetailsCalculations.HasAveragePrice(AveragePrice, Quantity);
 
     public ObservableCollection<TransactionDTO> Transactions { get; } = new();
@@ -273,25 +153,13 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public TransactionDTO? SelectedTransaction
     {
         get => _selectedTransaction;
-        set
-        {
-            if (SetProperty(ref _selectedTransaction, value))
-            {
-                UpdateCommandStates();
-            }
-        }
+        set { if (SetProperty(ref _selectedTransaction, value)) UpdateCommandStates(); }
     }
 
     public CreditDTO? SelectedCredit
     {
         get => _selectedCredit;
-        set
-        {
-            if (SetProperty(ref _selectedCredit, value))
-            {
-                UpdateCommandStates();
-            }
-        }
+        set { if (SetProperty(ref _selectedCredit, value)) UpdateCommandStates(); }
     }
 
     public RelayCommand AddTransactionCommand => _addTransactionCommand;
@@ -305,15 +173,18 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public RelayCommand SelectCreditsFilterCommand => _selectCreditsFilterCommand;
     public RelayCommand SelectCreditsTypeModeCommand => _selectCreditsTypeModeCommand;
 
-    public AssetDetailsViewModel(ITransactionService? transactionService = null, ICreditService? creditService = null, IAssetPriceService? assetPriceService = null)
+    public AssetDetailsViewModel(
+        ITransactionService transactionService,
+        ICreditService creditService,
+        IAssetPriceService assetPriceService)
     {
-        _transactionService = transactionService;
-        _creditService = creditService;
-        _assetPriceService = assetPriceService;
+        _transactionService = transactionService ?? throw new ArgumentNullException(nameof(transactionService));
+        _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
+        _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
         _todayInfo = new TodayInfoTracker(ApplyTodayInfo, ResetTodayInfo, UpdateCommandStates);
         _transactionActions = new TransactionActions(
             _transactionService,
-            () => HasTransactionContext,
+            () => HasAssetContext,
             () => BrokerName,
             () => PortfolioName,
             () => AssetName,
@@ -321,7 +192,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
         _creditActions = new CreditActions(
             _creditService,
-            () => HasCreditContext,
+            () => HasAssetContext,
             () => BrokerName,
             () => PortfolioName,
             () => AssetName,
@@ -341,9 +212,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         InitializeCreditsTypeModes();
     }
 
-    /// <summary>
-    /// Loads asset details from DTO
-    /// </summary>
     public void LoadAssetDetails(AssetDetailsDTO details)
     {
         var assetKey = BuildAssetKey(details.BrokerName, details.PortfolioName, details.Name);
@@ -370,15 +238,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
         Transactions.Clear();
         foreach (var tx in details.Transactions)
-        {
             Transactions.Add(tx);
-        }
 
         Credits.Clear();
         foreach (var credit in details.Credits)
-        {
             Credits.Add(credit);
-        }
         ApplyCreditsFilter();
 
         SelectedTransaction = null;
@@ -386,9 +250,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         UpdateCommandStates();
     }
 
-    /// <summary>
-    /// Clears all asset details
-    /// </summary>
     public void Clear()
     {
         ClearAssetContext();
@@ -418,28 +279,13 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         !string.IsNullOrWhiteSpace(PortfolioName) &&
         !string.IsNullOrWhiteSpace(AssetName);
 
-    private bool HasTransactionContext => _transactionService != null && HasAssetContext;
-
-    private bool HasCreditContext => _creditService != null && HasAssetContext;
-
-    private bool CanEditTransactions() => HasTransactionContext;
-
-    private bool CanUpdateTransaction(object? parameter) =>
-        HasTransactionContext && (parameter is TransactionDTO || SelectedTransaction != null);
-
-    private bool CanDeleteTransaction(object? parameter) =>
-        HasTransactionContext && (parameter is TransactionDTO || SelectedTransaction != null);
-
-    private bool CanEditCredits() => HasCreditContext;
-
-    private bool CanUpdateCredit(object? parameter) =>
-        HasCreditContext && (parameter is CreditDTO || SelectedCredit != null);
-
-    private bool CanDeleteCredit(object? parameter) =>
-        HasCreditContext && (parameter is CreditDTO || SelectedCredit != null);
-
+    private bool CanEditTransactions() => HasAssetContext;
+    private bool CanUpdateTransaction(object? parameter) => HasAssetContext && (parameter is TransactionDTO || SelectedTransaction != null);
+    private bool CanDeleteTransaction(object? parameter) => HasAssetContext && (parameter is TransactionDTO || SelectedTransaction != null);
+    private bool CanEditCredits() => HasAssetContext;
+    private bool CanUpdateCredit(object? parameter) => HasAssetContext && (parameter is CreditDTO || SelectedCredit != null);
+    private bool CanDeleteCredit(object? parameter) => HasAssetContext && (parameter is CreditDTO || SelectedCredit != null);
     private bool CanRefreshTodayInfo() => _todayInfo.CanRefresh(HasAssetContext);
-
     private bool CanCopyAssetName() => HasAssetContext;
 
     private void CopyAssetName()
@@ -449,29 +295,18 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             MessageBox.Show("Select an asset before copying.", "Copy Asset", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-
         Clipboard.SetText(AssetName);
     }
 
-    public Task EnsureTodayInfoLoadedAsync()
-    {
-        return RefreshTodayInfoAsync(forceRefresh: false);
-    }
+    public Task EnsureTodayInfoLoadedAsync() => RefreshTodayInfoAsync(forceRefresh: false);
 
-    private async void RefreshTodayInfo()
-    {
-        await RefreshTodayInfoAsync(forceRefresh: true);
-    }
+    private async void RefreshTodayInfo() => await RefreshTodayInfoAsync(forceRefresh: true);
 
     private Task RefreshTodayInfoAsync(bool forceRefresh)
     {
         return _todayInfo.RefreshAsync(
-            forceRefresh,
-            HasAssetContext,
-            _assetPriceService,
-            Exchange,
-            Ticker,
-            message => TodayInfoMessage = message);
+            forceRefresh, HasAssetContext, _assetPriceService,
+            Exchange, Ticker, message => TodayInfoMessage = message);
     }
 
     private void ResetTodayInfo()
@@ -506,9 +341,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
         Credits.Clear();
         foreach (var credit in credits)
-        {
             Credits.Add(credit);
-        }
         TotalCredits = credits.Sum(credit => credit.Value);
         ApplyCreditsFilter();
 
@@ -540,13 +373,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     public void UpdateCreditsPlotWidth(double plotWidth)
     {
-        if (plotWidth <= 0)
-        {
-            return;
-        }
-
+        if (plotWidth <= 0 || CreditsPlotModel == null) return;
         _creditsPlotWidth = plotWidth;
-        ApplyCreditsPlotLabelDensity();
+        CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _selectedCreditsTypeMode);
     }
 
     private void InitializeCreditsFilters()
@@ -570,30 +399,14 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     private void SelectCreditsFilter(object? parameter)
     {
-        if (parameter is CreditsFilterOptionViewModel option)
-        {
-            SetCreditsFilter(option.Filter);
-            return;
-        }
-
-        if (parameter is CreditsFilter filter)
-        {
-            SetCreditsFilter(filter);
-        }
+        if (parameter is CreditsFilterOptionViewModel option) { SetCreditsFilter(option.Filter); return; }
+        if (parameter is CreditsFilter filter) SetCreditsFilter(filter);
     }
 
     private void SelectCreditsTypeMode(object? parameter)
     {
-        if (parameter is CreditsTypeModeOptionViewModel option)
-        {
-            SetCreditsTypeMode(option.Mode);
-            return;
-        }
-
-        if (parameter is CreditsTypeChartMode mode)
-        {
-            SetCreditsTypeMode(mode);
-        }
+        if (parameter is CreditsTypeModeOptionViewModel option) { SetCreditsTypeMode(option.Mode); return; }
+        if (parameter is CreditsTypeChartMode mode) SetCreditsTypeMode(mode);
     }
 
     private void SetCreditsFilter(CreditsFilter filter, bool rebuild = true)
@@ -603,15 +416,10 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             UpdateCreditsFilterSelection();
             return;
         }
-
         _selectedCreditsFilter = filter;
         UpdateCreditsFilterSelection();
         UpdateCreditsViewState();
-
-        if (rebuild)
-        {
-            ApplyCreditsFilter();
-        }
+        if (rebuild) ApplyCreditsFilter();
     }
 
     private void SetCreditsTypeMode(CreditsTypeChartMode mode, bool rebuild = true)
@@ -621,31 +429,22 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             UpdateCreditsTypeModeSelection();
             return;
         }
-
         _selectedCreditsTypeMode = mode;
         UpdateCreditsTypeModeSelection();
         UpdateCreditsViewState();
-
-        if (rebuild)
-        {
-            ApplyCreditsFilter();
-        }
+        if (rebuild) ApplyCreditsFilter();
     }
 
     private void UpdateCreditsFilterSelection()
     {
         foreach (var option in CreditsFilters)
-        {
             option.IsSelected = option.Filter == _selectedCreditsFilter;
-        }
     }
 
     private void UpdateCreditsTypeModeSelection()
     {
         foreach (var option in CreditsTypeModes)
-        {
             option.IsSelected = option.Mode == _selectedCreditsTypeMode;
-        }
     }
 
     private void ApplyCreditsFilter()
@@ -655,10 +454,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     private static IEnumerable<CreditDTO> FilterCredits(IEnumerable<CreditDTO> credits, CreditsFilter filter)
     {
-        if (filter == CreditsFilter.All)
-        {
-            return credits;
-        }
+        if (filter == CreditsFilter.All) return credits;
 
         var today = DateTime.Today;
         var currentMonthStart = new DateTime(today.Year, today.Month, 1);
@@ -703,252 +499,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             .ToList();
 
         foreach (var group in grouped)
-        {
-            CreditsByMonthChart.Add(new KeyValuePair<string, decimal>(
-                group.Month.ToString("MM/yyyy"),
-                group.Total));
-        }
+            CreditsByMonthChart.Add(new KeyValuePair<string, decimal>(group.Month.ToString("MM/yyyy"), group.Total));
 
-        CreditsPlotModel = BuildCreditsPlotModel(grouped, _creditsChartTypes, _selectedCreditsTypeMode);
-        ApplyCreditsPlotLabelDensity();
-    }
-
-    private static PlotModel BuildCreditsPlotModel(
-        IReadOnlyList<CreditsMonthTypeTotals> grouped,
-        IReadOnlyList<string> creditTypes,
-        CreditsTypeChartMode mode)
-    {
-        var (model, categoryAxis) = CreatePlotModelWithAxes();
-
-        if (grouped.Count == 0 || creditTypes.Count == 0)
-        {
-            return model;
-        }
-
-        var seriesByType = CreateBarSeries(creditTypes);
-        PopulateBarItems(grouped, creditTypes, seriesByType, categoryAxis, mode);
-
-        foreach (var series in seriesByType)
-        {
-            model.Series.Add(series);
-        }
-        return model;
-    }
-
-    private static (PlotModel model, CategoryAxis categoryAxis) CreatePlotModelWithAxes()
-    {
-        var model = new PlotModel { Title = "Credits by Month" };
-        var categoryAxis = new CategoryAxis
-        {
-            Position = AxisPosition.Bottom,
-            GapWidth = 0.2,
-            IsPanEnabled = false,
-            IsZoomEnabled = false
-        };
-        var valueAxis = new LinearAxis
-        {
-            Position = AxisPosition.Left,
-            MajorGridlineStyle = LineStyle.Solid,
-            MinorGridlineStyle = LineStyle.Dot,
-            IsPanEnabled = false,
-            IsZoomEnabled = false,
-            MaximumPadding = 0.1
-        };
-        model.Axes.Add(categoryAxis);
-        model.Axes.Add(valueAxis);
-        return (model, categoryAxis);
-    }
-
-    private static List<RectangleBarSeries> CreateBarSeries(IReadOnlyList<string> creditTypes)
-    {
-        var palette = BuildBluePalette(creditTypes.Count);
-        return creditTypes
-            .Select((type, index) => new RectangleBarSeries
-            {
-                Title = type,
-                FillColor = palette[index],
-                StrokeColor = OxyColors.SlateGray,
-                StrokeThickness = 1
-            })
-            .ToList();
-    }
-
-    private static void PopulateBarItems(
-        IReadOnlyList<CreditsMonthTypeTotals> grouped,
-        IReadOnlyList<string> creditTypes,
-        List<RectangleBarSeries> seriesByType,
-        CategoryAxis categoryAxis,
-        CreditsTypeChartMode mode)
-    {
-        var halfGroupWidth = BarGroupWidth / 2;
-        var barWidth = BarGroupWidth / creditTypes.Count;
-
-        for (var monthIndex = 0; monthIndex < grouped.Count; monthIndex++)
-        {
-            var month = grouped[monthIndex];
-            categoryAxis.Labels.Add(month.Month.ToString("MM/yyyy"));
-
-            var positiveStack = 0.0;
-            var negativeStack = 0.0;
-
-            for (var typeIndex = 0; typeIndex < creditTypes.Count; typeIndex++)
-            {
-                var type = creditTypes[typeIndex];
-                var value = month.TotalsByType.TryGetValue(type, out var total) ? (double)total : 0d;
-                double x0, x1, y0, y1;
-
-                if (mode == CreditsTypeChartMode.Stacked)
-                {
-                    x0 = monthIndex - halfGroupWidth;
-                    x1 = monthIndex + halfGroupWidth;
-                    if (value >= 0)
-                    {
-                        y0 = positiveStack;
-                        y1 = positiveStack + value;
-                        positiveStack = y1;
-                    }
-                    else
-                    {
-                        y1 = negativeStack;
-                        y0 = negativeStack + value;
-                        negativeStack = y0;
-                    }
-                }
-                else
-                {
-                    x0 = monthIndex - halfGroupWidth + (barWidth * typeIndex);
-                    x1 = x0 + barWidth;
-                    y0 = Math.Min(0, value);
-                    y1 = Math.Max(0, value);
-                }
-
-                seriesByType[typeIndex].Items.Add(new RectangleBarItem(x0, y0, x1, y1));
-            }
-        }
-    }
-
-    private static IReadOnlyList<OxyColor> BuildBluePalette(int count)
-    {
-        if (count <= 0)
-        {
-            return Array.Empty<OxyColor>();
-        }
-
-        if (count == 1)
-        {
-            return new[] { OxyColors.SteelBlue };
-        }
-
-        var start = OxyColor.FromRgb(173, 216, 230); // Light blue
-        var end = OxyColor.FromRgb(8, 81, 156); // Dark blue
-        var colors = new List<OxyColor>(count);
-        for (var i = 0; i < count; i++)
-        {
-            var t = (double)i / (count - 1);
-            colors.Add(OxyColor.FromRgb(
-                LerpByte(start.R, end.R, t),
-                LerpByte(start.G, end.G, t),
-                LerpByte(start.B, end.B, t)));
-        }
-
-        return colors;
-    }
-
-    private static byte LerpByte(byte from, byte to, double t)
-    {
-        return (byte)Math.Round(from + ((to - from) * t));
-    }
-
-    private void ApplyCreditsPlotLabelDensity()
-    {
-        if (CreditsPlotModel == null || _creditsPlotWidth <= 0)
-        {
-            return;
-        }
-
-        var categoryAxis = CreditsPlotModel.Axes.OfType<CategoryAxis>().FirstOrDefault();
-        if (categoryAxis == null || categoryAxis.Labels.Count == 0)
-        {
-            return;
-        }
-
-        const double minLabelWidth = 52;
-        var maxVisibleLabels = Math.Max(1, (int)Math.Floor(_creditsPlotWidth / minLabelWidth));
-        var step = Math.Max(1, (int)Math.Ceiling((double)categoryAxis.Labels.Count / maxVisibleLabels));
-        categoryAxis.MajorStep = step;
-        categoryAxis.MinorStep = 1;
-        UpdateCreditsValueLabels(step);
-        CreditsPlotModel.InvalidatePlot(false);
-    }
-
-    private void UpdateCreditsValueLabels(int step)
-    {
-        if (CreditsPlotModel == null)
-        {
-            return;
-        }
-
-        for (var index = CreditsPlotModel.Annotations.Count - 1; index >= 0; index--)
-        {
-            if (CreditsPlotModel.Annotations[index].Tag is string tag &&
-                string.Equals(tag, CreditsValueLabelTag, StringComparison.Ordinal))
-            {
-                CreditsPlotModel.Annotations.RemoveAt(index);
-            }
-        }
-
-        if (_creditsChartMonths.Count == 0 || _creditsChartTypes.Count == 0)
-        {
-            return;
-        }
-
-        var halfGroupWidth = BarGroupWidth / 2;
-        var barWidth = BarGroupWidth / _creditsChartTypes.Count;
-
-        for (var monthIndex = 0; monthIndex < _creditsChartMonths.Count; monthIndex += step)
-        {
-            var month = _creditsChartMonths[monthIndex];
-
-            if (_selectedCreditsTypeMode == CreditsTypeChartMode.Stacked)
-            {
-                var total = month.Total;
-                AddCreditsValueLabel(monthIndex, total, total);
-                continue;
-            }
-
-            for (var typeIndex = 0; typeIndex < _creditsChartTypes.Count; typeIndex++)
-            {
-                var type = _creditsChartTypes[typeIndex];
-                var value = month.TotalsByType.TryGetValue(type, out var total) ? total : 0m;
-                if (value == 0)
-                {
-                    continue;
-                }
-
-                var x0 = monthIndex - halfGroupWidth + (barWidth * typeIndex);
-                var xCenter = x0 + (barWidth / 2);
-                AddCreditsValueLabel(xCenter, value, value);
-            }
-        }
-    }
-
-    private void AddCreditsValueLabel(double x, decimal value, decimal labelYValue)
-    {
-        var y = (double)labelYValue;
-        var annotation = new TextAnnotation
-        {
-            Text = value.ToString("N2"),
-            TextPosition = new DataPoint(x, y),
-            TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Center,
-            TextVerticalAlignment = value >= 0 ? OxyPlot.VerticalAlignment.Bottom : OxyPlot.VerticalAlignment.Top,
-            Offset = value >= 0 ? new ScreenVector(0, -6) : new ScreenVector(0, 6),
-            TextColor = OxyColors.Black,
-            Stroke = OxyColors.Undefined,
-            Tag = CreditsValueLabelTag,
-            ClipByXAxis = true,
-            ClipByYAxis = false
-        };
-        CreditsPlotModel?.Annotations.Add(annotation);
+        CreditsPlotModel = CreditsChartBuilder.Build(grouped, _creditsChartTypes, _selectedCreditsTypeMode);
+        if (CreditsPlotModel != null)
+            CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _selectedCreditsTypeMode);
     }
 
     private void SetCreditsContext(string contextKey, bool rebuild = true)
@@ -961,10 +516,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private CreditsViewState GetCreditsViewState(string contextKey)
     {
         if (_creditsViewStateByKey.TryGetValue(contextKey, out var state))
-        {
             return state;
-        }
-
         state = new CreditsViewState(CreditsFilter.LastYear, CreditsTypeChartMode.Stacked);
         _creditsViewStateByKey[contextKey] = state;
         return state;
@@ -974,21 +526,13 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         SetCreditsFilter(state.Filter, rebuild: false);
         SetCreditsTypeMode(state.Mode, rebuild: false);
-
-        if (rebuild)
-        {
-            ApplyCreditsFilter();
-        }
+        if (rebuild) ApplyCreditsFilter();
     }
 
     private void UpdateCreditsViewState()
     {
-        if (string.IsNullOrWhiteSpace(_creditsContextKey))
-        {
-            return;
-        }
-
-        _creditsViewStateByKey[_creditsContextKey] = new CreditsViewState(_selectedCreditsFilter, _selectedCreditsTypeMode);
+        if (!string.IsNullOrWhiteSpace(_creditsContextKey))
+            _creditsViewStateByKey[_creditsContextKey] = new CreditsViewState(_selectedCreditsFilter, _selectedCreditsTypeMode);
     }
 
     private static string BuildAssetKey(string brokerName, string portfolioName, string assetName) =>
@@ -1000,56 +544,32 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private static string BuildPortfolioKey(string brokerName, string portfolioName) =>
         $"Portfolio|{brokerName}|{portfolioName}";
 
-    private static string BuildBrokerKey(string brokerName) =>
-        $"Broker|{brokerName}";
+    private static string BuildBrokerKey(string brokerName) => $"Broker|{brokerName}";
 
-    private async void AddTransaction()
-    {
-        await _transactionActions.Add(ShowAddTransactionDialog);
-    }
-
-    private async void AddCredit()
-    {
-        await _creditActions.Add(ShowAddCreditDialog);
-    }
+    private async void AddTransaction() => await _transactionActions.Add(ShowAddTransactionDialog);
+    private async void AddCredit() => await _creditActions.Add(ShowAddCreditDialog);
 
     private async void UpdateTransaction(object? parameter)
     {
-        if (parameter is TransactionDTO transaction)
-        {
-            SelectedTransaction = transaction;
-        }
-
+        if (parameter is TransactionDTO tx) SelectedTransaction = tx;
         await _transactionActions.Update(SelectedTransaction, ShowUpdateTransactionDialog);
     }
 
     private async void UpdateCredit(object? parameter)
     {
-        if (parameter is CreditDTO credit)
-        {
-            SelectedCredit = credit;
-        }
-
+        if (parameter is CreditDTO credit) SelectedCredit = credit;
         await _creditActions.Update(SelectedCredit, ShowUpdateCreditDialog);
     }
 
     private async void DeleteTransaction(object? parameter)
     {
-        if (parameter is TransactionDTO transaction)
-        {
-            SelectedTransaction = transaction;
-        }
-
+        if (parameter is TransactionDTO tx) SelectedTransaction = tx;
         await _transactionActions.Delete(SelectedTransaction, ShowDeleteTransactionDialog);
     }
 
     private async void DeleteCredit(object? parameter)
     {
-        if (parameter is CreditDTO credit)
-        {
-            SelectedCredit = credit;
-        }
-
+        if (parameter is CreditDTO credit) SelectedCredit = credit;
         await _creditActions.Delete(SelectedCredit, ShowDeleteCreditDialog);
     }
 
@@ -1067,231 +587,67 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     private bool ShowTransactionDialog(TransactionDialogViewModel viewModel)
     {
-        var dialog = new TransactionDialog(viewModel)
-        {
-            Owner = System.Windows.Application.Current?.MainWindow
-        };
-
+        var dialog = new TransactionDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow };
         return dialog.ShowDialog() == true;
     }
 
     private TransactionDialogData? ShowAddTransactionDialog()
     {
-        var dialogViewModel = TransactionDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
-        if (!ShowTransactionDialog(dialogViewModel))
-        {
-            return null;
-        }
-
-        return new TransactionDialogData(
-            dialogViewModel.TransactionId,
-            dialogViewModel.Date,
-            dialogViewModel.Type,
-            dialogViewModel.Quantity,
-            dialogViewModel.UnitPrice,
-            dialogViewModel.Fees);
+        var vm = TransactionDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        if (!ShowTransactionDialog(vm)) return null;
+        return new TransactionDialogData(vm.TransactionId, vm.Date, vm.Type, vm.Quantity, vm.UnitPrice, vm.Fees);
     }
 
     private TransactionDialogData? ShowUpdateTransactionDialog()
     {
-        if (SelectedTransaction == null)
-        {
-            return null;
-        }
-
-        var dialogViewModel = TransactionDialogViewModel.CreateForUpdate(
-            BrokerName,
-            PortfolioName,
-            AssetName,
-            SelectedTransaction.Id,
-            SelectedTransaction.Date,
-            SelectedTransaction.Type,
-            SelectedTransaction.Quantity,
-            SelectedTransaction.UnitPrice,
-            SelectedTransaction.Fees);
-
-        if (!ShowTransactionDialog(dialogViewModel))
-        {
-            return null;
-        }
-
-        return new TransactionDialogData(
-            dialogViewModel.TransactionId,
-            dialogViewModel.Date,
-            dialogViewModel.Type,
-            dialogViewModel.Quantity,
-            dialogViewModel.UnitPrice,
-            dialogViewModel.Fees);
+        if (SelectedTransaction == null) return null;
+        var vm = TransactionDialogViewModel.CreateForUpdate(
+            BrokerName, PortfolioName, AssetName,
+            SelectedTransaction.Id, SelectedTransaction.Date, SelectedTransaction.Type,
+            SelectedTransaction.Quantity, SelectedTransaction.UnitPrice, SelectedTransaction.Fees);
+        if (!ShowTransactionDialog(vm)) return null;
+        return new TransactionDialogData(vm.TransactionId, vm.Date, vm.Type, vm.Quantity, vm.UnitPrice, vm.Fees);
     }
 
     private bool ShowDeleteTransactionDialog()
     {
-        if (SelectedTransaction == null)
-        {
-            return false;
-        }
-
-        var dialogViewModel = TransactionDialogViewModel.CreateForDelete(
-            BrokerName,
-            PortfolioName,
-            AssetName,
-            SelectedTransaction.Id,
-            SelectedTransaction.Date,
-            SelectedTransaction.Type,
-            SelectedTransaction.Quantity,
-            SelectedTransaction.UnitPrice,
-            SelectedTransaction.Fees);
-
-        return ShowTransactionDialog(dialogViewModel);
+        if (SelectedTransaction == null) return false;
+        var vm = TransactionDialogViewModel.CreateForDelete(
+            BrokerName, PortfolioName, AssetName,
+            SelectedTransaction.Id, SelectedTransaction.Date, SelectedTransaction.Type,
+            SelectedTransaction.Quantity, SelectedTransaction.UnitPrice, SelectedTransaction.Fees);
+        return ShowTransactionDialog(vm);
     }
 
     private bool ShowCreditDialog(CreditDialogViewModel viewModel)
     {
-        var dialog = new CreditDialog(viewModel)
-        {
-            Owner = System.Windows.Application.Current?.MainWindow
-        };
-
+        var dialog = new CreditDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow };
         return dialog.ShowDialog() == true;
     }
 
     private CreditDialogData? ShowAddCreditDialog()
     {
-        var dialogViewModel = CreditDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
-        if (!ShowCreditDialog(dialogViewModel))
-        {
-            return null;
-        }
-
-        return new CreditDialogData(
-            dialogViewModel.CreditId,
-            dialogViewModel.Date,
-            dialogViewModel.Type,
-            dialogViewModel.Value);
+        var vm = CreditDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        if (!ShowCreditDialog(vm)) return null;
+        return new CreditDialogData(vm.CreditId, vm.Date, vm.Type, vm.Value);
     }
 
     private CreditDialogData? ShowUpdateCreditDialog()
     {
-        if (SelectedCredit == null)
-        {
-            return null;
-        }
-
-        var dialogViewModel = CreditDialogViewModel.CreateForUpdate(
-            BrokerName,
-            PortfolioName,
-            AssetName,
-            SelectedCredit.Id,
-            SelectedCredit.Date,
-            SelectedCredit.Type,
-            SelectedCredit.Value);
-
-        if (!ShowCreditDialog(dialogViewModel))
-        {
-            return null;
-        }
-
-        return new CreditDialogData(
-            dialogViewModel.CreditId,
-            dialogViewModel.Date,
-            dialogViewModel.Type,
-            dialogViewModel.Value);
+        if (SelectedCredit == null) return null;
+        var vm = CreditDialogViewModel.CreateForUpdate(
+            BrokerName, PortfolioName, AssetName,
+            SelectedCredit.Id, SelectedCredit.Date, SelectedCredit.Type, SelectedCredit.Value);
+        if (!ShowCreditDialog(vm)) return null;
+        return new CreditDialogData(vm.CreditId, vm.Date, vm.Type, vm.Value);
     }
 
     private bool ShowDeleteCreditDialog()
     {
-        if (SelectedCredit == null)
-        {
-            return false;
-        }
-
-        var dialogViewModel = CreditDialogViewModel.CreateForDelete(
-            BrokerName,
-            PortfolioName,
-            AssetName,
-            SelectedCredit.Id,
-            SelectedCredit.Date,
-            SelectedCredit.Type,
-            SelectedCredit.Value);
-
-        return ShowCreditDialog(dialogViewModel);
-    }
-
-    public enum CreditsFilter
-    {
-        ThisMonth,
-        Last3Months,
-        Last6Months,
-        LastYear,
-        All
-    }
-
-    public enum CreditsTypeChartMode
-    {
-        Stacked,
-        Grouped
-    }
-
-    public sealed class CreditsFilterOptionViewModel : ViewModelBase
-    {
-        private bool _isSelected;
-
-        public CreditsFilterOptionViewModel(string label, CreditsFilter filter)
-        {
-            Label = label;
-            Filter = filter;
-        }
-
-        public string Label { get; }
-
-        public CreditsFilter Filter { get; }
-
-        public bool IsSelected
-        {
-            get => _isSelected;
-            set => SetProperty(ref _isSelected, value);
-        }
-    }
-
-    public sealed class CreditsTypeModeOptionViewModel : ViewModelBase
-    {
-        private bool _isSelected;
-
-        public CreditsTypeModeOptionViewModel(string label, CreditsTypeChartMode mode)
-        {
-            Label = label;
-            Mode = mode;
-        }
-
-        public string Label { get; }
-
-        public CreditsTypeChartMode Mode { get; }
-
-        public bool IsSelected
-        {
-            get => _isSelected;
-            set => SetProperty(ref _isSelected, value);
-        }
-    }
-
-    private readonly record struct CreditsViewState(CreditsFilter Filter, CreditsTypeChartMode Mode);
-
-    private sealed class CreditsMonthTypeTotals
-    {
-        public CreditsMonthTypeTotals(DateTime month, IReadOnlyDictionary<string, decimal> totalsByType)
-        {
-            Month = month;
-            TotalsByType = totalsByType;
-        }
-
-        public DateTime Month { get; }
-
-        public IReadOnlyDictionary<string, decimal> TotalsByType { get; }
-
-        public decimal Total => TotalsByType.Values.Sum();
+        if (SelectedCredit == null) return false;
+        var vm = CreditDialogViewModel.CreateForDelete(
+            BrokerName, PortfolioName, AssetName,
+            SelectedCredit.Id, SelectedCredit.Date, SelectedCredit.Type, SelectedCredit.Value);
+        return ShowCreditDialog(vm);
     }
 }
-
-
-
-

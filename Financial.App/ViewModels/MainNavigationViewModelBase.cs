@@ -13,7 +13,7 @@ namespace Financial.Presentation.App.ViewModels;
 /// <summary>
 /// Shared navigation view model logic for UI and Tools
 /// </summary>
-public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : ViewModelBase
+public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : ViewModelBase, IMainNavigationViewModel
     where TAssetDetailsViewModel : class, IAssetDetailsViewModel
 {
     private readonly INavigationService _navigationService;
@@ -26,6 +26,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     public ObservableCollection<TreeNodeViewModel> RootNodes { get; } = new();
     public ObservableCollection<AssetClassFilterOptionViewModel> AssetClassFilters { get; } = new();
     public TAssetDetailsViewModel AssetDetails { get; }
+    IAssetDetailsViewModel IMainNavigationViewModel.AssetDetails => AssetDetails;
 
     public TreeNodeViewModel? SelectedNode
     {

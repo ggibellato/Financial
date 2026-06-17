@@ -26,7 +26,7 @@ public sealed class TransactionActions : AssetActionsBase
 
     public async Task Add(Func<TransactionDialogData?> showDialog)
     {
-        if (!_hasContext())
+        if (!HasContext())
         {
             ShowInfo("Select an asset before adding a transaction.");
             return;
@@ -51,9 +51,9 @@ public sealed class TransactionActions : AssetActionsBase
 
         var updatedDetails = await _service.AddTransactionAsync(new TransactionCreateDTO
         {
-            BrokerName = _brokerName(),
-            PortfolioName = _portfolioName(),
-            AssetName = _assetName(),
+            BrokerName = GetBrokerName(),
+            PortfolioName = GetPortfolioName(),
+            AssetName = GetAssetName(),
             Date = dialogData.Value.Date,
             Type = normalizedType,
             Quantity = dialogData.Value.Quantity,
@@ -97,9 +97,9 @@ public sealed class TransactionActions : AssetActionsBase
 
         var updatedDetails = await _service.UpdateTransactionAsync(new TransactionUpdateDTO
         {
-            BrokerName = _brokerName(),
-            PortfolioName = _portfolioName(),
-            AssetName = _assetName(),
+            BrokerName = GetBrokerName(),
+            PortfolioName = GetPortfolioName(),
+            AssetName = GetAssetName(),
             Id = dialogData.Value.TransactionId,
             Date = dialogData.Value.Date,
             Type = normalizedType,
@@ -142,9 +142,9 @@ public sealed class TransactionActions : AssetActionsBase
 
         var updatedDetails = await _service.DeleteTransactionAsync(new TransactionDeleteDTO
         {
-            BrokerName = _brokerName(),
-            PortfolioName = _portfolioName(),
-            AssetName = _assetName(),
+            BrokerName = GetBrokerName(),
+            PortfolioName = GetPortfolioName(),
+            AssetName = GetAssetName(),
             Id = selectedTransaction.Id
         });
 
