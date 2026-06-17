@@ -1,9 +1,10 @@
 using Financial.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
+using System;
 
 namespace Financial.Infrastructure.Configuration;
 
-public sealed class RepositoryDiagnosticsProvider : IRepositoryDiagnostics
+public sealed class RepositoryDiagnosticsProvider : ILocalJsonRepositoryDiagnostics, IGoogleDriveRepositoryDiagnostics
 {
     private readonly IConfiguration _configuration;
 
