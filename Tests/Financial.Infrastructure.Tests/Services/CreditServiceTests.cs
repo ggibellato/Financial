@@ -3,9 +3,9 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Financial.Application.DTOs;
+using Financial.Application.Services;
 using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
-using Financial.Infrastructure.Services;
 using FluentAssertions;
 
 namespace Financial.Infrastructure.Tests.Services;

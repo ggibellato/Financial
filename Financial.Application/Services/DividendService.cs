@@ -2,44 +2,35 @@ using Financial.Application.Configuration;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
-using Financial.Infrastructure.Integrations.WebPageParser;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Financial.Infrastructure.Services;
+namespace Financial.Application.Services;
 
 public sealed class DividendService : IDividendService
 {
+    private readonly IDividendDataSource _dividendDataSource;
+    private readonly IAssetSnapshotSource _snapshotSource;
+
+    public DividendService(IDividendDataSource dividendDataSource, IAssetSnapshotSource snapshotSource)
+    {
+        _dividendDataSource = dividendDataSource ?? throw new ArgumentNullException(nameof(dividendDataSource));
+        _snapshotSource = snapshotSource ?? throw new ArgumentNullException(nameof(snapshotSource));
+    }
 
     public IReadOnlyList<DividendHistoryItemDTO> GetDividendHistory(DividendLookupRequestDTO request)
     {
         var values = LoadDividends(request);
-        return values
-            .OrderByDescending(dividend => dividend.Date)
-            .Select(dividend => new DividendHistoryItemDTO
-            {
-                Type = dividend.Type.ToString(),
-                Date = dividend.Date,
-                Value = dividend.Value
-            })
-            .ToList();
+        return MapToHistory(values);
     }
 
     public DividendSummaryDTO GetDividendSummary(DividendLookupRequestDTO request)
     {
         var values = LoadDividends(request);
-        var snapshot = GoogleFinance.GetFinancialInfoSnapshot(request.Exchange, request.Ticker);
+        var snapshot = _snapshotSource.GetSnapshot(request.Exchange, request.Ticker);
 
-        var history = values
-            .OrderByDescending(dividend => dividend.Date)
-            .Select(dividend => new DividendHistoryItemDTO
-            {
-                Type = dividend.Type.ToString(),
-                Date = dividend.Date,
-                Value = dividend.Value
-            })
-            .ToList();
+        var history = MapToHistory(values);
 
         var yearTotals = values
             .GroupBy(dividend => dividend.Date.Year)
@@ -77,7 +68,7 @@ public sealed class DividendService : IDividendService
         };
     }
 
-    private static IReadOnlyList<DividendValue> LoadDividends(DividendLookupRequestDTO request)
+    private IReadOnlyList<DividendValue> LoadDividends(DividendLookupRequestDTO request)
     {
         if (request is null)
         {
@@ -89,6 +80,19 @@ public sealed class DividendService : IDividendService
             throw new ArgumentException("Exchange and ticker are required.", nameof(request));
         }
 
-        return DadosMercadoDividend.GetDividendInfo(request.Ticker);
+        return _dividendDataSource.GetDividends(request.Ticker);
+    }
+
+    private static List<DividendHistoryItemDTO> MapToHistory(IReadOnlyList<DividendValue> values)
+    {
+        return values
+            .OrderByDescending(dividend => dividend.Date)
+            .Select(dividend => new DividendHistoryItemDTO
+            {
+                Type = dividend.Type.ToString(),
+                Date = dividend.Date,
+                Value = dividend.Value
+            })
+            .ToList();
     }
 }

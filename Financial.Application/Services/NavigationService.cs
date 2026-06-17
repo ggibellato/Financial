@@ -1,13 +1,12 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace Financial.Infrastructure.Services;
+namespace Financial.Application.Services;
 
-/// <summary>
-/// Implementation of INavigationService that provides hierarchical navigation
-/// over financial data using the repository pattern
-/// </summary>
 public sealed class NavigationService : INavigationService
 {
     private const string EncerradasName = "Encerradas";
@@ -18,9 +17,6 @@ public sealed class NavigationService : INavigationService
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }
 
-    /// <summary>
-    /// Builds the complete navigation tree from the root
-    /// </summary>
     public TreeNodeDTO GetNavigationTree()
     {
         var brokers = GetBrokers().ToList();
@@ -39,9 +35,6 @@ public sealed class NavigationService : INavigationService
         return rootNode;
     }
 
-    /// <summary>
-    /// Gets detailed information for a specific asset
-    /// </summary>
     public AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName)
     {
         if (string.IsNullOrWhiteSpace(brokerName) ||
@@ -93,19 +86,12 @@ public sealed class NavigationService : INavigationService
         };
     }
 
-    /// <summary>
-    /// Gets a list of all brokers with their portfolios and assets
-    /// </summary>
     public IEnumerable<BrokerNodeDTO> GetBrokers()
     {
         var brokers = OrderByNameWithEncerradasLast(_repository.GetBrokerList(), broker => broker.Name);
-
         return brokers.Select(MapBroker).ToList();
     }
 
-    /// <summary>
-    /// Gets credits for all assets under a broker
-    /// </summary>
     public IReadOnlyList<CreditDTO> GetCreditsByBroker(string brokerName)
     {
         if (string.IsNullOrWhiteSpace(brokerName))
@@ -121,9 +107,6 @@ public sealed class NavigationService : INavigationService
             .ToList();
     }
 
-    /// <summary>
-    /// Gets credits for all assets under a broker portfolio
-    /// </summary>
     public IReadOnlyList<CreditDTO> GetCreditsByPortfolio(string brokerName, string portfolioName)
     {
         if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
@@ -314,4 +297,3 @@ public sealed class NavigationService : INavigationService
         return string.Equals(name?.Trim(), EncerradasName, StringComparison.CurrentCultureIgnoreCase);
     }
 }
-
