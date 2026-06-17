@@ -1,5 +1,5 @@
-using Financial.Application.Configuration;
 using Financial.Application.Interfaces;
+using Financial.Infrastructure.Configuration;
 using System;
 using System.IO;
 using System.Threading.Tasks;

@@ -1,4 +1,3 @@
-using Financial.Application.Configuration;
 using Financial.Infrastructure.DependencyInjection;
 using Financial.Presentation.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,7 +36,7 @@ namespace Financial.Presentation.App
             catch (FileNotFoundException ex)
             {
                 MessageBox.Show(
-                    $"{ex.Message}\n\nSet '{RepositoryConfigurationKeys.LocalJsonDataFile}' or place '{RepositoryConfigurationKeys.LocalJsonDefaultFileName}' in the application directory.",
+                    ex.Message,
                     "Missing data file",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
