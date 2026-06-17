@@ -7,15 +7,9 @@ using Financial.Application.Validation;
 
 namespace Financial.Presentation.App.ViewModels;
 
-public sealed class TransactionActions
+public sealed class TransactionActions : AssetActionsBase
 {
     private readonly ITransactionService? _service;
-    private readonly Func<bool> _hasContext;
-    private readonly Func<string> _brokerName;
-    private readonly Func<string> _portfolioName;
-    private readonly Func<string> _assetName;
-    private readonly Action<AssetDetailsDTO> _applyDetails;
-    private readonly Action<string, string, MessageBoxImage> _showMessage;
 
     public TransactionActions(
         ITransactionService? service,
@@ -25,14 +19,9 @@ public sealed class TransactionActions
         Func<string> assetName,
         Action<AssetDetailsDTO> applyDetails,
         Action<string, string, MessageBoxImage> showMessage)
+        : base(hasContext, brokerName, portfolioName, assetName, applyDetails, showMessage, "Transaction")
     {
         _service = service;
-        _hasContext = hasContext ?? throw new ArgumentNullException(nameof(hasContext));
-        _brokerName = brokerName ?? throw new ArgumentNullException(nameof(brokerName));
-        _portfolioName = portfolioName ?? throw new ArgumentNullException(nameof(portfolioName));
-        _assetName = assetName ?? throw new ArgumentNullException(nameof(assetName));
-        _applyDetails = applyDetails ?? throw new ArgumentNullException(nameof(applyDetails));
-        _showMessage = showMessage ?? throw new ArgumentNullException(nameof(showMessage));
     }
 
     public async Task Add(Func<TransactionDialogData?> showDialog)
@@ -168,15 +157,6 @@ public sealed class TransactionActions
         _applyDetails(updatedDetails);
     }
 
-    private void ShowInfo(string message)
-    {
-        _showMessage(message, "Transaction", MessageBoxImage.Information);
-    }
-
-    private void ShowWarning(string message)
-    {
-        _showMessage(message, "Transaction", MessageBoxImage.Warning);
-    }
 }
 
 public readonly record struct TransactionDialogData(
