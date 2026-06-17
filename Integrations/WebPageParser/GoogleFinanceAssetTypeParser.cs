@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace Financial.Infrastructure.Integrations.WebPageParser;
@@ -10,6 +11,36 @@ public static class GoogleFinanceAssetTypeParser
         new Regex("\"quoteType\"\\s*:\\s*\"(?<type>[^\"]+)\"", RegexOptions.IgnoreCase | RegexOptions.Compiled),
         new Regex("\"instrumentType\"\\s*:\\s*\"(?<type>[^\"]+)\"", RegexOptions.IgnoreCase | RegexOptions.Compiled),
         new Regex("\"assetClass\"\\s*:\\s*\"(?<type>[^\"]+)\"", RegexOptions.IgnoreCase | RegexOptions.Compiled)
+    };
+
+    private static readonly Dictionary<string, string> TokenMap = new(StringComparer.Ordinal)
+    {
+        ["REIT"] = "REIT",
+        ["REALESTATEINVESTMENTTRUST"] = "REIT",
+        ["ETF"] = "ETF",
+        ["MUTUALFUND"] = "Fund",
+        ["FUND"] = "Fund",
+        ["BOND"] = "Bond",
+        ["GOVERNMENTBOND"] = "Bond",
+        ["GILT"] = "ConventionalGilt",
+        ["STOCK"] = "Stock",
+        ["EQUITY"] = "Stock",
+        ["CASH"] = "Cash",
+        ["PENSION"] = "Pension",
+    };
+
+    private static readonly (string Keyword, string LocalTypeCode)[] KeywordTable =
+    {
+        ("Real Estate Investment Trust", "REIT"),
+        ("REIT", "REIT"),
+        ("ETF", "ETF"),
+        ("Mutual Fund", "Fund"),
+        ("Bond", "Bond"),
+        ("Gilt", "ConventionalGilt"),
+        ("Stock", "Stock"),
+        ("Equity", "Stock"),
+        ("Cash", "Cash"),
+        ("Pension", "Pension"),
     };
 
     public static string TryParseLocalTypeCode(string? html)
@@ -37,58 +68,19 @@ public static class GoogleFinanceAssetTypeParser
 
     private static string TryParseKeyword(string html)
     {
-        if (ContainsKeyword(html, "Real Estate Investment Trust"))
+        foreach (var (keyword, localTypeCode) in KeywordTable)
         {
-            return "REIT";
-        }
-
-        if (ContainsKeyword(html, "REIT"))
-        {
-            return "REIT";
-        }
-
-        if (ContainsKeyword(html, "ETF"))
-        {
-            return "ETF";
-        }
-
-        if (ContainsKeyword(html, "Mutual Fund"))
-        {
-            return "Fund";
-        }
-
-        if (ContainsKeyword(html, "Bond"))
-        {
-            return "Bond";
-        }
-
-        if (ContainsKeyword(html, "Gilt"))
-        {
-            return "ConventionalGilt";
-        }
-
-        if (ContainsKeyword(html, "Stock") || ContainsKeyword(html, "Equity"))
-        {
-            return "Stock";
-        }
-
-        if (ContainsKeyword(html, "Cash"))
-        {
-            return "Cash";
-        }
-
-        if (ContainsKeyword(html, "Pension"))
-        {
-            return "Pension";
+            if (ContainsKeyword(html, keyword))
+            {
+                return localTypeCode;
+            }
         }
 
         return string.Empty;
     }
 
-    private static bool ContainsKeyword(string html, string keyword)
-    {
-        return html.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0;
-    }
+    private static bool ContainsKeyword(string html, string keyword) =>
+        html.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0;
 
     private static string MapTokenToLocalTypeCode(string token)
     {
@@ -98,27 +90,14 @@ public static class GoogleFinanceAssetTypeParser
         }
 
         var normalized = NormalizeToken(token);
-        return normalized switch
-        {
-            "REIT" or "REALESTATEINVESTMENTTRUST" => "REIT",
-            "ETF" => "ETF",
-            "MUTUALFUND" or "FUND" => "Fund",
-            "BOND" or "GOVERNMENTBOND" => "Bond",
-            "GILT" => "ConventionalGilt",
-            "STOCK" or "EQUITY" => "Stock",
-            "CASH" => "Cash",
-            "PENSION" => "Pension",
-            _ => string.Empty
-        };
+        return TokenMap.TryGetValue(normalized, out var localType) ? localType : string.Empty;
     }
 
-    private static string NormalizeToken(string token)
-    {
-        return token
+    private static string NormalizeToken(string token) =>
+        token
             .Trim()
             .Replace("_", string.Empty, StringComparison.OrdinalIgnoreCase)
             .Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase)
             .Replace(" ", string.Empty, StringComparison.OrdinalIgnoreCase)
             .ToUpperInvariant();
-    }
 }
