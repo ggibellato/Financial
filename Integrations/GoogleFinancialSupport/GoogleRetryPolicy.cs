@@ -1,3 +1,4 @@
+#nullable enable
 using Google;
 using System;
 using System.Net;
@@ -8,7 +9,7 @@ namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 
 internal static class GoogleRetryPolicy
 {
-    internal static async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action, int maxRetries = 5)
+    internal static async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action, int maxRetries = 5, Action<string>? logger = null)
     {
         int retryCount = 0;
         const int initialDelayMs = 2000;
@@ -23,7 +24,7 @@ internal static class GoogleRetryPolicy
             {
                 retryCount++;
                 var waitTime = initialDelayMs * (int)Math.Pow(2, retryCount - 1);
-                Console.WriteLine($"Rate limit hit. Retry {retryCount}/{maxRetries}. Waiting {waitTime}ms...");
+                logger?.Invoke($"Rate limit hit. Retry {retryCount}/{maxRetries}. Waiting {waitTime}ms...");
                 await Task.Delay(waitTime);
             }
             catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.TooManyRequests)
