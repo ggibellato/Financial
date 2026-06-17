@@ -1,8 +1,7 @@
 <Solution>
 	<Folder Name="/DDD/">
 		<Project Path="Financial.Application/Financial.Application.csproj" />
-		<Project Path="Financial.Common/Financial.Common.csproj" />
-		<Project Path="Financial.Domain/Financial.Domain.csproj" />
+<Project Path="Financial.Domain/Financial.Domain.csproj" />
 		<Project Path="Financial.Infrastructure/Financial.Infrastructure.csproj" />
 	</Folder>
 	<Folder Name="/Integrations/">

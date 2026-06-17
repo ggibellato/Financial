@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Financial.Common;
+using Financial.Domain.Entities;
 using Financial.Infrastructure.Integrations.WebPageParser;
 using FluentAssertions;
 using HtmlAgilityPack;

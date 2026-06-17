@@ -1,4 +1,4 @@
-using Financial.Common;
+using Financial.Domain.Entities;
 using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;

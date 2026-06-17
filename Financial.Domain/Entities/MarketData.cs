@@ -1,4 +1,6 @@
-﻿namespace Financial.Common;
+using System;
+
+namespace Financial.Domain.Entities;
 
 public enum DividendType { Dividend, JCP }
 
