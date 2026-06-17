@@ -11,47 +11,22 @@ using System.Threading.Tasks;
 
 namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 
-public class GoogleGenerator : IGenerator
+public sealed class GoogleGenerator : IGenerator
 {
-    // Rate limiting configuration to avoid API quota issues
-    private const int DelayBetweenSheetsMs = 3000;  // 3 seconds between each sheet
-    private const int DelayBetweenBrokersMs = 5000; // 5 seconds between each broker
-    private const int DelayBetweenOperationsMs = 1500; // 1.5 seconds between reading operations and credits
+    private const int DelayBetweenSheetsMs = 3000;
+    private const int DelayBetweenBrokersMs = 5000;
+    private const int DelayBetweenOperationsMs = 1500;
     private const string DefaultPortfolioName = "Default";
-
-    public List<string> IgnoreSpreadSheet = new List<string> {
-        "Totais",
-        "Totais com cotacao",
-        "Recomendacoes",
-        "Fundos de Investimento",
-        "Opcoes"
-    };
-
-    public Dictionary<string, string> PortfolioName = new Dictionary<string, string>() {
-        {"Trading 212_76a5af", "Fantastic Five Divid" },
-        {"Trading 212_ffd966", "Almost Daily Dividen" },
-        {"XPI_f4cccc", "Gold" },
-        {"XPI_ffff", "Acoes" },
-        {"XPI_cc0000", "Fundos Investimento" },
-        {"XPI_222222", "Encerradas" },
-        {"FreeTrade_222222", "Encerradas" },
-        {"Trading 212_222222", "Encerradas" },
-    };
-
-    public Dictionary<string, string> ExchangeCurrency = new Dictionary<string, string>() {
-        {"Trading 212", "GBP" },
-        {"XPI", "BRL" },
-        {"FreeTrade", "GBP" },
-        {"Coinbase", "GBP" },
-    };
 
     private readonly GoogleService _service;
     private readonly IJsonStorage _storage;
+    private readonly GoogleGeneratorOptions _options;
 
-    public GoogleGenerator(GoogleService service, IJsonStorage storage)
+    public GoogleGenerator(GoogleService service, IJsonStorage storage, GoogleGeneratorOptions options)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+        _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
     public async Task GenerateAsync(List<string> fileNames, IProgress<string> progress = null)
@@ -72,7 +47,7 @@ public class GoogleGenerator : IGenerator
                 await Task.Delay(DelayBetweenBrokersMs);
             }
             
-            var exchange = Broker.Create(fileName, ExchangeCurrency[fileName]);
+            var exchange = Broker.Create(fileName, _options.BrokerCurrencyMap[fileName]);
             data.AddBroker(exchange);
             var file = files.FirstOrDefault(f => f.Name == fileName);
 
@@ -80,11 +55,11 @@ public class GoogleGenerator : IGenerator
             var spreadSheets = await _service.GetSpreadSheetAsync(file.Id);
             
             int sheetCount = 0;
-            int totalSheets = spreadSheets.Count(s => !IgnoreSpreadSheet.Contains(s.Name));
-            
+            int totalSheets = spreadSheets.Count(s => !_options.IgnoreSheetNames.Contains(s.Name));
+
             foreach (var spreadsheet in spreadSheets)
             {
-                if (IgnoreSpreadSheet.Contains(spreadsheet.Name))
+                if (_options.IgnoreSheetNames.Contains(spreadsheet.Name))
                 {
                     continue;
                 }
@@ -150,7 +125,7 @@ public class GoogleGenerator : IGenerator
     private string ResolvePortfolioName(string brokerName, SheetDTO spreadsheet)
     {
         var portfolioName = string.IsNullOrWhiteSpace(spreadsheet.Color) ? DefaultPortfolioName : spreadsheet.Color;
-        if (PortfolioName.TryGetValue($"{brokerName}_{portfolioName}", out var name))
+        if (_options.PortfolioNameMap.TryGetValue($"{brokerName}_{portfolioName}", out var name))
         {
             portfolioName = name;
         }
@@ -194,7 +169,7 @@ public class GoogleGenerator : IGenerator
 
     private CountryCode ResolveBrokerCountry(string brokerName)
     {
-        if (!ExchangeCurrency.TryGetValue(brokerName, out var currency))
+        if (!_options.BrokerCurrencyMap.TryGetValue(brokerName, out var currency))
         {
             return CountryCode.Unknown;
         }

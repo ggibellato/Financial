@@ -138,7 +138,27 @@ public partial class MainWindow : Window
         {
             SetUIBusy(true, "Starting data generation...");
             
-            IGenerator generator = new GoogleGenerator(_service, new LocalJsonStorage(edtPath.Text));
+            var options = new GoogleGeneratorOptions(
+                IgnoreSheetNames: new List<string> { "Totais", "Totais com cotacao", "Recomendacoes", "Fundos de Investimento", "Opcoes" },
+                PortfolioNameMap: new Dictionary<string, string>
+                {
+                    { "Trading 212_76a5af", "Fantastic Five Divid" },
+                    { "Trading 212_ffd966", "Almost Daily Dividen" },
+                    { "XPI_f4cccc", "Gold" },
+                    { "XPI_ffff", "Acoes" },
+                    { "XPI_cc0000", "Fundos Investimento" },
+                    { "XPI_222222", "Encerradas" },
+                    { "FreeTrade_222222", "Encerradas" },
+                    { "Trading 212_222222", "Encerradas" },
+                },
+                BrokerCurrencyMap: new Dictionary<string, string>
+                {
+                    { "Trading 212", "GBP" },
+                    { "XPI", "BRL" },
+                    { "FreeTrade", "GBP" },
+                    { "Coinbase", "GBP" },
+                });
+            IGenerator generator = new GoogleGenerator(_service, new LocalJsonStorage(edtPath.Text), options);
             var fileNames = selectedFiles.Select(f => f.Name).ToList();
 
             var progress = new Progress<string>(status =>
