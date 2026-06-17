@@ -1,3 +1,4 @@
+using Financial.Application.DependencyInjection;
 using Financial.Infrastructure.DependencyInjection;
 using Financial.Presentation.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,7 @@ namespace Financial.Presentation.App
             AppHost = Host.CreateDefaultBuilder()
                 .ConfigureServices((context, services) =>
                 {
+                    services.AddFinancialApplication();
                     services.AddFinancialInfrastructure(context.Configuration);
                     services.AddTransient<MainNavigationViewModel>();
                     services.AddTransient<MainWindow>();
