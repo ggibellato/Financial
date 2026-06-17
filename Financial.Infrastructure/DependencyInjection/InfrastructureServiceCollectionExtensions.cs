@@ -5,6 +5,7 @@ using Financial.Infrastructure.Repositories;
 using Financial.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace Financial.Infrastructure.DependencyInjection;
 
@@ -19,10 +20,31 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
         services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();
         services.AddSingleton<IRepository>(sp =>
-            new RepositoryFactory(sp.GetRequiredService<IInvestmentsSerializer>())
-                .CreateFromConfiguration(configuration));
+        {
+            var options = BuildRepositoryOptions(configuration);
+            return new RepositoryFactory(sp.GetRequiredService<IInvestmentsSerializer>()).Create(options);
+        });
         services.AddSingleton<IAssetPriceService, AssetPriceService>();
 
         return services;
+    }
+
+    private static RepositorySelectionOptions BuildRepositoryOptions(IConfiguration configuration)
+    {
+        var providerValue = configuration[RepositoryConfigurationKeys.Provider]
+            ?? nameof(RepositoryProvider.LocalJson);
+
+        if (!Enum.TryParse(providerValue, ignoreCase: true, out RepositoryProvider provider))
+        {
+            throw new InvalidOperationException(
+                $"Repository provider '{providerValue}' is not supported. " +
+                $"Valid values: {string.Join(", ", Enum.GetNames<RepositoryProvider>())}.");
+        }
+
+        return new RepositorySelectionOptions(
+            provider,
+            configuration[RepositoryConfigurationKeys.LocalJsonDataFile],
+            configuration[RepositoryConfigurationKeys.GoogleDriveCredentialsPath],
+            configuration[RepositoryConfigurationKeys.GoogleDriveFilePath]);
     }
 }

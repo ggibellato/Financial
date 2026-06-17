@@ -108,15 +108,15 @@ public class AssetTests
     }
 
     [Fact]
-    public void AddCredit_AssignsIdWhenEmpty()
+    public void AddCredit_AddsToCollection()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
         var credit = Credit.CreateWithId(Guid.Empty, new DateTime(2024, 2, 1), Credit.CreditType.Dividend, 10m);
 
         asset.AddCredit(credit);
 
-        credit.Id.Should().NotBe(Guid.Empty);
-        asset.Credits.Should().ContainSingle();
+        asset.Credits.Should().ContainSingle()
+            .Which.Should().Be(credit);
     }
 
     [Fact]

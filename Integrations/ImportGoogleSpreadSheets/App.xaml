@@ -4,6 +4,7 @@
              xmlns:local="clr-namespace:Financial.Infrastructure.Integrations.ImportGoogleSpreadSheets"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <DrawingImage x:Key="AppIcon">
             <DrawingImage.Drawing>
                 <DrawingGroup>

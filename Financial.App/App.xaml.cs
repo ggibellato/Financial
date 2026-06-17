@@ -1,3 +1,4 @@
+using Financial.Application.Configuration;
 using Financial.Application.DependencyInjection;
 using Financial.Infrastructure.DependencyInjection;
 using Financial.Presentation.App.Options;
@@ -5,6 +6,7 @@ using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using System;
 using System.IO;
 using System.Windows;
@@ -24,9 +26,14 @@ namespace Financial.Presentation.App
                     services.AddFinancialInfrastructure(context.Configuration);
                     services.Configure<WatchlistOptions>(context.Configuration.GetSection(WatchlistOptions.SectionName));
                     services.Configure<AssetPriceFetchOptions>(context.Configuration.GetSection(AssetPriceFetchOptions.SectionName));
+                    services.Configure<DividendOptions>(context.Configuration.GetSection(DividendOptions.SectionName));
                     services.AddTransient<MainNavigationViewModel>();
                     services.AddTransient<DividendCheckViewModel>();
-                    services.AddTransient<AssetPriceFetchViewModel>();
+                    services.AddTransient<AssetPriceFetchViewModel>(sp => new AssetPriceFetchViewModel(
+                        sp.GetRequiredService<Financial.Application.Interfaces.INavigationService>(),
+                        sp.GetRequiredService<Financial.Application.Interfaces.IAssetPriceService>(),
+                        sp.GetRequiredService<IOptions<AssetPriceFetchOptions>>(),
+                        msg => MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error)));
                     services.AddTransient<DividendCheckView>();
                     services.AddTransient<AssetPriceView>();
                     services.AddTransient<MainWindow>();

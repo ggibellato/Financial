@@ -1,10 +1,11 @@
+using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 using System.Collections.Generic;
 
 namespace Financial.Infrastructure.Integrations.ImportGoogleSpreadSheets;
 
 internal static class GoogleGeneratorConfiguration
 {
-    internal static readonly IReadOnlyList<string> IgnoreSheetNames = new[]
+    private static readonly IReadOnlyList<string> IgnoreSheetNames = new[]
     {
         "Totais",
         "Totais com cotacao",
@@ -13,7 +14,7 @@ internal static class GoogleGeneratorConfiguration
         "Opcoes"
     };
 
-    internal static readonly IReadOnlyDictionary<string, string> PortfolioNameMap =
+    private static readonly IReadOnlyDictionary<string, string> PortfolioNameMap =
         new Dictionary<string, string>
         {
             { "Trading 212_76a5af", "Fantastic Five Divid" },
@@ -26,7 +27,7 @@ internal static class GoogleGeneratorConfiguration
             { "Trading 212_222222", "Encerradas" },
         };
 
-    internal static readonly IReadOnlyDictionary<string, string> BrokerCurrencyMap =
+    private static readonly IReadOnlyDictionary<string, string> BrokerCurrencyMap =
         new Dictionary<string, string>
         {
             { "Trading 212", "GBP" },
@@ -34,4 +35,7 @@ internal static class GoogleGeneratorConfiguration
             { "FreeTrade",   "GBP" },
             { "Coinbase",    "GBP" },
         };
+
+    internal static GoogleGeneratorOptions BuildOptions() =>
+        new(IgnoreSheetNames, PortfolioNameMap, BrokerCurrencyMap);
 }

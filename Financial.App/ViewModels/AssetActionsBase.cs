@@ -10,7 +10,7 @@ public abstract class AssetActionsBase
     private readonly Func<string> _brokerName;
     private readonly Func<string> _portfolioName;
     private readonly Func<string> _assetName;
-    protected readonly Action<AssetDetailsDTO> _applyDetails;
+    private readonly Action<AssetDetailsDTO> _applyDetails;
     private readonly Action<string, string, MessageBoxImage> _showMessage;
     private readonly string _title;
 
@@ -36,6 +36,7 @@ public abstract class AssetActionsBase
     protected string GetBrokerName() => _brokerName();
     protected string GetPortfolioName() => _portfolioName();
     protected string GetAssetName() => _assetName();
+    protected void ApplyDetails(AssetDetailsDTO details) => _applyDetails(details);
 
     protected void ShowInfo(string message) =>
         _showMessage(message, _title, MessageBoxImage.Information);

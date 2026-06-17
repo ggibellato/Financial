@@ -54,7 +54,7 @@
                 <StackPanel Visibility="{Binding IsFetching, Converter={StaticResource BoolToVisibilityConverter}}"
                             Margin="0,15,0,0">
                     <ProgressBar Height="8" Minimum="0" Maximum="100"
-                                 Value="{Binding ProgressPercent}" Foreground="#007ACC"/>
+                                 Value="{Binding ProgressPercent, Mode=OneWay}" Foreground="#007ACC"/>
                     <TextBlock Text="{Binding ProgressMessage}" FontSize="13"
                                Foreground="#666666" Margin="0,8,0,0"/>
                 </StackPanel>

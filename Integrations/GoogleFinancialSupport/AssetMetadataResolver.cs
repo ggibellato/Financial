@@ -1,4 +1,5 @@
 using Financial.Domain.Entities;
+using System;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,8 +24,13 @@ internal sealed class AssetMetadataResolver
     internal bool IsIgnoredSheet(string sheetName) =>
         _options.IgnoreSheetNames.Contains(sheetName);
 
-    internal string ResolveBrokerCurrency(string brokerName) =>
-        _options.BrokerCurrencyMap[brokerName];
+    internal string ResolveBrokerCurrency(string brokerName)
+    {
+        if (_options.BrokerCurrencyMap.TryGetValue(brokerName, out var currency))
+            return currency;
+        throw new InvalidOperationException(
+            $"No currency mapping found for broker '{brokerName}'. Add it to BrokerCurrencyMap.");
+    }
 
     internal string ResolvePortfolioName(string brokerName, SheetDTO spreadsheet)
     {

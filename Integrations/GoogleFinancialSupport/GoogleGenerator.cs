@@ -35,63 +35,69 @@ public sealed class GoogleGenerator : IGenerator
         var data = Investments.Create();
         var files = await _service.GetFilesNameAsync();
 
-        int brokerIndex = 0;
-        foreach (var fileName in fileNames)
+        for (var brokerIndex = 0; brokerIndex < fileNames.Count; brokerIndex++)
         {
-            brokerIndex++;
-            progress?.Report($"Processing broker {brokerIndex}/{fileNames.Count}: {fileName}");
+            var fileName = fileNames[brokerIndex];
+            progress?.Report($"Processing broker {brokerIndex + 1}/{fileNames.Count}: {fileName}");
 
-            if (brokerIndex > 1)
+            if (brokerIndex > 0)
             {
                 progress?.Report($"Waiting {DelayBetweenBrokersMs / 1000} seconds before next broker...");
                 await Task.Delay(DelayBetweenBrokersMs);
             }
 
-            var broker = Broker.Create(fileName, _metadataResolver.ResolveBrokerCurrency(fileName));
-            data.AddBroker(broker);
             var file = files.FirstOrDefault(f => f.Name == fileName);
-
-            progress?.Report($"Getting spreadsheets for: {fileName}");
-            var spreadSheets = await _service.GetSpreadSheetAsync(file.Id);
-            var activeSheets = spreadSheets.Where(s => !_metadataResolver.IsIgnoredSheet(s.Name)).ToList();
-
-            int sheetCount = 0;
-            foreach (var spreadsheet in activeSheets)
-            {
-                sheetCount++;
-                progress?.Report($"[{fileName}] Processing sheet {sheetCount}/{activeSheets.Count}: {spreadsheet.Name}");
-
-                var portfolioName = _metadataResolver.ResolvePortfolioName(fileName, spreadsheet);
-                var portfolio = broker.AddPortfolio(portfolioName);
-
-                var assetData = await _metadataResolver.ResolveAssetMetadataAsync(fileName, file!.Id, spreadsheet.Name);
-                var asset = Asset.Create(
-                    spreadsheet.Name,
-                    assetData.isin,
-                    assetData.exchangeId,
-                    assetData.ticker,
-                    assetData.country,
-                    assetData.localTypeCode,
-                    assetData.assetClass);
-                portfolio.AddAsset(asset);
-
-                asset.AddTransactions(await _sheetsReader.ReadTransactionsAsync(file.Id, spreadsheet.Name));
-
-                await Task.Delay(DelayBetweenOperationsMs);
-
-                asset.AddCredits(await _sheetsReader.ReadCreditsAsync(file.Id, spreadsheet.Name));
-
-                if (sheetCount < activeSheets.Count)
-                {
-                    progress?.Report($"[{fileName}] Waiting {DelayBetweenSheetsMs / 1000} seconds before next sheet...");
-                    await Task.Delay(DelayBetweenSheetsMs);
-                }
-            }
+            await ProcessBrokerAsync(data, fileName, file?.Id, progress);
         }
 
         progress?.Report("Saving data...");
         var json = _serializer.Serialize(data);
         await _storage.WriteAsync(json);
         progress?.Report("Complete!");
+    }
+
+    private async Task ProcessBrokerAsync(Investments data, string fileName, string fileId, IProgress<string> progress)
+    {
+        var broker = Broker.Create(fileName, _metadataResolver.ResolveBrokerCurrency(fileName));
+        data.AddBroker(broker);
+
+        progress?.Report($"Getting spreadsheets for: {fileName}");
+        var spreadSheets = await _service.GetSpreadSheetAsync(fileId);
+        var activeSheets = spreadSheets.Where(s => !_metadataResolver.IsIgnoredSheet(s.Name)).ToList();
+
+        for (var sheetIndex = 0; sheetIndex < activeSheets.Count; sheetIndex++)
+        {
+            var spreadsheet = activeSheets[sheetIndex];
+            progress?.Report($"[{fileName}] Processing sheet {sheetIndex + 1}/{activeSheets.Count}: {spreadsheet.Name}");
+
+            await ProcessSheetAsync(broker, fileName, fileId, spreadsheet, progress);
+
+            if (sheetIndex < activeSheets.Count - 1)
+            {
+                progress?.Report($"[{fileName}] Waiting {DelayBetweenSheetsMs / 1000} seconds before next sheet...");
+                await Task.Delay(DelayBetweenSheetsMs);
+            }
+        }
+    }
+
+    private async Task ProcessSheetAsync(Broker broker, string fileName, string fileId, DTO.SheetDTO spreadsheet, IProgress<string> progress)
+    {
+        var portfolioName = _metadataResolver.ResolvePortfolioName(fileName, spreadsheet);
+        var portfolio = broker.AddPortfolio(portfolioName);
+
+        var assetData = await _metadataResolver.ResolveAssetMetadataAsync(fileName, fileId, spreadsheet.Name);
+        var asset = Asset.Create(
+            spreadsheet.Name,
+            assetData.isin,
+            assetData.exchangeId,
+            assetData.ticker,
+            assetData.country,
+            assetData.localTypeCode,
+            assetData.assetClass);
+        portfolio.AddAsset(asset);
+
+        asset.AddTransactions(await _sheetsReader.ReadTransactionsAsync(fileId, spreadsheet.Name));
+        await Task.Delay(DelayBetweenOperationsMs);
+        asset.AddCredits(await _sheetsReader.ReadCreditsAsync(fileId, spreadsheet.Name));
     }
 }

@@ -13,7 +13,7 @@ namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 
 public sealed class AssetTypeLookup : IAssetTypeLookup
 {
-    private static readonly HttpClient HttpClient = new HttpClient();
+    private readonly HttpClient _httpClient;
     private static readonly string[] BrazilFiiPaths =
     {
         "bolsa/fundos-imobiliarios",
@@ -21,6 +21,11 @@ public sealed class AssetTypeLookup : IAssetTypeLookup
         "fundos-imobiliarios",
         "fiis"
     };
+
+    public AssetTypeLookup(HttpClient httpClient)
+    {
+        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+    }
 
     public async Task<AssetTypeLookupResultDTO> LookupAsync(AssetTypeLookupRequestDTO request)
     {
@@ -56,7 +61,7 @@ public sealed class AssetTypeLookup : IAssetTypeLookup
         return new AssetTypeLookupResultDTO();
     }
 
-    private static async Task<string> TryResolveBrazilTypeAsync(string ticker)
+    private async Task<string> TryResolveBrazilTypeAsync(string ticker)
     {
         if (string.IsNullOrWhiteSpace(ticker))
         {
@@ -76,7 +81,7 @@ public sealed class AssetTypeLookup : IAssetTypeLookup
         return string.IsNullOrWhiteSpace(equityHtml) ? string.Empty : "Acoes";
     }
 
-    private static async Task<string> TryResolveGoogleFinanceTypeAsync(AssetTypeLookupRequestDTO request, string ticker)
+    private async Task<string> TryResolveGoogleFinanceTypeAsync(AssetTypeLookupRequestDTO request, string ticker)
     {
         foreach (var url in BuildGoogleFinanceUrls(request, ticker))
         {
@@ -127,18 +132,15 @@ public sealed class AssetTypeLookup : IAssetTypeLookup
         return $"https://www.google.com/finance/quote/{Uri.EscapeDataString(value)}";
     }
 
-    private static async Task<string> TryLoadPageAsync(string url)
+    private async Task<string> TryLoadPageAsync(string url)
     {
         if (string.IsNullOrWhiteSpace(url))
-        {
             throw new ArgumentException("Url must be provided.", nameof(url));
-        }
 
-        using var response = await HttpClient.GetAsync(url);
+        using var response = await _httpClient.GetAsync(url);
         if (!response.IsSuccessStatusCode)
-        {
             return string.Empty;
-        }
+
         return await response.Content.ReadAsStringAsync();
     }
 

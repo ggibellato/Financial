@@ -1,21 +1,22 @@
 using System.Collections.ObjectModel;
+using Financial.Application.Configuration;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Rules;
+using Microsoft.Extensions.Options;
 
 namespace Financial.Presentation.App.ViewModels;
 
 public class DividendCheckViewModel : ViewModelBase
 {
     private readonly IDividendService _dividendService;
+    private readonly string _defaultExchange;
     private string _ticker = string.Empty;
     private string _summaryName = string.Empty;
     private string _summaryPrice = string.Empty;
     private string _summaryAverageDividend = string.Empty;
     private string _summaryPriceMaxBuy = string.Empty;
     private bool _isPriceGood;
-
-    private const string BvmfExchange = "BVMF";
 
     public string Ticker
     {
@@ -57,15 +58,17 @@ public class DividendCheckViewModel : ViewModelBase
     public ObservableCollection<DividendYearTotalDTO> YearTotals { get; } = new();
     public RelayCommand CheckCommand { get; }
 
-    public DividendCheckViewModel(IDividendService dividendService)
+    public DividendCheckViewModel(IDividendService dividendService, IOptions<DividendOptions> dividendOptions)
     {
         _dividendService = dividendService ?? throw new ArgumentNullException(nameof(dividendService));
+        _defaultExchange = dividendOptions?.Value.DefaultExchange
+            ?? throw new ArgumentNullException(nameof(dividendOptions));
         CheckCommand = new RelayCommand(Check);
     }
 
     private void Check()
     {
-        var request = new DividendLookupRequestDTO { Exchange = BvmfExchange, Ticker = Ticker.ToUpperInvariant() };
+        var request = new DividendLookupRequestDTO { Exchange = _defaultExchange, Ticker = Ticker.ToUpperInvariant() };
         var summary = _dividendService.GetDividendSummary(request);
 
         History.Clear();

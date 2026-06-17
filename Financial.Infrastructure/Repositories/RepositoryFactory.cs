@@ -2,7 +2,6 @@ using Financial.Application.Interfaces;
 using Financial.Infrastructure.Configuration;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Infrastructure.Persistence;
-using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -34,34 +33,8 @@ public sealed class RepositoryFactory
         }
 
         var storage = CreateStorage(options);
-        var investments = InvestmentsLoader.Load(storage, _serializer);
+        var investments = InvestmentsLoader.LoadSync(storage, _serializer);
         return new JSONRepository(investments, storage, _serializer);
-    }
-
-    public IRepository CreateFromConfiguration(IConfiguration configuration)
-    {
-        if (configuration is null)
-        {
-            throw new ArgumentNullException(nameof(configuration));
-        }
-
-        var providerValue = configuration[RepositoryConfigurationKeys.Provider]
-            ?? nameof(RepositoryProvider.LocalJson);
-
-        if (!Enum.TryParse(providerValue, true, out RepositoryProvider provider))
-        {
-            throw new InvalidOperationException(
-                $"Repository provider '{providerValue}' is not supported. " +
-                $"Valid values: {string.Join(", ", Enum.GetNames<RepositoryProvider>())}.");
-        }
-
-        var options = new RepositorySelectionOptions(
-            provider,
-            configuration[RepositoryConfigurationKeys.LocalJsonDataFile],
-            configuration[RepositoryConfigurationKeys.GoogleDriveCredentialsPath],
-            configuration[RepositoryConfigurationKeys.GoogleDriveFilePath]);
-
-        return Create(options);
     }
 
     private static IJsonStorage CreateStorage(RepositorySelectionOptions options)

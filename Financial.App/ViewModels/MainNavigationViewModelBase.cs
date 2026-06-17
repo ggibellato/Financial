@@ -186,18 +186,6 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         };
     }
 
-    public sealed class AssetClassFilterOptionViewModel : ViewModelBase
-    {
-        public AssetClassFilterOptionViewModel(string label, GlobalAssetClass? filter)
-        {
-            Label = label;
-            Filter = filter;
-        }
-
-        public string Label { get; }
-        public GlobalAssetClass? Filter { get; }
-    }
-
     private void OnTreeNodeSelected(object? sender, TreeNodeViewModel selectedNode)
     {
         LoadSelectionDetails(selectedNode);

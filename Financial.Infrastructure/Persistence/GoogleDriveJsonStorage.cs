@@ -1,4 +1,5 @@
 using Financial.Application.Interfaces;
+using Financial.Infrastructure.Configuration;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 using System;
 using System.Threading.Tasks;
@@ -7,9 +8,6 @@ namespace Financial.Infrastructure.Persistence;
 
 public sealed class GoogleDriveJsonStorage : IJsonStorage
 {
-    public const string CredentialsPathConfigurationKey = "GoogleDrive:CredentialsPath";
-    public const string FilePathConfigurationKey = "GoogleDrive:FilePath";
-
     private readonly GoogleService _service;
     private readonly string _driveFilePath;
 
@@ -28,7 +26,9 @@ public sealed class GoogleDriveJsonStorage : IJsonStorage
     private static string ResolveDriveFilePath(string? driveFilePath)
     {
         if (string.IsNullOrWhiteSpace(driveFilePath))
-            throw new ArgumentException($"Drive file path must be configured via '{FilePathConfigurationKey}'.", nameof(driveFilePath));
+            throw new ArgumentException(
+                $"Drive file path must be configured via '{RepositoryConfigurationKeys.GoogleDriveFilePath}'.",
+                nameof(driveFilePath));
         return driveFilePath;
     }
 }

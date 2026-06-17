@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
@@ -11,6 +12,7 @@ public class AssetPriceFetchViewModel : ViewModelBase
     private readonly INavigationService _navigationService;
     private readonly IAssetPriceService _assetPriceService;
     private readonly IReadOnlyList<PortfolioReference> _portfolios;
+    private readonly Action<string> _showError;
     private bool _isFetching;
     private string _progressMessage = string.Empty;
     private double _progressPercent;
@@ -41,10 +43,12 @@ public class AssetPriceFetchViewModel : ViewModelBase
     public AssetPriceFetchViewModel(
         INavigationService navigationService,
         IAssetPriceService assetPriceService,
-        IOptions<AssetPriceFetchOptions> options)
+        IOptions<AssetPriceFetchOptions> options,
+        Action<string> showError)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
+        _showError = showError ?? throw new ArgumentNullException(nameof(showError));
         _portfolios = (options?.Value.Portfolios ?? new List<PortfolioReference>()).AsReadOnly();
         FetchCommand = new RelayCommand(async () => await FetchAsync(), () => !IsFetching);
     }
@@ -81,11 +85,7 @@ public class AssetPriceFetchViewModel : ViewModelBase
         catch (Exception ex)
         {
             ProgressMessage = $"Error: {ex.Message}";
-            System.Windows.MessageBox.Show(
-                $"An error occurred while fetching prices:\n{ex.Message}",
-                "Error",
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Error);
+            _showError($"An error occurred while fetching prices:\n{ex.Message}");
         }
         finally
         {
