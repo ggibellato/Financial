@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Financial.Application.Services;
 
-public sealed class NavigationService : INavigationService
+public sealed class NavigationService : INavigationService, ICreditQueryService
 {
     private readonly IRepository _repository;
 

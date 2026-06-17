@@ -21,7 +21,9 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
         services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();
         services.AddSingleton<IRepository>(sp => CreateRepository(configuration, sp.GetRequiredService<IInvestmentsSerializer>()));
-        services.AddSingleton<INavigationService, NavigationService>();
+        services.AddSingleton<NavigationService>();
+        services.AddSingleton<INavigationService>(sp => sp.GetRequiredService<NavigationService>());
+        services.AddSingleton<ICreditQueryService>(sp => sp.GetRequiredService<NavigationService>());
         services.AddSingleton<ITransactionService, TransactionService>();
         services.AddSingleton<ICreditService, CreditService>();
         services.AddSingleton<IAssetPriceService, AssetPriceService>();

@@ -9,9 +9,15 @@ namespace Financial.Presentation.App.ViewModels;
 /// </summary>
 public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsViewModel>
 {
-    public MainNavigationViewModel(INavigationService navigationService, ITransactionService transactionService, ICreditService creditService, IAssetPriceService assetPriceService)
+    public MainNavigationViewModel(
+        INavigationService navigationService,
+        ICreditQueryService creditQueryService,
+        ITransactionService transactionService,
+        ICreditService creditService,
+        IAssetPriceService assetPriceService)
         : base(
             navigationService ?? throw new ArgumentNullException(nameof(navigationService)),
+            creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService)),
             new AssetDetailsViewModel(
                 transactionService ?? throw new ArgumentNullException(nameof(transactionService)),
                 creditService ?? throw new ArgumentNullException(nameof(creditService)),
@@ -19,7 +25,3 @@ public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsV
     {
     }
 }
-
-
-
-
