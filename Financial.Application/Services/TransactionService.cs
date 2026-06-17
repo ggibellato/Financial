@@ -5,7 +5,7 @@ using Financial.Domain.Entities;
 using System;
 using System.Threading.Tasks;
 
-namespace Financial.Infrastructure.Services;
+namespace Financial.Application.Services;
 
 public sealed class TransactionService : ITransactionService
 {

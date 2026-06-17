@@ -1,8 +1,8 @@
 using System.Threading.Tasks;
 using Financial.Application.Interfaces;
+using Financial.Application.Services;
 using Financial.Domain.Entities;
 using Financial.Infrastructure.Repositories;
-using Financial.Infrastructure.Services;
 using Financial.Infrastructure.Persistence;
 using FluentAssertions;
 

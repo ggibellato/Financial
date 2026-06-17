@@ -1,5 +1,6 @@
 using Financial.Application.Configuration;
 using Financial.Application.Interfaces;
+using Financial.Application.Services;
 using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
 using Financial.Infrastructure.Services;
@@ -16,6 +17,8 @@ public static class InfrastructureServiceCollectionExtensions
         IConfiguration configuration)
     {
         services.AddSingleton<IInvestmentsSerializer, InvestmentsSerializerAdapter>();
+        services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
+        services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();
         services.AddSingleton<IRepository>(sp => CreateRepository(configuration));
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<ITransactionService, TransactionService>();

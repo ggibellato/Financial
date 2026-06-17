@@ -1,5 +1,6 @@
 using Financial.Domain.Entities;
 using HtmlAgilityPack;
+using System;
 using System.Text.RegularExpressions;
 
 namespace Financial.Infrastructure.Integrations.WebPageParser;
