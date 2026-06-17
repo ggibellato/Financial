@@ -59,6 +59,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private CreditsFilter _selectedCreditsFilter = CreditsFilter.LastYear;
     private CreditsTypeChartMode _selectedCreditsTypeMode = CreditsTypeChartMode.Stacked;
     private const string DefaultCreditsContextKey = "default";
+    private const string CreditsValueLabelTag = "CreditsValueLabel";
+    private const double BarGroupWidth = 0.8;
     private readonly Dictionary<string, CreditsViewState> _creditsViewStateByKey = new(StringComparer.OrdinalIgnoreCase);
     private string _creditsContextKey = DefaultCreditsContextKey;
     private double _creditsPlotWidth;
@@ -68,7 +70,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private CreditDTO? _selectedCredit;
     private IReadOnlyList<CreditsMonthTypeTotals> _creditsChartMonths = Array.Empty<CreditsMonthTypeTotals>();
     private IReadOnlyList<string> _creditsChartTypes = Array.Empty<string>();
-    private const string CreditsValueLabelTag = "CreditsValueLabel";
 
     public string AssetName
     {
@@ -390,23 +391,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     /// </summary>
     public void Clear()
     {
-        AssetName = string.Empty;
-        BrokerName = string.Empty;
-        PortfolioName = string.Empty;
-        Ticker = string.Empty;
-        ISIN = string.Empty;
-        Exchange = string.Empty;
-        Country = CountryCode.Unknown;
-        LocalTypeCode = string.Empty;
-        Class = GlobalAssetClass.Unknown;
-        Quantity = 0;
-        AveragePrice = 0;
-        IsActive = false;
-        TotalBought = 0;
-        TotalSold = 0;
-        TotalCredits = 0;
-        _todayInfo.Clear();
-        Transactions.Clear();
+        ClearAssetContext();
         Credits.Clear();
         CreditsByMonthChart.Clear();
         CreditsPlotModel = null;
@@ -540,6 +525,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         Ticker = string.Empty;
         ISIN = string.Empty;
         Exchange = string.Empty;
+        Country = CountryCode.Unknown;
+        LocalTypeCode = string.Empty;
+        Class = GlobalAssetClass.Unknown;
         Quantity = 0;
         AveragePrice = 0;
         IsActive = false;
@@ -730,6 +718,25 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         IReadOnlyList<string> creditTypes,
         CreditsTypeChartMode mode)
     {
+        var (model, categoryAxis) = CreatePlotModelWithAxes();
+
+        if (grouped.Count == 0 || creditTypes.Count == 0)
+        {
+            return model;
+        }
+
+        var seriesByType = CreateBarSeries(creditTypes);
+        PopulateBarItems(grouped, creditTypes, seriesByType, categoryAxis, mode);
+
+        foreach (var series in seriesByType)
+        {
+            model.Series.Add(series);
+        }
+        return model;
+    }
+
+    private static (PlotModel model, CategoryAxis categoryAxis) CreatePlotModelWithAxes()
+    {
         var model = new PlotModel { Title = "Credits by Month" };
         var categoryAxis = new CategoryAxis
         {
@@ -749,14 +756,13 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         };
         model.Axes.Add(categoryAxis);
         model.Axes.Add(valueAxis);
+        return (model, categoryAxis);
+    }
 
-        if (grouped.Count == 0 || creditTypes.Count == 0)
-        {
-            return model;
-        }
-
+    private static List<RectangleBarSeries> CreateBarSeries(IReadOnlyList<string> creditTypes)
+    {
         var palette = BuildBluePalette(creditTypes.Count);
-        var seriesByType = creditTypes
+        return creditTypes
             .Select((type, index) => new RectangleBarSeries
             {
                 Title = type,
@@ -765,10 +771,17 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
                 StrokeThickness = 1
             })
             .ToList();
+    }
 
-        const double groupWidth = 0.8;
-        var halfGroupWidth = groupWidth / 2;
-        var barWidth = groupWidth / creditTypes.Count;
+    private static void PopulateBarItems(
+        IReadOnlyList<CreditsMonthTypeTotals> grouped,
+        IReadOnlyList<string> creditTypes,
+        List<RectangleBarSeries> seriesByType,
+        CategoryAxis categoryAxis,
+        CreditsTypeChartMode mode)
+    {
+        var halfGroupWidth = BarGroupWidth / 2;
+        var barWidth = BarGroupWidth / creditTypes.Count;
 
         for (var monthIndex = 0; monthIndex < grouped.Count; monthIndex++)
         {
@@ -782,10 +795,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             {
                 var type = creditTypes[typeIndex];
                 var value = month.TotalsByType.TryGetValue(type, out var total) ? (double)total : 0d;
-                double x0;
-                double x1;
-                double y0;
-                double y1;
+                double x0, x1, y0, y1;
 
                 if (mode == CreditsTypeChartMode.Stacked)
                 {
@@ -815,12 +825,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
                 seriesByType[typeIndex].Items.Add(new RectangleBarItem(x0, y0, x1, y1));
             }
         }
-
-        foreach (var series in seriesByType)
-        {
-            model.Series.Add(series);
-        }
-        return model;
     }
 
     private static IReadOnlyList<OxyColor> BuildBluePalette(int count)
@@ -898,9 +902,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             return;
         }
 
-        const double groupWidth = 0.8;
-        var halfGroupWidth = groupWidth / 2;
-        var barWidth = groupWidth / _creditsChartTypes.Count;
+        var halfGroupWidth = BarGroupWidth / 2;
+        var barWidth = BarGroupWidth / _creditsChartTypes.Count;
 
         for (var monthIndex = 0; monthIndex < _creditsChartMonths.Count; monthIndex += step)
         {
