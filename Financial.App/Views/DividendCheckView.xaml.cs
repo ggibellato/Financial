@@ -1,6 +1,7 @@
 using Financial.Presentation.App.Helpers;
 using Financial.Presentation.App.Options;
 using Financial.Presentation.App.ViewModels;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Windows;
@@ -11,7 +12,7 @@ namespace Financial.Presentation.App.Views;
 
 public partial class DividendCheckView : UserControl
 {
-    public DividendCheckView(DividendCheckViewModel viewModel, WatchlistOptions watchlistOptions)
+    public DividendCheckView(DividendCheckViewModel viewModel, IOptions<WatchlistOptions> watchlistOptions)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
         ArgumentNullException.ThrowIfNull(watchlistOptions);
@@ -19,7 +20,7 @@ public partial class DividendCheckView : UserControl
         InitializeComponent();
         DataContext = viewModel;
 
-        var groupedOptions = new ListCollectionView(new List<WatchlistItem>(watchlistOptions.Items));
+        var groupedOptions = new ListCollectionView(new List<WatchlistItem>(watchlistOptions.Value.Items));
         groupedOptions.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
         txtTicker.ItemsSource = groupedOptions;
     }
