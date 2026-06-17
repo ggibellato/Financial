@@ -2,6 +2,7 @@ using Financial.Application.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
+using System;
 
 namespace Financial.Api.Controllers;
 
@@ -35,12 +36,26 @@ public sealed class DiagnosticsController : ControllerBase
             return NotFound();
         }
 
+        string? dataJsonFile = null;
+        string? googleDriveCredentialsPath = null;
+        string? googleDriveFilePath = null;
+
+        if (_repositoryDiagnostics is ILocalJsonRepositoryDiagnostics localJson)
+        {
+            dataJsonFile = localJson.DataJsonFile;
+        }
+        else if (_repositoryDiagnostics is IGoogleDriveRepositoryDiagnostics googleDrive)
+        {
+            googleDriveCredentialsPath = googleDrive.GoogleDriveCredentialsPath;
+            googleDriveFilePath = googleDrive.GoogleDriveFilePath;
+        }
+
         return Ok(new
         {
             provider = _repositoryDiagnostics.Provider,
-            dataJsonFile = _repositoryDiagnostics.DataJsonFile,
-            googleDriveCredentialsPath = _repositoryDiagnostics.GoogleDriveCredentialsPath,
-            googleDriveFilePath = _repositoryDiagnostics.GoogleDriveFilePath
+            dataJsonFile,
+            googleDriveCredentialsPath,
+            googleDriveFilePath
         });
     }
 }
