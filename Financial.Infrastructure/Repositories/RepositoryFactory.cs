@@ -1,9 +1,11 @@
 using Financial.Application.Interfaces;
 using Financial.Infrastructure.Configuration;
+using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Financial.Infrastructure.Repositories;
 
@@ -12,7 +14,9 @@ public sealed class RepositoryFactory
     private static readonly Dictionary<RepositoryProvider, Func<RepositorySelectionOptions, IJsonStorage>> StorageFactoryRegistry = new()
     {
         [RepositoryProvider.LocalJson] = opts => new LocalJsonStorage(opts.LocalDataPath),
-        [RepositoryProvider.GoogleDriveJson] = opts => new GoogleDriveJsonStorage(opts.GoogleDriveCredentialsPath, opts.GoogleDriveFilePath),
+        [RepositoryProvider.GoogleDriveJson] = opts => new GoogleDriveJsonStorage(
+            new GoogleService(ResolveGoogleCredentialsPath(opts.GoogleDriveCredentialsPath)),
+            opts.GoogleDriveFilePath),
     };
 
     private readonly IInvestmentsSerializer _serializer;
@@ -68,5 +72,29 @@ public sealed class RepositoryFactory
         }
 
         return factory(options);
+    }
+
+    private static string ResolveGoogleCredentialsPath(string? credentialsPath)
+    {
+        if (string.IsNullOrWhiteSpace(credentialsPath))
+        {
+            throw new FileNotFoundException(
+                $"Google Drive credentials file path is required. Configure '{RepositoryConfigurationKeys.GoogleDriveCredentialsPath}'.");
+        }
+
+        var resolvedPath = credentialsPath;
+        if (!Path.IsPathRooted(resolvedPath))
+        {
+            resolvedPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, resolvedPath));
+        }
+
+        if (!File.Exists(resolvedPath))
+        {
+            throw new FileNotFoundException(
+                $"Google Drive credentials file not found at '{resolvedPath}'. Configure '{RepositoryConfigurationKeys.GoogleDriveCredentialsPath}'.",
+                resolvedPath);
+        }
+
+        return resolvedPath;
     }
 }
