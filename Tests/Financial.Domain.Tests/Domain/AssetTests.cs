@@ -1,5 +1,4 @@
 using System;
-using System.Text.Json;
 using FluentAssertions;
 using Financial.Domain.Entities;
 
@@ -82,9 +81,8 @@ public class AssetTests
     public void UpdateTransaction_EmptyId_Throws()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
-        // Use JSON deserialization to preserve Guid.Empty because Transaction.CreateWithId replaces empty IDs.
-        var transaction = JsonSerializer.Deserialize<Transaction>(
-            "{\"Id\":\"00000000-0000-0000-0000-000000000000\",\"Date\":\"2024-01-01T00:00:00\",\"Type\":\"Buy\",\"Quantity\":1,\"UnitPrice\":1,\"Fees\":0}")!;
+        // Activator bypasses the public factory methods so Id stays Guid.Empty.
+        var transaction = (Transaction)Activator.CreateInstance(typeof(Transaction), nonPublic: true)!;
 
         Action act = () => asset.UpdateTransaction(transaction);
 

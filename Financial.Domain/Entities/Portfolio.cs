@@ -1,15 +1,12 @@
 ﻿using System.Collections.Generic;
-using System.Text.Json.Serialization;
 
 namespace Financial.Domain.Entities;
 
 public class Portfolio
 {
-    [JsonInclude]
     public string Name { get; private set; }
 
     private List<Asset> _assets = new List<Asset>();
-    [JsonInclude]
     public IReadOnlyCollection<Asset> Assets { get => _assets.AsReadOnly(); set => SetAssets(value); }
     private void SetAssets(IReadOnlyCollection<Asset> data)
     {
@@ -17,7 +14,6 @@ public class Portfolio
         _assets.AddRange(data);
     }
 
-    [JsonConstructor]
     private Portfolio()
     {
     }

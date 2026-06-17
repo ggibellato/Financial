@@ -1,5 +1,4 @@
 using System;
-using System.Text.Json.Serialization;
 
 namespace Financial.Domain.Entities;
 
@@ -7,25 +6,15 @@ public class Transaction
 {
     public enum TransactionType { Buy, Sell }
 
-    [JsonInclude]
     public Guid Id { get; private set; }
-    [JsonInclude]
     public DateTime Date { get; private set; }
-    [JsonInclude]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
     public TransactionType Type { get; private set; }
-    [JsonInclude]
     public decimal Quantity { get; private set; }
-    [JsonInclude]
     public decimal UnitPrice { get; private set; }
-    [JsonInclude]
     public decimal Fees { get; private set; }
 
-    [JsonIgnore]
     public decimal TotalPrice => UnitPrice * Quantity + Fees;
 
-
-    [JsonConstructor]
     private Transaction() { }
 
     private Transaction(Guid id, DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees)

@@ -1,43 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
 
 namespace Financial.Domain.Entities;
 
 public class Asset
 {
-    [JsonInclude]
     public string Name { get; private set; }
 
-    [JsonInclude]
     public string ISIN { get; private set; }
 
-    [JsonInclude]
     public string Exchange{ get; private set; }
 
-    [JsonInclude]
     public string Ticker { get; private set; }
 
-    [JsonInclude]
     public CountryCode Country { get; private set; } = CountryCode.Unknown;
 
-    [JsonInclude]
     public string LocalTypeCode { get; private set; } = string.Empty;
 
-    [JsonInclude]
     public GlobalAssetClass Class { get; private set; } = GlobalAssetClass.Unknown;
 
-    [JsonIgnore]
     public decimal AveragePrice { get; private set; } = 0;
 
-    [JsonIgnore]
     public decimal Quantity { get; private set; }
 
-    [JsonIgnore]
     public bool Active => Quantity > 0;
 
     private List<Transaction> _transactions = new List<Transaction>();
-    [JsonInclude]
     public IReadOnlyCollection<Transaction> Transactions { get => _transactions.AsReadOnly(); set => SetTransactions(value); }
     private void SetTransactions(IReadOnlyCollection<Transaction> data)
     {
@@ -57,7 +45,6 @@ public class Asset
     }
 
     private List<Credit> _credits = new List<Credit>();
-    [JsonInclude]
     public IReadOnlyCollection<Credit> Credits { get => _credits.AsReadOnly(); set => SetCredits(value); }
     private void SetCredits(IReadOnlyCollection<Credit> data)
     {
@@ -68,7 +55,6 @@ public class Asset
         }
     }
 
-    [JsonConstructor]
     private Asset() {}
 
     private Asset(string name, string isin, string exchange, string ticker, CountryCode country, string localTypeCode, GlobalAssetClass assetClass) : this()

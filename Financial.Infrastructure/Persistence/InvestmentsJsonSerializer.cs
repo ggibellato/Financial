@@ -1,4 +1,3 @@
-using Financial.Common;
 using Financial.Domain.Entities;
 using System.Text.Json;
 
