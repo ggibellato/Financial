@@ -1,5 +1,5 @@
-using Financial.Application.Configuration;
 using Financial.Application.DTOs;
+using Financial.Domain.Rules;
 using Financial.Application.Interfaces;
 using Financial.Presentation.App.Components;
 using Financial.Presentation.App.ViewModels;
