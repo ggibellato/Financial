@@ -158,7 +158,7 @@ public partial class MainWindow : Window
                     { "FreeTrade", "GBP" },
                     { "Coinbase", "GBP" },
                 });
-            IGenerator generator = new GoogleGenerator(_service, new LocalJsonStorage(edtPath.Text), options);
+            IGenerator generator = new GoogleGenerator(_service, new LocalJsonStorage(edtPath.Text), options, new InvestmentsSerializerAdapter());
             var fileNames = selectedFiles.Select(f => f.Name).ToList();
 
             var progress = new Progress<string>(status =>

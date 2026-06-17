@@ -1,12 +1,10 @@
 using Financial.Application.Interfaces;
-using Financial.Common;
 using Financial.Domain.Entities;
 using Financial.Infrastructure.Integrations.FinancialToolSupport;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
@@ -21,12 +19,14 @@ public sealed class GoogleGenerator : IGenerator
     private readonly GoogleService _service;
     private readonly IJsonStorage _storage;
     private readonly GoogleGeneratorOptions _options;
+    private readonly IInvestmentsSerializer _serializer;
 
-    public GoogleGenerator(GoogleService service, IJsonStorage storage, GoogleGeneratorOptions options)
+    public GoogleGenerator(GoogleService service, IJsonStorage storage, GoogleGeneratorOptions options, IInvestmentsSerializer serializer)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         _storage = storage ?? throw new ArgumentNullException(nameof(storage));
         _options = options ?? throw new ArgumentNullException(nameof(options));
+        _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
     }
 
     public async Task GenerateAsync(List<string> fileNames, IProgress<string> progress = null)
@@ -185,7 +185,7 @@ public sealed class GoogleGenerator : IGenerator
 
     private async Task SaveAsync(Investments data)
     {
-        var json = JsonSerializer.Serialize(data, InvestmentsSerializerOptions.Default);
+        var json = _serializer.Serialize(data);
         await _storage.WriteAsync(json);
     }
 

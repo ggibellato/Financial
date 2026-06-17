@@ -1,5 +1,6 @@
 using Financial.Application.Configuration;
 using Financial.Application.Interfaces;
+using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
 using Financial.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +15,7 @@ public static class InfrastructureServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.AddSingleton<IInvestmentsSerializer, InvestmentsSerializerAdapter>();
         services.AddSingleton<IRepository>(sp => CreateRepository(configuration));
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<ITransactionService, TransactionService>();
