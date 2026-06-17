@@ -5,4 +5,5 @@ namespace Financial.Application.Interfaces;
 public interface IInvestmentsSerializer
 {
     string Serialize(Investments investments);
+    Investments Deserialize(string json);
 }

@@ -10,7 +10,7 @@ namespace Financial.Infrastructure.Tests.Services;
 
 public class NavigationServiceTests
 {
-    private readonly IRepository _repository = new JSONRepository(new LocalJsonStorage(TestDataPaths.DataJsonFile));
+    private readonly IRepository _repository = new JSONRepository(new LocalJsonStorage(TestDataPaths.DataJsonFile), new InvestmentsSerializerAdapter());
     private readonly NavigationService _sut;
 
     public NavigationServiceTests()
