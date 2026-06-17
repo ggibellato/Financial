@@ -1,7 +1,6 @@
-using Financial.Application.Configuration;
+using Financial.Application.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 
 namespace Financial.Api.Controllers;
@@ -10,12 +9,12 @@ namespace Financial.Api.Controllers;
 [Route("")]
 public sealed class DiagnosticsController : ControllerBase
 {
-    private readonly IConfiguration _configuration;
+    private readonly IRepositoryDiagnostics _repositoryDiagnostics;
     private readonly IHostEnvironment _environment;
 
-    public DiagnosticsController(IConfiguration configuration, IHostEnvironment environment)
+    public DiagnosticsController(IRepositoryDiagnostics repositoryDiagnostics, IHostEnvironment environment)
     {
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _repositoryDiagnostics = repositoryDiagnostics ?? throw new ArgumentNullException(nameof(repositoryDiagnostics));
         _environment = environment ?? throw new ArgumentNullException(nameof(environment));
     }
 
@@ -38,10 +37,10 @@ public sealed class DiagnosticsController : ControllerBase
 
         return Ok(new
         {
-            provider = _configuration[RepositoryConfigurationKeys.Provider],
-            dataJsonFile = _configuration[RepositoryConfigurationKeys.LocalJsonDataFile],
-            googleDriveCredentialsPath = _configuration[RepositoryConfigurationKeys.GoogleDriveCredentialsPath],
-            googleDriveFilePath = _configuration[RepositoryConfigurationKeys.GoogleDriveFilePath]
+            provider = _repositoryDiagnostics.Provider,
+            dataJsonFile = _repositoryDiagnostics.DataJsonFile,
+            googleDriveCredentialsPath = _repositoryDiagnostics.GoogleDriveCredentialsPath,
+            googleDriveFilePath = _repositoryDiagnostics.GoogleDriveFilePath
         });
     }
 }

@@ -1,6 +1,6 @@
-using Financial.Application.Configuration;
 using Financial.Application.Interfaces;
 using Financial.Application.Services;
+using Financial.Infrastructure.Configuration;
 using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
 using Financial.Infrastructure.Services;
@@ -16,6 +16,7 @@ public static class InfrastructureServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.AddSingleton<IRepositoryDiagnostics, RepositoryDiagnosticsProvider>();
         services.AddSingleton<IInvestmentsSerializer, InvestmentsSerializerAdapter>();
         services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
         services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();
