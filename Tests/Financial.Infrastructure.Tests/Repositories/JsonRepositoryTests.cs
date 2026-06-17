@@ -7,7 +7,14 @@ namespace Financial.Infrastructure.Tests.Repositories;
 
 public class JsonRepositoryTests
 {
-    private readonly JSONRepository _sut = new JSONRepository(new LocalJsonStorage(TestDataPaths.DataJsonFile), new InvestmentsSerializerAdapter());
+    private readonly JSONRepository _sut = CreateRepository(TestDataPaths.DataJsonFile);
+
+    private static JSONRepository CreateRepository(string dataFile)
+    {
+        var storage = new LocalJsonStorage(dataFile);
+        var serializer = new InvestmentsSerializerAdapter();
+        return new JSONRepository(InvestmentsLoader.Load(storage, serializer), storage, serializer);
+    }
 
     [Fact]
     public void GetAllAssetsFullName_ShouldReturn_Values()
