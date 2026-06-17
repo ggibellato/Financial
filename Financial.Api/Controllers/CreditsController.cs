@@ -12,12 +12,12 @@ namespace Financial.Api.Controllers;
 [Route("credits")]
 public sealed class CreditsController : ControllerBase
 {
-    private readonly INavigationService _navigationService;
+    private readonly ICreditQueryService _creditQueryService;
     private readonly ICreditService _creditService;
 
-    public CreditsController(INavigationService navigationService, ICreditService creditService)
+    public CreditsController(ICreditQueryService creditQueryService, ICreditService creditService)
     {
-        _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+        _creditQueryService = creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService));
         _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
     }
 
@@ -82,7 +82,7 @@ public sealed class CreditsController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<CreditDTO>), StatusCodes.Status200OK)]
     public ActionResult<IReadOnlyList<CreditDTO>> GetCreditsByBroker(string brokerName)
     {
-        var credits = _navigationService.GetCreditsByBroker(brokerName);
+        var credits = _creditQueryService.GetCreditsByBroker(brokerName);
         return Ok(credits);
     }
 
@@ -92,7 +92,7 @@ public sealed class CreditsController : ControllerBase
         string brokerName,
         string portfolioName)
     {
-        var credits = _navigationService.GetCreditsByPortfolio(brokerName, portfolioName);
+        var credits = _creditQueryService.GetCreditsByPortfolio(brokerName, portfolioName);
         return Ok(credits);
     }
 }

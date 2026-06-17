@@ -17,6 +17,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     where TAssetDetailsViewModel : class, IAssetDetailsViewModel
 {
     private readonly INavigationService _navigationService;
+    private readonly ICreditQueryService _creditQueryService;
     private TreeNodeViewModel? _selectedNode;
     private bool _isLoading;
     private TreeNodeDTO? _fullTree;
@@ -56,9 +57,13 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         }
     }
 
-    protected MainNavigationViewModelBase(INavigationService navigationService, TAssetDetailsViewModel assetDetails)
+    protected MainNavigationViewModelBase(
+        INavigationService navigationService,
+        ICreditQueryService creditQueryService,
+        TAssetDetailsViewModel assetDetails)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+        _creditQueryService = creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService));
         AssetDetails = assetDetails ?? throw new ArgumentNullException(nameof(assetDetails));
         InitializeAssetClassFilters();
     }
@@ -279,7 +284,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
-        var credits = _navigationService.GetCreditsByPortfolio(brokerName, portfolioName);
+        var credits = _creditQueryService.GetCreditsByPortfolio(brokerName, portfolioName);
         AssetDetails.LoadPortfolioCredits(brokerName, portfolioName, credits);
     }
 
@@ -292,8 +297,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
-        var credits = _navigationService.GetCreditsByBroker(brokerName);
+        var credits = _creditQueryService.GetCreditsByBroker(brokerName);
         AssetDetails.LoadBrokerCredits(brokerName, credits);
     }
 }
-
