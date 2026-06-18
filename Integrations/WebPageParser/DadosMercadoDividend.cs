@@ -1,9 +1,6 @@
 using Financial.Domain.Entities;
 using HtmlAgilityPack;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 
 namespace Financial.Infrastructure.Integrations.WebPageParser;
 

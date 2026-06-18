@@ -1,5 +1,4 @@
 using Financial.Application.DTOs;
-using System.Threading.Tasks;
 
 namespace Financial.Application.Interfaces;
 

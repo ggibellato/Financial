@@ -2,9 +2,6 @@ using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using Financial.Domain.Rules;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Financial.Application.Services;
 

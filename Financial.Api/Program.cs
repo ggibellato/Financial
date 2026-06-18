@@ -1,7 +1,6 @@
 using Financial.Application.Configuration;
 using Financial.Application.DependencyInjection;
 using Financial.Infrastructure.DependencyInjection;
-using System;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;

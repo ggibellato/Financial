@@ -1,8 +1,5 @@
 using Financial.Application.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Hosting;
-using System;
 
 namespace Financial.Api.Controllers;
 

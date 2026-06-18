@@ -9,7 +9,7 @@ public class Asset
 
     public string ISIN { get; private set; }
 
-    public string Exchange{ get; private set; }
+    public string Exchange { get; private set; }
 
     public string Ticker { get; private set; }
 
@@ -55,7 +55,7 @@ public class Asset
         }
     }
 
-    private Asset() {}
+    private Asset() { }
 
     private Asset(string name, string isin, string exchange, string ticker, CountryCode country, string localTypeCode, GlobalAssetClass assetClass) : this()
     {

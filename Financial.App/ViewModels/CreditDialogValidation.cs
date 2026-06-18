@@ -1,6 +1,4 @@
 using Financial.Application.Validation;
-using System;
-using System.Collections.Generic;
 
 namespace Financial.Presentation.App.ViewModels;
 

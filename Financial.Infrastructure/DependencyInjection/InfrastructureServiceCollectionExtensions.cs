@@ -5,7 +5,6 @@ using Financial.Infrastructure.Repositories;
 using Financial.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 
 namespace Financial.Infrastructure.DependencyInjection;
 

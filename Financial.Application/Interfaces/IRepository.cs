@@ -1,5 +1,4 @@
 ﻿using Financial.Domain.Entities;
-using System.Threading.Tasks;
 
 namespace Financial.Application.Interfaces;
 

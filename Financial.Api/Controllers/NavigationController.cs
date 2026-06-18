@@ -1,8 +1,6 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
 
 namespace Financial.Api.Controllers;
 

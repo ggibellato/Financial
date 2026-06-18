@@ -1,6 +1,5 @@
 using Financial.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
-using System;
 
 namespace Financial.Infrastructure.Configuration;
 

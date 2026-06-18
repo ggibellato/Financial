@@ -1,4 +1,3 @@
-using System;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Infrastructure.Integrations.WebPageParser;

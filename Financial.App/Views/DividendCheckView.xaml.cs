@@ -1,9 +1,6 @@
 using Financial.Presentation.App.Helpers;
 using Financial.Presentation.App.Options;
-using Financial.Presentation.App.ViewModels;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;

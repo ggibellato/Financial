@@ -1,5 +1,3 @@
-using System;
-
 namespace Financial.Presentation.App.ViewModels;
 
 public enum CreditDialogMode

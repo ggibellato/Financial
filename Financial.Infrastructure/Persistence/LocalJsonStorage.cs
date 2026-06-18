@@ -1,8 +1,5 @@
 using Financial.Application.Interfaces;
 using Financial.Infrastructure.Configuration;
-using System;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace Financial.Infrastructure.Persistence;
 

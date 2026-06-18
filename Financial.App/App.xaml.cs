@@ -2,12 +2,10 @@ using Financial.Application.Configuration;
 using Financial.Application.DependencyInjection;
 using Financial.Infrastructure.DependencyInjection;
 using Financial.Presentation.App.Options;
-using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using System;
 using System.IO;
 using System.Windows;
 

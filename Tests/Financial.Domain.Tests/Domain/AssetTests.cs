@@ -1,6 +1,5 @@
-using System;
-using FluentAssertions;
 using Financial.Domain.Entities;
+using FluentAssertions;
 
 namespace Financial.Domain.Tests;
 

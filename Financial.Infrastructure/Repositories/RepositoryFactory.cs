@@ -2,9 +2,6 @@ using Financial.Application.Interfaces;
 using Financial.Infrastructure.Configuration;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Infrastructure.Persistence;
-using System;
-using System.Collections.Generic;
-using System.IO;
 
 namespace Financial.Infrastructure.Repositories;
 

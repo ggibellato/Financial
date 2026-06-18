@@ -16,7 +16,7 @@ public class Broker
         _portfolios.AddRange(data);
     }
 
-    private Broker() {}
+    private Broker() { }
 
     private Broker(string name, string currency) : this()
     {

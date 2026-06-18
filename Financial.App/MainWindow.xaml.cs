@@ -1,4 +1,3 @@
-using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.Views;
 using System.Windows;
 

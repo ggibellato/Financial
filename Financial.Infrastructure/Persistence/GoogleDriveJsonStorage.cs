@@ -1,8 +1,6 @@
 using Financial.Application.Interfaces;
 using Financial.Infrastructure.Configuration;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
-using System;
-using System.Threading.Tasks;
 
 namespace Financial.Infrastructure.Persistence;
 

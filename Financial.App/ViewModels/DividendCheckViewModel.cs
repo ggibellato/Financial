@@ -1,9 +1,9 @@
-using System.Collections.ObjectModel;
 using Financial.Application.Configuration;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Rules;
 using Microsoft.Extensions.Options;
+using System.Collections.ObjectModel;
 
 namespace Financial.Presentation.App.ViewModels;
 

@@ -1,5 +1,3 @@
-using System;
-
 namespace Financial.Application.DTOs;
 
 /// <summary>

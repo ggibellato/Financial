@@ -1,6 +1,4 @@
-using System;
 using Financial.Application.Interfaces;
-using Financial.Presentation.App.ViewModels;
 
 namespace Financial.Presentation.App.ViewModels;
 

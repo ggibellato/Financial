@@ -12,7 +12,7 @@ public class Investments
         _brokers.AddRange(data);
     }
 
-    private Investments() {}
+    private Investments() { }
 
     public static Investments Create() => new();
 

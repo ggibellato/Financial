@@ -1,6 +1,6 @@
 using Financial.Domain.Entities;
-using System;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
