@@ -14,7 +14,7 @@ public static class InfrastructureServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddSingleton<IRepositoryDiagnostics, RepositoryDiagnosticsProvider>();
+        services.AddSingleton<IRepositorySettings, RepositorySettingsProvider>();
         services.AddSingleton<IInvestmentsSerializer, InvestmentsSerializerAdapter>();
         services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
         services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();

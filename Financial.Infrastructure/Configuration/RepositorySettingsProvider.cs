@@ -3,11 +3,11 @@ using Microsoft.Extensions.Configuration;
 
 namespace Financial.Infrastructure.Configuration;
 
-public sealed class RepositoryDiagnosticsProvider : ILocalJsonRepositoryDiagnostics, IGoogleDriveRepositoryDiagnostics
+public sealed class RepositorySettingsProvider : ILocalJsonRepositorySettings, IGoogleDriveRepositorySettings
 {
     private readonly IConfiguration _configuration;
 
-    public RepositoryDiagnosticsProvider(IConfiguration configuration)
+    public RepositorySettingsProvider(IConfiguration configuration)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }

@@ -7,12 +7,12 @@ namespace Financial.Api.Controllers;
 [Route("")]
 public sealed class DiagnosticsController : ControllerBase
 {
-    private readonly IRepositoryDiagnostics _repositoryDiagnostics;
+    private readonly IRepositorySettings _repositorySettings;
     private readonly IHostEnvironment _environment;
 
-    public DiagnosticsController(IRepositoryDiagnostics repositoryDiagnostics, IHostEnvironment environment)
+    public DiagnosticsController(IRepositorySettings repositorySettings, IHostEnvironment environment)
     {
-        _repositoryDiagnostics = repositoryDiagnostics ?? throw new ArgumentNullException(nameof(repositoryDiagnostics));
+        _repositorySettings = repositorySettings ?? throw new ArgumentNullException(nameof(repositorySettings));
         _environment = environment ?? throw new ArgumentNullException(nameof(environment));
     }
 
@@ -37,11 +37,11 @@ public sealed class DiagnosticsController : ControllerBase
         string? googleDriveCredentialsPath = null;
         string? googleDriveFilePath = null;
 
-        if (_repositoryDiagnostics is ILocalJsonRepositoryDiagnostics localJson)
+        if (_repositorySettings is ILocalJsonRepositorySettings localJson)
         {
             dataJsonFile = localJson.DataJsonFile;
         }
-        else if (_repositoryDiagnostics is IGoogleDriveRepositoryDiagnostics googleDrive)
+        else if (_repositorySettings is IGoogleDriveRepositorySettings googleDrive)
         {
             googleDriveCredentialsPath = googleDrive.GoogleDriveCredentialsPath;
             googleDriveFilePath = googleDrive.GoogleDriveFilePath;
@@ -49,7 +49,7 @@ public sealed class DiagnosticsController : ControllerBase
 
         return Ok(new
         {
-            provider = _repositoryDiagnostics.Provider,
+            provider = _repositorySettings.Provider,
             dataJsonFile,
             googleDriveCredentialsPath,
             googleDriveFilePath
