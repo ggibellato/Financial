@@ -1,6 +1,5 @@
-using System;
-using Financial.Infrastructure.Repositories;
 using Financial.Infrastructure.Persistence;
+using Financial.Infrastructure.Repositories;
 using FluentAssertions;
 
 namespace Financial.Infrastructure.Tests.Repositories;

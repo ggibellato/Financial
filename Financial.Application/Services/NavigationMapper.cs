@@ -1,8 +1,5 @@
 using Financial.Application.DTOs;
 using Financial.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Financial.Application.Services;
 

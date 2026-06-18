@@ -1,5 +1,4 @@
 using Financial.Domain.Entities;
-using System.Collections.Generic;
 
 namespace Financial.Application.Interfaces;
 

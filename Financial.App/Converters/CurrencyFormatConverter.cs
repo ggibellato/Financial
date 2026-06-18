@@ -14,12 +14,12 @@ public class CurrencyFormatConverter : IValueConverter
         {
             // Parameter can optionally specify currency symbol
             var currencySymbol = parameter as string ?? string.Empty;
-            
+
             if (string.IsNullOrEmpty(currencySymbol))
             {
                 return amount.ToString("N2", culture);
             }
-            
+
             return $"{currencySymbol} {amount:N2}";
         }
         return string.Empty;
@@ -27,7 +27,7 @@ public class CurrencyFormatConverter : IValueConverter
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is string str && decimal.TryParse(str.Replace(",", "").Replace(".", ""), 
+        if (value is string str && decimal.TryParse(str.Replace(",", "").Replace(".", ""),
             NumberStyles.Any, culture, out decimal result))
         {
             return result;

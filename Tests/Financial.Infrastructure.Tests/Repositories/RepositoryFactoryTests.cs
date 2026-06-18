@@ -1,7 +1,6 @@
 using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
 using FluentAssertions;
-using System;
 using System.IO;
 
 namespace Financial.Infrastructure.Tests.Repositories;

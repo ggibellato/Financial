@@ -1,9 +1,7 @@
-using System;
+using Financial.Presentation.App.Input;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Financial.Presentation.App.Input;
-using Financial.Presentation.App.ViewModels;
 
 namespace Financial.Presentation.App;
 

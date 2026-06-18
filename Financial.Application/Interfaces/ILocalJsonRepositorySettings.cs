@@ -1,6 +1,6 @@
 namespace Financial.Application.Interfaces;
 
-public interface ILocalJsonRepositoryDiagnostics : IRepositoryDiagnostics
+public interface ILocalJsonRepositorySettings : IRepositorySettings
 {
     string? DataJsonFile { get; }
 }

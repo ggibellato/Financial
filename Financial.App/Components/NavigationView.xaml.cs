@@ -1,6 +1,5 @@
 using System.Windows;
 using System.Windows.Controls;
-using Financial.Presentation.App.ViewModels;
 
 namespace Financial.Presentation.App.Components
 {

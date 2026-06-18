@@ -1,6 +1,5 @@
-using System;
-using System.Windows;
 using Financial.Application.DTOs;
+using System.Windows;
 
 namespace Financial.Presentation.App.ViewModels;
 

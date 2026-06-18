@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-
 namespace Financial.Api.Tests;
 
 internal static class TestDataPaths

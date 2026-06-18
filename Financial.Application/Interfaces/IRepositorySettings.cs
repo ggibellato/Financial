@@ -1,6 +1,6 @@
 namespace Financial.Application.Interfaces;
 
-public interface IRepositoryDiagnostics
+public interface IRepositorySettings
 {
     string? Provider { get; }
 }

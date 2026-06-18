@@ -1,12 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
+using System.Collections.ObjectModel;
 
 namespace Financial.Presentation.App.ViewModels;
 

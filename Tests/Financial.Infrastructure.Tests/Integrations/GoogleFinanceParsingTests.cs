@@ -1,4 +1,3 @@
-using System;
 using Financial.Infrastructure.Integrations.WebPageParser;
 using FluentAssertions;
 

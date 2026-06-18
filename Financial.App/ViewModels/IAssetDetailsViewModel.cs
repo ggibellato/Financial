@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Financial.Application.DTOs;
 
 namespace Financial.Presentation.App.ViewModels;

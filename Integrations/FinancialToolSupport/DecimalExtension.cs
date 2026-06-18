@@ -9,7 +9,7 @@ namespace Financial.Infrastructure.Integrations.FinancialToolSupport
     {
         private static readonly Dictionary<string, CultureInfo> ISOCurrenciesToACultureMap =
             CultureInfo.GetCultures(CultureTypes.SpecificCultures)
-                .Select(c => new { c, ISOCurrencySymbol=GetRegionISOCurrencySymbol(c.LCID) })
+                .Select(c => new { c, ISOCurrencySymbol = GetRegionISOCurrencySymbol(c.LCID) })
                 .Where(o => o.ISOCurrencySymbol != null)
                 .GroupBy(x => x.ISOCurrencySymbol)
                 .ToDictionary(g => g.Key, g => g.First().c, StringComparer.OrdinalIgnoreCase);

@@ -5,7 +5,6 @@ using Financial.Infrastructure.Repositories;
 using Financial.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 
 namespace Financial.Infrastructure.DependencyInjection;
 
@@ -15,7 +14,7 @@ public static class InfrastructureServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddSingleton<IRepositoryDiagnostics, RepositoryDiagnosticsProvider>();
+        services.AddSingleton<IRepositorySettings, RepositorySettingsProvider>();
         services.AddSingleton<IInvestmentsSerializer, InvestmentsSerializerAdapter>();
         services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
         services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();

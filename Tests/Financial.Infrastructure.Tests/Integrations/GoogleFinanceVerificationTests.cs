@@ -1,6 +1,5 @@
 using Financial.Infrastructure.Integrations;
 using Financial.Infrastructure.Integrations.WebPageParser;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Financial.Infrastructure.Tests.Integrations;

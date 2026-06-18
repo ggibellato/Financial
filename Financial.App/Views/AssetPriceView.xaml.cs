@@ -1,4 +1,3 @@
-using Financial.Presentation.App.ViewModels;
 using System.Windows.Controls;
 
 namespace Financial.Presentation.App.Views;

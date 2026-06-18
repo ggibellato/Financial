@@ -2,7 +2,6 @@ using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using Financial.Infrastructure.Integrations.WebPageParser;
-using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
 using System.Linq;

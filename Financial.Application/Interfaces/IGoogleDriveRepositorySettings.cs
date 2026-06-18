@@ -1,6 +1,6 @@
 namespace Financial.Application.Interfaces;
 
-public interface IGoogleDriveRepositoryDiagnostics : IRepositoryDiagnostics
+public interface IGoogleDriveRepositorySettings : IRepositorySettings
 {
     string? GoogleDriveCredentialsPath { get; }
     string? GoogleDriveFilePath { get; }
