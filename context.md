@@ -1,36 +1,36 @@
-I've revised the text for grammar, spelling, clarity, cohesion, and consistency while keeping the original meaning and intent.
-
 # Financial Project
 
 ## Purpose
 
-This document provides the context for my personal Financial Project.
+This document provides the context and requirements for my personal Financial Project.
 
-The application should allow users to record asset purchase and sale transactions, as well as register dividends and any other forms of investment income or profit.
+The application is a personal financial management tool that consolidates investment transactions across multiple brokers and portfolios.
 
-The system should also support the creation and management of brokers, portfolios, and assets.
+The system must allow users to:
+
+* Record asset purchase transactions.
+* Record asset sale transactions.
+* Register dividends and other forms of investment income.
+* Manage brokers.
+* Manage portfolios.
+* Manage assets.
 
 ---
 
 # Project Overview
 
-The project is a **personal financial management tool** designed to consolidate financial transactions across multiple Brokers.
-
-The current portfolio spans **two countries**:
+The current portfolio spans two countries:
 
 * United Kingdom
 * Brazil
 
-This introduces the need to manage:
+As a result, the system must support:
 
-* Multiple currencies
-* Different tax regulations
-
-The system must support:
-
-* **Annual tax reporting** for both jurisdictions
-* **Investment performance tracking**
-* **Portfolio analytics**
+* Multiple currencies.
+* Different tax regulations.
+* Annual tax reporting for both jurisdictions.
+* Investment performance tracking.
+* Portfolio analytics.
 
 Supported asset classes include:
 
@@ -41,24 +41,112 @@ Supported asset classes include:
 * Government bonds
 * ISAs
 
-The system must be designed with flexibility in mind, allowing **new asset classes to be added in the future**.
+The solution must be extensible so that new asset classes can be added in the future without significant architectural changes.
 
 ---
 
 # Technical Requirements
 
-As this is currently a personal project, a database is not required. A simple JSON file stored on the local hard drive is sufficient for persisting data.
+## Storage
 
-However, the design should also support storing data in Google Drive as an alternative to local storage. The storage mechanism should be abstracted so that future changes can be implemented with minimal impact on the rest of the application.
+This is currently a personal project. A traditional database is not required at this stage.
 
-For the initial version, all data can be loaded into memory when the application starts and saved either on user request or automatically when the application closes. Although this approach may evolve in the future, the codebase should be structured to make such changes as straightforward as possible.
+The initial implementation should use JSON files stored locally for persistence.
 
-The project must adhere to the following development principles:
+Future storage providers may include:
+
+* Local file system
+* Google Drive
+* Additional cloud storage providers
+
+The persistence layer must be abstracted so that storage implementations can be replaced with minimal impact on the rest of the application.
+
+For the initial version:
+
+* All data may be loaded into memory during application startup.
+* Data may be saved manually by the user.
+* Data should also be saved automatically during application shutdown.
+
+The codebase should be structured to allow migration to a more sophisticated persistence model in the future.
+
+---
+
+## User Interfaces
+
+The project will support two front ends:
+
+### WPF Application
+
+A desktop application built using WPF.
+
+### React Application
+
+A web application built using React.
+
+Because the React application requires server-side communication, the solution must include an API layer.
+
+The WPF application should use the same application services and business logic as the API, ensuring that business rules are implemented only once.
+
+Business logic must never reside in either UI project.
+
+---
+
+## Architecture
+
+The architecture should follow Domain-Driven Design (DDD) principles while remaining pragmatic and avoiding unnecessary complexity.
+
+The domain is relatively small and currently consists of concepts such as:
+
+* Broker
+* Portfolio
+* Asset
+* Transaction
+* Credit
+
+The primary architectural goal is separation of responsibilities, enabling the system to be:
+
+* Easy to maintain
+* Easy to test
+* Easy to extend
+* Easy to evolve
+
+A clean architecture approach is preferred, with clear boundaries between:
+
+* Domain
+* Application
+* Infrastructure
+* Presentation
+
+Dependencies should always point inward toward the domain.
+
+---
+
+## Code Quality
+
+The project must adhere to the following principles:
 
 * SOLID principles
 * Clean Code practices
-* Comprehensive unit test coverage
+* Separation of concerns
+* Dependency Injection
+* High unit test coverage
 
-The architecture should follow Domain-Driven Design (DDD) principles to provide a clear and maintainable structure. However, given the relatively simple domain model, consisting of concepts such as Brokers, Portfolios, Assets, Transactions, and Credits, the architecture should remain pragmatic and avoid unnecessary complexity.
+All business rules should be testable without requiring a UI, database, or external services.
 
-The primary goal of the architecture is to separate responsibilities effectively, making the system easier to maintain, extend, and evolve over time.
+Unit tests should focus on domain and application behavior rather than implementation details.
+
+---
+
+## Guidance for AI Coding Agents
+
+When generating code for this project:
+
+* Prioritize maintainability over premature optimization.
+* Prefer simple solutions over complex abstractions.
+* Avoid overengineering.
+* Follow established C# and .NET conventions.
+* Keep the domain model independent of infrastructure concerns.
+* Design interfaces around business needs rather than technical implementation details.
+* Ensure new features remain compatible with both the WPF and React front ends.
+* Remove unused dependencies and unnecessary abstractions.
+* Generate unit tests for all business-critical functionality.

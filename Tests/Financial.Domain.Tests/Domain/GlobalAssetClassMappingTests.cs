@@ -8,14 +8,38 @@ public class GlobalAssetClassMappingTests
     [Theory]
     [InlineData(CountryCode.BR, "FII", GlobalAssetClass.RealEstate)]
     [InlineData(CountryCode.BR, "Acoes", GlobalAssetClass.Equity)]
-    [InlineData(CountryCode.US, "REIT", GlobalAssetClass.RealEstate)]
+    [InlineData(CountryCode.BR, "ETF", GlobalAssetClass.ETF)]
+    [InlineData(CountryCode.BR, "Fund", GlobalAssetClass.Fund)]
+    [InlineData(CountryCode.BR, "Bond", GlobalAssetClass.Bond)]
     [InlineData(CountryCode.BR, "TesouroDireto", GlobalAssetClass.Bond)]
-    [InlineData(CountryCode.US, "T-Bill", GlobalAssetClass.Bond)]
-    [InlineData(CountryCode.UK, "ConventionalGilt", GlobalAssetClass.Bond)]
-    [InlineData(CountryCode.US, "ETF", GlobalAssetClass.ETF)]
-    [InlineData(CountryCode.UK, "Fund", GlobalAssetClass.Fund)]
+    [InlineData(CountryCode.US, "REIT", GlobalAssetClass.RealEstate)]
     [InlineData(CountryCode.US, "Stock", GlobalAssetClass.Equity)]
+    [InlineData(CountryCode.US, "ETF", GlobalAssetClass.ETF)]
+    [InlineData(CountryCode.US, "Fund", GlobalAssetClass.Fund)]
+    [InlineData(CountryCode.US, "Bond", GlobalAssetClass.Bond)]
+    [InlineData(CountryCode.US, "T-Bill", GlobalAssetClass.Bond)]
+    [InlineData(CountryCode.US, "Cash", GlobalAssetClass.Cash)]
+    [InlineData(CountryCode.US, "Pension", GlobalAssetClass.Pension)]
+    [InlineData(CountryCode.UK, "REIT", GlobalAssetClass.RealEstate)]
+    [InlineData(CountryCode.UK, "Stock", GlobalAssetClass.Equity)]
+    [InlineData(CountryCode.UK, "ETF", GlobalAssetClass.ETF)]
+    [InlineData(CountryCode.UK, "Fund", GlobalAssetClass.Fund)]
+    [InlineData(CountryCode.UK, "Bond", GlobalAssetClass.Bond)]
+    [InlineData(CountryCode.UK, "ConventionalGilt", GlobalAssetClass.Bond)]
+    [InlineData(CountryCode.UK, "Cash", GlobalAssetClass.Cash)]
+    [InlineData(CountryCode.UK, "Pension", GlobalAssetClass.Pension)]
     public void Resolve_KnownMappings_ReturnExpected(CountryCode country, string localTypeCode, GlobalAssetClass expected)
+    {
+        var result = GlobalAssetClassMapping.Resolve(country, localTypeCode);
+
+        result.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(CountryCode.BR, "fii", GlobalAssetClass.RealEstate)]
+    [InlineData(CountryCode.BR, "ACOES", GlobalAssetClass.Equity)]
+    [InlineData(CountryCode.UK, "conventionalgilt", GlobalAssetClass.Bond)]
+    public void Resolve_CaseInsensitive_ReturnsMappedClass(CountryCode country, string localTypeCode, GlobalAssetClass expected)
     {
         var result = GlobalAssetClassMapping.Resolve(country, localTypeCode);
 
