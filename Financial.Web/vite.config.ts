@@ -1,18 +1,17 @@
-import { defineConfig } from 'vitest/config'
-import { loadEnv } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'API_')
-  const apiTarget = env.API_BASE_URL || 'http://localhost:5190'
+  const apiBaseUrl = env.API_BASE_URL ?? '/api/v1/financial'
   return {
     plugins: [react()],
     define: {
-      'import.meta.env.API_BASE_URL': JSON.stringify(''),
+      'import.meta.env.API_BASE_URL': JSON.stringify(apiBaseUrl),
     },
     server: {
       proxy: {
-        '/api': { target: apiTarget, changeOrigin: true },
+        '/api': { target: 'http://localhost:5190', changeOrigin: true },
       },
     },
     test: {

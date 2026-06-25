@@ -4,7 +4,7 @@ WORKDIR /app
 COPY Financial.Web/package*.json .
 RUN npm install
 COPY Financial.Web/ .
-RUN echo "API_BASE_URL=" > .env
+RUN echo "API_BASE_URL=/api/v1/financial" > .env
 RUN npm run build
 
 # Stage 2: Build .NET API
