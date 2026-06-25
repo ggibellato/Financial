@@ -1,0 +1,30 @@
+.split-panel {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  overflow: hidden;
+}
+
+.split-panel__left {
+  flex-shrink: 0;
+  overflow: auto;
+  border-right: 1px solid var(--border, #e0e0e0);
+}
+
+.split-panel__handle {
+  width: 6px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  background: var(--border, #e0e0e0);
+  transition: background 0.15s;
+}
+
+.split-panel__handle:hover {
+  background: var(--accent, #007acc);
+}
+
+.split-panel__right {
+  flex: 1;
+  overflow: auto;
+  min-width: 0;
+}
