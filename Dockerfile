@@ -2,7 +2,7 @@
 FROM node:22-slim AS web-build
 WORKDIR /app
 COPY Financial.Web/package*.json .
-RUN npm ci
+RUN npm install
 COPY Financial.Web/ .
 RUN echo "API_BASE_URL=" > .env
 RUN npm run build
