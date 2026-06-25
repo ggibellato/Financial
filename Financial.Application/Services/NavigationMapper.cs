@@ -66,7 +66,7 @@ internal static class NavigationMapper
                 ["ISIN"] = asset.ISIN,
                 ["Country"] = asset.Country,
                 ["LocalTypeCode"] = asset.LocalTypeCode,
-                ["GlobalAssetClass"] = asset.Class,
+                ["GlobalAssetClass"] = (int)asset.Class,
                 ["Quantity"] = asset.Quantity,
                 ["AveragePrice"] = asset.AveragePrice,
                 ["IsActive"] = asset.IsActive,
