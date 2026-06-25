@@ -47,9 +47,12 @@ else
 
 app.UseHttpsRedirection();
 app.UseCors();
+app.UseStaticFiles();
 
 var api = app.MapGroup("/api/v1/financial");
 api.MapControllers();
+
+app.MapFallbackToFile("index.html");
 
 app.Run();
 
