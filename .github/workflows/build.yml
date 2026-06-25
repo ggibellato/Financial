@@ -43,7 +43,11 @@ jobs:
 
     - name: Install dependencies
       working-directory: Financial.Web
-      run: npm ci
+      run: npm install
+
+    - name: Lint
+      working-directory: Financial.Web
+      run: npm run lint
 
     - name: Run tests
       working-directory: Financial.Web
