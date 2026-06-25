@@ -45,7 +45,6 @@ else
     app.UseExceptionHandler();
 }
 
-app.UseHttpsRedirection();
 app.UseCors();
 app.UseStaticFiles();
 
