@@ -83,24 +83,27 @@ export default function NavigationTreePanel({ title = 'Navigation', className }:
   const [tree, setTree] = useState<TreeNodeDto | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  const loadTree = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await apiClient.getNavigationTree()
-      setTree(data)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to load navigation tree.'
-      setError(message)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [apiClient])
+  const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
-    void loadTree()
-  }, [loadTree])
+    apiClient
+      .getNavigationTree()
+      .then((data) => {
+        setTree(data)
+        setError(null)
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Unable to load navigation tree.'
+        setError(message)
+      })
+      .finally(() => setIsLoading(false))
+  }, [apiClient, retryCount])
+
+  const handleRetry = useCallback(() => {
+    setIsLoading(true)
+    setError(null)
+    setRetryCount((c) => c + 1)
+  }, [])
 
   return (
     <div className={['nav-tree', className].filter(Boolean).join(' ')}>
@@ -110,7 +113,7 @@ export default function NavigationTreePanel({ title = 'Navigation', className }:
       {isLoading ? (
         <LoadingState message="Loading navigation tree..." />
       ) : error ? (
-        <ErrorState message={error} onRetry={loadTree} />
+        <ErrorState message={error} onRetry={handleRetry} />
       ) : tree ? (
         <ul className="nav-tree__list">
           <TreeNode node={tree} context={{}} />

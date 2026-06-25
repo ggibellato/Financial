@@ -34,23 +34,27 @@ export default function CurrentValuesPage() {
     [],
   )
 
-  const loadBrokers = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await apiClient.getBrokers()
-      setBrokers(data)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to load brokers.'
-      setError(message)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [apiClient])
+  const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
-    void loadBrokers()
-  }, [loadBrokers])
+    apiClient
+      .getBrokers()
+      .then((data) => {
+        setBrokers(data)
+        setError(null)
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Unable to load brokers.'
+        setError(message)
+      })
+      .finally(() => setIsLoading(false))
+  }, [apiClient, retryCount])
+
+  const handleRetry = useCallback(() => {
+    setIsLoading(true)
+    setError(null)
+    setRetryCount((c) => c + 1)
+  }, [])
 
   const portfolios = useMemo(() => {
     const broker = brokers.find((item) => item.name === selectedBroker)
@@ -143,7 +147,7 @@ export default function CurrentValuesPage() {
   }
 
   if (error) {
-    return <ErrorState message={error} onRetry={loadBrokers} />
+    return <ErrorState message={error} onRetry={handleRetry} />
   }
 
   return (
