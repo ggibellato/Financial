@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DataJsonFile: /app/data/data.json
+      Repository__Provider: LocalJson
+    volumes:
+      - ./data:/app/data:ro
