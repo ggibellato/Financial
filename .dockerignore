@@ -1,0 +1,22 @@
+# .NET build output
+**/bin/
+**/obj/
+
+# Node
+**/node_modules/
+Financial.Web/dist/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vs/
+**/.idea/
+**/*.user
+
+# Docker files themselves
+docker-compose*.yml
+Dockerfile*
+nginx.conf
+.dockerignore
