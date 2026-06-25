@@ -41,6 +41,45 @@ dotnet run --project Financial.App
 
 `dotnet run` and Visual Studio set `DOTNET_ENVIRONMENT=Development` automatically via `launchSettings.json`, which loads `Financial.App/appsettings.Development.json` with a relative path to the shared `data/data.json`. Running the compiled `.exe` directly requires setting `DOTNET_ENVIRONMENT=Development` in your system environment variables.
 
+## Docker
+
+The API and web frontend are packaged into a single image. The .NET server serves both the REST API and the React SPA from the same port.
+
+### Build the image
+
+```bash
+docker build -t financial .
+```
+
+### Run the container
+
+```bash
+docker run -p 8080:8080 \
+  -v ./data:/app/data:ro \
+  -e DataJsonFile=/app/data/data.json \
+  financial
+```
+
+Open `http://localhost:8080` in your browser.
+
+### Run with Docker Compose (recommended)
+
+```bash
+docker compose up --build
+```
+
+This mounts `./data` read-only into the container and wires the environment variables automatically. Subsequent starts without code changes:
+
+```bash
+docker compose up
+```
+
+Stop and remove containers:
+
+```bash
+docker compose down
+```
+
 ## Build and test
 
 ```bash
@@ -51,7 +90,7 @@ dotnet test Financial.slnx
 
 # Web
 cd Financial.Web
-npm ci
+npm install
 npm test
 npm run build
 ```
