@@ -1,3 +1,21 @@
+export type NodeType = 'Asset' | 'Portfolio' | 'Broker'
+
+export interface SelectedNode {
+  nodeType: NodeType
+  brokerName: string
+  portfolioName?: string
+  assetName?: string
+  ticker?: string
+  exchange?: string
+  currency?: string
+  isActive?: boolean
+}
+
+export interface SelectedNodeContextValue {
+  selectedNode: SelectedNode | null
+  setSelectedNode: (node: SelectedNode | null) => void
+}
+
 export interface TreeNodeDto {
   nodeType: string
   displayName: string
