@@ -1,120 +1,79 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { describe, expect, it, vi } from 'vitest'
 import App from './App'
-import AssetDetailPage from './pages/AssetDetailPage'
-import type { FinancialApiClient } from './api/financialApiClient'
-import type { AssetDetailsDto, TreeNodeDto } from './api/types'
-
-const getNavigationTreeMock = vi.fn()
-const getAssetDetailsMock = vi.fn()
 
 vi.mock('./api/financialApiClient', () => ({
-  createFinancialApiClient: () => ({
-    getNavigationTree: getNavigationTreeMock,
-    getAssetDetails: getAssetDetailsMock,
-  } satisfies Partial<FinancialApiClient>),
+  createFinancialApiClient: () => ({}),
 }))
 
+const AppWithRoutes = ({ initialEntry = '/' }: { initialEntry?: string }) => (
+  <MemoryRouter initialEntries={[initialEntry]}>
+    <Routes>
+      <Route path="/" element={<App />}>
+        <Route index element={<Navigate to="/portfolio-navigator" replace />} />
+        <Route path="portfolio-navigator" element={<p>Portfolio Navigator placeholder</p>} />
+        <Route path="dividend-check" element={<h2>Shares Dividend Check</h2>} />
+        <Route path="current-values" element={<h2>Read Assets Current Values</h2>} />
+        <Route path="*" element={<p>Page not found.</p>} />
+      </Route>
+    </Routes>
+  </MemoryRouter>
+)
+
 describe('App', () => {
-  beforeEach(() => {
-    getNavigationTreeMock.mockReset()
-    getAssetDetailsMock.mockReset()
-    getNavigationTreeMock.mockResolvedValue({
-      nodeType: 'Investments',
-      displayName: 'All Investments',
-      metadata: {},
-      children: [],
-    } satisfies TreeNodeDto)
+  it('renders three nav items', () => {
+    render(<AppWithRoutes />)
+
+    expect(screen.getByRole('link', { name: 'Portfolio Navigator' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Shares Dividend Check' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Read Assets Current Values' })).toBeInTheDocument()
   })
 
-  it('renders the app header', () => {
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <Routes>
-          <Route path="/" element={<App />} />
-        </Routes>
-      </MemoryRouter>,
-    )
+  it('default route redirects to portfolio navigator', () => {
+    render(<AppWithRoutes initialEntry="/" />)
 
-    expect(screen.getByRole('heading', { name: 'Portfolio Dashboard' })).toBeInTheDocument()
+    expect(screen.getByText('Portfolio Navigator placeholder')).toBeInTheDocument()
   })
 
-  it('navigates from tree to asset detail', async () => {
-    getNavigationTreeMock.mockResolvedValue({
-      nodeType: 'Investments',
-      displayName: 'All Investments',
-      metadata: {},
-      children: [
-        {
-          nodeType: 'Broker',
-          displayName: 'XPI (BRL)',
-          metadata: { BrokerName: 'XPI', Currency: 'BRL', PortfolioCount: 1, TotalAssets: 1 },
-          children: [
-            {
-              nodeType: 'Portfolio',
-              displayName: 'Default (1 assets)',
-              metadata: { PortfolioName: 'Default', AssetCount: 1, ActiveAssetCount: 1 },
-              children: [
-                {
-                  nodeType: 'Asset',
-                  displayName: 'BCIA11',
-                  metadata: {
-                    AssetName: 'BCIA11',
-                    Ticker: 'BCIA11',
-                    Exchange: 'BVMF',
-                    ISIN: 'TEST',
-                    Country: 0,
-                    LocalTypeCode: '',
-                    GlobalAssetClass: 0,
-                    Quantity: 10,
-                    AveragePrice: 100,
-                    IsActive: true,
-                    TransactionCount: 0,
-                    CreditCount: 0,
-                  },
-                  children: [],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    } satisfies TreeNodeDto)
-    getAssetDetailsMock.mockResolvedValue({
-      name: 'BCIA11',
-      brokerName: 'XPI',
-      portfolioName: 'Default',
-      ticker: 'BCIA11',
-      isin: 'TEST',
-      exchange: 'BVMF',
-      country: 0,
-      localTypeCode: '',
-      class: 0,
-      quantity: 10,
-      averagePrice: 100,
-      isActive: true,
-      totalBought: 1000,
-      totalSold: 0,
-      totalCredits: 0,
-      transactions: [],
-      credits: [],
-    } satisfies AssetDetailsDto)
+  it('navigates to dividend check section', async () => {
+    render(<AppWithRoutes />)
 
-    render(
-      <MemoryRouter initialEntries={['/brokers']}>
-        <Routes>
-          <Route path="/" element={<App />}>
-            <Route path="brokers" element={<div>Broker list</div>} />
-            <Route path="assets/:brokerName/:portfolioName/:assetName" element={<AssetDetailPage />} />
-          </Route>
-        </Routes>
-      </MemoryRouter>,
-    )
+    fireEvent.click(screen.getByRole('link', { name: 'Shares Dividend Check' }))
 
-    const assetLink = await screen.findByRole('link', { name: /BCIA11/ })
-    fireEvent.click(assetLink)
+    expect(screen.getByRole('heading', { name: 'Shares Dividend Check' })).toBeInTheDocument()
+    expect(screen.queryByText('Portfolio Navigator placeholder')).not.toBeInTheDocument()
+  })
 
-    expect(await screen.findByRole('heading', { name: 'BCIA11' })).toBeInTheDocument()
+  it('navigates to current values section', () => {
+    render(<AppWithRoutes />)
+
+    fireEvent.click(screen.getByRole('link', { name: 'Read Assets Current Values' }))
+
+    expect(screen.getByRole('heading', { name: 'Read Assets Current Values' })).toBeInTheDocument()
+  })
+
+  it('active nav item receives active class', () => {
+    render(<AppWithRoutes initialEntry="/dividend-check" />)
+
+    const activeLink = screen.getByRole('link', { name: 'Shares Dividend Check' })
+    const portfolioLink = screen.getByRole('link', { name: 'Portfolio Navigator' })
+    const currentValuesLink = screen.getByRole('link', { name: 'Read Assets Current Values' })
+
+    expect(activeLink).toHaveClass('active')
+    expect(portfolioLink).not.toHaveClass('active')
+    expect(currentValuesLink).not.toHaveClass('active')
+  })
+
+  it('legacy broker route returns 404', () => {
+    render(<AppWithRoutes initialEntry="/brokers" />)
+
+    expect(screen.getByText('Page not found.')).toBeInTheDocument()
+  })
+
+  it('legacy navigation route returns 404', () => {
+    render(<AppWithRoutes initialEntry="/navigation" />)
+
+    expect(screen.getByText('Page not found.')).toBeInTheDocument()
   })
 })
