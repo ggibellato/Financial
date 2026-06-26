@@ -1,0 +1,18 @@
+#!/bin/sh
+# Runs ESLint in Financial.Web before every push. Blocks the push if lint fails.
+# Install: cp scripts/hooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+WEB_DIR="$REPO_ROOT/Financial.Web"
+
+echo "Running lint in Financial.Web..."
+cd "$WEB_DIR" && npm run lint
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "ERROR: Lint failed. Push blocked. Fix the errors above and try again."
+  exit 1
+fi
+
+echo "Lint passed."
+exit 0
