@@ -503,20 +503,20 @@ graph TD
 - [x] No `NavigationTreePanel` sidebar is visible on the Dividend Check or Current Values sections
 
 ### F02. Portfolio Navigator - Investment Tree & Split Panel Layout
-- [ ] Tree renders all brokers with their portfolios and assets on page load
-- [ ] Broker nodes display `{BrokerName} ({CurrencyCode})` (e.g., "XPI (BRL)")
-- [ ] Portfolio nodes display `{PortfolioName} ({N} assets)` (e.g., "Acoes (4 assets)")
-- [ ] Active assets display ● prefix; inactive assets display ○ prefix
-- [ ] Asset class filter dropdown defaults to "All" and shows all assets
-- [ ] Selecting an asset class filters the tree client-side to retain only matching assets and their broker/portfolio ancestors
-- [ ] Clicking a broker, portfolio, or asset node applies blue (#007ACC) highlight to that node
-- [ ] Blue selection highlight persists when the right panel receives focus
-- [ ] Broker and portfolio nodes expand and collapse on click
-- [ ] Left panel scrolls independently with its own scrollbar; right panel scrolls independently
-- [ ] When an asset is selected, the right panel header shows: asset name (bold, 20px), clipboard copy icon, breadcrumb `{Ticker} · {Exchange} · {BrokerName} · {PortfolioName}`, and active/inactive status indicator
-- [ ] Clicking the copy icon writes the asset name to the clipboard without showing a dialog
-- [ ] When no node is selected, the right panel shows "Select an item to view details"
-- [ ] Left panel is resizable via drag handle with a minimum width of 300px
+- [x] Tree renders all brokers with their portfolios and assets on page load
+- [x] Broker nodes display `{BrokerName} ({CurrencyCode})` (e.g., "XPI (BRL)")
+- [x] Portfolio nodes display `{PortfolioName} ({N} assets)` (e.g., "Acoes (4 assets)")
+- [x] Active assets display ● prefix; inactive assets display ○ prefix
+- [x] Asset class filter dropdown defaults to "All" and shows all assets
+- [x] Selecting an asset class filters the tree client-side to retain only matching assets and their broker/portfolio ancestors
+- [x] Clicking a broker, portfolio, or asset node applies blue (#007ACC) highlight to that node
+- [x] Blue selection highlight persists when the right panel receives focus
+- [x] Broker and portfolio nodes expand and collapse on click
+- [x] Left panel scrolls independently with its own scrollbar; right panel scrolls independently
+- [x] When an asset is selected, the right panel header shows: asset name (bold, 20px), clipboard copy icon, breadcrumb `{Ticker} · {Exchange} · {BrokerName} · {PortfolioName}`, and active/inactive status indicator
+- [x] Clicking the copy icon writes the asset name to the clipboard without showing a dialog
+- [x] When no node is selected, the right panel shows "Select an item to view details"
+- [x] Left panel is resizable via drag handle with a minimum width of 300px
 
 ### F03. Portfolio Navigator - Summary Tab - Asset View
 - [ ] Selecting an asset and viewing the Summary tab shows Quantity (N8), Average Price (N2), ISIN, Country, Local Type, and Asset Class
