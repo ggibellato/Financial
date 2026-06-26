@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import AssetSummaryTab from './AssetSummaryTab'
 import './DetailPanel.css'
 
 type TabId = 'summary' | 'transactions' | 'credits'
@@ -96,8 +97,9 @@ export default function DetailPanel() {
       </div>
 
       <div className="detail-panel__content">
-        {activeTab === 'summary' && (
-          <p className="detail-panel__placeholder">Summary — coming in F03 / F04</p>
+        {activeTab === 'summary' && isAsset && <AssetSummaryTab />}
+        {activeTab === 'summary' && !isAsset && (
+          <p className="detail-panel__placeholder">Summary — coming in F04</p>
         )}
         {activeTab === 'transactions' && (
           <p className="detail-panel__placeholder">Transactions — coming in F05</p>
