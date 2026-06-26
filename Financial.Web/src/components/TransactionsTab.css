@@ -1,0 +1,189 @@
+.transactions-tab {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.transactions-tab__placeholder {
+  padding: 24px;
+  color: var(--text-muted, #888);
+  font-size: 13px;
+}
+
+.transactions-tab__toolbar {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border, #e5e4e7);
+  flex-shrink: 0;
+}
+
+.transactions-tab__new-btn {
+  font-size: 12px;
+  padding: 3px 12px;
+  cursor: pointer;
+  background: #007acc;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+}
+
+.transactions-tab__new-btn:hover {
+  background: #005fa3;
+}
+
+.transactions-tab__form {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border, #e5e4e7);
+  background: var(--bg-subtle, #f9f9f9);
+  flex-shrink: 0;
+}
+
+.transactions-tab__form-title {
+  font-size: 13px;
+  font-weight: bold;
+  margin: 0 0 10px;
+}
+
+.transactions-tab__form-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 10px;
+}
+
+.transactions-tab__form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.transactions-tab__form-field label {
+  font-size: 11px;
+  color: var(--text-muted, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.transactions-tab__form-field input,
+.transactions-tab__form-field select {
+  font-size: 12px;
+  padding: 3px 6px;
+  border: 1px solid var(--border, #e5e4e7);
+  border-radius: 3px;
+  background: var(--bg, #fff);
+  min-width: 90px;
+}
+
+.transactions-tab__form-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.transactions-tab__save-btn {
+  font-size: 12px;
+  padding: 3px 12px;
+  cursor: pointer;
+  background: #007acc;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+}
+
+.transactions-tab__save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.transactions-tab__cancel-btn {
+  font-size: 12px;
+  padding: 3px 10px;
+  cursor: pointer;
+  background: none;
+  border: 1px solid var(--border, #e5e4e7);
+  border-radius: 3px;
+}
+
+.transactions-tab__cancel-btn:hover {
+  background: var(--bg-hover, #f0f0f0);
+}
+
+.transactions-tab__error {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #c62828;
+}
+
+.transactions-tab__table-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 16px 16px;
+}
+
+.transactions-tab__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.transactions-tab__table th {
+  text-align: left;
+  font-size: 11px;
+  color: var(--text-muted, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 1px solid var(--border, #e5e4e7);
+  padding: 6px 8px 4px;
+  white-space: nowrap;
+}
+
+.transactions-tab__table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border, #f0f0f0);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.transactions-tab__action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 12px;
+  color: var(--text-muted, #888);
+  border-radius: 2px;
+}
+
+.transactions-tab__action-btn:hover {
+  background: var(--bg-hover, #f0f0f0);
+  color: var(--text, #333);
+}
+
+.transactions-tab__type--buy {
+  color: #2e7d32;
+  font-weight: bold;
+}
+
+.transactions-tab__type--sell {
+  color: #c62828;
+  font-weight: bold;
+}
+
+.transactions-tab__amount {
+  text-align: right;
+}
+
+.transactions-tab__total {
+  text-align: right;
+  font-weight: bold;
+}
+
+.transactions-tab__delete-error {
+  padding: 6px 16px;
+  font-size: 12px;
+  color: #c62828;
+  flex-shrink: 0;
+}
