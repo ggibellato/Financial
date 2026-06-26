@@ -42,9 +42,9 @@ export interface AssetNodeDto {
   name: string
   ticker: string
   exchange: string
-  country: number
+  country: string
   localTypeCode: string
-  class: number
+  class: string
   isin: string
   quantity: number
   averagePrice: number
@@ -77,9 +77,9 @@ export interface AssetDetailsDto {
   ticker: string
   isin: string
   exchange: string
-  country: number
+  country: string
   localTypeCode: string
-  class: number
+  class: string
   quantity: number
   averagePrice: number
   isActive: boolean

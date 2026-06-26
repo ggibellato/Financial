@@ -449,16 +449,16 @@ Chart capabilities (all selection types):
 
 ## 8. Dependency Graph
 
-| # | Feature | Priority | Dependencies |
-|---|---------|----------|--------------|
-| F01 | App Navigation & Layout Restructure | 1 | None |
-| F02 | Investment Tree & Split Panel Layout | 1 | F01 |
-| F07 | Shares Dividend Check Redesign | 1 | F01 |
-| F08 | Read Assets Current Values Redesign | 1 | F01 |
-| F03 | Summary Tab — Asset View | 1 | F02 |
-| F04 | Summary Tab — Broker/Portfolio Aggregated View | 2 | F02 |
-| F05 | Transactions Tab | 1 | F02 |
-| F06 | Credits Tab | 1 | F02 |
+| # | Feature | Priority | Dependencies | Status |
+|---|---------|----------|--------------|--------|
+| F01 | App Navigation & Layout Restructure | 1 | None | ✅ Done |
+| F02 | Investment Tree & Split Panel Layout | 1 | F01 | ✅ Done |
+| F07 | Shares Dividend Check Redesign | 1 | F01 | ⬜ Pending |
+| F08 | Read Assets Current Values Redesign | 1 | F01 | ⬜ Pending |
+| F03 | Summary Tab — Asset View | 1 | F02 | ✅ Done |
+| F04 | Summary Tab — Broker/Portfolio Aggregated View | 2 | F02 | ⬜ Pending |
+| F05 | Transactions Tab | 1 | F02 | ⬜ Pending |
+| F06 | Credits Tab | 1 | F02 | ⬜ Pending |
 
 ### Foundation Features
 These features set up shared project infrastructure. In a greenfield project they must be implemented sequentially before or alongside any feature that depends on them:

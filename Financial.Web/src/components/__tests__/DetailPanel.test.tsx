@@ -2,7 +2,18 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import DetailPanel from '../DetailPanel'
 import { SelectedNodeProvider, useSelectedNode } from '../../context/SelectedNodeContext'
+import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { SelectedNode } from '../../api/types'
+
+const getAssetDetailsMock = vi.fn()
+const getCurrentPriceMock = vi.fn()
+
+vi.mock('../../api/financialApiClient', () => ({
+  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+    getAssetDetails: getAssetDetailsMock,
+    getCurrentPrice: getCurrentPriceMock,
+  }),
+}))
 
 function NodeSetter({ node }: { node: SelectedNode | null }) {
   const { setSelectedNode } = useSelectedNode()
@@ -46,6 +57,8 @@ describe('DetailPanel', () => {
     })
     vi.stubGlobal('alert', vi.fn())
     vi.stubGlobal('confirm', vi.fn())
+    getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
+    getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
   })
 
   it('shows empty state when selectedNode is null', () => {
@@ -134,6 +147,24 @@ describe('DetailPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Transactions' }))
     expect(screen.getByRole('button', { name: 'Transactions' })).toHaveClass('detail-panel__tab--active')
     expect(screen.getByRole('button', { name: 'Summary' })).not.toHaveClass('detail-panel__tab--active')
+  })
+
+  it('renders_asset_summary_tab_when_asset_selected', () => {
+    renderPanel(activeAssetNode)
+    act(() => screen.getByTestId('setter').click())
+    expect(screen.getByText('Loading...')).toBeInTheDocument()
+  })
+
+  it('renders_summary_placeholder_for_broker_node', () => {
+    renderPanel(brokerNode)
+    act(() => screen.getByTestId('setter').click())
+    expect(screen.getByText('Summary — coming in F04')).toBeInTheDocument()
+  })
+
+  it('renders_summary_placeholder_for_portfolio_node', () => {
+    renderPanel(portfolioNode)
+    act(() => screen.getByTestId('setter').click())
+    expect(screen.getByText('Summary — coming in F04')).toBeInTheDocument()
   })
 
   it('active tab resets to Summary on selectedNode change', () => {

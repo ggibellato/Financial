@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Financial.Domain.Entities;
 
 namespace Financial.Application.DTOs;
@@ -40,6 +41,7 @@ public class AssetDetailsDTO
     /// <summary>
     /// Asset country of origin
     /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public CountryCode Country { get; set; } = CountryCode.Unknown;
 
     /// <summary>
@@ -50,6 +52,7 @@ public class AssetDetailsDTO
     /// <summary>
     /// Global asset classification
     /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public GlobalAssetClass Class { get; set; } = GlobalAssetClass.Unknown;
 
     /// <summary>
