@@ -6,8 +6,10 @@
 }
 
 .split-panel__left {
+  display: flex;
+  flex-direction: column;
   flex-shrink: 0;
-  overflow: auto;
+  overflow: hidden;
   border-right: 1px solid var(--border, #e0e0e0);
 }
 
