@@ -34,15 +34,6 @@ function formatDate(iso: string): string {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
 }
 
-function toInputDate(iso: string): string {
-  return iso.split('T')[0]
-}
-
-function buildMonthKey(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${pad(date.getMonth() + 1)}/${date.getFullYear()}`
-}
-
 const FILTER_OPTIONS: { value: FilterOption; label: string }[] = [
   { value: 'this-month', label: 'This month' },
   { value: 'last-3-months', label: 'Last 3 months' },
@@ -387,5 +378,3 @@ export default function CreditsTab() {
     </div>
   )
 }
-
-export { formatN2, formatDate, toInputDate, buildMonthKey }
