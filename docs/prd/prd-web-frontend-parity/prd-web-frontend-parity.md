@@ -457,8 +457,8 @@ Chart capabilities (all selection types):
 | F08 | Read Assets Current Values Redesign | 1 | F01 | ⬜ Pending |
 | F03 | Summary Tab — Asset View | 1 | F02 | ✅ Done |
 | F04 | Summary Tab — Broker/Portfolio Aggregated View | 2 | F02 | ✅ Done |
-| F05 | Transactions Tab | 1 | F02 | ⬜ Pending |
-| F06 | Credits Tab | 1 | F02 | ⬜ Pending |
+| F05 | Transactions Tab | 1 | F02 | ✅ Done |
+| F06 | Credits Tab | 1 | F02 | ✅ Done |
 
 ### Foundation Features
 These features set up shared project infrastructure. In a greenfield project they must be implemented sequentially before or alongside any feature that depends on them:
@@ -519,17 +519,17 @@ graph TD
 - [x] Left panel is resizable via drag handle with a minimum width of 300px
 
 ### F03. Portfolio Navigator - Summary Tab - Asset View
-- [ ] Selecting an asset and viewing the Summary tab shows Quantity (N8), Average Price (N2), ISIN, Country, Local Type, and Asset Class
-- [ ] Total Bought is displayed in green, Total Sold in red, and Total Credits in blue
-- [ ] Current Value and As of fields are populated after price fetch completes
-- [ ] Refresh button is present; clicking it triggers a new price fetch
-- [ ] Refresh button is disabled while a price fetch is in progress
-- [ ] Total Current Value equals Current Value × Quantity (within ±0.01 rounding)
-- [ ] Result % equals (Total Current Value − Total Bought) / Total Bought, displayed as a percentage
-- [ ] Positive Result % is green; negative Result % is red
-- [ ] Total Current + Credits equals Total Current Value + Total Credits (within ±0.01 rounding)
-- [ ] Current Value section is hidden when Quantity = 0 or Average Price = 0
-- [ ] Status field shows error text when the price fetch fails
+- [x] Selecting an asset and viewing the Summary tab shows Quantity (N8), Average Price (N2), ISIN, Country, Local Type, and Asset Class
+- [x] Total Bought is displayed in green, Total Sold in red, and Total Credits in blue
+- [x] Current Value and As of fields are populated after price fetch completes
+- [x] Refresh button is present; clicking it triggers a new price fetch
+- [x] Refresh button is disabled while a price fetch is in progress
+- [x] Total Current Value equals Current Value × Quantity (within ±0.01 rounding)
+- [x] Result % equals (Total Current Value − Total Bought) / Total Bought, displayed as a percentage
+- [x] Positive Result % is green; negative Result % is red
+- [x] Total Current + Credits equals Total Current Value + Total Credits (within ±0.01 rounding)
+- [x] Current Value section is hidden when Quantity = 0 or Average Price = 0
+- [x] Status field shows error text when the price fetch fails
 
 ### F04. Portfolio Navigator - Summary Tab - Broker/Portfolio Aggregated View
 - [x] `GET /api/v1/financial/summary/broker/{brokerName}` returns a JSON object with `totalBought`, `totalSold`, and `totalCredits` as decimal values
@@ -541,36 +541,36 @@ graph TD
 - [x] No Current Value section appears in the Summary tab for broker or portfolio selections
 
 ### F05. Portfolio Navigator - Transactions Tab
-- [ ] Transactions tab shows all transactions for the selected asset, sorted by date descending (most recent first)
-- [ ] Table columns are Date (dd/MM/yyyy), Type, Quantity (N8), Unit Price (N2), Fees (N2), Total (N2 bold)
-- [ ] Buy type displayed in green bold; Sell type displayed in red bold
-- [ ] Clicking New shows a blank inline form above the table with title "New transaction"
-- [ ] Submitting a valid new transaction form calls `POST /transactions` and refreshes the transaction list
-- [ ] Clicking the edit icon populates the inline form with that transaction's values and changes the title to "Edit transaction"
-- [ ] Submitting an edited transaction form calls `PUT /transactions` and refreshes the list
-- [ ] Clicking the delete icon shows `window.confirm("Delete this transaction?")`
-- [ ] Confirming delete calls `DELETE /transactions` and removes the row from the table
-- [ ] Cancelling delete leaves the transaction unchanged
-- [ ] Save button shows "Saving..." and is disabled during submission
-- [ ] Form validation: Date, Quantity, and Unit Price are required; invalid submission shows an error message without clearing the form; Fees defaults to 0
+- [x] Transactions tab shows all transactions for the selected asset, sorted by date descending (most recent first)
+- [x] Table columns are Date (dd/MM/yyyy), Type, Quantity (N8), Unit Price (N2), Fees (N2), Total (N2 bold)
+- [x] Buy type displayed in green bold; Sell type displayed in red bold
+- [x] Clicking New shows a blank inline form above the table with title "New transaction"
+- [x] Submitting a valid new transaction form calls `POST /transactions` and refreshes the transaction list
+- [x] Clicking the edit icon populates the inline form with that transaction's values and changes the title to "Edit transaction"
+- [x] Submitting an edited transaction form calls `PUT /transactions` and refreshes the list
+- [x] Clicking the delete icon shows `window.confirm("Delete this transaction?")`
+- [x] Confirming delete calls `DELETE /transactions` and removes the row from the table
+- [x] Cancelling delete leaves the transaction unchanged
+- [x] Save button shows "Saving..." and is disabled during submission
+- [x] Form validation: Date, Quantity, and Unit Price are required; invalid submission shows an error message without clearing the form; Fees defaults to 0
 
 ### F06. Portfolio Navigator - Credits Tab
-- [ ] When an asset is selected, credits table shows Date (dd/MM/yyyy), Type, and Value (N2 bold) for all credits
-- [ ] When an asset is selected, New button is present; clicking it shows a blank inline form
-- [ ] Adding a valid credit calls `POST /credits` and refreshes the credits list
-- [ ] Editing a credit calls `PUT /credits` and refreshes the list
-- [ ] Deleting a credit shows confirm dialog; confirmed calls `DELETE /credits` and removes the row
-- [ ] When a broker or portfolio is selected, no credits table and no New button are shown; only the chart is visible
-- [ ] Chart title is "Credits by Month"
-- [ ] X-axis labels are in MM/yyyy format, ordered chronologically
-- [ ] Stacked mode stacks all credit types into a single bar per month
-- [ ] Grouped mode renders separate bars per credit type per month
-- [ ] Time filter "This month" shows only credits in the current calendar month
-- [ ] Time filter "Last year" shows credits across the current month and the 11 preceding months
-- [ ] Default filter on first load is "Last year"; default mode is "Stacked"
-- [ ] Switching to another asset and returning restores the previously selected filter and mode for the original asset
-- [ ] When a broker is selected, chart data matches credits returned by `GET /credits/broker/{brokerName}` for the same time filter
-- [ ] When a portfolio is selected, chart data matches credits returned by `GET /credits/portfolio/{brokerName}/{portfolioName}` for the same time filter
+- [x] When an asset is selected, credits table shows Date (dd/MM/yyyy), Type, and Value (N2 bold) for all credits
+- [x] When an asset is selected, New button is present; clicking it shows a blank inline form
+- [x] Adding a valid credit calls `POST /credits` and refreshes the credits list
+- [x] Editing a credit calls `PUT /credits` and refreshes the list
+- [x] Deleting a credit shows confirm dialog; confirmed calls `DELETE /credits` and removes the row
+- [x] When a broker or portfolio is selected, no credits table and no New button are shown; only the chart is visible
+- [x] Chart title is "Credits by Month"
+- [x] X-axis labels are in MM/yyyy format, ordered chronologically
+- [x] Stacked mode stacks all credit types into a single bar per month
+- [x] Grouped mode renders separate bars per credit type per month
+- [x] Time filter "This month" shows only credits in the current calendar month
+- [x] Time filter "Last year" shows credits across the current month and the 11 preceding months
+- [x] Default filter on first load is "Last year"; default mode is "Stacked"
+- [x] Switching to another asset and returning restores the previously selected filter and mode for the original asset
+- [x] When a broker is selected, chart data matches credits returned by `GET /credits/broker/{brokerName}` for the same time filter
+- [x] When a portfolio is selected, chart data matches credits returned by `GET /credits/portfolio/{brokerName}/{portfolioName}` for the same time filter
 
 ### F07. Shares Dividend Check Redesign
 - [ ] Ticker combobox renders three groups: "Ja possuidas" (KLBN4, TASA4, TAEE3), "Outras Barse" (UNIP6, CMIG4, TRPL4, BBAS3), "Outras" (CSAN3)
@@ -595,10 +595,10 @@ graph TD
 - [ ] Only active assets with non-empty ticker and exchange values are included in the fetch scope
 
 ### Cross-Feature Integration
-- [ ] Selecting an asset node in F02 correctly passes brokerName, portfolioName, and assetName to F03; the asset details loaded match the selected node
+- [x] Selecting an asset node in F02 correctly passes brokerName, portfolioName, and assetName to F03; the asset details loaded match the selected node
 - [x] Selecting a broker node in F02 correctly passes brokerName to F04; the aggregated summary fetched uses the broker's exact name
 - [x] Selecting a portfolio node in F02 correctly passes brokerName and portfolioName to F04; the aggregated summary fetched uses both identifiers
-- [ ] Selecting an asset node in F02 correctly passes brokerName, portfolioName, and assetName to F05; transactions displayed belong to the selected asset
-- [ ] Selecting an asset node in F02 correctly passes the asset context to F06; credits list and chart display data for that asset only
-- [ ] Selecting a broker node in F02 correctly passes brokerName to F06; credits chart data matches `GET /credits/broker/{brokerName}`
-- [ ] Selecting a portfolio node in F02 correctly passes brokerName and portfolioName to F06; credits chart data matches `GET /credits/portfolio/{brokerName}/{portfolioName}`
+- [x] Selecting an asset node in F02 correctly passes brokerName, portfolioName, and assetName to F05; transactions displayed belong to the selected asset
+- [x] Selecting an asset node in F02 correctly passes the asset context to F06; credits list and chart display data for that asset only
+- [x] Selecting a broker node in F02 correctly passes brokerName to F06; credits chart data matches `GET /credits/broker/{brokerName}`
+- [x] Selecting a portfolio node in F02 correctly passes brokerName and portfolioName to F06; credits chart data matches `GET /credits/portfolio/{brokerName}/{portfolioName}`
