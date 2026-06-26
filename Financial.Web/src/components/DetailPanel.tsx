@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import AggregatedSummaryTab from './AggregatedSummaryTab'
 import AssetSummaryTab from './AssetSummaryTab'
+import TransactionsTab from './TransactionsTab'
 import './DetailPanel.css'
 
 type TabId = 'summary' | 'transactions' | 'credits'
@@ -100,12 +101,7 @@ export default function DetailPanel() {
       <div className="detail-panel__content">
         {activeTab === 'summary' && isAsset && <AssetSummaryTab />}
         {activeTab === 'summary' && !isAsset && <AggregatedSummaryTab />}
-        {activeTab === 'transactions' && isAsset && (
-          <p className="detail-panel__placeholder">Transactions — coming in F05</p>
-        )}
-        {activeTab === 'transactions' && !isAsset && (
-          <p className="detail-panel__placeholder">Transactions are only available for individual assets</p>
-        )}
+        {activeTab === 'transactions' && <TransactionsTab />}
         {activeTab === 'credits' && (
           <p className="detail-panel__placeholder">Credits — coming in F06</p>
         )}
