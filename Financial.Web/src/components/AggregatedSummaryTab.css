@@ -1,0 +1,47 @@
+.aggregated-summary {
+  padding: 16px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.aggregated-summary__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 24px;
+}
+
+.aggregated-summary__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.aggregated-summary__field--full {
+  grid-column: 1 / -1;
+}
+
+.aggregated-summary__label {
+  font-size: 11px;
+  color: var(--text-muted, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.aggregated-summary__value {
+  font-size: 13px;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.aggregated-summary__value--green {
+  color: #2e7d32;
+}
+
+.aggregated-summary__value--red {
+  color: #c62828;
+}
+
+.aggregated-summary__value--blue {
+  color: #1565c0;
+}
