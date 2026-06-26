@@ -107,6 +107,11 @@ export function useAssetSummary(): AssetSummaryData {
 
     const { brokerName, portfolioName, assetName, exchange, ticker } = selectedNode
 
+    if (!portfolioName || !assetName) {
+      dispatch({ type: 'RESET' })
+      return
+    }
+
     dispatch({ type: 'ASSET_FETCH_START' })
 
     if (exchange && ticker) {
