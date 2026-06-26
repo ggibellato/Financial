@@ -494,13 +494,13 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. App Navigation & Layout Restructure
-- [ ] Navigating to `/` redirects to Portfolio Navigator (`/portfolio-navigator`)
-- [ ] Top navigation bar renders exactly three items: "Portfolio Navigator", "Shares Dividend Check", "Read Assets Current Values"
-- [ ] Clicking each nav item replaces the main content area completely without a page reload
-- [ ] The active nav item is visually distinct from inactive items (underline, background, or equivalent)
-- [ ] No vertical or horizontal browser scrollbar appears at 1280×800 viewport or larger during normal usage
-- [ ] Routes `/brokers`, `/brokers/XPI`, `/credits/XPI`, `/credits/XPI/Default`, and `/navigation` return 404 or redirect to Portfolio Navigator
-- [ ] No `NavigationTreePanel` sidebar is visible on the Dividend Check or Current Values sections
+- [x] Navigating to `/` redirects to Portfolio Navigator (`/portfolio-navigator`)
+- [x] Top navigation bar renders exactly three items: "Portfolio Navigator", "Shares Dividend Check", "Read Assets Current Values"
+- [x] Clicking each nav item replaces the main content area completely without a page reload
+- [x] The active nav item is visually distinct from inactive items (underline, background, or equivalent)
+- [x] No vertical or horizontal browser scrollbar appears at 1280×800 viewport or larger during normal usage
+- [x] Routes `/brokers`, `/brokers/XPI`, `/credits/XPI`, `/credits/XPI/Default`, and `/navigation` return 404 or redirect to Portfolio Navigator
+- [x] No `NavigationTreePanel` sidebar is visible on the Dividend Check or Current Values sections
 
 ### F02. Portfolio Navigator - Investment Tree & Split Panel Layout
 - [ ] Tree renders all brokers with their portfolios and assets on page load

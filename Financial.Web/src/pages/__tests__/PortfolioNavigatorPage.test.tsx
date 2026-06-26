@@ -1,11 +1,88 @@
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import PortfolioNavigatorPage from '../PortfolioNavigatorPage'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { TreeNodeDto } from '../../api/types'
+
+const getNavigationTreeMock = vi.fn()
+
+vi.mock('../../api/financialApiClient', () => ({
+  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
+    getNavigationTree: getNavigationTreeMock,
+  }),
+}))
+
+const stubTree: TreeNodeDto = {
+  nodeType: 'Investments',
+  displayName: 'Investments',
+  metadata: {},
+  children: [
+    {
+      nodeType: 'Broker',
+      displayName: 'XPI (BRL)',
+      metadata: { BrokerName: 'XPI', Currency: 'BRL' },
+      children: [
+        {
+          nodeType: 'Portfolio',
+          displayName: 'Acoes (1 assets)',
+          metadata: { PortfolioName: 'Acoes', AssetCount: 1 },
+          children: [
+            {
+              nodeType: 'Asset',
+              displayName: 'KLBN4',
+              metadata: {
+                AssetName: 'KLBN4',
+                Ticker: 'KLBN4',
+                Exchange: 'BVMF',
+                IsActive: true,
+                GlobalAssetClass: 1,
+              },
+              children: [],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+}
+
+function renderPage() {
+  return render(
+    <MemoryRouter>
+      <PortfolioNavigatorPage />
+    </MemoryRouter>,
+  )
+}
 
 describe('PortfolioNavigatorPage', () => {
-  it('renders placeholder message', () => {
-    render(<PortfolioNavigatorPage />)
+  beforeEach(() => {
+    getNavigationTreeMock.mockReset()
+  })
 
-    expect(screen.getByText('Portfolio Navigator — coming soon')).toBeInTheDocument()
+  it('renders tree and empty detail state on load', async () => {
+    getNavigationTreeMock.mockResolvedValue(stubTree)
+    renderPage()
+    expect(await screen.findByText('XPI (BRL)')).toBeInTheDocument()
+    expect(screen.getByText('Select an item to view details')).toBeInTheDocument()
+  })
+
+  it('selecting an asset node shows asset name in right panel', async () => {
+    getNavigationTreeMock.mockResolvedValue(stubTree)
+    renderPage()
+    await screen.findByText('XPI (BRL)')
+    fireEvent.click(screen.getAllByLabelText('Expand')[0])
+    fireEvent.click(screen.getByText('● KLBN4'))
+    expect(screen.getByText('KLBN4')).toBeInTheDocument()
+    expect(screen.getByText('KLBN4 · BVMF · XPI · Acoes')).toBeInTheDocument()
+  })
+
+  it('selecting a broker node shows broker name in right panel', async () => {
+    getNavigationTreeMock.mockResolvedValue(stubTree)
+    renderPage()
+    await screen.findByText('XPI (BRL)')
+    fireEvent.click(screen.getByText('XPI (BRL)'))
+    expect(screen.getAllByText('XPI').length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: 'Summary' })).toBeInTheDocument()
   })
 })
