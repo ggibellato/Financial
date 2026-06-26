@@ -8,12 +8,16 @@ import type { TreeNodeDto } from '../../api/types'
 const getNavigationTreeMock = vi.fn()
 const getAssetDetailsMock = vi.fn()
 const getCurrentPriceMock = vi.fn()
+const getSummaryByBrokerMock = vi.fn()
+const getSummaryByPortfolioMock = vi.fn()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getNavigationTree: getNavigationTreeMock,
     getAssetDetails: getAssetDetailsMock,
     getCurrentPrice: getCurrentPriceMock,
+    getSummaryByBroker: getSummaryByBrokerMock,
+    getSummaryByPortfolio: getSummaryByPortfolioMock,
   }),
 }))
 
@@ -64,6 +68,8 @@ describe('PortfolioNavigatorPage', () => {
     getNavigationTreeMock.mockReset()
     getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
+    getSummaryByBrokerMock.mockReturnValue(new Promise(() => {}))
+    getSummaryByPortfolioMock.mockReturnValue(new Promise(() => {}))
   })
 
   it('renders tree and empty detail state on load', async () => {

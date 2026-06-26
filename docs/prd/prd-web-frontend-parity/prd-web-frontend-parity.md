@@ -456,7 +456,7 @@ Chart capabilities (all selection types):
 | F07 | Shares Dividend Check Redesign | 1 | F01 | ⬜ Pending |
 | F08 | Read Assets Current Values Redesign | 1 | F01 | ⬜ Pending |
 | F03 | Summary Tab — Asset View | 1 | F02 | ✅ Done |
-| F04 | Summary Tab — Broker/Portfolio Aggregated View | 2 | F02 | ⬜ Pending |
+| F04 | Summary Tab — Broker/Portfolio Aggregated View | 2 | F02 | ✅ Done |
 | F05 | Transactions Tab | 1 | F02 | ⬜ Pending |
 | F06 | Credits Tab | 1 | F02 | ⬜ Pending |
 
@@ -532,13 +532,13 @@ graph TD
 - [ ] Status field shows error text when the price fetch fails
 
 ### F04. Portfolio Navigator - Summary Tab - Broker/Portfolio Aggregated View
-- [ ] `GET /api/v1/financial/summary/broker/{brokerName}` returns a JSON object with `totalBought`, `totalSold`, and `totalCredits` as decimal values
-- [ ] `GET /api/v1/financial/summary/portfolio/{brokerName}/{portfolioName}` returns a JSON object with `totalBought`, `totalSold`, and `totalCredits` as decimal values
-- [ ] Selecting a broker populates the Summary tab with aggregated Total Bought (green), Total Sold (red), Total Credits (blue)
-- [ ] Selecting a portfolio populates the Summary tab with aggregated Total Bought (green), Total Sold (red), Total Credits (blue)
-- [ ] `totalCredits` from the summary endpoint matches the sum of all credit values returned by `GET /credits/broker/{brokerName}` for the same broker
-- [ ] Transactions tab shows "Transactions are only available for individual assets" when a broker or portfolio is selected
-- [ ] No Current Value section appears in the Summary tab for broker or portfolio selections
+- [x] `GET /api/v1/financial/summary/broker/{brokerName}` returns a JSON object with `totalBought`, `totalSold`, and `totalCredits` as decimal values
+- [x] `GET /api/v1/financial/summary/portfolio/{brokerName}/{portfolioName}` returns a JSON object with `totalBought`, `totalSold`, and `totalCredits` as decimal values
+- [x] Selecting a broker populates the Summary tab with aggregated Total Bought (green), Total Sold (red), Total Credits (blue)
+- [x] Selecting a portfolio populates the Summary tab with aggregated Total Bought (green), Total Sold (red), Total Credits (blue)
+- [x] `totalCredits` from the summary endpoint matches the sum of all credit values returned by `GET /credits/broker/{brokerName}` for the same broker
+- [x] Transactions tab shows "Transactions are only available for individual assets" when a broker or portfolio is selected
+- [x] No Current Value section appears in the Summary tab for broker or portfolio selections
 
 ### F05. Portfolio Navigator - Transactions Tab
 - [ ] Transactions tab shows all transactions for the selected asset, sorted by date descending (most recent first)
@@ -596,8 +596,8 @@ graph TD
 
 ### Cross-Feature Integration
 - [ ] Selecting an asset node in F02 correctly passes brokerName, portfolioName, and assetName to F03; the asset details loaded match the selected node
-- [ ] Selecting a broker node in F02 correctly passes brokerName to F04; the aggregated summary fetched uses the broker's exact name
-- [ ] Selecting a portfolio node in F02 correctly passes brokerName and portfolioName to F04; the aggregated summary fetched uses both identifiers
+- [x] Selecting a broker node in F02 correctly passes brokerName to F04; the aggregated summary fetched uses the broker's exact name
+- [x] Selecting a portfolio node in F02 correctly passes brokerName and portfolioName to F04; the aggregated summary fetched uses both identifiers
 - [ ] Selecting an asset node in F02 correctly passes brokerName, portfolioName, and assetName to F05; transactions displayed belong to the selected asset
 - [ ] Selecting an asset node in F02 correctly passes the asset context to F06; credits list and chart display data for that asset only
 - [ ] Selecting a broker node in F02 correctly passes brokerName to F06; credits chart data matches `GET /credits/broker/{brokerName}`

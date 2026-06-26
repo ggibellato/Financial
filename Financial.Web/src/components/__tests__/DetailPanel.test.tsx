@@ -7,11 +7,15 @@ import type { SelectedNode } from '../../api/types'
 
 const getAssetDetailsMock = vi.fn()
 const getCurrentPriceMock = vi.fn()
+const getSummaryByBrokerMock = vi.fn()
+const getSummaryByPortfolioMock = vi.fn()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getAssetDetails: getAssetDetailsMock,
     getCurrentPrice: getCurrentPriceMock,
+    getSummaryByBroker: getSummaryByBrokerMock,
+    getSummaryByPortfolio: getSummaryByPortfolioMock,
   }),
 }))
 
@@ -59,6 +63,8 @@ describe('DetailPanel', () => {
     vi.stubGlobal('confirm', vi.fn())
     getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
+    getSummaryByBrokerMock.mockReturnValue(new Promise(() => {}))
+    getSummaryByPortfolioMock.mockReturnValue(new Promise(() => {}))
   })
 
   it('shows empty state when selectedNode is null', () => {
@@ -155,16 +161,37 @@ describe('DetailPanel', () => {
     expect(screen.getByText('Loading...')).toBeInTheDocument()
   })
 
-  it('renders_summary_placeholder_for_broker_node', () => {
+  it('renders_aggregated_summary_tab_for_broker_node', () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.getByText('Summary — coming in F04')).toBeInTheDocument()
+    expect(screen.getByText('Loading...')).toBeInTheDocument()
   })
 
-  it('renders_summary_placeholder_for_portfolio_node', () => {
+  it('renders_aggregated_summary_tab_for_portfolio_node', () => {
     renderPanel(portfolioNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.getByText('Summary — coming in F04')).toBeInTheDocument()
+    expect(screen.getByText('Loading...')).toBeInTheDocument()
+  })
+
+  it('renders_asset_summary_tab_for_asset_node_regression', () => {
+    renderPanel(activeAssetNode)
+    act(() => screen.getByTestId('setter').click())
+    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.queryByText('Transactions are only available for individual assets')).not.toBeInTheDocument()
+  })
+
+  it('renders_transactions_message_for_broker_node', () => {
+    renderPanel(brokerNode)
+    act(() => screen.getByTestId('setter').click())
+    fireEvent.click(screen.getByRole('button', { name: 'Transactions' }))
+    expect(screen.getByText('Transactions are only available for individual assets')).toBeInTheDocument()
+  })
+
+  it('renders_transactions_message_for_portfolio_node', () => {
+    renderPanel(portfolioNode)
+    act(() => screen.getByTestId('setter').click())
+    fireEvent.click(screen.getByRole('button', { name: 'Transactions' }))
+    expect(screen.getByText('Transactions are only available for individual assets')).toBeInTheDocument()
   })
 
   it('active tab resets to Summary on selectedNode change', () => {

@@ -176,3 +176,9 @@ export interface AssetPriceDto {
   price: number
   asOf: string | null
 }
+
+export interface AggregatedSummaryDto {
+  totalBought: number
+  totalSold: number
+  totalCredits: number
+}

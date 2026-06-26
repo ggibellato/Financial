@@ -1,5 +1,6 @@
 import { API_BASE_URL } from './config'
 import type {
+  AggregatedSummaryDto,
   AssetDetailsDto,
   AssetPriceDto,
   BrokerNodeDto,
@@ -21,6 +22,8 @@ export interface FinancialApiClient {
   getAssetDetails: (brokerName: string, portfolioName: string, assetName: string) => Promise<AssetDetailsDto>
   getCreditsByBroker: (brokerName: string) => Promise<CreditDto[]>
   getCreditsByPortfolio: (brokerName: string, portfolioName: string) => Promise<CreditDto[]>
+  getSummaryByBroker: (brokerName: string) => Promise<AggregatedSummaryDto>
+  getSummaryByPortfolio: (brokerName: string, portfolioName: string) => Promise<AggregatedSummaryDto>
   addTransaction: (request: TransactionCreateDto) => Promise<AssetDetailsDto>
   updateTransaction: (request: TransactionUpdateDto) => Promise<AssetDetailsDto>
   deleteTransaction: (request: TransactionDeleteDto) => Promise<AssetDetailsDto>
@@ -92,6 +95,12 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getCreditsByPortfolio: (brokerName, portfolioName) =>
       request<CreditDto[]>(
         `/credits/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}`,
+      ),
+    getSummaryByBroker: (brokerName) =>
+      request<AggregatedSummaryDto>(`/summary/broker/${encodeURIComponent(brokerName)}`),
+    getSummaryByPortfolio: (brokerName, portfolioName) =>
+      request<AggregatedSummaryDto>(
+        `/summary/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}`,
       ),
     addTransaction: (requestBody) =>
       request<AssetDetailsDto>('/transactions', {
