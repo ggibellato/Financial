@@ -158,7 +158,7 @@ public class DividendServiceTests
 
         using (new AssertionScope())
         {
-            result.AverageDividendPerYear.Should().Be(6.0m);
+            result.AverageDividendLastFiveYears.Should().Be(6.0m);
             result.PriceMaxBuy.Should().Be(6.0m / DividendValuationRules.RequiredYield);
             result.DiscountPercent.Should().Be(20.0m);
         }
@@ -178,7 +178,7 @@ public class DividendServiceTests
 
         using (new AssertionScope())
         {
-            result.AverageDividendPerYear.Should().Be(0m);
+            result.AverageDividendLastFiveYears.Should().Be(0m);
             result.PriceMaxBuy.Should().Be(0m);
         }
     }
@@ -202,7 +202,7 @@ public class DividendServiceTests
         var result = service.GetDividendSummary(MakeRequest());
 
         // Latest 5 years (2020:6, 2019:6, 2018:6, 2017:6, 2016:1) → average = 25/5 = 5.0m
-        result.AverageDividendPerYear.Should().Be(5.0m);
+        result.AverageDividendLastFiveYears.Should().Be(5.0m);
     }
 
     [Fact]
@@ -215,7 +215,7 @@ public class DividendServiceTests
 
         using (new AssertionScope())
         {
-            result.AverageDividendPerYear.Should().Be(0m);
+            result.AverageDividendLastFiveYears.Should().Be(0m);
             result.PriceMaxBuy.Should().Be(0m);
             result.DiscountPercent.Should().Be(0m);
             result.YearTotals.Should().BeEmpty();

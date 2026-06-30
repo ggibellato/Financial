@@ -57,7 +57,7 @@ public sealed class DividendService : IDividendService
             Name = snapshot.Name,
             CurrentPrice = snapshot.Price,
             PriceAsOf = snapshot.AsOf,
-            AverageDividendPerYear = averageDividend,
+            AverageDividendLastFiveYears = averageDividend,
             PriceMaxBuy = priceMax,
             DiscountPercent = discountPercent,
             History = history,
