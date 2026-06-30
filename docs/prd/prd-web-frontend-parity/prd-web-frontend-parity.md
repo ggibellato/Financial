@@ -453,7 +453,7 @@ Chart capabilities (all selection types):
 |---|---------|----------|--------------|--------|
 | F01 | App Navigation & Layout Restructure | 1 | None | ✅ Done |
 | F02 | Investment Tree & Split Panel Layout | 1 | F01 | ✅ Done |
-| F07 | Shares Dividend Check Redesign | 1 | F01 | ⬜ Pending |
+| F07 | Shares Dividend Check Redesign | 1 | F01 | ✅ Done |
 | F08 | Read Assets Current Values Redesign | 1 | F01 | ⬜ Pending |
 | F03 | Summary Tab — Asset View | 1 | F02 | ✅ Done |
 | F04 | Summary Tab — Broker/Portfolio Aggregated View | 2 | F02 | ✅ Done |
@@ -573,15 +573,15 @@ graph TD
 - [x] When a portfolio is selected, chart data matches credits returned by `GET /credits/portfolio/{brokerName}/{portfolioName}` for the same time filter
 
 ### F07. Shares Dividend Check Redesign
-- [ ] Ticker combobox renders three groups: "Ja possuidas" (KLBN4, TASA4, TAEE3), "Outras Barse" (UNIP6, CMIG4, TRPL4, BBAS3), "Outras" (CSAN3)
-- [ ] KLBN4 is selected by default on page load
-- [ ] Clicking Check fetches dividend data using the selected ticker and exchange BVMF
-- [ ] Summary card shows `{Ticker} - {Name}`, current price (N2), average dividend (N2, blue text), price max buy and discount % (green if price < max buy, red otherwise)
-- [ ] Dividend History table shows Type, Date (dd/MM/yyyy), Value (N2) ordered by date descending
-- [ ] By Year table shows Year and Total (N2) ordered by year descending
-- [ ] Check button shows "Checking..." and is disabled while the API calls are in progress
-- [ ] A ticker typed directly into the field (not from the watchlist) is sent to the API and returns data correctly
-- [ ] An inline error message is shown when the API call fails; Check button is re-enabled
+- [x] Ticker combobox renders three groups: "Ja possuidas" (KLBN4, TASA4, TAEE3), "Outras Barse" (UNIP6, CMIG4, TRPL4, BBAS3), "Outras" (CSAN3)
+- [x] KLBN4 is selected by default on page load
+- [x] Clicking Check fetches dividend data using the selected ticker and exchange BVMF
+- [x] Summary card shows `{Ticker} - {Name}`, current price (N2), average dividend (N2, blue text), price max buy and discount % (green if price < max buy, red otherwise)
+- [x] Dividend History table shows Type, Date (dd/MM/yyyy), Value (N2) ordered by date descending
+- [x] By Year table shows Year and Total (N2) ordered by year descending
+- [x] Check button shows "Checking..." and is disabled while the API calls are in progress
+- [x] A ticker typed directly into the field (not from the watchlist) is sent to the API and returns data correctly
+- [x] An inline error message is shown when the API call fails; Check button is re-enabled
 
 ### F08. Read Assets Current Values Redesign
 - [ ] No broker or portfolio filter controls are visible on the page
