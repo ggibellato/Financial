@@ -42,7 +42,7 @@ public sealed class DadosMercadoDividend
         }
 
         var dividendType = cells[DividendTypeColumn].InnerText == DividendTypeCode ? DividendType.Dividend : DividendType.JCP;
-        var date = DateTime.Parse(cells[DividendDateColumn].InnerText);
+        var date = DateTime.ParseExact(cells[DividendDateColumn].InnerText.Trim(), "dd/MM/yyyy", CultureInfo.InvariantCulture);
         var value = decimal.Parse(
             cells[DividendValueColumn].InnerText.Replace(",", ".").Replace("* ", ""),
             CultureInfo.InvariantCulture);
