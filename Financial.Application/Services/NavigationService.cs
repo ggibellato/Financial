@@ -14,7 +14,7 @@ public sealed class NavigationService : INavigationService
 
     public TreeNodeDTO GetNavigationTree()
     {
-        var brokers = GetBrokers().ToList();
+        var brokers = GetBrokers();
 
         var rootNode = new TreeNodeDTO
         {
@@ -39,8 +39,7 @@ public sealed class NavigationService : INavigationService
             return null;
         }
 
-        var asset = _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName)
-            .FirstOrDefault(a => a.Name == assetName);
+        var asset = _repository.GetAsset(brokerName, portfolioName, assetName);
 
         if (asset == null)
         {

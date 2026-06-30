@@ -6,6 +6,8 @@ namespace Financial.Infrastructure.Tests.Persistence;
 
 public class InvestmentsJsonSerializerTests
 {
+    private static readonly InvestmentsSerializerAdapter Serializer = new();
+
     [Fact]
     public void SerializeDeserialize_RoundTripPreservesStructure()
     {
@@ -15,8 +17,8 @@ public class InvestmentsJsonSerializerTests
         portfolio.AddAsset(Asset.Create("Asset A", "ISIN123", "NYSE", "AAA"));
         investments.AddBroker(broker);
 
-        var json = InvestmentsJsonSerializer.Serialize(investments);
-        var result = InvestmentsJsonSerializer.Deserialize(json);
+        var json = Serializer.Serialize(investments);
+        var result = Serializer.Deserialize(json);
 
         result.Should().NotBeNull();
         var brokerResult = result.Brokers.Should().ContainSingle().Which;
@@ -30,7 +32,7 @@ public class InvestmentsJsonSerializerTests
         var investments = Investments.Create();
         investments.AddBroker(Broker.Create("Broker A", "BRL"));
 
-        var json = InvestmentsJsonSerializer.Serialize(investments);
+        var json = Serializer.Serialize(investments);
 
         json.Should().NotBeNullOrWhiteSpace();
         json.Should().Contain("Broker A");

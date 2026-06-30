@@ -78,13 +78,14 @@ internal static class NavigationMapper
 
     internal static BrokerNodeDTO MapBroker(Broker broker)
     {
+        var portfolios = MapPortfolios(broker.Portfolios).ToList();
         return new BrokerNodeDTO
         {
             Name = broker.Name,
             Currency = broker.Currency,
-            PortfolioCount = broker.Portfolios.Count,
-            TotalAssets = broker.Portfolios.Sum(p => p.Assets.Count),
-            Portfolios = MapPortfolios(broker.Portfolios).ToList()
+            PortfolioCount = portfolios.Count,
+            TotalAssets = portfolios.Sum(p => p.AssetCount),
+            Portfolios = portfolios
         };
     }
 
@@ -115,13 +116,14 @@ internal static class NavigationMapper
 
     internal static (decimal TotalBought, decimal TotalSold, decimal TotalCredits) CalculateTotals(Asset asset)
     {
-        var totalBought = asset.Transactions
-            .Where(t => t.Type == Transaction.TransactionType.Buy)
-            .Sum(t => t.TotalPrice);
-
-        var totalSold = asset.Transactions
-            .Where(t => t.Type == Transaction.TransactionType.Sell)
-            .Sum(t => t.TotalPrice);
+        decimal totalBought = 0, totalSold = 0;
+        foreach (var t in asset.Transactions)
+        {
+            if (t.Type == Transaction.TransactionType.Buy)
+                totalBought += t.TotalPrice;
+            else
+                totalSold += t.TotalPrice;
+        }
 
         var totalCredits = asset.Credits.Sum(c => c.Value);
 

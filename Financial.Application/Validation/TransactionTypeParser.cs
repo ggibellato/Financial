@@ -4,15 +4,9 @@ namespace Financial.Application.Validation;
 
 public static class TransactionTypeParser
 {
-    private static readonly string[] NormalizedValues = { "Buy", "Sell" };
+    public static bool TryNormalize(string? value, out string normalized) =>
+        EnumParser.TryNormalize<Transaction.TransactionType>(value, out normalized);
 
-    public static bool TryNormalize(string? value, out string normalized)
-    {
-        return EnumParser.TryNormalize(value, NormalizedValues, out normalized);
-    }
-
-    public static bool TryParse(string? value, out Transaction.TransactionType transactionType)
-    {
-        return EnumParser.TryParseEnum(value, out transactionType);
-    }
+    public static bool TryParse(string? value, out Transaction.TransactionType transactionType) =>
+        EnumParser.TryParseEnum(value, out transactionType);
 }
