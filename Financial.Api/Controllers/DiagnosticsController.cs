@@ -33,26 +33,12 @@ public sealed class DiagnosticsController : ControllerBase
             return NotFound();
         }
 
-        string? dataJsonFile = null;
-        string? googleDriveCredentialsPath = null;
-        string? googleDriveFilePath = null;
-
-        if (_repositorySettings is ILocalJsonRepositorySettings localJson)
-        {
-            dataJsonFile = localJson.DataJsonFile;
-        }
-        else if (_repositorySettings is IGoogleDriveRepositorySettings googleDrive)
-        {
-            googleDriveCredentialsPath = googleDrive.GoogleDriveCredentialsPath;
-            googleDriveFilePath = googleDrive.GoogleDriveFilePath;
-        }
-
         return Ok(new
         {
             provider = _repositorySettings.Provider,
-            dataJsonFile,
-            googleDriveCredentialsPath,
-            googleDriveFilePath
+            dataJsonFile = _repositorySettings.DataJsonFile,
+            googleDriveCredentialsPath = _repositorySettings.GoogleDriveCredentialsPath,
+            googleDriveFilePath = _repositorySettings.GoogleDriveFilePath
         });
     }
 }

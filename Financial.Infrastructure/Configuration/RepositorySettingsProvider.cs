@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Financial.Infrastructure.Configuration;
 
-public sealed class RepositorySettingsProvider : ILocalJsonRepositorySettings, IGoogleDriveRepositorySettings
+public sealed class RepositorySettingsProvider : IRepositorySettings
 {
     private readonly IConfiguration _configuration;
 

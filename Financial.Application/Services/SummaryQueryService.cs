@@ -1,6 +1,5 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
-using Financial.Domain.Entities;
 
 namespace Financial.Application.Services;
 
@@ -31,24 +30,16 @@ public sealed class SummaryQueryService : ISummaryQueryService
         return Aggregate(assets);
     }
 
-    private static AggregatedSummaryDTO Aggregate(IEnumerable<Asset> assets)
+    private static AggregatedSummaryDTO Aggregate(IEnumerable<Domain.Entities.Asset> assets)
     {
-        decimal totalBought = 0;
-        decimal totalSold = 0;
-        decimal totalCredits = 0;
+        decimal totalBought = 0, totalSold = 0, totalCredits = 0;
 
         foreach (var asset in assets)
         {
-            foreach (var transaction in asset.Transactions)
-            {
-                if (transaction.Type == Transaction.TransactionType.Buy)
-                    totalBought += transaction.TotalPrice;
-                else
-                    totalSold += transaction.TotalPrice;
-            }
-
-            foreach (var credit in asset.Credits)
-                totalCredits += credit.Value;
+            var (bought, sold, credits) = NavigationMapper.CalculateTotals(asset);
+            totalBought += bought;
+            totalSold += sold;
+            totalCredits += credits;
         }
 
         return new AggregatedSummaryDTO

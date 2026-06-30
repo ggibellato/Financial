@@ -7,14 +7,6 @@ namespace Financial.Infrastructure.Repositories;
 
 public sealed class RepositoryFactory
 {
-    private static readonly Dictionary<RepositoryProvider, Func<RepositorySelectionOptions, IJsonStorage>> StorageFactoryRegistry = new()
-    {
-        [RepositoryProvider.LocalJson] = opts => new LocalJsonStorage(opts.LocalDataPath),
-        [RepositoryProvider.GoogleDriveJson] = opts => new GoogleDriveJsonStorage(
-            new GoogleService(ResolveGoogleCredentialsPath(opts.GoogleDriveCredentialsPath)),
-            opts.GoogleDriveFilePath),
-    };
-
     private readonly IInvestmentsSerializer _serializer;
 
     public RepositoryFactory(IInvestmentsSerializer serializer)
@@ -34,15 +26,18 @@ public sealed class RepositoryFactory
         return new JSONRepository(investments, storage, _serializer);
     }
 
-    private static IJsonStorage CreateStorage(RepositorySelectionOptions options)
-    {
-        if (!StorageFactoryRegistry.TryGetValue(options.Provider, out var factory))
+    private static IJsonStorage CreateStorage(RepositorySelectionOptions options) =>
+        options.Provider switch
         {
-            throw new ArgumentOutOfRangeException(nameof(options.Provider), options.Provider, "Unsupported repository provider.");
-        }
-
-        return factory(options);
-    }
+            RepositoryProvider.LocalJson =>
+                new LocalJsonStorage(options.LocalDataPath),
+            RepositoryProvider.GoogleDriveJson =>
+                new GoogleDriveJsonStorage(
+                    new GoogleService(ResolveGoogleCredentialsPath(options.GoogleDriveCredentialsPath)),
+                    options.GoogleDriveFilePath),
+            _ => throw new ArgumentOutOfRangeException(
+                    nameof(options.Provider), options.Provider, "Unsupported repository provider.")
+        };
 
     private static string ResolveGoogleCredentialsPath(string? credentialsPath)
     {

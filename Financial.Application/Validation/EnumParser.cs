@@ -2,21 +2,13 @@ namespace Financial.Application.Validation;
 
 internal static class EnumParser
 {
-    public static bool TryNormalize(string? value, IReadOnlyList<string> canonicalValues, out string normalized)
+    public static bool TryNormalize<TEnum>(string? value, out string normalized)
+        where TEnum : struct, Enum
     {
-        if (string.IsNullOrWhiteSpace(value))
+        if (Enum.TryParse<TEnum>(value, ignoreCase: true, out var parsed))
         {
-            normalized = string.Empty;
-            return false;
-        }
-
-        foreach (var canonicalValue in canonicalValues)
-        {
-            if (string.Equals(value, canonicalValue, StringComparison.OrdinalIgnoreCase))
-            {
-                normalized = canonicalValue;
-                return true;
-            }
+            normalized = parsed.ToString();
+            return true;
         }
 
         normalized = string.Empty;
