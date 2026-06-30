@@ -34,12 +34,24 @@ internal sealed class AssetMetadataResolver
 
     internal string ResolvePortfolioName(string brokerName, SheetDTO spreadsheet)
     {
-        var portfolioName = string.IsNullOrWhiteSpace(spreadsheet.Color) ? DefaultPortfolioName : spreadsheet.Color;
+        var portfolioName = string.IsNullOrWhiteSpace(spreadsheet.Color) ? GetDefaultPortfolioName(brokerName, spreadsheet.Name) : spreadsheet.Color;
         if (_options.PortfolioNameMap.TryGetValue($"{brokerName}_{portfolioName}", out var name))
         {
             portfolioName = name;
         }
         return portfolioName;
+    }
+
+    private string GetDefaultPortfolioName(string brokerName, string spreadsheetName)
+    {
+        return brokerName switch
+        {
+            "CoinBase" => "Cryptocurrency",
+            "FreeTrade" => "ETF",
+            "Trading 212" => spreadsheetName.Contains("ISA") ? "ETF ISA" : "ISA",
+            "XPI" => "FII",
+            _ => DefaultPortfolioName,
+        };
     }
 
     internal async Task<(string isin, string exchangeId, string ticker, CountryCode country, string localTypeCode, GlobalAssetClass assetClass)> ResolveAssetMetadataAsync(
