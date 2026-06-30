@@ -81,7 +81,7 @@ public class DividendCheckViewModel : ViewModelBase
 
         SummaryName = $"{summary.Ticker} - {summary.Name}";
         SummaryPrice = $"Current price: {summary.CurrentPrice:N2}";
-        SummaryAverageDividend = $"Average Dividend: {summary.AverageDividendPerYear:F2} (last {DividendValuationRules.DividendYearsLookback} years)";
+        SummaryAverageDividend = $"Average Dividend: {summary.AverageDividendLastFiveYears:F2} (last {DividendValuationRules.DividendYearsLookback} years)";
         SummaryPriceMaxBuy = $"Price max buy: {summary.PriceMaxBuy:F2}   Discount {summary.DiscountPercent:F2}%";
         IsPriceGood = summary.PriceMaxBuy > summary.CurrentPrice;
     }

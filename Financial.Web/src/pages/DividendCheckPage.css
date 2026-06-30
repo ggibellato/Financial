@@ -1,0 +1,92 @@
+.dividend-check {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dividend-check__header p {
+  color: var(--text);
+}
+
+.dividend-check__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.dividend-check__summary-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--social-bg);
+  display: grid;
+  gap: 6px;
+}
+
+.summary-card__title {
+  font-weight: 700;
+  font-size: 1.1em;
+  color: var(--text-h);
+  margin: 0;
+}
+
+.summary-card__avg-dividend {
+  color: #1565c0;
+}
+
+.summary-card__price-max {
+  font-weight: 700;
+}
+
+.summary-card__price-max--positive {
+  color: #1b8b4d;
+}
+
+.summary-card__price-max--negative {
+  color: #b42318;
+}
+
+.dividend-check__tables {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 2fr 1fr;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dividend-check__table-column {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.dividend-check__table-column h3 {
+  margin: 0 0 8px;
+}
+
+.dividend-check__tables table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border);
+}
+
+.dividend-check__tables th,
+.dividend-check__tables td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dividend-check__tables th {
+  text-align: left;
+  color: var(--text-h);
+}
+
+.dividend-check__placeholder {
+  color: var(--text);
+}

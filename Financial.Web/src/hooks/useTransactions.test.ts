@@ -320,15 +320,15 @@ describe('useTransactions', () => {
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
     act(() => result.current.deleteTransaction('aaa'))
-    await waitFor(() =>
+    await waitFor(() => {
       expect(deleteTransactionMock).toHaveBeenCalledWith({
         brokerName: 'XPI',
         portfolioName: 'Acoes',
         assetName: 'KLBN4',
         id: 'aaa',
-      }),
-    )
-    expect(result.current.asset).toEqual(updatedAsset)
+      })
+      expect(result.current.asset).toEqual(updatedAsset)
+    })
   })
 
   it('delete_failure_sets_delete_error', async () => {

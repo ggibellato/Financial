@@ -2,18 +2,26 @@ import { type FormEvent, useCallback, useMemo, useState } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { DividendHistoryItemDto, DividendSummaryDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
-import LoadingState from '../components/LoadingState'
+import TickerCombobox, { type TickerGroup } from '../components/TickerCombobox'
+import './DividendCheckPage.css'
 
-const defaultExchange = 'BVMF'
+const WATCHLIST_GROUPS: TickerGroup[] = [
+  { label: 'Ja possuidas', tickers: ['KLBN4', 'TASA4', 'TAEE3'] },
+  { label: 'Outras Barse', tickers: ['UNIP6', 'CMIG4', 'TRPL4', 'BBAS3'] },
+  { label: 'Outras', tickers: ['CSAN3'] },
+]
+
+const DEFAULT_TICKER = 'KLBN4'
+const FIXED_EXCHANGE = 'BVMF'
 
 export default function DividendCheckPage() {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
-  const [ticker, setTicker] = useState('')
-  const [exchange, setExchange] = useState(defaultExchange)
+  const [ticker, setTicker] = useState(DEFAULT_TICKER)
   const [summary, setSummary] = useState<DividendSummaryDto | null>(null)
   const [history, setHistory] = useState<DividendHistoryItemDto[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
   const formatter = useMemo(
     () =>
       new Intl.NumberFormat(undefined, {
@@ -24,17 +32,18 @@ export default function DividendCheckPage() {
   )
 
   const formatNumber = useCallback((value: number) => formatter.format(value), [formatter])
-  const formatDate = useCallback((value: string) => {
-    const parsed = new Date(value)
-    if (Number.isNaN(parsed.getTime())) {
-      return value
-    }
-    return parsed.toLocaleDateString()
+
+  const formatDate = useCallback((value: string): string => {
+    const d = new Date(value)
+    if (Number.isNaN(d.getTime())) return value
+    const day = String(d.getUTCDate()).padStart(2, '0')
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0')
+    const year = d.getUTCFullYear()
+    return `${day}/${month}/${year}`
   }, [])
 
   const runCheck = useCallback(async () => {
     const trimmedTicker = ticker.trim().toUpperCase()
-    const trimmedExchange = exchange.trim().toUpperCase()
     if (!trimmedTicker) {
       setError('Ticker is required.')
       return
@@ -44,18 +53,20 @@ export default function DividendCheckPage() {
     setError(null)
     try {
       const [summaryData, historyData] = await Promise.all([
-        apiClient.getDividendSummary(trimmedTicker, trimmedExchange || undefined),
-        apiClient.getDividendHistory(trimmedTicker, trimmedExchange || undefined),
+        apiClient.getDividendSummary(trimmedTicker, FIXED_EXCHANGE),
+        apiClient.getDividendHistory(trimmedTicker, FIXED_EXCHANGE),
       ])
       setSummary(summaryData)
       setHistory(historyData)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to load dividend data.'
       setError(message)
+      setSummary(null)
+      setHistory([])
     } finally {
       setIsLoading(false)
     }
-  }, [apiClient, exchange, ticker])
+  }, [apiClient, ticker])
 
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
@@ -65,11 +76,20 @@ export default function DividendCheckPage() {
     [runCheck],
   )
 
-  const summaryName = summary ? `${summary.ticker} - ${summary.name}` : 'Select a ticker and click Check'
-  const summaryColor =
+  const sortedHistory = useMemo(
+    () => [...history].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+    [history],
+  )
+
+  const sortedYearTotals = useMemo(
+    () => [...(summary?.yearTotals ?? [])].sort((a, b) => b.year - a.year),
+    [summary],
+  )
+
+  const priceMaxBuyClass =
     summary && summary.priceMaxBuy > 0 && summary.currentPrice < summary.priceMaxBuy
-      ? 'summary-value--positive'
-      : 'summary-value--negative'
+      ? 'summary-card__price-max--positive'
+      : 'summary-card__price-max--negative'
 
   return (
     <section className="dividend-check">
@@ -78,74 +98,49 @@ export default function DividendCheckPage() {
         <p>Review dividend history and estimate target entry price.</p>
       </header>
       <form className="dividend-check__form" onSubmit={handleSubmit} aria-label="Dividend check">
-        <label className="dividend-check__field">
-          <span>Ticker</span>
-          <input
-            type="text"
-            value={ticker}
-            onChange={(event) => setTicker(event.target.value)}
-            placeholder="e.g. BCIA11"
-            required
-          />
-        </label>
-        <label className="dividend-check__field">
-          <span>Exchange</span>
-          <input
-            type="text"
-            value={exchange}
-            onChange={(event) => setExchange(event.target.value)}
-            placeholder={defaultExchange}
-          />
-        </label>
+        <TickerCombobox groups={WATCHLIST_GROUPS} value={ticker} onChange={setTicker} />
         <button type="submit" disabled={isLoading}>
           {isLoading ? 'Checking...' : 'Check'}
         </button>
       </form>
 
-      {isLoading ? <LoadingState message="Loading dividend data..." /> : null}
       {error ? <ErrorState message={error} onRetry={runCheck} /> : null}
 
       {summary ? (
         <>
-          <section className="dividend-check__summary">
-            <h3>{summaryName}</h3>
-            <div className="summary-grid">
-              <div>
-                <p className="summary-label">Current price</p>
-                <p className="summary-value">{formatNumber(summary.currentPrice)}</p>
-              </div>
-              <div>
-                <p className="summary-label">Average Dividend</p>
-                <p className="summary-value">{formatNumber(summary.averageDividendLastFiveYears)} (last 5 years)</p>
-              </div>
-              <div>
-                <p className="summary-label">Price max buy</p>
-                <p className={`summary-value ${summaryColor}`}>
-                  {formatNumber(summary.priceMaxBuy)} · Discount {formatNumber(summary.discountPercent)}%
-                </p>
-              </div>
-            </div>
+          <section className="dividend-check__summary-card">
+            <p className="summary-card__title">
+              {summary.ticker} - {summary.name}
+            </p>
+            <p>Current price: {formatNumber(summary.currentPrice)}</p>
+            <p className="summary-card__avg-dividend">
+              Average Dividend: {formatNumber(summary.averageDividendLastFiveYears)} (last 5 years)
+            </p>
+            <p className={`summary-card__price-max ${priceMaxBuyClass}`}>
+              Price max buy: {formatNumber(summary.priceMaxBuy)}&nbsp;&nbsp;&nbsp;Discount{' '}
+              {formatNumber(summary.discountPercent)}%
+            </p>
           </section>
 
           <section className="dividend-check__tables">
-            <div>
+            <div className="dividend-check__table-column">
               <h3>Dividend History</h3>
-              {history.length === 0 ? (
+              {sortedHistory.length === 0 ? (
                 <p>No dividend history found.</p>
               ) : (
                 <table>
                   <thead>
                     <tr>
-                      <th>Date</th>
                       <th>Type</th>
+                      <th>Date</th>
                       <th className="table-number">Value</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {history.map((item) => (
+                    {sortedHistory.map((item) => (
                       <tr key={`${item.date}-${item.type}-${item.value}`}>
-                        <td>{formatDate(item.date)}</td>
                         <td>{item.type}</td>
+                        <td>{formatDate(item.date)}</td>
                         <td className="table-number">{formatNumber(item.value)}</td>
                       </tr>
                     ))}
@@ -153,9 +148,9 @@ export default function DividendCheckPage() {
                 </table>
               )}
             </div>
-            <div>
-              <h3>Dividends by Year</h3>
-              {summary.yearTotals.length === 0 ? (
+            <div className="dividend-check__table-column">
+              <h3>By Year</h3>
+              {sortedYearTotals.length === 0 ? (
                 <p>No yearly totals available.</p>
               ) : (
                 <table>
@@ -166,7 +161,7 @@ export default function DividendCheckPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {summary.yearTotals.map((total) => (
+                    {sortedYearTotals.map((total) => (
                       <tr key={total.year}>
                         <td>{total.year}</td>
                         <td className="table-number">{formatNumber(total.total)}</td>
@@ -178,9 +173,11 @@ export default function DividendCheckPage() {
             </div>
           </section>
         </>
-      ) : (
-        <p className="dividend-check__placeholder">{summaryName}</p>
-      )}
+      ) : null}
+
+      {!summary && !error ? (
+        <p className="dividend-check__placeholder">Select a ticker and click Check</p>
+      ) : null}
     </section>
   )
 }

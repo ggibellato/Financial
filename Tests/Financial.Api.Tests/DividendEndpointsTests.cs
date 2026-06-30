@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Financial.Api.Tests;
 
@@ -40,6 +41,21 @@ public class DividendEndpointsTests
         summary!.Ticker.Should().Be("BCIA11");
         summary.Exchange.Should().Be("BVMF");
         summary.YearTotals.Should().ContainSingle(total => total.Year == 2023 && total.Total == 4m);
+    }
+
+    [Fact]
+    public async Task GetDividendSummary_JsonContainsAverageDividendLastFiveYears()
+    {
+        // Verifies that the camelCase JSON property name matches what the frontend TypeScript type expects.
+        // A rename on the C# side without updating this test will fail immediately.
+        await using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/v1/financial/dividends/BCIA11/summary?exchange=BVMF");
+
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        doc.RootElement.TryGetProperty("averageDividendLastFiveYears", out _)
+            .Should().BeTrue("the frontend expects the property to be named 'averageDividendLastFiveYears'");
     }
 
     private static WebApplicationFactory<Program> CreateFactory()
@@ -78,7 +94,7 @@ public class DividendEndpointsTests
                 Name = "Sample Asset",
                 CurrentPrice = 10.5m,
                 PriceAsOf = new DateTimeOffset(2024, 2, 1, 0, 0, 0, TimeSpan.Zero),
-                AverageDividendPerYear = 4m,
+                AverageDividendLastFiveYears = 4m,
                 PriceMaxBuy = 66.67m,
                 DiscountPercent = 20m,
                 History = new[]

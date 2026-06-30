@@ -18,15 +18,16 @@ public sealed class DadosMercadoDividend
         var result = new List<DividendValue>();
         HtmlWeb htmlWeb = new HtmlWeb();
         HtmlDocument htmlDoc = htmlWeb.Load(googleTickerSearch);
-        var table = htmlDoc.DocumentNode.SelectSingleNode("//table[contains(@class, 'normal-table')]")
-            ?? throw new InvalidOperationException("Dividend table not found.");
-        var rows = table.SelectNodes("tbody/tr")
-            ?? throw new InvalidOperationException("Dividend rows not found.");
+        var table = htmlDoc.DocumentNode.SelectSingleNode("//table[contains(@class, 'normal-table')]");
+        if (table == null) return result;
+
+        var rows = table.SelectNodes("tbody/tr");
+        if (rows == null) return result;
 
         foreach (HtmlNode row in rows)
         {
-            var data = row.SelectNodes("th|td")
-                ?? throw new InvalidOperationException("Dividend row has no cells.");
+            var data = row.SelectNodes("th|td");
+            if (data == null || data.Count < MinimumColumnCount) continue;
             result.Add(ParseDividendRow(data.ToList()));
         }
 
@@ -41,7 +42,7 @@ public sealed class DadosMercadoDividend
         }
 
         var dividendType = cells[DividendTypeColumn].InnerText == DividendTypeCode ? DividendType.Dividend : DividendType.JCP;
-        var date = DateTime.Parse(cells[DividendDateColumn].InnerText);
+        var date = DateTime.ParseExact(cells[DividendDateColumn].InnerText.Trim(), "dd/MM/yyyy", CultureInfo.InvariantCulture);
         var value = decimal.Parse(
             cells[DividendValueColumn].InnerText.Replace(",", ".").Replace("* ", ""),
             CultureInfo.InvariantCulture);
