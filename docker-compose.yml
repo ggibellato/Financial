@@ -7,4 +7,4 @@ services:
       DataJsonFile: /app/data/data.json
       Repository__Provider: LocalJson
     volumes:
-      - ./data:/app/data:ro
+      - ./data:/app/data
