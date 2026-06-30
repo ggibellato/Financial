@@ -453,8 +453,8 @@ Chart capabilities (all selection types):
 |---|---------|----------|--------------|--------|
 | F01 | App Navigation & Layout Restructure | 1 | None | ✅ Done |
 | F02 | Investment Tree & Split Panel Layout | 1 | F01 | ✅ Done |
-| F07 | Shares Dividend Check Redesign | 1 | F01 | ⬜ Pending |
-| F08 | Read Assets Current Values Redesign | 1 | F01 | ⬜ Pending |
+| F07 | Shares Dividend Check Redesign | 1 | F01 | ✅ Done |
+| F08 | Read Assets Current Values Redesign | 1 | F01 | ✅ Done |
 | F03 | Summary Tab — Asset View | 1 | F02 | ✅ Done |
 | F04 | Summary Tab — Broker/Portfolio Aggregated View | 2 | F02 | ✅ Done |
 | F05 | Transactions Tab | 1 | F02 | ✅ Done |
@@ -573,26 +573,26 @@ graph TD
 - [x] When a portfolio is selected, chart data matches credits returned by `GET /credits/portfolio/{brokerName}/{portfolioName}` for the same time filter
 
 ### F07. Shares Dividend Check Redesign
-- [ ] Ticker combobox renders three groups: "Ja possuidas" (KLBN4, TASA4, TAEE3), "Outras Barse" (UNIP6, CMIG4, TRPL4, BBAS3), "Outras" (CSAN3)
-- [ ] KLBN4 is selected by default on page load
-- [ ] Clicking Check fetches dividend data using the selected ticker and exchange BVMF
-- [ ] Summary card shows `{Ticker} - {Name}`, current price (N2), average dividend (N2, blue text), price max buy and discount % (green if price < max buy, red otherwise)
-- [ ] Dividend History table shows Type, Date (dd/MM/yyyy), Value (N2) ordered by date descending
-- [ ] By Year table shows Year and Total (N2) ordered by year descending
-- [ ] Check button shows "Checking..." and is disabled while the API calls are in progress
-- [ ] A ticker typed directly into the field (not from the watchlist) is sent to the API and returns data correctly
-- [ ] An inline error message is shown when the API call fails; Check button is re-enabled
+- [x] Ticker combobox renders three groups: "Ja possuidas" (KLBN4, TASA4, TAEE3), "Outras Barse" (UNIP6, CMIG4, TRPL4, BBAS3), "Outras" (CSAN3)
+- [x] KLBN4 is selected by default on page load
+- [x] Clicking Check fetches dividend data using the selected ticker and exchange BVMF
+- [x] Summary card shows `{Ticker} - {Name}`, current price (N2), average dividend (N2, blue text), price max buy and discount % (green if price < max buy, red otherwise)
+- [x] Dividend History table shows Type, Date (dd/MM/yyyy), Value (N2) ordered by date descending
+- [x] By Year table shows Year and Total (N2) ordered by year descending
+- [x] Check button shows "Checking..." and is disabled while the API calls are in progress
+- [x] A ticker typed directly into the field (not from the watchlist) is sent to the API and returns data correctly
+- [x] An inline error message is shown when the API call fails; Check button is re-enabled
 
 ### F08. Read Assets Current Values Redesign
-- [ ] No broker or portfolio filter controls are visible on the page
-- [ ] Clicking Check Prices fetches prices for active assets in XPI/Default and XPI/Acoes only
-- [ ] Results table shows columns Ticker, Name, and Price (N2 right-aligned bold); no "As of" column is present
-- [ ] Progress bar updates incrementally as each asset price is fetched
-- [ ] Progress text reads "Fetching {N} of {M}: {ticker}..." during the fetch operation
-- [ ] Completion text reads "Completed! Loaded {N} assets." after all fetches finish
-- [ ] Check Prices button is disabled while the fetch is running
-- [ ] Assets with a failed price fetch display "—" in the Price column; fetch continues for remaining assets
-- [ ] Only active assets with non-empty ticker and exchange values are included in the fetch scope
+- [x] No broker or portfolio filter controls are visible on the page
+- [x] Clicking Check Prices fetches prices for active assets in XPI/Default and XPI/Acoes only
+- [x] Results table shows columns Ticker, Name, and Price (N2 right-aligned bold); no "As of" column is present
+- [x] Progress bar updates incrementally as each asset price is fetched
+- [x] Progress text reads "Fetching {N} of {M}: {ticker}..." during the fetch operation
+- [x] Completion text reads "Completed! Loaded {N} assets." after all fetches finish
+- [x] Check Prices button is disabled while the fetch is running
+- [x] Assets with a failed price fetch display "—" in the Price column; fetch continues for remaining assets
+- [x] Only active assets with non-empty ticker and exchange values are included in the fetch scope
 
 ### Cross-Feature Integration
 - [x] Selecting an asset node in F02 correctly passes brokerName, portfolioName, and assetName to F03; the asset details loaded match the selected node
