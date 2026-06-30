@@ -248,6 +248,10 @@
   white-space: nowrap;
 }
 
+.credits-tab__table tbody tr:nth-child(even) {
+  background: #f5f5f5;
+}
+
 .credits-tab__action-btn {
   background: none;
   border: none;
