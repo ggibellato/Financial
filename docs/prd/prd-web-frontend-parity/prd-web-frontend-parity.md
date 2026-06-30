@@ -454,7 +454,7 @@ Chart capabilities (all selection types):
 | F01 | App Navigation & Layout Restructure | 1 | None | ✅ Done |
 | F02 | Investment Tree & Split Panel Layout | 1 | F01 | ✅ Done |
 | F07 | Shares Dividend Check Redesign | 1 | F01 | ✅ Done |
-| F08 | Read Assets Current Values Redesign | 1 | F01 | ⬜ Pending |
+| F08 | Read Assets Current Values Redesign | 1 | F01 | ✅ Done |
 | F03 | Summary Tab — Asset View | 1 | F02 | ✅ Done |
 | F04 | Summary Tab — Broker/Portfolio Aggregated View | 2 | F02 | ✅ Done |
 | F05 | Transactions Tab | 1 | F02 | ✅ Done |
@@ -584,15 +584,15 @@ graph TD
 - [x] An inline error message is shown when the API call fails; Check button is re-enabled
 
 ### F08. Read Assets Current Values Redesign
-- [ ] No broker or portfolio filter controls are visible on the page
-- [ ] Clicking Check Prices fetches prices for active assets in XPI/Default and XPI/Acoes only
-- [ ] Results table shows columns Ticker, Name, and Price (N2 right-aligned bold); no "As of" column is present
-- [ ] Progress bar updates incrementally as each asset price is fetched
-- [ ] Progress text reads "Fetching {N} of {M}: {ticker}..." during the fetch operation
-- [ ] Completion text reads "Completed! Loaded {N} assets." after all fetches finish
-- [ ] Check Prices button is disabled while the fetch is running
-- [ ] Assets with a failed price fetch display "—" in the Price column; fetch continues for remaining assets
-- [ ] Only active assets with non-empty ticker and exchange values are included in the fetch scope
+- [x] No broker or portfolio filter controls are visible on the page
+- [x] Clicking Check Prices fetches prices for active assets in XPI/Default and XPI/Acoes only
+- [x] Results table shows columns Ticker, Name, and Price (N2 right-aligned bold); no "As of" column is present
+- [x] Progress bar updates incrementally as each asset price is fetched
+- [x] Progress text reads "Fetching {N} of {M}: {ticker}..." during the fetch operation
+- [x] Completion text reads "Completed! Loaded {N} assets." after all fetches finish
+- [x] Check Prices button is disabled while the fetch is running
+- [x] Assets with a failed price fetch display "—" in the Price column; fetch continues for remaining assets
+- [x] Only active assets with non-empty ticker and exchange values are included in the fetch scope
 
 ### Cross-Feature Integration
 - [x] Selecting an asset node in F02 correctly passes brokerName, portfolioName, and assetName to F03; the asset details loaded match the selected node
