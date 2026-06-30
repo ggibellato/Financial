@@ -21,6 +21,7 @@ const baseSummary: DividendSummaryDto = {
   currentPrice: 10.5,
   priceAsOf: '2024-02-01T00:00:00Z',
   averageDividendLastFiveYears: 1.4,
+  dividendYieldPercent: 13.33,
   priceMaxBuy: 20.0,
   discountPercent: 47.5,
   yearTotals: [{ year: 2023, total: 1.4 }],

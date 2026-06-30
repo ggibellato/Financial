@@ -15,6 +15,7 @@ public class DividendCheckViewModel : ViewModelBase
     private string _summaryName = string.Empty;
     private string _summaryPrice = string.Empty;
     private string _summaryAverageDividend = string.Empty;
+    private string _summaryDividendYield = string.Empty;
     private string _summaryPriceMaxBuy = string.Empty;
     private bool _isPriceGood;
 
@@ -40,6 +41,12 @@ public class DividendCheckViewModel : ViewModelBase
     {
         get => _summaryAverageDividend;
         private set => SetProperty(ref _summaryAverageDividend, value);
+    }
+
+    public string SummaryDividendYield
+    {
+        get => _summaryDividendYield;
+        private set => SetProperty(ref _summaryDividendYield, value);
     }
 
     public string SummaryPriceMaxBuy
@@ -82,6 +89,7 @@ public class DividendCheckViewModel : ViewModelBase
         SummaryName = $"{summary.Ticker} - {summary.Name}";
         SummaryPrice = $"Current price: {summary.CurrentPrice:N2}";
         SummaryAverageDividend = $"Average Dividend: {summary.AverageDividendLastFiveYears:F2} (last {DividendValuationRules.DividendYearsLookback} years)";
+        SummaryDividendYield = $"Dividend Yield: {summary.DividendYieldPercent:F2}% (annual avg / current price)";
         SummaryPriceMaxBuy = $"Price max buy: {summary.PriceMaxBuy:F2}   Discount {summary.DiscountPercent:F2}%";
         IsPriceGood = summary.PriceMaxBuy > summary.CurrentPrice;
     }

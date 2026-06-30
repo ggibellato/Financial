@@ -49,6 +49,7 @@ public sealed class DividendService : IDividendService
 
         var priceMax = averageDividend > 0m ? averageDividend / DividendValuationRules.RequiredYield : 0m;
         var discountPercent = priceMax > 0m ? (1m - (snapshot.Price / priceMax)) * 100m : 0m;
+        var dividendYieldPercent = snapshot.Price > 0m ? (averageDividend / snapshot.Price) * 100m : 0m;
 
         return new DividendSummaryDTO
         {
@@ -58,6 +59,7 @@ public sealed class DividendService : IDividendService
             CurrentPrice = snapshot.Price,
             PriceAsOf = snapshot.AsOf,
             AverageDividendLastFiveYears = averageDividend,
+            DividendYieldPercent = dividendYieldPercent,
             PriceMaxBuy = priceMax,
             DiscountPercent = discountPercent,
             History = history,
