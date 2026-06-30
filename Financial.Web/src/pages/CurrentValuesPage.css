@@ -67,6 +67,10 @@
   color: var(--text-h);
 }
 
+.current-values__results tbody tr:nth-child(even) {
+  background: #f5f5f5;
+}
+
 th.current-values__col--price,
 td.current-values__col--price {
   text-align: right;

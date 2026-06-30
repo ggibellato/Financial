@@ -147,6 +147,10 @@
   white-space: nowrap;
 }
 
+.transactions-tab__table tbody tr:nth-child(even) {
+  background: #f5f5f5;
+}
+
 .transactions-tab__action-btn {
   background: none;
   border: none;
