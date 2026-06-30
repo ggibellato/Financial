@@ -138,3 +138,10 @@ A feature is NOT complete unless:
 * New code is documented where necessary.
 
 Before marking work as complete, provide a checklist showing compliance with all Definition of Done items.
+
+## Application details
+
+This is a personal project and is intended to be installed a copy for each person that will use.
+Does not require to scale or should not also have many updates or changes.
+
+It should follow all the standars above but also know that it does not OVER ENGINEERING.

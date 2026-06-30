@@ -48,7 +48,7 @@ internal sealed class AssetMetadataResolver
         {
             "CoinBase" => "Cryptocurrency",
             "FreeTrade" => "ETF",
-            "Trading 212" => spreadsheetName.Contains("ISA") ? "ETF ISA" : "ISA",
+            "Trading 212" => spreadsheetName.Contains("ISA") ? "ETF ISA" : "ETF",
             "XPI" => "FII",
             _ => DefaultPortfolioName,
         };
