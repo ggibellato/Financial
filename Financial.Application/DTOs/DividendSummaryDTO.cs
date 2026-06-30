@@ -8,6 +8,7 @@ public class DividendSummaryDTO
     public decimal CurrentPrice { get; set; }
     public DateTimeOffset PriceAsOf { get; set; }
     public decimal AverageDividendLastFiveYears { get; set; }
+    public decimal DividendYieldPercent { get; set; }
     public decimal PriceMaxBuy { get; set; }
     public decimal DiscountPercent { get; set; }
     public required IReadOnlyList<DividendHistoryItemDTO> History { get; set; }

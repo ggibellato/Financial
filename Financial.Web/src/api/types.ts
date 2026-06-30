@@ -164,6 +164,7 @@ export interface DividendSummaryDto {
   currentPrice: number
   priceAsOf: string
   averageDividendLastFiveYears: number
+  dividendYieldPercent: number
   priceMaxBuy: number
   discountPercent: number
   yearTotals: DividendYearTotalDto[]

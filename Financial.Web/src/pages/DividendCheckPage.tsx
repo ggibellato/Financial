@@ -114,7 +114,7 @@ export default function DividendCheckPage() {
             </p>
             <p>Current price: {formatNumber(summary.currentPrice)}</p>
             <p className="summary-card__avg-dividend">
-              Average Dividend: {formatNumber(summary.averageDividendLastFiveYears)} (last 5 years)
+              Average Dividend: {formatNumber(summary.averageDividendLastFiveYears)} (last 5 years) — Yield: {formatNumber(summary.dividendYieldPercent)}%
             </p>
             <p className={`summary-card__price-max ${priceMaxBuyClass}`}>
               Price max buy: {formatNumber(summary.priceMaxBuy)}&nbsp;&nbsp;&nbsp;Discount{' '}
