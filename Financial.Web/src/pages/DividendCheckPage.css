@@ -90,3 +90,7 @@
 .dividend-check__placeholder {
   color: var(--text);
 }
+
+.dividend-check__tables .table-number {
+  text-align: right;
+}
