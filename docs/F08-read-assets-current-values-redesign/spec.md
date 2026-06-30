@@ -10,7 +10,7 @@
 
 Included:
 - `CurrentValuesPage.tsx` — remove filter state, fixed-scope asset resolution, heading update, "As of" column removal, button alignment with PRD label
-- `CurrentValuesPage.css` — new paired CSS file for page layout and Price cell styling
+- `CurrentValuesPage.css` — new paired CSS file for page layout, scroll containment, and Price cell styling
 - `src/config/portfolioScopeConfig.ts` — new constants module declaring the fixed `[XPI/Default, XPI/Acoes]` scope
 - `CurrentValuesPage.test.tsx` — updated tests reflecting removed filter UI, fixed scope, and absent "As of" column
 
@@ -53,6 +53,7 @@ Affected components:
 | `asOf` removal | Remove `asOf` from `PriceResult` interface and delete `formatDateTime` entirely | Keep `asOf` in state but exclude from table rendering | Eliminates dead state and dead utility code; smaller diff to verify |
 | CSS placement | New `CurrentValuesPage.css` imported by the page | Add rules to `App.css` | Follows the pattern established by `DividendCheckPage.css`; colocation keeps page-specific rules easy to find and remove later |
 | Progress initial text | `Fetching 0 of {total}...` before first asset starts | Empty until first asset begins | Matches existing implementation behaviour; provides immediate feedback to the user that the batch has started |
+| Scroll containment | `.current-values` uses `display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden`; only `.current-values__results` has `overflow-y: auto` | `height: 100%` on the container | `height: 100%` inside a flex child is not always treated as definite by browsers and triggers a spurious page scrollbar; the `flex: 1; min-height: 0` pattern is established for all page containers in this project (F07, F02) |
 
 ---
 
@@ -64,7 +65,7 @@ Affected components:
 |-----------|--------------|---------|---------------------|
 | `Financial.Web/src/config/portfolioScopeConfig.ts` | New | Fixed portfolio scope constant | Export `FIXED_PORTFOLIO_SCOPE` array of `{ brokerName, portfolioName }` objects for XPI/Default and XPI/Acoes |
 | `Financial.Web/src/pages/CurrentValuesPage.tsx` | Modified | Read Assets Current Values page | Remove filter state and controls; derive `assetsToCheck` by filtering `brokers` against `FIXED_PORTFOLIO_SCOPE`; remove `asOf` from `PriceResult`; remove `formatDateTime`; update section heading to "Fetch Current Prices"; keep progress bar, sequential fetch loop, and error handling behaviour |
-| `Financial.Web/src/pages/CurrentValuesPage.css` | New | Page-specific styles | Layout for `.current-values` section; progress bar width; Price column right-alignment and bold weight |
+| `Financial.Web/src/pages/CurrentValuesPage.css` | New | Page-specific styles | `.current-values` uses `display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden` so no page-level scrollbar ever appears; `.current-values__results` uses `flex: 1; min-height: 0; overflow-y: auto` so only the results table scrolls; progress bar width; Price column `text-align: right; font-weight: bold` |
 | `Financial.Web/src/pages/__tests__/CurrentValuesPage.test.tsx` | Modified | Unit/integration tests for the page | Cover fixed-scope asset resolution, absence of filter controls, absence of "As of" column, progress text format, per-asset error row, and broker tree load failure path |
 
 ---

@@ -12,7 +12,7 @@
 
 **1. Portfolio Scope Config** - Create `src/config/portfolioScopeConfig.ts` and export the `FIXED_PORTFOLIO_SCOPE` constant declaring the two fixed broker/portfolio pairs (`XPI/Default` and `XPI/Acoes`). This module is the single source of truth for the fetch scope, mirroring the WPF `appsettings.json` configuration concept.
 
-**2. CurrentValuesPage Styles** - Create `src/pages/CurrentValuesPage.css` with styles for the `.current-values` page layout, the progress bar width, and the Price column right-alignment and bold weight. Move any `current-values*` rules currently in `App.css` into this file and update `App.css` accordingly.
+**2. CurrentValuesPage Styles** - Create `src/pages/CurrentValuesPage.css` with styles for the `.current-values` page layout using the established `flex: 1; min-height: 0; overflow: hidden` pattern so the page never produces a vertical or horizontal scrollbar; apply `overflow-y: auto` only to the results container so the table scrolls independently. Add Price column right-alignment and bold weight. Move any `current-values*` rules currently in `App.css` into this file and update `App.css` accordingly.
 
 ---
 
