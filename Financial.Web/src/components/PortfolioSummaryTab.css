@@ -41,6 +41,11 @@
   white-space: nowrap;
 }
 
+.portfolio-summary__table th:nth-child(n+3),
+.portfolio-summary__table td:nth-child(n+3) {
+  text-align: right;
+}
+
 .portfolio-summary__profit--green {
   color: #2e7d32;
 }
