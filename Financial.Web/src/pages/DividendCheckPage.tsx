@@ -1,22 +1,33 @@
-import { type FormEvent, useCallback, useMemo, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { DividendHistoryItemDto, DividendSummaryDto } from '../api/types'
+import type { DividendHistoryItemDto, DividendSummaryDto, WatchlistItemDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import TickerCombobox, { type TickerGroup } from '../components/TickerCombobox'
 import './DividendCheckPage.css'
 
-const WATCHLIST_GROUPS: TickerGroup[] = [
-  { label: 'Ja possuidas', tickers: ['KLBN4', 'TASA4', 'TAEE3'] },
-  { label: 'Outras Barse', tickers: ['UNIP6', 'CMIG4', 'TRPL4', 'BBAS3'] },
-  { label: 'Outras', tickers: ['CSAN3'] },
-]
-
-const DEFAULT_TICKER = 'KLBN4'
 const FIXED_EXCHANGE = 'BVMF'
+
+function toTickerGroups(items: WatchlistItemDto[]): TickerGroup[] {
+  const map = new Map<string, string[]>()
+  for (const item of items) {
+    const tickers = map.get(item.group) ?? []
+    tickers.push(item.name)
+    map.set(item.group, tickers)
+  }
+  return Array.from(map, ([label, tickers]) => ({ label, tickers }))
+}
 
 export default function DividendCheckPage() {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
-  const [ticker, setTicker] = useState(DEFAULT_TICKER)
+  const [groups, setGroups] = useState<TickerGroup[]>([])
+  const [ticker, setTicker] = useState('')
+
+  useEffect(() => {
+    void apiClient.getWatchlist().then((items) => {
+      setGroups(toTickerGroups(items))
+      setTicker((prev) => (prev === '' && items.length > 0 ? items[0].name : prev))
+    })
+  }, [apiClient])
   const [summary, setSummary] = useState<DividendSummaryDto | null>(null)
   const [history, setHistory] = useState<DividendHistoryItemDto[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -98,7 +109,7 @@ export default function DividendCheckPage() {
         <p>Review dividend history and estimate target entry price.</p>
       </header>
       <form className="dividend-check__form" onSubmit={handleSubmit} aria-label="Dividend check">
-        <TickerCombobox groups={WATCHLIST_GROUPS} value={ticker} onChange={setTicker} />
+        <TickerCombobox groups={groups} value={ticker} onChange={setTicker} />
         <button type="submit" disabled={isLoading}>
           {isLoading ? 'Checking...' : 'Check'}
         </button>
