@@ -46,7 +46,7 @@ internal sealed class AssetMetadataResolver
     {
         return brokerName switch
         {
-            "CoinBase" => "Cryptocurrency",
+            "Coinbase" => "Cryptocurrency",
             "FreeTrade" => "ETF",
             "Trading 212" => spreadsheetName.Contains("ISA") ? "ETF ISA" : "ETF",
             "XPI" => "FII",

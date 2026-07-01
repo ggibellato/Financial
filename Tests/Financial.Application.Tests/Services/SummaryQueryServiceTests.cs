@@ -207,11 +207,8 @@ public class SummaryQueryServiceTests
         public IEnumerable<Asset> AssetsByBroker { get; set; } = [];
         public IEnumerable<Asset> AssetsByBrokerPortfolio { get; set; } = [];
 
-        public IReadOnlyList<string> GetAllAssetsFullName() => [];
         public IEnumerable<Asset> GetAssetsByBroker(string name) => AssetsByBroker;
         public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio) => AssetsByBrokerPortfolio;
-        public IEnumerable<Asset> GetAssetsByPortfolio(string name) => [];
-        public IEnumerable<Asset> GetAssetsByAssetName(string name) => [];
         public IEnumerable<Broker> GetBrokerList() => [];
         public Asset? GetAsset(string brokerName, string portfolioName, string assetName) => null;
         public Task SaveChangesAsync() => Task.CompletedTask;

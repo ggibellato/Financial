@@ -116,11 +116,8 @@ public class NavigationMapperTests
     {
         public Broker? Broker { get; set; }
 
-        public IReadOnlyList<string> GetAllAssetsFullName() => [];
         public IEnumerable<Asset> GetAssetsByBroker(string name) => [];
         public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio) => [];
-        public IEnumerable<Asset> GetAssetsByPortfolio(string name) => [];
-        public IEnumerable<Asset> GetAssetsByAssetName(string name) => [];
         public IEnumerable<Broker> GetBrokerList() => Broker == null ? [] : [Broker];
         public Asset? GetAsset(string brokerName, string portfolioName, string assetName) => null;
         public Task SaveChangesAsync() => Task.CompletedTask;
