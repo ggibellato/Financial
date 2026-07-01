@@ -116,6 +116,24 @@ describe('financialApiClient', () => {
     expect(url).toBe(`${API_BASE_URL}/watchlist`)
   })
 
+  it('calls asset-price-fetch endpoint', async () => {
+    const responseBody = [
+      { brokerName: 'XPI', portfolioName: 'FII' },
+      { brokerName: 'XPI', portfolioName: 'Acoes' },
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({
+      baseUrl: API_BASE_URL,
+      fetch: fetchMock,
+    })
+
+    const result = await client.getAssetPriceFetchScope()
+
+    expect(result).toEqual(responseBody)
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/asset-price-fetch`)
+  })
+
   it('throws when the API returns an error', async () => {
     const fetchMock = vi.fn().mockResolvedValue(errorResponse())
     const client = createFinancialApiClient({

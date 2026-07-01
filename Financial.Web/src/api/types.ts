@@ -188,3 +188,8 @@ export interface WatchlistItemDto {
   group: string
   name: string
 }
+
+export interface PortfolioReferenceDto {
+  brokerName: string
+  portfolioName: string
+}

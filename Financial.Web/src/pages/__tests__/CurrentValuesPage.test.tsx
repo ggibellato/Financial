@@ -2,15 +2,17 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import CurrentValuesPage from '../CurrentValuesPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AssetPriceDto, BrokerNodeDto } from '../../api/types'
+import type { AssetPriceDto, BrokerNodeDto, PortfolioReferenceDto } from '../../api/types'
 
 const getBrokersMock = vi.fn()
 const getCurrentPriceMock = vi.fn()
+const getAssetPriceFetchScopeMock = vi.fn()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: () => ({
     getBrokers: getBrokersMock,
     getCurrentPrice: getCurrentPriceMock,
+    getAssetPriceFetchScope: getAssetPriceFetchScopeMock,
   } satisfies Partial<FinancialApiClient>),
 }))
 
@@ -49,9 +51,16 @@ const makePrice = (ticker: string, price = 10.5): AssetPriceDto => ({
 })
 
 describe('CurrentValuesPage', () => {
+  const defaultScope: PortfolioReferenceDto[] = [
+    { brokerName: 'XPI', portfolioName: 'Default' },
+    { brokerName: 'XPI', portfolioName: 'Acoes' },
+  ]
+
   beforeEach(() => {
     getBrokersMock.mockReset()
     getCurrentPriceMock.mockReset()
+    getAssetPriceFetchScopeMock.mockReset()
+    getAssetPriceFetchScopeMock.mockResolvedValue(defaultScope)
   })
 
   it('fetches prices only for assets in XPI/Default and XPI/Acoes', async () => {
