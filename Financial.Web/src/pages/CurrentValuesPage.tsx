@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { BrokerNodeDto } from '../api/types'
+import type { BrokerNodeDto, PortfolioReferenceDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
-import { FIXED_PORTFOLIO_SCOPE } from '../config/portfolioScopeConfig'
 import './CurrentValuesPage.css'
 
 interface PriceResult {
@@ -18,6 +17,7 @@ interface PriceResult {
 export default function CurrentValuesPage() {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [brokers, setBrokers] = useState<BrokerNodeDto[]>([])
+  const [scope, setScope] = useState<PortfolioReferenceDto[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isRunning, setIsRunning] = useState(false)
@@ -36,10 +36,10 @@ export default function CurrentValuesPage() {
   )
 
   useEffect(() => {
-    apiClient
-      .getBrokers()
-      .then((data) => {
-        setBrokers(data)
+    Promise.all([apiClient.getBrokers(), apiClient.getAssetPriceFetchScope()])
+      .then(([brokersData, scopeData]) => {
+        setBrokers(brokersData)
+        setScope(scopeData)
         setError(null)
       })
       .catch((err: unknown) => {
@@ -56,7 +56,7 @@ export default function CurrentValuesPage() {
   }, [])
 
   const assetsToCheck = useMemo(() => {
-    const assets = FIXED_PORTFOLIO_SCOPE.flatMap(({ brokerName, portfolioName }) => {
+    const assets = scope.flatMap(({ brokerName, portfolioName }) => {
       const broker = brokers.find((b) => b.name === brokerName)
       if (!broker) return []
       const portfolio = broker.portfolios.find((p) => p.name === portfolioName)
@@ -69,7 +69,7 @@ export default function CurrentValuesPage() {
       }))
     })
     return assets.filter((asset) => asset.isActive && asset.ticker && asset.exchange)
-  }, [brokers])
+  }, [brokers, scope])
 
   const runPriceCheck = useCallback(async () => {
     if (assetsToCheck.length === 0) return
@@ -118,7 +118,7 @@ export default function CurrentValuesPage() {
   }, [apiClient, assetsToCheck])
 
   if (isLoading) {
-    return <LoadingState message="Loading brokers..." />
+    return <LoadingState message="Loading data..." />
   }
 
   if (error) {

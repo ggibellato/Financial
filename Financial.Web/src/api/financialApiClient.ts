@@ -10,6 +10,7 @@ import type {
   CreditUpdateDto,
   DividendHistoryItemDto,
   DividendSummaryDto,
+  PortfolioReferenceDto,
   TransactionCreateDto,
   TransactionDeleteDto,
   TransactionUpdateDto,
@@ -35,6 +36,7 @@ export interface FinancialApiClient {
   getDividendSummary: (ticker: string, exchange?: string) => Promise<DividendSummaryDto>
   getCurrentPrice: (exchange: string, ticker: string) => Promise<AssetPriceDto>
   getWatchlist: () => Promise<WatchlistItemDto[]>
+  getAssetPriceFetchScope: () => Promise<PortfolioReferenceDto[]>
 }
 
 export interface FinancialApiClientOptions {
@@ -147,5 +149,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         `/prices/current?exchange=${encodeURIComponent(exchange)}&ticker=${encodeURIComponent(ticker)}`,
       ),
     getWatchlist: () => request<WatchlistItemDto[]>('/watchlist'),
+    getAssetPriceFetchScope: () => request<PortfolioReferenceDto[]>('/asset-price-fetch'),
   }
 }
