@@ -179,146 +179,261 @@
             <TabControl Grid.Row="1">
                 <!-- Summary Tab -->
                 <TabItem Header="Summary">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <Grid Margin="10">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                    <TabItem.Resources>
+                        <DataTemplate x:Key="AssetSummaryTemplate">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <Grid Margin="10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                            <!-- Row 0: Quantity & Average Price -->
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Quantity:" FontWeight="Bold" Margin="0,5"/>
-                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AssetDetails.Quantity, Mode=OneWay, StringFormat=N8}" TextAlignment="Right" FontFamily="Consolas" Margin="10,5"/>
+                                    <!-- Row 0: Quantity & Average Price -->
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Quantity:" FontWeight="Bold" Margin="0,5"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AssetDetails.Quantity, Mode=OneWay, StringFormat=N8}" TextAlignment="Right" FontFamily="Consolas" Margin="10,5"/>
 
-                            <TextBlock Grid.Row="0" Grid.Column="2" Text="Average Price:" FontWeight="Bold" Margin="20,5,0,5"/>
-                            <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding AssetDetails.AveragePrice, Mode=OneWay, StringFormat=N2}" TextAlignment="Right" FontFamily="Consolas" Margin="10,5"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Average Price:" FontWeight="Bold" Margin="20,5,0,5"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding AssetDetails.AveragePrice, Mode=OneWay, StringFormat=N2}" TextAlignment="Right" FontFamily="Consolas" Margin="10,5"/>
 
-                            <!-- Row 1: ISIN & Country -->
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="ISIN:" FontWeight="Bold" Margin="0,5"/>
-                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AssetDetails.ISIN, Mode=OneWay}" Margin="10,5"/>
-                            <TextBlock Grid.Row="1" Grid.Column="2" Text="Country:" FontWeight="Bold" Margin="20,5,0,5"/>
-                            <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding AssetDetails.Country, Mode=OneWay}" Margin="10,5"/>
+                                    <!-- Row 1: ISIN & Country -->
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="ISIN:" FontWeight="Bold" Margin="0,5"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AssetDetails.ISIN, Mode=OneWay}" Margin="10,5"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Country:" FontWeight="Bold" Margin="20,5,0,5"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding AssetDetails.Country, Mode=OneWay}" Margin="10,5"/>
 
-                            <!-- Row 2: Local Type & Asset Class -->
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Local Type:" FontWeight="Bold" Margin="0,5"/>
-                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AssetDetails.LocalTypeCode, Mode=OneWay}" Margin="10,5"/>
-                            <TextBlock Grid.Row="2" Grid.Column="2" Text="Asset Class:" FontWeight="Bold" Margin="20,5,0,5"/>
-                            <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding AssetDetails.Class, Mode=OneWay}" Margin="10,5"/>
+                                    <!-- Row 2: Local Type & Asset Class -->
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Local Type:" FontWeight="Bold" Margin="0,5"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AssetDetails.LocalTypeCode, Mode=OneWay}" Margin="10,5"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="2" Text="Asset Class:" FontWeight="Bold" Margin="20,5,0,5"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding AssetDetails.Class, Mode=OneWay}" Margin="10,5"/>
 
-                            <!-- Separator -->
-                            <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4" 
-                                    BorderBrush="#EEEEEE" BorderThickness="0,1,0,0" Margin="0,15,0,15"/>
+                                    <!-- Separator -->
+                                    <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4"
+                                            BorderBrush="#EEEEEE" BorderThickness="0,1,0,0" Margin="0,15,0,15"/>
 
-                            <!-- Row 4: Total Bought & Total Sold -->
-                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Total Bought:" FontWeight="Bold" Margin="0,5"/>
-                            <TextBlock Grid.Row="4" Grid.Column="1" 
-                                       Text="{Binding AssetDetails.TotalBought, Mode=OneWay, StringFormat=N2}" 
-                                       TextAlignment="Right"
-                                       FontFamily="Consolas"
-                                       Margin="10,5"
-                                       Foreground="Green"/>
+                                    <!-- Row 4: Total Bought & Total Sold -->
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Total Bought:" FontWeight="Bold" Margin="0,5"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="1"
+                                               Text="{Binding AssetDetails.TotalBought, Mode=OneWay, StringFormat=N2}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Margin="10,5"
+                                               Foreground="Green"/>
 
-                            <TextBlock Grid.Row="4" Grid.Column="2" Text="Total Sold:" FontWeight="Bold" Margin="20,5,0,5"/>
-                            <TextBlock Grid.Row="4" Grid.Column="3" 
-                                       Text="{Binding AssetDetails.TotalSold, Mode=OneWay, StringFormat=N2}" 
-                                       Margin="10,5"
-                                       Foreground="Red"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="2" Text="Total Sold:" FontWeight="Bold" Margin="20,5,0,5"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="3"
+                                               Text="{Binding AssetDetails.TotalSold, Mode=OneWay, StringFormat=N2}"
+                                               Margin="10,5"
+                                               Foreground="Red"/>
 
-                            <!-- Row 5: Total Credits -->
-                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Total Credits:" FontWeight="Bold" Margin="0,5"/>
-                            <TextBlock Grid.Row="5" Grid.Column="1" 
-                                       Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}" 
-                                       TextAlignment="Right"
-                                       FontFamily="Consolas"
-                                       Margin="10,5"
-                                       Foreground="Blue"/>
+                                    <!-- Row 5: Total Credits -->
+                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Total Credits:" FontWeight="Bold" Margin="0,5"/>
+                                    <TextBlock Grid.Row="5" Grid.Column="1"
+                                               Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Margin="10,5"
+                                               Foreground="Blue"/>
 
-                            <!-- Separator -->
-                            <Border Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="4" 
-                                    BorderBrush="#EEEEEE" BorderThickness="0,1,0,0" Margin="0,15,0,15"/>
+                                    <!-- Separator -->
+                                    <Border Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="4"
+                                            BorderBrush="#EEEEEE" BorderThickness="0,1,0,0" Margin="0,15,0,15"/>
 
-                            <!-- Row 7: Current Header -->
-                            <TextBlock Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Text="Current" FontWeight="Bold" FontSize="13" Margin="0,5"/>
-                            <Button Grid.Row="7" Grid.Column="2" Grid.ColumnSpan="2"
-                                    Command="{Binding AssetDetails.RefreshTodayInfoCommand}"
-                                    Content="Refresh"
-                                    HorizontalAlignment="Right"
-                                    Margin="0,5"/>
+                                    <!-- Row 7: Current Header -->
+                                    <TextBlock Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Text="Current" FontWeight="Bold" FontSize="13" Margin="0,5"/>
+                                    <Button Grid.Row="7" Grid.Column="2" Grid.ColumnSpan="2"
+                                            Command="{Binding AssetDetails.RefreshTodayInfoCommand}"
+                                            Content="Refresh"
+                                            HorizontalAlignment="Right"
+                                            Margin="0,5"/>
 
-                            <!-- Row 8: Current Value & As Of -->
-                            <TextBlock Grid.Row="8" Grid.Column="0" Text="Current Value:" FontWeight="Bold" Margin="0,5"/>
-                            <TextBlock Grid.Row="8" Grid.Column="1" 
-                                       Text="{Binding AssetDetails.TodayCurrentValue, Mode=OneWay, StringFormat=N2}" 
-                                       TextAlignment="Right"
-                                       FontFamily="Consolas"
-                                       Margin="10,5"/>
-                            <TextBlock Grid.Row="8" Grid.Column="2" Text="As of:" FontWeight="Bold" Margin="20,5,0,5"/>
-                            <TextBlock Grid.Row="8" Grid.Column="3" 
-                                       Text="{Binding AssetDetails.TodayCurrentValueAsOf, Mode=OneWay}" 
-                                       Margin="10,5"/>
+                                    <!-- Row 8: Current Value & As Of -->
+                                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Current Value:" FontWeight="Bold" Margin="0,5"/>
+                                    <TextBlock Grid.Row="8" Grid.Column="1"
+                                               Text="{Binding AssetDetails.TodayCurrentValue, Mode=OneWay, StringFormat=N2}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Margin="10,5"/>
+                                    <TextBlock Grid.Row="8" Grid.Column="2" Text="As of:" FontWeight="Bold" Margin="20,5,0,5"/>
+                                    <TextBlock Grid.Row="8" Grid.Column="3"
+                                               Text="{Binding AssetDetails.TodayCurrentValueAsOf, Mode=OneWay}"
+                                               Margin="10,5"/>
 
-                            <!-- Row 9: Total Current Value & Result % -->
-                            <TextBlock Grid.Row="9" Grid.Column="0" Text="Total Current Value:" FontWeight="Bold" Margin="0,5"
-                                       Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                            <TextBlock Grid.Row="9" Grid.Column="1" 
-                                       Text="{Binding AssetDetails.TotalCurrentValue, Mode=OneWay, StringFormat=N2}" 
-                                       TextAlignment="Right"
-                                       FontFamily="Consolas"
-                                       Margin="10,5"
-                                       Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                            <TextBlock Grid.Row="9" Grid.Column="2" Text="Result %:" FontWeight="Bold" Margin="20,5,0,5"
-                                       Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                            <TextBlock Grid.Row="9" Grid.Column="3" 
-                                       Text="{Binding AssetDetails.ResultPercent, Mode=OneWay, StringFormat=P2}" 
-                                       TextAlignment="Right"
-                                       FontFamily="Consolas"
-                                       Foreground="{Binding AssetDetails.ResultPercent, Converter={StaticResource SignedValueToBrushConverter}}"
-                                       Margin="10,5"
-                                       Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <!-- Row 9: Total Current Value & Result % -->
+                                    <TextBlock Grid.Row="9" Grid.Column="0" Text="Total Current Value:" FontWeight="Bold" Margin="0,5"
+                                               Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="9" Grid.Column="1"
+                                               Text="{Binding AssetDetails.TotalCurrentValue, Mode=OneWay, StringFormat=N2}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="9" Grid.Column="2" Text="Result %:" FontWeight="Bold" Margin="20,5,0,5"
+                                               Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="9" Grid.Column="3"
+                                               Text="{Binding AssetDetails.ResultPercent, Mode=OneWay, StringFormat=P2}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Foreground="{Binding AssetDetails.ResultPercent, Converter={StaticResource SignedValueToBrushConverter}}"
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                            <!-- Row 10: Total Current + Credits & Result % -->
-                            <TextBlock Grid.Row="10" Grid.Column="0" Text="Total Current + Credits:" FontWeight="Bold" Margin="0,5"
-                                       Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                            <TextBlock Grid.Row="10" Grid.Column="1" 
-                                       Text="{Binding AssetDetails.TotalCurrentValueWithCredits, Mode=OneWay, StringFormat=N2}" 
-                                       TextAlignment="Right"
-                                       FontFamily="Consolas"
-                                       Margin="10,5"
-                                       Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                            <TextBlock Grid.Row="10" Grid.Column="2" Text="Result %:" FontWeight="Bold" Margin="20,5,0,5"
-                                       Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                            <TextBlock Grid.Row="10" Grid.Column="3" 
-                                       Text="{Binding AssetDetails.ResultPercentWithCredits, Mode=OneWay, StringFormat=P2}" 
-                                       TextAlignment="Right"
-                                       FontFamily="Consolas"
-                                       Foreground="{Binding AssetDetails.ResultPercentWithCredits, Converter={StaticResource SignedValueToBrushConverter}}"
-                                       Margin="10,5"
-                                       Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <!-- Row 10: Total Current + Credits & Result % -->
+                                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Total Current + Credits:" FontWeight="Bold" Margin="0,5"
+                                               Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="10" Grid.Column="1"
+                                               Text="{Binding AssetDetails.TotalCurrentValueWithCredits, Mode=OneWay, StringFormat=N2}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="10" Grid.Column="2" Text="Result %:" FontWeight="Bold" Margin="20,5,0,5"
+                                               Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="10" Grid.Column="3"
+                                               Text="{Binding AssetDetails.ResultPercentWithCredits, Mode=OneWay, StringFormat=P2}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Foreground="{Binding AssetDetails.ResultPercentWithCredits, Converter={StaticResource SignedValueToBrushConverter}}"
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                            <!-- Row 11: Status/Error -->
-                            <TextBlock Grid.Row="11" Grid.Column="0" Text="Status:" FontWeight="Bold" Margin="0,5"/>
-                            <TextBlock Grid.Row="11" Grid.Column="1" Grid.ColumnSpan="3"
-                                       Text="{Binding AssetDetails.TodayInfoMessage, Mode=OneWay}" 
-                                       Margin="10,5"
-                                       Foreground="DarkRed"/>
-                        </Grid>
-                    </ScrollViewer>
+                                    <!-- Row 11: Status/Error -->
+                                    <TextBlock Grid.Row="11" Grid.Column="0" Text="Status:" FontWeight="Bold" Margin="0,5"/>
+                                    <TextBlock Grid.Row="11" Grid.Column="1" Grid.ColumnSpan="3"
+                                               Text="{Binding AssetDetails.TodayInfoMessage, Mode=OneWay}"
+                                               Margin="10,5"
+                                               Foreground="DarkRed"/>
+                                </Grid>
+                            </ScrollViewer>
+                        </DataTemplate>
+                        <DataTemplate x:Key="PortfolioSummaryTemplate">
+                            <Grid Margin="10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Aggregated Totals -->
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                                    <TextBlock Text="Total Bought:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding AssetDetails.TotalBought, Mode=OneWay, StringFormat=N2}"
+                                               FontFamily="Consolas" Foreground="Green" Margin="0,0,20,0"/>
+                                    <TextBlock Text="Total Sold:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding AssetDetails.TotalSold, Mode=OneWay, StringFormat=N2}"
+                                               FontFamily="Consolas" Foreground="Red" Margin="0,0,20,0"/>
+                                    <TextBlock Text="Total Credits:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}"
+                                               FontFamily="Consolas" Foreground="Blue"/>
+                                </StackPanel>
+
+                                <!-- Per-Asset DataGrid -->
+                                <DataGrid Grid.Row="1"
+                                          ItemsSource="{Binding AssetDetails.PortfolioAssetSummaryRows}"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          IsReadOnly="True">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Asset Name" Binding="{Binding AssetName}" Width="*"/>
+                                        <DataGridTextColumn Header="First Investment" Binding="{Binding DisplayFirstInvestmentDate}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Quantity" Binding="{Binding DisplayCurrentQuantity}" Width="Auto">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextAlignment" Value="Right"/>
+                                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Total Invested" Binding="{Binding DisplayTotalInvested}" Width="Auto">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextAlignment" Value="Right"/>
+                                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="% Portfolio" Binding="{Binding DisplayPortfolioWeight}" Width="Auto">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextAlignment" Value="Right"/>
+                                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTemplateColumn Header="Current Value" Width="Auto">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock FontFamily="Consolas" TextAlignment="Right">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="{Binding DisplayCurrentValue}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsLoadingPrice}" Value="True">
+                                                                        <Setter Property="Text" Value="..."/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Header="% Profit" Width="Auto">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock FontFamily="Consolas" TextAlignment="Right">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="{Binding DisplayProfitPercent}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsLoadingPrice}" Value="True">
+                                                                        <Setter Property="Text" Value="..."/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding ProfitIsPositive}" Value="True">
+                                                                        <Setter Property="Foreground" Value="Green"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding ProfitIsNegative}" Value="True">
+                                                                        <Setter Property="Foreground" Value="Red"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </DataTemplate>
+                    </TabItem.Resources>
+                    <ContentControl Content="{Binding}">
+                        <ContentControl.Style>
+                            <Style TargetType="ContentControl">
+                                <Setter Property="ContentTemplate" Value="{StaticResource AssetSummaryTemplate}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding AssetDetails.IsPortfolioView}" Value="True">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource PortfolioSummaryTemplate}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ContentControl.Style>
+                    </ContentControl>
                 </TabItem>
 
                 <!-- Transactions Tab -->

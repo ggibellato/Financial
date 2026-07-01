@@ -52,6 +52,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private double _creditsPlotWidth;
     private bool _isCreditsAggregateView;
     private bool _hasCreditsContext;
+    private bool _isPortfolioView;
+    private CancellationTokenSource? _rowPriceCts;
     private TransactionDTO? _selectedTransaction;
     private CreditDTO? _selectedCredit;
     private IReadOnlyList<CreditsMonthTypeTotals> _creditsChartMonths = Array.Empty<CreditsMonthTypeTotals>();
@@ -139,6 +141,13 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public decimal ResultPercentWithCredits => AssetDetailsCalculations.CalculateResultPercentWithCredits(AveragePrice, Quantity, TotalCurrentValueWithCredits);
     public bool HasAveragePrice => AssetDetailsCalculations.HasAveragePrice(AveragePrice, Quantity);
 
+    public bool IsPortfolioView
+    {
+        get => _isPortfolioView;
+        private set => SetProperty(ref _isPortfolioView, value);
+    }
+
+    public ObservableCollection<PortfolioAssetSummaryRowViewModel> PortfolioAssetSummaryRows { get; } = new();
     public ObservableCollection<TransactionDTO> Transactions { get; } = new();
     public ObservableCollection<CreditDTO> Credits { get; } = new();
     public ObservableCollection<KeyValuePair<string, decimal>> CreditsByMonthChart { get; } = new();
@@ -207,8 +216,25 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         InitializeCreditsTypeModes();
     }
 
+    public void LoadPortfolioSummary(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits, IReadOnlyList<PortfolioAssetSummaryItemDTO> assetItems)
+    {
+        CancelAndResetRowPriceFetch();
+        LoadAggregateCredits(BuildPortfolioKey(brokerName, portfolioName), summary, credits);
+        IsPortfolioView = true;
+
+        PortfolioAssetSummaryRows.Clear();
+        foreach (var item in assetItems)
+            PortfolioAssetSummaryRows.Add(new PortfolioAssetSummaryRowViewModel(item));
+
+        var rows = PortfolioAssetSummaryRows.ToList();
+        _rowPriceCts = new CancellationTokenSource();
+        var token = _rowPriceCts.Token;
+        FetchRowPricesAsync(rows, token);
+    }
+
     public void LoadAssetDetails(AssetDetailsDTO details)
     {
+        IsPortfolioView = false;
         var assetKey = BuildAssetKey(details.BrokerName, details.PortfolioName, details.Name);
         _todayInfo.UpdateAssetKey(assetKey);
 
@@ -247,6 +273,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     public void Clear()
     {
+        CancelAndResetRowPriceFetch();
+        PortfolioAssetSummaryRows.Clear();
+        IsPortfolioView = false;
         ClearAssetContext();
         Credits.Clear();
         CreditsByMonthChart.Clear();
@@ -329,6 +358,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     private void LoadAggregateCredits(string contextKey, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
     {
+        IsPortfolioView = false;
         ClearAssetContext();
         TotalBought = summary.TotalBought;
         TotalSold = summary.TotalSold;
@@ -345,6 +375,36 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         SelectedTransaction = null;
         SelectedCredit = null;
         UpdateCommandStates();
+    }
+
+    private void FetchRowPricesAsync(IReadOnlyList<PortfolioAssetSummaryRowViewModel> rows, CancellationToken cancellationToken)
+    {
+        foreach (var row in rows)
+        {
+            var capturedRow = row;
+            Task.Run(() =>
+            {
+                try
+                {
+                    if (cancellationToken.IsCancellationRequested) return;
+                    var price = _assetPriceService.GetCurrentPrice(new Application.DTOs.AssetPriceRequestDTO { Exchange = capturedRow.Exchange, Ticker = capturedRow.Ticker });
+                    if (cancellationToken.IsCancellationRequested) return;
+                    capturedRow.ApplyPrice(price.Price);
+                }
+                catch
+                {
+                    if (!cancellationToken.IsCancellationRequested)
+                        capturedRow.MarkPriceFailed();
+                }
+            }, cancellationToken);
+        }
+    }
+
+    private void CancelAndResetRowPriceFetch()
+    {
+        _rowPriceCts?.Cancel();
+        _rowPriceCts?.Dispose();
+        _rowPriceCts = null;
     }
 
     private void ClearAssetContext()
