@@ -14,6 +14,7 @@ import type {
   TransactionDeleteDto,
   TransactionUpdateDto,
   TreeNodeDto,
+  WatchlistItemDto,
 } from './types'
 
 export interface FinancialApiClient {
@@ -33,6 +34,7 @@ export interface FinancialApiClient {
   getDividendHistory: (ticker: string, exchange?: string) => Promise<DividendHistoryItemDto[]>
   getDividendSummary: (ticker: string, exchange?: string) => Promise<DividendSummaryDto>
   getCurrentPrice: (exchange: string, ticker: string) => Promise<AssetPriceDto>
+  getWatchlist: () => Promise<WatchlistItemDto[]>
 }
 
 export interface FinancialApiClientOptions {
@@ -144,5 +146,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<AssetPriceDto>(
         `/prices/current?exchange=${encodeURIComponent(exchange)}&ticker=${encodeURIComponent(ticker)}`,
       ),
+    getWatchlist: () => request<WatchlistItemDto[]>('/watchlist'),
   }
 }

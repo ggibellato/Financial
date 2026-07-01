@@ -6,11 +6,13 @@ import type { DividendHistoryItemDto, DividendSummaryDto } from '../../api/types
 
 const getDividendSummaryMock = vi.fn()
 const getDividendHistoryMock = vi.fn()
+const getWatchlistMock = vi.fn()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: () => ({
     getDividendSummary: getDividendSummaryMock,
     getDividendHistory: getDividendHistoryMock,
+    getWatchlist: getWatchlistMock,
   } satisfies Partial<FinancialApiClient>),
 }))
 
@@ -35,6 +37,10 @@ describe('DividendCheckPage', () => {
   beforeEach(() => {
     getDividendSummaryMock.mockReset()
     getDividendHistoryMock.mockReset()
+    getWatchlistMock.mockResolvedValue([
+      { group: 'Ja possuidas', name: 'KLBN4' },
+      { group: 'Ja possuidas', name: 'TASA4' },
+    ])
   })
 
   it('shows placeholder text before first check', () => {
@@ -42,9 +48,9 @@ describe('DividendCheckPage', () => {
     expect(screen.getByText('Select a ticker and click Check')).toBeInTheDocument()
   })
 
-  it('defaults to KLBN4 on load', () => {
+  it('defaults to first watchlist item on load', async () => {
     render(<DividendCheckPage />)
-    expect(screen.getByLabelText('Ticker')).toHaveValue('KLBN4')
+    expect(await screen.findByDisplayValue('KLBN4')).toBeInTheDocument()
   })
 
   it('calls API with uppercased ticker and fixed BVMF exchange', async () => {
@@ -66,6 +72,7 @@ describe('DividendCheckPage', () => {
     getDividendHistoryMock.mockResolvedValue(baseHistory)
 
     render(<DividendCheckPage />)
+    await screen.findByDisplayValue('KLBN4')
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
 
     expect(await screen.findByText('KLBN4 - Klabin SA')).toBeInTheDocument()
@@ -79,6 +86,7 @@ describe('DividendCheckPage', () => {
     getDividendHistoryMock.mockResolvedValue([])
 
     const { container } = render(<DividendCheckPage />)
+    await screen.findByDisplayValue('KLBN4')
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
 
     await screen.findByText(/Price max buy:/)
@@ -91,6 +99,7 @@ describe('DividendCheckPage', () => {
     getDividendHistoryMock.mockResolvedValue([])
 
     const { container } = render(<DividendCheckPage />)
+    await screen.findByDisplayValue('KLBN4')
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
 
     await screen.findByText(/Price max buy:/)
@@ -106,6 +115,7 @@ describe('DividendCheckPage', () => {
     ])
 
     render(<DividendCheckPage />)
+    await screen.findByDisplayValue('KLBN4')
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
     await screen.findByText('Dividend History')
 
@@ -127,6 +137,7 @@ describe('DividendCheckPage', () => {
     getDividendHistoryMock.mockResolvedValue(baseHistory)
 
     render(<DividendCheckPage />)
+    await screen.findByDisplayValue('KLBN4')
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
     await screen.findByText('By Year')
 
@@ -136,11 +147,12 @@ describe('DividendCheckPage', () => {
     expect(yearRows[2]).toHaveTextContent('2022')
   })
 
-  it('shows Checking... and disables button during fetch', () => {
+  it('shows Checking... and disables button during fetch', async () => {
     getDividendSummaryMock.mockReturnValue(new Promise(() => {}))
     getDividendHistoryMock.mockReturnValue(new Promise(() => {}))
 
     render(<DividendCheckPage />)
+    await screen.findByDisplayValue('KLBN4')
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
 
     expect(screen.getByRole('button', { name: 'Checking...' })).toBeDisabled()
@@ -151,6 +163,7 @@ describe('DividendCheckPage', () => {
     getDividendHistoryMock.mockResolvedValueOnce(baseHistory)
 
     render(<DividendCheckPage />)
+    await screen.findByDisplayValue('KLBN4')
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
     await screen.findByText('KLBN4 - Klabin SA')
 
@@ -167,6 +180,7 @@ describe('DividendCheckPage', () => {
     getDividendHistoryMock.mockResolvedValue([])
 
     render(<DividendCheckPage />)
+    await screen.findByDisplayValue('KLBN4')
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Network error')
