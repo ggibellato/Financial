@@ -14,6 +14,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     private readonly INavigationService _navigationService;
     private readonly ICreditQueryService _creditQueryService;
     private readonly ISummaryQueryService _summaryQueryService;
+    private readonly IPortfolioAssetSummaryQueryService _portfolioAssetSummaryQueryService;
     private TreeNodeViewModel? _selectedNode;
     private bool _isLoading;
     private TreeNodeDTO? _fullTree;
@@ -58,11 +59,13 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         INavigationService navigationService,
         ICreditQueryService creditQueryService,
         ISummaryQueryService summaryQueryService,
+        IPortfolioAssetSummaryQueryService portfolioAssetSummaryQueryService,
         TAssetDetailsViewModel assetDetails)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _creditQueryService = creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService));
         _summaryQueryService = summaryQueryService ?? throw new ArgumentNullException(nameof(summaryQueryService));
+        _portfolioAssetSummaryQueryService = portfolioAssetSummaryQueryService ?? throw new ArgumentNullException(nameof(portfolioAssetSummaryQueryService));
         AssetDetails = assetDetails ?? throw new ArgumentNullException(nameof(assetDetails));
         InitializeAssetClassFilters();
     }
@@ -273,7 +276,8 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
         var summary = _summaryQueryService.GetPortfolioSummary(brokerName, portfolioName);
         var credits = _creditQueryService.GetCreditsByPortfolio(brokerName, portfolioName);
-        AssetDetails.LoadPortfolioCredits(brokerName, portfolioName, summary, credits);
+        var assetItems = _portfolioAssetSummaryQueryService.GetPortfolioAssetsSummary(brokerName, portfolioName);
+        AssetDetails.LoadPortfolioSummary(brokerName, portfolioName, summary, credits, assetItems);
     }
 
     private void LoadBrokerCredits(TreeNodeViewModel brokerNode)

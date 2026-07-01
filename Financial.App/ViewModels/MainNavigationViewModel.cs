@@ -11,6 +11,7 @@ public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsV
         INavigationService navigationService,
         ICreditQueryService creditQueryService,
         ISummaryQueryService summaryQueryService,
+        IPortfolioAssetSummaryQueryService portfolioAssetSummaryQueryService,
         ITransactionService transactionService,
         ICreditService creditService,
         IAssetPriceService assetPriceService)
@@ -18,6 +19,7 @@ public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsV
             navigationService ?? throw new ArgumentNullException(nameof(navigationService)),
             creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService)),
             summaryQueryService ?? throw new ArgumentNullException(nameof(summaryQueryService)),
+            portfolioAssetSummaryQueryService ?? throw new ArgumentNullException(nameof(portfolioAssetSummaryQueryService)),
             new AssetDetailsViewModel(
                 transactionService ?? throw new ArgumentNullException(nameof(transactionService)),
                 creditService ?? throw new ArgumentNullException(nameof(creditService)),
