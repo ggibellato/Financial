@@ -5,13 +5,28 @@ Personal financial management tool for consolidating investment transactions acr
 ## Prerequisites
 
 - .NET 10.0 SDK
-- Node.js 24.13+
+- Node.js 22+
 
 ## Data file
 
 The apps load investment data from a JSON file. Copy `data.example.json` to `data.json` locally (the real file is git-ignored).
 
 Configure the path via the `DataJsonFile` environment variable or `appsettings.json`. If not set, defaults to `data.json` in the application directory.
+
+### Storage providers
+
+Two storage backends are supported, selected via the `Repository:Provider` setting (env var: `Repository__Provider`):
+
+- **`LocalJson`** (default) — reads/writes `data.json` from the local filesystem. Set `DataJsonFile` to the file path.
+- **`GoogleDrive`** — reads/writes a JSON file stored in Google Drive. Requires `GoogleDrive:CredentialsPath` (path to the service-account credentials JSON) and `GoogleDrive:FilePath` (the Drive file ID or path).
+
+### Application configuration
+
+Personalise the following sections in `appsettings.json` (or via environment variable overrides) before first use:
+
+- **`Watchlist:Items`** — grouped list of tickers shown in the Dividend Check page combobox.
+- **`AssetPriceFetch:Portfolios`** — list of `{ BrokerName, PortfolioName }` pairs used by the bulk price-fetch page.
+- **`Dividends:DefaultExchange`** — exchange used when fetching dividend data (defaults to `BVMF`).
 
 ## Run
 

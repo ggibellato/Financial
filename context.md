@@ -11,9 +11,7 @@ The system must allow users to:
 * Record asset purchase transactions.
 * Record asset sale transactions.
 * Register dividends and other forms of investment income.
-* Manage brokers.
-* Manage portfolios.
-* Manage assets.
+* Manage brokers, portfolios, and assets (currently done by editing `data.json` directly; no API endpoints exist for adding or removing brokers, portfolios, or assets).
 
 ---
 
@@ -26,20 +24,27 @@ The current portfolio spans two countries:
 
 As a result, the system must support:
 
-* Multiple currencies.
+* Multiple currencies (each broker has a currency; no cross-currency conversion is currently implemented).
 * Different tax regulations.
-* Annual tax reporting for both jurisdictions.
+* Annual tax reporting for both jurisdictions (planned — not yet implemented).
 * Investment performance tracking.
 * Portfolio analytics.
 
-Supported asset classes include:
+Supported asset classes (`GlobalAssetClass` enum) include:
 
-* Bitcoin
-* REITs (Fundos Imobiliários)
-* Shares
-* ETFs
-* Government bonds
-* ISAs
+* Equity (BR: Acoes; US/UK: Stock)
+* RealEstate (BR: FII; US/UK: REIT)
+* ETF
+* Fund (BR: Fund; US/UK: Fund)
+* Bond (BR: Bond, TesouroDireto; US: T-Bill; UK: ConventionalGilt, Bond)
+* Cash
+* Pension
+* Other
+* Unknown (fallback when no mapping is found)
+
+Assets are classified using a two-level system: `CountryCode` (BR, US, UK) combined with a `LocalTypeCode` string (e.g., `Acoes`, `FII`, `TesouroDireto`, `ConventionalGilt`) maps to a `GlobalAssetClass`. Cryptocurrencies (e.g. Bitcoin) are held in a dedicated broker (Coinbase) and currently fall under `Unknown` as no crypto-specific `LocalTypeCode` mapping exists.
+
+Note: ISA is a UK tax wrapper (account type), not an asset class. ISA accounts at FreeTrade or Trading 212 hold assets of the classes above.
 
 The solution must be extensible so that new asset classes can be added in the future without significant architectural changes.
 
@@ -51,23 +56,27 @@ The solution must be extensible so that new asset classes can be added in the fu
 
 This is currently a personal project. A traditional database is not required at this stage.
 
-The initial implementation should use JSON files stored locally for persistence.
+Persistence uses JSON files. Two storage backends are implemented and selectable via configuration (`Repository:Provider`):
 
-Future storage providers may include:
+* **LocalJson** — reads/writes a `data.json` file on the local filesystem (default).
+* **GoogleDrive** — reads/writes a JSON file stored in Google Drive via the Google Drive API.
 
-* Local file system
-* Google Drive
-* Additional cloud storage providers
+The persistence layer is abstracted behind a repository interface so that storage implementations can be replaced with minimal impact on the rest of the application.
 
-The persistence layer must be abstracted so that storage implementations can be replaced with minimal impact on the rest of the application.
+All data is loaded into memory during application startup. Each write operation (add/update/delete transaction or credit) persists the full dataset immediately via the repository. There is no manual save step or shutdown hook.
 
-For the initial version:
+---
 
-* All data may be loaded into memory during application startup.
-* Data may be saved manually by the user.
-* Data should also be saved automatically during application shutdown.
+## Implemented Features
 
-The codebase should be structured to allow migration to a more sophisticated persistence model in the future.
+The following features are currently built and available in both the React web app and the WPF desktop app unless noted:
+
+* **Portfolio Navigator** — hierarchical tree (Broker → Portfolio → Asset) with per-asset detail tabs: summary (average price, quantity, current value), transactions (buy/sell CRUD), and credits (dividend/rent CRUD).
+* **Dividend Check** — enter a ticker to fetch 5-year average dividend history from Google Finance, compute the maximum buy price at a 6% required yield target, and display the current discount against the live price. Supports a configured watchlist of tickers as a quick-select combobox.
+* **Bulk Price Fetch** — fetches live prices for all active assets in a configured set of portfolios using the Google Finance web scraper, with a per-asset progress indicator.
+* **Watchlist** — static list of tickers defined in `appsettings.json` (`Watchlist:Items`), used by the Dividend Check page.
+* **Google Finance integration** — live asset prices and dividend history are obtained by scraping Google Finance pages (`WebPageParser` project). No API key is required, but the scraper depends on Google Finance's page structure.
+* **Google Sheets import tool** — a separate WPF utility (`Integrations/ImportGoogleSpreadSheets`) for one-time import of portfolio data from Google Sheets. Not part of the main app runtime.
 
 ---
 
