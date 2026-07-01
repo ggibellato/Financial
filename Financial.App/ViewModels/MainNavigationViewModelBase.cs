@@ -13,6 +13,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 {
     private readonly INavigationService _navigationService;
     private readonly ICreditQueryService _creditQueryService;
+    private readonly ISummaryQueryService _summaryQueryService;
     private TreeNodeViewModel? _selectedNode;
     private bool _isLoading;
     private TreeNodeDTO? _fullTree;
@@ -56,10 +57,12 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     protected MainNavigationViewModelBase(
         INavigationService navigationService,
         ICreditQueryService creditQueryService,
+        ISummaryQueryService summaryQueryService,
         TAssetDetailsViewModel assetDetails)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _creditQueryService = creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService));
+        _summaryQueryService = summaryQueryService ?? throw new ArgumentNullException(nameof(summaryQueryService));
         AssetDetails = assetDetails ?? throw new ArgumentNullException(nameof(assetDetails));
         InitializeAssetClassFilters();
     }
@@ -268,8 +271,9 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
+        var summary = _summaryQueryService.GetPortfolioSummary(brokerName, portfolioName);
         var credits = _creditQueryService.GetCreditsByPortfolio(brokerName, portfolioName);
-        AssetDetails.LoadPortfolioCredits(brokerName, portfolioName, credits);
+        AssetDetails.LoadPortfolioCredits(brokerName, portfolioName, summary, credits);
     }
 
     private void LoadBrokerCredits(TreeNodeViewModel brokerNode)
@@ -281,7 +285,8 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
+        var summary = _summaryQueryService.GetBrokerSummary(brokerName);
         var credits = _creditQueryService.GetCreditsByBroker(brokerName);
-        AssetDetails.LoadBrokerCredits(brokerName, credits);
+        AssetDetails.LoadBrokerCredits(brokerName, summary, credits);
     }
 }

@@ -259,14 +259,14 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         UpdateCommandStates();
     }
 
-    public void LoadBrokerCredits(string brokerName, IReadOnlyList<CreditDTO> credits)
+    public void LoadBrokerCredits(string brokerName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
     {
-        LoadAggregateCredits(BuildBrokerKey(brokerName), credits);
+        LoadAggregateCredits(BuildBrokerKey(brokerName), summary, credits);
     }
 
-    public void LoadPortfolioCredits(string brokerName, string portfolioName, IReadOnlyList<CreditDTO> credits)
+    public void LoadPortfolioCredits(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
     {
-        LoadAggregateCredits(BuildPortfolioKey(brokerName, portfolioName), credits);
+        LoadAggregateCredits(BuildPortfolioKey(brokerName, portfolioName), summary, credits);
     }
 
     private bool HasAssetContext =>
@@ -327,9 +327,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         OnPropertyChanged(nameof(ResultPercentWithCredits));
     }
 
-    private void LoadAggregateCredits(string contextKey, IReadOnlyList<CreditDTO> credits)
+    private void LoadAggregateCredits(string contextKey, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
     {
         ClearAssetContext();
+        TotalBought = summary.TotalBought;
+        TotalSold = summary.TotalSold;
         IsCreditsAggregateView = true;
         HasCreditsContext = true;
         SetCreditsContext(contextKey, rebuild: false);

@@ -1,0 +1,197 @@
+using Financial.Application.DTOs;
+using Financial.Application.Interfaces;
+using Financial.Domain.Entities;
+using Financial.Presentation.App.ViewModels;
+using FluentAssertions;
+
+namespace Financial.Presentation.Tests.ViewModels;
+
+public class MainNavigationViewModelBaseTests
+{
+    [Fact]
+    public void SelectingPortfolioNode_LoadsTotalSoldFromSummaryService()
+    {
+        var summary = new AggregatedSummaryDTO { TotalBought = 10000m, TotalSold = 4706.65m, TotalCredits = 500m };
+        var summaryService = new StubSummaryQueryService { PortfolioSummary = summary };
+        var spy = new SpyAssetDetailsViewModel();
+        var vm = new TestableNavigationViewModel(summaryService, spy);
+
+        var portfolioNode = BuildPortfolioNode("XPI", "FII");
+        vm.SelectedNode = portfolioNode;
+
+        spy.LastPortfolioSummary.Should().NotBeNull();
+        spy.LastPortfolioSummary!.TotalSold.Should().Be(4706.65m);
+        spy.LastPortfolioSummary.TotalBought.Should().Be(10000m);
+    }
+
+    [Fact]
+    public void SelectingBrokerNode_LoadsTotalSoldFromSummaryService()
+    {
+        var summary = new AggregatedSummaryDTO { TotalBought = 20000m, TotalSold = 9000m, TotalCredits = 800m };
+        var summaryService = new StubSummaryQueryService { BrokerSummary = summary };
+        var spy = new SpyAssetDetailsViewModel();
+        var vm = new TestableNavigationViewModel(summaryService, spy);
+
+        var brokerNode = BuildBrokerNode("XPI");
+        vm.SelectedNode = brokerNode;
+
+        spy.LastBrokerSummary.Should().NotBeNull();
+        spy.LastBrokerSummary!.TotalSold.Should().Be(9000m);
+        spy.LastBrokerSummary.TotalBought.Should().Be(20000m);
+    }
+
+    [Fact]
+    public void SelectingPortfolioNode_PassesCorrectBrokerAndPortfolioNameToSummaryService()
+    {
+        var summaryService = new StubSummaryQueryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var vm = new TestableNavigationViewModel(summaryService, spy);
+
+        var portfolioNode = BuildPortfolioNode("XPI", "FII");
+        vm.SelectedNode = portfolioNode;
+
+        summaryService.LastBrokerNameForPortfolio.Should().Be("XPI");
+        summaryService.LastPortfolioName.Should().Be("FII");
+    }
+
+    [Fact]
+    public void SelectingBrokerNode_PassesCorrectBrokerNameToSummaryService()
+    {
+        var summaryService = new StubSummaryQueryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var vm = new TestableNavigationViewModel(summaryService, spy);
+
+        var brokerNode = BuildBrokerNode("XPI");
+        vm.SelectedNode = brokerNode;
+
+        summaryService.LastBrokerNameForBroker.Should().Be("XPI");
+    }
+
+    [Fact]
+    public void SelectingPortfolioNode_WhenMissingMetadata_ClearsDetails()
+    {
+        var summaryService = new StubSummaryQueryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var vm = new TestableNavigationViewModel(summaryService, spy);
+
+        var nodeWithoutMetadata = BuildNodeWithoutMetadata(TreeNodeTypes.Portfolio);
+        vm.SelectedNode = nodeWithoutMetadata;
+
+        spy.WasCleared.Should().BeTrue();
+        spy.LastPortfolioSummary.Should().BeNull();
+    }
+
+    private static TreeNodeViewModel BuildPortfolioNode(string brokerName, string portfolioName)
+    {
+        var brokerDto = new TreeNodeDTO
+        {
+            NodeType = TreeNodeTypes.Broker,
+            DisplayName = brokerName,
+            Metadata = new Dictionary<string, object> { ["BrokerName"] = brokerName },
+            Children = []
+        };
+
+        var portfolioDto = new TreeNodeDTO
+        {
+            NodeType = TreeNodeTypes.Portfolio,
+            DisplayName = portfolioName,
+            Metadata = new Dictionary<string, object> { ["PortfolioName"] = portfolioName },
+            Children = []
+        };
+
+        var brokerNode = new TreeNodeViewModel(brokerDto);
+        var portfolioNode = new TreeNodeViewModel(portfolioDto, brokerNode);
+        return portfolioNode;
+    }
+
+    private static TreeNodeViewModel BuildBrokerNode(string brokerName)
+    {
+        var brokerDto = new TreeNodeDTO
+        {
+            NodeType = TreeNodeTypes.Broker,
+            DisplayName = brokerName,
+            Metadata = new Dictionary<string, object> { ["BrokerName"] = brokerName },
+            Children = []
+        };
+        return new TreeNodeViewModel(brokerDto);
+    }
+
+    private static TreeNodeViewModel BuildNodeWithoutMetadata(string nodeType)
+    {
+        var dto = new TreeNodeDTO
+        {
+            NodeType = nodeType,
+            DisplayName = "Unknown",
+            Metadata = new Dictionary<string, object>(),
+            Children = []
+        };
+        return new TreeNodeViewModel(dto);
+    }
+
+    private sealed class TestableNavigationViewModel : MainNavigationViewModelBase<SpyAssetDetailsViewModel>
+    {
+        public TestableNavigationViewModel(ISummaryQueryService summaryQueryService, SpyAssetDetailsViewModel spy)
+            : base(new StubNavigationService(), new StubCreditQueryService(), summaryQueryService, spy)
+        {
+        }
+    }
+
+    private sealed class SpyAssetDetailsViewModel : IAssetDetailsViewModel
+    {
+        public AggregatedSummaryDTO? LastPortfolioSummary { get; private set; }
+        public AggregatedSummaryDTO? LastBrokerSummary { get; private set; }
+        public bool WasCleared { get; private set; }
+
+        public void LoadAssetDetails(AssetDetailsDTO details) { }
+
+        public void LoadBrokerCredits(string brokerName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
+        {
+            LastBrokerSummary = summary;
+        }
+
+        public void LoadPortfolioCredits(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
+        {
+            LastPortfolioSummary = summary;
+        }
+
+        public void Clear() => WasCleared = true;
+        public Task EnsureTodayInfoLoadedAsync() => Task.CompletedTask;
+        public void UpdateCreditsPlotWidth(double plotWidth) { }
+    }
+
+    private sealed class StubSummaryQueryService : ISummaryQueryService
+    {
+        public AggregatedSummaryDTO BrokerSummary { get; set; } = new();
+        public AggregatedSummaryDTO PortfolioSummary { get; set; } = new();
+        public string? LastBrokerNameForBroker { get; private set; }
+        public string? LastBrokerNameForPortfolio { get; private set; }
+        public string? LastPortfolioName { get; private set; }
+
+        public AggregatedSummaryDTO GetBrokerSummary(string brokerName)
+        {
+            LastBrokerNameForBroker = brokerName;
+            return BrokerSummary;
+        }
+
+        public AggregatedSummaryDTO GetPortfolioSummary(string brokerName, string portfolioName)
+        {
+            LastBrokerNameForPortfolio = brokerName;
+            LastPortfolioName = portfolioName;
+            return PortfolioSummary;
+        }
+    }
+
+    private sealed class StubNavigationService : INavigationService
+    {
+        public TreeNodeDTO GetNavigationTree() => new() { NodeType = TreeNodeTypes.Broker, DisplayName = "Root", Metadata = [], Children = [] };
+        public AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName) => null;
+        public IEnumerable<BrokerNodeDTO> GetBrokers() => [];
+        public IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName) => [];
+    }
+
+    private sealed class StubCreditQueryService : ICreditQueryService
+    {
+        public IReadOnlyList<CreditDTO> GetCreditsByBroker(string brokerName) => [];
+        public IReadOnlyList<CreditDTO> GetCreditsByPortfolio(string brokerName, string portfolioName) => [];
+    }
+}

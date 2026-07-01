@@ -10,12 +10,14 @@ public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsV
     public MainNavigationViewModel(
         INavigationService navigationService,
         ICreditQueryService creditQueryService,
+        ISummaryQueryService summaryQueryService,
         ITransactionService transactionService,
         ICreditService creditService,
         IAssetPriceService assetPriceService)
         : base(
             navigationService ?? throw new ArgumentNullException(nameof(navigationService)),
             creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService)),
+            summaryQueryService ?? throw new ArgumentNullException(nameof(summaryQueryService)),
             new AssetDetailsViewModel(
                 transactionService ?? throw new ArgumentNullException(nameof(transactionService)),
                 creditService ?? throw new ArgumentNullException(nameof(creditService)),
