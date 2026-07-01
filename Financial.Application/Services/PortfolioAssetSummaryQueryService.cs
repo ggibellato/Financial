@@ -34,17 +34,37 @@ public sealed class PortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQu
 
     private static AssetComputedData ComputeAssetData(Asset asset)
     {
-        var (totalBought, totalSold, _) = NavigationMapper.CalculateTotals(asset);
+        var (totalBought, totalSold, totalCredits) = NavigationMapper.CalculateTotals(asset);
         var firstBuyDate = asset.Transactions
             .Where(t => t.Type == Transaction.TransactionType.Buy)
             .Select(t => (DateTime?)t.Date)
             .DefaultIfEmpty(null)
             .Min();
 
+        var cashFlows = BuildCashFlows(asset);
+
         return new AssetComputedData(
             asset.Name, asset.Ticker, asset.Exchange,
             firstBuyDate, asset.Quantity,
-            totalBought, totalSold, totalBought - totalSold);
+            totalBought, totalSold, totalBought - totalSold,
+            totalCredits, cashFlows);
+    }
+
+    private static IReadOnlyList<AssetCashFlowDTO> BuildCashFlows(Asset asset)
+    {
+        var flows = new List<AssetCashFlowDTO>();
+
+        foreach (var t in asset.Transactions)
+        {
+            var amount = t.Type == Transaction.TransactionType.Buy ? -t.TotalPrice : t.TotalPrice;
+            flows.Add(new AssetCashFlowDTO { Date = t.Date, Amount = amount });
+        }
+
+        foreach (var c in asset.Credits)
+            flows.Add(new AssetCashFlowDTO { Date = c.Date, Amount = c.Value });
+
+        flows.Sort((a, b) => a.Date.CompareTo(b.Date));
+        return flows;
     }
 
     private static PortfolioAssetSummaryItemDTO ToDTO(AssetComputedData c, decimal weight) =>
@@ -58,7 +78,9 @@ public sealed class PortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQu
             TotalBought = c.TotalBought,
             TotalSold = c.TotalSold,
             TotalInvested = c.TotalInvested,
-            PortfolioWeight = weight
+            PortfolioWeight = weight,
+            TotalCredits = c.TotalCredits,
+            CashFlows = c.CashFlows
         };
 
     private static decimal CalculateWeight(decimal totalInvested, decimal portfolioTotalInvested) =>
@@ -67,5 +89,6 @@ public sealed class PortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQu
     private sealed record AssetComputedData(
         string AssetName, string Ticker, string Exchange,
         DateTime? FirstInvestmentDate, decimal CurrentQuantity,
-        decimal TotalBought, decimal TotalSold, decimal TotalInvested);
+        decimal TotalBought, decimal TotalSold, decimal TotalInvested,
+        decimal TotalCredits, IReadOnlyList<AssetCashFlowDTO> CashFlows);
 }
