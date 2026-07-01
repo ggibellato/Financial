@@ -9,6 +9,7 @@ const getAssetDetailsMock = vi.fn()
 const getCurrentPriceMock = vi.fn()
 const getSummaryByBrokerMock = vi.fn()
 const getSummaryByPortfolioMock = vi.fn()
+const getPortfolioAssetsSummaryMock = vi.fn()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
@@ -16,6 +17,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getCurrentPrice: getCurrentPriceMock,
     getSummaryByBroker: getSummaryByBrokerMock,
     getSummaryByPortfolio: getSummaryByPortfolioMock,
+    getPortfolioAssetsSummary: getPortfolioAssetsSummaryMock,
   }),
 }))
 
@@ -65,6 +67,7 @@ describe('DetailPanel', () => {
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
     getSummaryByBrokerMock.mockReturnValue(new Promise(() => {}))
     getSummaryByPortfolioMock.mockReturnValue(new Promise(() => {}))
+    getPortfolioAssetsSummaryMock.mockReturnValue(new Promise(() => {}))
   })
 
   it('shows empty state when selectedNode is null', () => {
@@ -167,10 +170,11 @@ describe('DetailPanel', () => {
     expect(screen.getByText('Loading...')).toBeInTheDocument()
   })
 
-  it('renders_aggregated_summary_tab_for_portfolio_node', () => {
+  it('renders_portfolio_summary_tab_for_portfolio_node', () => {
     renderPanel(portfolioNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    const loadingItems = screen.getAllByText('Loading...')
+    expect(loadingItems.length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders_asset_summary_tab_for_asset_node_regression', () => {

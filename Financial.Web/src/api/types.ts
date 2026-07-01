@@ -193,3 +193,15 @@ export interface PortfolioReferenceDto {
   brokerName: string
   portfolioName: string
 }
+
+export interface PortfolioAssetSummaryItemDto {
+  assetName: string
+  ticker: string
+  exchange: string
+  firstInvestmentDate: string | null
+  currentQuantity: number
+  totalBought: number
+  totalSold: number
+  totalInvested: number
+  portfolioWeight: number
+}
