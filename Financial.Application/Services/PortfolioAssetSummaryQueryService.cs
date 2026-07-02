@@ -23,7 +23,8 @@ public sealed class PortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQu
         if (assets.Count == 0)
             return [];
 
-        var computed = assets.Select(ComputeAssetData).ToList();
+        var today = DateTime.Today;
+        var computed = assets.Select(a => ComputeAssetData(a, today)).ToList();
         var portfolioTotalInvested = computed.Sum(c => c.TotalInvested);
 
         return NavigationMapper
@@ -32,7 +33,7 @@ public sealed class PortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQu
             .ToList();
     }
 
-    private static AssetComputedData ComputeAssetData(Asset asset)
+    private static AssetComputedData ComputeAssetData(Asset asset, DateTime today)
     {
         var (totalBought, totalSold, totalCredits) = NavigationMapper.CalculateTotals(asset);
         var firstBuyDate = asset.Transactions
@@ -42,12 +43,85 @@ public sealed class PortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQu
             .Min();
 
         var cashFlows = BuildCashFlows(asset);
+        var creditsAnalysis = ComputeCreditsAnalysis(asset, totalBought - totalSold, today);
 
         return new AssetComputedData(
             asset.Name, asset.Ticker, asset.Exchange,
             firstBuyDate, asset.Quantity,
             totalBought, totalSold, totalBought - totalSold,
-            totalCredits, cashFlows);
+            totalCredits, cashFlows,
+            creditsAnalysis.LastMonthCredits, creditsAnalysis.LastCreditMonth,
+            creditsAnalysis.LastMonthCreditsPercent, creditsAnalysis.CreditFrequencyPerYear,
+            creditsAnalysis.EstimatedAnnualCredits, creditsAnalysis.EstimatedAnnualPercent,
+            creditsAnalysis.CurrentMonthCredits);
+    }
+
+    private static CreditsAnalysis ComputeCreditsAnalysis(Asset asset, decimal totalInvested, DateTime today)
+    {
+        var pastCredits = asset.Credits.Where(c => c.Date <= today).ToList();
+
+        var lastCreditMonth = pastCredits
+            .GroupBy(c => (c.Date.Year, c.Date.Month))
+            .Select(g => g.Key)
+            .OrderByDescending(g => g.Year).ThenByDescending(g => g.Month)
+            .Cast<(int Year, int Month)?>()
+            .FirstOrDefault();
+
+        var lastMonthCreditsString = lastCreditMonth.HasValue
+            ? $"{lastCreditMonth.Value.Year:D4}-{lastCreditMonth.Value.Month:D2}"
+            : null;
+
+        var lastMonthCredits = lastCreditMonth.HasValue
+            ? pastCredits
+                .Where(c => c.Date.Year == lastCreditMonth.Value.Year && c.Date.Month == lastCreditMonth.Value.Month)
+                .Sum(c => c.Value)
+            : 0m;
+
+        decimal? lastMonthCreditsPercent = lastCreditMonth.HasValue && totalInvested != 0m
+            ? lastMonthCredits / totalInvested * 100m
+            : null;
+
+        var frequencyPerYear = DetectCreditFrequency(asset.Credits);
+
+        decimal? estimatedAnnualCredits = frequencyPerYear.HasValue
+            ? lastMonthCredits * frequencyPerYear.Value
+            : null;
+
+        decimal? estimatedAnnualPercent = estimatedAnnualCredits.HasValue && totalInvested != 0m
+            ? estimatedAnnualCredits.Value / totalInvested * 100m
+            : null;
+
+        var currentMonthCredits = asset.Credits
+            .Where(c => c.Date.Year == today.Year && c.Date.Month == today.Month)
+            .Sum(c => c.Value);
+
+        return new CreditsAnalysis(
+            lastMonthCredits, lastMonthCreditsString, lastMonthCreditsPercent,
+            frequencyPerYear, estimatedAnnualCredits, estimatedAnnualPercent,
+            currentMonthCredits);
+    }
+
+    private static int? DetectCreditFrequency(IEnumerable<Credit> credits)
+    {
+        var distinctMonths = credits
+            .Select(c => c.Date.Year * 12 + (c.Date.Month - 1))
+            .Distinct()
+            .OrderBy(m => m)
+            .ToList();
+
+        if (distinctMonths.Count < 2)
+            return null;
+
+        var totalGap = distinctMonths[^1] - distinctMonths[0];
+        var averageGap = (double)totalGap / (distinctMonths.Count - 1);
+
+        return averageGap switch
+        {
+            <= 1.5 => 12,
+            <= 3.5 => 4,
+            <= 5.0 => 3,
+            _ => null
+        };
     }
 
     private static IReadOnlyList<AssetCashFlowDTO> BuildCashFlows(Asset asset)
@@ -80,7 +154,14 @@ public sealed class PortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQu
             TotalInvested = c.TotalInvested,
             PortfolioWeight = weight,
             TotalCredits = c.TotalCredits,
-            CashFlows = c.CashFlows
+            CashFlows = c.CashFlows,
+            LastMonthCredits = c.LastMonthCredits,
+            LastCreditMonth = c.LastCreditMonth,
+            LastMonthCreditsPercent = c.LastMonthCreditsPercent,
+            CreditFrequencyPerYear = c.CreditFrequencyPerYear,
+            EstimatedAnnualCredits = c.EstimatedAnnualCredits,
+            EstimatedAnnualPercent = c.EstimatedAnnualPercent,
+            CurrentMonthCredits = c.CurrentMonthCredits
         };
 
     private static decimal CalculateWeight(decimal totalInvested, decimal portfolioTotalInvested) =>
@@ -90,5 +171,13 @@ public sealed class PortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQu
         string AssetName, string Ticker, string Exchange,
         DateTime? FirstInvestmentDate, decimal CurrentQuantity,
         decimal TotalBought, decimal TotalSold, decimal TotalInvested,
-        decimal TotalCredits, IReadOnlyList<AssetCashFlowDTO> CashFlows);
+        decimal TotalCredits, IReadOnlyList<AssetCashFlowDTO> CashFlows,
+        decimal LastMonthCredits, string? LastCreditMonth, decimal? LastMonthCreditsPercent,
+        int? CreditFrequencyPerYear, decimal? EstimatedAnnualCredits, decimal? EstimatedAnnualPercent,
+        decimal CurrentMonthCredits);
+
+    private sealed record CreditsAnalysis(
+        decimal LastMonthCredits, string? LastCreditMonth, decimal? LastMonthCreditsPercent,
+        int? CreditFrequencyPerYear, decimal? EstimatedAnnualCredits, decimal? EstimatedAnnualPercent,
+        decimal CurrentMonthCredits);
 }

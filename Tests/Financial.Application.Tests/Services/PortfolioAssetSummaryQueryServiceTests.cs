@@ -289,6 +289,290 @@ public class PortfolioAssetSummaryQueryServiceTests
         result[0].CashFlows[0].Amount.Should().Be(-155m);
     }
 
+    // ── Phase 3: Credits-analysis unit tests ─────────────────────────────────
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsLastMonthCredits_SumOfMostRecentMonthCredits()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 1000m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 3, 1), Credit.CreditType.Dividend, 20m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 10m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 6, 15), Credit.CreditType.Dividend, 8m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].LastMonthCredits.Should().Be(18m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsLastMonthCredits_Zero_WhenNoCredits()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 1000m, 0m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].LastMonthCredits.Should().Be(0m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsLastCreditMonth_FormattedYYYYMM()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 6, 10), Credit.CreditType.Dividend, 5m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].LastCreditMonth.Should().Be("2024-06");
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsLastCreditMonth_Null_WhenNoCredits()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].LastCreditMonth.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ExcludesFutureCreditDatesFromLastMonthCalculation()
+    {
+        var pastDate = DateTime.Today.AddMonths(-1);
+        var futureDate = DateTime.Today.AddDays(5);
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        asset.AddCredit(Credit.Create(pastDate, Credit.CreditType.Dividend, 10m));
+        asset.AddCredit(Credit.Create(futureDate, Credit.CreditType.Dividend, 99m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        using var _ = new AssertionScope();
+        result[0].LastCreditMonth.Should().Be($"{pastDate.Year:D4}-{pastDate.Month:D2}");
+        result[0].LastMonthCredits.Should().Be(10m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsLastMonthCreditsPercent_Computed()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 1000m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 10m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].LastMonthCreditsPercent.Should().Be(1m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsLastMonthCreditsPercent_Null_WhenTotalInvestedIsZero()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 2, 1), Transaction.TransactionType.Sell, 1m, 100m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 3, 1), Credit.CreditType.Dividend, 5m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].LastMonthCreditsPercent.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsLastMonthCreditsPercent_Null_WhenNoCredits()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].LastMonthCreditsPercent.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_DetectsMonthlyFrequency()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 1, 15), Credit.CreditType.Dividend, 5m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 2, 15), Credit.CreditType.Dividend, 5m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 3, 15), Credit.CreditType.Dividend, 5m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].CreditFrequencyPerYear.Should().Be(12);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_DetectsQuarterlyFrequency()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 1, 15), Credit.CreditType.Dividend, 5m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 4, 15), Credit.CreditType.Dividend, 5m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 7, 15), Credit.CreditType.Dividend, 5m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].CreditFrequencyPerYear.Should().Be(4);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_DetectsFourMonthFrequency()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 1, 15), Credit.CreditType.Dividend, 5m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 5, 15), Credit.CreditType.Dividend, 5m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 9, 15), Credit.CreditType.Dividend, 5m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].CreditFrequencyPerYear.Should().Be(3);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsNullFrequency_WhenOnlyOneDistinctCreditMonth()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 5m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 6, 15), Credit.CreditType.Dividend, 3m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].CreditFrequencyPerYear.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsNullFrequency_WhenGapOutsideKnownRanges()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 1, 15), Credit.CreditType.Dividend, 5m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 9, 15), Credit.CreditType.Dividend, 5m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].CreditFrequencyPerYear.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsEstimatedAnnualCredits_Computed()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 10000m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 50m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 2, 1), Credit.CreditType.Dividend, 50m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 3, 1), Credit.CreditType.Dividend, 50m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].EstimatedAnnualCredits.Should().Be(600m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsEstimatedAnnualCredits_Null_WhenFrequencyNull()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 5m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].EstimatedAnnualCredits.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsEstimatedAnnualPercent_Computed()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 10000m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 50m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 2, 1), Credit.CreditType.Dividend, 50m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 3, 1), Credit.CreditType.Dividend, 50m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].EstimatedAnnualPercent.Should().Be(6m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsEstimatedAnnualPercent_Null_WhenEstimatedCreditsNull()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 5m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].EstimatedAnnualPercent.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsEstimatedAnnualPercent_Null_WhenTotalInvestedIsZero()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 2, 1), Transaction.TransactionType.Sell, 1m, 100m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 5m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 2, 1), Credit.CreditType.Dividend, 5m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 3, 1), Credit.CreditType.Dividend, 5m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].EstimatedAnnualPercent.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsCurrentMonthCredits_SumOfCurrentMonthCredits()
+    {
+        var today = DateTime.Today;
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(today.Year, today.Month, 1), Credit.CreditType.Dividend, 12m));
+        asset.AddCredit(Credit.Create(new DateTime(today.Year, today.Month, 10), Credit.CreditType.Dividend, 8m));
+        asset.AddCredit(Credit.Create(today.AddMonths(-1), Credit.CreditType.Dividend, 99m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].CurrentMonthCredits.Should().Be(20m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsCurrentMonthCredits_Zero_WhenNoneInCurrentMonth()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        asset.AddCredit(Credit.Create(DateTime.Today.AddMonths(-1), Credit.CreditType.Dividend, 15m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].CurrentMonthCredits.Should().Be(0m);
+    }
+
     private PortfolioAssetSummaryQueryService CreateService() => new(_repository);
 
     private static Asset MakeAsset(string name, string ticker, string exchange) =>
