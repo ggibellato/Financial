@@ -7,6 +7,7 @@ import PortfolioSummaryTab from '../PortfolioSummaryTab'
 
 const mockAggregatedRetry = vi.fn()
 const mockPortfolioRetry = vi.fn()
+const xirrMock = vi.hoisted(() => vi.fn<(cashFlows: { date: Date; amount: number }[]) => number | null>())
 
 const mockAggregatedHookValue: AggregatedSummaryData = {
   summary: null,
@@ -31,6 +32,10 @@ vi.mock('../../hooks/usePortfolioAssetSummary', () => ({
   usePortfolioAssetSummary: () => mockPortfolioHookValue,
 }))
 
+vi.mock('../../utils/xirr', () => ({
+  xirr: xirrMock,
+}))
+
 const SUMMARY: AggregatedSummaryDto = {
   totalBought: 15420.5,
   totalSold: 3200.0,
@@ -47,6 +52,8 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   totalSold: 0,
   totalInvested: 2500,
   portfolioWeight: 23.4,
+  totalCredits: 0,
+  cashFlows: [],
 }
 
 const LOADING_ROW_PRICE: RowPriceState = { isLoading: true, currentPrice: null, fetchFailed: false }
@@ -65,6 +72,8 @@ describe('PortfolioSummaryTab', () => {
   beforeEach(() => {
     mockAggregatedRetry.mockReset()
     mockPortfolioRetry.mockReset()
+    xirrMock.mockReset()
+    xirrMock.mockReturnValue(null)
     Object.assign(mockAggregatedHookValue, {
       summary: null,
       isLoading: false,
@@ -115,17 +124,32 @@ describe('PortfolioSummaryTab', () => {
     expect(screen.getByText('Quantity')).toBeInTheDocument()
     expect(screen.getByText('Total Invested')).toBeInTheDocument()
     expect(screen.getByText('% Portfolio')).toBeInTheDocument()
+    expect(screen.getAllByText('Total Credits').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Current Value')).toBeInTheDocument()
     expect(screen.getByText('% Profit')).toBeInTheDocument()
+    expect(screen.getByText('% Profit w/ Credits')).toBeInTheDocument()
+    expect(screen.getByText('XIRR')).toBeInTheDocument()
   })
 
   it('renders_asset_row_with_correctly_formatted_values', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, totalCredits: 75.5 }
     setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
     render(<PortfolioSummaryTab />)
     expect(screen.getByText('ALZR11')).toBeInTheDocument()
     expect(screen.getByText('01/03/2021')).toBeInTheDocument()
     expect(screen.getByText(/23\.4%/)).toBeInTheDocument()
+    expect(screen.getByText(/75[.,]50/)).toBeInTheDocument()
+  })
+
+  it('renders_total_credits_immediately_before_price_resolves', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, totalCredits: 75.5 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByText(/75[.,]50/)).toBeInTheDocument()
+    const loadingCells = screen.getAllByText('...')
+    expect(loadingCells.length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders_per_cell_loading_indicator_while_price_loads', () => {
@@ -133,7 +157,7 @@ describe('PortfolioSummaryTab', () => {
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
     render(<PortfolioSummaryTab />)
     const loadingCells = screen.getAllByText('...')
-    expect(loadingCells).toHaveLength(2)
+    expect(loadingCells).toHaveLength(4)
   })
 
   it('renders_current_value_when_price_resolves', () => {
@@ -150,15 +174,46 @@ describe('PortfolioSummaryTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
     render(<PortfolioSummaryTab />)
-    expect(screen.getByText(/5[.,]00%/)).toBeInTheDocument()
+    // Both % Profit and % Profit w/ Credits show 5.00% when totalCredits is 0
+    const profitElements = screen.getAllByText(/5[.,]00%/)
+    expect(profitElements.length).toBeGreaterThanOrEqual(1)
+    expect(profitElements[0]).toHaveClass('portfolio-summary__profit--green')
   })
 
-  it('renders_dash_in_current_value_and_profit_on_price_failure', () => {
+  it('renders_correct_profit_with_credits_percent', () => {
+    // currentValue = 10.5 * 25 = 262.50
+    // profitWithCreditsPercent = (262.50 + 12.50 - 250) / 250 * 100 = 10.00%
+    const item: PortfolioAssetSummaryItemDto = {
+      ...ITEM_1,
+      currentQuantity: 25,
+      totalInvested: 250,
+      totalCredits: 12.5,
+    }
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByText(/10[.,]00%/)).toBeInTheDocument()
+  })
+
+  it('renders_xirr_when_price_resolves', () => {
+    xirrMock.mockReturnValue(0.1234)
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByText(/12[.,]34%/)).toBeInTheDocument()
+    expect(xirrMock).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ amount: 262.5 })]),
+    )
+  })
+
+  it('renders_dash_in_current_value_and_price_dependent_columns_on_price_failure', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [FAILED_ROW_PRICE] })
     render(<PortfolioSummaryTab />)
     const dashes = screen.getAllByText('—')
-    expect(dashes.length).toBeGreaterThanOrEqual(2)
+    expect(dashes.length).toBeGreaterThanOrEqual(4)
   })
 
   it('renders_dash_in_profit_when_total_invested_is_zero', () => {
@@ -167,8 +222,30 @@ describe('PortfolioSummaryTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
     render(<PortfolioSummaryTab />)
-    expect(screen.getByText('—')).toBeInTheDocument()
+    const dashes = screen.getAllByText('—')
+    expect(dashes.length).toBeGreaterThanOrEqual(2) // % Profit and % Profit w/ Credits
     expect(screen.getByText(/262[.,]50/)).toBeInTheDocument()
+  })
+
+  it('renders_dash_in_xirr_when_cash_flows_fewer_than_two_entries', () => {
+    // cashFlows: [] + terminal entry = 1 entry → xirr returns null → XIRR shows "—"
+    xirrMock.mockReturnValue(null)
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
+    render(<PortfolioSummaryTab />)
+    const dashes = screen.getAllByText('—')
+    expect(dashes.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('renders_dash_in_xirr_on_non_convergence', () => {
+    xirrMock.mockReturnValue(null)
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
+    render(<PortfolioSummaryTab />)
+    const dashes = screen.getAllByText('—')
+    expect(dashes.length).toBeGreaterThanOrEqual(1)
   })
 
   it('applies_green_class_to_positive_profit', () => {
@@ -189,6 +266,60 @@ describe('PortfolioSummaryTab', () => {
     render(<PortfolioSummaryTab />)
     const profitEl = document.querySelector('.portfolio-summary__profit--red')
     expect(profitEl).toBeInTheDocument()
+  })
+
+  it('applies_green_class_to_positive_profit_with_credits', () => {
+    // currentValue = 10.5 * 25 = 262.50; totalInvested = 300; totalCredits = 50
+    // profitWithCreditsPercent = (262.50 + 50 - 300) / 300 * 100 = 4.17% (positive)
+    const item: PortfolioAssetSummaryItemDto = {
+      ...ITEM_1,
+      currentQuantity: 25,
+      totalInvested: 300,
+      totalCredits: 50,
+    }
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
+    render(<PortfolioSummaryTab />)
+    const greenEls = document.querySelectorAll('.portfolio-summary__profit--green')
+    expect(greenEls.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('applies_red_class_to_negative_profit_with_credits', () => {
+    // currentValue = 10.5 * 25 = 262.50; totalInvested = 400; totalCredits = 10
+    // profitWithCreditsPercent = (262.50 + 10 - 400) / 400 * 100 = -31.875% (negative)
+    const item: PortfolioAssetSummaryItemDto = {
+      ...ITEM_1,
+      currentQuantity: 25,
+      totalInvested: 400,
+      totalCredits: 10,
+    }
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
+    render(<PortfolioSummaryTab />)
+    const redEls = document.querySelectorAll('.portfolio-summary__profit--red')
+    expect(redEls.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('applies_green_class_to_positive_xirr', () => {
+    xirrMock.mockReturnValue(0.1234)
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
+    render(<PortfolioSummaryTab />)
+    const greenEls = document.querySelectorAll('.portfolio-summary__profit--green')
+    expect(greenEls.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('applies_red_class_to_negative_xirr', () => {
+    xirrMock.mockReturnValue(-0.05)
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
+    render(<PortfolioSummaryTab />)
+    const redEls = document.querySelectorAll('.portfolio-summary__profit--red')
+    expect(redEls.length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders_empty_string_for_null_first_investment_date', () => {

@@ -48,6 +48,12 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   totalSold: 0,
   totalInvested: 2500,
   portfolioWeight: 71.4,
+  totalCredits: 125,
+  cashFlows: [
+    { date: '2021-03-01T00:00:00', amount: -2500 },
+    { date: '2021-09-15T00:00:00', amount: 50 },
+    { date: '2022-09-15T00:00:00', amount: 75 },
+  ],
 }
 
 const ITEM_2: PortfolioAssetSummaryItemDto = {
@@ -60,6 +66,10 @@ const ITEM_2: PortfolioAssetSummaryItemDto = {
   totalSold: 0,
   totalInvested: 1000,
   portfolioWeight: 28.6,
+  totalCredits: 0,
+  cashFlows: [
+    { date: '2021-05-15T00:00:00', amount: -1000 },
+  ],
 }
 
 const PRICE_DTO: AssetPriceDto = {
@@ -139,6 +149,8 @@ describe('usePortfolioAssetSummary', () => {
     await waitFor(() => expect(result.current.items).not.toBeNull())
     expect(result.current.items).toHaveLength(2)
     expect(result.current.items![0].assetName).toBe('ALZR11')
+    expect(result.current.items![0].totalCredits).toBe(125)
+    expect(result.current.items![0].cashFlows).toHaveLength(3)
   })
 
   it('sets_error_on_fetch_failure', async () => {
