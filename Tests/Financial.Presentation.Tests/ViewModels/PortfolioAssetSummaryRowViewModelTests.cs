@@ -10,7 +10,9 @@ public class PortfolioAssetSummaryRowViewModelTests
         decimal currentQuantity = 25m,
         decimal totalInvested = 250m,
         decimal portfolioWeight = 0m,
-        DateTime? firstInvestmentDate = null)
+        decimal totalCredits = 0m,
+        DateTime? firstInvestmentDate = null,
+        IReadOnlyList<AssetCashFlowDTO>? cashFlows = null)
     {
         var dto = new PortfolioAssetSummaryItemDTO
         {
@@ -22,7 +24,9 @@ public class PortfolioAssetSummaryRowViewModelTests
             TotalBought = totalInvested,
             TotalSold = 0m,
             TotalInvested = totalInvested,
-            PortfolioWeight = portfolioWeight
+            PortfolioWeight = portfolioWeight,
+            TotalCredits = totalCredits,
+            CashFlows = cashFlows ?? []
         };
         return new PortfolioAssetSummaryRowViewModel(dto);
     }
@@ -66,6 +70,13 @@ public class PortfolioAssetSummaryRowViewModelTests
         };
         var row = new PortfolioAssetSummaryRowViewModel(dto);
         row.DisplayPortfolioWeight.Should().Be("23.5%");
+    }
+
+    [Fact]
+    public void DisplayTotalCredits_FormatsN2()
+    {
+        var row = BuildRow(totalCredits: 150.75m);
+        row.DisplayTotalCredits.Should().Be("150.75");
     }
 
     [Fact]
@@ -121,7 +132,98 @@ public class PortfolioAssetSummaryRowViewModelTests
     {
         var row = BuildRow(currentQuantity: 25m, totalInvested: 250m);
         row.ApplyPrice(10.50m);
+        // CurrentValue = 262.50, Profit = (262.50 - 250) / 250 * 100 = 5.00
         row.DisplayProfitPercent.Should().Be("5.00%");
+    }
+
+    [Fact]
+    public void DisplayProfitWithCreditsPercent_WhenIsLoadingPrice_ReturnsDash()
+    {
+        var row = BuildRow();
+        row.IsLoadingPrice.Should().BeTrue();
+        row.DisplayProfitWithCreditsPercent.Should().Be("—");
+    }
+
+    [Fact]
+    public void DisplayProfitWithCreditsPercent_WhenPriceFetchFailed_ReturnsDash()
+    {
+        var row = BuildRow();
+        row.MarkPriceFailed();
+        row.DisplayProfitWithCreditsPercent.Should().Be("—");
+    }
+
+    [Fact]
+    public void DisplayProfitWithCreditsPercent_WhenTotalInvestedIsZero_ReturnsDash()
+    {
+        var row = BuildRow(totalInvested: 0m, totalCredits: 50m);
+        row.ApplyPrice(10.50m);
+        row.DisplayProfitWithCreditsPercent.Should().Be("—");
+    }
+
+    [Fact]
+    public void DisplayProfitWithCreditsPercent_AfterApplyPrice_ReturnsFormattedPercent()
+    {
+        var row = BuildRow(currentQuantity: 25m, totalInvested: 250m, totalCredits: 12.5m);
+        row.ApplyPrice(10.50m);
+        // CurrentValue = 262.50, ProfitWithCredits = (262.50 + 12.5 - 250) / 250 * 100 = 10.00
+        row.DisplayProfitWithCreditsPercent.Should().Be("10.00%");
+    }
+
+    [Fact]
+    public void DisplayXirr_WhenIsLoadingPrice_ReturnsDash()
+    {
+        var row = BuildRow();
+        row.IsLoadingPrice.Should().BeTrue();
+        row.DisplayXirr.Should().Be("—");
+    }
+
+    [Fact]
+    public void DisplayXirr_WhenPriceFetchFailed_ReturnsDash()
+    {
+        var row = BuildRow();
+        row.MarkPriceFailed();
+        row.DisplayXirr.Should().Be("—");
+    }
+
+    [Fact]
+    public void DisplayXirr_WhenCashFlowsEmpty_ReturnsDash()
+    {
+        // Empty cash flows + terminal = only 1 entry → fewer than 2
+        var row = BuildRow(cashFlows: []);
+        row.ApplyPrice(1000m);
+        row.DisplayXirr.Should().Be("—");
+    }
+
+    [Fact]
+    public void DisplayXirr_WhenSingleCashFlow_ReturnsNonDashValue()
+    {
+        // One buy entry + terminal = 2 entries → should converge
+        var buyDate = DateTime.Today.AddYears(-2);
+        var cashFlows = new List<AssetCashFlowDTO>
+        {
+            new() { Date = buyDate, Amount = -1000m }
+        };
+        var row = BuildRow(currentQuantity: 1m, totalInvested: 1000m, cashFlows: cashFlows);
+        row.ApplyPrice(1210m); // CurrentValue = 1210
+        row.DisplayXirr.Should().NotBe("—");
+    }
+
+    [Fact]
+    public void DisplayXirr_AfterApplyPrice_ReturnsConvergedValueN2Percent()
+    {
+        // One buy at -1000 exactly 2 years ago; terminal = +1210 today
+        // Expected XIRR ≈ 10% per year: 1000 * (1.10)^2 = 1210
+        var buyDate = new DateTime(DateTime.Today.Year - 2, DateTime.Today.Month, DateTime.Today.Day);
+        var cashFlows = new List<AssetCashFlowDTO>
+        {
+            new() { Date = buyDate, Amount = -1000m }
+        };
+        var row = BuildRow(currentQuantity: 1m, totalInvested: 1000m, cashFlows: cashFlows);
+        row.ApplyPrice(1210m);
+
+        row.Xirr.Should().NotBeNull();
+        row.Xirr!.Value.Should().BeApproximately(10m, 0.1m);
+        row.DisplayXirr.Should().NotBe("—");
     }
 
     [Fact]
@@ -152,6 +254,72 @@ public class PortfolioAssetSummaryRowViewModelTests
     }
 
     [Fact]
+    public void ProfitWithCreditsIsPositive_WhenProfitWithCreditsExceedsZero_IsTrue()
+    {
+        // CurrentValue < TotalInvested but CurrentValue + TotalCredits > TotalInvested
+        var row = BuildRow(currentQuantity: 25m, totalInvested: 300m, totalCredits: 100m);
+        row.ApplyPrice(10.00m); // CurrentValue = 250, 250 + 100 = 350 > 300
+        row.ProfitWithCreditsIsPositive.Should().BeTrue();
+        row.ProfitWithCreditsIsNegative.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ProfitWithCreditsIsNegative_WhenProfitWithCreditsBelowZero_IsTrue()
+    {
+        var row = BuildRow(currentQuantity: 25m, totalInvested: 300m, totalCredits: 0m);
+        row.ApplyPrice(10.00m); // CurrentValue = 250 < 300, no credits
+        row.ProfitWithCreditsIsNegative.Should().BeTrue();
+        row.ProfitWithCreditsIsPositive.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ProfitWithCreditsIsPositive_WhenPriceUnavailable_IsFalse()
+    {
+        var row = BuildRow(totalCredits: 100m);
+        row.MarkPriceFailed();
+        row.ProfitWithCreditsIsPositive.Should().BeFalse();
+        row.ProfitWithCreditsIsNegative.Should().BeFalse();
+    }
+
+    [Fact]
+    public void XirrIsPositive_WhenXirrConvergesPositive_IsTrue()
+    {
+        var buyDate = DateTime.Today.AddYears(-2);
+        var cashFlows = new List<AssetCashFlowDTO>
+        {
+            new() { Date = buyDate, Amount = -1000m }
+        };
+        var row = BuildRow(currentQuantity: 1m, totalInvested: 1000m, cashFlows: cashFlows);
+        row.ApplyPrice(1210m); // positive XIRR ~10%
+        row.XirrIsPositive.Should().BeTrue();
+        row.XirrIsNegative.Should().BeFalse();
+    }
+
+    [Fact]
+    public void XirrIsNegative_WhenXirrConvergesNegative_IsTrue()
+    {
+        // Buy at 1000, current value 500 → negative XIRR
+        var buyDate = DateTime.Today.AddYears(-2);
+        var cashFlows = new List<AssetCashFlowDTO>
+        {
+            new() { Date = buyDate, Amount = -1000m }
+        };
+        var row = BuildRow(currentQuantity: 1m, totalInvested: 1000m, cashFlows: cashFlows);
+        row.ApplyPrice(500m);
+        row.XirrIsNegative.Should().BeTrue();
+        row.XirrIsPositive.Should().BeFalse();
+    }
+
+    [Fact]
+    public void XirrIsPositive_WhenPriceUnavailable_IsFalse()
+    {
+        var row = BuildRow();
+        row.MarkPriceFailed();
+        row.XirrIsPositive.Should().BeFalse();
+        row.XirrIsNegative.Should().BeFalse();
+    }
+
+    [Fact]
     public void ApplyPrice_RaisesPropertyChangedForDisplayProperties()
     {
         var row = BuildRow();
@@ -162,9 +330,15 @@ public class PortfolioAssetSummaryRowViewModelTests
 
         raised.Should().Contain(nameof(row.DisplayCurrentValue));
         raised.Should().Contain(nameof(row.DisplayProfitPercent));
+        raised.Should().Contain(nameof(row.DisplayProfitWithCreditsPercent));
+        raised.Should().Contain(nameof(row.DisplayXirr));
         raised.Should().Contain(nameof(row.IsLoadingPrice));
         raised.Should().Contain(nameof(row.ProfitIsPositive));
         raised.Should().Contain(nameof(row.ProfitIsNegative));
+        raised.Should().Contain(nameof(row.ProfitWithCreditsIsPositive));
+        raised.Should().Contain(nameof(row.ProfitWithCreditsIsNegative));
+        raised.Should().Contain(nameof(row.XirrIsPositive));
+        raised.Should().Contain(nameof(row.XirrIsNegative));
     }
 
     [Fact]
@@ -178,6 +352,8 @@ public class PortfolioAssetSummaryRowViewModelTests
 
         raised.Should().Contain(nameof(row.DisplayCurrentValue));
         raised.Should().Contain(nameof(row.DisplayProfitPercent));
+        raised.Should().Contain(nameof(row.DisplayProfitWithCreditsPercent));
+        raised.Should().Contain(nameof(row.DisplayXirr));
         raised.Should().Contain(nameof(row.PriceFetchFailed));
         raised.Should().Contain(nameof(row.IsLoadingPrice));
     }
