@@ -135,7 +135,7 @@ describe('PortfolioSummaryTab', () => {
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
     render(<PortfolioSummaryTab />)
     const loadingCells = screen.getAllByText('...')
-    expect(loadingCells).toHaveLength(2)
+    expect(loadingCells).toHaveLength(4)
   })
 
   it('renders_current_value_when_price_resolves', () => {
@@ -152,7 +152,10 @@ describe('PortfolioSummaryTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
     render(<PortfolioSummaryTab />)
-    expect(screen.getByText(/5[.,]00%/)).toBeInTheDocument()
+    // Both % Profit and % Profit w/ Credits show 5.00% when totalCredits is 0
+    const profitElements = screen.getAllByText(/5[.,]00%/)
+    expect(profitElements.length).toBeGreaterThanOrEqual(1)
+    expect(profitElements[0]).toHaveClass('portfolio-summary__profit--green')
   })
 
   it('renders_dash_in_current_value_and_profit_on_price_failure', () => {
@@ -169,7 +172,8 @@ describe('PortfolioSummaryTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
     render(<PortfolioSummaryTab />)
-    expect(screen.getByText('—')).toBeInTheDocument()
+    const dashes = screen.getAllByText('—')
+    expect(dashes.length).toBeGreaterThanOrEqual(2) // % Profit and % Profit w/ Credits
     expect(screen.getByText(/262[.,]50/)).toBeInTheDocument()
   })
 

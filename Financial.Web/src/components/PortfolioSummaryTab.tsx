@@ -3,6 +3,7 @@ import LoadingState from './LoadingState'
 import { usePortfolioAssetSummary } from '../hooks/usePortfolioAssetSummary'
 import type { RowPriceState } from '../hooks/usePortfolioAssetSummary'
 import type { PortfolioAssetSummaryItemDto } from '../api/types'
+import { xirr } from '../utils/xirr'
 import AggregatedSummaryTab from './AggregatedSummaryTab'
 import './PortfolioSummaryTab.css'
 
@@ -35,6 +36,10 @@ function formatShortDate(isoString: string | null): string {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
 }
 
+function getProfitClass(value: number): string {
+  return value >= 0 ? 'portfolio-summary__profit--green' : 'portfolio-summary__profit--red'
+}
+
 interface AssetRowProps {
   item: PortfolioAssetSummaryItemDto
   rowPrice: RowPriceState
@@ -49,10 +54,20 @@ function AssetRow({ item, rowPrice }: AssetRowProps) {
       ? ((currentValue - item.totalInvested) / item.totalInvested) * 100
       : null
 
-  const profitClass =
-    profitPercent !== null && profitPercent >= 0
-      ? 'portfolio-summary__profit--green'
-      : 'portfolio-summary__profit--red'
+  const profitWithCreditsPercent =
+    currentValue !== null && item.totalInvested !== 0
+      ? ((currentValue + item.totalCredits - item.totalInvested) / item.totalInvested) * 100
+      : null
+
+  const xirrValue = (() => {
+    if (currentValue === null) return null
+    const today = new Date()
+    const series = [
+      ...item.cashFlows.map(cf => ({ date: new Date(cf.date), amount: cf.amount })),
+      { date: today, amount: currentValue },
+    ].sort((a, b) => a.date.getTime() - b.date.getTime())
+    return xirr(series)
+  })()
 
   return (
     <tr>
@@ -61,6 +76,7 @@ function AssetRow({ item, rowPrice }: AssetRowProps) {
       <td>{formatN8(item.currentQuantity)}</td>
       <td>{formatN2(item.totalInvested)}</td>
       <td>{formatPortfolioWeight(item.portfolioWeight)}</td>
+      <td>{formatN2(item.totalCredits)}</td>
       <td>
         {rowPrice.isLoading ? (
           <span className="portfolio-summary__loading-cell">...</span>
@@ -75,10 +91,28 @@ function AssetRow({ item, rowPrice }: AssetRowProps) {
           <span className="portfolio-summary__loading-cell">...</span>
         ) : rowPrice.fetchFailed || profitPercent === null ? (
           '—'
-        ) : item.totalInvested === 0 ? (
+        ) : (
+          <span className={getProfitClass(profitPercent)}>{formatN2(profitPercent)}%</span>
+        )}
+      </td>
+      <td>
+        {rowPrice.isLoading ? (
+          <span className="portfolio-summary__loading-cell">...</span>
+        ) : rowPrice.fetchFailed || profitWithCreditsPercent === null ? (
           '—'
         ) : (
-          <span className={profitClass}>{formatN2(profitPercent)}%</span>
+          <span className={getProfitClass(profitWithCreditsPercent)}>
+            {formatN2(profitWithCreditsPercent)}%
+          </span>
+        )}
+      </td>
+      <td>
+        {rowPrice.isLoading ? (
+          <span className="portfolio-summary__loading-cell">...</span>
+        ) : rowPrice.fetchFailed || xirrValue === null ? (
+          '—'
+        ) : (
+          <span className={getProfitClass(xirrValue)}>{formatN2(xirrValue * 100)}%</span>
         )}
       </td>
     </tr>
@@ -106,8 +140,11 @@ export default function PortfolioSummaryTab() {
                 <th>Quantity</th>
                 <th>Total Invested</th>
                 <th>% Portfolio</th>
+                <th>Total Credits</th>
                 <th>Current Value</th>
                 <th>% Profit</th>
+                <th>% Profit w/ Credits</th>
+                <th>XIRR</th>
               </tr>
             </thead>
             <tbody>
