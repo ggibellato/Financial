@@ -244,58 +244,58 @@ graph TD
 
 ### F01. Portfolio Assets Summary Service and Endpoint
 
-- [ ] `GET /api/v1/financial/summary/portfolio/{brokerName}/{portfolioName}/assets` returns HTTP 200 with a JSON array
-- [ ] Each item in the array contains `assetName`, `ticker`, `exchange`, `firstInvestmentDate` (nullable), `currentQuantity`, `totalBought`, `totalSold`, `totalInvested`, `portfolioWeight`, `totalCredits`, `cashFlows`
-- [ ] `totalInvested` equals `totalBought − totalSold` for each item
-- [ ] `portfolioWeight` values sum to 100 (within floating-point rounding tolerance) when at least one asset has a positive TotalInvested; all values are 0 when portfolioTotalInvested is 0
-- [ ] Assets are returned sorted alphabetically by `assetName`
-- [ ] `firstInvestmentDate` is the date of the earliest Buy transaction for that asset; null when the asset has no Buy transactions
-- [ ] `totalCredits` equals the sum of all credit `Value` fields for the asset; returns 0 when the asset has no credits
-- [ ] `cashFlows` contains one entry per Buy transaction with `amount = −totalPrice`, one entry per Sell transaction with `amount = +totalPrice`, and one entry per Credit with `amount = +value`; entries are sorted ascending by `date`
-- [ ] `cashFlows` is an empty array when the asset has no transactions and no credits
-- [ ] Endpoint returns HTTP 400 when `brokerName` or `portfolioName` is null or whitespace
-- [ ] Endpoint returns an empty array (`[]`) with HTTP 200 when the portfolio has no assets
+- [x] `GET /api/v1/financial/summary/portfolio/{brokerName}/{portfolioName}/assets` returns HTTP 200 with a JSON array
+- [x] Each item in the array contains `assetName`, `ticker`, `exchange`, `firstInvestmentDate` (nullable), `currentQuantity`, `totalBought`, `totalSold`, `totalInvested`, `portfolioWeight`, `totalCredits`, `cashFlows`
+- [x] `totalInvested` equals `totalBought − totalSold` for each item
+- [x] `portfolioWeight` values sum to 100 (within floating-point rounding tolerance) when at least one asset has a positive TotalInvested; all values are 0 when portfolioTotalInvested is 0
+- [x] Assets are returned sorted alphabetically by `assetName`
+- [x] `firstInvestmentDate` is the date of the earliest Buy transaction for that asset; null when the asset has no Buy transactions
+- [x] `totalCredits` equals the sum of all credit `Value` fields for the asset; returns 0 when the asset has no credits
+- [x] `cashFlows` contains one entry per Buy transaction with `amount = −totalPrice`, one entry per Sell transaction with `amount = +totalPrice`, and one entry per Credit with `amount = +value`; entries are sorted ascending by `date`
+- [x] `cashFlows` is an empty array when the asset has no transactions and no credits
+- [x] Endpoint returns HTTP 400 when `brokerName` or `portfolioName` is null or whitespace
+- [x] Endpoint returns an empty array (`[]`) with HTTP 200 when the portfolio has no assets
 
 ### F02. Portfolio Summary Tab — Web Frontend
 
-- [ ] Selecting a Portfolio node renders `PortfolioSummaryTab` in the Summary tab
-- [ ] Selecting a Broker node still renders `AggregatedSummaryTab` without the per-asset table (regression check)
-- [ ] Selecting an Asset node still renders `AssetSummaryTab` (regression check)
-- [ ] Three totals (Total Bought in green, Total Sold in red, Total Credits in blue) appear at the top of the Portfolio Summary tab
-- [ ] Per-asset table appears below the totals with columns: Asset Name, First Investment, Quantity, Total Invested, % Portfolio, Total Credits, Current Value, % Profit, % Profit w/ Credits, XIRR
-- [ ] Total Credits column is populated immediately from the F01 response, before price fetches complete
-- [ ] Current Value, % Profit, % Profit w/ Credits, and XIRR populate automatically without a Refresh button
-- [ ] A failed price fetch for one asset shows `"—"` in that row's Current Value, % Profit, % Profit w/ Credits, and XIRR; other rows are unaffected
-- [ ] `% Profit` and `% Profit w/ Credits` are displayed in green when positive and red when negative
-- [ ] `XIRR` is displayed in green when positive and red when negative; shows `"—"` when price is unavailable or algorithm does not converge
-- [ ] When the F01 endpoint call fails, an error state with a Retry button is shown in the table area; the three totals section above continues to display normally
-- [ ] `CurrentValue = CurrentPrice × CurrentQuantity` verified with known test data
-- [ ] `% Profit = (CurrentValue − TotalInvested) / TotalInvested × 100` verified with known test data
-- [ ] `% Profit w/ Credits = (CurrentValue + TotalCredits − TotalInvested) / TotalInvested × 100` verified with known test data
-- [ ] `XIRR` computed using CashFlows from F01 plus terminal entry `(today, +CurrentValue)`, verified with known test data against an Excel XIRR reference value
-- [ ] `"—"` is shown in % Profit and % Profit w/ Credits when TotalInvested is 0
-- [ ] `"—"` is shown in XIRR when CashFlows array has fewer than 2 entries after appending the terminal entry
+- [x] Selecting a Portfolio node renders `PortfolioSummaryTab` in the Summary tab
+- [x] Selecting a Broker node still renders `AggregatedSummaryTab` without the per-asset table (regression check)
+- [x] Selecting an Asset node still renders `AssetSummaryTab` (regression check)
+- [x] Three totals (Total Bought in green, Total Sold in red, Total Credits in blue) appear at the top of the Portfolio Summary tab
+- [x] Per-asset table appears below the totals with columns: Asset Name, First Investment, Quantity, Total Invested, % Portfolio, Total Credits, Current Value, % Profit, % Profit w/ Credits, XIRR
+- [x] Total Credits column is populated immediately from the F01 response, before price fetches complete
+- [x] Current Value, % Profit, % Profit w/ Credits, and XIRR populate automatically without a Refresh button
+- [x] A failed price fetch for one asset shows `"—"` in that row's Current Value, % Profit, % Profit w/ Credits, and XIRR; other rows are unaffected
+- [x] `% Profit` and `% Profit w/ Credits` are displayed in green when positive and red when negative
+- [x] `XIRR` is displayed in green when positive and red when negative; shows `"—"` when price is unavailable or algorithm does not converge
+- [x] When the F01 endpoint call fails, an error state with a Retry button is shown in the table area; the three totals section above continues to display normally
+- [x] `CurrentValue = CurrentPrice × CurrentQuantity` verified with known test data
+- [x] `% Profit = (CurrentValue − TotalInvested) / TotalInvested × 100` verified with known test data
+- [x] `% Profit w/ Credits = (CurrentValue + TotalCredits − TotalInvested) / TotalInvested × 100` verified with known test data
+- [x] `XIRR` computed using CashFlows from F01 plus terminal entry `(today, +CurrentValue)`, verified with known test data against an Excel XIRR reference value
+- [x] `"—"` is shown in % Profit and % Profit w/ Credits when TotalInvested is 0
+- [x] `"—"` is shown in XIRR when CashFlows array has fewer than 2 entries after appending the terminal entry
 
 ### F03. Portfolio Summary Tab — WPF
 
-- [ ] Selecting a Portfolio node in WPF shows the three colour-coded totals and the per-asset DataGrid in the Summary tab
-- [ ] Selecting a Portfolio node in WPF shows no Quantity, Average Price, ISIN, Country, Local Type, Asset Class, or Current section fields in the Summary tab
-- [ ] Selecting an Asset node in WPF still shows all asset-specific Summary tab fields (regression check)
-- [ ] DataGrid columns are: Asset Name, First Investment, Quantity, Total Invested, % Portfolio, Total Credits, Current Value, % Profit, % Profit w/ Credits, XIRR
-- [ ] Total Credits column is populated immediately from the Application service response, before price fetches complete
-- [ ] Current Value, % Profit, % Profit w/ Credits, and XIRR columns populate automatically as price fetches complete; no Refresh button is present
-- [ ] A failed price fetch shows `"—"` in that row's Current Value, % Profit, % Profit w/ Credits, and XIRR; other rows update normally
-- [ ] `% Profit` and `% Profit w/ Credits` are green when positive, red when negative, and default foreground when null
-- [ ] `XIRR` is green when positive, red when negative, and default foreground when null or non-convergent
-- [ ] DataGrid rows are read-only; no double-click or selection action occurs
-- [ ] Credits tab behaviour is unchanged when a Portfolio node is selected (regression check)
-- [ ] Transactions tab behaviour is unchanged when a Portfolio node is selected (regression check)
+- [x] Selecting a Portfolio node in WPF shows the three colour-coded totals and the per-asset DataGrid in the Summary tab
+- [x] Selecting a Portfolio node in WPF shows no Quantity, Average Price, ISIN, Country, Local Type, Asset Class, or Current section fields in the Summary tab
+- [x] Selecting an Asset node in WPF still shows all asset-specific Summary tab fields (regression check)
+- [x] DataGrid columns are: Asset Name, First Investment, Quantity, Total Invested, % Portfolio, Total Credits, Current Value, % Profit, % Profit w/ Credits, XIRR
+- [x] Total Credits column is populated immediately from the Application service response, before price fetches complete
+- [x] Current Value, % Profit, % Profit w/ Credits, and XIRR columns populate automatically as price fetches complete; no Refresh button is present
+- [x] A failed price fetch shows `"—"` in that row's Current Value, % Profit, % Profit w/ Credits, and XIRR; other rows update normally
+- [x] `% Profit` and `% Profit w/ Credits` are green when positive, red when negative, and default foreground when null
+- [x] `XIRR` is green when positive, red when negative, and default foreground when null or non-convergent
+- [x] DataGrid rows are read-only; no double-click or selection action occurs
+- [x] Credits tab behaviour is unchanged when a Portfolio node is selected (regression check)
+- [x] Transactions tab behaviour is unchanged when a Portfolio node is selected (regression check)
 
 ### Cross-Feature Integration
 
-- [ ] The `ticker` and `exchange` values returned by F01's endpoint are used without modification in F02's `GET /prices/current?exchange={exchange}&ticker={ticker}` calls, producing correct price lookups
-- [ ] The `ticker` and `exchange` values from F01's Application service are used without modification in F03's `IAssetPriceService` calls, producing correct price lookups
-- [ ] The `totalInvested` and `currentQuantity` values from F01's endpoint are used without transformation in F02's client-side computation of `CurrentValue`, `% Profit`, and `% Profit w/ Credits`
-- [ ] The `totalInvested`, `currentQuantity`, and `totalCredits` values from F01's Application service are used without transformation in F03's ViewModel computation of `CurrentValue`, `% Profit`, `% Profit w/ Credits`, and `Xirr`
-- [ ] The `cashFlows` array from F01's endpoint is used without transformation in F02's XIRR computation; appending the terminal entry `(today, +CurrentValue)` produces the complete cash flow series
-- [ ] The `CashFlows` list from F01's Application service is used without transformation in F03's XIRR computation; appending the terminal entry `(today, +CurrentValue)` produces the complete cash flow series
+- [x] The `ticker` and `exchange` values returned by F01's endpoint are used without modification in F02's `GET /prices/current?exchange={exchange}&ticker={ticker}` calls, producing correct price lookups
+- [x] The `ticker` and `exchange` values from F01's Application service are used without modification in F03's `IAssetPriceService` calls, producing correct price lookups
+- [x] The `totalInvested` and `currentQuantity` values from F01's endpoint are used without transformation in F02's client-side computation of `CurrentValue`, `% Profit`, and `% Profit w/ Credits`
+- [x] The `totalInvested`, `currentQuantity`, and `totalCredits` values from F01's Application service are used without transformation in F03's ViewModel computation of `CurrentValue`, `% Profit`, `% Profit w/ Credits`, and `Xirr`
+- [x] The `cashFlows` array from F01's endpoint is used without transformation in F02's XIRR computation; appending the terminal entry `(today, +CurrentValue)` produces the complete cash flow series
+- [x] The `CashFlows` list from F01's Application service is used without transformation in F03's XIRR computation; appending the terminal entry `(today, +CurrentValue)` produces the complete cash flow series
