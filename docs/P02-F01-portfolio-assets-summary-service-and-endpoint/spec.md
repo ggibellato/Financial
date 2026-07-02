@@ -2,25 +2,24 @@
 
 ## 1. Technical Overview
 
-**What:** Introduces `IPortfolioAssetSummaryQueryService` / `PortfolioAssetSummaryQueryService` in the Application layer and a new GET action in the existing `SummaryController` that returns all assets of a portfolio as a list of per-asset summary items. Each item carries the static fields that F02 (web) and F03 (WPF) need to render the breakdown table before enriching it with live prices: asset name, ticker, exchange, date of first investment, current quantity, total bought, total sold, total invested, and portfolio weight.
+**What:** Extends the existing `PortfolioAssetSummaryItemDTO` and `PortfolioAssetSummaryQueryService` with two new computed fields — `TotalCredits` (sum of all credit values for the asset) and `CashFlows` (a dated cash-flow series combining buy/sell transactions and credit payments, sorted ascending by date). A companion DTO `AssetCashFlowDTO` is introduced to represent each entry in the series. The `SummaryController` endpoint response shape grows to include the new fields; the route, HTTP method, and status codes are unchanged.
 
-**Why:** The existing `ISummaryQueryService` aggregates across all assets into three scalar totals; a separate service interface keeps per-asset enumeration orthogonal to that concern, respecting ISP. Both F02 and F03 need the same computation, so centralising it in the Application layer eliminates duplication across the two UI implementations.
+**Why:** The frontend clients (F02 web, F03 WPF) need `TotalCredits` to render the new column and to compute `% Profit w/ Credits` client-side, and need `CashFlows` to compute XIRR client-side after fetching the live price. Centralising both computations in the Application layer avoids duplicating cash-flow assembly logic across the two UI implementations and keeps domain data access behind the repository interface.
 
 **Scope:**
 
 Included:
-- `PortfolioAssetSummaryItemDTO` in `Financial.Application/DTOs/`
-- `IPortfolioAssetSummaryQueryService` interface in `Financial.Application/Interfaces/`
-- `PortfolioAssetSummaryQueryService` implementation in `Financial.Application/Services/`
-- DI singleton registration in `ApplicationServiceCollectionExtensions`
-- New `GetPortfolioAssetsSummary` action in the existing `SummaryController`
-- Unit tests for `PortfolioAssetSummaryQueryService`
-- Integration test additions to `SummaryEndpointsTests`
+- New `AssetCashFlowDTO` in `Financial.Application/DTOs/`
+- `PortfolioAssetSummaryItemDTO` — add `TotalCredits` (decimal) and `CashFlows` (`IReadOnlyList<AssetCashFlowDTO>`) properties
+- `PortfolioAssetSummaryQueryService` — extend `ComputeAssetData` to capture `TotalCredits` from the already-computed `CalculateTotals` tuple and build the `CashFlows` list
+- Unit tests covering `TotalCredits` computation and `CashFlows` construction (content, sign, sort order, edge cases)
+- Integration test assertion that new fields appear in the HTTP response
 
 Excluded:
-- `CurrentValue` and `% Profit` — computed by frontends after fetching live prices
-- Broker-level per-asset breakdown — portfolio scope only
-- Any changes to `ISummaryQueryService`, `SummaryQueryService`, or existing controller actions
+- `CurrentValue`, `% Profit`, `% Profit w/ Credits`, XIRR — computed by frontends after fetching live prices
+- Any changes to `SummaryController` routing, HTTP status codes, or existing `GetPortfolioAssets­Summary` action signature
+- Any changes to `ISummaryQueryService`, `SummaryQueryService`, or other controller actions
+- Broker-level per-asset breakdown
 
 ---
 
@@ -36,6 +35,8 @@ graph TD
     Service --> Repository["IRepository.GetAssetsByBrokerPortfolio()"]
     Service --> NavMapper["NavigationMapper (CalculateTotals, OrderByNameWithEncerradasLast)"]
     Repository --> JSONRepo["JSONRepository (Financial.Infrastructure)"]
+    Service --> CashFlowDTO["AssetCashFlowDTO (new)"]
+    Service --> ItemDTO["PortfolioAssetSummaryItemDTO (modified)"]
 ```
 
 ---
@@ -44,12 +45,12 @@ graph TD
 
 | Decision | Chosen Approach | Alternative Considered | Trade-off |
 |----------|----------------|----------------------|-----------|
-| New interface vs. extending `ISummaryQueryService` | New `IPortfolioAssetSummaryQueryService` | Add `GetPortfolioAssetsSummary` to `ISummaryQueryService` | Respects ISP — aggregate totals and per-item list are distinct query shapes; adding to the existing interface couples two responsibilities and expands the surface area for all existing consumers |
-| Null/whitespace handling | Controller validates; returns HTTP 400 | Service returns empty list silently (existing `SummaryQueryService` pattern) | PRD acceptance criterion explicitly requires 400; for a list endpoint, returning an empty list for a meaningless input would silently swallow an API misuse |
-| Sort algorithm | `NavigationMapper.OrderByNameWithEncerradasLast` with `StringComparer.CurrentCultureIgnoreCase` | Plain `StringComparer.OrdinalIgnoreCase` sort | Consistency with navigation tree — asset nodes are already sorted this way in `MapPortfolio`; using the same method keeps list order identical to tree order |
-| TotalBought / TotalSold computation | Reuse `NavigationMapper.CalculateTotals(asset)` | Inline LINQ | Avoids duplicating tested transaction-iteration logic; `CalculateTotals` is `internal` to the Application assembly and accessible from the new service |
-| `PortfolioWeight` precision | Raw `decimal` in DTO — no server-side rounding | Round to 2 decimal places in service | Formatting is a UI concern; keeping full decimal precision lets both frontends format independently |
-| DTO style | `sealed class` with `{ get; init; }` | `class` with `{ get; set; }` (used by `AssetDetailsDTO`) | Follows the `AggregatedSummaryDTO` pattern — the most recent DTO in the Summary feature; init setters prevent accidental mutation after construction |
+| `AssetCashFlowDTO` as a separate named DTO | New `sealed class` with `{ get; init; }` in `Financial.Application/DTOs/` | Anonymous type or `ValueTuple<DateTime, decimal>` | Follows the project's named-DTO convention; produces clean camelCase JSON serialisation without additional configuration; aligns with `PortfolioAssetSummaryItemDTO`'s sealed-class-with-init pattern |
+| `TotalCredits` extraction | Stop discarding the third element of the `NavigationMapper.CalculateTotals` tuple | Iterate `asset.Credits` separately in the new code | `CalculateTotals` already computes the sum; reusing it avoids a second enumeration of the same credits collection |
+| `CashFlows` sort | Sort ascending by `Date` in the service before returning | Leave unsorted; let clients sort | Clients need a sorted series for Newton-Raphson; sorting once server-side is cheaper than sorting in every client; mirrors the `OrderByNameWithEncerradasLast` pattern where sort is a service responsibility |
+| Sign convention in `CashFlows` | Buy = `−TotalPrice` (negative); Sell = `+TotalPrice` (positive); Credit = `+Value` (positive) | All positive, with a `FlowType` discriminator | Standard XIRR cash-flow convention; reduces client logic to one append (terminal value) before computing the rate |
+| `CashFlows` when asset has no transactions or credits | Empty `IReadOnlyList<AssetCashFlowDTO>` (not null) | Return null | Consistent with existing list-return pattern; clients check `CashFlows.Count` without null guard |
+| `AssetComputedData` private record extension | Add `TotalCredits` and `CashFlows` to the existing `AssetComputedData` private record | Create a second intermediate record | Keeps the two-step pipeline (compute → sort → project to DTO) intact with a single record per asset |
 
 ---
 
@@ -59,11 +60,9 @@ graph TD
 
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |-----------|--------------|---------|---------------------|
-| `Financial.Application/DTOs/PortfolioAssetSummaryItemDTO.cs` | New | Response DTO | Sealed class with `init` properties: `AssetName` (string), `Ticker` (string), `Exchange` (string), `FirstInvestmentDate` (`DateTime?`), `CurrentQuantity` (decimal), `TotalBought` (decimal), `TotalSold` (decimal), `TotalInvested` (decimal), `PortfolioWeight` (decimal) |
-| `Financial.Application/Interfaces/IPortfolioAssetSummaryQueryService.cs` | New | Service abstraction | Single method `GetPortfolioAssetsSummary(string brokerName, string portfolioName)` returning `IReadOnlyList<PortfolioAssetSummaryItemDTO>` |
-| `Financial.Application/Services/PortfolioAssetSummaryQueryService.cs` | New | Query and mapping logic | Guard null/whitespace inputs (return empty list); call `_repository.GetAssetsByBrokerPortfolio`; for each asset compute `TotalBought`/`TotalSold` via `NavigationMapper.CalculateTotals`, derive `TotalInvested`, find `FirstInvestmentDate` from the earliest Buy transaction, read `CurrentQuantity` from `asset.Quantity`; compute `PortfolioWeight` per asset after summing all `TotalInvested` values (return 0 when denominator is 0); sort via `NavigationMapper.OrderByNameWithEncerradasLast`; return list |
-| `Financial.Application/DependencyInjection/ApplicationServiceCollectionExtensions.cs` | Modified | DI registration | Add `services.AddSingleton<IPortfolioAssetSummaryQueryService, PortfolioAssetSummaryQueryService>()` |
-| `Financial.Api/Controllers/SummaryController.cs` | Modified | New GET action | Add `IPortfolioAssetSummaryQueryService` as second constructor parameter; add `GetPortfolioAssetsSummary(string brokerName, string portfolioName)` action on route `portfolio/{brokerName}/{portfolioName}/assets`; validate both params with `string.IsNullOrWhiteSpace`, return `BadRequest()` if either is whitespace; otherwise return `Ok(result)` |
+| `Financial.Application/DTOs/AssetCashFlowDTO.cs` | New | Cash-flow entry DTO | Sealed class with `init` properties: `Date` (DateTime) and `Amount` (decimal); amount is negative for outflows (Buy), positive for inflows (Sell, Credit) |
+| `Financial.Application/DTOs/PortfolioAssetSummaryItemDTO.cs` | Modified | Response DTO | Add `TotalCredits` (decimal) and `CashFlows` (`IReadOnlyList<AssetCashFlowDTO>`) to the existing sealed class; both use `init` setters; `CashFlows` defaults to an empty list |
+| `Financial.Application/Services/PortfolioAssetSummaryQueryService.cs` | Modified | Query and mapping logic | Extend `AssetComputedData` record with `TotalCredits` and `CashFlows`; update `ComputeAssetData` to capture `totalCredits` from the `CalculateTotals` tuple and build the cash-flow list (Buy entries with `−TotalPrice`, Sell entries with `+TotalPrice`, Credit entries with `+Value`), then sort the combined list ascending by Date; propagate both fields through `ToDTO` |
 
 ---
 
@@ -95,6 +94,10 @@ graph TD
 | `[].totalSold` | `decimal` | Sum of `TotalPrice` for all Sell transactions |
 | `[].totalInvested` | `decimal` | `totalBought − totalSold` |
 | `[].portfolioWeight` | `decimal` | `totalInvested / portfolioTotalInvested × 100`; `0` when `portfolioTotalInvested` is `0` |
+| `[].totalCredits` | `decimal` | Sum of all credit values (Dividend + Rent) for the asset; `0` when no credits exist |
+| `[].cashFlows` | `array` | Dated cash-flow series; sorted ascending by `date`; empty array when asset has no transactions or credits |
+| `[].cashFlows[].date` | `string` (ISO 8601) | Date of the transaction or credit event |
+| `[].cashFlows[].amount` | `decimal` | Negative for Buy outflows; positive for Sell inflows and Credit receipts |
 
 **Response Example (200):**
 ```json
@@ -104,11 +107,19 @@ graph TD
     "ticker": "ALZR11",
     "exchange": "BVMF",
     "firstInvestmentDate": "2021-03-01T00:00:00",
-    "currentQuantity": 25.0,
+    "currentQuantity": 20.0,
     "totalBought": 2500.00,
-    "totalSold": 0.00,
-    "totalInvested": 2500.00,
-    "portfolioWeight": 71.4285714285714
+    "totalSold": 550.00,
+    "totalInvested": 1950.00,
+    "portfolioWeight": 66.1016949152542,
+    "totalCredits": 125.00,
+    "cashFlows": [
+      { "date": "2021-03-01T00:00:00", "amount": -1000.00 },
+      { "date": "2021-05-01T00:00:00", "amount": -1500.00 },
+      { "date": "2021-09-15T00:00:00", "amount": 50.00 },
+      { "date": "2022-01-01T00:00:00", "amount": 550.00 },
+      { "date": "2022-09-15T00:00:00", "amount": 75.00 }
+    ]
   },
   {
     "assetName": "MXRF11",
@@ -119,7 +130,12 @@ graph TD
     "totalBought": 1200.00,
     "totalSold": 200.00,
     "totalInvested": 1000.00,
-    "portfolioWeight": 28.5714285714286
+    "portfolioWeight": 33.8983050847458,
+    "totalCredits": 0.00,
+    "cashFlows": [
+      { "date": "2021-05-15T00:00:00", "amount": -1200.00 },
+      { "date": "2022-03-01T00:00:00", "amount": 200.00 }
+    ]
   }
 ]
 ```
@@ -140,7 +156,7 @@ graph TD
 
 ## 6. Data Model
 
-Not applicable. No persistence schema changes. All values are computed at query time from the in-memory JSON-backed repository via the existing `IRepository.GetAssetsByBrokerPortfolio` method. The `Asset` entity already tracks `Quantity`, `Transactions`, and `Credits` in memory.
+Not applicable. No persistence schema changes. All values are computed at query time from the in-memory JSON-backed repository via the existing `IRepository.GetAssetsByBrokerPortfolio` method. The `Asset` entity already tracks `Transactions` and `Credits` in memory.
 
 ---
 
@@ -150,47 +166,41 @@ Not applicable. No persistence schema changes. All values are computed at query 
 
 | Test File | Test Type | Target | Coverage Goal |
 |-----------|-----------|--------|---------------|
-| `Tests/Financial.Application.Tests/Services/PortfolioAssetSummaryQueryServiceTests.cs` | Unit | `PortfolioAssetSummaryQueryService` | All computation paths, sort, edge cases |
-| `Tests/Financial.Api.Tests/SummaryEndpointsTests.cs` | Integration | `SummaryController.GetPortfolioAssetsSummary` | HTTP 200 with valid data; HTTP 400 on whitespace param |
+| `Tests/Financial.Application.Tests/Services/PortfolioAssetSummaryQueryServiceTests.cs` | Unit | `PortfolioAssetSummaryQueryService` | New `TotalCredits` and `CashFlows` computation paths, sign convention, sort order, edge cases |
+| `Tests/Financial.Api.Tests/SummaryEndpointsTests.cs` | Integration | `SummaryController.GetPortfolioAssetsSummary` | New fields present in HTTP response |
 
-### PortfolioAssetSummaryQueryServiceTests.cs
+### PortfolioAssetSummaryQueryServiceTests.cs (additions)
 
-Follows the same structure as `SummaryQueryServiceTests.cs`: inner `StubRepository : IRepository`, `FluentAssertions` with `AssertionScope` for multi-field assertions, `[Theory][InlineData]` for null/whitespace variants.
+Follows the established pattern in the existing file: inner `StubRepository`, `FluentAssertions` with `AssertionScope`, `[Theory][InlineData]` for variants. All existing tests remain and continue to pass unchanged.
 
 | Test Function | Description | Assertions |
 |---------------|-------------|------------|
-| `Constructor_WithNullRepository_Throws` | Pass `null` as `IRepository` | Throws `ArgumentNullException` with parameter name `"repository"` |
-| `GetPortfolioAssetsSummary_ReturnsSingleAsset_WithCorrectFields` | One asset with 2 Buy + 1 Sell transactions | `AssetName`, `Ticker`, `Exchange`, `CurrentQuantity`, `TotalBought`, `TotalSold`, `TotalInvested` all match expected values; `PortfolioWeight` is `100m` |
-| `GetPortfolioAssetsSummary_SortsAlphabetically` | Three assets named `"ZEBRA"`, `"APPLE"`, `"MANGO"` | Returned list order is `APPLE`, `MANGO`, `ZEBRA` |
-| `GetPortfolioAssetsSummary_ComputesPortfolioWeight` | Two assets with `TotalInvested` of `300m` and `700m` | First asset `PortfolioWeight` is `30m`; second is `70m` |
-| `GetPortfolioAssetsSummary_ReturnsZeroPortfolioWeight_WhenAllTotalInvestedAreZero` | All assets have `TotalBought = TotalSold` | All `PortfolioWeight` values are `0m` |
-| `GetPortfolioAssetsSummary_SetsFirstInvestmentDate_FromEarliestBuyTransaction` | Asset with Buy on `2020-01-15` and Buy on `2021-06-01` | `FirstInvestmentDate` equals `2020-01-15` (date portion only) |
-| `GetPortfolioAssetsSummary_SetsFirstInvestmentDate_Null_WhenNoBuyTransactions` | Asset with no transactions | `FirstInvestmentDate` is `null` |
-| `GetPortfolioAssetsSummary_IncludesAllAssets_RegardlessOfActiveStatus` | One asset with Quantity > 0 and one with Quantity = 0 | Both assets appear in result; count is 2 |
-| `GetPortfolioAssetsSummary_ReturnsEmptyList_WhenPortfolioHasNoAssets` | Repository returns empty collection | Result is empty; no exception thrown |
-| `GetPortfolioAssetsSummary_ReturnsEmptyList_OnNullOrWhitespaceBrokerName` | `brokerName` is `null`, `""`, `"   "` | Returns empty list without throwing — `[Theory][InlineData(null), InlineData(""), InlineData("   ")]` |
-| `GetPortfolioAssetsSummary_ReturnsEmptyList_OnNullOrWhitespacePortfolioName` | `portfolioName` is `null`, `""`, `"   "` | Returns empty list without throwing — `[Theory][InlineData(null), InlineData(""), InlineData("   ")]` |
+| `GetPortfolioAssetsSummary_ReturnsTotalCredits_SumOfAllCreditValues` | Asset with one Dividend credit of `30m` and one Rent credit of `15m` | `TotalCredits` equals `45m` |
+| `GetPortfolioAssetsSummary_ReturnsTotalCredits_Zero_WhenNoCredits` | Asset with Buy transactions only, no credits | `TotalCredits` equals `0m` |
+| `GetPortfolioAssetsSummary_ReturnsCashFlows_BuyEntriesAreNegative` | Asset with one Buy at `100m` total price | `CashFlows` has one entry; `Amount` equals `−100m` |
+| `GetPortfolioAssetsSummary_ReturnsCashFlows_SellEntriesArePositive` | Asset with one Buy and one Sell at `50m` total price | `CashFlows` contains one entry with `Amount = +50m` for the Sell |
+| `GetPortfolioAssetsSummary_ReturnsCashFlows_CreditEntriesArePositive` | Asset with one Buy and one Credit of value `25m` | `CashFlows` contains one entry with `Amount = +25m` for the Credit |
+| `GetPortfolioAssetsSummary_ReturnsCashFlows_SortedAscendingByDate` | Asset with Buy on `2022-06-01`, Credit on `2021-09-15`, Sell on `2023-01-01` | `CashFlows` ordered: `2021-09-15`, `2022-06-01`, `2023-01-01` |
+| `GetPortfolioAssetsSummary_ReturnsCashFlows_Empty_WhenNoTransactionsOrCredits` | Asset with no transactions and no credits | `CashFlows` is an empty collection (not null) |
+| `GetPortfolioAssetsSummary_ReturnsCashFlows_ContainsAllThreeEventTypes` | Asset with 1 Buy, 1 Sell, and 1 Credit | `CashFlows.Count` equals `3`; one negative entry, two positive entries |
+| `GetPortfolioAssetsSummary_ReturnsCashFlows_BuyAmountMatchesTotalPrice` | Asset with Buy of 10 shares at `15m` unit price + `5m` fees (`TotalPrice = 155m`) | `CashFlows` entry amount equals `−155m` |
 
-### SummaryEndpointsTests.cs (additions)
+### SummaryEndpointsTests.cs (addition)
 
 Follows the same `ApiTestFactory` / `WebApplicationFactory<Program>` pattern as existing summary tests.
 
 | Test Function | Description | Assertions |
 |---------------|-------------|------------|
-| `GetPortfolioAssetsSummary_Returns200WithItems` | `GET /api/v1/financial/summary/portfolio/XPI/Default/assets` against the real test data file | HTTP 200; deserialised array is non-null and non-empty; first item has non-null `assetName`; all `totalBought ≥ 0` and `portfolioWeight ≥ 0` |
-| `GetPortfolioAssetsSummary_Returns400ForWhitespaceBrokerName` | `GET /api/v1/financial/summary/portfolio/%20/Default/assets` | HTTP 400 |
+| `GetPortfolioAssetsSummary_Returns200WithNewFields` | `GET /api/v1/financial/summary/portfolio/XPI/Default/assets` against the real test data file | HTTP 200; every item has `totalCredits ≥ 0`; every item has non-null `cashFlows` array; at least one item has `cashFlows.Count > 0` |
 
 ### Acceptance Test Mapping
 
 | PRD Acceptance Criterion (Section 9 — F01) | Covered By |
 |---------------------------------------------|------------|
-| Returns HTTP 200 with JSON array | `GetPortfolioAssetsSummary_Returns200WithItems` |
-| Each item contains required fields | `GetPortfolioAssetsSummary_Returns200WithItems` + `GetPortfolioAssetsSummary_ReturnsSingleAsset_WithCorrectFields` |
-| `totalInvested = totalBought − totalSold` | `GetPortfolioAssetsSummary_ReturnsSingleAsset_WithCorrectFields` |
-| `portfolioWeight` values sum to 100 | `GetPortfolioAssetsSummary_ComputesPortfolioWeight` |
-| All values 0 when `portfolioTotalInvested` is 0 | `GetPortfolioAssetsSummary_ReturnsZeroPortfolioWeight_WhenAllTotalInvestedAreZero` |
-| Assets sorted alphabetically | `GetPortfolioAssetsSummary_SortsAlphabetically` |
-| `firstInvestmentDate` from earliest Buy | `GetPortfolioAssetsSummary_SetsFirstInvestmentDate_FromEarliestBuyTransaction` |
-| `firstInvestmentDate` is null with no Buys | `GetPortfolioAssetsSummary_SetsFirstInvestmentDate_Null_WhenNoBuyTransactions` |
-| HTTP 400 on null/whitespace params | `GetPortfolioAssetsSummary_Returns400ForWhitespaceBrokerName` |
-| Empty array on empty portfolio | `GetPortfolioAssetsSummary_ReturnsEmptyList_WhenPortfolioHasNoAssets` |
+| Each item contains `totalCredits` and `cashFlows` | `GetPortfolioAssetsSummary_Returns200WithNewFields` |
+| `totalCredits` equals sum of all credit values | `GetPortfolioAssetsSummary_ReturnsTotalCredits_SumOfAllCreditValues` |
+| `totalCredits` is `0` when no credits | `GetPortfolioAssetsSummary_ReturnsTotalCredits_Zero_WhenNoCredits` |
+| `cashFlows` contains Buy as negative, Sell and Credit as positive | `GetPortfolioAssetsSummary_ReturnsCashFlows_BuyEntriesAreNegative` + `_SellEntriesArePositive` + `_CreditEntriesArePositive` |
+| `cashFlows` sorted ascending by date | `GetPortfolioAssetsSummary_ReturnsCashFlows_SortedAscendingByDate` |
+| `cashFlows` is empty array when no transactions or credits | `GetPortfolioAssetsSummary_ReturnsCashFlows_Empty_WhenNoTransactionsOrCredits` |
+| Buy amount in `cashFlows` matches `TotalPrice` | `GetPortfolioAssetsSummary_ReturnsCashFlows_BuyAmountMatchesTotalPrice` |
