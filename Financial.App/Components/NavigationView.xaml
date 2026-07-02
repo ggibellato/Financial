@@ -375,6 +375,14 @@
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Total Credits" Binding="{Binding DisplayTotalCredits}" Width="Auto">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextAlignment" Value="Right"/>
+                                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
                                         <DataGridTemplateColumn Header="Current Value" Width="Auto">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
@@ -408,6 +416,54 @@
                                                                         <Setter Property="Foreground" Value="Green"/>
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding ProfitIsNegative}" Value="True">
+                                                                        <Setter Property="Foreground" Value="Red"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Header="% Profit w/ Credits" Width="Auto">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock FontFamily="Consolas" TextAlignment="Right">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="{Binding DisplayProfitWithCreditsPercent}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsLoadingPrice}" Value="True">
+                                                                        <Setter Property="Text" Value="..."/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding ProfitWithCreditsIsPositive}" Value="True">
+                                                                        <Setter Property="Foreground" Value="Green"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding ProfitWithCreditsIsNegative}" Value="True">
+                                                                        <Setter Property="Foreground" Value="Red"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Header="XIRR" Width="Auto">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock FontFamily="Consolas" TextAlignment="Right">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="{Binding DisplayXirr}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsLoadingPrice}" Value="True">
+                                                                        <Setter Property="Text" Value="..."/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding XirrIsPositive}" Value="True">
+                                                                        <Setter Property="Foreground" Value="Green"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding XirrIsNegative}" Value="True">
                                                                         <Setter Property="Foreground" Value="Red"/>
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
