@@ -13,4 +13,11 @@ public sealed class PortfolioAssetSummaryItemDTO
     public decimal PortfolioWeight { get; init; }
     public decimal TotalCredits { get; init; }
     public IReadOnlyList<AssetCashFlowDTO> CashFlows { get; init; } = [];
+    public decimal LastMonthCredits { get; init; }
+    public string? LastCreditMonth { get; init; }
+    public decimal? LastMonthCreditsPercent { get; init; }
+    public int? CreditFrequencyPerYear { get; init; }
+    public decimal? EstimatedAnnualCredits { get; init; }
+    public decimal? EstimatedAnnualPercent { get; init; }
+    public decimal CurrentMonthCredits { get; init; }
 }
