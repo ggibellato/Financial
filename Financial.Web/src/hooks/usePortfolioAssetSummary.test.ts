@@ -149,6 +149,8 @@ describe('usePortfolioAssetSummary', () => {
     await waitFor(() => expect(result.current.items).not.toBeNull())
     expect(result.current.items).toHaveLength(2)
     expect(result.current.items![0].assetName).toBe('ALZR11')
+    expect(result.current.items![0].totalCredits).toBe(125)
+    expect(result.current.items![0].cashFlows).toHaveLength(3)
   })
 
   it('sets_error_on_fetch_failure', async () => {
