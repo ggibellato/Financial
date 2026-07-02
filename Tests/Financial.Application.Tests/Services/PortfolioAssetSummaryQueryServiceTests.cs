@@ -163,6 +163,132 @@ public class PortfolioAssetSummaryQueryServiceTests
         result.Should().BeEmpty();
     }
 
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsTotalCredits_SumOfAllCreditValues()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2023, 1, 1), Credit.CreditType.Dividend, 30m));
+        asset.AddCredit(Credit.Create(new DateTime(2023, 6, 1), Credit.CreditType.Rent, 15m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].TotalCredits.Should().Be(45m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsTotalCredits_Zero_WhenNoCredits()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 100m, 0m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].TotalCredits.Should().Be(0m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsCashFlows_BuyEntriesAreNegative()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        using var _ = new AssertionScope();
+        result[0].CashFlows.Should().HaveCount(1);
+        result[0].CashFlows[0].Amount.Should().Be(-100m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsCashFlows_SellEntriesArePositive()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 10m, 0m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        var sellFlow = result[0].CashFlows.First(f => f.Amount > 0 && f.Date.Year == 2022);
+        sellFlow.Amount.Should().Be(50m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsCashFlows_CreditEntriesArePositive()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2023, 3, 1), Credit.CreditType.Dividend, 25m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        var creditFlow = result[0].CashFlows.First(f => f.Date.Year == 2023);
+        creditFlow.Amount.Should().Be(25m);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsCashFlows_SortedAscendingByDate()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2022, 6, 1), Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2021, 9, 15), Credit.CreditType.Dividend, 5m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2023, 1, 1), Transaction.TransactionType.Sell, 1m, 12m, 0m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        var dates = result[0].CashFlows.Select(f => f.Date).ToList();
+        dates.Should().BeInAscendingOrder();
+        dates[0].Should().Be(new DateTime(2021, 9, 15));
+        dates[1].Should().Be(new DateTime(2022, 6, 1));
+        dates[2].Should().Be(new DateTime(2023, 1, 1));
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsCashFlows_Empty_WhenNoTransactionsOrCredits()
+    {
+        _repository.Assets = [MakeAsset("TEST", "TST", "BVMF")];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].CashFlows.Should().NotBeNull();
+        result[0].CashFlows.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsCashFlows_ContainsAllThreeEventTypes()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 5m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 2m, 12m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2021, 6, 1), Credit.CreditType.Dividend, 8m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        using var _ = new AssertionScope();
+        result[0].CashFlows.Should().HaveCount(3);
+        result[0].CashFlows.Count(f => f.Amount < 0).Should().Be(1);
+        result[0].CashFlows.Count(f => f.Amount > 0).Should().Be(2);
+    }
+
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsCashFlows_BuyAmountMatchesTotalPrice()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 15m, 5m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].CashFlows[0].Amount.Should().Be(-155m);
+    }
+
     private PortfolioAssetSummaryQueryService CreateService() => new(_repository);
 
     private static Asset MakeAsset(string name, string ticker, string exchange) =>

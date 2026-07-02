@@ -41,6 +41,27 @@ public class SummaryEndpointsTests
 
 
     [Fact]
+    public async Task GetPortfolioAssetsSummary_Returns200WithNewFields()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Default/assets");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var items = await response.Content.ReadFromJsonAsync<List<PortfolioAssetSummaryItemDTO>>();
+        items.Should().NotBeNull();
+        items.Should().NotBeEmpty();
+        items!.Should().AllSatisfy(i =>
+        {
+            i.TotalCredits.Should().BeGreaterThanOrEqualTo(0m);
+            i.CashFlows.Should().NotBeNull();
+        });
+        items.Should().Contain(i => i.CashFlows.Count > 0);
+    }
+
+    [Fact]
     public async Task GetBrokerSummary_Returns200WithDto()
     {
         await using var factory = new ApiTestFactory();
