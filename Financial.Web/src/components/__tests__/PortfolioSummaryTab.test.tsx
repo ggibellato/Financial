@@ -47,6 +47,8 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   totalSold: 0,
   totalInvested: 2500,
   portfolioWeight: 23.4,
+  totalCredits: 0,
+  cashFlows: [],
 }
 
 const LOADING_ROW_PRICE: RowPriceState = { isLoading: true, currentPrice: null, fetchFailed: false }

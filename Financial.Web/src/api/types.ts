@@ -194,6 +194,11 @@ export interface PortfolioReferenceDto {
   portfolioName: string
 }
 
+export interface AssetCashFlowDto {
+  date: string
+  amount: number
+}
+
 export interface PortfolioAssetSummaryItemDto {
   assetName: string
   ticker: string
@@ -204,4 +209,6 @@ export interface PortfolioAssetSummaryItemDto {
   totalSold: number
   totalInvested: number
   portfolioWeight: number
+  totalCredits: number
+  cashFlows: AssetCashFlowDto[]
 }
