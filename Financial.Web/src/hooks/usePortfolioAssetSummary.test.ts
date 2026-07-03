@@ -54,6 +54,13 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
     { date: '2021-09-15T00:00:00', amount: 50 },
     { date: '2022-09-15T00:00:00', amount: 75 },
   ],
+  lastMonthCredits: 50,
+  lastCreditMonth: '2022-09',
+  lastMonthCreditsPercent: 2.0,
+  creditFrequencyPerYear: 12,
+  estimatedAnnualCredits: 600,
+  estimatedAnnualPercent: 24.0,
+  currentMonthCredits: 0,
 }
 
 const ITEM_2: PortfolioAssetSummaryItemDto = {
@@ -70,6 +77,13 @@ const ITEM_2: PortfolioAssetSummaryItemDto = {
   cashFlows: [
     { date: '2021-05-15T00:00:00', amount: -1000 },
   ],
+  lastMonthCredits: 0,
+  lastCreditMonth: null,
+  lastMonthCreditsPercent: null,
+  creditFrequencyPerYear: null,
+  estimatedAnnualCredits: null,
+  estimatedAnnualPercent: null,
+  currentMonthCredits: 0,
 }
 
 const PRICE_DTO: AssetPriceDto = {

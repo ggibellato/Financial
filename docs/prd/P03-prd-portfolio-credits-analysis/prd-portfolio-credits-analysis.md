@@ -253,36 +253,36 @@ graph TD
 
 ### F01. Credits Analysis — Service Enhancement
 
-- [ ] `GET /api/v1/financial/summary/portfolio/{brokerName}/{portfolioName}/assets` response includes `lastMonthCredits`, `lastCreditMonth`, `lastMonthCreditsPercent`, `creditFrequencyPerYear`, `estimatedAnnualCredits`, `estimatedAnnualPercent`, `currentMonthCredits` for every item
-- [ ] `lastMonthCredits` equals the sum of all credit `Value` fields whose date falls in the most recent credit month ≤ today; is 0 when the asset has no credits
-- [ ] `lastCreditMonth` is formatted `"YYYY-MM"`; is null when the asset has no credits
-- [ ] `lastMonthCreditsPercent` equals `lastMonthCredits / totalInvested × 100`; is null when `totalInvested` is 0 or `lastCreditMonth` is null
-- [ ] `currentMonthCredits` equals the sum of credit `Value` fields whose date falls in the current calendar month (year + month matching today); is 0 when no such credits exist
-- [ ] **Frequency detection — monthly:** an asset with credits in Jan, Feb, Mar (gaps = 1, 1) returns `creditFrequencyPerYear = 12`
-- [ ] **Frequency detection — quarterly:** an asset with credits in Jan, Apr, Jul (gaps = 3, 3) returns `creditFrequencyPerYear = 4`
-- [ ] **Frequency detection — four-month:** an asset with credits in Jan, May, Sep (gaps = 4, 4) returns `creditFrequencyPerYear = 3`
-- [ ] **Frequency detection — undetectable:** an asset with only 1 distinct credit month returns `creditFrequencyPerYear = null`; an asset with gaps averaging outside 0–5 months also returns null
-- [ ] `estimatedAnnualCredits` equals `lastMonthCredits × creditFrequencyPerYear`; is null when `creditFrequencyPerYear` is null
-- [ ] `estimatedAnnualPercent` equals `estimatedAnnualCredits / totalInvested × 100`; is null when `estimatedAnnualCredits` is null or `totalInvested` is 0
-- [ ] Credits with a future date (after today) are excluded from `lastCreditMonth` and `lastMonthCredits` calculations
-- [ ] Existing fields (`assetName`, `totalInvested`, `totalCredits`, `cashFlows`, etc.) are unchanged and pass all P02 acceptance criteria without regression
+- [x] `GET /api/v1/financial/summary/portfolio/{brokerName}/{portfolioName}/assets` response includes `lastMonthCredits`, `lastCreditMonth`, `lastMonthCreditsPercent`, `creditFrequencyPerYear`, `estimatedAnnualCredits`, `estimatedAnnualPercent`, `currentMonthCredits` for every item
+- [x] `lastMonthCredits` equals the sum of all credit `Value` fields whose date falls in the most recent credit month ≤ today; is 0 when the asset has no credits
+- [x] `lastCreditMonth` is formatted `"YYYY-MM"`; is null when the asset has no credits
+- [x] `lastMonthCreditsPercent` equals `lastMonthCredits / totalInvested × 100`; is null when `totalInvested` is 0 or `lastCreditMonth` is null
+- [x] `currentMonthCredits` equals the sum of credit `Value` fields whose date falls in the current calendar month (year + month matching today); is 0 when no such credits exist
+- [x] **Frequency detection — monthly:** an asset with credits in Jan, Feb, Mar (gaps = 1, 1) returns `creditFrequencyPerYear = 12`
+- [x] **Frequency detection — quarterly:** an asset with credits in Jan, Apr, Jul (gaps = 3, 3) returns `creditFrequencyPerYear = 4`
+- [x] **Frequency detection — four-month:** an asset with credits in Jan, May, Sep (gaps = 4, 4) returns `creditFrequencyPerYear = 3`
+- [x] **Frequency detection — undetectable:** an asset with only 1 distinct credit month returns `creditFrequencyPerYear = null`; an asset with gaps averaging outside 0–5 months also returns null
+- [x] `estimatedAnnualCredits` equals `lastMonthCredits × creditFrequencyPerYear`; is null when `creditFrequencyPerYear` is null
+- [x] `estimatedAnnualPercent` equals `estimatedAnnualCredits / totalInvested × 100`; is null when `estimatedAnnualCredits` is null or `totalInvested` is 0
+- [x] Credits with a future date (after today) are excluded from `lastCreditMonth` and `lastMonthCredits` calculations
+- [x] Existing fields (`assetName`, `totalInvested`, `totalCredits`, `cashFlows`, etc.) are unchanged and pass all P02 acceptance criteria without regression
 
 ### F02. Credits Analysis Columns and Footer — Web Frontend
 
-- [ ] Five new columns appear after XIRR in the web per-asset table: Last Month Credits, Last Credit Month, Last Month %, Est. Annual Credits, Est. Annual %
-- [ ] A thick left border visually separates the "Last Month Credits" column from the XIRR column; no additional column is inserted between them
-- [ ] Last Month Credits, Last Credit Month, Last Month %, Est. Annual Credits, and Est. Annual % are populated immediately on F01 data load, before any price fetches complete
-- [ ] An asset with no credits shows "—" in Last Month Credits, Last Credit Month, and Last Month %
-- [ ] An asset with fewer than 2 distinct credit months shows "—" in Est. Annual Credits and Est. Annual %
-- [ ] Last Credit Month displays in "MMM YYYY" format (e.g., "Jun 2026")
-- [ ] Last Month % displays as N2 with "%" suffix (e.g., "1.25%"); "—" when null
-- [ ] Est. Annual % displays as N2 with "%" suffix (e.g., "5.00%"); "—" when null
-- [ ] Footer panel is visible below the table once F01 data has loaded
-- [ ] Footer shows: Total Invested (sum), Total Credits (sum), Current Value (sum), Credits [Mon YYYY] (current month sum), Est. Annual Credits (sum of non-null values)
-- [ ] Footer "Credits" label includes the current month and year (e.g., "Credits Jul 2026") matching the current calendar month
-- [ ] Current Value footer shows "Calculating…" while price fetches are in progress and updates as prices resolve
-- [ ] Footer is not a `<tr>` inside the table; it is a separate DOM element rendered below the table
-- [ ] All existing columns (Asset Name through XIRR) and the three portfolio totals above the table are unaffected (P02 regression check)
+- [x] Five new columns appear after XIRR in the web per-asset table: Last Month Credits, Last Credit Month, Last Month %, Est. Annual Credits, Est. Annual %
+- [x] A thick left border visually separates the "Last Month Credits" column from the XIRR column; no additional column is inserted between them
+- [x] Last Month Credits, Last Credit Month, Last Month %, Est. Annual Credits, and Est. Annual % are populated immediately on F01 data load, before any price fetches complete
+- [x] An asset with no credits shows "—" in Last Month Credits, Last Credit Month, and Last Month %
+- [x] An asset with fewer than 2 distinct credit months shows "—" in Est. Annual Credits and Est. Annual %
+- [x] Last Credit Month displays in "MMM YYYY" format (e.g., "Jun 2026")
+- [x] Last Month % displays as N2 with "%" suffix (e.g., "1.25%"); "—" when null
+- [x] Est. Annual % displays as N2 with "%" suffix (e.g., "5.00%"); "—" when null
+- [x] Footer panel is visible below the table once F01 data has loaded
+- [x] Footer shows: Total Invested (sum), Total Credits (sum), Current Value (sum), Credits [Mon YYYY] (current month sum), Est. Annual Credits (sum of non-null values)
+- [x] Footer "Credits" label includes the current month and year (e.g., "Credits Jul 2026") matching the current calendar month
+- [x] Current Value footer shows "Calculating…" while price fetches are in progress and updates as prices resolve
+- [x] Footer is not a `<tr>` inside the table; it is a separate DOM element rendered below the table
+- [x] All existing columns (Asset Name through XIRR) and the three portfolio totals above the table are unaffected (P02 regression check)
 
 ### F03. Credits Analysis Columns and Footer — WPF
 
@@ -300,7 +300,7 @@ graph TD
 
 ### Cross-Feature Integration
 
-- [ ] The `lastMonthCredits`, `lastCreditMonth`, `lastMonthCreditsPercent`, `estimatedAnnualCredits`, `estimatedAnnualPercent`, and `currentMonthCredits` values returned by F01's endpoint are used without transformation in F02's column rendering
+- [x] The `lastMonthCredits`, `lastCreditMonth`, `lastMonthCreditsPercent`, `estimatedAnnualCredits`, `estimatedAnnualPercent`, and `currentMonthCredits` values returned by F01's endpoint are used without transformation in F02's column rendering
 - [ ] The same fields from F01's Application service are used without transformation in F03's row view model properties
-- [ ] The `currentMonthCredits` values from F01 are summed by F02 to produce the footer "Credits [Mon YYYY]" total, verified with a portfolio containing assets with credits in the current month and assets without
+- [x] The `currentMonthCredits` values from F01 are summed by F02 to produce the footer "Credits [Mon YYYY]" total, verified with a portfolio containing assets with credits in the current month and assets without
 - [ ] The `currentMonthCredits` values from F01 are summed by F03 to produce the WPF footer total, verified with the same test portfolio

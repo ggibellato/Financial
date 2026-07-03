@@ -211,4 +211,11 @@ export interface PortfolioAssetSummaryItemDto {
   portfolioWeight: number
   totalCredits: number
   cashFlows: AssetCashFlowDto[]
+  lastMonthCredits: number
+  lastCreditMonth: string | null
+  lastMonthCreditsPercent: number | null
+  creditFrequencyPerYear: number | null
+  estimatedAnnualCredits: number | null
+  estimatedAnnualPercent: number | null
+  currentMonthCredits: number
 }

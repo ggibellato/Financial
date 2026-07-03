@@ -54,6 +54,13 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   portfolioWeight: 23.4,
   totalCredits: 0,
   cashFlows: [],
+  lastMonthCredits: 0,
+  lastCreditMonth: null,
+  lastMonthCreditsPercent: null,
+  creditFrequencyPerYear: null,
+  estimatedAnnualCredits: null,
+  estimatedAnnualPercent: null,
+  currentMonthCredits: 0,
 }
 
 const LOADING_ROW_PRICE: RowPriceState = { isLoading: true, currentPrice: null, fetchFailed: false }
@@ -338,5 +345,208 @@ describe('PortfolioSummaryTab', () => {
     expect(screen.getByText('Total Sold')).toBeInTheDocument()
     expect(screen.getByText('Total Credits')).toBeInTheDocument()
     expect(screen.getByText('F01 fetch failed')).toBeInTheDocument()
+  })
+
+  // ── P03-F02: Credits Analysis Columns ─────────────────────────────────────
+
+  it('renders_five_new_column_headers_after_xirr', () => {
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByText('Last Month Credits')).toBeInTheDocument()
+    expect(screen.getByText('Last Credit Month')).toBeInTheDocument()
+    expect(screen.getByText('Last Month %')).toBeInTheDocument()
+    expect(screen.getByText('Est. Annual Credits')).toBeInTheDocument()
+    expect(screen.getByText('Est. Annual %')).toBeInTheDocument()
+  })
+
+  it('renders_last_month_credits_with_formatted_value', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCredits: 12.50, lastCreditMonth: '2026-06' }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByText(/12[.,]50/)).toBeInTheDocument()
+  })
+
+  it('renders_last_month_credits_as_dash_when_no_credits', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCredits: 0, lastCreditMonth: null }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    const dashes = screen.getAllByText('—')
+    expect(dashes.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('renders_last_credit_month_in_mmm_yyyy_format', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCredits: 12.50, lastCreditMonth: '2026-06' }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByText('Jun 2026')).toBeInTheDocument()
+  })
+
+  it('renders_last_credit_month_as_dash_when_null', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastCreditMonth: null }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    const dashes = screen.getAllByText('—')
+    expect(dashes.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('renders_last_month_percent_with_percent_suffix', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCredits: 12.50, lastCreditMonth: '2026-06', lastMonthCreditsPercent: 1.25 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByText(/1[.,]25%/)).toBeInTheDocument()
+  })
+
+  it('renders_last_month_percent_as_dash_when_null', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCreditsPercent: null }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    const dashes = screen.getAllByText('—')
+    expect(dashes.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('renders_estimated_annual_credits_with_formatted_value', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCredits: 12.50, lastCreditMonth: '2026-06', estimatedAnnualCredits: 150.00 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByText(/150[.,]00/)).toBeInTheDocument()
+  })
+
+  it('renders_estimated_annual_credits_as_dash_when_null', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, estimatedAnnualCredits: null }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    const dashes = screen.getAllByText('—')
+    expect(dashes.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('renders_estimated_annual_percent_with_percent_suffix', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCredits: 12.50, lastCreditMonth: '2026-06', estimatedAnnualCredits: 150.00, estimatedAnnualPercent: 6.00 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByText(/6[.,]00%/)).toBeInTheDocument()
+  })
+
+  it('renders_estimated_annual_percent_as_dash_when_null', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, estimatedAnnualPercent: null }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    const dashes = screen.getAllByText('—')
+    expect(dashes.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('renders_credits_separator_class_on_last_month_credits_header', () => {
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    const header = screen.getByText('Last Month Credits')
+    expect(header).toHaveClass('portfolio-summary__credits-separator')
+  })
+
+  // ── P03-F02: Footer Panel ──────────────────────────────────────────────────
+
+  it('renders_footer_with_total_invested_sum', () => {
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, totalInvested: 1000 }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', totalInvested: 2000, totalCredits: 0 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item1, item2], rowPrices: [LOADING_ROW_PRICE, LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByDisplayValue(/3[,.]000[.,]00/)).toBeInTheDocument()
+  })
+
+  it('renders_footer_with_total_credits_sum', () => {
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, totalCredits: 50, totalInvested: 1000 }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', totalCredits: 75, totalInvested: 2000 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item1, item2], rowPrices: [LOADING_ROW_PRICE, LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByDisplayValue(/125[.,]00/)).toBeInTheDocument()
+  })
+
+  it('renders_footer_credits_label_with_current_month_and_year', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-07-15'))
+    try {
+      setAggregatedMock({ summary: SUMMARY })
+      setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
+      render(<PortfolioSummaryTab />)
+      expect(screen.getByText('Credits Jul 2026')).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('renders_footer_current_month_credits_sum', () => {
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentMonthCredits: 10, totalInvested: 1000 }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', currentMonthCredits: 20, totalInvested: 2000 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item1, item2], rowPrices: [LOADING_ROW_PRICE, LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByDisplayValue(/30[.,]00/)).toBeInTheDocument()
+  })
+
+  it('renders_footer_estimated_annual_credits_sum_of_non_null', () => {
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, estimatedAnnualCredits: 600, totalInvested: 1000 }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', estimatedAnnualCredits: null, totalInvested: 2000 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item1, item2], rowPrices: [LOADING_ROW_PRICE, LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByDisplayValue(/600[.,]00/)).toBeInTheDocument()
+  })
+
+  it('renders_footer_estimated_annual_credits_as_dash_when_all_null', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, estimatedAnnualCredits: null }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByDisplayValue('—')).toBeInTheDocument()
+  })
+
+  it('renders_footer_current_value_as_calculating_when_all_prices_pending', () => {
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByDisplayValue('Calculating…')).toBeInTheDocument()
+  })
+
+  it('renders_footer_current_value_as_partial_sum_with_asterisk_while_prices_loading', () => {
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 5 }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11' }
+    const resolvedPrice: RowPriceState = { isLoading: false, currentPrice: 10, fetchFailed: false }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item1, item2], rowPrices: [resolvedPrice, LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByDisplayValue(/50[.,]00 \*/)).toBeInTheDocument()
+    expect(screen.getByText('excludes assets with pending prices')).toBeInTheDocument()
+  })
+
+  it('renders_footer_current_value_as_clean_sum_when_all_prices_resolved', () => {
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 5 }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', currentQuantity: 10 }
+    const price1: RowPriceState = { isLoading: false, currentPrice: 10, fetchFailed: false }
+    const price2: RowPriceState = { isLoading: false, currentPrice: 5, fetchFailed: false }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item1, item2], rowPrices: [price1, price2] })
+    render(<PortfolioSummaryTab />)
+    expect(screen.getByDisplayValue(/100[.,]00/)).toBeInTheDocument()
+    expect(screen.queryByText('excludes assets with pending prices')).not.toBeInTheDocument()
+  })
+
+  it('footer_panel_is_not_inside_table_element', () => {
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
+    render(<PortfolioSummaryTab />)
+    expect(document.querySelector('.portfolio-summary__footer')).not.toBeNull()
+    expect(document.querySelector('table tfoot')).toBeNull()
   })
 })
