@@ -327,6 +327,7 @@
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
                                 <!-- Aggregated Totals -->
@@ -473,8 +474,95 @@
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
+                                        <DataGridTextColumn Header="Last Month Credits" Binding="{Binding DisplayLastMonthCredits}" Width="Auto">
+                                            <DataGridTextColumn.CellStyle>
+                                                <Style TargetType="DataGridCell">
+                                                    <Setter Property="BorderThickness" Value="3,0,0,0"/>
+                                                    <Setter Property="BorderBrush" Value="#007ACC"/>
+                                                </Style>
+                                            </DataGridTextColumn.CellStyle>
+                                            <DataGridTextColumn.HeaderStyle>
+                                                <Style TargetType="DataGridColumnHeader">
+                                                    <Setter Property="BorderThickness" Value="3,0,0,0"/>
+                                                    <Setter Property="BorderBrush" Value="#007ACC"/>
+                                                </Style>
+                                            </DataGridTextColumn.HeaderStyle>
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextAlignment" Value="Right"/>
+                                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Last Credit Month" Binding="{Binding LastCreditMonthDisplay}" Width="Auto">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextAlignment" Value="Right"/>
+                                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Last Month %" Binding="{Binding DisplayLastMonthCreditsPercent}" Width="Auto">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextAlignment" Value="Right"/>
+                                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Est. Annual Credits" Binding="{Binding DisplayEstimatedAnnualCredits}" Width="Auto">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextAlignment" Value="Right"/>
+                                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Est. Annual %" Binding="{Binding DisplayEstimatedAnnualPercent}" Width="Auto">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextAlignment" Value="Right"/>
+                                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
+                                <Border Grid.Row="2"
+                                        Background="{x:Static SystemColors.ControlBrush}"
+                                        Padding="8,6"
+                                        Margin="0,4,0,0">
+                                    <WrapPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                            <TextBlock Text="Total Invested:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                            <TextBlock Text="{Binding AssetDetails.FooterTotalInvested, StringFormat=N2}"
+                                                       FontFamily="Consolas"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                            <TextBlock Text="Total Credits:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                            <TextBlock Text="{Binding AssetDetails.FooterTotalCredits, StringFormat=N2}"
+                                                       FontFamily="Consolas"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                            <TextBlock Text="Current Value:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                            <TextBlock Text="{Binding AssetDetails.FooterCurrentValueDisplay}"
+                                                       FontFamily="Consolas"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                            <TextBlock FontWeight="Bold" Margin="0,0,5,0">
+                                                <Run Text="{Binding AssetDetails.FooterCurrentMonthLabel}"/>
+                                                <Run Text=":"/>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding AssetDetails.FooterCurrentMonthCredits, StringFormat=N2}"
+                                                       FontFamily="Consolas"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Est. Annual Credits:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                            <TextBlock Text="{Binding AssetDetails.FooterEstimatedAnnualCreditsDisplay}"
+                                                       FontFamily="Consolas"/>
+                                        </StackPanel>
+                                    </WrapPanel>
+                                </Border>
                             </Grid>
                         </DataTemplate>
                     </TabItem.Resources>
