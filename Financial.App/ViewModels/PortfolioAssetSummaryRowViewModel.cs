@@ -1,4 +1,5 @@
 using Financial.Application.DTOs;
+using System.Globalization;
 
 namespace Financial.Presentation.App.ViewModels;
 
@@ -23,6 +24,12 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     public decimal PortfolioWeight { get; }
     public decimal TotalCredits { get; }
     public IReadOnlyList<AssetCashFlowDTO> CashFlows { get; }
+    public decimal LastMonthCredits { get; }
+    public string? LastCreditMonth { get; }
+    public decimal? LastMonthCreditsPercent { get; }
+    public decimal? EstimatedAnnualCredits { get; }
+    public decimal? EstimatedAnnualPercent { get; }
+    public decimal CurrentMonthCredits { get; }
 
     public bool IsLoadingPrice => _isLoadingPrice;
     public bool PriceFetchFailed => _priceFetchFailed;
@@ -38,6 +45,24 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     public string DisplayTotalInvested => TotalInvested.ToString("N2");
     public string DisplayPortfolioWeight => $"{PortfolioWeight:F1}%";
     public string DisplayTotalCredits => TotalCredits.ToString("N2");
+
+    public string DisplayLastMonthCredits =>
+        LastCreditMonth is null ? "—" : LastMonthCredits.ToString("N2");
+
+    public string LastCreditMonthDisplay =>
+        LastCreditMonth is null
+            ? "—"
+            : DateTime.ParseExact(LastCreditMonth, "yyyy-MM", CultureInfo.InvariantCulture)
+                      .ToString("MMM yyyy", CultureInfo.InvariantCulture);
+
+    public string DisplayLastMonthCreditsPercent =>
+        LastMonthCreditsPercent.HasValue ? $"{LastMonthCreditsPercent.Value:F2}%" : "—";
+
+    public string DisplayEstimatedAnnualCredits =>
+        EstimatedAnnualCredits.HasValue ? EstimatedAnnualCredits.Value.ToString("N2") : "—";
+
+    public string DisplayEstimatedAnnualPercent =>
+        EstimatedAnnualPercent.HasValue ? $"{EstimatedAnnualPercent.Value:F2}%" : "—";
 
     public string DisplayCurrentValue =>
         _isLoadingPrice || _priceFetchFailed ? "—" : _currentValue?.ToString("N2") ?? "—";
@@ -69,6 +94,12 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
         PortfolioWeight = dto.PortfolioWeight;
         TotalCredits = dto.TotalCredits;
         CashFlows = dto.CashFlows;
+        LastMonthCredits = dto.LastMonthCredits;
+        LastCreditMonth = dto.LastCreditMonth;
+        LastMonthCreditsPercent = dto.LastMonthCreditsPercent;
+        EstimatedAnnualCredits = dto.EstimatedAnnualCredits;
+        EstimatedAnnualPercent = dto.EstimatedAnnualPercent;
+        CurrentMonthCredits = dto.CurrentMonthCredits;
     }
 
     public void ApplyPrice(decimal price)
