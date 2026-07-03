@@ -12,7 +12,13 @@ public class PortfolioAssetSummaryRowViewModelTests
         decimal portfolioWeight = 0m,
         decimal totalCredits = 0m,
         DateTime? firstInvestmentDate = null,
-        IReadOnlyList<AssetCashFlowDTO>? cashFlows = null)
+        IReadOnlyList<AssetCashFlowDTO>? cashFlows = null,
+        decimal lastMonthCredits = 0m,
+        string? lastCreditMonth = null,
+        decimal? lastMonthCreditsPercent = null,
+        decimal? estimatedAnnualCredits = null,
+        decimal? estimatedAnnualPercent = null,
+        decimal currentMonthCredits = 0m)
     {
         var dto = new PortfolioAssetSummaryItemDTO
         {
@@ -26,7 +32,13 @@ public class PortfolioAssetSummaryRowViewModelTests
             TotalInvested = totalInvested,
             PortfolioWeight = portfolioWeight,
             TotalCredits = totalCredits,
-            CashFlows = cashFlows ?? []
+            CashFlows = cashFlows ?? [],
+            LastMonthCredits = lastMonthCredits,
+            LastCreditMonth = lastCreditMonth,
+            LastMonthCreditsPercent = lastMonthCreditsPercent,
+            EstimatedAnnualCredits = estimatedAnnualCredits,
+            EstimatedAnnualPercent = estimatedAnnualPercent,
+            CurrentMonthCredits = currentMonthCredits
         };
         return new PortfolioAssetSummaryRowViewModel(dto);
     }
@@ -356,5 +368,75 @@ public class PortfolioAssetSummaryRowViewModelTests
         raised.Should().Contain(nameof(row.DisplayXirr));
         raised.Should().Contain(nameof(row.PriceFetchFailed));
         raised.Should().Contain(nameof(row.IsLoadingPrice));
+    }
+
+    [Fact]
+    public void DisplayLastMonthCredits_WhenLastCreditMonthIsNotNull_FormatsN2()
+    {
+        var row = BuildRow(lastMonthCredits: 12.50m, lastCreditMonth: "2026-06");
+        row.DisplayLastMonthCredits.Should().Be("12.50");
+    }
+
+    [Fact]
+    public void DisplayLastMonthCredits_WhenLastCreditMonthIsNull_ReturnsDash()
+    {
+        var row = BuildRow(lastCreditMonth: null);
+        row.DisplayLastMonthCredits.Should().Be("—");
+    }
+
+    [Fact]
+    public void LastCreditMonthDisplay_WhenNotNull_FormatsAsMMMYyyy()
+    {
+        var row = BuildRow(lastCreditMonth: "2026-06");
+        row.LastCreditMonthDisplay.Should().Be("Jun 2026");
+    }
+
+    [Fact]
+    public void LastCreditMonthDisplay_WhenNull_ReturnsDash()
+    {
+        var row = BuildRow(lastCreditMonth: null);
+        row.LastCreditMonthDisplay.Should().Be("—");
+    }
+
+    [Fact]
+    public void DisplayLastMonthCreditsPercent_WhenNotNull_FormatsF2Percent()
+    {
+        var row = BuildRow(lastMonthCreditsPercent: 1.25m);
+        row.DisplayLastMonthCreditsPercent.Should().Be("1.25%");
+    }
+
+    [Fact]
+    public void DisplayLastMonthCreditsPercent_WhenNull_ReturnsDash()
+    {
+        var row = BuildRow(lastMonthCreditsPercent: null);
+        row.DisplayLastMonthCreditsPercent.Should().Be("—");
+    }
+
+    [Fact]
+    public void DisplayEstimatedAnnualCredits_WhenNotNull_FormatsN2()
+    {
+        var row = BuildRow(estimatedAnnualCredits: 150.00m);
+        row.DisplayEstimatedAnnualCredits.Should().Be("150.00");
+    }
+
+    [Fact]
+    public void DisplayEstimatedAnnualCredits_WhenNull_ReturnsDash()
+    {
+        var row = BuildRow(estimatedAnnualCredits: null);
+        row.DisplayEstimatedAnnualCredits.Should().Be("—");
+    }
+
+    [Fact]
+    public void DisplayEstimatedAnnualPercent_WhenNotNull_FormatsF2Percent()
+    {
+        var row = BuildRow(estimatedAnnualPercent: 6.00m);
+        row.DisplayEstimatedAnnualPercent.Should().Be("6.00%");
+    }
+
+    [Fact]
+    public void DisplayEstimatedAnnualPercent_WhenNull_ReturnsDash()
+    {
+        var row = BuildRow(estimatedAnnualPercent: null);
+        row.DisplayEstimatedAnnualPercent.Should().Be("—");
     }
 }
