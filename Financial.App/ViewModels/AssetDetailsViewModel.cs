@@ -3,6 +3,8 @@ using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using OxyPlot;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Globalization;
 using System.Windows;
 
 namespace Financial.Presentation.App.ViewModels;
@@ -54,6 +56,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private bool _hasCreditsContext;
     private bool _isPortfolioView;
     private CancellationTokenSource? _rowPriceCts;
+    private decimal _footerTotalInvested;
+    private decimal _footerTotalCredits;
+    private decimal _footerCurrentMonthCredits;
+    private string _footerCurrentMonthLabel = string.Empty;
+    private string _footerEstimatedAnnualCreditsDisplay = "—";
+    private readonly List<(PortfolioAssetSummaryRowViewModel Row, PropertyChangedEventHandler Handler)> _rowSubscriptions = new();
     private TransactionDTO? _selectedTransaction;
     private CreditDTO? _selectedCredit;
     private IReadOnlyList<CreditsMonthTypeTotals> _creditsChartMonths = Array.Empty<CreditsMonthTypeTotals>();
@@ -148,6 +156,23 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     }
 
     public ObservableCollection<PortfolioAssetSummaryRowViewModel> PortfolioAssetSummaryRows { get; } = new();
+
+    public decimal FooterTotalInvested { get => _footerTotalInvested; private set => SetProperty(ref _footerTotalInvested, value); }
+    public decimal FooterTotalCredits { get => _footerTotalCredits; private set => SetProperty(ref _footerTotalCredits, value); }
+    public decimal FooterCurrentMonthCredits { get => _footerCurrentMonthCredits; private set => SetProperty(ref _footerCurrentMonthCredits, value); }
+    public string FooterCurrentMonthLabel { get => _footerCurrentMonthLabel; private set => SetProperty(ref _footerCurrentMonthLabel, value); }
+    public string FooterEstimatedAnnualCreditsDisplay { get => _footerEstimatedAnnualCreditsDisplay; private set => SetProperty(ref _footerEstimatedAnnualCreditsDisplay, value); }
+
+    public string FooterCurrentValueDisplay
+    {
+        get
+        {
+            if (!PortfolioAssetSummaryRows.Any() || PortfolioAssetSummaryRows.Any(r => r.IsLoadingPrice))
+                return "Calculating…";
+            return PortfolioAssetSummaryRows.Sum(r => r.CurrentValue ?? 0m).ToString("N2");
+        }
+    }
+
     public ObservableCollection<TransactionDTO> Transactions { get; } = new();
     public ObservableCollection<CreditDTO> Credits { get; } = new();
     public ObservableCollection<KeyValuePair<string, decimal>> CreditsByMonthChart { get; } = new();
@@ -226,6 +251,19 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         foreach (var item in assetItems)
             PortfolioAssetSummaryRows.Add(new PortfolioAssetSummaryRowViewModel(item));
 
+        FooterTotalInvested = assetItems.Sum(i => i.TotalInvested);
+        FooterTotalCredits = assetItems.Sum(i => i.TotalCredits);
+        FooterCurrentMonthCredits = assetItems.Sum(i => i.CurrentMonthCredits);
+        FooterCurrentMonthLabel = "Credits " + DateTime.Today.ToString("MMM yyyy", CultureInfo.InvariantCulture);
+        var withEstimated = assetItems.Where(i => i.EstimatedAnnualCredits.HasValue).ToList();
+        FooterEstimatedAnnualCreditsDisplay = withEstimated.Any()
+            ? withEstimated.Sum(i => i.EstimatedAnnualCredits!.Value).ToString("N2")
+            : "—";
+
+        foreach (var row in PortfolioAssetSummaryRows)
+            SubscribeToRowPriceChanges(row);
+        OnPropertyChanged(nameof(FooterCurrentValueDisplay));
+
         var rows = PortfolioAssetSummaryRows.ToList();
         _rowPriceCts = new CancellationTokenSource();
         var token = _rowPriceCts.Token;
@@ -275,6 +313,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         CancelAndResetRowPriceFetch();
         PortfolioAssetSummaryRows.Clear();
+        FooterTotalInvested = 0m;
+        FooterTotalCredits = 0m;
+        FooterCurrentMonthCredits = 0m;
+        FooterCurrentMonthLabel = string.Empty;
+        FooterEstimatedAnnualCreditsDisplay = "—";
+        OnPropertyChanged(nameof(FooterCurrentValueDisplay));
         IsPortfolioView = false;
         ClearAssetContext();
         Credits.Clear();
@@ -402,9 +446,29 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     private void CancelAndResetRowPriceFetch()
     {
+        UnsubscribeFromRowPriceChanges();
         _rowPriceCts?.Cancel();
         _rowPriceCts?.Dispose();
         _rowPriceCts = null;
+    }
+
+    private void SubscribeToRowPriceChanges(PortfolioAssetSummaryRowViewModel row)
+    {
+        void Handler(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(PortfolioAssetSummaryRowViewModel.IsLoadingPrice)
+                or nameof(PortfolioAssetSummaryRowViewModel.CurrentValue))
+                OnPropertyChanged(nameof(FooterCurrentValueDisplay));
+        }
+        row.PropertyChanged += Handler;
+        _rowSubscriptions.Add((row, Handler));
+    }
+
+    private void UnsubscribeFromRowPriceChanges()
+    {
+        foreach (var (row, handler) in _rowSubscriptions)
+            row.PropertyChanged -= handler;
+        _rowSubscriptions.Clear();
     }
 
     private void ClearAssetContext()
