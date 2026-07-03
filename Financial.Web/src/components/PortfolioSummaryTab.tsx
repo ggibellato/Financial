@@ -221,29 +221,27 @@ export default function PortfolioSummaryTab() {
       {footer && (
         <div className="portfolio-summary__footer">
           <div className="portfolio-summary__footer-item">
-            <span className="portfolio-summary__footer-label">Total Invested</span>
-            <span className="portfolio-summary__footer-value">{formatN2(footer.totalInvested)}</span>
+            <span className="portfolio-summary__footer-label" data-label="Total Invested" />
+            <input type="text" readOnly className="portfolio-summary__footer-value" value={formatN2(footer.totalInvested)} tabIndex={-1} />
           </div>
           <div className="portfolio-summary__footer-item">
-            <span className="portfolio-summary__footer-label">Total Credits</span>
-            <span className="portfolio-summary__footer-value">{formatN2(footer.totalCredits)}</span>
+            <span className="portfolio-summary__footer-label" data-label="Total Credits" />
+            <input type="text" readOnly className="portfolio-summary__footer-value" value={formatN2(footer.totalCredits)} tabIndex={-1} />
           </div>
           <div className="portfolio-summary__footer-item">
-            <span className="portfolio-summary__footer-label">Current Value</span>
-            <span className="portfolio-summary__footer-value">{footer.cv.display}</span>
+            <span className="portfolio-summary__footer-label" data-label="Current Value" />
+            <input type="text" readOnly className="portfolio-summary__footer-value" value={footer.cv.display} tabIndex={-1} />
             {footer.cv.partial && (
               <span className="portfolio-summary__footer-footnote">excludes assets with pending prices</span>
             )}
           </div>
           <div className="portfolio-summary__footer-item">
             <span className="portfolio-summary__footer-label">{creditsLabel}</span>
-            <span className="portfolio-summary__footer-value">{formatN2(footer.currentMonthCredits)}</span>
+            <input type="text" readOnly className="portfolio-summary__footer-value" value={formatN2(footer.currentMonthCredits)} tabIndex={-1} />
           </div>
           <div className="portfolio-summary__footer-item">
-            <span className="portfolio-summary__footer-label">Est. Annual Credits</span>
-            <span className="portfolio-summary__footer-value">
-              {footer.estAnnualCredits === null ? '—' : formatN2(footer.estAnnualCredits)}
-            </span>
+            <span className="portfolio-summary__footer-label" data-label="Est. Annual Credits" />
+            <input type="text" readOnly className="portfolio-summary__footer-value" value={footer.estAnnualCredits === null ? '—' : formatN2(footer.estAnnualCredits)} tabIndex={-1} />
           </div>
         </div>
       )}
