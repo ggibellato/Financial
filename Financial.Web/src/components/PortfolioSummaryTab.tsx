@@ -36,6 +36,12 @@ function formatShortDate(isoString: string | null): string {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
 }
 
+function formatCreditMonth(yearMonth: string): string {
+  const [year, month] = yearMonth.split('-').map(Number)
+  const d = new Date(year, month - 1, 1)
+  return d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+}
+
 function getProfitClass(value: number): string {
   return value >= 0 ? 'portfolio-summary__profit--green' : 'portfolio-summary__profit--red'
 }
@@ -115,12 +121,59 @@ function AssetRow({ item, rowPrice }: AssetRowProps) {
           <span className={getProfitClass(xirrValue)}>{formatN2(xirrValue * 100)}%</span>
         )}
       </td>
+      <td className="portfolio-summary__credits-separator">
+        {item.lastCreditMonth === null ? '—' : formatN2(item.lastMonthCredits)}
+      </td>
+      <td>{item.lastCreditMonth === null ? '—' : formatCreditMonth(item.lastCreditMonth)}</td>
+      <td>{item.lastMonthCreditsPercent === null ? '—' : `${formatN2(item.lastMonthCreditsPercent)}%`}</td>
+      <td>{item.estimatedAnnualCredits === null ? '—' : formatN2(item.estimatedAnnualCredits)}</td>
+      <td>{item.estimatedAnnualPercent === null ? '—' : `${formatN2(item.estimatedAnnualPercent)}%`}</td>
     </tr>
   )
 }
 
+function computeCurrentValueFooter(
+  items: PortfolioAssetSummaryItemDto[],
+  rowPrices: RowPriceState[],
+): { display: string; partial: boolean } {
+  const anyLoading = rowPrices.some(r => r.isLoading)
+  const resolved = items
+    .map((item, i) => {
+      const rp = rowPrices[i]
+      return rp && !rp.isLoading && rp.currentPrice !== null
+        ? rp.currentPrice * item.currentQuantity
+        : null
+    })
+    .filter((v): v is number => v !== null)
+
+  if (anyLoading && resolved.length === 0) return { display: 'Calculating…', partial: false }
+  const sum = resolved.reduce((acc, v) => acc + v, 0)
+  if (anyLoading) return { display: `${formatN2(sum)} *`, partial: true }
+  return { display: formatN2(sum), partial: false }
+}
+
 export default function PortfolioSummaryTab() {
   const { items, rowPrices, isLoading, error, retry } = usePortfolioAssetSummary()
+
+  const creditsLabel = (() => {
+    const now = new Date()
+    return `Credits ${now.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}`
+  })()
+
+  const footer =
+    items && items.length > 0
+      ? (() => {
+          const totalInvested = items.reduce((acc, it) => acc + it.totalInvested, 0)
+          const totalCredits = items.reduce((acc, it) => acc + it.totalCredits, 0)
+          const currentMonthCredits = items.reduce((acc, it) => acc + it.currentMonthCredits, 0)
+          const hasAnyAnnual = items.some(it => it.estimatedAnnualCredits !== null)
+          const estAnnualCredits = hasAnyAnnual
+            ? items.reduce((acc, it) => acc + (it.estimatedAnnualCredits ?? 0), 0)
+            : null
+          const cv = computeCurrentValueFooter(items, rowPrices)
+          return { totalInvested, totalCredits, currentMonthCredits, estAnnualCredits, cv }
+        })()
+      : null
 
   return (
     <div className="portfolio-summary">
@@ -145,6 +198,11 @@ export default function PortfolioSummaryTab() {
                 <th>% Profit</th>
                 <th>% Profit w/ Credits</th>
                 <th>XIRR</th>
+                <th className="portfolio-summary__credits-separator">Last Month Credits</th>
+                <th>Last Credit Month</th>
+                <th>Last Month %</th>
+                <th>Est. Annual Credits</th>
+                <th>Est. Annual %</th>
               </tr>
             </thead>
             <tbody>
@@ -159,6 +217,36 @@ export default function PortfolioSummaryTab() {
           </table>
         )}
       </div>
+
+      {footer && (
+        <div className="portfolio-summary__footer">
+          <div className="portfolio-summary__footer-item">
+            <span className="portfolio-summary__footer-label">Total Invested</span>
+            <span className="portfolio-summary__footer-value">{formatN2(footer.totalInvested)}</span>
+          </div>
+          <div className="portfolio-summary__footer-item">
+            <span className="portfolio-summary__footer-label">Total Credits</span>
+            <span className="portfolio-summary__footer-value">{formatN2(footer.totalCredits)}</span>
+          </div>
+          <div className="portfolio-summary__footer-item">
+            <span className="portfolio-summary__footer-label">Current Value</span>
+            <span className="portfolio-summary__footer-value">{footer.cv.display}</span>
+            {footer.cv.partial && (
+              <span className="portfolio-summary__footer-footnote">excludes assets with pending prices</span>
+            )}
+          </div>
+          <div className="portfolio-summary__footer-item">
+            <span className="portfolio-summary__footer-label">{creditsLabel}</span>
+            <span className="portfolio-summary__footer-value">{formatN2(footer.currentMonthCredits)}</span>
+          </div>
+          <div className="portfolio-summary__footer-item">
+            <span className="portfolio-summary__footer-label">Est. Annual Credits</span>
+            <span className="portfolio-summary__footer-value">
+              {footer.estAnnualCredits === null ? '—' : formatN2(footer.estAnnualCredits)}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
