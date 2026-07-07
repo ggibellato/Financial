@@ -17,7 +17,15 @@ public sealed class SummaryQueryService : ISummaryQueryService
         if (string.IsNullOrWhiteSpace(brokerName))
             return new AggregatedSummaryDTO();
 
-        var assets = _repository.GetAssetsByBroker(brokerName).Where(a => a.Active);
+        var broker = _repository.GetBrokerList().FirstOrDefault(b => b.Name == brokerName);
+        if (broker is null)
+            return new AggregatedSummaryDTO();
+
+        var assets = broker.Portfolios
+            .Where(p => !NavigationMapper.IsEncerradas(p.Name))
+            .SelectMany(p => p.Assets)
+            .Where(a => a.Active);
+
         return Aggregate(assets);
     }
 
@@ -47,6 +55,7 @@ public sealed class SummaryQueryService : ISummaryQueryService
             TotalBought = totalBought,
             TotalSold = totalSold,
             TotalCredits = totalCredits,
+            TotalInvested = totalBought - totalSold,
         };
     }
 }

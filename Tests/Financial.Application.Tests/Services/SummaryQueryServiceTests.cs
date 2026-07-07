@@ -23,7 +23,7 @@ public class SummaryQueryServiceTests
         var asset = MakeAsset();
         asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 15m, 0m));
         asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 20m, 0m));
-        _repository.AssetsByBroker = [asset];
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
         var result = CreateService().GetBrokerSummary("XPI");
 
@@ -36,7 +36,7 @@ public class SummaryQueryServiceTests
         var asset = MakeAsset();
         asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 20m, 10m, 0m));
         asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 12m, 0m));
-        _repository.AssetsByBroker = [asset];
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
         var result = CreateService().GetBrokerSummary("XPI");
 
@@ -50,7 +50,7 @@ public class SummaryQueryServiceTests
         asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
         asset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Dividend, 30m));
         asset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Rent, 15m));
-        _repository.AssetsByBroker = [asset];
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
         var result = CreateService().GetBrokerSummary("XPI");
 
@@ -67,7 +67,7 @@ public class SummaryQueryServiceTests
         var inactiveAsset = MakeZeroQuantityAsset();
         inactiveAsset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Dividend, 100m));
 
-        _repository.AssetsByBroker = [activeAsset, inactiveAsset];
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", activeAsset, inactiveAsset)];
 
         var result = CreateService().GetBrokerSummary("XPI");
 
@@ -79,7 +79,7 @@ public class SummaryQueryServiceTests
     [Fact]
     public void GetBrokerSummary_ReturnsZerosForBrokerWithNoActiveAssets()
     {
-        _repository.AssetsByBroker = [MakeZeroQuantityAsset()];
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", MakeZeroQuantityAsset())];
 
         var result = CreateService().GetBrokerSummary("XPI");
 
@@ -87,6 +87,85 @@ public class SummaryQueryServiceTests
         result.TotalBought.Should().Be(0m);
         result.TotalSold.Should().Be(0m);
         result.TotalCredits.Should().Be(0m);
+        result.TotalInvested.Should().Be(0m);
+    }
+
+    [Fact]
+    public void GetBrokerSummary_ReturnsZerosForUnknownBrokerName()
+    {
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", MakeAsset())];
+
+        var result = CreateService().GetBrokerSummary("UNKNOWN");
+
+        using var _ = new AssertionScope();
+        result.TotalBought.Should().Be(0m);
+        result.TotalSold.Should().Be(0m);
+        result.TotalCredits.Should().Be(0m);
+        result.TotalInvested.Should().Be(0m);
+    }
+
+    [Fact]
+    public void GetBrokerSummary_ExcludesEncerradasPortfolio()
+    {
+        var defaultAsset = MakeAsset("DEFAULT", "DEF");
+        defaultAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+
+        var encerradasAsset = MakeAsset("CLOSED", "CLO");
+        encerradasAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 100m, 5m, 0m));
+
+        var broker = Broker.Create("XPI", "BRL");
+        broker.AddPortfolio("Default").AddAsset(defaultAsset);
+        broker.AddPortfolio("Encerradas").AddAsset(encerradasAsset);
+        _repository.Brokers = [broker];
+
+        var result = CreateService().GetBrokerSummary("XPI");
+
+        result.TotalBought.Should().Be(100m);
+    }
+
+    [Theory]
+    [InlineData("Encerradas")]
+    [InlineData("encerradas")]
+    [InlineData("ENCERRADAS")]
+    [InlineData(" Encerradas ")]
+    public void GetBrokerSummary_ExcludesEncerradasPortfolio_CaseInsensitive(string portfolioName)
+    {
+        var encerradasAsset = MakeAsset("CLOSED", "CLO");
+        encerradasAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 100m, 5m, 0m));
+
+        var broker = Broker.Create("XPI", "BRL");
+        broker.AddPortfolio(portfolioName).AddAsset(encerradasAsset);
+        _repository.Brokers = [broker];
+
+        var result = CreateService().GetBrokerSummary("XPI");
+
+        result.TotalBought.Should().Be(0m);
+    }
+
+    [Fact]
+    public void GetBrokerSummary_TotalInvested_EqualsBoughtMinusSold()
+    {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 30m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 12m, 10m, 0m));
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
+
+        var result = CreateService().GetBrokerSummary("XPI");
+
+        result.TotalInvested.Should().Be(180m);
+    }
+
+    [Fact]
+    public void GetBrokerSummary_TotalInvested_CanBeNegative()
+    {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 50m, 0m));
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
+
+        var result = CreateService().GetBrokerSummary("XPI");
+
+        result.TotalInvested.Should().Be(-150m);
     }
 
     [Theory]
@@ -101,6 +180,7 @@ public class SummaryQueryServiceTests
         result.TotalBought.Should().Be(0m);
         result.TotalSold.Should().Be(0m);
         result.TotalCredits.Should().Be(0m);
+        result.TotalInvested.Should().Be(0m);
     }
 
     [Fact]
@@ -172,6 +252,19 @@ public class SummaryQueryServiceTests
         result.TotalCredits.Should().Be(0m);
     }
 
+    [Fact]
+    public void GetPortfolioSummary_TotalInvested_EqualsBoughtMinusSold()
+    {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 20m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 10m, 0m));
+        _repository.AssetsByBrokerPortfolio = [asset];
+
+        var result = CreateService().GetPortfolioSummary("XPI", "Default");
+
+        result.TotalInvested.Should().Be(150m);
+    }
+
     [Theory]
     [InlineData(null, "Default")]
     [InlineData("", "Default")]
@@ -187,6 +280,7 @@ public class SummaryQueryServiceTests
         result.TotalBought.Should().Be(0m);
         result.TotalSold.Should().Be(0m);
         result.TotalCredits.Should().Be(0m);
+        result.TotalInvested.Should().Be(0m);
     }
 
     private SummaryQueryService CreateService() => new(_repository);
@@ -202,14 +296,26 @@ public class SummaryQueryServiceTests
         return asset;
     }
 
+    private static Broker MakeBrokerWithAssets(string brokerName, string portfolioName, params Asset[] assets)
+    {
+        var broker = Broker.Create(brokerName, "BRL");
+        var portfolio = broker.AddPortfolio(portfolioName);
+        foreach (var asset in assets)
+        {
+            portfolio.AddAsset(asset);
+        }
+        return broker;
+    }
+
     private sealed class StubRepository : IRepository
     {
         public IEnumerable<Asset> AssetsByBroker { get; set; } = [];
         public IEnumerable<Asset> AssetsByBrokerPortfolio { get; set; } = [];
+        public IEnumerable<Broker> Brokers { get; set; } = [];
 
         public IEnumerable<Asset> GetAssetsByBroker(string name) => AssetsByBroker;
         public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio) => AssetsByBrokerPortfolio;
-        public IEnumerable<Broker> GetBrokerList() => [];
+        public IEnumerable<Broker> GetBrokerList() => Brokers;
         public Asset? GetAsset(string brokerName, string portfolioName, string assetName) => null;
         public Task SaveChangesAsync() => Task.CompletedTask;
     }

@@ -100,6 +100,7 @@ public class SummaryEndpointsTests
         dto!.TotalBought.Should().BeGreaterThanOrEqualTo(0m);
         dto.TotalSold.Should().BeGreaterThanOrEqualTo(0m);
         dto.TotalCredits.Should().BeGreaterThanOrEqualTo(0m);
+        dto.TotalInvested.Should().Be(dto.TotalBought - dto.TotalSold);
     }
 
     [Fact]
@@ -117,5 +118,6 @@ public class SummaryEndpointsTests
         dto!.TotalBought.Should().BeGreaterThanOrEqualTo(0m);
         dto.TotalSold.Should().BeGreaterThanOrEqualTo(0m);
         dto.TotalCredits.Should().BeGreaterThanOrEqualTo(0m);
+        dto.TotalInvested.Should().Be(dto.TotalBought - dto.TotalSold);
     }
 }

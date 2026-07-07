@@ -172,6 +172,6 @@ internal static class NavigationMapper
         };
     }
 
-    private static bool IsEncerradas(string? name) =>
+    internal static bool IsEncerradas(string? name) =>
         string.Equals(name?.Trim(), EncerradasName, StringComparison.CurrentCultureIgnoreCase);
 }
