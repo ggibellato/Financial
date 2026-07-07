@@ -117,4 +117,57 @@ public class TransactionEndpointsTests
         asset.Should().NotBeNull();
         asset!.Transactions.Should().NotContain(t => t.Id == transactionId);
     }
+
+    [Fact]
+    public async Task GetTransactionsByBroker_Returns200WithList()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/transactions/broker/XPI");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var items = await response.Content.ReadFromJsonAsync<List<TransactionSummaryItemDTO>>();
+        items.Should().NotBeNull();
+        items!.Select(i => i.Date).Should().BeInAscendingOrder();
+        items.Should().AllSatisfy(i => i.AssetName.Should().NotBeNullOrEmpty());
+    }
+
+    [Fact]
+    public async Task GetTransactionsByBroker_Returns400ForWhitespaceBrokerName()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/transactions/broker/%20");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task GetTransactionsByPortfolio_Returns200WithList()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/transactions/portfolio/XPI/Default");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var items = await response.Content.ReadFromJsonAsync<List<TransactionSummaryItemDTO>>();
+        items.Should().NotBeNull();
+        items!.Select(i => i.Date).Should().BeInAscendingOrder();
+    }
+
+    [Fact]
+    public async Task GetTransactionsByPortfolio_Returns400ForWhitespacePortfolioName()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/transactions/portfolio/XPI/%20");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 }

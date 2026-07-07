@@ -103,6 +103,17 @@ internal static class NavigationMapper
         };
     }
 
+    internal static TransactionSummaryItemDTO MapTransactionSummaryItem(Asset asset, Transaction transaction)
+    {
+        return new TransactionSummaryItemDTO
+        {
+            AssetName = asset.Name,
+            Date = transaction.Date,
+            Type = transaction.Type.ToString(),
+            TotalPrice = transaction.TotalPrice
+        };
+    }
+
     internal static CreditDTO MapCredit(Credit credit)
     {
         return new CreditDTO

@@ -12,6 +12,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddSingleton<ICreditQueryService, CreditQueryService>();
         services.AddSingleton<ISummaryQueryService, SummaryQueryService>();
         services.AddSingleton<ITransactionService, TransactionService>();
+        services.AddSingleton<ITransactionQueryService, TransactionQueryService>();
         services.AddSingleton<ICreditService, CreditService>();
         services.AddSingleton<IDividendService, DividendService>();
         services.AddSingleton<IPortfolioAssetSummaryQueryService, PortfolioAssetSummaryQueryService>();
