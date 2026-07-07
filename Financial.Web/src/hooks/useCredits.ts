@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { CreditDto, SelectedNode } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import type { PeriodFilterOption } from '../utils/periodFilter'
+import { getPeriodFilterStartDate } from '../utils/periodFilter'
 
-export type FilterOption = 'this-month' | 'last-3-months' | 'last-6-months' | 'last-year' | 'all'
 export type ViewMode = 'Stacked' | 'Grouped'
 export type CreditType = 'Dividend' | 'Rent'
 export type CreditFormField = 'formDate' | 'formType' | 'formValue'
@@ -15,11 +16,11 @@ export interface MonthBucket {
 }
 
 interface PersistedPrefs {
-  filter: FilterOption
+  filter: PeriodFilterOption
   mode: ViewMode
 }
 
-const DEFAULT_FILTER: FilterOption = 'last-year'
+const DEFAULT_FILTER: PeriodFilterOption = 'last-12-months'
 const DEFAULT_MODE: ViewMode = 'Stacked'
 
 interface CreditsState {
@@ -27,7 +28,7 @@ interface CreditsState {
   isLoading: boolean
   error: string | null
   retryCount: number
-  selectedFilter: FilterOption
+  selectedFilter: PeriodFilterOption
   selectedMode: ViewMode
   filterPersistence: Map<string, PersistedPrefs>
   isFormVisible: boolean
@@ -46,7 +47,7 @@ type CreditsAction =
   | { type: 'FETCH_SUCCESS'; payload: CreditDto[] }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
-  | { type: 'SET_FILTER'; payload: { filter: FilterOption; key: string } }
+  | { type: 'SET_FILTER'; payload: { filter: PeriodFilterOption; key: string } }
   | { type: 'SET_MODE'; payload: { mode: ViewMode; key: string } }
   | { type: 'SHOW_NEW_FORM' }
   | { type: 'SHOW_EDIT_FORM'; payload: CreditDto }
@@ -168,24 +169,6 @@ export function buildSelectionKey(node: SelectedNode): string {
   return `Broker|${node.brokerName}`
 }
 
-function getFilterStartDate(filter: FilterOption): Date | null {
-  if (filter === 'all') return null
-  const now = new Date()
-  const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  switch (filter) {
-    case 'this-month':
-      return startOfCurrentMonth
-    case 'last-3-months':
-      return new Date(startOfCurrentMonth.getFullYear(), startOfCurrentMonth.getMonth() - 2, 1)
-    case 'last-6-months':
-      return new Date(startOfCurrentMonth.getFullYear(), startOfCurrentMonth.getMonth() - 5, 1)
-    case 'last-year':
-      return new Date(startOfCurrentMonth.getFullYear(), startOfCurrentMonth.getMonth() - 11, 1)
-    default:
-      return null
-  }
-}
-
 function buildMonthKey(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${pad(date.getMonth() + 1)}/${date.getFullYear()}`
@@ -216,9 +199,9 @@ export interface CreditsData {
   isLoading: boolean
   error: string | null
   retry: () => void
-  selectedFilter: FilterOption
+  selectedFilter: PeriodFilterOption
   selectedMode: ViewMode
-  setFilter: (filter: FilterOption) => void
+  setFilter: (filter: PeriodFilterOption) => void
   setMode: (mode: ViewMode) => void
   isFormVisible: boolean
   editingId: string | null
@@ -295,7 +278,7 @@ export function useCredits(): CreditsData {
   )
 
   const filteredCredits = useMemo(() => {
-    const start = getFilterStartDate(state.selectedFilter)
+    const start = getPeriodFilterStartDate(state.selectedFilter, new Date())
     if (!start) return credits
     return credits.filter((c) => new Date(c.date) >= start)
   }, [credits, state.selectedFilter])
@@ -305,7 +288,7 @@ export function useCredits(): CreditsData {
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
   const setFilter = useCallback(
-    (filter: FilterOption) => {
+    (filter: PeriodFilterOption) => {
       if (!selectedNode) return
       dispatch({ type: 'SET_FILTER', payload: { filter, key: buildSelectionKey(selectedNode) } })
     },

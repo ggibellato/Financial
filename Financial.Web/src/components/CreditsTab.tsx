@@ -13,8 +13,9 @@ import {
 import type { CreditDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
-import type { CreditFormField, FilterOption, ViewMode } from '../hooks/useCredits'
+import type { CreditFormField, ViewMode } from '../hooks/useCredits'
 import { useCredits } from '../hooks/useCredits'
+import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import './CreditsTab.css'
 
 const DEFAULT_LEFT_WIDTH = 400
@@ -33,14 +34,6 @@ function formatDate(iso: string): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
 }
-
-const FILTER_OPTIONS: { value: FilterOption; label: string }[] = [
-  { value: 'this-month', label: 'This month' },
-  { value: 'last-3-months', label: 'Last 3 months' },
-  { value: 'last-6-months', label: 'Last 6 months' },
-  { value: 'last-year', label: 'Last year' },
-  { value: 'all', label: 'All' },
-]
 
 const DIVIDEND_COLOR = '#4682b4'
 const RENT_COLOR = '#6aabdb'
@@ -280,7 +273,7 @@ export default function CreditsTab() {
   const toolbar = (
     <div className="credits-tab__controls">
       <div className="credits-tab__filters">
-        {FILTER_OPTIONS.map((opt) => (
+        {PERIOD_FILTER_OPTIONS.map((opt) => (
           <button
             key={opt.value}
             type="button"
