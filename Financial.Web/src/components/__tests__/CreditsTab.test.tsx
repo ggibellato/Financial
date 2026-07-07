@@ -52,7 +52,7 @@ const DEFAULT_HOOK: CreditsData = {
   isLoading: false,
   error: null,
   retry: mockRetry,
-  selectedFilter: 'last-year',
+  selectedFilter: 'last-12-months',
   selectedMode: 'Stacked',
   setFilter: mockSetFilter,
   setMode: mockSetMode,
@@ -243,19 +243,20 @@ describe('CreditsTab', () => {
     expect(screen.getByText('Failed to delete')).toBeInTheDocument()
   })
 
-  it('renders_five_filter_buttons', () => {
+  it('renders_all_filter_buttons', () => {
     render(<CreditsTab />)
     expect(screen.getByRole('button', { name: 'This month' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Last 3 months' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Last 6 months' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Last year' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'All' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Last 12 months' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'YTD' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'All time' })).toBeInTheDocument()
   })
 
   it('active_filter_has_active_class', () => {
-    setMock({ selectedFilter: 'last-year' })
+    setMock({ selectedFilter: 'last-12-months' })
     render(<CreditsTab />)
-    const btn = screen.getByRole('button', { name: 'Last year' })
+    const btn = screen.getByRole('button', { name: 'Last 12 months' })
     expect(btn).toHaveClass('credits-tab__filter-btn--active')
   })
 
