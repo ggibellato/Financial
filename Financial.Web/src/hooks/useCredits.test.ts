@@ -131,7 +131,7 @@ describe('useCredits', () => {
     expect(result.current.isLoading).toBe(false)
     expect(result.current.credits).toEqual([])
     expect(result.current.error).toBeNull()
-    expect(result.current.selectedFilter).toBe('last-year')
+    expect(result.current.selectedFilter).toBe('last-12-months')
     expect(result.current.selectedMode).toBe('Stacked')
   })
 
@@ -224,7 +224,7 @@ describe('useCredits', () => {
 
     setNode(ASSET_NODE_B)
     await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'TASA4'))
-    expect(result.current.selectedFilter).toBe('last-year')
+    expect(result.current.selectedFilter).toBe('last-12-months')
     expect(result.current.selectedMode).toBe('Stacked')
 
     setNode(ASSET_NODE)
@@ -239,7 +239,7 @@ describe('useCredits', () => {
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.isLoading).toBe(false))
-    expect(result.current.selectedFilter).toBe('last-year')
+    expect(result.current.selectedFilter).toBe('last-12-months')
     expect(result.current.selectedMode).toBe('Stacked')
   })
 
