@@ -1,6 +1,7 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
+using Financial.Presentation.App.Helpers;
 using OxyPlot;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -46,7 +47,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private string _todayCurrentValueAsOf = string.Empty;
     private string _todayInfoMessage = string.Empty;
     private PlotModel? _creditsPlotModel;
-    private CreditsFilter _selectedCreditsFilter = CreditsFilter.LastYear;
+    private PeriodFilter _selectedCreditsFilter = PeriodFilter.Last12Months;
     private CreditsTypeChartMode _selectedCreditsTypeMode = CreditsTypeChartMode.Stacked;
     private const string DefaultCreditsContextKey = "default";
     private readonly Dictionary<string, CreditsViewState> _creditsViewStateByKey = new(StringComparer.OrdinalIgnoreCase);
@@ -502,12 +503,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private void InitializeCreditsFilters()
     {
         CreditsFilters.Clear();
-        CreditsFilters.Add(new CreditsFilterOptionViewModel("This month", CreditsFilter.ThisMonth));
-        CreditsFilters.Add(new CreditsFilterOptionViewModel("Last 3 months", CreditsFilter.Last3Months));
-        CreditsFilters.Add(new CreditsFilterOptionViewModel("Last 6 months", CreditsFilter.Last6Months));
-        CreditsFilters.Add(new CreditsFilterOptionViewModel("Last year", CreditsFilter.LastYear));
-        CreditsFilters.Add(new CreditsFilterOptionViewModel("All", CreditsFilter.All));
-        SetCreditsFilter(CreditsFilter.LastYear, rebuild: false);
+        foreach (var (label, filter) in PeriodFilterHelper.Options)
+            CreditsFilters.Add(new CreditsFilterOptionViewModel(label, filter));
+        SetCreditsFilter(PeriodFilter.Last12Months, rebuild: false);
     }
 
     private void InitializeCreditsTypeModes()
@@ -521,7 +519,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private void SelectCreditsFilter(object? parameter)
     {
         if (parameter is CreditsFilterOptionViewModel option) { SetCreditsFilter(option.Filter); return; }
-        if (parameter is CreditsFilter filter) SetCreditsFilter(filter);
+        if (parameter is PeriodFilter filter) SetCreditsFilter(filter);
     }
 
     private void SelectCreditsTypeMode(object? parameter)
@@ -530,7 +528,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         if (parameter is CreditsTypeChartMode mode) SetCreditsTypeMode(mode);
     }
 
-    private void SetCreditsFilter(CreditsFilter filter, bool rebuild = true)
+    private void SetCreditsFilter(PeriodFilter filter, bool rebuild = true)
     {
         if (_selectedCreditsFilter == filter && CreditsFilters.Count > 0)
         {
@@ -573,23 +571,10 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         RefreshCreditsByMonthChart(FilterCredits(Credits, _selectedCreditsFilter));
     }
 
-    private static IEnumerable<CreditDTO> FilterCredits(IEnumerable<CreditDTO> credits, CreditsFilter filter)
+    private static IEnumerable<CreditDTO> FilterCredits(IEnumerable<CreditDTO> credits, PeriodFilter filter)
     {
-        if (filter == CreditsFilter.All) return credits;
-
-        var today = DateTime.Today;
-        var currentMonthStart = new DateTime(today.Year, today.Month, 1);
-        var monthsBack = filter switch
-        {
-            CreditsFilter.ThisMonth => 0,
-            CreditsFilter.Last3Months => 2,
-            CreditsFilter.Last6Months => 5,
-            CreditsFilter.LastYear => 11,
-            _ => 0
-        };
-
-        var start = currentMonthStart.AddMonths(-monthsBack);
-        var endExclusive = currentMonthStart.AddMonths(1);
+        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, DateTime.Today);
+        if (start is null) return credits;
         return credits.Where(credit => credit.Date >= start && credit.Date < endExclusive);
     }
 
@@ -638,7 +623,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         if (_creditsViewStateByKey.TryGetValue(contextKey, out var state))
             return state;
-        state = new CreditsViewState(CreditsFilter.LastYear, CreditsTypeChartMode.Stacked);
+        state = new CreditsViewState(PeriodFilter.Last12Months, CreditsTypeChartMode.Stacked);
         _creditsViewStateByKey[contextKey] = state;
         return state;
     }
