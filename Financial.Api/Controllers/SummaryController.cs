@@ -10,13 +10,16 @@ public sealed class SummaryController : ControllerBase
 {
     private readonly ISummaryQueryService _summaryQueryService;
     private readonly IPortfolioAssetSummaryQueryService _portfolioAssetSummaryQueryService;
+    private readonly IBrokerBreakdownQueryService _brokerBreakdownQueryService;
 
     public SummaryController(
         ISummaryQueryService summaryQueryService,
-        IPortfolioAssetSummaryQueryService portfolioAssetSummaryQueryService)
+        IPortfolioAssetSummaryQueryService portfolioAssetSummaryQueryService,
+        IBrokerBreakdownQueryService brokerBreakdownQueryService)
     {
         _summaryQueryService = summaryQueryService ?? throw new ArgumentNullException(nameof(summaryQueryService));
         _portfolioAssetSummaryQueryService = portfolioAssetSummaryQueryService ?? throw new ArgumentNullException(nameof(portfolioAssetSummaryQueryService));
+        _brokerBreakdownQueryService = brokerBreakdownQueryService ?? throw new ArgumentNullException(nameof(brokerBreakdownQueryService));
     }
 
     [HttpGet("broker/{brokerName}")]
@@ -50,6 +53,18 @@ public sealed class SummaryController : ControllerBase
             return BadRequest();
 
         var result = _portfolioAssetSummaryQueryService.GetPortfolioAssetsSummary(brokerName, portfolioName);
+        return Ok(result);
+    }
+
+    [HttpGet("broker/{brokerName}/breakdown")]
+    [ProducesResponseType(typeof(IReadOnlyList<PortfolioBreakdownItemDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult<IReadOnlyList<PortfolioBreakdownItemDTO>> GetBrokerBreakdown(string brokerName)
+    {
+        if (string.IsNullOrWhiteSpace(brokerName))
+            return BadRequest();
+
+        var result = _brokerBreakdownQueryService.GetBrokerBreakdown(brokerName);
         return Ok(result);
     }
 }

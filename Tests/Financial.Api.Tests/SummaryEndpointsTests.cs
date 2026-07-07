@@ -120,4 +120,36 @@ public class SummaryEndpointsTests
         dto.TotalCredits.Should().BeGreaterThanOrEqualTo(0m);
         dto.TotalInvested.Should().Be(dto.TotalBought - dto.TotalSold);
     }
+
+    [Fact]
+    public async Task GetBrokerBreakdown_Returns200WithList()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/summary/broker/XPI/breakdown");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var items = await response.Content.ReadFromJsonAsync<List<PortfolioBreakdownItemDTO>>();
+        items.Should().NotBeNull();
+        items!.Should().AllSatisfy(p =>
+        {
+            p.TotalInvested.Should().BeGreaterThan(0m);
+            p.Assets.Should().NotBeEmpty();
+            p.TotalInvested.Should().Be(p.Assets.Sum(a => a.TotalInvested));
+            p.Assets.Should().AllSatisfy(a => a.TotalInvested.Should().BeGreaterThan(0m));
+        });
+    }
+
+    [Fact]
+    public async Task GetBrokerBreakdown_Returns400ForWhitespaceBrokerName()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/summary/broker/%20/breakdown");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 }
