@@ -17,10 +17,6 @@
   min-width: 0;
 }
 
-.aggregated-summary__field--full {
-  grid-column: 1 / -1;
-}
-
 .aggregated-summary__label {
   font-size: 11px;
   color: var(--text-muted, #888);
