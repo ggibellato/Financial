@@ -42,6 +42,7 @@ const SUMMARY_DTO: AggregatedSummaryDto = {
   totalBought: 15420.5,
   totalSold: 3200.0,
   totalCredits: 842.3,
+  totalInvested: 12220.5,
 }
 
 function createWrapper() {
@@ -108,6 +109,7 @@ describe('useAggregatedSummary', () => {
     expect(result.current.summary?.totalBought).toBe(15420.5)
     expect(result.current.summary?.totalSold).toBe(3200.0)
     expect(result.current.summary?.totalCredits).toBe(842.3)
+    expect(result.current.summary?.totalInvested).toBe(12220.5)
   })
 
   it('sets_error_on_fetch_failure', async () => {
