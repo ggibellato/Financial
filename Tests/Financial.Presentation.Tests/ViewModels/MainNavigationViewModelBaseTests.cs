@@ -96,6 +96,35 @@ public class MainNavigationViewModelBaseTests
     }
 
     [Fact]
+    public void SelectingBrokerNode_CallsLoadBrokerTransactionsOnDetailsViewModel()
+    {
+        var summaryService = new StubSummaryQueryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var vm = new TestableNavigationViewModel(summaryService, spy);
+
+        var brokerNode = BuildBrokerNode("XPI");
+        vm.SelectedNode = brokerNode;
+
+        spy.WasBrokerTransactionsLoaded.Should().BeTrue();
+        spy.LastBrokerTransactionsName.Should().Be("XPI");
+    }
+
+    [Fact]
+    public void SelectingPortfolioNode_CallsLoadPortfolioTransactionsOnDetailsViewModel()
+    {
+        var summaryService = new StubSummaryQueryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var vm = new TestableNavigationViewModel(summaryService, spy);
+
+        var portfolioNode = BuildPortfolioNode("XPI", "FII");
+        vm.SelectedNode = portfolioNode;
+
+        spy.WasPortfolioTransactionsLoaded.Should().BeTrue();
+        spy.LastPortfolioTransactionsBrokerName.Should().Be("XPI");
+        spy.LastPortfolioTransactionsPortfolioName.Should().Be("FII");
+    }
+
+    [Fact]
     public void SelectingPortfolioNode_WhenMissingMetadata_ClearsDetails()
     {
         var summaryService = new StubSummaryQueryService();
@@ -160,6 +189,20 @@ public class MainNavigationViewModelBaseTests
     }
 
     [Fact]
+    public void SelectingAssetNode_DoesNotCallLoadBrokerOrPortfolioTransactions()
+    {
+        var summaryService = new StubSummaryQueryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var vm = new TestableNavigationViewModel(summaryService, spy);
+
+        var assetNode = BuildAssetNode("XPI", "Acoes", "BBAS3");
+        vm.SelectedNode = assetNode;
+
+        spy.WasBrokerTransactionsLoaded.Should().BeFalse();
+        spy.WasPortfolioTransactionsLoaded.Should().BeFalse();
+    }
+
+    [Fact]
     public void SelectingBrokerNode_DoesNotCallLoadPortfolioSummary()
     {
         var summaryService = new StubSummaryQueryService();
@@ -205,6 +248,35 @@ public class MainNavigationViewModelBaseTests
             Children = []
         };
         return new TreeNodeViewModel(brokerDto);
+    }
+
+    private static TreeNodeViewModel BuildAssetNode(string brokerName, string portfolioName, string assetName)
+    {
+        var brokerDto = new TreeNodeDTO
+        {
+            NodeType = TreeNodeTypes.Broker,
+            DisplayName = brokerName,
+            Metadata = new Dictionary<string, object> { ["BrokerName"] = brokerName },
+            Children = []
+        };
+        var portfolioDto = new TreeNodeDTO
+        {
+            NodeType = TreeNodeTypes.Portfolio,
+            DisplayName = portfolioName,
+            Metadata = new Dictionary<string, object> { ["PortfolioName"] = portfolioName },
+            Children = []
+        };
+        var assetDto = new TreeNodeDTO
+        {
+            NodeType = TreeNodeTypes.Asset,
+            DisplayName = assetName,
+            Metadata = new Dictionary<string, object> { ["AssetName"] = assetName },
+            Children = []
+        };
+
+        var brokerNode = new TreeNodeViewModel(brokerDto);
+        var portfolioNode = new TreeNodeViewModel(portfolioDto, brokerNode);
+        return new TreeNodeViewModel(assetDto, portfolioNode);
     }
 
     private static TreeNodeViewModel BuildNodeWithoutMetadata(string nodeType)
