@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
-import { act, createElement } from 'react'
+import { act, render, screen } from '@testing-library/react'
+import { createElement } from 'react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AggregatedSummaryData } from '../../hooks/useAggregatedSummary'
