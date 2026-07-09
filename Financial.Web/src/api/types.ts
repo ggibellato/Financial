@@ -185,6 +185,17 @@ export interface AggregatedSummaryDto {
   totalInvested: number
 }
 
+export interface AssetBreakdownItemDto {
+  assetName: string
+  totalInvested: number
+}
+
+export interface PortfolioBreakdownItemDto {
+  portfolioName: string
+  totalInvested: number
+  assets: AssetBreakdownItemDto[]
+}
+
 export interface WatchlistItemDto {
   group: string
   name: string
