@@ -15,6 +15,7 @@ import type {
   PortfolioReferenceDto,
   TransactionCreateDto,
   TransactionDeleteDto,
+  TransactionSummaryItemDto,
   TransactionUpdateDto,
   TreeNodeDto,
   WatchlistItemDto,
@@ -29,6 +30,8 @@ export interface FinancialApiClient {
   getSummaryByBroker: (brokerName: string) => Promise<AggregatedSummaryDto>
   getSummaryByPortfolio: (brokerName: string, portfolioName: string) => Promise<AggregatedSummaryDto>
   getBrokerBreakdown: (brokerName: string) => Promise<PortfolioBreakdownItemDto[]>
+  getTransactionsByBroker: (brokerName: string) => Promise<TransactionSummaryItemDto[]>
+  getTransactionsByPortfolio: (brokerName: string, portfolioName: string) => Promise<TransactionSummaryItemDto[]>
   addTransaction: (request: TransactionCreateDto) => Promise<AssetDetailsDto>
   updateTransaction: (request: TransactionUpdateDto) => Promise<AssetDetailsDto>
   deleteTransaction: (request: TransactionDeleteDto) => Promise<AssetDetailsDto>
@@ -112,6 +115,12 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       ),
     getBrokerBreakdown: (brokerName) =>
       request<PortfolioBreakdownItemDto[]>(`/summary/broker/${encodeURIComponent(brokerName)}/breakdown`),
+    getTransactionsByBroker: (brokerName) =>
+      request<TransactionSummaryItemDto[]>(`/transactions/broker/${encodeURIComponent(brokerName)}`),
+    getTransactionsByPortfolio: (brokerName, portfolioName) =>
+      request<TransactionSummaryItemDto[]>(
+        `/transactions/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}`,
+      ),
     addTransaction: (requestBody) =>
       request<AssetDetailsDto>('/transactions', {
         method: 'POST',

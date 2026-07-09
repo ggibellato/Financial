@@ -63,6 +63,13 @@ export interface TransactionDto {
   totalPrice: number
 }
 
+export interface TransactionSummaryItemDto {
+  assetName: string
+  date: string
+  type: string
+  totalPrice: number
+}
+
 export interface CreditDto {
   id: string
   date: string
