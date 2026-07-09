@@ -237,6 +237,11 @@ public class MainNavigationViewModelBaseTests
         public bool WasBrokerSummaryLoaded { get; private set; }
         public string? LastBrokerBreakdownName { get; private set; }
         public bool WasBrokerBreakdownLoaded { get; private set; }
+        public string? LastBrokerTransactionsName { get; private set; }
+        public bool WasBrokerTransactionsLoaded { get; private set; }
+        public string? LastPortfolioTransactionsBrokerName { get; private set; }
+        public string? LastPortfolioTransactionsPortfolioName { get; private set; }
+        public bool WasPortfolioTransactionsLoaded { get; private set; }
         public bool IsPortfolioView => false;
         public bool IsBrokerView => false;
 
@@ -255,6 +260,13 @@ public class MainNavigationViewModelBaseTests
             return Task.CompletedTask;
         }
 
+        public Task LoadBrokerTransactions(string brokerName)
+        {
+            LastBrokerTransactionsName = brokerName;
+            WasBrokerTransactionsLoaded = true;
+            return Task.CompletedTask;
+        }
+
         public void LoadPortfolioCredits(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits) { }
 
         public void LoadPortfolioSummary(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits, IReadOnlyList<PortfolioAssetSummaryItemDTO> assetItems)
@@ -262,6 +274,14 @@ public class MainNavigationViewModelBaseTests
             LastPortfolioSummary = summary;
             LastPortfolioAssetItems = assetItems;
             WasPortfolioSummaryLoaded = true;
+        }
+
+        public Task LoadPortfolioTransactions(string brokerName, string portfolioName)
+        {
+            LastPortfolioTransactionsBrokerName = brokerName;
+            LastPortfolioTransactionsPortfolioName = portfolioName;
+            WasPortfolioTransactionsLoaded = true;
+            return Task.CompletedTask;
         }
 
         public void Clear() => WasCleared = true;
