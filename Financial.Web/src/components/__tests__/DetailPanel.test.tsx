@@ -188,26 +188,24 @@ describe('DetailPanel', () => {
     expect(screen.queryByText('Transactions are only available for individual assets')).not.toBeInTheDocument()
   })
 
-  it('renders_transactions_message_for_broker_node', async () => {
+  it('renders_transactions_chart_for_broker_node', async () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())
     fireEvent.click(screen.getByRole('button', { name: 'Transactions' }))
     await waitFor(() =>
-      expect(
-        screen.getByText('Transactions are only available for individual assets'),
-      ).toBeInTheDocument(),
+      expect(screen.getByText('Net Invested by Month')).toBeInTheDocument(),
     )
+    expect(document.querySelector('table')).not.toBeInTheDocument()
   })
 
-  it('renders_transactions_message_for_portfolio_node', async () => {
+  it('renders_transactions_chart_for_portfolio_node', async () => {
     renderPanel(portfolioNode)
     act(() => screen.getByTestId('setter').click())
     fireEvent.click(screen.getByRole('button', { name: 'Transactions' }))
     await waitFor(() =>
-      expect(
-        screen.getByText('Transactions are only available for individual assets'),
-      ).toBeInTheDocument(),
+      expect(screen.getByText('Net Invested by Month')).toBeInTheDocument(),
     )
+    expect(document.querySelector('table')).not.toBeInTheDocument()
   })
 
   it('active tab resets to Summary on selectedNode change', () => {
