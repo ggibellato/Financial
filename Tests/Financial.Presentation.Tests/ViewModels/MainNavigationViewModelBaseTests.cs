@@ -68,6 +68,20 @@ public class MainNavigationViewModelBaseTests
     }
 
     [Fact]
+    public void SelectingBrokerNode_CallsLoadBrokerSummaryOnDetailsViewModel()
+    {
+        var summaryService = new StubSummaryQueryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var vm = new TestableNavigationViewModel(summaryService, spy);
+
+        var brokerNode = BuildBrokerNode("XPI");
+        vm.SelectedNode = brokerNode;
+
+        spy.WasBrokerSummaryLoaded.Should().BeTrue();
+        spy.LastBrokerSummary.Should().NotBeNull();
+    }
+
+    [Fact]
     public void SelectingPortfolioNode_WhenMissingMetadata_ClearsDetails()
     {
         var summaryService = new StubSummaryQueryService();
