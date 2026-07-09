@@ -549,18 +549,39 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     private void ApplyBrokerBreakdown(IReadOnlyList<PortfolioBreakdownItemDTO> breakdown)
     {
-        OverallBreakdownPlotModel = BrokerBreakdownChartBuilder.Build(
+        var overallModel = BrokerBreakdownChartBuilder.Build(
             breakdown.Select(p => (p.PortfolioName, p.TotalInvested)).ToList());
 
-        PortfolioBreakdownPieItems.Clear();
-        foreach (var portfolio in breakdown)
-        {
-            var plotModel = BrokerBreakdownChartBuilder.Build(
-                portfolio.Assets.Select(a => (a.AssetName, a.TotalInvested)).ToList());
-            PortfolioBreakdownPieItems.Add(new PortfolioBreakdownPieItem(portfolio.PortfolioName, plotModel));
-        }
+        var items = breakdown
+            .Select(portfolio =>
+            {
+                var plotModel = BrokerBreakdownChartBuilder.Build(
+                    portfolio.Assets.Select(a => (a.AssetName, a.TotalInvested)).ToList());
+                return new PortfolioBreakdownPieItem(portfolio.PortfolioName, plotModel);
+            })
+            .ToList();
 
+        // ObservableCollection structural changes (unlike plain property changes) must
+        // happen on the thread that owns the bound CollectionView, or WPF throws
+        // NotSupportedException — this method runs on a background thread (Task.Run).
+        RunOnUIThread(() =>
+        {
+            PortfolioBreakdownPieItems.Clear();
+            foreach (var item in items)
+                PortfolioBreakdownPieItems.Add(item);
+        });
+
+        OverallBreakdownPlotModel = overallModel;
         IsBreakdownLoading = false;
+    }
+
+    private static void RunOnUIThread(Action action)
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher == null || dispatcher.CheckAccess())
+            action();
+        else
+            dispatcher.Invoke(action);
     }
 
     private void CancelAndResetBreakdownFetch()
