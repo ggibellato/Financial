@@ -14,7 +14,7 @@ Generate implementation-ready technical specifications based on the project's PR
 1. `spec.md` - Technical specification (7 sections)
 2. `plan.md` - Implementation plan (phases and steps)
 
-**Output location:** `docs/<feature-id>-<kebab-name>/spec.md` and `docs/<feature-id>-<kebab-name>/plan.md`
+**Output location:** `docs/<pr-id>-<feature-id>-<kebab-name>/spec.md` and `docs/<feature-id>-<kebab-name>/plan.md`
 - The `<kebab-name>` is derived from the feature's name in the PRD Section 6 (lowercase, spaces → hyphens, special characters removed). Example: `F03. Video Upload` → `docs/F03-video-upload/`.
 
 ---
