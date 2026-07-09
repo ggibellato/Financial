@@ -775,7 +775,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         if (plotWidth <= 0 || CreditsPlotModel == null) return;
         _creditsPlotWidth = plotWidth;
-        CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _selectedCreditsTypeMode);
+        CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _selectedCreditsTypeMode, _selectedCreditsChartType);
     }
 
     public void UpdateTransactionsPlotWidth(double plotWidth)
@@ -925,9 +925,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         foreach (var group in grouped)
             CreditsByMonthChart.Add(new KeyValuePair<string, decimal>(group.Month.ToString("MM/yyyy"), group.Total));
 
-        CreditsPlotModel = CreditsChartBuilder.Build(grouped, _creditsChartTypes, _selectedCreditsTypeMode);
+        CreditsPlotModel = CreditsChartBuilder.Build(grouped, _creditsChartTypes, _selectedCreditsTypeMode, _selectedCreditsChartType);
         if (CreditsPlotModel != null)
-            CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _selectedCreditsTypeMode);
+            CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _selectedCreditsTypeMode, _selectedCreditsChartType);
     }
 
     private void SetCreditsContext(string contextKey, bool rebuild = true)
