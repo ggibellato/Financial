@@ -30,6 +30,15 @@ function formatPercent(value: number): string {
 interface PieSliceDatum {
   name: string
   value: number
+  percent: number
+}
+
+function buildPieSliceData(items: { name: string; value: number }[]): PieSliceDatum[] {
+  const total = items.reduce((sum, item) => sum + item.value, 0)
+  return items.map((item) => ({
+    ...item,
+    percent: total > 0 ? item.value / total : 0,
+  }))
 }
 
 interface PieTooltipContentProps {
@@ -48,14 +57,17 @@ function PieTooltipContent({ name, value, percent }: PieTooltipContentProps) {
   )
 }
 
-// recharts' Pie tooltip payload carries `percent` at runtime, but the shared
-// TooltipPayloadEntry type doesn't declare it — narrow it safely here.
+// recharts' Pie tooltip payload entry doesn't carry `percent` itself (that's
+// only attached to the internal sector geometry, not the tooltip payload) —
+// but it does carry the original data object under `.payload`, which is where
+// our own pre-computed `percent` (see buildPieSliceData) actually surfaces.
 function readPieTooltipEntry(entry: unknown): PieTooltipContentProps {
-  const record = entry as { name?: unknown; value?: unknown; percent?: unknown }
+  const record = entry as { payload?: { name?: unknown; value?: unknown; percent?: unknown } }
+  const source = record.payload ?? {}
   return {
-    name: typeof record.name === 'string' ? record.name : '',
-    value: typeof record.value === 'number' ? record.value : 0,
-    percent: typeof record.percent === 'number' ? record.percent : 0,
+    name: typeof source.name === 'string' ? source.name : '',
+    value: typeof source.value === 'number' ? source.value : 0,
+    percent: typeof source.percent === 'number' ? source.percent : 0,
   }
 }
 
@@ -109,10 +121,9 @@ export default function BrokerBreakdownCharts() {
     return <p className="broker-breakdown__empty">No active portfolios to display</p>
   }
 
-  const portfolioData: PieSliceDatum[] = breakdown.map((portfolio) => ({
-    name: portfolio.portfolioName,
-    value: portfolio.totalInvested,
-  }))
+  const portfolioData = buildPieSliceData(
+    breakdown.map((portfolio) => ({ name: portfolio.portfolioName, value: portfolio.totalInvested })),
+  )
 
   return (
     <div className="broker-breakdown">
@@ -121,7 +132,9 @@ export default function BrokerBreakdownCharts() {
         <BreakdownPie
           key={portfolio.portfolioName}
           title={portfolio.portfolioName}
-          data={portfolio.assets.map((asset) => ({ name: asset.assetName, value: asset.totalInvested }))}
+          data={buildPieSliceData(
+            portfolio.assets.map((asset) => ({ name: asset.assetName, value: asset.totalInvested })),
+          )}
         />
       ))}
     </div>

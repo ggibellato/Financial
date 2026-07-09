@@ -21,6 +21,7 @@ vi.mock('../../hooks/useBrokerBreakdown', () => ({
 interface MockPieDatum {
   name: string
   value: number
+  percent: number
 }
 
 vi.mock('recharts', () => ({
@@ -30,7 +31,7 @@ vi.mock('recharts', () => ({
   Pie: ({ data, children }: { data: MockPieDatum[]; children?: React.ReactNode }) => (
     <div data-testid="pie">
       {data.map((d) => (
-        <span key={d.name} data-testid="pie-slice">
+        <span key={d.name} data-testid="pie-slice" data-percent={d.percent}>
           {d.name}
         </span>
       ))}
@@ -41,10 +42,24 @@ vi.mock('recharts', () => ({
   Tooltip: ({
     content,
   }: {
-    content?: (props: { active: boolean; payload: { name: string; value: number; percent: number }[] }) => React.ReactNode
+    content?: (props: {
+      active: boolean
+      payload: { name: string; value: number; payload: { name: string; value: number; percent: number } }[]
+    }) => React.ReactNode
   }) => (
     <div data-testid="tooltip">
-      {content ? content({ active: true, payload: [{ name: 'Test Slice', value: 1234.5, percent: 0.256 }] }) : null}
+      {content
+        ? content({
+            active: true,
+            payload: [
+              {
+                name: 'Test Slice',
+                value: 1234.5,
+                payload: { name: 'Test Slice', value: 1234.5, percent: 0.256 },
+              },
+            ],
+          })
+        : null}
     </div>
   ),
   Legend: () => <div data-testid="legend" />,
@@ -108,6 +123,16 @@ describe('BrokerBreakdownCharts', () => {
     expect(overviewSlices).toHaveLength(2)
     expect(overviewSlices[0].textContent).toBe('Acoes')
     expect(overviewSlices[1].textContent).toBe('FII')
+  })
+
+  it('computes_correct_percentage_per_slice', () => {
+    setMock({ breakdown: BREAKDOWN })
+    render(<BrokerBreakdownCharts />)
+    const pies = screen.getAllByTestId('pie')
+    const overviewSlices = pies[0].querySelectorAll('[data-testid="pie-slice"]')
+    const total = 38639.49 + 20000
+    expect(Number(overviewSlices[0].getAttribute('data-percent'))).toBeCloseTo(38639.49 / total, 5)
+    expect(Number(overviewSlices[1].getAttribute('data-percent'))).toBeCloseTo(20000 / total, 5)
   })
 
   it('renders_one_additional_pie_per_portfolio', () => {
