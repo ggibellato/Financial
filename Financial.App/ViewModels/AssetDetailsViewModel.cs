@@ -56,6 +56,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private bool _isCreditsAggregateView;
     private bool _hasCreditsContext;
     private bool _isPortfolioView;
+    private bool _isBrokerView;
+    private decimal _totalInvested;
     private CancellationTokenSource? _rowPriceCts;
     private decimal _footerTotalInvested;
     private decimal _footerTotalCredits;
@@ -156,6 +158,18 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         private set => SetProperty(ref _isPortfolioView, value);
     }
 
+    public bool IsBrokerView
+    {
+        get => _isBrokerView;
+        private set => SetProperty(ref _isBrokerView, value);
+    }
+
+    public decimal TotalInvested
+    {
+        get => _totalInvested;
+        private set => SetProperty(ref _totalInvested, value);
+    }
+
     public ObservableCollection<PortfolioAssetSummaryRowViewModel> PortfolioAssetSummaryRows { get; } = new();
 
     public decimal FooterTotalInvested { get => _footerTotalInvested; private set => SetProperty(ref _footerTotalInvested, value); }
@@ -247,6 +261,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         CancelAndResetRowPriceFetch();
         LoadAggregateCredits(BuildPortfolioKey(brokerName, portfolioName), summary, credits);
         IsPortfolioView = true;
+        TotalInvested = summary.TotalInvested;
 
         PortfolioAssetSummaryRows.Clear();
         foreach (var item in assetItems)
@@ -274,6 +289,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public void LoadAssetDetails(AssetDetailsDTO details)
     {
         IsPortfolioView = false;
+        IsBrokerView = false;
         var assetKey = BuildAssetKey(details.BrokerName, details.PortfolioName, details.Name);
         _todayInfo.UpdateAssetKey(assetKey);
 
@@ -321,6 +337,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         FooterEstimatedAnnualCreditsDisplay = "—";
         OnPropertyChanged(nameof(FooterCurrentValueDisplay));
         IsPortfolioView = false;
+        IsBrokerView = false;
+        TotalInvested = 0m;
         ClearAssetContext();
         Credits.Clear();
         CreditsByMonthChart.Clear();
@@ -333,9 +351,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         UpdateCommandStates();
     }
 
-    public void LoadBrokerCredits(string brokerName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
+    public void LoadBrokerSummary(string brokerName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
     {
         LoadAggregateCredits(BuildBrokerKey(brokerName), summary, credits);
+        IsBrokerView = true;
+        TotalInvested = summary.TotalInvested;
     }
 
     public void LoadPortfolioCredits(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
@@ -404,6 +424,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private void LoadAggregateCredits(string contextKey, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
     {
         IsPortfolioView = false;
+        IsBrokerView = false;
         ClearAssetContext();
         TotalBought = summary.TotalBought;
         TotalSold = summary.TotalSold;

@@ -206,13 +206,16 @@ public class MainNavigationViewModelBaseTests
         public IReadOnlyList<PortfolioAssetSummaryItemDTO>? LastPortfolioAssetItems { get; private set; }
         public bool WasCleared { get; private set; }
         public bool WasPortfolioSummaryLoaded { get; private set; }
+        public bool WasBrokerSummaryLoaded { get; private set; }
         public bool IsPortfolioView => false;
+        public bool IsBrokerView => false;
 
         public void LoadAssetDetails(AssetDetailsDTO details) { }
 
-        public void LoadBrokerCredits(string brokerName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
+        public void LoadBrokerSummary(string brokerName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
         {
             LastBrokerSummary = summary;
+            WasBrokerSummaryLoaded = true;
         }
 
         public void LoadPortfolioCredits(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits) { }

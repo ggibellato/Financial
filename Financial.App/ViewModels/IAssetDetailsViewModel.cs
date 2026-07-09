@@ -5,8 +5,9 @@ namespace Financial.Presentation.App.ViewModels;
 public interface IAssetDetailsViewModel
 {
     bool IsPortfolioView { get; }
+    bool IsBrokerView { get; }
     void LoadAssetDetails(AssetDetailsDTO details);
-    void LoadBrokerCredits(string brokerName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits);
+    void LoadBrokerSummary(string brokerName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits);
     void LoadPortfolioCredits(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits);
     void LoadPortfolioSummary(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits, IReadOnlyList<PortfolioAssetSummaryItemDTO> assetItems);
     void Clear();
