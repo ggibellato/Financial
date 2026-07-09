@@ -14,12 +14,17 @@ const mockDeleteCredit = vi.fn()
 const mockRetry = vi.fn()
 const mockSetFilter = vi.fn()
 const mockSetMode = vi.fn()
+const mockSetChartType = vi.fn()
 
 vi.mock('recharts', () => ({
   BarChart: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="bar-chart">{children}</div>
   ),
   Bar: () => null,
+  LineChart: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="line-chart">{children}</div>
+  ),
+  Line: ({ name }: { name?: string }) => <div data-testid="line" data-name={name} />,
   XAxis: () => null,
   YAxis: () => null,
   CartesianGrid: () => null,
@@ -49,13 +54,16 @@ const DEFAULT_HOOK: CreditsData = {
   credits: [],
   filteredCredits: [],
   chartData: [],
+  creditTypes: [],
   isLoading: false,
   error: null,
   retry: mockRetry,
   selectedFilter: 'last-12-months',
   selectedMode: 'Stacked',
+  selectedChartType: 'Bar',
   setFilter: mockSetFilter,
   setMode: mockSetMode,
+  setChartType: mockSetChartType,
   isFormVisible: false,
   editingId: null,
   formDate: '',
@@ -98,6 +106,7 @@ describe('CreditsTab', () => {
     mockRetry.mockReset()
     mockSetFilter.mockReset()
     mockSetMode.mockReset()
+    mockSetChartType.mockReset()
     mockHookValue = { ...DEFAULT_HOOK }
   })
 
@@ -290,5 +299,56 @@ describe('CreditsTab', () => {
     render(<CreditsTab />)
     const tbody = document.querySelector('tbody')
     expect(tbody?.children.length).toBe(0)
+  })
+
+  it('renders_bar_line_toggle_defaulting_to_bar', () => {
+    render(<CreditsTab />)
+    expect(screen.getByRole('button', { name: 'Bar' })).toHaveClass('credits-tab__mode-btn--active')
+    expect(screen.getByRole('button', { name: 'Line' })).not.toHaveClass('credits-tab__mode-btn--active')
+  })
+
+  it('clicking_line_toggle_calls_setChartType', () => {
+    render(<CreditsTab />)
+    fireEvent.click(screen.getByRole('button', { name: 'Line' }))
+    expect(mockSetChartType).toHaveBeenCalledWith('Line')
+  })
+
+  it('renders_relabelled_toggle_rows', () => {
+    render(<CreditsTab />)
+    expect(screen.getByText('View:')).toBeInTheDocument()
+    expect(screen.getByText('Group:')).toBeInTheDocument()
+  })
+
+  it('renders_bar_chart_unchanged_when_bar_selected', () => {
+    setMock({ selectedChartType: 'Bar' })
+    render(<CreditsTab />)
+    expect(screen.getByTestId('bar-chart')).toBeInTheDocument()
+    expect(screen.queryByTestId('line-chart')).not.toBeInTheDocument()
+  })
+
+  it('renders_single_total_line_when_grouped_and_line', () => {
+    setMock({
+      selectedChartType: 'Line',
+      selectedMode: 'Grouped',
+      creditTypes: ['Dividend', 'Rent'],
+      chartData: [{ month: '03/2024', total: 150, byType: { Dividend: 100, Rent: 50 } }],
+    })
+    render(<CreditsTab />)
+    const lines = screen.getAllByTestId('line')
+    expect(lines).toHaveLength(1)
+    expect(lines[0]).toHaveAttribute('data-name', 'Total')
+  })
+
+  it('renders_one_line_per_type_when_stacked_and_line', () => {
+    setMock({
+      selectedChartType: 'Line',
+      selectedMode: 'Stacked',
+      creditTypes: ['Dividend', 'Rent'],
+      chartData: [{ month: '03/2024', total: 150, byType: { Dividend: 100, Rent: 50 } }],
+    })
+    render(<CreditsTab />)
+    const lines = screen.getAllByTestId('line')
+    expect(lines).toHaveLength(2)
+    expect(lines.map((l) => l.getAttribute('data-name'))).toEqual(['Dividend', 'Rent'])
   })
 })

@@ -6,22 +6,25 @@ import type { PeriodFilterOption } from '../utils/periodFilter'
 import { getPeriodFilterStartDate } from '../utils/periodFilter'
 
 export type ViewMode = 'Stacked' | 'Grouped'
+export type ChartType = 'Bar' | 'Line'
 export type CreditType = 'Dividend' | 'Rent'
 export type CreditFormField = 'formDate' | 'formType' | 'formValue'
 
 export interface MonthBucket {
   month: string
-  Dividend: number
-  Rent: number
+  total: number
+  byType: Record<string, number>
 }
 
 interface PersistedPrefs {
   filter: PeriodFilterOption
   mode: ViewMode
+  chartType: ChartType
 }
 
 const DEFAULT_FILTER: PeriodFilterOption = 'last-12-months'
 const DEFAULT_MODE: ViewMode = 'Stacked'
+const DEFAULT_CHART_TYPE: ChartType = 'Bar'
 
 interface CreditsState {
   credits: CreditDto[]
@@ -30,6 +33,7 @@ interface CreditsState {
   retryCount: number
   selectedFilter: PeriodFilterOption
   selectedMode: ViewMode
+  selectedChartType: ChartType
   filterPersistence: Map<string, PersistedPrefs>
   isFormVisible: boolean
   editingId: string | null
@@ -49,6 +53,7 @@ type CreditsAction =
   | { type: 'RETRY' }
   | { type: 'SET_FILTER'; payload: { filter: PeriodFilterOption; key: string } }
   | { type: 'SET_MODE'; payload: { mode: ViewMode; key: string } }
+  | { type: 'SET_CHART_TYPE'; payload: { chartType: ChartType; key: string } }
   | { type: 'SHOW_NEW_FORM' }
   | { type: 'SHOW_EDIT_FORM'; payload: CreditDto }
   | { type: 'CANCEL_FORM' }
@@ -76,6 +81,7 @@ const INITIAL_STATE: CreditsState = {
   retryCount: 0,
   selectedFilter: DEFAULT_FILTER,
   selectedMode: DEFAULT_MODE,
+  selectedChartType: DEFAULT_CHART_TYPE,
   filterPersistence: new Map(),
   ...BLANK_FORM,
   deleteError: null,
@@ -98,6 +104,7 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
         filterPersistence: state.filterPersistence,
         selectedFilter: prefs?.filter ?? DEFAULT_FILTER,
         selectedMode: prefs?.mode ?? DEFAULT_MODE,
+        selectedChartType: prefs?.chartType ?? DEFAULT_CHART_TYPE,
       }
     }
     case 'FETCH_SUCCESS':
@@ -108,13 +115,30 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
       return { ...state, retryCount: state.retryCount + 1, error: null }
     case 'SET_FILTER': {
       const newMap = new Map(state.filterPersistence)
-      newMap.set(action.payload.key, { filter: action.payload.filter, mode: state.selectedMode })
+      newMap.set(action.payload.key, {
+        filter: action.payload.filter,
+        mode: state.selectedMode,
+        chartType: state.selectedChartType,
+      })
       return { ...state, selectedFilter: action.payload.filter, filterPersistence: newMap }
     }
     case 'SET_MODE': {
       const newMap = new Map(state.filterPersistence)
-      newMap.set(action.payload.key, { filter: state.selectedFilter, mode: action.payload.mode })
+      newMap.set(action.payload.key, {
+        filter: state.selectedFilter,
+        mode: action.payload.mode,
+        chartType: state.selectedChartType,
+      })
       return { ...state, selectedMode: action.payload.mode, filterPersistence: newMap }
+    }
+    case 'SET_CHART_TYPE': {
+      const newMap = new Map(state.filterPersistence)
+      newMap.set(action.payload.key, {
+        filter: state.selectedFilter,
+        mode: state.selectedMode,
+        chartType: action.payload.chartType,
+      })
+      return { ...state, selectedChartType: action.payload.chartType, filterPersistence: newMap }
     }
     case 'SHOW_NEW_FORM':
       return {
@@ -178,11 +202,10 @@ function aggregateByMonth(credits: CreditDto[]): MonthBucket[] {
   const map = new Map<string, MonthBucket>()
   for (const c of credits) {
     const key = buildMonthKey(new Date(c.date))
-    const existing = map.get(key) ?? { month: key, Dividend: 0, Rent: 0 }
-    const bucket: MonthBucket = { ...existing }
-    if (c.type === 'Dividend') bucket.Dividend += c.value
-    else if (c.type === 'Rent') bucket.Rent += c.value
-    map.set(key, bucket)
+    const existing = map.get(key) ?? { month: key, total: 0, byType: {} }
+    const byType = { ...existing.byType }
+    byType[c.type] = (byType[c.type] ?? 0) + c.value
+    map.set(key, { month: key, total: existing.total + c.value, byType })
   }
   return [...map.values()].sort((a, b) => {
     const [am, ay] = a.month.split('/').map(Number)
@@ -192,17 +215,28 @@ function aggregateByMonth(credits: CreditDto[]): MonthBucket[] {
   })
 }
 
+function computeCreditTypes(buckets: MonthBucket[]): string[] {
+  const types = new Set<string>()
+  for (const bucket of buckets) {
+    for (const type of Object.keys(bucket.byType)) types.add(type)
+  }
+  return [...types].sort()
+}
+
 export interface CreditsData {
   credits: CreditDto[]
   filteredCredits: CreditDto[]
   chartData: MonthBucket[]
+  creditTypes: string[]
   isLoading: boolean
   error: string | null
   retry: () => void
   selectedFilter: PeriodFilterOption
   selectedMode: ViewMode
+  selectedChartType: ChartType
   setFilter: (filter: PeriodFilterOption) => void
   setMode: (mode: ViewMode) => void
+  setChartType: (chartType: ChartType) => void
   isFormVisible: boolean
   editingId: string | null
   formDate: string
@@ -284,6 +318,7 @@ export function useCredits(): CreditsData {
   }, [credits, state.selectedFilter])
 
   const chartData = useMemo(() => aggregateByMonth(filteredCredits), [filteredCredits])
+  const creditTypes = useMemo(() => computeCreditTypes(chartData), [chartData])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
@@ -299,6 +334,14 @@ export function useCredits(): CreditsData {
     (mode: ViewMode) => {
       if (!selectedNode) return
       dispatch({ type: 'SET_MODE', payload: { mode, key: buildSelectionKey(selectedNode) } })
+    },
+    [selectedNode],
+  )
+
+  const setChartType = useCallback(
+    (chartType: ChartType) => {
+      if (!selectedNode) return
+      dispatch({ type: 'SET_CHART_TYPE', payload: { chartType, key: buildSelectionKey(selectedNode) } })
     },
     [selectedNode],
   )
@@ -384,13 +427,16 @@ export function useCredits(): CreditsData {
     credits,
     filteredCredits,
     chartData,
+    creditTypes,
     isLoading: state.isLoading,
     error: state.error,
     retry,
     selectedFilter: state.selectedFilter,
     selectedMode: state.selectedMode,
+    selectedChartType: state.selectedChartType,
     setFilter,
     setMode,
+    setChartType,
     isFormVisible: state.isFormVisible,
     editingId: state.editingId,
     formDate: state.formDate,

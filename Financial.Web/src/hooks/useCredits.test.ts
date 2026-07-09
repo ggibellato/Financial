@@ -423,4 +423,89 @@ describe('useCredits', () => {
     expect(result.current.credits[0].id).toBe('aaa')
     expect(result.current.credits[1].id).toBe('bbb')
   })
+
+  it('aggregateByMonth_computesByTypeDynamically', async () => {
+    const creditA: CreditDto = { id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100 }
+    const creditB: CreditDto = { id: 'sm2', date: '2024-03-20T00:00:00', type: 'Rent', value: 50 }
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB] })
+    const { wrapper, setNode } = createWrapper()
+    const { result } = renderHook(() => useCredits(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.credits).toHaveLength(2))
+    act(() => result.current.setFilter('all-time'))
+
+    const bucket = result.current.chartData.find((b) => b.month === '03/2024')
+    expect(bucket?.byType.Dividend).toBe(100)
+    expect(bucket?.byType.Rent).toBe(50)
+  })
+
+  it('aggregateByMonth_computesTotalAsSumOfByType', async () => {
+    const creditA: CreditDto = { id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100 }
+    const creditB: CreditDto = { id: 'sm2', date: '2024-03-20T00:00:00', type: 'Rent', value: 50 }
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB] })
+    const { wrapper, setNode } = createWrapper()
+    const { result } = renderHook(() => useCredits(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.credits).toHaveLength(2))
+    act(() => result.current.setFilter('all-time'))
+
+    const bucket = result.current.chartData.find((b) => b.month === '03/2024')
+    expect(bucket?.total).toBe(150)
+  })
+
+  it('aggregateByMonth_supportsAThirdCreditType', async () => {
+    const creditA: CreditDto = { id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100 }
+    const creditB: CreditDto = { id: 'sm2', date: '2024-03-20T00:00:00', type: 'Rent', value: 50 }
+    const creditC: CreditDto = { id: 'sm3', date: '2024-03-10T00:00:00', type: 'Interest', value: 30 }
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB, creditC] })
+    const { wrapper, setNode } = createWrapper()
+    const { result } = renderHook(() => useCredits(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.credits).toHaveLength(3))
+    act(() => result.current.setFilter('all-time'))
+
+    expect(result.current.creditTypes).toEqual(['Dividend', 'Interest', 'Rent'])
+    const bucket = result.current.chartData.find((b) => b.month === '03/2024')
+    expect(bucket?.byType.Interest).toBe(30)
+    expect(bucket?.total).toBe(180)
+  })
+
+  it('setChartType_defaultsToBar', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    const { wrapper, setNode } = createWrapper()
+    const { result } = renderHook(() => useCredits(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.credits).toHaveLength(2))
+    expect(result.current.selectedChartType).toBe('Bar')
+  })
+
+  it('setChartType_persistsSelectionPerNode', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    const { wrapper, setNode } = createWrapper()
+    const { result } = renderHook(() => useCredits(), { wrapper })
+
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.credits).toHaveLength(2))
+    act(() => result.current.setChartType('Line'))
+    expect(result.current.selectedChartType).toBe('Line')
+
+    setNode(ASSET_NODE_B)
+    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'TASA4'))
+    expect(result.current.selectedChartType).toBe('Bar')
+
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4'))
+    await waitFor(() => expect(result.current.selectedChartType).toBe('Line'))
+  })
+
+  it('setChartType_doesNotAffectSelectedMode_forSameNode', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    const { wrapper, setNode } = createWrapper()
+    const { result } = renderHook(() => useCredits(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.credits).toHaveLength(2))
+    expect(result.current.selectedMode).toBe('Stacked')
+    act(() => result.current.setChartType('Line'))
+    expect(result.current.selectedMode).toBe('Stacked')
+  })
 })
