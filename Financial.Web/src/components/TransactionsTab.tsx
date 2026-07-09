@@ -1,9 +1,24 @@
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import type { TransactionDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
-import type { TransactionFormField } from '../hooks/useTransactions'
+import type { ChartDisplayMode, TransactionFormField, TransactionMonthBucket } from '../hooks/useTransactions'
 import { useTransactions } from '../hooks/useTransactions'
+import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
+import type { PeriodFilterOption } from '../utils/periodFilter'
 import './TransactionsTab.css'
+
+const CHART_COLOR = '#6b7280'
 
 function formatN2(value: number): string {
   return new Intl.NumberFormat(undefined, {
@@ -181,12 +196,97 @@ function InlineForm({
   )
 }
 
+interface TransactionsChartProps {
+  chartData: TransactionMonthBucket[]
+  selectedFilter: PeriodFilterOption
+  selectedChartMode: ChartDisplayMode
+  setFilter: (filter: PeriodFilterOption) => void
+  setChartMode: (mode: ChartDisplayMode) => void
+  compact?: boolean
+}
+
+function TransactionsChart({
+  chartData,
+  selectedFilter,
+  selectedChartMode,
+  setFilter,
+  setChartMode,
+  compact,
+}: TransactionsChartProps) {
+  return (
+    <div
+      className={`transactions-tab__chart-panel${compact ? ' transactions-tab__chart-panel--compact' : ''}`}
+    >
+      <div className="transactions-tab__controls">
+        <div className="transactions-tab__filters">
+          {PERIOD_FILTER_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              className={`transactions-tab__filter-btn${selectedFilter === opt.value ? ' transactions-tab__filter-btn--active' : ''}`}
+              onClick={() => setFilter(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <div className="transactions-tab__modes">
+          <span className="transactions-tab__mode-label">View:</span>
+          {(['Bar', 'Line'] as ChartDisplayMode[]).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              className={`transactions-tab__mode-btn${selectedChartMode === mode ? ' transactions-tab__mode-btn--active' : ''}`}
+              onClick={() => setChartMode(mode)}
+            >
+              {mode}
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className="transactions-tab__chart-title">Net Invested by Month</p>
+      <div className="transactions-tab__chart-container">
+        <ResponsiveContainer width="100%" height="100%">
+          {selectedChartMode === 'Bar' ? (
+            <BarChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
+              <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
+              <Bar dataKey="netInvested" fill={CHART_COLOR} />
+            </BarChart>
+          ) : (
+            <LineChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
+              <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
+              <Line
+                type="monotone"
+                dataKey="netInvested"
+                stroke={CHART_COLOR}
+                strokeWidth={2}
+                dot={{ r: 3 }}
+              />
+            </LineChart>
+          )}
+        </ResponsiveContainer>
+      </div>
+    </div>
+  )
+}
+
 export default function TransactionsTab() {
   const {
     isLoading,
     error,
     retry,
     transactions,
+    chartData,
+    selectedFilter,
+    selectedChartMode,
+    setFilter,
+    setChartMode,
     isFormVisible,
     editingId,
     formDate,
@@ -216,14 +316,29 @@ export default function TransactionsTab() {
 
   if (nodeType !== 'Asset') {
     return (
-      <p className="transactions-tab__placeholder">
-        Transactions are only available for individual assets
-      </p>
+      <div className="transactions-tab">
+        <TransactionsChart
+          chartData={chartData}
+          selectedFilter={selectedFilter}
+          selectedChartMode={selectedChartMode}
+          setFilter={setFilter}
+          setChartMode={setChartMode}
+        />
+      </div>
     )
   }
 
   return (
     <div className="transactions-tab">
+      <TransactionsChart
+        chartData={chartData}
+        selectedFilter={selectedFilter}
+        selectedChartMode={selectedChartMode}
+        setFilter={setFilter}
+        setChartMode={setChartMode}
+        compact
+      />
+
       <div className="transactions-tab__toolbar">
         <button className="transactions-tab__new-btn" type="button" onClick={showNewForm}>
           New

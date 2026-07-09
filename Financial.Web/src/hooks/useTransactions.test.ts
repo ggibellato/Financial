@@ -3,14 +3,16 @@ import type { ReactNode } from 'react'
 import { createElement } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../api/financialApiClient'
-import type { AssetDetailsDto, SelectedNode, TransactionDto } from '../api/types'
+import type { AssetDetailsDto, SelectedNode, TransactionDto, TransactionSummaryItemDto } from '../api/types'
 import { SelectedNodeProvider, useSelectedNode } from '../context/SelectedNodeContext'
-import { useTransactions } from './useTransactions'
+import { buildMonthlyNetInvested, useTransactions } from './useTransactions'
 
 const getAssetDetailsMock = vi.fn<FinancialApiClient['getAssetDetails']>()
 const addTransactionMock = vi.fn<FinancialApiClient['addTransaction']>()
 const updateTransactionMock = vi.fn<FinancialApiClient['updateTransaction']>()
 const deleteTransactionMock = vi.fn<FinancialApiClient['deleteTransaction']>()
+const getTransactionsByBrokerMock = vi.fn<FinancialApiClient['getTransactionsByBroker']>()
+const getTransactionsByPortfolioMock = vi.fn<FinancialApiClient['getTransactionsByPortfolio']>()
 
 vi.mock('../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
@@ -18,6 +20,8 @@ vi.mock('../api/financialApiClient', () => ({
     addTransaction: addTransactionMock,
     updateTransaction: updateTransactionMock,
     deleteTransaction: deleteTransactionMock,
+    getTransactionsByBroker: getTransactionsByBrokerMock,
+    getTransactionsByPortfolio: getTransactionsByPortfolioMock,
   }),
 }))
 
@@ -37,6 +41,25 @@ const PORTFOLIO_NODE: SelectedNode = {
   nodeType: 'Portfolio',
   brokerName: 'XPI',
   portfolioName: 'Acoes',
+}
+
+const BROKER_NODE: SelectedNode = {
+  nodeType: 'Broker',
+  brokerName: 'XPI',
+}
+
+const SUMMARY_ITEM_A: TransactionSummaryItemDto = {
+  assetName: 'KLBN4',
+  date: '2024-03-15T00:00:00',
+  type: 'Buy',
+  totalPrice: 420.5,
+}
+
+const SUMMARY_ITEM_B: TransactionSummaryItemDto = {
+  assetName: 'PETR4',
+  date: '2024-01-10T00:00:00',
+  type: 'Sell',
+  totalPrice: 251.0,
 }
 
 const TRANSACTION_A: TransactionDto = {
@@ -107,6 +130,8 @@ describe('useTransactions', () => {
     addTransactionMock.mockReset()
     updateTransactionMock.mockReset()
     deleteTransactionMock.mockReset()
+    getTransactionsByBrokerMock.mockReset().mockResolvedValue([])
+    getTransactionsByPortfolioMock.mockReset().mockResolvedValue([])
     vi.mocked(window.confirm).mockReturnValue(true)
   })
 
@@ -342,4 +367,93 @@ describe('useTransactions', () => {
     await waitFor(() => expect(result.current.deleteError).toBe('Delete failed'))
     expect(result.current.asset).toEqual(ASSET_DETAILS)
   })
+
+  it('fetches_transactions_on_broker_selection', async () => {
+    getTransactionsByBrokerMock.mockResolvedValue([SUMMARY_ITEM_A, SUMMARY_ITEM_B])
+    const { wrapper, setNode } = createWrapper()
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+    setNode(BROKER_NODE)
+    await waitFor(() => expect(getTransactionsByBrokerMock).toHaveBeenCalledWith('XPI'))
+    await waitFor(() => expect(result.current.chartData.length).toBeGreaterThan(0))
+  })
+
+  it('fetches_transactions_on_portfolio_selection', async () => {
+    getTransactionsByPortfolioMock.mockResolvedValue([SUMMARY_ITEM_A])
+    const { wrapper, setNode } = createWrapper()
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+    setNode(PORTFOLIO_NODE)
+    await waitFor(() =>
+      expect(getTransactionsByPortfolioMock).toHaveBeenCalledWith('XPI', 'Acoes'),
+    )
+    await waitFor(() => expect(result.current.chartData.length).toBeGreaterThan(0))
+  })
+
+  it('transactions_fetch_error_sets_error_state', async () => {
+    getTransactionsByBrokerMock.mockRejectedValue(new Error('Network error'))
+    const { wrapper, setNode } = createWrapper()
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+    setNode(BROKER_NODE)
+    await waitFor(() => expect(result.current.error).toBe('Network error'))
+  })
+
+  it('set_filter_and_mode_persist_per_node_selection', async () => {
+    getTransactionsByBrokerMock.mockResolvedValue([SUMMARY_ITEM_A])
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    const { wrapper, setNode } = createWrapper()
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+
+    setNode(BROKER_NODE)
+    await waitFor(() => expect(result.current.selectedFilter).toBe('last-12-months'))
+    act(() => result.current.setFilter('ytd'))
+    act(() => result.current.setChartMode('Line'))
+    expect(result.current.selectedFilter).toBe('ytd')
+    expect(result.current.selectedChartMode).toBe('Line')
+
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.asset).not.toBeNull())
+    expect(result.current.selectedFilter).toBe('last-12-months')
+    expect(result.current.selectedChartMode).toBe('Bar')
+
+    setNode(BROKER_NODE)
+    await waitFor(() => expect(result.current.selectedFilter).toBe('ytd'))
+    expect(result.current.selectedChartMode).toBe('Line')
+  })
 })
+
+describe('buildMonthlyNetInvested', () => {
+  it('zero_fills_months_with_no_transactions_across_selected_period', () => {
+    const referenceDate = new Date(2024, 2, 15)
+    const buckets = buildMonthlyNetInvested([SUMMARY_ITEM_A], 'last-12-months', referenceDate)
+    expect(buckets.length).toBe(12)
+    const marchBucket = buckets.find((b) => b.month === formatMonth(referenceDate))
+    expect(marchBucket?.netInvested).toBe(420.5)
+    const emptyMonths = buckets.filter((b) => b.netInvested === 0)
+    expect(emptyMonths.length).toBe(11)
+  })
+
+  it('nets_buy_minus_sell_within_the_same_month', () => {
+    const referenceDate = new Date(2024, 0, 31)
+    const buckets = buildMonthlyNetInvested(
+      [
+        { date: '2024-01-05', type: 'Buy', totalPrice: 500 },
+        { date: '2024-01-20', type: 'Sell', totalPrice: 200 },
+      ],
+      'ytd',
+      referenceDate,
+    )
+    expect(buckets.length).toBe(1)
+    expect(buckets[0].netInvested).toBe(300)
+  })
+
+  it('works_identically_for_broker_summary_shape_and_asset_transaction_shape', () => {
+    const referenceDate = new Date(2024, 2, 31)
+    const summaryResult = buildMonthlyNetInvested([SUMMARY_ITEM_A], 'ytd', referenceDate)
+    const assetResult = buildMonthlyNetInvested([TRANSACTION_A], 'ytd', referenceDate)
+    expect(summaryResult).toEqual(assetResult)
+    expect(summaryResult.some((b) => b.netInvested === 420.5)).toBe(true)
+  })
+})
+
+function formatMonth(date: Date): string {
+  return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+}

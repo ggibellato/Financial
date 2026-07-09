@@ -5,10 +5,100 @@
   overflow: hidden;
 }
 
-.transactions-tab__placeholder {
-  padding: 24px;
+.transactions-tab__controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--border, #e5e4e7);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.transactions-tab__filters {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.transactions-tab__filter-btn {
+  font-size: 12px;
+  padding: 2px 8px;
+  cursor: pointer;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: #007acc;
+  text-decoration: underline;
+}
+
+.transactions-tab__filter-btn:hover {
+  background: var(--bg-hover, #f0f0f0);
+}
+
+.transactions-tab__filter-btn--active {
+  color: var(--text-h, #08060d);
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.transactions-tab__modes {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.transactions-tab__mode-label {
+  font-size: 12px;
   color: var(--text-muted, #888);
+  margin-right: 4px;
+}
+
+.transactions-tab__mode-btn {
+  font-size: 12px;
+  padding: 2px 8px;
+  cursor: pointer;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: #007acc;
+  text-decoration: underline;
+}
+
+.transactions-tab__mode-btn:hover {
+  background: var(--bg-hover, #f0f0f0);
+}
+
+.transactions-tab__mode-btn--active {
+  color: var(--text-h, #08060d);
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.transactions-tab__chart-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 8px 0;
+}
+
+.transactions-tab__chart-panel--compact {
+  flex: none;
+  height: 260px;
+}
+
+.transactions-tab__chart-title {
   font-size: 13px;
+  font-weight: bold;
+  text-align: center;
+  margin: 0 0 8px;
+  color: var(--text-h, #08060d);
+}
+
+.transactions-tab__chart-container {
+  flex: 1;
+  min-height: 0;
 }
 
 .transactions-tab__toolbar {

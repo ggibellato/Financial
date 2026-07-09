@@ -1,8 +1,23 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { TransactionsData } from '../../hooks/useTransactions'
+import type { ReactNode } from 'react'
+import type { TransactionMonthBucket, TransactionsData } from '../../hooks/useTransactions'
 import type { TransactionDto } from '../../api/types'
 import TransactionsTab from '../TransactionsTab'
+
+vi.mock('recharts', () => ({
+  BarChart: ({ children }: { children: ReactNode }) => <div data-testid="bar-chart">{children}</div>,
+  LineChart: ({ children }: { children: ReactNode }) => <div data-testid="line-chart">{children}</div>,
+  Bar: () => null,
+  Line: () => null,
+  XAxis: () => null,
+  YAxis: () => null,
+  CartesianGrid: () => null,
+  Tooltip: () => null,
+  ResponsiveContainer: ({ children }: { children: ReactNode }) => (
+    <div data-testid="responsive-container">{children}</div>
+  ),
+}))
 
 const mockShowNewForm = vi.fn()
 const mockShowEditForm = vi.fn()
@@ -32,12 +47,25 @@ const TRANSACTION_SELL: TransactionDto = {
   totalPrice: 251.0,
 }
 
+const CHART_DATA: TransactionMonthBucket[] = [
+  { month: 'Jan 2024', netInvested: 0 },
+  { month: 'Feb 2024', netInvested: 169.5 },
+]
+
+const mockSetFilter = vi.fn()
+const mockSetChartMode = vi.fn()
+
 const DEFAULT_HOOK: TransactionsData = {
   asset: null,
   isLoading: false,
   error: null,
   retry: mockRetry,
   transactions: [],
+  chartData: [],
+  selectedFilter: 'last-12-months',
+  selectedChartMode: 'Bar',
+  setFilter: mockSetFilter,
+  setChartMode: mockSetChartMode,
   isFormVisible: false,
   editingId: null,
   formDate: '',
@@ -92,12 +120,61 @@ describe('TransactionsTab', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 
-  it('renders_placeholder_for_non_asset', () => {
-    setMock({ nodeType: 'Portfolio' })
+  it('renders_chart_only_for_broker_node_selection', () => {
+    setMock({ nodeType: 'Broker', chartData: CHART_DATA })
     render(<TransactionsTab />)
-    expect(
-      screen.getByText('Transactions are only available for individual assets'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('Net Invested by Month')).toBeInTheDocument()
+    expect(document.querySelector('table')).not.toBeInTheDocument()
+  })
+
+  it('renders_chart_only_for_portfolio_node_selection', () => {
+    setMock({ nodeType: 'Portfolio', chartData: CHART_DATA })
+    render(<TransactionsTab />)
+    expect(screen.getByText('Net Invested by Month')).toBeInTheDocument()
+    expect(document.querySelector('table')).not.toBeInTheDocument()
+  })
+
+  it('renders_chart_above_table_for_asset_node_selection', () => {
+    setMock({ nodeType: 'Asset', chartData: CHART_DATA, transactions: [TRANSACTION_BUY] })
+    render(<TransactionsTab />)
+    expect(screen.getByText('Net Invested by Month')).toBeInTheDocument()
+    expect(document.querySelector('table')).toBeInTheDocument()
+    expect(screen.getByText('15/03/2024')).toBeInTheDocument()
+  })
+
+  it('renders_six_period_filter_buttons', () => {
+    render(<TransactionsTab />)
+    expect(screen.getByRole('button', { name: 'This month' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Last 3 months' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Last 6 months' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Last 12 months' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'YTD' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'All time' })).toBeInTheDocument()
+  })
+
+  it('renders_bar_line_toggle_defaulting_to_bar', () => {
+    render(<TransactionsTab />)
+    expect(screen.getByRole('button', { name: 'Bar' })).toHaveClass('transactions-tab__mode-btn--active')
+    expect(screen.getByRole('button', { name: 'Line' })).not.toHaveClass('transactions-tab__mode-btn--active')
+  })
+
+  it('clicking_line_toggle_calls_setChartMode', () => {
+    render(<TransactionsTab />)
+    fireEvent.click(screen.getByRole('button', { name: 'Line' }))
+    expect(mockSetChartMode).toHaveBeenCalledWith('Line')
+  })
+
+  it('clicking_filter_button_calls_setFilter', () => {
+    render(<TransactionsTab />)
+    fireEvent.click(screen.getByRole('button', { name: 'YTD' }))
+    expect(mockSetFilter).toHaveBeenCalledWith('ytd')
+  })
+
+  it('renders_error_state_with_retry_on_broker_portfolio_fetch_failure', () => {
+    setMock({ nodeType: 'Broker', error: 'Unable to load transactions' })
+    render(<TransactionsTab />)
+    expect(screen.getByText('Unable to load transactions')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 
   it('renders_table_with_correct_columns', () => {
