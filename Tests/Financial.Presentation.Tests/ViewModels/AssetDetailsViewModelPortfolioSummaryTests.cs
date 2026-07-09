@@ -12,7 +12,8 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         return new AssetDetailsViewModel(
             new StubTransactionService(),
             new StubCreditService(),
-            priceService ?? new NeverResolvingPriceService());
+            priceService ?? new NeverResolvingPriceService(),
+            new StubBrokerBreakdownQueryService());
     }
 
     private static IReadOnlyList<PortfolioAssetSummaryItemDTO> BuildItems(int count = 2)
@@ -267,6 +268,11 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         vm.FooterCurrentMonthCredits.Should().Be(0m);
         vm.FooterCurrentMonthLabel.Should().Be(string.Empty);
         vm.FooterEstimatedAnnualCreditsDisplay.Should().Be("—");
+    }
+
+    private sealed class StubBrokerBreakdownQueryService : IBrokerBreakdownQueryService
+    {
+        public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName) => [];
     }
 
     private sealed class NeverResolvingPriceService : IAssetPriceService

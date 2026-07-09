@@ -323,52 +323,102 @@
                             </ScrollViewer>
                         </DataTemplate>
                         <DataTemplate x:Key="BrokerSummaryTemplate">
-                            <Grid Margin="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <Grid Margin="10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                                <!-- Row 0: Total Bought & Total Sold -->
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Total Bought:" FontWeight="Bold" Margin="0,5"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1"
-                                           Text="{Binding AssetDetails.TotalBought, Mode=OneWay, StringFormat=N2}"
-                                           TextAlignment="Right"
-                                           FontFamily="Consolas"
-                                           Margin="10,5"
-                                           Foreground="Green"/>
+                                    <!-- Row 0: Total Bought & Total Sold -->
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Total Bought:" FontWeight="Bold" Margin="0,5"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1"
+                                               Text="{Binding AssetDetails.TotalBought, Mode=OneWay, StringFormat=N2}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Margin="10,5"
+                                               Foreground="Green"/>
 
-                                <TextBlock Grid.Row="0" Grid.Column="2" Text="Total Sold:" FontWeight="Bold" Margin="20,5,0,5"/>
-                                <TextBlock Grid.Row="0" Grid.Column="3"
-                                           Text="{Binding AssetDetails.TotalSold, Mode=OneWay, StringFormat=N2}"
-                                           TextAlignment="Right"
-                                           FontFamily="Consolas"
-                                           Margin="10,5"
-                                           Foreground="Red"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Total Sold:" FontWeight="Bold" Margin="20,5,0,5"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="3"
+                                               Text="{Binding AssetDetails.TotalSold, Mode=OneWay, StringFormat=N2}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Margin="10,5"
+                                               Foreground="Red"/>
 
-                                <!-- Row 1: Total Credits & Total Invested -->
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Total Credits:" FontWeight="Bold" Margin="0,5"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1"
-                                           Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}"
-                                           TextAlignment="Right"
-                                           FontFamily="Consolas"
-                                           Margin="10,5"
-                                           Foreground="Blue"/>
+                                    <!-- Row 1: Total Credits & Total Invested -->
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Total Credits:" FontWeight="Bold" Margin="0,5"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1"
+                                               Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Margin="10,5"
+                                               Foreground="Blue"/>
 
-                                <TextBlock Grid.Row="1" Grid.Column="2" Text="Total Invested:" FontWeight="Bold" Margin="20,5,0,5"/>
-                                <TextBlock Grid.Row="1" Grid.Column="3"
-                                           Text="{Binding AssetDetails.TotalInvested, Mode=OneWay, StringFormat=N2}"
-                                           TextAlignment="Right"
-                                           FontFamily="Consolas"
-                                           Foreground="{Binding AssetDetails.TotalInvested, Converter={StaticResource SignedValueToBrushConverter}}"
-                                           Margin="10,5"/>
-                            </Grid>
+                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Total Invested:" FontWeight="Bold" Margin="20,5,0,5"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="3"
+                                               Text="{Binding AssetDetails.TotalInvested, Mode=OneWay, StringFormat=N2}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Foreground="{Binding AssetDetails.TotalInvested, Converter={StaticResource SignedValueToBrushConverter}}"
+                                               Margin="10,5"/>
+
+                                    <!-- Row 2: Breakdown loading indicator -->
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4"
+                                               Text="Loading breakdown..."
+                                               Margin="0,15,0,5"
+                                               Visibility="{Binding AssetDetails.IsBreakdownLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                    <!-- Row 3: Breakdown inline error -->
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4"
+                                               Text="{Binding AssetDetails.BreakdownError}"
+                                               Foreground="DarkRed"
+                                               Margin="0,15,0,5"
+                                               Visibility="{Binding AssetDetails.HasBreakdownError, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                    <!-- Row 4: Breakdown empty state -->
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4"
+                                               Text="No active portfolios to display"
+                                               Foreground="Gray"
+                                               Margin="0,15,0,5"
+                                               Visibility="{Binding AssetDetails.ShowBreakdownEmptyState, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                    <!-- Row 5: Overall portfolio breakdown pie -->
+                                    <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="4"
+                                                Margin="0,15,0,0"
+                                                Visibility="{Binding AssetDetails.HasBreakdownData, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <TextBlock Text="Portfolio Breakdown" FontWeight="Bold" Margin="0,0,0,5"/>
+                                        <oxy:PlotView Model="{Binding AssetDetails.OverallBreakdownPlotModel}" Height="260" Background="Transparent"/>
+                                    </StackPanel>
+
+                                    <!-- Row 6: Per-portfolio asset breakdown pies -->
+                                    <ItemsControl Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="4"
+                                                  Margin="0,15,0,0"
+                                                  ItemsSource="{Binding AssetDetails.PortfolioBreakdownPieItems}"
+                                                  Visibility="{Binding AssetDetails.HasBreakdownData, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="0,0,0,15">
+                                                    <TextBlock Text="{Binding PortfolioName}" FontWeight="Bold" Margin="0,0,0,5"/>
+                                                    <oxy:PlotView Model="{Binding PlotModel}" Height="260" Background="Transparent"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </ScrollViewer>
                         </DataTemplate>
                         <DataTemplate x:Key="PortfolioSummaryTemplate">
                             <Grid Margin="10">

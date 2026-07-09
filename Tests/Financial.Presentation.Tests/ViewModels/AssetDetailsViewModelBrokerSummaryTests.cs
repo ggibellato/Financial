@@ -7,12 +7,13 @@ namespace Financial.Presentation.Tests.ViewModels;
 
 public class AssetDetailsViewModelBrokerSummaryTests
 {
-    private static AssetDetailsViewModel BuildViewModel()
+    private static AssetDetailsViewModel BuildViewModel(IBrokerBreakdownQueryService? brokerBreakdownQueryService = null)
     {
         return new AssetDetailsViewModel(
             new StubTransactionService(),
             new StubCreditService(),
-            new StubAssetPriceService());
+            new StubAssetPriceService(),
+            brokerBreakdownQueryService ?? new StubBrokerBreakdownQueryService());
     }
 
     [Fact]
@@ -142,6 +143,140 @@ public class AssetDetailsViewModelBrokerSummaryTests
         vm.LoadBrokerSummary("XPI", new AggregatedSummaryDTO(), []);
         vm.IsPortfolioView.Should().BeFalse();
         vm.IsBrokerView.Should().BeTrue();
+    }
+
+    [Fact]
+    public void LoadBrokerBreakdown_SetsIsBreakdownLoadingTrue_Synchronously()
+    {
+        var stub = new StubBrokerBreakdownQueryService();
+        var vm = BuildViewModel(stub);
+        _ = vm.LoadBrokerBreakdown("XPI");
+        vm.IsBreakdownLoading.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task LoadBrokerBreakdown_PopulatesOverallBreakdownPlotModel_OnSuccess()
+    {
+        var stub = new StubBrokerBreakdownQueryService
+        {
+            Breakdown =
+            [
+                new PortfolioBreakdownItemDTO { PortfolioName = "Acoes", TotalInvested = 1000m, Assets = [] },
+                new PortfolioBreakdownItemDTO { PortfolioName = "FII", TotalInvested = 2000m, Assets = [] },
+            ],
+        };
+        var vm = BuildViewModel(stub);
+        await vm.LoadBrokerBreakdown("XPI");
+
+        vm.OverallBreakdownPlotModel.Should().NotBeNull();
+        vm.OverallBreakdownPlotModel!.Series.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task LoadBrokerBreakdown_PopulatesPortfolioBreakdownPieItems_OnSuccess()
+    {
+        var stub = new StubBrokerBreakdownQueryService
+        {
+            Breakdown =
+            [
+                new PortfolioBreakdownItemDTO
+                {
+                    PortfolioName = "Acoes",
+                    TotalInvested = 1000m,
+                    Assets = [new AssetBreakdownItemDTO { AssetName = "BBAS3", TotalInvested = 1000m }],
+                },
+                new PortfolioBreakdownItemDTO
+                {
+                    PortfolioName = "FII",
+                    TotalInvested = 2000m,
+                    Assets = [new AssetBreakdownItemDTO { AssetName = "MXRF11", TotalInvested = 2000m }],
+                },
+            ],
+        };
+        var vm = BuildViewModel(stub);
+        await vm.LoadBrokerBreakdown("XPI");
+
+        vm.PortfolioBreakdownPieItems.Should().HaveCount(2);
+        vm.PortfolioBreakdownPieItems[0].PortfolioName.Should().Be("Acoes");
+        vm.PortfolioBreakdownPieItems[0].PlotModel.Should().NotBeNull();
+        vm.PortfolioBreakdownPieItems[1].PortfolioName.Should().Be("FII");
+    }
+
+    [Fact]
+    public async Task LoadBrokerBreakdown_SetsIsBreakdownLoadingFalse_OnSuccess()
+    {
+        var stub = new StubBrokerBreakdownQueryService { Breakdown = [] };
+        var vm = BuildViewModel(stub);
+        await vm.LoadBrokerBreakdown("XPI");
+        vm.IsBreakdownLoading.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task LoadBrokerBreakdown_SetsBreakdownError_OnFailure()
+    {
+        var stub = new StubBrokerBreakdownQueryService { ExceptionToThrow = new InvalidOperationException("boom") };
+        var vm = BuildViewModel(stub);
+        await vm.LoadBrokerBreakdown("XPI");
+
+        vm.BreakdownError.Should().NotBeNull();
+        vm.IsBreakdownLoading.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Clear_AfterLoadBrokerBreakdown_ResetsBreakdownState()
+    {
+        var stub = new StubBrokerBreakdownQueryService
+        {
+            Breakdown = [new PortfolioBreakdownItemDTO { PortfolioName = "Acoes", TotalInvested = 1000m, Assets = [] }],
+        };
+        var vm = BuildViewModel(stub);
+        await vm.LoadBrokerBreakdown("XPI");
+
+        vm.Clear();
+
+        vm.OverallBreakdownPlotModel.Should().BeNull();
+        vm.PortfolioBreakdownPieItems.Should().BeEmpty();
+        vm.IsBreakdownLoading.Should().BeFalse();
+        vm.BreakdownError.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task LoadAssetDetails_AfterLoadBrokerBreakdown_ResetsBreakdownState()
+    {
+        var stub = new StubBrokerBreakdownQueryService
+        {
+            Breakdown = [new PortfolioBreakdownItemDTO { PortfolioName = "Acoes", TotalInvested = 1000m, Assets = [] }],
+        };
+        var vm = BuildViewModel(stub);
+        await vm.LoadBrokerBreakdown("XPI");
+
+        vm.LoadAssetDetails(new AssetDetailsDTO
+        {
+            Name = "Asset A", BrokerName = "XPI", PortfolioName = "Portfolio",
+            Ticker = "T", ISIN = "", Exchange = "LSE",
+            Country = Financial.Domain.Entities.CountryCode.Unknown,
+            LocalTypeCode = "", Class = Financial.Domain.Entities.GlobalAssetClass.Unknown,
+            Quantity = 0m, AveragePrice = 0m, IsActive = true,
+            TotalBought = 0m, TotalSold = 0m, TotalCredits = 0m,
+            Transactions = [], Credits = []
+        });
+
+        vm.OverallBreakdownPlotModel.Should().BeNull();
+        vm.PortfolioBreakdownPieItems.Should().BeEmpty();
+    }
+
+    private sealed class StubBrokerBreakdownQueryService : IBrokerBreakdownQueryService
+    {
+        public IReadOnlyList<PortfolioBreakdownItemDTO> Breakdown { get; set; } = [];
+        public Exception? ExceptionToThrow { get; set; }
+        public string? LastBrokerName { get; private set; }
+
+        public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName)
+        {
+            LastBrokerName = brokerName;
+            if (ExceptionToThrow != null) throw ExceptionToThrow;
+            return Breakdown;
+        }
     }
 
     private sealed class StubAssetPriceService : IAssetPriceService

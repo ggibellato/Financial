@@ -15,6 +15,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private readonly ITransactionService _transactionService;
     private readonly ICreditService _creditService;
     private readonly IAssetPriceService _assetPriceService;
+    private readonly IBrokerBreakdownQueryService _brokerBreakdownQueryService;
     private readonly TodayInfoTracker _todayInfo;
     private readonly TransactionActions _transactionActions;
     private readonly CreditActions _creditActions;
@@ -58,6 +59,10 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private bool _isPortfolioView;
     private bool _isBrokerView;
     private decimal _totalInvested;
+    private PlotModel? _overallBreakdownPlotModel;
+    private bool _isBreakdownLoading;
+    private string? _breakdownError;
+    private CancellationTokenSource? _breakdownCts;
     private CancellationTokenSource? _rowPriceCts;
     private decimal _footerTotalInvested;
     private decimal _footerTotalCredits;
@@ -170,6 +175,45 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         private set => SetProperty(ref _totalInvested, value);
     }
 
+    public PlotModel? OverallBreakdownPlotModel
+    {
+        get => _overallBreakdownPlotModel;
+        private set => SetProperty(ref _overallBreakdownPlotModel, value);
+    }
+
+    public bool IsBreakdownLoading
+    {
+        get => _isBreakdownLoading;
+        private set
+        {
+            if (SetProperty(ref _isBreakdownLoading, value))
+            {
+                OnPropertyChanged(nameof(ShowBreakdownEmptyState));
+                OnPropertyChanged(nameof(HasBreakdownData));
+            }
+        }
+    }
+
+    public string? BreakdownError
+    {
+        get => _breakdownError;
+        private set
+        {
+            if (SetProperty(ref _breakdownError, value))
+            {
+                OnPropertyChanged(nameof(HasBreakdownError));
+                OnPropertyChanged(nameof(ShowBreakdownEmptyState));
+                OnPropertyChanged(nameof(HasBreakdownData));
+            }
+        }
+    }
+
+    public bool HasBreakdownError => BreakdownError != null;
+    public bool ShowBreakdownEmptyState => !IsBreakdownLoading && BreakdownError == null && PortfolioBreakdownPieItems.Count == 0;
+    public bool HasBreakdownData => !IsBreakdownLoading && BreakdownError == null && PortfolioBreakdownPieItems.Count > 0;
+
+    public ObservableCollection<PortfolioBreakdownPieItem> PortfolioBreakdownPieItems { get; } = new();
+
     public ObservableCollection<PortfolioAssetSummaryRowViewModel> PortfolioAssetSummaryRows { get; } = new();
 
     public decimal FooterTotalInvested { get => _footerTotalInvested; private set => SetProperty(ref _footerTotalInvested, value); }
@@ -220,11 +264,13 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public AssetDetailsViewModel(
         ITransactionService transactionService,
         ICreditService creditService,
-        IAssetPriceService assetPriceService)
+        IAssetPriceService assetPriceService,
+        IBrokerBreakdownQueryService brokerBreakdownQueryService)
     {
         _transactionService = transactionService ?? throw new ArgumentNullException(nameof(transactionService));
         _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
         _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
+        _brokerBreakdownQueryService = brokerBreakdownQueryService ?? throw new ArgumentNullException(nameof(brokerBreakdownQueryService));
         _todayInfo = new TodayInfoTracker(ApplyTodayInfo, ResetTodayInfo, UpdateCommandStates);
         _transactionActions = new TransactionActions(
             _transactionService,
@@ -290,6 +336,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         IsPortfolioView = false;
         IsBrokerView = false;
+        CancelAndResetBreakdownFetch();
         var assetKey = BuildAssetKey(details.BrokerName, details.PortfolioName, details.Name);
         _todayInfo.UpdateAssetKey(assetKey);
 
@@ -339,6 +386,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         IsPortfolioView = false;
         IsBrokerView = false;
         TotalInvested = 0m;
+        CancelAndResetBreakdownFetch();
         ClearAssetContext();
         Credits.Clear();
         CreditsByMonthChart.Clear();
@@ -356,6 +404,30 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         LoadAggregateCredits(BuildBrokerKey(brokerName), summary, credits);
         IsBrokerView = true;
         TotalInvested = summary.TotalInvested;
+    }
+
+    public Task LoadBrokerBreakdown(string brokerName)
+    {
+        CancelAndResetBreakdownFetch();
+        IsBreakdownLoading = true;
+
+        _breakdownCts = new CancellationTokenSource();
+        var token = _breakdownCts.Token;
+        return Task.Run(() =>
+        {
+            try
+            {
+                var breakdown = _brokerBreakdownQueryService.GetBrokerBreakdown(brokerName);
+                if (token.IsCancellationRequested) return;
+                ApplyBrokerBreakdown(breakdown);
+            }
+            catch
+            {
+                if (token.IsCancellationRequested) return;
+                BreakdownError = "Unable to load breakdown";
+                IsBreakdownLoading = false;
+            }
+        }, token);
     }
 
     public void LoadPortfolioCredits(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
@@ -425,6 +497,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         IsPortfolioView = false;
         IsBrokerView = false;
+        CancelAndResetBreakdownFetch();
         ClearAssetContext();
         TotalBought = summary.TotalBought;
         TotalSold = summary.TotalSold;
@@ -472,6 +545,56 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _rowPriceCts?.Cancel();
         _rowPriceCts?.Dispose();
         _rowPriceCts = null;
+    }
+
+    private void ApplyBrokerBreakdown(IReadOnlyList<PortfolioBreakdownItemDTO> breakdown)
+    {
+        var overallModel = BrokerBreakdownChartBuilder.Build(
+            breakdown.Select(p => (p.PortfolioName, p.TotalInvested)).ToList());
+
+        var items = breakdown
+            .Select(portfolio =>
+            {
+                var plotModel = BrokerBreakdownChartBuilder.Build(
+                    portfolio.Assets.Select(a => (a.AssetName, a.TotalInvested)).ToList());
+                return new PortfolioBreakdownPieItem(portfolio.PortfolioName, plotModel);
+            })
+            .ToList();
+
+        // ObservableCollection structural changes (unlike plain property changes) must
+        // happen on the thread that owns the bound CollectionView, or WPF throws
+        // NotSupportedException — this method runs on a background thread (Task.Run).
+        RunOnUIThread(() =>
+        {
+            PortfolioBreakdownPieItems.Clear();
+            foreach (var item in items)
+                PortfolioBreakdownPieItems.Add(item);
+        });
+
+        OverallBreakdownPlotModel = overallModel;
+        IsBreakdownLoading = false;
+    }
+
+    private static void RunOnUIThread(Action action)
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher == null || dispatcher.CheckAccess())
+            action();
+        else
+            dispatcher.Invoke(action);
+    }
+
+    private void CancelAndResetBreakdownFetch()
+    {
+        _breakdownCts?.Cancel();
+        _breakdownCts?.Dispose();
+        _breakdownCts = null;
+        IsBreakdownLoading = false;
+        BreakdownError = null;
+        OverallBreakdownPlotModel = null;
+        PortfolioBreakdownPieItems.Clear();
+        OnPropertyChanged(nameof(ShowBreakdownEmptyState));
+        OnPropertyChanged(nameof(HasBreakdownData));
     }
 
     private void SubscribeToRowPriceChanges(PortfolioAssetSummaryRowViewModel row)
