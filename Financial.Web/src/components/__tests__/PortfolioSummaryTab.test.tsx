@@ -40,6 +40,7 @@ const SUMMARY: AggregatedSummaryDto = {
   totalBought: 15420.5,
   totalSold: 3200.0,
   totalCredits: 842.3,
+  totalInvested: 12220.5,
 }
 
 const ITEM_1: PortfolioAssetSummaryItemDto = {
@@ -107,6 +108,13 @@ describe('PortfolioSummaryTab', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 
+  it('renders_total_invested_for_portfolio_node_selection', () => {
+    setAggregatedMock({ summary: SUMMARY })
+    render(<PortfolioSummaryTab />)
+    const labels = screen.getAllByText(/^Total (Bought|Sold|Credits|Invested)$/, { selector: 'span.aggregated-summary__label' })
+    expect(labels.map((el) => el.textContent)).toEqual(['Total Bought', 'Total Sold', 'Total Credits', 'Total Invested'])
+  })
+
   it('renders_loading_state_in_table_section_while_items_load', () => {
     setPortfolioMock({ isLoading: true })
     render(<PortfolioSummaryTab />)
@@ -129,7 +137,7 @@ describe('PortfolioSummaryTab', () => {
     expect(screen.getByText('Asset Name')).toBeInTheDocument()
     expect(screen.getByText('First Investment')).toBeInTheDocument()
     expect(screen.getByText('Quantity')).toBeInTheDocument()
-    expect(screen.getByText('Total Invested')).toBeInTheDocument()
+    expect(screen.getAllByText('Total Invested').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('% Portfolio')).toBeInTheDocument()
     expect(screen.getAllByText('Total Credits').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Current Value')).toBeInTheDocument()

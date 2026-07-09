@@ -10,6 +10,10 @@ function formatN2(value: number): string {
   }).format(value)
 }
 
+function getInvestedClass(value: number): string {
+  return value >= 0 ? 'aggregated-summary__value--green' : 'aggregated-summary__value--red'
+}
+
 export default function AggregatedSummaryTab() {
   const { summary, isLoading, error, retry } = useAggregatedSummary()
 
@@ -40,10 +44,16 @@ export default function AggregatedSummaryTab() {
             {formatN2(summary.totalSold)}
           </span>
         </div>
-        <div className="aggregated-summary__field aggregated-summary__field--full">
+        <div className="aggregated-summary__field">
           <span className="aggregated-summary__label">Total Credits</span>
           <span className="aggregated-summary__value aggregated-summary__value--blue">
             {formatN2(summary.totalCredits)}
+          </span>
+        </div>
+        <div className="aggregated-summary__field">
+          <span className="aggregated-summary__label">Total Invested</span>
+          <span className={`aggregated-summary__value ${getInvestedClass(summary.totalInvested)}`}>
+            {formatN2(summary.totalInvested)}
           </span>
         </div>
       </div>

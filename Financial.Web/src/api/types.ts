@@ -182,6 +182,7 @@ export interface AggregatedSummaryDto {
   totalBought: number
   totalSold: number
   totalCredits: number
+  totalInvested: number
 }
 
 export interface WatchlistItemDto {
