@@ -13,7 +13,7 @@ import {
 import type { CreditDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
-import type { CreditFormField, ViewMode } from '../hooks/useCredits'
+import type { CreditFormField, MonthBucket, ViewMode } from '../hooks/useCredits'
 import { useCredits } from '../hooks/useCredits'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import './CreditsTab.css'
@@ -163,12 +163,19 @@ function InlineForm({
   )
 }
 
+const CHART_COLORS = [DIVIDEND_COLOR, RENT_COLOR]
+
+function typeValue(type: string) {
+  return (bucket: MonthBucket) => bucket.byType[type] ?? 0
+}
+
 interface ChartPanelProps {
   chartData: ReturnType<typeof useCredits>['chartData']
+  creditTypes: string[]
   selectedMode: ViewMode
 }
 
-function ChartPanel({ chartData, selectedMode }: ChartPanelProps) {
+function ChartPanel({ chartData, creditTypes, selectedMode }: ChartPanelProps) {
   const isStacked = selectedMode === 'Stacked'
   return (
     <div className="credits-tab__chart-panel">
@@ -181,20 +188,22 @@ function ChartPanel({ chartData, selectedMode }: ChartPanelProps) {
             <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
             <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
             <Legend />
-            <Bar
-              dataKey="Dividend"
-              fill={DIVIDEND_COLOR}
-              stackId={isStacked ? 'credits' : undefined}
-            >
-              <LabelList dataKey="Dividend" position="inside" formatter={(v: unknown) => typeof v === 'number' && v > 0 ? formatN2(v) : ''} style={{ fontSize: 10 }} />
-            </Bar>
-            <Bar
-              dataKey="Rent"
-              fill={RENT_COLOR}
-              stackId={isStacked ? 'credits' : undefined}
-            >
-              <LabelList dataKey="Rent" position="inside" formatter={(v: unknown) => typeof v === 'number' && v > 0 ? formatN2(v) : ''} style={{ fontSize: 10 }} />
-            </Bar>
+            {creditTypes.map((type, index) => (
+              <Bar
+                key={type}
+                dataKey={typeValue(type)}
+                name={type}
+                fill={CHART_COLORS[index % CHART_COLORS.length]}
+                stackId={isStacked ? 'credits' : undefined}
+              >
+                <LabelList
+                  dataKey={typeValue(type)}
+                  position="inside"
+                  formatter={(v: unknown) => (typeof v === 'number' && v > 0 ? formatN2(v) : '')}
+                  style={{ fontSize: 10 }}
+                />
+              </Bar>
+            ))}
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -206,6 +215,7 @@ export default function CreditsTab() {
   const {
     credits,
     chartData,
+    creditTypes,
     isLoading,
     error,
     retry,
@@ -304,7 +314,7 @@ export default function CreditsTab() {
     return (
       <div className="credits-tab">
         {toolbar}
-        <ChartPanel chartData={chartData} selectedMode={selectedMode} />
+        <ChartPanel chartData={chartData} creditTypes={creditTypes} selectedMode={selectedMode} />
       </div>
     )
   }
@@ -368,7 +378,7 @@ export default function CreditsTab() {
         />
 
         <div className="credits-tab__right">
-          <ChartPanel chartData={chartData} selectedMode={selectedMode} />
+          <ChartPanel chartData={chartData} creditTypes={creditTypes} selectedMode={selectedMode} />
         </div>
       </div>
     </div>

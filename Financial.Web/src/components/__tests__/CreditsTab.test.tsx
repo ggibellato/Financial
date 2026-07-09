@@ -49,6 +49,7 @@ const DEFAULT_HOOK: CreditsData = {
   credits: [],
   filteredCredits: [],
   chartData: [],
+  creditTypes: [],
   isLoading: false,
   error: null,
   retry: mockRetry,

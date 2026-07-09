@@ -11,8 +11,8 @@ export type CreditFormField = 'formDate' | 'formType' | 'formValue'
 
 export interface MonthBucket {
   month: string
-  Dividend: number
-  Rent: number
+  total: number
+  byType: Record<string, number>
 }
 
 interface PersistedPrefs {
@@ -178,11 +178,10 @@ function aggregateByMonth(credits: CreditDto[]): MonthBucket[] {
   const map = new Map<string, MonthBucket>()
   for (const c of credits) {
     const key = buildMonthKey(new Date(c.date))
-    const existing = map.get(key) ?? { month: key, Dividend: 0, Rent: 0 }
-    const bucket: MonthBucket = { ...existing }
-    if (c.type === 'Dividend') bucket.Dividend += c.value
-    else if (c.type === 'Rent') bucket.Rent += c.value
-    map.set(key, bucket)
+    const existing = map.get(key) ?? { month: key, total: 0, byType: {} }
+    const byType = { ...existing.byType }
+    byType[c.type] = (byType[c.type] ?? 0) + c.value
+    map.set(key, { month: key, total: existing.total + c.value, byType })
   }
   return [...map.values()].sort((a, b) => {
     const [am, ay] = a.month.split('/').map(Number)
@@ -192,10 +191,19 @@ function aggregateByMonth(credits: CreditDto[]): MonthBucket[] {
   })
 }
 
+function computeCreditTypes(buckets: MonthBucket[]): string[] {
+  const types = new Set<string>()
+  for (const bucket of buckets) {
+    for (const type of Object.keys(bucket.byType)) types.add(type)
+  }
+  return [...types].sort()
+}
+
 export interface CreditsData {
   credits: CreditDto[]
   filteredCredits: CreditDto[]
   chartData: MonthBucket[]
+  creditTypes: string[]
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -284,6 +292,7 @@ export function useCredits(): CreditsData {
   }, [credits, state.selectedFilter])
 
   const chartData = useMemo(() => aggregateByMonth(filteredCredits), [filteredCredits])
+  const creditTypes = useMemo(() => computeCreditTypes(chartData), [chartData])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
@@ -384,6 +393,7 @@ export function useCredits(): CreditsData {
     credits,
     filteredCredits,
     chartData,
+    creditTypes,
     isLoading: state.isLoading,
     error: state.error,
     retry,
