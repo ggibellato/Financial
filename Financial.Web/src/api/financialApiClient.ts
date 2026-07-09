@@ -11,6 +11,7 @@ import type {
   DividendHistoryItemDto,
   DividendSummaryDto,
   PortfolioAssetSummaryItemDto,
+  PortfolioBreakdownItemDto,
   PortfolioReferenceDto,
   TransactionCreateDto,
   TransactionDeleteDto,
@@ -27,6 +28,7 @@ export interface FinancialApiClient {
   getCreditsByPortfolio: (brokerName: string, portfolioName: string) => Promise<CreditDto[]>
   getSummaryByBroker: (brokerName: string) => Promise<AggregatedSummaryDto>
   getSummaryByPortfolio: (brokerName: string, portfolioName: string) => Promise<AggregatedSummaryDto>
+  getBrokerBreakdown: (brokerName: string) => Promise<PortfolioBreakdownItemDto[]>
   addTransaction: (request: TransactionCreateDto) => Promise<AssetDetailsDto>
   updateTransaction: (request: TransactionUpdateDto) => Promise<AssetDetailsDto>
   deleteTransaction: (request: TransactionDeleteDto) => Promise<AssetDetailsDto>
@@ -108,6 +110,8 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<AggregatedSummaryDto>(
         `/summary/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}`,
       ),
+    getBrokerBreakdown: (brokerName) =>
+      request<PortfolioBreakdownItemDto[]>(`/summary/broker/${encodeURIComponent(brokerName)}/breakdown`),
     addTransaction: (requestBody) =>
       request<AssetDetailsDto>('/transactions', {
         method: 'POST',

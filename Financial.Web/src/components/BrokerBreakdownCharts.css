@@ -1,0 +1,40 @@
+.broker-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.broker-breakdown__chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.broker-breakdown__empty {
+  color: var(--text-muted, #888);
+  font-size: 13px;
+  margin-top: 24px;
+}
+
+.broker-breakdown__tooltip {
+  background: #fff;
+  border: 1px solid #e1e0d9;
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.broker-breakdown__tooltip-name {
+  color: #52514e;
+  margin-bottom: 2px;
+}
+
+.broker-breakdown__tooltip-value {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.broker-breakdown__tooltip-percent {
+  color: #52514e;
+}
