@@ -5,6 +5,8 @@ import {
   CartesianGrid,
   LabelList,
   Legend,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -13,7 +15,7 @@ import {
 import type { CreditDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
-import type { CreditFormField, MonthBucket, ViewMode } from '../hooks/useCredits'
+import type { ChartType, CreditFormField, MonthBucket, ViewMode } from '../hooks/useCredits'
 import { useCredits } from '../hooks/useCredits'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import './CreditsTab.css'
@@ -35,8 +37,28 @@ function formatDate(iso: string): string {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
 }
 
-const DIVIDEND_COLOR = '#4682b4'
-const RENT_COLOR = '#6aabdb'
+const SINGLE_TYPE_COLOR = '#4682b4'
+const PALETTE_START = { r: 173, g: 216, b: 230 }
+const PALETTE_END = { r: 8, g: 81, b: 156 }
+
+function lerpByte(from: number, to: number, t: number): number {
+  return Math.round(from + (to - from) * t)
+}
+
+function buildPalette(count: number): string[] {
+  if (count <= 0) return []
+  if (count === 1) return [SINGLE_TYPE_COLOR]
+
+  const colors: string[] = []
+  for (let i = 0; i < count; i++) {
+    const t = i / (count - 1)
+    const r = lerpByte(PALETTE_START.r, PALETTE_END.r, t)
+    const g = lerpByte(PALETTE_START.g, PALETTE_END.g, t)
+    const b = lerpByte(PALETTE_START.b, PALETTE_END.b, t)
+    colors.push(`rgb(${r}, ${g}, ${b})`)
+  }
+  return colors
+}
 
 interface CreditRowProps {
   credit: CreditDto
@@ -163,8 +185,6 @@ function InlineForm({
   )
 }
 
-const CHART_COLORS = [DIVIDEND_COLOR, RENT_COLOR]
-
 function typeValue(type: string) {
   return (bucket: MonthBucket) => bucket.byType[type] ?? 0
 }
@@ -173,38 +193,73 @@ interface ChartPanelProps {
   chartData: ReturnType<typeof useCredits>['chartData']
   creditTypes: string[]
   selectedMode: ViewMode
+  selectedChartType: ChartType
 }
 
-function ChartPanel({ chartData, creditTypes, selectedMode }: ChartPanelProps) {
+function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType }: ChartPanelProps) {
   const isStacked = selectedMode === 'Stacked'
+  const palette = buildPalette(creditTypes.length)
+
   return (
     <div className="credits-tab__chart-panel">
       <p className="credits-tab__chart-title">Credits by Month</p>
       <div className="credits-tab__chart-container">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-            <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
-            <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
-            <Legend />
-            {creditTypes.map((type, index) => (
-              <Bar
-                key={type}
-                dataKey={typeValue(type)}
-                name={type}
-                fill={CHART_COLORS[index % CHART_COLORS.length]}
-                stackId={isStacked ? 'credits' : undefined}
-              >
-                <LabelList
+          {selectedChartType === 'Bar' ? (
+            <BarChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
+              <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
+              <Legend />
+              {creditTypes.map((type, index) => (
+                <Bar
+                  key={type}
                   dataKey={typeValue(type)}
-                  position="inside"
-                  formatter={(v: unknown) => (typeof v === 'number' && v > 0 ? formatN2(v) : '')}
-                  style={{ fontSize: 10 }}
+                  name={type}
+                  fill={palette[index]}
+                  stackId={isStacked ? 'credits' : undefined}
+                >
+                  <LabelList
+                    dataKey={typeValue(type)}
+                    position="inside"
+                    formatter={(v: unknown) => (typeof v === 'number' && v > 0 ? formatN2(v) : '')}
+                    style={{ fontSize: 10 }}
+                  />
+                </Bar>
+              ))}
+            </BarChart>
+          ) : (
+            <LineChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
+              <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
+              <Legend />
+              {isStacked ? (
+                creditTypes.map((type, index) => (
+                  <Line
+                    key={type}
+                    type="monotone"
+                    dataKey={typeValue(type)}
+                    name={type}
+                    stroke={palette[index]}
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                  />
+                ))
+              ) : (
+                <Line
+                  type="monotone"
+                  dataKey="total"
+                  name="Total"
+                  stroke={SINGLE_TYPE_COLOR}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
                 />
-              </Bar>
-            ))}
-          </BarChart>
+              )}
+            </LineChart>
+          )}
         </ResponsiveContainer>
       </div>
     </div>
@@ -221,8 +276,10 @@ export default function CreditsTab() {
     retry,
     selectedFilter,
     selectedMode,
+    selectedChartType,
     setFilter,
     setMode,
+    setChartType,
     isFormVisible,
     editingId,
     formDate,
@@ -296,6 +353,19 @@ export default function CreditsTab() {
       </div>
       <div className="credits-tab__modes">
         <span className="credits-tab__mode-label">View:</span>
+        {(['Bar', 'Line'] as ChartType[]).map((chartType) => (
+          <button
+            key={chartType}
+            type="button"
+            className={`credits-tab__mode-btn${selectedChartType === chartType ? ' credits-tab__mode-btn--active' : ''}`}
+            onClick={() => setChartType(chartType)}
+          >
+            {chartType}
+          </button>
+        ))}
+      </div>
+      <div className="credits-tab__modes">
+        <span className="credits-tab__mode-label">Group:</span>
         {(['Stacked', 'Grouped'] as ViewMode[]).map((mode) => (
           <button
             key={mode}
@@ -314,7 +384,12 @@ export default function CreditsTab() {
     return (
       <div className="credits-tab">
         {toolbar}
-        <ChartPanel chartData={chartData} creditTypes={creditTypes} selectedMode={selectedMode} />
+        <ChartPanel
+          chartData={chartData}
+          creditTypes={creditTypes}
+          selectedMode={selectedMode}
+          selectedChartType={selectedChartType}
+        />
       </div>
     )
   }
@@ -378,7 +453,12 @@ export default function CreditsTab() {
         />
 
         <div className="credits-tab__right">
-          <ChartPanel chartData={chartData} creditTypes={creditTypes} selectedMode={selectedMode} />
+          <ChartPanel
+            chartData={chartData}
+            creditTypes={creditTypes}
+            selectedMode={selectedMode}
+            selectedChartType={selectedChartType}
+          />
         </div>
       </div>
     </div>
