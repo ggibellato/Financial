@@ -90,6 +90,24 @@ public class AssetDetailsViewModelPortfolioSummaryTests
     }
 
     [Fact]
+    public void LoadPortfolioSummary_SetsTotalInvested()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO { TotalBought = 10000m, TotalSold = 2000m, TotalInvested = 8000m };
+        vm.LoadPortfolioSummary("Broker", "Portfolio", summary, [], BuildItems());
+        vm.TotalInvested.Should().Be(8000m);
+    }
+
+    [Fact]
+    public void LoadPortfolioSummary_SetsNegativeTotalInvested()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO { TotalBought = 1000m, TotalSold = 3000m, TotalInvested = -2000m };
+        vm.LoadPortfolioSummary("Broker", "Portfolio", summary, [], BuildItems());
+        vm.TotalInvested.Should().Be(-2000m);
+    }
+
+    [Fact]
     public void LoadPortfolioSummary_LoadsCreditsForCreditsTab()
     {
         var vm = BuildViewModel();
@@ -126,6 +144,16 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         vm.LoadPortfolioSummary("Broker", "Portfolio", new AggregatedSummaryDTO(), [], BuildItems());
         vm.Clear();
         vm.IsPortfolioView.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Clear_AfterLoadPortfolioSummary_ResetsTotalInvested()
+    {
+        var vm = BuildViewModel();
+        var summary = new AggregatedSummaryDTO { TotalBought = 10000m, TotalSold = 2000m, TotalInvested = 8000m };
+        vm.LoadPortfolioSummary("Broker", "Portfolio", summary, [], BuildItems());
+        vm.Clear();
+        vm.TotalInvested.Should().Be(0m);
     }
 
     [Fact]

@@ -322,6 +322,54 @@
                                 </Grid>
                             </ScrollViewer>
                         </DataTemplate>
+                        <DataTemplate x:Key="BrokerSummaryTemplate">
+                            <Grid Margin="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Row 0: Total Bought & Total Sold -->
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Total Bought:" FontWeight="Bold" Margin="0,5"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1"
+                                           Text="{Binding AssetDetails.TotalBought, Mode=OneWay, StringFormat=N2}"
+                                           TextAlignment="Right"
+                                           FontFamily="Consolas"
+                                           Margin="10,5"
+                                           Foreground="Green"/>
+
+                                <TextBlock Grid.Row="0" Grid.Column="2" Text="Total Sold:" FontWeight="Bold" Margin="20,5,0,5"/>
+                                <TextBlock Grid.Row="0" Grid.Column="3"
+                                           Text="{Binding AssetDetails.TotalSold, Mode=OneWay, StringFormat=N2}"
+                                           TextAlignment="Right"
+                                           FontFamily="Consolas"
+                                           Margin="10,5"
+                                           Foreground="Red"/>
+
+                                <!-- Row 1: Total Credits & Total Invested -->
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Total Credits:" FontWeight="Bold" Margin="0,5"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1"
+                                           Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}"
+                                           TextAlignment="Right"
+                                           FontFamily="Consolas"
+                                           Margin="10,5"
+                                           Foreground="Blue"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="Total Invested:" FontWeight="Bold" Margin="20,5,0,5"/>
+                                <TextBlock Grid.Row="1" Grid.Column="3"
+                                           Text="{Binding AssetDetails.TotalInvested, Mode=OneWay, StringFormat=N2}"
+                                           TextAlignment="Right"
+                                           FontFamily="Consolas"
+                                           Foreground="{Binding AssetDetails.TotalInvested, Converter={StaticResource SignedValueToBrushConverter}}"
+                                           Margin="10,5"/>
+                            </Grid>
+                        </DataTemplate>
                         <DataTemplate x:Key="PortfolioSummaryTemplate">
                             <Grid Margin="10">
                                 <Grid.RowDefinitions>
@@ -340,7 +388,11 @@
                                                FontFamily="Consolas" Foreground="Red" Margin="0,0,20,0"/>
                                     <TextBlock Text="Total Credits:" FontWeight="Bold" Margin="0,0,5,0"/>
                                     <TextBlock Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}"
-                                               FontFamily="Consolas" Foreground="Blue"/>
+                                               FontFamily="Consolas" Foreground="Blue" Margin="0,0,20,0"/>
+                                    <TextBlock Text="Total Invested:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding AssetDetails.TotalInvested, Mode=OneWay, StringFormat=N2}"
+                                               FontFamily="Consolas"
+                                               Foreground="{Binding AssetDetails.TotalInvested, Converter={StaticResource SignedValueToBrushConverter}}"/>
                                 </StackPanel>
 
                                 <!-- Per-Asset DataGrid -->
@@ -571,6 +623,9 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding AssetDetails.IsPortfolioView}" Value="True">
                                         <Setter Property="ContentTemplate" Value="{StaticResource PortfolioSummaryTemplate}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding AssetDetails.IsBrokerView}" Value="True">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource BrokerSummaryTemplate}"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>

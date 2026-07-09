@@ -291,6 +291,6 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
         var summary = _summaryQueryService.GetBrokerSummary(brokerName);
         var credits = _creditQueryService.GetCreditsByBroker(brokerName);
-        AssetDetails.LoadBrokerCredits(brokerName, summary, credits);
+        AssetDetails.LoadBrokerSummary(brokerName, summary, credits);
     }
 }
