@@ -287,6 +287,7 @@ public class MainNavigationViewModelBaseTests
         public void Clear() => WasCleared = true;
         public Task EnsureTodayInfoLoadedAsync() => Task.CompletedTask;
         public void UpdateCreditsPlotWidth(double plotWidth) { }
+        public void UpdateTransactionsPlotWidth(double plotWidth) { }
     }
 
     private sealed class StubPortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQueryService

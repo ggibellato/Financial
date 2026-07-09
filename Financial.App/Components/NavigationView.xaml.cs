@@ -20,6 +20,14 @@ namespace Financial.Presentation.App.Components
                 viewModel.AssetDetails.UpdateCreditsPlotWidth(e.NewSize.Width);
             }
         }
+
+        private void OnTransactionsPlotSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (DataContext is IMainNavigationViewModel viewModel)
+            {
+                viewModel.AssetDetails.UpdateTransactionsPlotWidth(e.NewSize.Width);
+            }
+        }
     }
 }
 

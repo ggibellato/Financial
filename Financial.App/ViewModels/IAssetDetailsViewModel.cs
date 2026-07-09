@@ -16,5 +16,6 @@ public interface IAssetDetailsViewModel
     void Clear();
     Task EnsureTodayInfoLoadedAsync();
     void UpdateCreditsPlotWidth(double plotWidth);
+    void UpdateTransactionsPlotWidth(double plotWidth);
 }
 
