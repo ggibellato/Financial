@@ -6,6 +6,7 @@ import type { PeriodFilterOption } from '../utils/periodFilter'
 import { getPeriodFilterStartDate } from '../utils/periodFilter'
 
 export type ViewMode = 'Stacked' | 'Grouped'
+export type ChartType = 'Bar' | 'Line'
 export type CreditType = 'Dividend' | 'Rent'
 export type CreditFormField = 'formDate' | 'formType' | 'formValue'
 
@@ -18,10 +19,12 @@ export interface MonthBucket {
 interface PersistedPrefs {
   filter: PeriodFilterOption
   mode: ViewMode
+  chartType: ChartType
 }
 
 const DEFAULT_FILTER: PeriodFilterOption = 'last-12-months'
 const DEFAULT_MODE: ViewMode = 'Stacked'
+const DEFAULT_CHART_TYPE: ChartType = 'Bar'
 
 interface CreditsState {
   credits: CreditDto[]
@@ -30,6 +33,7 @@ interface CreditsState {
   retryCount: number
   selectedFilter: PeriodFilterOption
   selectedMode: ViewMode
+  selectedChartType: ChartType
   filterPersistence: Map<string, PersistedPrefs>
   isFormVisible: boolean
   editingId: string | null
@@ -49,6 +53,7 @@ type CreditsAction =
   | { type: 'RETRY' }
   | { type: 'SET_FILTER'; payload: { filter: PeriodFilterOption; key: string } }
   | { type: 'SET_MODE'; payload: { mode: ViewMode; key: string } }
+  | { type: 'SET_CHART_TYPE'; payload: { chartType: ChartType; key: string } }
   | { type: 'SHOW_NEW_FORM' }
   | { type: 'SHOW_EDIT_FORM'; payload: CreditDto }
   | { type: 'CANCEL_FORM' }
@@ -76,6 +81,7 @@ const INITIAL_STATE: CreditsState = {
   retryCount: 0,
   selectedFilter: DEFAULT_FILTER,
   selectedMode: DEFAULT_MODE,
+  selectedChartType: DEFAULT_CHART_TYPE,
   filterPersistence: new Map(),
   ...BLANK_FORM,
   deleteError: null,
@@ -98,6 +104,7 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
         filterPersistence: state.filterPersistence,
         selectedFilter: prefs?.filter ?? DEFAULT_FILTER,
         selectedMode: prefs?.mode ?? DEFAULT_MODE,
+        selectedChartType: prefs?.chartType ?? DEFAULT_CHART_TYPE,
       }
     }
     case 'FETCH_SUCCESS':
@@ -108,13 +115,30 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
       return { ...state, retryCount: state.retryCount + 1, error: null }
     case 'SET_FILTER': {
       const newMap = new Map(state.filterPersistence)
-      newMap.set(action.payload.key, { filter: action.payload.filter, mode: state.selectedMode })
+      newMap.set(action.payload.key, {
+        filter: action.payload.filter,
+        mode: state.selectedMode,
+        chartType: state.selectedChartType,
+      })
       return { ...state, selectedFilter: action.payload.filter, filterPersistence: newMap }
     }
     case 'SET_MODE': {
       const newMap = new Map(state.filterPersistence)
-      newMap.set(action.payload.key, { filter: state.selectedFilter, mode: action.payload.mode })
+      newMap.set(action.payload.key, {
+        filter: state.selectedFilter,
+        mode: action.payload.mode,
+        chartType: state.selectedChartType,
+      })
       return { ...state, selectedMode: action.payload.mode, filterPersistence: newMap }
+    }
+    case 'SET_CHART_TYPE': {
+      const newMap = new Map(state.filterPersistence)
+      newMap.set(action.payload.key, {
+        filter: state.selectedFilter,
+        mode: state.selectedMode,
+        chartType: action.payload.chartType,
+      })
+      return { ...state, selectedChartType: action.payload.chartType, filterPersistence: newMap }
     }
     case 'SHOW_NEW_FORM':
       return {
@@ -209,8 +233,10 @@ export interface CreditsData {
   retry: () => void
   selectedFilter: PeriodFilterOption
   selectedMode: ViewMode
+  selectedChartType: ChartType
   setFilter: (filter: PeriodFilterOption) => void
   setMode: (mode: ViewMode) => void
+  setChartType: (chartType: ChartType) => void
   isFormVisible: boolean
   editingId: string | null
   formDate: string
@@ -312,6 +338,14 @@ export function useCredits(): CreditsData {
     [selectedNode],
   )
 
+  const setChartType = useCallback(
+    (chartType: ChartType) => {
+      if (!selectedNode) return
+      dispatch({ type: 'SET_CHART_TYPE', payload: { chartType, key: buildSelectionKey(selectedNode) } })
+    },
+    [selectedNode],
+  )
+
   const showNewForm = useCallback(() => dispatch({ type: 'SHOW_NEW_FORM' }), [])
 
   const showEditForm = useCallback(
@@ -399,8 +433,10 @@ export function useCredits(): CreditsData {
     retry,
     selectedFilter: state.selectedFilter,
     selectedMode: state.selectedMode,
+    selectedChartType: state.selectedChartType,
     setFilter,
     setMode,
+    setChartType,
     isFormVisible: state.isFormVisible,
     editingId: state.editingId,
     formDate: state.formDate,

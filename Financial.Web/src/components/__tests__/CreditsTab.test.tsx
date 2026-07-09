@@ -14,6 +14,7 @@ const mockDeleteCredit = vi.fn()
 const mockRetry = vi.fn()
 const mockSetFilter = vi.fn()
 const mockSetMode = vi.fn()
+const mockSetChartType = vi.fn()
 
 vi.mock('recharts', () => ({
   BarChart: ({ children }: { children: React.ReactNode }) => (
@@ -55,8 +56,10 @@ const DEFAULT_HOOK: CreditsData = {
   retry: mockRetry,
   selectedFilter: 'last-12-months',
   selectedMode: 'Stacked',
+  selectedChartType: 'Bar',
   setFilter: mockSetFilter,
   setMode: mockSetMode,
+  setChartType: mockSetChartType,
   isFormVisible: false,
   editingId: null,
   formDate: '',
