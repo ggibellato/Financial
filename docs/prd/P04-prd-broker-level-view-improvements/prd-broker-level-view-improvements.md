@@ -8,6 +8,8 @@ This feature set fixes the WPF layout bug, adds a Total Invested total (Total Bo
 
 Separately, the Transactions tab — currently available only for individual assets — is extended to Broker and Portfolio levels and gains a new monthly investment chart (Bought − Sold per calendar month), rendered as bars by default with an optional line view, filterable by six time periods (This Month, Last 3 Months, Last 6 Months, Last 12 Months, YTD, All Time). This same expanded period-filter set is also applied to the existing Credits tab chart for consistency across the two features.
 
+Finally, the existing Credits tab chart — which today only offers a Stacked/Grouped bar view — gains the same Bar/Line display toggle as the new Transactions chart, at all three node levels (Broker, Portfolio, Asset) and in both UIs. The two toggles are independent: switching to Line while Grouped is selected plots a single line for the combined total, while switching to Line while Stacked is selected plots one line per credit type, matching the per-type breakdown the Stacked bars already show.
+
 ---
 
 ## 2. Problem and Opportunity
@@ -28,6 +30,9 @@ Separately, the Transactions tab — currently available only for individual ass
 **No visibility into investment pace over time**
 - The Transactions tab shows only a flat list of individual Buy/Sell rows for a single asset; there is no way to see how much net capital was deployed per month, whether spending is accelerating or slowing, or to view this at the Broker or Portfolio level at all (the tab does not support those node types today)
 
+**Inconsistent chart flexibility between Credits and Transactions**
+- The Credits tab chart only offers a Stacked/Grouped bar view; once the new Transactions chart ships with a Bar/Line toggle, the two charts would offer inconsistent visualization options for what is conceptually the same kind of monthly trend data, with no way to view Credits as a line
+
 ### The Opportunity
 
 Each problem maps to a concrete deliverable:
@@ -35,6 +40,7 @@ Each problem maps to a concrete deliverable:
 - No net investment figure → F01 introduces a Total Invested total, surfaced in both UIs by F05 (Web) and F06 (WPF)
 - No visual breakdown → F02 computes an Encerradas-and-inactive-asset-excluded breakdown of portfolios and assets by Total Invested; F07 (Web) and F08 (WPF) render it as pie charts on the Broker Summary screen
 - No investment-pace visibility → F03 provides aggregated transaction data for Broker and Portfolio scopes; F09 (Web) and F10 (WPF) render the monthly Bought-minus-Sold chart with period filtering, extending the Transactions tab beyond its current Asset-only scope; F04 extends the period-filter options (adding YTD) consistently across both the Credits and Transactions charts
+- Inconsistent chart flexibility → F11 (Web) and F12 (WPF) add the same Bar/Line toggle to the existing Credits chart, independent from its Stacked/Grouped grouping, at all three node levels
 
 ---
 
@@ -66,6 +72,9 @@ Each problem maps to a concrete deliverable:
 
 **Surface monthly investment pace with flexible time filtering**
 - Metric: The Transactions tab renders a monthly Bought-minus-Sold chart for Asset, Portfolio, and Broker selections, supporting 6 period filters and a Bar/Line display toggle, in both UIs
+
+**Bring the same display flexibility to the Credits chart**
+- Metric: The Credits chart supports an independent Bar/Line display toggle alongside its existing Stacked/Grouped grouping, for Asset, Portfolio, and Broker selections, in both UIs
 
 ---
 
@@ -126,6 +135,17 @@ Each problem maps to a concrete deliverable:
 
 - As a user, I want the same monthly investment chart, period filters, and Bar/Line toggle available in WPF as in the web app so that both interfaces offer the same investment-pace insight
 - As a user, I want selecting a Broker or Portfolio node in WPF to show this chart instead of the current "transactions only available for individual assets" message so that the desktop app matches the web app's capability
+
+### F11. Credits Chart Bar/Line Toggle — Web Frontend
+
+- As a user, I want to switch the Credits chart between bar and line display, mirroring the Transactions chart's toggle, so that I can pick the visual style I find clearest
+- As a user, I want the Stacked/Grouped grouping to keep working when I switch to Line view, so that I don't lose the breakdown I'm used to
+- As a user, I want a single line showing my combined total when Grouped is selected, and one line per credit type when Stacked is selected, so that the line view respects the same grouping choice as the bar view
+- As a user, I want my Bar/Line choice to persist per Broker, Portfolio, or Asset selection, consistent with how the Stacked/Grouped choice already persists
+
+### F12. Credits Chart Bar/Line Toggle — WPF
+
+- As a user, I want the same Bar/Line toggle and behavior available in WPF as in the web app so that both interfaces offer the same Credits chart flexibility
 
 ---
 
@@ -336,6 +356,47 @@ Each problem maps to a concrete deliverable:
 
 ---
 
+### F11. Credits Chart Bar/Line Toggle — Web Frontend
+
+**Capabilities:**
+- `CreditsTab`'s chart gains a second, independent toggle control — chart display mode (`Bar`/`Line`) — alongside the existing Stacked/Grouped grouping toggle; the two toggles are orthogonal and both remain available regardless of the other's selection
+- Toggle rows are labelled "View: Bar / Line" (new, matching the label already used by the Transactions chart's own Bar/Line toggle) and "Group: Stacked / Grouped" (the existing toggle, relabelled from "View:" to "Group:" to avoid ambiguity with the new row)
+- **Bar + Grouped** and **Bar + Stacked**: existing bar rendering, completely unchanged visually and behaviourally
+- **Line + Grouped**: renders a single `recharts` `Line` series plotting the combined total (sum across all credit types) for each month
+- **Line + Stacked**: renders one `recharts` `Line` series per credit type (e.g. Dividend, Rent), each showing that type's own monthly value; lines are drawn independently, not cumulatively stacked on top of one another; the series set is computed dynamically from the same per-type breakdown the Stacked bars already use, so it automatically supports any number of credit types, not just the two that exist today
+- Default chart display mode is Bar, preserving current behaviour for existing users; default grouping remains Stacked, unchanged from today
+- The chart display mode selection persists per node selection (Broker/Portfolio/Asset), using the same per-node persistence mechanism already used for the Stacked/Grouped selection, but stored independently so the two choices don't overwrite each other
+- Applies at all three node levels (Broker, Portfolio, Asset), since all three already render the same shared chart component today
+- Line series reuse the same colours already assigned to each credit type for the Bar view, for visual consistency when toggling between the two chart types
+
+**Experience:**
+1. User selects a Broker, Portfolio, or Asset node and opens the Credits tab, as today
+2. Two independent toggle rows appear above the chart: "View: Bar / Line" and "Group: Stacked / Grouped"
+3. Changing either toggle re-renders the chart instantly from already-fetched data; no new network request is triggered
+4. Switching to Line while Grouped is selected shows one line for the combined total; switching to Line while Stacked is selected shows one line per credit type
+5. Switching back to Bar restores the exact pre-existing Stacked/Grouped bar rendering
+6. The chosen chart display mode is remembered when navigating away and back to the same node; a different node defaults to Bar until changed
+
+---
+
+### F12. Credits Chart Bar/Line Toggle — WPF
+
+**Capabilities:**
+- Mirrors F11 exactly on the WPF desktop app: a new `ChartTypeModes`-equivalent collection (Bar/Line) is added to `AssetDetailsViewModel` alongside the existing `CreditsTypeModes` (Stacked/Grouped) collection, bound as a second, independent toggle row in the Credits tab's XAML template
+- `CreditsChartBuilder` gains Line-rendering support using `OxyPlot.Series.LineSeries`, mirroring the existing `RectangleBarSeries` construction: one `LineSeries` for the combined total when Grouped, one `LineSeries` per credit type when Stacked (not cumulative), reusing the same per-type colour assignment as the existing bar series
+- The existing `CreditsViewState` (per-node persisted Filter + Mode) is extended with the new chart display mode dimension, so all three selections (period filter, Stacked/Grouped, Bar/Line) persist together per node, exactly mirroring the existing per-node persistence mechanism
+- Default chart display mode is Bar; default grouping remains Stacked, both unchanged from today
+- Applies at all three node levels (Broker, Portfolio, Asset), reusing the same shared `CreditsPlotModel` binding and `DataTemplate`s already used for all three today
+
+**Experience:**
+1. User selects a Broker, Portfolio, or Asset node and views the Credits tab, as today
+2. Two independent toggle button rows are shown: the existing Stacked/Grouped row and the new Bar/Line row
+3. Changing either selection rebuilds the `PlotModel` synchronously from already-loaded credit data; no new fetch occurs
+4. Line + Grouped shows one line for the total; Line + Stacked shows one line per credit type
+5. Selecting a different node restores that node's own persisted chart display mode (or the Bar default, if never set)
+
+---
+
 ## 7. Out of Scope
 
 **Pie charts outside the Broker screen**
@@ -359,8 +420,8 @@ Each problem maps to a concrete deliverable:
 **Real-time or live-updating charts**
 - Charts reflect data as of the moment they were fetched; there is no polling, websocket, or auto-refresh behaviour
 
-**New chart types for the Credits tab**
-- F04 only adds the YTD period option and relabels two existing options; the Credits tab's existing Stacked/Grouped bar chart type is not changed
+**Cumulative stacked lines for the Credits chart**
+- When Stacked + Line is selected (F11/F12), each credit type's line plots its own independent monthly value; lines are not drawn as a cumulative stacked area, since that would be harder to read than the existing Stacked bar view
 
 **Manual data refresh controls**
 - None of the new charts include a manual Refresh button; they load automatically on node selection, consistent with how Total Invested and the breakdown data are fetched
@@ -381,11 +442,13 @@ Each problem maps to a concrete deliverable:
 | F08 | Broker Breakdown Pie Charts — WPF | 2 | F02 |
 | F09 | Transactions Monthly Investment Chart — Web Frontend | 2 | F03, F04 |
 | F10 | Transactions Monthly Investment Chart — WPF | 2 | F03, F04 |
+| F11 | Credits Chart Bar/Line Toggle — Web Frontend | 2 | None |
+| F12 | Credits Chart Bar/Line Toggle — WPF | 2 | None |
 
 ### Execution Waves
 Features within the same wave can be built in parallel. A wave starts only after every feature in earlier waves is complete.
 
-- **Wave 1**: F01, F02, F03, F04
+- **Wave 1**: F01, F02, F03, F04, F11, F12
 - **Wave 2**: F05, F06, F07, F08, F09, F10
 
 ### Priority levels
@@ -403,6 +466,8 @@ graph TD
   F03 --> F10[WPF Monthly Chart]
   F04[Period Filter YTD] --> F09
   F04 --> F10
+  F11[Web Credits Bar/Line]
+  F12[WPF Credits Bar/Line]
 ```
 
 ---
@@ -483,6 +548,22 @@ graph TD
 - [ ] Chart values and zero-fill behaviour match the web frontend's computation for the same underlying data
 - [ ] Bar is the default chart type; toggling to Line updates the `PlotModel` accordingly
 - [ ] All 6 period filters are available and correctly filter the plotted months
+
+### F11. Credits Chart Bar/Line Toggle — Web Frontend
+- [ ] The Credits chart offers a Bar/Line toggle independent from the existing Stacked/Grouped toggle, at Broker, Portfolio, and Asset levels
+- [ ] Default chart display mode is Bar; existing Stacked/Grouped bar rendering is visually unchanged when Bar is selected
+- [ ] Selecting Line with Grouped selected renders a single line representing the combined total across all credit types per month
+- [ ] Selecting Line with Stacked selected renders one line per credit type, not cumulative, matching the number of types present in the data
+- [ ] Changing either toggle does not trigger a new network request
+- [ ] The Bar/Line selection persists per node selection (Broker/Portfolio/Asset), independent from the Stacked/Grouped selection's own persistence
+
+### F12. Credits Chart Bar/Line Toggle — WPF
+- [ ] The Credits chart offers a Bar/Line toggle independent from the existing Stacked/Grouped toggle, at Broker, Portfolio, and Asset levels
+- [ ] Default chart display mode is Bar; existing Stacked/Grouped bar rendering is visually unchanged when Bar is selected
+- [ ] Selecting Line with Grouped selected renders a single line representing the combined total across all credit types per month
+- [ ] Selecting Line with Stacked selected renders one line per credit type, not cumulative, matching the number of types present in the data
+- [ ] Chart values in Line mode match the Bar mode's underlying data exactly
+- [ ] The Bar/Line selection persists per node selection (Broker/Portfolio/Asset), independent from the Stacked/Grouped selection's own persistence
 
 ### Cross-Feature Integration
 - [ ] `totalInvested` computed by F01 for Broker scope is displayed without transformation in F05's and F06's fourth total
