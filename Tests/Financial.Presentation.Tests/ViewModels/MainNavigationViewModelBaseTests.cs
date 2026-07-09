@@ -82,6 +82,20 @@ public class MainNavigationViewModelBaseTests
     }
 
     [Fact]
+    public void SelectingBrokerNode_CallsLoadBrokerBreakdownOnDetailsViewModel()
+    {
+        var summaryService = new StubSummaryQueryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var vm = new TestableNavigationViewModel(summaryService, spy);
+
+        var brokerNode = BuildBrokerNode("XPI");
+        vm.SelectedNode = brokerNode;
+
+        spy.WasBrokerBreakdownLoaded.Should().BeTrue();
+        spy.LastBrokerBreakdownName.Should().Be("XPI");
+    }
+
+    [Fact]
     public void SelectingPortfolioNode_WhenMissingMetadata_ClearsDetails()
     {
         var summaryService = new StubSummaryQueryService();
@@ -234,10 +248,11 @@ public class MainNavigationViewModelBaseTests
             WasBrokerSummaryLoaded = true;
         }
 
-        public void LoadBrokerBreakdown(string brokerName)
+        public Task LoadBrokerBreakdown(string brokerName)
         {
             LastBrokerBreakdownName = brokerName;
             WasBrokerBreakdownLoaded = true;
+            return Task.CompletedTask;
         }
 
         public void LoadPortfolioCredits(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits) { }

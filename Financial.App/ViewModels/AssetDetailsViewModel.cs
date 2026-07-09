@@ -406,14 +406,14 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalInvested = summary.TotalInvested;
     }
 
-    public void LoadBrokerBreakdown(string brokerName)
+    public Task LoadBrokerBreakdown(string brokerName)
     {
         CancelAndResetBreakdownFetch();
         IsBreakdownLoading = true;
 
         _breakdownCts = new CancellationTokenSource();
         var token = _breakdownCts.Token;
-        Task.Run(() =>
+        return Task.Run(() =>
         {
             try
             {

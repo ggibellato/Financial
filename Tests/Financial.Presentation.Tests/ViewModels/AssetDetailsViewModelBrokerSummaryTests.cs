@@ -7,8 +7,6 @@ namespace Financial.Presentation.Tests.ViewModels;
 
 public class AssetDetailsViewModelBrokerSummaryTests
 {
-    private static readonly TimeSpan AsyncWaitTimeout = TimeSpan.FromSeconds(2);
-
     private static AssetDetailsViewModel BuildViewModel(IBrokerBreakdownQueryService? brokerBreakdownQueryService = null)
     {
         return new AssetDetailsViewModel(
@@ -152,12 +150,12 @@ public class AssetDetailsViewModelBrokerSummaryTests
     {
         var stub = new StubBrokerBreakdownQueryService();
         var vm = BuildViewModel(stub);
-        vm.LoadBrokerBreakdown("XPI");
+        _ = vm.LoadBrokerBreakdown("XPI");
         vm.IsBreakdownLoading.Should().BeTrue();
     }
 
     [Fact]
-    public void LoadBrokerBreakdown_PopulatesOverallBreakdownPlotModel_OnSuccess()
+    public async Task LoadBrokerBreakdown_PopulatesOverallBreakdownPlotModel_OnSuccess()
     {
         var stub = new StubBrokerBreakdownQueryService
         {
@@ -168,15 +166,14 @@ public class AssetDetailsViewModelBrokerSummaryTests
             ],
         };
         var vm = BuildViewModel(stub);
-        vm.LoadBrokerBreakdown("XPI");
-        SpinWait.SpinUntil(() => !vm.IsBreakdownLoading, AsyncWaitTimeout);
+        await vm.LoadBrokerBreakdown("XPI");
 
         vm.OverallBreakdownPlotModel.Should().NotBeNull();
         vm.OverallBreakdownPlotModel!.Series.Should().HaveCount(1);
     }
 
     [Fact]
-    public void LoadBrokerBreakdown_PopulatesPortfolioBreakdownPieItems_OnSuccess()
+    public async Task LoadBrokerBreakdown_PopulatesPortfolioBreakdownPieItems_OnSuccess()
     {
         var stub = new StubBrokerBreakdownQueryService
         {
@@ -197,8 +194,7 @@ public class AssetDetailsViewModelBrokerSummaryTests
             ],
         };
         var vm = BuildViewModel(stub);
-        vm.LoadBrokerBreakdown("XPI");
-        SpinWait.SpinUntil(() => !vm.IsBreakdownLoading, AsyncWaitTimeout);
+        await vm.LoadBrokerBreakdown("XPI");
 
         vm.PortfolioBreakdownPieItems.Should().HaveCount(2);
         vm.PortfolioBreakdownPieItems[0].PortfolioName.Should().Be("Acoes");
@@ -207,37 +203,34 @@ public class AssetDetailsViewModelBrokerSummaryTests
     }
 
     [Fact]
-    public void LoadBrokerBreakdown_SetsIsBreakdownLoadingFalse_OnSuccess()
+    public async Task LoadBrokerBreakdown_SetsIsBreakdownLoadingFalse_OnSuccess()
     {
         var stub = new StubBrokerBreakdownQueryService { Breakdown = [] };
         var vm = BuildViewModel(stub);
-        vm.LoadBrokerBreakdown("XPI");
-        SpinWait.SpinUntil(() => !vm.IsBreakdownLoading, AsyncWaitTimeout);
+        await vm.LoadBrokerBreakdown("XPI");
         vm.IsBreakdownLoading.Should().BeFalse();
     }
 
     [Fact]
-    public void LoadBrokerBreakdown_SetsBreakdownError_OnFailure()
+    public async Task LoadBrokerBreakdown_SetsBreakdownError_OnFailure()
     {
         var stub = new StubBrokerBreakdownQueryService { ExceptionToThrow = new InvalidOperationException("boom") };
         var vm = BuildViewModel(stub);
-        vm.LoadBrokerBreakdown("XPI");
-        SpinWait.SpinUntil(() => !vm.IsBreakdownLoading, AsyncWaitTimeout);
+        await vm.LoadBrokerBreakdown("XPI");
 
         vm.BreakdownError.Should().NotBeNull();
         vm.IsBreakdownLoading.Should().BeFalse();
     }
 
     [Fact]
-    public void Clear_AfterLoadBrokerBreakdown_ResetsBreakdownState()
+    public async Task Clear_AfterLoadBrokerBreakdown_ResetsBreakdownState()
     {
         var stub = new StubBrokerBreakdownQueryService
         {
             Breakdown = [new PortfolioBreakdownItemDTO { PortfolioName = "Acoes", TotalInvested = 1000m, Assets = [] }],
         };
         var vm = BuildViewModel(stub);
-        vm.LoadBrokerBreakdown("XPI");
-        SpinWait.SpinUntil(() => !vm.IsBreakdownLoading, AsyncWaitTimeout);
+        await vm.LoadBrokerBreakdown("XPI");
 
         vm.Clear();
 
@@ -248,15 +241,14 @@ public class AssetDetailsViewModelBrokerSummaryTests
     }
 
     [Fact]
-    public void LoadAssetDetails_AfterLoadBrokerBreakdown_ResetsBreakdownState()
+    public async Task LoadAssetDetails_AfterLoadBrokerBreakdown_ResetsBreakdownState()
     {
         var stub = new StubBrokerBreakdownQueryService
         {
             Breakdown = [new PortfolioBreakdownItemDTO { PortfolioName = "Acoes", TotalInvested = 1000m, Assets = [] }],
         };
         var vm = BuildViewModel(stub);
-        vm.LoadBrokerBreakdown("XPI");
-        SpinWait.SpinUntil(() => !vm.IsBreakdownLoading, AsyncWaitTimeout);
+        await vm.LoadBrokerBreakdown("XPI");
 
         vm.LoadAssetDetails(new AssetDetailsDTO
         {
