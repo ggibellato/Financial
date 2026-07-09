@@ -1,6 +1,8 @@
+import BrokerBreakdownCharts from './BrokerBreakdownCharts'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useAggregatedSummary } from '../hooks/useAggregatedSummary'
+import { useSelectedNode } from '../context/SelectedNodeContext'
 import './AggregatedSummaryTab.css'
 
 function formatN2(value: number): string {
@@ -16,6 +18,8 @@ function getInvestedClass(value: number): string {
 
 export default function AggregatedSummaryTab() {
   const { summary, isLoading, error, retry } = useAggregatedSummary()
+  const { selectedNode } = useSelectedNode()
+  const isBroker = selectedNode?.nodeType === 'Broker'
 
   if (isLoading) {
     return <LoadingState />
@@ -57,6 +61,7 @@ export default function AggregatedSummaryTab() {
           </span>
         </div>
       </div>
+      {isBroker && <BrokerBreakdownCharts />}
     </div>
   )
 }

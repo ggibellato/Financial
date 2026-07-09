@@ -3,7 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AggregatedSummaryData } from '../../hooks/useAggregatedSummary'
 import type { PortfolioAssetSummaryData, RowPriceState } from '../../hooks/usePortfolioAssetSummary'
 import type { AggregatedSummaryDto, PortfolioAssetSummaryItemDto } from '../../api/types'
+import { SelectedNodeProvider } from '../../context/SelectedNodeContext'
 import PortfolioSummaryTab from '../PortfolioSummaryTab'
+
+function renderComponent() {
+  return render(
+    <SelectedNodeProvider>
+      <PortfolioSummaryTab />
+    </SelectedNodeProvider>,
+  )
+}
 
 const mockAggregatedRetry = vi.fn()
 const mockPortfolioRetry = vi.fn()
@@ -97,34 +106,34 @@ describe('PortfolioSummaryTab', () => {
 
   it('renders_loading_state_in_totals_section_while_aggregated_summary_loads', () => {
     setAggregatedMock({ isLoading: true })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText('Loading...')).toBeInTheDocument()
   })
 
   it('renders_error_state_in_totals_section_on_aggregated_summary_failure', () => {
     setAggregatedMock({ error: 'Unable to load summary' })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText('Unable to load summary')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 
   it('renders_total_invested_for_portfolio_node_selection', () => {
     setAggregatedMock({ summary: SUMMARY })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const labels = screen.getAllByText(/^Total (Bought|Sold|Credits|Invested)$/, { selector: 'span.aggregated-summary__label' })
     expect(labels.map((el) => el.textContent)).toEqual(['Total Bought', 'Total Sold', 'Total Credits', 'Total Invested'])
   })
 
   it('renders_loading_state_in_table_section_while_items_load', () => {
     setPortfolioMock({ isLoading: true })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText('Loading...')).toBeInTheDocument()
   })
 
   it('renders_error_state_in_table_section_on_items_fetch_failure', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ error: 'Unable to load portfolio assets' })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText('Unable to load portfolio assets')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
     expect(screen.getByText('Total Bought')).toBeInTheDocument()
@@ -133,7 +142,7 @@ describe('PortfolioSummaryTab', () => {
   it('renders_table_with_correct_column_headers', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText('Asset Name')).toBeInTheDocument()
     expect(screen.getByText('First Investment')).toBeInTheDocument()
     expect(screen.getByText('Quantity')).toBeInTheDocument()
@@ -150,7 +159,7 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, totalCredits: 75.5 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText('ALZR11')).toBeInTheDocument()
     expect(screen.getByText('01/03/2021')).toBeInTheDocument()
     expect(screen.getByText(/23\.4%/)).toBeInTheDocument()
@@ -161,7 +170,7 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, totalCredits: 75.5 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText(/75[.,]50/)).toBeInTheDocument()
     const loadingCells = screen.getAllByText('...')
     expect(loadingCells.length).toBeGreaterThanOrEqual(1)
@@ -170,7 +179,7 @@ describe('PortfolioSummaryTab', () => {
   it('renders_per_cell_loading_indicator_while_price_loads', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const loadingCells = screen.getAllByText('...')
     expect(loadingCells).toHaveLength(4)
   })
@@ -179,7 +188,7 @@ describe('PortfolioSummaryTab', () => {
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText(/262[.,]50/)).toBeInTheDocument()
   })
 
@@ -188,7 +197,7 @@ describe('PortfolioSummaryTab', () => {
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     // Both % Profit and % Profit w/ Credits show 5.00% when totalCredits is 0
     const profitElements = screen.getAllByText(/5[.,]00%/)
     expect(profitElements.length).toBeGreaterThanOrEqual(1)
@@ -207,7 +216,7 @@ describe('PortfolioSummaryTab', () => {
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText(/10[.,]00%/)).toBeInTheDocument()
   })
 
@@ -216,7 +225,7 @@ describe('PortfolioSummaryTab', () => {
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText(/12[.,]34%/)).toBeInTheDocument()
     expect(xirrMock).toHaveBeenCalledWith(
       expect.arrayContaining([expect.objectContaining({ amount: 262.5 })]),
@@ -226,7 +235,7 @@ describe('PortfolioSummaryTab', () => {
   it('renders_dash_in_current_value_and_price_dependent_columns_on_price_failure', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [FAILED_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const dashes = screen.getAllByText('—')
     expect(dashes.length).toBeGreaterThanOrEqual(4)
   })
@@ -236,7 +245,7 @@ describe('PortfolioSummaryTab', () => {
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const dashes = screen.getAllByText('—')
     expect(dashes.length).toBeGreaterThanOrEqual(2) // % Profit and % Profit w/ Credits
     expect(screen.getByText(/262[.,]50/)).toBeInTheDocument()
@@ -248,7 +257,7 @@ describe('PortfolioSummaryTab', () => {
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const dashes = screen.getAllByText('—')
     expect(dashes.length).toBeGreaterThanOrEqual(1)
   })
@@ -258,7 +267,7 @@ describe('PortfolioSummaryTab', () => {
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const dashes = screen.getAllByText('—')
     expect(dashes.length).toBeGreaterThanOrEqual(1)
   })
@@ -268,7 +277,7 @@ describe('PortfolioSummaryTab', () => {
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const profitEl = document.querySelector('.portfolio-summary__profit--green')
     expect(profitEl).toBeInTheDocument()
   })
@@ -278,7 +287,7 @@ describe('PortfolioSummaryTab', () => {
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const profitEl = document.querySelector('.portfolio-summary__profit--red')
     expect(profitEl).toBeInTheDocument()
   })
@@ -295,7 +304,7 @@ describe('PortfolioSummaryTab', () => {
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const greenEls = document.querySelectorAll('.portfolio-summary__profit--green')
     expect(greenEls.length).toBeGreaterThanOrEqual(1)
   })
@@ -312,7 +321,7 @@ describe('PortfolioSummaryTab', () => {
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const redEls = document.querySelectorAll('.portfolio-summary__profit--red')
     expect(redEls.length).toBeGreaterThanOrEqual(1)
   })
@@ -322,7 +331,7 @@ describe('PortfolioSummaryTab', () => {
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const greenEls = document.querySelectorAll('.portfolio-summary__profit--green')
     expect(greenEls.length).toBeGreaterThanOrEqual(1)
   })
@@ -332,7 +341,7 @@ describe('PortfolioSummaryTab', () => {
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const redEls = document.querySelectorAll('.portfolio-summary__profit--red')
     expect(redEls.length).toBeGreaterThanOrEqual(1)
   })
@@ -341,14 +350,14 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, firstInvestmentDate: null }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.queryByText('01/03/2021')).not.toBeInTheDocument()
   })
 
   it('totals_section_is_unaffected_when_table_section_errors', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ error: 'F01 fetch failed' })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText('Total Bought')).toBeInTheDocument()
     expect(screen.getByText('Total Sold')).toBeInTheDocument()
     expect(screen.getByText('Total Credits')).toBeInTheDocument()
@@ -360,7 +369,7 @@ describe('PortfolioSummaryTab', () => {
   it('renders_five_new_column_headers_after_xirr', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText('Last Month Credits')).toBeInTheDocument()
     expect(screen.getByText('Last Credit Month')).toBeInTheDocument()
     expect(screen.getByText('Last Month %')).toBeInTheDocument()
@@ -372,7 +381,7 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCredits: 12.50, lastCreditMonth: '2026-06' }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText(/12[.,]50/)).toBeInTheDocument()
   })
 
@@ -380,7 +389,7 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCredits: 0, lastCreditMonth: null }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const dashes = screen.getAllByText('—')
     expect(dashes.length).toBeGreaterThanOrEqual(1)
   })
@@ -389,7 +398,7 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCredits: 12.50, lastCreditMonth: '2026-06' }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText('Jun 2026')).toBeInTheDocument()
   })
 
@@ -397,7 +406,7 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastCreditMonth: null }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const dashes = screen.getAllByText('—')
     expect(dashes.length).toBeGreaterThanOrEqual(1)
   })
@@ -406,7 +415,7 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCredits: 12.50, lastCreditMonth: '2026-06', lastMonthCreditsPercent: 1.25 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText(/1[.,]25%/)).toBeInTheDocument()
   })
 
@@ -414,7 +423,7 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCreditsPercent: null }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const dashes = screen.getAllByText('—')
     expect(dashes.length).toBeGreaterThanOrEqual(1)
   })
@@ -423,7 +432,7 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCredits: 12.50, lastCreditMonth: '2026-06', estimatedAnnualCredits: 150.00 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText(/150[.,]00/)).toBeInTheDocument()
   })
 
@@ -431,7 +440,7 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, estimatedAnnualCredits: null }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const dashes = screen.getAllByText('—')
     expect(dashes.length).toBeGreaterThanOrEqual(1)
   })
@@ -440,7 +449,7 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastMonthCredits: 12.50, lastCreditMonth: '2026-06', estimatedAnnualCredits: 150.00, estimatedAnnualPercent: 6.00 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByText(/6[.,]00%/)).toBeInTheDocument()
   })
 
@@ -448,7 +457,7 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, estimatedAnnualPercent: null }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const dashes = screen.getAllByText('—')
     expect(dashes.length).toBeGreaterThanOrEqual(1)
   })
@@ -456,7 +465,7 @@ describe('PortfolioSummaryTab', () => {
   it('renders_credits_separator_class_on_last_month_credits_header', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     const header = screen.getByText('Last Month Credits')
     expect(header).toHaveClass('portfolio-summary__credits-separator')
   })
@@ -468,7 +477,7 @@ describe('PortfolioSummaryTab', () => {
     const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', totalInvested: 2000, totalCredits: 0 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [LOADING_ROW_PRICE, LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByDisplayValue(/3[,.]000[.,]00/)).toBeInTheDocument()
   })
 
@@ -477,7 +486,7 @@ describe('PortfolioSummaryTab', () => {
     const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', totalCredits: 75, totalInvested: 2000 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [LOADING_ROW_PRICE, LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByDisplayValue(/125[.,]00/)).toBeInTheDocument()
   })
 
@@ -487,7 +496,7 @@ describe('PortfolioSummaryTab', () => {
     try {
       setAggregatedMock({ summary: SUMMARY })
       setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
-      render(<PortfolioSummaryTab />)
+      renderComponent()
       expect(screen.getByText('Credits Jul 2026')).toBeInTheDocument()
     } finally {
       vi.useRealTimers()
@@ -499,7 +508,7 @@ describe('PortfolioSummaryTab', () => {
     const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', currentMonthCredits: 20, totalInvested: 2000 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [LOADING_ROW_PRICE, LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByDisplayValue(/30[.,]00/)).toBeInTheDocument()
   })
 
@@ -508,7 +517,7 @@ describe('PortfolioSummaryTab', () => {
     const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', estimatedAnnualCredits: null, totalInvested: 2000 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [LOADING_ROW_PRICE, LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByDisplayValue(/600[.,]00/)).toBeInTheDocument()
   })
 
@@ -516,14 +525,14 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, estimatedAnnualCredits: null }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByDisplayValue('—')).toBeInTheDocument()
   })
 
   it('renders_footer_current_value_as_calculating_when_all_prices_pending', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByDisplayValue('Calculating…')).toBeInTheDocument()
   })
 
@@ -533,7 +542,7 @@ describe('PortfolioSummaryTab', () => {
     const resolvedPrice: RowPriceState = { isLoading: false, currentPrice: 10, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [resolvedPrice, LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByDisplayValue(/50[.,]00 \*/)).toBeInTheDocument()
     expect(screen.getByText('excludes assets with pending prices')).toBeInTheDocument()
   })
@@ -545,7 +554,7 @@ describe('PortfolioSummaryTab', () => {
     const price2: RowPriceState = { isLoading: false, currentPrice: 5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [price1, price2] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(screen.getByDisplayValue(/100[.,]00/)).toBeInTheDocument()
     expect(screen.queryByText('excludes assets with pending prices')).not.toBeInTheDocument()
   })
@@ -553,7 +562,7 @@ describe('PortfolioSummaryTab', () => {
   it('footer_panel_is_not_inside_table_element', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
-    render(<PortfolioSummaryTab />)
+    renderComponent()
     expect(document.querySelector('.portfolio-summary__footer')).not.toBeNull()
     expect(document.querySelector('table tfoot')).toBeNull()
   })
