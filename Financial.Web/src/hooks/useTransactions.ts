@@ -1,15 +1,92 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { AssetDetailsDto, TransactionDto } from '../api/types'
+import type { AssetDetailsDto, TransactionDto, TransactionSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { buildSelectionKey } from './useCredits'
+import type { PeriodFilterOption } from '../utils/periodFilter'
+import { getPeriodFilterStartDate } from '../utils/periodFilter'
 
 export type TransactionFormField = 'formDate' | 'formType' | 'formQuantity' | 'formUnitPrice' | 'formFees'
+export type ChartDisplayMode = 'Bar' | 'Line'
+
+export interface TransactionMonthBucket {
+  month: string
+  netInvested: number
+}
+
+interface MinimalTransaction {
+  date: string
+  type: string
+  totalPrice: number
+}
+
+interface PersistedChartPrefs {
+  filter: PeriodFilterOption
+  mode: ChartDisplayMode
+}
+
+const DEFAULT_FILTER: PeriodFilterOption = 'last-12-months'
+const DEFAULT_CHART_MODE: ChartDisplayMode = 'Bar'
+
+function startOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1)
+}
+
+function addMonths(date: Date, count: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + count, 1)
+}
+
+function formatMonthLabel(date: Date): string {
+  return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+}
+
+function monthKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+export function buildMonthlyNetInvested(
+  transactions: MinimalTransaction[],
+  filter: PeriodFilterOption,
+  referenceDate: Date = new Date(),
+): TransactionMonthBucket[] {
+  const netByMonth = new Map<string, number>()
+  for (const t of transactions) {
+    const key = monthKey(new Date(t.date))
+    const delta = t.type === 'Buy' ? t.totalPrice : -t.totalPrice
+    netByMonth.set(key, (netByMonth.get(key) ?? 0) + delta)
+  }
+
+  const periodStart = getPeriodFilterStartDate(filter, referenceDate)
+  let rangeStart: Date
+  if (periodStart) {
+    rangeStart = startOfMonth(periodStart)
+  } else if (transactions.length > 0) {
+    const earliest = transactions.reduce(
+      (min, t) => (new Date(t.date) < min ? new Date(t.date) : min),
+      new Date(transactions[0].date),
+    )
+    rangeStart = startOfMonth(earliest)
+  } else {
+    rangeStart = startOfMonth(referenceDate)
+  }
+
+  const rangeEnd = startOfMonth(referenceDate)
+  const buckets: TransactionMonthBucket[] = []
+  for (let cursor = rangeStart; cursor <= rangeEnd; cursor = addMonths(cursor, 1)) {
+    buckets.push({ month: formatMonthLabel(cursor), netInvested: netByMonth.get(monthKey(cursor)) ?? 0 })
+  }
+  return buckets
+}
 
 interface TransactionsState {
   asset: AssetDetailsDto | null
+  brokerPortfolioTransactions: TransactionSummaryItemDto[]
   isLoading: boolean
   error: string | null
   retryCount: number
+  selectedFilter: PeriodFilterOption
+  selectedChartMode: ChartDisplayMode
+  filterPersistence: Map<string, PersistedChartPrefs>
   isFormVisible: boolean
   editingId: string | null
   formDate: string
@@ -24,10 +101,13 @@ interface TransactionsState {
 
 type TransactionsAction =
   | { type: 'RESET' }
-  | { type: 'FETCH_START' }
+  | { type: 'FETCH_START'; payload: { key: string } }
   | { type: 'FETCH_SUCCESS'; payload: AssetDetailsDto }
+  | { type: 'FETCH_TRANSACTIONS_SUCCESS'; payload: TransactionSummaryItemDto[] }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
+  | { type: 'SET_FILTER'; payload: { filter: PeriodFilterOption; key: string } }
+  | { type: 'SET_CHART_MODE'; payload: { mode: ChartDisplayMode; key: string } }
   | { type: 'SHOW_NEW_FORM' }
   | { type: 'SHOW_EDIT_FORM'; payload: TransactionDto }
   | { type: 'CANCEL_FORM' }
@@ -52,9 +132,13 @@ const BLANK_FORM = {
 
 const INITIAL_STATE: TransactionsState = {
   asset: null,
+  brokerPortfolioTransactions: [],
   isLoading: false,
   error: null,
   retryCount: 0,
+  selectedFilter: DEFAULT_FILTER,
+  selectedChartMode: DEFAULT_CHART_MODE,
+  filterPersistence: new Map(),
   ...BLANK_FORM,
   deleteError: null,
 }
@@ -66,15 +150,36 @@ function toInputDate(isoString: string): string {
 function reducer(state: TransactionsState, action: TransactionsAction): TransactionsState {
   switch (action.type) {
     case 'RESET':
-      return INITIAL_STATE
-    case 'FETCH_START':
-      return { ...INITIAL_STATE, isLoading: true, retryCount: state.retryCount }
+      return { ...INITIAL_STATE, filterPersistence: state.filterPersistence }
+    case 'FETCH_START': {
+      const prefs = state.filterPersistence.get(action.payload.key)
+      return {
+        ...INITIAL_STATE,
+        isLoading: true,
+        retryCount: state.retryCount,
+        filterPersistence: state.filterPersistence,
+        selectedFilter: prefs?.filter ?? DEFAULT_FILTER,
+        selectedChartMode: prefs?.mode ?? DEFAULT_CHART_MODE,
+      }
+    }
     case 'FETCH_SUCCESS':
       return { ...state, isLoading: false, asset: action.payload }
+    case 'FETCH_TRANSACTIONS_SUCCESS':
+      return { ...state, isLoading: false, brokerPortfolioTransactions: action.payload }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
       return { ...state, retryCount: state.retryCount + 1, error: null }
+    case 'SET_FILTER': {
+      const newMap = new Map(state.filterPersistence)
+      newMap.set(action.payload.key, { filter: action.payload.filter, mode: state.selectedChartMode })
+      return { ...state, selectedFilter: action.payload.filter, filterPersistence: newMap }
+    }
+    case 'SET_CHART_MODE': {
+      const newMap = new Map(state.filterPersistence)
+      newMap.set(action.payload.key, { filter: state.selectedFilter, mode: action.payload.mode })
+      return { ...state, selectedChartMode: action.payload.mode, filterPersistence: newMap }
+    }
     case 'SHOW_NEW_FORM':
       return {
         ...state,
@@ -128,6 +233,11 @@ export interface TransactionsData {
   error: string | null
   retry: () => void
   transactions: TransactionDto[]
+  chartData: TransactionMonthBucket[]
+  selectedFilter: PeriodFilterOption
+  selectedChartMode: ChartDisplayMode
+  setFilter: (filter: PeriodFilterOption) => void
+  setChartMode: (mode: ChartDisplayMode) => void
   isFormVisible: boolean
   editingId: string | null
   formDate: string
@@ -152,36 +262,52 @@ export function useTransactions(): TransactionsData {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
-  const isAsset =
-    selectedNode?.nodeType === 'Asset' &&
-    !!selectedNode.portfolioName &&
-    !!selectedNode.assetName
-
   useEffect(() => {
-    if (!isAsset || !selectedNode) {
+    if (!selectedNode) {
       dispatch({ type: 'RESET' })
       return
     }
 
-    const { brokerName, portfolioName, assetName } = selectedNode
+    const { nodeType, brokerName, portfolioName, assetName } = selectedNode
+    const key = buildSelectionKey(selectedNode)
 
-    if (!portfolioName || !assetName) {
-      dispatch({ type: 'RESET' })
-      return
-    }
-
-    dispatch({ type: 'FETCH_START' })
-
-    void apiClient
-      .getAssetDetails(brokerName, portfolioName, assetName)
-      .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result }))
-      .catch((err: unknown) => {
-        dispatch({
-          type: 'FETCH_ERROR',
-          payload: err instanceof Error ? err.message : 'Unable to load asset details',
+    if (nodeType === 'Asset' && portfolioName && assetName) {
+      dispatch({ type: 'FETCH_START', payload: { key } })
+      void apiClient
+        .getAssetDetails(brokerName, portfolioName, assetName)
+        .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result }))
+        .catch((err: unknown) => {
+          dispatch({
+            type: 'FETCH_ERROR',
+            payload: err instanceof Error ? err.message : 'Unable to load asset details',
+          })
         })
-      })
-  }, [selectedNode, isAsset, apiClient, state.retryCount])
+    } else if (nodeType === 'Broker') {
+      dispatch({ type: 'FETCH_START', payload: { key } })
+      void apiClient
+        .getTransactionsByBroker(brokerName)
+        .then((result) => dispatch({ type: 'FETCH_TRANSACTIONS_SUCCESS', payload: result }))
+        .catch((err: unknown) => {
+          dispatch({
+            type: 'FETCH_ERROR',
+            payload: err instanceof Error ? err.message : 'Unable to load transactions',
+          })
+        })
+    } else if (nodeType === 'Portfolio' && portfolioName) {
+      dispatch({ type: 'FETCH_START', payload: { key } })
+      void apiClient
+        .getTransactionsByPortfolio(brokerName, portfolioName)
+        .then((result) => dispatch({ type: 'FETCH_TRANSACTIONS_SUCCESS', payload: result }))
+        .catch((err: unknown) => {
+          dispatch({
+            type: 'FETCH_ERROR',
+            payload: err instanceof Error ? err.message : 'Unable to load transactions',
+          })
+        })
+    } else {
+      dispatch({ type: 'RESET' })
+    }
+  }, [selectedNode, apiClient, state.retryCount])
 
   const transactions = useMemo(() => {
     if (!state.asset) return []
@@ -190,7 +316,33 @@ export function useTransactions(): TransactionsData {
     )
   }, [state.asset])
 
+  const transactionsForChart = useMemo(() => {
+    if (selectedNode?.nodeType === 'Asset') return state.asset?.transactions ?? []
+    return state.brokerPortfolioTransactions
+  }, [selectedNode, state.asset, state.brokerPortfolioTransactions])
+
+  const chartData = useMemo(
+    () => buildMonthlyNetInvested(transactionsForChart, state.selectedFilter, new Date()),
+    [transactionsForChart, state.selectedFilter],
+  )
+
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
+
+  const setFilter = useCallback(
+    (filter: PeriodFilterOption) => {
+      if (!selectedNode) return
+      dispatch({ type: 'SET_FILTER', payload: { filter, key: buildSelectionKey(selectedNode) } })
+    },
+    [selectedNode],
+  )
+
+  const setChartMode = useCallback(
+    (mode: ChartDisplayMode) => {
+      if (!selectedNode) return
+      dispatch({ type: 'SET_CHART_MODE', payload: { mode, key: buildSelectionKey(selectedNode) } })
+    },
+    [selectedNode],
+  )
 
   const showNewForm = useCallback(() => dispatch({ type: 'SHOW_NEW_FORM' }), [])
 
@@ -284,6 +436,11 @@ export function useTransactions(): TransactionsData {
     error: state.error,
     retry,
     transactions,
+    chartData,
+    selectedFilter: state.selectedFilter,
+    selectedChartMode: state.selectedChartMode,
+    setFilter,
+    setChartMode,
     isFormVisible: state.isFormVisible,
     editingId: state.editingId,
     formDate: state.formDate,

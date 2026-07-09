@@ -32,12 +32,20 @@ const TRANSACTION_SELL: TransactionDto = {
   totalPrice: 251.0,
 }
 
+const mockSetFilter = vi.fn()
+const mockSetChartMode = vi.fn()
+
 const DEFAULT_HOOK: TransactionsData = {
   asset: null,
   isLoading: false,
   error: null,
   retry: mockRetry,
   transactions: [],
+  chartData: [],
+  selectedFilter: 'last-12-months',
+  selectedChartMode: 'Bar',
+  setFilter: mockSetFilter,
+  setChartMode: mockSetChartMode,
   isFormVisible: false,
   editingId: null,
   formDate: '',

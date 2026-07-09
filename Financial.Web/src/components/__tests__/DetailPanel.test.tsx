@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import DetailPanel from '../DetailPanel'
 import { SelectedNodeProvider, useSelectedNode } from '../../context/SelectedNodeContext'
@@ -10,6 +10,8 @@ const getCurrentPriceMock = vi.fn()
 const getSummaryByBrokerMock = vi.fn()
 const getSummaryByPortfolioMock = vi.fn()
 const getPortfolioAssetsSummaryMock = vi.fn()
+const getTransactionsByBrokerMock = vi.fn().mockResolvedValue([])
+const getTransactionsByPortfolioMock = vi.fn().mockResolvedValue([])
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
@@ -18,6 +20,8 @@ vi.mock('../../api/financialApiClient', () => ({
     getSummaryByBroker: getSummaryByBrokerMock,
     getSummaryByPortfolio: getSummaryByPortfolioMock,
     getPortfolioAssetsSummary: getPortfolioAssetsSummaryMock,
+    getTransactionsByBroker: getTransactionsByBrokerMock,
+    getTransactionsByPortfolio: getTransactionsByPortfolioMock,
   }),
 }))
 
@@ -184,18 +188,26 @@ describe('DetailPanel', () => {
     expect(screen.queryByText('Transactions are only available for individual assets')).not.toBeInTheDocument()
   })
 
-  it('renders_transactions_message_for_broker_node', () => {
+  it('renders_transactions_message_for_broker_node', async () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())
     fireEvent.click(screen.getByRole('button', { name: 'Transactions' }))
-    expect(screen.getByText('Transactions are only available for individual assets')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(
+        screen.getByText('Transactions are only available for individual assets'),
+      ).toBeInTheDocument(),
+    )
   })
 
-  it('renders_transactions_message_for_portfolio_node', () => {
+  it('renders_transactions_message_for_portfolio_node', async () => {
     renderPanel(portfolioNode)
     act(() => screen.getByTestId('setter').click())
     fireEvent.click(screen.getByRole('button', { name: 'Transactions' }))
-    expect(screen.getByText('Transactions are only available for individual assets')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(
+        screen.getByText('Transactions are only available for individual assets'),
+      ).toBeInTheDocument(),
+    )
   })
 
   it('active tab resets to Summary on selectedNode change', () => {
