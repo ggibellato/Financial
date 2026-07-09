@@ -221,6 +221,8 @@ public class MainNavigationViewModelBaseTests
         public bool WasCleared { get; private set; }
         public bool WasPortfolioSummaryLoaded { get; private set; }
         public bool WasBrokerSummaryLoaded { get; private set; }
+        public string? LastBrokerBreakdownName { get; private set; }
+        public bool WasBrokerBreakdownLoaded { get; private set; }
         public bool IsPortfolioView => false;
         public bool IsBrokerView => false;
 
@@ -230,6 +232,12 @@ public class MainNavigationViewModelBaseTests
         {
             LastBrokerSummary = summary;
             WasBrokerSummaryLoaded = true;
+        }
+
+        public void LoadBrokerBreakdown(string brokerName)
+        {
+            LastBrokerBreakdownName = brokerName;
+            WasBrokerBreakdownLoaded = true;
         }
 
         public void LoadPortfolioCredits(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits) { }
