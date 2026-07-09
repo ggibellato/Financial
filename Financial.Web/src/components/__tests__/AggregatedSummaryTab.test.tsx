@@ -1,9 +1,15 @@
 import { render, screen } from '@testing-library/react'
+import { act, createElement } from 'react'
+import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AggregatedSummaryData } from '../../hooks/useAggregatedSummary'
-import type { AggregatedSummaryDto } from '../../api/types'
-import { SelectedNodeProvider } from '../../context/SelectedNodeContext'
+import type { AggregatedSummaryDto, SelectedNode } from '../../api/types'
+import { SelectedNodeProvider, useSelectedNode } from '../../context/SelectedNodeContext'
 import AggregatedSummaryTab from '../AggregatedSummaryTab'
+
+vi.mock('../BrokerBreakdownCharts', () => ({
+  default: () => <div data-testid="broker-breakdown-charts" />,
+}))
 
 function renderComponent() {
   return render(
@@ -11,6 +17,24 @@ function renderComponent() {
       <AggregatedSummaryTab />
     </SelectedNodeProvider>,
   )
+}
+
+function renderComponentWithNode(node: SelectedNode) {
+  let setNodeRef: ((node: SelectedNode | null) => void) | undefined
+
+  function NodeControl() {
+    const { setSelectedNode } = useSelectedNode()
+    setNodeRef = setSelectedNode
+    return null
+  }
+
+  function Wrapper({ children }: { children: ReactNode }) {
+    return createElement(SelectedNodeProvider, null, createElement(NodeControl), children)
+  }
+
+  const result = render(<AggregatedSummaryTab />, { wrapper: Wrapper })
+  act(() => setNodeRef?.(node))
+  return result
 }
 
 const mockRetry = vi.fn()
@@ -130,5 +154,17 @@ describe('AggregatedSummaryTab', () => {
     expect(screen.getByText('Total Sold')).toBeInTheDocument()
     expect(screen.getByText('Total Credits')).toBeInTheDocument()
     expect(screen.getByText('Total Invested')).toBeInTheDocument()
+  })
+
+  it('renders_broker_breakdown_charts_for_broker_node_selection', () => {
+    setMock({ summary: SUMMARY })
+    renderComponentWithNode({ nodeType: 'Broker', brokerName: 'XPI', currency: 'BRL' })
+    expect(screen.getByTestId('broker-breakdown-charts')).toBeInTheDocument()
+  })
+
+  it('does_not_render_broker_breakdown_charts_for_portfolio_node_selection', () => {
+    setMock({ summary: SUMMARY })
+    renderComponentWithNode({ nodeType: 'Portfolio', brokerName: 'XPI', portfolioName: 'Acoes' })
+    expect(screen.queryByTestId('broker-breakdown-charts')).not.toBeInTheDocument()
   })
 })
