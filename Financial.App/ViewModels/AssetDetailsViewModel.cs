@@ -184,14 +184,33 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public bool IsBreakdownLoading
     {
         get => _isBreakdownLoading;
-        private set => SetProperty(ref _isBreakdownLoading, value);
+        private set
+        {
+            if (SetProperty(ref _isBreakdownLoading, value))
+            {
+                OnPropertyChanged(nameof(ShowBreakdownEmptyState));
+                OnPropertyChanged(nameof(HasBreakdownData));
+            }
+        }
     }
 
     public string? BreakdownError
     {
         get => _breakdownError;
-        private set => SetProperty(ref _breakdownError, value);
+        private set
+        {
+            if (SetProperty(ref _breakdownError, value))
+            {
+                OnPropertyChanged(nameof(HasBreakdownError));
+                OnPropertyChanged(nameof(ShowBreakdownEmptyState));
+                OnPropertyChanged(nameof(HasBreakdownData));
+            }
+        }
     }
+
+    public bool HasBreakdownError => BreakdownError != null;
+    public bool ShowBreakdownEmptyState => !IsBreakdownLoading && BreakdownError == null && PortfolioBreakdownPieItems.Count == 0;
+    public bool HasBreakdownData => !IsBreakdownLoading && BreakdownError == null && PortfolioBreakdownPieItems.Count > 0;
 
     public ObservableCollection<PortfolioBreakdownPieItem> PortfolioBreakdownPieItems { get; } = new();
 
@@ -553,6 +572,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         BreakdownError = null;
         OverallBreakdownPlotModel = null;
         PortfolioBreakdownPieItems.Clear();
+        OnPropertyChanged(nameof(ShowBreakdownEmptyState));
+        OnPropertyChanged(nameof(HasBreakdownData));
     }
 
     private void SubscribeToRowPriceChanges(PortfolioAssetSummaryRowViewModel row)
