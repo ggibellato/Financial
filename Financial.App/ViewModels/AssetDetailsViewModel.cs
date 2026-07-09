@@ -16,6 +16,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private readonly ICreditService _creditService;
     private readonly IAssetPriceService _assetPriceService;
     private readonly IBrokerBreakdownQueryService _brokerBreakdownQueryService;
+    private readonly ITransactionQueryService _transactionQueryService;
     private readonly TodayInfoTracker _todayInfo;
     private readonly TransactionActions _transactionActions;
     private readonly CreditActions _creditActions;
@@ -29,6 +30,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private readonly RelayCommand _copyAssetNameCommand;
     private readonly RelayCommand _selectCreditsFilterCommand;
     private readonly RelayCommand _selectCreditsTypeModeCommand;
+    private readonly RelayCommand _selectTransactionsFilterCommand;
+    private readonly RelayCommand _selectTransactionsChartModeCommand;
     private string _assetName = string.Empty;
     private string _brokerName = string.Empty;
     private string _portfolioName = string.Empty;
@@ -74,6 +77,19 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private CreditDTO? _selectedCredit;
     private IReadOnlyList<CreditsMonthTypeTotals> _creditsChartMonths = Array.Empty<CreditsMonthTypeTotals>();
     private IReadOnlyList<string> _creditsChartTypes = Array.Empty<string>();
+    private PlotModel? _transactionsPlotModel;
+    private PeriodFilter _selectedTransactionsFilter = PeriodFilter.Last12Months;
+    private ChartTypeMode _selectedTransactionsChartMode = ChartTypeMode.Bar;
+    private const string DefaultTransactionsContextKey = "default";
+    private readonly Dictionary<string, TransactionsViewState> _transactionsViewStateByKey = new(StringComparer.OrdinalIgnoreCase);
+    private string _transactionsContextKey = DefaultTransactionsContextKey;
+    private double _transactionsPlotWidth;
+    private bool _isTransactionsAggregateView;
+    private bool _isTransactionsLoading;
+    private string? _transactionsError;
+    private CancellationTokenSource? _transactionsCts;
+    private IReadOnlyList<TransactionSummaryItemDTO> _brokerPortfolioTransactions = Array.Empty<TransactionSummaryItemDTO>();
+    private IReadOnlyList<TransactionMonthNet> _transactionsChartMonths = Array.Empty<TransactionMonthNet>();
 
     public string AssetName { get => _assetName; private set => SetProperty(ref _assetName, value); }
     public string BrokerName { get => _brokerName; private set => SetProperty(ref _brokerName, value); }
@@ -238,6 +254,31 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public ObservableCollection<CreditsFilterOptionViewModel> CreditsFilters { get; } = new();
     public ObservableCollection<CreditsTypeModeOptionViewModel> CreditsTypeModes { get; } = new();
 
+    public PlotModel? TransactionsPlotModel { get => _transactionsPlotModel; private set => SetProperty(ref _transactionsPlotModel, value); }
+
+    public bool IsTransactionsAggregateView
+    {
+        get => _isTransactionsAggregateView;
+        private set => SetProperty(ref _isTransactionsAggregateView, value);
+    }
+
+    public bool IsTransactionsLoading
+    {
+        get => _isTransactionsLoading;
+        private set => SetProperty(ref _isTransactionsLoading, value);
+    }
+
+    public string? TransactionsError
+    {
+        get => _transactionsError;
+        private set { if (SetProperty(ref _transactionsError, value)) OnPropertyChanged(nameof(HasTransactionsError)); }
+    }
+
+    public bool HasTransactionsError => TransactionsError != null;
+
+    public ObservableCollection<TransactionsFilterOptionViewModel> TransactionsFilters { get; } = new();
+    public ObservableCollection<ChartTypeModeOptionViewModel> ChartTypeModes { get; } = new();
+
     public TransactionDTO? SelectedTransaction
     {
         get => _selectedTransaction;
@@ -260,17 +301,21 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public RelayCommand CopyAssetNameCommand => _copyAssetNameCommand;
     public RelayCommand SelectCreditsFilterCommand => _selectCreditsFilterCommand;
     public RelayCommand SelectCreditsTypeModeCommand => _selectCreditsTypeModeCommand;
+    public RelayCommand SelectTransactionsFilterCommand => _selectTransactionsFilterCommand;
+    public RelayCommand SelectTransactionsChartModeCommand => _selectTransactionsChartModeCommand;
 
     public AssetDetailsViewModel(
         ITransactionService transactionService,
         ICreditService creditService,
         IAssetPriceService assetPriceService,
-        IBrokerBreakdownQueryService brokerBreakdownQueryService)
+        IBrokerBreakdownQueryService brokerBreakdownQueryService,
+        ITransactionQueryService transactionQueryService)
     {
         _transactionService = transactionService ?? throw new ArgumentNullException(nameof(transactionService));
         _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
         _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
         _brokerBreakdownQueryService = brokerBreakdownQueryService ?? throw new ArgumentNullException(nameof(brokerBreakdownQueryService));
+        _transactionQueryService = transactionQueryService ?? throw new ArgumentNullException(nameof(transactionQueryService));
         _todayInfo = new TodayInfoTracker(ApplyTodayInfo, ResetTodayInfo, UpdateCommandStates);
         _transactionActions = new TransactionActions(
             _transactionService,
@@ -298,8 +343,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _copyAssetNameCommand = new RelayCommand(CopyAssetName, CanCopyAssetName);
         _selectCreditsFilterCommand = new RelayCommand(SelectCreditsFilter);
         _selectCreditsTypeModeCommand = new RelayCommand(SelectCreditsTypeMode);
+        _selectTransactionsFilterCommand = new RelayCommand(SelectTransactionsFilter);
+        _selectTransactionsChartModeCommand = new RelayCommand(SelectTransactionsChartMode);
         InitializeCreditsFilters();
         InitializeCreditsTypeModes();
+        InitializeTransactionsFilters();
+        InitializeChartTypeModes();
     }
 
     public void LoadPortfolioSummary(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits, IReadOnlyList<PortfolioAssetSummaryItemDTO> assetItems)
@@ -337,6 +386,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         IsPortfolioView = false;
         IsBrokerView = false;
         CancelAndResetBreakdownFetch();
+        IsTransactionsAggregateView = false;
+        CancelAndResetTransactionsFetch();
         var assetKey = BuildAssetKey(details.BrokerName, details.PortfolioName, details.Name);
         _todayInfo.UpdateAssetKey(assetKey);
 
@@ -368,6 +419,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             Credits.Add(credit);
         ApplyCreditsFilter();
 
+        SetTransactionsContext(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), rebuild: false);
+        ApplyTransactionsFilter();
+
         SelectedTransaction = null;
         SelectedCredit = null;
         UpdateCommandStates();
@@ -394,6 +448,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         IsCreditsAggregateView = false;
         HasCreditsContext = false;
         _creditsContextKey = DefaultCreditsContextKey;
+        IsTransactionsAggregateView = false;
+        CancelAndResetTransactionsFetch();
+        _transactionsContextKey = DefaultTransactionsContextKey;
         SelectedTransaction = null;
         SelectedCredit = null;
         UpdateCommandStates();
@@ -433,6 +490,54 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public void LoadPortfolioCredits(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
     {
         LoadAggregateCredits(BuildPortfolioKey(brokerName, portfolioName), summary, credits);
+    }
+
+    public Task LoadBrokerTransactions(string brokerName)
+    {
+        CancelAndResetTransactionsFetch();
+        IsTransactionsLoading = true;
+
+        _transactionsCts = new CancellationTokenSource();
+        var token = _transactionsCts.Token;
+        return Task.Run(() =>
+        {
+            try
+            {
+                var transactions = _transactionQueryService.GetTransactionsByBroker(brokerName);
+                if (token.IsCancellationRequested) return;
+                ApplyFetchedTransactions(transactions);
+            }
+            catch
+            {
+                if (token.IsCancellationRequested) return;
+                TransactionsError = "Unable to load transactions";
+                IsTransactionsLoading = false;
+            }
+        }, token);
+    }
+
+    public Task LoadPortfolioTransactions(string brokerName, string portfolioName)
+    {
+        CancelAndResetTransactionsFetch();
+        IsTransactionsLoading = true;
+
+        _transactionsCts = new CancellationTokenSource();
+        var token = _transactionsCts.Token;
+        return Task.Run(() =>
+        {
+            try
+            {
+                var transactions = _transactionQueryService.GetTransactionsByPortfolio(brokerName, portfolioName);
+                if (token.IsCancellationRequested) return;
+                ApplyFetchedTransactions(transactions);
+            }
+            catch
+            {
+                if (token.IsCancellationRequested) return;
+                TransactionsError = "Unable to load transactions";
+                IsTransactionsLoading = false;
+            }
+        }, token);
     }
 
     private bool HasAssetContext =>
@@ -510,6 +615,10 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             Credits.Add(credit);
         TotalCredits = credits.Sum(credit => credit.Value);
         ApplyCreditsFilter();
+
+        IsTransactionsAggregateView = true;
+        CancelAndResetTransactionsFetch();
+        SetTransactionsContext(contextKey, rebuild: false);
 
         SelectedTransaction = null;
         SelectedCredit = null;
@@ -597,6 +706,25 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         OnPropertyChanged(nameof(HasBreakdownData));
     }
 
+    private void ApplyFetchedTransactions(IReadOnlyList<TransactionSummaryItemDTO> transactions)
+    {
+        _brokerPortfolioTransactions = transactions;
+        ApplyTransactionsFilter();
+        IsTransactionsLoading = false;
+    }
+
+    private void CancelAndResetTransactionsFetch()
+    {
+        _transactionsCts?.Cancel();
+        _transactionsCts?.Dispose();
+        _transactionsCts = null;
+        IsTransactionsLoading = false;
+        TransactionsError = null;
+        TransactionsPlotModel = null;
+        _brokerPortfolioTransactions = Array.Empty<TransactionSummaryItemDTO>();
+        _transactionsChartMonths = Array.Empty<TransactionMonthNet>();
+    }
+
     private void SubscribeToRowPriceChanges(PortfolioAssetSummaryRowViewModel row)
     {
         void Handler(object? sender, PropertyChangedEventArgs e)
@@ -642,6 +770,13 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         if (plotWidth <= 0 || CreditsPlotModel == null) return;
         _creditsPlotWidth = plotWidth;
         CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _selectedCreditsTypeMode);
+    }
+
+    public void UpdateTransactionsPlotWidth(double plotWidth)
+    {
+        if (plotWidth <= 0 || TransactionsPlotModel == null) return;
+        _transactionsPlotWidth = plotWidth;
+        TransactionsChartBuilder.ApplyLabelDensity(TransactionsPlotModel, _transactionsPlotWidth, _transactionsChartMonths);
     }
 
     private void InitializeCreditsFilters()
@@ -783,6 +918,114 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         if (!string.IsNullOrWhiteSpace(_creditsContextKey))
             _creditsViewStateByKey[_creditsContextKey] = new CreditsViewState(_selectedCreditsFilter, _selectedCreditsTypeMode);
+    }
+
+    private void InitializeTransactionsFilters()
+    {
+        TransactionsFilters.Clear();
+        foreach (var (label, filter) in PeriodFilterHelper.Options)
+            TransactionsFilters.Add(new TransactionsFilterOptionViewModel(label, filter));
+        SetTransactionsFilter(PeriodFilter.Last12Months, rebuild: false);
+    }
+
+    private void InitializeChartTypeModes()
+    {
+        ChartTypeModes.Clear();
+        ChartTypeModes.Add(new ChartTypeModeOptionViewModel("Bar", ChartTypeMode.Bar));
+        ChartTypeModes.Add(new ChartTypeModeOptionViewModel("Line", ChartTypeMode.Line));
+        SetTransactionsChartMode(ChartTypeMode.Bar, rebuild: false);
+    }
+
+    private void SelectTransactionsFilter(object? parameter)
+    {
+        if (parameter is TransactionsFilterOptionViewModel option) { SetTransactionsFilter(option.Filter); return; }
+        if (parameter is PeriodFilter filter) SetTransactionsFilter(filter);
+    }
+
+    private void SelectTransactionsChartMode(object? parameter)
+    {
+        if (parameter is ChartTypeModeOptionViewModel option) { SetTransactionsChartMode(option.Mode); return; }
+        if (parameter is ChartTypeMode mode) SetTransactionsChartMode(mode);
+    }
+
+    private void SetTransactionsFilter(PeriodFilter filter, bool rebuild = true)
+    {
+        if (_selectedTransactionsFilter == filter && TransactionsFilters.Count > 0)
+        {
+            UpdateTransactionsFilterSelection();
+            return;
+        }
+        _selectedTransactionsFilter = filter;
+        UpdateTransactionsFilterSelection();
+        UpdateTransactionsViewState();
+        if (rebuild) ApplyTransactionsFilter();
+    }
+
+    private void SetTransactionsChartMode(ChartTypeMode mode, bool rebuild = true)
+    {
+        if (_selectedTransactionsChartMode == mode && ChartTypeModes.Count > 0)
+        {
+            UpdateTransactionsChartModeSelection();
+            return;
+        }
+        _selectedTransactionsChartMode = mode;
+        UpdateTransactionsChartModeSelection();
+        UpdateTransactionsViewState();
+        if (rebuild) ApplyTransactionsFilter();
+    }
+
+    private void UpdateTransactionsFilterSelection()
+    {
+        foreach (var option in TransactionsFilters)
+            option.IsSelected = option.Filter == _selectedTransactionsFilter;
+    }
+
+    private void UpdateTransactionsChartModeSelection()
+    {
+        foreach (var option in ChartTypeModes)
+            option.IsSelected = option.Mode == _selectedTransactionsChartMode;
+    }
+
+    private void ApplyTransactionsFilter()
+    {
+        IEnumerable<(DateTime Date, string Type, decimal TotalPrice)> source = IsTransactionsAggregateView
+            ? _brokerPortfolioTransactions.Select(t => (t.Date, t.Type, t.TotalPrice))
+            : Transactions.Select(t => (t.Date, t.Type, t.TotalPrice));
+
+        var months = TransactionsMonthlyAggregator.BuildMonthlyNetInvested(source, _selectedTransactionsFilter, DateTime.Today);
+        _transactionsChartMonths = months;
+        TransactionsPlotModel = TransactionsChartBuilder.Build(months, _selectedTransactionsChartMode);
+        if (TransactionsPlotModel != null)
+            TransactionsChartBuilder.ApplyLabelDensity(TransactionsPlotModel, _transactionsPlotWidth, months);
+    }
+
+    private void SetTransactionsContext(string contextKey, bool rebuild = true)
+    {
+        _transactionsContextKey = string.IsNullOrWhiteSpace(contextKey) ? DefaultTransactionsContextKey : contextKey;
+        var state = GetTransactionsViewState(_transactionsContextKey);
+        ApplyTransactionsViewState(state, rebuild);
+    }
+
+    private TransactionsViewState GetTransactionsViewState(string contextKey)
+    {
+        if (_transactionsViewStateByKey.TryGetValue(contextKey, out var state))
+            return state;
+        state = new TransactionsViewState(PeriodFilter.Last12Months, ChartTypeMode.Bar);
+        _transactionsViewStateByKey[contextKey] = state;
+        return state;
+    }
+
+    private void ApplyTransactionsViewState(TransactionsViewState state, bool rebuild)
+    {
+        SetTransactionsFilter(state.Filter, rebuild: false);
+        SetTransactionsChartMode(state.Mode, rebuild: false);
+        if (rebuild) ApplyTransactionsFilter();
+    }
+
+    private void UpdateTransactionsViewState()
+    {
+        if (!string.IsNullOrWhiteSpace(_transactionsContextKey))
+            _transactionsViewStateByKey[_transactionsContextKey] = new TransactionsViewState(_selectedTransactionsFilter, _selectedTransactionsChartMode);
     }
 
     private static string BuildAssetKey(string brokerName, string portfolioName, string assetName) =>

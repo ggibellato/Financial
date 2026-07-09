@@ -7,13 +7,16 @@ namespace Financial.Presentation.Tests.ViewModels;
 
 public class AssetDetailsViewModelBrokerSummaryTests
 {
-    private static AssetDetailsViewModel BuildViewModel(IBrokerBreakdownQueryService? brokerBreakdownQueryService = null)
+    private static AssetDetailsViewModel BuildViewModel(
+        IBrokerBreakdownQueryService? brokerBreakdownQueryService = null,
+        ITransactionQueryService? transactionQueryService = null)
     {
         return new AssetDetailsViewModel(
             new StubTransactionService(),
             new StubCreditService(),
             new StubAssetPriceService(),
-            brokerBreakdownQueryService ?? new StubBrokerBreakdownQueryService());
+            brokerBreakdownQueryService ?? new StubBrokerBreakdownQueryService(),
+            transactionQueryService ?? new StubTransactionQueryService());
     }
 
     [Fact]
@@ -283,6 +286,12 @@ public class AssetDetailsViewModelBrokerSummaryTests
     {
         public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request) =>
             new() { Exchange = request.Exchange, Ticker = request.Ticker, Price = 0m };
+    }
+
+    private sealed class StubTransactionQueryService : ITransactionQueryService
+    {
+        public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByBroker(string brokerName) => [];
+        public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByPortfolio(string brokerName, string portfolioName) => [];
     }
 
     private sealed class StubTransactionService : ITransactionService

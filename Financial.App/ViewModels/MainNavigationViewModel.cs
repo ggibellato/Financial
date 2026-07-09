@@ -15,7 +15,8 @@ public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsV
         ITransactionService transactionService,
         ICreditService creditService,
         IAssetPriceService assetPriceService,
-        IBrokerBreakdownQueryService brokerBreakdownQueryService)
+        IBrokerBreakdownQueryService brokerBreakdownQueryService,
+        ITransactionQueryService transactionQueryService)
         : base(
             navigationService ?? throw new ArgumentNullException(nameof(navigationService)),
             creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService)),
@@ -25,7 +26,8 @@ public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsV
                 transactionService ?? throw new ArgumentNullException(nameof(transactionService)),
                 creditService ?? throw new ArgumentNullException(nameof(creditService)),
                 assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService)),
-                brokerBreakdownQueryService ?? throw new ArgumentNullException(nameof(brokerBreakdownQueryService))))
+                brokerBreakdownQueryService ?? throw new ArgumentNullException(nameof(brokerBreakdownQueryService)),
+                transactionQueryService ?? throw new ArgumentNullException(nameof(transactionQueryService))))
     {
     }
 }

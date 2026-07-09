@@ -278,6 +278,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         var credits = _creditQueryService.GetCreditsByPortfolio(brokerName, portfolioName);
         var assetItems = _portfolioAssetSummaryQueryService.GetPortfolioAssetsSummary(brokerName, portfolioName);
         AssetDetails.LoadPortfolioSummary(brokerName, portfolioName, summary, credits, assetItems);
+        _ = AssetDetails.LoadPortfolioTransactions(brokerName, portfolioName);
     }
 
     private void LoadBrokerCredits(TreeNodeViewModel brokerNode)
@@ -293,5 +294,6 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         var credits = _creditQueryService.GetCreditsByBroker(brokerName);
         AssetDetails.LoadBrokerSummary(brokerName, summary, credits);
         _ = AssetDetails.LoadBrokerBreakdown(brokerName);
+        _ = AssetDetails.LoadBrokerTransactions(brokerName);
     }
 }

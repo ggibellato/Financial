@@ -13,7 +13,8 @@ public class AssetDetailsViewModelPortfolioSummaryTests
             new StubTransactionService(),
             new StubCreditService(),
             priceService ?? new NeverResolvingPriceService(),
-            new StubBrokerBreakdownQueryService());
+            new StubBrokerBreakdownQueryService(),
+            new StubTransactionQueryService());
     }
 
     private static IReadOnlyList<PortfolioAssetSummaryItemDTO> BuildItems(int count = 2)
@@ -273,6 +274,12 @@ public class AssetDetailsViewModelPortfolioSummaryTests
     private sealed class StubBrokerBreakdownQueryService : IBrokerBreakdownQueryService
     {
         public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName) => [];
+    }
+
+    private sealed class StubTransactionQueryService : ITransactionQueryService
+    {
+        public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByBroker(string brokerName) => [];
+        public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByPortfolio(string brokerName, string portfolioName) => [];
     }
 
     private sealed class NeverResolvingPriceService : IAssetPriceService
