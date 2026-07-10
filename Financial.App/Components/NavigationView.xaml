@@ -476,7 +476,7 @@
                                         <DataGridTemplateColumn Header="Current Value" Width="Auto">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock TextAlignment="Left" Padding="8">
+                                                    <TextBlock TextAlignment="Right" Padding="8">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="Text" Value="{Binding DisplayCurrentValue}"/>
@@ -494,7 +494,7 @@
                                         <DataGridTemplateColumn Header="% Profit" Width="Auto">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock TextAlignment="Left" Padding="8">
+                                                    <TextBlock TextAlignment="Right" Padding="8">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="Text" Value="{Binding DisplayProfitPercent}"/>
@@ -518,7 +518,7 @@
                                         <DataGridTemplateColumn Header="% Profit w/ Credits" Width="Auto">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock TextAlignment="Left" Padding="8">
+                                                    <TextBlock TextAlignment="Right" Padding="8">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="Text" Value="{Binding DisplayProfitWithCreditsPercent}"/>
@@ -542,7 +542,7 @@
                                         <DataGridTemplateColumn Header="XIRR" Width="Auto">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock TextAlignment="Left" Padding="8">
+                                                    <TextBlock TextAlignment="Right" Padding="8">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="Text" Value="{Binding DisplayXirr}"/>
