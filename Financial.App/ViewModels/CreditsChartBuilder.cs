@@ -14,18 +14,31 @@ internal static class CreditsChartBuilder
     public static PlotModel Build(
         IReadOnlyList<CreditsMonthTypeTotals> grouped,
         IReadOnlyList<string> creditTypes,
-        CreditsTypeChartMode mode)
+        CreditsTypeChartMode mode,
+        CreditsChartType chartType)
     {
         var (model, categoryAxis) = CreateModelWithAxes();
 
         if (grouped.Count == 0 || creditTypes.Count == 0)
             return model;
 
-        var seriesByType = CreateBarSeries(creditTypes);
-        PopulateBarItems(grouped, creditTypes, seriesByType, categoryAxis, mode);
+        foreach (var month in grouped)
+            categoryAxis.Labels.Add(month.Month.ToString("MM/yyyy"));
 
-        foreach (var series in seriesByType)
-            model.Series.Add(series);
+        if (chartType == CreditsChartType.Bar)
+        {
+            var seriesByType = CreateBarSeries(creditTypes);
+            PopulateBarItems(grouped, creditTypes, seriesByType, mode);
+            foreach (var series in seriesByType)
+                model.Series.Add(series);
+        }
+        else
+        {
+            var seriesByType = CreateLineSeries(creditTypes, mode);
+            PopulateLineItems(grouped, creditTypes, seriesByType, mode);
+            foreach (var series in seriesByType)
+                model.Series.Add(series);
+        }
 
         return model;
     }
@@ -35,7 +48,8 @@ internal static class CreditsChartBuilder
         double plotWidth,
         IReadOnlyList<CreditsMonthTypeTotals> chartMonths,
         IReadOnlyList<string> chartTypes,
-        CreditsTypeChartMode mode)
+        CreditsTypeChartMode mode,
+        CreditsChartType chartType)
     {
         if (plotWidth <= 0) return;
 
@@ -46,7 +60,7 @@ internal static class CreditsChartBuilder
         var step = Math.Max(1, (int)Math.Ceiling((double)categoryAxis.Labels.Count / maxVisibleLabels));
         categoryAxis.MajorStep = step;
         categoryAxis.MinorStep = 1;
-        UpdateValueLabels(model, step, chartMonths, chartTypes, mode);
+        UpdateValueLabels(model, step, chartMonths, chartTypes, mode, chartType);
         model.InvalidatePlot(false);
     }
 
@@ -92,7 +106,6 @@ internal static class CreditsChartBuilder
         IReadOnlyList<CreditsMonthTypeTotals> grouped,
         IReadOnlyList<string> creditTypes,
         List<RectangleBarSeries> seriesByType,
-        CategoryAxis categoryAxis,
         CreditsTypeChartMode mode)
     {
         var halfGroupWidth = BarGroupWidth / 2;
@@ -101,7 +114,6 @@ internal static class CreditsChartBuilder
         for (var monthIndex = 0; monthIndex < grouped.Count; monthIndex++)
         {
             var month = grouped[monthIndex];
-            categoryAxis.Labels.Add(month.Month.ToString("MM/yyyy"));
 
             var positiveStack = 0.0;
             var negativeStack = 0.0;
@@ -142,12 +154,70 @@ internal static class CreditsChartBuilder
         }
     }
 
+    private static List<LineSeries> CreateLineSeries(IReadOnlyList<string> creditTypes, CreditsTypeChartMode mode)
+    {
+        if (mode == CreditsTypeChartMode.Grouped)
+        {
+            return new List<LineSeries>
+            {
+                new()
+                {
+                    Title = "Total",
+                    Color = OxyColors.SteelBlue,
+                    StrokeThickness = 2,
+                    MarkerType = MarkerType.Circle,
+                    MarkerSize = 3,
+                    MarkerFill = OxyColors.SteelBlue
+                }
+            };
+        }
+
+        var palette = BuildBluePalette(creditTypes.Count);
+        return creditTypes
+            .Select((type, index) => new LineSeries
+            {
+                Title = type,
+                Color = palette[index],
+                StrokeThickness = 2,
+                MarkerType = MarkerType.Circle,
+                MarkerSize = 3,
+                MarkerFill = palette[index]
+            })
+            .ToList();
+    }
+
+    private static void PopulateLineItems(
+        IReadOnlyList<CreditsMonthTypeTotals> grouped,
+        IReadOnlyList<string> creditTypes,
+        List<LineSeries> seriesByType,
+        CreditsTypeChartMode mode)
+    {
+        for (var monthIndex = 0; monthIndex < grouped.Count; monthIndex++)
+        {
+            var month = grouped[monthIndex];
+
+            if (mode == CreditsTypeChartMode.Grouped)
+            {
+                seriesByType[0].Points.Add(new DataPoint(monthIndex, (double)month.Total));
+                continue;
+            }
+
+            for (var typeIndex = 0; typeIndex < creditTypes.Count; typeIndex++)
+            {
+                var type = creditTypes[typeIndex];
+                var value = month.TotalsByType.TryGetValue(type, out var total) ? (double)total : 0d;
+                seriesByType[typeIndex].Points.Add(new DataPoint(monthIndex, value));
+            }
+        }
+    }
+
     private static void UpdateValueLabels(
         PlotModel model,
         int step,
         IReadOnlyList<CreditsMonthTypeTotals> chartMonths,
         IReadOnlyList<string> chartTypes,
-        CreditsTypeChartMode mode)
+        CreditsTypeChartMode mode,
+        CreditsChartType chartType)
     {
         for (var index = model.Annotations.Count - 1; index >= 0; index--)
         {
@@ -160,6 +230,12 @@ internal static class CreditsChartBuilder
 
         if (chartMonths.Count == 0 || chartTypes.Count == 0) return;
 
+        // A combination renders as a single visual series (one Total label) when either
+        // Bar bars are stacked into one bar, or Line collapses into one line; otherwise
+        // each credit type has its own bar/line and gets its own label.
+        var isSingleSeries = (chartType == CreditsChartType.Bar && mode == CreditsTypeChartMode.Stacked)
+            || (chartType == CreditsChartType.Line && mode == CreditsTypeChartMode.Grouped);
+
         var halfGroupWidth = BarGroupWidth / 2;
         var barWidth = BarGroupWidth / chartTypes.Count;
 
@@ -167,7 +243,7 @@ internal static class CreditsChartBuilder
         {
             var month = chartMonths[monthIndex];
 
-            if (mode == CreditsTypeChartMode.Stacked)
+            if (isSingleSeries)
             {
                 AddValueLabel(model, monthIndex, month.Total, month.Total);
                 continue;
@@ -179,8 +255,10 @@ internal static class CreditsChartBuilder
                 var value = month.TotalsByType.TryGetValue(type, out var total) ? total : 0m;
                 if (value == 0) continue;
 
-                var x0 = monthIndex - halfGroupWidth + (barWidth * typeIndex);
-                AddValueLabel(model, x0 + (barWidth / 2), value, value);
+                var labelX = chartType == CreditsChartType.Bar
+                    ? monthIndex - halfGroupWidth + (barWidth * typeIndex) + (barWidth / 2)
+                    : monthIndex;
+                AddValueLabel(model, labelX, value, value);
             }
         }
     }

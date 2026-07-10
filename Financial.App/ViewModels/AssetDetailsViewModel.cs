@@ -30,6 +30,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private readonly RelayCommand _copyAssetNameCommand;
     private readonly RelayCommand _selectCreditsFilterCommand;
     private readonly RelayCommand _selectCreditsTypeModeCommand;
+    private readonly RelayCommand _selectCreditsChartTypeCommand;
     private readonly RelayCommand _selectTransactionsFilterCommand;
     private readonly RelayCommand _selectTransactionsChartModeCommand;
     private string _assetName = string.Empty;
@@ -53,6 +54,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private PlotModel? _creditsPlotModel;
     private PeriodFilter _selectedCreditsFilter = PeriodFilter.Last12Months;
     private CreditsTypeChartMode _selectedCreditsTypeMode = CreditsTypeChartMode.Stacked;
+    private CreditsChartType _selectedCreditsChartType = CreditsChartType.Bar;
     private const string DefaultCreditsContextKey = "default";
     private readonly Dictionary<string, CreditsViewState> _creditsViewStateByKey = new(StringComparer.OrdinalIgnoreCase);
     private string _creditsContextKey = DefaultCreditsContextKey;
@@ -253,6 +255,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public ObservableCollection<KeyValuePair<string, decimal>> CreditsByMonthChart { get; } = new();
     public ObservableCollection<CreditsFilterOptionViewModel> CreditsFilters { get; } = new();
     public ObservableCollection<CreditsTypeModeOptionViewModel> CreditsTypeModes { get; } = new();
+    public ObservableCollection<CreditsChartTypeOptionViewModel> CreditsChartTypes { get; } = new();
 
     public PlotModel? TransactionsPlotModel { get => _transactionsPlotModel; private set => SetProperty(ref _transactionsPlotModel, value); }
 
@@ -301,6 +304,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public RelayCommand CopyAssetNameCommand => _copyAssetNameCommand;
     public RelayCommand SelectCreditsFilterCommand => _selectCreditsFilterCommand;
     public RelayCommand SelectCreditsTypeModeCommand => _selectCreditsTypeModeCommand;
+    public RelayCommand SelectCreditsChartTypeCommand => _selectCreditsChartTypeCommand;
     public RelayCommand SelectTransactionsFilterCommand => _selectTransactionsFilterCommand;
     public RelayCommand SelectTransactionsChartModeCommand => _selectTransactionsChartModeCommand;
 
@@ -343,10 +347,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _copyAssetNameCommand = new RelayCommand(CopyAssetName, CanCopyAssetName);
         _selectCreditsFilterCommand = new RelayCommand(SelectCreditsFilter);
         _selectCreditsTypeModeCommand = new RelayCommand(SelectCreditsTypeMode);
+        _selectCreditsChartTypeCommand = new RelayCommand(SelectCreditsChartType);
         _selectTransactionsFilterCommand = new RelayCommand(SelectTransactionsFilter);
         _selectTransactionsChartModeCommand = new RelayCommand(SelectTransactionsChartMode);
         InitializeCreditsFilters();
         InitializeCreditsTypeModes();
+        InitializeCreditsChartTypes();
         InitializeTransactionsFilters();
         InitializeChartTypeModes();
     }
@@ -769,7 +775,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         if (plotWidth <= 0 || CreditsPlotModel == null) return;
         _creditsPlotWidth = plotWidth;
-        CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _selectedCreditsTypeMode);
+        CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _selectedCreditsTypeMode, _selectedCreditsChartType);
     }
 
     public void UpdateTransactionsPlotWidth(double plotWidth)
@@ -795,6 +801,14 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         SetCreditsTypeMode(CreditsTypeChartMode.Stacked, rebuild: false);
     }
 
+    private void InitializeCreditsChartTypes()
+    {
+        CreditsChartTypes.Clear();
+        CreditsChartTypes.Add(new CreditsChartTypeOptionViewModel("Bar", CreditsChartType.Bar));
+        CreditsChartTypes.Add(new CreditsChartTypeOptionViewModel("Line", CreditsChartType.Line));
+        SetCreditsChartType(CreditsChartType.Bar, rebuild: false);
+    }
+
     private void SelectCreditsFilter(object? parameter)
     {
         if (parameter is CreditsFilterOptionViewModel option) { SetCreditsFilter(option.Filter); return; }
@@ -805,6 +819,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         if (parameter is CreditsTypeModeOptionViewModel option) { SetCreditsTypeMode(option.Mode); return; }
         if (parameter is CreditsTypeChartMode mode) SetCreditsTypeMode(mode);
+    }
+
+    private void SelectCreditsChartType(object? parameter)
+    {
+        if (parameter is CreditsChartTypeOptionViewModel option) { SetCreditsChartType(option.ChartType); return; }
+        if (parameter is CreditsChartType chartType) SetCreditsChartType(chartType);
     }
 
     private void SetCreditsFilter(PeriodFilter filter, bool rebuild = true)
@@ -833,6 +853,19 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         if (rebuild) ApplyCreditsFilter();
     }
 
+    private void SetCreditsChartType(CreditsChartType chartType, bool rebuild = true)
+    {
+        if (_selectedCreditsChartType == chartType && CreditsChartTypes.Count > 0)
+        {
+            UpdateCreditsChartTypeSelection();
+            return;
+        }
+        _selectedCreditsChartType = chartType;
+        UpdateCreditsChartTypeSelection();
+        UpdateCreditsViewState();
+        if (rebuild) ApplyCreditsFilter();
+    }
+
     private void UpdateCreditsFilterSelection()
     {
         foreach (var option in CreditsFilters)
@@ -843,6 +876,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         foreach (var option in CreditsTypeModes)
             option.IsSelected = option.Mode == _selectedCreditsTypeMode;
+    }
+
+    private void UpdateCreditsChartTypeSelection()
+    {
+        foreach (var option in CreditsChartTypes)
+            option.IsSelected = option.ChartType == _selectedCreditsChartType;
     }
 
     private void ApplyCreditsFilter()
@@ -886,9 +925,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         foreach (var group in grouped)
             CreditsByMonthChart.Add(new KeyValuePair<string, decimal>(group.Month.ToString("MM/yyyy"), group.Total));
 
-        CreditsPlotModel = CreditsChartBuilder.Build(grouped, _creditsChartTypes, _selectedCreditsTypeMode);
+        CreditsPlotModel = CreditsChartBuilder.Build(grouped, _creditsChartTypes, _selectedCreditsTypeMode, _selectedCreditsChartType);
         if (CreditsPlotModel != null)
-            CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _selectedCreditsTypeMode);
+            CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _selectedCreditsTypeMode, _selectedCreditsChartType);
     }
 
     private void SetCreditsContext(string contextKey, bool rebuild = true)
@@ -902,7 +941,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         if (_creditsViewStateByKey.TryGetValue(contextKey, out var state))
             return state;
-        state = new CreditsViewState(PeriodFilter.Last12Months, CreditsTypeChartMode.Stacked);
+        state = new CreditsViewState(PeriodFilter.Last12Months, CreditsTypeChartMode.Stacked, CreditsChartType.Bar);
         _creditsViewStateByKey[contextKey] = state;
         return state;
     }
@@ -911,13 +950,14 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         SetCreditsFilter(state.Filter, rebuild: false);
         SetCreditsTypeMode(state.Mode, rebuild: false);
+        SetCreditsChartType(state.ChartType, rebuild: false);
         if (rebuild) ApplyCreditsFilter();
     }
 
     private void UpdateCreditsViewState()
     {
         if (!string.IsNullOrWhiteSpace(_creditsContextKey))
-            _creditsViewStateByKey[_creditsContextKey] = new CreditsViewState(_selectedCreditsFilter, _selectedCreditsTypeMode);
+            _creditsViewStateByKey[_creditsContextKey] = new CreditsViewState(_selectedCreditsFilter, _selectedCreditsTypeMode, _selectedCreditsChartType);
     }
 
     private void InitializeTransactionsFilters()
