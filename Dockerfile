@@ -16,7 +16,6 @@ COPY Financial.Api/Financial.Api.csproj Financial.Api/
 COPY Financial.Application/Financial.Application.csproj Financial.Application/
 COPY Financial.Domain/Financial.Domain.csproj Financial.Domain/
 COPY Financial.Infrastructure/Financial.Infrastructure.csproj Financial.Infrastructure/
-COPY Integrations/FinancialToolSupport/FinancialToolSupport.csproj Integrations/FinancialToolSupport/
 COPY Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj Integrations/GoogleFinancialSupport/
 COPY Integrations/WebPageParser/WebPageParser.csproj Integrations/WebPageParser/
 
@@ -26,7 +25,6 @@ COPY Financial.Api/ Financial.Api/
 COPY Financial.Application/ Financial.Application/
 COPY Financial.Domain/ Financial.Domain/
 COPY Financial.Infrastructure/ Financial.Infrastructure/
-COPY Integrations/FinancialToolSupport/ Integrations/FinancialToolSupport/
 COPY Integrations/GoogleFinancialSupport/ Integrations/GoogleFinancialSupport/
 COPY Integrations/WebPageParser/ Integrations/WebPageParser/
 
