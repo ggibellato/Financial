@@ -22,6 +22,7 @@ public sealed class DividendsController : ControllerBase
     [HttpGet("{ticker}/history")]
     [ProducesResponseType(typeof(IReadOnlyList<DividendHistoryItemDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<IReadOnlyList<DividendHistoryItemDTO>> GetDividendHistory(
         string ticker,
         [FromQuery] string? exchange = null)
@@ -32,13 +33,21 @@ public sealed class DividendsController : ControllerBase
         }
 
         var request = BuildRequest(ticker, exchange);
-        var history = _dividendService.GetDividendHistory(request);
-        return Ok(history);
+        try
+        {
+            var history = _dividendService.GetDividendHistory(request);
+            return Ok(history);
+        }
+        catch (Exception)
+        {
+            return DividendNotFound(ticker);
+        }
     }
 
     [HttpGet("{ticker}/summary")]
     [ProducesResponseType(typeof(DividendSummaryDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult<DividendSummaryDTO> GetDividendSummary(
         string ticker,
         [FromQuery] string? exchange = null)
@@ -49,9 +58,22 @@ public sealed class DividendsController : ControllerBase
         }
 
         var request = BuildRequest(ticker, exchange);
-        var summary = _dividendService.GetDividendSummary(request);
-        return Ok(summary);
+        try
+        {
+            var summary = _dividendService.GetDividendSummary(request);
+            return Ok(summary);
+        }
+        catch (Exception)
+        {
+            return DividendNotFound(ticker);
+        }
     }
+
+    private ObjectResult DividendNotFound(string ticker) =>
+        Problem(
+            title: "Dividend data not found",
+            detail: $"Could not find dividend data for '{ticker.Trim().ToUpperInvariant()}'. Check the ticker and try again.",
+            statusCode: StatusCodes.Status404NotFound);
 
     private DividendLookupRequestDTO BuildRequest(string ticker, string? exchange)
     {

@@ -58,22 +58,55 @@ public class DividendEndpointsTests
             .Should().BeTrue("the frontend expects the property to be named 'averageDividendLastFiveYears'");
     }
 
-    private static WebApplicationFactory<Program> CreateFactory()
+    [Fact]
+    public async Task GetDividendSummary_WhenServiceThrows_ReturnsNotFoundWithFriendlyDetail()
+    {
+        await using var factory = CreateFactory(throwOnLookup: true);
+        using var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/v1/financial/dividends/ASDF/summary?exchange=BVMF");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        doc.RootElement.GetProperty("detail").GetString().Should().Contain("ASDF");
+    }
+
+    [Fact]
+    public async Task GetDividendHistory_WhenServiceThrows_ReturnsNotFoundWithFriendlyDetail()
+    {
+        await using var factory = CreateFactory(throwOnLookup: true);
+        using var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/v1/financial/dividends/ASDF/history?exchange=BVMF");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        doc.RootElement.GetProperty("detail").GetString().Should().Contain("ASDF");
+    }
+
+    private static WebApplicationFactory<Program> CreateFactory(bool throwOnLookup = false)
     {
         return new ApiTestFactory().WithWebHostBuilder(builder =>
         {
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IDividendService>();
-                services.AddSingleton<IDividendService>(new DividendServiceStub());
+                services.AddSingleton<IDividendService>(new DividendServiceStub(throwOnLookup));
             });
         });
     }
 
-    private sealed class DividendServiceStub : IDividendService
+    private sealed class DividendServiceStub(bool throwOnLookup = false) : IDividendService
     {
         public IReadOnlyList<DividendHistoryItemDTO> GetDividendHistory(DividendLookupRequestDTO request)
         {
+            if (throwOnLookup)
+            {
+                throw new InvalidOperationException("Ticker not found.");
+            }
+
             return new[]
             {
                 new DividendHistoryItemDTO
@@ -87,6 +120,11 @@ public class DividendEndpointsTests
 
         public DividendSummaryDTO GetDividendSummary(DividendLookupRequestDTO request)
         {
+            if (throwOnLookup)
+            {
+                throw new InvalidOperationException("Ticker not found.");
+            }
+
             return new DividendSummaryDTO
             {
                 Exchange = request.Exchange,
