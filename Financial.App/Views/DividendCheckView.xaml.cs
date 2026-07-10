@@ -49,7 +49,7 @@ public partial class DividendCheckView : UserControl
             col.Binding = new System.Windows.Data.Binding(propertyName) { StringFormat = "N2" };
 
         var style = new System.Windows.Style(typeof(TextBlock));
-        style.Setters.Add(new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Right));
+        style.Setters.Add(new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Left));
         style.Setters.Add(new Setter(TextBlock.FontWeightProperty, FontWeights.Bold));
         style.Setters.Add(new Setter(TextBlock.ForegroundProperty, System.Windows.Media.Brushes.Black));
         col.ElementStyle = style;
