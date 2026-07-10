@@ -99,7 +99,7 @@ function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
       </td>
       <td>{formatDate(credit.date)}</td>
       <td className={typeClass}>{credit.type}</td>
-      <td className="credits-tab__value">{formatN2(credit.value)}</td>
+      <td className="data-table__col--numeric credits-tab__value">{formatN2(credit.value)}</td>
     </tr>
   )
 }
@@ -420,14 +420,14 @@ export default function CreditsTab() {
           )}
 
           <div className="credits-tab__table-wrapper">
-            <table className="credits-tab__table">
+            <table className="credits-tab__table data-table">
               <thead>
                 <tr>
                   <th />
                   <th />
                   <th>Date</th>
                   <th>Type</th>
-                  <th className="credits-tab__value">Value</th>
+                  <th className="data-table__col--numeric credits-tab__value">Value</th>
                 </tr>
               </thead>
               <tbody>

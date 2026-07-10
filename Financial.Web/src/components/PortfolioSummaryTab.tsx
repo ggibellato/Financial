@@ -185,7 +185,7 @@ export default function PortfolioSummaryTab() {
         {isLoading && <LoadingState />}
         {error && <ErrorState message={error} onRetry={retry} />}
         {!isLoading && !error && items && (
-          <table className="portfolio-summary__table">
+          <table className="portfolio-summary__table data-table">
             <thead>
               <tr>
                 <th>Asset Name</th>

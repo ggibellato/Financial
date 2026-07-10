@@ -139,12 +139,12 @@ export default function DividendCheckPage() {
               {sortedHistory.length === 0 ? (
                 <p>No dividend history found.</p>
               ) : (
-                <table>
+                <table className="data-table">
                   <thead>
                     <tr>
                       <th>Type</th>
                       <th>Date</th>
-                      <th className="table-number">Value</th>
+                      <th className="data-table__col--numeric">Value</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -152,7 +152,7 @@ export default function DividendCheckPage() {
                       <tr key={`${item.date}-${item.type}-${item.value}`}>
                         <td>{item.type}</td>
                         <td>{formatDate(item.date)}</td>
-                        <td className="table-number">{formatNumber(item.value)}</td>
+                        <td className="data-table__col--numeric">{formatNumber(item.value)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -164,18 +164,18 @@ export default function DividendCheckPage() {
               {sortedYearTotals.length === 0 ? (
                 <p>No yearly totals available.</p>
               ) : (
-                <table>
+                <table className="data-table">
                   <thead>
                     <tr>
                       <th>Year</th>
-                      <th className="table-number">Total</th>
+                      <th className="data-table__col--numeric">Total</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sortedYearTotals.map((total) => (
                       <tr key={total.year}>
                         <td>{total.year}</td>
-                        <td className="table-number">{formatNumber(total.total)}</td>
+                        <td className="data-table__col--numeric">{formatNumber(total.total)}</td>
                       </tr>
                     ))}
                   </tbody>

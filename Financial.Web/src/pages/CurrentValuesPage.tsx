@@ -150,12 +150,12 @@ export default function CurrentValuesPage() {
 
       {results.length > 0 && (
         <section className="current-values__results">
-          <table>
+          <table className="data-table">
             <thead>
               <tr>
                 <th>Ticker</th>
                 <th>Name</th>
-                <th className="current-values__col--price">Price</th>
+                <th className="current-values__col--price data-table__col--numeric">Price</th>
               </tr>
             </thead>
             <tbody>
@@ -163,7 +163,7 @@ export default function CurrentValuesPage() {
                 <tr key={`${result.exchange}-${result.ticker}-${result.assetName}`}>
                   <td>{result.ticker}</td>
                   <td>{result.name}</td>
-                  <td className="current-values__col--price">
+                  <td className="current-values__col--price data-table__col--numeric">
                     {result.price === null ? '—' : formatter.format(result.price)}
                   </td>
                 </tr>
