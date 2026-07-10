@@ -51,6 +51,32 @@ export interface FinancialApiClientOptions {
   fetch?: typeof fetch
 }
 
+interface ProblemDetailsBody {
+  detail?: string
+  title?: string
+}
+
+async function buildErrorMessage(response: Response, method: string, url: string): Promise<string> {
+  let body = ''
+  try {
+    body = await response.text()
+  } catch {
+    // Ignore response body failures; fall back to the generic message below.
+  }
+
+  if (body) {
+    try {
+      const problem = JSON.parse(body) as ProblemDetailsBody
+      if (problem.detail) return problem.detail
+      if (problem.title) return problem.title
+    } catch {
+      // Not a JSON problem-details body; fall through to the generic message.
+    }
+  }
+
+  return `API request failed: ${method} ${url} (${response.status} ${body || response.statusText})`
+}
+
 export function createFinancialApiClient(options: FinancialApiClientOptions = {}): FinancialApiClient {
   const baseUrl = options.baseUrl !== undefined
     ? options.baseUrl.replace(/\/$/, '')
@@ -73,17 +99,8 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     })
 
     if (!response.ok) {
-      let errorDetail = response.statusText
-      try {
-        const body = await response.text()
-        if (body) {
-          errorDetail = body
-        }
-      } catch {
-        // Ignore response body failures; status text is enough.
-      }
       const method = init?.method ?? 'GET'
-      throw new Error(`API request failed: ${method} ${url} (${response.status} ${errorDetail})`)
+      throw new Error(await buildErrorMessage(response, method, url))
     }
 
     return (await response.json()) as T

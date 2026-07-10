@@ -19,6 +19,14 @@ const errorResponse = () =>
     json: async () => ({}),
   }) as Response
 
+const problemDetailsResponse = (detail: string) =>
+  ({
+    ok: false,
+    status: 404,
+    statusText: 'Not Found',
+    text: async () => JSON.stringify({ title: 'Dividend data not found', detail, status: 404 }),
+  }) as Response
+
 describe('financialApiClient', () => {
   it('calls navigation tree endpoint', async () => {
     const responseBody: TreeNodeDto = {
@@ -142,5 +150,19 @@ describe('financialApiClient', () => {
     })
 
     await expect(client.getNavigationTree()).rejects.toThrow('API request failed')
+  })
+
+  it('throws the problem-details "detail" message when the API returns one', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(problemDetailsResponse("Could not find dividend data for 'ASDF'. Check the ticker and try again."))
+    const client = createFinancialApiClient({
+      baseUrl: API_BASE_URL,
+      fetch: fetchMock,
+    })
+
+    await expect(client.getDividendSummary('ASDF', 'BVMF')).rejects.toThrow(
+      "Could not find dividend data for 'ASDF'. Check the ticker and try again.",
+    )
   })
 })
