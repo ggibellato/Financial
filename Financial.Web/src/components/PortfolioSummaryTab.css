@@ -17,30 +17,6 @@
   overflow-y: auto;
 }
 
-.portfolio-summary__table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.portfolio-summary__table th {
-  text-align: left;
-  font-size: 11px;
-  color: var(--text-muted, #888);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  padding: 4px 8px 6px 0;
-  border-bottom: 1px solid var(--border, #e0e0e0);
-  white-space: nowrap;
-}
-
-.portfolio-summary__table td {
-  padding: 5px 8px 5px 0;
-  border-bottom: 1px solid var(--border-subtle, #f0f0f0);
-  vertical-align: middle;
-  white-space: nowrap;
-}
-
 .portfolio-summary__table th:nth-child(n+3),
 .portfolio-summary__table td:nth-child(n+3) {
   text-align: right;

@@ -71,30 +71,9 @@
 }
 
 .dividend-check__tables table {
-  width: 100%;
-  border-collapse: collapse;
   border: 1px solid var(--border);
-}
-
-.dividend-check__tables th,
-.dividend-check__tables td {
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
-}
-
-.dividend-check__tables th {
-  text-align: left;
-  color: var(--text-h);
-}
-
-.dividend-check__tables tbody tr:nth-child(even) {
-  background: #f5f5f5;
 }
 
 .dividend-check__placeholder {
   color: var(--text);
-}
-
-.dividend-check__tables .table-number {
-  text-align: right;
 }

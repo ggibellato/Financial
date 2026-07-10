@@ -80,10 +80,10 @@ function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) 
       </td>
       <td>{formatDate(transaction.date)}</td>
       <td className={typeClass}>{transaction.type}</td>
-      <td className="transactions-tab__amount">{formatN8(transaction.quantity)}</td>
-      <td className="transactions-tab__amount">{formatN2(transaction.unitPrice)}</td>
-      <td className="transactions-tab__amount">{formatN2(transaction.fees)}</td>
-      <td className="transactions-tab__total">{formatN2(transaction.totalPrice)}</td>
+      <td className="data-table__col--numeric">{formatN8(transaction.quantity)}</td>
+      <td className="data-table__col--numeric">{formatN2(transaction.unitPrice)}</td>
+      <td className="data-table__col--numeric">{formatN2(transaction.fees)}</td>
+      <td className="data-table__col--numeric transactions-tab__total">{formatN2(transaction.totalPrice)}</td>
     </tr>
   )
 }
@@ -362,17 +362,17 @@ export default function TransactionsTab() {
       )}
 
       <div className="transactions-tab__table-wrapper">
-        <table className="transactions-tab__table">
+        <table className="transactions-tab__table data-table">
           <thead>
             <tr>
               <th />
               <th />
               <th>Date</th>
               <th>Type</th>
-              <th className="transactions-tab__amount">Quantity</th>
-              <th className="transactions-tab__amount">Unit Price</th>
-              <th className="transactions-tab__amount">Fees</th>
-              <th className="transactions-tab__amount">Total</th>
+              <th className="data-table__col--numeric">Quantity</th>
+              <th className="data-table__col--numeric">Unit Price</th>
+              <th className="data-table__col--numeric">Fees</th>
+              <th className="data-table__col--numeric transactions-tab__total">Total</th>
             </tr>
           </thead>
           <tbody>
