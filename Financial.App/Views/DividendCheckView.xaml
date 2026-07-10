@@ -6,6 +6,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -72,7 +73,12 @@
             </StackPanel>
         </Border>
 
-        <Border Grid.Row="2" BorderBrush="#CCCCCC" BorderThickness="1" Padding="15" Margin="0,0,0,20">
+        <Border Grid.Row="2" BorderBrush="#D32F2F" BorderThickness="1" Padding="10" Margin="0,0,0,20"
+                Background="#FDECEA" Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="#D32F2F" FontWeight="Bold" TextWrapping="Wrap"/>
+        </Border>
+
+        <Border Grid.Row="3" BorderBrush="#CCCCCC" BorderThickness="1" Padding="15" Margin="0,0,0,20">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -105,7 +111,7 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Row="3">
+        <Grid Grid.Row="4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*" MinWidth="300"/>
                 <ColumnDefinition Width="10"/>
