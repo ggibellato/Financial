@@ -3,14 +3,8 @@ import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useAggregatedSummary } from '../hooks/useAggregatedSummary'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { formatN2 } from '../utils/formatters'
 import './AggregatedSummaryTab.css'
-
-function formatN2(value: number): string {
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
-}
 
 function getInvestedClass(value: number): string {
   return value >= 0 ? 'aggregated-summary__value--green' : 'aggregated-summary__value--red'

@@ -5,7 +5,6 @@
 		<Project Path="Financial.Infrastructure/Financial.Infrastructure.csproj" />
 	</Folder>
 	<Folder Name="/Integrations/">
-		<Project Path="Integrations/FinancialToolSupport/FinancialToolSupport.csproj" />
 		<Project Path="Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj" />
 		<Project Path="Integrations/ImportGoogleSpreadSheets/ImportGoogleSpreadSheets.csproj" />
 		<Project Path="Integrations/WebPageParser/WebPageParser.csproj" />

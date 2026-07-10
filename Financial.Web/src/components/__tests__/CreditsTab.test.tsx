@@ -52,7 +52,6 @@ const CREDIT_RENT: CreditDto = {
 
 const DEFAULT_HOOK: CreditsData = {
   credits: [],
-  filteredCredits: [],
   chartData: [],
   creditTypes: [],
   isLoading: false,
@@ -125,14 +124,6 @@ describe('CreditsTab', () => {
 
   it('renders_chart_only_for_broker_node', () => {
     setMock({ nodeType: 'Broker' })
-    render(<CreditsTab />)
-    expect(screen.getByTestId('responsive-container')).toBeInTheDocument()
-    expect(screen.queryByRole('table')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'New' })).not.toBeInTheDocument()
-  })
-
-  it('renders_chart_only_for_portfolio_node', () => {
-    setMock({ nodeType: 'Portfolio' })
     render(<CreditsTab />)
     expect(screen.getByTestId('responsive-container')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()

@@ -1,10 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import type { ReactNode } from 'react'
-import { createElement } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../api/financialApiClient'
 import type { AssetDetailsDto, AssetPriceDto, SelectedNode } from '../api/types'
-import { SelectedNodeProvider, useSelectedNode } from '../context/SelectedNodeContext'
+import { createSelectedNodeWrapper } from '../test-utils/selectedNodeTestWrapper'
 import { useAssetSummary } from './useAssetSummary'
 
 const getAssetDetailsMock = vi.fn<FinancialApiClient['getAssetDetails']>()
@@ -61,25 +59,6 @@ const PRICE: AssetPriceDto = {
   asOf: '2026-06-26T10:00:00',
 }
 
-function createWrapper() {
-  let setNodeRef: ((node: SelectedNode | null) => void) | undefined
-
-  function NodeControl() {
-    const { setSelectedNode } = useSelectedNode()
-    setNodeRef = setSelectedNode
-    return null
-  }
-
-  function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(SelectedNodeProvider, null, createElement(NodeControl), children)
-  }
-
-  return {
-    wrapper: Wrapper,
-    setNode: (node: SelectedNode | null) => act(() => { setNodeRef?.(node) }),
-  }
-}
-
 describe('useAssetSummary', () => {
   beforeEach(() => {
     getAssetDetailsMock.mockReset()
@@ -89,7 +68,7 @@ describe('useAssetSummary', () => {
   it('fetches_asset_details_on_asset_selection', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     getCurrentPriceMock.mockResolvedValue(PRICE)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => {
@@ -100,7 +79,7 @@ describe('useAssetSummary', () => {
   it('fetches_current_price_simultaneously_with_asset_details', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     getCurrentPriceMock.mockResolvedValue(PRICE)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => {
@@ -112,7 +91,7 @@ describe('useAssetSummary', () => {
   it('returns_isLoadingAsset_true_while_fetching', async () => {
     getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.isLoadingAsset).toBe(true))
@@ -121,7 +100,7 @@ describe('useAssetSummary', () => {
   it('computes_total_current_value', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     getCurrentPriceMock.mockResolvedValue(PRICE)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
@@ -132,7 +111,7 @@ describe('useAssetSummary', () => {
   it('computes_result_percent', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     getCurrentPriceMock.mockResolvedValue(PRICE)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.price).not.toBeNull())
@@ -144,7 +123,7 @@ describe('useAssetSummary', () => {
   it('computes_total_current_plus_credits', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     getCurrentPriceMock.mockResolvedValue(PRICE)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.price).not.toBeNull())
@@ -155,7 +134,7 @@ describe('useAssetSummary', () => {
   it('computes_result_percent_with_credits', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     getCurrentPriceMock.mockResolvedValue(PRICE)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.price).not.toBeNull())
@@ -168,7 +147,7 @@ describe('useAssetSummary', () => {
   it('sets_asset_error_on_load_failure', async () => {
     getAssetDetailsMock.mockRejectedValue(new Error('Network error'))
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.assetError).toBe('Network error'))
@@ -178,7 +157,7 @@ describe('useAssetSummary', () => {
   it('sets_price_error_on_price_fetch_failure', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     getCurrentPriceMock.mockRejectedValue(new Error('Price unavailable'))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
@@ -189,7 +168,7 @@ describe('useAssetSummary', () => {
   it('refresh_triggers_new_price_fetch', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     getCurrentPriceMock.mockResolvedValue(PRICE)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.price).not.toBeNull())
@@ -201,7 +180,7 @@ describe('useAssetSummary', () => {
   it('disables_refresh_while_price_is_loading', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.isLoadingPrice).toBe(true))
@@ -211,7 +190,7 @@ describe('useAssetSummary', () => {
   it('resets_state_on_node_change', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     getCurrentPriceMock.mockResolvedValue(PRICE)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset?.name).toBe('KLBN4'))
@@ -226,7 +205,7 @@ describe('useAssetSummary', () => {
     const zeroQty = { ...ASSET_DETAILS, quantity: 0 }
     getAssetDetailsMock.mockResolvedValue(zeroQty)
     getCurrentPriceMock.mockResolvedValue(PRICE)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
@@ -237,7 +216,7 @@ describe('useAssetSummary', () => {
     const zeroPx = { ...ASSET_DETAILS, averagePrice: 0 }
     getAssetDetailsMock.mockResolvedValue(zeroPx)
     getCurrentPriceMock.mockResolvedValue(PRICE)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
@@ -247,7 +226,7 @@ describe('useAssetSummary', () => {
   it('showCurrentSection_true_when_both_nonzero', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     getCurrentPriceMock.mockResolvedValue(PRICE)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())

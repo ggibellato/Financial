@@ -1,4 +1,3 @@
-import { useCallback, useRef, useState } from 'react'
 import {
   Bar,
   BarChart,
@@ -15,27 +14,15 @@ import {
 import type { CreditDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
+import SplitPanel from './SplitPanel'
 import type { ChartType, CreditFormField, MonthBucket, ViewMode } from '../hooks/useCredits'
 import { useCredits } from '../hooks/useCredits'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
+import { formatN2, formatShortDate } from '../utils/formatters'
 import './CreditsTab.css'
 
 const DEFAULT_LEFT_WIDTH = 400
 const MIN_LEFT_WIDTH = 200
-
-function formatN2(value: number): string {
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
-}
 
 const SINGLE_TYPE_COLOR = '#4682b4'
 const PALETTE_START = { r: 173, g: 216, b: 230 }
@@ -97,7 +84,7 @@ function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
           </svg>
         </button>
       </td>
-      <td>{formatDate(credit.date)}</td>
+      <td>{formatShortDate(credit.date)}</td>
       <td className={typeClass}>{credit.type}</td>
       <td className="data-table__col--numeric credits-tab__value">{formatN2(credit.value)}</td>
     </tr>
@@ -297,36 +284,6 @@ export default function CreditsTab() {
     deleteCredit,
   } = useCredits()
 
-  const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT_WIDTH)
-  const startX = useRef(0)
-  const startWidth = useRef(0)
-
-  const onHandleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      startX.current = e.clientX
-      startWidth.current = leftWidth
-      document.body.style.cursor = 'col-resize'
-      document.body.style.userSelect = 'none'
-
-      const handleMouseMove = (ev: MouseEvent) => {
-        const delta = ev.clientX - startX.current
-        const maxWidth = window.innerWidth / 2
-        setLeftWidth(Math.max(MIN_LEFT_WIDTH, Math.min(startWidth.current + delta, maxWidth)))
-      }
-
-      const handleMouseUp = () => {
-        document.removeEventListener('mousemove', handleMouseMove)
-        document.removeEventListener('mouseup', handleMouseUp)
-        document.body.style.cursor = ''
-        document.body.style.userSelect = ''
-      }
-
-      document.addEventListener('mousemove', handleMouseMove)
-      document.addEventListener('mouseup', handleMouseUp)
-    },
-    [leftWidth],
-  )
-
   if (isLoading) {
     return <LoadingState />
   }
@@ -394,72 +351,72 @@ export default function CreditsTab() {
     )
   }
 
+  const leftPanel = (
+    <div className="credits-tab__left">
+      <div className="credits-tab__table-toolbar">
+        <button className="credits-tab__new-btn" type="button" onClick={showNewForm}>
+          New
+        </button>
+      </div>
+
+      {isFormVisible && (
+        <InlineForm
+          editingId={editingId}
+          formDate={formDate}
+          formType={formType}
+          formValue={formValue}
+          isSaving={isSaving}
+          saveError={saveError}
+          onFieldChange={setFormField}
+          onSave={saveForm}
+          onCancel={cancelForm}
+        />
+      )}
+
+      <div className="credits-tab__table-wrapper">
+        <table className="credits-tab__table data-table">
+          <thead>
+            <tr>
+              <th />
+              <th />
+              <th>Date</th>
+              <th>Type</th>
+              <th className="data-table__col--numeric credits-tab__value">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {credits.map((c) => (
+              <CreditRow key={c.id} credit={c} onEdit={showEditForm} onDelete={deleteCredit} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {deleteError && <p className="credits-tab__delete-error">{deleteError}</p>}
+    </div>
+  )
+
+  const rightPanel = (
+    <div className="credits-tab__right">
+      <ChartPanel
+        chartData={chartData}
+        creditTypes={creditTypes}
+        selectedMode={selectedMode}
+        selectedChartType={selectedChartType}
+      />
+    </div>
+  )
+
   return (
     <div className="credits-tab">
       {toolbar}
       <div className="credits-tab__split">
-        <div className="credits-tab__left" style={{ width: leftWidth }}>
-          <div className="credits-tab__table-toolbar">
-            <button className="credits-tab__new-btn" type="button" onClick={showNewForm}>
-              New
-            </button>
-          </div>
-
-          {isFormVisible && (
-            <InlineForm
-              editingId={editingId}
-              formDate={formDate}
-              formType={formType}
-              formValue={formValue}
-              isSaving={isSaving}
-              saveError={saveError}
-              onFieldChange={setFormField}
-              onSave={saveForm}
-              onCancel={cancelForm}
-            />
-          )}
-
-          <div className="credits-tab__table-wrapper">
-            <table className="credits-tab__table data-table">
-              <thead>
-                <tr>
-                  <th />
-                  <th />
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th className="data-table__col--numeric credits-tab__value">Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                {credits.map((c) => (
-                  <CreditRow
-                    key={c.id}
-                    credit={c}
-                    onEdit={showEditForm}
-                    onDelete={deleteCredit}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {deleteError && <p className="credits-tab__delete-error">{deleteError}</p>}
-        </div>
-
-        <div
-          className="credits-tab__handle"
-          onMouseDown={onHandleMouseDown}
-          aria-label="Resize panel"
+        <SplitPanel
+          left={leftPanel}
+          right={rightPanel}
+          defaultWidth={DEFAULT_LEFT_WIDTH}
+          minWidth={MIN_LEFT_WIDTH}
         />
-
-        <div className="credits-tab__right">
-          <ChartPanel
-            chartData={chartData}
-            creditTypes={creditTypes}
-            selectedMode={selectedMode}
-            selectedChartType={selectedChartType}
-          />
-        </div>
       </div>
     </div>
   )

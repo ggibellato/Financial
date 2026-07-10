@@ -92,17 +92,6 @@
   min-width: 200px;
 }
 
-.credits-tab__handle {
-  width: 4px;
-  cursor: col-resize;
-  background: var(--border, #e5e4e7);
-  flex-shrink: 0;
-}
-
-.credits-tab__handle:hover {
-  background: #007acc;
-}
-
 .credits-tab__right {
   flex: 1;
   min-width: 0;

@@ -22,7 +22,7 @@ public class NavigationMapperTests
     [InlineData(GlobalAssetClass.ETF)]
     [InlineData(GlobalAssetClass.Fund)]
     [InlineData(GlobalAssetClass.Unknown)]
-    public void GetNavigationTree_AssetNode_GlobalAssetClassMetadata_IsGlobalAssetClassType(GlobalAssetClass assetClass)
+    public void GetNavigationTree_AssetNode_GlobalAssetClassMetadata_IsGlobalAssetClassTypeAndMatchesAssetClass(GlobalAssetClass assetClass)
     {
         _repository.Broker = BuildBrokerWithAsset("ASSET1", assetClass);
 
@@ -31,35 +31,7 @@ public class NavigationMapperTests
         var assetNode = GetFirstAssetNode(tree);
         assetNode.Metadata.Should().ContainKey("GlobalAssetClass");
         assetNode.Metadata["GlobalAssetClass"].Should().BeOfType<GlobalAssetClass>();
-    }
-
-    [Theory]
-    [InlineData(GlobalAssetClass.Equity)]
-    [InlineData(GlobalAssetClass.RealEstate)]
-    [InlineData(GlobalAssetClass.Bond)]
-    [InlineData(GlobalAssetClass.ETF)]
-    [InlineData(GlobalAssetClass.Fund)]
-    [InlineData(GlobalAssetClass.Unknown)]
-    public void GetNavigationTree_AssetNode_GlobalAssetClassMetadata_MatchesAssetClass(GlobalAssetClass assetClass)
-    {
-        _repository.Broker = BuildBrokerWithAsset("ASSET1", assetClass);
-
-        var tree = CreateService().GetNavigationTree();
-
-        var assetNode = GetFirstAssetNode(tree);
         assetNode.Metadata["GlobalAssetClass"].Should().Be(assetClass);
-    }
-
-    [Fact]
-    public void GetNavigationTree_AssetNode_GlobalAssetClassMetadata_IsNotInt()
-    {
-        _repository.Broker = BuildBrokerWithAsset("ASSET1", GlobalAssetClass.Equity);
-
-        var tree = CreateService().GetNavigationTree();
-
-        var assetNode = GetFirstAssetNode(tree);
-        assetNode.Metadata["GlobalAssetClass"].Should().NotBeOfType<int>(
-            "the WPF filter uses 'value is GlobalAssetClass' pattern matching, which fails on int");
     }
 
     [Fact]

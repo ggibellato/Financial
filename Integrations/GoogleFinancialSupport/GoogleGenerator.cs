@@ -1,6 +1,5 @@
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
-using Financial.Infrastructure.Integrations.FinancialToolSupport;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 
-public sealed class GoogleGenerator : IGenerator
+public sealed class GoogleGenerator
 {
     private const int DelayBetweenSheetsMs = 3000;
     private const int DelayBetweenBrokersMs = 5000;

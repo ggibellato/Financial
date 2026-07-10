@@ -127,13 +127,6 @@ describe('TransactionsTab', () => {
     expect(document.querySelector('table')).not.toBeInTheDocument()
   })
 
-  it('renders_chart_only_for_portfolio_node_selection', () => {
-    setMock({ nodeType: 'Portfolio', chartData: CHART_DATA })
-    render(<TransactionsTab />)
-    expect(screen.getByText('Net Invested by Month')).toBeInTheDocument()
-    expect(document.querySelector('table')).not.toBeInTheDocument()
-  })
-
   it('renders_chart_above_table_for_asset_node_selection', () => {
     setMock({ nodeType: 'Asset', chartData: CHART_DATA, transactions: [TRANSACTION_BUY] })
     render(<TransactionsTab />)

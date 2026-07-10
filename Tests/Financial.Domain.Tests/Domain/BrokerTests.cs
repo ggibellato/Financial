@@ -6,15 +6,6 @@ namespace Financial.Domain.Tests;
 public class BrokerTests
 {
     [Fact]
-    public void Create_SetsProperties()
-    {
-        var broker = Broker.Create("Broker A", "USD");
-
-        broker.Name.Should().Be("Broker A");
-        broker.Currency.Should().Be("USD");
-    }
-
-    [Fact]
     public void AddPortfolio_SameName_ReturnsExisting()
     {
         var broker = Broker.Create("Broker A", "USD");

@@ -1,10 +1,9 @@
-import { act, render, screen } from '@testing-library/react'
-import { createElement } from 'react'
-import type { ReactNode } from 'react'
+import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AggregatedSummaryData } from '../../hooks/useAggregatedSummary'
 import type { AggregatedSummaryDto, SelectedNode } from '../../api/types'
-import { SelectedNodeProvider, useSelectedNode } from '../../context/SelectedNodeContext'
+import { SelectedNodeProvider } from '../../context/SelectedNodeContext'
+import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import AggregatedSummaryTab from '../AggregatedSummaryTab'
 
 vi.mock('../BrokerBreakdownCharts', () => ({
@@ -20,20 +19,9 @@ function renderComponent() {
 }
 
 function renderComponentWithNode(node: SelectedNode) {
-  let setNodeRef: ((node: SelectedNode | null) => void) | undefined
-
-  function NodeControl() {
-    const { setSelectedNode } = useSelectedNode()
-    setNodeRef = setSelectedNode
-    return null
-  }
-
-  function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(SelectedNodeProvider, null, createElement(NodeControl), children)
-  }
-
-  const result = render(<AggregatedSummaryTab />, { wrapper: Wrapper })
-  act(() => setNodeRef?.(node))
+  const { wrapper, setNode } = createSelectedNodeWrapper()
+  const result = render(<AggregatedSummaryTab />, { wrapper })
+  setNode(node)
   return result
 }
 

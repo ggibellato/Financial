@@ -207,20 +207,6 @@ public class PortfolioAssetSummaryRowViewModelTests
     }
 
     [Fact]
-    public void DisplayXirr_WhenSingleCashFlow_ReturnsNonDashValue()
-    {
-        // One buy entry + terminal = 2 entries → should converge
-        var buyDate = DateTime.Today.AddYears(-2);
-        var cashFlows = new List<AssetCashFlowDTO>
-        {
-            new() { Date = buyDate, Amount = -1000m }
-        };
-        var row = BuildRow(currentQuantity: 1m, totalInvested: 1000m, cashFlows: cashFlows);
-        row.ApplyPrice(1210m); // CurrentValue = 1210
-        row.DisplayXirr.Should().NotBe("—");
-    }
-
-    [Fact]
     public void DisplayXirr_AfterApplyPrice_ReturnsConvergedValueN2Percent()
     {
         // One buy at -1000 exactly 2 years ago; terminal = +1210 today

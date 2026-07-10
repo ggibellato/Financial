@@ -12,20 +12,4 @@ internal static class CountryCodeResolver
             "USD" => CountryCode.US,
             _ => CountryCode.Unknown
         };
-
-    internal static CountryCode FromExchange(string exchange)
-    {
-        if (string.IsNullOrWhiteSpace(exchange))
-        {
-            return CountryCode.Unknown;
-        }
-
-        return exchange.Trim().ToUpperInvariant() switch
-        {
-            "BVMF" => CountryCode.BR,
-            "LON" or "LSE" => CountryCode.UK,
-            "NYSE" or "NASDAQ" or "AMEX" => CountryCode.US,
-            _ => CountryCode.Unknown
-        };
-    }
 }

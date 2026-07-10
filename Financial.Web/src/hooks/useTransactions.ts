@@ -4,7 +4,8 @@ import type { AssetDetailsDto, TransactionDto, TransactionSummaryItemDto } from 
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { buildSelectionKey } from './useCredits'
 import type { PeriodFilterOption } from '../utils/periodFilter'
-import { getPeriodFilterStartDate } from '../utils/periodFilter'
+import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
+import { toInputDate } from '../utils/formatters'
 
 export type TransactionFormField = 'formDate' | 'formType' | 'formQuantity' | 'formUnitPrice' | 'formFees'
 export type ChartDisplayMode = 'Bar' | 'Line'
@@ -25,7 +26,6 @@ interface PersistedChartPrefs {
   mode: ChartDisplayMode
 }
 
-const DEFAULT_FILTER: PeriodFilterOption = 'last-12-months'
 const DEFAULT_CHART_MODE: ChartDisplayMode = 'Bar'
 
 function startOfMonth(date: Date): Date {
@@ -141,10 +141,6 @@ const INITIAL_STATE: TransactionsState = {
   filterPersistence: new Map(),
   ...BLANK_FORM,
   deleteError: null,
-}
-
-function toInputDate(isoString: string): string {
-  return isoString.split('T')[0]
 }
 
 function reducer(state: TransactionsState, action: TransactionsAction): TransactionsState {

@@ -1,4 +1,4 @@
-namespace Financial.Api.Options;
+namespace Financial.Application.Configuration;
 
 public sealed class AssetPriceFetchOptions
 {

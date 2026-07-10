@@ -1,7 +1,6 @@
 using Financial.Application.Configuration;
 using Financial.Application.DependencyInjection;
 using Financial.Infrastructure.DependencyInjection;
-using Financial.Presentation.App.Options;
 using Financial.Presentation.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

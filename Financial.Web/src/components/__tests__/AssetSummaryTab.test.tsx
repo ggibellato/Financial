@@ -108,11 +108,10 @@ describe('AssetSummaryTab', () => {
 
   it('renders_total_bought_in_green', () => {
     setMock({ asset: ASSET })
-    const { container } = render(<AssetSummaryTab />)
+    render(<AssetSummaryTab />)
     const totalBoughtLabel = screen.getByText('Total Bought')
     const valueEl = totalBoughtLabel.nextElementSibling
     expect(valueEl).toHaveClass('asset-summary__value--green')
-    expect(container).toBeTruthy()
   })
 
   it('renders_total_sold_in_red', () => {

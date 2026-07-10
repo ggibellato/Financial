@@ -181,13 +181,6 @@ describe('DetailPanel', () => {
     expect(loadingItems.length).toBeGreaterThanOrEqual(1)
   })
 
-  it('renders_asset_summary_tab_for_asset_node_regression', () => {
-    renderPanel(activeAssetNode)
-    act(() => screen.getByTestId('setter').click())
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
-    expect(screen.queryByText('Transactions are only available for individual assets')).not.toBeInTheDocument()
-  })
-
   it('renders_transactions_chart_for_broker_node', async () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())

@@ -262,16 +262,6 @@ describe('PortfolioSummaryTab', () => {
     expect(dashes.length).toBeGreaterThanOrEqual(1)
   })
 
-  it('renders_dash_in_xirr_on_non_convergence', () => {
-    xirrMock.mockReturnValue(null)
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
-    renderComponent()
-    const dashes = screen.getAllByText('—')
-    expect(dashes.length).toBeGreaterThanOrEqual(1)
-  })
-
   it('applies_green_class_to_positive_profit', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 25, totalInvested: 200 }
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }

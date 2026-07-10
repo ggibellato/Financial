@@ -12,12 +12,6 @@ namespace Financial.Infrastructure.Integrations.WebPageParser;
 /// </summary>
 public static class GoogleFinance
 {
-    public static AssetValue GetFinancialInfo(string exchange, string ticker)
-    {
-        var snapshot = GetFinancialInfoSnapshot(exchange, ticker);
-        return new AssetValue(snapshot.Ticker, snapshot.Name, snapshot.Price);
-    }
-
     public static AssetValueSnapshot GetFinancialInfoSnapshot(string exchange, string ticker)
     {
         var googleTickerSearch = $"https://www.google.com/finance/quote/{ticker}:{exchange}";

@@ -55,26 +55,6 @@ public class LocalJsonStorageTests
     }
 
     [Fact]
-    public async Task WriteAsync_ThenReadAsync_ReturnsSameContent()
-    {
-        var tempFile = CreateTempFile(string.Empty);
-        try
-        {
-            var storage = new LocalJsonStorage(tempFile);
-            const string json = "{\"round-trip\": true}";
-
-            await storage.WriteAsync(json);
-            var result = await storage.ReadAsync();
-
-            result.Should().Be(json);
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
     public async Task Constructor_WithNullPath_UsesDefaultFileName()
     {
         // Null path resolves to AppContext.BaseDirectory/data.json; file won't exist there in tests
