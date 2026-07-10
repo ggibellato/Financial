@@ -30,8 +30,8 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.Configure<DividendOptions>(configuration.GetSection(DividendOptions.SectionName));
-builder.Services.Configure<Financial.Api.Options.WatchlistOptions>(configuration.GetSection(Financial.Api.Options.WatchlistOptions.SectionName));
-builder.Services.Configure<Financial.Api.Options.AssetPriceFetchOptions>(configuration.GetSection(Financial.Api.Options.AssetPriceFetchOptions.SectionName));
+builder.Services.Configure<WatchlistOptions>(configuration.GetSection(WatchlistOptions.SectionName));
+builder.Services.Configure<AssetPriceFetchOptions>(configuration.GetSection(AssetPriceFetchOptions.SectionName));
 builder.Services.AddFinancialApplication();
 builder.Services.AddFinancialInfrastructure(configuration);
 

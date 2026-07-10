@@ -3,11 +3,11 @@ import { createFinancialApiClient } from '../api/financialApiClient'
 import type { CreditDto, SelectedNode } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import type { PeriodFilterOption } from '../utils/periodFilter'
-import { getPeriodFilterStartDate } from '../utils/periodFilter'
+import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
+import { pad, toInputDate } from '../utils/formatters'
 
 export type ViewMode = 'Stacked' | 'Grouped'
 export type ChartType = 'Bar' | 'Line'
-export type CreditType = 'Dividend' | 'Rent'
 export type CreditFormField = 'formDate' | 'formType' | 'formValue'
 
 export interface MonthBucket {
@@ -22,7 +22,6 @@ interface PersistedPrefs {
   chartType: ChartType
 }
 
-const DEFAULT_FILTER: PeriodFilterOption = 'last-12-months'
 const DEFAULT_MODE: ViewMode = 'Stacked'
 const DEFAULT_CHART_TYPE: ChartType = 'Bar'
 
@@ -85,10 +84,6 @@ const INITIAL_STATE: CreditsState = {
   filterPersistence: new Map(),
   ...BLANK_FORM,
   deleteError: null,
-}
-
-function toInputDate(isoString: string): string {
-  return isoString.split('T')[0]
 }
 
 function reducer(state: CreditsState, action: CreditsAction): CreditsState {
@@ -194,7 +189,6 @@ export function buildSelectionKey(node: SelectedNode): string {
 }
 
 function buildMonthKey(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0')
   return `${pad(date.getMonth() + 1)}/${date.getFullYear()}`
 }
 
@@ -225,7 +219,6 @@ function computeCreditTypes(buckets: MonthBucket[]): string[] {
 
 export interface CreditsData {
   credits: CreditDto[]
-  filteredCredits: CreditDto[]
   chartData: MonthBucket[]
   creditTypes: string[]
   isLoading: boolean
@@ -425,7 +418,6 @@ export function useCredits(): CreditsData {
 
   return {
     credits,
-    filteredCredits,
     chartData,
     creditTypes,
     isLoading: state.isLoading,

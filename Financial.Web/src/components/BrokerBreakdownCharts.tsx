@@ -2,6 +2,7 @@ import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recha
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useBrokerBreakdown } from '../hooks/useBrokerBreakdown'
+import { formatN2 } from '../utils/formatters'
 import './BrokerBreakdownCharts.css'
 
 // Validated categorical palette (fixed hue order, CVD-safe adjacency).
@@ -15,13 +16,6 @@ const CATEGORICAL_PALETTE = [
   '#e87ba4', // magenta
   '#eb6834', // orange
 ]
-
-function formatN2(value: number): string {
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
-}
 
 function formatPercent(value: number): string {
   return `${value.toFixed(1)}%`

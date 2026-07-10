@@ -1,10 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import type { ReactNode } from 'react'
-import { createElement } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../api/financialApiClient'
 import type { AssetDetailsDto, CreditDto, SelectedNode } from '../api/types'
-import { SelectedNodeProvider, useSelectedNode } from '../context/SelectedNodeContext'
+import { createSelectedNodeWrapper } from '../test-utils/selectedNodeTestWrapper'
 import { useCredits } from './useCredits'
 
 const getAssetDetailsMock = vi.fn<FinancialApiClient['getAssetDetails']>()
@@ -92,28 +90,6 @@ const ASSET_DETAILS: AssetDetailsDto = {
   credits: [CREDIT_A, CREDIT_B],
 }
 
-function createWrapper() {
-  let setNodeRef: ((node: SelectedNode | null) => void) | undefined
-
-  function NodeControl() {
-    const { setSelectedNode } = useSelectedNode()
-    setNodeRef = setSelectedNode
-    return null
-  }
-
-  function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(SelectedNodeProvider, null, createElement(NodeControl), children)
-  }
-
-  return {
-    wrapper: Wrapper,
-    setNode: (node: SelectedNode | null) =>
-      act(() => {
-        setNodeRef?.(node)
-      }),
-  }
-}
-
 describe('useCredits', () => {
   beforeEach(() => {
     getAssetDetailsMock.mockReset()
@@ -126,7 +102,7 @@ describe('useCredits', () => {
   })
 
   it('returns_initial_empty_state', () => {
-    const { wrapper } = createWrapper()
+    const { wrapper } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     expect(result.current.isLoading).toBe(false)
     expect(result.current.credits).toEqual([])
@@ -137,7 +113,7 @@ describe('useCredits', () => {
 
   it('fetches_asset_credits_on_asset_selection', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4'))
@@ -147,7 +123,7 @@ describe('useCredits', () => {
 
   it('fetches_broker_credits_on_broker_selection', async () => {
     getCreditsByBrokerMock.mockResolvedValue([CREDIT_A])
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(BROKER_NODE)
     await waitFor(() =>
@@ -158,7 +134,7 @@ describe('useCredits', () => {
 
   it('fetches_portfolio_credits_on_portfolio_selection', async () => {
     getCreditsByPortfolioMock.mockResolvedValue([CREDIT_B])
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() =>
@@ -169,7 +145,7 @@ describe('useCredits', () => {
 
   it('resets_credits_when_node_is_null', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -181,7 +157,7 @@ describe('useCredits', () => {
   it('increments_retry_and_refetches', async () => {
     getAssetDetailsMock.mockRejectedValueOnce(new Error('Network error'))
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.error).toBe('Network error'))
@@ -192,7 +168,7 @@ describe('useCredits', () => {
 
   it('set_filter_updates_selected_filter', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -202,7 +178,7 @@ describe('useCredits', () => {
 
   it('set_mode_updates_selected_mode', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -212,7 +188,7 @@ describe('useCredits', () => {
 
   it('persists_filter_and_mode_per_selection_key', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
 
     setNode(ASSET_NODE)
@@ -235,7 +211,7 @@ describe('useCredits', () => {
 
   it('defaults_to_last_year_stacked_on_first_selection', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -245,7 +221,7 @@ describe('useCredits', () => {
 
   it('show_new_form_opens_blank_form', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -259,7 +235,7 @@ describe('useCredits', () => {
 
   it('show_edit_form_populates_fields', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -273,7 +249,7 @@ describe('useCredits', () => {
 
   it('cancel_form_hides_form_and_resets', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -289,7 +265,7 @@ describe('useCredits', () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     const updatedAsset = { ...ASSET_DETAILS, credits: [CREDIT_A] }
     addCreditMock.mockResolvedValue(updatedAsset)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -318,7 +294,7 @@ describe('useCredits', () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     const updatedAsset = { ...ASSET_DETAILS }
     updateCreditMock.mockResolvedValue(updatedAsset)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -338,7 +314,7 @@ describe('useCredits', () => {
   it('save_sets_error_on_api_failure', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     addCreditMock.mockRejectedValue(new Error('Server error'))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -355,7 +331,7 @@ describe('useCredits', () => {
 
   it('save_validates_date_required', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -368,7 +344,7 @@ describe('useCredits', () => {
 
   it('save_validates_value_greater_than_zero', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -386,7 +362,7 @@ describe('useCredits', () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     const updatedAsset = { ...ASSET_DETAILS, credits: [CREDIT_B] }
     deleteCreditMock.mockResolvedValue(updatedAsset)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -405,7 +381,7 @@ describe('useCredits', () => {
   it('delete_failure_sets_delete_error', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     deleteCreditMock.mockRejectedValue(new Error('Delete failed'))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -416,7 +392,7 @@ describe('useCredits', () => {
 
   it('sorts_credits_by_date_descending', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -428,7 +404,7 @@ describe('useCredits', () => {
     const creditA: CreditDto = { id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100 }
     const creditB: CreditDto = { id: 'sm2', date: '2024-03-20T00:00:00', type: 'Rent', value: 50 }
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB] })
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -443,7 +419,7 @@ describe('useCredits', () => {
     const creditA: CreditDto = { id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100 }
     const creditB: CreditDto = { id: 'sm2', date: '2024-03-20T00:00:00', type: 'Rent', value: 50 }
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB] })
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -458,7 +434,7 @@ describe('useCredits', () => {
     const creditB: CreditDto = { id: 'sm2', date: '2024-03-20T00:00:00', type: 'Rent', value: 50 }
     const creditC: CreditDto = { id: 'sm3', date: '2024-03-10T00:00:00', type: 'Interest', value: 30 }
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB, creditC] })
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(3))
@@ -472,7 +448,7 @@ describe('useCredits', () => {
 
   it('setChartType_defaultsToBar', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))
@@ -481,7 +457,7 @@ describe('useCredits', () => {
 
   it('setChartType_persistsSelectionPerNode', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
 
     setNode(ASSET_NODE)
@@ -500,7 +476,7 @@ describe('useCredits', () => {
 
   it('setChartType_doesNotAffectSelectedMode_forSameNode', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.credits).toHaveLength(2))

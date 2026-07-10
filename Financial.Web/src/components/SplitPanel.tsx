@@ -8,10 +8,17 @@ const MIN_LEFT_WIDTH = 300
 interface SplitPanelProps {
   left: ReactNode
   right: ReactNode
+  defaultWidth?: number
+  minWidth?: number
 }
 
-export default function SplitPanel({ left, right }: SplitPanelProps) {
-  const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT_WIDTH)
+export default function SplitPanel({
+  left,
+  right,
+  defaultWidth = DEFAULT_LEFT_WIDTH,
+  minWidth = MIN_LEFT_WIDTH,
+}: SplitPanelProps) {
+  const [leftWidth, setLeftWidth] = useState(defaultWidth)
   const startX = useRef(0)
   const startWidth = useRef(0)
 
@@ -25,7 +32,7 @@ export default function SplitPanel({ left, right }: SplitPanelProps) {
       const handleMouseMove = (ev: MouseEvent) => {
         const delta = ev.clientX - startX.current
         const maxWidth = window.innerWidth / 2
-        setLeftWidth(Math.max(MIN_LEFT_WIDTH, Math.min(startWidth.current + delta, maxWidth)))
+        setLeftWidth(Math.max(minWidth, Math.min(startWidth.current + delta, maxWidth)))
       }
 
       const handleMouseUp = () => {
@@ -38,7 +45,7 @@ export default function SplitPanel({ left, right }: SplitPanelProps) {
       document.addEventListener('mousemove', handleMouseMove)
       document.addEventListener('mouseup', handleMouseUp)
     },
-    [leftWidth],
+    [leftWidth, minWidth],
   )
 
   return (

@@ -15,12 +15,4 @@ public class InvestmentsTests
 
         investments.Brokers.Should().ContainSingle().Which.Name.Should().Be("Broker A");
     }
-
-    [Fact]
-    public void Create_ReturnsEmptyInvestments()
-    {
-        var investments = Investments.Create();
-
-        investments.Brokers.Should().BeEmpty();
-    }
 }

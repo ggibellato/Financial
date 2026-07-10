@@ -53,7 +53,4 @@ public sealed class JSONRepository : IRepository
 
     private IEnumerable<Asset> GetAssetsByBrokerInternal(string brokerName) =>
         GetPortfoliosByBroker(brokerName).SelectMany(p => p.Assets);
-
-    private IEnumerable<Asset> GetAllAssetsInternal() =>
-        _investiments.Brokers.SelectMany(b => b.Portfolios.SelectMany(p => p.Assets));
 }

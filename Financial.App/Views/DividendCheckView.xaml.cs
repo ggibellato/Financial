@@ -1,5 +1,5 @@
+using Financial.Application.Configuration;
 using Financial.Presentation.App.Helpers;
-using Financial.Presentation.App.Options;
 using Microsoft.Extensions.Options;
 using System.Windows;
 using System.Windows.Controls;

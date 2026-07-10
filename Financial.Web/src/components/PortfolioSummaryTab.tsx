@@ -4,36 +4,15 @@ import { usePortfolioAssetSummary } from '../hooks/usePortfolioAssetSummary'
 import type { RowPriceState } from '../hooks/usePortfolioAssetSummary'
 import type { PortfolioAssetSummaryItemDto } from '../api/types'
 import { xirr } from '../utils/xirr'
+import { formatN2, formatN8, formatShortDate } from '../utils/formatters'
 import AggregatedSummaryTab from './AggregatedSummaryTab'
 import './PortfolioSummaryTab.css'
-
-function formatN2(value: number): string {
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
-}
-
-function formatN8(value: number): string {
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 8,
-    maximumFractionDigits: 8,
-  }).format(value)
-}
 
 function formatPortfolioWeight(value: number): string {
   return `${new Intl.NumberFormat(undefined, {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   }).format(value)}%`
-}
-
-function formatShortDate(isoString: string | null): string {
-  if (!isoString) return ''
-  const d = new Date(isoString)
-  if (Number.isNaN(d.getTime())) return ''
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
 }
 
 function formatCreditMonth(yearMonth: string): string {

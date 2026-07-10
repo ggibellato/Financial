@@ -8,11 +8,9 @@
         <!-- Value Converters -->
         <converters:BoolToIconConverter x:Key="BoolToIconConverter"/>
         <converters:BoolToActiveStatusConverter x:Key="BoolToActiveStatusConverter"/>
-        <converters:CurrencyFormatConverter x:Key="CurrencyFormatConverter"/>
         <converters:DateFormatConverter x:Key="DateFormatConverter"/>
         <converters:TransactionTypeToColorConverter x:Key="TransactionTypeToColorConverter"/>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-        <converters:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
         <converters:NodeTypeToVisibilityConverter x:Key="NodeTypeToVisibilityConverter"/>
         <converters:SignedValueToBrushConverter x:Key="SignedValueToBrushConverter"/>
         <converters:BetweenTextSeparatorConverter x:Key="BetweenTextSeparatorConverter"/>

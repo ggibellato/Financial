@@ -6,6 +6,8 @@ export type PeriodFilterOption =
   | 'ytd'
   | 'all-time'
 
+export const DEFAULT_FILTER: PeriodFilterOption = 'last-12-months'
+
 export const PERIOD_FILTER_OPTIONS: { value: PeriodFilterOption; label: string }[] = [
   { value: 'this-month', label: 'This month' },
   { value: 'last-3-months', label: 'Last 3 months' },

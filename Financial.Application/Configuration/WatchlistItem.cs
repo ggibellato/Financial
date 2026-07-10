@@ -1,6 +1,6 @@
-namespace Financial.Presentation.App.Options;
+namespace Financial.Application.Configuration;
 
-public class WatchlistItem
+public sealed class WatchlistItem
 {
     public required string Group { get; set; }
     public required string Name { get; set; }

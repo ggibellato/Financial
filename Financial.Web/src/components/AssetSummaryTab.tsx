@@ -1,21 +1,8 @@
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useAssetSummary } from '../hooks/useAssetSummary'
+import { formatN2, formatN8, formatShortDate, pad } from '../utils/formatters'
 import './AssetSummaryTab.css'
-
-function formatN2(value: number): string {
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
-}
-
-function formatN8(value: number): string {
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 8,
-    maximumFractionDigits: 8,
-  }).format(value)
-}
 
 function formatPercent(value: number): string {
   return new Intl.NumberFormat(undefined, {
@@ -29,8 +16,7 @@ function formatDateTime(isoString: string | null): string {
   if (!isoString) return '—'
   const d = new Date(isoString)
   if (Number.isNaN(d.getTime())) return isoString
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return `${formatShortDate(isoString)} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 export default function AssetSummaryTab() {

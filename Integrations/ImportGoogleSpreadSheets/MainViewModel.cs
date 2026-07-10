@@ -1,5 +1,4 @@
 using Financial.Application.Interfaces;
-using Financial.Infrastructure.Integrations.FinancialToolSupport;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Infrastructure.Persistence;
 using System;
@@ -120,7 +119,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             IsBusy = true;
             Status = "Starting data generation...";
 
-            IGenerator generator = new GoogleGenerator(
+            var generator = new GoogleGenerator(
                 _service,
                 new LocalJsonStorage(OutputPath),
                 GoogleGeneratorConfiguration.BuildOptions(),

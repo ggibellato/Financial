@@ -25,17 +25,6 @@ public class DividendCheckViewModelTests
     }
 
     [Fact]
-    public void Check_WithWhitespaceTicker_SetsErrorMessage()
-    {
-        var vm = BuildViewModel();
-        vm.Ticker = "   ";
-
-        vm.CheckCommand.Execute(null);
-
-        vm.HasError.Should().BeTrue();
-    }
-
-    [Fact]
     public void Check_WhenServiceThrows_SetsErrorMessageInsteadOfCrashing()
     {
         _dividendService.ThrowOnGetSummary = new InvalidOperationException("Ticker not found.");

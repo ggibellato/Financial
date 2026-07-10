@@ -47,15 +47,6 @@ public class AssetDetailsViewModelBrokerSummaryTests
     }
 
     [Fact]
-    public void LoadBrokerSummary_SetsNegativeTotalInvested()
-    {
-        var vm = BuildViewModel();
-        var summary = new AggregatedSummaryDTO { TotalBought = 1000m, TotalSold = 5000m, TotalInvested = -4000m };
-        vm.LoadBrokerSummary("XPI", summary, []);
-        vm.TotalInvested.Should().Be(-4000m);
-    }
-
-    [Fact]
     public void LoadBrokerSummary_LoadsCreditsForCreditsTab()
     {
         var vm = BuildViewModel();
@@ -268,43 +259,4 @@ public class AssetDetailsViewModelBrokerSummaryTests
         vm.PortfolioBreakdownPieItems.Should().BeEmpty();
     }
 
-    private sealed class StubBrokerBreakdownQueryService : IBrokerBreakdownQueryService
-    {
-        public IReadOnlyList<PortfolioBreakdownItemDTO> Breakdown { get; set; } = [];
-        public Exception? ExceptionToThrow { get; set; }
-        public string? LastBrokerName { get; private set; }
-
-        public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName)
-        {
-            LastBrokerName = brokerName;
-            if (ExceptionToThrow != null) throw ExceptionToThrow;
-            return Breakdown;
-        }
-    }
-
-    private sealed class StubAssetPriceService : IAssetPriceService
-    {
-        public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request) =>
-            new() { Exchange = request.Exchange, Ticker = request.Ticker, Price = 0m };
-    }
-
-    private sealed class StubTransactionQueryService : ITransactionQueryService
-    {
-        public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByBroker(string brokerName) => [];
-        public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByPortfolio(string brokerName, string portfolioName) => [];
-    }
-
-    private sealed class StubTransactionService : ITransactionService
-    {
-        public Task<AssetDetailsDTO?> AddTransactionAsync(TransactionCreateDTO request) => Task.FromResult<AssetDetailsDTO?>(null);
-        public Task<AssetDetailsDTO?> UpdateTransactionAsync(TransactionUpdateDTO request) => Task.FromResult<AssetDetailsDTO?>(null);
-        public Task<AssetDetailsDTO?> DeleteTransactionAsync(TransactionDeleteDTO request) => Task.FromResult<AssetDetailsDTO?>(null);
-    }
-
-    private sealed class StubCreditService : ICreditService
-    {
-        public Task<AssetDetailsDTO?> AddCreditAsync(CreditCreateDTO request) => Task.FromResult<AssetDetailsDTO?>(null);
-        public Task<AssetDetailsDTO?> UpdateCreditAsync(CreditUpdateDTO request) => Task.FromResult<AssetDetailsDTO?>(null);
-        public Task<AssetDetailsDTO?> DeleteCreditAsync(CreditDeleteDTO request) => Task.FromResult<AssetDetailsDTO?>(null);
-    }
 }

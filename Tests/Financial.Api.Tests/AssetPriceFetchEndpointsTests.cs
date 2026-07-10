@@ -1,4 +1,4 @@
-using Financial.Api.Options;
+using Financial.Application.Configuration;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;

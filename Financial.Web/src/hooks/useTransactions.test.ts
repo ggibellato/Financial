@@ -1,10 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import type { ReactNode } from 'react'
-import { createElement } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../api/financialApiClient'
 import type { AssetDetailsDto, SelectedNode, TransactionDto, TransactionSummaryItemDto } from '../api/types'
-import { SelectedNodeProvider, useSelectedNode } from '../context/SelectedNodeContext'
+import { createSelectedNodeWrapper } from '../test-utils/selectedNodeTestWrapper'
 import { buildMonthlyNetInvested, useTransactions } from './useTransactions'
 
 const getAssetDetailsMock = vi.fn<FinancialApiClient['getAssetDetails']>()
@@ -102,28 +100,6 @@ const ASSET_DETAILS: AssetDetailsDto = {
   credits: [],
 }
 
-function createWrapper() {
-  let setNodeRef: ((node: SelectedNode | null) => void) | undefined
-
-  function NodeControl() {
-    const { setSelectedNode } = useSelectedNode()
-    setNodeRef = setSelectedNode
-    return null
-  }
-
-  function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(SelectedNodeProvider, null, createElement(NodeControl), children)
-  }
-
-  return {
-    wrapper: Wrapper,
-    setNode: (node: SelectedNode | null) =>
-      act(() => {
-        setNodeRef?.(node)
-      }),
-  }
-}
-
 describe('useTransactions', () => {
   beforeEach(() => {
     getAssetDetailsMock.mockReset()
@@ -136,7 +112,7 @@ describe('useTransactions', () => {
   })
 
   it('returns_initial_empty_state', () => {
-    const { wrapper } = createWrapper()
+    const { wrapper } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     expect(result.current.isLoading).toBe(false)
     expect(result.current.asset).toBeNull()
@@ -147,7 +123,7 @@ describe('useTransactions', () => {
 
   it('fetches_asset_details_on_asset_selection', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => {
@@ -157,7 +133,7 @@ describe('useTransactions', () => {
 
   it('resets_state_when_non_asset_node_selected', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
@@ -169,7 +145,7 @@ describe('useTransactions', () => {
   it('increments_retry_and_refetches_on_retry', async () => {
     getAssetDetailsMock.mockRejectedValueOnce(new Error('Network error'))
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.error).toBe('Network error'))
@@ -180,7 +156,7 @@ describe('useTransactions', () => {
 
   it('sorts_transactions_by_date_descending', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.transactions.length).toBe(2))
@@ -190,7 +166,7 @@ describe('useTransactions', () => {
 
   it('show_new_form_opens_blank_form', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
@@ -206,7 +182,7 @@ describe('useTransactions', () => {
 
   it('show_edit_form_populates_fields', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
@@ -222,7 +198,7 @@ describe('useTransactions', () => {
 
   it('cancel_form_hides_form_and_resets_fields', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
@@ -238,7 +214,7 @@ describe('useTransactions', () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     const updatedAsset = { ...ASSET_DETAILS, transactions: [TRANSACTION_A, TRANSACTION_B] }
     addTransactionMock.mockResolvedValue(updatedAsset)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
@@ -269,7 +245,7 @@ describe('useTransactions', () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     const updatedAsset = { ...ASSET_DETAILS }
     updateTransactionMock.mockResolvedValue(updatedAsset)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
@@ -287,7 +263,7 @@ describe('useTransactions', () => {
   it('save_sets_error_on_api_failure', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     addTransactionMock.mockRejectedValue(new Error('Server error'))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
@@ -306,7 +282,7 @@ describe('useTransactions', () => {
   it('save_defaults_fees_to_zero_when_blank', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     addTransactionMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
@@ -326,7 +302,7 @@ describe('useTransactions', () => {
 
   it('save_validation_error_when_required_fields_missing', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
@@ -340,7 +316,7 @@ describe('useTransactions', () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     const updatedAsset = { ...ASSET_DETAILS, transactions: [TRANSACTION_B] }
     deleteTransactionMock.mockResolvedValue(updatedAsset)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
@@ -359,7 +335,7 @@ describe('useTransactions', () => {
   it('delete_failure_sets_delete_error', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     deleteTransactionMock.mockRejectedValue(new Error('Delete failed'))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
@@ -370,7 +346,7 @@ describe('useTransactions', () => {
 
   it('fetches_transactions_on_broker_selection', async () => {
     getTransactionsByBrokerMock.mockResolvedValue([SUMMARY_ITEM_A, SUMMARY_ITEM_B])
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(BROKER_NODE)
     await waitFor(() => expect(getTransactionsByBrokerMock).toHaveBeenCalledWith('XPI'))
@@ -379,7 +355,7 @@ describe('useTransactions', () => {
 
   it('fetches_transactions_on_portfolio_selection', async () => {
     getTransactionsByPortfolioMock.mockResolvedValue([SUMMARY_ITEM_A])
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() =>
@@ -390,7 +366,7 @@ describe('useTransactions', () => {
 
   it('transactions_fetch_error_sets_error_state', async () => {
     getTransactionsByBrokerMock.mockRejectedValue(new Error('Network error'))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(BROKER_NODE)
     await waitFor(() => expect(result.current.error).toBe('Network error'))
@@ -399,7 +375,7 @@ describe('useTransactions', () => {
   it('set_filter_and_mode_persist_per_node_selection', async () => {
     getTransactionsByBrokerMock.mockResolvedValue([SUMMARY_ITEM_A])
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
 
     setNode(BROKER_NODE)

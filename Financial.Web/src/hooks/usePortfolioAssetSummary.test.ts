@@ -1,10 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import type { ReactNode } from 'react'
-import { createElement } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../api/financialApiClient'
 import type { AssetPriceDto, PortfolioAssetSummaryItemDto, SelectedNode } from '../api/types'
-import { SelectedNodeProvider, useSelectedNode } from '../context/SelectedNodeContext'
+import { createSelectedNodeWrapper } from '../test-utils/selectedNodeTestWrapper'
 import { usePortfolioAssetSummary } from './usePortfolioAssetSummary'
 
 const getPortfolioAssetsSummaryMock = vi.fn<FinancialApiClient['getPortfolioAssetsSummary']>()
@@ -94,25 +92,6 @@ const PRICE_DTO: AssetPriceDto = {
   asOf: '2024-01-01T10:00:00',
 }
 
-function createWrapper() {
-  let setNodeRef: ((node: SelectedNode | null) => void) | undefined
-
-  function NodeControl() {
-    const { setSelectedNode } = useSelectedNode()
-    setNodeRef = setSelectedNode
-    return null
-  }
-
-  function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(SelectedNodeProvider, null, createElement(NodeControl), children)
-  }
-
-  return {
-    wrapper: Wrapper,
-    setNode: (node: SelectedNode | null) => act(() => { setNodeRef?.(node) }),
-  }
-}
-
 describe('usePortfolioAssetSummary', () => {
   beforeEach(() => {
     getPortfolioAssetsSummaryMock.mockReset()
@@ -122,7 +101,7 @@ describe('usePortfolioAssetSummary', () => {
   it('calls_getPortfolioAssetsSummary_on_portfolio_node_selection', async () => {
     getPortfolioAssetsSummaryMock.mockResolvedValue([ITEM_1])
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => {
@@ -131,7 +110,7 @@ describe('usePortfolioAssetSummary', () => {
   })
 
   it('does_not_fetch_when_broker_node_selected', async () => {
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(BROKER_NODE)
     await act(async () => {})
@@ -139,7 +118,7 @@ describe('usePortfolioAssetSummary', () => {
   })
 
   it('does_not_fetch_when_asset_node_selected', async () => {
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await act(async () => {})
@@ -148,7 +127,7 @@ describe('usePortfolioAssetSummary', () => {
 
   it('sets_isLoading_true_while_fetch_in_progress', async () => {
     getPortfolioAssetsSummaryMock.mockReturnValue(new Promise(() => {}))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => expect(result.current.isLoading).toBe(true))
@@ -157,7 +136,7 @@ describe('usePortfolioAssetSummary', () => {
   it('populates_items_on_successful_fetch', async () => {
     getPortfolioAssetsSummaryMock.mockResolvedValue([ITEM_1, ITEM_2])
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => expect(result.current.items).not.toBeNull())
@@ -169,7 +148,7 @@ describe('usePortfolioAssetSummary', () => {
 
   it('sets_error_on_fetch_failure', async () => {
     getPortfolioAssetsSummaryMock.mockRejectedValue(new Error('Network error'))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => expect(result.current.error).toBe('Network error'))
@@ -179,7 +158,7 @@ describe('usePortfolioAssetSummary', () => {
   it('resets_state_on_node_change', async () => {
     getPortfolioAssetsSummaryMock.mockResolvedValue([ITEM_1])
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => expect(result.current.items).not.toBeNull())
@@ -195,7 +174,7 @@ describe('usePortfolioAssetSummary', () => {
     getPortfolioAssetsSummaryMock.mockRejectedValueOnce(new Error('Fail'))
     getPortfolioAssetsSummaryMock.mockResolvedValue([ITEM_1])
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => expect(result.current.error).toBe('Fail'))
@@ -208,7 +187,7 @@ describe('usePortfolioAssetSummary', () => {
   it('fires_getCurrentPrice_for_each_item_after_fetch', async () => {
     getPortfolioAssetsSummaryMock.mockResolvedValue([ITEM_1, ITEM_2])
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => expect(getCurrentPriceMock).toHaveBeenCalledTimes(2))
@@ -219,7 +198,7 @@ describe('usePortfolioAssetSummary', () => {
   it('sets_row_price_loading_true_after_items_arrive', async () => {
     getPortfolioAssetsSummaryMock.mockResolvedValue([ITEM_1])
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => expect(result.current.items).not.toBeNull())
@@ -229,7 +208,7 @@ describe('usePortfolioAssetSummary', () => {
   it('populates_row_price_on_price_success', async () => {
     getPortfolioAssetsSummaryMock.mockResolvedValue([ITEM_1])
     getCurrentPriceMock.mockResolvedValue(PRICE_DTO)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => expect(result.current.rowPrices[0]?.isLoading).toBe(false))
@@ -240,7 +219,7 @@ describe('usePortfolioAssetSummary', () => {
   it('sets_row_fetch_failed_on_price_error', async () => {
     getPortfolioAssetsSummaryMock.mockResolvedValue([ITEM_1])
     getCurrentPriceMock.mockRejectedValue(new Error('Price fetch failed'))
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => expect(result.current.rowPrices[0]?.fetchFailed).toBe(true))
@@ -253,7 +232,7 @@ describe('usePortfolioAssetSummary', () => {
     getCurrentPriceMock
       .mockRejectedValueOnce(new Error('Price fetch failed'))
       .mockResolvedValueOnce(PRICE_DTO)
-    const { wrapper, setNode } = createWrapper()
+    const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => {

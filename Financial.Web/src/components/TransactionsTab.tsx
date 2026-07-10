@@ -16,30 +16,10 @@ import type { ChartDisplayMode, TransactionFormField, TransactionMonthBucket } f
 import { useTransactions } from '../hooks/useTransactions'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import type { PeriodFilterOption } from '../utils/periodFilter'
+import { formatN2, formatN8, formatShortDate } from '../utils/formatters'
 import './TransactionsTab.css'
 
 const CHART_COLOR = '#6b7280'
-
-function formatN2(value: number): string {
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
-}
-
-function formatN8(value: number): string {
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 8,
-    maximumFractionDigits: 8,
-  }).format(value)
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
-}
 
 interface TransactionRowProps {
   transaction: TransactionDto
@@ -78,7 +58,7 @@ function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) 
           </svg>
         </button>
       </td>
-      <td>{formatDate(transaction.date)}</td>
+      <td>{formatShortDate(transaction.date)}</td>
       <td className={typeClass}>{transaction.type}</td>
       <td className="data-table__col--numeric">{formatN8(transaction.quantity)}</td>
       <td className="data-table__col--numeric">{formatN2(transaction.unitPrice)}</td>
