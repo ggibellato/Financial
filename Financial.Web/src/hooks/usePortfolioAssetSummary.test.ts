@@ -40,6 +40,7 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   assetName: 'ALZR11',
   ticker: 'ALZR11',
   exchange: 'BVMF',
+  class: 'RealEstate',
   firstInvestmentDate: '2021-03-01T00:00:00',
   currentQuantity: 25,
   averagePrice: 100,
@@ -66,6 +67,7 @@ const ITEM_2: PortfolioAssetSummaryItemDto = {
   assetName: 'MXRF11',
   ticker: 'MXRF11',
   exchange: 'BVMF',
+  class: 'RealEstate',
   firstInvestmentDate: '2021-05-15T00:00:00',
   currentQuantity: 10,
   averagePrice: 100,
@@ -193,8 +195,21 @@ describe('usePortfolioAssetSummary', () => {
     renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => expect(getCurrentPriceMock).toHaveBeenCalledTimes(2))
-    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'ALZR11')
-    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'MXRF11')
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'ALZR11', 'RealEstate', 'XPI')
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'MXRF11', 'RealEstate', 'XPI')
+  })
+
+  it('fires_getCurrentPrice_for_cryptocurrency_item_with_blank_exchange', async () => {
+    const cryptoItem: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'Bitcoin', ticker: 'BTC', exchange: '', class: 'Cryptocurrency' }
+    const coinbaseNode: SelectedNode = { nodeType: 'Portfolio', brokerName: 'Coinbase', portfolioName: 'Cryptocurrency' }
+    getPortfolioAssetsSummaryMock.mockResolvedValue([cryptoItem])
+    getCurrentPriceMock.mockResolvedValue(PRICE_DTO)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    renderHook(() => usePortfolioAssetSummary(), { wrapper })
+    setNode(coinbaseNode)
+    await waitFor(() =>
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'BTC', 'Cryptocurrency', 'Coinbase'),
+    )
   })
 
   it('sets_row_price_loading_true_after_items_arrive', async () => {

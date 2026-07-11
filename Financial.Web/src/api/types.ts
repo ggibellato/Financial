@@ -223,6 +223,7 @@ export interface PortfolioAssetSummaryItemDto {
   assetName: string
   ticker: string
   exchange: string
+  class: string
   firstInvestmentDate: string | null
   currentQuantity: number
   averagePrice: number
