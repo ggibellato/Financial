@@ -14,6 +14,8 @@
         <converters:NodeTypeToVisibilityConverter x:Key="NodeTypeToVisibilityConverter"/>
         <converters:SignedValueToBrushConverter x:Key="SignedValueToBrushConverter"/>
         <converters:BetweenTextSeparatorConverter x:Key="BetweenTextSeparatorConverter"/>
+        <converters:DoubleToGridLengthConverter x:Key="DoubleToGridLengthConverter"/>
+        <converters:DoubleToDataGridLengthConverter x:Key="DoubleToDataGridLengthConverter"/>
 
         <DrawingImage x:Key="AppIcon">
             <DrawingImage.Drawing>
@@ -126,6 +128,21 @@
              this explicitly via ElementStyle to get the same vertical centering. -->
         <Style x:Key="PlainColumnTextStyle" TargetType="TextBlock">
             <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Group-header overlay bar shown above a DataGrid's own column headers,
+             used to visually merge related columns under one spanning title. -->
+        <Style x:Key="GroupHeaderBarStyle" TargetType="Border">
+            <Setter Property="Background" Value="#F0F0F0"/>
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+        </Style>
+
+        <Style x:Key="GroupHeaderTitleTextStyle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="Padding" Value="8,4"/>
         </Style>
     </Application.Resources>
 </Application>
