@@ -1,4 +1,5 @@
 using Financial.Application.DTOs;
+using Financial.Domain.Entities;
 using System.Globalization;
 
 namespace Financial.Presentation.App.ViewModels;
@@ -18,6 +19,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     public string AssetName { get; }
     public string Ticker { get; }
     public string Exchange { get; }
+    public GlobalAssetClass Class { get; }
     public DateTime? FirstInvestmentDate { get; }
     public decimal CurrentQuantity { get; }
     public decimal AveragePrice { get; }
@@ -90,6 +92,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
         AssetName = dto.AssetName;
         Ticker = dto.Ticker;
         Exchange = dto.Exchange;
+        Class = dto.Class;
         FirstInvestmentDate = dto.FirstInvestmentDate;
         CurrentQuantity = dto.CurrentQuantity;
         AveragePrice = dto.AveragePrice;
