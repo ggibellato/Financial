@@ -1,5 +1,6 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
+using Financial.Domain.Entities;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,25 +38,63 @@ public class AssetPriceEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
-    private static WebApplicationFactory<Program> CreateFactory()
+    [Fact]
+    public async Task GetCurrentPrice_WithAssetClassAndBrokerName_ReturnsOk()
+    {
+        var stub = new AssetPriceServiceStub();
+        await using var factory = CreateFactory(stub);
+        using var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/v1/financial/prices/current?ticker=BTC&assetClass=Cryptocurrency&brokerName=Coinbase");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        stub.LastRequest.Should().NotBeNull();
+        stub.LastRequest!.AssetClass.Should().Be(GlobalAssetClass.Cryptocurrency);
+        stub.LastRequest.BrokerName.Should().Be("Coinbase");
+    }
+
+    [Fact]
+    public async Task GetCurrentPrice_CryptocurrencyWithoutBrokerName_ReturnsBadRequest()
+    {
+        await using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/v1/financial/prices/current?ticker=BTC&assetClass=Cryptocurrency");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task GetCurrentPrice_UnrecognizedAssetClass_DefaultsToUnknownAndRequiresExchange()
+    {
+        await using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/v1/financial/prices/current?ticker=BTC&assetClass=NotARealClass");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    private static WebApplicationFactory<Program> CreateFactory(AssetPriceServiceStub? stub = null)
     {
         return new ApiTestFactory().WithWebHostBuilder(builder =>
         {
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IAssetPriceService>();
-                services.AddSingleton<IAssetPriceService>(new AssetPriceServiceStub());
+                services.AddSingleton<IAssetPriceService>(stub ?? new AssetPriceServiceStub());
             });
         });
     }
 
     private sealed class AssetPriceServiceStub : IAssetPriceService
     {
+        public AssetPriceRequestDTO? LastRequest { get; private set; }
+
         public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request)
         {
-            if (string.IsNullOrWhiteSpace(request.Exchange) || string.IsNullOrWhiteSpace(request.Ticker))
+            LastRequest = request;
+
+            if (string.IsNullOrWhiteSpace(request.Ticker))
             {
-                throw new ArgumentException("Exchange and ticker are required.", nameof(request));
+                throw new ArgumentException("Ticker is required.", nameof(request));
             }
 
             return new AssetPriceDTO

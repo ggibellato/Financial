@@ -381,7 +381,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         var rows = PortfolioAssetSummaryRows.ToList();
         _rowPriceCts = new CancellationTokenSource();
         var token = _rowPriceCts.Token;
-        FetchRowPricesAsync(rows, token);
+        FetchRowPricesAsync(rows, token, brokerName);
     }
 
     public void LoadAssetDetails(AssetDetailsDTO details)
@@ -574,6 +574,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         return _todayInfo.RefreshAsync(
             forceRefresh, HasAssetContext, _assetPriceService,
+            Class, BrokerName,
             Exchange, Ticker, message => TodayInfoMessage = message);
     }
 
@@ -627,7 +628,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         UpdateCommandStates();
     }
 
-    private void FetchRowPricesAsync(IReadOnlyList<PortfolioAssetSummaryRowViewModel> rows, CancellationToken cancellationToken)
+    private void FetchRowPricesAsync(IReadOnlyList<PortfolioAssetSummaryRowViewModel> rows, CancellationToken cancellationToken, string brokerName)
     {
         foreach (var row in rows)
         {
@@ -637,7 +638,14 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
                 try
                 {
                     if (cancellationToken.IsCancellationRequested) return;
-                    var price = _assetPriceService.GetCurrentPrice(new Application.DTOs.AssetPriceRequestDTO { Exchange = capturedRow.Exchange, Ticker = capturedRow.Ticker });
+                    // AssetClass is not available on PortfolioAssetSummaryRowViewModel (P02 DTO), so this
+                    // always uses the standard exchange-based fetch path, even for cryptocurrency assets.
+                    var price = _assetPriceService.GetCurrentPrice(new Application.DTOs.AssetPriceRequestDTO
+                    {
+                        Exchange = capturedRow.Exchange,
+                        Ticker = capturedRow.Ticker,
+                        BrokerName = brokerName
+                    });
                     if (cancellationToken.IsCancellationRequested) return;
                     capturedRow.ApplyPrice(price.Price);
                 }
