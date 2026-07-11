@@ -150,8 +150,9 @@ describe('PortfolioSummaryTab', () => {
     expect(screen.getByText('% Portfolio')).toBeInTheDocument()
     expect(screen.getAllByText('Total Credits').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Current Value')).toBeInTheDocument()
-    expect(screen.getByText('% Profit')).toBeInTheDocument()
-    expect(screen.getByText('% Profit w/ Credits')).toBeInTheDocument()
+    expect(screen.getByText('Profit')).toBeInTheDocument()
+    expect(screen.getAllByText('%').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText('w/ Credits')).toBeInTheDocument()
     expect(screen.getByText('XIRR')).toBeInTheDocument()
   })
 
@@ -356,15 +357,17 @@ describe('PortfolioSummaryTab', () => {
 
   // ── P03-F02: Credits Analysis Columns ─────────────────────────────────────
 
-  it('renders_five_new_column_headers_after_xirr', () => {
+  it('renders_grouped_credits_analysis_column_headers_after_xirr', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
     renderComponent()
-    expect(screen.getByText('Last Month Credits')).toBeInTheDocument()
-    expect(screen.getByText('Last Credit Month')).toBeInTheDocument()
-    expect(screen.getByText('Last Month %')).toBeInTheDocument()
-    expect(screen.getByText('Est. Annual Credits')).toBeInTheDocument()
-    expect(screen.getByText('Est. Annual %')).toBeInTheDocument()
+    expect(screen.getByText('Last Month')).toBeInTheDocument()
+    expect(screen.getByText('Month')).toBeInTheDocument()
+    expect(screen.getByText('Est. Annual')).toBeInTheDocument()
+    // "Credits" sub-header appears under both the Last Month and Est. Annual groups
+    expect(screen.getAllByText('Credits').length).toBeGreaterThanOrEqual(2)
+    // "%" sub-header appears under Profit, Last Month, and Est. Annual groups
+    expect(screen.getAllByText('%').length).toBeGreaterThanOrEqual(3)
   })
 
   it('renders_last_month_credits_with_formatted_value', () => {
@@ -452,11 +455,11 @@ describe('PortfolioSummaryTab', () => {
     expect(dashes.length).toBeGreaterThanOrEqual(1)
   })
 
-  it('renders_credits_separator_class_on_last_month_credits_header', () => {
+  it('renders_credits_separator_class_on_last_month_group_header', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
     renderComponent()
-    const header = screen.getByText('Last Month Credits')
+    const header = screen.getByText('Last Month')
     expect(header).toHaveClass('portfolio-summary__credits-separator')
   })
 

@@ -491,7 +491,25 @@
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTemplateColumn Header="% Profit" Width="Auto">
+                                        <DataGridTemplateColumn Width="70">
+                                            <DataGridTemplateColumn.HeaderStyle>
+                                                <Style TargetType="DataGridColumnHeader">
+                                                    <Setter Property="Panel.ZIndex" Value="1"/>
+                                                </Style>
+                                            </DataGridTemplateColumn.HeaderStyle>
+                                            <DataGridTemplateColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock Grid.Row="0" Text="Profit" Width="180" HorizontalAlignment="Left"
+                                                                   Style="{StaticResource GroupedHeaderTitleStyle}"/>
+                                                        <TextBlock Grid.Row="1" Text="%" Style="{StaticResource GroupedHeaderSubLabelStyle}"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.HeaderTemplate>
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock TextAlignment="Right" Padding="8">
@@ -515,7 +533,19 @@
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTemplateColumn Header="% Profit w/ Credits" Width="Auto">
+                                        <DataGridTemplateColumn Width="110">
+                                            <DataGridTemplateColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock Grid.Row="0" Style="{StaticResource GroupedHeaderTitleStyle}"/>
+                                                        <TextBlock Grid.Row="1" Text="w/ Credits" Style="{StaticResource GroupedHeaderSubLabelStyle}"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.HeaderTemplate>
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock TextAlignment="Right" Padding="8">
@@ -563,7 +593,7 @@
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTextColumn Header="Last Month Credits" Binding="{Binding DisplayLastMonthCredits}" Width="Auto">
+                                        <DataGridTextColumn Binding="{Binding DisplayLastMonthCredits}" Width="100">
                                             <DataGridTextColumn.CellStyle>
                                                 <Style TargetType="DataGridCell">
                                                     <Setter Property="BorderThickness" Value="3,0,0,0"/>
@@ -574,28 +604,96 @@
                                                 <Style TargetType="DataGridColumnHeader">
                                                     <Setter Property="BorderThickness" Value="3,0,0,0"/>
                                                     <Setter Property="BorderBrush" Value="#007ACC"/>
+                                                    <Setter Property="Panel.ZIndex" Value="1"/>
                                                 </Style>
                                             </DataGridTextColumn.HeaderStyle>
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock Grid.Row="0" Text="Last Month" Width="250" HorizontalAlignment="Left"
+                                                                   Style="{StaticResource GroupedHeaderTitleStyle}"/>
+                                                        <TextBlock Grid.Row="1" Text="Credits" Style="{StaticResource GroupedHeaderSubLabelStyle}"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Header="Last Credit Month" Binding="{Binding LastCreditMonthDisplay}" Width="Auto">
+                                        <DataGridTextColumn Binding="{Binding LastCreditMonthDisplay}" Width="80">
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock Grid.Row="0" Style="{StaticResource GroupedHeaderTitleStyle}"/>
+                                                        <TextBlock Grid.Row="1" Text="Month" Style="{StaticResource GroupedHeaderSubLabelStyle}"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Header="Last Month %" Binding="{Binding DisplayLastMonthCreditsPercent}" Width="Auto">
+                                        <DataGridTextColumn Binding="{Binding DisplayLastMonthCreditsPercent}" Width="70">
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock Grid.Row="0" Style="{StaticResource GroupedHeaderTitleStyle}"/>
+                                                        <TextBlock Grid.Row="1" Text="%" Style="{StaticResource GroupedHeaderSubLabelStyle}"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Header="Est. Annual Credits" Binding="{Binding DisplayEstimatedAnnualCredits}" Width="Auto">
+                                        <DataGridTextColumn Binding="{Binding DisplayEstimatedAnnualCredits}" Width="100">
+                                            <DataGridTextColumn.HeaderStyle>
+                                                <Style TargetType="DataGridColumnHeader">
+                                                    <Setter Property="Panel.ZIndex" Value="1"/>
+                                                </Style>
+                                            </DataGridTextColumn.HeaderStyle>
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock Grid.Row="0" Text="Est. Annual" Width="170" HorizontalAlignment="Left"
+                                                                   Style="{StaticResource GroupedHeaderTitleStyle}"/>
+                                                        <TextBlock Grid.Row="1" Text="Credits" Style="{StaticResource GroupedHeaderSubLabelStyle}"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Header="Est. Annual %" Binding="{Binding DisplayEstimatedAnnualPercent}" Width="Auto">
+                                        <DataGridTextColumn Binding="{Binding DisplayEstimatedAnnualPercent}" Width="70">
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock Grid.Row="0" Style="{StaticResource GroupedHeaderTitleStyle}"/>
+                                                        <TextBlock Grid.Row="1" Text="%" Style="{StaticResource GroupedHeaderSubLabelStyle}"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                             </DataGridTextColumn.ElementStyle>

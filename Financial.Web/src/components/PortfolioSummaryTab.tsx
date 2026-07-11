@@ -167,21 +167,26 @@ export default function PortfolioSummaryTab() {
           <table className="portfolio-summary__table data-table">
             <thead>
               <tr>
-                <th>Asset Name</th>
-                <th>First Investment</th>
-                <th>Quantity</th>
-                <th>Total Invested</th>
-                <th>% Portfolio</th>
-                <th>Total Credits</th>
-                <th>Current Value</th>
-                <th>% Profit</th>
-                <th>% Profit w/ Credits</th>
-                <th>XIRR</th>
-                <th className="portfolio-summary__credits-separator">Last Month Credits</th>
-                <th>Last Credit Month</th>
-                <th>Last Month %</th>
-                <th>Est. Annual Credits</th>
-                <th>Est. Annual %</th>
+                <th rowSpan={2}>Asset Name</th>
+                <th rowSpan={2}>First Investment</th>
+                <th rowSpan={2}>Quantity</th>
+                <th rowSpan={2}>Total Invested</th>
+                <th rowSpan={2}>% Portfolio</th>
+                <th rowSpan={2}>Total Credits</th>
+                <th rowSpan={2}>Current Value</th>
+                <th colSpan={2} className="portfolio-summary__group-header">Profit</th>
+                <th rowSpan={2}>XIRR</th>
+                <th colSpan={3} className="portfolio-summary__group-header portfolio-summary__credits-separator">Last Month</th>
+                <th colSpan={2} className="portfolio-summary__group-header">Est. Annual</th>
+              </tr>
+              <tr>
+                <th>%</th>
+                <th>w/ Credits</th>
+                <th className="portfolio-summary__credits-separator">Credits</th>
+                <th>Month</th>
+                <th>%</th>
+                <th>Credits</th>
+                <th>%</th>
               </tr>
             </thead>
             <tbody>

@@ -22,6 +22,14 @@
   text-align: right;
 }
 
+.portfolio-summary__table th {
+  vertical-align: middle;
+}
+
+.portfolio-summary__table th.portfolio-summary__group-header {
+  text-align: center;
+}
+
 .portfolio-summary__profit--green {
   color: #2e7d32;
 }

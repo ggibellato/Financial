@@ -117,6 +117,17 @@
             <Setter Property="TextAlignment" Value="Right"/>
             <Setter Property="Padding" Value="8"/>
         </Style>
+
+        <Style x:Key="GroupedHeaderTitleStyle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="0,0,0,2"/>
+        </Style>
+
+        <Style x:Key="GroupedHeaderSubLabelStyle" TargetType="TextBlock">
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+        </Style>
     </Application.Resources>
 </Application>
 
