@@ -86,6 +86,14 @@
   padding-left: 12px;
 }
 
+.investment-tree__status-icon--active {
+  color: #2e7d32;
+}
+
+.investment-tree__status-icon--inactive {
+  color: #c62828;
+}
+
 .investment-tree__node--broker {
   font-weight: 500;
 }

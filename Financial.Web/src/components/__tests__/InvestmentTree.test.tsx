@@ -112,7 +112,7 @@ describe('InvestmentTree', () => {
     await screen.findByText('XPI (BRL)')
     const expandBtn = screen.getAllByLabelText('Expand')[0]
     fireEvent.click(expandBtn)
-    expect(screen.getByText('● KLBN4')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '● KLBN4' })).toBeInTheDocument()
   })
 
   it('renders inactive asset with empty circle prefix', async () => {
@@ -120,7 +120,16 @@ describe('InvestmentTree', () => {
     await screen.findByText('XPI (BRL)')
     const expandBtn = screen.getAllByLabelText('Expand')[0]
     fireEvent.click(expandBtn)
-    expect(screen.getByText('○ TRPL4')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '○ TRPL4' })).toBeInTheDocument()
+  })
+
+  it('renders active asset status icon in green and inactive in red', async () => {
+    renderTree()
+    await screen.findByText('XPI (BRL)')
+    const expandBtn = screen.getAllByLabelText('Expand')[0]
+    fireEvent.click(expandBtn)
+    expect(screen.getByText('●')).toHaveClass('investment-tree__status-icon--active')
+    expect(screen.getByText('○')).toHaveClass('investment-tree__status-icon--inactive')
   })
 
   it('clicking asset node sets selectedNode in context', async () => {
@@ -128,7 +137,7 @@ describe('InvestmentTree', () => {
     await screen.findByText('XPI (BRL)')
     const expandBtn = screen.getAllByLabelText('Expand')[0]
     fireEvent.click(expandBtn)
-    fireEvent.click(screen.getByText('● KLBN4'))
+    fireEvent.click(screen.getByRole('button', { name: '● KLBN4' }))
     expect(screen.getByTestId('selected').textContent).toBe('Asset:XPI:Acoes:KLBN4')
   })
 
@@ -168,8 +177,8 @@ describe('InvestmentTree', () => {
     fireEvent.click(expandBtn)
 
     fireEvent.change(screen.getByLabelText('Asset class'), { target: { value: '1' } })
-    expect(screen.getByText('● KLBN4')).toBeInTheDocument()
-    expect(screen.queryByText('● TREA3')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '● KLBN4' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '● TREA3' })).not.toBeInTheDocument()
   })
 
   it('asset class filter All restores full tree', async () => {
@@ -195,8 +204,8 @@ describe('InvestmentTree', () => {
 
     fireEvent.change(screen.getByLabelText('Asset class'), { target: { value: '1' } })
     fireEvent.change(screen.getByLabelText('Asset class'), { target: { value: 'all' } })
-    expect(screen.getByText('● KLBN4')).toBeInTheDocument()
-    expect(screen.getByText('● TREA3')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '● KLBN4' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '● TREA3' })).toBeInTheDocument()
   })
 
   it('broker node is retained in tree when filter is active', async () => {
