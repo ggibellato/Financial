@@ -451,8 +451,16 @@
                                           CanUserAddRows="False"
                                           IsReadOnly="True">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Asset Name" Binding="{Binding AssetName}" Width="*"/>
-                                        <DataGridTextColumn Header="First Investment" Binding="{Binding DisplayFirstInvestmentDate}" Width="Auto"/>
+                                        <DataGridTextColumn Header="Asset Name" Binding="{Binding AssetName}" Width="*">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="First Investment" Binding="{Binding DisplayFirstInvestmentDate}" Width="Auto">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
                                         <DataGridTextColumn Header="Quantity" Binding="{Binding DisplayCurrentQuantity}" Width="Auto">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
@@ -476,7 +484,7 @@
                                         <DataGridTemplateColumn Header="Current Value" Width="Auto">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock TextAlignment="Right" Padding="8">
+                                                    <TextBlock TextAlignment="Right" Padding="8" VerticalAlignment="Center">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="Text" Value="{Binding DisplayCurrentValue}"/>
@@ -499,7 +507,7 @@
                                         <DataGridTemplateColumn Header="% Profit" Width="Auto">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock TextAlignment="Right" Padding="8">
+                                                    <TextBlock TextAlignment="Right" Padding="8" VerticalAlignment="Center">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="Text" Value="{Binding DisplayProfitPercent}"/>
@@ -523,7 +531,7 @@
                                         <DataGridTemplateColumn Header="% Profit w/ Credits" Width="Auto">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock TextAlignment="Right" Padding="8">
+                                                    <TextBlock TextAlignment="Right" Padding="8" VerticalAlignment="Center">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="Text" Value="{Binding DisplayProfitWithCreditsPercent}"/>
@@ -547,7 +555,7 @@
                                         <DataGridTemplateColumn Header="XIRR" Width="Auto">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock TextAlignment="Right" Padding="8">
+                                                    <TextBlock TextAlignment="Right" Padding="8" VerticalAlignment="Center">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="Text" Value="{Binding DisplayXirr}"/>
@@ -715,12 +723,16 @@
                                         </DataGridTemplateColumn>
                                         <DataGridTextColumn Header="Date"
                                                             Binding="{Binding Date, Converter={StaticResource DateFormatConverter}, ConverterParameter='d'}"
-                                                            Width="Auto"/>
+                                                            Width="Auto">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
                                         <DataGridTextColumn Header="Type"
                                                             Binding="{Binding Type}"
                                                             Width="Auto">
                                             <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}">
                                                     <Setter Property="Foreground"
                                                             Value="{Binding Type, Converter={StaticResource TransactionTypeToColorConverter}}"/>
                                                     <Setter Property="FontWeight" Value="Bold"/>
@@ -1015,12 +1027,20 @@
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTextColumn Header="Date" 
-                                                            Binding="{Binding Date, Converter={StaticResource DateFormatConverter}, ConverterParameter='d'}" 
-                                                            Width="Auto"/>
-                                        <DataGridTextColumn Header="Type" 
-                                                            Binding="{Binding Type}" 
-                                                            Width="Auto"/>
+                                        <DataGridTextColumn Header="Date"
+                                                            Binding="{Binding Date, Converter={StaticResource DateFormatConverter}, ConverterParameter='d'}"
+                                                            Width="Auto">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Type"
+                                                            Binding="{Binding Type}"
+                                                            Width="Auto">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
                                         <DataGridTextColumn Header="Value"
                                                             Binding="{Binding Value, StringFormat=N2}"
                                                             Width="*">
