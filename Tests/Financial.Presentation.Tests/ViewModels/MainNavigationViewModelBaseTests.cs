@@ -9,6 +9,17 @@ namespace Financial.Presentation.Tests.ViewModels;
 public class MainNavigationViewModelBaseTests
 {
     [Fact]
+    public void AssetClassFilters_IncludesCryptocurrencyWithCorrectLabel()
+    {
+        var summaryService = new StubSummaryQueryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var vm = new TestableNavigationViewModel(summaryService, spy);
+
+        vm.AssetClassFilters.Should().ContainSingle(f =>
+            f.Filter == GlobalAssetClass.Cryptocurrency && f.Label == "Cryptocurrency");
+    }
+
+    [Fact]
     public void SelectingPortfolioNode_LoadsTotalSoldFromSummaryService()
     {
         var summary = new AggregatedSummaryDTO { TotalBought = 10000m, TotalSold = 4706.65m, TotalCredits = 500m };
