@@ -16,9 +16,13 @@ vi.mock('../../api/financialApiClient', () => ({
   } satisfies Partial<FinancialApiClient>),
 }))
 
-const makeBroker = (portfolios: { name: string; assets: Partial<BrokerNodeDto['portfolios'][0]['assets'][0]>[] }[]): BrokerNodeDto => ({
-  name: 'XPI',
-  currency: 'BRL',
+const makeBroker = (
+  portfolios: { name: string; assets: Partial<BrokerNodeDto['portfolios'][0]['assets'][0]>[] }[],
+  brokerName = 'XPI',
+  currency = 'BRL',
+): BrokerNodeDto => ({
+  name: brokerName,
+  currency,
   portfolioCount: portfolios.length,
   totalAssets: portfolios.reduce((sum, p) => sum + p.assets.length, 0),
   portfolios: portfolios.map((p) => ({
@@ -31,7 +35,7 @@ const makeBroker = (portfolios: { name: string; assets: Partial<BrokerNodeDto['p
       exchange: a.exchange ?? 'BVMF',
       country: 'Brazil',
       localTypeCode: 'FII',
-      class: 'RealEstateFund',
+      class: a.class ?? 'RealEstateFund',
       isin: 'BR000',
       quantity: 10,
       averagePrice: 100,
@@ -77,9 +81,9 @@ describe('CurrentValuesPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
 
     await waitFor(() => {
-      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11')
-      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'KLBN4')
-      expect(getCurrentPriceMock).not.toHaveBeenCalledWith('BVMF', 'XXXX3')
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstateFund', 'XPI')
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'KLBN4', 'RealEstateFund', 'XPI')
+      expect(getCurrentPriceMock).not.toHaveBeenCalledWith('BVMF', 'XXXX3', 'RealEstateFund', 'XPI')
     })
   })
 
@@ -248,8 +252,8 @@ describe('CurrentValuesPage', () => {
     await waitFor(() => expect(screen.queryByText(/Completed!/)).toBeInTheDocument())
 
     expect(getCurrentPriceMock).toHaveBeenCalledTimes(1)
-    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11')
-    expect(getCurrentPriceMock).not.toHaveBeenCalledWith('BVMF', 'INAC11')
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstateFund', 'XPI')
+    expect(getCurrentPriceMock).not.toHaveBeenCalledWith('BVMF', 'INAC11', 'RealEstateFund', 'XPI')
   })
 
   it('excludes assets with empty ticker or exchange', async () => {
@@ -272,6 +276,67 @@ describe('CurrentValuesPage', () => {
     await waitFor(() => expect(screen.queryByText(/Completed!/)).toBeInTheDocument())
 
     expect(getCurrentPriceMock).toHaveBeenCalledTimes(1)
-    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11')
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstateFund', 'XPI')
+  })
+
+  it('fetches Bitcoin under Coinbase/Cryptocurrency scope with assetClass and brokerName', async () => {
+    getAssetPriceFetchScopeMock.mockResolvedValue([
+      ...defaultScope,
+      { brokerName: 'Coinbase', portfolioName: 'Cryptocurrency' },
+    ])
+    getBrokersMock.mockResolvedValue([
+      makeBroker(
+        [
+          {
+            name: 'Cryptocurrency',
+            assets: [{ name: 'Bitcoin', ticker: 'BTC', exchange: '', class: 'Cryptocurrency' }],
+          },
+        ],
+        'Coinbase',
+        'GBP',
+      ),
+    ])
+    getCurrentPriceMock.mockResolvedValue({
+      exchange: '',
+      ticker: 'BTC',
+      name: 'Bitcoin',
+      price: 48000,
+      asOf: '2024-02-01T00:00:00Z',
+    } satisfies AssetPriceDto)
+
+    render(<CurrentValuesPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+
+    await waitFor(() => {
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'BTC', 'Cryptocurrency', 'Coinbase')
+    })
+  })
+
+  it('does not exclude Cryptocurrency assets with blank exchange', async () => {
+    getAssetPriceFetchScopeMock.mockResolvedValue([{ brokerName: 'Coinbase', portfolioName: 'Cryptocurrency' }])
+    getBrokersMock.mockResolvedValue([
+      makeBroker(
+        [
+          {
+            name: 'Cryptocurrency',
+            assets: [{ name: 'Bitcoin', ticker: 'BTC', exchange: '', class: 'Cryptocurrency' }],
+          },
+        ],
+        'Coinbase',
+        'GBP',
+      ),
+    ])
+    getCurrentPriceMock.mockResolvedValue({
+      exchange: '',
+      ticker: 'BTC',
+      name: 'Bitcoin',
+      price: 48000,
+      asOf: '2024-02-01T00:00:00Z',
+    } satisfies AssetPriceDto)
+
+    render(<CurrentValuesPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+
+    await waitFor(() => expect(getCurrentPriceMock).toHaveBeenCalledTimes(1))
   })
 })

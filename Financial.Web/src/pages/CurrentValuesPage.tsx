@@ -66,9 +66,13 @@ export default function CurrentValuesPage() {
         exchange: asset.exchange,
         assetName: asset.name,
         isActive: asset.isActive,
+        assetClass: asset.class,
+        brokerName: broker.name,
       }))
     })
-    return assets.filter((asset) => asset.isActive && asset.ticker && asset.exchange)
+    return assets.filter(
+      (asset) => asset.isActive && asset.ticker && (asset.exchange || asset.assetClass === 'Cryptocurrency'),
+    )
   }, [brokers, scope])
 
   const runPriceCheck = useCallback(async () => {
@@ -82,7 +86,12 @@ export default function CurrentValuesPage() {
     let completed = 0
     for (const asset of assetsToCheck) {
       try {
-        const price = await apiClient.getCurrentPrice(asset.exchange, asset.ticker)
+        const price = await apiClient.getCurrentPrice(
+          asset.exchange,
+          asset.ticker,
+          asset.assetClass,
+          asset.brokerName,
+        )
         setResults((prev) => [
           ...prev,
           {
