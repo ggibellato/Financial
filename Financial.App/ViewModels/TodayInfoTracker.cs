@@ -1,5 +1,6 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
+using Financial.Domain.Entities;
 
 namespace Financial.Presentation.App.ViewModels;
 
@@ -58,6 +59,8 @@ public sealed class TodayInfoTracker
         bool forceRefresh,
         bool hasAssetContext,
         IAssetPriceService? assetPriceService,
+        GlobalAssetClass assetClass,
+        string? brokerName,
         string exchange,
         string ticker,
         Action<string> setMessage)
@@ -74,7 +77,9 @@ public sealed class TodayInfoTracker
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(exchange) || string.IsNullOrWhiteSpace(ticker))
+        var isCryptocurrency = assetClass == GlobalAssetClass.Cryptocurrency;
+
+        if (string.IsNullOrWhiteSpace(ticker) || (!isCryptocurrency && string.IsNullOrWhiteSpace(exchange)))
         {
             setMessage("Asset exchange or ticker is missing.");
             return;
@@ -96,7 +101,9 @@ public sealed class TodayInfoTracker
             var request = new AssetPriceRequestDTO
             {
                 Exchange = exchange,
-                Ticker = ticker
+                Ticker = ticker,
+                AssetClass = assetClass,
+                BrokerName = brokerName
             };
 
             var price = await Task.Run(() => assetPriceService.GetCurrentPrice(request));

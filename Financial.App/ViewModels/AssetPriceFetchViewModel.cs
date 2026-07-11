@@ -61,20 +61,23 @@ public class AssetPriceFetchViewModel : ViewModelBase
         try
         {
             var assets = _portfolios
-                .SelectMany(p => _navigationService.GetAssetsByBrokerPortfolio(p.BrokerName, p.PortfolioName))
+                .SelectMany(p => _navigationService.GetAssetsByBrokerPortfolio(p.BrokerName, p.PortfolioName)
+                    .Select(asset => (BrokerName: p.BrokerName, Asset: asset)))
                 .ToList();
 
             var total = assets.Count;
             for (var i = 0; i < assets.Count; i++)
             {
-                var asset = assets[i];
+                var (brokerName, asset) = assets[i];
                 ProgressPercent = (i + 1) * 100.0 / total;
                 ProgressMessage = $"Fetching {i + 1} of {total}: {asset.Ticker}...";
 
                 var result = await Task.Run(() => _assetPriceService.GetCurrentPrice(new AssetPriceRequestDTO
                 {
                     Exchange = asset.Exchange,
-                    Ticker = asset.Ticker
+                    Ticker = asset.Ticker,
+                    AssetClass = asset.Class,
+                    BrokerName = brokerName
                 }));
                 Results.Add(result);
             }
