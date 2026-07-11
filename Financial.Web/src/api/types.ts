@@ -9,6 +9,7 @@ export interface SelectedNode {
   exchange?: string
   currency?: string
   isActive?: boolean
+  assetClass?: string
 }
 
 export interface SelectedNodeContextValue {
@@ -222,6 +223,7 @@ export interface PortfolioAssetSummaryItemDto {
   assetName: string
   ticker: string
   exchange: string
+  class: string
   firstInvestmentDate: string | null
   currentQuantity: number
   averagePrice: number

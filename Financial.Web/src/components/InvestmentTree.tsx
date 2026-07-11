@@ -69,7 +69,16 @@ function AssetNode({ node, brokerName, portfolioName, filterClass }: AssetNodePr
   const prefix = isActive ? '●' : '○'
 
   const handleClick = () => {
-    setSelectedNode({ nodeType: 'Asset', brokerName, portfolioName, assetName, ticker, exchange, isActive })
+    setSelectedNode({
+      nodeType: 'Asset',
+      brokerName,
+      portfolioName,
+      assetName,
+      ticker,
+      exchange,
+      isActive,
+      assetClass: ASSET_CLASS_OPTIONS.find((o) => o.value === assetClass)?.label,
+    })
   }
 
   return (

@@ -46,7 +46,7 @@ public sealed class PortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQu
         var creditsAnalysis = ComputeCreditsAnalysis(asset, totalBought - totalSold, today);
 
         return new AssetComputedData(
-            asset.Name, asset.Ticker, asset.Exchange,
+            asset.Name, asset.Ticker, asset.Exchange, asset.Class,
             firstBuyDate, asset.Quantity, asset.AveragePrice,
             totalBought, totalSold, totalBought - totalSold,
             totalCredits, cashFlows,
@@ -147,6 +147,7 @@ public sealed class PortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQu
             AssetName = c.AssetName,
             Ticker = c.Ticker,
             Exchange = c.Exchange,
+            Class = c.Class,
             FirstInvestmentDate = c.FirstInvestmentDate,
             CurrentQuantity = c.CurrentQuantity,
             AveragePrice = c.AveragePrice,
@@ -169,7 +170,7 @@ public sealed class PortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQu
         portfolioTotalInvested == 0m ? 0m : totalInvested / portfolioTotalInvested * 100m;
 
     private sealed record AssetComputedData(
-        string AssetName, string Ticker, string Exchange,
+        string AssetName, string Ticker, string Exchange, GlobalAssetClass Class,
         DateTime? FirstInvestmentDate, decimal CurrentQuantity, decimal AveragePrice,
         decimal TotalBought, decimal TotalSold, decimal TotalInvested,
         decimal TotalCredits, IReadOnlyList<AssetCashFlowDTO> CashFlows,

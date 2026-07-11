@@ -112,6 +112,29 @@ describe('financialApiClient', () => {
     expect(init?.method).toBeUndefined()
   })
 
+  it('calls current price endpoint with assetClass and brokerName for cryptocurrency', async () => {
+    const responseBody = {
+      exchange: '',
+      ticker: 'BTC',
+      name: 'Bitcoin',
+      price: 48000,
+      asOf: '2024-02-01T00:00:00Z',
+    } satisfies AssetPriceDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({
+      baseUrl: API_BASE_URL,
+      fetch: fetchMock,
+    })
+
+    const result = await client.getCurrentPrice('', 'BTC', 'Cryptocurrency', 'Coinbase')
+
+    expect(result).toEqual(responseBody)
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(
+      `${API_BASE_URL}/prices/current?exchange=&ticker=BTC&assetClass=Cryptocurrency&brokerName=Coinbase`,
+    )
+  })
+
   it('calls watchlist endpoint', async () => {
     const responseBody = [{ group: 'Test', name: 'KLBN4' }]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))

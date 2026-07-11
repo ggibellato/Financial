@@ -109,7 +109,7 @@ export function usePortfolioAssetSummary(): PortfolioAssetSummaryData {
         dispatch({ type: 'FETCH_SUCCESS', payload: items })
         items.forEach((item, index) => {
           void apiClient
-            .getCurrentPrice(item.exchange, item.ticker)
+            .getCurrentPrice(item.exchange, item.ticker, item.class, brokerName)
             .then((priceDto) => {
               dispatch({ type: 'ROW_PRICE_SUCCESS', index, currentPrice: priceDto.price })
             })

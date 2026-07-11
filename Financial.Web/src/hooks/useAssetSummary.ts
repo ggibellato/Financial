@@ -84,10 +84,10 @@ export function useAssetSummary(): AssetSummaryData {
     !!selectedNode.assetName
 
   const fetchPrice = useCallback(
-    (exchange: string, ticker: string) => {
+    (exchange: string, ticker: string, assetClass?: string, brokerName?: string) => {
       dispatch({ type: 'PRICE_FETCH_START' })
       void apiClient
-        .getCurrentPrice(exchange, ticker)
+        .getCurrentPrice(exchange, ticker, assetClass, brokerName)
         .then((result) => dispatch({ type: 'PRICE_FETCH_SUCCESS', payload: result }))
         .catch((err: unknown) => {
           dispatch({
@@ -105,7 +105,7 @@ export function useAssetSummary(): AssetSummaryData {
       return
     }
 
-    const { brokerName, portfolioName, assetName, exchange, ticker } = selectedNode
+    const { brokerName, portfolioName, assetName, exchange, ticker, assetClass } = selectedNode
 
     if (!portfolioName || !assetName) {
       dispatch({ type: 'RESET' })
@@ -114,8 +114,8 @@ export function useAssetSummary(): AssetSummaryData {
 
     dispatch({ type: 'ASSET_FETCH_START' })
 
-    if (exchange && ticker) {
-      fetchPrice(exchange, ticker)
+    if (ticker && (exchange || assetClass === 'Cryptocurrency')) {
+      fetchPrice(exchange ?? '', ticker, assetClass, brokerName)
     }
 
     void apiClient
@@ -132,8 +132,9 @@ export function useAssetSummary(): AssetSummaryData {
   const retryAsset = useCallback(() => dispatch({ type: 'ASSET_RETRY' }), [])
 
   const refresh = useCallback(() => {
-    if (!isAsset || !selectedNode?.exchange || !selectedNode?.ticker) return
-    fetchPrice(selectedNode.exchange, selectedNode.ticker)
+    if (!isAsset || !selectedNode?.ticker) return
+    if (!selectedNode.exchange && selectedNode.assetClass !== 'Cryptocurrency') return
+    fetchPrice(selectedNode.exchange ?? '', selectedNode.ticker, selectedNode.assetClass, selectedNode.brokerName)
   }, [isAsset, selectedNode, fetchPrice])
 
   const canRefresh = !state.isLoadingPrice

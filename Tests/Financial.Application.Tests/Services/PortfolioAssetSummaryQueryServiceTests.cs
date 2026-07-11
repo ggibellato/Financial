@@ -18,6 +18,18 @@ public class PortfolioAssetSummaryQueryServiceTests
     }
 
     [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsAssetClass_MatchingAssetClassification()
+    {
+        var asset = Asset.Create("Bitcoin", "", "", "BTC", CountryCode.UK, "", GlobalAssetClass.Cryptocurrency);
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("Coinbase", "Cryptocurrency");
+
+        result.Should().HaveCount(1);
+        result[0].Class.Should().Be(GlobalAssetClass.Cryptocurrency);
+    }
+
+    [Fact]
     public void GetPortfolioAssetsSummary_ReturnsSingleAsset_WithCorrectFields()
     {
         var asset = MakeAsset("ALZR11", "ALZR11", "BVMF");
