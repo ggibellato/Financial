@@ -5,6 +5,12 @@
   margin-top: 24px;
 }
 
+.broker-breakdown__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
 .broker-breakdown__chart-title {
   font-size: 13px;
   font-weight: 600;

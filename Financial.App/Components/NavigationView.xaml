@@ -387,14 +387,19 @@
                                         <oxy:PlotView Model="{Binding AssetDetails.OverallBreakdownPlotModel}" Height="260" Background="Transparent"/>
                                     </StackPanel>
 
-                                    <!-- Row 6: Per-portfolio asset breakdown pies -->
+                                    <!-- Row 6: Per-portfolio asset breakdown pies, two per row -->
                                     <ItemsControl Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="4"
                                                   Margin="0,15,0,0"
                                                   ItemsSource="{Binding AssetDetails.PortfolioBreakdownPieItems}"
                                                   Visibility="{Binding AssetDetails.HasBreakdownData, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Columns="2"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <StackPanel Margin="0,0,0,15">
+                                                <StackPanel Margin="0,0,15,15">
                                                     <TextBlock Text="{Binding PortfolioName}" FontWeight="Bold" Margin="0,0,0,5"/>
                                                     <oxy:PlotView Model="{Binding PlotModel}" Height="260" Background="Transparent"/>
                                                 </StackPanel>

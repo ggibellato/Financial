@@ -122,15 +122,17 @@ export default function BrokerBreakdownCharts() {
   return (
     <div className="broker-breakdown">
       <BreakdownPie title="Portfolio Breakdown" data={portfolioData} />
-      {breakdown.map((portfolio) => (
-        <BreakdownPie
-          key={portfolio.portfolioName}
-          title={portfolio.portfolioName}
-          data={buildPieSliceData(
-            portfolio.assets.map((asset) => ({ name: asset.assetName, value: asset.totalInvested })),
-          )}
-        />
-      ))}
+      <div className="broker-breakdown__grid">
+        {breakdown.map((portfolio) => (
+          <BreakdownPie
+            key={portfolio.portfolioName}
+            title={portfolio.portfolioName}
+            data={buildPieSliceData(
+              portfolio.assets.map((asset) => ({ name: asset.assetName, value: asset.totalInvested })),
+            )}
+          />
+        ))}
+      </div>
     </div>
   )
 }
