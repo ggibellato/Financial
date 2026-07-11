@@ -47,7 +47,7 @@ public sealed class PortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQu
 
         return new AssetComputedData(
             asset.Name, asset.Ticker, asset.Exchange,
-            firstBuyDate, asset.Quantity,
+            firstBuyDate, asset.Quantity, asset.AveragePrice,
             totalBought, totalSold, totalBought - totalSold,
             totalCredits, cashFlows,
             creditsAnalysis.LastMonthCredits, creditsAnalysis.LastCreditMonth,
@@ -149,6 +149,7 @@ public sealed class PortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQu
             Exchange = c.Exchange,
             FirstInvestmentDate = c.FirstInvestmentDate,
             CurrentQuantity = c.CurrentQuantity,
+            AveragePrice = c.AveragePrice,
             TotalBought = c.TotalBought,
             TotalSold = c.TotalSold,
             TotalInvested = c.TotalInvested,
@@ -169,7 +170,7 @@ public sealed class PortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQu
 
     private sealed record AssetComputedData(
         string AssetName, string Ticker, string Exchange,
-        DateTime? FirstInvestmentDate, decimal CurrentQuantity,
+        DateTime? FirstInvestmentDate, decimal CurrentQuantity, decimal AveragePrice,
         decimal TotalBought, decimal TotalSold, decimal TotalInvested,
         decimal TotalCredits, IReadOnlyList<AssetCashFlowDTO> CashFlows,
         decimal LastMonthCredits, string? LastCreditMonth, decimal? LastMonthCreditsPercent,
