@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:oxy="http://oxyplot.org/wpf"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:vm="clr-namespace:Financial.Presentation.App.ViewModels"
              mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="1200">
     <Grid>
@@ -411,22 +412,7 @@
                         </DataTemplate>
                         <DataTemplate x:Key="PortfolioSummaryTemplate">
                             <DataTemplate.Resources>
-                                <sys:Double x:Key="ColW_AssetName">160</sys:Double>
-                                <sys:Double x:Key="ColW_FirstInvestment">110</sys:Double>
-                                <sys:Double x:Key="ColW_Quantity">110</sys:Double>
-                                <sys:Double x:Key="ColW_TotalInvested">110</sys:Double>
-                                <sys:Double x:Key="ColW_PortfolioWeight">90</sys:Double>
-                                <sys:Double x:Key="ColW_TotalCredits">100</sys:Double>
-                                <sys:Double x:Key="ColW_CurrentValue">100</sys:Double>
-                                <sys:Double x:Key="ColW_AveragePrice">100</sys:Double>
-                                <sys:Double x:Key="ColW_Profit">70</sys:Double>
-                                <sys:Double x:Key="ColW_ProfitWithCredits">110</sys:Double>
-                                <sys:Double x:Key="ColW_Xirr">70</sys:Double>
-                                <sys:Double x:Key="ColW_LastMonthCredits">100</sys:Double>
-                                <sys:Double x:Key="ColW_LastCreditMonth">90</sys:Double>
-                                <sys:Double x:Key="ColW_LastMonthPercent">70</sys:Double>
-                                <sys:Double x:Key="ColW_EstAnnualCredits">100</sys:Double>
-                                <sys:Double x:Key="ColW_EstAnnualPercent">70</sys:Double>
+                                <vm:PortfolioSummaryColumnWidths x:Key="ColWidths"/>
                             </DataTemplate.Resources>
                             <Grid Margin="10">
                                 <Grid.RowDefinitions>
@@ -463,22 +449,22 @@
                                         <!-- Group title bar: merges related columns under one spanning header -->
                                         <Grid Grid.Row="0">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="{Binding Source={StaticResource ColW_AssetName}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
-                                                <ColumnDefinition Width="{Binding Source={StaticResource ColW_FirstInvestment}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
-                                                <ColumnDefinition Width="{Binding Source={StaticResource ColW_Quantity}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
-                                                <ColumnDefinition Width="{Binding Source={StaticResource ColW_TotalInvested}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
-                                                <ColumnDefinition Width="{Binding Source={StaticResource ColW_PortfolioWeight}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
-                                                <ColumnDefinition Width="{Binding Source={StaticResource ColW_TotalCredits}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
-                                                <ColumnDefinition Width="{Binding Source={StaticResource ColW_CurrentValue}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
-                                                <ColumnDefinition Width="{Binding Source={StaticResource ColW_AveragePrice}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
-                                                <ColumnDefinition Width="{Binding Source={StaticResource ColW_Profit}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
-                                                <ColumnDefinition Width="{Binding Source={StaticResource ColW_ProfitWithCredits}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
-                                                <ColumnDefinition Width="{Binding Source={StaticResource ColW_Xirr}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
-                                                <ColumnDefinition Width="{Binding Source={StaticResource ColW_LastMonthCredits}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
-                                                <ColumnDefinition Width="{Binding Source={StaticResource ColW_LastCreditMonth}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
-                                                <ColumnDefinition Width="{Binding Source={StaticResource ColW_LastMonthPercent}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
-                                                <ColumnDefinition Width="{Binding Source={StaticResource ColW_EstAnnualCredits}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
-                                                <ColumnDefinition Width="{Binding Source={StaticResource ColW_EstAnnualPercent}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=AssetName, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=FirstInvestment, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=Quantity, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=TotalInvested, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=PortfolioWeight, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=TotalCredits, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=CurrentValue, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=AveragePrice, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=Profit, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=ProfitWithCredits, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=Xirr, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=LastMonthCredits, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=LastCreditMonth, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=LastMonthPercent, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=EstAnnualCredits, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=EstAnnualPercent, Converter={StaticResource DoubleToGridLengthConverter}}"/>
                                             </Grid.ColumnDefinitions>
 
                                             <Border Grid.Column="0" Style="{StaticResource GroupHeaderBarStyle}"/>
@@ -505,41 +491,40 @@
                                                   ItemsSource="{Binding AssetDetails.PortfolioAssetSummaryRows}"
                                                   AutoGenerateColumns="False"
                                                   CanUserAddRows="False"
-                                                  CanUserResizeColumns="False"
                                                   IsReadOnly="True"
                                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                             <DataGrid.Columns>
-                                                <DataGridTextColumn Header="Asset Name" Binding="{Binding AssetName}" Width="{Binding Source={StaticResource ColW_AssetName}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="Asset Name" Binding="{Binding AssetName}" Width="{Binding Source={StaticResource ColWidths}, Path=AssetName, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTextColumn Header="First Investment" Binding="{Binding DisplayFirstInvestmentDate}" Width="{Binding Source={StaticResource ColW_FirstInvestment}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="First Investment" Binding="{Binding DisplayFirstInvestmentDate}" Width="{Binding Source={StaticResource ColWidths}, Path=FirstInvestment, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTextColumn Header="Quantity" Binding="{Binding DisplayCurrentQuantity}" Width="{Binding Source={StaticResource ColW_Quantity}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="Quantity" Binding="{Binding DisplayCurrentQuantity}" Width="{Binding Source={StaticResource ColWidths}, Path=Quantity, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTextColumn Header="Total Invested" Binding="{Binding DisplayTotalInvested}" Width="{Binding Source={StaticResource ColW_TotalInvested}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="Total Invested" Binding="{Binding DisplayTotalInvested}" Width="{Binding Source={StaticResource ColWidths}, Path=TotalInvested, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTextColumn Header="% Portfolio" Binding="{Binding DisplayPortfolioWeight}" Width="{Binding Source={StaticResource ColW_PortfolioWeight}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="% Portfolio" Binding="{Binding DisplayPortfolioWeight}" Width="{Binding Source={StaticResource ColWidths}, Path=PortfolioWeight, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTextColumn Header="Total Credits" Binding="{Binding DisplayTotalCredits}" Width="{Binding Source={StaticResource ColW_TotalCredits}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="Total Credits" Binding="{Binding DisplayTotalCredits}" Width="{Binding Source={StaticResource ColWidths}, Path=TotalCredits, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTemplateColumn Header="Current Value" Width="{Binding Source={StaticResource ColW_CurrentValue}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTemplateColumn Header="Current Value" Width="{Binding Source={StaticResource ColWidths}, Path=CurrentValue, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <TextBlock TextAlignment="Right" Padding="8" VerticalAlignment="Center">
@@ -557,12 +542,12 @@
                                                         </DataTemplate>
                                                     </DataGridTemplateColumn.CellTemplate>
                                                 </DataGridTemplateColumn>
-                                                <DataGridTextColumn Header="Average Price" Binding="{Binding DisplayAveragePrice}" Width="{Binding Source={StaticResource ColW_AveragePrice}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="Average Price" Binding="{Binding DisplayAveragePrice}" Width="{Binding Source={StaticResource ColWidths}, Path=AveragePrice, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTemplateColumn Header="%" Width="{Binding Source={StaticResource ColW_Profit}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTemplateColumn Header="%" Width="{Binding Source={StaticResource ColWidths}, Path=Profit, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <TextBlock TextAlignment="Right" Padding="8" VerticalAlignment="Center">
@@ -586,7 +571,7 @@
                                                         </DataTemplate>
                                                     </DataGridTemplateColumn.CellTemplate>
                                                 </DataGridTemplateColumn>
-                                                <DataGridTemplateColumn Header="w/ Credits" Width="{Binding Source={StaticResource ColW_ProfitWithCredits}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTemplateColumn Header="w/ Credits" Width="{Binding Source={StaticResource ColWidths}, Path=ProfitWithCredits, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <TextBlock TextAlignment="Right" Padding="8" VerticalAlignment="Center">
@@ -610,7 +595,7 @@
                                                         </DataTemplate>
                                                     </DataGridTemplateColumn.CellTemplate>
                                                 </DataGridTemplateColumn>
-                                                <DataGridTemplateColumn Header="XIRR" Width="{Binding Source={StaticResource ColW_Xirr}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTemplateColumn Header="XIRR" Width="{Binding Source={StaticResource ColWidths}, Path=Xirr, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <TextBlock TextAlignment="Right" Padding="8" VerticalAlignment="Center">
@@ -634,7 +619,7 @@
                                                         </DataTemplate>
                                                     </DataGridTemplateColumn.CellTemplate>
                                                 </DataGridTemplateColumn>
-                                                <DataGridTextColumn Header="Credits" Binding="{Binding DisplayLastMonthCredits}" Width="{Binding Source={StaticResource ColW_LastMonthCredits}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="Credits" Binding="{Binding DisplayLastMonthCredits}" Width="{Binding Source={StaticResource ColWidths}, Path=LastMonthCredits, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTextColumn.CellStyle>
                                                         <Style TargetType="DataGridCell">
                                                             <Setter Property="BorderThickness" Value="3,0,0,0"/>
@@ -651,22 +636,22 @@
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTextColumn Header="Month" Binding="{Binding LastCreditMonthDisplay}" Width="{Binding Source={StaticResource ColW_LastCreditMonth}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="Month" Binding="{Binding LastCreditMonthDisplay}" Width="{Binding Source={StaticResource ColWidths}, Path=LastCreditMonth, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTextColumn Header="%" Binding="{Binding DisplayLastMonthCreditsPercent}" Width="{Binding Source={StaticResource ColW_LastMonthPercent}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="%" Binding="{Binding DisplayLastMonthCreditsPercent}" Width="{Binding Source={StaticResource ColWidths}, Path=LastMonthPercent, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTextColumn Header="Credits" Binding="{Binding DisplayEstimatedAnnualCredits}" Width="{Binding Source={StaticResource ColW_EstAnnualCredits}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="Credits" Binding="{Binding DisplayEstimatedAnnualCredits}" Width="{Binding Source={StaticResource ColWidths}, Path=EstAnnualCredits, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTextColumn Header="%" Binding="{Binding DisplayEstimatedAnnualPercent}" Width="{Binding Source={StaticResource ColW_EstAnnualPercent}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="%" Binding="{Binding DisplayEstimatedAnnualPercent}" Width="{Binding Source={StaticResource ColWidths}, Path=EstAnnualPercent, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
