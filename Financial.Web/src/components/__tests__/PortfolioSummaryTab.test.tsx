@@ -58,6 +58,7 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   exchange: 'BVMF',
   firstInvestmentDate: '2021-03-01T00:00:00',
   currentQuantity: 25,
+  averagePrice: 100,
   totalBought: 2500,
   totalSold: 0,
   totalInvested: 2500,
@@ -150,6 +151,7 @@ describe('PortfolioSummaryTab', () => {
     expect(screen.getByText('% Portfolio')).toBeInTheDocument()
     expect(screen.getAllByText('Total Credits').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Current Value')).toBeInTheDocument()
+    expect(screen.getByText('Average Price')).toBeInTheDocument()
     expect(screen.getByText('Profit')).toBeInTheDocument()
     expect(screen.getAllByText('%').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('w/ Credits')).toBeInTheDocument()
@@ -165,6 +167,14 @@ describe('PortfolioSummaryTab', () => {
     expect(screen.getByText('01/03/2021')).toBeInTheDocument()
     expect(screen.getByText(/23\.4%/)).toBeInTheDocument()
     expect(screen.getByText(/75[.,]50/)).toBeInTheDocument()
+  })
+
+  it('renders_average_price_with_formatted_value', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, averagePrice: 123.456 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent()
+    expect(screen.getByText(/123[.,]46/)).toBeInTheDocument()
   })
 
   it('renders_total_credits_immediately_before_price_resolves', () => {

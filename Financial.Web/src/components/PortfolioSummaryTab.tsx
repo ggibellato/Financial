@@ -71,6 +71,7 @@ function AssetRow({ item, rowPrice }: AssetRowProps) {
           formatN2(currentValue)
         )}
       </td>
+      <td>{formatN2(item.averagePrice)}</td>
       <td>
         {rowPrice.isLoading ? (
           <span className="portfolio-summary__loading-cell">...</span>
@@ -174,6 +175,7 @@ export default function PortfolioSummaryTab() {
                 <th rowSpan={2}>% Portfolio</th>
                 <th rowSpan={2}>Total Credits</th>
                 <th rowSpan={2}>Current Value</th>
+                <th rowSpan={2}>Average Price</th>
                 <th colSpan={2} className="portfolio-summary__group-header">Profit</th>
                 <th rowSpan={2}>XIRR</th>
                 <th colSpan={3} className="portfolio-summary__group-header portfolio-summary__credits-separator">Last Month</th>

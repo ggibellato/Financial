@@ -27,21 +27,23 @@ public partial class DividendCheckView : UserControl
         if (e.PropertyType == typeof(DateTime) && e.Column is DataGridTextColumn dateColumn)
             dateColumn.Binding.StringFormat = DateFormatHelper.GetPaddedShortDatePattern();
 
-        ApplyValueColumnStyle(e, "Value");
+        if (!ApplyValueColumnStyle(e, "Value"))
+            ApplyPlainColumnStyle(e);
     }
 
     private void DividendByYearDataGrid_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
     {
-        ApplyValueColumnStyle(e, "Total");
+        if (!ApplyValueColumnStyle(e, "Total"))
+            ApplyPlainColumnStyle(e);
     }
 
-    private static void ApplyValueColumnStyle(DataGridAutoGeneratingColumnEventArgs e, string propertyName)
+    private static bool ApplyValueColumnStyle(DataGridAutoGeneratingColumnEventArgs e, string propertyName)
     {
         if (!string.Equals(e.PropertyName, propertyName, StringComparison.OrdinalIgnoreCase))
-            return;
+            return false;
 
         if (e.Column is not DataGridTextColumn col)
-            return;
+            return false;
 
         if (col.Binding is System.Windows.Data.Binding binding)
             binding.StringFormat = "N2";
@@ -52,6 +54,18 @@ public partial class DividendCheckView : UserControl
         style.Setters.Add(new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Right));
         style.Setters.Add(new Setter(TextBlock.FontWeightProperty, FontWeights.Bold));
         style.Setters.Add(new Setter(TextBlock.ForegroundProperty, System.Windows.Media.Brushes.Black));
+        style.Setters.Add(new Setter(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center));
+        col.ElementStyle = style;
+        return true;
+    }
+
+    private static void ApplyPlainColumnStyle(DataGridAutoGeneratingColumnEventArgs e)
+    {
+        if (e.Column is not DataGridTextColumn col)
+            return;
+
+        var style = new System.Windows.Style(typeof(TextBlock));
+        style.Setters.Add(new Setter(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center));
         col.ElementStyle = style;
     }
 }

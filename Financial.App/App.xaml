@@ -14,6 +14,8 @@
         <converters:NodeTypeToVisibilityConverter x:Key="NodeTypeToVisibilityConverter"/>
         <converters:SignedValueToBrushConverter x:Key="SignedValueToBrushConverter"/>
         <converters:BetweenTextSeparatorConverter x:Key="BetweenTextSeparatorConverter"/>
+        <converters:DoubleToGridLengthConverter x:Key="DoubleToGridLengthConverter"/>
+        <converters:DoubleToDataGridLengthConverter x:Key="DoubleToDataGridLengthConverter"/>
 
         <DrawingImage x:Key="AppIcon">
             <DrawingImage.Drawing>
@@ -71,6 +73,7 @@
             <Setter Property="Padding" Value="8"/>
             <Setter Property="BorderBrush" Value="#CCCCCC"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
         <Style TargetType="DataGridRow">
@@ -97,6 +100,7 @@
         </Style>
 
         <Style TargetType="DataGridCell">
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
                     <Setter Property="Background" Value="LightYellow"/>
@@ -116,6 +120,14 @@
         <Style x:Key="NumericColumnTextStyle" TargetType="TextBlock">
             <Setter Property="TextAlignment" Value="Right"/>
             <Setter Property="Padding" Value="8"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- WPF's implicit-style lookup does not apply to the TextBlock a DataGridTextColumn
+             generates internally, so every plain (non-numeric) text column must reference
+             this explicitly via ElementStyle to get the same vertical centering. -->
+        <Style x:Key="PlainColumnTextStyle" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
 
         <!-- Group-header overlay bar shown above a DataGrid's own column headers,
