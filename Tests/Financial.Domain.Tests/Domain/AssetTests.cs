@@ -20,6 +20,26 @@ public class AssetTests
     }
 
     [Fact]
+    public void Create_CryptocurrencyAssetShape_SetsPropertiesWithBlankIsinAndExchange()
+    {
+        var asset = Asset.Create("Bitcoin", "", "", "BTC", CountryCode.UK, "", GlobalAssetClass.Cryptocurrency);
+
+        asset.ISIN.Should().BeEmpty();
+        asset.Exchange.Should().BeEmpty();
+        asset.Ticker.Should().Be("BTC");
+        asset.Country.Should().Be(CountryCode.UK);
+        asset.Class.Should().Be(GlobalAssetClass.Cryptocurrency);
+    }
+
+    [Fact]
+    public void Create_BlankTicker_StillCreatesAssetWithEmptyTicker()
+    {
+        var asset = Asset.Create("Bitcoin", "", "", "", CountryCode.UK, "", GlobalAssetClass.Cryptocurrency);
+
+        asset.Ticker.Should().BeEmpty();
+    }
+
+    [Fact]
     public void AddTransaction_Buy_UpdatesAveragePriceAndQuantity()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
