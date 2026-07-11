@@ -12,11 +12,22 @@ namespace Financial.Infrastructure.Integrations.WebPageParser;
 /// </summary>
 public static class GoogleFinance
 {
-    public static AssetValueSnapshot GetFinancialInfoSnapshot(string exchange, string ticker)
+    public static AssetValueSnapshot GetFinancialInfoSnapshot(string exchange, string ticker) =>
+        FetchSnapshot(BuildStockQuoteUrl(exchange, ticker), ticker);
+
+    public static AssetValueSnapshot GetCryptocurrencyFinancialInfoSnapshot(string currency, string ticker) =>
+        FetchSnapshot(BuildCryptocurrencyQuoteUrl(currency, ticker), ticker);
+
+    internal static string BuildStockQuoteUrl(string exchange, string ticker) =>
+        $"https://www.google.com/finance/quote/{ticker}:{exchange}";
+
+    internal static string BuildCryptocurrencyQuoteUrl(string currency, string ticker) =>
+        $"https://www.google.com/finance/beta/quote/{ticker}-{currency}";
+
+    private static AssetValueSnapshot FetchSnapshot(string url, string ticker)
     {
-        var googleTickerSearch = $"https://www.google.com/finance/quote/{ticker}:{exchange}";
         HtmlWeb htmlWeb = new HtmlWeb();
-        HtmlDocument htmlDoc = htmlWeb.Load(googleTickerSearch);
+        HtmlDocument htmlDoc = htmlWeb.Load(url);
 
         var mainData = GetMainData(htmlDoc);
         var name = ReadAssetName(mainData);
