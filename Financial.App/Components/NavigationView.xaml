@@ -492,36 +492,18 @@
                                                 <ColumnDefinition Width="{Binding Source={StaticResource ColW_EstAnnualPercent}, Converter={StaticResource DoubleToGridLengthConverter}}"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <Border Grid.Column="0" Style="{StaticResource GroupHeaderBarStyle}">
-                                                <TextBlock Text="Asset Name" Style="{StaticResource GroupHeaderTitleTextStyle}"/>
-                                            </Border>
-                                            <Border Grid.Column="1" Style="{StaticResource GroupHeaderBarStyle}">
-                                                <TextBlock Text="First Investment" Style="{StaticResource GroupHeaderTitleTextStyle}"/>
-                                            </Border>
-                                            <Border Grid.Column="2" Style="{StaticResource GroupHeaderBarStyle}">
-                                                <TextBlock Text="Quantity" Style="{StaticResource GroupHeaderTitleTextStyle}"/>
-                                            </Border>
-                                            <Border Grid.Column="3" Style="{StaticResource GroupHeaderBarStyle}">
-                                                <TextBlock Text="Total Invested" Style="{StaticResource GroupHeaderTitleTextStyle}"/>
-                                            </Border>
-                                            <Border Grid.Column="4" Style="{StaticResource GroupHeaderBarStyle}">
-                                                <TextBlock Text="% Portfolio" Style="{StaticResource GroupHeaderTitleTextStyle}"/>
-                                            </Border>
-                                            <Border Grid.Column="5" Style="{StaticResource GroupHeaderBarStyle}">
-                                                <TextBlock Text="Total Credits" Style="{StaticResource GroupHeaderTitleTextStyle}"/>
-                                            </Border>
-                                            <Border Grid.Column="6" Style="{StaticResource GroupHeaderBarStyle}">
-                                                <TextBlock Text="Current Value" Style="{StaticResource GroupHeaderTitleTextStyle}"/>
-                                            </Border>
-                                            <Border Grid.Column="7" Style="{StaticResource GroupHeaderBarStyle}">
-                                                <TextBlock Text="Average Price" Style="{StaticResource GroupHeaderTitleTextStyle}"/>
-                                            </Border>
+                                            <Border Grid.Column="0" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="1" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="2" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="3" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="4" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="5" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="6" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="7" Style="{StaticResource GroupHeaderBarStyle}"/>
                                             <Border Grid.Column="8" Grid.ColumnSpan="2" Style="{StaticResource GroupHeaderBarStyle}">
                                                 <TextBlock Text="Profit" Style="{StaticResource GroupHeaderTitleTextStyle}"/>
                                             </Border>
-                                            <Border Grid.Column="10" Style="{StaticResource GroupHeaderBarStyle}">
-                                                <TextBlock Text="XIRR" Style="{StaticResource GroupHeaderTitleTextStyle}"/>
-                                            </Border>
+                                            <Border Grid.Column="10" Style="{StaticResource GroupHeaderBarStyle}"/>
                                             <Border Grid.Column="11" Grid.ColumnSpan="3" Style="{StaticResource GroupHeaderBarStyle}" BorderThickness="3,0,1,1" BorderBrush="#007ACC">
                                                 <TextBlock Text="Last Month" Style="{StaticResource GroupHeaderTitleTextStyle}"/>
                                             </Border>
@@ -538,37 +520,37 @@
                                                   IsReadOnly="True"
                                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                             <DataGrid.Columns>
-                                                <DataGridTextColumn Binding="{Binding AssetName}" Width="{Binding Source={StaticResource ColW_AssetName}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="Asset Name" Binding="{Binding AssetName}" Width="{Binding Source={StaticResource ColW_AssetName}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTextColumn Binding="{Binding DisplayFirstInvestmentDate}" Width="{Binding Source={StaticResource ColW_FirstInvestment}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="First Investment" Binding="{Binding DisplayFirstInvestmentDate}" Width="{Binding Source={StaticResource ColW_FirstInvestment}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTextColumn Binding="{Binding DisplayCurrentQuantity}" Width="{Binding Source={StaticResource ColW_Quantity}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="Quantity" Binding="{Binding DisplayCurrentQuantity}" Width="{Binding Source={StaticResource ColW_Quantity}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTextColumn Binding="{Binding DisplayTotalInvested}" Width="{Binding Source={StaticResource ColW_TotalInvested}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="Total Invested" Binding="{Binding DisplayTotalInvested}" Width="{Binding Source={StaticResource ColW_TotalInvested}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTextColumn Binding="{Binding DisplayPortfolioWeight}" Width="{Binding Source={StaticResource ColW_PortfolioWeight}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="% Portfolio" Binding="{Binding DisplayPortfolioWeight}" Width="{Binding Source={StaticResource ColW_PortfolioWeight}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTextColumn Binding="{Binding DisplayTotalCredits}" Width="{Binding Source={StaticResource ColW_TotalCredits}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="Total Credits" Binding="{Binding DisplayTotalCredits}" Width="{Binding Source={StaticResource ColW_TotalCredits}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
                                                 </DataGridTextColumn>
-                                                <DataGridTemplateColumn Width="{Binding Source={StaticResource ColW_CurrentValue}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTemplateColumn Header="Current Value" Width="{Binding Source={StaticResource ColW_CurrentValue}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <TextBlock TextAlignment="Right" Padding="8" VerticalAlignment="Center">
@@ -586,7 +568,7 @@
                                                         </DataTemplate>
                                                     </DataGridTemplateColumn.CellTemplate>
                                                 </DataGridTemplateColumn>
-                                                <DataGridTextColumn Binding="{Binding DisplayAveragePrice}" Width="{Binding Source={StaticResource ColW_AveragePrice}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTextColumn Header="Average Price" Binding="{Binding DisplayAveragePrice}" Width="{Binding Source={StaticResource ColW_AveragePrice}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
                                                     <DataGridTextColumn.ElementStyle>
                                                         <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
                                                     </DataGridTextColumn.ElementStyle>
@@ -639,7 +621,7 @@
                                                         </DataTemplate>
                                                     </DataGridTemplateColumn.CellTemplate>
                                                 </DataGridTemplateColumn>
-                                                <DataGridTemplateColumn Width="{Binding Source={StaticResource ColW_Xirr}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
+                                                <DataGridTemplateColumn Header="XIRR" Width="{Binding Source={StaticResource ColW_Xirr}, Converter={StaticResource DoubleToDataGridLengthConverter}}">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <TextBlock TextAlignment="Right" Padding="8" VerticalAlignment="Center">
