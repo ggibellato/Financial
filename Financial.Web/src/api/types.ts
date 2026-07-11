@@ -9,6 +9,7 @@ export interface SelectedNode {
   exchange?: string
   currency?: string
   isActive?: boolean
+  assetClass?: string
 }
 
 export interface SelectedNodeContextValue {

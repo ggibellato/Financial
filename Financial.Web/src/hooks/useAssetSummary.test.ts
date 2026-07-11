@@ -83,8 +83,29 @@ describe('useAssetSummary', () => {
     renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => {
-      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'KLBN4')
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'KLBN4', undefined, 'XPI')
       expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4')
+    })
+  })
+
+  it('fetches_current_price_for_cryptocurrency_asset_with_blank_exchange', async () => {
+    const cryptoNode: SelectedNode = {
+      nodeType: 'Asset',
+      brokerName: 'Coinbase',
+      portfolioName: 'Cryptocurrency',
+      assetName: 'Bitcoin',
+      ticker: 'BTC',
+      exchange: '',
+      isActive: true,
+      assetClass: 'Cryptocurrency',
+    }
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, name: 'Bitcoin', ticker: 'BTC', class: 'Cryptocurrency' })
+    getCurrentPriceMock.mockResolvedValue({ ...PRICE, ticker: 'BTC', exchange: '' })
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    renderHook(() => useAssetSummary(), { wrapper })
+    setNode(cryptoNode)
+    await waitFor(() => {
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'BTC', 'Cryptocurrency', 'Coinbase')
     })
   })
 
