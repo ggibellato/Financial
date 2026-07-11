@@ -15,6 +15,7 @@ const ASSET_CLASS_OPTIONS: { value: number; label: string }[] = [
   { value: 6, label: 'Cash' },
   { value: 7, label: 'Pension' },
   { value: 8, label: 'Other' },
+  { value: 9, label: 'Cryptocurrency' },
 ]
 
 const ALL_CLASSES = 'all'

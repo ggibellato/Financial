@@ -208,6 +208,39 @@ describe('InvestmentTree', () => {
     expect(screen.getByRole('button', { name: '● TREA3' })).toBeInTheDocument()
   })
 
+  it('asset class filter shows Cryptocurrency option', async () => {
+    renderTree()
+    await screen.findByText('XPI (BRL)')
+    const option = screen.getByRole('option', { name: 'Cryptocurrency' }) as HTMLOptionElement
+    expect(option.value).toBe('9')
+  })
+
+  it('asset class filter hides non-matching assets when Cryptocurrency selected', async () => {
+    const tree: TreeNodeDto = {
+      nodeType: 'Investments',
+      displayName: 'Investments',
+      metadata: {},
+      children: [
+        makeBroker('Coinbase', 'GBP', [
+          makePortfolio('Cryptocurrency', [makeAsset('BTC', true, 9), makeAsset('TREA3', true, 3)]),
+        ]),
+      ],
+    }
+    getNavigationTreeMock.mockResolvedValue(tree)
+    render(
+      <SelectedNodeProvider>
+        <InvestmentTree />
+      </SelectedNodeProvider>,
+    )
+    await screen.findByText('Coinbase (GBP)')
+    const expandBtn = screen.getAllByLabelText('Expand')[0]
+    fireEvent.click(expandBtn)
+
+    fireEvent.change(screen.getByLabelText('Asset class'), { target: { value: '9' } })
+    expect(screen.getByRole('button', { name: '● BTC' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '● TREA3' })).not.toBeInTheDocument()
+  })
+
   it('broker node is retained in tree when filter is active', async () => {
     renderTree()
     await screen.findByText('XPI (BRL)')
