@@ -11,6 +11,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
 
     private bool _isLoadingPrice = true;
     private bool _priceFetchFailed;
+    private decimal? _currentPrice;
     private decimal? _currentValue;
     private decimal? _profitPercent;
     private decimal? _profitWithCreditsPercent;
@@ -36,6 +37,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
 
     public bool IsLoadingPrice => _isLoadingPrice;
     public bool PriceFetchFailed => _priceFetchFailed;
+    public decimal? CurrentPrice => _currentPrice;
     public decimal? CurrentValue => _currentValue;
     public decimal? ProfitPercent => _profitPercent;
     public decimal? ProfitWithCreditsPercent => _profitWithCreditsPercent;
@@ -70,6 +72,9 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
 
     public string DisplayCurrentValue =>
         _isLoadingPrice || _priceFetchFailed ? "—" : _currentValue?.ToString("N2") ?? "—";
+
+    public string DisplayCurrentPrice =>
+        _isLoadingPrice || _priceFetchFailed ? "—" : _currentPrice?.ToString("N2") ?? "—";
 
     public string DisplayProfitPercent =>
         _isLoadingPrice || _priceFetchFailed || !_profitPercent.HasValue ? "—" : $"{_profitPercent.Value:F2}%";
@@ -110,6 +115,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
 
     public void ApplyPrice(decimal price)
     {
+        _currentPrice = price;
         _currentValue = price * CurrentQuantity;
 
         _profitPercent = TotalInvested != 0
@@ -124,6 +130,8 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
         _isLoadingPrice = false;
 
         OnPropertyChanged(nameof(IsLoadingPrice));
+        OnPropertyChanged(nameof(CurrentPrice));
+        OnPropertyChanged(nameof(DisplayCurrentPrice));
         OnPropertyChanged(nameof(CurrentValue));
         OnPropertyChanged(nameof(DisplayCurrentValue));
         OnPropertyChanged(nameof(ProfitPercent));
@@ -147,6 +155,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
 
         OnPropertyChanged(nameof(IsLoadingPrice));
         OnPropertyChanged(nameof(PriceFetchFailed));
+        OnPropertyChanged(nameof(DisplayCurrentPrice));
         OnPropertyChanged(nameof(DisplayCurrentValue));
         OnPropertyChanged(nameof(DisplayProfitPercent));
         OnPropertyChanged(nameof(DisplayProfitWithCreditsPercent));

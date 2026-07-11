@@ -153,6 +153,7 @@ describe('PortfolioSummaryTab', () => {
     expect(screen.getAllByText('Total Credits').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Current Value')).toBeInTheDocument()
     expect(screen.getByText('Average Price')).toBeInTheDocument()
+    expect(screen.getByText('Current Price')).toBeInTheDocument()
     expect(screen.getByText('Profit')).toBeInTheDocument()
     expect(screen.getAllByText('%').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('w/ Credits')).toBeInTheDocument()
@@ -193,7 +194,7 @@ describe('PortfolioSummaryTab', () => {
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
     renderComponent()
     const loadingCells = screen.getAllByText('...')
-    expect(loadingCells).toHaveLength(4)
+    expect(loadingCells).toHaveLength(5)
   })
 
   it('renders_current_value_when_price_resolves', () => {
@@ -202,6 +203,22 @@ describe('PortfolioSummaryTab', () => {
     setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
     renderComponent()
     expect(screen.getByText(/262[.,]50/)).toBeInTheDocument()
+  })
+
+  it('renders_current_price_when_price_resolves', () => {
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
+    renderComponent()
+    expect(screen.getByText(/10[.,]50/)).toBeInTheDocument()
+  })
+
+  it('renders_dash_in_current_price_when_price_fetch_fails', () => {
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [FAILED_ROW_PRICE] })
+    renderComponent()
+    const dashes = screen.getAllByText('—')
+    expect(dashes.length).toBeGreaterThanOrEqual(5)
   })
 
   it('renders_correct_profit_percent', () => {
@@ -249,7 +266,7 @@ describe('PortfolioSummaryTab', () => {
     setPortfolioMock({ items: [ITEM_1], rowPrices: [FAILED_ROW_PRICE] })
     renderComponent()
     const dashes = screen.getAllByText('—')
-    expect(dashes.length).toBeGreaterThanOrEqual(4)
+    expect(dashes.length).toBeGreaterThanOrEqual(5)
   })
 
   it('renders_dash_in_profit_when_total_invested_is_zero', () => {

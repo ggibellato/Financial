@@ -125,6 +125,30 @@ public class PortfolioAssetSummaryRowViewModelTests
     }
 
     [Fact]
+    public void DisplayCurrentPrice_WhenIsLoadingPrice_ReturnsDash()
+    {
+        var row = BuildRow();
+        row.IsLoadingPrice.Should().BeTrue();
+        row.DisplayCurrentPrice.Should().Be("—");
+    }
+
+    [Fact]
+    public void DisplayCurrentPrice_WhenPriceFetchFailed_ReturnsDash()
+    {
+        var row = BuildRow();
+        row.MarkPriceFailed();
+        row.DisplayCurrentPrice.Should().Be("—");
+    }
+
+    [Fact]
+    public void DisplayCurrentPrice_AfterApplyPrice_ReturnsPriceN2()
+    {
+        var row = BuildRow();
+        row.ApplyPrice(10.50m);
+        row.DisplayCurrentPrice.Should().Be("10.50");
+    }
+
+    [Fact]
     public void DisplayProfitPercent_WhenIsLoadingPrice_ReturnsDash()
     {
         var row = BuildRow();
@@ -335,6 +359,7 @@ public class PortfolioAssetSummaryRowViewModelTests
 
         row.ApplyPrice(10.50m);
 
+        raised.Should().Contain(nameof(row.DisplayCurrentPrice));
         raised.Should().Contain(nameof(row.DisplayCurrentValue));
         raised.Should().Contain(nameof(row.DisplayProfitPercent));
         raised.Should().Contain(nameof(row.DisplayProfitWithCreditsPercent));
@@ -357,6 +382,7 @@ public class PortfolioAssetSummaryRowViewModelTests
 
         row.MarkPriceFailed();
 
+        raised.Should().Contain(nameof(row.DisplayCurrentPrice));
         raised.Should().Contain(nameof(row.DisplayCurrentValue));
         raised.Should().Contain(nameof(row.DisplayProfitPercent));
         raised.Should().Contain(nameof(row.DisplayProfitWithCreditsPercent));

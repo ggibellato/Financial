@@ -59,9 +59,8 @@ function AssetRow({ item, rowPrice }: AssetRowProps) {
       <td>{item.assetName}</td>
       <td>{formatShortDate(item.firstInvestmentDate)}</td>
       <td>{formatN8(item.currentQuantity)}</td>
-      <td>{formatN2(item.totalInvested)}</td>
       <td>{formatPortfolioWeight(item.portfolioWeight)}</td>
-      <td>{formatN2(item.totalCredits)}</td>
+      <td>{formatN2(item.totalInvested)}</td>
       <td>
         {rowPrice.isLoading ? (
           <span className="portfolio-summary__loading-cell">...</span>
@@ -71,7 +70,17 @@ function AssetRow({ item, rowPrice }: AssetRowProps) {
           formatN2(currentValue)
         )}
       </td>
+      <td>{formatN2(item.totalCredits)}</td>
       <td>{formatN2(item.averagePrice)}</td>
+      <td>
+        {rowPrice.isLoading ? (
+          <span className="portfolio-summary__loading-cell">...</span>
+        ) : rowPrice.fetchFailed || rowPrice.currentPrice === null ? (
+          '—'
+        ) : (
+          formatN2(rowPrice.currentPrice)
+        )}
+      </td>
       <td>
         {rowPrice.isLoading ? (
           <span className="portfolio-summary__loading-cell">...</span>
@@ -171,11 +180,12 @@ export default function PortfolioSummaryTab() {
                 <th rowSpan={2}>Asset Name</th>
                 <th rowSpan={2}>First Investment</th>
                 <th rowSpan={2}>Quantity</th>
-                <th rowSpan={2}>Total Invested</th>
                 <th rowSpan={2}>% Portfolio</th>
-                <th rowSpan={2}>Total Credits</th>
+                <th rowSpan={2}>Total Invested</th>
                 <th rowSpan={2}>Current Value</th>
+                <th rowSpan={2}>Total Credits</th>
                 <th rowSpan={2}>Average Price</th>
+                <th rowSpan={2}>Current Price</th>
                 <th colSpan={2} className="portfolio-summary__group-header">Profit</th>
                 <th rowSpan={2}>XIRR</th>
                 <th colSpan={3} className="portfolio-summary__group-header portfolio-summary__credits-separator">Last Month</th>

@@ -15,6 +15,7 @@ public class PortfolioSummaryColumnWidths : ViewModelBase
     private double _totalCredits = 100;
     private double _currentValue = 100;
     private double _averagePrice = 100;
+    private double _currentPrice = 100;
     private double _profit = 70;
     private double _profitWithCredits = 110;
     private double _xirr = 70;
@@ -32,6 +33,7 @@ public class PortfolioSummaryColumnWidths : ViewModelBase
     public double TotalCredits { get => _totalCredits; set => SetProperty(ref _totalCredits, value); }
     public double CurrentValue { get => _currentValue; set => SetProperty(ref _currentValue, value); }
     public double AveragePrice { get => _averagePrice; set => SetProperty(ref _averagePrice, value); }
+    public double CurrentPrice { get => _currentPrice; set => SetProperty(ref _currentPrice, value); }
     public double Profit { get => _profit; set => SetProperty(ref _profit, value); }
     public double ProfitWithCredits { get => _profitWithCredits; set => SetProperty(ref _profitWithCredits, value); }
     public double Xirr { get => _xirr; set => SetProperty(ref _xirr, value); }
