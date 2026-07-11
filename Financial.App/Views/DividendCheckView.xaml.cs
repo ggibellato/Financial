@@ -52,6 +52,7 @@ public partial class DividendCheckView : UserControl
         style.Setters.Add(new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Right));
         style.Setters.Add(new Setter(TextBlock.FontWeightProperty, FontWeights.Bold));
         style.Setters.Add(new Setter(TextBlock.ForegroundProperty, System.Windows.Media.Brushes.Black));
+        style.Setters.Add(new Setter(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center));
         col.ElementStyle = style;
     }
 }
