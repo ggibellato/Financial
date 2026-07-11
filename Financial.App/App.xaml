@@ -99,14 +99,6 @@
 
         <Style TargetType="DataGridCell">
             <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Style.Resources>
-                <!-- TextBlock stretches to fill the cell by default and does not center
-                     its own text vertically, so cells with no ElementStyle (e.g. plain
-                     Date/Type columns) need this explicit default to match styled columns. -->
-                <Style TargetType="TextBlock">
-                    <Setter Property="VerticalAlignment" Value="Center"/>
-                </Style>
-            </Style.Resources>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
                     <Setter Property="Background" Value="LightYellow"/>
@@ -126,6 +118,13 @@
         <Style x:Key="NumericColumnTextStyle" TargetType="TextBlock">
             <Setter Property="TextAlignment" Value="Right"/>
             <Setter Property="Padding" Value="8"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- WPF's implicit-style lookup does not apply to the TextBlock a DataGridTextColumn
+             generates internally, so every plain (non-numeric) text column must reference
+             this explicitly via ElementStyle to get the same vertical centering. -->
+        <Style x:Key="PlainColumnTextStyle" TargetType="TextBlock">
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
     </Application.Resources>
