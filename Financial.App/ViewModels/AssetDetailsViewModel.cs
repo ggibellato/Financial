@@ -638,12 +638,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
                 try
                 {
                     if (cancellationToken.IsCancellationRequested) return;
-                    // AssetClass is not available on PortfolioAssetSummaryRowViewModel (P02 DTO), so this
-                    // always uses the standard exchange-based fetch path, even for cryptocurrency assets.
                     var price = _assetPriceService.GetCurrentPrice(new Application.DTOs.AssetPriceRequestDTO
                     {
                         Exchange = capturedRow.Exchange,
                         Ticker = capturedRow.Ticker,
+                        AssetClass = capturedRow.Class,
                         BrokerName = brokerName
                     });
                     if (cancellationToken.IsCancellationRequested) return;

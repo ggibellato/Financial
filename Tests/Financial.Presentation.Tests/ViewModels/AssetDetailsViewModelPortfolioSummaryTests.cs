@@ -1,5 +1,6 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
+using Financial.Domain.Entities;
 using Financial.Presentation.App.ViewModels;
 using FluentAssertions;
 
@@ -262,6 +263,33 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         vm.FooterEstimatedAnnualCreditsDisplay.Should().Be("—");
     }
 
+    [Fact]
+    public async Task LoadPortfolioSummary_CryptocurrencyAsset_PassesAssetClassAndBrokerName()
+    {
+        var priceService = new CapturingPriceService();
+        var vm = BuildViewModel(priceService);
+        var item = new PortfolioAssetSummaryItemDTO
+        {
+            AssetName = "Bitcoin",
+            Ticker = "BTC",
+            Exchange = "",
+            Class = GlobalAssetClass.Cryptocurrency,
+            CurrentQuantity = 0.01m,
+            TotalBought = 100m,
+            TotalSold = 0m,
+            TotalInvested = 100m,
+            PortfolioWeight = 100m
+        };
+
+        vm.LoadPortfolioSummary("Coinbase", "Cryptocurrency", new AggregatedSummaryDTO(), [], [item]);
+
+        var request = await priceService.RequestReceived.WaitAsync(TimeSpan.FromSeconds(5));
+        request.Ticker.Should().Be("BTC");
+        request.Exchange.Should().Be("");
+        request.AssetClass.Should().Be(GlobalAssetClass.Cryptocurrency);
+        request.BrokerName.Should().Be("Coinbase");
+    }
+
     private sealed class NeverResolvingPriceService : IAssetPriceService
     {
         private readonly SemaphoreSlim _blocker = new SemaphoreSlim(0);
@@ -270,6 +298,19 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         {
             _blocker.Wait();
             return new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = 0m };
+        }
+    }
+
+    private sealed class CapturingPriceService : IAssetPriceService
+    {
+        private readonly TaskCompletionSource<AssetPriceRequestDTO> _tcs = new();
+
+        public Task<AssetPriceRequestDTO> RequestReceived => _tcs.Task;
+
+        public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request)
+        {
+            _tcs.TrySetResult(request);
+            return new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = 1m };
         }
     }
 }
