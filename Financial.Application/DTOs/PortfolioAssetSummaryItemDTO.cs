@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using Financial.Domain.Entities;
+
 namespace Financial.Application.DTOs;
 
 public sealed class PortfolioAssetSummaryItemDTO
@@ -5,6 +8,8 @@ public sealed class PortfolioAssetSummaryItemDTO
     public string AssetName { get; init; } = string.Empty;
     public string Ticker { get; init; } = string.Empty;
     public string Exchange { get; init; } = string.Empty;
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public GlobalAssetClass Class { get; init; } = GlobalAssetClass.Unknown;
     public DateTime? FirstInvestmentDate { get; init; }
     public decimal CurrentQuantity { get; init; }
     public decimal AveragePrice { get; init; }
