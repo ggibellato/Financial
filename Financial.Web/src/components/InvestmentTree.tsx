@@ -78,7 +78,7 @@ function AssetNode({ node, brokerName, portfolioName, filterClass }: AssetNodePr
         onClick={handleClick}
         type="button"
       >
-        {prefix} {node.displayName}
+        <span className={`investment-tree__status-icon investment-tree__status-icon--${isActive ? 'active' : 'inactive'}`}>{prefix}</span> {node.displayName}
       </button>
     </li>
   )

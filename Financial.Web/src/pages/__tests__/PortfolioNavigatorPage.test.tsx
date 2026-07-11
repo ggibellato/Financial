@@ -84,8 +84,8 @@ describe('PortfolioNavigatorPage', () => {
     renderPage()
     await screen.findByText('XPI (BRL)')
     fireEvent.click(screen.getAllByLabelText('Expand')[0])
-    fireEvent.click(screen.getByText('● KLBN4'))
-    expect(screen.getByText('KLBN4')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '● KLBN4' }))
+    expect(screen.getByText('KLBN4', { selector: '.detail-panel__name' })).toBeInTheDocument()
     expect(screen.getByText('KLBN4 · BVMF · XPI · Acoes')).toBeInTheDocument()
   })
 

@@ -65,6 +65,7 @@
                         <StackPanel Orientation="Horizontal">
                             <!-- Icon for Asset nodes based on Active status -->
                             <TextBlock Text="{Binding Metadata[IsActive], Converter={StaticResource BoolToIconConverter}}"
+                                       Foreground="{Binding Metadata[IsActive], Converter={StaticResource BoolToActiveColorConverter}}"
                                        Visibility="{Binding NodeType, Converter={StaticResource NodeTypeToVisibilityConverter}}"
                                        Margin="0,0,5,0"
                                        FontSize="14"
