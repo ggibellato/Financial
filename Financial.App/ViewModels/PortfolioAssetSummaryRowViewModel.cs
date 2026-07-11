@@ -20,6 +20,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     public string Exchange { get; }
     public DateTime? FirstInvestmentDate { get; }
     public decimal CurrentQuantity { get; }
+    public decimal AveragePrice { get; }
     public decimal TotalInvested { get; }
     public decimal PortfolioWeight { get; }
     public decimal TotalCredits { get; }
@@ -42,6 +43,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
         FirstInvestmentDate.HasValue ? FirstInvestmentDate.Value.ToString("dd/MM/yyyy") : string.Empty;
 
     public string DisplayCurrentQuantity => CurrentQuantity.ToString("N8");
+    public string DisplayAveragePrice => AveragePrice.ToString("N2");
     public string DisplayTotalInvested => TotalInvested.ToString("N2");
     public string DisplayPortfolioWeight => $"{PortfolioWeight:F1}%";
     public string DisplayTotalCredits => TotalCredits.ToString("N2");
@@ -90,6 +92,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
         Exchange = dto.Exchange;
         FirstInvestmentDate = dto.FirstInvestmentDate;
         CurrentQuantity = dto.CurrentQuantity;
+        AveragePrice = dto.AveragePrice;
         TotalInvested = dto.TotalInvested;
         PortfolioWeight = dto.PortfolioWeight;
         TotalCredits = dto.TotalCredits;

@@ -8,6 +8,7 @@ public class PortfolioAssetSummaryRowViewModelTests
 {
     private static PortfolioAssetSummaryRowViewModel BuildRow(
         decimal currentQuantity = 25m,
+        decimal averagePrice = 0m,
         decimal totalInvested = 250m,
         decimal portfolioWeight = 0m,
         decimal totalCredits = 0m,
@@ -27,6 +28,7 @@ public class PortfolioAssetSummaryRowViewModelTests
             Exchange = "LSE",
             FirstInvestmentDate = firstInvestmentDate,
             CurrentQuantity = currentQuantity,
+            AveragePrice = averagePrice,
             TotalBought = totalInvested,
             TotalSold = 0m,
             TotalInvested = totalInvested,
@@ -62,6 +64,13 @@ public class PortfolioAssetSummaryRowViewModelTests
     {
         var row = BuildRow(currentQuantity: 25.0m);
         row.DisplayCurrentQuantity.Should().Be("25.00000000");
+    }
+
+    [Fact]
+    public void DisplayAveragePrice_FormatsN2()
+    {
+        var row = BuildRow(averagePrice: 100.5m);
+        row.DisplayAveragePrice.Should().Be("100.50");
     }
 
     [Fact]

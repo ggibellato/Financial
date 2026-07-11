@@ -35,6 +35,7 @@ public class PortfolioAssetSummaryQueryServiceTests
         item.Ticker.Should().Be("ALZR11");
         item.Exchange.Should().Be("BVMF");
         item.CurrentQuantity.Should().Be(20m);
+        item.AveragePrice.Should().Be(100m);
         item.TotalBought.Should().Be(2500m);
         item.TotalSold.Should().Be(550m);
         item.TotalInvested.Should().Be(1950m);
