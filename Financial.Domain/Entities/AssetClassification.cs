@@ -21,7 +21,8 @@ public enum GlobalAssetClass
     ETF,
     Cash,
     Pension,
-    Other
+    Other,
+    Cryptocurrency
 }
 
 public static class GlobalAssetClassMapping

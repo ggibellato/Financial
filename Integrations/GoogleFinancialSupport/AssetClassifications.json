@@ -15,7 +15,7 @@
   { "name": "Bank of Montreal", "country": "UK", "localTypeCode": "", "assetClass": "Unknown" },
   { "name": "BBAS3", "country": "BR", "localTypeCode": "Acoes", "assetClass": "Equity" },
   { "name": "BCIA11", "country": "BR", "localTypeCode": "FII", "assetClass": "RealEstate" },
-  { "name": "Bitcoin", "country": "UK", "localTypeCode": "", "assetClass": "Unknown" },
+  { "name": "Bitcoin", "country": "UK", "localTypeCode": "", "assetClass": "Cryptocurrency" },
   { "name": "BOVA11", "country": "BR", "localTypeCode": "", "assetClass": "ETF" },
   { "name": "BP", "country": "UK", "localTypeCode": "", "assetClass": "Unknown" },
   { "name": "Brasil Capital 30 Advisory FIC FIA", "country": "BR", "localTypeCode": "", "assetClass": "Unknown" },
