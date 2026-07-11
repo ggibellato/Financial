@@ -44,7 +44,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private GlobalAssetClass _class = GlobalAssetClass.Unknown;
     private decimal _quantity;
     private decimal _averagePrice;
-    private bool _isActive;
     private decimal _totalBought;
     private decimal _totalSold;
     private decimal _totalCredits;
@@ -114,8 +113,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         get => _averagePrice;
         private set { if (SetProperty(ref _averagePrice, value)) NotifyCurrentValueChanged(); }
     }
-
-    public bool IsActive { get => _isActive; private set => SetProperty(ref _isActive, value); }
 
     public decimal TotalBought
     {
@@ -408,7 +405,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         Class = details.Class;
         Quantity = details.Quantity;
         AveragePrice = details.AveragePrice;
-        IsActive = details.IsActive;
         TotalBought = details.TotalBought;
         TotalSold = details.TotalSold;
         TotalCredits = details.TotalCredits;
@@ -763,7 +759,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         Class = GlobalAssetClass.Unknown;
         Quantity = 0;
         AveragePrice = 0;
-        IsActive = false;
         TotalBought = 0;
         TotalSold = 0;
         TotalCredits = 0;

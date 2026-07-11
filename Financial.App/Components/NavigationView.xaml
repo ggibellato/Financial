@@ -110,69 +110,52 @@
                     BorderThickness="0,0,0,1" 
                     Padding="0,0,0,10"
                     Margin="0,0,0,10">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Grid.Column="0">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding AssetDetails.AssetName, Mode=OneWay}" 
-                                       FontSize="20" 
-                                       FontWeight="Bold"
-                                       Foreground="#333333"/>
-                            <Button Command="{Binding AssetDetails.CopyAssetNameCommand}"
-                                    ToolTip="Copy asset name"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    Padding="2"
-                                    Margin="4,0,0,0">
-                                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8C8;" FontSize="14" Foreground="#666666"/>
-                            </Button>
-                        </StackPanel>
-                        <TextBlock Margin="0,5,0,0">
-                            <Run Text="{Binding AssetDetails.Ticker, Mode=OneWay}"/>
-                            <Run>
-                                <Run.Text>
-                                    <MultiBinding Converter="{StaticResource BetweenTextSeparatorConverter}" ConverterParameter=" · " Mode="OneWay">
-                                        <Binding Path="AssetDetails.Ticker" Mode="OneWay"/>
-                                        <Binding Path="AssetDetails.Exchange" Mode="OneWay"/>
-                                    </MultiBinding>
-                                </Run.Text>
-                            </Run>
-                            <Run Text="{Binding AssetDetails.Exchange, Mode=OneWay}"/>
-                            <Run>
-                                <Run.Text>
-                                    <MultiBinding Converter="{StaticResource BetweenTextSeparatorConverter}" ConverterParameter=" · " Mode="OneWay">
-                                        <Binding Path="AssetDetails.Exchange" Mode="OneWay"/>
-                                        <Binding Path="AssetDetails.BrokerName" Mode="OneWay"/>
-                                    </MultiBinding>
-                                </Run.Text>
-                            </Run>
-                            <Run Text="{Binding AssetDetails.BrokerName, Mode=OneWay}"/>
-                            <Run>
-                                <Run.Text>
-                                    <MultiBinding Converter="{StaticResource BetweenTextSeparatorConverter}" ConverterParameter=" · " Mode="OneWay">
-                                        <Binding Path="AssetDetails.BrokerName" Mode="OneWay"/>
-                                        <Binding Path="AssetDetails.PortfolioName" Mode="OneWay"/>
-                                    </MultiBinding>
-                                </Run.Text>
-                            </Run>
-                            <Run Text="{Binding AssetDetails.PortfolioName, Mode=OneWay}"/>
-                        </TextBlock>
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding AssetDetails.AssetName, Mode=OneWay}"
+                                   FontSize="20"
+                                   FontWeight="Bold"
+                                   Foreground="#333333"/>
+                        <Button Command="{Binding AssetDetails.CopyAssetNameCommand}"
+                                ToolTip="Copy asset name"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="2"
+                                Margin="4,0,0,0">
+                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8C8;" FontSize="14" Foreground="#666666"/>
+                        </Button>
                     </StackPanel>
-
-                    <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                        <TextBlock Text="{Binding AssetDetails.IsActive, Mode=OneWay, Converter={StaticResource BoolToIconConverter}}"
-                                   FontSize="24"
-                                   HorizontalAlignment="Right"/>
-                        <TextBlock Text="{Binding AssetDetails.IsActive, Mode=OneWay, Converter={StaticResource BoolToActiveStatusConverter}}"
-                                   FontSize="11"
-                                   Foreground="#666666"
-                                   HorizontalAlignment="Right"/>
-                    </StackPanel>
-                </Grid>
+                    <TextBlock Margin="0,5,0,0">
+                        <Run Text="{Binding AssetDetails.Ticker, Mode=OneWay}"/>
+                        <Run>
+                            <Run.Text>
+                                <MultiBinding Converter="{StaticResource BetweenTextSeparatorConverter}" ConverterParameter=" · " Mode="OneWay">
+                                    <Binding Path="AssetDetails.Ticker" Mode="OneWay"/>
+                                    <Binding Path="AssetDetails.Exchange" Mode="OneWay"/>
+                                </MultiBinding>
+                            </Run.Text>
+                        </Run>
+                        <Run Text="{Binding AssetDetails.Exchange, Mode=OneWay}"/>
+                        <Run>
+                            <Run.Text>
+                                <MultiBinding Converter="{StaticResource BetweenTextSeparatorConverter}" ConverterParameter=" · " Mode="OneWay">
+                                    <Binding Path="AssetDetails.Exchange" Mode="OneWay"/>
+                                    <Binding Path="AssetDetails.BrokerName" Mode="OneWay"/>
+                                </MultiBinding>
+                            </Run.Text>
+                        </Run>
+                        <Run Text="{Binding AssetDetails.BrokerName, Mode=OneWay}"/>
+                        <Run>
+                            <Run.Text>
+                                <MultiBinding Converter="{StaticResource BetweenTextSeparatorConverter}" ConverterParameter=" · " Mode="OneWay">
+                                    <Binding Path="AssetDetails.BrokerName" Mode="OneWay"/>
+                                    <Binding Path="AssetDetails.PortfolioName" Mode="OneWay"/>
+                                </MultiBinding>
+                            </Run.Text>
+                        </Run>
+                        <Run Text="{Binding AssetDetails.PortfolioName, Mode=OneWay}"/>
+                    </TextBlock>
+                </StackPanel>
             </Border>
 
             <!-- Tab Control for Details -->
