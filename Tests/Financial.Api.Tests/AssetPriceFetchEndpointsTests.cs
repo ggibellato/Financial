@@ -21,8 +21,8 @@ public class AssetPriceFetchEndpointsTests
                 {
                     options.Portfolios =
                     [
-                        new PortfolioReference { BrokerName = "XPI", PortfolioName = "FII" },
-                        new PortfolioReference { BrokerName = "XPI", PortfolioName = "Acoes" },
+                        new AssetPriceFetch { BrokerName = "XPI", PortfolioName = "FII" },
+                        new AssetPriceFetch { BrokerName = "XPI", PortfolioName = "Acoes" },
                     ];
                 });
             });
@@ -33,7 +33,7 @@ public class AssetPriceFetchEndpointsTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var portfolios = await response.Content.ReadFromJsonAsync<PortfolioReference[]>(
+        var portfolios = await response.Content.ReadFromJsonAsync<AssetPriceFetch[]>(
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         portfolios.Should().HaveCount(2);
         portfolios![0].BrokerName.Should().Be("XPI");
@@ -57,7 +57,7 @@ public class AssetPriceFetchEndpointsTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var portfolios = await response.Content.ReadFromJsonAsync<PortfolioReference[]>(
+        var portfolios = await response.Content.ReadFromJsonAsync<AssetPriceFetch[]>(
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         portfolios.Should().BeEmpty();
     }
@@ -71,7 +71,7 @@ public class AssetPriceFetchEndpointsTests
             {
                 services.PostConfigure<AssetPriceFetchOptions>(options =>
                 {
-                    options.Portfolios = [new PortfolioReference { BrokerName = "XPI", PortfolioName = "FII" }];
+                    options.Portfolios = [new AssetPriceFetch { BrokerName = "XPI", PortfolioName = "FII" }];
                 });
             });
         });

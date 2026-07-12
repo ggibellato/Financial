@@ -28,7 +28,7 @@ public class AssetPriceFetchViewModelTests
         var priceService = new StubAssetPriceService();
         var options = Options.Create(new AssetPriceFetchOptions
         {
-            Portfolios = [new PortfolioReference { BrokerName = "Coinbase", PortfolioName = "Cryptocurrency" }]
+            Portfolios = [new AssetPriceFetch { BrokerName = "Coinbase", PortfolioName = "Cryptocurrency" }]
         });
         var vm = new AssetPriceFetchViewModel(navigationService, priceService, options, _ => { });
 
@@ -59,7 +59,7 @@ public class AssetPriceFetchViewModelTests
         var priceService = new StubAssetPriceService();
         var options = Options.Create(new AssetPriceFetchOptions
         {
-            Portfolios = [new PortfolioReference { BrokerName = "XPI", PortfolioName = "Acoes" }]
+            Portfolios = [new AssetPriceFetch { BrokerName = "XPI", PortfolioName = "Acoes" }]
         });
         var vm = new AssetPriceFetchViewModel(navigationService, priceService, options, _ => { });
 

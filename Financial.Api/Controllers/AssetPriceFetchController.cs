@@ -16,6 +16,6 @@ public sealed class AssetPriceFetchController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<PortfolioReference>), StatusCodes.Status200OK)]
-    public ActionResult<IReadOnlyList<PortfolioReference>> Get() => Ok(_options.Portfolios);
+    [ProducesResponseType(typeof(IReadOnlyList<AssetPriceFetch>), StatusCodes.Status200OK)]
+    public ActionResult<IReadOnlyList<AssetPriceFetch>> Get() => Ok(_options.Portfolios);
 }
