@@ -93,7 +93,7 @@ The result: Bond assets get a real, live current price — Tesouro Direto as the
 ### F01. Finance Service Common Interface
 
 **Capabilities:**
-- New `IFinanceService` interface in `Financial.Application/Interfaces/`, with a single `AssetValueSnapshot GetQuote(FinanceQuoteRequest request)` member
+- New `IFinanceService` interface in `Financial.Infrastructure/Interfaces/`, with a single `AssetValueSnapshot GetQuote(FinanceQuoteRequest request)` member. This interface — like the existing `IAssetPriceFetcher` (relocated here from `Financial.Application/Interfaces/` as part of this feature) — is referenced exclusively within `Financial.Infrastructure`, never by Application or Presentation, so it is placed in Infrastructure rather than following this codebase's default convention of declaring every interface in Application regardless of consumer
 - New `FinanceQuoteRequest` type carrying every field a website-based source might need to resolve a quote: `Ticker`, `Exchange`, `Currency`, and `Name` (the last added specifically so title-keyed sources — Tesouro Direto, Status Invest — don't need a ticker/exchange pair at all); each concrete service reads only the fields relevant to it and ignores the rest
 - New `GoogleFinanceService` in `Financial.Infrastructure/Services/` implementing `IFinanceService`: `GetQuote` inspects the request and calls `GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker)` when `Exchange` is populated, or `GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot(currency, ticker)` when `Currency` is populated — the existing static `GoogleFinance` class's URL-building, HTML parsing, and selectors are not modified
 - `StandardAssetPriceFetcher` and `CryptocurrencyAssetPriceFetcher` are updated to take `GoogleFinanceService` (via `IFinanceService`) as a constructor dependency instead of calling the static `GoogleFinance` class directly; the request they build for it carries exactly the `Exchange`/`Ticker` or `Currency`/`Ticker` pair each already builds today
@@ -220,7 +220,8 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Finance Service Common Interface
-- [ ] `IFinanceService` exists in `Financial.Application/Interfaces/` with a `GetQuote(FinanceQuoteRequest)` member returning `AssetValueSnapshot`
+- [ ] `IFinanceService` exists in `Financial.Infrastructure/Interfaces/` with a `GetQuote(FinanceQuoteRequest)` member returning `AssetValueSnapshot`
+- [ ] `IAssetPriceFetcher` is relocated to `Financial.Infrastructure/Interfaces/`, with no change to its members
 - [ ] `FinanceQuoteRequest` carries `Ticker`, `Exchange`, `Currency`, and `Name` fields
 - [ ] `GoogleFinanceService.GetQuote` calls `GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker)` when `Exchange` is populated, and `GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot(currency, ticker)` when `Currency` is populated
 - [ ] `StandardAssetPriceFetcher` and `CryptocurrencyAssetPriceFetcher` no longer reference the static `GoogleFinance` class directly; both depend on `GoogleFinanceService` via `IFinanceService`
