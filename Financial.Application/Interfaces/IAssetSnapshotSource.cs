@@ -1,4 +1,4 @@
-using Financial.Domain.Entities;
+using Financial.Domain.ValueObjects;
 
 namespace Financial.Application.Interfaces;
 

@@ -1,4 +1,4 @@
-using Financial.Domain.Entities;
+using Financial.Domain.ValueObjects;
 using Financial.Infrastructure.Integrations.WebPageParser;
 using FluentAssertions;
 using HtmlAgilityPack;
