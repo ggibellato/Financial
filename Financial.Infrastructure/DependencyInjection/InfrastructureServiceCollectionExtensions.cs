@@ -26,7 +26,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IInvestmentsSerializer, InvestmentsSerializerAdapter>();
         services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
         services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();
-        services.AddSingleton<IAssetSnapshotFetcher, StandardAssetSnapshotFetcher>();
+        services.AddSingleton<IAssetPriceFetcher, StandardAssetPriceFetcher>();
         services.AddSingleton<IRepository>(sp =>
         {
             var settings = sp.GetRequiredService<IOptions<RepositorySettingsOptions>>().Value;

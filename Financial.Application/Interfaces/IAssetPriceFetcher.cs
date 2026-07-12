@@ -4,7 +4,7 @@ using Financial.Domain.ValueObjects;
 
 namespace Financial.Application.Interfaces;
 
-public interface IAssetSnapshotFetcher
+public interface IAssetPriceFetcher
 {
     bool Supports(GlobalAssetClass assetClass);
 

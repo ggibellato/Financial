@@ -5,12 +5,12 @@ using FluentAssertions;
 
 namespace Financial.Infrastructure.Tests.Services;
 
-public class StandardAssetSnapshotFetcherTests
+public class StandardAssetPriceFetcherTests
 {
     [Fact]
     public void Supports_Cryptocurrency_ReturnsFalse()
     {
-        var fetcher = new StandardAssetSnapshotFetcher();
+        var fetcher = new StandardAssetPriceFetcher();
 
         var result = fetcher.Supports(GlobalAssetClass.Cryptocurrency);
 
@@ -20,7 +20,7 @@ public class StandardAssetSnapshotFetcherTests
     [Fact]
     public void Supports_Equity_ReturnsTrue()
     {
-        var fetcher = new StandardAssetSnapshotFetcher();
+        var fetcher = new StandardAssetPriceFetcher();
 
         var result = fetcher.Supports(GlobalAssetClass.Equity);
 
@@ -30,7 +30,7 @@ public class StandardAssetSnapshotFetcherTests
     [Fact]
     public void Supports_Unknown_ReturnsTrue()
     {
-        var fetcher = new StandardAssetSnapshotFetcher();
+        var fetcher = new StandardAssetPriceFetcher();
 
         var result = fetcher.Supports(GlobalAssetClass.Unknown);
 
@@ -40,7 +40,7 @@ public class StandardAssetSnapshotFetcherTests
     [Fact]
     public void Supports_Bond_ReturnsTrue()
     {
-        var fetcher = new StandardAssetSnapshotFetcher();
+        var fetcher = new StandardAssetPriceFetcher();
 
         var result = fetcher.Supports(GlobalAssetClass.Bond);
 
@@ -50,7 +50,7 @@ public class StandardAssetSnapshotFetcherTests
     [Fact]
     public void GetSnapshot_BlankExchange_ThrowsArgumentException()
     {
-        var fetcher = new StandardAssetSnapshotFetcher();
+        var fetcher = new StandardAssetPriceFetcher();
         var request = new AssetPriceRequestDTO { Exchange = "", Ticker = "BCIA11" };
 
         Action act = () => fetcher.GetSnapshot(request);

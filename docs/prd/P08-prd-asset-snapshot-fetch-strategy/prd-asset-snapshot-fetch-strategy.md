@@ -4,7 +4,7 @@
 
 Asset Snapshot Fetch Strategy is an internal architecture refactor of the Financial application's price-fetch pipeline (`Financial.Infrastructure/Services/AssetPriceService`). Today, choosing how to fetch a current price for an asset is a single hardcoded conditional: `Cryptocurrency` goes down one path, every other `GlobalAssetClass` value goes down another. This works for the two asset classes the system currently understands, but the enum already defines seven more (`Equity`, `RealEstate`, `Bond`, `Fund`, `ETF`, `Cash`, `Pension`, `Other`), and at least one of them — `Bond`, destined for Brazilian Tesouro Direto government bonds sourced from statusinvest.com.br — is a concretely planned future addition that would otherwise mean editing this same conditional a second time.
 
-This feature replaces the conditional with a strategy pattern: a new `IAssetSnapshotFetcher` contract that any asset-class-specific fetch strategy implements, resolved by `AssetPriceService` from an injected collection instead of a hardcoded branch. The existing two behaviors — the default Google Finance stock-quote path and the Cryptocurrency broker-currency-resolved path — become the first two concrete fetchers (`StandardAssetSnapshotFetcher`, `CryptocurrencySnapshotFetcher`), each independently testable exactly as their logic is today. `AssetPriceService` itself shrinks to a thin dispatcher with no asset-class-specific knowledge of its own.
+This feature replaces the conditional with a strategy pattern: a new `IAssetPriceFetcher` contract that any asset-class-specific fetch strategy implements, resolved by `AssetPriceService` from an injected collection instead of a hardcoded branch. The existing two behaviors — the default Google Finance stock-quote path and the Cryptocurrency broker-currency-resolved path — become the first two concrete fetchers (`StandardAssetPriceFetcher`, `CryptocurrencyAssetPriceFetcher`), each independently testable exactly as their logic is today. `AssetPriceService` itself shrinks to a thin dispatcher with no asset-class-specific knowledge of its own.
 
 This is a maintainability investment, not a user-facing change: no API contract, DTO, database, WPF screen, or Web page changes as a result of this feature. Its entire value is that the next asset class to need a different fetch strategy — such as the planned Tesouro Direto bonds — is added by writing one new class and one DI registration line, with zero edits to already-shipped, already-tested code.
 
@@ -29,8 +29,8 @@ This is a maintainability investment, not a user-facing change: no API contract,
 
 ### The Opportunity
 
-- Open/Closed violation → introduce `IAssetSnapshotFetcher`, an interface implemented once per asset-class-specific strategy; `AssetPriceService` resolves the matching fetcher from an injected collection, so a new asset class is a new class plus one DI registration line, with zero edits to `AssetPriceService`
-- Conflated dependency → move `IRepository` out of `AssetPriceService` and into `CryptocurrencySnapshotFetcher`, the only strategy that actually needs broker-currency resolution; the default path carries no dependency it doesn't use
+- Open/Closed violation → introduce `IAssetPriceFetcher`, an interface implemented once per asset-class-specific strategy; `AssetPriceService` resolves the matching fetcher from an injected collection, so a new asset class is a new class plus one DI registration line, with zero edits to `AssetPriceService`
+- Conflated dependency → move `IRepository` out of `AssetPriceService` and into `CryptocurrencyAssetPriceFetcher`, the only strategy that actually needs broker-currency resolution; the default path carries no dependency it doesn't use
 - Growing regression risk → each fetcher becomes independently unit-testable in its own test file, exactly as today's `ResolveBrokerCurrency` and `BuildCryptocurrencyQuoteUrl` seams already are, so a future asset class's tests cannot accidentally break another class's tests
 
 ---
@@ -49,27 +49,27 @@ This is a maintainability investment, not a user-facing change: no API contract,
 ## 4. Objectives
 
 **Eliminate the Open/Closed violation in price-fetch dispatch**
-- Metric: `AssetPriceService.GetCurrentPrice` contains zero `GlobalAssetClass`-specific conditional logic; strategy selection reads exclusively from an injected `IEnumerable<IAssetSnapshotFetcher>`
+- Metric: `AssetPriceService.GetCurrentPrice` contains zero `GlobalAssetClass`-specific conditional logic; strategy selection reads exclusively from an injected `IEnumerable<IAssetPriceFetcher>`
 
 **Decouple broker-currency resolution from the default path**
-- Metric: `AssetPriceService`'s constructor no longer declares an `IRepository` parameter; only `CryptocurrencySnapshotFetcher` depends on it
+- Metric: `AssetPriceService`'s constructor no longer declares an `IRepository` parameter; only `CryptocurrencyAssetPriceFetcher` depends on it
 
 **Preserve 100% of existing price-fetch behavior**
 - Metric: every existing `AssetPriceServiceTests` scenario (blank ticker, blank exchange, blank broker name, unknown broker, successful standard/crypto dispatch) has an equivalent passing test after the refactor, with unchanged expected outcomes, and `AssetPriceEndpointsTests` passes unmodified
 
 **Make the next asset class cheap to add**
-- Metric: adding a hypothetical new `IAssetSnapshotFetcher` implementation requires creating exactly one new class and one DI registration line, with zero modifications to `AssetPriceService`, `StandardAssetSnapshotFetcher`, or `CryptocurrencySnapshotFetcher`
+- Metric: adding a hypothetical new `IAssetPriceFetcher` implementation requires creating exactly one new class and one DI registration line, with zero modifications to `AssetPriceService`, `StandardAssetPriceFetcher`, or `CryptocurrencyAssetPriceFetcher`
 
 ---
 
 ## 5. User Stories
 
 ### F01. Asset Snapshot Fetcher Contract & Standard Fetcher
-- As the system, I want a common `IAssetSnapshotFetcher` contract so that any future asset-class-specific fetch strategy can be added without modifying existing dispatch code
-- As the developer, I want today's non-cryptocurrency price-fetch logic (the Google Finance stock-quote path) extracted into a `StandardAssetSnapshotFetcher` implementing that contract, so today's default behavior becomes one strategy among many instead of being hardwired into `AssetPriceService`
+- As the system, I want a common `IAssetPriceFetcher` contract so that any future asset-class-specific fetch strategy can be added without modifying existing dispatch code
+- As the developer, I want today's non-cryptocurrency price-fetch logic (the Google Finance stock-quote path) extracted into a `StandardAssetPriceFetcher` implementing that contract, so today's default behavior becomes one strategy among many instead of being hardwired into `AssetPriceService`
 
 ### F02. Cryptocurrency Snapshot Fetcher
-- As the system, I want the cryptocurrency-specific price-fetch logic (broker-currency resolution plus the Google Finance beta-quote URL) extracted into a `CryptocurrencySnapshotFetcher` implementing the same contract, so its logic is fully independent of the standard strategy and of any future asset class
+- As the system, I want the cryptocurrency-specific price-fetch logic (broker-currency resolution plus the Google Finance beta-quote URL) extracted into a `CryptocurrencyAssetPriceFetcher` implementing the same contract, so its logic is fully independent of the standard strategy and of any future asset class
 - As the developer, I want the existing `ResolveBrokerCurrency` logic and the crypto branch's `BrokerName`-required validation moved into this fetcher unchanged, so behavior stays identical to today, only relocated
 
 ### F03. Strategy Dispatch in AssetPriceService
@@ -87,10 +87,10 @@ This is a maintainability investment, not a user-facing change: no API contract,
 - Asset value snapshot (ticker, display name, price, as-of timestamp) for the default/non-cryptocurrency fetch strategy (used by F03)
 
 **Capabilities:**
-- New `IAssetSnapshotFetcher` interface in `Financial.Application/Interfaces/`, with `bool Supports(GlobalAssetClass assetClass)` and `AssetValueSnapshot GetSnapshot(AssetPriceRequestDTO request)` members
-- New `StandardAssetSnapshotFetcher` in `Financial.Infrastructure/Services/` implementing `IAssetSnapshotFetcher`: `Supports` returns `true` for every `GlobalAssetClass` value except `Cryptocurrency` (today's default/fallback behavior), `false` for `Cryptocurrency`
+- New `IAssetPriceFetcher` interface in `Financial.Application/Interfaces/`, with `bool Supports(GlobalAssetClass assetClass)` and `AssetValueSnapshot GetSnapshot(AssetPriceRequestDTO request)` members
+- New `StandardAssetPriceFetcher` in `Financial.Infrastructure/Services/` implementing `IAssetPriceFetcher`: `Supports` returns `true` for every `GlobalAssetClass` value except `Cryptocurrency` (today's default/fallback behavior), `false` for `Cryptocurrency`
 - `GetSnapshot` validates that `Exchange` is non-blank (throwing `ArgumentException` otherwise, matching today's `GetStandardSnapshot` message) and calls `GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker)` unchanged
-- Registered in DI (`InfrastructureServiceCollectionExtensions`) as one of the `IAssetSnapshotFetcher` implementations resolvable via `IEnumerable<IAssetSnapshotFetcher>`
+- Registered in DI (`InfrastructureServiceCollectionExtensions`) as one of the `IAssetPriceFetcher` implementations resolvable via `IEnumerable<IAssetPriceFetcher>`
 - `AssetPriceService` is not modified by this feature — its existing branching logic stays in place until F03 wires the dispatcher in, so F01 introduces the contract and first implementation without a big-bang cutover
 
 **Experience:**
@@ -103,10 +103,10 @@ This is a maintainability investment, not a user-facing change: no API contract,
 - Asset value snapshot (ticker, display name, price, as-of timestamp) for `Cryptocurrency`-class assets, using the currency resolved from the asset's broker (used by F03)
 
 **Capabilities:**
-- New `CryptocurrencySnapshotFetcher` in `Financial.Infrastructure/Services/` implementing `IAssetSnapshotFetcher`, taking `IRepository` as a constructor dependency (moved here from `AssetPriceService`)
+- New `CryptocurrencyAssetPriceFetcher` in `Financial.Infrastructure/Services/` implementing `IAssetPriceFetcher`, taking `IRepository` as a constructor dependency (moved here from `AssetPriceService`)
 - `Supports` returns `true` only for `GlobalAssetClass.Cryptocurrency`
 - `GetSnapshot` validates that `BrokerName` is non-blank (throwing `ArgumentException` otherwise, matching today's crypto-branch message), resolves the broker's currency via the existing `ResolveBrokerCurrency(IEnumerable<Broker>, string)` logic relocated here unchanged (including its `InvalidOperationException` when the broker name has no match), then calls `GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot(currency, ticker)`
-- Registered in DI alongside `StandardAssetSnapshotFetcher` as another `IAssetSnapshotFetcher`
+- Registered in DI alongside `StandardAssetPriceFetcher` as another `IAssetPriceFetcher`
 
 **Experience:**
 - No caller-visible change: this feature only introduces a new type and DI registration that nothing consumes yet
@@ -119,12 +119,12 @@ This is a maintainability investment, not a user-facing change: no API contract,
 - F02: asset value snapshot for `Cryptocurrency`-class assets
 
 **Capabilities:**
-- `AssetPriceService`'s constructor changes from `IRepository` to `IEnumerable<IAssetSnapshotFetcher>` — the repository dependency moves entirely into `CryptocurrencySnapshotFetcher` (F02)
+- `AssetPriceService`'s constructor changes from `IRepository` to `IEnumerable<IAssetPriceFetcher>` — the repository dependency moves entirely into `CryptocurrencyAssetPriceFetcher` (F02)
 - `GetCurrentPrice` keeps its existing `request`-null and blank-`Ticker` validation unchanged, then selects the fetcher via `fetchers.FirstOrDefault(f => f.Supports(request.AssetClass))`
-- If no registered fetcher's `Supports` matches the request's asset class, dispatch falls back to the `StandardAssetSnapshotFetcher` instance rather than throwing — preserving today's "any unrecognized/non-crypto class defaults to standard" behavior exactly, including for `GlobalAssetClass.Bond` until a dedicated bond fetcher is added in a future feature
+- If no registered fetcher's `Supports` matches the request's asset class, dispatch falls back to the `StandardAssetPriceFetcher` instance rather than throwing — preserving today's "any unrecognized/non-crypto class defaults to standard" behavior exactly, including for `GlobalAssetClass.Bond` until a dedicated bond fetcher is added in a future feature
 - The resolved fetcher's `AssetValueSnapshot` is mapped into `AssetPriceDTO` exactly as today (`Exchange` from the request, `Ticker`/`Name`/`Price`/`AsOf` from the snapshot)
 - The old `GetStandardSnapshot`, `GetCryptocurrencySnapshot`, and `ResolveBrokerCurrency` methods are removed from `AssetPriceService`
-- DI registration for `AssetPriceService` is updated so its constructor resolves the `IEnumerable<IAssetSnapshotFetcher>` collection populated by F01 and F02
+- DI registration for `AssetPriceService` is updated so its constructor resolves the `IEnumerable<IAssetPriceFetcher>` collection populated by F01 and F02
 
 **Experience:**
 - From every caller's perspective — the `/prices/current` API endpoint, the WPF "Current Values" refresh, the WPF Asset Details "Refresh" action — fetching a price works identically before and after this feature: same trigger, same request shape, same response shape, same loading/failure states
@@ -138,13 +138,13 @@ This is a maintainability investment, not a user-facing change: no API contract,
 - Implementing an actual `GlobalAssetClass.Bond` fetcher, or any statusinvest.com.br integration, is not part of this PRD — this PRD only makes the architecture ready to receive it as a future, self-contained addition
 
 **`IAssetSnapshotSource` / dividend and credit lookups**
-- `IAssetSnapshotSource` and `AssetSnapshotSourceAdapter` (consumed by `DividendService`) are not touched, extended, or unified with `IAssetSnapshotFetcher` — they remain a separate, single-strategy interface, consistent with P07's decision to keep crypto/other-class dividend lookups out of scope
+- `IAssetSnapshotSource` and `AssetSnapshotSourceAdapter` (consumed by `DividendService`) are not touched, extended, or unified with `IAssetPriceFetcher` — they remain a separate, single-strategy interface, consistent with P07's decision to keep crypto/other-class dividend lookups out of scope
 
 **API, DTO, and UI contract changes**
 - `AssetPriceRequestDTO`, the `/prices/current` endpoint's request/response contract, and every WPF/Web call site are unchanged — this refactor is entirely internal to `Financial.Infrastructure`
 
 **Fail-loud validation for unmapped asset classes**
-- Asset classes without a dedicated fetcher continue to silently fall back to `StandardAssetSnapshotFetcher`; this PRD does not introduce a mode that fails or warns when a class has no explicit fetcher
+- Asset classes without a dedicated fetcher continue to silently fall back to `StandardAssetPriceFetcher`; this PRD does not introduce a mode that fails or warns when a class has no explicit fetcher
 
 **Changes to `GoogleFinance.cs`'s URL-building or scraping logic**
 - `GoogleFinance.GetFinancialInfoSnapshot` and `GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot` are reused as-is by the two fetchers; their internal URL-building, HTML parsing, and selector logic are not modified
@@ -186,30 +186,30 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Asset Snapshot Fetcher Contract & Standard Fetcher
-- [ ] `IAssetSnapshotFetcher` exists in `Financial.Application/Interfaces/` with `Supports(GlobalAssetClass)` and `GetSnapshot(AssetPriceRequestDTO)` members
-- [ ] `StandardAssetSnapshotFetcher.Supports` returns `true` for every `GlobalAssetClass` value except `Cryptocurrency`, and `false` for `Cryptocurrency`
-- [ ] `StandardAssetSnapshotFetcher.GetSnapshot` throws `ArgumentException` when `Exchange` is blank
-- [ ] `StandardAssetSnapshotFetcher.GetSnapshot` calls `GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker)` and returns its result unmodified
-- [ ] `StandardAssetSnapshotFetcher` is registered in DI as an `IAssetSnapshotFetcher`
+- [ ] `IAssetPriceFetcher` exists in `Financial.Application/Interfaces/` with `Supports(GlobalAssetClass)` and `GetSnapshot(AssetPriceRequestDTO)` members
+- [ ] `StandardAssetPriceFetcher.Supports` returns `true` for every `GlobalAssetClass` value except `Cryptocurrency`, and `false` for `Cryptocurrency`
+- [ ] `StandardAssetPriceFetcher.GetSnapshot` throws `ArgumentException` when `Exchange` is blank
+- [ ] `StandardAssetPriceFetcher.GetSnapshot` calls `GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker)` and returns its result unmodified
+- [ ] `StandardAssetPriceFetcher` is registered in DI as an `IAssetPriceFetcher`
 
 ### F02. Cryptocurrency Snapshot Fetcher
-- [ ] `CryptocurrencySnapshotFetcher.Supports` returns `true` only for `GlobalAssetClass.Cryptocurrency`, `false` for every other value
-- [ ] `CryptocurrencySnapshotFetcher.GetSnapshot` throws `ArgumentException` when `BrokerName` is blank
-- [ ] `CryptocurrencySnapshotFetcher.GetSnapshot` throws `InvalidOperationException` when `BrokerName` matches no broker returned by `IRepository.GetBrokerList()`
-- [ ] `CryptocurrencySnapshotFetcher.GetSnapshot` resolves the matching broker's `Currency` and calls `GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot(currency, ticker)`
-- [ ] `CryptocurrencySnapshotFetcher` is registered in DI as an `IAssetSnapshotFetcher`
+- [ ] `CryptocurrencyAssetPriceFetcher.Supports` returns `true` only for `GlobalAssetClass.Cryptocurrency`, `false` for every other value
+- [ ] `CryptocurrencyAssetPriceFetcher.GetSnapshot` throws `ArgumentException` when `BrokerName` is blank
+- [ ] `CryptocurrencyAssetPriceFetcher.GetSnapshot` throws `InvalidOperationException` when `BrokerName` matches no broker returned by `IRepository.GetBrokerList()`
+- [ ] `CryptocurrencyAssetPriceFetcher.GetSnapshot` resolves the matching broker's `Currency` and calls `GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot(currency, ticker)`
+- [ ] `CryptocurrencyAssetPriceFetcher` is registered in DI as an `IAssetPriceFetcher`
 
 ### F03. Strategy Dispatch in AssetPriceService
-- [ ] `AssetPriceService`'s constructor takes `IEnumerable<IAssetSnapshotFetcher>` and no longer takes `IRepository`
+- [ ] `AssetPriceService`'s constructor takes `IEnumerable<IAssetPriceFetcher>` and no longer takes `IRepository`
 - [ ] `GetCurrentPrice` still throws `ArgumentNullException` for a null request and `ArgumentException` for a blank `Ticker`, unchanged
-- [ ] A request with `AssetClass = Cryptocurrency` and a valid `BrokerName` dispatches to `CryptocurrencySnapshotFetcher` and returns its snapshot mapped into `AssetPriceDTO`
-- [ ] A request with any non-`Cryptocurrency` `AssetClass` (including `Unknown`, `Equity`, `Bond`, `ETF`) dispatches to `StandardAssetSnapshotFetcher`
-- [ ] If no registered fetcher's `Supports` returns `true` for the request's `AssetClass`, dispatch falls back to `StandardAssetSnapshotFetcher` instead of throwing
+- [ ] A request with `AssetClass = Cryptocurrency` and a valid `BrokerName` dispatches to `CryptocurrencyAssetPriceFetcher` and returns its snapshot mapped into `AssetPriceDTO`
+- [ ] A request with any non-`Cryptocurrency` `AssetClass` (including `Unknown`, `Equity`, `Bond`, `ETF`) dispatches to `StandardAssetPriceFetcher`
+- [ ] If no registered fetcher's `Supports` returns `true` for the request's `AssetClass`, dispatch falls back to `StandardAssetPriceFetcher` instead of throwing
 - [ ] `GetStandardSnapshot`, `GetCryptocurrencySnapshot`, and `ResolveBrokerCurrency` no longer exist on `AssetPriceService`
 - [ ] All pre-existing `AssetPriceServiceTests` scenarios have an equivalent passing test after the refactor, with unchanged expected outcomes
 - [ ] `AssetPriceEndpointsTests` passes unmodified, proving the public `/prices/current` contract is unaffected
 
 ### Cross-Feature Integration
-- [ ] A request with `AssetClass = Cryptocurrency` and a valid `BrokerName` produces the same `AssetPriceDTO` shape as today's crypto branch, proving `AssetPriceService` (F03) correctly dispatches to the snapshot provided by `CryptocurrencySnapshotFetcher` (F02)
-- [ ] A request with `AssetClass = Equity` (or any other non-crypto value) produces the same `AssetPriceDTO` shape as today's standard branch, proving `AssetPriceService` (F03) correctly dispatches to the snapshot provided by `StandardAssetSnapshotFetcher` (F01)
-- [ ] Registering both `StandardAssetSnapshotFetcher` (F01) and `CryptocurrencySnapshotFetcher` (F02) in DI and resolving `IEnumerable<IAssetSnapshotFetcher>` in `AssetPriceService` (F03) yields exactly two fetchers, both reachable by the dispatcher
+- [ ] A request with `AssetClass = Cryptocurrency` and a valid `BrokerName` produces the same `AssetPriceDTO` shape as today's crypto branch, proving `AssetPriceService` (F03) correctly dispatches to the snapshot provided by `CryptocurrencyAssetPriceFetcher` (F02)
+- [ ] A request with `AssetClass = Equity` (or any other non-crypto value) produces the same `AssetPriceDTO` shape as today's standard branch, proving `AssetPriceService` (F03) correctly dispatches to the snapshot provided by `StandardAssetPriceFetcher` (F01)
+- [ ] Registering both `StandardAssetPriceFetcher` (F01) and `CryptocurrencyAssetPriceFetcher` (F02) in DI and resolving `IEnumerable<IAssetPriceFetcher>` in `AssetPriceService` (F03) yields exactly two fetchers, both reachable by the dispatcher

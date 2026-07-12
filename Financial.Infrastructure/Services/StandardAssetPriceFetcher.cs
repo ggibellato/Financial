@@ -6,7 +6,7 @@ using Financial.Infrastructure.Integrations.WebPageParser;
 
 namespace Financial.Infrastructure.Services;
 
-public sealed class StandardAssetSnapshotFetcher : IAssetSnapshotFetcher
+public sealed class StandardAssetPriceFetcher : IAssetPriceFetcher
 {
     public bool Supports(GlobalAssetClass assetClass) => assetClass != GlobalAssetClass.Cryptocurrency;
 

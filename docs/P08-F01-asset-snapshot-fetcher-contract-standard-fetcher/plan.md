@@ -5,9 +5,9 @@
 
 ### Stage 1: Fetcher Contract and Implementation
 
-**1. IAssetSnapshotFetcher Interface** - Define the new strategy contract in the Application layer, with members for checking whether a fetcher applies to a given asset class and for producing a price snapshot from a request. Reference the spec for the exact member signatures and location.
+**1. IAssetPriceFetcher Interface** - Define the new strategy contract in the Application layer, with members for checking whether a fetcher applies to a given asset class and for producing a price snapshot from a request. Reference the spec for the exact member signatures and location.
 
-**2. StandardAssetSnapshotFetcher Implementation** - Extract today's non-cryptocurrency price-fetch logic into a new Infrastructure-layer class implementing the interface, preserving the existing exchange validation and its exact error message, and delegating to the existing Google Finance integration unmodified. Reference the spec for the exact `Supports` semantics and file location.
+**2. StandardAssetPriceFetcher Implementation** - Extract today's non-cryptocurrency price-fetch logic into a new Infrastructure-layer class implementing the interface, preserving the existing exchange validation and its exact error message, and delegating to the existing Google Finance integration unmodified. Reference the spec for the exact `Supports` semantics and file location.
 
 ### Stage 2: Wiring and Verification
 
