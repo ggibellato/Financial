@@ -1,6 +1,6 @@
 namespace Financial.Infrastructure.Interfaces;
 
-public class FinanceQuoteRequest
+public class AssetValueRequest
 {
     public string? Ticker { get; set; }
     public string? Exchange { get; set; }

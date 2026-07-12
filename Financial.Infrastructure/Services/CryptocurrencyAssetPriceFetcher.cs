@@ -27,7 +27,7 @@ public sealed class CryptocurrencyAssetPriceFetcher : IAssetPriceFetcher
         }
 
         var currency = ResolveBrokerCurrency(_repository.GetBrokerList(), request.BrokerName);
-        return _financeService.GetQuote(new FinanceQuoteRequest { Currency = currency, Ticker = request.Ticker });
+        return _financeService.GetAssetValue(new AssetValueRequest { Currency = currency, Ticker = request.Ticker });
     }
 
     internal static string ResolveBrokerCurrency(IEnumerable<Broker> brokers, string brokerName)

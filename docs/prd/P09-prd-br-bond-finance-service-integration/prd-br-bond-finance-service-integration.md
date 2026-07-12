@@ -93,9 +93,9 @@ The result: Bond assets get a real, live current price — Tesouro Direto as the
 ### F01. Finance Service Common Interface
 
 **Capabilities:**
-- New `IFinanceService` interface in `Financial.Infrastructure/Interfaces/`, with a single `AssetValueSnapshot GetQuote(FinanceQuoteRequest request)` member. This interface — like the existing `IAssetPriceFetcher` (relocated here from `Financial.Application/Interfaces/` as part of this feature) — is referenced exclusively within `Financial.Infrastructure`, never by Application or Presentation, so it is placed in Infrastructure rather than following this codebase's default convention of declaring every interface in Application regardless of consumer
-- New `FinanceQuoteRequest` type carrying every field a website-based source might need to resolve a quote: `Ticker`, `Exchange`, `Currency`, and `Name` (the last added specifically so title-keyed sources — Tesouro Direto, Status Invest — don't need a ticker/exchange pair at all); each concrete service reads only the fields relevant to it and ignores the rest
-- New `GoogleFinanceService` in `Financial.Infrastructure/Services/` implementing `IFinanceService`: `GetQuote` inspects the request and calls `GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker)` when `Exchange` is populated, or `GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot(currency, ticker)` when `Currency` is populated — the existing static `GoogleFinance` class's URL-building, HTML parsing, and selectors are not modified
+- New `IFinanceService` interface in `Financial.Infrastructure/Interfaces/`, with a single `AssetValueSnapshot GetAssetValue(AssetValueRequest request)` member. This interface — like the existing `IAssetPriceFetcher` (relocated here from `Financial.Application/Interfaces/` as part of this feature) — is referenced exclusively within `Financial.Infrastructure`, never by Application or Presentation, so it is placed in Infrastructure rather than following this codebase's default convention of declaring every interface in Application regardless of consumer
+- New `AssetValueRequest` type carrying every field a website-based source might need to resolve a current asset value: `Ticker`, `Exchange`, `Currency`, and `Name` (the last added specifically so title-keyed sources — Tesouro Direto, Status Invest — don't need a ticker/exchange pair at all); each concrete service reads only the fields relevant to it and ignores the rest
+- New `GoogleFinanceService` in `Financial.Infrastructure/Services/` implementing `IFinanceService`: `GetAssetValue` inspects the request and calls `GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker)` when `Exchange` is populated, or `GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot(currency, ticker)` when `Currency` is populated — the existing static `GoogleFinance` class's URL-building, HTML parsing, and selectors are not modified
 - `StandardAssetPriceFetcher` and `CryptocurrencyAssetPriceFetcher` are updated to take `GoogleFinanceService` (via `IFinanceService`) as a constructor dependency instead of calling the static `GoogleFinance` class directly; the request they build for it carries exactly the `Exchange`/`Ticker` or `Currency`/`Ticker` pair each already builds today
 - Registered in DI (`InfrastructureServiceCollectionExtensions`) as a singleton, resolved by the two existing fetchers through the constructor change above
 
@@ -109,7 +109,7 @@ The result: Bond assets get a real, live current price — Tesouro Direto as the
 
 **Capabilities:**
 - New `TesouroDiretoFinanceService` in `Financial.Infrastructure/Services/` (backed by a new `Integrations/WebPageParser/TesouroDireto.cs` scraper, alongside the existing `GoogleFinance.cs` and `DadosMercadoDividend.cs`), implementing `IFinanceService`
-- `GetQuote` fetches the tesourodireto.com.br rendimento-dos-titulos redemption dataset (the data shown under the page's "Resgatar" view) and looks for the row whose `Titulo` column matches `request.Name` case-insensitively, ignoring leading/trailing whitespace differences
+- `GetAssetValue` fetches the tesourodireto.com.br rendimento-dos-titulos redemption dataset (the data shown under the page's "Resgatar" view) and looks for the row whose `Titulo` column matches `request.Name` case-insensitively, ignoring leading/trailing whitespace differences
 - On a match, returns the row's "Preço Unit." value as the price and the data's reference date as the as-of timestamp
 - On no match, returns a not-found result (no exception) so `F04` can attempt the fallback source
 - If the page's Resgatar dataset is rendered client-side rather than present in the static HTML, the implementation targets whichever underlying data source (API response or embedded data block) the page uses to populate that view, following the project's existing per-source scraping convention of isolating the exact selectors/endpoint in one reviewable place (mirroring `GoogleFinanceSelectors.cs`)
@@ -125,7 +125,7 @@ The result: Bond assets get a real, live current price — Tesouro Direto as the
 
 **Capabilities:**
 - New `StatusInvestFinanceService` in `Financial.Infrastructure/Services/` (backed by a new `Integrations/WebPageParser/StatusInvest.cs` scraper), implementing `IFinanceService`
-- `GetQuote` derives a URL slug from `request.Name` using a generic rule: lowercase the title, strip accents, remove `+` and other punctuation, collapse whitespace, and join words with hyphens (e.g., "TESOURO IPCA+ 2029" → "tesouro-ipca-2029")
+- `GetAssetValue` derives a URL slug from `request.Name` using a generic rule: lowercase the title, strip accents, remove `+` and other punctuation, collapse whitespace, and join words with hyphens (e.g., "TESOURO IPCA+ 2029" → "tesouro-ipca-2029")
 - Fetches `https://statusinvest.com.br/tesouro/{slug}` and extracts the "Valor Unitário" field as the price, with the page's displayed reference date (or the fetch time, if none is shown) as the as-of timestamp
 - If the derived slug's page returns a 404 or the page loads but has no "Valor Unitário" element, returns a not-found result (no exception), consistent with F02's not-found signal
 - Registered in DI as a singleton `StatusInvestFinanceService`
@@ -142,9 +142,9 @@ The result: Bond assets get a real, live current price — Tesouro Direto as the
 **Capabilities:**
 - New `BondAssetPriceFetcher` in `Financial.Infrastructure/Services/` implementing `IAssetPriceFetcher`; `Supports` returns `true` only for `GlobalAssetClass.Bond`
 - `AssetPriceRequestDTO` gains a `Name` field, populated from the requested asset's `Asset.Name`; this field is used only by the Bond dispatch path — Equity and Cryptocurrency call sites leave it unpopulated, and `StandardAssetPriceFetcher`/`CryptocurrencyAssetPriceFetcher` ignore it, so no behavior change for non-Bond requests
-- `GetSnapshot` validates that `Name` is non-blank (throwing `ArgumentException` otherwise, matching the existing validation style of the other fetchers), builds a `FinanceQuoteRequest` with `Name` set, and calls `TesouroDiretoFinanceService.GetQuote` first
+- `GetSnapshot` validates that `Name` is non-blank (throwing `ArgumentException` otherwise, matching the existing validation style of the other fetchers), builds a `AssetValueRequest` with `Name` set, and calls `TesouroDiretoFinanceService.GetAssetValue` first
 - If Tesouro Direto returns a match, that result is returned as the `AssetValueSnapshot` and Status Invest is not called
-- If Tesouro Direto returns not-found, `StatusInvestFinanceService.GetQuote` is called with the same request; its result (match or not-found) becomes the fetcher's outcome
+- If Tesouro Direto returns not-found, `StatusInvestFinanceService.GetAssetValue` is called with the same request; its result (match or not-found) becomes the fetcher's outcome
 - If neither source finds the bond, `GetSnapshot` fails in the same manner `StandardAssetPriceFetcher` does today when Google Finance cannot resolve a ticker — no bond-specific silent fallback price is introduced
 - `StandardAssetPriceFetcher.Supports` is updated to also exclude `GlobalAssetClass.Bond` (alongside its existing `Cryptocurrency` exclusion), so dispatch ordering can't route a Bond request back to Google Finance even as a fallback
 - Registered in DI alongside the existing two fetchers as another `IAssetPriceFetcher`
@@ -191,7 +191,7 @@ The result: Bond assets get a real, live current price — Tesouro Direto as the
 
 ### Foundation Features
 These features set up shared project infrastructure. In a greenfield project they must be implemented sequentially before or alongside any feature that depends on them:
-- **F01 Finance Service Common Interface** — introduces the `IFinanceService` contract and `FinanceQuoteRequest` shape every website-based price source (existing and new) implements, and refactors Google Finance behind it
+- **F01 Finance Service Common Interface** — introduces the `IFinanceService` contract and `AssetValueRequest` shape every website-based price source (existing and new) implements, and refactors Google Finance behind it
 
 ### Execution Waves
 Features within the same wave can be built in parallel. A wave starts only after every feature in earlier waves is complete.
@@ -220,23 +220,23 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Finance Service Common Interface
-- [ ] `IFinanceService` exists in `Financial.Infrastructure/Interfaces/` with a `GetQuote(FinanceQuoteRequest)` member returning `AssetValueSnapshot`
+- [ ] `IFinanceService` exists in `Financial.Infrastructure/Interfaces/` with a `GetAssetValue(AssetValueRequest)` member returning `AssetValueSnapshot`
 - [ ] `IAssetPriceFetcher` is relocated to `Financial.Infrastructure/Interfaces/`, with no change to its members
-- [ ] `FinanceQuoteRequest` carries `Ticker`, `Exchange`, `Currency`, and `Name` fields
-- [ ] `GoogleFinanceService.GetQuote` calls `GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker)` when `Exchange` is populated, and `GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot(currency, ticker)` when `Currency` is populated
+- [ ] `AssetValueRequest` carries `Ticker`, `Exchange`, `Currency`, and `Name` fields
+- [ ] `GoogleFinanceService.GetAssetValue` calls `GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker)` when `Exchange` is populated, and `GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot(currency, ticker)` when `Currency` is populated
 - [ ] `StandardAssetPriceFetcher` and `CryptocurrencyAssetPriceFetcher` no longer reference the static `GoogleFinance` class directly; both depend on `GoogleFinanceService` via `IFinanceService`
 - [ ] Every existing `StandardAssetPriceFetcherTests` and `CryptocurrencyAssetPriceFetcherTests` scenario (other than the Bond-dispatch test flipped by F04) still passes with unchanged expected outcomes
 - [ ] `GoogleFinanceService` is registered in DI as a singleton
 
 ### F02. Tesouro Direto Finance Service
-- [ ] `TesouroDiretoFinanceService.GetQuote` returns a matching price and as-of date when `request.Name` matches a `Titulo` row case-insensitively (ignoring leading/trailing whitespace)
-- [ ] `TesouroDiretoFinanceService.GetQuote` returns a not-found result, not an exception, when no row matches
+- [ ] `TesouroDiretoFinanceService.GetAssetValue` returns a matching price and as-of date when `request.Name` matches a `Titulo` row case-insensitively (ignoring leading/trailing whitespace)
+- [ ] `TesouroDiretoFinanceService.GetAssetValue` returns a not-found result, not an exception, when no row matches
 - [ ] `TesouroDiretoFinanceService` is registered in DI as a singleton
 
 ### F03. Status Invest Finance Service
 - [ ] `StatusInvestFinanceService` derives the correct slug for representative bond titles (e.g., "TESOURO IPCA+ 2029" → "tesouro-ipca-2029")
-- [ ] `StatusInvestFinanceService.GetQuote` returns the page's "Valor Unitário" value and an as-of date when the derived slug resolves to a valid page
-- [ ] `StatusInvestFinanceService.GetQuote` returns a not-found result, not an exception, when the derived slug's page 404s or has no "Valor Unitário" element
+- [ ] `StatusInvestFinanceService.GetAssetValue` returns the page's "Valor Unitário" value and an as-of date when the derived slug resolves to a valid page
+- [ ] `StatusInvestFinanceService.GetAssetValue` returns a not-found result, not an exception, when the derived slug's page 404s or has no "Valor Unitário" element
 - [ ] `StatusInvestFinanceService` is registered in DI as a singleton
 
 ### F04. BR Bond Price Fetcher

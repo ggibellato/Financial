@@ -6,7 +6,7 @@ namespace Financial.Infrastructure.Services;
 
 public sealed class GoogleFinanceService : IFinanceService
 {
-    public AssetValueSnapshot GetQuote(FinanceQuoteRequest request)
+    public AssetValueSnapshot GetAssetValue(AssetValueRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Ticker))
         {

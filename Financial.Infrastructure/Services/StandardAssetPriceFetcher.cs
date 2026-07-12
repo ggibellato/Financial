@@ -23,6 +23,6 @@ public sealed class StandardAssetPriceFetcher : IAssetPriceFetcher
             throw new ArgumentException("Exchange is required.", nameof(request));
         }
 
-        return _financeService.GetQuote(new FinanceQuoteRequest { Exchange = request.Exchange, Ticker = request.Ticker });
+        return _financeService.GetAssetValue(new AssetValueRequest { Exchange = request.Exchange, Ticker = request.Ticker });
     }
 }

@@ -154,6 +154,6 @@ public class AssetPriceServiceTests
 
     private sealed class FakeFinanceService : IFinanceService
     {
-        public AssetValueSnapshot GetQuote(FinanceQuoteRequest request) => throw new NotImplementedException();
+        public AssetValueSnapshot GetAssetValue(AssetValueRequest request) => throw new NotImplementedException();
     }
 }

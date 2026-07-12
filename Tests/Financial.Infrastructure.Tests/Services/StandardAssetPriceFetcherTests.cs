@@ -81,6 +81,6 @@ public class StandardAssetPriceFetcherTests
             _snapshot = snapshot;
         }
 
-        public AssetValueSnapshot GetQuote(FinanceQuoteRequest request) => _snapshot ?? throw new NotImplementedException();
+        public AssetValueSnapshot GetAssetValue(AssetValueRequest request) => _snapshot ?? throw new NotImplementedException();
     }
 }

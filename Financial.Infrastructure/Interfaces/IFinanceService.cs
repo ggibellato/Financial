@@ -4,5 +4,5 @@ namespace Financial.Infrastructure.Interfaces;
 
 public interface IFinanceService
 {
-    AssetValueSnapshot GetQuote(FinanceQuoteRequest request);
+    AssetValueSnapshot GetAssetValue(AssetValueRequest request);
 }
