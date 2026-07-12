@@ -22,7 +22,8 @@ public enum GlobalAssetClass
     Cash,
     Pension,
     Other,
-    Cryptocurrency
+    Cryptocurrency,
+    PrivateCredit
 }
 
 public static class GlobalAssetClassMapping
@@ -34,10 +35,12 @@ public static class GlobalAssetClassMapping
             [(CountryCode.BR, "FII")] = GlobalAssetClass.RealEstate,
             [(CountryCode.BR, "ETF")] = GlobalAssetClass.ETF,
             [(CountryCode.BR, "Fund")] = GlobalAssetClass.Fund,
+            [(CountryCode.BR, "Fundo")] = GlobalAssetClass.Fund,
             [(CountryCode.BR, "Bond")] = GlobalAssetClass.Bond,
             [(CountryCode.US, "REIT")] = GlobalAssetClass.RealEstate,
             [(CountryCode.UK, "REIT")] = GlobalAssetClass.RealEstate,
             [(CountryCode.BR, "TesouroDireto")] = GlobalAssetClass.Bond,
+            [(CountryCode.BR, "CreditoImobiliario")] = GlobalAssetClass.PrivateCredit,
             [(CountryCode.US, "T-Bill")] = GlobalAssetClass.Bond,
             [(CountryCode.UK, "ConventionalGilt")] = GlobalAssetClass.Bond,
             [(CountryCode.US, "Stock")] = GlobalAssetClass.Equity,
@@ -51,7 +54,8 @@ public static class GlobalAssetClassMapping
             [(CountryCode.US, "Cash")] = GlobalAssetClass.Cash,
             [(CountryCode.UK, "Cash")] = GlobalAssetClass.Cash,
             [(CountryCode.US, "Pension")] = GlobalAssetClass.Pension,
-            [(CountryCode.UK, "Pension")] = GlobalAssetClass.Pension
+            [(CountryCode.UK, "Pension")] = GlobalAssetClass.Pension,
+            [(CountryCode.BR, "Pensao")] = GlobalAssetClass.Pension
         };
 
     public static GlobalAssetClass Resolve(CountryCode country, string localTypeCode)
