@@ -68,7 +68,7 @@ This is a maintainability investment, not a user-facing change: no API contract,
 - As the system, I want a common `IAssetPriceFetcher` contract so that any future asset-class-specific fetch strategy can be added without modifying existing dispatch code
 - As the developer, I want today's non-cryptocurrency price-fetch logic (the Google Finance stock-quote path) extracted into a `StandardAssetPriceFetcher` implementing that contract, so today's default behavior becomes one strategy among many instead of being hardwired into `AssetPriceService`
 
-### F02. Cryptocurrency Snapshot Fetcher
+### F02. Cryptocurrency Asset Price Fetcher
 - As the system, I want the cryptocurrency-specific price-fetch logic (broker-currency resolution plus the Google Finance beta-quote URL) extracted into a `CryptocurrencyAssetPriceFetcher` implementing the same contract, so its logic is fully independent of the standard strategy and of any future asset class
 - As the developer, I want the existing `ResolveBrokerCurrency` logic and the crypto branch's `BrokerName`-required validation moved into this fetcher unchanged, so behavior stays identical to today, only relocated
 
@@ -97,7 +97,7 @@ This is a maintainability investment, not a user-facing change: no API contract,
 - No caller-visible change: this feature only introduces new types and DI registrations that nothing consumes yet
 - Once consumed by F03, a request whose asset class is not `Cryptocurrency` produces the exact same Google Finance stock-quote fetch, response shape, and failure behavior as today
 
-### F02. Cryptocurrency Snapshot Fetcher
+### F02. Cryptocurrency Asset Price Fetcher
 
 **Provides:**
 - Asset value snapshot (ticker, display name, price, as-of timestamp) for `Cryptocurrency`-class assets, using the currency resolved from the asset's broker (used by F03)
@@ -159,7 +159,7 @@ This is a maintainability investment, not a user-facing change: no API contract,
 | # | Feature | Priority | Dependencies |
 |---|---------|----------|--------------|
 | F01 | Asset Snapshot Fetcher Contract & Standard Fetcher | 1 | None |
-| F02 | Cryptocurrency Snapshot Fetcher | 1 | F01 |
+| F02 | Cryptocurrency Asset Price Fetcher | 1 | F01 |
 | F03 | Strategy Dispatch in AssetPriceService | 1 | F01, F02 |
 
 ### Execution Waves
@@ -192,7 +192,7 @@ graph TD
 - [ ] `StandardAssetPriceFetcher.GetSnapshot` calls `GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker)` and returns its result unmodified
 - [ ] `StandardAssetPriceFetcher` is registered in DI as an `IAssetPriceFetcher`
 
-### F02. Cryptocurrency Snapshot Fetcher
+### F02. Cryptocurrency Asset Price Fetcher
 - [ ] `CryptocurrencyAssetPriceFetcher.Supports` returns `true` only for `GlobalAssetClass.Cryptocurrency`, `false` for every other value
 - [ ] `CryptocurrencyAssetPriceFetcher.GetSnapshot` throws `ArgumentException` when `BrokerName` is blank
 - [ ] `CryptocurrencyAssetPriceFetcher.GetSnapshot` throws `InvalidOperationException` when `BrokerName` matches no broker returned by `IRepository.GetBrokerList()`
