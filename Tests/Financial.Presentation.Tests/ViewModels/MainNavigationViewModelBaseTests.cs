@@ -11,7 +11,7 @@ public class MainNavigationViewModelBaseTests
     [Fact]
     public void AssetClassFilters_IncludesCryptocurrencyWithCorrectLabel()
     {
-        var summaryService = new StubSummaryQueryService();
+        var summaryService = new StubSummaryService();
         var spy = new SpyAssetDetailsViewModel();
         var vm = new TestableNavigationViewModel(summaryService, spy);
 
@@ -23,7 +23,7 @@ public class MainNavigationViewModelBaseTests
     public void SelectingPortfolioNode_LoadsTotalSoldFromSummaryService()
     {
         var summary = new AggregatedSummaryDTO { TotalBought = 10000m, TotalSold = 4706.65m, TotalCredits = 500m };
-        var summaryService = new StubSummaryQueryService { PortfolioSummary = summary };
+        var summaryService = new StubSummaryService { PortfolioSummary = summary };
         var spy = new SpyAssetDetailsViewModel();
         var vm = new TestableNavigationViewModel(summaryService, spy);
 
@@ -39,7 +39,7 @@ public class MainNavigationViewModelBaseTests
     public void SelectingBrokerNode_LoadsTotalSoldFromSummaryService()
     {
         var summary = new AggregatedSummaryDTO { TotalBought = 20000m, TotalSold = 9000m, TotalCredits = 800m };
-        var summaryService = new StubSummaryQueryService { BrokerSummary = summary };
+        var summaryService = new StubSummaryService { BrokerSummary = summary };
         var spy = new SpyAssetDetailsViewModel();
         var vm = new TestableNavigationViewModel(summaryService, spy);
 
@@ -54,7 +54,7 @@ public class MainNavigationViewModelBaseTests
     [Fact]
     public void SelectingPortfolioNode_PassesCorrectBrokerAndPortfolioNameToSummaryService()
     {
-        var summaryService = new StubSummaryQueryService();
+        var summaryService = new StubSummaryService();
         var spy = new SpyAssetDetailsViewModel();
         var vm = new TestableNavigationViewModel(summaryService, spy);
 
@@ -68,7 +68,7 @@ public class MainNavigationViewModelBaseTests
     [Fact]
     public void SelectingBrokerNode_PassesCorrectBrokerNameToSummaryService()
     {
-        var summaryService = new StubSummaryQueryService();
+        var summaryService = new StubSummaryService();
         var spy = new SpyAssetDetailsViewModel();
         var vm = new TestableNavigationViewModel(summaryService, spy);
 
@@ -81,7 +81,7 @@ public class MainNavigationViewModelBaseTests
     [Fact]
     public void SelectingBrokerNode_CallsLoadBrokerSummaryOnDetailsViewModel()
     {
-        var summaryService = new StubSummaryQueryService();
+        var summaryService = new StubSummaryService();
         var spy = new SpyAssetDetailsViewModel();
         var vm = new TestableNavigationViewModel(summaryService, spy);
 
@@ -95,7 +95,7 @@ public class MainNavigationViewModelBaseTests
     [Fact]
     public void SelectingBrokerNode_CallsLoadBrokerBreakdownOnDetailsViewModel()
     {
-        var summaryService = new StubSummaryQueryService();
+        var summaryService = new StubSummaryService();
         var spy = new SpyAssetDetailsViewModel();
         var vm = new TestableNavigationViewModel(summaryService, spy);
 
@@ -109,7 +109,7 @@ public class MainNavigationViewModelBaseTests
     [Fact]
     public void SelectingBrokerNode_CallsLoadBrokerTransactionsOnDetailsViewModel()
     {
-        var summaryService = new StubSummaryQueryService();
+        var summaryService = new StubSummaryService();
         var spy = new SpyAssetDetailsViewModel();
         var vm = new TestableNavigationViewModel(summaryService, spy);
 
@@ -123,7 +123,7 @@ public class MainNavigationViewModelBaseTests
     [Fact]
     public void SelectingPortfolioNode_CallsLoadPortfolioTransactionsOnDetailsViewModel()
     {
-        var summaryService = new StubSummaryQueryService();
+        var summaryService = new StubSummaryService();
         var spy = new SpyAssetDetailsViewModel();
         var vm = new TestableNavigationViewModel(summaryService, spy);
 
@@ -138,7 +138,7 @@ public class MainNavigationViewModelBaseTests
     [Fact]
     public void SelectingPortfolioNode_WhenMissingMetadata_ClearsDetails()
     {
-        var summaryService = new StubSummaryQueryService();
+        var summaryService = new StubSummaryService();
         var spy = new SpyAssetDetailsViewModel();
         var vm = new TestableNavigationViewModel(summaryService, spy);
 
@@ -152,7 +152,7 @@ public class MainNavigationViewModelBaseTests
     [Fact]
     public void SelectingPortfolioNode_CallsLoadPortfolioSummaryOnDetailsViewModel()
     {
-        var summaryService = new StubSummaryQueryService();
+        var summaryService = new StubSummaryService();
         var spy = new SpyAssetDetailsViewModel();
         var vm = new TestableNavigationViewModel(summaryService, spy);
 
@@ -166,8 +166,8 @@ public class MainNavigationViewModelBaseTests
     [Fact]
     public void SelectingPortfolioNode_PassesCorrectAssetItemsFromService()
     {
-        var summaryService = new StubSummaryQueryService();
-        var assetSummaryService = new StubPortfolioAssetSummaryQueryService
+        var summaryService = new StubSummaryService();
+        var assetSummaryService = new StubPortfolioAssetSummaryService
         {
             Items =
             [
@@ -187,8 +187,8 @@ public class MainNavigationViewModelBaseTests
     [Fact]
     public void SelectingPortfolioNode_PassesCorrectBrokerAndPortfolioNameToAssetSummaryService()
     {
-        var summaryService = new StubSummaryQueryService();
-        var assetSummaryService = new StubPortfolioAssetSummaryQueryService();
+        var summaryService = new StubSummaryService();
+        var assetSummaryService = new StubPortfolioAssetSummaryService();
         var spy = new SpyAssetDetailsViewModel();
         var vm = new TestableNavigationViewModel(summaryService, spy, assetSummaryService);
 
@@ -202,7 +202,7 @@ public class MainNavigationViewModelBaseTests
     [Fact]
     public void SelectingAssetNode_DoesNotCallLoadBrokerOrPortfolioTransactions()
     {
-        var summaryService = new StubSummaryQueryService();
+        var summaryService = new StubSummaryService();
         var spy = new SpyAssetDetailsViewModel();
         var vm = new TestableNavigationViewModel(summaryService, spy);
 
@@ -216,7 +216,7 @@ public class MainNavigationViewModelBaseTests
     [Fact]
     public void SelectingBrokerNode_DoesNotCallLoadPortfolioSummary()
     {
-        var summaryService = new StubSummaryQueryService();
+        var summaryService = new StubSummaryService();
         var spy = new SpyAssetDetailsViewModel();
         var vm = new TestableNavigationViewModel(summaryService, spy);
 
@@ -304,8 +304,8 @@ public class MainNavigationViewModelBaseTests
 
     private sealed class TestableNavigationViewModel : MainNavigationViewModelBase<SpyAssetDetailsViewModel>
     {
-        public TestableNavigationViewModel(ISummaryQueryService summaryQueryService, SpyAssetDetailsViewModel spy, IPortfolioAssetSummaryQueryService? portfolioAssetSummaryQueryService = null)
-            : base(new StubNavigationService(), new StubCreditQueryService(), summaryQueryService, portfolioAssetSummaryQueryService ?? new StubPortfolioAssetSummaryQueryService(), spy)
+        public TestableNavigationViewModel(ISummaryService summaryService, SpyAssetDetailsViewModel spy, IPortfolioAssetSummaryService? portfolioAssetSummaryService = null)
+            : base(new StubNavigationService(), new StubCreditQueryService(), summaryService, portfolioAssetSummaryService ?? new StubPortfolioAssetSummaryService(), spy)
         {
         }
     }
@@ -373,7 +373,7 @@ public class MainNavigationViewModelBaseTests
         public void UpdateTransactionsPlotWidth(double plotWidth) { }
     }
 
-    private sealed class StubPortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQueryService
+    private sealed class StubPortfolioAssetSummaryService : IPortfolioAssetSummaryService
     {
         public IReadOnlyList<PortfolioAssetSummaryItemDTO> Items { get; set; } = [];
         public string? LastBrokerName { get; private set; }
@@ -387,7 +387,7 @@ public class MainNavigationViewModelBaseTests
         }
     }
 
-    private sealed class StubSummaryQueryService : ISummaryQueryService
+    private sealed class StubSummaryService : ISummaryService
     {
         public AggregatedSummaryDTO BrokerSummary { get; set; } = new();
         public AggregatedSummaryDTO PortfolioSummary { get; set; } = new();

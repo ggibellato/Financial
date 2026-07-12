@@ -14,7 +14,7 @@ public class AssetDetailsViewModelPortfolioSummaryTests
             new StubTransactionService(),
             new StubCreditService(),
             priceService ?? new NeverResolvingPriceService(),
-            new StubBrokerBreakdownQueryService(),
+            new StubBrokerBreakdownService(),
             new StubTransactionQueryService());
     }
 

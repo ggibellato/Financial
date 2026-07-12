@@ -27,7 +27,7 @@ internal sealed class StubAssetPriceService : IAssetPriceService
         new() { Exchange = request.Exchange, Ticker = request.Ticker, Price = 0m };
 }
 
-internal sealed class StubBrokerBreakdownQueryService : IBrokerBreakdownQueryService
+internal sealed class StubBrokerBreakdownService : IBrokerBreakdownService
 {
     public IReadOnlyList<PortfolioBreakdownItemDTO> Breakdown { get; set; } = [];
     public Exception? ExceptionToThrow { get; set; }

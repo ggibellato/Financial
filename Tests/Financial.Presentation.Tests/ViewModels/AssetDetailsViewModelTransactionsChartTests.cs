@@ -9,14 +9,14 @@ namespace Financial.Presentation.Tests.ViewModels;
 public class AssetDetailsViewModelTransactionsChartTests
 {
     private static AssetDetailsViewModel BuildViewModel(
-        IBrokerBreakdownQueryService? brokerBreakdownQueryService = null,
+        IBrokerBreakdownService? brokerBreakdownService = null,
         ITransactionQueryService? transactionQueryService = null)
     {
         return new AssetDetailsViewModel(
             new StubTransactionService(),
             new StubCreditService(),
             new StubAssetPriceService(),
-            brokerBreakdownQueryService ?? new StubBrokerBreakdownQueryService(),
+            brokerBreakdownService ?? new StubBrokerBreakdownService(),
             transactionQueryService ?? new StubTransactionQueryService());
     }
 

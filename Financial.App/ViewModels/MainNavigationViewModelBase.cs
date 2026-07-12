@@ -13,8 +13,8 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 {
     private readonly INavigationService _navigationService;
     private readonly ICreditQueryService _creditQueryService;
-    private readonly ISummaryQueryService _summaryQueryService;
-    private readonly IPortfolioAssetSummaryQueryService _portfolioAssetSummaryQueryService;
+    private readonly ISummaryService _summaryService;
+    private readonly IPortfolioAssetSummaryService _portfolioAssetSummaryService;
     private TreeNodeViewModel? _selectedNode;
     private bool _isLoading;
     private TreeNodeDTO? _fullTree;
@@ -58,14 +58,14 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     protected MainNavigationViewModelBase(
         INavigationService navigationService,
         ICreditQueryService creditQueryService,
-        ISummaryQueryService summaryQueryService,
-        IPortfolioAssetSummaryQueryService portfolioAssetSummaryQueryService,
+        ISummaryService summaryService,
+        IPortfolioAssetSummaryService portfolioAssetSummaryService,
         TAssetDetailsViewModel assetDetails)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _creditQueryService = creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService));
-        _summaryQueryService = summaryQueryService ?? throw new ArgumentNullException(nameof(summaryQueryService));
-        _portfolioAssetSummaryQueryService = portfolioAssetSummaryQueryService ?? throw new ArgumentNullException(nameof(portfolioAssetSummaryQueryService));
+        _summaryService = summaryService ?? throw new ArgumentNullException(nameof(summaryService));
+        _portfolioAssetSummaryService = portfolioAssetSummaryService ?? throw new ArgumentNullException(nameof(portfolioAssetSummaryService));
         AssetDetails = assetDetails ?? throw new ArgumentNullException(nameof(assetDetails));
         InitializeAssetClassFilters();
     }
@@ -274,9 +274,9 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
-        var summary = _summaryQueryService.GetPortfolioSummary(brokerName, portfolioName);
+        var summary = _summaryService.GetPortfolioSummary(brokerName, portfolioName);
         var credits = _creditQueryService.GetCreditsByPortfolio(brokerName, portfolioName);
-        var assetItems = _portfolioAssetSummaryQueryService.GetPortfolioAssetsSummary(brokerName, portfolioName);
+        var assetItems = _portfolioAssetSummaryService.GetPortfolioAssetsSummary(brokerName, portfolioName);
         AssetDetails.LoadPortfolioSummary(brokerName, portfolioName, summary, credits, assetItems);
         _ = AssetDetails.LoadPortfolioTransactions(brokerName, portfolioName);
     }
@@ -290,7 +290,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
-        var summary = _summaryQueryService.GetBrokerSummary(brokerName);
+        var summary = _summaryService.GetBrokerSummary(brokerName);
         var credits = _creditQueryService.GetCreditsByBroker(brokerName);
         AssetDetails.LoadBrokerSummary(brokerName, summary, credits);
         _ = AssetDetails.LoadBrokerBreakdown(brokerName);
