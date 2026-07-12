@@ -19,10 +19,11 @@ internal static class GoogleGeneratorConfiguration
         {
             { "Trading 212_76a5af", "Fantastic Five Divid" },
             { "Trading 212_ffd966", "Almost Daily Dividen" },
-            { "XPI_f4cccc",         "Gold" },
             { "XPI_ffff",           "Acoes" },
-            { "XPI_cc0000",         "Fundos Investimento" },
+            { "XPI_cc0000",         "Previdencia" },
             { "XPI_222222",         "Encerradas" },
+            { "XPI_6aa84f",         "Renda Fixa" },
+            { "XPI_38761d",         "Reserva" },
             { "FreeTrade_222222",   "Encerradas" },
             { "Trading 212_222222", "Encerradas" },
         };

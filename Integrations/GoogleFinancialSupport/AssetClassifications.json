@@ -143,5 +143,11 @@
   { "name": "WALMART INC. (WMT)", "country": "UK", "localTypeCode": "", "assetClass": "Unknown" },
   { "name": "Warehouse", "country": "UK", "localTypeCode": "", "assetClass": "Unknown" },
   { "name": "XPCI11", "country": "BR", "localTypeCode": "FII", "assetClass": "RealEstate" },
-  { "name": "XPML11", "country": "BR", "localTypeCode": "FII", "assetClass": "RealEstate" }
+  { "name": "XPML11", "country": "BR", "localTypeCode": "FII", "assetClass": "RealEstate" },
+  { "name": "TESOURO IPCA+ 2026", "country": "BR", "localTypeCode": "TesouroDireto", "assetClass": "Bond" },
+  { "name": "TESOURO IPCA+ 2029", "country": "BR", "localTypeCode": "TesouroDireto", "assetClass": "Bond" },
+  { "name": "TESOURO IPCA+ 2035", "country": "BR", "localTypeCode": "TesouroDireto", "assetClass": "Bond" },
+  { "name": "TESOURO IPCA+ 2040", "country": "BR", "localTypeCode": "TesouroDireto", "assetClass": "Bond" },
+  { "name": "INCO", "country": "BR", "localTypeCode": "CreditoImobiliario", "assetClass": "PrivateCredit" },
+  { "name": "Grao ARCA", "country": "BR", "localTypeCode": "Pensao", "assetClass": "Pension" }
 ]
