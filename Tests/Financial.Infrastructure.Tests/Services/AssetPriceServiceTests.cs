@@ -2,6 +2,7 @@ using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using Financial.Domain.ValueObjects;
+using Financial.Infrastructure.Interfaces;
 using Financial.Infrastructure.Services;
 using FluentAssertions;
 
@@ -82,8 +83,8 @@ public class AssetPriceServiceTests
     {
         var fetchers = new IAssetPriceFetcher[]
         {
-            new StandardAssetPriceFetcher(),
-            new CryptocurrencyAssetPriceFetcher(new StubRepository([]))
+            new StandardAssetPriceFetcher(new FakeFinanceService()),
+            new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new FakeFinanceService())
         };
         var service = new AssetPriceService(fetchers);
         var request = new AssetPriceRequestDTO
@@ -104,8 +105,8 @@ public class AssetPriceServiceTests
     {
         var fetchers = new IAssetPriceFetcher[]
         {
-            new StandardAssetPriceFetcher(),
-            new CryptocurrencyAssetPriceFetcher(new StubRepository([]))
+            new StandardAssetPriceFetcher(new FakeFinanceService()),
+            new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new FakeFinanceService())
         };
         var service = new AssetPriceService(fetchers);
         var request = new AssetPriceRequestDTO { Exchange = "", Ticker = "BCIA11", AssetClass = GlobalAssetClass.Equity };
@@ -149,5 +150,10 @@ public class AssetPriceServiceTests
         public Asset? GetAsset(string brokerName, string portfolioName, string assetName) => throw new NotImplementedException();
 
         public Task SaveChangesAsync() => throw new NotImplementedException();
+    }
+
+    private sealed class FakeFinanceService : IFinanceService
+    {
+        public AssetValueSnapshot GetQuote(FinanceQuoteRequest request) => throw new NotImplementedException();
     }
 }
