@@ -19,12 +19,12 @@ public class NavigationServiceTests
         return new JSONRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
     }
     private readonly NavigationService _sut;
-    private readonly CreditQueryService _creditSut;
+    private readonly CreditService _creditSut;
 
     public NavigationServiceTests()
     {
         _sut = new NavigationService(_repository);
-        _creditSut = new CreditQueryService(_repository);
+        _creditSut = new CreditService(_repository, _sut);
     }
 
     [Fact]

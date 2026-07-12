@@ -9,10 +9,12 @@ public static class ApplicationServiceCollectionExtensions
     public static IServiceCollection AddFinancialApplication(this IServiceCollection services)
     {
         services.AddSingleton<INavigationService, NavigationService>();
-        services.AddSingleton<ICreditService, CreditService>();
-        services.AddSingleton<ICreditQueryService, CreditQueryService>();
-        services.AddSingleton<ITransactionService, TransactionService>();
-        services.AddSingleton<ITransactionQueryService, TransactionQueryService>();
+        services.AddSingleton<CreditService>();
+        services.AddSingleton<ICreditService>(sp => sp.GetRequiredService<CreditService>());
+        services.AddSingleton<ICreditQueryService>(sp => sp.GetRequiredService<CreditService>());
+        services.AddSingleton<TransactionService>();
+        services.AddSingleton<ITransactionService>(sp => sp.GetRequiredService<TransactionService>());
+        services.AddSingleton<ITransactionQueryService>(sp => sp.GetRequiredService<TransactionService>());
         services.AddSingleton<IDividendService, DividendService>();
         services.AddSingleton<IBrokerBreakdownQueryService, BrokerBreakdownQueryService>();
         services.AddSingleton<IPortfolioAssetSummaryQueryService, PortfolioAssetSummaryQueryService>();

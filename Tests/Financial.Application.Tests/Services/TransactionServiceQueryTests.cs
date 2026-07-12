@@ -5,14 +5,14 @@ using FluentAssertions;
 
 namespace Financial.Application.Tests.Services;
 
-public class TransactionQueryServiceTests
+public class TransactionServiceQueryTests
 {
     private readonly StubRepository _repository = new();
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new TransactionQueryService(null!);
+        Action act = () => new TransactionService(null!, new NavigationService(_repository));
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
@@ -143,7 +143,7 @@ public class TransactionQueryServiceTests
         result.Should().BeEmpty();
     }
 
-    private TransactionQueryService CreateService() => new(_repository);
+    private TransactionService CreateService() => new(_repository, new NavigationService(_repository));
 
     private static Asset MakeAsset(string name = "TEST") =>
         Asset.Create(name, "ISIN", "BVMF", name);
