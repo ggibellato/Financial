@@ -5,7 +5,7 @@ using Financial.Domain.Entities;
 
 namespace Financial.Application.Services;
 
-public sealed class TransactionService : ITransactionService
+public sealed class TransactionService : ITransactionService, ITransactionQueryService
 {
     private readonly IRepository _repository;
     private readonly INavigationService _navigationService;
@@ -18,7 +18,7 @@ public sealed class TransactionService : ITransactionService
 
     public Task<AssetDetailsDTO?> AddTransactionAsync(TransactionCreateDTO request)
     {
-        return AssetServiceHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
+        return AssetMutationHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
             _repository,
             _navigationService,
             request.BrokerName,
@@ -41,7 +41,7 @@ public sealed class TransactionService : ITransactionService
             return Task.FromResult<AssetDetailsDTO?>(null);
         }
 
-        return AssetServiceHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
+        return AssetMutationHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
             _repository,
             _navigationService,
             request.BrokerName,
@@ -63,12 +63,37 @@ public sealed class TransactionService : ITransactionService
             return Task.FromResult<AssetDetailsDTO?>(null);
         }
 
-        return AssetServiceHelper.ExecuteAssetMutationAsync(
+        return AssetMutationHelper.ExecuteAssetMutationAsync(
             _repository,
             _navigationService,
             request.BrokerName,
             request.PortfolioName,
             request.AssetName,
             asset => asset.RemoveTransaction(request.Id));
+    }
+
+    public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByBroker(string brokerName)
+    {
+        if (string.IsNullOrWhiteSpace(brokerName))
+            return Array.Empty<TransactionSummaryItemDTO>();
+
+        return MapAndSort(_repository.GetAssetsByBroker(brokerName));
+    }
+
+    public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByPortfolio(string brokerName, string portfolioName)
+    {
+        if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
+            return Array.Empty<TransactionSummaryItemDTO>();
+
+        return MapAndSort(_repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName));
+    }
+
+    private static IReadOnlyList<TransactionSummaryItemDTO> MapAndSort(IEnumerable<Asset> assets)
+    {
+        return assets
+            .SelectMany(asset => asset.Transactions.Select(transaction => NavigationMapper.MapTransactionSummaryItem(asset, transaction)))
+            .OrderBy(item => item.Date)
+            .ThenBy(item => item.AssetName, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
     }
 }

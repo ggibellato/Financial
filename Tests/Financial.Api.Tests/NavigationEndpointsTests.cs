@@ -18,7 +18,7 @@ public class NavigationEndpointsTests
 
         var tree = await response.Content.ReadFromJsonAsync<TreeNodeDTO>();
         tree.Should().NotBeNull();
-        tree!.NodeType.Should().NotBeNullOrWhiteSpace();
+        tree!.NodeType.Should().Be(TreeNodeType.Investments);
         tree.DisplayName.Should().NotBeNullOrWhiteSpace();
     }
 

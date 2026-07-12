@@ -3,11 +3,11 @@ using Financial.Application.Interfaces;
 
 namespace Financial.Application.Services;
 
-public sealed class SummaryQueryService : ISummaryQueryService
+public sealed class SummaryService : ISummaryService
 {
     private readonly IRepository _repository;
 
-    public SummaryQueryService(IRepository repository)
+    public SummaryService(IRepository repository)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }

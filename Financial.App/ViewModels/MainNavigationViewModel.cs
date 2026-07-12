@@ -10,23 +10,23 @@ public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsV
     public MainNavigationViewModel(
         INavigationService navigationService,
         ICreditQueryService creditQueryService,
-        ISummaryQueryService summaryQueryService,
-        IPortfolioAssetSummaryQueryService portfolioAssetSummaryQueryService,
+        ISummaryService summaryService,
+        IPortfolioAssetSummaryService portfolioAssetSummaryService,
         ITransactionService transactionService,
         ICreditService creditService,
         IAssetPriceService assetPriceService,
-        IBrokerBreakdownQueryService brokerBreakdownQueryService,
+        IBrokerBreakdownService brokerBreakdownService,
         ITransactionQueryService transactionQueryService)
         : base(
             navigationService ?? throw new ArgumentNullException(nameof(navigationService)),
             creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService)),
-            summaryQueryService ?? throw new ArgumentNullException(nameof(summaryQueryService)),
-            portfolioAssetSummaryQueryService ?? throw new ArgumentNullException(nameof(portfolioAssetSummaryQueryService)),
+            summaryService ?? throw new ArgumentNullException(nameof(summaryService)),
+            portfolioAssetSummaryService ?? throw new ArgumentNullException(nameof(portfolioAssetSummaryService)),
             new AssetDetailsViewModel(
                 transactionService ?? throw new ArgumentNullException(nameof(transactionService)),
                 creditService ?? throw new ArgumentNullException(nameof(creditService)),
                 assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService)),
-                brokerBreakdownQueryService ?? throw new ArgumentNullException(nameof(brokerBreakdownQueryService)),
+                brokerBreakdownService ?? throw new ArgumentNullException(nameof(brokerBreakdownService)),
                 transactionQueryService ?? throw new ArgumentNullException(nameof(transactionQueryService))))
     {
     }

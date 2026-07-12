@@ -6,14 +6,14 @@ using FluentAssertions.Execution;
 
 namespace Financial.Application.Tests.Services;
 
-public class SummaryQueryServiceTests
+public class SummaryServiceTests
 {
     private readonly StubRepository _repository = new();
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new SummaryQueryService(null!);
+        Action act = () => new SummaryService(null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
@@ -283,7 +283,7 @@ public class SummaryQueryServiceTests
         result.TotalInvested.Should().Be(0m);
     }
 
-    private SummaryQueryService CreateService() => new(_repository);
+    private SummaryService CreateService() => new(_repository);
 
     private static Asset MakeAsset(string name = "TEST", string ticker = "TEST") =>
         Asset.Create(name, "ISIN", "BVMF", ticker);

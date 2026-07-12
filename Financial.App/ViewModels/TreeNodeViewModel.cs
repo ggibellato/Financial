@@ -19,7 +19,7 @@ public class TreeNodeViewModel : ViewModelBase
     /// <summary>
     /// Type of node (Broker, Portfolio, Asset)
     /// </summary>
-    public string NodeType { get; }
+    public TreeNodeType NodeType { get; }
 
     /// <summary>
     /// Metadata associated with the node

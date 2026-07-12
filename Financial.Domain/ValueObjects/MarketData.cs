@@ -1,6 +1,6 @@
 using System;
 
-namespace Financial.Domain.Entities;
+namespace Financial.Domain.ValueObjects;
 
 public enum DividendType { Dividend, JCP }
 

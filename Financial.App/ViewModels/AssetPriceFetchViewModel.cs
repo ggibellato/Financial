@@ -10,7 +10,7 @@ public class AssetPriceFetchViewModel : ViewModelBase
 {
     private readonly INavigationService _navigationService;
     private readonly IAssetPriceService _assetPriceService;
-    private readonly IReadOnlyList<PortfolioReference> _portfolios;
+    private readonly IReadOnlyList<AssetPriceFetch> _portfolios;
     private readonly Action<string> _showError;
     private bool _isFetching;
     private string _progressMessage = string.Empty;
@@ -48,7 +48,7 @@ public class AssetPriceFetchViewModel : ViewModelBase
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
         _showError = showError ?? throw new ArgumentNullException(nameof(showError));
-        _portfolios = (options?.Value.Portfolios ?? new List<PortfolioReference>()).AsReadOnly();
+        _portfolios = (options?.Value.Portfolios ?? new List<AssetPriceFetch>()).AsReadOnly();
         FetchCommand = new RelayCommand(async () => await FetchAsync(), () => !IsFetching);
     }
 

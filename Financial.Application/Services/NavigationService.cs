@@ -18,7 +18,7 @@ public sealed class NavigationService : INavigationService
 
         var rootNode = new TreeNodeDTO
         {
-            NodeType = TreeNodeTypes.Investments,
+            NodeType = TreeNodeType.Investments,
             DisplayName = "All Investments"
         };
 

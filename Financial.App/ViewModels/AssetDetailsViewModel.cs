@@ -15,7 +15,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private readonly ITransactionService _transactionService;
     private readonly ICreditService _creditService;
     private readonly IAssetPriceService _assetPriceService;
-    private readonly IBrokerBreakdownQueryService _brokerBreakdownQueryService;
+    private readonly IBrokerBreakdownService _brokerBreakdownService;
     private readonly ITransactionQueryService _transactionQueryService;
     private readonly TodayInfoTracker _todayInfo;
     private readonly TransactionActions _transactionActions;
@@ -309,13 +309,13 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         ITransactionService transactionService,
         ICreditService creditService,
         IAssetPriceService assetPriceService,
-        IBrokerBreakdownQueryService brokerBreakdownQueryService,
+        IBrokerBreakdownService brokerBreakdownService,
         ITransactionQueryService transactionQueryService)
     {
         _transactionService = transactionService ?? throw new ArgumentNullException(nameof(transactionService));
         _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
         _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
-        _brokerBreakdownQueryService = brokerBreakdownQueryService ?? throw new ArgumentNullException(nameof(brokerBreakdownQueryService));
+        _brokerBreakdownService = brokerBreakdownService ?? throw new ArgumentNullException(nameof(brokerBreakdownService));
         _transactionQueryService = transactionQueryService ?? throw new ArgumentNullException(nameof(transactionQueryService));
         _todayInfo = new TodayInfoTracker(ApplyTodayInfo, ResetTodayInfo, UpdateCommandStates);
         _transactionActions = new TransactionActions(
@@ -476,7 +476,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         {
             try
             {
-                var breakdown = _brokerBreakdownQueryService.GetBrokerBreakdown(brokerName);
+                var breakdown = _brokerBreakdownService.GetBrokerBreakdown(brokerName);
                 if (token.IsCancellationRequested) return;
                 ApplyBrokerBreakdown(breakdown);
             }

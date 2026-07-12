@@ -13,7 +13,7 @@ public class AssetDetailsViewModelCreditsChartTests
             new StubTransactionService(),
             new StubCreditService(),
             new StubAssetPriceService(),
-            new StubBrokerBreakdownQueryService(),
+            new StubBrokerBreakdownService(),
             new StubTransactionQueryService());
     }
 

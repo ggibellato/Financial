@@ -1,7 +1,7 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
-using Financial.Domain.Entities;
 using Financial.Domain.Rules;
+using Financial.Domain.ValueObjects;
 
 namespace Financial.Application.Services;
 

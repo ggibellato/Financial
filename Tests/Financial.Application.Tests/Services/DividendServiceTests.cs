@@ -1,8 +1,8 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Application.Services;
-using Financial.Domain.Entities;
 using Financial.Domain.Rules;
+using Financial.Domain.ValueObjects;
 using FluentAssertions;
 using FluentAssertions.Execution;
 

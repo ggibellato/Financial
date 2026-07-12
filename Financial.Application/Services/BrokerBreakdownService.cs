@@ -4,11 +4,11 @@ using Financial.Domain.Entities;
 
 namespace Financial.Application.Services;
 
-public sealed class BrokerBreakdownQueryService : IBrokerBreakdownQueryService
+public sealed class BrokerBreakdownService : IBrokerBreakdownService
 {
     private readonly IRepository _repository;
 
-    public BrokerBreakdownQueryService(IRepository repository)
+    public BrokerBreakdownService(IRepository repository)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }

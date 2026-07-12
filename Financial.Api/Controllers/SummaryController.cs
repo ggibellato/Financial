@@ -8,18 +8,18 @@ namespace Financial.Api.Controllers;
 [Route("summary")]
 public sealed class SummaryController : ControllerBase
 {
-    private readonly ISummaryQueryService _summaryQueryService;
-    private readonly IPortfolioAssetSummaryQueryService _portfolioAssetSummaryQueryService;
-    private readonly IBrokerBreakdownQueryService _brokerBreakdownQueryService;
+    private readonly ISummaryService _summaryService;
+    private readonly IPortfolioAssetSummaryService _portfolioAssetSummaryService;
+    private readonly IBrokerBreakdownService _brokerBreakdownService;
 
     public SummaryController(
-        ISummaryQueryService summaryQueryService,
-        IPortfolioAssetSummaryQueryService portfolioAssetSummaryQueryService,
-        IBrokerBreakdownQueryService brokerBreakdownQueryService)
+        ISummaryService summaryService,
+        IPortfolioAssetSummaryService portfolioAssetSummaryService,
+        IBrokerBreakdownService brokerBreakdownService)
     {
-        _summaryQueryService = summaryQueryService ?? throw new ArgumentNullException(nameof(summaryQueryService));
-        _portfolioAssetSummaryQueryService = portfolioAssetSummaryQueryService ?? throw new ArgumentNullException(nameof(portfolioAssetSummaryQueryService));
-        _brokerBreakdownQueryService = brokerBreakdownQueryService ?? throw new ArgumentNullException(nameof(brokerBreakdownQueryService));
+        _summaryService = summaryService ?? throw new ArgumentNullException(nameof(summaryService));
+        _portfolioAssetSummaryService = portfolioAssetSummaryService ?? throw new ArgumentNullException(nameof(portfolioAssetSummaryService));
+        _brokerBreakdownService = brokerBreakdownService ?? throw new ArgumentNullException(nameof(brokerBreakdownService));
     }
 
     [HttpGet("broker/{brokerName}")]
@@ -27,7 +27,7 @@ public sealed class SummaryController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public ActionResult<AggregatedSummaryDTO> GetBrokerSummary(string brokerName)
     {
-        var dto = _summaryQueryService.GetBrokerSummary(brokerName);
+        var dto = _summaryService.GetBrokerSummary(brokerName);
         return Ok(dto);
     }
 
@@ -38,7 +38,7 @@ public sealed class SummaryController : ControllerBase
         string brokerName,
         string portfolioName)
     {
-        var dto = _summaryQueryService.GetPortfolioSummary(brokerName, portfolioName);
+        var dto = _summaryService.GetPortfolioSummary(brokerName, portfolioName);
         return Ok(dto);
     }
 
@@ -52,7 +52,7 @@ public sealed class SummaryController : ControllerBase
         if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
             return BadRequest();
 
-        var result = _portfolioAssetSummaryQueryService.GetPortfolioAssetsSummary(brokerName, portfolioName);
+        var result = _portfolioAssetSummaryService.GetPortfolioAssetsSummary(brokerName, portfolioName);
         return Ok(result);
     }
 
@@ -64,7 +64,7 @@ public sealed class SummaryController : ControllerBase
         if (string.IsNullOrWhiteSpace(brokerName))
             return BadRequest();
 
-        var result = _brokerBreakdownQueryService.GetBrokerBreakdown(brokerName);
+        var result = _brokerBreakdownService.GetBrokerBreakdown(brokerName);
         return Ok(result);
     }
 }

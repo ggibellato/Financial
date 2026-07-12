@@ -4,11 +4,11 @@ using Financial.Domain.Entities;
 
 namespace Financial.Application.Services;
 
-public sealed class PortfolioAssetSummaryQueryService : IPortfolioAssetSummaryQueryService
+public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
 {
     private readonly IRepository _repository;
 
-    public PortfolioAssetSummaryQueryService(IRepository repository)
+    public PortfolioAssetSummaryService(IRepository repository)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }

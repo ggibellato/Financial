@@ -1,3 +1,4 @@
+using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Application.Services;
 using Financial.Domain.Entities;
@@ -18,12 +19,12 @@ public class NavigationServiceTests
         return new JSONRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
     }
     private readonly NavigationService _sut;
-    private readonly CreditQueryService _creditSut;
+    private readonly CreditService _creditSut;
 
     public NavigationServiceTests()
     {
         _sut = new NavigationService(_repository);
-        _creditSut = new CreditQueryService(_repository);
+        _creditSut = new CreditService(_repository, _sut);
     }
 
     [Fact]
@@ -45,7 +46,7 @@ public class NavigationServiceTests
 
         // Assert
         result.Should().NotBeNull();
-        result.NodeType.Should().Be("Investments");
+        result.NodeType.Should().Be(TreeNodeType.Investments);
         result.DisplayName.Should().Be("All Investments");
         result.Children.Should().NotBeEmpty();
     }
@@ -59,7 +60,7 @@ public class NavigationServiceTests
         // Assert
         result.Children.Should().AllSatisfy(node =>
         {
-            node.NodeType.Should().Be("Broker");
+            node.NodeType.Should().Be(TreeNodeType.Broker);
             node.Metadata.Should().ContainKey("BrokerName");
             node.Metadata.Should().ContainKey("Currency");
         });
@@ -76,7 +77,7 @@ public class NavigationServiceTests
         brokerNode.Children.Should().NotBeEmpty();
         brokerNode.Children.Should().AllSatisfy(node =>
         {
-            node.NodeType.Should().Be("Portfolio");
+            node.NodeType.Should().Be(TreeNodeType.Portfolio);
             node.Metadata.Should().ContainKey("PortfolioName");
         });
     }
@@ -93,7 +94,7 @@ public class NavigationServiceTests
         portfolioNode.Children.Should().NotBeEmpty();
         portfolioNode.Children.Should().AllSatisfy(node =>
         {
-            node.NodeType.Should().Be("Asset");
+            node.NodeType.Should().Be(TreeNodeType.Asset);
             node.Metadata.Should().ContainKey("AssetName");
             node.Metadata.Should().ContainKey("Ticker");
         });

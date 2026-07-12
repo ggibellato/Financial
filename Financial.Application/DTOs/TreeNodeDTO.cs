@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Financial.Application.DTOs;
 
 /// <summary>
@@ -8,7 +10,8 @@ public class TreeNodeDTO
     /// <summary>
     /// Type of node (Investments, Broker, Portfolio, Asset)
     /// </summary>
-    public required string NodeType { get; set; }
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public required TreeNodeType NodeType { get; set; }
 
     /// <summary>
     /// Display name for the node

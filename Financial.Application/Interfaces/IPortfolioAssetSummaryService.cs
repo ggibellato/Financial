@@ -2,7 +2,7 @@ using Financial.Application.DTOs;
 
 namespace Financial.Application.Interfaces;
 
-public interface IPortfolioAssetSummaryQueryService
+public interface IPortfolioAssetSummaryService
 {
     IReadOnlyList<PortfolioAssetSummaryItemDTO> GetPortfolioAssetsSummary(string brokerName, string portfolioName);
 }
