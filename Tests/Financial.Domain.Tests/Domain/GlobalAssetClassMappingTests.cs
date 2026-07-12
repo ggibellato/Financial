@@ -12,6 +12,8 @@ public class GlobalAssetClassMappingTests
     [InlineData(CountryCode.BR, "Fund", GlobalAssetClass.Fund)]
     [InlineData(CountryCode.BR, "Bond", GlobalAssetClass.Bond)]
     [InlineData(CountryCode.BR, "TesouroDireto", GlobalAssetClass.Bond)]
+    [InlineData(CountryCode.BR, "CreditoImobiliario", GlobalAssetClass.PrivateCredit)]
+    [InlineData(CountryCode.BR, "Pensao", GlobalAssetClass.Pension)]
     [InlineData(CountryCode.US, "REIT", GlobalAssetClass.RealEstate)]
     [InlineData(CountryCode.US, "Stock", GlobalAssetClass.Equity)]
     [InlineData(CountryCode.US, "ETF", GlobalAssetClass.ETF)]
