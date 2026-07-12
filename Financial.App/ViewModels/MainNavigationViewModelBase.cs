@@ -117,7 +117,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
     private static TreeNodeDTO? FilterTreeNode(TreeNodeDTO node, GlobalAssetClass filter)
     {
-        if (node.NodeType == TreeNodeTypes.Asset)
+        if (node.NodeType == TreeNodeType.Asset)
         {
             if (node.Metadata.TryGetValue("GlobalAssetClass", out var value) && value is GlobalAssetClass assetClass)
             {
@@ -205,19 +205,19 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
     private void LoadSelectionDetails(TreeNodeViewModel selectedNode)
     {
-        if (selectedNode.NodeType == TreeNodeTypes.Asset)
+        if (selectedNode.NodeType == TreeNodeType.Asset)
         {
             LoadAssetDetails(selectedNode);
             return;
         }
 
-        if (selectedNode.NodeType == TreeNodeTypes.Portfolio)
+        if (selectedNode.NodeType == TreeNodeType.Portfolio)
         {
             LoadPortfolioCredits(selectedNode);
             return;
         }
 
-        if (selectedNode.NodeType == TreeNodeTypes.Broker)
+        if (selectedNode.NodeType == TreeNodeType.Broker)
         {
             LoadBrokerCredits(selectedNode);
             return;

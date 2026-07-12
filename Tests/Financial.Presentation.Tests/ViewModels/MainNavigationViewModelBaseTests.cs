@@ -142,7 +142,7 @@ public class MainNavigationViewModelBaseTests
         var spy = new SpyAssetDetailsViewModel();
         var vm = new TestableNavigationViewModel(summaryService, spy);
 
-        var nodeWithoutMetadata = BuildNodeWithoutMetadata(TreeNodeTypes.Portfolio);
+        var nodeWithoutMetadata = BuildNodeWithoutMetadata(TreeNodeType.Portfolio);
         vm.SelectedNode = nodeWithoutMetadata;
 
         spy.WasCleared.Should().BeTrue();
@@ -230,7 +230,7 @@ public class MainNavigationViewModelBaseTests
     {
         var brokerDto = new TreeNodeDTO
         {
-            NodeType = TreeNodeTypes.Broker,
+            NodeType = TreeNodeType.Broker,
             DisplayName = brokerName,
             Metadata = new Dictionary<string, object> { ["BrokerName"] = brokerName },
             Children = []
@@ -238,7 +238,7 @@ public class MainNavigationViewModelBaseTests
 
         var portfolioDto = new TreeNodeDTO
         {
-            NodeType = TreeNodeTypes.Portfolio,
+            NodeType = TreeNodeType.Portfolio,
             DisplayName = portfolioName,
             Metadata = new Dictionary<string, object> { ["PortfolioName"] = portfolioName },
             Children = []
@@ -253,7 +253,7 @@ public class MainNavigationViewModelBaseTests
     {
         var brokerDto = new TreeNodeDTO
         {
-            NodeType = TreeNodeTypes.Broker,
+            NodeType = TreeNodeType.Broker,
             DisplayName = brokerName,
             Metadata = new Dictionary<string, object> { ["BrokerName"] = brokerName },
             Children = []
@@ -265,21 +265,21 @@ public class MainNavigationViewModelBaseTests
     {
         var brokerDto = new TreeNodeDTO
         {
-            NodeType = TreeNodeTypes.Broker,
+            NodeType = TreeNodeType.Broker,
             DisplayName = brokerName,
             Metadata = new Dictionary<string, object> { ["BrokerName"] = brokerName },
             Children = []
         };
         var portfolioDto = new TreeNodeDTO
         {
-            NodeType = TreeNodeTypes.Portfolio,
+            NodeType = TreeNodeType.Portfolio,
             DisplayName = portfolioName,
             Metadata = new Dictionary<string, object> { ["PortfolioName"] = portfolioName },
             Children = []
         };
         var assetDto = new TreeNodeDTO
         {
-            NodeType = TreeNodeTypes.Asset,
+            NodeType = TreeNodeType.Asset,
             DisplayName = assetName,
             Metadata = new Dictionary<string, object> { ["AssetName"] = assetName },
             Children = []
@@ -290,7 +290,7 @@ public class MainNavigationViewModelBaseTests
         return new TreeNodeViewModel(assetDto, portfolioNode);
     }
 
-    private static TreeNodeViewModel BuildNodeWithoutMetadata(string nodeType)
+    private static TreeNodeViewModel BuildNodeWithoutMetadata(TreeNodeType nodeType)
     {
         var dto = new TreeNodeDTO
         {
@@ -411,7 +411,7 @@ public class MainNavigationViewModelBaseTests
 
     private sealed class StubNavigationService : INavigationService
     {
-        public TreeNodeDTO GetNavigationTree() => new() { NodeType = TreeNodeTypes.Broker, DisplayName = "Root", Metadata = [], Children = [] };
+        public TreeNodeDTO GetNavigationTree() => new() { NodeType = TreeNodeType.Broker, DisplayName = "Root", Metadata = [], Children = [] };
         public AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName) => null;
         public IEnumerable<BrokerNodeDTO> GetBrokers() => [];
         public IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName) => [];

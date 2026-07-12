@@ -11,7 +11,7 @@ internal static class NavigationMapper
     {
         var brokerNode = new TreeNodeDTO
         {
-            NodeType = TreeNodeTypes.Broker,
+            NodeType = TreeNodeType.Broker,
             DisplayName = $"{broker.Name} ({broker.Currency})",
             Metadata = new Dictionary<string, object>
             {
@@ -34,7 +34,7 @@ internal static class NavigationMapper
     {
         var portfolioNode = new TreeNodeDTO
         {
-            NodeType = TreeNodeTypes.Portfolio,
+            NodeType = TreeNodeType.Portfolio,
             DisplayName = $"{portfolio.Name} ({portfolio.AssetCount} assets)",
             Metadata = new Dictionary<string, object>
             {
@@ -56,7 +56,7 @@ internal static class NavigationMapper
     {
         return new TreeNodeDTO
         {
-            NodeType = TreeNodeTypes.Asset,
+            NodeType = TreeNodeType.Asset,
             DisplayName = asset.Name,
             Metadata = new Dictionary<string, object>
             {
