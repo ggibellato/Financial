@@ -1,5 +1,6 @@
-using Financial.Application.Interfaces;
+using Financial.Application.Configuration;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Financial.Api.Controllers;
 
@@ -7,12 +8,13 @@ namespace Financial.Api.Controllers;
 [Route("")]
 public sealed class DiagnosticsController : ControllerBase
 {
-    private readonly IRepositorySettings _repositorySettings;
+    private readonly RepositorySettingsOptions _repositorySettings;
     private readonly IHostEnvironment _environment;
 
-    public DiagnosticsController(IRepositorySettings repositorySettings, IHostEnvironment environment)
+    public DiagnosticsController(IOptions<RepositorySettingsOptions> repositorySettings, IHostEnvironment environment)
     {
-        _repositorySettings = repositorySettings ?? throw new ArgumentNullException(nameof(repositorySettings));
+        ArgumentNullException.ThrowIfNull(repositorySettings);
+        _repositorySettings = repositorySettings.Value;
         _environment = environment ?? throw new ArgumentNullException(nameof(environment));
     }
 

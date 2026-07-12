@@ -1,3 +1,4 @@
+using Financial.Application.Configuration;
 using Financial.Application.Interfaces;
 using Financial.Infrastructure.Configuration;
 using Financial.Infrastructure.Persistence;
@@ -5,6 +6,7 @@ using Financial.Infrastructure.Repositories;
 using Financial.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Financial.Infrastructure.DependencyInjection;
 
@@ -14,13 +16,20 @@ public static class InfrastructureServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddSingleton<IRepositorySettings, RepositorySettingsProvider>();
+        services.Configure<RepositorySettingsOptions>(options =>
+        {
+            options.Provider = configuration[RepositoryConfigurationKeys.Provider];
+            options.DataJsonFile = configuration[RepositoryConfigurationKeys.LocalJsonDataFile];
+            options.GoogleDriveCredentialsPath = configuration[RepositoryConfigurationKeys.GoogleDriveCredentialsPath];
+            options.GoogleDriveFilePath = configuration[RepositoryConfigurationKeys.GoogleDriveFilePath];
+        });
         services.AddSingleton<IInvestmentsSerializer, InvestmentsSerializerAdapter>();
         services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
         services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();
         services.AddSingleton<IRepository>(sp =>
         {
-            var options = BuildRepositoryOptions(configuration);
+            var settings = sp.GetRequiredService<IOptions<RepositorySettingsOptions>>().Value;
+            var options = BuildRepositoryOptions(settings);
             return new RepositoryFactory(sp.GetRequiredService<IInvestmentsSerializer>()).Create(options);
         });
         services.AddSingleton<IAssetPriceService, AssetPriceService>();
@@ -28,10 +37,9 @@ public static class InfrastructureServiceCollectionExtensions
         return services;
     }
 
-    private static RepositorySelectionOptions BuildRepositoryOptions(IConfiguration configuration)
+    private static RepositorySelectionOptions BuildRepositoryOptions(RepositorySettingsOptions settings)
     {
-        var providerValue = configuration[RepositoryConfigurationKeys.Provider]
-            ?? nameof(RepositoryProvider.LocalJson);
+        var providerValue = settings.Provider ?? nameof(RepositoryProvider.LocalJson);
 
         if (!Enum.TryParse(providerValue, ignoreCase: true, out RepositoryProvider provider))
         {
@@ -42,8 +50,8 @@ public static class InfrastructureServiceCollectionExtensions
 
         return new RepositorySelectionOptions(
             provider,
-            configuration[RepositoryConfigurationKeys.LocalJsonDataFile],
-            configuration[RepositoryConfigurationKeys.GoogleDriveCredentialsPath],
-            configuration[RepositoryConfigurationKeys.GoogleDriveFilePath]);
+            settings.DataJsonFile,
+            settings.GoogleDriveCredentialsPath,
+            settings.GoogleDriveFilePath);
     }
 }
