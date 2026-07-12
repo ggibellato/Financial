@@ -44,7 +44,7 @@
   { "name": "GiltsI", "country": "UK", "localTypeCode": "ConventionalGilt", "assetClass": "Bond" },
   { "name": "GiltsV", "country": "UK", "localTypeCode": "ConventionalGilt", "assetClass": "Bond" },
   { "name": "GOLD11", "country": "BR", "localTypeCode": "", "assetClass": "Unknown" },
-  { "name": "Guepardo Institucional FIC FIA", "country": "BR", "localTypeCode": "", "assetClass": "Unknown" },
+  { "name": "Guepardo Institucional FIC FIA", "country": "BR", "localTypeCode": "Fundo", "assetClass": "Fund" },
   { "name": "Halliburton", "country": "UK", "localTypeCode": "", "assetClass": "Unknown" },
   { "name": "HGLG11", "country": "BR", "localTypeCode": "FII", "assetClass": "RealEstate" },
   { "name": "HGRU11", "country": "BR", "localTypeCode": "FII", "assetClass": "RealEstate" },
@@ -146,6 +146,8 @@
   { "name": "TESOURO IPCA+ 2029", "country": "BR", "localTypeCode": "TesouroDireto", "assetClass": "Bond" },
   { "name": "TESOURO IPCA+ 2035", "country": "BR", "localTypeCode": "TesouroDireto", "assetClass": "Bond" },
   { "name": "TESOURO IPCA+ 2040", "country": "BR", "localTypeCode": "TesouroDireto", "assetClass": "Bond" },
+  { "name": "TESOURO SELIC 2031", "country": "BR", "localTypeCode": "TesouroDireto", "assetClass": "Bond" },
+  { "name": "TESOURO PREFIXADO 2027", "country": "BR", "localTypeCode": "TesouroDireto", "assetClass": "Bond" },
   { "name": "INCO", "country": "BR", "localTypeCode": "CreditoImobiliario", "assetClass": "PrivateCredit" },
   { "name": "Grao ARCA", "country": "BR", "localTypeCode": "Pensao", "assetClass": "Pension" }
 ]

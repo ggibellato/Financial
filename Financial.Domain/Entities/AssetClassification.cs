@@ -35,6 +35,7 @@ public static class GlobalAssetClassMapping
             [(CountryCode.BR, "FII")] = GlobalAssetClass.RealEstate,
             [(CountryCode.BR, "ETF")] = GlobalAssetClass.ETF,
             [(CountryCode.BR, "Fund")] = GlobalAssetClass.Fund,
+            [(CountryCode.BR, "Fundo")] = GlobalAssetClass.Fund,
             [(CountryCode.BR, "Bond")] = GlobalAssetClass.Bond,
             [(CountryCode.US, "REIT")] = GlobalAssetClass.RealEstate,
             [(CountryCode.UK, "REIT")] = GlobalAssetClass.RealEstate,
