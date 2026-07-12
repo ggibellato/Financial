@@ -28,6 +28,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
         services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();
         services.AddSingleton<IFinanceService, GoogleFinanceService>();
+        services.AddSingleton<TesouroDiretoFinanceService>();
         services.AddSingleton<IAssetPriceFetcher, StandardAssetPriceFetcher>();
         services.AddSingleton<IAssetPriceFetcher, CryptocurrencyAssetPriceFetcher>();
         services.AddSingleton<IRepository>(sp =>
