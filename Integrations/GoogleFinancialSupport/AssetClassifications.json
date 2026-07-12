@@ -92,6 +92,7 @@
   { "name": "Procter & Gamble Corp.", "country": "UK", "localTypeCode": "", "assetClass": "Unknown" },
   { "name": "Prospect Capital Corp.", "country": "UK", "localTypeCode": "", "assetClass": "Unknown" },
   { "name": "PVBI11", "country": "BR", "localTypeCode": "FII", "assetClass": "RealEstate" },
+  { "name": "PSEC11", "country": "BR", "localTypeCode": "FII", "assetClass": "RealEstate" },
   { "name": "RBFM11", "country": "BR", "localTypeCode": "FII", "assetClass": "RealEstate" },
   { "name": "RBRF11", "country": "BR", "localTypeCode": "FII", "assetClass": "RealEstate" },
   { "name": "RBRR11", "country": "BR", "localTypeCode": "FII", "assetClass": "RealEstate" },
