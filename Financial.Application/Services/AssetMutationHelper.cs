@@ -4,7 +4,7 @@ using Financial.Domain.Entities;
 
 namespace Financial.Application.Services;
 
-internal static class AssetServiceHelper
+internal static class AssetMutationHelper
 {
     public delegate bool TryParseDelegate<TEnum>(string? value, out TEnum parsed);
 

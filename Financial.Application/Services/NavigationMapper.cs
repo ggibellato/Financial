@@ -30,7 +30,7 @@ internal static class NavigationMapper
         return brokerNode;
     }
 
-    internal static TreeNodeDTO BuildPortfolioTreeNode(PortfolioNodeDTO portfolio)
+    private static TreeNodeDTO BuildPortfolioTreeNode(PortfolioNodeDTO portfolio)
     {
         var portfolioNode = new TreeNodeDTO
         {
@@ -52,7 +52,7 @@ internal static class NavigationMapper
         return portfolioNode;
     }
 
-    internal static TreeNodeDTO BuildAssetTreeNode(AssetNodeDTO asset)
+    private static TreeNodeDTO BuildAssetTreeNode(AssetNodeDTO asset)
     {
         return new TreeNodeDTO
         {

@@ -18,7 +18,7 @@ public sealed class CreditService : ICreditService
 
     public Task<AssetDetailsDTO?> AddCreditAsync(CreditCreateDTO request)
     {
-        return AssetServiceHelper.ExecuteParsedMutationAsync<Credit.CreditType>(
+        return AssetMutationHelper.ExecuteParsedMutationAsync<Credit.CreditType>(
             _repository,
             _navigationService,
             request.BrokerName,
@@ -41,7 +41,7 @@ public sealed class CreditService : ICreditService
             return Task.FromResult<AssetDetailsDTO?>(null);
         }
 
-        return AssetServiceHelper.ExecuteParsedMutationAsync<Credit.CreditType>(
+        return AssetMutationHelper.ExecuteParsedMutationAsync<Credit.CreditType>(
             _repository,
             _navigationService,
             request.BrokerName,
@@ -63,7 +63,7 @@ public sealed class CreditService : ICreditService
             return Task.FromResult<AssetDetailsDTO?>(null);
         }
 
-        return AssetServiceHelper.ExecuteAssetMutationAsync(
+        return AssetMutationHelper.ExecuteAssetMutationAsync(
             _repository,
             _navigationService,
             request.BrokerName,

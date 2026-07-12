@@ -18,7 +18,7 @@ public sealed class TransactionService : ITransactionService
 
     public Task<AssetDetailsDTO?> AddTransactionAsync(TransactionCreateDTO request)
     {
-        return AssetServiceHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
+        return AssetMutationHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
             _repository,
             _navigationService,
             request.BrokerName,
@@ -41,7 +41,7 @@ public sealed class TransactionService : ITransactionService
             return Task.FromResult<AssetDetailsDTO?>(null);
         }
 
-        return AssetServiceHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
+        return AssetMutationHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
             _repository,
             _navigationService,
             request.BrokerName,
@@ -63,7 +63,7 @@ public sealed class TransactionService : ITransactionService
             return Task.FromResult<AssetDetailsDTO?>(null);
         }
 
-        return AssetServiceHelper.ExecuteAssetMutationAsync(
+        return AssetMutationHelper.ExecuteAssetMutationAsync(
             _repository,
             _navigationService,
             request.BrokerName,
