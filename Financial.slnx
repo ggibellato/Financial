@@ -16,8 +16,10 @@
 		<Project Path="Tests/Financial.Infrastructure.Tests/Financial.Infrastructure.Tests.csproj" />
 		<Project Path="Tests/Financial.Presentation.Tests/Financial.Presentation.Tests.csproj" />
 	</Folder>
-	<Project Path="Financial.App/Financial.App.csproj" />
-	<Project Path="Financial.Api/Financial.Api.csproj" />
+	<Folder Name="/Presentation/">
+		<Project Path="Financial.App/Financial.App.csproj" />
+		<Project Path="Financial.Api/Financial.Api.csproj" />
+	</Folder>
 </Solution>
 
 
