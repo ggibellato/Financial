@@ -2,7 +2,7 @@ using Financial.Application.DTOs;
 using Financial.Domain.Entities;
 using Financial.Domain.ValueObjects;
 
-namespace Financial.Application.Interfaces;
+namespace Financial.Infrastructure.Interfaces;
 
 public interface IAssetPriceFetcher
 {

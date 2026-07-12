@@ -1,6 +1,7 @@
 using Financial.Application.Configuration;
 using Financial.Application.Interfaces;
 using Financial.Infrastructure.Configuration;
+using Financial.Infrastructure.Interfaces;
 using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
 using Financial.Infrastructure.Services;
@@ -26,6 +27,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IInvestmentsSerializer, InvestmentsSerializerAdapter>();
         services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
         services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();
+        services.AddSingleton<IFinanceService, GoogleFinanceService>();
         services.AddSingleton<IAssetPriceFetcher, StandardAssetPriceFetcher>();
         services.AddSingleton<IAssetPriceFetcher, CryptocurrencyAssetPriceFetcher>();
         services.AddSingleton<IRepository>(sp =>

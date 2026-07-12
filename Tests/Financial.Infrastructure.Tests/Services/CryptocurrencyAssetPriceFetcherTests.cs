@@ -1,6 +1,8 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
+using Financial.Domain.ValueObjects;
+using Financial.Infrastructure.Interfaces;
 using Financial.Infrastructure.Services;
 using FluentAssertions;
 
@@ -11,7 +13,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void Supports_Cryptocurrency_ReturnsTrue()
     {
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]));
+        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new FakeFinanceService());
 
         var result = fetcher.Supports(GlobalAssetClass.Cryptocurrency);
 
@@ -21,7 +23,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void Supports_Equity_ReturnsFalse()
     {
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]));
+        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new FakeFinanceService());
 
         var result = fetcher.Supports(GlobalAssetClass.Equity);
 
@@ -31,7 +33,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void Supports_Unknown_ReturnsFalse()
     {
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]));
+        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new FakeFinanceService());
 
         var result = fetcher.Supports(GlobalAssetClass.Unknown);
 
@@ -41,7 +43,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void GetSnapshot_BlankBrokerName_ThrowsArgumentException()
     {
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]));
+        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new FakeFinanceService());
         var request = new AssetPriceRequestDTO { Exchange = "", Ticker = "BTC", AssetClass = GlobalAssetClass.Cryptocurrency, BrokerName = null };
 
         Action act = () => fetcher.GetSnapshot(request);
@@ -52,7 +54,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void GetSnapshot_UnknownBroker_ThrowsInvalidOperationException()
     {
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]));
+        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new FakeFinanceService());
         var request = new AssetPriceRequestDTO
         {
             Exchange = "",
@@ -64,6 +66,25 @@ public class CryptocurrencyAssetPriceFetcherTests
         Action act = () => fetcher.GetSnapshot(request);
 
         act.Should().Throw<InvalidOperationException>().WithMessage("*NotABroker*");
+    }
+
+    [Fact]
+    public void GetSnapshot_KnownBroker_DelegatesToFinanceServiceWithResolvedCurrency()
+    {
+        var snapshot = new AssetValueSnapshot("BTC", "Bitcoin", 50000m, DateTimeOffset.UtcNow);
+        var brokers = new[] { Broker.Create("Coinbase", "GBP") };
+        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository(brokers), new FakeFinanceService(snapshot));
+        var request = new AssetPriceRequestDTO
+        {
+            Exchange = "",
+            Ticker = "BTC",
+            AssetClass = GlobalAssetClass.Cryptocurrency,
+            BrokerName = "Coinbase"
+        };
+
+        var result = fetcher.GetSnapshot(request);
+
+        result.Should().Be(snapshot);
     }
 
     [Fact]
@@ -102,5 +123,17 @@ public class CryptocurrencyAssetPriceFetcherTests
         public Asset? GetAsset(string brokerName, string portfolioName, string assetName) => throw new NotImplementedException();
 
         public Task SaveChangesAsync() => throw new NotImplementedException();
+    }
+
+    private sealed class FakeFinanceService : IFinanceService
+    {
+        private readonly AssetValueSnapshot? _snapshot;
+
+        public FakeFinanceService(AssetValueSnapshot? snapshot = null)
+        {
+            _snapshot = snapshot;
+        }
+
+        public AssetValueSnapshot GetAssetValue(AssetValueRequest request) => _snapshot ?? throw new NotImplementedException();
     }
 }
