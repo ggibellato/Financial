@@ -2,7 +2,6 @@ using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using Financial.Domain.ValueObjects;
-using Financial.Infrastructure.Integrations.WebPageParser;
 using Financial.Infrastructure.Interfaces;
 
 namespace Financial.Infrastructure.Services;
@@ -10,10 +9,12 @@ namespace Financial.Infrastructure.Services;
 public sealed class CryptocurrencyAssetPriceFetcher : IAssetPriceFetcher
 {
     private readonly IRepository _repository;
+    private readonly IFinanceService _financeService;
 
-    public CryptocurrencyAssetPriceFetcher(IRepository repository)
+    public CryptocurrencyAssetPriceFetcher(IRepository repository, IFinanceService financeService)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _financeService = financeService ?? throw new ArgumentNullException(nameof(financeService));
     }
 
     public bool Supports(GlobalAssetClass assetClass) => assetClass == GlobalAssetClass.Cryptocurrency;
@@ -26,7 +27,7 @@ public sealed class CryptocurrencyAssetPriceFetcher : IAssetPriceFetcher
         }
 
         var currency = ResolveBrokerCurrency(_repository.GetBrokerList(), request.BrokerName);
-        return GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot(currency, request.Ticker);
+        return _financeService.GetQuote(new FinanceQuoteRequest { Currency = currency, Ticker = request.Ticker });
     }
 
     internal static string ResolveBrokerCurrency(IEnumerable<Broker> brokers, string brokerName)
