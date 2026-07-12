@@ -1,8 +1,8 @@
 using Financial.Application.DTOs;
-using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using Financial.Domain.ValueObjects;
 using Financial.Infrastructure.Integrations.WebPageParser;
+using Financial.Infrastructure.Interfaces;
 
 namespace Financial.Infrastructure.Services;
 
