@@ -72,6 +72,35 @@ public class AssetPriceFetchViewModelTests
         request.BrokerName.Should().Be("XPI");
     }
 
+    [Fact]
+    public async Task FetchAsync_BondAsset_PassesName()
+    {
+        var navigationService = new StubNavigationService();
+        navigationService.AssetsByBrokerPortfolio[("XPI", "Reserva")] =
+        [
+            new AssetNodeDTO
+            {
+                Name = "TESOURO IPCA+ 2029",
+                Ticker = "TESOURO IPCA+ 2029",
+                Exchange = "BVMF",
+                Class = GlobalAssetClass.Bond,
+                IsActive = true,
+            }
+        ];
+        var priceService = new StubAssetPriceService();
+        var options = Options.Create(new AssetPriceFetchOptions
+        {
+            Portfolios = [new AssetPriceFetch { BrokerName = "XPI", PortfolioName = "Reserva" }]
+        });
+        var vm = new AssetPriceFetchViewModel(navigationService, priceService, options, _ => { });
+
+        vm.FetchCommand.Execute(null);
+        var request = await priceService.RequestReceived.WaitAsync(TimeSpan.FromSeconds(5));
+
+        request.AssetClass.Should().Be(GlobalAssetClass.Bond);
+        request.Name.Should().Be("TESOURO IPCA+ 2029");
+    }
+
     private sealed class StubNavigationService : INavigationService
     {
         public Dictionary<(string BrokerName, string PortfolioName), List<AssetNodeDTO>> AssetsByBrokerPortfolio { get; } = new();
