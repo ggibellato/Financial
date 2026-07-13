@@ -94,5 +94,15 @@ public class AssetDetailsDTO
     /// List of all credits (dividends/rent)
     /// </summary>
     public List<CreditDTO> Credits { get; set; } = new();
+
+    /// <summary>
+    /// Cash flows (transactions + credits) used to compute XIRR with credits
+    /// </summary>
+    public IReadOnlyList<AssetCashFlowDTO> CashFlowsWithCredits { get; set; } = [];
+
+    /// <summary>
+    /// Cash flows (transactions only) used to compute XIRR without credits
+    /// </summary>
+    public IReadOnlyList<AssetCashFlowDTO> CashFlowsWithoutCredits { get; set; } = [];
 }
 

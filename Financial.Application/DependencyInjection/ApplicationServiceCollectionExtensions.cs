@@ -19,6 +19,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddSingleton<IBrokerBreakdownService, BrokerBreakdownService>();
         services.AddSingleton<IPortfolioAssetSummaryService, PortfolioAssetSummaryService>();
         services.AddSingleton<ISummaryService, SummaryService>();
+        services.AddSingleton<IXirrCalculationService, XirrCalculationService>();
 
         return services;
     }
