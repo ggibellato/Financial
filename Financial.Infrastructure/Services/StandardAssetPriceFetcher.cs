@@ -14,7 +14,7 @@ public sealed class StandardAssetPriceFetcher : IAssetPriceFetcher
         _financeService = financeService ?? throw new ArgumentNullException(nameof(financeService));
     }
 
-    public bool Supports(GlobalAssetClass assetClass) => assetClass != GlobalAssetClass.Cryptocurrency;
+    public bool Supports(GlobalAssetClass assetClass) => assetClass != GlobalAssetClass.Cryptocurrency && assetClass != GlobalAssetClass.Bond;
 
     public AssetValueSnapshot GetSnapshot(AssetPriceRequestDTO request)
     {
