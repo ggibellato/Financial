@@ -575,7 +575,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         return _todayInfo.RefreshAsync(
             forceRefresh, HasAssetContext, _assetPriceService,
             Class, BrokerName,
-            Exchange, Ticker, message => TodayInfoMessage = message);
+            Exchange, Ticker, AssetName, message => TodayInfoMessage = message);
     }
 
     private void ResetTodayInfo()
