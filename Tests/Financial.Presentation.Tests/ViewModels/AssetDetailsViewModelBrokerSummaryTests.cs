@@ -1,5 +1,6 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
+using Financial.Application.Services;
 using Financial.Presentation.App.ViewModels;
 using FluentAssertions;
 
@@ -16,7 +17,8 @@ public class AssetDetailsViewModelBrokerSummaryTests
             new StubCreditService(),
             new StubAssetPriceService(),
             brokerBreakdownService ?? new StubBrokerBreakdownService(),
-            transactionQueryService ?? new StubTransactionQueryService());
+            transactionQueryService ?? new StubTransactionQueryService(),
+            new XirrCalculationService());
     }
 
     [Fact]

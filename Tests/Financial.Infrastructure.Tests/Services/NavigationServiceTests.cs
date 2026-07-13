@@ -230,6 +230,38 @@ public class NavigationServiceTests
     }
 
     [Fact]
+    public void GetAssetDetails_ShouldIncludeCashFlowsWithCredits()
+    {
+        // Arrange
+        const string brokerName = "XPI";
+        const string portfolioName = "Default";
+        const string assetName = "BCIA11";
+
+        // Act
+        var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.CashFlowsWithCredits.Should().HaveCount(result.Transactions.Count + result.Credits.Count);
+    }
+
+    [Fact]
+    public void GetAssetDetails_ShouldIncludeCashFlowsWithoutCredits_ExcludingCredits()
+    {
+        // Arrange
+        const string brokerName = "XPI";
+        const string portfolioName = "Default";
+        const string assetName = "BCIA11";
+
+        // Act
+        var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.CashFlowsWithoutCredits.Should().HaveCount(result.Transactions.Count);
+    }
+
+    [Fact]
     public void GetAssetDetails_ShouldCalculateTotalsCorrectly()
     {
         // Arrange

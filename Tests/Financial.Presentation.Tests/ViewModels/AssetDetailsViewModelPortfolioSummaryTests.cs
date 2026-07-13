@@ -1,5 +1,6 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
+using Financial.Application.Services;
 using Financial.Domain.Entities;
 using Financial.Presentation.App.ViewModels;
 using FluentAssertions;
@@ -15,7 +16,8 @@ public class AssetDetailsViewModelPortfolioSummaryTests
             new StubCreditService(),
             priceService ?? new NeverResolvingPriceService(),
             new StubBrokerBreakdownService(),
-            new StubTransactionQueryService());
+            new StubTransactionQueryService(),
+            new XirrCalculationService());
     }
 
     private static IReadOnlyList<PortfolioAssetSummaryItemDTO> BuildItems(int count = 2)

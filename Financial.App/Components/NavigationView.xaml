@@ -187,6 +187,7 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
                                     <!-- Row 0: Quantity & Average Price -->
@@ -298,9 +299,29 @@
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                                    <!-- Row 11: Status/Error -->
-                                    <TextBlock Grid.Row="11" Grid.Column="0" Text="Status:" FontWeight="Bold" Margin="0,5"/>
-                                    <TextBlock Grid.Row="11" Grid.Column="1" Grid.ColumnSpan="3"
+                                    <!-- Row 11: XIRR & XIRR w/ Credits -->
+                                    <TextBlock Grid.Row="11" Grid.Column="0" Text="XIRR:" FontWeight="Bold" Margin="0,5"
+                                               Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="11" Grid.Column="1"
+                                               Text="{Binding AssetDetails.Xirr, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Foreground="{Binding AssetDetails.Xirr, Converter={StaticResource SignedValueToBrushConverter}}"
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="11" Grid.Column="2" Text="XIRR w/ Credits:" FontWeight="Bold" Margin="20,5,0,5"
+                                               Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="11" Grid.Column="3"
+                                               Text="{Binding AssetDetails.XirrWithCredits, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Foreground="{Binding AssetDetails.XirrWithCredits, Converter={StaticResource SignedValueToBrushConverter}}"
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                    <!-- Row 12: Status/Error -->
+                                    <TextBlock Grid.Row="12" Grid.Column="0" Text="Status:" FontWeight="Bold" Margin="0,5"/>
+                                    <TextBlock Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="3"
                                                Text="{Binding AssetDetails.TodayInfoMessage, Mode=OneWay}"
                                                Margin="10,5"
                                                Foreground="DarkRed"/>

@@ -1,17 +1,19 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../api/financialApiClient'
-import type { AssetDetailsDto, AssetPriceDto, SelectedNode } from '../api/types'
+import type { AssetDetailsDto, AssetPriceDto, SelectedNode, XirrResultDto } from '../api/types'
 import { createSelectedNodeWrapper } from '../test-utils/selectedNodeTestWrapper'
 import { useAssetSummary } from './useAssetSummary'
 
 const getAssetDetailsMock = vi.fn<FinancialApiClient['getAssetDetails']>()
 const getCurrentPriceMock = vi.fn<FinancialApiClient['getCurrentPrice']>()
+const calculateXirrMock = vi.fn<FinancialApiClient['calculateXirr']>()
 
 vi.mock('../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getAssetDetails: getAssetDetailsMock,
     getCurrentPrice: getCurrentPriceMock,
+    calculateXirr: calculateXirrMock,
   }),
 }))
 
@@ -49,6 +51,8 @@ const ASSET_DETAILS: AssetDetailsDto = {
   totalCredits: 50,
   transactions: [],
   credits: [],
+  cashFlowsWithCredits: [{ date: '2024-01-01T00:00:00', amount: -2000 }],
+  cashFlowsWithoutCredits: [{ date: '2024-01-01T00:00:00', amount: -2000 }],
 }
 
 const PRICE: AssetPriceDto = {
@@ -63,6 +67,8 @@ describe('useAssetSummary', () => {
   beforeEach(() => {
     getAssetDetailsMock.mockReset()
     getCurrentPriceMock.mockReset()
+    calculateXirrMock.mockReset()
+    calculateXirrMock.mockResolvedValue({ xirr: null })
   })
 
   it('fetches_asset_details_on_asset_selection', async () => {
@@ -195,6 +201,39 @@ describe('useAssetSummary', () => {
     const tcc = tcv + ASSET_DETAILS.totalCredits
     const expected = (tcc - ASSET_DETAILS.totalBought) / ASSET_DETAILS.totalBought
     expect(result.current.resultWithCreditsPercent).toBeCloseTo(expected, 5)
+  })
+
+  it('fetches_xirr_for_both_totals_once_asset_and_price_are_loaded', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    getCurrentPriceMock.mockResolvedValue(PRICE)
+    const responses: XirrResultDto[] = [{ xirr: 0.12 }, { xirr: 0.15 }]
+    calculateXirrMock.mockImplementation(() => Promise.resolve(responses.shift() ?? { xirr: null }))
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useAssetSummary(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.xirr).toBe(0.12))
+    expect(result.current.xirrWithCredits).toBe(0.15)
+    expect(calculateXirrMock).toHaveBeenCalledWith(
+      ASSET_DETAILS.cashFlowsWithoutCredits,
+      PRICE.price * ASSET_DETAILS.quantity,
+    )
+    expect(calculateXirrMock).toHaveBeenCalledWith(
+      ASSET_DETAILS.cashFlowsWithCredits,
+      PRICE.price * ASSET_DETAILS.quantity + ASSET_DETAILS.totalCredits,
+    )
+  })
+
+  it('resets_xirr_to_null_when_xirr_calculation_fails', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    getCurrentPriceMock.mockResolvedValue(PRICE)
+    calculateXirrMock.mockRejectedValue(new Error('XIRR unavailable'))
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useAssetSummary(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.price).not.toBeNull())
+    await waitFor(() => expect(calculateXirrMock).toHaveBeenCalled())
+    expect(result.current.xirr).toBeNull()
+    expect(result.current.xirrWithCredits).toBeNull()
   })
 
   it('sets_asset_error_on_load_failure', async () => {

@@ -76,7 +76,9 @@ public sealed class NavigationService : INavigationService
             TotalSold = totalSold,
             TotalCredits = totalCredits,
             Transactions = transactions,
-            Credits = credits
+            Credits = credits,
+            CashFlowsWithCredits = AssetCashFlowBuilder.BuildWithCredits(asset),
+            CashFlowsWithoutCredits = AssetCashFlowBuilder.BuildWithoutCredits(asset)
         };
     }
 

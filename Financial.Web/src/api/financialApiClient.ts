@@ -1,6 +1,7 @@
 import { API_BASE_URL } from './config'
 import type {
   AggregatedSummaryDto,
+  AssetCashFlowDto,
   AssetDetailsDto,
   AssetPriceDto,
   BrokerNodeDto,
@@ -19,6 +20,7 @@ import type {
   TransactionUpdateDto,
   TreeNodeDto,
   WatchlistItemDto,
+  XirrResultDto,
 } from './types'
 
 export interface FinancialApiClient {
@@ -50,6 +52,7 @@ export interface FinancialApiClient {
   getWatchlist: () => Promise<WatchlistItemDto[]>
   getAssetPriceFetchScope: () => Promise<PortfolioReferenceDto[]>
   getPortfolioAssetsSummary: (brokerName: string, portfolioName: string) => Promise<PortfolioAssetSummaryItemDto[]>
+  calculateXirr: (cashFlows: AssetCashFlowDto[], terminalValue: number) => Promise<XirrResultDto>
 }
 
 export interface FinancialApiClientOptions {
@@ -196,5 +199,10 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<PortfolioAssetSummaryItemDto[]>(
         `/summary/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}/assets`,
       ),
+    calculateXirr: (cashFlows, terminalValue) =>
+      request<XirrResultDto>('/xirr/calculate', {
+        method: 'POST',
+        body: JSON.stringify({ cashFlows, terminalValue }),
+      }),
   }
 }

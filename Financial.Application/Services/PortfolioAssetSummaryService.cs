@@ -42,7 +42,7 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
             .DefaultIfEmpty(null)
             .Min();
 
-        var cashFlows = BuildCashFlows(asset);
+        var cashFlows = AssetCashFlowBuilder.BuildWithCredits(asset);
         var creditsAnalysis = ComputeCreditsAnalysis(asset, totalBought - totalSold, today);
 
         return new AssetComputedData(
@@ -122,23 +122,6 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
             <= 5.0 => 3,
             _ => null
         };
-    }
-
-    private static IReadOnlyList<AssetCashFlowDTO> BuildCashFlows(Asset asset)
-    {
-        var flows = new List<AssetCashFlowDTO>();
-
-        foreach (var t in asset.Transactions)
-        {
-            var amount = t.Type == Transaction.TransactionType.Buy ? -t.TotalPrice : t.TotalPrice;
-            flows.Add(new AssetCashFlowDTO { Date = t.Date, Amount = amount });
-        }
-
-        foreach (var c in asset.Credits)
-            flows.Add(new AssetCashFlowDTO { Date = c.Date, Amount = c.Value });
-
-        flows.Sort((a, b) => a.Date.CompareTo(b.Date));
-        return flows;
     }
 
     private static PortfolioAssetSummaryItemDTO ToDTO(AssetComputedData c, decimal weight) =>

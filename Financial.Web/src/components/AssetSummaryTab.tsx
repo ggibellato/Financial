@@ -35,6 +35,8 @@ export default function AssetSummaryTab() {
     resultPercent,
     totalCurrentPlusCredits,
     resultWithCreditsPercent,
+    xirr,
+    xirrWithCredits,
   } = useAssetSummary()
 
   if (isLoadingAsset) {
@@ -53,6 +55,9 @@ export default function AssetSummaryTab() {
     resultPercent >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'
   const resultWithCreditsClass =
     resultWithCreditsPercent >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'
+  const xirrClass = xirr === null ? '' : xirr >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'
+  const xirrWithCreditsClass =
+    xirrWithCredits === null ? '' : xirrWithCredits >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'
 
   return (
     <div className="asset-summary">
@@ -156,6 +161,19 @@ export default function AssetSummaryTab() {
                   <span className="asset-summary__label">Result % with Credits</span>
                   <span className={`asset-summary__value ${resultWithCreditsClass}`}>
                     {formatPercent(resultWithCreditsPercent)}
+                  </span>
+                </div>
+
+                <div className="asset-summary__field">
+                  <span className="asset-summary__label">XIRR</span>
+                  <span className={`asset-summary__value ${xirrClass}`}>
+                    {xirr === null ? '—' : formatPercent(xirr)}
+                  </span>
+                </div>
+                <div className="asset-summary__field">
+                  <span className="asset-summary__label">XIRR w/ Credits</span>
+                  <span className={`asset-summary__value ${xirrWithCreditsClass}`}>
+                    {xirrWithCredits === null ? '—' : formatPercent(xirrWithCredits)}
                   </span>
                 </div>
               </>
