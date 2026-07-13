@@ -40,13 +40,13 @@ public class StandardAssetPriceFetcherTests
     }
 
     [Fact]
-    public void Supports_Bond_ReturnsTrue()
+    public void Supports_Bond_ReturnsFalse()
     {
         var fetcher = new StandardAssetPriceFetcher(new FakeFinanceService());
 
         var result = fetcher.Supports(GlobalAssetClass.Bond);
 
-        result.Should().BeTrue();
+        result.Should().BeFalse();
     }
 
     [Fact]

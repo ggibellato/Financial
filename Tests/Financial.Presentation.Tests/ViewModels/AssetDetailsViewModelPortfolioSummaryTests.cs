@@ -290,13 +290,45 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         request.BrokerName.Should().Be("Coinbase");
     }
 
+    [Fact]
+    public async Task LoadPortfolioSummary_BondAsset_PassesName()
+    {
+        var priceService = new CapturingPriceService();
+        var vm = BuildViewModel(priceService);
+        var item = new PortfolioAssetSummaryItemDTO
+        {
+            AssetName = "TESOURO IPCA+ 2029",
+            Ticker = "TESOURO IPCA+ 2029",
+            Exchange = "BVMF",
+            Class = GlobalAssetClass.Bond,
+            CurrentQuantity = 1m,
+            TotalBought = 3000m,
+            TotalSold = 0m,
+            TotalInvested = 3000m,
+            PortfolioWeight = 100m
+        };
+
+        vm.LoadPortfolioSummary("XPI", "Reserva", new AggregatedSummaryDTO(), [], [item]);
+
+        var request = await priceService.RequestReceived.WaitAsync(TimeSpan.FromSeconds(5));
+        request.AssetClass.Should().Be(GlobalAssetClass.Bond);
+        request.Name.Should().Be("TESOURO IPCA+ 2029");
+    }
+
     private sealed class NeverResolvingPriceService : IAssetPriceService
     {
+        // Bounded, not infinite: every test using this leaves its background Task.Run
+        // blocked on a thread-pool worker for the block's duration. Assertions that rely
+        // on "still loading" check state synchronously right after LoadPortfolioSummary,
+        // so they never depend on the block lasting any particular length - an unbounded
+        // Wait() here just accumulates permanently-blocked threads across the test run
+        // until later, unrelated tests get starved for a thread-pool slot.
         private readonly SemaphoreSlim _blocker = new SemaphoreSlim(0);
+        private static readonly TimeSpan MaxBlockDuration = TimeSpan.FromSeconds(2);
 
         public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request)
         {
-            _blocker.Wait();
+            _blocker.Wait(MaxBlockDuration);
             return new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = 0m };
         }
     }

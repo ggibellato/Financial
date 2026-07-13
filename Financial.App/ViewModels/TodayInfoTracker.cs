@@ -63,6 +63,7 @@ public sealed class TodayInfoTracker
         string? brokerName,
         string exchange,
         string ticker,
+        string? name,
         Action<string> setMessage)
     {
         if (!hasAssetContext)
@@ -78,8 +79,23 @@ public sealed class TodayInfoTracker
         }
 
         var isCryptocurrency = assetClass == GlobalAssetClass.Cryptocurrency;
+        var isBond = assetClass == GlobalAssetClass.Bond;
 
-        if (string.IsNullOrWhiteSpace(ticker) || (!isCryptocurrency && string.IsNullOrWhiteSpace(exchange)))
+        if (string.IsNullOrWhiteSpace(ticker))
+        {
+            setMessage("Asset exchange or ticker is missing.");
+            return;
+        }
+
+        if (isBond)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                setMessage("Asset name is missing.");
+                return;
+            }
+        }
+        else if (!isCryptocurrency && string.IsNullOrWhiteSpace(exchange))
         {
             setMessage("Asset exchange or ticker is missing.");
             return;
@@ -103,7 +119,8 @@ public sealed class TodayInfoTracker
                 Exchange = exchange,
                 Ticker = ticker,
                 AssetClass = assetClass,
-                BrokerName = brokerName
+                BrokerName = brokerName,
+                Name = name
             };
 
             var price = await Task.Run(() => assetPriceService.GetCurrentPrice(request));

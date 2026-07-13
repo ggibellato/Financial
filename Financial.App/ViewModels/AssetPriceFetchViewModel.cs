@@ -77,7 +77,8 @@ public class AssetPriceFetchViewModel : ViewModelBase
                     Exchange = asset.Exchange,
                     Ticker = asset.Ticker,
                     AssetClass = asset.Class,
-                    BrokerName = brokerName
+                    BrokerName = brokerName,
+                    Name = asset.Name
                 }));
                 Results.Add(result);
             }

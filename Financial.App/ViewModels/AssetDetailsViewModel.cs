@@ -575,7 +575,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         return _todayInfo.RefreshAsync(
             forceRefresh, HasAssetContext, _assetPriceService,
             Class, BrokerName,
-            Exchange, Ticker, message => TodayInfoMessage = message);
+            Exchange, Ticker, AssetName, message => TodayInfoMessage = message);
     }
 
     private void ResetTodayInfo()
@@ -643,7 +643,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
                         Exchange = capturedRow.Exchange,
                         Ticker = capturedRow.Ticker,
                         AssetClass = capturedRow.Class,
-                        BrokerName = brokerName
+                        BrokerName = brokerName,
+                        Name = capturedRow.AssetName
                     });
                     if (cancellationToken.IsCancellationRequested) return;
                     capturedRow.ApplyPrice(price.Price);
