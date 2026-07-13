@@ -72,6 +72,30 @@ public class AssetPriceEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    [Fact]
+    public async Task GetCurrentPrice_BondWithName_ReturnsOk()
+    {
+        var stub = new AssetPriceServiceStub();
+        await using var factory = CreateFactory(stub);
+        using var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/v1/financial/prices/current?ticker=TESOURO+IPCA%2B+2029&assetClass=Bond&name=TESOURO+IPCA%2B+2029");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        stub.LastRequest.Should().NotBeNull();
+        stub.LastRequest!.AssetClass.Should().Be(GlobalAssetClass.Bond);
+        stub.LastRequest.Name.Should().Be("TESOURO IPCA+ 2029");
+    }
+
+    [Fact]
+    public async Task GetCurrentPrice_BondWithoutName_ReturnsBadRequest()
+    {
+        await using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/v1/financial/prices/current?ticker=TESOURO+IPCA%2B+2029&assetClass=Bond");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
     private static WebApplicationFactory<Program> CreateFactory(AssetPriceServiceStub? stub = null)
     {
         return new ApiTestFactory().WithWebHostBuilder(builder =>

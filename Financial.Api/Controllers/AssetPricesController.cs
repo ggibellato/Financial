@@ -23,7 +23,8 @@ public sealed class AssetPricesController : ControllerBase
         [FromQuery] string? exchange,
         [FromQuery] string? ticker,
         [FromQuery] string? assetClass,
-        [FromQuery] string? brokerName)
+        [FromQuery] string? brokerName,
+        [FromQuery] string? name)
     {
         if (string.IsNullOrWhiteSpace(ticker))
         {
@@ -41,6 +42,13 @@ public sealed class AssetPricesController : ControllerBase
                 return BadRequest();
             }
         }
+        else if (parsedAssetClass == GlobalAssetClass.Bond)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return BadRequest();
+            }
+        }
         else if (string.IsNullOrWhiteSpace(exchange))
         {
             return BadRequest();
@@ -51,7 +59,8 @@ public sealed class AssetPricesController : ControllerBase
             Exchange = exchange?.Trim() ?? string.Empty,
             Ticker = ticker.Trim(),
             AssetClass = parsedAssetClass,
-            BrokerName = brokerName?.Trim()
+            BrokerName = brokerName?.Trim(),
+            Name = name?.Trim()
         });
 
         return Ok(result);
