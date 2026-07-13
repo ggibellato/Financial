@@ -643,7 +643,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
                         Exchange = capturedRow.Exchange,
                         Ticker = capturedRow.Ticker,
                         AssetClass = capturedRow.Class,
-                        BrokerName = brokerName
+                        BrokerName = brokerName,
+                        Name = capturedRow.AssetName
                     });
                     if (cancellationToken.IsCancellationRequested) return;
                     capturedRow.ApplyPrice(price.Price);

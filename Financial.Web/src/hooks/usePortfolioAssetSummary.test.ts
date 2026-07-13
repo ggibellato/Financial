@@ -195,8 +195,8 @@ describe('usePortfolioAssetSummary', () => {
     renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => expect(getCurrentPriceMock).toHaveBeenCalledTimes(2))
-    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'ALZR11', 'RealEstate', 'XPI')
-    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'MXRF11', 'RealEstate', 'XPI')
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'ALZR11', 'RealEstate', 'XPI', 'ALZR11')
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'MXRF11', 'RealEstate', 'XPI', 'MXRF11')
   })
 
   it('fires_getCurrentPrice_for_cryptocurrency_item_with_blank_exchange', async () => {
@@ -208,8 +208,30 @@ describe('usePortfolioAssetSummary', () => {
     renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(coinbaseNode)
     await waitFor(() =>
-      expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'BTC', 'Cryptocurrency', 'Coinbase'),
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'BTC', 'Cryptocurrency', 'Coinbase', 'Bitcoin'),
     )
+  })
+
+  it('fires_getCurrentPrice_with_name_for_bond_item_with_blank_exchange', async () => {
+    const bondItem: PortfolioAssetSummaryItemDto = {
+      ...ITEM_1,
+      assetName: 'TESOURO IPCA+ 2029',
+      ticker: 'TESOURO IPCA+ 2029',
+      exchange: '',
+      class: 'Bond',
+    }
+    const reservaNode: SelectedNode = { nodeType: 'Portfolio', brokerName: 'XPI', portfolioName: 'Reserva' }
+    getPortfolioAssetsSummaryMock.mockResolvedValue([bondItem])
+    getCurrentPriceMock.mockResolvedValue({ ...PRICE_DTO, ticker: 'TESOURO IPCA+ 2029', exchange: '', price: 3775.97 })
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
+    setNode(reservaNode)
+    await waitFor(() =>
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'TESOURO IPCA+ 2029', 'Bond', 'XPI', 'TESOURO IPCA+ 2029'),
+    )
+    await waitFor(() => expect(result.current.rowPrices[0]?.isLoading).toBe(false))
+    expect(result.current.rowPrices[0].currentPrice).toBe(3775.97)
+    expect(result.current.rowPrices[0].fetchFailed).toBe(false)
   })
 
   it('sets_row_price_loading_true_after_items_arrive', async () => {
