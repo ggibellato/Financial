@@ -98,6 +98,8 @@ const ASSET_DETAILS: AssetDetailsDto = {
   totalCredits: 50,
   transactions: [TRANSACTION_A, TRANSACTION_B],
   credits: [],
+  cashFlowsWithCredits: [],
+  cashFlowsWithoutCredits: [],
 }
 
 describe('useTransactions', () => {

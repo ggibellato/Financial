@@ -22,6 +22,8 @@ const mockHookValue: AssetSummaryData = {
   resultPercent: 0,
   totalCurrentPlusCredits: 0,
   resultWithCreditsPercent: 0,
+  xirr: null,
+  xirrWithCredits: null,
 }
 
 vi.mock('../../hooks/useAssetSummary', () => ({
@@ -46,6 +48,8 @@ const ASSET: AssetDetailsDto = {
   totalCredits: 50,
   transactions: [],
   credits: [],
+  cashFlowsWithCredits: [],
+  cashFlowsWithoutCredits: [],
 }
 
 const PRICE: AssetPriceDto = {
@@ -77,6 +81,8 @@ describe('AssetSummaryTab', () => {
       resultPercent: 0,
       totalCurrentPlusCredits: 0,
       resultWithCreditsPercent: 0,
+      xirr: null,
+      xirrWithCredits: null,
     })
   })
 
@@ -225,5 +231,52 @@ describe('AssetSummaryTab', () => {
     render(<AssetSummaryTab />)
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
     expect(mockRefresh).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders_dash_for_xirr_while_not_yet_computed', () => {
+    setMock({
+      asset: ASSET,
+      price: PRICE,
+      showCurrentSection: true,
+      totalCurrentValue: 2500,
+      totalCurrentPlusCredits: 2550,
+      xirr: null,
+      xirrWithCredits: null,
+    })
+    render(<AssetSummaryTab />)
+    const xirrLabel = screen.getByText('XIRR')
+    expect(xirrLabel.nextElementSibling?.textContent).toBe('—')
+    const xirrWithCreditsLabel = screen.getByText('XIRR w/ Credits')
+    expect(xirrWithCreditsLabel.nextElementSibling?.textContent).toBe('—')
+  })
+
+  it('renders_positive_xirr_in_green', () => {
+    setMock({
+      asset: ASSET,
+      price: PRICE,
+      showCurrentSection: true,
+      totalCurrentValue: 2500,
+      totalCurrentPlusCredits: 2550,
+      xirr: 0.1234,
+      xirrWithCredits: 0.15,
+    })
+    render(<AssetSummaryTab />)
+    const xirrLabel = screen.getByText('XIRR')
+    expect(xirrLabel.nextElementSibling).toHaveClass('asset-summary__value--green')
+  })
+
+  it('renders_negative_xirr_in_red', () => {
+    setMock({
+      asset: ASSET,
+      price: PRICE,
+      showCurrentSection: true,
+      totalCurrentValue: 1500,
+      totalCurrentPlusCredits: 1550,
+      xirr: -0.1234,
+      xirrWithCredits: -0.1,
+    })
+    render(<AssetSummaryTab />)
+    const xirrLabel = screen.getByText('XIRR')
+    expect(xirrLabel.nextElementSibling).toHaveClass('asset-summary__value--red')
   })
 })

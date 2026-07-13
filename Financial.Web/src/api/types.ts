@@ -96,6 +96,8 @@ export interface AssetDetailsDto {
   totalCredits: number
   transactions: TransactionDto[]
   credits: CreditDto[]
+  cashFlowsWithCredits: AssetCashFlowDto[]
+  cashFlowsWithoutCredits: AssetCashFlowDto[]
 }
 
 export interface TransactionCreateDto {
@@ -217,6 +219,15 @@ export interface PortfolioReferenceDto {
 export interface AssetCashFlowDto {
   date: string
   amount: number
+}
+
+export interface CalculateXirrRequestDto {
+  cashFlows: AssetCashFlowDto[]
+  terminalValue: number
+}
+
+export interface XirrResultDto {
+  xirr: number | null
 }
 
 export interface PortfolioAssetSummaryItemDto {

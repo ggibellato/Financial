@@ -11,6 +11,8 @@ interface SummaryState {
   price: AssetPriceDto | null
   isLoadingPrice: boolean
   priceError: string | null
+  xirr: number | null
+  xirrWithCredits: number | null
 }
 
 type SummaryAction =
@@ -22,6 +24,8 @@ type SummaryAction =
   | { type: 'PRICE_FETCH_START' }
   | { type: 'PRICE_FETCH_SUCCESS'; payload: AssetPriceDto }
   | { type: 'PRICE_FETCH_ERROR'; payload: string }
+  | { type: 'XIRR_RESET' }
+  | { type: 'XIRR_FETCH_SUCCESS'; xirr: number | null; xirrWithCredits: number | null }
 
 const INITIAL_STATE: SummaryState = {
   asset: null,
@@ -31,6 +35,8 @@ const INITIAL_STATE: SummaryState = {
   price: null,
   isLoadingPrice: false,
   priceError: null,
+  xirr: null,
+  xirrWithCredits: null,
 }
 
 function reducer(state: SummaryState, action: SummaryAction): SummaryState {
@@ -46,11 +52,15 @@ function reducer(state: SummaryState, action: SummaryAction): SummaryState {
     case 'ASSET_RETRY':
       return { ...state, assetRetryCount: state.assetRetryCount + 1 }
     case 'PRICE_FETCH_START':
-      return { ...state, isLoadingPrice: true, priceError: null, price: null }
+      return { ...state, isLoadingPrice: true, priceError: null, price: null, xirr: null, xirrWithCredits: null }
     case 'PRICE_FETCH_SUCCESS':
       return { ...state, isLoadingPrice: false, price: action.payload }
     case 'PRICE_FETCH_ERROR':
       return { ...state, isLoadingPrice: false, priceError: action.payload, price: null }
+    case 'XIRR_RESET':
+      return { ...state, xirr: null, xirrWithCredits: null }
+    case 'XIRR_FETCH_SUCCESS':
+      return { ...state, xirr: action.xirr, xirrWithCredits: action.xirrWithCredits }
     default:
       return state
   }
@@ -71,6 +81,8 @@ export interface AssetSummaryData {
   resultPercent: number
   totalCurrentPlusCredits: number
   resultWithCreditsPercent: number
+  xirr: number | null
+  xirrWithCredits: number | null
 }
 
 export function useAssetSummary(): AssetSummaryData {
@@ -144,6 +156,33 @@ export function useAssetSummary(): AssetSummaryData {
     )
   }, [isAsset, selectedNode, fetchPrice])
 
+  useEffect(() => {
+    if (!state.asset || !state.price) {
+      dispatch({ type: 'XIRR_RESET' })
+      return
+    }
+
+    const currentValue = state.price.price * state.asset.quantity
+    const currentValueWithCredits = currentValue + state.asset.totalCredits
+    let cancelled = false
+
+    void Promise.all([
+      apiClient.calculateXirr(state.asset.cashFlowsWithoutCredits, currentValue),
+      apiClient.calculateXirr(state.asset.cashFlowsWithCredits, currentValueWithCredits),
+    ])
+      .then(([withoutCredits, withCredits]) => {
+        if (cancelled) return
+        dispatch({ type: 'XIRR_FETCH_SUCCESS', xirr: withoutCredits.xirr, xirrWithCredits: withCredits.xirr })
+      })
+      .catch(() => {
+        if (!cancelled) dispatch({ type: 'XIRR_RESET' })
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [state.asset, state.price, apiClient])
+
   const canRefresh = !state.isLoadingPrice
 
   const showCurrentSection =
@@ -179,5 +218,7 @@ export function useAssetSummary(): AssetSummaryData {
     resultPercent,
     totalCurrentPlusCredits,
     resultWithCreditsPercent,
+    xirr: state.xirr,
+    xirrWithCredits: state.xirrWithCredits,
   }
 }
