@@ -1,4 +1,5 @@
 using Financial.Application.DTOs;
+using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using System.Globalization;
 
@@ -6,8 +7,7 @@ namespace Financial.Presentation.App.ViewModels;
 
 public class PortfolioAssetSummaryRowViewModel : ViewModelBase
 {
-    private const int XirrMaxIterations = 100;
-    private const double XirrTolerance = 1e-7;
+    private readonly IXirrCalculationService _xirrCalculationService;
 
     private bool _isLoadingPrice = true;
     private bool _priceFetchFailed;
@@ -92,8 +92,9 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     public bool XirrIsPositive => _xirr > 0;
     public bool XirrIsNegative => _xirr < 0;
 
-    public PortfolioAssetSummaryRowViewModel(PortfolioAssetSummaryItemDTO dto)
+    public PortfolioAssetSummaryRowViewModel(PortfolioAssetSummaryItemDTO dto, IXirrCalculationService xirrCalculationService)
     {
+        _xirrCalculationService = xirrCalculationService ?? throw new ArgumentNullException(nameof(xirrCalculationService));
         AssetName = dto.AssetName;
         Ticker = dto.Ticker;
         Exchange = dto.Exchange;
@@ -126,7 +127,8 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
             ? (_currentValue.Value + TotalCredits - TotalInvested) / TotalInvested * 100
             : (decimal?)null;
 
-        _xirr = ComputeXirr(_currentValue.Value);
+        var xirrFraction = _xirrCalculationService.Calculate(CashFlows, _currentValue.Value);
+        _xirr = xirrFraction.HasValue ? xirrFraction.Value * 100 : null;
         _isLoadingPrice = false;
 
         OnPropertyChanged(nameof(IsLoadingPrice));
@@ -162,47 +164,4 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
         OnPropertyChanged(nameof(DisplayXirr));
     }
 
-    private decimal? ComputeXirr(decimal terminalValue)
-    {
-        var cashFlows = BuildCashFlowSeries(terminalValue);
-        if (cashFlows.Count < 2)
-            return null;
-
-        var t0 = cashFlows[0].date;
-        double rate = 0.1;
-
-        for (int i = 0; i < XirrMaxIterations; i++)
-        {
-            double f = 0;
-            double df = 0;
-
-            foreach (var (date, amount) in cashFlows)
-            {
-                double years = (date - t0).TotalDays / 365.0;
-                double denom = Math.Pow(1 + rate, years);
-                double c = (double)amount;
-                f += c / denom;
-                df -= years * c / (denom * (1 + rate));
-            }
-
-            if (df == 0)
-                return null;
-
-            double next = rate - f / df;
-
-            if (Math.Abs(f) < XirrTolerance)
-                return (decimal)(rate * 100);
-
-            rate = next;
-        }
-
-        return null;
-    }
-
-    private List<(DateTime date, decimal amount)> BuildCashFlowSeries(decimal terminalValue)
-    {
-        var series = CashFlows.Select(cf => (cf.Date, cf.Amount)).ToList();
-        series.Add((DateTime.Today, terminalValue));
-        return series;
-    }
 }

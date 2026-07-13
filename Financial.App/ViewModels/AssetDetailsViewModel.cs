@@ -17,6 +17,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private readonly IAssetPriceService _assetPriceService;
     private readonly IBrokerBreakdownService _brokerBreakdownService;
     private readonly ITransactionQueryService _transactionQueryService;
+    private readonly IXirrCalculationService _xirrCalculationService;
     private readonly TodayInfoTracker _todayInfo;
     private readonly TransactionActions _transactionActions;
     private readonly CreditActions _creditActions;
@@ -91,6 +92,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private CancellationTokenSource? _transactionsCts;
     private IReadOnlyList<TransactionSummaryItemDTO> _brokerPortfolioTransactions = Array.Empty<TransactionSummaryItemDTO>();
     private IReadOnlyList<TransactionMonthNet> _transactionsChartMonths = Array.Empty<TransactionMonthNet>();
+    private IReadOnlyList<AssetCashFlowDTO> _cashFlowsWithCredits = Array.Empty<AssetCashFlowDTO>();
+    private IReadOnlyList<AssetCashFlowDTO> _cashFlowsWithoutCredits = Array.Empty<AssetCashFlowDTO>();
 
     public string AssetName { get => _assetName; private set => SetProperty(ref _assetName, value); }
     public string BrokerName { get => _brokerName; private set => SetProperty(ref _brokerName, value); }
@@ -171,6 +174,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public decimal TotalCurrentValueWithCredits => TotalCurrentValue + TotalCredits;
     public decimal ResultPercentWithCredits => AssetDetailsCalculations.CalculateResultPercentWithCredits(AveragePrice, Quantity, TotalCurrentValueWithCredits);
     public bool HasAveragePrice => AssetDetailsCalculations.HasAveragePrice(AveragePrice, Quantity);
+    public decimal? Xirr => _xirrCalculationService.Calculate(_cashFlowsWithoutCredits, TotalCurrentValue);
+    public decimal? XirrWithCredits => _xirrCalculationService.Calculate(_cashFlowsWithCredits, TotalCurrentValueWithCredits);
 
     public bool IsPortfolioView
     {
@@ -310,13 +315,15 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         ICreditService creditService,
         IAssetPriceService assetPriceService,
         IBrokerBreakdownService brokerBreakdownService,
-        ITransactionQueryService transactionQueryService)
+        ITransactionQueryService transactionQueryService,
+        IXirrCalculationService xirrCalculationService)
     {
         _transactionService = transactionService ?? throw new ArgumentNullException(nameof(transactionService));
         _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
         _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
         _brokerBreakdownService = brokerBreakdownService ?? throw new ArgumentNullException(nameof(brokerBreakdownService));
         _transactionQueryService = transactionQueryService ?? throw new ArgumentNullException(nameof(transactionQueryService));
+        _xirrCalculationService = xirrCalculationService ?? throw new ArgumentNullException(nameof(xirrCalculationService));
         _todayInfo = new TodayInfoTracker(ApplyTodayInfo, ResetTodayInfo, UpdateCommandStates);
         _transactionActions = new TransactionActions(
             _transactionService,
@@ -363,7 +370,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
         PortfolioAssetSummaryRows.Clear();
         foreach (var item in assetItems)
-            PortfolioAssetSummaryRows.Add(new PortfolioAssetSummaryRowViewModel(item));
+            PortfolioAssetSummaryRows.Add(new PortfolioAssetSummaryRowViewModel(item, _xirrCalculationService));
 
         FooterTotalInvested = assetItems.Sum(i => i.TotalInvested);
         FooterTotalCredits = assetItems.Sum(i => i.TotalCredits);
@@ -393,6 +400,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         CancelAndResetTransactionsFetch();
         var assetKey = BuildAssetKey(details.BrokerName, details.PortfolioName, details.Name);
         _todayInfo.UpdateAssetKey(assetKey);
+        _cashFlowsWithCredits = details.CashFlowsWithCredits;
+        _cashFlowsWithoutCredits = details.CashFlowsWithoutCredits;
 
         AssetName = details.Name;
         BrokerName = details.BrokerName;
@@ -599,6 +608,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         OnPropertyChanged(nameof(HasAveragePrice));
         OnPropertyChanged(nameof(TotalCurrentValueWithCredits));
         OnPropertyChanged(nameof(ResultPercentWithCredits));
+        OnPropertyChanged(nameof(Xirr));
+        OnPropertyChanged(nameof(XirrWithCredits));
     }
 
     private void LoadAggregateCredits(string contextKey, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
@@ -770,6 +781,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalBought = 0;
         TotalSold = 0;
         TotalCredits = 0;
+        _cashFlowsWithCredits = Array.Empty<AssetCashFlowDTO>();
+        _cashFlowsWithoutCredits = Array.Empty<AssetCashFlowDTO>();
         _todayInfo.Clear();
         Transactions.Clear();
     }

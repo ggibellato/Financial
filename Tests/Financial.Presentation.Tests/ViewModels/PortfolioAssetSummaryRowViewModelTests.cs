@@ -1,4 +1,5 @@
 using Financial.Application.DTOs;
+using Financial.Application.Services;
 using Financial.Presentation.App.ViewModels;
 using FluentAssertions;
 
@@ -42,7 +43,7 @@ public class PortfolioAssetSummaryRowViewModelTests
             EstimatedAnnualPercent = estimatedAnnualPercent,
             CurrentMonthCredits = currentMonthCredits
         };
-        return new PortfolioAssetSummaryRowViewModel(dto);
+        return new PortfolioAssetSummaryRowViewModel(dto, new XirrCalculationService());
     }
 
     [Fact]
@@ -89,7 +90,7 @@ public class PortfolioAssetSummaryRowViewModelTests
             CurrentQuantity = 1m, TotalBought = 1m, TotalSold = 0m,
             TotalInvested = 1m, PortfolioWeight = 23.4567m
         };
-        var row = new PortfolioAssetSummaryRowViewModel(dto);
+        var row = new PortfolioAssetSummaryRowViewModel(dto, new XirrCalculationService());
         row.DisplayPortfolioWeight.Should().Be("23.5%");
     }
 
