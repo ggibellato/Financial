@@ -83,7 +83,7 @@ describe('useAssetSummary', () => {
     renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => {
-      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'KLBN4', undefined, 'XPI')
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'KLBN4', undefined, 'XPI', undefined)
       expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4')
     })
   })
@@ -105,7 +105,39 @@ describe('useAssetSummary', () => {
     renderHook(() => useAssetSummary(), { wrapper })
     setNode(cryptoNode)
     await waitFor(() => {
-      expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'BTC', 'Cryptocurrency', 'Coinbase')
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'BTC', 'Cryptocurrency', 'Coinbase', undefined)
+    })
+  })
+
+  it('fetches_current_price_for_bond_asset_without_exchange', async () => {
+    const bondNode: SelectedNode = {
+      nodeType: 'Asset',
+      brokerName: 'XPI',
+      portfolioName: 'Reserva',
+      assetName: 'TESOURO IPCA+ 2029',
+      ticker: 'TESOURO IPCA+ 2029',
+      exchange: '',
+      isActive: true,
+      assetClass: 'Bond',
+    }
+    getAssetDetailsMock.mockResolvedValue({
+      ...ASSET_DETAILS,
+      name: 'TESOURO IPCA+ 2029',
+      ticker: 'TESOURO IPCA+ 2029',
+      class: 'Bond',
+    })
+    getCurrentPriceMock.mockResolvedValue({ ...PRICE, ticker: 'TESOURO IPCA+ 2029', exchange: '' })
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    renderHook(() => useAssetSummary(), { wrapper })
+    setNode(bondNode)
+    await waitFor(() => {
+      expect(getCurrentPriceMock).toHaveBeenCalledWith(
+        '',
+        'TESOURO IPCA+ 2029',
+        'Bond',
+        'XPI',
+        'TESOURO IPCA+ 2029',
+      )
     })
   })
 

@@ -45,6 +45,7 @@ export interface FinancialApiClient {
     ticker: string,
     assetClass?: string,
     brokerName?: string,
+    name?: string,
   ) => Promise<AssetPriceDto>
   getWatchlist: () => Promise<WatchlistItemDto[]>
   getAssetPriceFetchScope: () => Promise<PortfolioReferenceDto[]>
@@ -181,11 +182,12 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<DividendSummaryDto>(
         `/dividends/${encodeURIComponent(ticker)}/summary${buildExchangeQuery(exchange)}`,
       ),
-    getCurrentPrice: (exchange, ticker, assetClass, brokerName) => {
+    getCurrentPrice: (exchange, ticker, assetClass, brokerName, name) => {
       const classQuery = assetClass ? `&assetClass=${encodeURIComponent(assetClass)}` : ''
       const brokerQuery = brokerName ? `&brokerName=${encodeURIComponent(brokerName)}` : ''
+      const nameQuery = name ? `&name=${encodeURIComponent(name)}` : ''
       return request<AssetPriceDto>(
-        `/prices/current?exchange=${encodeURIComponent(exchange)}&ticker=${encodeURIComponent(ticker)}${classQuery}${brokerQuery}`,
+        `/prices/current?exchange=${encodeURIComponent(exchange)}&ticker=${encodeURIComponent(ticker)}${classQuery}${brokerQuery}${nameQuery}`,
       )
     },
     getWatchlist: () => request<WatchlistItemDto[]>('/watchlist'),

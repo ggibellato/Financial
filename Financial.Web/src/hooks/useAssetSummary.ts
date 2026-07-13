@@ -84,10 +84,10 @@ export function useAssetSummary(): AssetSummaryData {
     !!selectedNode.assetName
 
   const fetchPrice = useCallback(
-    (exchange: string, ticker: string, assetClass?: string, brokerName?: string) => {
+    (exchange: string, ticker: string, assetClass?: string, brokerName?: string, name?: string) => {
       dispatch({ type: 'PRICE_FETCH_START' })
       void apiClient
-        .getCurrentPrice(exchange, ticker, assetClass, brokerName)
+        .getCurrentPrice(exchange, ticker, assetClass, brokerName, name)
         .then((result) => dispatch({ type: 'PRICE_FETCH_SUCCESS', payload: result }))
         .catch((err: unknown) => {
           dispatch({
@@ -114,8 +114,8 @@ export function useAssetSummary(): AssetSummaryData {
 
     dispatch({ type: 'ASSET_FETCH_START' })
 
-    if (ticker && (exchange || assetClass === 'Cryptocurrency')) {
-      fetchPrice(exchange ?? '', ticker, assetClass, brokerName)
+    if (ticker && (exchange || assetClass === 'Cryptocurrency' || (assetClass === 'Bond' && assetName))) {
+      fetchPrice(exchange ?? '', ticker, assetClass, brokerName, assetClass === 'Bond' ? assetName : undefined)
     }
 
     void apiClient
@@ -133,8 +133,15 @@ export function useAssetSummary(): AssetSummaryData {
 
   const refresh = useCallback(() => {
     if (!isAsset || !selectedNode?.ticker) return
-    if (!selectedNode.exchange && selectedNode.assetClass !== 'Cryptocurrency') return
-    fetchPrice(selectedNode.exchange ?? '', selectedNode.ticker, selectedNode.assetClass, selectedNode.brokerName)
+    const isBondWithName = selectedNode.assetClass === 'Bond' && !!selectedNode.assetName
+    if (!selectedNode.exchange && selectedNode.assetClass !== 'Cryptocurrency' && !isBondWithName) return
+    fetchPrice(
+      selectedNode.exchange ?? '',
+      selectedNode.ticker,
+      selectedNode.assetClass,
+      selectedNode.brokerName,
+      isBondWithName ? selectedNode.assetName : undefined,
+    )
   }, [isAsset, selectedNode, fetchPrice])
 
   const canRefresh = !state.isLoadingPrice

@@ -112,6 +112,29 @@ describe('financialApiClient', () => {
     expect(init?.method).toBeUndefined()
   })
 
+  it('calls current price endpoint with assetClass and name for bond', async () => {
+    const responseBody = {
+      exchange: '',
+      ticker: 'TESOURO IPCA+ 2029',
+      name: 'TESOURO IPCA+ 2029',
+      price: 3775.97,
+      asOf: '2024-02-01T00:00:00Z',
+    } satisfies AssetPriceDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({
+      baseUrl: API_BASE_URL,
+      fetch: fetchMock,
+    })
+
+    const result = await client.getCurrentPrice('', 'TESOURO IPCA+ 2029', 'Bond', undefined, 'TESOURO IPCA+ 2029')
+
+    expect(result).toEqual(responseBody)
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(
+      `${API_BASE_URL}/prices/current?exchange=&ticker=TESOURO%20IPCA%2B%202029&assetClass=Bond&name=TESOURO%20IPCA%2B%202029`,
+    )
+  })
+
   it('calls current price endpoint with assetClass and brokerName for cryptocurrency', async () => {
     const responseBody = {
       exchange: '',
