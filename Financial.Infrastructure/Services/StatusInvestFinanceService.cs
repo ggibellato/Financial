@@ -6,6 +6,17 @@ namespace Financial.Infrastructure.Services;
 
 public sealed class StatusInvestFinanceService : IFinanceService
 {
+    private readonly Func<string, AssetValueSnapshot> _lookup;
+
+    public StatusInvestFinanceService() : this(StatusInvest.GetSellValue)
+    {
+    }
+
+    internal StatusInvestFinanceService(Func<string, AssetValueSnapshot> lookup)
+    {
+        _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
+    }
+
     public AssetValueSnapshot GetAssetValue(AssetValueRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
@@ -13,6 +24,6 @@ public sealed class StatusInvestFinanceService : IFinanceService
             throw new ArgumentException("Name is required.", nameof(request));
         }
 
-        return StatusInvest.GetSellValue(request.Name);
+        return _lookup(request.Name);
     }
 }
