@@ -155,15 +155,15 @@ public class NavigationMapperTests
     {
         public Broker? Broker { get; set; }
 
-        public IEnumerable<Asset> GetAssetsByBroker(string name) =>
+        public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) =>
             Broker == null ? [] : Broker.Portfolios.SelectMany(p => p.Assets);
 
-        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio) =>
+        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) =>
             Broker?.Portfolios.FirstOrDefault(p => p.Name == portfolio)?.Assets ?? [];
 
-        public IEnumerable<Broker> GetBrokerList() => Broker == null ? [] : [Broker];
+        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) => Broker == null ? [] : [Broker];
 
-        public Asset? GetAsset(string brokerName, string portfolioName, string assetName) =>
+        public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) =>
             Broker?.Portfolios.FirstOrDefault(p => p.Name == portfolioName)?.Assets.FirstOrDefault(a => a.Name == assetName);
         public Task SaveChangesAsync() => Task.CompletedTask;
     }

@@ -85,7 +85,7 @@ public sealed class NavigationService : INavigationService
 
     public IEnumerable<BrokerNodeDTO> GetBrokers()
     {
-        var brokers = NavigationMapper.OrderByNameWithEncerradasLast(_repository.GetBrokerList(), b => b.Name);
+        var brokers = _repository.GetBrokerList().OrderBy(b => b.Name, StringComparer.CurrentCultureIgnoreCase);
         return brokers.Select(NavigationMapper.MapBroker).ToList();
     }
 

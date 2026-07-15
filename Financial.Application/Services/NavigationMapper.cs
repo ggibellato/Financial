@@ -142,16 +142,9 @@ internal static class NavigationMapper
         return (totalBought, totalSold, totalCredits);
     }
 
-    internal static IEnumerable<T> OrderByNameWithEncerradasLast<T>(IEnumerable<T> source, Func<T, string> nameSelector)
-    {
-        return source
-            .OrderBy(item => IsEncerradas(nameSelector(item)) ? 1 : 0)
-            .ThenBy(item => nameSelector(item) ?? string.Empty, StringComparer.CurrentCultureIgnoreCase);
-    }
-
     private static IEnumerable<PortfolioNodeDTO> MapPortfolios(IEnumerable<Portfolio> portfolios)
     {
-        return OrderByNameWithEncerradasLast(portfolios, p => p.Name).Select(MapPortfolio);
+        return portfolios.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase).Select(MapPortfolio);
     }
 
     private static PortfolioNodeDTO MapPortfolio(Portfolio portfolio)
@@ -161,7 +154,7 @@ internal static class NavigationMapper
             Name = portfolio.Name,
             AssetCount = portfolio.Assets.Count,
             ActiveAssetCount = portfolio.Assets.Count(a => a.Active),
-            Assets = OrderByNameWithEncerradasLast(portfolio.Assets, a => a.Name).Select(MapAsset).ToList()
+            Assets = portfolio.Assets.OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase).Select(MapAsset).ToList()
         };
     }
 

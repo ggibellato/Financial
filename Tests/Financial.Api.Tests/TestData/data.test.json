@@ -1,5 +1,5 @@
 {
-  "Brokers": [
+  "ActiveBrokers": [
     {
       "Name": "XPI",
       "Currency": "BRL",
@@ -45,5 +45,6 @@
         }
       ]
     }
-  ]
+  ],
+  "HistoricBrokers": []
 }

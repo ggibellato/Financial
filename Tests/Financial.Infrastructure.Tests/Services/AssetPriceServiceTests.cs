@@ -141,13 +141,13 @@ public class AssetPriceServiceTests
             _brokers = brokers.ToList();
         }
 
-        public IEnumerable<Asset> GetAssetsByBroker(string name) => throw new NotImplementedException();
+        public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
 
-        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio) => throw new NotImplementedException();
+        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
 
-        public IEnumerable<Broker> GetBrokerList() => _brokers;
+        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) => _brokers;
 
-        public Asset? GetAsset(string brokerName, string portfolioName, string assetName) => throw new NotImplementedException();
+        public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
 
         public Task SaveChangesAsync() => throw new NotImplementedException();
     }

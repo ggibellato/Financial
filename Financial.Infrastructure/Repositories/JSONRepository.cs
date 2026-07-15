@@ -16,27 +16,27 @@ public sealed class JSONRepository : IRepository
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
     }
 
-    public IEnumerable<Asset> GetAssetsByBroker(string name)
+    public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active)
     {
-        return GetAssetsByBrokerInternal(name);
+        return GetAssetsByBrokerInternal(name, scope);
     }
 
-    public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio)
+    public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active)
     {
-        return GetPortfoliosByBroker(broker)
+        return GetPortfoliosByBroker(broker, scope)
             .Where(p => p.Name == portfolio)
             .SelectMany(p => p.Assets);
     }
 
-    public Asset? GetAsset(string brokerName, string portfolioName, string assetName)
+    public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active)
     {
-        return GetAssetsByBrokerPortfolio(brokerName, portfolioName)
+        return GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope)
             .FirstOrDefault(a => a.Name == assetName);
     }
 
-    public IEnumerable<Broker> GetBrokerList()
+    public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active)
     {
-        return _investiments.Brokers;
+        return ResolveBrokers(scope);
     }
 
     public async Task SaveChangesAsync()
@@ -45,12 +45,15 @@ public sealed class JSONRepository : IRepository
         await _storage.WriteAsync(json).ConfigureAwait(false);
     }
 
-    private IEnumerable<Broker> GetBrokersByName(string brokerName) =>
-        _investiments.Brokers.Where(b => b.Name == brokerName);
+    private IReadOnlyCollection<Broker> ResolveBrokers(InvestmentScope scope) =>
+        scope == InvestmentScope.Historic ? _investiments.HistoricBrokers : _investiments.ActiveBrokers;
 
-    private IEnumerable<Portfolio> GetPortfoliosByBroker(string brokerName) =>
-        GetBrokersByName(brokerName).SelectMany(b => b.Portfolios);
+    private IEnumerable<Broker> GetBrokersByName(string brokerName, InvestmentScope scope) =>
+        ResolveBrokers(scope).Where(b => b.Name == brokerName);
 
-    private IEnumerable<Asset> GetAssetsByBrokerInternal(string brokerName) =>
-        GetPortfoliosByBroker(brokerName).SelectMany(p => p.Assets);
+    private IEnumerable<Portfolio> GetPortfoliosByBroker(string brokerName, InvestmentScope scope) =>
+        GetBrokersByName(brokerName, scope).SelectMany(b => b.Portfolios);
+
+    private IEnumerable<Asset> GetAssetsByBrokerInternal(string brokerName, InvestmentScope scope) =>
+        GetPortfoliosByBroker(brokerName, scope).SelectMany(p => p.Assets);
 }
