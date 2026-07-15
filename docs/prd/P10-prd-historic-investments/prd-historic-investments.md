@@ -4,7 +4,7 @@
 
 Historic Investments Separation restructures the Financial application's investment tracking so that closed positions are no longer mixed into the active portfolio view. Today, a closed asset simply lives inside a portfolio conventionally named `"Encerradas"`, detected during spreadsheet import by matching a hex tab color, and every downstream summary/chart feature has to remember to filter both that portfolio name and `Asset.Active` out by hand. This project replaces that convention with a structural split: two independent collections, `activeInvestments` and `historicInvestments`, each holding the same Broker → Portfolio → Asset hierarchy, stored side by side in the existing `data.json`.
 
-The product is used by a single developer-maintainer who tracks UK and Brazilian brokerage holdings across both a WPF desktop app and a React web app. After this change, both apps gain a second top-level tab, "Historic Investments," mirroring the existing "Active Investments" tab (the renamed "Portfolio Navigator") with its own Broker/Portfolio/Asset tree, its own totals, and its own charts — computed from realized cash flows (bought, sold, credits) rather than current market value, since a closed position's current value is always zero. Position status inside Active Investments becomes a genuine three-state signal driven purely by quantity sign — Green (long), Black (flat), Red (short) — replacing today's two-color Active/Inactive convention that could not distinguish a closed position from an open short.
+The product is used by a single developer-maintainer who tracks UK and Brazilian brokerage holdings across both a WPF desktop app and a React web app. After this change, both apps gain a second top-level tab, "Historic Investments," mirroring the existing "Active Investments" tab (the renamed "Portfolio Navigator") with its own Broker/Portfolio/Asset tree, its own totals, and its own charts — computed from realized cash flows (bought, sold, credits) rather than current market value, since a closed position's current value is always zero. Position type inside Active Investments becomes a genuine three-state signal driven purely by quantity sign — Green (long), Black (flat), Red (short) — replacing today's two-color Active/Inactive convention that could not distinguish a closed position from an open short.
 
 At the import layer, the spreadsheet importer keeps its existing tab-colour-based closed-position detection unchanged — a sheet coloured to signal "closed" (e.g. `"222222"`) is still recognized the same way it is today. What changes is where that asset ends up: instead of landing in an `"Encerradas"` portfolio inside the broker's active data, it is routed into that same broker's entry in Historic Investments, under a portfolio name resolved from a new `historicPortfolio` field in `AssetClassification.json`, falling back to that broker's own `"Uncategorized"` portfolio when no classification exists. This stops erasing an asset's original portfolio identity the moment it closes, without touching the detection signal itself.
 
@@ -17,7 +17,7 @@ At the import layer, the spreadsheet importer keeps its existing tab-colour-base
 - Every summary and chart feature must remember to apply the same two filters — `NavigationMapper.IsEncerradas(portfolio.Name)` and `asset.Active` — or a closed position silently pollutes a total or a pie slice
 - Sort order even has to special-case it (`NavigationMapper.OrderByNameWithEncerradasLast`) just to push it to the bottom of every tree view
 
-**Status is a binary Active/Inactive concept that hides short positions**
+**The Active/Inactive concept is binary and hides short positions**
 - `Asset.Active => Quantity > 0` (`Financial.Domain/Entities/Asset.cs:26`) collapses "flat" (quantity = 0) and "short" (quantity < 0) into the same `false` value
 - `BoolToActiveColorConverter` (WPF) renders both as red — a closed position and an open short look identical today, even though they mean opposite things
 
@@ -29,7 +29,7 @@ At the import layer, the spreadsheet importer keeps its existing tab-colour-base
 
 - Filtering-by-convention → **structural separation**: `activeInvestments` and `historicInvestments` become two independent top-level collections (F02), so every scoped query (F05) is correct by construction instead of by remembered filter
 - Same-collection closed bucket → **structurally separate historic home** (F04): the import's existing tab-colour closed-detection is kept exactly as is, but a closed match now routes into the correct broker's `historicInvestments` collection instead of an `"Encerradas"` portfolio sitting inside that broker's active data
-- Binary status → **three-state, quantity-signed status** (F01): Green/Black/Red map directly to `Quantity > 0` / `= 0` / `< 0`, shown only where it's meaningful — inside Active Investments
+- Binary Active/Inactive → **three-state position type** (F01): Green/Black/Red map directly to `Quantity > 0` / `= 0` / `< 0`, shown only where it's meaningful — inside Active Investments
 - Lost portfolio identity → **`AssetClassification.json` historic portfolio metadata** (F03): a `historicPortfolio` field captures an asset's original grouping at classification time, independent of the generic closed-colour bucket it would otherwise fall into, with a per-broker fallback portfolio when that information isn't available
 
 ## 3. Target Audience
@@ -52,7 +52,7 @@ At the import layer, the spreadsheet importer keeps its existing tab-colour-base
 **Keep totals and charts scope-pure**
 - Metric: for 100% of brokers/portfolios, an Active Investments total or chart never includes a historic asset's data, and a Historic Investments total or chart never includes an active asset's data
 
-**Deliver accurate three-state position status**
+**Deliver accurate three-state position type**
 - Metric: every asset shown in Active Investments displays Green/Black/Red exactly matching `Quantity > 0` / `= 0` / `< 0`, with no asset ever rendered with the wrong color across existing and new test fixtures
 
 **Reach full WPF/Web parity for Historic Investments**
@@ -60,8 +60,8 @@ At the import layer, the spreadsheet importer keeps its existing tab-colour-base
 
 ## 5. User Stories
 
-### F01. Position Status Domain Model
-- As the system, I want to derive an asset's position status directly from its quantity (Long if `> 0`, Flat if `= 0`, Short if `< 0`) so that status always reflects the real position with no separately stored flag to fall out of sync
+### F01. Position Type Domain Model
+- As the system, I want to derive an asset's position type directly from its quantity (Long if `> 0`, Flat if `= 0`, Short if `< 0`) so that position type always reflects the real position with no separately stored flag to fall out of sync
 - As a user, I want a Green/Black/Red indicator matching Long/Flat/Short so that I can tell at a glance whether I'm currently invested, flat, or short an asset
 
 ### F02. Active/Historic Investments Data Model & Storage
@@ -79,7 +79,7 @@ At the import layer, the spreadsheet importer keeps its existing tab-colour-base
 
 ### F05. Scoped Navigation & Summary API
 - As a user, I want the navigation tree and asset-detail endpoints to accept an Active/Historic scope so that each tab only ever receives its own data
-- As a user, I want position status included in Active-scoped asset data so that the tree can render the correct status color
+- As a user, I want position type included in Active-scoped asset data so that the tree can render the correct color
 
 ### F06. Historic Realized Totals Service
 - As a user, I want to see total bought, total sold, total credits, and realized gain/loss for each historic asset and portfolio so that I can evaluate how a closed strategy actually performed
@@ -89,14 +89,14 @@ At the import layer, the spreadsheet importer keeps its existing tab-colour-base
 
 ### F08. Web — Active Investments Tab Update
 - As a user, I want the existing Portfolio Navigator page relabeled "Active Investments" and scoped to only active data so that a closed position never appears in it again
-- As a user, I want the Green/Black/Red status shown in the Active Investments tree so that I can see each asset's position state at a glance
+- As a user, I want the Green/Black/Red indicator shown in the Active Investments tree so that I can see each asset's position type at a glance
 
 ### F09. Web — Historic Investments Tab
 - As a user, I want a new "Historic Investments" tab with the same Broker/Portfolio/Asset tree, totals, and charts structure as Active Investments so that I can review closed positions the same way I review open ones
 - As a user, I want to edit transactions and credits for a historic asset so that I can correct or complete its record after it has closed
 
 ### F10. WPF — Active Investments Tab Update
-- As a user, I want the WPF "Active Investments" tab to show only active positions with the correct Green/Black/Red status so that the desktop app matches the web app's behavior
+- As a user, I want the WPF "Active Investments" tab to show only active positions with the correct Green/Black/Red position type indicator so that the desktop app matches the web app's behavior
 
 ### F11. WPF — Historic Investments Tab
 - As a user, I want a new "Historic Investments" tab in the WPF app with the same hierarchy, totals, and charts as Active Investments so that I have full parity with the web app
@@ -104,18 +104,18 @@ At the import layer, the spreadsheet importer keeps its existing tab-colour-base
 
 ## 6. Functionalities
 
-### F01. Position Status Domain Model
+### F01. Position Type Domain Model
 
 **Provides:**
-- Position status (`Long` / `Flat` / `Short`) derived from an asset's quantity sign (used by F05, F08, F10)
+- Position type (`Long` / `Flat` / `Short`) derived from an asset's quantity sign (used by F05, F08, F10)
 
 **Capabilities:**
-- New `PositionStatus` enum (`Long`, `Flat`, `Short`) in `Financial.Domain.Entities`, alongside `Asset`
-- `Asset` exposes a computed `PositionStatus Status => Quantity switch { > 0 => Long, < 0 => Short, _ => Flat }`; the existing `Active` bool property is removed everywhere it's only used for status display (kept only if still needed as a pure quantity check internally — no separate stored flag is introduced)
-- DTOs that currently carry `IsActive` (`AssetNodeDTO`, `AssetDetailsDto`/`AssetDetailsDTO`, TS `AssetNodeDto`/`AssetDetailsDto`) gain a `Status`/`status` field carrying the three-state value; `NavigationMapper.MapAsset` and related mapping methods populate it from `asset.Status`
+- New `PositionType` enum (`Long`, `Flat`, `Short`) as a top-level type in `Financial.Domain.Entities` (not nested inside `Asset` — C# does not allow a class to declare both a nested type and a property with the identical name)
+- `Asset` exposes a computed `PositionType` property (`Quantity > 0` → `Long`, `< 0` → `Short`, otherwise `Flat`); the existing `Active` bool property stays exactly as it is today, since it is load-bearing filtering logic in other Application services (not merely a display flag) — `PositionType` is additive, not a replacement
+- DTOs that currently carry `IsActive` (`AssetNodeDTO`, `AssetDetailsDto`/`AssetDetailsDTO`, TS `AssetNodeDto`/`AssetDetailsDto`) gain a `PositionType`/`positionType` field carrying the three-state value; `NavigationMapper.MapAsset` and related mapping methods populate it from `asset.PositionType`
 
 **Experience:**
-- No independent UI in this feature; F08/F10 consume `Status` to render the three-color indicator inside Active Investments only — Historic Investments never displays a status color, since every historic asset is by definition flat
+- No independent UI in this feature; F08/F10 consume `PositionType` to render the three-color indicator inside Active Investments only — Historic Investments never displays this indicator, since every historic asset is by definition flat
 
 ### F02. Active/Historic Investments Data Model & Storage
 
@@ -177,15 +177,15 @@ At the import layer, the spreadsheet importer keeps its existing tab-colour-base
 ### F05. Scoped Navigation & Summary API
 
 **Consumes:**
-- F01: position status per asset
+- F01: position type per asset
 - F02: active/historic investment collections
 
 **Provides:**
-- Broker/Portfolio/Asset tree data scoped to Active or Historic, including position status for Active-scoped assets (used by F06, F07, F08, F09, F10, F11)
+- Broker/Portfolio/Asset tree data scoped to Active or Historic, including position type for Active-scoped assets (used by F06, F07, F08, F09, F10, F11)
 
 **Capabilities:**
 - `NavigationController` endpoints (`GET /navigation/tree`, `GET /navigation/brokers`) gain a scope selector (e.g. `scope=active|historic` query parameter, defaulting to `active` for backward compatibility with any existing caller); `NavigationService`/`NavigationMapper` build the tree from the repository's Active or Historic collection accordingly
-- `TreeNodeDTO`/`AssetNodeDTO` metadata for Active-scoped trees includes `Status` (`Long`/`Flat`/`Short`); Historic-scoped trees omit or fix it to `Flat` since every historic asset is closed by definition
+- `TreeNodeDTO`/`AssetNodeDTO` metadata for Active-scoped trees includes `PositionType` (`Long`/`Flat`/`Short`); Historic-scoped trees omit or fix it to `Flat` since every historic asset is closed by definition
 - `SummaryController` endpoints (`/summary/broker/{name}`, `/summary/portfolio/{broker}/{portfolio}`, `/summary/portfolio/{broker}/{portfolio}/assets`, `/summary/broker/{name}/breakdown`) each gain the same scope selector, delegating to the scoped repository from F02
 - `BrokerBreakdownService`'s existing `.Where(p => !NavigationMapper.IsEncerradas(...))` and `.Where(a => a.Active)` filters are deleted — scope purity now comes from which repository collection was queried, not from a runtime filter
 
@@ -220,13 +220,13 @@ At the import layer, the spreadsheet importer keeps its existing tab-colour-base
 ### F08. Web — Active Investments Tab Update
 
 **Consumes:**
-- F01: position status per asset
+- F01: position type per asset
 - F05: broker/portfolio/asset tree data scoped to Active
 
 **Capabilities:**
 - `App.tsx`'s `NavLink` for "Portfolio Navigator" is relabeled "Active Investments" (route can stay `/portfolio-navigator` or be renamed to `/active-investments` — either way, exactly one route serves this tab)
 - `PortfolioNavigatorPage.tsx`/`InvestmentTree.tsx`/`useAggregatedSummary.ts`/`useBrokerBreakdown.ts` calls are updated to pass `scope=active` (or rely on the API default) so no historic asset can appear
-- Status color rendering in the tree/detail panel switches from a boolean isActive check to a three-way mapping on the new `status` field: `Long` → green, `Flat` → black/neutral, `Short` → red
+- Position type color rendering in the tree/detail panel switches from a boolean isActive check to a three-way mapping on the new `positionType` field: `Long` → green, `Flat` → black/neutral, `Short` → red
 
 **Experience:**
 - Functionally identical to today's Portfolio Navigator, just relabeled and guaranteed scope-pure; a user closing a position (via re-import) sees it disappear from this tab on next data refresh
@@ -253,12 +253,12 @@ At the import layer, the spreadsheet importer keeps its existing tab-colour-base
 ### F10. WPF — Active Investments Tab Update
 
 **Consumes:**
-- F01: position status per asset
+- F01: position type per asset
 - F05: broker/portfolio/asset tree data scoped to Active
 
 **Capabilities:**
 - The `MainWindow.xaml` tab hosting `NavigationView.xaml` is relabeled "Active Investments"; its data-loading path is scoped to Active (F05)
-- `BoolToActiveColorConverter` is replaced with a `PositionStatusToColorConverter` (or extended) mapping `Long`/`Flat`/`Short` to green/black/red brushes, bound wherever the tree/detail view currently binds the boolean active indicator
+- `BoolToActiveColorConverter` is replaced with a `PositionTypeToColorConverter` (or extended) mapping `Long`/`Flat`/`Short` to green/black/red brushes, bound wherever the tree/detail view currently binds the boolean active indicator
 
 **Experience:**
 - Functionally identical to today's single Investments tab, just relabeled, scope-pure, and showing the correct three-state color
@@ -311,7 +311,7 @@ At the import layer, the spreadsheet importer keeps its existing tab-colour-base
 
 | # | Feature | Priority | Dependencies |
 |---|---------|----------|--------------|
-| F01 | Position Status Domain Model | 1 | None |
+| F01 | Position Type Domain Model | 1 | None |
 | F02 | Active/Historic Investments Data Model & Storage | 1 | None |
 | F03 | AssetClassification Historic Portfolio Metadata | 2 | None |
 | F04 | Spreadsheet Import — Closed Position Routing to Historic | 1 | F02, F03 |
@@ -338,7 +338,7 @@ Features within the same wave can be built in parallel. A wave starts only after
 
 ```mermaid
 graph TD
-  F01[Status Model] --> F05[Scoped API]
+  F01[Position Type Model] --> F05[Scoped API]
   F02[Data Split] --> F04[Import Routing]
   F02 --> F05
   F03[Classification Meta] --> F04
@@ -358,11 +358,11 @@ graph TD
 
 ## 9. Acceptance Criteria
 
-### F01. Position Status Domain Model
-- [ ] An asset with `Quantity > 0` reports `Status = Long`
-- [ ] An asset with `Quantity = 0` reports `Status = Flat`
-- [ ] An asset with `Quantity < 0` reports `Status = Short`
-- [ ] `Status` is present on Active-scoped `AssetNodeDTO`/`AssetDetailsDto` (backend and TS types)
+### F01. Position Type Domain Model
+- [ ] An asset with `Quantity > 0` reports `PositionType = Long`
+- [ ] An asset with `Quantity = 0` reports `PositionType = Flat`
+- [ ] An asset with `Quantity < 0` reports `PositionType = Short`
+- [ ] `PositionType` is present on Active-scoped `AssetNodeDTO`/`AssetDetailsDto` (backend and TS types)
 
 ### F02. Active/Historic Investments Data Model & Storage
 - [ ] `data.json` round-trips with both `activeInvestments` and `historicInvestments` top-level arrays
@@ -382,7 +382,7 @@ graph TD
 - [ ] Re-importing a sheet previously resolving to the closed marker, now recoloured to a normal active grouping, results in the asset appearing only in `activeInvestments`
 
 ### F05. Scoped Navigation & Summary API
-- [ ] `GET /navigation/tree?scope=active` returns only assets from `activeInvestments`, including their `Status`
+- [ ] `GET /navigation/tree?scope=active` returns only assets from `activeInvestments`, including their `PositionType`
 - [ ] `GET /navigation/tree?scope=historic` returns only assets from `historicInvestments`
 - [ ] Each `SummaryController` endpoint respects the same scope selector
 - [ ] Omitting the scope parameter preserves today's Active-only behavior (no breaking change for any existing caller)
@@ -418,8 +418,8 @@ graph TD
 
 ### Cross-Feature Integration
 - [ ] Data written by import (F04) into `activeInvestments`/`historicInvestments` (F02's structure) is correctly returned by the scoped navigation API (F05)
-- [ ] Position status computed by F01 appears correctly on every Active-scoped asset returned by F05
+- [ ] Position type computed by F01 appears correctly on every Active-scoped asset returned by F05
 - [ ] Historic tree/asset data served by F05 is correctly consumed by both the realized totals service (F06) and the breakdown charts service (F07)
 - [ ] Realized totals from F06 render correctly in both the Web (F09) and WPF (F11) Historic Investments summary views
 - [ ] Breakdown data from F07 renders correctly in both the Web (F09) and WPF (F11) Historic Investments charts views
-- [ ] Active-scoped data and status from F01/F05 render correctly in both the Web (F08) and WPF (F10) Active Investments tabs
+- [ ] Active-scoped data and position type from F01/F05 render correctly in both the Web (F08) and WPF (F10) Active Investments tabs
