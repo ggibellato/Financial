@@ -46,6 +46,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   quantity: 100,
   averagePrice: 20,
   isActive: true,
+  status: 'Long',
   totalBought: 2000,
   totalSold: 0,
   totalCredits: 50,
