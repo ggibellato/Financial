@@ -11,10 +11,13 @@ namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 internal readonly record struct AssetClassificationEntry(
     CountryCode Country,
     string LocalTypeCode,
-    GlobalAssetClass Class);
+    GlobalAssetClass Class,
+    string HistoricPortfolio = null);
 
 internal static class AssetClassificationLookup
 {
+    internal const string UncategorizedHistoricPortfolioName = "Uncategorized";
+
     private static readonly IReadOnlyDictionary<string, AssetClassificationEntry> Entries = LoadEntries();
 
     public static bool TryGet(string assetName, out AssetClassificationEntry entry)
@@ -27,6 +30,12 @@ internal static class AssetClassificationLookup
 
         return Entries.TryGetValue(assetName.Trim(), out entry);
     }
+
+    public static string ResolveHistoricPortfolio(string assetName) =>
+        TryGet(assetName, out var entry) ? ResolveHistoricPortfolio(entry) : UncategorizedHistoricPortfolioName;
+
+    public static string ResolveHistoricPortfolio(AssetClassificationEntry entry) =>
+        string.IsNullOrWhiteSpace(entry.HistoricPortfolio) ? UncategorizedHistoricPortfolioName : entry.HistoricPortfolio;
 
     private static IReadOnlyDictionary<string, AssetClassificationEntry> LoadEntries()
     {
@@ -43,7 +52,7 @@ internal static class AssetClassificationLookup
 
         return jsonEntries.ToDictionary(
             e => e.Name,
-            e => new AssetClassificationEntry(e.Country, e.LocalTypeCode, e.AssetClass),
+            e => new AssetClassificationEntry(e.Country, e.LocalTypeCode, e.AssetClass, e.HistoricPortfolio),
             StringComparer.OrdinalIgnoreCase);
     }
 
@@ -53,5 +62,6 @@ internal static class AssetClassificationLookup
         public CountryCode Country { get; set; }
         public string LocalTypeCode { get; set; } = "";
         public GlobalAssetClass AssetClass { get; set; }
+        public string HistoricPortfolio { get; set; }
     }
 }
