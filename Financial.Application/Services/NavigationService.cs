@@ -72,6 +72,7 @@ public sealed class NavigationService : INavigationService
             Quantity = asset.Quantity,
             AveragePrice = asset.AveragePrice,
             IsActive = asset.Active,
+            PositionType = asset.PositionType,
             TotalBought = totalBought,
             TotalSold = totalSold,
             TotalCredits = totalCredits,
