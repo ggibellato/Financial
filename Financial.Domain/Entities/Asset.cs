@@ -5,8 +5,6 @@ namespace Financial.Domain.Entities;
 
 public class Asset
 {
-    public enum PositionStatus { Long, Flat, Short }
-
     public string Name { get; private set; }
 
     public string ISIN { get; private set; }
@@ -27,11 +25,11 @@ public class Asset
 
     public bool Active => Quantity > 0;
 
-    public PositionStatus Status => Quantity switch
+    public PositionType PositionType => Quantity switch
     {
-        > 0 => PositionStatus.Long,
-        < 0 => PositionStatus.Short,
-        _ => PositionStatus.Flat
+        > 0 => PositionType.Long,
+        < 0 => PositionType.Short,
+        _ => PositionType.Flat
     };
 
     private List<Transaction> _transactions = new List<Transaction>();

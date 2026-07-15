@@ -54,21 +54,21 @@ public class NavigationMapperTests
     }
 
     [Fact]
-    public void GetNavigationTree_AssetNode_MetadataIncludesPositionStatus()
+    public void GetNavigationTree_AssetNode_MetadataIncludesPositionType()
     {
         _repository.Broker = BuildBrokerWithAsset("LONG1", GlobalAssetClass.Equity, quantity: 10m);
 
         var tree = CreateService().GetNavigationTree();
 
         var assetNode = GetFirstAssetNode(tree);
-        assetNode.Metadata["PositionStatus"].Should().Be(Asset.PositionStatus.Long);
+        assetNode.Metadata["PositionType"].Should().Be(PositionType.Long);
     }
 
     [Theory]
-    [InlineData(10, Asset.PositionStatus.Long)]
-    [InlineData(0, Asset.PositionStatus.Flat)]
-    [InlineData(-10, Asset.PositionStatus.Short)]
-    public void GetAssetsByBrokerPortfolio_AssetNodeDto_StatusMatchesAssetStatus(decimal quantity, Asset.PositionStatus expectedStatus)
+    [InlineData(10, PositionType.Long)]
+    [InlineData(0, PositionType.Flat)]
+    [InlineData(-10, PositionType.Short)]
+    public void GetAssetsByBrokerPortfolio_AssetNodeDto_PositionTypeMatchesAssetPositionType(decimal quantity, PositionType expectedPositionType)
     {
         var broker = Broker.Create("Broker", "BRL");
         var portfolio = broker.AddPortfolio("Portfolio");
@@ -77,14 +77,14 @@ public class NavigationMapperTests
 
         var assets = CreateService().GetAssetsByBrokerPortfolio("Broker", "Portfolio").ToList();
 
-        assets.Should().ContainSingle().Which.Status.Should().Be(expectedStatus);
+        assets.Should().ContainSingle().Which.PositionType.Should().Be(expectedPositionType);
     }
 
     [Theory]
-    [InlineData(10, Asset.PositionStatus.Long)]
-    [InlineData(0, Asset.PositionStatus.Flat)]
-    [InlineData(-10, Asset.PositionStatus.Short)]
-    public void GetAssetDetails_ReturnsStatusMatchingAsset(decimal quantity, Asset.PositionStatus expectedStatus)
+    [InlineData(10, PositionType.Long)]
+    [InlineData(0, PositionType.Flat)]
+    [InlineData(-10, PositionType.Short)]
+    public void GetAssetDetails_ReturnsPositionTypeMatchingAsset(decimal quantity, PositionType expectedPositionType)
     {
         var broker = Broker.Create("Broker", "BRL");
         var portfolio = broker.AddPortfolio("Portfolio");
@@ -94,7 +94,7 @@ public class NavigationMapperTests
         var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
 
         details.Should().NotBeNull();
-        details!.Status.Should().Be(expectedStatus);
+        details!.PositionType.Should().Be(expectedPositionType);
     }
 
     private static Asset BuildAssetWithQuantity(string name, decimal quantity)

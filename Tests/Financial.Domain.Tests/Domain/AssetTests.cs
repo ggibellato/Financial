@@ -68,30 +68,30 @@ public class AssetTests
     }
 
     [Fact]
-    public void Status_PositiveQuantity_ReturnsLong()
+    public void PositionType_PositiveQuantity_ReturnsLong()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
         asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
 
-        asset.Status.Should().Be(Asset.PositionStatus.Long);
+        asset.PositionType.Should().Be(PositionType.Long);
     }
 
     [Fact]
-    public void Status_ZeroQuantity_ReturnsFlat()
+    public void PositionType_ZeroQuantity_ReturnsFlat()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
 
-        asset.Status.Should().Be(Asset.PositionStatus.Flat);
+        asset.PositionType.Should().Be(PositionType.Flat);
     }
 
     [Fact]
-    public void Status_NegativeQuantity_ReturnsShort()
+    public void PositionType_NegativeQuantity_ReturnsShort()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
         asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Sell, 5m, 10m, 0m));
 
         asset.Quantity.Should().Be(-5m);
-        asset.Status.Should().Be(Asset.PositionStatus.Short);
+        asset.PositionType.Should().Be(PositionType.Short);
     }
 
     [Fact]

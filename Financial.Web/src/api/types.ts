@@ -50,7 +50,7 @@ export interface AssetNodeDto {
   quantity: number
   averagePrice: number
   isActive: boolean
-  status: string
+  positionType: string
   transactionCount: number
   creditCount: number
 }
@@ -92,7 +92,7 @@ export interface AssetDetailsDto {
   quantity: number
   averagePrice: number
   isActive: boolean
-  status: string
+  positionType: string
   totalBought: number
   totalSold: number
   totalCredits: number

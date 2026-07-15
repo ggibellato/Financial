@@ -61,10 +61,10 @@ public class AssetNodeDTO
     public bool IsActive { get; set; }
 
     /// <summary>
-    /// Position status derived from quantity sign (Long/Flat/Short)
+    /// Position type derived from quantity sign (Long/Flat/Short)
     /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public Asset.PositionStatus Status { get; set; }
+    public PositionType PositionType { get; set; }
 
     /// <summary>
     /// Number of transactions (buy/sell)

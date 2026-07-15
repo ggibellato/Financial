@@ -40,7 +40,7 @@ const makeBroker = (
       quantity: 10,
       averagePrice: 100,
       isActive: a.isActive ?? true,
-      status: a.status ?? ((a.isActive ?? true) ? 'Long' : 'Flat'),
+      positionType: a.positionType ?? ((a.isActive ?? true) ? 'Long' : 'Flat'),
       transactionCount: 0,
       creditCount: 0,
     })),
