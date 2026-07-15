@@ -53,6 +53,64 @@ public class NavigationMapperTests
         reitNode.Metadata["GlobalAssetClass"].Should().Be(GlobalAssetClass.RealEstate);
     }
 
+    [Fact]
+    public void GetNavigationTree_AssetNode_MetadataIncludesPositionStatus()
+    {
+        _repository.Broker = BuildBrokerWithAsset("LONG1", GlobalAssetClass.Equity, quantity: 10m);
+
+        var tree = CreateService().GetNavigationTree();
+
+        var assetNode = GetFirstAssetNode(tree);
+        assetNode.Metadata["PositionStatus"].Should().Be(Asset.PositionStatus.Long);
+    }
+
+    [Theory]
+    [InlineData(10, Asset.PositionStatus.Long)]
+    [InlineData(0, Asset.PositionStatus.Flat)]
+    [InlineData(-10, Asset.PositionStatus.Short)]
+    public void GetAssetsByBrokerPortfolio_AssetNodeDto_StatusMatchesAssetStatus(decimal quantity, Asset.PositionStatus expectedStatus)
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        portfolio.AddAsset(BuildAssetWithQuantity("ASSET1", quantity));
+        _repository.Broker = broker;
+
+        var assets = CreateService().GetAssetsByBrokerPortfolio("Broker", "Portfolio").ToList();
+
+        assets.Should().ContainSingle().Which.Status.Should().Be(expectedStatus);
+    }
+
+    [Theory]
+    [InlineData(10, Asset.PositionStatus.Long)]
+    [InlineData(0, Asset.PositionStatus.Flat)]
+    [InlineData(-10, Asset.PositionStatus.Short)]
+    public void GetAssetDetails_ReturnsStatusMatchingAsset(decimal quantity, Asset.PositionStatus expectedStatus)
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        portfolio.AddAsset(BuildAssetWithQuantity("ASSET1", quantity));
+        _repository.Broker = broker;
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        details.Should().NotBeNull();
+        details!.Status.Should().Be(expectedStatus);
+    }
+
+    private static Asset BuildAssetWithQuantity(string name, decimal quantity)
+    {
+        var asset = Asset.Create(name, "ISIN", "BVMF", name, CountryCode.BR, "FII", GlobalAssetClass.Equity);
+        if (quantity > 0)
+        {
+            asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, quantity, 10m, 0m));
+        }
+        else if (quantity < 0)
+        {
+            asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Sell, -quantity, 10m, 0m));
+        }
+        return asset;
+    }
+
     private static TreeNodeDTO GetFirstAssetNode(TreeNodeDTO tree) =>
         tree.Children
             .SelectMany(broker => broker.Children)
@@ -64,11 +122,20 @@ public class NavigationMapperTests
             .SelectMany(broker => broker.Children)
             .SelectMany(portfolio => portfolio.Children);
 
-    private static Broker BuildBrokerWithAsset(string assetName, GlobalAssetClass assetClass)
+    private static Broker BuildBrokerWithAsset(string assetName, GlobalAssetClass assetClass, decimal quantity = 0m)
     {
         var broker = Broker.Create("Broker", "BRL");
         var portfolio = broker.AddPortfolio("Portfolio");
-        portfolio.AddAsset(Asset.Create(assetName, "ISIN", "BVMF", "T1", CountryCode.BR, "FII", assetClass));
+        var asset = Asset.Create(assetName, "ISIN", "BVMF", "T1", CountryCode.BR, "FII", assetClass);
+        if (quantity > 0)
+        {
+            asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, quantity, 10m, 0m));
+        }
+        else if (quantity < 0)
+        {
+            asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Sell, -quantity, 10m, 0m));
+        }
+        portfolio.AddAsset(asset);
         return broker;
     }
 
@@ -88,10 +155,16 @@ public class NavigationMapperTests
     {
         public Broker? Broker { get; set; }
 
-        public IEnumerable<Asset> GetAssetsByBroker(string name) => [];
-        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio) => [];
+        public IEnumerable<Asset> GetAssetsByBroker(string name) =>
+            Broker == null ? [] : Broker.Portfolios.SelectMany(p => p.Assets);
+
+        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio) =>
+            Broker?.Portfolios.FirstOrDefault(p => p.Name == portfolio)?.Assets ?? [];
+
         public IEnumerable<Broker> GetBrokerList() => Broker == null ? [] : [Broker];
-        public Asset? GetAsset(string brokerName, string portfolioName, string assetName) => null;
+
+        public Asset? GetAsset(string brokerName, string portfolioName, string assetName) =>
+            Broker?.Portfolios.FirstOrDefault(p => p.Name == portfolioName)?.Assets.FirstOrDefault(a => a.Name == assetName);
         public Task SaveChangesAsync() => Task.CompletedTask;
     }
 }
