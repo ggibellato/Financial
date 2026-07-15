@@ -61,6 +61,12 @@ public class AssetNodeDTO
     public bool IsActive { get; set; }
 
     /// <summary>
+    /// Position type derived from quantity sign (Long/Flat/Short)
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public PositionType PositionType { get; set; }
+
+    /// <summary>
     /// Number of transactions (buy/sell)
     /// </summary>
     public int TransactionCount { get; set; }

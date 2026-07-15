@@ -25,6 +25,13 @@ public class Asset
 
     public bool Active => Quantity > 0;
 
+    public PositionType PositionType => Quantity switch
+    {
+        > 0 => PositionType.Long,
+        < 0 => PositionType.Short,
+        _ => PositionType.Flat
+    };
+
     private List<Transaction> _transactions = new List<Transaction>();
     public IReadOnlyCollection<Transaction> Transactions { get => _transactions.AsReadOnly(); private set => SetTransactions(value); }
     private void SetTransactions(IReadOnlyCollection<Transaction> data)
