@@ -58,7 +58,7 @@ public sealed class GoogleGenerator
     private async Task ProcessBrokerAsync(Investments data, string fileName, string fileId, IProgress<string> progress)
     {
         var broker = Broker.Create(fileName, _metadataResolver.ResolveBrokerCurrency(fileName));
-        data.AddBroker(broker);
+        data.AddActiveBroker(broker);
 
         progress?.Report($"Getting spreadsheets for: {fileName}");
         var spreadSheets = await _service.GetSpreadSheetAsync(fileId);

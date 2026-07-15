@@ -246,10 +246,10 @@ public class BrokerBreakdownServiceTests
         public IEnumerable<Asset> AssetsByBrokerPortfolio { get; set; } = [];
         public IEnumerable<Broker> Brokers { get; set; } = [];
 
-        public IEnumerable<Asset> GetAssetsByBroker(string name) => AssetsByBroker;
-        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio) => AssetsByBrokerPortfolio;
-        public IEnumerable<Broker> GetBrokerList() => Brokers;
-        public Asset? GetAsset(string brokerName, string portfolioName, string assetName) => null;
+        public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) => AssetsByBroker;
+        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) => AssetsByBrokerPortfolio;
+        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) => Brokers;
+        public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => null;
         public Task SaveChangesAsync() => Task.CompletedTask;
     }
 }

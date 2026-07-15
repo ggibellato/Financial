@@ -27,8 +27,8 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
         var computed = assets.Select(a => ComputeAssetData(a, today)).ToList();
         var portfolioTotalInvested = computed.Sum(c => c.TotalInvested);
 
-        return NavigationMapper
-            .OrderByNameWithEncerradasLast(computed, c => c.AssetName)
+        return computed
+            .OrderBy(c => c.AssetName, StringComparer.CurrentCultureIgnoreCase)
             .Select(c => ToDTO(c, CalculateWeight(c.TotalInvested, portfolioTotalInvested)))
             .ToList();
     }

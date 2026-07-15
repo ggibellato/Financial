@@ -410,7 +410,7 @@ public class NavigationServiceTests
     }
 
     [Fact]
-    public void GetBrokers_ShouldOrderByNameWithEncerradasLast()
+    public void GetBrokers_ShouldOrderByNameAlphabetically()
     {
         // Arrange
         var repository = new StubRepository(new[]
@@ -425,11 +425,11 @@ public class NavigationServiceTests
         var brokerNames = sut.GetBrokers().Select(broker => broker.Name).ToList();
 
         // Assert
-        brokerNames.Should().ContainInOrder("Alpha", "Zeta", "Encerradas");
+        brokerNames.Should().ContainInOrder("Alpha", "Encerradas", "Zeta");
     }
 
     [Fact]
-    public void GetBrokers_PortfoliosShouldOrderByNameWithEncerradasLast()
+    public void GetBrokers_PortfoliosShouldOrderByNameAlphabetically()
     {
         // Arrange
         var broker = BuildBroker("Broker", "USD",
@@ -443,11 +443,11 @@ public class NavigationServiceTests
         var portfolioNames = sut.GetBrokers().Single().Portfolios.Select(portfolio => portfolio.Name).ToList();
 
         // Assert
-        portfolioNames.Should().ContainInOrder("Alpha", "Zeta", "Encerradas");
+        portfolioNames.Should().ContainInOrder("Alpha", "Encerradas", "Zeta");
     }
 
     [Fact]
-    public void GetBrokers_AssetsShouldOrderByNameWithEncerradasLast()
+    public void GetBrokers_AssetsShouldOrderByNameAlphabetically()
     {
         // Arrange
         var broker = BuildBroker("Broker", "USD",
@@ -463,7 +463,7 @@ public class NavigationServiceTests
             .ToList();
 
         // Assert
-        assetNames.Should().ContainInOrder("Alpha", "Zeta", "Encerradas");
+        assetNames.Should().ContainInOrder("Alpha", "Encerradas", "Zeta");
     }
 
     private static Broker BuildBroker(string name, string currency = "USD",
@@ -492,13 +492,13 @@ public class NavigationServiceTests
             _brokers = brokers.ToList();
         }
 
-        public IEnumerable<Asset> GetAssetsByBroker(string name) => throw new NotImplementedException();
+        public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
 
-        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio) => throw new NotImplementedException();
+        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
 
-        public IEnumerable<Broker> GetBrokerList() => _brokers;
+        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) => _brokers;
 
-        public Asset? GetAsset(string brokerName, string portfolioName, string assetName) => throw new NotImplementedException();
+        public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
 
         public Task SaveChangesAsync() => throw new NotImplementedException();
     }
