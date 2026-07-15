@@ -17,6 +17,14 @@ public class AssetClassificationLookupTests
     }
 
     [Fact]
+    public void TryGet_Bitcoin_HistoricPortfolioIsNull()
+    {
+        AssetClassificationLookup.TryGet("Bitcoin", out var entry);
+
+        entry.HistoricPortfolio.Should().BeNull();
+    }
+
+    [Fact]
     public void TryGet_BitcoinCaseInsensitiveAndTrimmed_ReturnsCryptocurrencyClass()
     {
         var found = AssetClassificationLookup.TryGet(" bitcoin ", out var entry);
@@ -32,5 +40,41 @@ public class AssetClassificationLookupTests
 
         found.Should().BeFalse();
         entry.Should().Be(default(AssetClassificationEntry));
+    }
+
+    [Fact]
+    public void ResolveHistoricPortfolio_EntryWithHistoricPortfolio_ReturnsClassifiedValue()
+    {
+        var entry = new AssetClassificationEntry(CountryCode.UK, "REIT", GlobalAssetClass.RealEstate, "Dividend Portfolio");
+
+        var result = AssetClassificationLookup.ResolveHistoricPortfolio(entry);
+
+        result.Should().Be("Dividend Portfolio");
+    }
+
+    [Fact]
+    public void ResolveHistoricPortfolio_EntryWithoutHistoricPortfolio_ReturnsUncategorized()
+    {
+        var entry = new AssetClassificationEntry(CountryCode.UK, "REIT", GlobalAssetClass.RealEstate);
+
+        var result = AssetClassificationLookup.ResolveHistoricPortfolio(entry);
+
+        result.Should().Be(AssetClassificationLookup.UncategorizedHistoricPortfolioName);
+    }
+
+    [Fact]
+    public void ResolveHistoricPortfolio_KnownAssetWithoutHistoricPortfolio_ReturnsUncategorized()
+    {
+        var result = AssetClassificationLookup.ResolveHistoricPortfolio("Bitcoin");
+
+        result.Should().Be(AssetClassificationLookup.UncategorizedHistoricPortfolioName);
+    }
+
+    [Fact]
+    public void ResolveHistoricPortfolio_UnknownAssetName_ReturnsUncategorized()
+    {
+        var result = AssetClassificationLookup.ResolveHistoricPortfolio("NotARealAsset");
+
+        result.Should().Be(AssetClassificationLookup.UncategorizedHistoricPortfolioName);
     }
 }
