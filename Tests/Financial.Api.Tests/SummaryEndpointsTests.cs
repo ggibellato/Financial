@@ -176,6 +176,24 @@ public class SummaryEndpointsTests
         var items = await response.Content.ReadFromJsonAsync<List<PortfolioBreakdownItemDTO>>();
         items.Should().NotBeNull();
         items!.Should().ContainSingle(p => p.PortfolioName == "Uncategorized");
-        items!.SelectMany(p => p.Assets).Should().Contain(a => a.AssetName == "CLOSEDASSET");
+        // CLOSEDASSET: bought 5 x 60 = 300, sold 5 x 50 = 250 — historic sizing uses gross TotalBought (300), not net invested (50)
+        items!.Single().TotalInvested.Should().Be(300m);
+        items!.SelectMany(p => p.Assets).Should().Contain(a => a.AssetName == "CLOSEDASSET" && a.TotalInvested == 300m);
+    }
+
+    [Fact]
+    public async Task GetBrokerBreakdown_ScopeActive_PreservesNetInvestedBehavior()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/summary/broker/XPI/breakdown?scope=active");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var items = await response.Content.ReadFromJsonAsync<List<PortfolioBreakdownItemDTO>>();
+        items.Should().NotBeNull();
+        // BCIA11: bought 10 x 100 = 1000, sold 2 x 110 = 220 — active sizing stays net invested (780)
+        items!.SelectMany(p => p.Assets).Should().Contain(a => a.AssetName == "BCIA11" && a.TotalInvested == 780m);
     }
 }
