@@ -66,6 +66,11 @@ public class AssetDetailsDTO
     public decimal AveragePrice { get; set; }
 
     /// <summary>
+    /// Weighted-average sell price across the asset's Sell transactions; null if never sold
+    /// </summary>
+    public decimal? AverageSellPrice { get; set; }
+
+    /// <summary>
     /// Whether the asset is active
     /// </summary>
     public bool IsActive { get; set; }

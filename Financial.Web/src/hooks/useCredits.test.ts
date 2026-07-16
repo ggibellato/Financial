@@ -82,6 +82,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   class: 'Equity',
   quantity: 100,
   averagePrice: 20,
+  averageSellPrice: null,
   isActive: true,
   positionType: 'Long',
   totalBought: 2000,

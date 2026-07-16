@@ -96,6 +96,7 @@ export interface AssetDetailsDto {
   class: string
   quantity: number
   averagePrice: number
+  averageSellPrice: number | null
   isActive: boolean
   positionType: PositionType
   totalBought: number
@@ -246,6 +247,7 @@ export interface PortfolioAssetSummaryItemDto {
   firstInvestmentDate: string | null
   currentQuantity: number
   averagePrice: number
+  averageSellPrice: number | null
   totalBought: number
   totalSold: number
   totalInvested: number

@@ -47,6 +47,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   class: 'Equity',
   quantity: 100,
   averagePrice: 20,
+  averageSellPrice: null,
   isActive: true,
   positionType: 'Long',
   totalBought: 2000,
@@ -99,8 +100,8 @@ describe('useAssetSummary', () => {
     })
   })
 
-  it('fetches_realized_totals_from_portfolio_summary_for_historic_asset', async () => {
-    const historicAsset = { ...ASSET_DETAILS, quantity: 0, totalSold: 250 }
+  it('fetches_portfolio_weight_from_portfolio_summary_for_historic_asset', async () => {
+    const historicAsset = { ...ASSET_DETAILS, quantity: 0, totalSold: 250, realizedGainLoss: -1750 }
     getAssetDetailsMock.mockResolvedValue(historicAsset)
     const summaryItem: PortfolioAssetSummaryItemDto = {
       assetName: 'KLBN4',
@@ -110,6 +111,7 @@ describe('useAssetSummary', () => {
       firstInvestmentDate: '2024-01-01T00:00:00',
       currentQuantity: 0,
       averagePrice: 20,
+      averageSellPrice: 21,
       totalBought: 2000,
       totalSold: 250,
       totalInvested: 1750,
@@ -129,13 +131,14 @@ describe('useAssetSummary', () => {
     const { wrapper, setNode } = createSelectedNodeWrapper('historic')
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
-    await waitFor(() => expect(result.current.realizedGainLoss).not.toBeNull())
+    await waitFor(() => expect(result.current.portfolioWeight).not.toBeNull())
     expect(getPortfolioAssetsSummaryMock).toHaveBeenCalledWith('XPI', 'Acoes', 'historic')
-    expect(result.current.realizedGainLoss).toBe(-1750)
     expect(result.current.portfolioWeight).toBe(100)
+    // realizedGainLoss comes directly from the asset details response, not a second round-trip
+    expect(result.current.asset?.realizedGainLoss).toBe(-1750)
   })
 
-  it('skips_current_price_and_xirr_fetch_for_historic_scope', async () => {
+  it('skips_current_price_fetch_for_historic_scope', async () => {
     const historicAsset = { ...ASSET_DETAILS, quantity: 0, totalSold: 250 }
     getAssetDetailsMock.mockResolvedValue(historicAsset)
     getPortfolioAssetsSummaryMock.mockResolvedValue([])
@@ -144,7 +147,19 @@ describe('useAssetSummary', () => {
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
     expect(getCurrentPriceMock).not.toHaveBeenCalled()
-    expect(calculateXirrMock).not.toHaveBeenCalled()
+  })
+
+  it('computes_xirr_for_historic_scope_using_zero_terminal_value_without_waiting_for_price', async () => {
+    const historicAsset = { ...ASSET_DETAILS, quantity: 0, totalSold: 250 }
+    getAssetDetailsMock.mockResolvedValue(historicAsset)
+    getPortfolioAssetsSummaryMock.mockResolvedValue([])
+    calculateXirrMock.mockResolvedValue({ xirr: 0.08 })
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    const { result } = renderHook(() => useAssetSummary(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.xirr).toBe(0.08))
+    expect(calculateXirrMock).toHaveBeenCalledWith(historicAsset.cashFlowsWithoutCredits, 0)
+    expect(calculateXirrMock).toHaveBeenCalledWith(historicAsset.cashFlowsWithCredits, 0)
   })
 
   it('fetches_current_price_simultaneously_with_asset_details', async () => {

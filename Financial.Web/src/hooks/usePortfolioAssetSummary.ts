@@ -108,8 +108,9 @@ export function usePortfolioAssetSummary(): PortfolioAssetSummaryData {
       .then((items) => {
         dispatch({ type: 'FETCH_SUCCESS', payload: items })
         if (scope === 'historic') {
-          // Historic assets have no current price/XIRR concept; resolve rows immediately
-          // instead of leaving them stuck in a perpetual loading state.
+          // Historic positions are closed — there's no live price to fetch. Profit%/XIRR for
+          // these rows are computed from realized data (see PortfolioSummaryTab), not rowPrice.
+          // Resolve rows immediately instead of leaving them stuck in a perpetual loading state.
           items.forEach((_, index) => dispatch({ type: 'ROW_PRICE_ERROR', index }))
           return
         }

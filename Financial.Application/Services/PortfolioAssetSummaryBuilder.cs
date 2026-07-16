@@ -32,6 +32,7 @@ internal static class PortfolioAssetSummaryBuilder
         var totals = new AssetTotals(totalBought, totalSold, totalCredits);
         var weightBasis = weightBasisSelector(totals);
         var realizedGainLoss = NavigationMapper.CalculateRealizedGainLoss(asset);
+        var averageSellPrice = NavigationMapper.CalculateAverageSellPrice(asset);
 
         var firstBuyDate = asset.Transactions
             .Where(t => t.Type == Transaction.TransactionType.Buy)
@@ -44,7 +45,7 @@ internal static class PortfolioAssetSummaryBuilder
 
         return new AssetComputedData(
             asset.Name, asset.Ticker, asset.Exchange, asset.Class,
-            firstBuyDate, asset.Quantity, asset.AveragePrice,
+            firstBuyDate, asset.Quantity, asset.AveragePrice, averageSellPrice,
             totalBought, totalSold, totalBought - totalSold, realizedGainLoss, weightBasis,
             totalCredits, cashFlows,
             creditsAnalysis.LastMonthCredits, creditsAnalysis.LastCreditMonth,
@@ -131,6 +132,7 @@ internal static class PortfolioAssetSummaryBuilder
             FirstInvestmentDate = c.FirstInvestmentDate,
             CurrentQuantity = c.CurrentQuantity,
             AveragePrice = c.AveragePrice,
+            AverageSellPrice = c.AverageSellPrice,
             TotalBought = c.TotalBought,
             TotalSold = c.TotalSold,
             TotalInvested = c.TotalInvested,
@@ -152,7 +154,7 @@ internal static class PortfolioAssetSummaryBuilder
 
     private sealed record AssetComputedData(
         string AssetName, string Ticker, string Exchange, GlobalAssetClass Class,
-        DateTime? FirstInvestmentDate, decimal CurrentQuantity, decimal AveragePrice,
+        DateTime? FirstInvestmentDate, decimal CurrentQuantity, decimal AveragePrice, decimal? AverageSellPrice,
         decimal TotalBought, decimal TotalSold, decimal TotalInvested, decimal RealizedGainLoss, decimal WeightBasis,
         decimal TotalCredits, IReadOnlyList<AssetCashFlowDTO> CashFlows,
         decimal LastMonthCredits, string? LastCreditMonth, decimal? LastMonthCreditsPercent,

@@ -39,7 +39,6 @@ export default function AssetSummaryTab() {
     resultWithCreditsPercent,
     xirr,
     xirrWithCredits,
-    realizedGainLoss,
     portfolioWeight,
   } = useAssetSummary()
 
@@ -55,8 +54,6 @@ export default function AssetSummaryTab() {
     return null
   }
 
-  const realizedGainLossClass =
-    asset.realizedGainLoss >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'
   const resultClass =
     resultPercent >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'
   const resultWithCreditsClass =
@@ -110,16 +107,10 @@ export default function AssetSummaryTab() {
           </span>
         </div>
 
-        <div className="asset-summary__field">
+        <div className="asset-summary__field asset-summary__field--full">
           <span className="asset-summary__label">Total Credits</span>
           <span className="asset-summary__value asset-summary__value--blue">
             {formatN2(asset.totalCredits)}
-          </span>
-        </div>
-        <div className="asset-summary__field">
-          <span className="asset-summary__label">Realized Gain/Loss</span>
-          <span className={`asset-summary__value ${realizedGainLossClass}`}>
-            {formatN2(asset.realizedGainLoss)}
           </span>
         </div>
 
@@ -134,15 +125,27 @@ export default function AssetSummaryTab() {
             <div className="asset-summary__field">
               <span className="asset-summary__label">Realized Gain/Loss</span>
               <span
-                className={`asset-summary__value ${realizedGainLoss === null ? '' : realizedGainLoss >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'}`}
+                className={`asset-summary__value ${asset.realizedGainLoss >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'}`}
               >
-                {realizedGainLoss === null ? '—' : formatN2(realizedGainLoss)}
+                {formatN2(asset.realizedGainLoss)}
               </span>
             </div>
             <div className="asset-summary__field">
               <span className="asset-summary__label">Portfolio Weight</span>
               <span className="asset-summary__value">
                 {portfolioWeight === null ? '—' : formatPercent(portfolioWeight / 100)}
+              </span>
+            </div>
+            <div className="asset-summary__field">
+              <span className="asset-summary__label">XIRR</span>
+              <span className={`asset-summary__value ${xirrClass}`}>
+                {xirr === null ? '—' : formatPercent(xirr)}
+              </span>
+            </div>
+            <div className="asset-summary__field">
+              <span className="asset-summary__label">XIRR w/ Credits</span>
+              <span className={`asset-summary__value ${xirrWithCreditsClass}`}>
+                {xirrWithCredits === null ? '—' : formatPercent(xirrWithCredits)}
               </span>
             </div>
           </>

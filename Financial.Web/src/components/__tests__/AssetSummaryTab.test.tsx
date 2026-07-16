@@ -33,7 +33,6 @@ const mockHookValue: AssetSummaryData = {
   resultWithCreditsPercent: 0,
   xirr: null,
   xirrWithCredits: null,
-  realizedGainLoss: null,
   portfolioWeight: null,
 }
 
@@ -53,6 +52,7 @@ const ASSET: AssetDetailsDto = {
   class: 'Equity',
   quantity: 100,
   averagePrice: 20,
+  averageSellPrice: null,
   isActive: true,
   positionType: 'Long',
   totalBought: 2000,
@@ -149,27 +149,6 @@ describe('AssetSummaryTab', () => {
     expect(valueEl).toHaveClass('asset-summary__value--blue')
   })
 
-  it('renders_realized_gain_loss_field_regardless_of_current_section', () => {
-    setMock({ asset: ASSET, showCurrentSection: false })
-    render(<AssetSummaryTab />)
-    const label = screen.getByText('Realized Gain/Loss')
-    expect(label.nextElementSibling?.textContent).toBe('75.00')
-  })
-
-  it('renders_positive_realized_gain_loss_in_green', () => {
-    setMock({ asset: { ...ASSET, realizedGainLoss: 75 } })
-    render(<AssetSummaryTab />)
-    const label = screen.getByText('Realized Gain/Loss')
-    expect(label.nextElementSibling).toHaveClass('asset-summary__value--green')
-  })
-
-  it('renders_negative_realized_gain_loss_in_red', () => {
-    setMock({ asset: { ...ASSET, realizedGainLoss: -30 } })
-    render(<AssetSummaryTab />)
-    const label = screen.getByText('Realized Gain/Loss')
-    expect(label.nextElementSibling).toHaveClass('asset-summary__value--red')
-  })
-
   it('renders_current_section_when_quantity_and_price_nonzero', () => {
     setMock({
       asset: ASSET,
@@ -196,17 +175,45 @@ describe('AssetSummaryTab', () => {
 
   it('renders_realized_totals_section_for_historic_scope', () => {
     setMock({
-      asset: { ...ASSET, quantity: 0 },
+      asset: { ...ASSET, quantity: 0, realizedGainLoss: -50 },
       showCurrentSection: false,
-      realizedGainLoss: -50,
       portfolioWeight: 100,
+      xirr: -0.1,
+      xirrWithCredits: -0.05,
     })
     renderAssetSummaryTab('historic')
     expect(screen.getByText('Realized')).toBeInTheDocument()
-    expect(screen.getByText('Realized Gain/Loss')).toBeInTheDocument()
+    const label = screen.getByText('Realized Gain/Loss')
+    expect(label.nextElementSibling?.textContent).toBe('-50.00')
+    expect(label.nextElementSibling).toHaveClass('asset-summary__value--red')
     expect(screen.getByText('Portfolio Weight')).toBeInTheDocument()
     expect(screen.queryByText('Current')).not.toBeInTheDocument()
-    expect(screen.queryByText('XIRR')).not.toBeInTheDocument()
+    expect(screen.getByText('XIRR')).toBeInTheDocument()
+    expect(screen.getByText('XIRR w/ Credits')).toBeInTheDocument()
+  })
+
+  it('renders_dash_for_historic_xirr_while_not_yet_computed', () => {
+    setMock({
+      asset: { ...ASSET, quantity: 0, realizedGainLoss: -50 },
+      showCurrentSection: false,
+      portfolioWeight: 100,
+      xirr: null,
+      xirrWithCredits: null,
+    })
+    renderAssetSummaryTab('historic')
+    const xirrLabel = screen.getByText('XIRR')
+    expect(xirrLabel.nextElementSibling?.textContent).toBe('—')
+  })
+
+  it('renders_positive_realized_gain_loss_in_green_for_historic_scope', () => {
+    setMock({
+      asset: { ...ASSET, quantity: 0, realizedGainLoss: 75 },
+      showCurrentSection: false,
+      portfolioWeight: 100,
+    })
+    renderAssetSummaryTab('historic')
+    const label = screen.getByText('Realized Gain/Loss')
+    expect(label.nextElementSibling).toHaveClass('asset-summary__value--green')
   })
 
   it('hides_realized_totals_section_for_active_scope', () => {

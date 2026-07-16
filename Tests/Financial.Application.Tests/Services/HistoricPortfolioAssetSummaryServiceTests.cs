@@ -50,6 +50,19 @@ public class HistoricPortfolioAssetSummaryServiceTests
     }
 
     [Fact]
+    public void GetPortfolioAssetsSummary_ComputesAverageSellPrice()
+    {
+        var asset = MakeAsset("CLOSEDASSET", "CLOSEDASSET", "BVMF");
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 60m, 0m));
+        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 50m, 0m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Uncategorized");
+
+        result[0].AverageSellPrice.Should().Be(50m);
+    }
+
+    [Fact]
     public void GetPortfolioAssetsSummary_PortfolioWeightsSumTo100Percent()
     {
         var asset1 = MakeAsset("ALPHA", "ALP", "BVMF");
