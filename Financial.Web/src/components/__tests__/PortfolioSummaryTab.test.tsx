@@ -150,6 +150,7 @@ describe('PortfolioSummaryTab', () => {
     expect(screen.getByText('First Investment')).toBeInTheDocument()
     expect(screen.getByText('Quantity')).toBeInTheDocument()
     expect(screen.getAllByText('Total Invested').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText('Realized Gain/Loss')).toBeInTheDocument()
     expect(screen.getByText('% Portfolio')).toBeInTheDocument()
     expect(screen.getAllByText('Total Credits').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Current Value')).toBeInTheDocument()
@@ -170,6 +171,42 @@ describe('PortfolioSummaryTab', () => {
     expect(screen.getByText('01/03/2021')).toBeInTheDocument()
     expect(screen.getByText(/23\.4%/)).toBeInTheDocument()
     expect(screen.getByText(/75[.,]50/)).toBeInTheDocument()
+  })
+
+  it('renders_realized_gain_loss_for_historic_asset', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, realizedGainLoss: -50, totalBought: 300, totalSold: 250 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
+    const { container } = renderComponent()
+    expect(container.textContent).toContain('-50')
+  })
+
+  it('renders_dash_for_realized_gain_loss_when_null', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, realizedGainLoss: null }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent()
+    const label = screen.getByText('Realized Gain/Loss')
+    const cell = label.closest('table')?.querySelector('tbody td:nth-child(6)')
+    expect(cell?.textContent).toBe('—')
+  })
+
+  it('renders_footer_realized_gain_loss_sum_of_non_null', () => {
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, realizedGainLoss: -50 }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', realizedGainLoss: -20 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
+    const { container } = renderComponent()
+    const input = container.querySelector('[data-label="Realized Gain/Loss"] + input') as HTMLInputElement
+    expect(input.value).toBe('-70.00')
+  })
+
+  it('renders_dash_for_footer_current_value_when_no_row_has_price_data', () => {
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
+    const { container } = renderComponent()
+    const input = container.querySelector('[data-label="Current Value"] + input') as HTMLInputElement
+    expect(input.value).toBe('—')
   })
 
   it('renders_average_price_with_formatted_value', () => {

@@ -1,13 +1,13 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AssetSummaryData } from '../../hooks/useAssetSummary'
-import type { AssetDetailsDto, AssetPriceDto } from '../../api/types'
+import type { AssetDetailsDto, AssetPriceDto, InvestmentScope } from '../../api/types'
 import { SelectedNodeProvider } from '../../context/SelectedNodeContext'
 import AssetSummaryTab from '../AssetSummaryTab'
 
-function renderAssetSummaryTab() {
+function renderAssetSummaryTab(scope: InvestmentScope = 'active') {
   return render(
-    <SelectedNodeProvider>
+    <SelectedNodeProvider scope={scope}>
       <AssetSummaryTab />
     </SelectedNodeProvider>,
   )
@@ -170,6 +170,34 @@ describe('AssetSummaryTab', () => {
     renderAssetSummaryTab()
     expect(screen.queryByText('Current')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Refresh' })).not.toBeInTheDocument()
+  })
+
+  it('renders_realized_totals_section_for_historic_scope', () => {
+    setMock({
+      asset: { ...ASSET, quantity: 0 },
+      showCurrentSection: false,
+      realizedGainLoss: -50,
+      portfolioWeight: 100,
+    })
+    renderAssetSummaryTab('historic')
+    expect(screen.getByText('Realized')).toBeInTheDocument()
+    expect(screen.getByText('Realized Gain/Loss')).toBeInTheDocument()
+    expect(screen.getByText('Portfolio Weight')).toBeInTheDocument()
+    expect(screen.queryByText('Current')).not.toBeInTheDocument()
+    expect(screen.queryByText('XIRR')).not.toBeInTheDocument()
+  })
+
+  it('hides_realized_totals_section_for_active_scope', () => {
+    setMock({ asset: ASSET, showCurrentSection: true, price: PRICE })
+    renderAssetSummaryTab('active')
+    expect(screen.queryByText('Realized')).not.toBeInTheDocument()
+    expect(screen.getByText('Current')).toBeInTheDocument()
+  })
+
+  it('hides_current_section_for_historic_scope_even_when_hook_reports_it_true', () => {
+    setMock({ asset: ASSET, showCurrentSection: true, price: PRICE })
+    renderAssetSummaryTab('historic')
+    expect(screen.queryByText('Current')).not.toBeInTheDocument()
   })
 
   it('hides_current_section_when_average_price_is_zero', () => {
