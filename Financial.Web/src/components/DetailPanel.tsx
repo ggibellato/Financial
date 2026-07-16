@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { POSITION_TYPE_STATUS_CLASS } from '../utils/positionType'
 import AggregatedSummaryTab from './AggregatedSummaryTab'
 import AssetSummaryTab from './AssetSummaryTab'
 import PortfolioSummaryTab from './PortfolioSummaryTab'
@@ -76,11 +77,11 @@ export default function DetailPanel() {
               ⧉
             </button>
           )}
-          {isAsset && (
+          {isAsset && selectedNode.positionType && (
             <span
-              className={`detail-panel__status detail-panel__status--${selectedNode.isActive ? 'active' : 'inactive'}`}
+              className={`detail-panel__status detail-panel__status--${POSITION_TYPE_STATUS_CLASS[selectedNode.positionType]}`}
             >
-              {selectedNode.isActive ? '● Active' : '○ Inactive'}
+              ● {selectedNode.positionType}
             </span>
           )}
         </div>

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import PortfolioNavigatorPage from '../PortfolioNavigatorPage'
+import ActiveInvestmentsPage from '../ActiveInvestmentsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { TreeNodeDto } from '../../api/types'
 
@@ -44,6 +44,7 @@ const stubTree: TreeNodeDto = {
                 Ticker: 'KLBN4',
                 Exchange: 'BVMF',
                 IsActive: true,
+                PositionType: 'Long',
                 GlobalAssetClass: 1,
               },
               children: [],
@@ -58,12 +59,12 @@ const stubTree: TreeNodeDto = {
 function renderPage() {
   return render(
     <MemoryRouter>
-      <PortfolioNavigatorPage />
+      <ActiveInvestmentsPage />
     </MemoryRouter>,
   )
 }
 
-describe('PortfolioNavigatorPage', () => {
+describe('ActiveInvestmentsPage', () => {
   beforeEach(() => {
     getNavigationTreeMock.mockReset()
     getAssetDetailsMock.mockReturnValue(new Promise(() => {}))

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { SelectedNode, TreeNodeDto } from '../api/types'
+import type { PositionType, SelectedNode, TreeNodeDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { POSITION_TYPE_STATUS_CLASS } from '../utils/positionType'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import './InvestmentTree.css'
@@ -25,8 +26,9 @@ function getMetaString(metadata: Record<string, unknown>, key: string): string {
   return typeof v === 'string' ? v : ''
 }
 
-function getMetaBool(metadata: Record<string, unknown>, key: string): boolean {
-  return metadata[key] === true
+function getMetaPositionType(metadata: Record<string, unknown>): PositionType {
+  const v = metadata['PositionType']
+  return v === 'Long' || v === 'Short' ? v : 'Flat'
 }
 
 function getMetaNumber(metadata: Record<string, unknown>, key: string): number {
@@ -60,13 +62,13 @@ function AssetNode({ node, brokerName, portfolioName, filterClass }: AssetNodePr
   const assetName = getMetaString(node.metadata, 'AssetName')
   const ticker = getMetaString(node.metadata, 'Ticker')
   const exchange = getMetaString(node.metadata, 'Exchange')
-  const isActive = getMetaBool(node.metadata, 'IsActive')
+  const positionType = getMetaPositionType(node.metadata)
   const assetClass = getMetaNumber(node.metadata, 'GlobalAssetClass')
 
   if (filterClass !== ALL_CLASSES && String(assetClass) !== filterClass) return null
 
   const isSelected = nodeMatchesSelected(selectedNode, 'Asset', { brokerName, portfolioName, assetName })
-  const prefix = isActive ? '●' : '○'
+  const statusClass = POSITION_TYPE_STATUS_CLASS[positionType]
 
   const handleClick = () => {
     setSelectedNode({
@@ -76,7 +78,7 @@ function AssetNode({ node, brokerName, portfolioName, filterClass }: AssetNodePr
       assetName,
       ticker,
       exchange,
-      isActive,
+      positionType,
       assetClass: ASSET_CLASS_OPTIONS.find((o) => o.value === assetClass)?.label,
     })
   }
@@ -88,7 +90,7 @@ function AssetNode({ node, brokerName, portfolioName, filterClass }: AssetNodePr
         onClick={handleClick}
         type="button"
       >
-        <span className={`investment-tree__status-icon investment-tree__status-icon--${isActive ? 'active' : 'inactive'}`}>{prefix}</span> {node.displayName}
+        <span className={`investment-tree__status-icon investment-tree__status-icon--${statusClass}`}>●</span> {node.displayName}
       </button>
     </li>
   )
