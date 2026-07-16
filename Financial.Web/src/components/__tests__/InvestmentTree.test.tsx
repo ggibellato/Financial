@@ -106,6 +106,23 @@ describe('InvestmentTree', () => {
     expect(await screen.findByText('XPI (BRL)')).toBeInTheDocument()
   })
 
+  it('requests the tree with active scope by default', async () => {
+    renderTree()
+    await screen.findByText('XPI (BRL)')
+    expect(getNavigationTreeMock).toHaveBeenCalledWith('active')
+  })
+
+  it('requests the tree with the scope from context', async () => {
+    getNavigationTreeMock.mockResolvedValue(stubTree)
+    render(
+      <SelectedNodeProvider scope="historic">
+        <InvestmentTree />
+      </SelectedNodeProvider>,
+    )
+    await screen.findByText('XPI (BRL)')
+    expect(getNavigationTreeMock).toHaveBeenCalledWith('historic')
+  })
+
   it('renders portfolio nodes under broker', async () => {
     renderTree()
     await screen.findByText('XPI (BRL)')
