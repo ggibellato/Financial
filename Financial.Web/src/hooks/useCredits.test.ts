@@ -124,6 +124,14 @@ describe('useCredits', () => {
     expect(result.current.credits).toHaveLength(2)
   })
 
+  it('resolves_asset_via_getAssetDetails_with_historic_scope', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    renderHook(() => useCredits(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'historic'))
+  })
+
   it('fetches_broker_credits_on_broker_selection', async () => {
     getCreditsByBrokerMock.mockResolvedValue([CREDIT_A])
     const { wrapper, setNode } = createSelectedNodeWrapper()

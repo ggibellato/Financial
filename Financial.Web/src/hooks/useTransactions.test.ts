@@ -134,6 +134,16 @@ describe('useTransactions', () => {
     })
   })
 
+  it('resolves_asset_via_getAssetDetails_with_historic_scope', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    renderHook(() => useTransactions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => {
+      expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'historic')
+    })
+  })
+
   it('resets_state_when_non_asset_node_selected', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     const { wrapper, setNode } = createSelectedNodeWrapper()
