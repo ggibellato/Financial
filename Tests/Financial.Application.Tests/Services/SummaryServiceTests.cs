@@ -58,36 +58,33 @@ public class SummaryServiceTests
     }
 
     [Fact]
-    public void GetBrokerSummary_ExcludesInactiveAssets()
+    public void GetBrokerSummary_IncludesEveryAssetInScope_ScopePurityComesFromRepository()
     {
-        var activeAsset = MakeAsset();
-        activeAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 5m, 0m));
-        activeAsset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Dividend, 20m));
+        var asset1 = MakeAsset();
+        asset1.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        asset1.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Dividend, 20m));
 
-        var inactiveAsset = MakeZeroQuantityAsset();
-        inactiveAsset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Dividend, 100m));
+        var zeroNetAsset = MakeZeroQuantityAsset();
+        zeroNetAsset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Dividend, 100m));
 
-        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", activeAsset, inactiveAsset)];
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset1, zeroNetAsset)];
 
         var result = CreateService().GetBrokerSummary("XPI");
 
         using var _ = new AssertionScope();
-        result.TotalBought.Should().Be(50m);
-        result.TotalCredits.Should().Be(20m);
+        result.TotalBought.Should().Be(100m);
+        result.TotalSold.Should().Be(50m);
+        result.TotalCredits.Should().Be(120m);
     }
 
     [Fact]
-    public void GetBrokerSummary_ReturnsZerosForBrokerWithNoActiveAssets()
+    public void GetBrokerSummary_ForwardsScopeToRepository()
     {
-        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", MakeZeroQuantityAsset())];
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", MakeAsset())];
 
-        var result = CreateService().GetBrokerSummary("XPI");
+        CreateService().GetBrokerSummary("XPI", InvestmentScope.Historic);
 
-        using var _ = new AssertionScope();
-        result.TotalBought.Should().Be(0m);
-        result.TotalSold.Should().Be(0m);
-        result.TotalCredits.Should().Be(0m);
-        result.TotalInvested.Should().Be(0m);
+        _repository.LastRequestedBrokerListScope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]
@@ -105,41 +102,22 @@ public class SummaryServiceTests
     }
 
     [Fact]
-    public void GetBrokerSummary_ExcludesEncerradasPortfolio()
+    public void GetBrokerSummary_IncludesEveryPortfolioRegardlessOfName()
     {
         var defaultAsset = MakeAsset("DEFAULT", "DEF");
         defaultAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
 
-        var encerradasAsset = MakeAsset("CLOSED", "CLO");
-        encerradasAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 100m, 5m, 0m));
+        var otherAsset = MakeAsset("CLOSED", "CLO");
+        otherAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 100m, 5m, 0m));
 
         var broker = Broker.Create("XPI", "BRL");
         broker.AddPortfolio("Default").AddAsset(defaultAsset);
-        broker.AddPortfolio("Encerradas").AddAsset(encerradasAsset);
+        broker.AddPortfolio("Encerradas").AddAsset(otherAsset);
         _repository.Brokers = [broker];
 
         var result = CreateService().GetBrokerSummary("XPI");
 
-        result.TotalBought.Should().Be(100m);
-    }
-
-    [Theory]
-    [InlineData("Encerradas")]
-    [InlineData("encerradas")]
-    [InlineData("ENCERRADAS")]
-    [InlineData(" Encerradas ")]
-    public void GetBrokerSummary_ExcludesEncerradasPortfolio_CaseInsensitive(string portfolioName)
-    {
-        var encerradasAsset = MakeAsset("CLOSED", "CLO");
-        encerradasAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 100m, 5m, 0m));
-
-        var broker = Broker.Create("XPI", "BRL");
-        broker.AddPortfolio(portfolioName).AddAsset(encerradasAsset);
-        _repository.Brokers = [broker];
-
-        var result = CreateService().GetBrokerSummary("XPI");
-
-        result.TotalBought.Should().Be(0m);
+        result.TotalBought.Should().Be(600m);
     }
 
     [Fact]
@@ -222,34 +200,31 @@ public class SummaryServiceTests
     }
 
     [Fact]
-    public void GetPortfolioSummary_ExcludesInactiveAssets()
+    public void GetPortfolioSummary_IncludesEveryAssetInScope_ScopePurityComesFromRepository()
     {
-        var activeAsset = MakeAsset();
-        activeAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 10m, 0m));
+        var asset1 = MakeAsset();
+        asset1.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 10m, 0m));
 
-        var inactiveAsset = MakeZeroQuantityAsset();
-        inactiveAsset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Dividend, 999m));
+        var zeroNetAsset = MakeZeroQuantityAsset();
+        zeroNetAsset.AddCredit(Credit.Create(DateTime.Today, Credit.CreditType.Dividend, 999m));
 
-        _repository.AssetsByBrokerPortfolio = [activeAsset, inactiveAsset];
+        _repository.AssetsByBrokerPortfolio = [asset1, zeroNetAsset];
 
         var result = CreateService().GetPortfolioSummary("XPI", "Default");
 
         using var _ = new AssertionScope();
-        result.TotalBought.Should().Be(50m);
-        result.TotalCredits.Should().Be(0m);
+        result.TotalBought.Should().Be(100m);
+        result.TotalCredits.Should().Be(999m);
     }
 
     [Fact]
-    public void GetPortfolioSummary_ReturnsZerosForPortfolioWithNoActiveAssets()
+    public void GetPortfolioSummary_ForwardsScopeToRepository()
     {
-        _repository.AssetsByBrokerPortfolio = [MakeZeroQuantityAsset()];
+        _repository.AssetsByBrokerPortfolio = [MakeAsset()];
 
-        var result = CreateService().GetPortfolioSummary("XPI", "Default");
+        CreateService().GetPortfolioSummary("XPI", "Default", InvestmentScope.Historic);
 
-        using var _ = new AssertionScope();
-        result.TotalBought.Should().Be(0m);
-        result.TotalSold.Should().Be(0m);
-        result.TotalCredits.Should().Be(0m);
+        _repository.LastRequestedAssetsByBrokerPortfolioScope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]
@@ -312,10 +287,20 @@ public class SummaryServiceTests
         public IEnumerable<Asset> AssetsByBroker { get; set; } = [];
         public IEnumerable<Asset> AssetsByBrokerPortfolio { get; set; } = [];
         public IEnumerable<Broker> Brokers { get; set; } = [];
+        public InvestmentScope? LastRequestedBrokerListScope { get; private set; }
+        public InvestmentScope? LastRequestedAssetsByBrokerPortfolioScope { get; private set; }
 
         public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) => AssetsByBroker;
-        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) => AssetsByBrokerPortfolio;
-        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) => Brokers;
+        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active)
+        {
+            LastRequestedAssetsByBrokerPortfolioScope = scope;
+            return AssetsByBrokerPortfolio;
+        }
+        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active)
+        {
+            LastRequestedBrokerListScope = scope;
+            return Brokers;
+        }
         public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => null;
         public Task SaveChangesAsync() => Task.CompletedTask;
     }

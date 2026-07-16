@@ -13,12 +13,12 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }
 
-    public IReadOnlyList<PortfolioAssetSummaryItemDTO> GetPortfolioAssetsSummary(string brokerName, string portfolioName)
+    public IReadOnlyList<PortfolioAssetSummaryItemDTO> GetPortfolioAssetsSummary(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
     {
         if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
             return [];
 
-        var assets = _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName).ToList();
+        var assets = _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope).ToList();
 
         if (assets.Count == 0)
             return [];

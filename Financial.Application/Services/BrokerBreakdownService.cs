@@ -13,17 +13,16 @@ public sealed class BrokerBreakdownService : IBrokerBreakdownService
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }
 
-    public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName)
+    public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName, InvestmentScope scope = InvestmentScope.Active)
     {
         if (string.IsNullOrWhiteSpace(brokerName))
             return [];
 
-        var broker = _repository.GetBrokerList().FirstOrDefault(b => b.Name == brokerName);
+        var broker = _repository.GetBrokerList(scope).FirstOrDefault(b => b.Name == brokerName);
         if (broker is null)
             return [];
 
         return broker.Portfolios
-            .Where(p => !NavigationMapper.IsEncerradas(p.Name))
             .Select(BuildPortfolioBreakdown)
             .Where(p => p.Assets.Count > 0)
             .OrderBy(p => p.PortfolioName, StringComparer.CurrentCultureIgnoreCase)
@@ -33,7 +32,6 @@ public sealed class BrokerBreakdownService : IBrokerBreakdownService
     private static PortfolioBreakdownItemDTO BuildPortfolioBreakdown(Portfolio portfolio)
     {
         var assets = portfolio.Assets
-            .Where(a => a.Active)
             .Select(BuildAssetBreakdown)
             .Where(a => a.TotalInvested > 0)
             .OrderBy(a => a.AssetName, StringComparer.CurrentCultureIgnoreCase)

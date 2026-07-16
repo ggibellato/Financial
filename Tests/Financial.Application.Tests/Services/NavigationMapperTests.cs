@@ -97,6 +97,37 @@ public class NavigationMapperTests
         details!.PositionType.Should().Be(expectedPositionType);
     }
 
+    [Theory]
+    [InlineData(10)]
+    [InlineData(0)]
+    [InlineData(-10)]
+    public void GetNavigationTree_HistoricScope_AssetNode_PositionTypeIsFlat(decimal quantity)
+    {
+        _repository.Broker = BuildBrokerWithAsset("ASSET1", GlobalAssetClass.Equity, quantity);
+
+        var tree = CreateService().GetNavigationTree(InvestmentScope.Historic);
+
+        var assetNode = GetFirstAssetNode(tree);
+        assetNode.Metadata["PositionType"].Should().Be(PositionType.Flat);
+    }
+
+    [Theory]
+    [InlineData(10)]
+    [InlineData(0)]
+    [InlineData(-10)]
+    public void GetAssetDetails_HistoricScope_PositionTypeIsFlat(decimal quantity)
+    {
+        var broker = Broker.Create("Broker", "BRL");
+        var portfolio = broker.AddPortfolio("Portfolio");
+        portfolio.AddAsset(BuildAssetWithQuantity("ASSET1", quantity));
+        _repository.Broker = broker;
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1", InvestmentScope.Historic);
+
+        details.Should().NotBeNull();
+        details!.PositionType.Should().Be(PositionType.Flat);
+    }
+
     private static Asset BuildAssetWithQuantity(string name, decimal quantity)
     {
         var asset = Asset.Create(name, "ISIN", "BVMF", name, CountryCode.BR, "FII", GlobalAssetClass.Equity);

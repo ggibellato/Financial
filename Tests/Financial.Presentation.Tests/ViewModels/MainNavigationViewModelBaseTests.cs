@@ -379,7 +379,7 @@ public class MainNavigationViewModelBaseTests
         public string? LastBrokerName { get; private set; }
         public string? LastPortfolioName { get; private set; }
 
-        public IReadOnlyList<PortfolioAssetSummaryItemDTO> GetPortfolioAssetsSummary(string brokerName, string portfolioName)
+        public IReadOnlyList<PortfolioAssetSummaryItemDTO> GetPortfolioAssetsSummary(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
         {
             LastBrokerName = brokerName;
             LastPortfolioName = portfolioName;
@@ -395,13 +395,13 @@ public class MainNavigationViewModelBaseTests
         public string? LastBrokerNameForPortfolio { get; private set; }
         public string? LastPortfolioName { get; private set; }
 
-        public AggregatedSummaryDTO GetBrokerSummary(string brokerName)
+        public AggregatedSummaryDTO GetBrokerSummary(string brokerName, InvestmentScope scope = InvestmentScope.Active)
         {
             LastBrokerNameForBroker = brokerName;
             return BrokerSummary;
         }
 
-        public AggregatedSummaryDTO GetPortfolioSummary(string brokerName, string portfolioName)
+        public AggregatedSummaryDTO GetPortfolioSummary(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
         {
             LastBrokerNameForPortfolio = brokerName;
             LastPortfolioName = portfolioName;
@@ -411,9 +411,9 @@ public class MainNavigationViewModelBaseTests
 
     private sealed class StubNavigationService : INavigationService
     {
-        public TreeNodeDTO GetNavigationTree() => new() { NodeType = TreeNodeType.Broker, DisplayName = "Root", Metadata = [], Children = [] };
-        public AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName) => null;
-        public IEnumerable<BrokerNodeDTO> GetBrokers() => [];
+        public TreeNodeDTO GetNavigationTree(InvestmentScope scope = InvestmentScope.Active) => new() { NodeType = TreeNodeType.Broker, DisplayName = "Root", Metadata = [], Children = [] };
+        public AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => null;
+        public IEnumerable<BrokerNodeDTO> GetBrokers(InvestmentScope scope = InvestmentScope.Active) => [];
         public IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName) => [];
     }
 

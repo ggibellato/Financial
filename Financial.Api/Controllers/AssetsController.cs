@@ -1,5 +1,6 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
+using Financial.Application.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Controllers;
@@ -21,9 +22,10 @@ public sealed class AssetsController : ControllerBase
     public ActionResult<AssetDetailsDTO> GetAssetDetails(
         string brokerName,
         string portfolioName,
-        string assetName)
+        string assetName,
+        [FromQuery] string? scope)
     {
-        var asset = _navigationService.GetAssetDetails(brokerName, portfolioName, assetName);
+        var asset = _navigationService.GetAssetDetails(brokerName, portfolioName, assetName, InvestmentScopeParser.ParseOrDefault(scope));
         if (asset is null)
         {
             return NotFound();

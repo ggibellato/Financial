@@ -33,7 +33,7 @@ internal sealed class StubBrokerBreakdownService : IBrokerBreakdownService
     public Exception? ExceptionToThrow { get; set; }
     public string? LastBrokerName { get; private set; }
 
-    public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName)
+    public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName, InvestmentScope scope = InvestmentScope.Active)
     {
         LastBrokerName = brokerName;
         if (ExceptionToThrow != null) throw ExceptionToThrow;
