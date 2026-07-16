@@ -115,6 +115,27 @@ describe('usePortfolioAssetSummary', () => {
     })
   })
 
+  it('forwards_historic_scope_from_context', async () => {
+    getPortfolioAssetsSummaryMock.mockResolvedValue([{ ...ITEM_1, realizedGainLoss: -50 }])
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    renderHook(() => usePortfolioAssetSummary(), { wrapper })
+    setNode(PORTFOLIO_NODE)
+    await waitFor(() => {
+      expect(getPortfolioAssetsSummaryMock).toHaveBeenCalledWith('XPI', 'Acoes', 'historic')
+    })
+  })
+
+  it('skips_current_price_fetch_for_historic_scope', async () => {
+    getPortfolioAssetsSummaryMock.mockResolvedValue([{ ...ITEM_1, realizedGainLoss: -50 }])
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
+    setNode(PORTFOLIO_NODE)
+    await waitFor(() => expect(result.current.items).not.toBeNull())
+    expect(getCurrentPriceMock).not.toHaveBeenCalled()
+    expect(result.current.rowPrices[0].isLoading).toBe(false)
+    expect(result.current.rowPrices[0].currentPrice).toBeNull()
+  })
+
   it('does_not_fetch_when_broker_node_selected', async () => {
     const { wrapper, setNode } = createSelectedNodeWrapper()
     renderHook(() => usePortfolioAssetSummary(), { wrapper })

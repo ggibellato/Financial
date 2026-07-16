@@ -60,6 +60,16 @@ describe('useBrokerBreakdown', () => {
     })
   })
 
+  it('forwards_historic_scope_from_context', async () => {
+    getBrokerBreakdownMock.mockResolvedValue(BREAKDOWN_DTO)
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    renderHook(() => useBrokerBreakdown(), { wrapper })
+    setNode(BROKER_NODE)
+    await waitFor(() => {
+      expect(getBrokerBreakdownMock).toHaveBeenCalledWith('XPI', 'historic')
+    })
+  })
+
   it('does_not_fetch_on_portfolio_node_selection', async () => {
     const { wrapper, setNode } = createSelectedNodeWrapper()
     renderHook(() => useBrokerBreakdown(), { wrapper })

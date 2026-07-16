@@ -1,19 +1,21 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../api/financialApiClient'
-import type { AssetDetailsDto, AssetPriceDto, SelectedNode, XirrResultDto } from '../api/types'
+import type { AssetDetailsDto, AssetPriceDto, PortfolioAssetSummaryItemDto, SelectedNode, XirrResultDto } from '../api/types'
 import { createSelectedNodeWrapper } from '../test-utils/selectedNodeTestWrapper'
 import { useAssetSummary } from './useAssetSummary'
 
 const getAssetDetailsMock = vi.fn<FinancialApiClient['getAssetDetails']>()
 const getCurrentPriceMock = vi.fn<FinancialApiClient['getCurrentPrice']>()
 const calculateXirrMock = vi.fn<FinancialApiClient['calculateXirr']>()
+const getPortfolioAssetsSummaryMock = vi.fn<FinancialApiClient['getPortfolioAssetsSummary']>()
 
 vi.mock('../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getAssetDetails: getAssetDetailsMock,
     getCurrentPrice: getCurrentPriceMock,
     calculateXirr: calculateXirrMock,
+    getPortfolioAssetsSummary: getPortfolioAssetsSummaryMock,
   }),
 }))
 
@@ -70,6 +72,7 @@ describe('useAssetSummary', () => {
     getCurrentPriceMock.mockReset()
     calculateXirrMock.mockReset()
     calculateXirrMock.mockResolvedValue({ xirr: null })
+    getPortfolioAssetsSummaryMock.mockReset()
   })
 
   it('fetches_asset_details_on_asset_selection', async () => {
@@ -81,6 +84,66 @@ describe('useAssetSummary', () => {
     await waitFor(() => {
       expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'active')
     })
+  })
+
+  it('fetches_asset_details_with_historic_scope_when_context_scope_is_historic', async () => {
+    const historicAsset = { ...ASSET_DETAILS, quantity: 0, totalSold: 250 }
+    getAssetDetailsMock.mockResolvedValue(historicAsset)
+    getPortfolioAssetsSummaryMock.mockResolvedValue([])
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    renderHook(() => useAssetSummary(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => {
+      expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'historic')
+    })
+  })
+
+  it('fetches_realized_totals_from_portfolio_summary_for_historic_asset', async () => {
+    const historicAsset = { ...ASSET_DETAILS, quantity: 0, totalSold: 250 }
+    getAssetDetailsMock.mockResolvedValue(historicAsset)
+    const summaryItem: PortfolioAssetSummaryItemDto = {
+      assetName: 'KLBN4',
+      ticker: 'KLBN4',
+      exchange: 'BVMF',
+      class: 'Equity',
+      firstInvestmentDate: '2024-01-01T00:00:00',
+      currentQuantity: 0,
+      averagePrice: 20,
+      totalBought: 2000,
+      totalSold: 250,
+      totalInvested: 1750,
+      realizedGainLoss: -1750,
+      portfolioWeight: 100,
+      totalCredits: 50,
+      cashFlows: [],
+      lastMonthCredits: 0,
+      lastCreditMonth: null,
+      lastMonthCreditsPercent: null,
+      creditFrequencyPerYear: null,
+      estimatedAnnualCredits: null,
+      estimatedAnnualPercent: null,
+      currentMonthCredits: 0,
+    }
+    getPortfolioAssetsSummaryMock.mockResolvedValue([summaryItem, { ...summaryItem, assetName: 'OTHER' }])
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    const { result } = renderHook(() => useAssetSummary(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.realizedGainLoss).not.toBeNull())
+    expect(getPortfolioAssetsSummaryMock).toHaveBeenCalledWith('XPI', 'Acoes', 'historic')
+    expect(result.current.realizedGainLoss).toBe(-1750)
+    expect(result.current.portfolioWeight).toBe(100)
+  })
+
+  it('skips_current_price_and_xirr_fetch_for_historic_scope', async () => {
+    const historicAsset = { ...ASSET_DETAILS, quantity: 0, totalSold: 250 }
+    getAssetDetailsMock.mockResolvedValue(historicAsset)
+    getPortfolioAssetsSummaryMock.mockResolvedValue([])
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    const { result } = renderHook(() => useAssetSummary(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.asset).not.toBeNull())
+    expect(getCurrentPriceMock).not.toHaveBeenCalled()
+    expect(calculateXirrMock).not.toHaveBeenCalled()
   })
 
   it('fetches_current_price_simultaneously_with_asset_details', async () => {
