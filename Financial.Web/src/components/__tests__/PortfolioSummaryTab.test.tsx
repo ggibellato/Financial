@@ -63,6 +63,7 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   totalBought: 2500,
   totalSold: 0,
   totalInvested: 2500,
+  realizedGainLoss: null,
   portfolioWeight: 23.4,
   totalCredits: 0,
   cashFlows: [],
