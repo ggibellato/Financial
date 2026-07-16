@@ -46,5 +46,40 @@
       ]
     }
   ],
-  "HistoricBrokers": []
+  "HistoricBrokers": [
+    {
+      "Name": "XPI",
+      "Currency": "BRL",
+      "Portfolios": [
+        {
+          "Name": "Uncategorized",
+          "Assets": [
+            {
+              "Name": "CLOSEDASSET",
+              "ISIN": "TESTISIN2",
+              "Exchange": "BVMF",
+              "Ticker": "CLOSEDASSET",
+              "Transactions": [
+                {
+                  "Date": "2023-01-01T00:00:00",
+                  "Type": "Buy",
+                  "Quantity": 5,
+                  "UnitPrice": 60,
+                  "Fees": 0
+                },
+                {
+                  "Date": "2023-06-01T00:00:00",
+                  "Type": "Sell",
+                  "Quantity": 5,
+                  "UnitPrice": 50,
+                  "Fees": 0
+                }
+              ],
+              "Credits": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

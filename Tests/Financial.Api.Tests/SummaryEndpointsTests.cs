@@ -115,4 +115,67 @@ public class SummaryEndpointsTests
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    [Fact]
+    public async Task GetBrokerSummary_ScopeHistoric_ReturnsRealizedFromHistoricBrokerOnly()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/summary/broker/XPI?scope=historic");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var dto = await response.Content.ReadFromJsonAsync<AggregatedSummaryDTO>();
+        dto.Should().NotBeNull();
+        dto!.TotalBought.Should().Be(300m);
+        dto.TotalSold.Should().Be(250m);
+    }
+
+    [Fact]
+    public async Task GetPortfolioSummary_ScopeHistoric_ReturnsHistoricOnly()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Uncategorized?scope=historic");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var dto = await response.Content.ReadFromJsonAsync<AggregatedSummaryDTO>();
+        dto.Should().NotBeNull();
+        dto!.TotalBought.Should().Be(300m);
+        dto.TotalSold.Should().Be(250m);
+    }
+
+    [Fact]
+    public async Task GetPortfolioAssetsSummary_ScopeHistoric_ReturnsHistoricOnly()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Uncategorized/assets?scope=historic");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var items = await response.Content.ReadFromJsonAsync<List<PortfolioAssetSummaryItemDTO>>();
+        items.Should().NotBeNull();
+        items!.Should().ContainSingle(i => i.AssetName == "CLOSEDASSET");
+    }
+
+    [Fact]
+    public async Task GetBrokerBreakdown_ScopeHistoric_ReturnsHistoricOnly()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/summary/broker/XPI/breakdown?scope=historic");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var items = await response.Content.ReadFromJsonAsync<List<PortfolioBreakdownItemDTO>>();
+        items.Should().NotBeNull();
+        items!.Should().ContainSingle(p => p.PortfolioName == "Uncategorized");
+        items!.SelectMany(p => p.Assets).Should().Contain(a => a.AssetName == "CLOSEDASSET");
+    }
 }
