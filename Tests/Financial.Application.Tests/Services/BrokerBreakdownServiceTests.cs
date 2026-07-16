@@ -1,247 +1,90 @@
+using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Application.Services;
-using Financial.Domain.Entities;
 using FluentAssertions;
 
 namespace Financial.Application.Tests.Services;
 
 public class BrokerBreakdownServiceTests
 {
-    private readonly StubRepository _repository = new();
+    private readonly StubActiveBrokerBreakdownService _activeService = new();
+    private readonly StubHistoricBrokerBreakdownService _historicService = new();
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
+    public void Constructor_WithNullActiveService_Throws()
     {
-        Action act = () => new BrokerBreakdownService(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
+        Action act = () => new BrokerBreakdownService(null!, _historicService);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("activeBrokerBreakdownService");
     }
 
     [Fact]
-    public void GetBrokerBreakdown_ReturnsPortfolioWithTotalInvested()
+    public void Constructor_WithNullHistoricService_Throws()
     {
-        var asset = MakeAsset();
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 50m, 10m, 0m));
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 10m, 10m, 0m));
-        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
-
-        var result = CreateService().GetBrokerBreakdown("XPI");
-
-        result.Should().ContainSingle(p => p.PortfolioName == "Default" && p.TotalInvested == 400m);
+        Action act = () => new BrokerBreakdownService(_activeService, null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("historicBrokerBreakdownService");
     }
 
     [Fact]
-    public void GetBrokerBreakdown_ReturnsAssetsWithinPortfolio()
+    public void GetBrokerBreakdown_DefaultScope_DelegatesToActiveService()
     {
-        var asset1 = MakeAsset("AAAA", "AAAA");
-        asset1.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
-        var asset2 = MakeAsset("BBBB", "BBBB");
-        asset2.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 20m, 10m, 0m));
-        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset1, asset2)];
+        CreateService().GetBrokerBreakdown("XPI");
 
-        var result = CreateService().GetBrokerBreakdown("XPI");
-
-        var portfolio = result.Single();
-        portfolio.Assets.Should().HaveCount(2);
-        portfolio.Assets.Should().Contain(a => a.AssetName == "AAAA" && a.TotalInvested == 100m);
-        portfolio.Assets.Should().Contain(a => a.AssetName == "BBBB" && a.TotalInvested == 200m);
+        _activeService.LastRequestedBrokerName.Should().Be("XPI");
+        _historicService.LastRequestedBrokerName.Should().BeNull();
     }
 
     [Fact]
-    public void GetBrokerBreakdown_PortfolioTotalInvested_EqualsSumOfIncludedAssets()
+    public void GetBrokerBreakdown_ScopeActive_DelegatesToActiveService()
     {
-        var includedAsset1 = MakeAsset("AAAA", "AAAA");
-        includedAsset1.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
-        var includedAsset2 = MakeAsset("BBBB", "BBBB");
-        includedAsset2.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 20m, 10m, 0m));
-        var excludedAsset = MakeAsset("CCCC", "CCCC");
-        excludedAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 10m, 0m));
-        excludedAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 100m, 0m));
-        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", includedAsset1, includedAsset2, excludedAsset)];
+        CreateService().GetBrokerBreakdown("XPI", InvestmentScope.Active);
 
-        var result = CreateService().GetBrokerBreakdown("XPI");
-
-        result.Single().TotalInvested.Should().Be(300m);
+        _activeService.LastRequestedBrokerName.Should().Be("XPI");
+        _historicService.LastRequestedBrokerName.Should().BeNull();
     }
 
     [Fact]
-    public void GetBrokerBreakdown_ExcludesAssetsWithNonPositiveTotalInvested()
+    public void GetBrokerBreakdown_ScopeHistoric_DelegatesToHistoricService()
     {
-        var positiveAsset = MakeAsset("POS", "POS");
-        positiveAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
-        var negativeAsset = MakeAsset("NEG", "NEG");
-        negativeAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 10m, 0m));
-        negativeAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 100m, 0m));
-        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", positiveAsset, negativeAsset)];
-
-        var result = CreateService().GetBrokerBreakdown("XPI");
-
-        result.Single().Assets.Should().ContainSingle(a => a.AssetName == "POS");
-    }
-
-    [Fact]
-    public void GetBrokerBreakdown_ExcludesInactiveAssets()
-    {
-        var activeAsset = MakeAsset("ACTIVE", "ACTIVE");
-        activeAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
-        var inactiveAsset = MakeZeroQuantityAsset();
-        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", activeAsset, inactiveAsset)];
-
-        var result = CreateService().GetBrokerBreakdown("XPI");
-
-        result.Single().Assets.Should().ContainSingle(a => a.AssetName == "ACTIVE");
-    }
-
-    [Fact]
-    public void GetBrokerBreakdown_DoesNotFilterByPortfolioName_ScopePurityComesFromRepository()
-    {
-        var defaultAsset = MakeAsset("DEFAULT", "DEF");
-        defaultAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
-        var otherAsset = MakeAsset("OTHER", "OTH");
-        otherAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 100m, 5m, 0m));
-
-        var broker = Broker.Create("XPI", "BRL");
-        broker.AddPortfolio("Default").AddAsset(defaultAsset);
-        broker.AddPortfolio("Encerradas").AddAsset(otherAsset);
-        _repository.Brokers = [broker];
-
-        var result = CreateService().GetBrokerBreakdown("XPI");
-
-        result.Should().HaveCount(2);
-        result.Select(p => p.PortfolioName).Should().Contain(["Default", "Encerradas"]);
-    }
-
-    [Fact]
-    public void GetBrokerBreakdown_ForwardsScopeToRepository()
-    {
-        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", MakeAsset())];
-
         CreateService().GetBrokerBreakdown("XPI", InvestmentScope.Historic);
 
-        _repository.LastRequestedScope.Should().Be(InvestmentScope.Historic);
+        _historicService.LastRequestedBrokerName.Should().Be("XPI");
+        _activeService.LastRequestedBrokerName.Should().BeNull();
     }
 
     [Fact]
-    public void GetBrokerBreakdown_OmitsPortfolioWithNoQualifyingAssets()
+    public void GetBrokerBreakdown_ScopeHistoric_ReturnsHistoricServiceResult()
     {
-        var qualifyingAsset = MakeAsset("QUAL", "QUAL");
-        qualifyingAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
-        var inactiveAsset = MakeZeroQuantityAsset();
+        var expected = new List<PortfolioBreakdownItemDTO> { new() { PortfolioName = "Uncategorized" } };
+        _historicService.Result = expected;
 
-        var broker = Broker.Create("XPI", "BRL");
-        broker.AddPortfolio("Default").AddAsset(qualifyingAsset);
-        broker.AddPortfolio("EmptyPortfolio").AddAsset(inactiveAsset);
-        _repository.Brokers = [broker];
+        var result = CreateService().GetBrokerBreakdown("XPI", InvestmentScope.Historic);
 
-        var result = CreateService().GetBrokerBreakdown("XPI");
-
-        result.Should().ContainSingle();
-        result.Single().PortfolioName.Should().Be("Default");
+        result.Should().BeSameAs(expected);
     }
 
-    [Fact]
-    public void GetBrokerBreakdown_SortsPortfoliosAlphabetically()
+    private BrokerBreakdownService CreateService() => new(_activeService, _historicService);
+
+    private sealed class StubActiveBrokerBreakdownService : IActiveBrokerBreakdownService
     {
-        var zetaAsset = MakeAsset("ZETA-A", "ZETA-A");
-        zetaAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
-        var alphaAsset = MakeAsset("ALPHA-A", "ALPHA-A");
-        alphaAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        public string? LastRequestedBrokerName { get; private set; }
+        public IReadOnlyList<PortfolioBreakdownItemDTO> Result { get; set; } = [];
 
-        var broker = Broker.Create("XPI", "BRL");
-        broker.AddPortfolio("Zeta").AddAsset(zetaAsset);
-        broker.AddPortfolio("Alpha").AddAsset(alphaAsset);
-        _repository.Brokers = [broker];
-
-        var result = CreateService().GetBrokerBreakdown("XPI");
-
-        result.Select(p => p.PortfolioName).Should().Equal("Alpha", "Zeta");
-    }
-
-    [Fact]
-    public void GetBrokerBreakdown_SortsAssetsAlphabeticallyWithinPortfolio()
-    {
-        var zzzz = MakeAsset("ZZZZ3", "ZZZZ3");
-        zzzz.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
-        var aaaa = MakeAsset("AAAA3", "AAAA3");
-        aaaa.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
-        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", zzzz, aaaa)];
-
-        var result = CreateService().GetBrokerBreakdown("XPI");
-
-        result.Single().Assets.Select(a => a.AssetName).Should().Equal("AAAA3", "ZZZZ3");
-    }
-
-    [Fact]
-    public void GetBrokerBreakdown_ReturnsEmptyForUnknownBroker()
-    {
-        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", MakeAsset())];
-
-        var result = CreateService().GetBrokerBreakdown("UNKNOWN");
-
-        result.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void GetBrokerBreakdown_ReturnsEmptyWhenNoEligiblePortfolios()
-    {
-        var broker = Broker.Create("XPI", "BRL");
-        broker.AddPortfolio("EmptyPortfolio").AddAsset(MakeZeroQuantityAsset());
-        _repository.Brokers = [broker];
-
-        var result = CreateService().GetBrokerBreakdown("XPI");
-
-        result.Should().BeEmpty();
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void GetBrokerBreakdown_ReturnsEmptyOnNullOrWhitespaceBrokerName(string? brokerName)
-    {
-        var result = CreateService().GetBrokerBreakdown(brokerName!);
-
-        result.Should().BeEmpty();
-    }
-
-    private BrokerBreakdownService CreateService() => new(_repository);
-
-    private static Asset MakeAsset(string name = "TEST", string ticker = "TEST") =>
-        Asset.Create(name, "ISIN", "BVMF", ticker);
-
-    private static Asset MakeZeroQuantityAsset()
-    {
-        var asset = Asset.Create("INACTIVE", "ISIN2", "BVMF", "INACT");
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 10m, 0m));
-        asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 5m, 10m, 0m));
-        return asset;
-    }
-
-    private static Broker MakeBrokerWithAssets(string brokerName, string portfolioName, params Asset[] assets)
-    {
-        var broker = Broker.Create(brokerName, "BRL");
-        var portfolio = broker.AddPortfolio(portfolioName);
-        foreach (var asset in assets)
+        public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName)
         {
-            portfolio.AddAsset(asset);
+            LastRequestedBrokerName = brokerName;
+            return Result;
         }
-        return broker;
     }
 
-    private sealed class StubRepository : IRepository
+    private sealed class StubHistoricBrokerBreakdownService : IHistoricBrokerBreakdownService
     {
-        public IEnumerable<Asset> AssetsByBroker { get; set; } = [];
-        public IEnumerable<Asset> AssetsByBrokerPortfolio { get; set; } = [];
-        public IEnumerable<Broker> Brokers { get; set; } = [];
-        public InvestmentScope? LastRequestedScope { get; private set; }
+        public string? LastRequestedBrokerName { get; private set; }
+        public IReadOnlyList<PortfolioBreakdownItemDTO> Result { get; set; } = [];
 
-        public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) => AssetsByBroker;
-        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) => AssetsByBrokerPortfolio;
-        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active)
+        public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName)
         {
-            LastRequestedScope = scope;
-            return Brokers;
+            LastRequestedBrokerName = brokerName;
+            return Result;
         }
-        public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => null;
-        public Task SaveChangesAsync() => Task.CompletedTask;
     }
 }
