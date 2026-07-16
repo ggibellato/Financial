@@ -32,7 +32,7 @@ const ASSET_NODE: SelectedNode = {
   assetName: 'KLBN4',
   ticker: 'KLBN4',
   exchange: 'BVMF',
-  isActive: true,
+  positionType: 'Long',
 }
 
 const PORTFOLIO_NODE: SelectedNode = {

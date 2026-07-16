@@ -120,12 +120,14 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     return trimmed && trimmed.length > 0 ? `?exchange=${encodeURIComponent(trimmed)}` : ''
   }
 
+  const ACTIVE_SCOPE_QUERY = '?scope=active'
+
   return {
-    getNavigationTree: () => request<TreeNodeDto>('/navigation/tree'),
+    getNavigationTree: () => request<TreeNodeDto>(`/navigation/tree${ACTIVE_SCOPE_QUERY}`),
     getBrokers: () => request<BrokerNodeDto[]>('/navigation/brokers'),
     getAssetDetails: (brokerName, portfolioName, assetName) =>
       request<AssetDetailsDto>(
-        `/assets/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}/${encodeURIComponent(assetName)}`,
+        `/assets/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}/${encodeURIComponent(assetName)}${ACTIVE_SCOPE_QUERY}`,
       ),
     getCreditsByBroker: (brokerName) =>
       request<CreditDto[]>(`/credits/broker/${encodeURIComponent(brokerName)}`),
@@ -134,13 +136,13 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         `/credits/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}`,
       ),
     getSummaryByBroker: (brokerName) =>
-      request<AggregatedSummaryDto>(`/summary/broker/${encodeURIComponent(brokerName)}`),
+      request<AggregatedSummaryDto>(`/summary/broker/${encodeURIComponent(brokerName)}${ACTIVE_SCOPE_QUERY}`),
     getSummaryByPortfolio: (brokerName, portfolioName) =>
       request<AggregatedSummaryDto>(
-        `/summary/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}`,
+        `/summary/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}${ACTIVE_SCOPE_QUERY}`,
       ),
     getBrokerBreakdown: (brokerName) =>
-      request<PortfolioBreakdownItemDto[]>(`/summary/broker/${encodeURIComponent(brokerName)}/breakdown`),
+      request<PortfolioBreakdownItemDto[]>(`/summary/broker/${encodeURIComponent(brokerName)}/breakdown${ACTIVE_SCOPE_QUERY}`),
     getTransactionsByBroker: (brokerName) =>
       request<TransactionSummaryItemDto[]>(`/transactions/broker/${encodeURIComponent(brokerName)}`),
     getTransactionsByPortfolio: (brokerName, portfolioName) =>
@@ -197,7 +199,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getAssetPriceFetchScope: () => request<PortfolioReferenceDto[]>('/asset-price-fetch'),
     getPortfolioAssetsSummary: (brokerName, portfolioName) =>
       request<PortfolioAssetSummaryItemDto[]>(
-        `/summary/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}/assets`,
+        `/summary/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}/assets${ACTIVE_SCOPE_QUERY}`,
       ),
     calculateXirr: (cashFlows, terminalValue) =>
       request<XirrResultDto>('/xirr/calculate', {

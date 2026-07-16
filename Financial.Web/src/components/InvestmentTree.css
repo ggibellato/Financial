@@ -86,11 +86,15 @@
   padding-left: 12px;
 }
 
-.investment-tree__status-icon--active {
+.investment-tree__status-icon--long {
   color: #2e7d32;
 }
 
-.investment-tree__status-icon--inactive {
+.investment-tree__status-icon--flat {
+  color: var(--text, #333);
+}
+
+.investment-tree__status-icon--short {
   color: #c62828;
 }
 

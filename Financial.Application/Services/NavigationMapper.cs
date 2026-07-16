@@ -71,7 +71,7 @@ internal static class NavigationMapper
                 ["Quantity"] = asset.Quantity,
                 ["AveragePrice"] = asset.AveragePrice,
                 ["IsActive"] = asset.IsActive,
-                ["PositionType"] = asset.PositionType,
+                ["PositionType"] = asset.PositionType.ToString(),
                 ["TransactionCount"] = asset.TransactionCount,
                 ["CreditCount"] = asset.CreditCount
             }

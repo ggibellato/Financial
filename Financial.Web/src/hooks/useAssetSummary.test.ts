@@ -24,7 +24,7 @@ const ASSET_NODE: SelectedNode = {
   assetName: 'KLBN4',
   ticker: 'KLBN4',
   exchange: 'BVMF',
-  isActive: true,
+  positionType: 'Long',
 }
 
 const OTHER_ASSET_NODE: SelectedNode = {
@@ -103,7 +103,7 @@ describe('useAssetSummary', () => {
       assetName: 'Bitcoin',
       ticker: 'BTC',
       exchange: '',
-      isActive: true,
+      positionType: 'Long',
       assetClass: 'Cryptocurrency',
     }
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, name: 'Bitcoin', ticker: 'BTC', class: 'Cryptocurrency' })
@@ -124,7 +124,7 @@ describe('useAssetSummary', () => {
       assetName: 'TESOURO IPCA+ 2029',
       ticker: 'TESOURO IPCA+ 2029',
       exchange: '',
-      isActive: true,
+      positionType: 'Long',
       assetClass: 'Bond',
     }
     getAssetDetailsMock.mockResolvedValue({

@@ -61,6 +61,7 @@ public class NavigationEndpointsTests
 
         var assetNode = GetAllAssetNodes(tree!).Single(a => a.DisplayName == "BCIA11");
         assetNode.Metadata.Should().ContainKey("PositionType");
+        ((System.Text.Json.JsonElement)assetNode.Metadata["PositionType"]).GetString().Should().Be("Long");
     }
 
     [Fact]

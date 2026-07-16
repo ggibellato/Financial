@@ -11,8 +11,8 @@ const AppWithRoutes = ({ initialEntry = '/' }: { initialEntry?: string }) => (
   <MemoryRouter initialEntries={[initialEntry]}>
     <Routes>
       <Route path="/" element={<App />}>
-        <Route index element={<Navigate to="/portfolio-navigator" replace />} />
-        <Route path="portfolio-navigator" element={<p>Portfolio Navigator placeholder</p>} />
+        <Route index element={<Navigate to="/active-investments" replace />} />
+        <Route path="active-investments" element={<p>Active Investments placeholder</p>} />
         <Route path="dividend-check" element={<h2>Shares Dividend Check</h2>} />
         <Route path="current-values" element={<h2>Read Assets Current Values</h2>} />
         <Route path="*" element={<p>Page not found.</p>} />
@@ -25,15 +25,15 @@ describe('App', () => {
   it('renders three nav items', () => {
     render(<AppWithRoutes />)
 
-    expect(screen.getByRole('link', { name: 'Portfolio Navigator' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Active Investments' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Shares Dividend Check' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Read Assets Current Values' })).toBeInTheDocument()
   })
 
-  it('default route redirects to portfolio navigator', () => {
+  it('default route redirects to active investments', () => {
     render(<AppWithRoutes initialEntry="/" />)
 
-    expect(screen.getByText('Portfolio Navigator placeholder')).toBeInTheDocument()
+    expect(screen.getByText('Active Investments placeholder')).toBeInTheDocument()
   })
 
   it('navigates to dividend check section', async () => {
@@ -42,7 +42,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Shares Dividend Check' }))
 
     expect(screen.getByRole('heading', { name: 'Shares Dividend Check' })).toBeInTheDocument()
-    expect(screen.queryByText('Portfolio Navigator placeholder')).not.toBeInTheDocument()
+    expect(screen.queryByText('Active Investments placeholder')).not.toBeInTheDocument()
   })
 
   it('navigates to current values section', () => {
@@ -57,11 +57,11 @@ describe('App', () => {
     render(<AppWithRoutes initialEntry="/dividend-check" />)
 
     const activeLink = screen.getByRole('link', { name: 'Shares Dividend Check' })
-    const portfolioLink = screen.getByRole('link', { name: 'Portfolio Navigator' })
+    const activeInvestmentsLink = screen.getByRole('link', { name: 'Active Investments' })
     const currentValuesLink = screen.getByRole('link', { name: 'Read Assets Current Values' })
 
     expect(activeLink).toHaveClass('active')
-    expect(portfolioLink).not.toHaveClass('active')
+    expect(activeInvestmentsLink).not.toHaveClass('active')
     expect(currentValuesLink).not.toHaveClass('active')
   })
 

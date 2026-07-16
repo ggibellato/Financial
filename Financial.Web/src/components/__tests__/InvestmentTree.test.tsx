@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import InvestmentTree from '../InvestmentTree'
 import { SelectedNodeProvider, useSelectedNode } from '../../context/SelectedNodeContext'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { TreeNodeDto } from '../../api/types'
+import type { PositionType, TreeNodeDto } from '../../api/types'
 
 const getNavigationTreeMock = vi.fn()
 
@@ -13,7 +13,12 @@ vi.mock('../../api/financialApiClient', () => ({
   }),
 }))
 
-function makeAsset(name: string, isActive: boolean, assetClass: number): TreeNodeDto {
+function makeAsset(
+  name: string,
+  isActive: boolean,
+  assetClass: number,
+  positionType: PositionType = isActive ? 'Long' : 'Flat',
+): TreeNodeDto {
   return {
     nodeType: 'Asset',
     displayName: name,
@@ -22,6 +27,7 @@ function makeAsset(name: string, isActive: boolean, assetClass: number): TreeNod
       Ticker: name,
       Exchange: 'BVMF',
       IsActive: isActive,
+      PositionType: positionType,
       GlobalAssetClass: assetClass,
     },
     children: [],
@@ -107,29 +113,48 @@ describe('InvestmentTree', () => {
     expect(screen.getByText('Acoes (2 assets)')).toBeInTheDocument()
   })
 
-  it('renders active asset with filled circle prefix', async () => {
+  it('renders a filled bullet prefix regardless of position type', async () => {
     renderTree()
     await screen.findByText('XPI (BRL)')
     const expandBtn = screen.getAllByLabelText('Expand')[0]
     fireEvent.click(expandBtn)
     expect(screen.getByRole('button', { name: '● KLBN4' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '● TRPL4' })).toBeInTheDocument()
   })
 
-  it('renders inactive asset with empty circle prefix', async () => {
-    renderTree()
+  it('renders Long/Flat/Short status icons with the matching color class', async () => {
+    const tree: TreeNodeDto = {
+      nodeType: 'Investments',
+      displayName: 'Investments',
+      metadata: {},
+      children: [
+        makeBroker('XPI', 'BRL', [
+          makePortfolio('Mix', [
+            makeAsset('LONGASSET', true, 1, 'Long'),
+            makeAsset('FLATASSET', false, 1, 'Flat'),
+            makeAsset('SHORTASSET', true, 1, 'Short'),
+          ]),
+        ]),
+      ],
+    }
+    getNavigationTreeMock.mockResolvedValue(tree)
+    render(
+      <SelectedNodeProvider>
+        <InvestmentTree />
+      </SelectedNodeProvider>,
+    )
     await screen.findByText('XPI (BRL)')
-    const expandBtn = screen.getAllByLabelText('Expand')[0]
-    fireEvent.click(expandBtn)
-    expect(screen.getByRole('button', { name: '○ TRPL4' })).toBeInTheDocument()
-  })
+    fireEvent.click(screen.getAllByLabelText('Expand')[0])
 
-  it('renders active asset status icon in green and inactive in red', async () => {
-    renderTree()
-    await screen.findByText('XPI (BRL)')
-    const expandBtn = screen.getAllByLabelText('Expand')[0]
-    fireEvent.click(expandBtn)
-    expect(screen.getByText('●')).toHaveClass('investment-tree__status-icon--active')
-    expect(screen.getByText('○')).toHaveClass('investment-tree__status-icon--inactive')
+    expect(screen.getByRole('button', { name: '● LONGASSET' }).querySelector('span')).toHaveClass(
+      'investment-tree__status-icon--long',
+    )
+    expect(screen.getByRole('button', { name: '● FLATASSET' }).querySelector('span')).toHaveClass(
+      'investment-tree__status-icon--flat',
+    )
+    expect(screen.getByRole('button', { name: '● SHORTASSET' }).querySelector('span')).toHaveClass(
+      'investment-tree__status-icon--short',
+    )
   })
 
   it('clicking asset node sets selectedNode in context', async () => {

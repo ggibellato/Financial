@@ -51,12 +51,16 @@
   margin-left: auto;
 }
 
-.detail-panel__status--active {
-  color: green;
+.detail-panel__status--long {
+  color: #2e7d32;
 }
 
-.detail-panel__status--inactive {
-  color: var(--text-muted, #888);
+.detail-panel__status--flat {
+  color: var(--text, #333);
+}
+
+.detail-panel__status--short {
+  color: #c62828;
 }
 
 .detail-panel__breadcrumb {

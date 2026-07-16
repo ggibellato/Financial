@@ -397,9 +397,9 @@ graph TD
 - [x] A historic portfolio with no assets is excluded from the breakdown, consistent with today's Active behavior
 
 ### F08. Web — Active Investments Tab Update
-- [ ] The nav item previously labeled "Portfolio Navigator" reads "Active Investments"
-- [ ] The Active Investments tree never displays a historic asset
-- [ ] Each asset's tree node shows green/black/red matching `Long`/`Flat`/`Short`
+- [x] The nav item previously labeled "Portfolio Navigator" reads "Active Investments"
+- [x] The Active Investments tree never displays a historic asset
+- [x] Each asset's tree node shows green/black/red matching `Long`/`Flat`/`Short`
 
 ### F09. Web — Historic Investments Tab
 - [ ] A new "Historic Investments" nav item renders a tree scoped to historic data only

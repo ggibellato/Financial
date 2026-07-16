@@ -25,9 +25,10 @@ The skill only needs to locate two files and one reference source:
 ## OUTPUT
 
 - **Commits**: one per phase of `plan.md`, on the current branch (no branch creation, no branch switching).
+- **PRD update** (only when the run's final status is `success`): the PRD's acceptance-criteria checkboxes for this feature are checked off, in their own commit. See Step 7.
 - **Chat report** at the end: the feature's acceptance-criteria checklist marked ✓ / ✗ / — against actual test results, plus sections for Deviations, Soft-fails, Pre-existing failures, Overrides applied, Overrides ignored, and Phase status.
 
-No files are written besides code changes and commit objects. The chat report is ephemeral.
+No files are written besides code changes, commit objects, and — on a successful run only — the PRD checkbox update described in Step 7. The chat report itself remains ephemeral; the PRD checkbox update is its durable counterpart.
 
 ---
 
@@ -182,7 +183,19 @@ The run's final status is determined by this step, not by whether phases committ
 
 Never report `success` when any of the checks above has an unresolved failure, even if every phase individually committed clean.
 
-### Step 7: Final Report
+### Step 7: Update PRD Acceptance Criteria
+
+If Step 6.5 determined status `success`: edit the PRD to check off (`- [ ]` → `- [x]`) every acceptance-criterion checkbox for this feature that was confirmed ✓ in Step 6.3. Match the PRD's existing checkbox list format exactly — flip the marker only, do not add new sections, prose, dates, or reformat surrounding content.
+
+A cross-feature integration checkbox often names more than one feature (e.g. "...renders correctly in both the Web (F08) and WPF (F10)..."). Check it off only when *every* feature it names is already implemented (its own PRD boxes checked or its `docs/<feature>/` spec confirmed shipped) — not just the one this run completed. If other named features aren't done yet, leave that box unchecked even though this run's half is verified true.
+
+Stage only the PRD file and commit it separately from the phase commits, e.g. `docs(F<ID>): mark acceptance criteria complete`. This is the durable counterpart to the chat report's AC checklist — the chat report disappears with the session, but the checked boxes stay in the repo as a versioned record of what has actually shipped.
+
+If status is `completed with regressions`, `incomplete`, or `aborted at phase <N>`: do not touch the PRD. Leave every box as-is so a partial or failed run never claims false progress.
+
+Skip this step entirely if the PRD has no acceptance-criteria checkboxes for this feature (see Edge Case: "PRD has no AC content for this feature").
+
+### Step 8: Final Report
 
 Output the report to chat. Status comes from Step 6.5, never from "I think I finished":
 
@@ -250,11 +263,14 @@ If aborted, the report still lists whatever committed phases achieved and clearl
 - For phases that produce runtime surfaces (UI, HTTP route, migration, CLI), actually exercise them against a local environment before claiming done, or soft-fail the runtime check.
 - Execute Step 6 (Final Verification) in full before reporting — full-suite re-run, Component Overview walk-through, AC re-check, environment smoke check.
 - Derive the final status exclusively from Step 6.5. Report `success` only when every Step 6 check is green.
+- On a `success` status, check off this feature's satisfied acceptance-criteria and cross-feature-integration checkboxes in the PRD (Step 7), in their own commit, before the final report.
 
 **Never:**
 - Claim the run is `success` when Step 6 found regressions, missing-from-spec items, or unresolved failures — even if every phase individually committed clean.
 - Skip the AC report or its traceability (immutable core).
 - Skip Step 6 (Final Verification).
+- Check off PRD acceptance-criteria boxes when the run's status is anything other than `success`.
+- Check off a PRD box for an AC that Step 6.3 did not confirm ✓.
 - Create or switch branches.
 - Abort on name/path/type cosmetic divergences.
 - Abort on external dependency missing for a test — soft-fail the test, keep implementing.
