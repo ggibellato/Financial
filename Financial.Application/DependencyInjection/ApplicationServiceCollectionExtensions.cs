@@ -16,6 +16,8 @@ public static class ApplicationServiceCollectionExtensions
         services.AddSingleton<ITransactionService>(sp => sp.GetRequiredService<TransactionService>());
         services.AddSingleton<ITransactionQueryService>(sp => sp.GetRequiredService<TransactionService>());
         services.AddSingleton<IDividendService, DividendService>();
+        services.AddSingleton<IActiveBrokerBreakdownService, ActiveBrokerBreakdownService>();
+        services.AddSingleton<IHistoricBrokerBreakdownService, HistoricBrokerBreakdownService>();
         services.AddSingleton<IBrokerBreakdownService, BrokerBreakdownService>();
         services.AddSingleton<IPortfolioAssetSummaryService, PortfolioAssetSummaryService>();
         services.AddSingleton<ISummaryService, SummaryService>();

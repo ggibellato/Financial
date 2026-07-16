@@ -1,57 +1,23 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
-using Financial.Domain.Entities;
 
 namespace Financial.Application.Services;
 
 public sealed class BrokerBreakdownService : IBrokerBreakdownService
 {
-    private readonly IRepository _repository;
+    private readonly IActiveBrokerBreakdownService _activeBrokerBreakdownService;
+    private readonly IHistoricBrokerBreakdownService _historicBrokerBreakdownService;
 
-    public BrokerBreakdownService(IRepository repository)
+    public BrokerBreakdownService(
+        IActiveBrokerBreakdownService activeBrokerBreakdownService,
+        IHistoricBrokerBreakdownService historicBrokerBreakdownService)
     {
-        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _activeBrokerBreakdownService = activeBrokerBreakdownService ?? throw new ArgumentNullException(nameof(activeBrokerBreakdownService));
+        _historicBrokerBreakdownService = historicBrokerBreakdownService ?? throw new ArgumentNullException(nameof(historicBrokerBreakdownService));
     }
 
-    public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName, InvestmentScope scope = InvestmentScope.Active)
-    {
-        if (string.IsNullOrWhiteSpace(brokerName))
-            return [];
-
-        var broker = _repository.GetBrokerList(scope).FirstOrDefault(b => b.Name == brokerName);
-        if (broker is null)
-            return [];
-
-        return broker.Portfolios
-            .Select(BuildPortfolioBreakdown)
-            .Where(p => p.Assets.Count > 0)
-            .OrderBy(p => p.PortfolioName, StringComparer.CurrentCultureIgnoreCase)
-            .ToList();
-    }
-
-    private static PortfolioBreakdownItemDTO BuildPortfolioBreakdown(Portfolio portfolio)
-    {
-        var assets = portfolio.Assets
-            .Select(BuildAssetBreakdown)
-            .Where(a => a.TotalInvested > 0)
-            .OrderBy(a => a.AssetName, StringComparer.CurrentCultureIgnoreCase)
-            .ToList();
-
-        return new PortfolioBreakdownItemDTO
-        {
-            PortfolioName = portfolio.Name,
-            TotalInvested = assets.Sum(a => a.TotalInvested),
-            Assets = assets,
-        };
-    }
-
-    private static AssetBreakdownItemDTO BuildAssetBreakdown(Asset asset)
-    {
-        var (totalBought, totalSold, _) = NavigationMapper.CalculateTotals(asset);
-        return new AssetBreakdownItemDTO
-        {
-            AssetName = asset.Name,
-            TotalInvested = totalBought - totalSold,
-        };
-    }
+    public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName, InvestmentScope scope = InvestmentScope.Active) =>
+        scope == InvestmentScope.Historic
+            ? _historicBrokerBreakdownService.GetBrokerBreakdown(brokerName)
+            : _activeBrokerBreakdownService.GetBrokerBreakdown(brokerName);
 }
