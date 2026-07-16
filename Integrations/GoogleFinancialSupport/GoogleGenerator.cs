@@ -57,8 +57,9 @@ public sealed class GoogleGenerator
 
     private async Task ProcessBrokerAsync(Investments data, string fileName, string fileId, IProgress<string> progress)
     {
-        var broker = Broker.Create(fileName, _metadataResolver.ResolveBrokerCurrency(fileName));
-        data.AddActiveBroker(broker);
+        var currency = _metadataResolver.ResolveBrokerCurrency(fileName);
+        Broker activeBroker = null;
+        Broker historicBroker = null;
 
         progress?.Report($"Getting spreadsheets for: {fileName}");
         var spreadSheets = await _service.GetSpreadSheetAsync(fileId);
@@ -69,7 +70,19 @@ public sealed class GoogleGenerator
             var spreadsheet = activeSheets[sheetIndex];
             progress?.Report($"[{fileName}] Processing sheet {sheetIndex + 1}/{activeSheets.Count}: {spreadsheet.Name}");
 
-            await ProcessSheetAsync(broker, fileName, fileId, spreadsheet, progress);
+            var resolvedPortfolioName = _metadataResolver.ResolvePortfolioName(fileName, spreadsheet);
+
+            if (_metadataResolver.IsClosedPortfolio(resolvedPortfolioName))
+            {
+                historicBroker ??= CreateBroker(data, fileName, currency, isHistoric: true);
+                var historicPortfolioName = _metadataResolver.ResolveHistoricPortfolioName(spreadsheet.Name);
+                await ProcessSheetAsync(historicBroker, historicPortfolioName, fileName, fileId, spreadsheet, progress);
+            }
+            else
+            {
+                activeBroker ??= CreateBroker(data, fileName, currency, isHistoric: false);
+                await ProcessSheetAsync(activeBroker, resolvedPortfolioName, fileName, fileId, spreadsheet, progress);
+            }
 
             if (sheetIndex < activeSheets.Count - 1)
             {
@@ -79,9 +92,22 @@ public sealed class GoogleGenerator
         }
     }
 
-    private async Task ProcessSheetAsync(Broker broker, string fileName, string fileId, DTO.SheetDTO spreadsheet, IProgress<string> progress)
+    private static Broker CreateBroker(Investments data, string fileName, string currency, bool isHistoric)
     {
-        var portfolioName = _metadataResolver.ResolvePortfolioName(fileName, spreadsheet);
+        var broker = Broker.Create(fileName, currency);
+        if (isHistoric)
+        {
+            data.AddHistoricBroker(broker);
+        }
+        else
+        {
+            data.AddActiveBroker(broker);
+        }
+        return broker;
+    }
+
+    private async Task ProcessSheetAsync(Broker broker, string portfolioName, string fileName, string fileId, DTO.SheetDTO spreadsheet, IProgress<string> progress)
+    {
         var portfolio = broker.AddPortfolio(portfolioName);
 
         var assetData = await _metadataResolver.ResolveAssetMetadataAsync(fileName, fileId, spreadsheet.Name);
