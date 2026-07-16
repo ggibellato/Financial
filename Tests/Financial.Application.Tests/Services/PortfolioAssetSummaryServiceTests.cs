@@ -586,6 +586,16 @@ public class PortfolioAssetSummaryServiceTests
         result[0].CurrentMonthCredits.Should().Be(0m);
     }
 
+    [Fact]
+    public void GetPortfolioAssetsSummary_ForwardsScopeToRepository()
+    {
+        _repository.Assets = [MakeAsset("TEST", "TST", "BVMF")];
+
+        CreateService().GetPortfolioAssetsSummary("XPI", "Default", InvestmentScope.Historic);
+
+        _repository.LastRequestedScope.Should().Be(InvestmentScope.Historic);
+    }
+
     private PortfolioAssetSummaryService CreateService() => new(_repository);
 
     private static Asset MakeAsset(string name, string ticker, string exchange) =>
@@ -594,9 +604,14 @@ public class PortfolioAssetSummaryServiceTests
     private sealed class StubRepository : IRepository
     {
         public IEnumerable<Asset> Assets { get; set; } = [];
+        public InvestmentScope? LastRequestedScope { get; private set; }
 
         public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) => [];
-        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) => Assets;
+        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active)
+        {
+            LastRequestedScope = scope;
+            return Assets;
+        }
         public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) => [];
         public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => null;
         public Task SaveChangesAsync() => Task.CompletedTask;

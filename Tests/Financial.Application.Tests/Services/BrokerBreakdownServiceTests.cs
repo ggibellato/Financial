@@ -92,41 +92,32 @@ public class BrokerBreakdownServiceTests
     }
 
     [Fact]
-    public void GetBrokerBreakdown_ExcludesEncerradasPortfolio()
+    public void GetBrokerBreakdown_DoesNotFilterByPortfolioName_ScopePurityComesFromRepository()
     {
         var defaultAsset = MakeAsset("DEFAULT", "DEF");
         defaultAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 10m, 10m, 0m));
-        var closedAsset = MakeAsset("CLOSED", "CLO");
-        closedAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 100m, 5m, 0m));
+        var otherAsset = MakeAsset("OTHER", "OTH");
+        otherAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 100m, 5m, 0m));
 
         var broker = Broker.Create("XPI", "BRL");
         broker.AddPortfolio("Default").AddAsset(defaultAsset);
-        broker.AddPortfolio("Encerradas").AddAsset(closedAsset);
+        broker.AddPortfolio("Encerradas").AddAsset(otherAsset);
         _repository.Brokers = [broker];
 
         var result = CreateService().GetBrokerBreakdown("XPI");
 
-        result.Should().ContainSingle();
-        result.Single().PortfolioName.Should().Be("Default");
+        result.Should().HaveCount(2);
+        result.Select(p => p.PortfolioName).Should().Contain(["Default", "Encerradas"]);
     }
 
-    [Theory]
-    [InlineData("Encerradas")]
-    [InlineData("encerradas")]
-    [InlineData("ENCERRADAS")]
-    [InlineData(" Encerradas ")]
-    public void GetBrokerBreakdown_ExcludesEncerradasPortfolio_CaseInsensitive(string portfolioName)
+    [Fact]
+    public void GetBrokerBreakdown_ForwardsScopeToRepository()
     {
-        var closedAsset = MakeAsset("CLOSED", "CLO");
-        closedAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 100m, 5m, 0m));
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", MakeAsset())];
 
-        var broker = Broker.Create("XPI", "BRL");
-        broker.AddPortfolio(portfolioName).AddAsset(closedAsset);
-        _repository.Brokers = [broker];
+        CreateService().GetBrokerBreakdown("XPI", InvestmentScope.Historic);
 
-        var result = CreateService().GetBrokerBreakdown("XPI");
-
-        result.Should().BeEmpty();
+        _repository.LastRequestedScope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]
@@ -192,11 +183,7 @@ public class BrokerBreakdownServiceTests
     [Fact]
     public void GetBrokerBreakdown_ReturnsEmptyWhenNoEligiblePortfolios()
     {
-        var closedAsset = MakeAsset("CLOSED", "CLO");
-        closedAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 100m, 5m, 0m));
-
         var broker = Broker.Create("XPI", "BRL");
-        broker.AddPortfolio("Encerradas").AddAsset(closedAsset);
         broker.AddPortfolio("EmptyPortfolio").AddAsset(MakeZeroQuantityAsset());
         _repository.Brokers = [broker];
 
@@ -245,10 +232,15 @@ public class BrokerBreakdownServiceTests
         public IEnumerable<Asset> AssetsByBroker { get; set; } = [];
         public IEnumerable<Asset> AssetsByBrokerPortfolio { get; set; } = [];
         public IEnumerable<Broker> Brokers { get; set; } = [];
+        public InvestmentScope? LastRequestedScope { get; private set; }
 
         public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) => AssetsByBroker;
         public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) => AssetsByBrokerPortfolio;
-        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) => Brokers;
+        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active)
+        {
+            LastRequestedScope = scope;
+            return Brokers;
+        }
         public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => null;
         public Task SaveChangesAsync() => Task.CompletedTask;
     }
