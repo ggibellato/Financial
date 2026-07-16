@@ -111,7 +111,7 @@ describe('usePortfolioAssetSummary', () => {
     renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => {
-      expect(getPortfolioAssetsSummaryMock).toHaveBeenCalledWith('XPI', 'Acoes')
+      expect(getPortfolioAssetsSummaryMock).toHaveBeenCalledWith('XPI', 'Acoes', 'active')
     })
   })
 

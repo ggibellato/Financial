@@ -49,7 +49,7 @@ export interface AggregatedSummaryData {
 }
 
 export function useAggregatedSummary(): AggregatedSummaryData {
-  const { selectedNode } = useSelectedNode()
+  const { selectedNode, scope } = useSelectedNode()
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
@@ -66,8 +66,8 @@ export function useAggregatedSummary(): AggregatedSummaryData {
     dispatch({ type: 'FETCH_START' })
 
     const fetchPromise = isBroker
-      ? apiClient.getSummaryByBroker(selectedNode.brokerName)
-      : apiClient.getSummaryByPortfolio(selectedNode.brokerName, selectedNode.portfolioName!)
+      ? apiClient.getSummaryByBroker(selectedNode.brokerName, scope)
+      : apiClient.getSummaryByPortfolio(selectedNode.brokerName, selectedNode.portfolioName!, scope)
 
     void fetchPromise
       .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result }))
@@ -77,7 +77,7 @@ export function useAggregatedSummary(): AggregatedSummaryData {
           payload: err instanceof Error ? err.message : 'Unable to load summary',
         })
       })
-  }, [selectedNode, shouldFetch, isBroker, apiClient, state.retryCount])
+  }, [selectedNode, shouldFetch, isBroker, apiClient, scope, state.retryCount])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 

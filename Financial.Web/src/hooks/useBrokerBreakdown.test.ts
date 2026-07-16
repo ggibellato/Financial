@@ -56,7 +56,7 @@ describe('useBrokerBreakdown', () => {
     renderHook(() => useBrokerBreakdown(), { wrapper })
     setNode(BROKER_NODE)
     await waitFor(() => {
-      expect(getBrokerBreakdownMock).toHaveBeenCalledWith('XPI')
+      expect(getBrokerBreakdownMock).toHaveBeenCalledWith('XPI', 'active')
     })
   })
 

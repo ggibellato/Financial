@@ -13,6 +13,8 @@ interface SummaryState {
   priceError: string | null
   xirr: number | null
   xirrWithCredits: number | null
+  realizedGainLoss: number | null
+  portfolioWeight: number | null
 }
 
 type SummaryAction =
@@ -26,6 +28,7 @@ type SummaryAction =
   | { type: 'PRICE_FETCH_ERROR'; payload: string }
   | { type: 'XIRR_RESET' }
   | { type: 'XIRR_FETCH_SUCCESS'; xirr: number | null; xirrWithCredits: number | null }
+  | { type: 'REALIZED_TOTALS_SUCCESS'; realizedGainLoss: number | null; portfolioWeight: number | null }
 
 const INITIAL_STATE: SummaryState = {
   asset: null,
@@ -37,6 +40,8 @@ const INITIAL_STATE: SummaryState = {
   priceError: null,
   xirr: null,
   xirrWithCredits: null,
+  realizedGainLoss: null,
+  portfolioWeight: null,
 }
 
 function reducer(state: SummaryState, action: SummaryAction): SummaryState {
@@ -44,7 +49,16 @@ function reducer(state: SummaryState, action: SummaryAction): SummaryState {
     case 'RESET':
       return INITIAL_STATE
     case 'ASSET_FETCH_START':
-      return { ...state, isLoadingAsset: true, assetError: null, asset: null, price: null, priceError: null }
+      return {
+        ...state,
+        isLoadingAsset: true,
+        assetError: null,
+        asset: null,
+        price: null,
+        priceError: null,
+        realizedGainLoss: null,
+        portfolioWeight: null,
+      }
     case 'ASSET_FETCH_SUCCESS':
       return { ...state, isLoadingAsset: false, asset: action.payload }
     case 'ASSET_FETCH_ERROR':
@@ -61,6 +75,8 @@ function reducer(state: SummaryState, action: SummaryAction): SummaryState {
       return { ...state, xirr: null, xirrWithCredits: null }
     case 'XIRR_FETCH_SUCCESS':
       return { ...state, xirr: action.xirr, xirrWithCredits: action.xirrWithCredits }
+    case 'REALIZED_TOTALS_SUCCESS':
+      return { ...state, realizedGainLoss: action.realizedGainLoss, portfolioWeight: action.portfolioWeight }
     default:
       return state
   }
@@ -83,10 +99,12 @@ export interface AssetSummaryData {
   resultWithCreditsPercent: number
   xirr: number | null
   xirrWithCredits: number | null
+  realizedGainLoss: number | null
+  portfolioWeight: number | null
 }
 
 export function useAssetSummary(): AssetSummaryData {
-  const { selectedNode } = useSelectedNode()
+  const { selectedNode, scope } = useSelectedNode()
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
@@ -126,12 +144,16 @@ export function useAssetSummary(): AssetSummaryData {
 
     dispatch({ type: 'ASSET_FETCH_START' })
 
-    if (ticker && (exchange || assetClass === 'Cryptocurrency' || (assetClass === 'Bond' && assetName))) {
+    if (
+      scope === 'active' &&
+      ticker &&
+      (exchange || assetClass === 'Cryptocurrency' || (assetClass === 'Bond' && assetName))
+    ) {
       fetchPrice(exchange ?? '', ticker, assetClass, brokerName, assetClass === 'Bond' ? assetName : undefined)
     }
 
     void apiClient
-      .getAssetDetails(brokerName, portfolioName, assetName)
+      .getAssetDetails(brokerName, portfolioName, assetName, scope)
       .then((result) => dispatch({ type: 'ASSET_FETCH_SUCCESS', payload: result }))
       .catch((err: unknown) => {
         dispatch({
@@ -139,7 +161,23 @@ export function useAssetSummary(): AssetSummaryData {
           payload: err instanceof Error ? err.message : 'Unable to load asset details',
         })
       })
-  }, [selectedNode, isAsset, apiClient, fetchPrice, state.assetRetryCount])
+
+    if (scope === 'historic') {
+      void apiClient
+        .getPortfolioAssetsSummary(brokerName, portfolioName, 'historic')
+        .then((items) => {
+          const match = items.find((item) => item.assetName === assetName)
+          dispatch({
+            type: 'REALIZED_TOTALS_SUCCESS',
+            realizedGainLoss: match?.realizedGainLoss ?? null,
+            portfolioWeight: match?.portfolioWeight ?? null,
+          })
+        })
+        .catch(() => {
+          dispatch({ type: 'REALIZED_TOTALS_SUCCESS', realizedGainLoss: null, portfolioWeight: null })
+        })
+    }
+  }, [selectedNode, isAsset, apiClient, fetchPrice, scope, state.assetRetryCount])
 
   const retryAsset = useCallback(() => dispatch({ type: 'ASSET_RETRY' }), [])
 
@@ -220,5 +258,7 @@ export function useAssetSummary(): AssetSummaryData {
     resultWithCreditsPercent,
     xirr: state.xirr,
     xirrWithCredits: state.xirrWithCredits,
+    realizedGainLoss: state.realizedGainLoss,
+    portfolioWeight: state.portfolioWeight,
   }
 }

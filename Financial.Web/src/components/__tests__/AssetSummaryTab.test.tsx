@@ -24,6 +24,8 @@ const mockHookValue: AssetSummaryData = {
   resultWithCreditsPercent: 0,
   xirr: null,
   xirrWithCredits: null,
+  realizedGainLoss: null,
+  portfolioWeight: null,
 }
 
 vi.mock('../../hooks/useAssetSummary', () => ({

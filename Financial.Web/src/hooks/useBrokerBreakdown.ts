@@ -49,7 +49,7 @@ export interface BrokerBreakdownData {
 }
 
 export function useBrokerBreakdown(): BrokerBreakdownData {
-  const { selectedNode } = useSelectedNode()
+  const { selectedNode, scope } = useSelectedNode()
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
@@ -64,7 +64,7 @@ export function useBrokerBreakdown(): BrokerBreakdownData {
     dispatch({ type: 'FETCH_START' })
 
     void apiClient
-      .getBrokerBreakdown(selectedNode.brokerName)
+      .getBrokerBreakdown(selectedNode.brokerName, scope)
       .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result }))
       .catch((err: unknown) => {
         dispatch({
@@ -72,7 +72,7 @@ export function useBrokerBreakdown(): BrokerBreakdownData {
           payload: err instanceof Error ? err.message : 'Unable to load breakdown',
         })
       })
-  }, [selectedNode, isBroker, apiClient, state.retryCount])
+  }, [selectedNode, isBroker, apiClient, scope, state.retryCount])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 

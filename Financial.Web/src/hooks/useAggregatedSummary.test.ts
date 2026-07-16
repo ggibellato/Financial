@@ -55,7 +55,7 @@ describe('useAggregatedSummary', () => {
     renderHook(() => useAggregatedSummary(), { wrapper })
     setNode(BROKER_NODE)
     await waitFor(() => {
-      expect(getSummaryByBrokerMock).toHaveBeenCalledWith('XPI')
+      expect(getSummaryByBrokerMock).toHaveBeenCalledWith('XPI', 'active')
     })
     expect(getSummaryByPortfolioMock).not.toHaveBeenCalled()
   })
@@ -66,7 +66,7 @@ describe('useAggregatedSummary', () => {
     renderHook(() => useAggregatedSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => {
-      expect(getSummaryByPortfolioMock).toHaveBeenCalledWith('XPI', 'Acoes')
+      expect(getSummaryByPortfolioMock).toHaveBeenCalledWith('XPI', 'Acoes', 'active')
     })
     expect(getSummaryByBrokerMock).not.toHaveBeenCalled()
   })
