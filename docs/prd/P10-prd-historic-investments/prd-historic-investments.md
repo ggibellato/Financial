@@ -211,8 +211,8 @@ At the import layer, the spreadsheet importer keeps its existing tab-colour-base
 - F05: broker/portfolio/asset tree data scoped to Historic
 
 **Capabilities:**
-- Parallel to `BrokerBreakdownService`, building `PortfolioBreakdownItemDTO`/`AssetBreakdownItemDTO` for the Historic scope, sizing each slice by `TotalBought` (gross capital historically committed) rather than a current-value figure, since a closed position's current value is always zero
-- Exposed via the existing breakdown endpoint under `scope=historic` (F05), returning the same DTO shape the Active breakdown already returns so `BrokerBreakdownCharts.tsx`/`BrokerBreakdownChartBuilder.cs` can render it unmodified
+- The existing `BrokerBreakdownService` is renamed `ActiveBrokerBreakdownService` and a new sibling `HistoricBrokerBreakdownService` is introduced, both sharing a common breakdown-building helper; `HistoricBrokerBreakdownService` builds `PortfolioBreakdownItemDTO`/`AssetBreakdownItemDTO` for the Historic scope, sizing each slice by `TotalBought` (gross capital historically committed) rather than a current-value figure, since a closed position's current value is always zero
+- Exposed via the existing breakdown endpoint under `scope=historic` (F05) through the existing `IBrokerBreakdownService` facade, returning the same DTO shape the Active breakdown already returns so `BrokerBreakdownCharts.tsx`/`BrokerBreakdownChartBuilder.cs` can render it unmodified
 
 **Experience:**
 - No direct UI; consumed by F09/F11's charts tab for Historic Investments
