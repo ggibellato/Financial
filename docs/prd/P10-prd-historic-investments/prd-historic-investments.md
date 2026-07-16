@@ -388,9 +388,9 @@ graph TD
 - [x] Omitting the scope parameter preserves today's Active-only behavior (no breaking change for any existing caller)
 
 ### F06. Historic Realized Totals Service
-- [ ] A historic asset's summary returns `TotalBought`, `TotalSold`, `TotalCredits`, and `RealizedGainLoss = TotalSold - TotalBought + TotalCredits`
+- [x] A historic asset's summary returns `TotalBought`, `TotalSold`, `TotalCredits`, and `RealizedGainLoss = TotalSold - TotalBought + TotalCredits`
 - [ ] No current price fetch or XIRR field is present in the historic summary response
-- [ ] Portfolio weight sums to 100% across a historic portfolio's assets (by `TotalBought`)
+- [x] Portfolio weight sums to 100% across a historic portfolio's assets (by `TotalBought`)
 
 ### F07. Historic Broker Breakdown Charts Service
 - [x] A historic broker's breakdown returns one entry per historic portfolio with assets, sized by `TotalBought`
@@ -419,7 +419,7 @@ graph TD
 ### Cross-Feature Integration
 - [x] Data written by import (F04) into `activeInvestments`/`historicInvestments` (F02's structure) is correctly returned by the scoped navigation API (F05)
 - [x] Position type computed by F01 appears correctly on every Active-scoped asset returned by F05
-- [ ] Historic tree/asset data served by F05 is correctly consumed by both the realized totals service (F06) and the breakdown charts service (F07)
+- [x] Historic tree/asset data served by F05 is correctly consumed by both the realized totals service (F06) and the breakdown charts service (F07)
 - [ ] Realized totals from F06 render correctly in both the Web (F09) and WPF (F11) Historic Investments summary views
 - [ ] Breakdown data from F07 renders correctly in both the Web (F09) and WPF (F11) Historic Investments charts views
 - [ ] Active-scoped data and position type from F01/F05 render correctly in both the Web (F08) and WPF (F10) Active Investments tabs

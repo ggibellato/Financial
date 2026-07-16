@@ -245,6 +245,7 @@ export interface PortfolioAssetSummaryItemDto {
   totalBought: number
   totalSold: number
   totalInvested: number
+  realizedGainLoss: number | null
   portfolioWeight: number
   totalCredits: number
   cashFlows: AssetCashFlowDto[]

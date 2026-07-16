@@ -161,6 +161,43 @@ public class SummaryEndpointsTests
         var items = await response.Content.ReadFromJsonAsync<List<PortfolioAssetSummaryItemDTO>>();
         items.Should().NotBeNull();
         items!.Should().ContainSingle(i => i.AssetName == "CLOSEDASSET");
+        // CLOSEDASSET: bought 5 x 60 = 300, sold 5 x 50 = 250, no credits — RealizedGainLoss = 250 - 300 + 0 = -50
+        items!.Single().RealizedGainLoss.Should().Be(-50m);
+        items!.Single().PortfolioWeight.Should().Be(100m);
+    }
+
+    [Fact]
+    public async Task GetPortfolioAssetsSummary_ScopeHistoric_PortfolioWeightsSumTo100()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Uncategorized/assets?scope=historic");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var items = await response.Content.ReadFromJsonAsync<List<PortfolioAssetSummaryItemDTO>>();
+        items.Should().NotBeNull();
+        items!.Sum(i => i.PortfolioWeight).Should().Be(100m);
+    }
+
+    [Fact]
+    public async Task GetPortfolioAssetsSummary_ScopeActive_PreservesNetInvestedWeightingAndNullRealizedGainLoss()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Default/assets?scope=active");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var items = await response.Content.ReadFromJsonAsync<List<PortfolioAssetSummaryItemDTO>>();
+        items.Should().NotBeNull();
+        // BCIA11: bought 10 x 100 = 1000, sold 2 x 110 = 220 — active weighting stays net invested (780), 100% of the portfolio
+        var bcia11 = items!.Single(i => i.AssetName == "BCIA11");
+        bcia11.TotalInvested.Should().Be(780m);
+        bcia11.PortfolioWeight.Should().Be(100m);
+        bcia11.RealizedGainLoss.Should().BeNull();
     }
 
     [Fact]
