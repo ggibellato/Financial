@@ -254,7 +254,7 @@ export interface TransactionsData {
 }
 
 export function useTransactions(): TransactionsData {
-  const { selectedNode } = useSelectedNode()
+  const { selectedNode, scope } = useSelectedNode()
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
@@ -270,7 +270,7 @@ export function useTransactions(): TransactionsData {
     if (nodeType === 'Asset' && portfolioName && assetName) {
       dispatch({ type: 'FETCH_START', payload: { key } })
       void apiClient
-        .getAssetDetails(brokerName, portfolioName, assetName)
+        .getAssetDetails(brokerName, portfolioName, assetName, scope)
         .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result }))
         .catch((err: unknown) => {
           dispatch({
@@ -303,7 +303,7 @@ export function useTransactions(): TransactionsData {
     } else {
       dispatch({ type: 'RESET' })
     }
-  }, [selectedNode, apiClient, state.retryCount])
+  }, [selectedNode, apiClient, scope, state.retryCount])
 
   const transactions = useMemo(() => {
     if (!state.asset) return []

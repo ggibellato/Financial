@@ -82,6 +82,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   class: 'Equity',
   quantity: 100,
   averagePrice: 20,
+  averageSellPrice: null,
   isActive: true,
   positionType: 'Long',
   totalBought: 2000,
@@ -120,9 +121,17 @@ describe('useCredits', () => {
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
-    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4'))
+    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'active'))
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(result.current.credits).toHaveLength(2)
+  })
+
+  it('resolves_asset_via_getAssetDetails_with_historic_scope', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    renderHook(() => useCredits(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'historic'))
   })
 
   it('fetches_broker_credits_on_broker_selection', async () => {
@@ -203,12 +212,12 @@ describe('useCredits', () => {
     expect(result.current.selectedMode).toBe('Grouped')
 
     setNode(ASSET_NODE_B)
-    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'TASA4'))
+    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'TASA4', 'active'))
     expect(result.current.selectedFilter).toBe('last-12-months')
     expect(result.current.selectedMode).toBe('Stacked')
 
     setNode(ASSET_NODE)
-    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4'))
+    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'active'))
     await waitFor(() => expect(result.current.selectedFilter).toBe('last-3-months'))
     expect(result.current.selectedMode).toBe('Grouped')
   })
@@ -470,11 +479,11 @@ describe('useCredits', () => {
     expect(result.current.selectedChartType).toBe('Line')
 
     setNode(ASSET_NODE_B)
-    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'TASA4'))
+    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'TASA4', 'active'))
     expect(result.current.selectedChartType).toBe('Bar')
 
     setNode(ASSET_NODE)
-    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4'))
+    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'active'))
     await waitFor(() => expect(result.current.selectedChartType).toBe('Line'))
   })
 

@@ -44,6 +44,7 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   firstInvestmentDate: '2021-03-01T00:00:00',
   currentQuantity: 25,
   averagePrice: 100,
+  averageSellPrice: null,
   totalBought: 2500,
   totalSold: 0,
   totalInvested: 2500,
@@ -72,6 +73,7 @@ const ITEM_2: PortfolioAssetSummaryItemDto = {
   firstInvestmentDate: '2021-05-15T00:00:00',
   currentQuantity: 10,
   averagePrice: 100,
+  averageSellPrice: null,
   totalBought: 1000,
   totalSold: 0,
   totalInvested: 1000,
@@ -111,8 +113,29 @@ describe('usePortfolioAssetSummary', () => {
     renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => {
-      expect(getPortfolioAssetsSummaryMock).toHaveBeenCalledWith('XPI', 'Acoes')
+      expect(getPortfolioAssetsSummaryMock).toHaveBeenCalledWith('XPI', 'Acoes', 'active')
     })
+  })
+
+  it('forwards_historic_scope_from_context', async () => {
+    getPortfolioAssetsSummaryMock.mockResolvedValue([{ ...ITEM_1, realizedGainLoss: -50 }])
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    renderHook(() => usePortfolioAssetSummary(), { wrapper })
+    setNode(PORTFOLIO_NODE)
+    await waitFor(() => {
+      expect(getPortfolioAssetsSummaryMock).toHaveBeenCalledWith('XPI', 'Acoes', 'historic')
+    })
+  })
+
+  it('skips_current_price_fetch_for_historic_scope', async () => {
+    getPortfolioAssetsSummaryMock.mockResolvedValue([{ ...ITEM_1, realizedGainLoss: -50 }])
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
+    setNode(PORTFOLIO_NODE)
+    await waitFor(() => expect(result.current.items).not.toBeNull())
+    expect(getCurrentPriceMock).not.toHaveBeenCalled()
+    expect(result.current.rowPrices[0].isLoading).toBe(false)
+    expect(result.current.rowPrices[0].currentPrice).toBeNull()
   })
 
   it('does_not_fetch_when_broker_node_selected', async () => {

@@ -92,6 +92,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   class: 'Equity',
   quantity: 100,
   averagePrice: 20,
+  averageSellPrice: null,
   isActive: true,
   positionType: 'Long',
   totalBought: 2000,
@@ -131,7 +132,17 @@ describe('useTransactions', () => {
     renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => {
-      expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4')
+      expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'active')
+    })
+  })
+
+  it('resolves_asset_via_getAssetDetails_with_historic_scope', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    renderHook(() => useTransactions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => {
+      expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'historic')
     })
   })
 

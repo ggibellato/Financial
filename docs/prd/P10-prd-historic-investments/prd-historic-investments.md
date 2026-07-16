@@ -402,10 +402,10 @@ graph TD
 - [x] Each asset's tree node shows green/black/red matching `Long`/`Flat`/`Short`
 
 ### F09. Web — Historic Investments Tab
-- [ ] A new "Historic Investments" nav item renders a tree scoped to historic data only
-- [ ] The Summary tab for a historic asset shows realized totals, not current-value/XIRR fields
-- [ ] The Charts tab renders historic breakdown data
-- [ ] A transaction or credit can be added, edited, and deleted for a historic asset through the same UI flow as an active asset
+- [x] A new "Historic Investments" nav item renders a tree scoped to historic data only
+- [x] The Summary tab for a historic asset shows realized totals, not current-value/XIRR fields
+- [x] The Charts tab renders historic breakdown data
+- [x] A transaction or credit can be added, edited, and deleted for a historic asset through the same UI flow as an active asset
 
 ### F10. WPF — Active Investments Tab Update
 - [ ] The existing investments tab is relabeled "Active Investments" and shows only active data

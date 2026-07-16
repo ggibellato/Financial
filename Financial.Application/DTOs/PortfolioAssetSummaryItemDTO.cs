@@ -13,6 +13,7 @@ public sealed class PortfolioAssetSummaryItemDTO
     public DateTime? FirstInvestmentDate { get; init; }
     public decimal CurrentQuantity { get; init; }
     public decimal AveragePrice { get; init; }
+    public decimal? AverageSellPrice { get; init; }
     public decimal TotalBought { get; init; }
     public decimal TotalSold { get; init; }
     public decimal TotalInvested { get; init; }

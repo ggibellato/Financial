@@ -2,6 +2,8 @@ export type NodeType = 'Asset' | 'Portfolio' | 'Broker'
 
 export type PositionType = 'Long' | 'Flat' | 'Short'
 
+export type InvestmentScope = 'active' | 'historic'
+
 export interface SelectedNode {
   nodeType: NodeType
   brokerName: string
@@ -17,6 +19,7 @@ export interface SelectedNode {
 export interface SelectedNodeContextValue {
   selectedNode: SelectedNode | null
   setSelectedNode: (node: SelectedNode | null) => void
+  scope: InvestmentScope
 }
 
 export interface TreeNodeDto {
@@ -93,6 +96,7 @@ export interface AssetDetailsDto {
   class: string
   quantity: number
   averagePrice: number
+  averageSellPrice: number | null
   isActive: boolean
   positionType: PositionType
   totalBought: number
@@ -243,6 +247,7 @@ export interface PortfolioAssetSummaryItemDto {
   firstInvestmentDate: string | null
   currentQuantity: number
   averagePrice: number
+  averageSellPrice: number | null
   totalBought: number
   totalSold: number
   totalInvested: number

@@ -168,6 +168,23 @@ internal static class NavigationMapper
         return realizedCapitalGain + totalCredits;
     }
 
+    internal static decimal? CalculateAverageSellPrice(Asset asset)
+    {
+        // Weighted average over Sell transactions (total proceeds / total quantity sold),
+        // mirroring how Asset.AddTransaction weights AveragePrice by TotalPrice for buys.
+        decimal totalSoldQuantity = 0, totalSoldValue = 0;
+        foreach (var t in asset.Transactions)
+        {
+            if (t.Type == Transaction.TransactionType.Sell)
+            {
+                totalSoldValue += t.TotalPrice;
+                totalSoldQuantity += t.Quantity;
+            }
+        }
+
+        return totalSoldQuantity == 0 ? null : totalSoldValue / totalSoldQuantity;
+    }
+
     private static IEnumerable<PortfolioNodeDTO> MapPortfolios(IEnumerable<Portfolio> portfolios, InvestmentScope scope)
     {
         return portfolios.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase).Select(portfolio => MapPortfolio(portfolio, scope));

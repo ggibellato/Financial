@@ -83,7 +83,7 @@ export interface PortfolioAssetSummaryData {
 }
 
 export function usePortfolioAssetSummary(): PortfolioAssetSummaryData {
-  const { selectedNode } = useSelectedNode()
+  const { selectedNode, scope } = useSelectedNode()
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
@@ -104,9 +104,16 @@ export function usePortfolioAssetSummary(): PortfolioAssetSummaryData {
     dispatch({ type: 'FETCH_START' })
 
     void apiClient
-      .getPortfolioAssetsSummary(brokerName, portfolioName)
+      .getPortfolioAssetsSummary(brokerName, portfolioName, scope)
       .then((items) => {
         dispatch({ type: 'FETCH_SUCCESS', payload: items })
+        if (scope === 'historic') {
+          // Historic positions are closed — there's no live price to fetch. Profit%/XIRR for
+          // these rows are computed from realized data (see PortfolioSummaryTab), not rowPrice.
+          // Resolve rows immediately instead of leaving them stuck in a perpetual loading state.
+          items.forEach((_, index) => dispatch({ type: 'ROW_PRICE_ERROR', index }))
+          return
+        }
         items.forEach((item, index) => {
           void apiClient
             .getCurrentPrice(item.exchange, item.ticker, item.class, brokerName, item.assetName)
@@ -124,7 +131,7 @@ export function usePortfolioAssetSummary(): PortfolioAssetSummaryData {
           payload: err instanceof Error ? err.message : 'Unable to load portfolio assets',
         })
       })
-  }, [selectedNode, isPortfolio, apiClient, state.retryCount])
+  }, [selectedNode, isPortfolio, apiClient, scope, state.retryCount])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 

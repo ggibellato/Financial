@@ -1,19 +1,21 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../api/financialApiClient'
-import type { AssetDetailsDto, AssetPriceDto, SelectedNode, XirrResultDto } from '../api/types'
+import type { AssetDetailsDto, AssetPriceDto, PortfolioAssetSummaryItemDto, SelectedNode, XirrResultDto } from '../api/types'
 import { createSelectedNodeWrapper } from '../test-utils/selectedNodeTestWrapper'
 import { useAssetSummary } from './useAssetSummary'
 
 const getAssetDetailsMock = vi.fn<FinancialApiClient['getAssetDetails']>()
 const getCurrentPriceMock = vi.fn<FinancialApiClient['getCurrentPrice']>()
 const calculateXirrMock = vi.fn<FinancialApiClient['calculateXirr']>()
+const getPortfolioAssetsSummaryMock = vi.fn<FinancialApiClient['getPortfolioAssetsSummary']>()
 
 vi.mock('../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getAssetDetails: getAssetDetailsMock,
     getCurrentPrice: getCurrentPriceMock,
     calculateXirr: calculateXirrMock,
+    getPortfolioAssetsSummary: getPortfolioAssetsSummaryMock,
   }),
 }))
 
@@ -45,6 +47,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   class: 'Equity',
   quantity: 100,
   averagePrice: 20,
+  averageSellPrice: null,
   isActive: true,
   positionType: 'Long',
   totalBought: 2000,
@@ -71,6 +74,7 @@ describe('useAssetSummary', () => {
     getCurrentPriceMock.mockReset()
     calculateXirrMock.mockReset()
     calculateXirrMock.mockResolvedValue({ xirr: null })
+    getPortfolioAssetsSummaryMock.mockReset()
   })
 
   it('fetches_asset_details_on_asset_selection', async () => {
@@ -80,8 +84,82 @@ describe('useAssetSummary', () => {
     renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => {
-      expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4')
+      expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'active')
     })
+  })
+
+  it('fetches_asset_details_with_historic_scope_when_context_scope_is_historic', async () => {
+    const historicAsset = { ...ASSET_DETAILS, quantity: 0, totalSold: 250 }
+    getAssetDetailsMock.mockResolvedValue(historicAsset)
+    getPortfolioAssetsSummaryMock.mockResolvedValue([])
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    renderHook(() => useAssetSummary(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => {
+      expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'historic')
+    })
+  })
+
+  it('fetches_portfolio_weight_from_portfolio_summary_for_historic_asset', async () => {
+    const historicAsset = { ...ASSET_DETAILS, quantity: 0, totalSold: 250, realizedGainLoss: -1750 }
+    getAssetDetailsMock.mockResolvedValue(historicAsset)
+    const summaryItem: PortfolioAssetSummaryItemDto = {
+      assetName: 'KLBN4',
+      ticker: 'KLBN4',
+      exchange: 'BVMF',
+      class: 'Equity',
+      firstInvestmentDate: '2024-01-01T00:00:00',
+      currentQuantity: 0,
+      averagePrice: 20,
+      averageSellPrice: 21,
+      totalBought: 2000,
+      totalSold: 250,
+      totalInvested: 1750,
+      realizedGainLoss: -1750,
+      portfolioWeight: 100,
+      totalCredits: 50,
+      cashFlows: [],
+      lastMonthCredits: 0,
+      lastCreditMonth: null,
+      lastMonthCreditsPercent: null,
+      creditFrequencyPerYear: null,
+      estimatedAnnualCredits: null,
+      estimatedAnnualPercent: null,
+      currentMonthCredits: 0,
+    }
+    getPortfolioAssetsSummaryMock.mockResolvedValue([summaryItem, { ...summaryItem, assetName: 'OTHER' }])
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    const { result } = renderHook(() => useAssetSummary(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.portfolioWeight).not.toBeNull())
+    expect(getPortfolioAssetsSummaryMock).toHaveBeenCalledWith('XPI', 'Acoes', 'historic')
+    expect(result.current.portfolioWeight).toBe(100)
+    // realizedGainLoss comes directly from the asset details response, not a second round-trip
+    expect(result.current.asset?.realizedGainLoss).toBe(-1750)
+  })
+
+  it('skips_current_price_fetch_for_historic_scope', async () => {
+    const historicAsset = { ...ASSET_DETAILS, quantity: 0, totalSold: 250 }
+    getAssetDetailsMock.mockResolvedValue(historicAsset)
+    getPortfolioAssetsSummaryMock.mockResolvedValue([])
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    const { result } = renderHook(() => useAssetSummary(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.asset).not.toBeNull())
+    expect(getCurrentPriceMock).not.toHaveBeenCalled()
+  })
+
+  it('computes_xirr_for_historic_scope_using_zero_terminal_value_without_waiting_for_price', async () => {
+    const historicAsset = { ...ASSET_DETAILS, quantity: 0, totalSold: 250 }
+    getAssetDetailsMock.mockResolvedValue(historicAsset)
+    getPortfolioAssetsSummaryMock.mockResolvedValue([])
+    calculateXirrMock.mockResolvedValue({ xirr: 0.08 })
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    const { result } = renderHook(() => useAssetSummary(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.xirr).toBe(0.08))
+    expect(calculateXirrMock).toHaveBeenCalledWith(historicAsset.cashFlowsWithoutCredits, 0)
+    expect(calculateXirrMock).toHaveBeenCalledWith(historicAsset.cashFlowsWithCredits, 0)
   })
 
   it('fetches_current_price_simultaneously_with_asset_details', async () => {
@@ -92,7 +170,7 @@ describe('useAssetSummary', () => {
     setNode(ASSET_NODE)
     await waitFor(() => {
       expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'KLBN4', undefined, 'XPI', undefined)
-      expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4')
+      expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'active')
     })
   })
 

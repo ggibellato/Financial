@@ -225,6 +225,7 @@ function BrokerNode({ node, filterClass }: BrokerNodeProps) {
 
 export default function InvestmentTree() {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
+  const { scope } = useSelectedNode()
   const [tree, setTree] = useState<TreeNodeDto | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -233,7 +234,7 @@ export default function InvestmentTree() {
 
   useEffect(() => {
     apiClient
-      .getNavigationTree()
+      .getNavigationTree(scope)
       .then((data) => {
         setTree(data)
         setError(null)
@@ -242,7 +243,7 @@ export default function InvestmentTree() {
         setError(err instanceof Error ? err.message : 'Unable to load investments.')
       })
       .finally(() => setIsLoading(false))
-  }, [apiClient, retryCount])
+  }, [apiClient, scope, retryCount])
 
   const handleRetry = useCallback(() => {
     setIsLoading(true)

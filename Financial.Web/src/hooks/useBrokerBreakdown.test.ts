@@ -56,7 +56,17 @@ describe('useBrokerBreakdown', () => {
     renderHook(() => useBrokerBreakdown(), { wrapper })
     setNode(BROKER_NODE)
     await waitFor(() => {
-      expect(getBrokerBreakdownMock).toHaveBeenCalledWith('XPI')
+      expect(getBrokerBreakdownMock).toHaveBeenCalledWith('XPI', 'active')
+    })
+  })
+
+  it('forwards_historic_scope_from_context', async () => {
+    getBrokerBreakdownMock.mockResolvedValue(BREAKDOWN_DTO)
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    renderHook(() => useBrokerBreakdown(), { wrapper })
+    setNode(BROKER_NODE)
+    await waitFor(() => {
+      expect(getBrokerBreakdownMock).toHaveBeenCalledWith('XPI', 'historic')
     })
   })
 

@@ -6,6 +6,7 @@ function App() {
     <div className="app">
       <nav className="app__nav" aria-label="Primary">
         <NavLink to="/active-investments">Active Investments</NavLink>
+        <NavLink to="/historic-investments">Historic Investments</NavLink>
         <NavLink to="/dividend-check">Shares Dividend Check</NavLink>
         <NavLink to="/current-values">Read Assets Current Values</NavLink>
       </nav>

@@ -1,6 +1,7 @@
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useAssetSummary } from '../hooks/useAssetSummary'
+import { useSelectedNode } from '../context/SelectedNodeContext'
 import { formatN2, formatN8, formatShortDate, pad } from '../utils/formatters'
 import './AssetSummaryTab.css'
 
@@ -20,6 +21,7 @@ function formatDateTime(isoString: string | null): string {
 }
 
 export default function AssetSummaryTab() {
+  const { scope } = useSelectedNode()
   const {
     asset,
     isLoadingAsset,
@@ -37,6 +39,7 @@ export default function AssetSummaryTab() {
     resultWithCreditsPercent,
     xirr,
     xirrWithCredits,
+    portfolioWeight,
   } = useAssetSummary()
 
   if (isLoadingAsset) {
@@ -51,8 +54,6 @@ export default function AssetSummaryTab() {
     return null
   }
 
-  const realizedGainLossClass =
-    asset.realizedGainLoss >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'
   const resultClass =
     resultPercent >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'
   const resultWithCreditsClass =
@@ -106,20 +107,51 @@ export default function AssetSummaryTab() {
           </span>
         </div>
 
-        <div className="asset-summary__field">
+        <div className="asset-summary__field asset-summary__field--full">
           <span className="asset-summary__label">Total Credits</span>
           <span className="asset-summary__value asset-summary__value--blue">
             {formatN2(asset.totalCredits)}
           </span>
         </div>
-        <div className="asset-summary__field">
-          <span className="asset-summary__label">Realized Gain/Loss</span>
-          <span className={`asset-summary__value ${realizedGainLossClass}`}>
-            {formatN2(asset.realizedGainLoss)}
-          </span>
-        </div>
 
-        {showCurrentSection && (
+        {scope === 'historic' && (
+          <>
+            <div className="asset-summary__separator" />
+
+            <div className="asset-summary__section-header">
+              <span className="asset-summary__section-title">Realized</span>
+            </div>
+
+            <div className="asset-summary__field">
+              <span className="asset-summary__label">Realized Gain/Loss</span>
+              <span
+                className={`asset-summary__value ${asset.realizedGainLoss >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'}`}
+              >
+                {formatN2(asset.realizedGainLoss)}
+              </span>
+            </div>
+            <div className="asset-summary__field">
+              <span className="asset-summary__label">Portfolio Weight</span>
+              <span className="asset-summary__value">
+                {portfolioWeight === null ? '—' : formatPercent(portfolioWeight / 100)}
+              </span>
+            </div>
+            <div className="asset-summary__field">
+              <span className="asset-summary__label">XIRR</span>
+              <span className={`asset-summary__value ${xirrClass}`}>
+                {xirr === null ? '—' : formatPercent(xirr)}
+              </span>
+            </div>
+            <div className="asset-summary__field">
+              <span className="asset-summary__label">XIRR w/ Credits</span>
+              <span className={`asset-summary__value ${xirrWithCreditsClass}`}>
+                {xirrWithCredits === null ? '—' : formatPercent(xirrWithCredits)}
+              </span>
+            </div>
+          </>
+        )}
+
+        {scope === 'active' && showCurrentSection && (
           <>
             <div className="asset-summary__separator" />
 

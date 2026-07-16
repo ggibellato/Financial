@@ -2,13 +2,13 @@ import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AggregatedSummaryData } from '../../hooks/useAggregatedSummary'
 import type { PortfolioAssetSummaryData, RowPriceState } from '../../hooks/usePortfolioAssetSummary'
-import type { AggregatedSummaryDto, PortfolioAssetSummaryItemDto } from '../../api/types'
+import type { AggregatedSummaryDto, InvestmentScope, PortfolioAssetSummaryItemDto } from '../../api/types'
 import { SelectedNodeProvider } from '../../context/SelectedNodeContext'
 import PortfolioSummaryTab from '../PortfolioSummaryTab'
 
-function renderComponent() {
+function renderComponent(scope: InvestmentScope = 'active') {
   return render(
-    <SelectedNodeProvider>
+    <SelectedNodeProvider scope={scope}>
       <PortfolioSummaryTab />
     </SelectedNodeProvider>,
   )
@@ -60,6 +60,7 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   firstInvestmentDate: '2021-03-01T00:00:00',
   currentQuantity: 25,
   averagePrice: 100,
+  averageSellPrice: null,
   totalBought: 2500,
   totalSold: 0,
   totalInvested: 2500,
@@ -142,14 +143,15 @@ describe('PortfolioSummaryTab', () => {
     expect(screen.getByText('Total Bought')).toBeInTheDocument()
   })
 
-  it('renders_table_with_correct_column_headers', () => {
+  it('renders_table_with_correct_column_headers_for_active_scope', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
-    renderComponent()
+    renderComponent('active')
     expect(screen.getByText('Asset Name')).toBeInTheDocument()
     expect(screen.getByText('First Investment')).toBeInTheDocument()
     expect(screen.getByText('Quantity')).toBeInTheDocument()
     expect(screen.getAllByText('Total Invested').length).toBeGreaterThanOrEqual(1)
+    expect(screen.queryByText('Realized Gain/Loss')).not.toBeInTheDocument()
     expect(screen.getByText('% Portfolio')).toBeInTheDocument()
     expect(screen.getAllByText('Total Credits').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Current Value')).toBeInTheDocument()
@@ -161,6 +163,16 @@ describe('PortfolioSummaryTab', () => {
     expect(screen.getByText('XIRR')).toBeInTheDocument()
   })
 
+  it('renders_table_with_correct_column_headers_for_historic_scope', () => {
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent('historic')
+    expect(screen.getByText('Realized Gain/Loss')).toBeInTheDocument()
+    expect(screen.getByText('Sold Price')).toBeInTheDocument()
+    expect(screen.queryByText('Current Value')).not.toBeInTheDocument()
+    expect(screen.queryByText('Current Price')).not.toBeInTheDocument()
+  })
+
   it('renders_asset_row_with_correctly_formatted_values', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, totalCredits: 75.5 }
     setAggregatedMock({ summary: SUMMARY })
@@ -170,6 +182,101 @@ describe('PortfolioSummaryTab', () => {
     expect(screen.getByText('01/03/2021')).toBeInTheDocument()
     expect(screen.getByText(/23\.4%/)).toBeInTheDocument()
     expect(screen.getByText(/75[.,]50/)).toBeInTheDocument()
+  })
+
+  it('renders_realized_gain_loss_for_historic_asset', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, realizedGainLoss: -50, totalBought: 300, totalSold: 250 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
+    const { container } = renderComponent('historic')
+    expect(container.textContent).toContain('-50')
+  })
+
+  it('renders_footer_realized_gain_loss_sum', () => {
+    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, realizedGainLoss: -50 }
+    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', realizedGainLoss: -20 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
+    const { container } = renderComponent('historic')
+    const input = container.querySelector('[data-label="Realized Gain/Loss"] + input') as HTMLInputElement
+    expect(input.value).toBe('-70.00')
+  })
+
+  it('renders_sold_price_for_historic_asset', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, averageSellPrice: 115.5 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent('historic')
+    expect(screen.getByText(/115[.,]50/)).toBeInTheDocument()
+  })
+
+  it('renders_dash_for_sold_price_when_never_sold', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, averageSellPrice: null }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
+    const { container } = renderComponent('historic')
+    const cell = container.querySelector('tbody td:nth-child(9)')
+    expect(cell?.textContent).toBe('—')
+  })
+
+  it('computes_historic_profit_percent_from_realized_gain_loss_excluding_credits', () => {
+    // capital-gain-only % = (realizedGainLoss - totalCredits) / totalBought x 100
+    // = (280 - 30) / 2500 x 100 = 10.00%
+    const item: PortfolioAssetSummaryItemDto = {
+      ...ITEM_1,
+      totalBought: 2500,
+      totalCredits: 30,
+      realizedGainLoss: 280,
+    }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent('historic')
+    expect(screen.getByText(/10[.,]00%/)).toBeInTheDocument()
+  })
+
+  it('computes_historic_profit_with_credits_percent_from_full_realized_gain_loss', () => {
+    // w/ credits % = realizedGainLoss / totalBought x 100 = 280 / 2500 x 100 = 11.20%
+    const item: PortfolioAssetSummaryItemDto = {
+      ...ITEM_1,
+      totalBought: 2500,
+      totalCredits: 30,
+      realizedGainLoss: 280,
+    }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent('historic')
+    expect(screen.getByText(/11[.,]20%/)).toBeInTheDocument()
+  })
+
+  it('renders_dash_for_historic_profit_when_total_bought_is_zero', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, totalBought: 0, realizedGainLoss: 0 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
+    const { container } = renderComponent('historic')
+    const profitCell = container.querySelector('tbody td:nth-child(10)')
+    const profitWithCreditsCell = container.querySelector('tbody td:nth-child(11)')
+    expect(profitCell?.textContent).toBe('—')
+    expect(profitWithCreditsCell?.textContent).toBe('—')
+  })
+
+  it('computes_historic_xirr_from_cash_flows_with_zero_terminal_value', () => {
+    xirrMock.mockReturnValue(0.15)
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1 }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent('historic')
+    expect(screen.getByText(/15[.,]00%/)).toBeInTheDocument()
+    expect(xirrMock).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ amount: 0 })]),
+    )
+  })
+
+  it('renders_dash_for_footer_current_value_when_no_row_has_price_data', () => {
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
+    const { container } = renderComponent()
+    const input = container.querySelector('[data-label="Current Value"] + input') as HTMLInputElement
+    expect(input.value).toBe('—')
   })
 
   it('renders_average_price_with_formatted_value', () => {
@@ -552,8 +659,9 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, estimatedAnnualCredits: null }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    renderComponent()
-    expect(screen.getByDisplayValue('—')).toBeInTheDocument()
+    const { container } = renderComponent()
+    const input = container.querySelector('[data-label="Est. Annual Credits"] + input') as HTMLInputElement
+    expect(input.value).toBe('—')
   })
 
   it('renders_footer_current_value_as_calculating_when_all_prices_pending', () => {

@@ -52,7 +52,7 @@ describe('financialApiClient', () => {
     expect(headers.get('Content-Type')).toBeNull()
   })
 
-  it('requests scope=active on every Active-scoped endpoint', async () => {
+  it('defaults to scope=active on every scope-capable endpoint when no scope is passed', async () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse({}))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
@@ -71,6 +71,28 @@ describe('financialApiClient', () => {
       `${API_BASE_URL}/summary/portfolio/XPI/Default?scope=active`,
       `${API_BASE_URL}/summary/broker/XPI/breakdown?scope=active`,
       `${API_BASE_URL}/summary/portfolio/XPI/Default/assets?scope=active`,
+    ])
+  })
+
+  it('requests scope=historic on every scope-capable endpoint when historic is passed', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse({}))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.getNavigationTree('historic')
+    await client.getAssetDetails('XPI', 'Uncategorized', 'CLOSEDASSET', 'historic')
+    await client.getSummaryByBroker('XPI', 'historic')
+    await client.getSummaryByPortfolio('XPI', 'Uncategorized', 'historic')
+    await client.getBrokerBreakdown('XPI', 'historic')
+    await client.getPortfolioAssetsSummary('XPI', 'Uncategorized', 'historic')
+
+    const urls = fetchMock.mock.calls.map(([url]) => url as string)
+    expect(urls).toEqual([
+      `${API_BASE_URL}/navigation/tree?scope=historic`,
+      `${API_BASE_URL}/assets/XPI/Uncategorized/CLOSEDASSET?scope=historic`,
+      `${API_BASE_URL}/summary/broker/XPI?scope=historic`,
+      `${API_BASE_URL}/summary/portfolio/XPI/Uncategorized?scope=historic`,
+      `${API_BASE_URL}/summary/broker/XPI/breakdown?scope=historic`,
+      `${API_BASE_URL}/summary/portfolio/XPI/Uncategorized/assets?scope=historic`,
     ])
   })
 
