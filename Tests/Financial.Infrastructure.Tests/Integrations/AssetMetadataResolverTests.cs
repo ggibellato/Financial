@@ -50,4 +50,30 @@ public class AssetMetadataResolverTests
 
         portfolioName.Should().Be("Cryptocurrency");
     }
+
+    [Fact]
+    public void IsClosedPortfolio_Encerradas_ReturnsTrue()
+    {
+        var resolver = CreateResolver();
+
+        resolver.IsClosedPortfolio("Encerradas").Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsClosedPortfolio_OtherPortfolioName_ReturnsFalse()
+    {
+        var resolver = CreateResolver();
+
+        resolver.IsClosedPortfolio("Acoes").Should().BeFalse();
+    }
+
+    [Fact]
+    public void ResolveHistoricPortfolioName_DelegatesToAssetClassificationLookup()
+    {
+        var resolver = CreateResolver();
+
+        var portfolioName = resolver.ResolveHistoricPortfolioName("Bitcoin");
+
+        portfolioName.Should().Be(AssetClassificationLookup.UncategorizedHistoricPortfolioName);
+    }
 }

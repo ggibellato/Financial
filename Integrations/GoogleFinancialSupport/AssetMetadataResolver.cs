@@ -11,6 +11,7 @@ internal sealed class AssetMetadataResolver
     private const string DefaultPortfolioName = "Default";
     private const string XpiBrokerName = "XPI";
     private const string XpiExchangeId = "BVMF";
+    private const string ClosedPortfolioMarkerName = "Encerradas";
 
     private readonly GoogleGeneratorOptions _options;
     private readonly GoogleSheetsAssetReader _sheetsReader;
@@ -41,6 +42,12 @@ internal sealed class AssetMetadataResolver
         }
         return portfolioName;
     }
+
+    internal bool IsClosedPortfolio(string portfolioName) =>
+        string.Equals(portfolioName, ClosedPortfolioMarkerName, StringComparison.Ordinal);
+
+    internal string ResolveHistoricPortfolioName(string assetName) =>
+        AssetClassificationLookup.ResolveHistoricPortfolio(assetName);
 
     private string GetDefaultPortfolioName(string brokerName, string spreadsheetName)
     {
