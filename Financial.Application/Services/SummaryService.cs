@@ -12,29 +12,26 @@ public sealed class SummaryService : ISummaryService
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }
 
-    public AggregatedSummaryDTO GetBrokerSummary(string brokerName)
+    public AggregatedSummaryDTO GetBrokerSummary(string brokerName, InvestmentScope scope = InvestmentScope.Active)
     {
         if (string.IsNullOrWhiteSpace(brokerName))
             return new AggregatedSummaryDTO();
 
-        var broker = _repository.GetBrokerList().FirstOrDefault(b => b.Name == brokerName);
+        var broker = _repository.GetBrokerList(scope).FirstOrDefault(b => b.Name == brokerName);
         if (broker is null)
             return new AggregatedSummaryDTO();
 
-        var assets = broker.Portfolios
-            .Where(p => !NavigationMapper.IsEncerradas(p.Name))
-            .SelectMany(p => p.Assets)
-            .Where(a => a.Active);
+        var assets = broker.Portfolios.SelectMany(p => p.Assets);
 
         return Aggregate(assets);
     }
 
-    public AggregatedSummaryDTO GetPortfolioSummary(string brokerName, string portfolioName)
+    public AggregatedSummaryDTO GetPortfolioSummary(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
     {
         if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
             return new AggregatedSummaryDTO();
 
-        var assets = _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName).Where(a => a.Active);
+        var assets = _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope);
         return Aggregate(assets);
     }
 

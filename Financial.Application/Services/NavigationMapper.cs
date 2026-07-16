@@ -1,4 +1,5 @@
 using Financial.Application.DTOs;
+using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 
 namespace Financial.Application.Services;
@@ -77,9 +78,9 @@ internal static class NavigationMapper
         };
     }
 
-    internal static BrokerNodeDTO MapBroker(Broker broker)
+    internal static BrokerNodeDTO MapBroker(Broker broker, InvestmentScope scope)
     {
-        var portfolios = MapPortfolios(broker.Portfolios).ToList();
+        var portfolios = MapPortfolios(broker.Portfolios, scope).ToList();
         return new BrokerNodeDTO
         {
             Name = broker.Name,
@@ -142,23 +143,23 @@ internal static class NavigationMapper
         return (totalBought, totalSold, totalCredits);
     }
 
-    private static IEnumerable<PortfolioNodeDTO> MapPortfolios(IEnumerable<Portfolio> portfolios)
+    private static IEnumerable<PortfolioNodeDTO> MapPortfolios(IEnumerable<Portfolio> portfolios, InvestmentScope scope)
     {
-        return portfolios.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase).Select(MapPortfolio);
+        return portfolios.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase).Select(portfolio => MapPortfolio(portfolio, scope));
     }
 
-    private static PortfolioNodeDTO MapPortfolio(Portfolio portfolio)
+    private static PortfolioNodeDTO MapPortfolio(Portfolio portfolio, InvestmentScope scope)
     {
         return new PortfolioNodeDTO
         {
             Name = portfolio.Name,
             AssetCount = portfolio.Assets.Count,
             ActiveAssetCount = portfolio.Assets.Count(a => a.Active),
-            Assets = portfolio.Assets.OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase).Select(MapAsset).ToList()
+            Assets = portfolio.Assets.OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase).Select(asset => MapAsset(asset, scope)).ToList()
         };
     }
 
-    internal static AssetNodeDTO MapAsset(Asset asset)
+    internal static AssetNodeDTO MapAsset(Asset asset, InvestmentScope scope)
     {
         return new AssetNodeDTO
         {
@@ -172,7 +173,7 @@ internal static class NavigationMapper
             Quantity = asset.Quantity,
             AveragePrice = asset.AveragePrice,
             IsActive = asset.Active,
-            PositionType = asset.PositionType,
+            PositionType = scope == InvestmentScope.Historic ? PositionType.Flat : asset.PositionType,
             TransactionCount = asset.Transactions.Count,
             CreditCount = asset.Credits.Count
         };

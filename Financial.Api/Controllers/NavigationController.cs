@@ -1,5 +1,6 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
+using Financial.Application.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Controllers;
@@ -17,17 +18,17 @@ public sealed class NavigationController : ControllerBase
 
     [HttpGet("tree")]
     [ProducesResponseType(typeof(TreeNodeDTO), StatusCodes.Status200OK)]
-    public ActionResult<TreeNodeDTO> GetNavigationTree()
+    public ActionResult<TreeNodeDTO> GetNavigationTree([FromQuery] string? scope)
     {
-        var tree = _navigationService.GetNavigationTree();
+        var tree = _navigationService.GetNavigationTree(InvestmentScopeParser.ParseOrDefault(scope));
         return Ok(tree);
     }
 
     [HttpGet("brokers")]
     [ProducesResponseType(typeof(IEnumerable<BrokerNodeDTO>), StatusCodes.Status200OK)]
-    public ActionResult<IEnumerable<BrokerNodeDTO>> GetBrokers()
+    public ActionResult<IEnumerable<BrokerNodeDTO>> GetBrokers([FromQuery] string? scope)
     {
-        var brokers = _navigationService.GetBrokers();
+        var brokers = _navigationService.GetBrokers(InvestmentScopeParser.ParseOrDefault(scope));
         return Ok(brokers);
     }
 }

@@ -105,9 +105,9 @@ public class AssetPriceFetchViewModelTests
     {
         public Dictionary<(string BrokerName, string PortfolioName), List<AssetNodeDTO>> AssetsByBrokerPortfolio { get; } = new();
 
-        public TreeNodeDTO GetNavigationTree() => throw new NotImplementedException();
-        public AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName) => throw new NotImplementedException();
-        public IEnumerable<BrokerNodeDTO> GetBrokers() => throw new NotImplementedException();
+        public TreeNodeDTO GetNavigationTree(InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
+        public AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
+        public IEnumerable<BrokerNodeDTO> GetBrokers(InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
 
         public IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName) =>
             AssetsByBrokerPortfolio.TryGetValue((brokerName, portfolioName), out var assets) ? assets : [];
