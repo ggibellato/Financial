@@ -143,6 +143,31 @@ internal static class NavigationMapper
         return (totalBought, totalSold, totalCredits);
     }
 
+    internal static decimal CalculateRealizedGainLoss(Asset asset)
+    {
+        // Mirrors Asset.AddTransaction's weighted-average recurrence exactly, replaying
+        // asset.Transactions in stored order (not sorted by Date, since that's the same
+        // order the domain itself used to produce the asset's current AveragePrice) so the
+        // running cost basis at each Sell matches what the domain actually used.
+        decimal runningAveragePrice = 0, runningQuantity = 0, realizedCapitalGain = 0;
+        foreach (var t in asset.Transactions)
+        {
+            if (t.Type == Transaction.TransactionType.Buy)
+            {
+                runningAveragePrice = (runningAveragePrice * runningQuantity + t.TotalPrice) / (runningQuantity + t.Quantity);
+                runningQuantity += t.Quantity;
+            }
+            else
+            {
+                realizedCapitalGain += t.TotalPrice - (t.Quantity * runningAveragePrice);
+                runningQuantity -= t.Quantity;
+            }
+        }
+
+        var totalCredits = asset.Credits.Sum(c => c.Value);
+        return realizedCapitalGain + totalCredits;
+    }
+
     private static IEnumerable<PortfolioNodeDTO> MapPortfolios(IEnumerable<Portfolio> portfolios, InvestmentScope scope)
     {
         return portfolios.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase).Select(portfolio => MapPortfolio(portfolio, scope));

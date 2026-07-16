@@ -87,6 +87,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   totalBought: 2000,
   totalSold: 0,
   totalCredits: 470.5,
+  realizedGainLoss: 0,
   transactions: [],
   credits: [CREDIT_A, CREDIT_B],
   cashFlowsWithCredits: [],

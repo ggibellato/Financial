@@ -92,6 +92,12 @@ public class AssetDetailsDTO
     public decimal TotalCredits { get; set; }
 
     /// <summary>
+    /// Realized gain/loss from closed (sold) quantity plus credits, computed via
+    /// weighted-average cost-basis replay of the asset's transaction history
+    /// </summary>
+    public decimal RealizedGainLoss { get; set; }
+
+    /// <summary>
     /// List of all transactions (buy/sell)
     /// </summary>
     public List<TransactionDTO> Transactions { get; set; } = new();

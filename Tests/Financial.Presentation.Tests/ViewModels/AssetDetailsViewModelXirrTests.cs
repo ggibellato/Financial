@@ -23,7 +23,8 @@ public class AssetDetailsViewModelXirrTests
     private static AssetDetailsDTO BuildAssetDetails(
         IReadOnlyList<AssetCashFlowDTO> cashFlowsWithoutCredits,
         IReadOnlyList<AssetCashFlowDTO> cashFlowsWithCredits,
-        decimal totalCredits = 0m) => new()
+        decimal totalCredits = 0m,
+        decimal realizedGainLoss = 0m) => new()
     {
         Name = "TEST",
         BrokerName = "XPI",
@@ -33,6 +34,7 @@ public class AssetDetailsViewModelXirrTests
         Quantity = 1m,
         AveragePrice = 1000m,
         TotalCredits = totalCredits,
+        RealizedGainLoss = realizedGainLoss,
         CashFlowsWithoutCredits = cashFlowsWithoutCredits,
         CashFlowsWithCredits = cashFlowsWithCredits
     };
@@ -93,6 +95,31 @@ public class AssetDetailsViewModelXirrTests
 
         vm.Xirr.Should().BeNull();
         vm.XirrWithCredits.Should().BeNull();
+    }
+
+    [Fact]
+    public void LoadAssetDetails_SetsRealizedGainLossFromDto()
+    {
+        var buyDate = DateTime.Today.AddYears(-1);
+        var cashFlows = new List<AssetCashFlowDTO> { new() { Date = buyDate, Amount = -1000m } };
+        var vm = BuildViewModel();
+
+        vm.LoadAssetDetails(BuildAssetDetails(cashFlows, cashFlows, realizedGainLoss: 62m));
+
+        vm.RealizedGainLoss.Should().Be(62m);
+    }
+
+    [Fact]
+    public void Clear_ResetsRealizedGainLossToZero()
+    {
+        var buyDate = DateTime.Today.AddYears(-1);
+        var cashFlows = new List<AssetCashFlowDTO> { new() { Date = buyDate, Amount = -1000m } };
+        var vm = BuildViewModel();
+        vm.LoadAssetDetails(BuildAssetDetails(cashFlows, cashFlows, realizedGainLoss: 62m));
+
+        vm.Clear();
+
+        vm.RealizedGainLoss.Should().Be(0m);
     }
 
     private sealed class FixedPriceService : IAssetPriceService

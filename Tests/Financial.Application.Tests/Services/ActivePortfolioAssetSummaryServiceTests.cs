@@ -51,7 +51,7 @@ public class ActivePortfolioAssetSummaryServiceTests
         item.TotalBought.Should().Be(2500m);
         item.TotalSold.Should().Be(550m);
         item.TotalInvested.Should().Be(1950m);
-        item.RealizedGainLoss.Should().BeNull();
+        item.RealizedGainLoss.Should().Be(50m);
         item.PortfolioWeight.Should().Be(100m);
     }
 
@@ -598,7 +598,7 @@ public class ActivePortfolioAssetSummaryServiceTests
     }
 
     [Fact]
-    public void GetPortfolioAssetsSummary_RealizedGainLossIsAlwaysNull()
+    public void GetPortfolioAssetsSummary_ComputesRealizedGainLossFromTransactionReplay()
     {
         var asset = MakeAsset("TEST", "TST", "BVMF");
         asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 5m, 60m, 0m));
@@ -607,7 +607,7 @@ public class ActivePortfolioAssetSummaryServiceTests
 
         var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
 
-        result[0].RealizedGainLoss.Should().BeNull();
+        result[0].RealizedGainLoss.Should().Be(-50m);
     }
 
     private ActivePortfolioAssetSummaryService CreateService() => new(_repository);
