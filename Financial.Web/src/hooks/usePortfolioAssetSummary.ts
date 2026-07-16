@@ -107,7 +107,12 @@ export function usePortfolioAssetSummary(): PortfolioAssetSummaryData {
       .getPortfolioAssetsSummary(brokerName, portfolioName, scope)
       .then((items) => {
         dispatch({ type: 'FETCH_SUCCESS', payload: items })
-        if (scope === 'historic') return
+        if (scope === 'historic') {
+          // Historic assets have no current price/XIRR concept; resolve rows immediately
+          // instead of leaving them stuck in a perpetual loading state.
+          items.forEach((_, index) => dispatch({ type: 'ROW_PRICE_ERROR', index }))
+          return
+        }
         items.forEach((item, index) => {
           void apiClient
             .getCurrentPrice(item.exchange, item.ticker, item.class, brokerName, item.assetName)

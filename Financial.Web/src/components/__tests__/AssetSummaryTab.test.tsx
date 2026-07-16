@@ -2,7 +2,16 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AssetSummaryData } from '../../hooks/useAssetSummary'
 import type { AssetDetailsDto, AssetPriceDto } from '../../api/types'
+import { SelectedNodeProvider } from '../../context/SelectedNodeContext'
 import AssetSummaryTab from '../AssetSummaryTab'
+
+function renderAssetSummaryTab() {
+  return render(
+    <SelectedNodeProvider>
+      <AssetSummaryTab />
+    </SelectedNodeProvider>,
+  )
+}
 
 const mockRefresh = vi.fn()
 const mockRetryAsset = vi.fn()
@@ -91,20 +100,20 @@ describe('AssetSummaryTab', () => {
 
   it('renders_loading_indicator_while_asset_loads', () => {
     setMock({ isLoadingAsset: true })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     expect(screen.getByText('Loading...')).toBeInTheDocument()
   })
 
   it('renders_error_state_with_retry_on_asset_failure', () => {
     setMock({ assetError: 'Unable to load asset details' })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     expect(screen.getByText('Unable to load asset details')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 
   it('renders_all_metadata_fields', () => {
     setMock({ asset: ASSET, showCurrentSection: false })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     expect(screen.getByText('Quantity')).toBeInTheDocument()
     expect(screen.getByText('Average Price')).toBeInTheDocument()
     expect(screen.getByText('ISIN')).toBeInTheDocument()
@@ -117,7 +126,7 @@ describe('AssetSummaryTab', () => {
 
   it('renders_total_bought_in_green', () => {
     setMock({ asset: ASSET })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     const totalBoughtLabel = screen.getByText('Total Bought')
     const valueEl = totalBoughtLabel.nextElementSibling
     expect(valueEl).toHaveClass('asset-summary__value--green')
@@ -125,7 +134,7 @@ describe('AssetSummaryTab', () => {
 
   it('renders_total_sold_in_red', () => {
     setMock({ asset: ASSET })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     const totalSoldLabel = screen.getByText('Total Sold')
     const valueEl = totalSoldLabel.nextElementSibling
     expect(valueEl).toHaveClass('asset-summary__value--red')
@@ -133,7 +142,7 @@ describe('AssetSummaryTab', () => {
 
   it('renders_total_credits_in_blue', () => {
     setMock({ asset: ASSET })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     const totalCreditsLabel = screen.getByText('Total Credits')
     const valueEl = totalCreditsLabel.nextElementSibling
     expect(valueEl).toHaveClass('asset-summary__value--blue')
@@ -149,7 +158,7 @@ describe('AssetSummaryTab', () => {
       totalCurrentPlusCredits: 2550,
       resultWithCreditsPercent: 0.275,
     })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     expect(screen.getByText('Current')).toBeInTheDocument()
     expect(screen.getByText('Current Value')).toBeInTheDocument()
     expect(screen.getByText('As of')).toBeInTheDocument()
@@ -158,20 +167,20 @@ describe('AssetSummaryTab', () => {
 
   it('hides_current_section_when_quantity_is_zero', () => {
     setMock({ asset: { ...ASSET, quantity: 0 }, showCurrentSection: false })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     expect(screen.queryByText('Current')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Refresh' })).not.toBeInTheDocument()
   })
 
   it('hides_current_section_when_average_price_is_zero', () => {
     setMock({ asset: { ...ASSET, averagePrice: 0 }, showCurrentSection: false })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     expect(screen.queryByText('Current')).not.toBeInTheDocument()
   })
 
   it('renders_dash_for_current_value_while_price_loads', () => {
     setMock({ asset: ASSET, showCurrentSection: true, isLoadingPrice: true, price: null })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     const currentValueLabel = screen.getByText('Current Value')
     expect(currentValueLabel.nextElementSibling?.textContent).toBe('—')
   })
@@ -186,7 +195,7 @@ describe('AssetSummaryTab', () => {
       totalCurrentPlusCredits: 2550,
       resultWithCreditsPercent: 0.275,
     })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     const resultLabel = screen.getByText('Result %')
     const valueEl = resultLabel.nextElementSibling
     expect(valueEl).toHaveClass('asset-summary__value--green')
@@ -202,7 +211,7 @@ describe('AssetSummaryTab', () => {
       totalCurrentPlusCredits: 1550,
       resultWithCreditsPercent: -0.225,
     })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     const resultLabel = screen.getByText('Result %')
     const valueEl = resultLabel.nextElementSibling
     expect(valueEl).toHaveClass('asset-summary__value--red')
@@ -210,7 +219,7 @@ describe('AssetSummaryTab', () => {
 
   it('renders_price_error_in_status_field', () => {
     setMock({ asset: ASSET, showCurrentSection: true, priceError: 'Price unavailable' })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     expect(screen.getByText('Status')).toBeInTheDocument()
     const statusLabel = screen.getByText('Status')
     expect(statusLabel.nextElementSibling?.textContent).toBe('Price unavailable')
@@ -219,19 +228,19 @@ describe('AssetSummaryTab', () => {
 
   it('refresh_button_enabled_after_price_load', () => {
     setMock({ asset: ASSET, price: PRICE, showCurrentSection: true, canRefresh: true, totalCurrentValue: 2500, resultPercent: 0.25, totalCurrentPlusCredits: 2550, resultWithCreditsPercent: 0.275 })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     expect(screen.getByRole('button', { name: 'Refresh' })).not.toBeDisabled()
   })
 
   it('disables_refresh_button_while_price_is_loading', () => {
     setMock({ asset: ASSET, showCurrentSection: true, isLoadingPrice: true, canRefresh: false })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     expect(screen.getByRole('button', { name: 'Refresh' })).toBeDisabled()
   })
 
   it('calls_refresh_on_button_click', () => {
     setMock({ asset: ASSET, price: PRICE, showCurrentSection: true, canRefresh: true, totalCurrentValue: 2500, resultPercent: 0.25, totalCurrentPlusCredits: 2550, resultWithCreditsPercent: 0.275 })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
     expect(mockRefresh).toHaveBeenCalledTimes(1)
   })
@@ -246,7 +255,7 @@ describe('AssetSummaryTab', () => {
       xirr: null,
       xirrWithCredits: null,
     })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     const xirrLabel = screen.getByText('XIRR')
     expect(xirrLabel.nextElementSibling?.textContent).toBe('—')
     const xirrWithCreditsLabel = screen.getByText('XIRR w/ Credits')
@@ -263,7 +272,7 @@ describe('AssetSummaryTab', () => {
       xirr: 0.1234,
       xirrWithCredits: 0.15,
     })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     const xirrLabel = screen.getByText('XIRR')
     expect(xirrLabel.nextElementSibling).toHaveClass('asset-summary__value--green')
   })
@@ -278,7 +287,7 @@ describe('AssetSummaryTab', () => {
       xirr: -0.1234,
       xirrWithCredits: -0.1,
     })
-    render(<AssetSummaryTab />)
+    renderAssetSummaryTab()
     const xirrLabel = screen.getByText('XIRR')
     expect(xirrLabel.nextElementSibling).toHaveClass('asset-summary__value--red')
   })

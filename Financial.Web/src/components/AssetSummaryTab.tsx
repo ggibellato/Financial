@@ -1,6 +1,7 @@
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useAssetSummary } from '../hooks/useAssetSummary'
+import { useSelectedNode } from '../context/SelectedNodeContext'
 import { formatN2, formatN8, formatShortDate, pad } from '../utils/formatters'
 import './AssetSummaryTab.css'
 
@@ -20,6 +21,7 @@ function formatDateTime(isoString: string | null): string {
 }
 
 export default function AssetSummaryTab() {
+  const { scope } = useSelectedNode()
   const {
     asset,
     isLoadingAsset,
@@ -37,6 +39,8 @@ export default function AssetSummaryTab() {
     resultWithCreditsPercent,
     xirr,
     xirrWithCredits,
+    realizedGainLoss,
+    portfolioWeight,
   } = useAssetSummary()
 
   if (isLoadingAsset) {
@@ -111,7 +115,32 @@ export default function AssetSummaryTab() {
           </span>
         </div>
 
-        {showCurrentSection && (
+        {scope === 'historic' && (
+          <>
+            <div className="asset-summary__separator" />
+
+            <div className="asset-summary__section-header">
+              <span className="asset-summary__section-title">Realized</span>
+            </div>
+
+            <div className="asset-summary__field">
+              <span className="asset-summary__label">Realized Gain/Loss</span>
+              <span
+                className={`asset-summary__value ${realizedGainLoss === null ? '' : realizedGainLoss >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'}`}
+              >
+                {realizedGainLoss === null ? '—' : formatN2(realizedGainLoss)}
+              </span>
+            </div>
+            <div className="asset-summary__field">
+              <span className="asset-summary__label">Portfolio Weight</span>
+              <span className="asset-summary__value">
+                {portfolioWeight === null ? '—' : formatPercent(portfolioWeight / 100)}
+              </span>
+            </div>
+          </>
+        )}
+
+        {scope === 'active' && showCurrentSection && (
           <>
             <div className="asset-summary__separator" />
 

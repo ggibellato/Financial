@@ -547,8 +547,9 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, estimatedAnnualCredits: null }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    renderComponent()
-    expect(screen.getByDisplayValue('—')).toBeInTheDocument()
+    const { container } = renderComponent()
+    const input = container.querySelector('[data-label="Est. Annual Credits"] + input') as HTMLInputElement
+    expect(input.value).toBe('—')
   })
 
   it('renders_footer_current_value_as_calculating_when_all_prices_pending', () => {

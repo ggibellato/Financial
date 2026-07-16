@@ -62,6 +62,13 @@ function AssetRow({ item, rowPrice }: AssetRowProps) {
       <td>{formatPortfolioWeight(item.portfolioWeight)}</td>
       <td>{formatN2(item.totalInvested)}</td>
       <td>
+        {item.realizedGainLoss === null ? (
+          '—'
+        ) : (
+          <span className={getProfitClass(item.realizedGainLoss)}>{formatN2(item.realizedGainLoss)}</span>
+        )}
+      </td>
+      <td>
         {rowPrice.isLoading ? (
           <span className="portfolio-summary__loading-cell">...</span>
         ) : rowPrice.fetchFailed || currentValue === null ? (
@@ -136,6 +143,7 @@ function computeCurrentValueFooter(
     .filter((v): v is number => v !== null)
 
   if (anyLoading && resolved.length === 0) return { display: 'Calculating…', partial: false }
+  if (!anyLoading && resolved.length === 0) return { display: '—', partial: false }
   const sum = resolved.reduce((acc, v) => acc + v, 0)
   if (anyLoading) return { display: `${formatN2(sum)} *`, partial: true }
   return { display: formatN2(sum), partial: false }
@@ -159,8 +167,12 @@ export default function PortfolioSummaryTab() {
           const estAnnualCredits = hasAnyAnnual
             ? items.reduce((acc, it) => acc + (it.estimatedAnnualCredits ?? 0), 0)
             : null
+          const hasAnyRealizedGainLoss = items.some(it => it.realizedGainLoss !== null)
+          const realizedGainLoss = hasAnyRealizedGainLoss
+            ? items.reduce((acc, it) => acc + (it.realizedGainLoss ?? 0), 0)
+            : null
           const cv = computeCurrentValueFooter(items, rowPrices)
-          return { totalInvested, totalCredits, currentMonthCredits, estAnnualCredits, cv }
+          return { totalInvested, totalCredits, currentMonthCredits, estAnnualCredits, realizedGainLoss, cv }
         })()
       : null
 
@@ -182,6 +194,7 @@ export default function PortfolioSummaryTab() {
                 <th rowSpan={2}>Quantity</th>
                 <th rowSpan={2}>% Portfolio</th>
                 <th rowSpan={2}>Total Invested</th>
+                <th rowSpan={2}>Realized Gain/Loss</th>
                 <th rowSpan={2}>Current Value</th>
                 <th rowSpan={2}>Total Credits</th>
                 <th rowSpan={2}>Average Price</th>
@@ -223,6 +236,10 @@ export default function PortfolioSummaryTab() {
           <div className="portfolio-summary__footer-item">
             <span className="portfolio-summary__footer-label" data-label="Total Credits" />
             <input type="text" readOnly className="portfolio-summary__footer-value" value={formatN2(footer.totalCredits)} tabIndex={-1} />
+          </div>
+          <div className="portfolio-summary__footer-item">
+            <span className="portfolio-summary__footer-label" data-label="Realized Gain/Loss" />
+            <input type="text" readOnly className="portfolio-summary__footer-value" value={footer.realizedGainLoss === null ? '—' : formatN2(footer.realizedGainLoss)} tabIndex={-1} />
           </div>
           <div className="portfolio-summary__footer-item">
             <span className="portfolio-summary__footer-label" data-label="Current Value" />
