@@ -191,17 +191,15 @@ export function useAssetSummary(): AssetSummaryData {
   const totalCurrentValue =
     state.price && state.asset ? state.price.price * state.asset.quantity : 0
 
+  const costBasis = state.asset ? state.asset.quantity * state.asset.averagePrice : 0
+
   const resultPercent =
-    state.asset && state.asset.totalBought !== 0
-      ? (totalCurrentValue - state.asset.totalBought) / state.asset.totalBought
-      : 0
+    costBasis !== 0 ? (totalCurrentValue - costBasis) / costBasis : 0
 
   const totalCurrentPlusCredits = state.asset ? totalCurrentValue + state.asset.totalCredits : 0
 
   const resultWithCreditsPercent =
-    state.asset && state.asset.totalBought !== 0
-      ? (totalCurrentPlusCredits - state.asset.totalBought) / state.asset.totalBought
-      : 0
+    costBasis !== 0 ? (totalCurrentPlusCredits - costBasis) / costBasis : 0
 
   return {
     asset: state.asset,

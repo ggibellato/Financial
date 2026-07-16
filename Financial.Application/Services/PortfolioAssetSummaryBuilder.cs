@@ -10,11 +10,10 @@ internal static class PortfolioAssetSummaryBuilder
     internal static IReadOnlyList<PortfolioAssetSummaryItemDTO> Build(
         IEnumerable<Asset> assets,
         DateTime today,
-        Func<AssetTotals, decimal> weightBasisSelector,
-        Func<AssetTotals, decimal?> realizedGainLossSelector)
+        Func<AssetTotals, decimal> weightBasisSelector)
     {
         var computed = assets
-            .Select(a => ComputeAssetData(a, today, weightBasisSelector, realizedGainLossSelector))
+            .Select(a => ComputeAssetData(a, today, weightBasisSelector))
             .ToList();
         var portfolioWeightBasis = computed.Sum(c => c.WeightBasis);
 
@@ -27,13 +26,12 @@ internal static class PortfolioAssetSummaryBuilder
     private static AssetComputedData ComputeAssetData(
         Asset asset,
         DateTime today,
-        Func<AssetTotals, decimal> weightBasisSelector,
-        Func<AssetTotals, decimal?> realizedGainLossSelector)
+        Func<AssetTotals, decimal> weightBasisSelector)
     {
         var (totalBought, totalSold, totalCredits) = NavigationMapper.CalculateTotals(asset);
         var totals = new AssetTotals(totalBought, totalSold, totalCredits);
         var weightBasis = weightBasisSelector(totals);
-        var realizedGainLoss = realizedGainLossSelector(totals);
+        var realizedGainLoss = NavigationMapper.CalculateRealizedGainLoss(asset);
 
         var firstBuyDate = asset.Transactions
             .Where(t => t.Type == Transaction.TransactionType.Buy)
@@ -155,7 +153,7 @@ internal static class PortfolioAssetSummaryBuilder
     private sealed record AssetComputedData(
         string AssetName, string Ticker, string Exchange, GlobalAssetClass Class,
         DateTime? FirstInvestmentDate, decimal CurrentQuantity, decimal AveragePrice,
-        decimal TotalBought, decimal TotalSold, decimal TotalInvested, decimal? RealizedGainLoss, decimal WeightBasis,
+        decimal TotalBought, decimal TotalSold, decimal TotalInvested, decimal RealizedGainLoss, decimal WeightBasis,
         decimal TotalCredits, IReadOnlyList<AssetCashFlowDTO> CashFlows,
         decimal LastMonthCredits, string? LastCreditMonth, decimal? LastMonthCreditsPercent,
         int? CreditFrequencyPerYear, decimal? EstimatedAnnualCredits, decimal? EstimatedAnnualPercent,

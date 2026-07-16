@@ -77,6 +77,7 @@ public sealed class NavigationService : INavigationService
             TotalBought = totalBought,
             TotalSold = totalSold,
             TotalCredits = totalCredits,
+            RealizedGainLoss = NavigationMapper.CalculateRealizedGainLoss(asset),
             Transactions = transactions,
             Credits = credits,
             CashFlowsWithCredits = AssetCashFlowBuilder.BuildWithCredits(asset),

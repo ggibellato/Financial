@@ -47,6 +47,7 @@ const ASSET: AssetDetailsDto = {
   totalBought: 2000,
   totalSold: 500,
   totalCredits: 50,
+  realizedGainLoss: 75,
   transactions: [],
   credits: [],
   cashFlowsWithCredits: [],
@@ -135,6 +136,27 @@ describe('AssetSummaryTab', () => {
     const totalCreditsLabel = screen.getByText('Total Credits')
     const valueEl = totalCreditsLabel.nextElementSibling
     expect(valueEl).toHaveClass('asset-summary__value--blue')
+  })
+
+  it('renders_realized_gain_loss_field_regardless_of_current_section', () => {
+    setMock({ asset: ASSET, showCurrentSection: false })
+    render(<AssetSummaryTab />)
+    const label = screen.getByText('Realized Gain/Loss')
+    expect(label.nextElementSibling?.textContent).toBe('75.00')
+  })
+
+  it('renders_positive_realized_gain_loss_in_green', () => {
+    setMock({ asset: { ...ASSET, realizedGainLoss: 75 } })
+    render(<AssetSummaryTab />)
+    const label = screen.getByText('Realized Gain/Loss')
+    expect(label.nextElementSibling).toHaveClass('asset-summary__value--green')
+  })
+
+  it('renders_negative_realized_gain_loss_in_red', () => {
+    setMock({ asset: { ...ASSET, realizedGainLoss: -30 } })
+    render(<AssetSummaryTab />)
+    const label = screen.getByText('Realized Gain/Loss')
+    expect(label.nextElementSibling).toHaveClass('asset-summary__value--red')
   })
 
   it('renders_current_section_when_quantity_and_price_nonzero', () => {

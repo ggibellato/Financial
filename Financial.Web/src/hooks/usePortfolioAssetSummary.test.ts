@@ -47,7 +47,7 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   totalBought: 2500,
   totalSold: 0,
   totalInvested: 2500,
-  realizedGainLoss: null,
+  realizedGainLoss: 0,
   portfolioWeight: 71.4,
   totalCredits: 125,
   cashFlows: [
@@ -75,7 +75,7 @@ const ITEM_2: PortfolioAssetSummaryItemDto = {
   totalBought: 1000,
   totalSold: 0,
   totalInvested: 1000,
-  realizedGainLoss: null,
+  realizedGainLoss: 0,
   portfolioWeight: 28.6,
   totalCredits: 0,
   cashFlows: [

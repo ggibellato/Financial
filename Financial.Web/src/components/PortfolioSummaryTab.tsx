@@ -34,14 +34,16 @@ function AssetRow({ item, rowPrice }: AssetRowProps) {
   const currentValue =
     rowPrice.currentPrice !== null ? rowPrice.currentPrice * item.currentQuantity : null
 
+  const costBasis = item.currentQuantity * item.averagePrice
+
   const profitPercent =
-    currentValue !== null && item.totalInvested !== 0
-      ? ((currentValue - item.totalInvested) / item.totalInvested) * 100
+    currentValue !== null && costBasis !== 0
+      ? ((currentValue - costBasis) / costBasis) * 100
       : null
 
   const profitWithCreditsPercent =
-    currentValue !== null && item.totalInvested !== 0
-      ? ((currentValue + item.totalCredits - item.totalInvested) / item.totalInvested) * 100
+    currentValue !== null && costBasis !== 0
+      ? ((currentValue + item.totalCredits - costBasis) / costBasis) * 100
       : null
 
   const xirrValue = (() => {

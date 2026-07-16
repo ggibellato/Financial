@@ -228,7 +228,7 @@
                                                Margin="10,5"
                                                Foreground="Red"/>
 
-                                    <!-- Row 5: Total Credits -->
+                                    <!-- Row 5: Total Credits & Realized Gain/Loss -->
                                     <TextBlock Grid.Row="5" Grid.Column="0" Text="Total Credits:" FontWeight="Bold" Margin="0,5"/>
                                     <TextBlock Grid.Row="5" Grid.Column="1"
                                                Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}"
@@ -236,6 +236,14 @@
                                                FontFamily="Consolas"
                                                Margin="10,5"
                                                Foreground="Blue"/>
+
+                                    <TextBlock Grid.Row="5" Grid.Column="2" Text="Realized Gain/Loss:" FontWeight="Bold" Margin="20,5,0,5"/>
+                                    <TextBlock Grid.Row="5" Grid.Column="3"
+                                               Text="{Binding AssetDetails.RealizedGainLoss, Mode=OneWay, StringFormat=N2}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Foreground="{Binding AssetDetails.RealizedGainLoss, Converter={StaticResource SignedValueToBrushConverter}}"
+                                               Margin="10,5"/>
 
                                     <!-- Separator -->
                                     <Border Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="4"
