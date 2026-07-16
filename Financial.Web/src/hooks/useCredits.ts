@@ -248,7 +248,7 @@ export interface CreditsData {
 }
 
 export function useCredits(): CreditsData {
-  const { selectedNode } = useSelectedNode()
+  const { selectedNode, scope } = useSelectedNode()
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
@@ -265,7 +265,7 @@ export function useCredits(): CreditsData {
 
     if (nodeType === 'Asset' && portfolioName && assetName) {
       void apiClient
-        .getAssetDetails(brokerName, portfolioName, assetName)
+        .getAssetDetails(brokerName, portfolioName, assetName, scope)
         .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result.credits }))
         .catch((err: unknown) => {
           dispatch({
@@ -294,7 +294,7 @@ export function useCredits(): CreditsData {
           })
         })
     }
-  }, [selectedNode, apiClient, state.retryCount])
+  }, [selectedNode, apiClient, scope, state.retryCount])
 
   const credits = useMemo(
     () =>

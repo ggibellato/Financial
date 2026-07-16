@@ -119,7 +119,7 @@ describe('useCredits', () => {
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(ASSET_NODE)
-    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4'))
+    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'active'))
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(result.current.credits).toHaveLength(2)
   })
@@ -202,12 +202,12 @@ describe('useCredits', () => {
     expect(result.current.selectedMode).toBe('Grouped')
 
     setNode(ASSET_NODE_B)
-    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'TASA4'))
+    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'TASA4', 'active'))
     expect(result.current.selectedFilter).toBe('last-12-months')
     expect(result.current.selectedMode).toBe('Stacked')
 
     setNode(ASSET_NODE)
-    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4'))
+    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'active'))
     await waitFor(() => expect(result.current.selectedFilter).toBe('last-3-months'))
     expect(result.current.selectedMode).toBe('Grouped')
   })
@@ -469,11 +469,11 @@ describe('useCredits', () => {
     expect(result.current.selectedChartType).toBe('Line')
 
     setNode(ASSET_NODE_B)
-    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'TASA4'))
+    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'TASA4', 'active'))
     expect(result.current.selectedChartType).toBe('Bar')
 
     setNode(ASSET_NODE)
-    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4'))
+    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'active'))
     await waitFor(() => expect(result.current.selectedChartType).toBe('Line'))
   })
 

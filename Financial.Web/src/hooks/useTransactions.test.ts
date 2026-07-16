@@ -130,7 +130,7 @@ describe('useTransactions', () => {
     renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => {
-      expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4')
+      expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'active')
     })
   })
 
