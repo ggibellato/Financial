@@ -21,11 +21,8 @@ public sealed class HistoricPortfolioAssetSummaryService : IHistoricPortfolioAss
         if (assets.Count == 0)
             return [];
 
-        return PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, CalculateGrossBought, CalculateRealizedGainLoss);
+        return PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, CalculateGrossBought);
     }
 
     private static decimal CalculateGrossBought(AssetTotals totals) => totals.TotalBought;
-
-    private static decimal? CalculateRealizedGainLoss(AssetTotals totals) =>
-        totals.TotalSold - totals.TotalBought + totals.TotalCredits;
 }

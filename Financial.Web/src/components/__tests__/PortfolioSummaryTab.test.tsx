@@ -63,7 +63,7 @@ const ITEM_1: PortfolioAssetSummaryItemDto = {
   totalBought: 2500,
   totalSold: 0,
   totalInvested: 2500,
-  realizedGainLoss: null,
+  realizedGainLoss: 0,
   portfolioWeight: 23.4,
   totalCredits: 0,
   cashFlows: [],
@@ -260,7 +260,8 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('renders_correct_profit_percent', () => {
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 25, totalInvested: 250 }
+    // costBasis = quantity x averagePrice = 25 x 10 = 250
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 25, averagePrice: 10, totalInvested: 250 }
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
@@ -272,11 +273,12 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('renders_correct_profit_with_credits_percent', () => {
-    // currentValue = 10.5 * 25 = 262.50
+    // currentValue = 10.5 * 25 = 262.50; costBasis = 25 x 10 = 250
     // profitWithCreditsPercent = (262.50 + 12.50 - 250) / 250 * 100 = 10.00%
     const item: PortfolioAssetSummaryItemDto = {
       ...ITEM_1,
       currentQuantity: 25,
+      averagePrice: 10,
       totalInvested: 250,
       totalCredits: 12.5,
     }
@@ -308,7 +310,7 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('renders_dash_in_profit_when_total_invested_is_zero', () => {
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, totalInvested: 0 }
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, averagePrice: 0, totalInvested: 0 }
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
@@ -330,7 +332,8 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('applies_green_class_to_positive_profit', () => {
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 25, totalInvested: 200 }
+    // costBasis = 25 x 8 = 200
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 25, averagePrice: 8, totalInvested: 200 }
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
@@ -340,7 +343,8 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('applies_red_class_to_negative_profit', () => {
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 25, totalInvested: 300 }
+    // costBasis = 25 x 12 = 300
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 25, averagePrice: 12, totalInvested: 300 }
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
@@ -350,11 +354,12 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('applies_green_class_to_positive_profit_with_credits', () => {
-    // currentValue = 10.5 * 25 = 262.50; totalInvested = 300; totalCredits = 50
+    // currentValue = 10.5 * 25 = 262.50; costBasis = 25 x 12 = 300; totalCredits = 50
     // profitWithCreditsPercent = (262.50 + 50 - 300) / 300 * 100 = 4.17% (positive)
     const item: PortfolioAssetSummaryItemDto = {
       ...ITEM_1,
       currentQuantity: 25,
+      averagePrice: 12,
       totalInvested: 300,
       totalCredits: 50,
     }

@@ -101,6 +101,7 @@ export interface AssetDetailsDto {
   totalBought: number
   totalSold: number
   totalCredits: number
+  realizedGainLoss: number
   transactions: TransactionDto[]
   credits: CreditDto[]
   cashFlowsWithCredits: AssetCashFlowDto[]
@@ -248,7 +249,7 @@ export interface PortfolioAssetSummaryItemDto {
   totalBought: number
   totalSold: number
   totalInvested: number
-  realizedGainLoss: number | null
+  realizedGainLoss: number
   portfolioWeight: number
   totalCredits: number
   cashFlows: AssetCashFlowDto[]

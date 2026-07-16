@@ -119,12 +119,14 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
         _currentPrice = price;
         _currentValue = price * CurrentQuantity;
 
-        _profitPercent = TotalInvested != 0
-            ? (_currentValue.Value - TotalInvested) / TotalInvested * 100
+        var costBasis = CurrentQuantity * AveragePrice;
+
+        _profitPercent = costBasis != 0
+            ? (_currentValue.Value - costBasis) / costBasis * 100
             : (decimal?)null;
 
-        _profitWithCreditsPercent = TotalInvested != 0
-            ? (_currentValue.Value + TotalCredits - TotalInvested) / TotalInvested * 100
+        _profitWithCreditsPercent = costBasis != 0
+            ? (_currentValue.Value + TotalCredits - costBasis) / costBasis * 100
             : (decimal?)null;
 
         var xirrFraction = _xirrCalculationService.Calculate(CashFlows, _currentValue.Value);

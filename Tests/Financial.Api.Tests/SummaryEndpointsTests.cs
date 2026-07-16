@@ -182,7 +182,7 @@ public class SummaryEndpointsTests
     }
 
     [Fact]
-    public async Task GetPortfolioAssetsSummary_ScopeActive_PreservesNetInvestedWeightingAndNullRealizedGainLoss()
+    public async Task GetPortfolioAssetsSummary_ScopeActive_PreservesNetInvestedWeightingAndComputesRealizedGainLoss()
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
@@ -194,10 +194,11 @@ public class SummaryEndpointsTests
         var items = await response.Content.ReadFromJsonAsync<List<PortfolioAssetSummaryItemDTO>>();
         items.Should().NotBeNull();
         // BCIA11: bought 10 x 100 = 1000, sold 2 x 110 = 220 — active weighting stays net invested (780), 100% of the portfolio
+        // RealizedGainLoss = capital gain (220 - 2 x 100 average cost = 20) + credits (5 + 6 = 11) = 31
         var bcia11 = items!.Single(i => i.AssetName == "BCIA11");
         bcia11.TotalInvested.Should().Be(780m);
         bcia11.PortfolioWeight.Should().Be(100m);
-        bcia11.RealizedGainLoss.Should().BeNull();
+        bcia11.RealizedGainLoss.Should().Be(31m);
     }
 
     [Fact]

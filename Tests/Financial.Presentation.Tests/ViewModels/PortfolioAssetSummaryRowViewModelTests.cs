@@ -176,9 +176,9 @@ public class PortfolioAssetSummaryRowViewModelTests
     [Fact]
     public void DisplayProfitPercent_AfterApplyPrice_ReturnsFormattedPercent()
     {
-        var row = BuildRow(currentQuantity: 25m, totalInvested: 250m);
+        var row = BuildRow(currentQuantity: 25m, averagePrice: 10m, totalInvested: 250m);
         row.ApplyPrice(10.50m);
-        // CurrentValue = 262.50, Profit = (262.50 - 250) / 250 * 100 = 5.00
+        // CurrentValue = 262.50, costBasis = 25 x 10 = 250, Profit = (262.50 - 250) / 250 * 100 = 5.00
         row.DisplayProfitPercent.Should().Be("5.00%");
     }
 
@@ -209,10 +209,20 @@ public class PortfolioAssetSummaryRowViewModelTests
     [Fact]
     public void DisplayProfitWithCreditsPercent_AfterApplyPrice_ReturnsFormattedPercent()
     {
-        var row = BuildRow(currentQuantity: 25m, totalInvested: 250m, totalCredits: 12.5m);
+        var row = BuildRow(currentQuantity: 25m, averagePrice: 10m, totalInvested: 250m, totalCredits: 12.5m);
         row.ApplyPrice(10.50m);
-        // CurrentValue = 262.50, ProfitWithCredits = (262.50 + 12.5 - 250) / 250 * 100 = 10.00
+        // CurrentValue = 262.50, costBasis = 25 x 10 = 250, ProfitWithCredits = (262.50 + 12.5 - 250) / 250 * 100 = 10.00
         row.DisplayProfitWithCreditsPercent.Should().Be("10.00%");
+    }
+
+    [Fact]
+    public void DisplayProfitPercent_UsesCurrentCostBasisNotGrossTotalInvested()
+    {
+        // Partial sell scenario: totalInvested (2000, gross bought) no longer reflects the current
+        // position's cost basis once some quantity has been sold — quantity x averagePrice (60 x 20 = 1200) does.
+        var row = BuildRow(currentQuantity: 60m, averagePrice: 20m, totalInvested: 2000m);
+        row.ApplyPrice(25m); // CurrentValue = 1500, costBasis = 1200, Profit = (1500 - 1200) / 1200 * 100 = 25.00
+        row.DisplayProfitPercent.Should().Be("25.00%");
     }
 
     [Fact]
@@ -261,8 +271,8 @@ public class PortfolioAssetSummaryRowViewModelTests
     [Fact]
     public void ProfitIsPositive_WhenCurrentValueExceedsTotalInvested_IsTrue()
     {
-        var row = BuildRow(currentQuantity: 25m, totalInvested: 250m);
-        row.ApplyPrice(10.50m); // CurrentValue = 262.50 > 250
+        var row = BuildRow(currentQuantity: 25m, averagePrice: 10m, totalInvested: 250m);
+        row.ApplyPrice(10.50m); // CurrentValue = 262.50 > costBasis (250)
         row.ProfitIsPositive.Should().BeTrue();
         row.ProfitIsNegative.Should().BeFalse();
     }
@@ -270,8 +280,8 @@ public class PortfolioAssetSummaryRowViewModelTests
     [Fact]
     public void ProfitIsNegative_WhenCurrentValueBelowTotalInvested_IsTrue()
     {
-        var row = BuildRow(currentQuantity: 25m, totalInvested: 300m);
-        row.ApplyPrice(10.00m); // CurrentValue = 250 < 300
+        var row = BuildRow(currentQuantity: 25m, averagePrice: 12m, totalInvested: 300m);
+        row.ApplyPrice(10.00m); // CurrentValue = 250 < costBasis (300)
         row.ProfitIsNegative.Should().BeTrue();
         row.ProfitIsPositive.Should().BeFalse();
     }
@@ -288,9 +298,9 @@ public class PortfolioAssetSummaryRowViewModelTests
     [Fact]
     public void ProfitWithCreditsIsPositive_WhenProfitWithCreditsExceedsZero_IsTrue()
     {
-        // CurrentValue < TotalInvested but CurrentValue + TotalCredits > TotalInvested
-        var row = BuildRow(currentQuantity: 25m, totalInvested: 300m, totalCredits: 100m);
-        row.ApplyPrice(10.00m); // CurrentValue = 250, 250 + 100 = 350 > 300
+        // CurrentValue < costBasis but CurrentValue + TotalCredits > costBasis
+        var row = BuildRow(currentQuantity: 25m, averagePrice: 12m, totalInvested: 300m, totalCredits: 100m);
+        row.ApplyPrice(10.00m); // CurrentValue = 250, 250 + 100 = 350 > costBasis (300)
         row.ProfitWithCreditsIsPositive.Should().BeTrue();
         row.ProfitWithCreditsIsNegative.Should().BeFalse();
     }
@@ -298,8 +308,8 @@ public class PortfolioAssetSummaryRowViewModelTests
     [Fact]
     public void ProfitWithCreditsIsNegative_WhenProfitWithCreditsBelowZero_IsTrue()
     {
-        var row = BuildRow(currentQuantity: 25m, totalInvested: 300m, totalCredits: 0m);
-        row.ApplyPrice(10.00m); // CurrentValue = 250 < 300, no credits
+        var row = BuildRow(currentQuantity: 25m, averagePrice: 12m, totalInvested: 300m, totalCredits: 0m);
+        row.ApplyPrice(10.00m); // CurrentValue = 250 < costBasis (300), no credits
         row.ProfitWithCreditsIsNegative.Should().BeTrue();
         row.ProfitWithCreditsIsPositive.Should().BeFalse();
     }

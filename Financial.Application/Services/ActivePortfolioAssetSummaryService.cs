@@ -21,10 +21,8 @@ public sealed class ActivePortfolioAssetSummaryService : IActivePortfolioAssetSu
         if (assets.Count == 0)
             return [];
 
-        return PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, CalculateNetInvested, NoRealizedGainLoss);
+        return PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, CalculateNetInvested);
     }
 
     private static decimal CalculateNetInvested(AssetTotals totals) => totals.TotalBought - totals.TotalSold;
-
-    private static decimal? NoRealizedGainLoss(AssetTotals totals) => null;
 }

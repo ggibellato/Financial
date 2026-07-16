@@ -52,6 +52,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   totalBought: 2000,
   totalSold: 0,
   totalCredits: 50,
+  realizedGainLoss: 0,
   transactions: [],
   credits: [],
   cashFlowsWithCredits: [{ date: '2024-01-01T00:00:00', amount: -2000 }],
@@ -239,7 +240,8 @@ describe('useAssetSummary', () => {
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.price).not.toBeNull())
     const tcv = PRICE.price * ASSET_DETAILS.quantity
-    const expected = (tcv - ASSET_DETAILS.totalBought) / ASSET_DETAILS.totalBought
+    const costBasis = ASSET_DETAILS.quantity * ASSET_DETAILS.averagePrice
+    const expected = (tcv - costBasis) / costBasis
     expect(result.current.resultPercent).toBeCloseTo(expected, 5)
   })
 
@@ -263,8 +265,26 @@ describe('useAssetSummary', () => {
     await waitFor(() => expect(result.current.price).not.toBeNull())
     const tcv = PRICE.price * ASSET_DETAILS.quantity
     const tcc = tcv + ASSET_DETAILS.totalCredits
-    const expected = (tcc - ASSET_DETAILS.totalBought) / ASSET_DETAILS.totalBought
+    const costBasis = ASSET_DETAILS.quantity * ASSET_DETAILS.averagePrice
+    const expected = (tcc - costBasis) / costBasis
     expect(result.current.resultWithCreditsPercent).toBeCloseTo(expected, 5)
+  })
+
+  it('computes_result_percent_using_current_cost_basis_not_gross_total_bought', async () => {
+    // Partial sell scenario: totalBought (2000) no longer reflects the current position's
+    // cost basis once some quantity has been sold — quantity x averagePrice (60 x 20 = 1200) does.
+    const partiallySold: AssetDetailsDto = { ...ASSET_DETAILS, quantity: 60, totalBought: 2000, totalSold: 800 }
+    getAssetDetailsMock.mockResolvedValue(partiallySold)
+    getCurrentPriceMock.mockResolvedValue(PRICE)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useAssetSummary(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.price).not.toBeNull())
+    const tcv = PRICE.price * partiallySold.quantity
+    const costBasis = partiallySold.quantity * partiallySold.averagePrice
+    const expected = (tcv - costBasis) / costBasis
+    expect(result.current.resultPercent).toBeCloseTo(expected, 5)
+    expect(result.current.resultPercent).not.toBeCloseTo((tcv - partiallySold.totalBought) / partiallySold.totalBought, 5)
   })
 
   it('fetches_xirr_for_both_totals_once_asset_and_price_are_loaded', async () => {

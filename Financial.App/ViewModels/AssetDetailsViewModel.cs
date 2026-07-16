@@ -48,6 +48,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private decimal _totalBought;
     private decimal _totalSold;
     private decimal _totalCredits;
+    private decimal _realizedGainLoss;
     private decimal _todayCurrentValue;
     private string _todayCurrentValueAsOf = string.Empty;
     private string _todayInfoMessage = string.Empty;
@@ -133,6 +134,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         get => _totalCredits;
         private set { if (SetProperty(ref _totalCredits, value)) NotifyCurrentValueChanged(); }
+    }
+
+    public decimal RealizedGainLoss
+    {
+        get => _realizedGainLoss;
+        private set => SetProperty(ref _realizedGainLoss, value);
     }
 
     public PlotModel? CreditsPlotModel { get => _creditsPlotModel; private set => SetProperty(ref _creditsPlotModel, value); }
@@ -417,6 +424,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalBought = details.TotalBought;
         TotalSold = details.TotalSold;
         TotalCredits = details.TotalCredits;
+        RealizedGainLoss = details.RealizedGainLoss;
         IsCreditsAggregateView = false;
         HasCreditsContext = true;
         SetCreditsContext(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), rebuild: false);
@@ -781,6 +789,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalBought = 0;
         TotalSold = 0;
         TotalCredits = 0;
+        RealizedGainLoss = 0;
         _cashFlowsWithCredits = Array.Empty<AssetCashFlowDTO>();
         _cashFlowsWithoutCredits = Array.Empty<AssetCashFlowDTO>();
         _todayInfo.Clear();
