@@ -1,5 +1,7 @@
 export type NodeType = 'Asset' | 'Portfolio' | 'Broker'
 
+export type PositionType = 'Long' | 'Flat' | 'Short'
+
 export interface SelectedNode {
   nodeType: NodeType
   brokerName: string
@@ -8,7 +10,7 @@ export interface SelectedNode {
   ticker?: string
   exchange?: string
   currency?: string
-  isActive?: boolean
+  positionType?: PositionType
   assetClass?: string
 }
 
@@ -50,7 +52,7 @@ export interface AssetNodeDto {
   quantity: number
   averagePrice: number
   isActive: boolean
-  positionType: string
+  positionType: PositionType
   transactionCount: number
   creditCount: number
 }
@@ -92,7 +94,7 @@ export interface AssetDetailsDto {
   quantity: number
   averagePrice: number
   isActive: boolean
-  positionType: string
+  positionType: PositionType
   totalBought: number
   totalSold: number
   totalCredits: number

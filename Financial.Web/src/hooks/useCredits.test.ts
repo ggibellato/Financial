@@ -32,7 +32,7 @@ const ASSET_NODE: SelectedNode = {
   assetName: 'KLBN4',
   ticker: 'KLBN4',
   exchange: 'BVMF',
-  isActive: true,
+  positionType: 'Long',
 }
 
 const BROKER_NODE: SelectedNode = {
@@ -53,7 +53,7 @@ const ASSET_NODE_B: SelectedNode = {
   assetName: 'TASA4',
   ticker: 'TASA4',
   exchange: 'BVMF',
-  isActive: true,
+  positionType: 'Long',
 }
 
 const CREDIT_A: CreditDto = {

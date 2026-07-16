@@ -46,10 +46,32 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/navigation/tree`)
+    expect(url).toBe(`${API_BASE_URL}/navigation/tree?scope=active`)
     const headers = init?.headers as Headers
     expect(headers.get('Accept')).toBe('application/json')
     expect(headers.get('Content-Type')).toBeNull()
+  })
+
+  it('requests scope=active on every Active-scoped endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse({}))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.getNavigationTree()
+    await client.getAssetDetails('XPI', 'Default', 'BCIA11')
+    await client.getSummaryByBroker('XPI')
+    await client.getSummaryByPortfolio('XPI', 'Default')
+    await client.getBrokerBreakdown('XPI')
+    await client.getPortfolioAssetsSummary('XPI', 'Default')
+
+    const urls = fetchMock.mock.calls.map(([url]) => url as string)
+    expect(urls).toEqual([
+      `${API_BASE_URL}/navigation/tree?scope=active`,
+      `${API_BASE_URL}/assets/XPI/Default/BCIA11?scope=active`,
+      `${API_BASE_URL}/summary/broker/XPI?scope=active`,
+      `${API_BASE_URL}/summary/portfolio/XPI/Default?scope=active`,
+      `${API_BASE_URL}/summary/broker/XPI/breakdown?scope=active`,
+      `${API_BASE_URL}/summary/portfolio/XPI/Default/assets?scope=active`,
+    ])
   })
 
   it('posts a new transaction', async () => {

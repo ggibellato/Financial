@@ -56,9 +56,10 @@ const activeAssetNode: SelectedNode = {
   assetName: 'KLBN4',
   ticker: 'KLBN4',
   exchange: 'BVMF',
-  isActive: true,
+  positionType: 'Long',
 }
-const inactiveAssetNode: SelectedNode = { ...activeAssetNode, isActive: false }
+const flatAssetNode: SelectedNode = { ...activeAssetNode, positionType: 'Flat' }
+const shortAssetNode: SelectedNode = { ...activeAssetNode, positionType: 'Short' }
 
 describe('DetailPanel', () => {
   beforeEach(() => {
@@ -88,8 +89,9 @@ describe('DetailPanel', () => {
   it('does not show status indicator for broker node', () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.queryByText(/Active/)).not.toBeInTheDocument()
-    expect(screen.queryByText(/Inactive/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Long/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Flat/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Short/)).not.toBeInTheDocument()
   })
 
   it('does not show copy icon for broker node', () => {
@@ -112,16 +114,28 @@ describe('DetailPanel', () => {
     expect(screen.getByText('KLBN4 · BVMF · XPI · Acoes')).toBeInTheDocument()
   })
 
-  it('shows Active status indicator for active asset', () => {
+  it('shows Long status indicator in green for a long position', () => {
     renderPanel(activeAssetNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.getByText('● Active')).toBeInTheDocument()
+    const status = screen.getByText('● Long')
+    expect(status).toBeInTheDocument()
+    expect(status).toHaveClass('detail-panel__status--long')
   })
 
-  it('shows Inactive status indicator for inactive asset', () => {
-    renderPanel(inactiveAssetNode)
+  it('shows Flat status indicator in the neutral color for a flat position', () => {
+    renderPanel(flatAssetNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.getByText('○ Inactive')).toBeInTheDocument()
+    const status = screen.getByText('● Flat')
+    expect(status).toBeInTheDocument()
+    expect(status).toHaveClass('detail-panel__status--flat')
+  })
+
+  it('shows Short status indicator in red for a short position', () => {
+    renderPanel(shortAssetNode)
+    act(() => screen.getByTestId('setter').click())
+    const status = screen.getByText('● Short')
+    expect(status).toBeInTheDocument()
+    expect(status).toHaveClass('detail-panel__status--short')
   })
 
   it('copy icon calls clipboard writeText with asset name', () => {

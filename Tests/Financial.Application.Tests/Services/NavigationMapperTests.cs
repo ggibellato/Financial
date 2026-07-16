@@ -61,7 +61,7 @@ public class NavigationMapperTests
         var tree = CreateService().GetNavigationTree();
 
         var assetNode = GetFirstAssetNode(tree);
-        assetNode.Metadata["PositionType"].Should().Be(PositionType.Long);
+        assetNode.Metadata["PositionType"].Should().Be("Long");
     }
 
     [Theory]
@@ -108,7 +108,7 @@ public class NavigationMapperTests
         var tree = CreateService().GetNavigationTree(InvestmentScope.Historic);
 
         var assetNode = GetFirstAssetNode(tree);
-        assetNode.Metadata["PositionType"].Should().Be(PositionType.Flat);
+        assetNode.Metadata["PositionType"].Should().Be("Flat");
     }
 
     [Theory]
