@@ -359,33 +359,33 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Position Type Domain Model
-- [ ] An asset with `Quantity > 0` reports `PositionType = Long`
-- [ ] An asset with `Quantity = 0` reports `PositionType = Flat`
-- [ ] An asset with `Quantity < 0` reports `PositionType = Short`
-- [ ] `PositionType` is present on Active-scoped `AssetNodeDTO`/`AssetDetailsDto` (backend and TS types)
+- [x] An asset with `Quantity > 0` reports `PositionType = Long`
+- [x] An asset with `Quantity = 0` reports `PositionType = Flat`
+- [x] An asset with `Quantity < 0` reports `PositionType = Short`
+- [x] `PositionType` is present on Active-scoped `AssetNodeDTO`/`AssetDetailsDto` (backend and TS types)
 
 ### F02. Active/Historic Investments Data Model & Storage
-- [ ] `data.json` round-trips with both `activeInvestments` and `historicInvestments` top-level arrays
-- [ ] A repository query scoped to Active never returns an asset from `historicInvestments`, and vice versa
-- [ ] Loading a `data.json` missing one of the two top-level keys succeeds with that collection empty, rather than throwing
-- [ ] `NavigationMapper.IsEncerradas`/its "sort last" special-casing no longer exists in the codebase
+- [x] `data.json` round-trips with both `activeInvestments` and `historicInvestments` top-level arrays
+- [x] A repository query scoped to Active never returns an asset from `historicInvestments`, and vice versa
+- [x] Loading a `data.json` missing one of the two top-level keys succeeds with that collection empty, rather than throwing
+- [x] `NavigationMapper.IsEncerradas`/its "sort last" special-casing no longer exists in the codebase
 
 ### F03. AssetClassification Historic Portfolio Metadata
-- [ ] An `AssetClassifications.json` entry with a `historicPortfolio` value resolves to that value when looked up
-- [ ] An asset with no classification entry, or an entry without `historicPortfolio`, resolves to that broker's own `"Uncategorized"` portfolio (not a bucket shared across brokers)
-- [ ] Existing entries without `historicPortfolio` remain valid (no deserialization failure)
+- [x] An `AssetClassifications.json` entry with a `historicPortfolio` value resolves to that value when looked up
+- [x] An asset with no classification entry, or an entry without `historicPortfolio`, resolves to that broker's own `"Uncategorized"` portfolio (not a bucket shared across brokers)
+- [x] Existing entries without `historicPortfolio` remain valid (no deserialization failure)
 
 ### F04. Spreadsheet Import — Closed Position Routing to Historic
-- [ ] An asset whose tab colour resolves to a broker's closed marker (e.g. `"222222"`) is written to that broker's entry in `historicInvestments`, under its `historicPortfolio` (or that broker's `"Uncategorized"` fallback) — not to an `"Encerradas"` portfolio inside `activeInvestments`
-- [ ] An asset whose tab colour does not resolve to the closed marker is written to `activeInvestments` under its normal colour-resolved portfolio, unchanged from today
-- [ ] No `Portfolio` literally named `"Encerradas"` exists inside `activeInvestments` after import
-- [ ] Re-importing a sheet previously resolving to the closed marker, now recoloured to a normal active grouping, results in the asset appearing only in `activeInvestments`
+- [x] An asset whose tab colour resolves to a broker's closed marker (e.g. `"222222"`) is written to that broker's entry in `historicInvestments`, under its `historicPortfolio` (or that broker's `"Uncategorized"` fallback) — not to an `"Encerradas"` portfolio inside `activeInvestments`
+- [x] An asset whose tab colour does not resolve to the closed marker is written to `activeInvestments` under its normal colour-resolved portfolio, unchanged from today
+- [x] No `Portfolio` literally named `"Encerradas"` exists inside `activeInvestments` after import
+- [x] Re-importing a sheet previously resolving to the closed marker, now recoloured to a normal active grouping, results in the asset appearing only in `activeInvestments`
 
 ### F05. Scoped Navigation & Summary API
-- [ ] `GET /navigation/tree?scope=active` returns only assets from `activeInvestments`, including their `PositionType`
-- [ ] `GET /navigation/tree?scope=historic` returns only assets from `historicInvestments`
-- [ ] Each `SummaryController` endpoint respects the same scope selector
-- [ ] Omitting the scope parameter preserves today's Active-only behavior (no breaking change for any existing caller)
+- [x] `GET /navigation/tree?scope=active` returns only assets from `activeInvestments`, including their `PositionType`
+- [x] `GET /navigation/tree?scope=historic` returns only assets from `historicInvestments`
+- [x] Each `SummaryController` endpoint respects the same scope selector
+- [x] Omitting the scope parameter preserves today's Active-only behavior (no breaking change for any existing caller)
 
 ### F06. Historic Realized Totals Service
 - [ ] A historic asset's summary returns `TotalBought`, `TotalSold`, `TotalCredits`, and `RealizedGainLoss = TotalSold - TotalBought + TotalCredits`
@@ -393,8 +393,8 @@ graph TD
 - [ ] Portfolio weight sums to 100% across a historic portfolio's assets (by `TotalBought`)
 
 ### F07. Historic Broker Breakdown Charts Service
-- [ ] A historic broker's breakdown returns one entry per historic portfolio with assets, sized by `TotalBought`
-- [ ] A historic portfolio with no assets is excluded from the breakdown, consistent with today's Active behavior
+- [x] A historic broker's breakdown returns one entry per historic portfolio with assets, sized by `TotalBought`
+- [x] A historic portfolio with no assets is excluded from the breakdown, consistent with today's Active behavior
 
 ### F08. Web — Active Investments Tab Update
 - [ ] The nav item previously labeled "Portfolio Navigator" reads "Active Investments"
@@ -417,8 +417,8 @@ graph TD
 - [ ] A transaction or credit can be added, edited, and deleted for a historic asset through the same UI flow as an active asset
 
 ### Cross-Feature Integration
-- [ ] Data written by import (F04) into `activeInvestments`/`historicInvestments` (F02's structure) is correctly returned by the scoped navigation API (F05)
-- [ ] Position type computed by F01 appears correctly on every Active-scoped asset returned by F05
+- [x] Data written by import (F04) into `activeInvestments`/`historicInvestments` (F02's structure) is correctly returned by the scoped navigation API (F05)
+- [x] Position type computed by F01 appears correctly on every Active-scoped asset returned by F05
 - [ ] Historic tree/asset data served by F05 is correctly consumed by both the realized totals service (F06) and the breakdown charts service (F07)
 - [ ] Realized totals from F06 render correctly in both the Web (F09) and WPF (F11) Historic Investments summary views
 - [ ] Breakdown data from F07 renders correctly in both the Web (F09) and WPF (F11) Historic Investments charts views
