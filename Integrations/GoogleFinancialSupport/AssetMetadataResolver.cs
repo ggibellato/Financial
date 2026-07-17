@@ -55,10 +55,25 @@ internal sealed class AssetMetadataResolver
         {
             "Coinbase" => "Cryptocurrency",
             "FreeTrade" => "ETF",
-            "Trading 212" => spreadsheetName.Contains("ISA") ? "ETF ISA" : "ETF",
+            "Trading 212" => ResolveTrading212PortfolioName(spreadsheetName),
             "XPI" => "FII",
             _ => DefaultPortfolioName,
         };
+    }
+
+    private static string ResolveTrading212PortfolioName(string spreadsheetName)
+    {
+        if (spreadsheetName.Contains("ISA"))
+        {
+            return "ETF ISA";
+        }
+
+        if (spreadsheetName.Contains("SIPP"))
+        {
+            return "ETF SIPP";
+        }
+
+        return "ETF";
     }
 
     internal async Task<(string isin, string exchangeId, string ticker, CountryCode country, string localTypeCode, GlobalAssetClass assetClass)> ResolveAssetMetadataAsync(

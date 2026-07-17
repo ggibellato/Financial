@@ -52,6 +52,39 @@ public class AssetMetadataResolverTests
     }
 
     [Fact]
+    public void ResolvePortfolioName_Trading212WithIsaInSheetName_ReturnsEtfIsa()
+    {
+        var resolver = CreateResolver();
+        var sheet = new SheetDTO { Id = 0, Name = "VUSA ISA", Color = "" };
+
+        var portfolioName = resolver.ResolvePortfolioName("Trading 212", sheet);
+
+        portfolioName.Should().Be("ETF ISA");
+    }
+
+    [Fact]
+    public void ResolvePortfolioName_Trading212WithSippInSheetName_ReturnsEtfSipp()
+    {
+        var resolver = CreateResolver();
+        var sheet = new SheetDTO { Id = 0, Name = "VUSA SIPP", Color = "" };
+
+        var portfolioName = resolver.ResolvePortfolioName("Trading 212", sheet);
+
+        portfolioName.Should().Be("ETF SIPP");
+    }
+
+    [Fact]
+    public void ResolvePortfolioName_Trading212WithoutIsaOrSippInSheetName_ReturnsEtf()
+    {
+        var resolver = CreateResolver();
+        var sheet = new SheetDTO { Id = 0, Name = "VUSA", Color = "" };
+
+        var portfolioName = resolver.ResolvePortfolioName("Trading 212", sheet);
+
+        portfolioName.Should().Be("ETF");
+    }
+
+    [Fact]
     public void IsClosedPortfolio_Encerradas_ReturnsTrue()
     {
         var resolver = CreateResolver();
