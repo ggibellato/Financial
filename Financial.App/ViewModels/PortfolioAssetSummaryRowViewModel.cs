@@ -154,11 +154,21 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
 
     public void MarkPriceFailed()
     {
-        _isLoadingPrice = false;
         _priceFetchFailed = true;
+        RaisePriceUnavailableNotifications();
+        OnPropertyChanged(nameof(PriceFetchFailed));
+    }
+
+    public void MarkPriceNotApplicable()
+    {
+        RaisePriceUnavailableNotifications();
+    }
+
+    private void RaisePriceUnavailableNotifications()
+    {
+        _isLoadingPrice = false;
 
         OnPropertyChanged(nameof(IsLoadingPrice));
-        OnPropertyChanged(nameof(PriceFetchFailed));
         OnPropertyChanged(nameof(DisplayCurrentPrice));
         OnPropertyChanged(nameof(DisplayCurrentValue));
         OnPropertyChanged(nameof(DisplayProfitPercent));

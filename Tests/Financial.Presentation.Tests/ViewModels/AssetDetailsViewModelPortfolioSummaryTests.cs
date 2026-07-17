@@ -9,7 +9,7 @@ namespace Financial.Presentation.Tests.ViewModels;
 
 public class AssetDetailsViewModelPortfolioSummaryTests
 {
-    private static AssetDetailsViewModel BuildViewModel(IAssetPriceService? priceService = null)
+    private static AssetDetailsViewModel BuildViewModel(IAssetPriceService? priceService = null, InvestmentScope scope = InvestmentScope.Active)
     {
         return new AssetDetailsViewModel(
             new StubTransactionService(),
@@ -17,7 +17,8 @@ public class AssetDetailsViewModelPortfolioSummaryTests
             priceService ?? new NeverResolvingPriceService(),
             new StubBrokerBreakdownService(),
             new StubTransactionQueryService(),
-            new XirrCalculationService());
+            new XirrCalculationService(),
+            scope);
     }
 
     private static IReadOnlyList<PortfolioAssetSummaryItemDTO> BuildItems(int count = 2)
@@ -122,6 +123,17 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         var vm = BuildViewModel(new NeverResolvingPriceService());
         vm.LoadPortfolioSummary("Broker", "Portfolio", new AggregatedSummaryDTO(), [], BuildItems(3));
         vm.PortfolioAssetSummaryRows.All(r => r.IsLoadingPrice).Should().BeTrue();
+    }
+
+    [Fact]
+    public void LoadPortfolioSummary_HistoricScope_DoesNotFetchRowPrices()
+    {
+        var priceService = new CountingPriceService();
+        var vm = BuildViewModel(priceService, scope: InvestmentScope.Historic);
+        vm.LoadPortfolioSummary("Broker", "Uncategorized", new AggregatedSummaryDTO(), [], BuildItems(3));
+
+        vm.PortfolioAssetSummaryRows.All(r => !r.IsLoadingPrice).Should().BeTrue();
+        priceService.CallCount.Should().Be(0);
     }
 
     [Fact]
@@ -331,6 +343,17 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request)
         {
             _blocker.Wait(MaxBlockDuration);
+            return new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = 0m };
+        }
+    }
+
+    private sealed class CountingPriceService : IAssetPriceService
+    {
+        public int CallCount { get; private set; }
+
+        public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request)
+        {
+            CallCount++;
             return new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = 0m };
         }
     }

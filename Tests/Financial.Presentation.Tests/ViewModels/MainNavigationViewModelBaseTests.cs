@@ -290,6 +290,67 @@ public class MainNavigationViewModelBaseTests
         summaryService.LastScopeForBroker.Should().Be(InvestmentScope.Active);
     }
 
+    [Fact]
+    public async Task LoadNavigationTreeAsync_HistoricScope_RequestsHistoricScope()
+    {
+        var summaryService = new StubSummaryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var navigationService = new StubNavigationService();
+        var vm = new TestableNavigationViewModel(summaryService, spy, navigationService: navigationService, scope: InvestmentScope.Historic);
+
+        try
+        {
+            await vm.LoadNavigationTreeAsync();
+        }
+        catch (NullReferenceException)
+        {
+        }
+
+        navigationService.LastTreeScope.Should().Be(InvestmentScope.Historic);
+    }
+
+    [Fact]
+    public void SelectingAssetNode_HistoricScope_RequestsHistoricScopeAssetDetails()
+    {
+        var summaryService = new StubSummaryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var navigationService = new StubNavigationService();
+        var vm = new TestableNavigationViewModel(summaryService, spy, navigationService: navigationService, scope: InvestmentScope.Historic);
+
+        var assetNode = BuildAssetNode("XPI", "Uncategorized", "BBAS3");
+        vm.SelectedNode = assetNode;
+
+        navigationService.LastAssetDetailsScope.Should().Be(InvestmentScope.Historic);
+    }
+
+    [Fact]
+    public void SelectingPortfolioNode_HistoricScope_RequestsHistoricScopeSummaryAndAssetItems()
+    {
+        var summaryService = new StubSummaryService();
+        var assetSummaryService = new StubPortfolioAssetSummaryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var vm = new TestableNavigationViewModel(summaryService, spy, assetSummaryService, scope: InvestmentScope.Historic);
+
+        var portfolioNode = BuildPortfolioNode("XPI", "Uncategorized");
+        vm.SelectedNode = portfolioNode;
+
+        summaryService.LastScopeForPortfolio.Should().Be(InvestmentScope.Historic);
+        assetSummaryService.LastScope.Should().Be(InvestmentScope.Historic);
+    }
+
+    [Fact]
+    public void SelectingBrokerNode_HistoricScope_RequestsHistoricScopeSummary()
+    {
+        var summaryService = new StubSummaryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var vm = new TestableNavigationViewModel(summaryService, spy, scope: InvestmentScope.Historic);
+
+        var brokerNode = BuildBrokerNode("XPI");
+        vm.SelectedNode = brokerNode;
+
+        summaryService.LastScopeForBroker.Should().Be(InvestmentScope.Historic);
+    }
+
     private static TreeNodeViewModel BuildPortfolioNode(string brokerName, string portfolioName)
     {
         var brokerDto = new TreeNodeDTO
@@ -374,8 +435,9 @@ public class MainNavigationViewModelBaseTests
             ISummaryService summaryService,
             SpyAssetDetailsViewModel spy,
             IPortfolioAssetSummaryService? portfolioAssetSummaryService = null,
-            StubNavigationService? navigationService = null)
-            : this(navigationService ?? new StubNavigationService(), summaryService, spy, portfolioAssetSummaryService)
+            StubNavigationService? navigationService = null,
+            InvestmentScope scope = InvestmentScope.Active)
+            : this(navigationService ?? new StubNavigationService(), summaryService, spy, portfolioAssetSummaryService, scope)
         {
         }
 
@@ -383,8 +445,9 @@ public class MainNavigationViewModelBaseTests
             StubNavigationService navigationService,
             ISummaryService summaryService,
             SpyAssetDetailsViewModel spy,
-            IPortfolioAssetSummaryService? portfolioAssetSummaryService)
-            : base(navigationService, new StubCreditQueryService(), summaryService, portfolioAssetSummaryService ?? new StubPortfolioAssetSummaryService(), spy)
+            IPortfolioAssetSummaryService? portfolioAssetSummaryService,
+            InvestmentScope scope)
+            : base(navigationService, new StubCreditQueryService(), summaryService, portfolioAssetSummaryService ?? new StubPortfolioAssetSummaryService(), spy, scope)
         {
             NavigationService = navigationService;
         }

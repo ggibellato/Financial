@@ -403,6 +403,49 @@ public class PortfolioAssetSummaryRowViewModelTests
     }
 
     [Fact]
+    public void DisplayCurrentValue_AfterMarkPriceNotApplicable_ReturnsDash()
+    {
+        var row = BuildRow();
+        row.MarkPriceNotApplicable();
+        row.DisplayCurrentValue.Should().Be("—");
+    }
+
+    [Fact]
+    public void DisplayXirr_AfterMarkPriceNotApplicable_ReturnsDash()
+    {
+        var row = BuildRow();
+        row.MarkPriceNotApplicable();
+        row.DisplayXirr.Should().Be("—");
+    }
+
+    [Fact]
+    public void MarkPriceNotApplicable_DoesNotSetPriceFetchFailed()
+    {
+        var row = BuildRow();
+        row.MarkPriceNotApplicable();
+        row.PriceFetchFailed.Should().BeFalse();
+        row.IsLoadingPrice.Should().BeFalse();
+    }
+
+    [Fact]
+    public void MarkPriceNotApplicable_RaisesPropertyChangedForDisplayProperties()
+    {
+        var row = BuildRow();
+        var raised = new List<string?>();
+        row.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        row.MarkPriceNotApplicable();
+
+        raised.Should().Contain(nameof(row.DisplayCurrentPrice));
+        raised.Should().Contain(nameof(row.DisplayCurrentValue));
+        raised.Should().Contain(nameof(row.DisplayProfitPercent));
+        raised.Should().Contain(nameof(row.DisplayProfitWithCreditsPercent));
+        raised.Should().Contain(nameof(row.DisplayXirr));
+        raised.Should().Contain(nameof(row.IsLoadingPrice));
+        raised.Should().NotContain(nameof(row.PriceFetchFailed));
+    }
+
+    [Fact]
     public void DisplayLastMonthCredits_WhenLastCreditMonthIsNotNull_FormatsN2()
     {
         var row = BuildRow(lastMonthCredits: 12.50m, lastCreditMonth: "2026-06");
