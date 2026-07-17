@@ -24,7 +24,10 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     public DateTime? FirstInvestmentDate { get; }
     public decimal CurrentQuantity { get; }
     public decimal AveragePrice { get; }
+    public decimal? AverageSellPrice { get; }
+    public decimal TotalBought { get; }
     public decimal TotalInvested { get; }
+    public decimal RealizedGainLoss { get; }
     public decimal PortfolioWeight { get; }
     public decimal TotalCredits { get; }
     public IReadOnlyList<AssetCashFlowDTO> CashFlows { get; }
@@ -92,6 +95,50 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     public bool XirrIsPositive => _xirr > 0;
     public bool XirrIsNegative => _xirr < 0;
 
+    // Historic (closed) positions have no live price to mark-to-market: these are derived
+    // entirely from already-realized cash flows (bought/sold/credits), available synchronously
+    // — unlike the Active-scope fields above, which depend on an async price fetch.
+    public string DisplayRealizedGainLoss => RealizedGainLoss.ToString("N2");
+    public bool RealizedGainLossIsPositive => RealizedGainLoss > 0;
+    public bool RealizedGainLossIsNegative => RealizedGainLoss < 0;
+
+    public string DisplaySoldPrice => AverageSellPrice.HasValue ? AverageSellPrice.Value.ToString("N2") : "—";
+
+    // Realized capital gain alone (credits excluded), matching the active-scope semantic
+    // where credits are a separate "w/ Credits" column.
+    public decimal? HistoricProfitPercent =>
+        TotalBought != 0 ? (RealizedGainLoss - TotalCredits) / TotalBought * 100 : null;
+
+    public decimal? HistoricProfitWithCreditsPercent =>
+        TotalBought != 0 ? RealizedGainLoss / TotalBought * 100 : null;
+
+    // Historic cash flows already contain every buy/sell/credit as a dated entry, so the
+    // terminal value is 0 (no remaining position left to mark-to-market).
+    public decimal? HistoricXirr
+    {
+        get
+        {
+            var fraction = _xirrCalculationService.Calculate(CashFlows, 0m);
+            return fraction.HasValue ? fraction.Value * 100 : null;
+        }
+    }
+
+    public string DisplayHistoricProfitPercent =>
+        HistoricProfitPercent.HasValue ? $"{HistoricProfitPercent.Value:F2}%" : "—";
+
+    public string DisplayHistoricProfitWithCreditsPercent =>
+        HistoricProfitWithCreditsPercent.HasValue ? $"{HistoricProfitWithCreditsPercent.Value:F2}%" : "—";
+
+    public string DisplayHistoricXirr =>
+        HistoricXirr.HasValue ? $"{HistoricXirr.Value:F2}%" : "—";
+
+    public bool HistoricProfitIsPositive => HistoricProfitPercent > 0;
+    public bool HistoricProfitIsNegative => HistoricProfitPercent < 0;
+    public bool HistoricProfitWithCreditsIsPositive => HistoricProfitWithCreditsPercent > 0;
+    public bool HistoricProfitWithCreditsIsNegative => HistoricProfitWithCreditsPercent < 0;
+    public bool HistoricXirrIsPositive => HistoricXirr > 0;
+    public bool HistoricXirrIsNegative => HistoricXirr < 0;
+
     public PortfolioAssetSummaryRowViewModel(PortfolioAssetSummaryItemDTO dto, IXirrCalculationService xirrCalculationService)
     {
         _xirrCalculationService = xirrCalculationService ?? throw new ArgumentNullException(nameof(xirrCalculationService));
@@ -102,7 +149,10 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
         FirstInvestmentDate = dto.FirstInvestmentDate;
         CurrentQuantity = dto.CurrentQuantity;
         AveragePrice = dto.AveragePrice;
+        AverageSellPrice = dto.AverageSellPrice;
+        TotalBought = dto.TotalBought;
         TotalInvested = dto.TotalInvested;
+        RealizedGainLoss = dto.RealizedGainLoss;
         PortfolioWeight = dto.PortfolioWeight;
         TotalCredits = dto.TotalCredits;
         CashFlows = dto.CashFlows;

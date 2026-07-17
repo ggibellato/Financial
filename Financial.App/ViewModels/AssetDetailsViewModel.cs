@@ -72,6 +72,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private CancellationTokenSource? _breakdownCts;
     private CancellationTokenSource? _rowPriceCts;
     private decimal _footerTotalInvested;
+    private decimal _footerRealizedGainLoss;
     private decimal _footerTotalCredits;
     private decimal _footerCurrentMonthCredits;
     private string _footerCurrentMonthLabel = string.Empty;
@@ -246,6 +247,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public ObservableCollection<PortfolioAssetSummaryRowViewModel> PortfolioAssetSummaryRows { get; } = new();
 
     public decimal FooterTotalInvested { get => _footerTotalInvested; private set => SetProperty(ref _footerTotalInvested, value); }
+    public decimal FooterRealizedGainLoss { get => _footerRealizedGainLoss; private set => SetProperty(ref _footerRealizedGainLoss, value); }
     public decimal FooterTotalCredits { get => _footerTotalCredits; private set => SetProperty(ref _footerTotalCredits, value); }
     public decimal FooterCurrentMonthCredits { get => _footerCurrentMonthCredits; private set => SetProperty(ref _footerCurrentMonthCredits, value); }
     public string FooterCurrentMonthLabel { get => _footerCurrentMonthLabel; private set => SetProperty(ref _footerCurrentMonthLabel, value); }
@@ -384,6 +386,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             PortfolioAssetSummaryRows.Add(new PortfolioAssetSummaryRowViewModel(item, _xirrCalculationService));
 
         FooterTotalInvested = assetItems.Sum(i => i.TotalInvested);
+        FooterRealizedGainLoss = assetItems.Sum(i => i.RealizedGainLoss);
         FooterTotalCredits = assetItems.Sum(i => i.TotalCredits);
         FooterCurrentMonthCredits = assetItems.Sum(i => i.CurrentMonthCredits);
         FooterCurrentMonthLabel = "Credits " + DateTime.Today.ToString("MMM yyyy", CultureInfo.InvariantCulture);
@@ -462,6 +465,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         CancelAndResetRowPriceFetch();
         PortfolioAssetSummaryRows.Clear();
         FooterTotalInvested = 0m;
+        FooterRealizedGainLoss = 0m;
         FooterTotalCredits = 0m;
         FooterCurrentMonthCredits = 0m;
         FooterCurrentMonthLabel = string.Empty;
