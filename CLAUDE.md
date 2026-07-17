@@ -49,7 +49,6 @@ Contains:
 * Value Objects
 * Domain Services
 * Domain Events
-* Repository Interfaces
 
 Must contain no framework code.
 
