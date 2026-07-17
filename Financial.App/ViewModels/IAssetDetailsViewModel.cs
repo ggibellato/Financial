@@ -6,7 +6,7 @@ public interface IAssetDetailsViewModel
 {
     bool IsPortfolioView { get; }
     bool IsBrokerView { get; }
-    void LoadAssetDetails(AssetDetailsDTO details);
+    void LoadAssetDetails(AssetDetailsDTO details, decimal? realizedPortfolioWeight = null);
     void LoadBrokerSummary(string brokerName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits);
     Task LoadBrokerBreakdown(string brokerName);
     Task LoadBrokerTransactions(string brokerName);

@@ -146,8 +146,11 @@ public class AssetDetailsViewModelBrokerSummaryTests
     [Fact]
     public void LoadBrokerBreakdown_SetsIsBreakdownLoadingTrue_Synchronously()
     {
-        var stub = new StubBrokerBreakdownService();
-        var vm = BuildViewModel(stub);
+        // Uses a blocking stub rather than StubBrokerBreakdownService: the latter returns
+        // instantly, so the background Task.Run could reach ApplyBrokerBreakdown (which sets
+        // IsBreakdownLoading = false) before this synchronous assertion runs - a real,
+        // previously-observed race, not a hypothetical one.
+        var vm = BuildViewModel(new BlockingBrokerBreakdownService());
         _ = vm.LoadBrokerBreakdown("XPI");
         vm.IsBreakdownLoading.Should().BeTrue();
     }
@@ -283,4 +286,19 @@ public class AssetDetailsViewModelBrokerSummaryTests
         vm.PortfolioBreakdownPieItems.Should().BeEmpty();
     }
 
+    private sealed class BlockingBrokerBreakdownService : IBrokerBreakdownService
+    {
+        // Bounded, not infinite: same reasoning as NeverResolvingPriceService
+        // (AssetDetailsViewModelPortfolioSummaryTests.cs) - the test only needs the block to
+        // outlast its own synchronous assertion, and an unbounded wait would accumulate
+        // permanently-blocked threads across the test run.
+        private readonly SemaphoreSlim _blocker = new(0);
+        private static readonly TimeSpan MaxBlockDuration = TimeSpan.FromSeconds(2);
+
+        public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName, InvestmentScope scope = InvestmentScope.Active)
+        {
+            _blocker.Wait(MaxBlockDuration);
+            return [];
+        }
+    }
 }

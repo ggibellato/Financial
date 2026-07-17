@@ -50,6 +50,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private decimal _totalSold;
     private decimal _totalCredits;
     private decimal _realizedGainLoss;
+    private decimal? _realizedPortfolioWeight;
     private decimal _todayCurrentValue;
     private string _todayCurrentValueAsOf = string.Empty;
     private string _todayInfoMessage = string.Empty;
@@ -72,6 +73,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private CancellationTokenSource? _breakdownCts;
     private CancellationTokenSource? _rowPriceCts;
     private decimal _footerTotalInvested;
+    private decimal _footerRealizedGainLoss;
     private decimal _footerTotalCredits;
     private decimal _footerCurrentMonthCredits;
     private string _footerCurrentMonthLabel = string.Empty;
@@ -183,8 +185,30 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public decimal ResultPercentWithCredits => AssetDetailsCalculations.CalculateResultPercentWithCredits(AveragePrice, Quantity, TotalCurrentValueWithCredits);
     public bool HasAveragePrice => AssetDetailsCalculations.HasAveragePrice(AveragePrice, Quantity);
     public bool IsActiveScope => _scope == InvestmentScope.Active;
+    public bool IsHistoricScope => _scope == InvestmentScope.Historic;
     public decimal? Xirr => _xirrCalculationService.Calculate(_cashFlowsWithoutCredits, TotalCurrentValue);
     public decimal? XirrWithCredits => _xirrCalculationService.Calculate(_cashFlowsWithCredits, TotalCurrentValueWithCredits);
+
+    // Historic (closed) positions have no live price to mark-to-market: XIRR is derived from
+    // already-realized cash flows alone, with a 0 terminal value (every buy/sell/credit is
+    // already a dated entry), matching the Web app's equivalent calculation.
+    public decimal? RealizedXirr => _xirrCalculationService.Calculate(_cashFlowsWithoutCredits, 0m);
+    public decimal? RealizedXirrWithCredits => _xirrCalculationService.Calculate(_cashFlowsWithCredits, 0m);
+
+    public decimal? RealizedPortfolioWeight
+    {
+        get => _realizedPortfolioWeight;
+        private set
+        {
+            if (SetProperty(ref _realizedPortfolioWeight, value))
+            {
+                OnPropertyChanged(nameof(DisplayRealizedPortfolioWeight));
+            }
+        }
+    }
+
+    public string DisplayRealizedPortfolioWeight =>
+        RealizedPortfolioWeight.HasValue ? $"{RealizedPortfolioWeight.Value:F2}%" : "—";
 
     public bool IsPortfolioView
     {
@@ -246,6 +270,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public ObservableCollection<PortfolioAssetSummaryRowViewModel> PortfolioAssetSummaryRows { get; } = new();
 
     public decimal FooterTotalInvested { get => _footerTotalInvested; private set => SetProperty(ref _footerTotalInvested, value); }
+    public decimal FooterRealizedGainLoss { get => _footerRealizedGainLoss; private set => SetProperty(ref _footerRealizedGainLoss, value); }
     public decimal FooterTotalCredits { get => _footerTotalCredits; private set => SetProperty(ref _footerTotalCredits, value); }
     public decimal FooterCurrentMonthCredits { get => _footerCurrentMonthCredits; private set => SetProperty(ref _footerCurrentMonthCredits, value); }
     public string FooterCurrentMonthLabel { get => _footerCurrentMonthLabel; private set => SetProperty(ref _footerCurrentMonthLabel, value); }
@@ -342,7 +367,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             () => BrokerName,
             () => PortfolioName,
             () => AssetName,
-            LoadAssetDetails,
+            details => LoadAssetDetails(details),
             (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
         _creditActions = new CreditActions(
             _creditService,
@@ -350,7 +375,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             () => BrokerName,
             () => PortfolioName,
             () => AssetName,
-            LoadAssetDetails,
+            details => LoadAssetDetails(details),
             (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
         _addTransactionCommand = new RelayCommand(AddTransaction, CanEditTransactions);
         _updateTransactionCommand = new RelayCommand(UpdateTransaction, CanUpdateTransaction);
@@ -384,6 +409,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             PortfolioAssetSummaryRows.Add(new PortfolioAssetSummaryRowViewModel(item, _xirrCalculationService));
 
         FooterTotalInvested = assetItems.Sum(i => i.TotalInvested);
+        FooterRealizedGainLoss = assetItems.Sum(i => i.RealizedGainLoss);
         FooterTotalCredits = assetItems.Sum(i => i.TotalCredits);
         FooterCurrentMonthCredits = assetItems.Sum(i => i.CurrentMonthCredits);
         FooterCurrentMonthLabel = "Credits " + DateTime.Today.ToString("MMM yyyy", CultureInfo.InvariantCulture);
@@ -409,7 +435,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         FetchRowPricesAsync(rows, token, brokerName);
     }
 
-    public void LoadAssetDetails(AssetDetailsDTO details)
+    public void LoadAssetDetails(AssetDetailsDTO details, decimal? realizedPortfolioWeight = null)
     {
         IsPortfolioView = false;
         IsBrokerView = false;
@@ -436,6 +462,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalSold = details.TotalSold;
         TotalCredits = details.TotalCredits;
         RealizedGainLoss = details.RealizedGainLoss;
+        RealizedPortfolioWeight = realizedPortfolioWeight;
         IsCreditsAggregateView = false;
         HasCreditsContext = true;
         SetCreditsContext(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), rebuild: false);
@@ -462,6 +489,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         CancelAndResetRowPriceFetch();
         PortfolioAssetSummaryRows.Clear();
         FooterTotalInvested = 0m;
+        FooterRealizedGainLoss = 0m;
         FooterTotalCredits = 0m;
         FooterCurrentMonthCredits = 0m;
         FooterCurrentMonthLabel = string.Empty;
@@ -634,6 +662,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         OnPropertyChanged(nameof(ResultPercentWithCredits));
         OnPropertyChanged(nameof(Xirr));
         OnPropertyChanged(nameof(XirrWithCredits));
+        OnPropertyChanged(nameof(RealizedXirr));
+        OnPropertyChanged(nameof(RealizedXirrWithCredits));
     }
 
     private void LoadAggregateCredits(string contextKey, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
@@ -806,6 +836,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalSold = 0;
         TotalCredits = 0;
         RealizedGainLoss = 0;
+        RealizedPortfolioWeight = null;
         _cashFlowsWithCredits = Array.Empty<AssetCashFlowDTO>();
         _cashFlowsWithoutCredits = Array.Empty<AssetCashFlowDTO>();
         _todayInfo.Clear();

@@ -188,6 +188,9 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
                                     <!-- Row 0: Quantity & Average Price -->
@@ -228,7 +231,7 @@
                                                Margin="10,5"
                                                Foreground="Red"/>
 
-                                    <!-- Row 5: Total Credits & Realized Gain/Loss -->
+                                    <!-- Row 5: Total Credits & Realized Gain/Loss (latter shown only for Active; Historic shows it in the Realized section below instead) -->
                                     <TextBlock Grid.Row="5" Grid.Column="0" Text="Total Credits:" FontWeight="Bold" Margin="0,5"/>
                                     <TextBlock Grid.Row="5" Grid.Column="1"
                                                Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}"
@@ -237,56 +240,101 @@
                                                Margin="10,5"
                                                Foreground="Blue"/>
 
-                                    <TextBlock Grid.Row="5" Grid.Column="2" Text="Realized Gain/Loss:" FontWeight="Bold" Margin="20,5,0,5"/>
+                                    <TextBlock Grid.Row="5" Grid.Column="2" Text="Realized Gain/Loss:" FontWeight="Bold" Margin="20,5,0,5"
+                                               Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                     <TextBlock Grid.Row="5" Grid.Column="3"
                                                Text="{Binding AssetDetails.RealizedGainLoss, Mode=OneWay, StringFormat=N2}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
                                                Foreground="{Binding AssetDetails.RealizedGainLoss, Converter={StaticResource SignedValueToBrushConverter}}"
-                                               Margin="10,5"/>
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                                     <!-- Separator -->
                                     <Border Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="4"
                                             BorderBrush="#EEEEEE" BorderThickness="0,1,0,0" Margin="0,15,0,15"/>
 
-                                    <!-- Row 7: Current Header (Active scope only - Historic never has a live price) -->
-                                    <TextBlock Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Text="Current" FontWeight="Bold" FontSize="13" Margin="0,5"
+                                    <!-- Row 7: Realized Header (Historic scope only) -->
+                                    <TextBlock Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Text="Realized" FontWeight="Bold" FontSize="13" Margin="0,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                    <!-- Row 8: Realized Gain/Loss & Portfolio Weight (Historic scope only) -->
+                                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Realized Gain/Loss:" FontWeight="Bold" Margin="0,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="8" Grid.Column="1"
+                                               Text="{Binding AssetDetails.RealizedGainLoss, Mode=OneWay, StringFormat=N2}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Foreground="{Binding AssetDetails.RealizedGainLoss, Converter={StaticResource SignedValueToBrushConverter}}"
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="8" Grid.Column="2" Text="Portfolio Weight:" FontWeight="Bold" Margin="20,5,0,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="8" Grid.Column="3"
+                                               Text="{Binding AssetDetails.DisplayRealizedPortfolioWeight, Mode=OneWay}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                    <!-- Row 9: XIRR & XIRR w/ Credits, realized (Historic scope only) -->
+                                    <TextBlock Grid.Row="9" Grid.Column="0" Text="XIRR:" FontWeight="Bold" Margin="0,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="9" Grid.Column="1"
+                                               Text="{Binding AssetDetails.RealizedXirr, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Foreground="{Binding AssetDetails.RealizedXirr, Converter={StaticResource SignedValueToBrushConverter}}"
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="9" Grid.Column="2" Text="XIRR w/ Credits:" FontWeight="Bold" Margin="20,5,0,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="9" Grid.Column="3"
+                                               Text="{Binding AssetDetails.RealizedXirrWithCredits, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Foreground="{Binding AssetDetails.RealizedXirrWithCredits, Converter={StaticResource SignedValueToBrushConverter}}"
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                    <!-- Row 10: Current Header (Active scope only - Historic never has a live price) -->
+                                    <TextBlock Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2" Text="Current" FontWeight="Bold" FontSize="13" Margin="0,5"
                                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <Button Grid.Row="7" Grid.Column="2" Grid.ColumnSpan="2"
+                                    <Button Grid.Row="10" Grid.Column="2" Grid.ColumnSpan="2"
                                             Command="{Binding AssetDetails.RefreshTodayInfoCommand}"
                                             Content="Refresh"
                                             HorizontalAlignment="Right"
                                             Margin="0,5"
                                             Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                                    <!-- Row 8: Current Value & As Of (Active scope only) -->
-                                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Current Value:" FontWeight="Bold" Margin="0,5"
+                                    <!-- Row 11: Current Value & As Of (Active scope only) -->
+                                    <TextBlock Grid.Row="11" Grid.Column="0" Text="Current Value:" FontWeight="Bold" Margin="0,5"
                                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="8" Grid.Column="1"
+                                    <TextBlock Grid.Row="11" Grid.Column="1"
                                                Text="{Binding AssetDetails.TodayCurrentValue, Mode=OneWay, StringFormat=N2}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="8" Grid.Column="2" Text="As of:" FontWeight="Bold" Margin="20,5,0,5"
+                                    <TextBlock Grid.Row="11" Grid.Column="2" Text="As of:" FontWeight="Bold" Margin="20,5,0,5"
                                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="8" Grid.Column="3"
+                                    <TextBlock Grid.Row="11" Grid.Column="3"
                                                Text="{Binding AssetDetails.TodayCurrentValueAsOf, Mode=OneWay}"
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                                    <!-- Row 9: Total Current Value & Result % -->
-                                    <TextBlock Grid.Row="9" Grid.Column="0" Text="Total Current Value:" FontWeight="Bold" Margin="0,5"
+                                    <!-- Row 12: Total Current Value & Result % -->
+                                    <TextBlock Grid.Row="12" Grid.Column="0" Text="Total Current Value:" FontWeight="Bold" Margin="0,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="9" Grid.Column="1"
+                                    <TextBlock Grid.Row="12" Grid.Column="1"
                                                Text="{Binding AssetDetails.TotalCurrentValue, Mode=OneWay, StringFormat=N2}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="9" Grid.Column="2" Text="Result %:" FontWeight="Bold" Margin="20,5,0,5"
+                                    <TextBlock Grid.Row="12" Grid.Column="2" Text="Result %:" FontWeight="Bold" Margin="20,5,0,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="9" Grid.Column="3"
+                                    <TextBlock Grid.Row="12" Grid.Column="3"
                                                Text="{Binding AssetDetails.ResultPercent, Mode=OneWay, StringFormat=P2}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
@@ -294,18 +342,18 @@
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                                    <!-- Row 10: Total Current + Credits & Result % -->
-                                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Total Current + Credits:" FontWeight="Bold" Margin="0,5"
+                                    <!-- Row 13: Total Current + Credits & Result % -->
+                                    <TextBlock Grid.Row="13" Grid.Column="0" Text="Total Current + Credits:" FontWeight="Bold" Margin="0,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="10" Grid.Column="1"
+                                    <TextBlock Grid.Row="13" Grid.Column="1"
                                                Text="{Binding AssetDetails.TotalCurrentValueWithCredits, Mode=OneWay, StringFormat=N2}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="10" Grid.Column="2" Text="Result %:" FontWeight="Bold" Margin="20,5,0,5"
+                                    <TextBlock Grid.Row="13" Grid.Column="2" Text="Result %:" FontWeight="Bold" Margin="20,5,0,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="10" Grid.Column="3"
+                                    <TextBlock Grid.Row="13" Grid.Column="3"
                                                Text="{Binding AssetDetails.ResultPercentWithCredits, Mode=OneWay, StringFormat=P2}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
@@ -313,19 +361,19 @@
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                                    <!-- Row 11: XIRR & XIRR w/ Credits -->
-                                    <TextBlock Grid.Row="11" Grid.Column="0" Text="XIRR:" FontWeight="Bold" Margin="0,5"
+                                    <!-- Row 14: XIRR & XIRR w/ Credits -->
+                                    <TextBlock Grid.Row="14" Grid.Column="0" Text="XIRR:" FontWeight="Bold" Margin="0,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="11" Grid.Column="1"
+                                    <TextBlock Grid.Row="14" Grid.Column="1"
                                                Text="{Binding AssetDetails.Xirr, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
                                                Foreground="{Binding AssetDetails.Xirr, Converter={StaticResource SignedValueToBrushConverter}}"
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="11" Grid.Column="2" Text="XIRR w/ Credits:" FontWeight="Bold" Margin="20,5,0,5"
+                                    <TextBlock Grid.Row="14" Grid.Column="2" Text="XIRR w/ Credits:" FontWeight="Bold" Margin="20,5,0,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="11" Grid.Column="3"
+                                    <TextBlock Grid.Row="14" Grid.Column="3"
                                                Text="{Binding AssetDetails.XirrWithCredits, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
@@ -333,10 +381,12 @@
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                                    <!-- Row 12: Status/Error -->
-                                    <TextBlock Grid.Row="12" Grid.Column="0" Text="Status:" FontWeight="Bold" Margin="0,5"/>
-                                    <TextBlock Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="3"
+                                    <!-- Row 15: Status/Error (Active scope only - reports today's price-refresh status) -->
+                                    <TextBlock Grid.Row="15" Grid.Column="0" Text="Status:" FontWeight="Bold" Margin="0,5"
+                                               Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="15" Grid.Column="1" Grid.ColumnSpan="3"
                                                Text="{Binding AssetDetails.TodayInfoMessage, Mode=OneWay}"
+                                               Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"
                                                Margin="10,5"
                                                Foreground="DarkRed"/>
                                 </Grid>
@@ -750,6 +800,294 @@
                                 </Border>
                             </Grid>
                         </DataTemplate>
+
+                        <!-- Historic variant of PortfolioSummaryTemplate: no live price exists for a closed
+                             position, so the current-value/price/profit/XIRR columns are replaced with their
+                             realized-cash-flow equivalents (available synchronously, no price fetch involved),
+                             with headers renamed to match. Every other column is identical. -->
+                        <DataTemplate x:Key="PortfolioSummaryTemplateHistoric">
+                            <DataTemplate.Resources>
+                                <vm:PortfolioSummaryColumnWidths x:Key="ColWidths"/>
+                            </DataTemplate.Resources>
+                            <Grid Margin="10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Aggregated Totals -->
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                                    <TextBlock Text="Total Bought:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding AssetDetails.TotalBought, Mode=OneWay, StringFormat=N2}"
+                                               FontFamily="Consolas" Foreground="Green" Margin="0,0,20,0"/>
+                                    <TextBlock Text="Total Sold:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding AssetDetails.TotalSold, Mode=OneWay, StringFormat=N2}"
+                                               FontFamily="Consolas" Foreground="Red" Margin="0,0,20,0"/>
+                                    <TextBlock Text="Total Credits:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}"
+                                               FontFamily="Consolas" Foreground="Blue" Margin="0,0,20,0"/>
+                                    <TextBlock Text="Total Invested:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding AssetDetails.TotalInvested, Mode=OneWay, StringFormat=N2}"
+                                               FontFamily="Consolas"
+                                               Foreground="{Binding AssetDetails.TotalInvested, Converter={StaticResource SignedValueToBrushConverter}}"/>
+                                </StackPanel>
+
+                                <!-- Per-Asset DataGrid, with a group-header overlay bar above it -->
+                                <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+
+                                        <!-- Group title bar: merges related columns under one spanning header -->
+                                        <Grid Grid.Row="0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=AssetName, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=FirstInvestment, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=Quantity, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=PortfolioWeight, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=TotalInvested, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=CurrentValue, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=TotalCredits, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=AveragePrice, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=CurrentPrice, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=Profit, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=ProfitWithCredits, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=Xirr, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=LastMonthCredits, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=LastCreditMonth, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=LastMonthPercent, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=EstAnnualCredits, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                                <ColumnDefinition Width="{Binding Source={StaticResource ColWidths}, Path=EstAnnualPercent, Converter={StaticResource DoubleToGridLengthConverter}}"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Border Grid.Column="0" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="1" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="2" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="3" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="4" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="5" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="6" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="7" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="8" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="9" Grid.ColumnSpan="2" Style="{StaticResource GroupHeaderBarStyle}">
+                                                <TextBlock Text="Profit" Style="{StaticResource GroupHeaderTitleTextStyle}"/>
+                                            </Border>
+                                            <Border Grid.Column="11" Style="{StaticResource GroupHeaderBarStyle}"/>
+                                            <Border Grid.Column="12" Grid.ColumnSpan="3" Style="{StaticResource GroupHeaderBarStyle}" BorderThickness="3,0,1,1" BorderBrush="#007ACC">
+                                                <TextBlock Text="Last Month" Style="{StaticResource GroupHeaderTitleTextStyle}"/>
+                                            </Border>
+                                            <Border Grid.Column="15" Grid.ColumnSpan="2" Style="{StaticResource GroupHeaderBarStyle}">
+                                                <TextBlock Text="Est. Annual" Style="{StaticResource GroupHeaderTitleTextStyle}"/>
+                                            </Border>
+                                        </Grid>
+
+                                        <DataGrid Grid.Row="1"
+                                                  ItemsSource="{Binding AssetDetails.PortfolioAssetSummaryRows}"
+                                                  AutoGenerateColumns="False"
+                                                  CanUserAddRows="False"
+                                                  IsReadOnly="True"
+                                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="Asset Name" Binding="{Binding AssetName}" Width="{Binding Source={StaticResource ColWidths}, Path=AssetName, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTextColumn Header="First Investment" Binding="{Binding DisplayFirstInvestmentDate}" Width="{Binding Source={StaticResource ColWidths}, Path=FirstInvestment, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTextColumn Header="Quantity" Binding="{Binding DisplayCurrentQuantity}" Width="{Binding Source={StaticResource ColWidths}, Path=Quantity, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTextColumn Header="% Portfolio" Binding="{Binding DisplayPortfolioWeight}" Width="{Binding Source={StaticResource ColWidths}, Path=PortfolioWeight, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTextColumn Header="Total Invested" Binding="{Binding DisplayTotalInvested}" Width="{Binding Source={StaticResource ColWidths}, Path=TotalInvested, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTemplateColumn Header="Realized Gain/Loss" Width="{Binding Source={StaticResource ColWidths}, Path=CurrentValue, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding DisplayRealizedGainLoss}" TextAlignment="Right" Padding="8" VerticalAlignment="Center">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding RealizedGainLossIsPositive}" Value="True">
+                                                                                <Setter Property="Foreground" Value="Green"/>
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding RealizedGainLossIsNegative}" Value="True">
+                                                                                <Setter Property="Foreground" Value="Red"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTextColumn Header="Total Credits" Binding="{Binding DisplayTotalCredits}" Width="{Binding Source={StaticResource ColWidths}, Path=TotalCredits, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTextColumn Header="Average Price" Binding="{Binding DisplayAveragePrice}" Width="{Binding Source={StaticResource ColWidths}, Path=AveragePrice, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTextColumn Header="Sold Price" Binding="{Binding DisplaySoldPrice}" Width="{Binding Source={StaticResource ColWidths}, Path=CurrentPrice, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTemplateColumn Header="%" Width="{Binding Source={StaticResource ColWidths}, Path=Profit, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding DisplayHistoricProfitPercent}" TextAlignment="Right" Padding="8" VerticalAlignment="Center">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding HistoricProfitIsPositive}" Value="True">
+                                                                                <Setter Property="Foreground" Value="Green"/>
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding HistoricProfitIsNegative}" Value="True">
+                                                                                <Setter Property="Foreground" Value="Red"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Header="w/ Credits" Width="{Binding Source={StaticResource ColWidths}, Path=ProfitWithCredits, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding DisplayHistoricProfitWithCreditsPercent}" TextAlignment="Right" Padding="8" VerticalAlignment="Center">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding HistoricProfitWithCreditsIsPositive}" Value="True">
+                                                                                <Setter Property="Foreground" Value="Green"/>
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding HistoricProfitWithCreditsIsNegative}" Value="True">
+                                                                                <Setter Property="Foreground" Value="Red"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Header="XIRR" Width="{Binding Source={StaticResource ColWidths}, Path=Xirr, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding DisplayHistoricXirr}" TextAlignment="Right" Padding="8" VerticalAlignment="Center">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding HistoricXirrIsPositive}" Value="True">
+                                                                                <Setter Property="Foreground" Value="Green"/>
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding HistoricXirrIsNegative}" Value="True">
+                                                                                <Setter Property="Foreground" Value="Red"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTextColumn Header="Credits" Binding="{Binding DisplayLastMonthCredits}" Width="{Binding Source={StaticResource ColWidths}, Path=LastMonthCredits, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTextColumn.CellStyle>
+                                                        <Style TargetType="DataGridCell">
+                                                            <Setter Property="BorderThickness" Value="3,0,0,0"/>
+                                                            <Setter Property="BorderBrush" Value="#007ACC"/>
+                                                        </Style>
+                                                    </DataGridTextColumn.CellStyle>
+                                                    <DataGridTextColumn.HeaderStyle>
+                                                        <Style TargetType="DataGridColumnHeader">
+                                                            <Setter Property="BorderThickness" Value="3,0,0,0"/>
+                                                            <Setter Property="BorderBrush" Value="#007ACC"/>
+                                                        </Style>
+                                                    </DataGridTextColumn.HeaderStyle>
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTextColumn Header="Month" Binding="{Binding LastCreditMonthDisplay}" Width="{Binding Source={StaticResource ColWidths}, Path=LastCreditMonth, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTextColumn Header="%" Binding="{Binding DisplayLastMonthCreditsPercent}" Width="{Binding Source={StaticResource ColWidths}, Path=LastMonthPercent, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTextColumn Header="Credits" Binding="{Binding DisplayEstimatedAnnualCredits}" Width="{Binding Source={StaticResource ColWidths}, Path=EstAnnualCredits, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                                <DataGridTextColumn Header="%" Binding="{Binding DisplayEstimatedAnnualPercent}" Width="{Binding Source={StaticResource ColWidths}, Path=EstAnnualPercent, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
+                                                    <DataGridTextColumn.ElementStyle>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}"/>
+                                                    </DataGridTextColumn.ElementStyle>
+                                                </DataGridTextColumn>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </Grid>
+                                </ScrollViewer>
+                                <Border Grid.Row="2"
+                                        Background="{x:Static SystemColors.ControlBrush}"
+                                        Padding="8,6"
+                                        Margin="0,4,0,0">
+                                    <WrapPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                            <TextBlock Text="Total Invested:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                            <TextBlock Text="{Binding AssetDetails.FooterTotalInvested, StringFormat=N2}"
+                                                       FontFamily="Consolas"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                            <TextBlock Text="Total Credits:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                            <TextBlock Text="{Binding AssetDetails.FooterTotalCredits, StringFormat=N2}"
+                                                       FontFamily="Consolas"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                            <TextBlock Text="Realized Gain/Loss:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                            <TextBlock Text="{Binding AssetDetails.FooterRealizedGainLoss, StringFormat=N2}"
+                                                       FontFamily="Consolas"
+                                                       Foreground="{Binding AssetDetails.FooterRealizedGainLoss, Converter={StaticResource SignedValueToBrushConverter}}"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                                            <TextBlock Text="{Binding AssetDetails.FooterCurrentMonthLabel, StringFormat='{}{0}:'}"
+                                                       FontWeight="Bold" Margin="0,0,5,0"/>
+                                            <TextBlock Text="{Binding AssetDetails.FooterCurrentMonthCredits, StringFormat=N2}"
+                                                       FontFamily="Consolas"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Est. Annual Credits:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                            <TextBlock Text="{Binding AssetDetails.FooterEstimatedAnnualCreditsDisplay}"
+                                                       FontFamily="Consolas"/>
+                                        </StackPanel>
+                                    </WrapPanel>
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
                     </TabItem.Resources>
                     <ContentControl Content="{Binding}">
                         <ContentControl.Style>
@@ -762,6 +1100,13 @@
                                     <DataTrigger Binding="{Binding AssetDetails.IsBrokerView}" Value="True">
                                         <Setter Property="ContentTemplate" Value="{StaticResource BrokerSummaryTemplate}"/>
                                     </DataTrigger>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding AssetDetails.IsPortfolioView}" Value="True"/>
+                                            <Condition Binding="{Binding AssetDetails.IsActiveScope}" Value="False"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="ContentTemplate" Value="{StaticResource PortfolioSummaryTemplateHistoric}"/>
+                                    </MultiDataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </ContentControl.Style>

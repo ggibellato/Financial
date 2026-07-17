@@ -20,7 +20,10 @@ public class PortfolioAssetSummaryRowViewModelTests
         decimal? lastMonthCreditsPercent = null,
         decimal? estimatedAnnualCredits = null,
         decimal? estimatedAnnualPercent = null,
-        decimal currentMonthCredits = 0m)
+        decimal currentMonthCredits = 0m,
+        decimal? totalBought = null,
+        decimal realizedGainLoss = 0m,
+        decimal? averageSellPrice = null)
     {
         var dto = new PortfolioAssetSummaryItemDTO
         {
@@ -30,9 +33,11 @@ public class PortfolioAssetSummaryRowViewModelTests
             FirstInvestmentDate = firstInvestmentDate,
             CurrentQuantity = currentQuantity,
             AveragePrice = averagePrice,
-            TotalBought = totalInvested,
+            AverageSellPrice = averageSellPrice,
+            TotalBought = totalBought ?? totalInvested,
             TotalSold = 0m,
             TotalInvested = totalInvested,
+            RealizedGainLoss = realizedGainLoss,
             PortfolioWeight = portfolioWeight,
             TotalCredits = totalCredits,
             CashFlows = cashFlows ?? [],
@@ -513,5 +518,119 @@ public class PortfolioAssetSummaryRowViewModelTests
     {
         var row = BuildRow(estimatedAnnualPercent: null);
         row.DisplayEstimatedAnnualPercent.Should().Be("—");
+    }
+
+    [Fact]
+    public void DisplayRealizedGainLoss_FormatsN2()
+    {
+        var row = BuildRow(realizedGainLoss: 123.456m);
+        row.DisplayRealizedGainLoss.Should().Be("123.46");
+    }
+
+    [Fact]
+    public void RealizedGainLossIsPositive_WhenGainPositive_IsTrue()
+    {
+        var row = BuildRow(realizedGainLoss: 100m);
+        row.RealizedGainLossIsPositive.Should().BeTrue();
+        row.RealizedGainLossIsNegative.Should().BeFalse();
+    }
+
+    [Fact]
+    public void RealizedGainLossIsNegative_WhenLossNegative_IsTrue()
+    {
+        var row = BuildRow(realizedGainLoss: -50m);
+        row.RealizedGainLossIsNegative.Should().BeTrue();
+        row.RealizedGainLossIsPositive.Should().BeFalse();
+    }
+
+    [Fact]
+    public void DisplaySoldPrice_WhenAverageSellPriceIsSet_FormatsN2()
+    {
+        var row = BuildRow(averageSellPrice: 12.5m);
+        row.DisplaySoldPrice.Should().Be("12.50");
+    }
+
+    [Fact]
+    public void DisplaySoldPrice_WhenAverageSellPriceIsNull_ReturnsDash()
+    {
+        var row = BuildRow(averageSellPrice: null);
+        row.DisplaySoldPrice.Should().Be("—");
+    }
+
+    [Fact]
+    public void DisplayHistoricProfitPercent_ExcludesCreditsFromRealizedGainLoss()
+    {
+        // Profit % reflects the realized capital gain alone: (200 - 50) / 1000 * 100 = 15.00
+        var row = BuildRow(totalBought: 1000m, totalCredits: 50m, realizedGainLoss: 200m);
+        row.HistoricProfitPercent.Should().Be(15.00m);
+        row.DisplayHistoricProfitPercent.Should().Be("15.00%");
+    }
+
+    [Fact]
+    public void DisplayHistoricProfitWithCreditsPercent_UsesFullRealizedGainLoss()
+    {
+        // Profit % w/ Credits uses the full realized gain/loss: 200 / 1000 * 100 = 20.00
+        var row = BuildRow(totalBought: 1000m, totalCredits: 50m, realizedGainLoss: 200m);
+        row.HistoricProfitWithCreditsPercent.Should().Be(20.00m);
+        row.DisplayHistoricProfitWithCreditsPercent.Should().Be("20.00%");
+    }
+
+    [Fact]
+    public void DisplayHistoricProfitPercent_WhenTotalBoughtIsZero_ReturnsDash()
+    {
+        var row = BuildRow(totalBought: 0m, realizedGainLoss: 100m);
+        row.HistoricProfitPercent.Should().BeNull();
+        row.DisplayHistoricProfitPercent.Should().Be("—");
+    }
+
+    [Fact]
+    public void DisplayHistoricProfitWithCreditsPercent_WhenTotalBoughtIsZero_ReturnsDash()
+    {
+        var row = BuildRow(totalBought: 0m, realizedGainLoss: 100m);
+        row.HistoricProfitWithCreditsPercent.Should().BeNull();
+        row.DisplayHistoricProfitWithCreditsPercent.Should().Be("—");
+    }
+
+    [Fact]
+    public void HistoricProfitIsPositive_WhenHistoricProfitPercentPositive_IsTrue()
+    {
+        var row = BuildRow(totalBought: 1000m, realizedGainLoss: 100m);
+        row.HistoricProfitIsPositive.Should().BeTrue();
+        row.HistoricProfitIsNegative.Should().BeFalse();
+    }
+
+    [Fact]
+    public void HistoricProfitWithCreditsIsNegative_WhenHistoricProfitWithCreditsPercentNegative_IsTrue()
+    {
+        var row = BuildRow(totalBought: 1000m, realizedGainLoss: -100m);
+        row.HistoricProfitWithCreditsIsNegative.Should().BeTrue();
+        row.HistoricProfitWithCreditsIsPositive.Should().BeFalse();
+    }
+
+    [Fact]
+    public void DisplayHistoricXirr_ComputesFromCashFlowsWithZeroTerminalValue()
+    {
+        // One buy at -1000 exactly 2 years ago; the position's proceeds are already recorded
+        // as a +1210 cash flow today (fully realized) instead of a live terminal mark-to-market.
+        var buyDate = DateTime.Today.AddYears(-2);
+        var cashFlows = new List<AssetCashFlowDTO>
+        {
+            new() { Date = buyDate, Amount = -1000m },
+            new() { Date = DateTime.Today, Amount = 1210m }
+        };
+        var row = BuildRow(cashFlows: cashFlows);
+
+        row.HistoricXirr.Should().NotBeNull();
+        row.HistoricXirr!.Value.Should().BeApproximately(10m, 0.1m);
+        row.DisplayHistoricXirr.Should().NotBe("—");
+        row.HistoricXirrIsPositive.Should().BeTrue();
+    }
+
+    [Fact]
+    public void DisplayHistoricXirr_WhenCashFlowsEmpty_ReturnsDash()
+    {
+        var row = BuildRow(cashFlows: []);
+        row.HistoricXirr.Should().BeNull();
+        row.DisplayHistoricXirr.Should().Be("—");
     }
 }
