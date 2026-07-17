@@ -10,6 +10,14 @@ namespace Financial.Infrastructure.Tests.Services;
 public class StandardAssetPriceFetcherTests
 {
     [Fact]
+    public void Constructor_WithNullFinanceService_ThrowsArgumentNullException()
+    {
+        Action act = () => new StandardAssetPriceFetcher(null!);
+
+        act.Should().Throw<ArgumentNullException>().WithParameterName("financeService");
+    }
+
+    [Fact]
     public void Supports_Cryptocurrency_ReturnsFalse()
     {
         var fetcher = new StandardAssetPriceFetcher(new StubFinanceService());

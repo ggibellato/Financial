@@ -9,6 +9,14 @@ namespace Financial.Infrastructure.Tests.Services;
 public class BondAssetPriceFetcherTests
 {
     [Fact]
+    public void Constructor_WithNullStatusInvestFinanceService_ThrowsArgumentNullException()
+    {
+        Action act = () => new BondAssetPriceFetcher(null!);
+
+        act.Should().Throw<ArgumentNullException>().WithParameterName("statusInvestFinanceService");
+    }
+
+    [Fact]
     public void Supports_Bond_ReturnsTrue()
     {
         var fetcher = new BondAssetPriceFetcher(new StatusInvestFinanceService(_ => throw new NotImplementedException()));

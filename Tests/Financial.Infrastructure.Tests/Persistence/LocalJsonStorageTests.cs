@@ -66,6 +66,38 @@ public class LocalJsonStorageTests
         ex.Which.FileName.Should().EndWith(LocalJsonStorage.DefaultDataFileName);
     }
 
+    [Fact]
+    public async Task Constructor_WithDirectoryPath_AppendsDefaultFileName()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"storage-test-dir-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var storage = new LocalJsonStorage(tempDir);
+
+            Func<Task> act = () => storage.ReadAsync();
+
+            var ex = await act.Should().ThrowAsync<FileNotFoundException>();
+            ex.Which.FileName.Should().Be(Path.Combine(tempDir, LocalJsonStorage.DefaultDataFileName));
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Constructor_WithRelativePath_ResolvesAgainstBaseDirectory()
+    {
+        var relativeFileName = $"relative-storage-test-{Guid.NewGuid():N}.json";
+        var storage = new LocalJsonStorage(relativeFileName);
+
+        Func<Task> act = () => storage.ReadAsync();
+
+        var ex = await act.Should().ThrowAsync<FileNotFoundException>();
+        ex.Which.FileName.Should().Be(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, relativeFileName)));
+    }
+
     private static string CreateTempFile(string content)
     {
         var path = Path.Combine(Path.GetTempPath(), $"storage-test-{Guid.NewGuid():N}.json");

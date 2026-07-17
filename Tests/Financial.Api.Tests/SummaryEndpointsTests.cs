@@ -50,6 +50,17 @@ public class SummaryEndpointsTests
     }
 
     [Fact]
+    public async Task GetPortfolioAssetsSummary_Returns400ForWhitespacePortfolioName()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/summary/portfolio/XPI/%20/assets");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task GetBrokerSummary_Returns200WithDto()
     {
         await using var factory = new ApiTestFactory();

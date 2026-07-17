@@ -58,6 +58,16 @@ public class GlobalAssetClassMappingTests
     }
 
     [Fact]
+    public void Resolve_LocalTypeCodeMappedForDifferentCountry_ReturnsUnknown()
+    {
+        // "Stock" is a valid key for US/UK but not BR - exercises the comparer's
+        // country-mismatch short-circuit against otherwise-matching local type codes.
+        var result = GlobalAssetClassMapping.Resolve(CountryCode.BR, "Stock");
+
+        result.Should().Be(GlobalAssetClass.Unknown);
+    }
+
+    [Fact]
     public void Resolve_EmptyLocalType_ReturnsUnknown()
     {
         var result = GlobalAssetClassMapping.Resolve(CountryCode.BR, "  ");

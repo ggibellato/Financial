@@ -32,6 +32,17 @@ public class AssetPriceServiceTests
     }
 
     [Fact]
+    public void GetCurrentPrice_NoFetchersRegistered_ThrowsInvalidOperationException()
+    {
+        var service = new AssetPriceService([]);
+        var request = new AssetPriceRequestDTO { Exchange = "BVMF", Ticker = "BCIA11" };
+
+        Action act = () => service.GetCurrentPrice(request);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*No asset price fetcher is registered*");
+    }
+
+    [Fact]
     public void GetCurrentPrice_CryptocurrencyAssetClass_DispatchesToMatchingFetcher()
     {
         var cryptoSnapshot = new AssetValueSnapshot("BTC", "Bitcoin", 50000m, DateTimeOffset.UtcNow);

@@ -11,6 +11,22 @@ namespace Financial.Infrastructure.Tests.Services;
 public class CryptocurrencyAssetPriceFetcherTests
 {
     [Fact]
+    public void Constructor_WithNullRepository_ThrowsArgumentNullException()
+    {
+        Action act = () => new CryptocurrencyAssetPriceFetcher(null!, new StubFinanceService());
+
+        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
+    }
+
+    [Fact]
+    public void Constructor_WithNullFinanceService_ThrowsArgumentNullException()
+    {
+        Action act = () => new CryptocurrencyAssetPriceFetcher(new StubRepository([]), null!);
+
+        act.Should().Throw<ArgumentNullException>().WithParameterName("financeService");
+    }
+
+    [Fact]
     public void Supports_Cryptocurrency_ReturnsTrue()
     {
         var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new StubFinanceService());
