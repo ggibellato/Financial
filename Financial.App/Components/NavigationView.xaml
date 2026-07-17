@@ -188,6 +188,9 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
                                     <!-- Row 0: Quantity & Average Price -->
@@ -228,7 +231,7 @@
                                                Margin="10,5"
                                                Foreground="Red"/>
 
-                                    <!-- Row 5: Total Credits & Realized Gain/Loss -->
+                                    <!-- Row 5: Total Credits & Realized Gain/Loss (latter shown only for Active; Historic shows it in the Realized section below instead) -->
                                     <TextBlock Grid.Row="5" Grid.Column="0" Text="Total Credits:" FontWeight="Bold" Margin="0,5"/>
                                     <TextBlock Grid.Row="5" Grid.Column="1"
                                                Text="{Binding AssetDetails.TotalCredits, Mode=OneWay, StringFormat=N2}"
@@ -237,56 +240,101 @@
                                                Margin="10,5"
                                                Foreground="Blue"/>
 
-                                    <TextBlock Grid.Row="5" Grid.Column="2" Text="Realized Gain/Loss:" FontWeight="Bold" Margin="20,5,0,5"/>
+                                    <TextBlock Grid.Row="5" Grid.Column="2" Text="Realized Gain/Loss:" FontWeight="Bold" Margin="20,5,0,5"
+                                               Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                     <TextBlock Grid.Row="5" Grid.Column="3"
                                                Text="{Binding AssetDetails.RealizedGainLoss, Mode=OneWay, StringFormat=N2}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
                                                Foreground="{Binding AssetDetails.RealizedGainLoss, Converter={StaticResource SignedValueToBrushConverter}}"
-                                               Margin="10,5"/>
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                                     <!-- Separator -->
                                     <Border Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="4"
                                             BorderBrush="#EEEEEE" BorderThickness="0,1,0,0" Margin="0,15,0,15"/>
 
-                                    <!-- Row 7: Current Header (Active scope only - Historic never has a live price) -->
-                                    <TextBlock Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Text="Current" FontWeight="Bold" FontSize="13" Margin="0,5"
+                                    <!-- Row 7: Realized Header (Historic scope only) -->
+                                    <TextBlock Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Text="Realized" FontWeight="Bold" FontSize="13" Margin="0,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                    <!-- Row 8: Realized Gain/Loss & Portfolio Weight (Historic scope only) -->
+                                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Realized Gain/Loss:" FontWeight="Bold" Margin="0,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="8" Grid.Column="1"
+                                               Text="{Binding AssetDetails.RealizedGainLoss, Mode=OneWay, StringFormat=N2}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Foreground="{Binding AssetDetails.RealizedGainLoss, Converter={StaticResource SignedValueToBrushConverter}}"
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="8" Grid.Column="2" Text="Portfolio Weight:" FontWeight="Bold" Margin="20,5,0,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="8" Grid.Column="3"
+                                               Text="{Binding AssetDetails.DisplayRealizedPortfolioWeight, Mode=OneWay}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                    <!-- Row 9: XIRR & XIRR w/ Credits, realized (Historic scope only) -->
+                                    <TextBlock Grid.Row="9" Grid.Column="0" Text="XIRR:" FontWeight="Bold" Margin="0,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="9" Grid.Column="1"
+                                               Text="{Binding AssetDetails.RealizedXirr, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Foreground="{Binding AssetDetails.RealizedXirr, Converter={StaticResource SignedValueToBrushConverter}}"
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="9" Grid.Column="2" Text="XIRR w/ Credits:" FontWeight="Bold" Margin="20,5,0,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="9" Grid.Column="3"
+                                               Text="{Binding AssetDetails.RealizedXirrWithCredits, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
+                                               TextAlignment="Right"
+                                               FontFamily="Consolas"
+                                               Foreground="{Binding AssetDetails.RealizedXirrWithCredits, Converter={StaticResource SignedValueToBrushConverter}}"
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.IsHistoricScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                    <!-- Row 10: Current Header (Active scope only - Historic never has a live price) -->
+                                    <TextBlock Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2" Text="Current" FontWeight="Bold" FontSize="13" Margin="0,5"
                                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <Button Grid.Row="7" Grid.Column="2" Grid.ColumnSpan="2"
+                                    <Button Grid.Row="10" Grid.Column="2" Grid.ColumnSpan="2"
                                             Command="{Binding AssetDetails.RefreshTodayInfoCommand}"
                                             Content="Refresh"
                                             HorizontalAlignment="Right"
                                             Margin="0,5"
                                             Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                                    <!-- Row 8: Current Value & As Of (Active scope only) -->
-                                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Current Value:" FontWeight="Bold" Margin="0,5"
+                                    <!-- Row 11: Current Value & As Of (Active scope only) -->
+                                    <TextBlock Grid.Row="11" Grid.Column="0" Text="Current Value:" FontWeight="Bold" Margin="0,5"
                                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="8" Grid.Column="1"
+                                    <TextBlock Grid.Row="11" Grid.Column="1"
                                                Text="{Binding AssetDetails.TodayCurrentValue, Mode=OneWay, StringFormat=N2}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="8" Grid.Column="2" Text="As of:" FontWeight="Bold" Margin="20,5,0,5"
+                                    <TextBlock Grid.Row="11" Grid.Column="2" Text="As of:" FontWeight="Bold" Margin="20,5,0,5"
                                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="8" Grid.Column="3"
+                                    <TextBlock Grid.Row="11" Grid.Column="3"
                                                Text="{Binding AssetDetails.TodayCurrentValueAsOf, Mode=OneWay}"
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                                    <!-- Row 9: Total Current Value & Result % -->
-                                    <TextBlock Grid.Row="9" Grid.Column="0" Text="Total Current Value:" FontWeight="Bold" Margin="0,5"
+                                    <!-- Row 12: Total Current Value & Result % -->
+                                    <TextBlock Grid.Row="12" Grid.Column="0" Text="Total Current Value:" FontWeight="Bold" Margin="0,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="9" Grid.Column="1"
+                                    <TextBlock Grid.Row="12" Grid.Column="1"
                                                Text="{Binding AssetDetails.TotalCurrentValue, Mode=OneWay, StringFormat=N2}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="9" Grid.Column="2" Text="Result %:" FontWeight="Bold" Margin="20,5,0,5"
+                                    <TextBlock Grid.Row="12" Grid.Column="2" Text="Result %:" FontWeight="Bold" Margin="20,5,0,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="9" Grid.Column="3"
+                                    <TextBlock Grid.Row="12" Grid.Column="3"
                                                Text="{Binding AssetDetails.ResultPercent, Mode=OneWay, StringFormat=P2}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
@@ -294,18 +342,18 @@
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                                    <!-- Row 10: Total Current + Credits & Result % -->
-                                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Total Current + Credits:" FontWeight="Bold" Margin="0,5"
+                                    <!-- Row 13: Total Current + Credits & Result % -->
+                                    <TextBlock Grid.Row="13" Grid.Column="0" Text="Total Current + Credits:" FontWeight="Bold" Margin="0,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="10" Grid.Column="1"
+                                    <TextBlock Grid.Row="13" Grid.Column="1"
                                                Text="{Binding AssetDetails.TotalCurrentValueWithCredits, Mode=OneWay, StringFormat=N2}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="10" Grid.Column="2" Text="Result %:" FontWeight="Bold" Margin="20,5,0,5"
+                                    <TextBlock Grid.Row="13" Grid.Column="2" Text="Result %:" FontWeight="Bold" Margin="20,5,0,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="10" Grid.Column="3"
+                                    <TextBlock Grid.Row="13" Grid.Column="3"
                                                Text="{Binding AssetDetails.ResultPercentWithCredits, Mode=OneWay, StringFormat=P2}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
@@ -313,19 +361,19 @@
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                                    <!-- Row 11: XIRR & XIRR w/ Credits -->
-                                    <TextBlock Grid.Row="11" Grid.Column="0" Text="XIRR:" FontWeight="Bold" Margin="0,5"
+                                    <!-- Row 14: XIRR & XIRR w/ Credits -->
+                                    <TextBlock Grid.Row="14" Grid.Column="0" Text="XIRR:" FontWeight="Bold" Margin="0,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="11" Grid.Column="1"
+                                    <TextBlock Grid.Row="14" Grid.Column="1"
                                                Text="{Binding AssetDetails.Xirr, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
                                                Foreground="{Binding AssetDetails.Xirr, Converter={StaticResource SignedValueToBrushConverter}}"
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="11" Grid.Column="2" Text="XIRR w/ Credits:" FontWeight="Bold" Margin="20,5,0,5"
+                                    <TextBlock Grid.Row="14" Grid.Column="2" Text="XIRR w/ Credits:" FontWeight="Bold" Margin="20,5,0,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="11" Grid.Column="3"
+                                    <TextBlock Grid.Row="14" Grid.Column="3"
                                                Text="{Binding AssetDetails.XirrWithCredits, Mode=OneWay, StringFormat=P2, TargetNullValue='—'}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
@@ -333,10 +381,10 @@
                                                Margin="10,5"
                                                Visibility="{Binding AssetDetails.HasAveragePrice, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                                    <!-- Row 12: Status/Error (Active scope only - reports today's price-refresh status) -->
-                                    <TextBlock Grid.Row="12" Grid.Column="0" Text="Status:" FontWeight="Bold" Margin="0,5"
+                                    <!-- Row 15: Status/Error (Active scope only - reports today's price-refresh status) -->
+                                    <TextBlock Grid.Row="15" Grid.Column="0" Text="Status:" FontWeight="Bold" Margin="0,5"
                                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="3"
+                                    <TextBlock Grid.Row="15" Grid.Column="1" Grid.ColumnSpan="3"
                                                Text="{Binding AssetDetails.TodayInfoMessage, Mode=OneWay}"
                                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"
                                                Margin="10,5"

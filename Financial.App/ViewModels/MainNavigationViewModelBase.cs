@@ -254,7 +254,17 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
         if (details != null)
         {
-            AssetDetails.LoadAssetDetails(details);
+            // No single-asset endpoint carries PortfolioWeight (it's inherently
+            // portfolio-relative); reuse the portfolio-list summary and match by name,
+            // matching the Web app's equivalent approach for the Historic Summary tab.
+            decimal? realizedPortfolioWeight = null;
+            if (_scope == InvestmentScope.Historic)
+            {
+                var assetItems = _portfolioAssetSummaryService.GetPortfolioAssetsSummary(brokerName, portfolioName, _scope);
+                realizedPortfolioWeight = assetItems.FirstOrDefault(item => item.AssetName == assetName)?.PortfolioWeight;
+            }
+
+            AssetDetails.LoadAssetDetails(details, realizedPortfolioWeight);
             _ = AssetDetails.EnsureTodayInfoLoadedAsync();
         }
     }

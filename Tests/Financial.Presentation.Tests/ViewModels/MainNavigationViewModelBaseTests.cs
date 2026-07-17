@@ -324,6 +324,54 @@ public class MainNavigationViewModelBaseTests
     }
 
     [Fact]
+    public void SelectingAssetNode_HistoricScope_PassesMatchingPortfolioWeightToAssetDetails()
+    {
+        var summaryService = new StubSummaryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var navigationService = new StubNavigationService
+        {
+            AssetDetails = new AssetDetailsDTO { Name = "BBAS3", BrokerName = "XPI", PortfolioName = "Uncategorized", Ticker = "BBAS3" }
+        };
+        var assetSummaryService = new StubPortfolioAssetSummaryService
+        {
+            Items =
+            [
+                new PortfolioAssetSummaryItemDTO { AssetName = "Other Asset", PortfolioWeight = 40m },
+                new PortfolioAssetSummaryItemDTO { AssetName = "BBAS3", PortfolioWeight = 5.15m }
+            ]
+        };
+        var vm = new TestableNavigationViewModel(summaryService, spy, assetSummaryService, navigationService, InvestmentScope.Historic);
+
+        var assetNode = BuildAssetNode("XPI", "Uncategorized", "BBAS3");
+        vm.SelectedNode = assetNode;
+
+        spy.LastAssetDetails.Should().NotBeNull();
+        spy.LastRealizedPortfolioWeight.Should().Be(5.15m);
+        assetSummaryService.LastBrokerName.Should().Be("XPI");
+        assetSummaryService.LastPortfolioName.Should().Be("Uncategorized");
+        assetSummaryService.LastScope.Should().Be(InvestmentScope.Historic);
+    }
+
+    [Fact]
+    public void SelectingAssetNode_ActiveScope_DoesNotFetchPortfolioWeight()
+    {
+        var summaryService = new StubSummaryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var navigationService = new StubNavigationService
+        {
+            AssetDetails = new AssetDetailsDTO { Name = "BBAS3", BrokerName = "XPI", PortfolioName = "Acoes", Ticker = "BBAS3" }
+        };
+        var assetSummaryService = new StubPortfolioAssetSummaryService();
+        var vm = new TestableNavigationViewModel(summaryService, spy, assetSummaryService, navigationService);
+
+        var assetNode = BuildAssetNode("XPI", "Acoes", "BBAS3");
+        vm.SelectedNode = assetNode;
+
+        assetSummaryService.LastBrokerName.Should().BeNull();
+        spy.LastRealizedPortfolioWeight.Should().BeNull();
+    }
+
+    [Fact]
     public void SelectingPortfolioNode_HistoricScope_RequestsHistoricScopeSummaryAndAssetItems()
     {
         var summaryService = new StubSummaryService();
@@ -470,8 +518,14 @@ public class MainNavigationViewModelBaseTests
         public bool WasPortfolioTransactionsLoaded { get; private set; }
         public bool IsPortfolioView => false;
         public bool IsBrokerView => false;
+        public AssetDetailsDTO? LastAssetDetails { get; private set; }
+        public decimal? LastRealizedPortfolioWeight { get; private set; }
 
-        public void LoadAssetDetails(AssetDetailsDTO details) { }
+        public void LoadAssetDetails(AssetDetailsDTO details, decimal? realizedPortfolioWeight = null)
+        {
+            LastAssetDetails = details;
+            LastRealizedPortfolioWeight = realizedPortfolioWeight;
+        }
 
         public void LoadBrokerSummary(string brokerName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
         {
@@ -562,6 +616,7 @@ public class MainNavigationViewModelBaseTests
     {
         public InvestmentScope? LastTreeScope { get; private set; }
         public InvestmentScope? LastAssetDetailsScope { get; private set; }
+        public AssetDetailsDTO? AssetDetails { get; set; }
 
         public TreeNodeDTO GetNavigationTree(InvestmentScope scope = InvestmentScope.Active)
         {
@@ -572,7 +627,7 @@ public class MainNavigationViewModelBaseTests
         public AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active)
         {
             LastAssetDetailsScope = scope;
-            return null;
+            return AssetDetails;
         }
 
         public IEnumerable<BrokerNodeDTO> GetBrokers(InvestmentScope scope = InvestmentScope.Active) => [];

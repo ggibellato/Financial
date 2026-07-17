@@ -50,6 +50,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private decimal _totalSold;
     private decimal _totalCredits;
     private decimal _realizedGainLoss;
+    private decimal? _realizedPortfolioWeight;
     private decimal _todayCurrentValue;
     private string _todayCurrentValueAsOf = string.Empty;
     private string _todayInfoMessage = string.Empty;
@@ -184,8 +185,30 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public decimal ResultPercentWithCredits => AssetDetailsCalculations.CalculateResultPercentWithCredits(AveragePrice, Quantity, TotalCurrentValueWithCredits);
     public bool HasAveragePrice => AssetDetailsCalculations.HasAveragePrice(AveragePrice, Quantity);
     public bool IsActiveScope => _scope == InvestmentScope.Active;
+    public bool IsHistoricScope => _scope == InvestmentScope.Historic;
     public decimal? Xirr => _xirrCalculationService.Calculate(_cashFlowsWithoutCredits, TotalCurrentValue);
     public decimal? XirrWithCredits => _xirrCalculationService.Calculate(_cashFlowsWithCredits, TotalCurrentValueWithCredits);
+
+    // Historic (closed) positions have no live price to mark-to-market: XIRR is derived from
+    // already-realized cash flows alone, with a 0 terminal value (every buy/sell/credit is
+    // already a dated entry), matching the Web app's equivalent calculation.
+    public decimal? RealizedXirr => _xirrCalculationService.Calculate(_cashFlowsWithoutCredits, 0m);
+    public decimal? RealizedXirrWithCredits => _xirrCalculationService.Calculate(_cashFlowsWithCredits, 0m);
+
+    public decimal? RealizedPortfolioWeight
+    {
+        get => _realizedPortfolioWeight;
+        private set
+        {
+            if (SetProperty(ref _realizedPortfolioWeight, value))
+            {
+                OnPropertyChanged(nameof(DisplayRealizedPortfolioWeight));
+            }
+        }
+    }
+
+    public string DisplayRealizedPortfolioWeight =>
+        RealizedPortfolioWeight.HasValue ? $"{RealizedPortfolioWeight.Value:F2}%" : "—";
 
     public bool IsPortfolioView
     {
@@ -344,7 +367,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             () => BrokerName,
             () => PortfolioName,
             () => AssetName,
-            LoadAssetDetails,
+            details => LoadAssetDetails(details),
             (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
         _creditActions = new CreditActions(
             _creditService,
@@ -352,7 +375,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             () => BrokerName,
             () => PortfolioName,
             () => AssetName,
-            LoadAssetDetails,
+            details => LoadAssetDetails(details),
             (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
         _addTransactionCommand = new RelayCommand(AddTransaction, CanEditTransactions);
         _updateTransactionCommand = new RelayCommand(UpdateTransaction, CanUpdateTransaction);
@@ -412,7 +435,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         FetchRowPricesAsync(rows, token, brokerName);
     }
 
-    public void LoadAssetDetails(AssetDetailsDTO details)
+    public void LoadAssetDetails(AssetDetailsDTO details, decimal? realizedPortfolioWeight = null)
     {
         IsPortfolioView = false;
         IsBrokerView = false;
@@ -439,6 +462,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalSold = details.TotalSold;
         TotalCredits = details.TotalCredits;
         RealizedGainLoss = details.RealizedGainLoss;
+        RealizedPortfolioWeight = realizedPortfolioWeight;
         IsCreditsAggregateView = false;
         HasCreditsContext = true;
         SetCreditsContext(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), rebuild: false);
@@ -638,6 +662,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         OnPropertyChanged(nameof(ResultPercentWithCredits));
         OnPropertyChanged(nameof(Xirr));
         OnPropertyChanged(nameof(XirrWithCredits));
+        OnPropertyChanged(nameof(RealizedXirr));
+        OnPropertyChanged(nameof(RealizedXirrWithCredits));
     }
 
     private void LoadAggregateCredits(string contextKey, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits)
@@ -810,6 +836,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalSold = 0;
         TotalCredits = 0;
         RealizedGainLoss = 0;
+        RealizedPortfolioWeight = null;
         _cashFlowsWithCredits = Array.Empty<AssetCashFlowDTO>();
         _cashFlowsWithoutCredits = Array.Empty<AssetCashFlowDTO>();
         _todayInfo.Clear();

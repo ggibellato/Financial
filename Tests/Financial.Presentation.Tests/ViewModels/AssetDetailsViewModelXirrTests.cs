@@ -140,6 +140,129 @@ public class AssetDetailsViewModelXirrTests
         vm.RealizedGainLoss.Should().Be(0m);
     }
 
+    [Fact]
+    public void RealizedXirr_BeforeAssetLoaded_IsNull()
+    {
+        var vm = BuildViewModel();
+
+        vm.RealizedXirr.Should().BeNull();
+        vm.RealizedXirrWithCredits.Should().BeNull();
+    }
+
+    [Fact]
+    public void RealizedXirr_ComputesFromCashFlowsWithZeroTerminalValue()
+    {
+        // One buy at -1000 exactly 2 years ago; the position's proceeds are already recorded
+        // as a +1210 cash flow today (fully realized) instead of a live terminal mark-to-market -
+        // matching the Web app's equivalent calculation for a closed position.
+        var buyDate = DateTime.Today.AddYears(-2);
+        var cashFlows = new List<AssetCashFlowDTO>
+        {
+            new() { Date = buyDate, Amount = -1000m },
+            new() { Date = DateTime.Today, Amount = 1210m }
+        };
+        var vm = BuildViewModel(scope: InvestmentScope.Historic);
+
+        vm.LoadAssetDetails(BuildAssetDetails(cashFlows, cashFlows));
+
+        vm.RealizedXirr.Should().NotBeNull();
+        vm.RealizedXirr!.Value.Should().BeApproximately(0.10m, 0.01m);
+    }
+
+    [Fact]
+    public void RealizedXirrWithCredits_UsesCreditsCashFlowsSeries()
+    {
+        var buyDate = DateTime.Today.AddYears(-2);
+        var withoutCredits = new List<AssetCashFlowDTO>
+        {
+            new() { Date = buyDate, Amount = -1000m },
+            new() { Date = DateTime.Today, Amount = 1210m }
+        };
+        var withCredits = new List<AssetCashFlowDTO>
+        {
+            new() { Date = buyDate, Amount = -1000m },
+            new() { Date = DateTime.Today.AddMonths(-6), Amount = 50m },
+            new() { Date = DateTime.Today, Amount = 1210m }
+        };
+        var vm = BuildViewModel(scope: InvestmentScope.Historic);
+
+        vm.LoadAssetDetails(BuildAssetDetails(withoutCredits, withCredits, totalCredits: 50m));
+
+        vm.RealizedXirr.Should().NotBeNull();
+        vm.RealizedXirrWithCredits.Should().NotBeNull();
+        vm.RealizedXirrWithCredits!.Value.Should().BeGreaterThan(vm.RealizedXirr!.Value);
+    }
+
+    [Fact]
+    public void Clear_ResetsRealizedXirrToNull()
+    {
+        var buyDate = DateTime.Today.AddYears(-2);
+        var cashFlows = new List<AssetCashFlowDTO>
+        {
+            new() { Date = buyDate, Amount = -1000m },
+            new() { Date = DateTime.Today, Amount = 1210m }
+        };
+        var vm = BuildViewModel(scope: InvestmentScope.Historic);
+        vm.LoadAssetDetails(BuildAssetDetails(cashFlows, cashFlows));
+
+        vm.Clear();
+
+        vm.RealizedXirr.Should().BeNull();
+        vm.RealizedXirrWithCredits.Should().BeNull();
+    }
+
+    [Fact]
+    public void LoadAssetDetails_SetsRealizedPortfolioWeightFromParameter()
+    {
+        var vm = BuildViewModel();
+
+        vm.LoadAssetDetails(BuildAssetDetails([], []), realizedPortfolioWeight: 5.15m);
+
+        vm.RealizedPortfolioWeight.Should().Be(5.15m);
+        vm.DisplayRealizedPortfolioWeight.Should().Be("5.15%");
+    }
+
+    [Fact]
+    public void LoadAssetDetails_DefaultsRealizedPortfolioWeightToNull_WhenNotProvided()
+    {
+        var vm = BuildViewModel();
+
+        vm.LoadAssetDetails(BuildAssetDetails([], []));
+
+        vm.RealizedPortfolioWeight.Should().BeNull();
+        vm.DisplayRealizedPortfolioWeight.Should().Be("—");
+    }
+
+    [Fact]
+    public void Clear_ResetsRealizedPortfolioWeightToNull()
+    {
+        var vm = BuildViewModel();
+        vm.LoadAssetDetails(BuildAssetDetails([], []), realizedPortfolioWeight: 5.15m);
+
+        vm.Clear();
+
+        vm.RealizedPortfolioWeight.Should().BeNull();
+        vm.DisplayRealizedPortfolioWeight.Should().Be("—");
+    }
+
+    [Fact]
+    public void IsHistoricScope_WhenScopeIsHistoric_IsTrue()
+    {
+        var vm = BuildViewModel(scope: InvestmentScope.Historic);
+
+        vm.IsHistoricScope.Should().BeTrue();
+        vm.IsActiveScope.Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsHistoricScope_WhenScopeIsActive_IsFalse()
+    {
+        var vm = BuildViewModel(scope: InvestmentScope.Active);
+
+        vm.IsHistoricScope.Should().BeFalse();
+        vm.IsActiveScope.Should().BeTrue();
+    }
+
     private sealed class FixedPriceService : IAssetPriceService
     {
         private readonly decimal _price;
