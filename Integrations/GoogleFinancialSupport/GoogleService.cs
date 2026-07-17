@@ -1,10 +1,11 @@
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
+using Financial.Infrastructure.Persistence;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 
-public sealed class GoogleService
+public sealed class GoogleService : IRemoteFileClient
 {
     private readonly GoogleDriveClient _driveClient;
     private readonly GoogleSheetsClient _sheetsClient;

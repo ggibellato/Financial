@@ -1,6 +1,7 @@
 using Financial.Application.Configuration;
 using Financial.Application.DependencyInjection;
 using Financial.Infrastructure.DependencyInjection;
+using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Presentation.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -20,6 +21,7 @@ namespace Financial.Presentation.App
                 .ConfigureServices((context, services) =>
                 {
                     services.AddFinancialApplication();
+                    services.AddGoogleDriveFileClient();
                     services.AddFinancialInfrastructure(context.Configuration);
                     services.Configure<WatchlistOptions>(context.Configuration.GetSection(WatchlistOptions.SectionName));
                     services.Configure<AssetPriceFetchOptions>(context.Configuration.GetSection(AssetPriceFetchOptions.SectionName));

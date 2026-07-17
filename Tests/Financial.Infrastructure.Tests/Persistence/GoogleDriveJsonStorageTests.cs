@@ -6,11 +6,11 @@ namespace Financial.Infrastructure.Tests.Persistence;
 public class GoogleDriveJsonStorageTests
 {
     [Fact]
-    public void Constructor_WithNullService_ThrowsArgumentNullException()
+    public void Constructor_WithNullClient_ThrowsArgumentNullException()
     {
         Action act = () => new GoogleDriveJsonStorage(null!, "some/path");
 
-        act.Should().Throw<ArgumentNullException>().WithParameterName("service");
+        act.Should().Throw<ArgumentNullException>().WithParameterName("client");
     }
 
     [Fact]
