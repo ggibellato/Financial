@@ -25,6 +25,7 @@ namespace Financial.Presentation.App
                     services.Configure<AssetPriceFetchOptions>(context.Configuration.GetSection(AssetPriceFetchOptions.SectionName));
                     services.Configure<DividendOptions>(context.Configuration.GetSection(DividendOptions.SectionName));
                     services.AddTransient<MainNavigationViewModel>();
+                    services.AddTransient<MainNavigationViewModelHistoric>();
                     services.AddTransient<DividendCheckViewModel>();
                     services.AddTransient<AssetPriceFetchViewModel>(sp => new AssetPriceFetchViewModel(
                         sp.GetRequiredService<Financial.Application.Interfaces.INavigationService>(),
