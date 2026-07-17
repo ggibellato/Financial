@@ -1,6 +1,6 @@
 using Financial.Domain.Entities;
 
-namespace Financial.Application.Interfaces;
+namespace Financial.Infrastructure.Persistence;
 
 public interface IInvestmentsSerializer
 {

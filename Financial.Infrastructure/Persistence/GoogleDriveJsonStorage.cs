@@ -1,6 +1,5 @@
 using Financial.Application.Interfaces;
 using Financial.Infrastructure.Configuration;
-using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 
 namespace Financial.Infrastructure.Persistence;
 
@@ -10,10 +9,10 @@ public sealed class GoogleDriveJsonStorage : IJsonStorage
     private readonly Action<string, string> _upload;
     private readonly string _driveFilePath;
 
-    public GoogleDriveJsonStorage(GoogleService service, string? driveFilePath)
+    public GoogleDriveJsonStorage(IRemoteFileClient client, string? driveFilePath)
         : this(
-            (service ?? throw new ArgumentNullException(nameof(service))).DownloadFileContent,
-            service.UploadFileContent,
+            (client ?? throw new ArgumentNullException(nameof(client))).DownloadFileContent,
+            client.UploadFileContent,
             driveFilePath)
     {
     }

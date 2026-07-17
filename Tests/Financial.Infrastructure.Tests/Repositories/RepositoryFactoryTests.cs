@@ -1,3 +1,4 @@
+using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
 using FluentAssertions;
@@ -7,7 +8,8 @@ namespace Financial.Infrastructure.Tests.Repositories;
 
 public class RepositoryFactoryTests
 {
-    private static readonly RepositoryFactory Factory = new(new InvestmentsSerializerAdapter());
+    private static readonly RepositoryFactory Factory =
+        new(new InvestmentsSerializerAdapter(), new GoogleFileClientFactory());
 
     [Fact]
     public void Constructor_WithNullSerializer_Throws()
@@ -98,6 +100,22 @@ public class RepositoryFactoryTests
 
         act.Should().Throw<ArgumentOutOfRangeException>()
             .WithParameterName("Provider");
+    }
+
+    [Fact]
+    public void Create_WithGoogleDriveProvider_NoRemoteFileClientFactoryRegistered_ThrowsInvalidOperationException()
+    {
+        var factoryWithoutRemoteFileClient = new RepositoryFactory(new InvestmentsSerializerAdapter());
+        var options = new RepositorySelectionOptions(
+            RepositoryProvider.GoogleDriveJson,
+            null,
+            TestDataPaths.DataJsonFile,
+            "Pessoais/Gleison/Financeiros");
+
+        Action act = () => factoryWithoutRemoteFileClient.Create(options);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*IRemoteFileClientFactory*");
     }
 
 }

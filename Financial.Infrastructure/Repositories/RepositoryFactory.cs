@@ -1,6 +1,5 @@
 using Financial.Application.Interfaces;
 using Financial.Infrastructure.Configuration;
-using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Infrastructure.Persistence;
 
 namespace Financial.Infrastructure.Repositories;
@@ -8,10 +7,12 @@ namespace Financial.Infrastructure.Repositories;
 public sealed class RepositoryFactory
 {
     private readonly IInvestmentsSerializer _serializer;
+    private readonly IRemoteFileClientFactory? _remoteFileClientFactory;
 
-    public RepositoryFactory(IInvestmentsSerializer serializer)
+    public RepositoryFactory(IInvestmentsSerializer serializer, IRemoteFileClientFactory? remoteFileClientFactory = null)
     {
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+        _remoteFileClientFactory = remoteFileClientFactory;
     }
 
     public IRepository Create(RepositorySelectionOptions options)
@@ -26,18 +27,31 @@ public sealed class RepositoryFactory
         return new JSONRepository(investments, storage, _serializer);
     }
 
-    private static IJsonStorage CreateStorage(RepositorySelectionOptions options) =>
+    private IJsonStorage CreateStorage(RepositorySelectionOptions options) =>
         options.Provider switch
         {
             RepositoryProvider.LocalJson =>
                 new LocalJsonStorage(options.LocalDataPath),
             RepositoryProvider.GoogleDriveJson =>
-                new GoogleDriveJsonStorage(
-                    new GoogleService(ResolveGoogleCredentialsPath(options.GoogleDriveCredentialsPath)),
-                    options.GoogleDriveFilePath),
+                CreateGoogleDriveStorage(options),
             _ => throw new ArgumentOutOfRangeException(
                     nameof(options.Provider), options.Provider, "Unsupported repository provider.")
         };
+
+    private IJsonStorage CreateGoogleDriveStorage(RepositorySelectionOptions options)
+    {
+        var credentialsPath = ResolveGoogleCredentialsPath(options.GoogleDriveCredentialsPath);
+
+        if (_remoteFileClientFactory is null)
+        {
+            throw new InvalidOperationException(
+                $"Repository provider '{nameof(RepositoryProvider.GoogleDriveJson)}' requires an {nameof(IRemoteFileClientFactory)} " +
+                "to be registered (see AddGoogleDriveFileClient).");
+        }
+
+        var client = _remoteFileClientFactory.Create(credentialsPath);
+        return new GoogleDriveJsonStorage(client, options.GoogleDriveFilePath);
+    }
 
     private static string ResolveGoogleCredentialsPath(string? credentialsPath)
     {

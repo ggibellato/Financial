@@ -36,7 +36,9 @@ public static class InfrastructureServiceCollectionExtensions
         {
             var settings = sp.GetRequiredService<IOptions<RepositorySettingsOptions>>().Value;
             var options = BuildRepositoryOptions(settings);
-            return new RepositoryFactory(sp.GetRequiredService<IInvestmentsSerializer>()).Create(options);
+            return new RepositoryFactory(
+                sp.GetRequiredService<IInvestmentsSerializer>(),
+                sp.GetService<IRemoteFileClientFactory>()).Create(options);
         });
         services.AddSingleton<IAssetPriceService, AssetPriceService>();
 

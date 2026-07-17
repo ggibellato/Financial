@@ -1,6 +1,7 @@
 using Financial.Application.Configuration;
 using Financial.Application.DependencyInjection;
 using Financial.Infrastructure.DependencyInjection;
+using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -33,6 +34,7 @@ builder.Services.Configure<DividendOptions>(configuration.GetSection(DividendOpt
 builder.Services.Configure<WatchlistOptions>(configuration.GetSection(WatchlistOptions.SectionName));
 builder.Services.Configure<AssetPriceFetchOptions>(configuration.GetSection(AssetPriceFetchOptions.SectionName));
 builder.Services.AddFinancialApplication();
+builder.Services.AddGoogleDriveFileClient();
 builder.Services.AddFinancialInfrastructure(configuration);
 
 var app = builder.Build();
