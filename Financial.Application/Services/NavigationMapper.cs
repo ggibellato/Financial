@@ -6,8 +6,6 @@ namespace Financial.Application.Services;
 
 internal static class NavigationMapper
 {
-    private const string EncerradasName = "Encerradas";
-
     internal static TreeNodeDTO BuildBrokerTreeNode(BrokerNodeDTO broker)
     {
         var brokerNode = new TreeNodeDTO
@@ -220,7 +218,4 @@ internal static class NavigationMapper
             CreditCount = asset.Credits.Count
         };
     }
-
-    internal static bool IsEncerradas(string? name) =>
-        string.Equals(name?.Trim(), EncerradasName, StringComparison.CurrentCultureIgnoreCase);
 }

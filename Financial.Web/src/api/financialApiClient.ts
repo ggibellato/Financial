@@ -5,6 +5,7 @@ import type {
   AssetDetailsDto,
   AssetPriceDto,
   BrokerNodeDto,
+  CalculateXirrRequestDto,
   CreditCreateDto,
   CreditDeleteDto,
   CreditDto,
@@ -205,7 +206,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     calculateXirr: (cashFlows, terminalValue) =>
       request<XirrResultDto>('/xirr/calculate', {
         method: 'POST',
-        body: JSON.stringify({ cashFlows, terminalValue }),
+        body: JSON.stringify({ cashFlows, terminalValue } satisfies CalculateXirrRequestDto),
       }),
   }
 }

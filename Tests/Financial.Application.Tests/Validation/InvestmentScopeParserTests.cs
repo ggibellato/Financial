@@ -12,42 +12,6 @@ public class InvestmentScopeParserTests
     };
 
     [Theory]
-    [InlineData("Active", "Active")]
-    [InlineData("ACTIVE", "Active")]
-    [InlineData("active", "Active")]
-    [InlineData("Historic", "Historic")]
-    [InlineData("hISTORIC", "Historic")]
-    public void TryNormalize_WhenValueMatches_ReturnsCanonicalValue(string value, string expected)
-    {
-        var result = InvestmentScopeParser.TryNormalize(value, out var normalized);
-
-        result.Should().BeTrue();
-        normalized.Should().Be(expected);
-    }
-
-    [Theory]
-    [MemberData(nameof(NullValues))]
-    public void TryNormalize_WhenValueIsNull_ReturnsFalseAndEmpty(string? value)
-    {
-        var result = InvestmentScopeParser.TryNormalize(value, out var normalized);
-
-        result.Should().BeFalse();
-        normalized.Should().BeEmpty();
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData(" ")]
-    [InlineData("garbage")]
-    public void TryNormalize_WhenValueInvalid_ReturnsFalseAndEmpty(string value)
-    {
-        var result = InvestmentScopeParser.TryNormalize(value, out var normalized);
-
-        result.Should().BeFalse();
-        normalized.Should().BeEmpty();
-    }
-
-    [Theory]
     [MemberData(nameof(NullValues))]
     public void TryParse_WhenValueIsNull_ReturnsFalseAndDefault(string? value)
     {

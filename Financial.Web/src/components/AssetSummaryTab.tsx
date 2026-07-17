@@ -2,16 +2,8 @@ import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useAssetSummary } from '../hooks/useAssetSummary'
 import { useSelectedNode } from '../context/SelectedNodeContext'
-import { formatN2, formatN8, formatShortDate, pad } from '../utils/formatters'
+import { formatN2, formatN8, formatPercentFraction, formatShortDate, pad } from '../utils/formatters'
 import './AssetSummaryTab.css'
-
-function formatPercent(value: number): string {
-  return new Intl.NumberFormat(undefined, {
-    style: 'percent',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
-}
 
 function formatDateTime(isoString: string | null): string {
   if (!isoString) return '—'
@@ -133,19 +125,19 @@ export default function AssetSummaryTab() {
             <div className="asset-summary__field">
               <span className="asset-summary__label">Portfolio Weight</span>
               <span className="asset-summary__value">
-                {portfolioWeight === null ? '—' : formatPercent(portfolioWeight / 100)}
+                {portfolioWeight === null ? '—' : formatPercentFraction(portfolioWeight / 100)}
               </span>
             </div>
             <div className="asset-summary__field">
               <span className="asset-summary__label">XIRR</span>
               <span className={`asset-summary__value ${xirrClass}`}>
-                {xirr === null ? '—' : formatPercent(xirr)}
+                {xirr === null ? '—' : formatPercentFraction(xirr)}
               </span>
             </div>
             <div className="asset-summary__field">
               <span className="asset-summary__label">XIRR w/ Credits</span>
               <span className={`asset-summary__value ${xirrWithCreditsClass}`}>
-                {xirrWithCredits === null ? '—' : formatPercent(xirrWithCredits)}
+                {xirrWithCredits === null ? '—' : formatPercentFraction(xirrWithCredits)}
               </span>
             </div>
           </>
@@ -189,7 +181,7 @@ export default function AssetSummaryTab() {
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">Result %</span>
                   <span className={`asset-summary__value ${resultClass}`}>
-                    {formatPercent(resultPercent)}
+                    {formatPercentFraction(resultPercent)}
                   </span>
                 </div>
 
@@ -200,20 +192,20 @@ export default function AssetSummaryTab() {
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">Result % with Credits</span>
                   <span className={`asset-summary__value ${resultWithCreditsClass}`}>
-                    {formatPercent(resultWithCreditsPercent)}
+                    {formatPercentFraction(resultWithCreditsPercent)}
                   </span>
                 </div>
 
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">XIRR</span>
                   <span className={`asset-summary__value ${xirrClass}`}>
-                    {xirr === null ? '—' : formatPercent(xirr)}
+                    {xirr === null ? '—' : formatPercentFraction(xirr)}
                   </span>
                 </div>
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">XIRR w/ Credits</span>
                   <span className={`asset-summary__value ${xirrWithCreditsClass}`}>
-                    {xirrWithCredits === null ? '—' : formatPercent(xirrWithCredits)}
+                    {xirrWithCredits === null ? '—' : formatPercentFraction(xirrWithCredits)}
                   </span>
                 </div>
               </>

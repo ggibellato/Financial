@@ -18,6 +18,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private readonly IBrokerBreakdownService _brokerBreakdownService;
     private readonly ITransactionQueryService _transactionQueryService;
     private readonly IXirrCalculationService _xirrCalculationService;
+    private readonly IProfitCalculationService _profitCalculationService;
     private readonly InvestmentScope _scope;
     private readonly TodayInfoTracker _todayInfo;
     private readonly TransactionActions _transactionActions;
@@ -179,11 +180,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public string TodayCurrentValueAsOf { get => _todayCurrentValueAsOf; private set => SetProperty(ref _todayCurrentValueAsOf, value); }
     public string TodayInfoMessage { get => _todayInfoMessage; private set => SetProperty(ref _todayInfoMessage, value); }
 
-    public decimal TotalCurrentValue => AssetDetailsCalculations.CalculateTotalCurrentValue(TodayCurrentValue, Quantity);
-    public decimal ResultPercent => AssetDetailsCalculations.CalculateResultPercent(AveragePrice, Quantity, TotalCurrentValue);
+    public decimal TotalCurrentValue => TodayCurrentValue * Quantity;
+    public decimal ResultPercent => _profitCalculationService.CalculateResultFraction(AveragePrice, Quantity, TotalCurrentValue);
     public decimal TotalCurrentValueWithCredits => TotalCurrentValue + TotalCredits;
-    public decimal ResultPercentWithCredits => AssetDetailsCalculations.CalculateResultPercentWithCredits(AveragePrice, Quantity, TotalCurrentValueWithCredits);
-    public bool HasAveragePrice => AssetDetailsCalculations.HasAveragePrice(AveragePrice, Quantity);
+    public decimal ResultPercentWithCredits => _profitCalculationService.CalculateResultFraction(AveragePrice, Quantity, TotalCurrentValueWithCredits);
+    public bool HasAveragePrice => _profitCalculationService.HasCostBasis(AveragePrice, Quantity);
     public bool IsActiveScope => _scope == InvestmentScope.Active;
     public bool IsHistoricScope => _scope == InvestmentScope.Historic;
     public decimal? Xirr => _xirrCalculationService.Calculate(_cashFlowsWithoutCredits, TotalCurrentValue);
@@ -351,6 +352,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         IBrokerBreakdownService brokerBreakdownService,
         ITransactionQueryService transactionQueryService,
         IXirrCalculationService xirrCalculationService,
+        IProfitCalculationService profitCalculationService,
         InvestmentScope scope = InvestmentScope.Active)
     {
         _transactionService = transactionService ?? throw new ArgumentNullException(nameof(transactionService));
@@ -359,6 +361,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _brokerBreakdownService = brokerBreakdownService ?? throw new ArgumentNullException(nameof(brokerBreakdownService));
         _transactionQueryService = transactionQueryService ?? throw new ArgumentNullException(nameof(transactionQueryService));
         _xirrCalculationService = xirrCalculationService ?? throw new ArgumentNullException(nameof(xirrCalculationService));
+        _profitCalculationService = profitCalculationService ?? throw new ArgumentNullException(nameof(profitCalculationService));
         _scope = scope;
         _todayInfo = new TodayInfoTracker(ApplyTodayInfo, ResetTodayInfo, UpdateCommandStates);
         _transactionActions = new TransactionActions(
@@ -406,7 +409,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
         PortfolioAssetSummaryRows.Clear();
         foreach (var item in assetItems)
-            PortfolioAssetSummaryRows.Add(new PortfolioAssetSummaryRowViewModel(item, _xirrCalculationService));
+            PortfolioAssetSummaryRows.Add(new PortfolioAssetSummaryRowViewModel(item, _xirrCalculationService, _profitCalculationService));
 
         FooterTotalInvested = assetItems.Sum(i => i.TotalInvested);
         FooterRealizedGainLoss = assetItems.Sum(i => i.RealizedGainLoss);

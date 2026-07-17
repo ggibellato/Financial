@@ -121,6 +121,23 @@ public class AssetPriceEndpointsTests
                 throw new ArgumentException("Ticker is required.", nameof(request));
             }
 
+            if (request.AssetClass == GlobalAssetClass.Cryptocurrency && string.IsNullOrWhiteSpace(request.BrokerName))
+            {
+                throw new ArgumentException("BrokerName is required for cryptocurrency assets.", nameof(request));
+            }
+
+            if (request.AssetClass == GlobalAssetClass.Bond && string.IsNullOrWhiteSpace(request.Name))
+            {
+                throw new ArgumentException("Name is required for bond assets.", nameof(request));
+            }
+
+            if (request.AssetClass != GlobalAssetClass.Cryptocurrency
+                && request.AssetClass != GlobalAssetClass.Bond
+                && string.IsNullOrWhiteSpace(request.Exchange))
+            {
+                throw new ArgumentException("Exchange is required.", nameof(request));
+            }
+
             return new AssetPriceDTO
             {
                 Exchange = request.Exchange,

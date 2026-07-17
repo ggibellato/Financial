@@ -20,6 +20,7 @@ public class AssetDetailsViewModelBrokerSummaryTests
             brokerBreakdownService ?? new StubBrokerBreakdownService(),
             transactionQueryService ?? new StubTransactionQueryService(),
             new XirrCalculationService(),
+            new ProfitCalculationService(),
             scope);
     }
 

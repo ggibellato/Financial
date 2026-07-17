@@ -4,6 +4,7 @@ using Financial.Infrastructure.Persistence;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,7 +14,7 @@ namespace Financial.Infrastructure.Integrations.ImportGoogleSpreadSheets;
 
 public sealed class MainViewModel : INotifyPropertyChanged
 {
-    private const string DefaultOutputPath = @"E:\dev\Projetos\Financial\data";
+    private static readonly string DefaultOutputPath = Path.Combine(AppContext.BaseDirectory, "data");
 
     private readonly GoogleService? _service;
     private readonly IInvestmentsSerializer _serializer;

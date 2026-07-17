@@ -18,6 +18,7 @@ public class AssetDetailsViewModelPortfolioSummaryTests
             new StubBrokerBreakdownService(),
             new StubTransactionQueryService(),
             new XirrCalculationService(),
+            new ProfitCalculationService(),
             scope);
     }
 

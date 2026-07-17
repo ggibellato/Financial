@@ -19,7 +19,8 @@ public class AssetDetailsViewModelTransactionsChartTests
             new StubAssetPriceService(),
             brokerBreakdownService ?? new StubBrokerBreakdownService(),
             transactionQueryService ?? new StubTransactionQueryService(),
-            new XirrCalculationService());
+            new XirrCalculationService(),
+            new ProfitCalculationService());
     }
 
     private static AssetDetailsDTO BuildAssetDetails(List<TransactionDTO> transactions) => new()

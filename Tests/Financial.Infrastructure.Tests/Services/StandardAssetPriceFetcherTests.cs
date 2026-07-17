@@ -71,16 +71,4 @@ public class StandardAssetPriceFetcherTests
 
         result.Should().Be(snapshot);
     }
-
-    private sealed class FakeFinanceService : IFinanceService
-    {
-        private readonly AssetValueSnapshot? _snapshot;
-
-        public FakeFinanceService(AssetValueSnapshot? snapshot = null)
-        {
-            _snapshot = snapshot;
-        }
-
-        public AssetValueSnapshot GetAssetValue(AssetValueRequest request) => _snapshot ?? throw new NotImplementedException();
-    }
 }
