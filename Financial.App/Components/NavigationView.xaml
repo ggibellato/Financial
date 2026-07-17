@@ -249,25 +249,31 @@
                                     <Border Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="4"
                                             BorderBrush="#EEEEEE" BorderThickness="0,1,0,0" Margin="0,15,0,15"/>
 
-                                    <!-- Row 7: Current Header -->
-                                    <TextBlock Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Text="Current" FontWeight="Bold" FontSize="13" Margin="0,5"/>
+                                    <!-- Row 7: Current Header (Active scope only - Historic never has a live price) -->
+                                    <TextBlock Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Text="Current" FontWeight="Bold" FontSize="13" Margin="0,5"
+                                               Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                     <Button Grid.Row="7" Grid.Column="2" Grid.ColumnSpan="2"
                                             Command="{Binding AssetDetails.RefreshTodayInfoCommand}"
                                             Content="Refresh"
                                             HorizontalAlignment="Right"
-                                            Margin="0,5"/>
+                                            Margin="0,5"
+                                            Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                                    <!-- Row 8: Current Value & As Of -->
-                                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Current Value:" FontWeight="Bold" Margin="0,5"/>
+                                    <!-- Row 8: Current Value & As Of (Active scope only) -->
+                                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Current Value:" FontWeight="Bold" Margin="0,5"
+                                               Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                     <TextBlock Grid.Row="8" Grid.Column="1"
                                                Text="{Binding AssetDetails.TodayCurrentValue, Mode=OneWay, StringFormat=N2}"
                                                TextAlignment="Right"
                                                FontFamily="Consolas"
-                                               Margin="10,5"/>
-                                    <TextBlock Grid.Row="8" Grid.Column="2" Text="As of:" FontWeight="Bold" Margin="20,5,0,5"/>
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Grid.Row="8" Grid.Column="2" Text="As of:" FontWeight="Bold" Margin="20,5,0,5"
+                                               Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                     <TextBlock Grid.Row="8" Grid.Column="3"
                                                Text="{Binding AssetDetails.TodayCurrentValueAsOf, Mode=OneWay}"
-                                               Margin="10,5"/>
+                                               Margin="10,5"
+                                               Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                                     <!-- Row 9: Total Current Value & Result % -->
                                     <TextBlock Grid.Row="9" Grid.Column="0" Text="Total Current Value:" FontWeight="Bold" Margin="0,5"

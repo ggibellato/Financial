@@ -412,14 +412,14 @@ graph TD
 - [x] Each asset's status indicator shows green/black/red matching `Long`/`Flat`/`Short`
 
 ### F11. WPF — Historic Investments Tab
-- [ ] A new "Historic Investments" tab shows a tree, summary, transactions, credits, and charts scoped to historic data only
-- [ ] The summary view shows realized totals, not current-value/XIRR fields
+- [x] A new "Historic Investments" tab shows a tree, summary, transactions, credits, and charts scoped to historic data only
+- [x] The summary view shows realized totals, not current-value/XIRR fields
 - [ ] A transaction or credit can be added, edited, and deleted for a historic asset through the same UI flow as an active asset
 
 ### Cross-Feature Integration
 - [x] Data written by import (F04) into `activeInvestments`/`historicInvestments` (F02's structure) is correctly returned by the scoped navigation API (F05)
 - [x] Position type computed by F01 appears correctly on every Active-scoped asset returned by F05
 - [x] Historic tree/asset data served by F05 is correctly consumed by both the realized totals service (F06) and the breakdown charts service (F07)
-- [ ] Realized totals from F06 render correctly in both the Web (F09) and WPF (F11) Historic Investments summary views
-- [ ] Breakdown data from F07 renders correctly in both the Web (F09) and WPF (F11) Historic Investments charts views
+- [x] Realized totals from F06 render correctly in both the Web (F09) and WPF (F11) Historic Investments summary views
+- [x] Breakdown data from F07 renders correctly in both the Web (F09) and WPF (F11) Historic Investments charts views
 - [x] Active-scoped data and position type from F01/F05 render correctly in both the Web (F08) and WPF (F10) Active Investments tabs

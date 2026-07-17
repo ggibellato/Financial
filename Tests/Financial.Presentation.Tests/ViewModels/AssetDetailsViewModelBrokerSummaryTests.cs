@@ -10,7 +10,8 @@ public class AssetDetailsViewModelBrokerSummaryTests
 {
     private static AssetDetailsViewModel BuildViewModel(
         IBrokerBreakdownService? brokerBreakdownService = null,
-        ITransactionQueryService? transactionQueryService = null)
+        ITransactionQueryService? transactionQueryService = null,
+        InvestmentScope scope = InvestmentScope.Active)
     {
         return new AssetDetailsViewModel(
             new StubTransactionService(),
@@ -18,7 +19,8 @@ public class AssetDetailsViewModelBrokerSummaryTests
             new StubAssetPriceService(),
             brokerBreakdownService ?? new StubBrokerBreakdownService(),
             transactionQueryService ?? new StubTransactionQueryService(),
-            new XirrCalculationService());
+            new XirrCalculationService(),
+            scope);
     }
 
     [Fact]
@@ -206,6 +208,16 @@ public class AssetDetailsViewModelBrokerSummaryTests
         await vm.LoadBrokerBreakdown("XPI");
 
         stub.LastScope.Should().Be(InvestmentScope.Active);
+    }
+
+    [Fact]
+    public async Task LoadBrokerBreakdown_HistoricScope_RequestsHistoricScope()
+    {
+        var stub = new StubBrokerBreakdownService();
+        var vm = BuildViewModel(stub, scope: InvestmentScope.Historic);
+        await vm.LoadBrokerBreakdown("XPI");
+
+        stub.LastScope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]

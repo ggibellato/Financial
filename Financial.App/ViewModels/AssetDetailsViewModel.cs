@@ -18,6 +18,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private readonly IBrokerBreakdownService _brokerBreakdownService;
     private readonly ITransactionQueryService _transactionQueryService;
     private readonly IXirrCalculationService _xirrCalculationService;
+    private readonly InvestmentScope _scope;
     private readonly TodayInfoTracker _todayInfo;
     private readonly TransactionActions _transactionActions;
     private readonly CreditActions _creditActions;
@@ -181,6 +182,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public decimal TotalCurrentValueWithCredits => TotalCurrentValue + TotalCredits;
     public decimal ResultPercentWithCredits => AssetDetailsCalculations.CalculateResultPercentWithCredits(AveragePrice, Quantity, TotalCurrentValueWithCredits);
     public bool HasAveragePrice => AssetDetailsCalculations.HasAveragePrice(AveragePrice, Quantity);
+    public bool IsActiveScope => _scope == InvestmentScope.Active;
     public decimal? Xirr => _xirrCalculationService.Calculate(_cashFlowsWithoutCredits, TotalCurrentValue);
     public decimal? XirrWithCredits => _xirrCalculationService.Calculate(_cashFlowsWithCredits, TotalCurrentValueWithCredits);
 
@@ -323,7 +325,8 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         IAssetPriceService assetPriceService,
         IBrokerBreakdownService brokerBreakdownService,
         ITransactionQueryService transactionQueryService,
-        IXirrCalculationService xirrCalculationService)
+        IXirrCalculationService xirrCalculationService,
+        InvestmentScope scope = InvestmentScope.Active)
     {
         _transactionService = transactionService ?? throw new ArgumentNullException(nameof(transactionService));
         _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
@@ -331,6 +334,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _brokerBreakdownService = brokerBreakdownService ?? throw new ArgumentNullException(nameof(brokerBreakdownService));
         _transactionQueryService = transactionQueryService ?? throw new ArgumentNullException(nameof(transactionQueryService));
         _xirrCalculationService = xirrCalculationService ?? throw new ArgumentNullException(nameof(xirrCalculationService));
+        _scope = scope;
         _todayInfo = new TodayInfoTracker(ApplyTodayInfo, ResetTodayInfo, UpdateCommandStates);
         _transactionActions = new TransactionActions(
             _transactionService,
@@ -393,6 +397,13 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         OnPropertyChanged(nameof(FooterCurrentValueDisplay));
 
         var rows = PortfolioAssetSummaryRows.ToList();
+        if (_scope == InvestmentScope.Historic)
+        {
+            foreach (var row in rows)
+                row.MarkPriceNotApplicable();
+            return;
+        }
+
         _rowPriceCts = new CancellationTokenSource();
         var token = _rowPriceCts.Token;
         FetchRowPricesAsync(rows, token, brokerName);
@@ -493,7 +504,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         {
             try
             {
-                var breakdown = _brokerBreakdownService.GetBrokerBreakdown(brokerName, InvestmentScope.Active);
+                var breakdown = _brokerBreakdownService.GetBrokerBreakdown(brokerName, _scope);
                 if (token.IsCancellationRequested) return;
                 ApplyBrokerBreakdown(breakdown);
             }
@@ -589,6 +600,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     private Task RefreshTodayInfoAsync(bool forceRefresh)
     {
+        if (_scope == InvestmentScope.Historic)
+        {
+            return Task.CompletedTask;
+        }
+
         return _todayInfo.RefreshAsync(
             forceRefresh, HasAssetContext, _assetPriceService,
             Class, BrokerName,

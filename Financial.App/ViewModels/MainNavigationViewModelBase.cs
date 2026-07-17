@@ -15,6 +15,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     private readonly ICreditQueryService _creditQueryService;
     private readonly ISummaryService _summaryService;
     private readonly IPortfolioAssetSummaryService _portfolioAssetSummaryService;
+    private readonly InvestmentScope _scope;
     private TreeNodeViewModel? _selectedNode;
     private bool _isLoading;
     private TreeNodeDTO? _fullTree;
@@ -60,13 +61,15 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         ICreditQueryService creditQueryService,
         ISummaryService summaryService,
         IPortfolioAssetSummaryService portfolioAssetSummaryService,
-        TAssetDetailsViewModel assetDetails)
+        TAssetDetailsViewModel assetDetails,
+        InvestmentScope scope = InvestmentScope.Active)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _creditQueryService = creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService));
         _summaryService = summaryService ?? throw new ArgumentNullException(nameof(summaryService));
         _portfolioAssetSummaryService = portfolioAssetSummaryService ?? throw new ArgumentNullException(nameof(portfolioAssetSummaryService));
         AssetDetails = assetDetails ?? throw new ArgumentNullException(nameof(assetDetails));
+        _scope = scope;
         InitializeAssetClassFilters();
     }
 
@@ -80,7 +83,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         {
             await Task.Run(() =>
             {
-                _fullTree = _navigationService.GetNavigationTree(InvestmentScope.Active);
+                _fullTree = _navigationService.GetNavigationTree(_scope);
                 ApplyAssetClassFilter();
             });
         }
@@ -247,7 +250,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
-        var details = _navigationService.GetAssetDetails(brokerName, portfolioName, assetName, InvestmentScope.Active);
+        var details = _navigationService.GetAssetDetails(brokerName, portfolioName, assetName, _scope);
 
         if (details != null)
         {
@@ -274,9 +277,9 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
-        var summary = _summaryService.GetPortfolioSummary(brokerName, portfolioName, InvestmentScope.Active);
+        var summary = _summaryService.GetPortfolioSummary(brokerName, portfolioName, _scope);
         var credits = _creditQueryService.GetCreditsByPortfolio(brokerName, portfolioName);
-        var assetItems = _portfolioAssetSummaryService.GetPortfolioAssetsSummary(brokerName, portfolioName, InvestmentScope.Active);
+        var assetItems = _portfolioAssetSummaryService.GetPortfolioAssetsSummary(brokerName, portfolioName, _scope);
         AssetDetails.LoadPortfolioSummary(brokerName, portfolioName, summary, credits, assetItems);
         _ = AssetDetails.LoadPortfolioTransactions(brokerName, portfolioName);
     }
@@ -290,7 +293,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
-        var summary = _summaryService.GetBrokerSummary(brokerName, InvestmentScope.Active);
+        var summary = _summaryService.GetBrokerSummary(brokerName, _scope);
         var credits = _creditQueryService.GetCreditsByBroker(brokerName);
         AssetDetails.LoadBrokerSummary(brokerName, summary, credits);
         _ = AssetDetails.LoadBrokerBreakdown(brokerName);

@@ -12,6 +12,9 @@
             <TabItem Header="Active Investments">
                 <local:NavigationView DataContext="{Binding ElementName=root, Path=NavigationViewModel}"/>
             </TabItem>
+            <TabItem Header="Historic Investments">
+                <local:NavigationView DataContext="{Binding ElementName=root, Path=NavigationViewModelHistoric}"/>
+            </TabItem>
             <TabItem x:Name="dividendCheckTab" Header="Shares Dividend check"/>
             <TabItem x:Name="assetPriceTab" Header="Read Assets current values"/>
         </TabControl>
