@@ -226,6 +226,70 @@ public class MainNavigationViewModelBaseTests
         spy.WasPortfolioSummaryLoaded.Should().BeFalse();
     }
 
+    [Fact]
+    public async Task LoadNavigationTreeAsync_RequestsActiveScope()
+    {
+        var summaryService = new StubSummaryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var navigationService = new StubNavigationService();
+        var vm = new TestableNavigationViewModel(summaryService, spy, navigationService: navigationService);
+
+        // GetNavigationTree runs (and records its scope) before ApplyAssetClassFilter's
+        // System.Windows.Application.Current.Dispatcher.Invoke, which throws here because no
+        // WPF Application runs in this test host; only the scope pass-through is under test.
+        try
+        {
+            await vm.LoadNavigationTreeAsync();
+        }
+        catch (NullReferenceException)
+        {
+        }
+
+        navigationService.LastTreeScope.Should().Be(InvestmentScope.Active);
+    }
+
+    [Fact]
+    public void SelectingAssetNode_RequestsActiveScopeAssetDetails()
+    {
+        var summaryService = new StubSummaryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var navigationService = new StubNavigationService();
+        var vm = new TestableNavigationViewModel(summaryService, spy, navigationService: navigationService);
+
+        var assetNode = BuildAssetNode("XPI", "Acoes", "BBAS3");
+        vm.SelectedNode = assetNode;
+
+        navigationService.LastAssetDetailsScope.Should().Be(InvestmentScope.Active);
+    }
+
+    [Fact]
+    public void SelectingPortfolioNode_RequestsActiveScopeSummaryAndAssetItems()
+    {
+        var summaryService = new StubSummaryService();
+        var assetSummaryService = new StubPortfolioAssetSummaryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var vm = new TestableNavigationViewModel(summaryService, spy, assetSummaryService);
+
+        var portfolioNode = BuildPortfolioNode("XPI", "FII");
+        vm.SelectedNode = portfolioNode;
+
+        summaryService.LastScopeForPortfolio.Should().Be(InvestmentScope.Active);
+        assetSummaryService.LastScope.Should().Be(InvestmentScope.Active);
+    }
+
+    [Fact]
+    public void SelectingBrokerNode_RequestsActiveScopeSummary()
+    {
+        var summaryService = new StubSummaryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var vm = new TestableNavigationViewModel(summaryService, spy);
+
+        var brokerNode = BuildBrokerNode("XPI");
+        vm.SelectedNode = brokerNode;
+
+        summaryService.LastScopeForBroker.Should().Be(InvestmentScope.Active);
+    }
+
     private static TreeNodeViewModel BuildPortfolioNode(string brokerName, string portfolioName)
     {
         var brokerDto = new TreeNodeDTO
@@ -304,9 +368,25 @@ public class MainNavigationViewModelBaseTests
 
     private sealed class TestableNavigationViewModel : MainNavigationViewModelBase<SpyAssetDetailsViewModel>
     {
-        public TestableNavigationViewModel(ISummaryService summaryService, SpyAssetDetailsViewModel spy, IPortfolioAssetSummaryService? portfolioAssetSummaryService = null)
-            : base(new StubNavigationService(), new StubCreditQueryService(), summaryService, portfolioAssetSummaryService ?? new StubPortfolioAssetSummaryService(), spy)
+        public StubNavigationService NavigationService { get; }
+
+        public TestableNavigationViewModel(
+            ISummaryService summaryService,
+            SpyAssetDetailsViewModel spy,
+            IPortfolioAssetSummaryService? portfolioAssetSummaryService = null,
+            StubNavigationService? navigationService = null)
+            : this(navigationService ?? new StubNavigationService(), summaryService, spy, portfolioAssetSummaryService)
         {
+        }
+
+        private TestableNavigationViewModel(
+            StubNavigationService navigationService,
+            ISummaryService summaryService,
+            SpyAssetDetailsViewModel spy,
+            IPortfolioAssetSummaryService? portfolioAssetSummaryService)
+            : base(navigationService, new StubCreditQueryService(), summaryService, portfolioAssetSummaryService ?? new StubPortfolioAssetSummaryService(), spy)
+        {
+            NavigationService = navigationService;
         }
     }
 
@@ -378,11 +458,13 @@ public class MainNavigationViewModelBaseTests
         public IReadOnlyList<PortfolioAssetSummaryItemDTO> Items { get; set; } = [];
         public string? LastBrokerName { get; private set; }
         public string? LastPortfolioName { get; private set; }
+        public InvestmentScope? LastScope { get; private set; }
 
         public IReadOnlyList<PortfolioAssetSummaryItemDTO> GetPortfolioAssetsSummary(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
         {
             LastBrokerName = brokerName;
             LastPortfolioName = portfolioName;
+            LastScope = scope;
             return Items;
         }
     }
@@ -394,10 +476,13 @@ public class MainNavigationViewModelBaseTests
         public string? LastBrokerNameForBroker { get; private set; }
         public string? LastBrokerNameForPortfolio { get; private set; }
         public string? LastPortfolioName { get; private set; }
+        public InvestmentScope? LastScopeForBroker { get; private set; }
+        public InvestmentScope? LastScopeForPortfolio { get; private set; }
 
         public AggregatedSummaryDTO GetBrokerSummary(string brokerName, InvestmentScope scope = InvestmentScope.Active)
         {
             LastBrokerNameForBroker = brokerName;
+            LastScopeForBroker = scope;
             return BrokerSummary;
         }
 
@@ -405,14 +490,28 @@ public class MainNavigationViewModelBaseTests
         {
             LastBrokerNameForPortfolio = brokerName;
             LastPortfolioName = portfolioName;
+            LastScopeForPortfolio = scope;
             return PortfolioSummary;
         }
     }
 
     private sealed class StubNavigationService : INavigationService
     {
-        public TreeNodeDTO GetNavigationTree(InvestmentScope scope = InvestmentScope.Active) => new() { NodeType = TreeNodeType.Broker, DisplayName = "Root", Metadata = [], Children = [] };
-        public AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => null;
+        public InvestmentScope? LastTreeScope { get; private set; }
+        public InvestmentScope? LastAssetDetailsScope { get; private set; }
+
+        public TreeNodeDTO GetNavigationTree(InvestmentScope scope = InvestmentScope.Active)
+        {
+            LastTreeScope = scope;
+            return new() { NodeType = TreeNodeType.Broker, DisplayName = "Root", Metadata = [], Children = [] };
+        }
+
+        public AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active)
+        {
+            LastAssetDetailsScope = scope;
+            return null;
+        }
+
         public IEnumerable<BrokerNodeDTO> GetBrokers(InvestmentScope scope = InvestmentScope.Active) => [];
         public IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName) => [];
     }

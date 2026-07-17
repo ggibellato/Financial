@@ -80,7 +80,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         {
             await Task.Run(() =>
             {
-                _fullTree = _navigationService.GetNavigationTree();
+                _fullTree = _navigationService.GetNavigationTree(InvestmentScope.Active);
                 ApplyAssetClassFilter();
             });
         }
@@ -247,7 +247,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
-        var details = _navigationService.GetAssetDetails(brokerName, portfolioName, assetName);
+        var details = _navigationService.GetAssetDetails(brokerName, portfolioName, assetName, InvestmentScope.Active);
 
         if (details != null)
         {
@@ -274,9 +274,9 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
-        var summary = _summaryService.GetPortfolioSummary(brokerName, portfolioName);
+        var summary = _summaryService.GetPortfolioSummary(brokerName, portfolioName, InvestmentScope.Active);
         var credits = _creditQueryService.GetCreditsByPortfolio(brokerName, portfolioName);
-        var assetItems = _portfolioAssetSummaryService.GetPortfolioAssetsSummary(brokerName, portfolioName);
+        var assetItems = _portfolioAssetSummaryService.GetPortfolioAssetsSummary(brokerName, portfolioName, InvestmentScope.Active);
         AssetDetails.LoadPortfolioSummary(brokerName, portfolioName, summary, credits, assetItems);
         _ = AssetDetails.LoadPortfolioTransactions(brokerName, portfolioName);
     }
@@ -290,7 +290,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
-        var summary = _summaryService.GetBrokerSummary(brokerName);
+        var summary = _summaryService.GetBrokerSummary(brokerName, InvestmentScope.Active);
         var credits = _creditQueryService.GetCreditsByBroker(brokerName);
         AssetDetails.LoadBrokerSummary(brokerName, summary, credits);
         _ = AssetDetails.LoadBrokerBreakdown(brokerName);

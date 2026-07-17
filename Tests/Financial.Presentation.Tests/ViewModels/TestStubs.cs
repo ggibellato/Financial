@@ -32,10 +32,12 @@ internal sealed class StubBrokerBreakdownService : IBrokerBreakdownService
     public IReadOnlyList<PortfolioBreakdownItemDTO> Breakdown { get; set; } = [];
     public Exception? ExceptionToThrow { get; set; }
     public string? LastBrokerName { get; private set; }
+    public InvestmentScope? LastScope { get; private set; }
 
     public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName, InvestmentScope scope = InvestmentScope.Active)
     {
         LastBrokerName = brokerName;
+        LastScope = scope;
         if (ExceptionToThrow != null) throw ExceptionToThrow;
         return Breakdown;
     }
