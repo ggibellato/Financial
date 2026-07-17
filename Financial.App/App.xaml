@@ -6,7 +6,6 @@
              xmlns:primitives="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework">
     <Application.Resources>
         <!-- Value Converters -->
-        <converters:BoolToIconConverter x:Key="BoolToIconConverter"/>
         <converters:PositionTypeToColorConverter x:Key="PositionTypeToColorConverter"/>
         <converters:DateFormatConverter x:Key="DateFormatConverter"/>
         <converters:TransactionTypeToColorConverter x:Key="TransactionTypeToColorConverter"/>
