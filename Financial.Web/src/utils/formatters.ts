@@ -16,6 +16,21 @@ export function formatN8(value: number): string {
   }).format(value)
 }
 
+export function formatPercentFraction(value: number): string {
+  return new Intl.NumberFormat(undefined, {
+    style: 'percent',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)
+}
+
+export function formatPercent1(value: number): string {
+  return `${new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(value)}%`
+}
+
 export function formatShortDate(isoString: string | null | undefined): string {
   if (!isoString) return ''
   const d = new Date(isoString)

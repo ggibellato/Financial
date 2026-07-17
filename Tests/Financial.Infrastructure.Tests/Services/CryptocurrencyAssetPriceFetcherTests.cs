@@ -13,7 +13,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void Supports_Cryptocurrency_ReturnsTrue()
     {
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new FakeFinanceService());
+        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new StubFinanceService());
 
         var result = fetcher.Supports(GlobalAssetClass.Cryptocurrency);
 
@@ -23,7 +23,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void Supports_Equity_ReturnsFalse()
     {
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new FakeFinanceService());
+        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new StubFinanceService());
 
         var result = fetcher.Supports(GlobalAssetClass.Equity);
 
@@ -33,7 +33,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void Supports_Unknown_ReturnsFalse()
     {
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new FakeFinanceService());
+        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new StubFinanceService());
 
         var result = fetcher.Supports(GlobalAssetClass.Unknown);
 
@@ -43,7 +43,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void GetSnapshot_BlankBrokerName_ThrowsArgumentException()
     {
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new FakeFinanceService());
+        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new StubFinanceService());
         var request = new AssetPriceRequestDTO { Exchange = "", Ticker = "BTC", AssetClass = GlobalAssetClass.Cryptocurrency, BrokerName = null };
 
         Action act = () => fetcher.GetSnapshot(request);
@@ -54,7 +54,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void GetSnapshot_UnknownBroker_ThrowsInvalidOperationException()
     {
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new FakeFinanceService());
+        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new StubFinanceService());
         var request = new AssetPriceRequestDTO
         {
             Exchange = "",
@@ -73,7 +73,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     {
         var snapshot = new AssetValueSnapshot("BTC", "Bitcoin", 50000m, DateTimeOffset.UtcNow);
         var brokers = new[] { Broker.Create("Coinbase", "GBP") };
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository(brokers), new FakeFinanceService(snapshot));
+        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubRepository(brokers), new StubFinanceService(snapshot));
         var request = new AssetPriceRequestDTO
         {
             Exchange = "",
@@ -105,35 +105,4 @@ public class CryptocurrencyAssetPriceFetcherTests
         act.Should().Throw<InvalidOperationException>().WithMessage("*Coinbase*");
     }
 
-    private sealed class StubRepository : IRepository
-    {
-        private readonly List<Broker> _brokers;
-
-        public StubRepository(IEnumerable<Broker> brokers)
-        {
-            _brokers = brokers.ToList();
-        }
-
-        public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
-
-        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
-
-        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) => _brokers;
-
-        public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
-
-        public Task SaveChangesAsync() => throw new NotImplementedException();
-    }
-
-    private sealed class FakeFinanceService : IFinanceService
-    {
-        private readonly AssetValueSnapshot? _snapshot;
-
-        public FakeFinanceService(AssetValueSnapshot? snapshot = null)
-        {
-            _snapshot = snapshot;
-        }
-
-        public AssetValueSnapshot GetAssetValue(AssetValueRequest request) => _snapshot ?? throw new NotImplementedException();
-    }
 }

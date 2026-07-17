@@ -1,23 +1,38 @@
 using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
+using Financial.Domain.Entities;
 
 namespace Financial.Application.Services;
 
 public sealed class BrokerBreakdownService : IBrokerBreakdownService
 {
-    private readonly IActiveBrokerBreakdownService _activeBrokerBreakdownService;
-    private readonly IHistoricBrokerBreakdownService _historicBrokerBreakdownService;
+    private readonly IRepository _repository;
 
-    public BrokerBreakdownService(
-        IActiveBrokerBreakdownService activeBrokerBreakdownService,
-        IHistoricBrokerBreakdownService historicBrokerBreakdownService)
+    public BrokerBreakdownService(IRepository repository)
     {
-        _activeBrokerBreakdownService = activeBrokerBreakdownService ?? throw new ArgumentNullException(nameof(activeBrokerBreakdownService));
-        _historicBrokerBreakdownService = historicBrokerBreakdownService ?? throw new ArgumentNullException(nameof(historicBrokerBreakdownService));
+        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }
 
-    public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName, InvestmentScope scope = InvestmentScope.Active) =>
-        scope == InvestmentScope.Historic
-            ? _historicBrokerBreakdownService.GetBrokerBreakdown(brokerName)
-            : _activeBrokerBreakdownService.GetBrokerBreakdown(brokerName);
+    public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName, InvestmentScope scope = InvestmentScope.Active)
+    {
+        if (string.IsNullOrWhiteSpace(brokerName))
+            return [];
+
+        var broker = _repository.GetBrokerList(scope).FirstOrDefault(b => b.Name == brokerName);
+        if (broker is null)
+            return [];
+
+        return scope == InvestmentScope.Historic
+            ? BrokerBreakdownBuilder.Build(broker, CalculateGrossBought)
+            : BrokerBreakdownBuilder.Build(broker, CalculateNetInvested);
+    }
+
+    private static decimal CalculateNetInvested(Asset asset)
+    {
+        var (totalBought, totalSold, _) = NavigationMapper.CalculateTotals(asset);
+        return totalBought - totalSold;
+    }
+
+    private static decimal CalculateGrossBought(Asset asset) =>
+        NavigationMapper.CalculateTotals(asset).TotalBought;
 }

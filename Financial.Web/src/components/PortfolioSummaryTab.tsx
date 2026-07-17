@@ -6,16 +6,9 @@ import type { RowPriceState } from '../hooks/usePortfolioAssetSummary'
 import type { PortfolioAssetSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { xirr } from '../utils/xirr'
-import { formatN2, formatN8, formatShortDate } from '../utils/formatters'
+import { formatN2, formatN8, formatPercent1, formatShortDate } from '../utils/formatters'
 import AggregatedSummaryTab from './AggregatedSummaryTab'
 import './PortfolioSummaryTab.css'
-
-function formatPortfolioWeight(value: number): string {
-  return `${new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  }).format(value)}%`
-}
 
 function formatCreditMonth(yearMonth: string): string {
   const [year, month] = yearMonth.split('-').map(Number)
@@ -94,7 +87,7 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
       <td>{item.assetName}</td>
       <td>{formatShortDate(item.firstInvestmentDate)}</td>
       <td>{formatN8(item.currentQuantity)}</td>
-      <td>{formatPortfolioWeight(item.portfolioWeight)}</td>
+      <td>{formatPercent1(item.portfolioWeight)}</td>
       <td>{formatN2(item.totalInvested)}</td>
       {isHistoric && (
         <td>

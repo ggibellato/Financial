@@ -5,19 +5,28 @@ namespace Financial.Application.Services;
 
 public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
 {
-    private readonly IActivePortfolioAssetSummaryService _activePortfolioAssetSummaryService;
-    private readonly IHistoricPortfolioAssetSummaryService _historicPortfolioAssetSummaryService;
+    private readonly IRepository _repository;
 
-    public PortfolioAssetSummaryService(
-        IActivePortfolioAssetSummaryService activePortfolioAssetSummaryService,
-        IHistoricPortfolioAssetSummaryService historicPortfolioAssetSummaryService)
+    public PortfolioAssetSummaryService(IRepository repository)
     {
-        _activePortfolioAssetSummaryService = activePortfolioAssetSummaryService ?? throw new ArgumentNullException(nameof(activePortfolioAssetSummaryService));
-        _historicPortfolioAssetSummaryService = historicPortfolioAssetSummaryService ?? throw new ArgumentNullException(nameof(historicPortfolioAssetSummaryService));
+        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }
 
-    public IReadOnlyList<PortfolioAssetSummaryItemDTO> GetPortfolioAssetsSummary(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active) =>
-        scope == InvestmentScope.Historic
-            ? _historicPortfolioAssetSummaryService.GetPortfolioAssetsSummary(brokerName, portfolioName)
-            : _activePortfolioAssetSummaryService.GetPortfolioAssetsSummary(brokerName, portfolioName);
+    public IReadOnlyList<PortfolioAssetSummaryItemDTO> GetPortfolioAssetsSummary(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
+    {
+        if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
+            return [];
+
+        var assets = _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope).ToList();
+        if (assets.Count == 0)
+            return [];
+
+        return scope == InvestmentScope.Historic
+            ? PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, CalculateGrossBought)
+            : PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, CalculateNetInvested);
+    }
+
+    private static decimal CalculateNetInvested(AssetTotals totals) => totals.TotalBought - totals.TotalSold;
+
+    private static decimal CalculateGrossBought(AssetTotals totals) => totals.TotalBought;
 }

@@ -2,7 +2,7 @@ import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recha
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useBrokerBreakdown } from '../hooks/useBrokerBreakdown'
-import { formatN2 } from '../utils/formatters'
+import { formatN2, formatPercent1 } from '../utils/formatters'
 import './BrokerBreakdownCharts.css'
 
 // Validated categorical palette (fixed hue order, CVD-safe adjacency).
@@ -16,10 +16,6 @@ const CATEGORICAL_PALETTE = [
   '#e87ba4', // magenta
   '#eb6834', // orange
 ]
-
-function formatPercent(value: number): string {
-  return `${value.toFixed(1)}%`
-}
 
 interface PieSliceDatum {
   name: string
@@ -46,7 +42,7 @@ function PieTooltipContent({ name, value, percent }: PieTooltipContentProps) {
     <div className="broker-breakdown__tooltip">
       <div className="broker-breakdown__tooltip-name">{name}</div>
       <div className="broker-breakdown__tooltip-value">{formatN2(value)}</div>
-      <div className="broker-breakdown__tooltip-percent">{formatPercent(percent * 100)}</div>
+      <div className="broker-breakdown__tooltip-percent">{formatPercent1(percent * 100)}</div>
     </div>
   )
 }

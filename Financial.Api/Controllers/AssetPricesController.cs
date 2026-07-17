@@ -35,34 +35,22 @@ public sealed class AssetPricesController : ControllerBase
             ? parsed
             : GlobalAssetClass.Unknown;
 
-        if (parsedAssetClass == GlobalAssetClass.Cryptocurrency)
+        try
         {
-            if (string.IsNullOrWhiteSpace(brokerName))
+            var result = _assetPriceService.GetCurrentPrice(new AssetPriceRequestDTO
             {
-                return BadRequest();
-            }
+                Exchange = exchange?.Trim() ?? string.Empty,
+                Ticker = ticker.Trim(),
+                AssetClass = parsedAssetClass,
+                BrokerName = brokerName?.Trim(),
+                Name = name?.Trim()
+            });
+
+            return Ok(result);
         }
-        else if (parsedAssetClass == GlobalAssetClass.Bond)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                return BadRequest();
-            }
-        }
-        else if (string.IsNullOrWhiteSpace(exchange))
+        catch (ArgumentException)
         {
             return BadRequest();
         }
-
-        var result = _assetPriceService.GetCurrentPrice(new AssetPriceRequestDTO
-        {
-            Exchange = exchange?.Trim() ?? string.Empty,
-            Ticker = ticker.Trim(),
-            AssetClass = parsedAssetClass,
-            BrokerName = brokerName?.Trim(),
-            Name = name?.Trim()
-        });
-
-        return Ok(result);
     }
 }

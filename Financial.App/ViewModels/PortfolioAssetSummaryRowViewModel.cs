@@ -8,6 +8,7 @@ namespace Financial.Presentation.App.ViewModels;
 public class PortfolioAssetSummaryRowViewModel : ViewModelBase
 {
     private readonly IXirrCalculationService _xirrCalculationService;
+    private readonly IProfitCalculationService _profitCalculationService;
 
     private bool _isLoadingPrice = true;
     private bool _priceFetchFailed;
@@ -139,9 +140,10 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     public bool HistoricXirrIsPositive => HistoricXirr > 0;
     public bool HistoricXirrIsNegative => HistoricXirr < 0;
 
-    public PortfolioAssetSummaryRowViewModel(PortfolioAssetSummaryItemDTO dto, IXirrCalculationService xirrCalculationService)
+    public PortfolioAssetSummaryRowViewModel(PortfolioAssetSummaryItemDTO dto, IXirrCalculationService xirrCalculationService, IProfitCalculationService profitCalculationService)
     {
         _xirrCalculationService = xirrCalculationService ?? throw new ArgumentNullException(nameof(xirrCalculationService));
+        _profitCalculationService = profitCalculationService ?? throw new ArgumentNullException(nameof(profitCalculationService));
         AssetName = dto.AssetName;
         Ticker = dto.Ticker;
         Exchange = dto.Exchange;
@@ -171,13 +173,8 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
 
         var costBasis = CurrentQuantity * AveragePrice;
 
-        _profitPercent = costBasis != 0
-            ? (_currentValue.Value - costBasis) / costBasis * 100
-            : (decimal?)null;
-
-        _profitWithCreditsPercent = costBasis != 0
-            ? (_currentValue.Value + TotalCredits - costBasis) / costBasis * 100
-            : (decimal?)null;
+        _profitPercent = _profitCalculationService.CalculateProfitPercent(_currentValue.Value, costBasis);
+        _profitWithCreditsPercent = _profitCalculationService.CalculateProfitPercent(_currentValue.Value + TotalCredits, costBasis);
 
         var xirrFraction = _xirrCalculationService.Calculate(CashFlows, _currentValue.Value);
         _xirr = xirrFraction.HasValue ? xirrFraction.Value * 100 : null;

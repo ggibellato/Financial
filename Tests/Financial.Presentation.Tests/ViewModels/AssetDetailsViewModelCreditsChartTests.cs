@@ -16,7 +16,8 @@ public class AssetDetailsViewModelCreditsChartTests
             new StubAssetPriceService(),
             new StubBrokerBreakdownService(),
             new StubTransactionQueryService(),
-            new XirrCalculationService());
+            new XirrCalculationService(),
+            new ProfitCalculationService());
     }
 
     [Fact]

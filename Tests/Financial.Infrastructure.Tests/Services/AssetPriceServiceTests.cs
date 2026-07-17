@@ -36,8 +36,8 @@ public class AssetPriceServiceTests
     {
         var cryptoSnapshot = new AssetValueSnapshot("BTC", "Bitcoin", 50000m, DateTimeOffset.UtcNow);
         var standardSnapshot = new AssetValueSnapshot("BCIA11", "Some ETF", 10.5m, DateTimeOffset.UtcNow);
-        var standardFetcher = new FakeFetcher(assetClass => assetClass != GlobalAssetClass.Cryptocurrency, standardSnapshot);
-        var cryptoFetcher = new FakeFetcher(assetClass => assetClass == GlobalAssetClass.Cryptocurrency, cryptoSnapshot);
+        var standardFetcher = new StubFetcher(assetClass => assetClass != GlobalAssetClass.Cryptocurrency, standardSnapshot);
+        var cryptoFetcher = new StubFetcher(assetClass => assetClass == GlobalAssetClass.Cryptocurrency, cryptoSnapshot);
         var service = new AssetPriceService([standardFetcher, cryptoFetcher]);
         var request = new AssetPriceRequestDTO { Exchange = "", Ticker = "BTC", AssetClass = GlobalAssetClass.Cryptocurrency };
 
@@ -52,8 +52,8 @@ public class AssetPriceServiceTests
     {
         var cryptoSnapshot = new AssetValueSnapshot("BTC", "Bitcoin", 50000m, DateTimeOffset.UtcNow);
         var standardSnapshot = new AssetValueSnapshot("BCIA11", "Some ETF", 10.5m, DateTimeOffset.UtcNow);
-        var standardFetcher = new FakeFetcher(assetClass => assetClass != GlobalAssetClass.Cryptocurrency, standardSnapshot);
-        var cryptoFetcher = new FakeFetcher(assetClass => assetClass == GlobalAssetClass.Cryptocurrency, cryptoSnapshot);
+        var standardFetcher = new StubFetcher(assetClass => assetClass != GlobalAssetClass.Cryptocurrency, standardSnapshot);
+        var cryptoFetcher = new StubFetcher(assetClass => assetClass == GlobalAssetClass.Cryptocurrency, cryptoSnapshot);
         var service = new AssetPriceService([standardFetcher, cryptoFetcher]);
         var request = new AssetPriceRequestDTO { Exchange = "BVMF", Ticker = "BCIA11", AssetClass = GlobalAssetClass.Equity };
 
@@ -68,8 +68,8 @@ public class AssetPriceServiceTests
     {
         var firstSnapshot = new AssetValueSnapshot("XXX", "First Fetcher", 1m, DateTimeOffset.UtcNow);
         var secondSnapshot = new AssetValueSnapshot("YYY", "Second Fetcher", 2m, DateTimeOffset.UtcNow);
-        var firstFetcher = new FakeFetcher(_ => false, firstSnapshot);
-        var secondFetcher = new FakeFetcher(_ => false, secondSnapshot);
+        var firstFetcher = new StubFetcher(_ => false, firstSnapshot);
+        var secondFetcher = new StubFetcher(_ => false, secondSnapshot);
         var service = new AssetPriceService([firstFetcher, secondFetcher]);
         var request = new AssetPriceRequestDTO { Exchange = "BVMF", Ticker = "XXX", AssetClass = GlobalAssetClass.Bond };
 
@@ -83,8 +83,8 @@ public class AssetPriceServiceTests
     {
         var fetchers = new IAssetPriceFetcher[]
         {
-            new StandardAssetPriceFetcher(new FakeFinanceService()),
-            new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new FakeFinanceService())
+            new StandardAssetPriceFetcher(new StubFinanceService()),
+            new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new StubFinanceService())
         };
         var service = new AssetPriceService(fetchers);
         var request = new AssetPriceRequestDTO
@@ -105,8 +105,8 @@ public class AssetPriceServiceTests
     {
         var fetchers = new IAssetPriceFetcher[]
         {
-            new StandardAssetPriceFetcher(new FakeFinanceService()),
-            new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new FakeFinanceService())
+            new StandardAssetPriceFetcher(new StubFinanceService()),
+            new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new StubFinanceService())
         };
         var service = new AssetPriceService(fetchers);
         var request = new AssetPriceRequestDTO { Exchange = "", Ticker = "BCIA11", AssetClass = GlobalAssetClass.Equity };
@@ -116,12 +116,12 @@ public class AssetPriceServiceTests
         act.Should().Throw<ArgumentException>().WithMessage("Exchange is required.*");
     }
 
-    private sealed class FakeFetcher : IAssetPriceFetcher
+    private sealed class StubFetcher : IAssetPriceFetcher
     {
         private readonly Func<GlobalAssetClass, bool> _supports;
         private readonly AssetValueSnapshot _snapshot;
 
-        public FakeFetcher(Func<GlobalAssetClass, bool> supports, AssetValueSnapshot snapshot)
+        public StubFetcher(Func<GlobalAssetClass, bool> supports, AssetValueSnapshot snapshot)
         {
             _supports = supports;
             _snapshot = snapshot;
@@ -130,30 +130,5 @@ public class AssetPriceServiceTests
         public bool Supports(GlobalAssetClass assetClass) => _supports(assetClass);
 
         public AssetValueSnapshot GetSnapshot(AssetPriceRequestDTO request) => _snapshot;
-    }
-
-    private sealed class StubRepository : IRepository
-    {
-        private readonly List<Broker> _brokers;
-
-        public StubRepository(IEnumerable<Broker> brokers)
-        {
-            _brokers = brokers.ToList();
-        }
-
-        public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
-
-        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
-
-        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) => _brokers;
-
-        public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
-
-        public Task SaveChangesAsync() => throw new NotImplementedException();
-    }
-
-    private sealed class FakeFinanceService : IFinanceService
-    {
-        public AssetValueSnapshot GetAssetValue(AssetValueRequest request) => throw new NotImplementedException();
     }
 }
