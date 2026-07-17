@@ -10,6 +10,53 @@ public class RepositoryFactoryTests
     private static readonly RepositoryFactory Factory = new(new InvestmentsSerializerAdapter());
 
     [Fact]
+    public void Constructor_WithNullSerializer_Throws()
+    {
+        Action act = () => new RepositoryFactory(null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("serializer");
+    }
+
+    [Fact]
+    public void Create_WithNullOptions_Throws()
+    {
+        Action act = () => Factory.Create(null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("options");
+    }
+
+    [Fact]
+    public void Create_WithGoogleDriveProvider_CredentialsPathDoesNotExist_ThrowsFileNotFoundExceptionWithResolvedPath()
+    {
+        var options = new RepositorySelectionOptions(
+            RepositoryProvider.GoogleDriveJson,
+            null,
+            "nonexistent/credentials.json",
+            "Pessoais/Gleison/Financeiros");
+
+        Action act = () => Factory.Create(options);
+
+        act.Should().Throw<FileNotFoundException>()
+            .WithMessage("*credentials file not found at*");
+    }
+
+    [Fact]
+    public void Create_WithGoogleDriveProvider_CredentialsPathExists_ResolvesPastFileCheck()
+    {
+        // The credentials file exists but isn't a valid Google service-account JSON, so this
+        // exercises the successful path-resolution branch; the eventual credential-parsing
+        // failure happens later and purely locally, no network call is made.
+        var options = new RepositorySelectionOptions(
+            RepositoryProvider.GoogleDriveJson,
+            null,
+            TestDataPaths.DataJsonFile,
+            "Pessoais/Gleison/Financeiros");
+
+        Action act = () => Factory.Create(options);
+
+        act.Should().Throw<Exception>()
+            .Which.Message.Should().NotContain("credentials file not found");
+    }
+
+    [Fact]
     public void Create_WithLocalJsonProvider_ReturnsJsonRepository()
     {
         var options = new RepositorySelectionOptions(

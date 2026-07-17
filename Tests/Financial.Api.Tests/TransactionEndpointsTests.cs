@@ -34,6 +34,72 @@ public class TransactionEndpointsTests
     }
 
     [Fact]
+    public async Task AddTransaction_InvalidType_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new TransactionCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = DateTime.UtcNow,
+            Type = "NotARealType",
+            Quantity = 1,
+            UnitPrice = 10,
+            Fees = 0
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/transactions", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdateTransaction_UnknownId_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync("/api/v1/financial/transactions", new TransactionUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Id = Guid.NewGuid(),
+            Date = new DateTime(2024, 1, 2),
+            Type = "Buy",
+            Quantity = 1,
+            UnitPrice = 10,
+            Fees = 0
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task DeleteTransaction_UnknownId_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        using var request = new HttpRequestMessage(HttpMethod.Delete, "/api/v1/financial/transactions")
+        {
+            Content = JsonContent.Create(new TransactionDeleteDTO
+            {
+                BrokerName = "XPI",
+                PortfolioName = "Default",
+                AssetName = "BCIA11",
+                Id = Guid.NewGuid()
+            })
+        };
+
+        var response = await client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task UpdateTransaction_ReturnsOk()
     {
         await using var factory = new ApiTestFactory();

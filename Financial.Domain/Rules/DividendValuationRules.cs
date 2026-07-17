@@ -2,6 +2,6 @@ namespace Financial.Domain.Rules;
 
 public static class DividendValuationRules
 {
-    public const decimal RequiredYield = 0.06m;
-    public const int DividendYearsLookback = 5;
+    public static readonly decimal RequiredYield = 0.06m;
+    public static readonly int DividendYearsLookback = 5;
 }

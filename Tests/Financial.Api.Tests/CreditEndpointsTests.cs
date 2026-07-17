@@ -57,6 +57,66 @@ public class CreditEndpointsTests
     }
 
     [Fact]
+    public async Task AddCredit_InvalidType_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var response = await client.PostAsJsonAsync("/api/v1/financial/credits", new CreditCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = new DateTime(2024, 2, 1),
+            Type = "NotARealType",
+            Value = 5.5m
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdateCredit_UnknownId_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync("/api/v1/financial/credits", new CreditUpdateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Id = Guid.NewGuid(),
+            Date = new DateTime(2024, 2, 1),
+            Type = "Dividend",
+            Value = 5.5m
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task DeleteCredit_UnknownId_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        using var request = new HttpRequestMessage(HttpMethod.Delete, "/api/v1/financial/credits")
+        {
+            Content = JsonContent.Create(new CreditDeleteDTO
+            {
+                BrokerName = "XPI",
+                PortfolioName = "Default",
+                AssetName = "BCIA11",
+                Id = Guid.NewGuid()
+            })
+        };
+
+        var response = await client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task UpdateCredit_ReturnsOk()
     {
         await using var factory = new ApiTestFactory();

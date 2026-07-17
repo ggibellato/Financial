@@ -28,6 +28,26 @@ public class DividendEndpointsTests
     }
 
     [Fact]
+    public async Task GetDividendHistory_Returns400ForWhitespaceTicker()
+    {
+        await using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/v1/financial/dividends/%20/history?exchange=BVMF");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task GetDividendSummary_Returns400ForWhitespaceTicker()
+    {
+        await using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/v1/financial/dividends/%20/summary?exchange=BVMF");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task GetDividendSummary_ReturnsOk()
     {
         await using var factory = CreateFactory();

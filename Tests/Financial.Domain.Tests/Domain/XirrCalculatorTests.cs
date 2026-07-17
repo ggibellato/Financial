@@ -66,6 +66,20 @@ public class XirrCalculatorTests
     }
 
     [Fact]
+    public void Calculate_ExtremeReturnThatDoesNotConvergeWithinIterationLimit_ReturnsNull()
+    {
+        var cashFlows = new List<(DateTime Date, decimal Amount)>
+        {
+            (new DateTime(2024, 1, 1), -1m),
+            (new DateTime(2024, 1, 2), 1_000_000m)
+        };
+
+        var result = XirrCalculator.Calculate(cashFlows);
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
     public void Calculate_AllPositiveCashFlows_ReturnsNull()
     {
         var cashFlows = new List<(DateTime Date, decimal Amount)>

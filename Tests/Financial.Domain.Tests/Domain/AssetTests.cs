@@ -40,6 +40,43 @@ public class AssetTests
     }
 
     [Fact]
+    public void Create_FiveArgOverload_ResolvesAssetClassFromCountryAndLocalTypeCode()
+    {
+        var asset = Asset.Create("Petrobras", "ISIN123", "BVMF", "PETR4", CountryCode.BR, "Acoes");
+
+        asset.Country.Should().Be(CountryCode.BR);
+        asset.LocalTypeCode.Should().Be("Acoes");
+        asset.Class.Should().Be(GlobalAssetClass.Equity);
+    }
+
+    [Fact]
+    public void AddTransaction_NullTransaction_ThrowsArgumentNullException()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+
+        Action act = () => asset.AddTransaction(null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void AddTransactions_AddsAllTransactionsAndRecalculates()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var transactions = new[]
+        {
+            Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m),
+            Transaction.Create(new DateTime(2024, 1, 2), Transaction.TransactionType.Buy, 10m, 7m, 0m),
+        };
+
+        asset.AddTransactions(transactions);
+
+        asset.Quantity.Should().Be(20m);
+        asset.AveragePrice.Should().Be(6m);
+        asset.Transactions.Should().HaveCount(2);
+    }
+
+    [Fact]
     public void AddTransaction_Buy_UpdatesAveragePriceAndQuantity()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
@@ -114,6 +151,16 @@ public class AssetTests
     }
 
     [Fact]
+    public void UpdateTransaction_NullTransaction_ThrowsArgumentNullException()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+
+        Action act = () => asset.UpdateTransaction(null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
     public void UpdateTransaction_UnknownId_ReturnsFalse()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
@@ -144,6 +191,20 @@ public class AssetTests
     }
 
     [Fact]
+    public void RemoveTransaction_ExistingId_RemovesAndReturnsTrue()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var txId = Guid.NewGuid();
+        asset.AddTransaction(Transaction.CreateWithId(txId, new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+
+        var result = asset.RemoveTransaction(txId);
+
+        result.Should().BeTrue();
+        asset.Transactions.Should().BeEmpty();
+        asset.Quantity.Should().Be(0m);
+    }
+
+    [Fact]
     public void RemoveTransaction_EmptyId_Throws()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
@@ -163,6 +224,55 @@ public class AssetTests
 
         asset.Credits.Should().ContainSingle()
             .Which.Should().Be(credit);
+    }
+
+    [Fact]
+    public void AddCredit_NullCredit_ThrowsArgumentNullException()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+
+        Action act = () => asset.AddCredit(null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void AddCredits_AddsAllCreditsToCollection()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var credits = new[]
+        {
+            Credit.CreateWithId(Guid.NewGuid(), new DateTime(2024, 2, 1), Credit.CreditType.Dividend, 10m),
+            Credit.CreateWithId(Guid.NewGuid(), new DateTime(2024, 3, 1), Credit.CreditType.Rent, 20m),
+        };
+
+        asset.AddCredits(credits);
+
+        asset.Credits.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void UpdateCredit_NullCredit_ThrowsArgumentNullException()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+
+        Action act = () => asset.UpdateCredit(null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void UpdateCredit_ExistingId_UpdatesAndReturnsTrue()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var creditId = Guid.NewGuid();
+        asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2024, 2, 1), Credit.CreditType.Dividend, 10m));
+        var updated = Credit.CreateWithId(creditId, new DateTime(2024, 2, 1), Credit.CreditType.Dividend, 25m);
+
+        var result = asset.UpdateCredit(updated);
+
+        result.Should().BeTrue();
+        asset.Credits.Should().ContainSingle().Which.Value.Should().Be(25m);
     }
 
     [Fact]
@@ -192,5 +302,18 @@ public class AssetTests
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
 
         asset.RemoveCredit(Guid.NewGuid()).Should().BeFalse();
+    }
+
+    [Fact]
+    public void RemoveCredit_ExistingId_RemovesAndReturnsTrue()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var creditId = Guid.NewGuid();
+        asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2024, 2, 1), Credit.CreditType.Dividend, 10m));
+
+        var result = asset.RemoveCredit(creditId);
+
+        result.Should().BeTrue();
+        asset.Credits.Should().BeEmpty();
     }
 }

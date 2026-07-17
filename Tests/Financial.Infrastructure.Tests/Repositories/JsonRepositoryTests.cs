@@ -17,6 +17,38 @@ public class JsonRepositoryTests
         return new JSONRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
     }
 
+    [Fact]
+    public void Constructor_WithNullInvestments_Throws()
+    {
+        var storage = new LocalJsonStorage(TestDataPaths.DataJsonFile);
+        var serializer = new InvestmentsSerializerAdapter();
+
+        Action act = () => new JSONRepository(null!, storage, serializer);
+
+        act.Should().Throw<ArgumentNullException>().WithParameterName("investments");
+    }
+
+    [Fact]
+    public void Constructor_WithNullStorage_Throws()
+    {
+        var investments = InvestmentsLoader.LoadSync(new LocalJsonStorage(TestDataPaths.DataJsonFile), new InvestmentsSerializerAdapter());
+
+        Action act = () => new JSONRepository(investments, null!, new InvestmentsSerializerAdapter());
+
+        act.Should().Throw<ArgumentNullException>().WithParameterName("storage");
+    }
+
+    [Fact]
+    public void Constructor_WithNullSerializer_Throws()
+    {
+        var storage = new LocalJsonStorage(TestDataPaths.DataJsonFile);
+        var investments = InvestmentsLoader.LoadSync(storage, new InvestmentsSerializerAdapter());
+
+        Action act = () => new JSONRepository(investments, storage, null!);
+
+        act.Should().Throw<ArgumentNullException>().WithParameterName("serializer");
+    }
+
     [Theory]
     [InlineData(null, 0)]
     [InlineData("", 0)]

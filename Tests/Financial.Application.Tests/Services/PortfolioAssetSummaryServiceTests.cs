@@ -321,6 +321,22 @@ public class PortfolioAssetSummaryServiceTests
     }
 
     [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsLastMonthCredits_DistinguishesYearFromMonthNumber()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 1000m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2023, 6, 1), Credit.CreditType.Dividend, 100m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 20m));
+        asset.AddCredit(Credit.Create(new DateTime(2024, 6, 15), Credit.CreditType.Dividend, 8m));
+        _repository.Assets = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        result[0].LastCreditMonth.Should().Be("2024-06");
+        result[0].LastMonthCredits.Should().Be(28m);
+    }
+
+    [Fact]
     public void GetPortfolioAssetsSummary_ReturnsLastMonthCredits_Zero_WhenNoCredits()
     {
         var asset = MakeAsset("TEST", "TST", "BVMF");
