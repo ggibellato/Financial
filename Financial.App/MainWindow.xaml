@@ -9,7 +9,7 @@
         Title="Financial tools" Height="800" Width="1200" Icon="{StaticResource AppIcon}">
     <Grid>
         <TabControl SelectedIndex="0" Grid.ColumnSpan="2">
-            <TabItem Header="Portfolio Navigator">
+            <TabItem Header="Active Investments">
                 <local:NavigationView DataContext="{Binding ElementName=root, Path=NavigationViewModel}"/>
             </TabItem>
             <TabItem x:Name="dividendCheckTab" Header="Shares Dividend check"/>

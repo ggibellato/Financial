@@ -199,6 +199,16 @@ public class AssetDetailsViewModelBrokerSummaryTests
     }
 
     [Fact]
+    public async Task LoadBrokerBreakdown_RequestsActiveScope()
+    {
+        var stub = new StubBrokerBreakdownService();
+        var vm = BuildViewModel(stub);
+        await vm.LoadBrokerBreakdown("XPI");
+
+        stub.LastScope.Should().Be(InvestmentScope.Active);
+    }
+
+    [Fact]
     public async Task LoadBrokerBreakdown_SetsIsBreakdownLoadingFalse_OnSuccess()
     {
         var stub = new StubBrokerBreakdownService { Breakdown = [] };

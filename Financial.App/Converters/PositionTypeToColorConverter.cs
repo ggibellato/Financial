@@ -5,13 +5,23 @@ using System.Windows.Media;
 namespace Financial.Presentation.App.Converters;
 
 /// <summary>
-/// Converts boolean active status to a brush: green for active, red for inactive.
+/// Converts a PositionType string (Long/Flat/Short) to a brush: green/black/red.
 /// </summary>
-public class BoolToActiveColorConverter : IValueConverter
+public class PositionTypeToColorConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        return value is true ? Brushes.Green : Brushes.Red;
+        if (value is string positionType)
+        {
+            return positionType switch
+            {
+                "Long" => Brushes.Green,
+                "Short" => Brushes.Red,
+                _ => Brushes.Black
+            };
+        }
+
+        return Brushes.Black;
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

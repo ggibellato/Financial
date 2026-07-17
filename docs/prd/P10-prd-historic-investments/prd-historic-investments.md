@@ -408,8 +408,8 @@ graph TD
 - [x] A transaction or credit can be added, edited, and deleted for a historic asset through the same UI flow as an active asset
 
 ### F10. WPF — Active Investments Tab Update
-- [ ] The existing investments tab is relabeled "Active Investments" and shows only active data
-- [ ] Each asset's status indicator shows green/black/red matching `Long`/`Flat`/`Short`
+- [x] The existing investments tab is relabeled "Active Investments" and shows only active data
+- [x] Each asset's status indicator shows green/black/red matching `Long`/`Flat`/`Short`
 
 ### F11. WPF — Historic Investments Tab
 - [ ] A new "Historic Investments" tab shows a tree, summary, transactions, credits, and charts scoped to historic data only
@@ -422,4 +422,4 @@ graph TD
 - [x] Historic tree/asset data served by F05 is correctly consumed by both the realized totals service (F06) and the breakdown charts service (F07)
 - [ ] Realized totals from F06 render correctly in both the Web (F09) and WPF (F11) Historic Investments summary views
 - [ ] Breakdown data from F07 renders correctly in both the Web (F09) and WPF (F11) Historic Investments charts views
-- [ ] Active-scoped data and position type from F01/F05 render correctly in both the Web (F08) and WPF (F10) Active Investments tabs
+- [x] Active-scoped data and position type from F01/F05 render correctly in both the Web (F08) and WPF (F10) Active Investments tabs

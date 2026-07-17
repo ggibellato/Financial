@@ -493,7 +493,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         {
             try
             {
-                var breakdown = _brokerBreakdownService.GetBrokerBreakdown(brokerName);
+                var breakdown = _brokerBreakdownService.GetBrokerBreakdown(brokerName, InvestmentScope.Active);
                 if (token.IsCancellationRequested) return;
                 ApplyBrokerBreakdown(breakdown);
             }
