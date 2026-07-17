@@ -389,7 +389,7 @@ graph TD
 
 ### F06. Historic Realized Totals Service
 - [x] A historic asset's summary returns `TotalBought`, `TotalSold`, `TotalCredits`, and `RealizedGainLoss = TotalSold - TotalBought + TotalCredits`
-- [ ] No current price fetch or XIRR field is present in the historic summary response
+- [x] No current price fetch or XIRR field is present in the historic summary response
 - [x] Portfolio weight sums to 100% across a historic portfolio's assets (by `TotalBought`)
 
 ### F07. Historic Broker Breakdown Charts Service
@@ -414,7 +414,7 @@ graph TD
 ### F11. WPF — Historic Investments Tab
 - [x] A new "Historic Investments" tab shows a tree, summary, transactions, credits, and charts scoped to historic data only
 - [x] The summary view shows realized totals, not current-value/XIRR fields
-- [ ] A transaction or credit can be added, edited, and deleted for a historic asset through the same UI flow as an active asset
+- [x] A transaction or credit can be added, edited, and deleted for a historic asset through the same UI flow as an active asset
 
 ### Cross-Feature Integration
 - [x] Data written by import (F04) into `activeInvestments`/`historicInvestments` (F02's structure) is correctly returned by the scoped navigation API (F05)

@@ -2,6 +2,7 @@ using Financial.Application.DTOs;
 using FluentAssertions;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Financial.Api.Tests;
 
@@ -164,6 +165,32 @@ public class SummaryEndpointsTests
         // CLOSEDASSET: bought 5 x 60 = 300, sold 5 x 50 = 250, no credits — RealizedGainLoss = 250 - 300 + 0 = -50
         items!.Single().RealizedGainLoss.Should().Be(-50m);
         items!.Single().PortfolioWeight.Should().Be(100m);
+    }
+
+    [Fact]
+    public async Task GetPortfolioAssetsSummary_ScopeHistoric_ResponseHasNoCurrentPriceOrXirrField()
+    {
+        // PRD F06: "No current price fetch or XIRR field is present in the historic summary
+        // response" - price/XIRR are computed entirely client-side (Web/WPF), never returned
+        // by this endpoint for any scope; this guards against that ever regressing.
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Uncategorized/assets?scope=historic");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var json = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(json);
+        var propertyNames = document.RootElement.EnumerateArray()
+            .SelectMany(item => item.EnumerateObject())
+            .Select(prop => prop.Name)
+            .Distinct()
+            .ToList();
+
+        propertyNames.Should().NotContain(name => name.Contains("currentPrice", StringComparison.OrdinalIgnoreCase));
+        propertyNames.Should().NotContain(name => name.Contains("currentValue", StringComparison.OrdinalIgnoreCase));
+        propertyNames.Should().NotContain(name => name.Contains("xirr", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
