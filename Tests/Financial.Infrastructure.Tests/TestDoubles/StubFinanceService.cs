@@ -3,11 +3,11 @@ using Financial.Infrastructure.Interfaces;
 
 namespace Financial.Infrastructure.Tests;
 
-internal sealed class FakeFinanceService : IFinanceService
+internal sealed class StubFinanceService : IFinanceService
 {
     private readonly AssetValueSnapshot? _snapshot;
 
-    public FakeFinanceService(AssetValueSnapshot? snapshot = null)
+    public StubFinanceService(AssetValueSnapshot? snapshot = null)
     {
         _snapshot = snapshot;
     }

@@ -83,8 +83,8 @@ public class AssetPriceServiceTests
     {
         var fetchers = new IAssetPriceFetcher[]
         {
-            new StandardAssetPriceFetcher(new FakeFinanceService()),
-            new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new FakeFinanceService())
+            new StandardAssetPriceFetcher(new StubFinanceService()),
+            new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new StubFinanceService())
         };
         var service = new AssetPriceService(fetchers);
         var request = new AssetPriceRequestDTO
@@ -105,8 +105,8 @@ public class AssetPriceServiceTests
     {
         var fetchers = new IAssetPriceFetcher[]
         {
-            new StandardAssetPriceFetcher(new FakeFinanceService()),
-            new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new FakeFinanceService())
+            new StandardAssetPriceFetcher(new StubFinanceService()),
+            new CryptocurrencyAssetPriceFetcher(new StubRepository([]), new StubFinanceService())
         };
         var service = new AssetPriceService(fetchers);
         var request = new AssetPriceRequestDTO { Exchange = "", Ticker = "BCIA11", AssetClass = GlobalAssetClass.Equity };
