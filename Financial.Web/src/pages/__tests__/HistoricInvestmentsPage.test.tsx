@@ -43,7 +43,6 @@ const stubTree: TreeNodeDto = {
                 AssetName: 'CLOSEDASSET',
                 Ticker: 'CLOSEDASSET',
                 Exchange: 'BVMF',
-                IsActive: true,
                 PositionType: 'Flat',
                 GlobalAssetClass: 1,
               },

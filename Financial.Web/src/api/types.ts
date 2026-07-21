@@ -40,7 +40,6 @@ export interface BrokerNodeDto {
 export interface PortfolioNodeDto {
   name: string
   assetCount: number
-  activeAssetCount: number
   assets: AssetNodeDto[]
 }
 
@@ -54,7 +53,6 @@ export interface AssetNodeDto {
   isin: string
   quantity: number
   averagePrice: number
-  isActive: boolean
   positionType: PositionType
   transactionCount: number
   creditCount: number
@@ -97,7 +95,6 @@ export interface AssetDetailsDto {
   quantity: number
   averagePrice: number
   averageSellPrice: number | null
-  isActive: boolean
   positionType: PositionType
   totalBought: number
   totalSold: number

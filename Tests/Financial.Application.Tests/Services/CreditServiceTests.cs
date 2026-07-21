@@ -210,7 +210,7 @@ public class CreditServiceTests
     }
 
     [Fact]
-    public void GetCreditsByBroker_ReturnsCreditsFromActiveAssets()
+    public void GetCreditsByBroker_ReturnsCreditsFromAsset()
     {
         var asset = MakeAsset();
         asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 10m, 0m));
@@ -220,6 +220,26 @@ public class CreditServiceTests
         var result = CreateService().GetCreditsByBroker("XPI");
 
         result.Should().ContainSingle(c => c.Value == 5m);
+    }
+
+    [Fact]
+    public void GetCreditsByBroker_IncludesCreditsFromFlatAndShortAssets()
+    {
+        var flatAsset = MakeAsset("FLAT");
+        flatAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        flatAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 1m, 10m, 0m));
+        flatAsset.AddCredit(Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 3m));
+
+        var shortAsset = MakeAsset("SHORT");
+        shortAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 1m, 10m, 0m));
+        shortAsset.AddCredit(Credit.Create(new DateTime(2024, 1, 2), Credit.CreditType.Rent, 7m));
+
+        _repository.AssetsByBroker = [flatAsset, shortAsset];
+
+        var result = CreateService().GetCreditsByBroker("XPI");
+
+        result.Should().Contain(c => c.Value == 3m);
+        result.Should().Contain(c => c.Value == 7m);
     }
 
     [Theory]
@@ -234,7 +254,7 @@ public class CreditServiceTests
     }
 
     [Fact]
-    public void GetCreditsByPortfolio_ReturnsCreditsFromActiveAssets()
+    public void GetCreditsByPortfolio_ReturnsCreditsFromAsset()
     {
         var asset = MakeAsset();
         asset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 10m, 0m));
@@ -244,6 +264,26 @@ public class CreditServiceTests
         var result = CreateService().GetCreditsByPortfolio("XPI", "Default");
 
         result.Should().ContainSingle(c => c.Value == 5m);
+    }
+
+    [Fact]
+    public void GetCreditsByPortfolio_IncludesCreditsFromFlatAndShortAssets()
+    {
+        var flatAsset = MakeAsset("FLAT");
+        flatAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Buy, 1m, 10m, 0m));
+        flatAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 1m, 10m, 0m));
+        flatAsset.AddCredit(Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 3m));
+
+        var shortAsset = MakeAsset("SHORT");
+        shortAsset.AddTransaction(Transaction.Create(DateTime.Today, Transaction.TransactionType.Sell, 1m, 10m, 0m));
+        shortAsset.AddCredit(Credit.Create(new DateTime(2024, 1, 2), Credit.CreditType.Rent, 7m));
+
+        _repository.AssetsByBrokerPortfolio = [flatAsset, shortAsset];
+
+        var result = CreateService().GetCreditsByPortfolio("XPI", "Default");
+
+        result.Should().Contain(c => c.Value == 3m);
+        result.Should().Contain(c => c.Value == 7m);
     }
 
     [Theory]

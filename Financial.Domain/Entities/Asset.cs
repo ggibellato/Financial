@@ -23,8 +23,6 @@ public class Asset
 
     public decimal Quantity { get; private set; }
 
-    public bool Active => Quantity > 0;
-
     public PositionType PositionType => Quantity switch
     {
         > 0 => PositionType.Long,

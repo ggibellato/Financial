@@ -88,7 +88,7 @@ public class AssetTests
 
         asset.Quantity.Should().Be(20m);
         asset.AveragePrice.Should().Be(6m);
-        asset.Active.Should().BeTrue();
+        asset.PositionType.Should().Be(PositionType.Long);
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public class AssetTests
 
         asset.Quantity.Should().Be(0m);
         asset.AveragePrice.Should().Be(10m);
-        asset.Active.Should().BeFalse();
+        asset.PositionType.Should().Be(PositionType.Flat);
     }
 
     [Fact]
