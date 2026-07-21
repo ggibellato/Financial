@@ -1,3 +1,3 @@
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("Financial.Infrastructure.Tests")]
+[assembly: InternalsVisibleTo("Financial.Investment.Infrastructure.Tests")]

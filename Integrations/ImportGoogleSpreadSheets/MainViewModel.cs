@@ -1,5 +1,5 @@
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
-using Financial.Infrastructure.Persistence;
+using Financial.Investment.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using System;
 using System.Collections.ObjectModel;

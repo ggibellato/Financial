@@ -1,6 +1,6 @@
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DependencyInjection;
-using Financial.Infrastructure.DependencyInjection;
+using Financial.Investment.Infrastructure.DependencyInjection;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 using Serilog;
 

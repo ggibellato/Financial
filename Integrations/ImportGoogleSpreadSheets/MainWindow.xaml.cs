@@ -1,5 +1,5 @@
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
-using Financial.Infrastructure.Persistence;
+using Financial.Investment.Infrastructure.Persistence;
 using System;
 using System.IO;
 using System.Text.Json;

@@ -2,7 +2,7 @@
 	<Folder Name="/DDD/">
 		<Project Path="Financial.Investment.Application/Financial.Investment.Application.csproj" />
 		<Project Path="Financial.Investment.Domain/Financial.Investment.Domain.csproj" />
-		<Project Path="Financial.Infrastructure/Financial.Infrastructure.csproj" />
+		<Project Path="Financial.Investment.Infrastructure/Financial.Investment.Infrastructure.csproj" />
 	</Folder>
 	<Folder Name="/Integrations/">
 		<Project Path="Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj" />
@@ -13,7 +13,7 @@
 		<Project Path="Tests/Financial.Investment.Application.Tests/Financial.Investment.Application.Tests.csproj" />
 		<Project Path="Tests/Financial.Api.Tests/Financial.Api.Tests.csproj" />
 		<Project Path="Tests/Financial.Investment.Domain.Tests/Financial.Investment.Domain.Tests.csproj" />
-		<Project Path="Tests/Financial.Infrastructure.Tests/Financial.Infrastructure.Tests.csproj" />
+		<Project Path="Tests/Financial.Investment.Infrastructure.Tests/Financial.Investment.Infrastructure.Tests.csproj" />
 		<Project Path="Tests/Financial.Presentation.Tests/Financial.Presentation.Tests.csproj" />
 	</Folder>
 	<Folder Name="/Presentation/">
