@@ -1,3 +1,4 @@
+using Financial.Application.Enums;
 using Financial.Domain.Entities;
 
 namespace Financial.Application.Interfaces;

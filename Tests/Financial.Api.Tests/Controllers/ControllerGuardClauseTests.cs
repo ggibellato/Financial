@@ -1,6 +1,7 @@
 using Financial.Api.Controllers;
 using Financial.Application.Configuration;
 using Financial.Application.DTOs;
+using Financial.Application.Enums;
 using Financial.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.Extensions.Options;

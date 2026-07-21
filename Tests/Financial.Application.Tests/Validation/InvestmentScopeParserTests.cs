@@ -1,4 +1,4 @@
-using Financial.Application.Interfaces;
+using Financial.Application.Enums;
 using Financial.Application.Validation;
 using FluentAssertions;
 

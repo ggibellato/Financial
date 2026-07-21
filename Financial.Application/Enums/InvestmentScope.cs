@@ -1,3 +1,3 @@
-namespace Financial.Application.Interfaces;
+namespace Financial.Application.Enums;
 
 public enum InvestmentScope { Active, Historic }

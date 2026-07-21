@@ -1,3 +1,4 @@
+using Financial.Application.Enums;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using Financial.Infrastructure.Persistence;

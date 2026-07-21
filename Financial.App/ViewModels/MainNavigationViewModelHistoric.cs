@@ -1,3 +1,4 @@
+using Financial.Application.Enums;
 using Financial.Application.Interfaces;
 
 namespace Financial.Presentation.App.ViewModels;
