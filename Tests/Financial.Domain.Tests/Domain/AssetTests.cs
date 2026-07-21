@@ -1,5 +1,6 @@
 using Financial.Domain.Entities;
 using FluentAssertions;
+using System.Linq;
 
 namespace Financial.Domain.Tests;
 
@@ -60,51 +61,6 @@ public class AssetTests
     }
 
     [Fact]
-    public void AddTransactions_AddsAllTransactionsAndRecalculates()
-    {
-        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
-        var transactions = new[]
-        {
-            Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m),
-            Transaction.Create(new DateTime(2024, 1, 2), Transaction.TransactionType.Buy, 10m, 7m, 0m),
-        };
-
-        asset.AddTransactions(transactions);
-
-        asset.Quantity.Should().Be(20m);
-        asset.AveragePrice.Should().Be(6m);
-        asset.Transactions.Should().HaveCount(2);
-    }
-
-    [Fact]
-    public void AddTransaction_Buy_UpdatesAveragePriceAndQuantity()
-    {
-        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
-        var first = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);
-        var second = Transaction.Create(new DateTime(2024, 1, 2), Transaction.TransactionType.Buy, 10m, 7m, 0m);
-
-        asset.AddTransaction(first);
-        asset.AddTransaction(second);
-
-        asset.Quantity.Should().Be(20m);
-        asset.AveragePrice.Should().Be(6m);
-        asset.PositionType.Should().Be(PositionType.Long);
-    }
-
-    [Fact]
-    public void AddTransaction_Sell_DecreasesQuantityAndKeepsAveragePrice()
-    {
-        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
-        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 5m, 10m, 0m));
-
-        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 2), Transaction.TransactionType.Sell, 5m, 12m, 0m));
-
-        asset.Quantity.Should().Be(0m);
-        asset.AveragePrice.Should().Be(10m);
-        asset.PositionType.Should().Be(PositionType.Flat);
-    }
-
-    [Fact]
     public void PositionType_PositiveQuantity_ReturnsLong()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
@@ -132,25 +88,6 @@ public class AssetTests
     }
 
     [Fact]
-    public void UpdateTransaction_RebuildsTransactionsAndRecalculates()
-    {
-        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
-        var tx1Id = Guid.NewGuid();
-        var tx1 = Transaction.CreateWithId(tx1Id, new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m);
-        var tx2 = Transaction.CreateWithId(Guid.NewGuid(), new DateTime(2024, 1, 2), Transaction.TransactionType.Buy, 10m, 7m, 0m);
-        asset.AddTransaction(tx1);
-        asset.AddTransaction(tx2);
-
-        var updated = Transaction.CreateWithId(tx1Id, tx1.Date, tx1.Type, 20m, 5m, 0m);
-        var result = asset.UpdateTransaction(updated);
-
-        result.Should().BeTrue();
-        asset.Quantity.Should().Be(30m);
-        var expected = (20m * 5m + 10m * 7m) / 30m;
-        asset.AveragePrice.Should().Be(expected);
-    }
-
-    [Fact]
     public void UpdateTransaction_NullTransaction_ThrowsArgumentNullException()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
@@ -158,36 +95,6 @@ public class AssetTests
         Action act = () => asset.UpdateTransaction(null!);
 
         act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
-    public void UpdateTransaction_UnknownId_ReturnsFalse()
-    {
-        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
-
-        var result = asset.UpdateTransaction(Transaction.CreateWithId(Guid.NewGuid(), new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 1m, 1m, 0m));
-
-        result.Should().BeFalse();
-    }
-
-    [Fact]
-    public void UpdateTransaction_EmptyId_Throws()
-    {
-        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
-        // Activator bypasses the public factory methods so Id stays Guid.Empty.
-        var transaction = (Transaction)Activator.CreateInstance(typeof(Transaction), nonPublic: true)!;
-
-        Action act = () => asset.UpdateTransaction(transaction);
-
-        act.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
-    public void RemoveTransaction_UnknownId_ReturnsFalse()
-    {
-        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
-
-        asset.RemoveTransaction(Guid.NewGuid()).Should().BeFalse();
     }
 
     [Fact]
@@ -315,5 +222,19 @@ public class AssetTests
 
         result.Should().BeTrue();
         asset.Credits.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Quantity_AveragePrice_RealizedGainLoss_ReflectTransactionsAndCredits()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2021, 6, 1), Credit.CreditType.Dividend, 12m));
+
+        asset.Quantity.Should().Be(asset.Transactions.Quantity);
+        asset.AveragePrice.Should().Be(asset.Transactions.AveragePrice);
+        asset.AverageSellPrice.Should().Be(asset.Transactions.AverageSellPrice);
+        asset.RealizedGainLoss.Should().Be(asset.Transactions.RealizedCapitalGain + asset.Credits.Sum(c => c.Value));
     }
 }

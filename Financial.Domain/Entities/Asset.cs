@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Financial.Domain.Entities;
 
@@ -19,9 +20,20 @@ public class Asset
 
     public GlobalAssetClass Class { get; private set; } = GlobalAssetClass.Unknown;
 
-    public decimal AveragePrice { get; private set; } = 0;
+    public Transactions Transactions { get; private set; } = new();
 
-    public decimal Quantity { get; private set; }
+    public decimal AveragePrice => Transactions.AveragePrice;
+
+    public decimal Quantity => Transactions.Quantity;
+
+    public decimal? AverageSellPrice => Transactions.AverageSellPrice;
+
+    /// <summary>
+    /// Realized gain/loss from closed (sold) quantity plus credits. Composes
+    /// Transactions' pure capital-gain figure with Credits, since Transactions
+    /// itself has no knowledge of Credits.
+    /// </summary>
+    public decimal RealizedGainLoss => Transactions.RealizedCapitalGain + Credits.Sum(c => c.Value);
 
     public PositionType PositionType => Quantity switch
     {
@@ -29,25 +41,6 @@ public class Asset
         < 0 => PositionType.Short,
         _ => PositionType.Flat
     };
-
-    private List<Transaction> _transactions = new List<Transaction>();
-    public IReadOnlyCollection<Transaction> Transactions { get => _transactions.AsReadOnly(); private set => SetTransactions(value); }
-    private void SetTransactions(IReadOnlyCollection<Transaction> data)
-    {
-        RebuildTransactions(data);
-    }
-
-    private void RebuildTransactions(IEnumerable<Transaction> transactions)
-    {
-        var transactionList = new List<Transaction>(transactions);
-        _transactions.Clear();
-        AveragePrice = 0;
-        Quantity = 0;
-        foreach (var transaction in transactionList)
-        {
-            AddTransaction(transaction);
-        }
-    }
 
     private List<Credit> _credits = new List<Credit>();
     public IReadOnlyCollection<Credit> Credits { get => _credits.AsReadOnly(); private set => SetCredits(value); }
@@ -96,65 +89,13 @@ public class Asset
         return new Asset(name, isin, exchange, ticker, country, normalizedLocalTypeCode, assetClass);
     }
 
-    public void AddTransaction(Transaction transaction)
-    {
-        if (transaction == null)
-        {
-            throw new ArgumentNullException(nameof(transaction));
-        }
+    public void AddTransaction(Transaction transaction) => Transactions.Add(transaction);
 
-        if (transaction.Type == Transaction.TransactionType.Buy)
-        {
-            AveragePrice = (AveragePrice * Quantity + transaction.TotalPrice) / (Quantity + transaction.Quantity);
-        }
-        Quantity += (transaction.Type == Transaction.TransactionType.Buy
-            ? transaction.Quantity : -transaction.Quantity);
-        _transactions.Add(transaction);
-    }
-    public void AddTransactions(IEnumerable<Transaction> transactions)
-    {
-        foreach (var transaction in transactions)
-        {
-            AddTransaction(transaction);
-        }
-    }
+    public void AddTransactions(IEnumerable<Transaction> transactions) => Transactions.AddRange(transactions);
 
-    public bool UpdateTransaction(Transaction updatedTransaction)
-    {
-        if (updatedTransaction == null)
-        {
-            throw new ArgumentNullException(nameof(updatedTransaction));
-        }
+    public bool UpdateTransaction(Transaction updatedTransaction) => Transactions.Update(updatedTransaction);
 
-        EnsureNotEmptyId(updatedTransaction.Id, "Transaction Id is required for update.", nameof(updatedTransaction));
-
-        var index = _transactions.FindIndex(t => t.Id == updatedTransaction.Id);
-        if (index < 0)
-        {
-            return false;
-        }
-
-        var transactions = new List<Transaction>(_transactions);
-        transactions[index] = updatedTransaction;
-        RebuildTransactions(transactions);
-        return true;
-    }
-
-    public bool RemoveTransaction(Guid transactionId)
-    {
-        EnsureNotEmptyId(transactionId, "Transaction Id is required for delete.", nameof(transactionId));
-
-        var index = _transactions.FindIndex(t => t.Id == transactionId);
-        if (index < 0)
-        {
-            return false;
-        }
-
-        var transactions = new List<Transaction>(_transactions);
-        transactions.RemoveAt(index);
-        RebuildTransactions(transactions);
-        return true;
-    }
+    public bool RemoveTransaction(Guid transactionId) => Transactions.RemoveById(transactionId);
 
     public void AddCredit(Credit credit)
     {
