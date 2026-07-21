@@ -2,9 +2,21 @@ using Financial.Application.Configuration;
 using Financial.Application.DependencyInjection;
 using Financial.Infrastructure.DependencyInjection;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
+
+builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+{
+    loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .WriteTo.File(
+            Path.Combine(AppContext.BaseDirectory, "logs", "app-.log"),
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: 14);
+});
 
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();

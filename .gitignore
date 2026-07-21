@@ -12,6 +12,10 @@ dist
 terraform*
 .terraform*
 
+#local deployment output (manual, not part of CI/CD)
+/deploy
+scripts/deploy.local.json
+
 
 #specific files
 .gitignore.bak
