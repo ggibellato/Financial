@@ -5,31 +5,33 @@
   overflow: hidden;
 }
 
-.app__nav {
+.app__domain-switcher {
   display: flex;
-  gap: 0;
-  padding: 0 16px;
+  gap: 8px;
+  padding: 8px 16px;
   border-bottom: 1px solid var(--border);
   background: var(--bg);
   flex-shrink: 0;
 }
 
-.app__nav a {
+.app__domain-switcher a {
   color: var(--text-h);
   text-decoration: none;
-  font-weight: 500;
-  padding: 12px 16px;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
 }
 
-.app__nav a.active {
-  border-bottom-color: var(--accent);
-  font-weight: 600;
+.app__domain-switcher a.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
 }
 
 .app__content {
   flex: 1;
+  min-height: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;

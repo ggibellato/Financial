@@ -1,14 +1,24 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { useEffect } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { setStoredDomain } from './utils/domainStorage'
 import './App.css'
 
 function App() {
+  const location = useLocation()
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/investments')) {
+      setStoredDomain('investments')
+    } else if (location.pathname.startsWith('/cashflow')) {
+      setStoredDomain('cashflow')
+    }
+  }, [location.pathname])
+
   return (
     <div className="app">
-      <nav className="app__nav" aria-label="Primary">
-        <NavLink to="/active-investments">Active Investments</NavLink>
-        <NavLink to="/historic-investments">Historic Investments</NavLink>
-        <NavLink to="/dividend-check">Shares Dividend Check</NavLink>
-        <NavLink to="/current-values">Read Assets Current Values</NavLink>
+      <nav className="app__domain-switcher" aria-label="Domain">
+        <NavLink to="/investments">Investments</NavLink>
+        <NavLink to="/cashflow">CashFlow</NavLink>
       </nav>
       <main className="app__content">
         <Outlet />
