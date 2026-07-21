@@ -194,7 +194,7 @@ internal static class NavigationMapper
         {
             Name = portfolio.Name,
             AssetCount = portfolio.Assets.Count,
-            ActiveAssetCount = portfolio.Assets.Count(a => a.Active),
+            ActiveAssetCount = portfolio.Assets.Count(a => a.PositionType == PositionType.Long),
             Assets = portfolio.Assets.OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase).Select(asset => MapAsset(asset, scope)).ToList()
         };
     }
@@ -212,7 +212,7 @@ internal static class NavigationMapper
             Class = asset.Class,
             Quantity = asset.Quantity,
             AveragePrice = asset.AveragePrice,
-            IsActive = asset.Active,
+            IsActive = asset.PositionType == PositionType.Long,
             PositionType = scope == InvestmentScope.Historic ? PositionType.Flat : asset.PositionType,
             TransactionCount = asset.Transactions.Count,
             CreditCount = asset.Credits.Count

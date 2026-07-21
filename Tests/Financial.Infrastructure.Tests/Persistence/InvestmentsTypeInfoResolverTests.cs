@@ -32,7 +32,6 @@ public class InvestmentsTypeInfoResolverTests
 
         typeInfo!.Properties.Should().NotContain(p => p.Name == nameof(Asset.AveragePrice));
         typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.Quantity));
-        typeInfo.Properties.Should().NotContain(p => p.Name == nameof(Asset.Active));
     }
 
     [Fact]
