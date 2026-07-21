@@ -5,7 +5,11 @@
 		<Project Path="Financial.Investment.Domain/Financial.Investment.Domain.csproj" />
 		<Project Path="Financial.Investment.Infrastructure/Financial.Investment.Infrastructure.csproj" />
 	</Folder>
-	<Folder Name="/DDD/CashFlow/" />
+	<Folder Name="/DDD/CashFlow/">
+		<Project Path="Financial.CashFlow.Application/Financial.CashFlow.Application.csproj" />
+		<Project Path="Financial.CashFlow.Domain/Financial.CashFlow.Domain.csproj" />
+		<Project Path="Financial.CashFlow.Infrastructure/Financial.CashFlow.Infrastructure.csproj" />
+	</Folder>
 	<Folder Name="/DDD/Shared/">
 		<Project Path="Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj" />
 	</Folder>
@@ -21,6 +25,8 @@
 		<Project Path="Tests/Financial.Investment.Infrastructure.Tests/Financial.Investment.Infrastructure.Tests.csproj" />
 		<Project Path="Tests/Financial.Shared.Infrastructure.Tests/Financial.Shared.Infrastructure.Tests.csproj" />
 		<Project Path="Tests/Financial.Presentation.Tests/Financial.Presentation.Tests.csproj" />
+		<Project Path="Tests/Financial.CashFlow.Domain.Tests/Financial.CashFlow.Domain.Tests.csproj" />
+		<Project Path="Tests/Financial.CashFlow.Infrastructure.Tests/Financial.CashFlow.Infrastructure.Tests.csproj" />
 	</Folder>
 	<Folder Name="/Presentation/">
 		<Project Path="Financial.App/Financial.App.csproj" />

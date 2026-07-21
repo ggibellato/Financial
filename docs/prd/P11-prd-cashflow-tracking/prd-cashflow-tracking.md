@@ -557,9 +557,9 @@ graph TD
 - [x] `Financial.Api`, `Financial.Web`, and `Financial.App` build and run with no behavior change
 
 ### F02. CashFlow Domain Model & Storage
-- [ ] `data-cashflow.json` round-trips with all six top-level collections (expenses, reserve ledger, card statements, recurring bill templates/instances, mae ledger, investment snapshots)
-- [ ] A missing `data-cashflow.json` on first run is created with all six collections empty rather than failing to start
-- [ ] `Financial.CashFlow.Infrastructure` references `Financial.Shared.Infrastructure` for its storage engine rather than duplicating it
+- [x] `data-cashflow.json` round-trips with all six top-level collections (expenses, reserve ledger, card statements, recurring bill templates/instances, mae ledger, investment snapshots)
+- [x] A missing `data-cashflow.json` on first run is created with all six collections empty rather than failing to start
+- [x] `Financial.CashFlow.Infrastructure` references `Financial.Shared.Infrastructure` for its storage engine rather than duplicating it
 - [ ] A category retired from current use still displays correctly on a historical record but is not offered when creating a new entry
 
 ### F03. Monthly Expense Tracking
@@ -635,7 +635,7 @@ graph TD
 - [ ] The same view shows a month-over-month diff table per investment account, plus the combined net position, for the selected year
 
 ### Cross-Feature Integration
-- [ ] The `Financial.Investment.Infrastructure` project created by F01 builds and runs correctly referencing `Financial.Shared.Infrastructure`, and F02's `Financial.CashFlow.Infrastructure` references the same shared project without duplication
+- [x] The `Financial.Investment.Infrastructure` project created by F01 builds and runs correctly referencing `Financial.Shared.Infrastructure`, and F02's `Financial.CashFlow.Infrastructure` references the same shared project without duplication
 - [ ] Expense data written through F02's storage abstraction (F01/F02) is correctly read back by F03 as categorized expense records
 - [ ] A card tag on an F03 expense correctly feeds F04's per-card outstanding total and combined adjustment figure
 - [ ] Reserve bucket movements posted by F05 persist and reload correctly through F02's storage abstraction
