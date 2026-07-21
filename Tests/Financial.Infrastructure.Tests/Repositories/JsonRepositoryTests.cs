@@ -1,6 +1,7 @@
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Domain.Entities;
 using Financial.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
 using FluentAssertions;
 

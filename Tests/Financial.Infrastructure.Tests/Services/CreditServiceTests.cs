@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Services;
 using Financial.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
 using FluentAssertions;
 using System.IO;

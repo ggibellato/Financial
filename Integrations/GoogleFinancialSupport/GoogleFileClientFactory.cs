@@ -1,4 +1,4 @@
-using Financial.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Persistence;
 
 namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 

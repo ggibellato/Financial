@@ -1,6 +1,6 @@
-using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;

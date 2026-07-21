@@ -1,5 +1,5 @@
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
-using Financial.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Persistence;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

@@ -1,8 +1,8 @@
-using Financial.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Persistence;
 using FluentAssertions;
 using System.IO;
 
-namespace Financial.Infrastructure.Tests.Persistence;
+namespace Financial.Shared.Infrastructure.Tests.Persistence;
 
 public class LocalJsonStorageTests
 {

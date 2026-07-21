@@ -1,5 +1,5 @@
-using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
+using Financial.Shared.Infrastructure.Persistence;
 
 namespace Financial.Infrastructure.Persistence;
 

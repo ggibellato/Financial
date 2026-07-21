@@ -1,4 +1,4 @@
-namespace Financial.Infrastructure.Configuration;
+namespace Financial.Shared.Infrastructure.Configuration;
 
 public static class RepositoryConfigurationKeys
 {

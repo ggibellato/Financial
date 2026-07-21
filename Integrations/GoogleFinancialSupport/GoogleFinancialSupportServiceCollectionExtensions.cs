@@ -1,4 +1,4 @@
-using Financial.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;

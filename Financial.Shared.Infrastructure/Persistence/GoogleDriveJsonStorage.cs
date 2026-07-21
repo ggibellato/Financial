@@ -1,7 +1,6 @@
-using Financial.Investment.Application.Interfaces;
-using Financial.Infrastructure.Configuration;
+using Financial.Shared.Infrastructure.Configuration;
 
-namespace Financial.Infrastructure.Persistence;
+namespace Financial.Shared.Infrastructure.Persistence;
 
 public sealed class GoogleDriveJsonStorage : IJsonStorage
 {

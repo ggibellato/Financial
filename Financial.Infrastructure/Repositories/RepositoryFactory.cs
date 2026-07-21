@@ -1,6 +1,7 @@
 using Financial.Investment.Application.Interfaces;
-using Financial.Infrastructure.Configuration;
 using Financial.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Configuration;
+using Financial.Shared.Infrastructure.Persistence;
 
 namespace Financial.Infrastructure.Repositories;
 

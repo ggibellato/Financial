@@ -1,7 +1,7 @@
-using Financial.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Persistence;
 using FluentAssertions;
 
-namespace Financial.Infrastructure.Tests.Persistence;
+namespace Financial.Shared.Infrastructure.Tests.Persistence;
 
 public class GoogleDriveJsonStorageTests
 {

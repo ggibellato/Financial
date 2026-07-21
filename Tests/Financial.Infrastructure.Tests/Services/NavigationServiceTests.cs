@@ -3,6 +3,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
 using Financial.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
 using FluentAssertions;
 

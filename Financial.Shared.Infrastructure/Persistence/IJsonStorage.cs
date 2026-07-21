@@ -1,4 +1,4 @@
-namespace Financial.Investment.Application.Interfaces;
+namespace Financial.Shared.Infrastructure.Persistence;
 
 public interface IJsonStorage
 {
