@@ -1,5 +1,6 @@
 using Financial.Application.Configuration;
 using Financial.Application.DTOs;
+using Financial.Application.Enums;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using Financial.Presentation.App.ViewModels;

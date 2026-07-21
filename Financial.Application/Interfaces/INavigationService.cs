@@ -1,4 +1,5 @@
 using Financial.Application.DTOs;
+using Financial.Application.Enums;
 
 namespace Financial.Application.Interfaces;
 

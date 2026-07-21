@@ -1,4 +1,5 @@
 using Financial.Application.DTOs;
+using Financial.Application.Enums;
 using Financial.Application.Interfaces;
 
 namespace Financial.Presentation.Tests.ViewModels;
