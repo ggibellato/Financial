@@ -1,15 +1,13 @@
 <Solution>
-	<Folder Name="/DDD/">
-		<Folder Name="/DDD/Investment/">
-			<Project Path="Financial.Investment.Application/Financial.Investment.Application.csproj" />
-			<Project Path="Financial.Investment.Domain/Financial.Investment.Domain.csproj" />
-			<Project Path="Financial.Investment.Infrastructure/Financial.Investment.Infrastructure.csproj" />
-		</Folder>
-		<Folder Name="/DDD/CashFlow/">
-		</Folder>
-		<Folder Name="/DDD/Shared/">
-			<Project Path="Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj" />
-		</Folder>
+	<Folder Name="/DDD/" />
+	<Folder Name="/DDD/Investment/">
+		<Project Path="Financial.Investment.Application/Financial.Investment.Application.csproj" />
+		<Project Path="Financial.Investment.Domain/Financial.Investment.Domain.csproj" />
+		<Project Path="Financial.Investment.Infrastructure/Financial.Investment.Infrastructure.csproj" />
+	</Folder>
+	<Folder Name="/DDD/CashFlow/" />
+	<Folder Name="/DDD/Shared/">
+		<Project Path="Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj" />
 	</Folder>
 	<Folder Name="/Integrations/">
 		<Project Path="Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj" />
