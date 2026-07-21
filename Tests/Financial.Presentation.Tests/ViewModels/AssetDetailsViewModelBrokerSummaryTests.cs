@@ -74,7 +74,7 @@ public class AssetDetailsViewModelBrokerSummaryTests
             Ticker = "T", ISIN = "US1234567890", Exchange = "LSE",
             Country = Financial.Domain.Entities.CountryCode.Unknown,
             LocalTypeCode = "", Class = Financial.Domain.Entities.GlobalAssetClass.Unknown,
-            Quantity = 10m, AveragePrice = 50m, IsActive = true,
+            Quantity = 10m, AveragePrice = 50m,
             TotalBought = 500m, TotalSold = 0m, TotalCredits = 0m,
             Transactions = [], Credits = []
         });
@@ -117,7 +117,7 @@ public class AssetDetailsViewModelBrokerSummaryTests
             Ticker = "T", ISIN = "", Exchange = "LSE",
             Country = Financial.Domain.Entities.CountryCode.Unknown,
             LocalTypeCode = "", Class = Financial.Domain.Entities.GlobalAssetClass.Unknown,
-            Quantity = 0m, AveragePrice = 0m, IsActive = true,
+            Quantity = 0m, AveragePrice = 0m,
             TotalBought = 0m, TotalSold = 0m, TotalCredits = 0m,
             Transactions = [], Credits = []
         });
@@ -278,7 +278,7 @@ public class AssetDetailsViewModelBrokerSummaryTests
             Ticker = "T", ISIN = "", Exchange = "LSE",
             Country = Financial.Domain.Entities.CountryCode.Unknown,
             LocalTypeCode = "", Class = Financial.Domain.Entities.GlobalAssetClass.Unknown,
-            Quantity = 0m, AveragePrice = 0m, IsActive = true,
+            Quantity = 0m, AveragePrice = 0m,
             TotalBought = 0m, TotalSold = 0m, TotalCredits = 0m,
             Transactions = [], Credits = []
         });

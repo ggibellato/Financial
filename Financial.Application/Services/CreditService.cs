@@ -78,7 +78,6 @@ public sealed class CreditService : ICreditService, ICreditQueryService
             return Array.Empty<CreditDTO>();
 
         return _repository.GetAssetsByBroker(brokerName)
-            .Where(asset => asset.PositionType == PositionType.Long)
             .SelectMany(asset => asset.Credits)
             .Select(NavigationMapper.MapCredit)
             .OrderByDescending(credit => credit.Date)
@@ -91,7 +90,6 @@ public sealed class CreditService : ICreditService, ICreditQueryService
             return Array.Empty<CreditDTO>();
 
         return _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName)
-            .Where(asset => asset.PositionType == PositionType.Long)
             .SelectMany(asset => asset.Credits)
             .Select(NavigationMapper.MapCredit)
             .OrderByDescending(credit => credit.Date)

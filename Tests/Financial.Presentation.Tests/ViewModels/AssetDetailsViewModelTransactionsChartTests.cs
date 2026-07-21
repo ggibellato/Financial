@@ -36,7 +36,6 @@ public class AssetDetailsViewModelTransactionsChartTests
         Class = Financial.Domain.Entities.GlobalAssetClass.Unknown,
         Quantity = 100m,
         AveragePrice = 20m,
-        IsActive = true,
         TotalBought = 2000m,
         TotalSold = 0m,
         TotalCredits = 0m,

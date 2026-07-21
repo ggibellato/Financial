@@ -26,7 +26,6 @@ function makeAsset(
       AssetName: name,
       Ticker: name,
       Exchange: 'BVMF',
-      IsActive: isActive,
       PositionType: positionType,
       GlobalAssetClass: assetClass,
     },

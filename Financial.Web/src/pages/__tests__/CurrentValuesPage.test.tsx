@@ -28,7 +28,6 @@ const makeBroker = (
   portfolios: portfolios.map((p) => ({
     name: p.name,
     assetCount: p.assets.length,
-    activeAssetCount: p.assets.filter((a) => a.isActive !== false).length,
     assets: p.assets.map((a) => ({
       name: a.name ?? 'ASSET',
       ticker: a.ticker ?? 'TICK',
@@ -39,8 +38,7 @@ const makeBroker = (
       isin: 'BR000',
       quantity: 10,
       averagePrice: 100,
-      isActive: a.isActive ?? true,
-      positionType: a.positionType ?? ((a.isActive ?? true) ? 'Long' : 'Flat'),
+      positionType: a.positionType ?? 'Long',
       transactionCount: 0,
       creditCount: 0,
     })),
@@ -233,14 +231,15 @@ describe('CurrentValuesPage', () => {
     expect(await screen.findByRole('button', { name: 'Check Prices' })).toBeInTheDocument()
   })
 
-  it('excludes inactive assets from fetch scope', async () => {
+  it('does not exclude flat or short assets from fetch scope', async () => {
     getBrokersMock.mockResolvedValue([
       makeBroker([
         {
           name: 'Default',
           assets: [
-            { name: 'BCIA11', ticker: 'BCIA11', isActive: true },
-            { name: 'INAC11', ticker: 'INAC11', isActive: false },
+            { name: 'BCIA11', ticker: 'BCIA11', positionType: 'Long' },
+            { name: 'FLAT11', ticker: 'FLAT11', positionType: 'Flat' },
+            { name: 'SHRT11', ticker: 'SHRT11', positionType: 'Short' },
           ],
         },
       ]),
@@ -252,9 +251,10 @@ describe('CurrentValuesPage', () => {
 
     await waitFor(() => expect(screen.queryByText(/Completed!/)).toBeInTheDocument())
 
-    expect(getCurrentPriceMock).toHaveBeenCalledTimes(1)
+    expect(getCurrentPriceMock).toHaveBeenCalledTimes(3)
     expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstateFund', 'XPI')
-    expect(getCurrentPriceMock).not.toHaveBeenCalledWith('BVMF', 'INAC11', 'RealEstateFund', 'XPI')
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'FLAT11', 'RealEstateFund', 'XPI')
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'SHRT11', 'RealEstateFund', 'XPI')
   })
 
   it('excludes assets with empty ticker or exchange', async () => {

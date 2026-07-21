@@ -38,8 +38,7 @@ internal static class NavigationMapper
             Metadata = new Dictionary<string, object>
             {
                 ["PortfolioName"] = portfolio.Name,
-                ["AssetCount"] = portfolio.AssetCount,
-                ["ActiveAssetCount"] = portfolio.ActiveAssetCount
+                ["AssetCount"] = portfolio.AssetCount
             }
         };
 
@@ -68,7 +67,6 @@ internal static class NavigationMapper
                 ["GlobalAssetClass"] = asset.Class,
                 ["Quantity"] = asset.Quantity,
                 ["AveragePrice"] = asset.AveragePrice,
-                ["IsActive"] = asset.IsActive,
                 ["PositionType"] = asset.PositionType.ToString(),
                 ["TransactionCount"] = asset.TransactionCount,
                 ["CreditCount"] = asset.CreditCount
@@ -194,7 +192,6 @@ internal static class NavigationMapper
         {
             Name = portfolio.Name,
             AssetCount = portfolio.Assets.Count,
-            ActiveAssetCount = portfolio.Assets.Count(a => a.PositionType == PositionType.Long),
             Assets = portfolio.Assets.OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase).Select(asset => MapAsset(asset, scope)).ToList()
         };
     }
@@ -212,7 +209,6 @@ internal static class NavigationMapper
             Class = asset.Class,
             Quantity = asset.Quantity,
             AveragePrice = asset.AveragePrice,
-            IsActive = asset.PositionType == PositionType.Long,
             PositionType = scope == InvestmentScope.Historic ? PositionType.Flat : asset.PositionType,
             TransactionCount = asset.Transactions.Count,
             CreditCount = asset.Credits.Count

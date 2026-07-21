@@ -22,7 +22,6 @@ public class AssetPriceFetchViewModelTests
                 Ticker = "BTC",
                 Exchange = "",
                 Class = GlobalAssetClass.Cryptocurrency,
-                IsActive = true,
             }
         ];
         var priceService = new StubAssetPriceService();
@@ -53,7 +52,6 @@ public class AssetPriceFetchViewModelTests
                 Ticker = "KLBN4",
                 Exchange = "BVMF",
                 Class = GlobalAssetClass.Equity,
-                IsActive = true,
             }
         ];
         var priceService = new StubAssetPriceService();
@@ -84,7 +82,6 @@ public class AssetPriceFetchViewModelTests
                 Ticker = "TESOURO IPCA+ 2029",
                 Exchange = "BVMF",
                 Class = GlobalAssetClass.Bond,
-                IsActive = true,
             }
         ];
         var priceService = new StubAssetPriceService();

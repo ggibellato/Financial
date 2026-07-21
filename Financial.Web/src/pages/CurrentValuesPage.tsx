@@ -65,13 +65,12 @@ export default function CurrentValuesPage() {
         ticker: asset.ticker,
         exchange: asset.exchange,
         assetName: asset.name,
-        isActive: asset.isActive,
         assetClass: asset.class,
         brokerName: broker.name,
       }))
     })
     return assets.filter(
-      (asset) => asset.isActive && asset.ticker && (asset.exchange || asset.assetClass === 'Cryptocurrency'),
+      (asset) => asset.ticker && (asset.exchange || asset.assetClass === 'Cryptocurrency'),
     )
   }, [brokers, scope])
 

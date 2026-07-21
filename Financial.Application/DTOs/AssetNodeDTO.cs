@@ -56,11 +56,6 @@ public class AssetNodeDTO
     public decimal AveragePrice { get; set; }
 
     /// <summary>
-    /// Whether the asset is active (quantity > 0)
-    /// </summary>
-    public bool IsActive { get; set; }
-
-    /// <summary>
     /// Position type derived from quantity sign (Long/Flat/Short)
     /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]

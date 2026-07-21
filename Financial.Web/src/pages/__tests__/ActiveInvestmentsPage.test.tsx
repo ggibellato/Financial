@@ -43,7 +43,6 @@ const stubTree: TreeNodeDto = {
                 AssetName: 'KLBN4',
                 Ticker: 'KLBN4',
                 Exchange: 'BVMF',
-                IsActive: true,
                 PositionType: 'Long',
                 GlobalAssetClass: 1,
               },
