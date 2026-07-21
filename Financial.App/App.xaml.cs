@@ -6,6 +6,7 @@ using Financial.Presentation.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Serilog;
 using System.IO;
 using System.Windows;
 
@@ -18,6 +19,16 @@ namespace Financial.Presentation.App
         public App()
         {
             AppHost = Host.CreateDefaultBuilder()
+                .UseSerilog((context, services, loggerConfiguration) =>
+                {
+                    loggerConfiguration
+                        .ReadFrom.Configuration(context.Configuration)
+                        .ReadFrom.Services(services)
+                        .WriteTo.File(
+                            Path.Combine(AppContext.BaseDirectory, "logs", "app-.log"),
+                            rollingInterval: RollingInterval.Day,
+                            retainedFileCountLimit: 14);
+                })
                 .ConfigureServices((context, services) =>
                 {
                     services.AddFinancialApplication();
