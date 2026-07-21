@@ -6,7 +6,7 @@ CashFlow Tracking introduces Financial.CashFlow, a new bounded context that repl
 
 The scope is intentionally bounded to the UK-resident, GBP-denominated period. Everything from `Julho 2014` through `Janeiro 2017` was recorded while living in Brazil, denominated in Reais (BRL), and using a distinct full-Portuguese-month-name sheet layout; that period is out of scope for this PRD and is not imported. The automated Resumo/Year summary for 2017 itself only starts at Fevereiro, confirming that boundary in the source data.
 
-Before CashFlow can be added, the existing Investments code needs an explicit identity of its own. Today's `Financial.Domain`/`Financial.Application`/`Financial.Infrastructure` projects carry no domain name, and a domain-agnostic JSON/Google-Drive storage engine lives entangled inside the Investments infrastructure project. This PRD's first feature renames those three projects to `Financial.Investment.Domain`/`.Application`/`.Infrastructure`, grouped under a new `Investment.DDD` solution folder alongside a new `CashFlow.DDD` folder for the projects this PRD adds, and extracts the shared storage engine into its own `Financial.Shared.Infrastructure` project inside a third `Shared.DDD` solution folder, so neither domain depends on the other's code.
+Before CashFlow can be added, the existing Investments code needs an explicit identity of its own. Today's `Financial.Domain`/`Financial.Application`/`Financial.Infrastructure` projects carry no domain name, and a domain-agnostic JSON/Google-Drive storage engine lives entangled inside the Investments infrastructure project. This PRD's first feature renames those three projects to `Financial.Investment.Domain`/`.Application`/`.Infrastructure`, grouped under a new `DDD/Investment` solution folder alongside a new `DDD/CashFlow` folder for the projects this PRD adds, and extracts the shared storage engine into its own `Financial.Shared.Infrastructure` project inside a third `DDD/Shared` solution folder, so neither domain depends on the other's code.
 
 Functionally, the product covers: categorized monthly expense tracking; the Reserva reserve pool with its automated tithe-then-split logic; five credit cards with a statement-paid reconciliation mechanic; Brasil/UK recurring bills generated from templates; a BRL/GBP family cash-flow ledger with automatic historical exchange-rate lookup; an 11-account monthly investment snapshot; and an automated yearly summary with month-over-month diffs. The Web app (React) ships first, presented through a new top-level Investments/CashFlow domain switcher that keeps the two bounded contexts visually and functionally separate; WPF parity is deferred to a follow-up PRD.
 
@@ -41,7 +41,7 @@ Functionally, the product covers: categorized monthly expense tracking; the Rese
 
 ### The Opportunity
 
-- No domain identity → **F01 renames and restructures first**: `Financial.Investment.*` under `Investment.DDD`, a new `CashFlow.DDD` folder ready for this PRD's projects, and a `Financial.Shared.Infrastructure` project holding only the domain-agnostic storage engine, referenced by both domains without either depending on the other
+- No domain identity → **F01 renames and restructures first**: `Financial.Investment.*` under `DDD/Investment`, a new `DDD/CashFlow` folder ready for this PRD's projects, and a `Financial.Shared.Infrastructure` project holding only the domain-agnostic storage engine, referenced by both domains without either depending on the other
 - Manual reserve math → **F05's automated split**: entering the month's four income fields (Salario Gleison, Salario Ariana, Lottery, Dividendo/Juros) computes and posts the full Dizimo-then-Limpo-thirds/sixths split across all 5 buckets atomically
 - Manual card reconciliation → **F04's structured per-card adjustment**: each card carries its own outstanding total and an explicit "mark statement paid" action, replacing the coincidental Ajuste cell
 - 9 years of evolving formats → **F10's format-tolerant importer**, built to parse every layout variant from February 2017 through 2026 into one canonical schema, preserving retired categories rather than dropping them
@@ -80,7 +80,7 @@ Functionally, the product covers: categorized monthly expense tracking; the Rese
 ## 5. User Stories
 
 ### F01. Investments Projects Rename & Domain Folder Restructuring
-- As the developer, I want the existing Investments code renamed to `Financial.Investment.*` and grouped under an `Investment.DDD` solution folder so that it reads as one of two symmetric bounded contexts instead of an unnamed default
+- As the developer, I want the existing Investments code renamed to `Financial.Investment.*` and grouped under a `DDD/Investment` solution folder so that it reads as one of two symmetric bounded contexts instead of an unnamed default
 - As the developer, I want the domain-agnostic JSON/Google-Drive storage engine extracted into its own `Financial.Shared.Infrastructure` project so that CashFlow can reuse it without duplicating file I/O code or depending on the Investments project
 
 ### F02. CashFlow Domain Model & Storage
@@ -148,8 +148,8 @@ Functionally, the product covers: categorized monthly expense tracking; the Rese
 
 **Capabilities:**
 - `Financial.Domain`, `Financial.Application`, and `Financial.Infrastructure` are renamed to `Financial.Investment.Domain`, `Financial.Investment.Application`, and `Financial.Investment.Infrastructure`; every namespace, using-statement, and project reference is updated across the solution (`Financial.Api`, `Financial.Web` build config, `Financial.App`, `Tests`)
-- The three renamed projects move into a new solution folder `Investment.DDD`; a new, initially empty solution folder `CashFlow.DDD` is created to hold the projects F02 adds
-- The domain-agnostic storage engine currently inside `Financial.Infrastructure/Persistence` (`IJsonStorage`, `LocalJsonStorage`, `GoogleDriveJsonStorage`, `IRemoteFileClient`, `IRemoteFileClientFactory`) is extracted into a new `Financial.Shared.Infrastructure` project, placed inside a third solution folder `Shared.DDD` (a sibling of `Investment.DDD`/`CashFlow.DDD`, not nested inside either), with zero knowledge of Investments or CashFlow types; `Financial.Investment.Infrastructure` references it instead of containing it directly
+- The three renamed projects move into a new solution folder `DDD/Investment`; a new, initially empty solution folder `DDD/CashFlow` is created to hold the projects F02 adds
+- The domain-agnostic storage engine currently inside `Financial.Infrastructure/Persistence` (`IJsonStorage`, `LocalJsonStorage`, `GoogleDriveJsonStorage`, `IRemoteFileClient`, `IRemoteFileClientFactory`) is extracted into a new `Financial.Shared.Infrastructure` project, placed inside a third solution folder `DDD/Shared` (a sibling of `DDD/Investment`/`DDD/CashFlow` under the same top-level `DDD` folder), with zero knowledge of Investments or CashFlow types; `Financial.Investment.Infrastructure` references it instead of containing it directly
 - Every other file currently in `Financial.Infrastructure` (`JSONRepository`, `RepositoryFactory`, `RepositoryProvider`, `RepositorySelectionOptions`, `InvestmentsLoader`, `InvestmentsSerializerAdapter`, `InvestmentsTypeInfoResolver`, `IInvestmentsSerializer`, `IAssetPriceFetcher`, `IFinanceService`, and the pricing/finance services) moves unchanged, aside from namespace, into `Financial.Investment.Infrastructure`, since each is bound to Investments-domain types
 - `Financial.slnx` is updated to reflect the new project names, paths, and solution folders; `.csproj` file names and file-system folder names for the three renamed projects are updated to match
 
@@ -167,7 +167,7 @@ Functionally, the product covers: categorized monthly expense tracking; the Rese
 - Investment snapshot storage abstraction (used by F08, F10)
 
 **Capabilities:**
-- New `Financial.CashFlow.Domain`/`.Application`/`.Infrastructure` projects are added inside the `CashFlow.DDD` solution folder (created by F01), layered identically to Investments (Domain has no framework/DB code; Application coordinates use cases; Infrastructure implements repository interfaces and references `Financial.Shared.Infrastructure` for its storage engine rather than duplicating it)
+- New `Financial.CashFlow.Domain`/`.Application`/`.Infrastructure` projects are added inside the `DDD/CashFlow` solution folder (created by F01), layered identically to Investments (Domain has no framework/DB code; Application coordinates use cases; Infrastructure implements repository interfaces and references `Financial.Shared.Infrastructure` for its storage engine rather than duplicating it)
 - A new `data-cashflow.json` file (separate from the Investments `data.json`) is persisted via the same repository-abstraction pattern (LocalJson/GoogleDrive, selectable via config)
 - The root schema holds six top-level collections: expenses, reserve ledger, card statements, recurring bill templates/instances, mae ledger, investment snapshots
 - `Category` is a hardcoded enum assembled as the superset of every category label observed across all 115 historical sheets (February 2017-2026) plus the current 14 (Ariana, Carro, Casa, Estudo, Extras, Familia, Gleison, Mercado, Samuel, Saude, Viagem, Dizimo, Investimento, Reserva); a category retired from current use remains valid for display on historical records already tagged with it, but is not offered when creating a new entry post-cutover
@@ -499,7 +499,7 @@ These features set up shared project infrastructure. In a greenfield project the
 ### Execution Waves
 Features within the same wave can be built in parallel. A wave starts only after every feature in earlier waves is complete.
 
-**Note:** Foundation features (see "Foundation Features" above) cannot run in parallel with each other in a greenfield sense — F01 must fully land before F02 starts (F02 depends on the `CashFlow.DDD` folder and `Financial.Shared.Infrastructure` project F01 creates), even though F01 and F11 appear together in Wave 1 since they don't depend on each other.
+**Note:** Foundation features (see "Foundation Features" above) cannot run in parallel with each other in a greenfield sense — F01 must fully land before F02 starts (F02 depends on the `DDD/CashFlow` folder and `Financial.Shared.Infrastructure` project F01 creates), even though F01 and F11 appear together in Wave 1 since they don't depend on each other.
 
 - **Wave 1**: F01, F11
 - **Wave 2**: F02
@@ -549,12 +549,12 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Investments Projects Rename & Domain Folder Restructuring
-- [ ] `Financial.Domain`, `Financial.Application`, and `Financial.Infrastructure` no longer exist under those names; `Financial.Investment.Domain`, `Financial.Investment.Application`, and `Financial.Investment.Infrastructure` exist in their place with all types under the corresponding renamed namespaces
-- [ ] `Financial.slnx` shows `Investment.DDD` containing the three renamed projects, an empty `CashFlow.DDD` solution folder, and a `Shared.DDD` solution folder containing `Financial.Shared.Infrastructure`
-- [ ] `IJsonStorage`, `LocalJsonStorage`, `GoogleDriveJsonStorage`, `IRemoteFileClient`, and `IRemoteFileClientFactory` live in a new `Financial.Shared.Infrastructure` project with no reference to any Investments type
-- [ ] `Financial.Investment.Infrastructure` references `Financial.Shared.Infrastructure` for storage rather than containing its own copy
-- [ ] The full existing test suite passes unmodified in behavior after only namespace/using-statement updates
-- [ ] `Financial.Api`, `Financial.Web`, and `Financial.App` build and run with no behavior change
+- [x] `Financial.Domain`, `Financial.Application`, and `Financial.Infrastructure` no longer exist under those names; `Financial.Investment.Domain`, `Financial.Investment.Application`, and `Financial.Investment.Infrastructure` exist in their place with all types under the corresponding renamed namespaces
+- [x] `Financial.slnx` shows a top-level `DDD` solution folder containing `DDD/Investment` (the three renamed projects), an empty `DDD/CashFlow`, and `DDD/Shared` (containing `Financial.Shared.Infrastructure`)
+- [x] `IJsonStorage`, `LocalJsonStorage`, `GoogleDriveJsonStorage`, `IRemoteFileClient`, and `IRemoteFileClientFactory` live in a new `Financial.Shared.Infrastructure` project with no reference to any Investments type
+- [x] `Financial.Investment.Infrastructure` references `Financial.Shared.Infrastructure` for storage rather than containing its own copy
+- [x] The full existing test suite passes unmodified in behavior after only namespace/using-statement updates
+- [x] `Financial.Api`, `Financial.Web`, and `Financial.App` build and run with no behavior change
 
 ### F02. CashFlow Domain Model & Storage
 - [ ] `data-cashflow.json` round-trips with all six top-level collections (expenses, reserve ledger, card statements, recurring bill templates/instances, mae ledger, investment snapshots)

@@ -1,4 +1,4 @@
-namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
+namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
 
 public class SpreadSheetDTO
 {

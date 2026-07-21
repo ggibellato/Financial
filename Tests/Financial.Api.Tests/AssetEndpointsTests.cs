@@ -1,5 +1,5 @@
-using Financial.Application.DTOs;
-using Financial.Domain.Entities;
+using Financial.Investment.Application.DTOs;
+using Financial.Investment.Domain.Entities;
 using FluentAssertions;
 using System.Net;
 using System.Net.Http.Json;

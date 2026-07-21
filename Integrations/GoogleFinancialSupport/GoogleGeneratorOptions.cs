@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 
 public sealed record GoogleGeneratorOptions(
     IReadOnlyList<string> IgnoreSheetNames,

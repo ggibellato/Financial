@@ -1,8 +1,8 @@
-using Financial.Domain.ValueObjects;
+using Financial.Investment.Domain.ValueObjects;
 using HtmlAgilityPack;
 using System.Globalization;
 
-namespace Financial.Infrastructure.Integrations.WebPageParser;
+namespace Financial.Investment.Infrastructure.Integrations.WebPageParser;
 
 public sealed class DadosMercadoDividend
 {

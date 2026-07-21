@@ -1,4 +1,4 @@
-using Financial.Application.Interfaces;
+using Financial.Investment.Application.Interfaces;
 
 namespace Financial.Presentation.App.ViewModels;
 

@@ -1,12 +1,12 @@
-using Financial.Application.Interfaces;
-using Financial.Domain.Entities;
-using Financial.Infrastructure.Persistence;
+using Financial.Investment.Domain.Entities;
+using Financial.Investment.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 
 public sealed class GoogleGenerator
 {

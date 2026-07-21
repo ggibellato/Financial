@@ -1,7 +1,7 @@
-<Application x:Class="Financial.Infrastructure.Integrations.ImportGoogleSpreadSheets.App"
+<Application x:Class="Financial.Investment.Infrastructure.Integrations.ImportGoogleSpreadSheets.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:Financial.Infrastructure.Integrations.ImportGoogleSpreadSheets"
+             xmlns:local="clr-namespace:Financial.Investment.Infrastructure.Integrations.ImportGoogleSpreadSheets"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>

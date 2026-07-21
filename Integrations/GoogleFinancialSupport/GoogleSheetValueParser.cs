@@ -1,6 +1,6 @@
 using Google.Apis.Sheets.v4.Data;
 
-namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 
 internal static class GoogleSheetValueParser
 {

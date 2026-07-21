@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Financial.Infrastructure.Integrations.ImportGoogleSpreadSheets.Properties {
+namespace Financial.Investment.Infrastructure.Integrations.ImportGoogleSpreadSheets.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]

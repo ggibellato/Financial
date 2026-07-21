@@ -1,9 +1,9 @@
-using Financial.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
-using Financial.Infrastructure.Persistence;
+using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
+using Financial.Shared.Infrastructure.Persistence;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 
 public sealed class GoogleService : IRemoteFileClient
 {

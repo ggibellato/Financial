@@ -1,10 +1,10 @@
-using Financial.Domain.Entities;
+using Financial.Investment.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 
 internal sealed class GoogleSheetsAssetReader
 {

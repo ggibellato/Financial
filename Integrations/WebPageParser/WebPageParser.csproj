@@ -4,8 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>Financial.Infrastructure.Integrations.WebPageParser</RootNamespace>
-    <AssemblyName>Financial.Infrastructure.Integrations.WebPageParser</AssemblyName>
+    <RootNamespace>Financial.Investment.Infrastructure.Integrations.WebPageParser</RootNamespace>
+    <AssemblyName>Financial.Investment.Infrastructure.Integrations.WebPageParser</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Financial.Domain\Financial.Domain.csproj" />
+    <ProjectReference Include="..\..\Financial.Investment.Domain\Financial.Investment.Domain.csproj" />
   </ItemGroup>
 </Project>
 

@@ -1,4 +1,4 @@
-using Financial.Application.Validation;
+using Financial.Investment.Application.Validation;
 
 namespace Financial.Presentation.App.ViewModels;
 

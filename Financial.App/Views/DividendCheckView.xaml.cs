@@ -1,4 +1,4 @@
-using Financial.Application.Configuration;
+using Financial.Investment.Application.Configuration;
 using Financial.Presentation.App.Helpers;
 using Microsoft.Extensions.Options;
 using System.Windows;

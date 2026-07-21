@@ -1,5 +1,5 @@
-using Financial.Application.Enums;
-using Financial.Application.Interfaces;
+using Financial.Investment.Application.Enums;
+using Financial.Investment.Application.Interfaces;
 
 namespace Financial.Presentation.App.ViewModels;
 

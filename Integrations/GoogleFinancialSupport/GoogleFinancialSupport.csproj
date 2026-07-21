@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <RootNamespace>Financial.Infrastructure.Integrations.GoogleFinancialSupport</RootNamespace>
-    <AssemblyName>Financial.Infrastructure.Integrations.GoogleFinancialSupport</AssemblyName>
+    <RootNamespace>Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport</RootNamespace>
+    <AssemblyName>Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,9 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Financial.Application\Financial.Application.csproj" />
-    <ProjectReference Include="..\..\Financial.Domain\Financial.Domain.csproj" />
-    <ProjectReference Include="..\..\Financial.Infrastructure\Financial.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Financial.Investment.Application\Financial.Investment.Application.csproj" />
+    <ProjectReference Include="..\..\Financial.Investment.Domain\Financial.Investment.Domain.csproj" />
+    <ProjectReference Include="..\..\Financial.Investment.Infrastructure\Financial.Investment.Infrastructure.csproj" />
     <ProjectReference Include="..\WebPageParser\WebPageParser.csproj" />
   </ItemGroup>
 

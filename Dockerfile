@@ -13,18 +13,20 @@ WORKDIR /src
 
 COPY Financial.slnx .
 COPY Financial.Api/Financial.Api.csproj Financial.Api/
-COPY Financial.Application/Financial.Application.csproj Financial.Application/
-COPY Financial.Domain/Financial.Domain.csproj Financial.Domain/
-COPY Financial.Infrastructure/Financial.Infrastructure.csproj Financial.Infrastructure/
+COPY Financial.Investment.Application/Financial.Investment.Application.csproj Financial.Investment.Application/
+COPY Financial.Investment.Domain/Financial.Investment.Domain.csproj Financial.Investment.Domain/
+COPY Financial.Investment.Infrastructure/Financial.Investment.Infrastructure.csproj Financial.Investment.Infrastructure/
+COPY Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj Financial.Shared.Infrastructure/
 COPY Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj Integrations/GoogleFinancialSupport/
 COPY Integrations/WebPageParser/WebPageParser.csproj Integrations/WebPageParser/
 
 RUN dotnet restore Financial.Api/Financial.Api.csproj
 
 COPY Financial.Api/ Financial.Api/
-COPY Financial.Application/ Financial.Application/
-COPY Financial.Domain/ Financial.Domain/
-COPY Financial.Infrastructure/ Financial.Infrastructure/
+COPY Financial.Investment.Application/ Financial.Investment.Application/
+COPY Financial.Investment.Domain/ Financial.Investment.Domain/
+COPY Financial.Investment.Infrastructure/ Financial.Investment.Infrastructure/
+COPY Financial.Shared.Infrastructure/ Financial.Shared.Infrastructure/
 COPY Integrations/GoogleFinancialSupport/ Integrations/GoogleFinancialSupport/
 COPY Integrations/WebPageParser/ Integrations/WebPageParser/
 

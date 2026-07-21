@@ -1,7 +1,7 @@
-using Financial.Application.DTOs;
-using Financial.Application.Enums;
-using Financial.Application.Interfaces;
-using Financial.Application.Services;
+using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
+using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Application.Services;
 using Financial.Presentation.App.ViewModels;
 using FluentAssertions;
 
@@ -73,8 +73,8 @@ public class AssetDetailsViewModelBrokerSummaryTests
         {
             Name = "Asset A", BrokerName = "XPI", PortfolioName = "Portfolio",
             Ticker = "T", ISIN = "US1234567890", Exchange = "LSE",
-            Country = Financial.Domain.Entities.CountryCode.Unknown,
-            LocalTypeCode = "", Class = Financial.Domain.Entities.GlobalAssetClass.Unknown,
+            Country = Financial.Investment.Domain.Entities.CountryCode.Unknown,
+            LocalTypeCode = "", Class = Financial.Investment.Domain.Entities.GlobalAssetClass.Unknown,
             Quantity = 10m, AveragePrice = 50m,
             TotalBought = 500m, TotalSold = 0m, TotalCredits = 0m,
             Transactions = [], Credits = []
@@ -116,8 +116,8 @@ public class AssetDetailsViewModelBrokerSummaryTests
         {
             Name = "Asset A", BrokerName = "XPI", PortfolioName = "Portfolio",
             Ticker = "T", ISIN = "", Exchange = "LSE",
-            Country = Financial.Domain.Entities.CountryCode.Unknown,
-            LocalTypeCode = "", Class = Financial.Domain.Entities.GlobalAssetClass.Unknown,
+            Country = Financial.Investment.Domain.Entities.CountryCode.Unknown,
+            LocalTypeCode = "", Class = Financial.Investment.Domain.Entities.GlobalAssetClass.Unknown,
             Quantity = 0m, AveragePrice = 0m,
             TotalBought = 0m, TotalSold = 0m, TotalCredits = 0m,
             Transactions = [], Credits = []
@@ -277,8 +277,8 @@ public class AssetDetailsViewModelBrokerSummaryTests
         {
             Name = "Asset A", BrokerName = "XPI", PortfolioName = "Portfolio",
             Ticker = "T", ISIN = "", Exchange = "LSE",
-            Country = Financial.Domain.Entities.CountryCode.Unknown,
-            LocalTypeCode = "", Class = Financial.Domain.Entities.GlobalAssetClass.Unknown,
+            Country = Financial.Investment.Domain.Entities.CountryCode.Unknown,
+            LocalTypeCode = "", Class = Financial.Investment.Domain.Entities.GlobalAssetClass.Unknown,
             Quantity = 0m, AveragePrice = 0m,
             TotalBought = 0m, TotalSold = 0m, TotalCredits = 0m,
             Transactions = [], Credits = []

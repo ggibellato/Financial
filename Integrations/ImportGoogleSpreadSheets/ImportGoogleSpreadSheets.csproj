@@ -6,15 +6,15 @@
     <UseWPF>true</UseWPF>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <ApplicationIcon>app.ico</ApplicationIcon>
-    <RootNamespace>Financial.Infrastructure.Integrations.ImportGoogleSpreadSheets</RootNamespace>
-    <AssemblyName>Financial.Infrastructure.Integrations.ImportGoogleSpreadSheets</AssemblyName>
+    <RootNamespace>Financial.Investment.Infrastructure.Integrations.ImportGoogleSpreadSheets</RootNamespace>
+    <AssemblyName>Financial.Investment.Infrastructure.Integrations.ImportGoogleSpreadSheets</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="import.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GoogleFinancialSupport\GoogleFinancialSupport.csproj" />
-    <ProjectReference Include="..\..\Financial.Infrastructure\Financial.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Financial.Investment.Infrastructure\Financial.Investment.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />

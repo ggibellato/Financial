@@ -1,7 +1,7 @@
-using Financial.Application.DTOs;
-using Financial.Application.Enums;
-using Financial.Application.Interfaces;
-using Financial.Domain.Entities;
+using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
+using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Domain.Entities;
 using Financial.Presentation.App.Helpers;
 using OxyPlot;
 using System.Collections.ObjectModel;
@@ -707,7 +707,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
                 try
                 {
                     if (cancellationToken.IsCancellationRequested) return;
-                    var price = _assetPriceService.GetCurrentPrice(new Application.DTOs.AssetPriceRequestDTO
+                    var price = _assetPriceService.GetCurrentPrice(new AssetPriceRequestDTO
                     {
                         Exchange = capturedRow.Exchange,
                         Ticker = capturedRow.Ticker,

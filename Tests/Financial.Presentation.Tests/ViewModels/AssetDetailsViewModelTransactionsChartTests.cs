@@ -1,6 +1,6 @@
-using Financial.Application.DTOs;
-using Financial.Application.Interfaces;
-using Financial.Application.Services;
+using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Application.Services;
 using Financial.Presentation.App.Helpers;
 using Financial.Presentation.App.ViewModels;
 using FluentAssertions;
@@ -31,9 +31,9 @@ public class AssetDetailsViewModelTransactionsChartTests
         Ticker = "BBAS3",
         ISIN = "",
         Exchange = "BVMF",
-        Country = Financial.Domain.Entities.CountryCode.Unknown,
+        Country = Financial.Investment.Domain.Entities.CountryCode.Unknown,
         LocalTypeCode = "",
-        Class = Financial.Domain.Entities.GlobalAssetClass.Unknown,
+        Class = Financial.Investment.Domain.Entities.GlobalAssetClass.Unknown,
         Quantity = 100m,
         AveragePrice = 20m,
         TotalBought = 2000m,

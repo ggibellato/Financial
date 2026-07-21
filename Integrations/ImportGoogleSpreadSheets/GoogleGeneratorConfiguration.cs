@@ -1,7 +1,7 @@
-using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 using System.Collections.Generic;
 
-namespace Financial.Infrastructure.Integrations.ImportGoogleSpreadSheets;
+namespace Financial.Investment.Infrastructure.Integrations.ImportGoogleSpreadSheets;
 
 internal static class GoogleGeneratorConfiguration
 {

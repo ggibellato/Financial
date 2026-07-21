@@ -1,4 +1,4 @@
-using Financial.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
+using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
 using Google.Apis.Drive.v3;
 using Google.Apis.Upload;
 using System;
@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 
 internal sealed class GoogleDriveClient
 {

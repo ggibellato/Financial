@@ -2,7 +2,7 @@ using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using System.IO;
 
-namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 
 internal sealed class GoogleCredentialFactory
 {

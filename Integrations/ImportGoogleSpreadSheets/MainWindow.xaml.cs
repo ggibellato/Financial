@@ -1,11 +1,11 @@
-using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
-using Financial.Infrastructure.Persistence;
+using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Investment.Infrastructure.Persistence;
 using System;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
 
-namespace Financial.Infrastructure.Integrations.ImportGoogleSpreadSheets;
+namespace Financial.Investment.Infrastructure.Integrations.ImportGoogleSpreadSheets;
 
 public partial class MainWindow : Window
 {

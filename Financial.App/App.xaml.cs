@@ -1,7 +1,7 @@
-using Financial.Application.Configuration;
-using Financial.Application.DependencyInjection;
-using Financial.Infrastructure.DependencyInjection;
-using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Investment.Application.Configuration;
+using Financial.Investment.Application.DependencyInjection;
+using Financial.Investment.Infrastructure.DependencyInjection;
+using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Presentation.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -41,8 +41,8 @@ namespace Financial.Presentation.App
                     services.AddTransient<MainNavigationViewModelHistoric>();
                     services.AddTransient<DividendCheckViewModel>();
                     services.AddTransient<AssetPriceFetchViewModel>(sp => new AssetPriceFetchViewModel(
-                        sp.GetRequiredService<Financial.Application.Interfaces.INavigationService>(),
-                        sp.GetRequiredService<Financial.Application.Interfaces.IAssetPriceService>(),
+                        sp.GetRequiredService<Financial.Investment.Application.Interfaces.INavigationService>(),
+                        sp.GetRequiredService<Financial.Investment.Application.Interfaces.IAssetPriceService>(),
                         sp.GetRequiredService<IOptions<AssetPriceFetchOptions>>(),
                         msg => MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error)));
                     services.AddTransient<DividendCheckView>();
