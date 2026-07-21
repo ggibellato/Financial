@@ -2,9 +2,9 @@
 
 ## 1. Technical Overview
 
-**What:** Rename the three unnamed core projects (`Financial.Domain`, `Financial.Application`, `Financial.Infrastructure`) to `Financial.Investment.Domain`, `Financial.Investment.Application`, and `Financial.Investment.Infrastructure`, group them under a new `Investment.DDD` solution folder, create an empty `CashFlow.DDD` solution folder for P11's later features, and extract the domain-agnostic JSON/Google-Drive storage engine into a new `Financial.Shared.Infrastructure` project under a `Shared.DDD` solution folder.
+**What:** Rename the three unnamed core projects (`Financial.Domain`, `Financial.Application`, `Financial.Infrastructure`) to `Financial.Investment.Domain`, `Financial.Investment.Application`, and `Financial.Investment.Infrastructure`, group them under a new `DDD/Investment` solution folder, create an empty `DDD/CashFlow` solution folder for P11's later features, and extract the domain-agnostic JSON/Google-Drive storage engine into a new `Financial.Shared.Infrastructure` project under a `DDD/Shared` solution folder.
 
-**Why:** Every subsequent P11 feature (F02 onward) needs a `CashFlow.DDD` folder and a storage engine neither domain owns. Today the storage engine (`IJsonStorage`, `LocalJsonStorage`, `GoogleDriveJsonStorage`, `IRemoteFileClient`, `IRemoteFileClientFactory`) is entangled inside `Financial.Infrastructure`, so `Financial.CashFlow.Infrastructure` would otherwise have to either duplicate it or take a cross-domain dependency on `Financial.Investment.Infrastructure` — both forbidden by this project's Clean Architecture rules. This feature is purely structural: no business logic, API surface, or persisted data shape changes.
+**Why:** Every subsequent P11 feature (F02 onward) needs a `DDD/CashFlow` folder and a storage engine neither domain owns. Today the storage engine (`IJsonStorage`, `LocalJsonStorage`, `GoogleDriveJsonStorage`, `IRemoteFileClient`, `IRemoteFileClientFactory`) is entangled inside `Financial.Infrastructure`, so `Financial.CashFlow.Infrastructure` would otherwise have to either duplicate it or take a cross-domain dependency on `Financial.Investment.Infrastructure` — both forbidden by this project's Clean Architecture rules. This feature is purely structural: no business logic, API surface, or persisted data shape changes.
 
 **Scope:**
 - Included: renaming/moving the 3 core projects and their ~250 consuming files' namespaces/usings; extracting the storage engine into `Financial.Shared.Infrastructure`; renaming the 3 matching test projects and creating `Financial.Shared.Infrastructure.Tests`; updating `Financial.slnx`, the 3 Integrations projects' namespaces/project references, and the `Dockerfile`.
@@ -36,7 +36,7 @@ graph TD
   F --> A
   F --> D
   G["Integrations: ImportGoogleSpreadSheets"] --> C
-  H["CashFlow.DDD (empty, F02+)"] -.-> D
+  H["DDD/CashFlow (empty, F02+)"] -.-> D
 ```
 
 ## 3. Technical Decisions
@@ -80,7 +80,7 @@ graph TD
 | `Integrations/ImportGoogleSpreadSheets/*.cs`, `.csproj` | Modified | Historical spreadsheet import console tool | `RootNamespace`/`AssemblyName` → `Financial.Investment.Infrastructure.Integrations.ImportGoogleSpreadSheets`; `ProjectReference` repointed |
 | `Integrations/WebPageParser/*.cs`, `.csproj` | Modified | Web scraping helper | `RootNamespace`/`AssemblyName` → `Financial.Investment.Infrastructure.Integrations.WebPageParser` |
 | `Dockerfile` | Modified | Multi-stage build | `COPY` paths repointed to `Financial.Investment.*` and new `Financial.Shared.Infrastructure` |
-| `Financial.slnx` | Modified | Solution structure | `/DDD/` folder replaced by `/Investment.DDD/` (3 renamed projects), empty `/CashFlow.DDD/`, `/Shared.DDD/` (`Financial.Shared.Infrastructure`) |
+| `Financial.slnx` | Modified | Solution structure | `/DDD/` restructured into 3 nested subfolders: `/DDD/Investment/` (3 renamed projects), empty `/DDD/CashFlow/`, `/DDD/Shared/` (`Financial.Shared.Infrastructure`) |
 
 **Backend — test projects:**
 
@@ -115,11 +115,11 @@ N/A — no change to `data.json`'s schema, location, or serialization format. `I
 
 **Acceptance tests (from PRD Section 9, F01):**
 - Building the solution finds zero references to `Financial.Domain`, `Financial.Application`, `Financial.Infrastructure` namespaces anywhere.
-- `Financial.slnx` shows `Investment.DDD` (3 renamed projects), empty `CashFlow.DDD`, and `Shared.DDD` (`Financial.Shared.Infrastructure`).
+- `Financial.slnx` shows `DDD/Investment` (3 renamed projects), empty `DDD/CashFlow`, and `DDD/Shared` (`Financial.Shared.Infrastructure`).
 - `IJsonStorage`, `LocalJsonStorage`, `GoogleDriveJsonStorage`, `IRemoteFileClient`, `IRemoteFileClientFactory` compile inside `Financial.Shared.Infrastructure` with zero reference to any Investments type.
 - `Financial.Investment.Infrastructure.csproj` has a `ProjectReference` to `Financial.Shared.Infrastructure.csproj` and contains no local copy of the storage engine files.
 - Full existing test suite (`dotnet test` across all Tests projects) passes with the same pass/fail outcome as before the rename.
 - `Financial.Api`, `Financial.Web` (served by `Financial.Api`), and `Financial.App` build and run with no behavior change (manual smoke: load the app, confirm existing Investments tabs render data as before).
 
 **Cross-Feature Integration tests (from PRD Section 9):**
-- "The `Financial.Investment.Infrastructure` project created by F01 builds and runs correctly referencing `Financial.Shared.Infrastructure`, and F02's `Financial.CashFlow.Infrastructure` references the same shared project without duplication" — the second half is verified when F02 lands; F01's slice is that `Financial.Investment.Infrastructure` builds cleanly against `Financial.Shared.Infrastructure` with `CashFlow.DDD` present and empty.
+- "The `Financial.Investment.Infrastructure` project created by F01 builds and runs correctly referencing `Financial.Shared.Infrastructure`, and F02's `Financial.CashFlow.Infrastructure` references the same shared project without duplication" — the second half is verified when F02 lands; F01's slice is that `Financial.Investment.Infrastructure` builds cleanly against `Financial.Shared.Infrastructure` with `DDD/CashFlow` present and empty.
