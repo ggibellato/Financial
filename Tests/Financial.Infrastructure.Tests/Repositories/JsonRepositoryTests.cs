@@ -1,5 +1,5 @@
-using Financial.Application.Enums;
-using Financial.Domain.Entities;
+using Financial.Investment.Application.Enums;
+using Financial.Investment.Domain.Entities;
 using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
 using FluentAssertions;

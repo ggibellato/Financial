@@ -1,4 +1,4 @@
-using Financial.Domain.ValueObjects;
+using Financial.Investment.Domain.ValueObjects;
 using Financial.Infrastructure.DTOs;
 using Financial.Infrastructure.Integrations.WebPageParser;
 using Financial.Infrastructure.Interfaces;

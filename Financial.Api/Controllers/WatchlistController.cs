@@ -1,4 +1,4 @@
-using Financial.Application.Configuration;
+using Financial.Investment.Application.Configuration;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 

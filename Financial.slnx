@@ -1,7 +1,7 @@
 <Solution>
 	<Folder Name="/DDD/">
-		<Project Path="Financial.Application/Financial.Application.csproj" />
-<Project Path="Financial.Domain/Financial.Domain.csproj" />
+		<Project Path="Financial.Investment.Application/Financial.Investment.Application.csproj" />
+		<Project Path="Financial.Investment.Domain/Financial.Investment.Domain.csproj" />
 		<Project Path="Financial.Infrastructure/Financial.Infrastructure.csproj" />
 	</Folder>
 	<Folder Name="/Integrations/">
@@ -10,9 +10,9 @@
 		<Project Path="Integrations/WebPageParser/WebPageParser.csproj" />
 	</Folder>
 	<Folder Name="/Tests/">
-		<Project Path="Tests/Financial.Application.Tests/Financial.Application.Tests.csproj" />
+		<Project Path="Tests/Financial.Investment.Application.Tests/Financial.Investment.Application.Tests.csproj" />
 		<Project Path="Tests/Financial.Api.Tests/Financial.Api.Tests.csproj" />
-		<Project Path="Tests/Financial.Domain.Tests/Financial.Domain.Tests.csproj" />
+		<Project Path="Tests/Financial.Investment.Domain.Tests/Financial.Investment.Domain.Tests.csproj" />
 		<Project Path="Tests/Financial.Infrastructure.Tests/Financial.Infrastructure.Tests.csproj" />
 		<Project Path="Tests/Financial.Presentation.Tests/Financial.Presentation.Tests.csproj" />
 	</Folder>

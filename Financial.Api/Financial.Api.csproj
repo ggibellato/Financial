@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Financial.Application\Financial.Application.csproj" />
+    <ProjectReference Include="..\Financial.Investment.Application\Financial.Investment.Application.csproj" />
     <ProjectReference Include="..\Financial.Infrastructure\Financial.Infrastructure.csproj" />
     <ProjectReference Include="..\Integrations\GoogleFinancialSupport\GoogleFinancialSupport.csproj" />
   </ItemGroup>

@@ -1,4 +1,4 @@
-using Financial.Domain.Entities;
+using Financial.Investment.Domain.Entities;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 

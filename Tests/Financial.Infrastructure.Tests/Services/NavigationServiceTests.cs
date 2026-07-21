@@ -1,7 +1,7 @@
-using Financial.Application.DTOs;
-using Financial.Application.Interfaces;
-using Financial.Application.Services;
-using Financial.Domain.Entities;
+using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Application.Services;
+using Financial.Investment.Domain.Entities;
 using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
 using FluentAssertions;

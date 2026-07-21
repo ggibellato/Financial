@@ -1,6 +1,6 @@
-using Financial.Application.DTOs;
-using Financial.Application.Interfaces;
-using Financial.Application.Validation;
+using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Application.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Controllers;

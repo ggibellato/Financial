@@ -1,4 +1,4 @@
-using Financial.Domain.ValueObjects;
+using Financial.Investment.Domain.ValueObjects;
 using Financial.Infrastructure.DTOs;
 
 namespace Financial.Infrastructure.Interfaces;

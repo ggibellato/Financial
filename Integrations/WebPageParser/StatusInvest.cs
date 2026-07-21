@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
-using Financial.Domain.ValueObjects;
+using Financial.Investment.Domain.ValueObjects;
 using HtmlAgilityPack;
 
 namespace Financial.Infrastructure.Integrations.WebPageParser;

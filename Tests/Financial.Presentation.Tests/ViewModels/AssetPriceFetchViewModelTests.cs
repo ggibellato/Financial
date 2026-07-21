@@ -1,8 +1,8 @@
-using Financial.Application.Configuration;
-using Financial.Application.DTOs;
-using Financial.Application.Enums;
-using Financial.Application.Interfaces;
-using Financial.Domain.Entities;
+using Financial.Investment.Application.Configuration;
+using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
+using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Domain.Entities;
 using Financial.Presentation.App.ViewModels;
 using FluentAssertions;
 using Microsoft.Extensions.Options;

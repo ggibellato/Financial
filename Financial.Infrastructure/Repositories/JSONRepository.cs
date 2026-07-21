@@ -1,6 +1,6 @@
-using Financial.Application.Enums;
-using Financial.Application.Interfaces;
-using Financial.Domain.Entities;
+using Financial.Investment.Application.Enums;
+using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Domain.Entities;
 using Financial.Infrastructure.Persistence;
 
 namespace Financial.Infrastructure.Repositories;

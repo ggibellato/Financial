@@ -1,4 +1,4 @@
-using Financial.Domain.ValueObjects;
+using Financial.Investment.Domain.ValueObjects;
 using HtmlAgilityPack;
 using System.Globalization;
 

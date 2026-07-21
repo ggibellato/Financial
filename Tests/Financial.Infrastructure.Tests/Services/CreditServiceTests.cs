@@ -1,5 +1,5 @@
-using Financial.Application.DTOs;
-using Financial.Application.Services;
+using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Services;
 using Financial.Infrastructure.Persistence;
 using Financial.Infrastructure.Repositories;
 using FluentAssertions;

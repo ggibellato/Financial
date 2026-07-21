@@ -1,5 +1,5 @@
-using Financial.Application.Configuration;
-using Financial.Application.DependencyInjection;
+using Financial.Investment.Application.Configuration;
+using Financial.Investment.Application.DependencyInjection;
 using Financial.Infrastructure.DependencyInjection;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
 using Serilog;

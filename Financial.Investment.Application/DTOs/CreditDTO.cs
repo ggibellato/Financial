@@ -1,0 +1,28 @@
+namespace Financial.Investment.Application.DTOs;
+
+/// <summary>
+/// Represents a credit entry (dividend or rent) for an asset
+/// </summary>
+public class CreditDTO
+{
+    /// <summary>
+    /// Credit identifier
+    /// </summary>
+    public Guid Id { get; set; }
+
+    /// <summary>
+    /// Date the credit was received
+    /// </summary>
+    public DateTime Date { get; set; }
+
+    /// <summary>
+    /// Type of credit (Dividend or Rent)
+    /// </summary>
+    public required string Type { get; set; }
+
+    /// <summary>
+    /// Credit amount
+    /// </summary>
+    public decimal Value { get; set; }
+}
+

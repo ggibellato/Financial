@@ -1,4 +1,4 @@
-using Financial.Application.DTOs;
+using Financial.Investment.Application.DTOs;
 using FluentAssertions;
 using System.Net;
 using System.Net.Http.Json;

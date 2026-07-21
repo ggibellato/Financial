@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Financial.Application\Financial.Application.csproj" />
-    <ProjectReference Include="..\Financial.Domain\Financial.Domain.csproj" />
+    <ProjectReference Include="..\Financial.Investment.Application\Financial.Investment.Application.csproj" />
+    <ProjectReference Include="..\Financial.Investment.Domain\Financial.Investment.Domain.csproj" />
     <ProjectReference Include="..\Integrations\WebPageParser\WebPageParser.csproj" />
   </ItemGroup>
 

@@ -1,4 +1,4 @@
-using Financial.Domain.Entities;
+using Financial.Investment.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;

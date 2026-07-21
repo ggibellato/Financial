@@ -1,5 +1,5 @@
-using Financial.Application.DTOs;
-using Financial.Application.Interfaces;
+using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Interfaces;
 using Financial.Presentation.App.ViewModels;
 using FluentAssertions;
 using System.Windows;

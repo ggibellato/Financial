@@ -1,4 +1,4 @@
-using Financial.Domain.Entities;
+using Financial.Investment.Domain.Entities;
 using Financial.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
 using System;
 using System.Linq;

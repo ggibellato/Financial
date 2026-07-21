@@ -1,5 +1,5 @@
 using Financial.Api.Controllers;
-using Financial.Application.Configuration;
+using Financial.Investment.Application.Configuration;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;

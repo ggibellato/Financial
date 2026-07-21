@@ -1,4 +1,4 @@
-using Financial.Application.DTOs;
+using Financial.Investment.Application.DTOs;
 
 namespace Financial.Presentation.App.ViewModels;
 

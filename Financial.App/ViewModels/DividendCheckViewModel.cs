@@ -1,7 +1,7 @@
-using Financial.Application.Configuration;
-using Financial.Application.DTOs;
-using Financial.Application.Interfaces;
-using Financial.Domain.Rules;
+using Financial.Investment.Application.Configuration;
+using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Domain.Rules;
 using Microsoft.Extensions.Options;
 using System.Collections.ObjectModel;
 

@@ -1,5 +1,5 @@
-using Financial.Application.Configuration;
-using Financial.Application.Interfaces;
+using Financial.Investment.Application.Configuration;
+using Financial.Investment.Application.Interfaces;
 using Financial.Infrastructure.Configuration;
 using Financial.Infrastructure.Interfaces;
 using Financial.Infrastructure.Persistence;

@@ -1,4 +1,4 @@
-using Financial.Domain.Entities;
+using Financial.Investment.Domain.Entities;
 
 namespace Financial.Infrastructure.Persistence;
 

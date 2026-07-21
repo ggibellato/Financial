@@ -1,6 +1,6 @@
-using Financial.Application.Configuration;
-using Financial.Application.DTOs;
-using Financial.Application.Interfaces;
+using Financial.Investment.Application.Configuration;
+using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
