@@ -1,5 +1,5 @@
 using Financial.Domain.ValueObjects;
-using Financial.Infrastructure.Interfaces;
+using Financial.Infrastructure.DTOs;
 using Financial.Infrastructure.Services;
 using FluentAssertions;
 
@@ -11,7 +11,7 @@ public class GoogleFinanceServiceTests
     public void GetAssetValue_BlankTicker_ThrowsArgumentException()
     {
         var service = new GoogleFinanceService();
-        var request = new AssetValueRequest { Exchange = "BVMF", Ticker = "" };
+        var request = new AssetValueRequestDTO { Exchange = "BVMF", Ticker = "" };
 
         Action act = () => service.GetAssetValue(request);
 
@@ -22,7 +22,7 @@ public class GoogleFinanceServiceTests
     public void GetAssetValue_NeitherExchangeNorCurrencyProvided_ThrowsArgumentException()
     {
         var service = new GoogleFinanceService();
-        var request = new AssetValueRequest { Ticker = "BCIA11" };
+        var request = new AssetValueRequestDTO { Ticker = "BCIA11" };
 
         Action act = () => service.GetAssetValue(request);
 
@@ -52,7 +52,7 @@ public class GoogleFinanceServiceTests
         var service = new GoogleFinanceService(
             (exchange, ticker) => exchange == "BVMF" && ticker == "BCIA11" ? snapshot : throw new InvalidOperationException(),
             (_, _) => throw new InvalidOperationException("crypto lookup should not be called"));
-        var request = new AssetValueRequest { Exchange = "BVMF", Ticker = "BCIA11" };
+        var request = new AssetValueRequestDTO { Exchange = "BVMF", Ticker = "BCIA11" };
 
         var result = service.GetAssetValue(request);
 
@@ -66,7 +66,7 @@ public class GoogleFinanceServiceTests
         var service = new GoogleFinanceService(
             (_, _) => throw new InvalidOperationException("exchange lookup should not be called"),
             (currency, ticker) => currency == "GBP" && ticker == "BTC" ? snapshot : throw new InvalidOperationException());
-        var request = new AssetValueRequest { Currency = "GBP", Ticker = "BTC" };
+        var request = new AssetValueRequestDTO { Currency = "GBP", Ticker = "BTC" };
 
         var result = service.GetAssetValue(request);
 

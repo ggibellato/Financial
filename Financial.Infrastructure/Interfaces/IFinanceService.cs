@@ -1,8 +1,9 @@
 using Financial.Domain.ValueObjects;
+using Financial.Infrastructure.DTOs;
 
 namespace Financial.Infrastructure.Interfaces;
 
 public interface IFinanceService
 {
-    AssetValueSnapshot GetAssetValue(AssetValueRequest request);
+    AssetValueSnapshot GetAssetValue(AssetValueRequestDTO request);
 }

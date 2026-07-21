@@ -1,4 +1,5 @@
 using Financial.Domain.ValueObjects;
+using Financial.Infrastructure.DTOs;
 using Financial.Infrastructure.Integrations.WebPageParser;
 using Financial.Infrastructure.Interfaces;
 
@@ -22,7 +23,7 @@ public sealed class GoogleFinanceService : IFinanceService
         _cryptoLookup = cryptoLookup ?? throw new ArgumentNullException(nameof(cryptoLookup));
     }
 
-    public AssetValueSnapshot GetAssetValue(AssetValueRequest request)
+    public AssetValueSnapshot GetAssetValue(AssetValueRequestDTO request)
     {
         if (string.IsNullOrWhiteSpace(request.Ticker))
         {

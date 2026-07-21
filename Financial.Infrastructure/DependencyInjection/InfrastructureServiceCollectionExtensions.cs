@@ -31,7 +31,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<StatusInvestFinanceService>();
         services.AddSingleton<IAssetPriceFetcher, StandardAssetPriceFetcher>();
         services.AddSingleton<IAssetPriceFetcher, CryptocurrencyAssetPriceFetcher>();
-        services.AddSingleton<IAssetPriceFetcher, BondAssetPriceFetcher>();
+        services.AddSingleton<IAssetPriceFetcher>(sp =>
+            new BondAssetPriceFetcher(sp.GetRequiredService<StatusInvestFinanceService>()));
         services.AddSingleton<IRepository>(sp =>
         {
             var settings = sp.GetRequiredService<IOptions<RepositorySettingsOptions>>().Value;

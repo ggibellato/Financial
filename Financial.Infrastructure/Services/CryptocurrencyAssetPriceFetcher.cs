@@ -2,6 +2,7 @@ using Financial.Application.DTOs;
 using Financial.Application.Interfaces;
 using Financial.Domain.Entities;
 using Financial.Domain.ValueObjects;
+using Financial.Infrastructure.DTOs;
 using Financial.Infrastructure.Interfaces;
 
 namespace Financial.Infrastructure.Services;
@@ -27,7 +28,7 @@ public sealed class CryptocurrencyAssetPriceFetcher : IAssetPriceFetcher
         }
 
         var currency = ResolveBrokerCurrency(_repository.GetBrokerList(), request.BrokerName);
-        return _financeService.GetAssetValue(new AssetValueRequest { Currency = currency, Ticker = request.Ticker });
+        return _financeService.GetAssetValue(new AssetValueRequestDTO { Currency = currency, Ticker = request.Ticker });
     }
 
     internal static string ResolveBrokerCurrency(IEnumerable<Broker> brokers, string brokerName)

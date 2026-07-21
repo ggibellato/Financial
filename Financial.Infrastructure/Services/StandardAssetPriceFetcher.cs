@@ -1,6 +1,7 @@
 using Financial.Application.DTOs;
 using Financial.Domain.Entities;
 using Financial.Domain.ValueObjects;
+using Financial.Infrastructure.DTOs;
 using Financial.Infrastructure.Interfaces;
 
 namespace Financial.Infrastructure.Services;
@@ -23,6 +24,6 @@ public sealed class StandardAssetPriceFetcher : IAssetPriceFetcher
             throw new ArgumentException("Exchange is required.", nameof(request));
         }
 
-        return _financeService.GetAssetValue(new AssetValueRequest { Exchange = request.Exchange, Ticker = request.Ticker });
+        return _financeService.GetAssetValue(new AssetValueRequestDTO { Exchange = request.Exchange, Ticker = request.Ticker });
     }
 }
