@@ -605,9 +605,9 @@ graph TD
 - [ ] Re-running the import against a freshly emptied `data-cashflow.json` produces the same result as the first run
 
 ### F11. Web — App Shell: Investments/CashFlow Domain Switcher
-- [ ] The top-level switcher shows exactly 2 options: Investments and CashFlow
-- [ ] Selecting Investments shows only the existing Investments tabs, unchanged in behavior
-- [ ] Selecting CashFlow shows only the 6 CashFlow tabs (Monthly, Reserva, Mensais, Controle Mae, Investment Snapshots, Yearly Summary)
+- [x] The top-level switcher shows exactly 2 options: Investments and CashFlow
+- [x] Selecting Investments shows only the existing Investments tabs, unchanged in behavior
+- [x] Selecting CashFlow shows only the 6 CashFlow tabs (Monthly, Reserva, Mensais, Controle Mae, Investment Snapshots, Yearly Summary)
 
 ### F12. Web — Monthly View
 - [ ] The view shows the selected month's categorized expenses and all 5 cards' outstanding totals and combined adjustment figure together
