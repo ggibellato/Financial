@@ -549,12 +549,12 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Investments Projects Rename & Domain Folder Restructuring
-- [ ] `Financial.Domain`, `Financial.Application`, and `Financial.Infrastructure` no longer exist under those names; `Financial.Investment.Domain`, `Financial.Investment.Application`, and `Financial.Investment.Infrastructure` exist in their place with all types under the corresponding renamed namespaces
-- [ ] `Financial.slnx` shows `Investment.DDD` containing the three renamed projects, an empty `CashFlow.DDD` solution folder, and a `Shared.DDD` solution folder containing `Financial.Shared.Infrastructure`
-- [ ] `IJsonStorage`, `LocalJsonStorage`, `GoogleDriveJsonStorage`, `IRemoteFileClient`, and `IRemoteFileClientFactory` live in a new `Financial.Shared.Infrastructure` project with no reference to any Investments type
-- [ ] `Financial.Investment.Infrastructure` references `Financial.Shared.Infrastructure` for storage rather than containing its own copy
-- [ ] The full existing test suite passes unmodified in behavior after only namespace/using-statement updates
-- [ ] `Financial.Api`, `Financial.Web`, and `Financial.App` build and run with no behavior change
+- [x] `Financial.Domain`, `Financial.Application`, and `Financial.Infrastructure` no longer exist under those names; `Financial.Investment.Domain`, `Financial.Investment.Application`, and `Financial.Investment.Infrastructure` exist in their place with all types under the corresponding renamed namespaces
+- [x] `Financial.slnx` shows `Investment.DDD` containing the three renamed projects, an empty `CashFlow.DDD` solution folder, and a `Shared.DDD` solution folder containing `Financial.Shared.Infrastructure`
+- [x] `IJsonStorage`, `LocalJsonStorage`, `GoogleDriveJsonStorage`, `IRemoteFileClient`, and `IRemoteFileClientFactory` live in a new `Financial.Shared.Infrastructure` project with no reference to any Investments type
+- [x] `Financial.Investment.Infrastructure` references `Financial.Shared.Infrastructure` for storage rather than containing its own copy
+- [x] The full existing test suite passes unmodified in behavior after only namespace/using-statement updates
+- [x] `Financial.Api`, `Financial.Web`, and `Financial.App` build and run with no behavior change
 
 ### F02. CashFlow Domain Model & Storage
 - [ ] `data-cashflow.json` round-trips with all six top-level collections (expenses, reserve ledger, card statements, recurring bill templates/instances, mae ledger, investment snapshots)
