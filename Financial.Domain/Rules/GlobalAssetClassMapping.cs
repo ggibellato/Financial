@@ -1,30 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Financial.Domain.Entities;
 
-namespace Financial.Domain.Entities;
-
-public enum CountryCode
-{
-    Unknown = 0,
-    BR,
-    US,
-    UK
-}
-
-public enum GlobalAssetClass
-{
-    Unknown = 0,
-    Equity,
-    RealEstate,
-    Bond,
-    Fund,
-    ETF,
-    Cash,
-    Pension,
-    Other,
-    Cryptocurrency,
-    PrivateCredit
-}
+namespace Financial.Domain.Rules;
 
 public static class GlobalAssetClassMapping
 {

@@ -1,4 +1,5 @@
 using Financial.Domain.Entities;
+using Financial.Domain.Rules;
 using FluentAssertions;
 
 namespace Financial.Domain.Tests;
