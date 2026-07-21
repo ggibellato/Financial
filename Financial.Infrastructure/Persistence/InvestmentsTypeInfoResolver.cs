@@ -21,6 +21,8 @@ public class InvestmentsTypeInfoResolver : DefaultJsonTypeInfoResolver
     [
         (typeof(Asset), nameof(Asset.AveragePrice)),
         (typeof(Asset), nameof(Asset.Quantity)),
+        (typeof(Asset), nameof(Asset.AverageSellPrice)),
+        (typeof(Asset), nameof(Asset.RealizedGainLoss)),
         (typeof(Transaction), nameof(Transaction.TotalPrice))
     ];
 

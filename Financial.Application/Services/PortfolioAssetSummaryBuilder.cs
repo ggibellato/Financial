@@ -31,8 +31,8 @@ internal static class PortfolioAssetSummaryBuilder
         var (totalBought, totalSold, totalCredits) = NavigationMapper.CalculateTotals(asset);
         var totals = new AssetTotals(totalBought, totalSold, totalCredits);
         var weightBasis = weightBasisSelector(totals);
-        var realizedGainLoss = NavigationMapper.CalculateRealizedGainLoss(asset);
-        var averageSellPrice = NavigationMapper.CalculateAverageSellPrice(asset);
+        var realizedGainLoss = asset.RealizedGainLoss;
+        var averageSellPrice = asset.AverageSellPrice;
 
         var firstBuyDate = asset.Transactions
             .Where(t => t.Type == Transaction.TransactionType.Buy)
