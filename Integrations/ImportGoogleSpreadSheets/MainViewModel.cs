@@ -1,4 +1,4 @@
-using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using System;
@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
-namespace Financial.Infrastructure.Integrations.ImportGoogleSpreadSheets;
+namespace Financial.Investment.Infrastructure.Integrations.ImportGoogleSpreadSheets;
 
 public sealed class MainViewModel : INotifyPropertyChanged
 {

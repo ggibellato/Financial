@@ -1,6 +1,6 @@
 using Financial.Investment.Domain.Entities;
 
-namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 
 internal static class CountryCodeResolver
 {

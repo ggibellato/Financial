@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace Financial.Infrastructure.Integrations.ImportGoogleSpreadSheets;
+namespace Financial.Investment.Infrastructure.Integrations.ImportGoogleSpreadSheets;
 
 public class FilesInfo : INotifyPropertyChanged
 {

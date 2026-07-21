@@ -1,7 +1,7 @@
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DependencyInjection;
 using Financial.Investment.Infrastructure.DependencyInjection;
-using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Presentation.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

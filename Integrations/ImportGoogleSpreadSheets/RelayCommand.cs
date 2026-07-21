@@ -1,7 +1,7 @@
 using System;
 using System.Windows.Input;
 
-namespace Financial.Infrastructure.Integrations.ImportGoogleSpreadSheets;
+namespace Financial.Investment.Infrastructure.Integrations.ImportGoogleSpreadSheets;
 
 internal sealed class RelayCommand : ICommand
 {

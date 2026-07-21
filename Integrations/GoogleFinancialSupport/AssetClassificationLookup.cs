@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 
 internal readonly record struct AssetClassificationEntry(
     CountryCode Country,
@@ -40,7 +40,7 @@ internal static class AssetClassificationLookup
     private static IReadOnlyDictionary<string, AssetClassificationEntry> LoadEntries()
     {
         const string ResourceName =
-            "Financial.Infrastructure.Integrations.GoogleFinancialSupport.AssetClassifications.json";
+            "Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport.AssetClassifications.json";
 
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(ResourceName)
             ?? throw new InvalidOperationException(

@@ -1,4 +1,4 @@
-using Financial.Infrastructure.Integrations.WebPageParser;
+using Financial.Investment.Infrastructure.Integrations.WebPageParser;
 using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Integrations;

@@ -1,5 +1,5 @@
 using Financial.Investment.Domain.Entities;
-using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Integrations;

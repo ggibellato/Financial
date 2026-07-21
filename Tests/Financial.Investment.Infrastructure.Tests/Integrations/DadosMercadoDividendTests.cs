@@ -1,5 +1,5 @@
 using Financial.Investment.Domain.ValueObjects;
-using Financial.Infrastructure.Integrations.WebPageParser;
+using Financial.Investment.Infrastructure.Integrations.WebPageParser;
 using FluentAssertions;
 using HtmlAgilityPack;
 

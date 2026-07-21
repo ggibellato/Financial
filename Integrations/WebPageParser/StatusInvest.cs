@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 using Financial.Investment.Domain.ValueObjects;
 using HtmlAgilityPack;
 
-namespace Financial.Infrastructure.Integrations.WebPageParser;
+namespace Financial.Investment.Infrastructure.Integrations.WebPageParser;
 
 /// <summary>
 /// Parses Status Invest's per-bond page for the "Valor de Venda" (sell price).

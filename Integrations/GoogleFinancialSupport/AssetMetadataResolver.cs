@@ -1,10 +1,10 @@
 using Financial.Investment.Domain.Entities;
-using Financial.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
+using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 
 internal sealed class AssetMetadataResolver
 {

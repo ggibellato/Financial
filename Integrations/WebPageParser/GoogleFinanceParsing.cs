@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace Financial.Infrastructure.Integrations.WebPageParser;
+namespace Financial.Investment.Infrastructure.Integrations.WebPageParser;
 
 internal static class GoogleFinanceParsing
 {

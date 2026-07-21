@@ -1,4 +1,4 @@
-using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 using FluentAssertions;
 using Google.Apis.Sheets.v4.Data;
 

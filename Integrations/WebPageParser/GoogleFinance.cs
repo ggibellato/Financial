@@ -2,7 +2,7 @@ using Financial.Investment.Domain.ValueObjects;
 using HtmlAgilityPack;
 using System.Text.RegularExpressions;
 
-namespace Financial.Infrastructure.Integrations.WebPageParser;
+namespace Financial.Investment.Infrastructure.Integrations.WebPageParser;
 
 /// <summary>
 /// Parses financial data from Google Finance web pages.

@@ -1,4 +1,4 @@
-using Financial.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using FluentAssertions;

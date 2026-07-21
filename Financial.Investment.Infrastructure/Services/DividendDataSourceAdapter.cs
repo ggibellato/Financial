@@ -1,6 +1,6 @@
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.ValueObjects;
-using Financial.Infrastructure.Integrations.WebPageParser;
+using Financial.Investment.Infrastructure.Integrations.WebPageParser;
 
 namespace Financial.Investment.Infrastructure.Services;
 
