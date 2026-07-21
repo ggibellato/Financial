@@ -1,6 +1,6 @@
-namespace Financial.Infrastructure.Interfaces;
+namespace Financial.Infrastructure.DTOs;
 
-public class AssetValueRequest
+public class AssetValueRequestDTO
 {
     public string? Ticker { get; set; }
     public string? Exchange { get; set; }

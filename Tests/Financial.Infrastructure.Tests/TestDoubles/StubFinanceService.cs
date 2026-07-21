@@ -1,4 +1,5 @@
 using Financial.Domain.ValueObjects;
+using Financial.Infrastructure.DTOs;
 using Financial.Infrastructure.Interfaces;
 
 namespace Financial.Infrastructure.Tests;
@@ -12,5 +13,5 @@ internal sealed class StubFinanceService : IFinanceService
         _snapshot = snapshot;
     }
 
-    public AssetValueSnapshot GetAssetValue(AssetValueRequest request) => _snapshot ?? throw new NotImplementedException();
+    public AssetValueSnapshot GetAssetValue(AssetValueRequestDTO request) => _snapshot ?? throw new NotImplementedException();
 }

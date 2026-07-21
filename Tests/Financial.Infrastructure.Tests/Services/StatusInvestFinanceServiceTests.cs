@@ -1,5 +1,5 @@
 using Financial.Domain.ValueObjects;
-using Financial.Infrastructure.Interfaces;
+using Financial.Infrastructure.DTOs;
 using Financial.Infrastructure.Services;
 using FluentAssertions;
 
@@ -11,7 +11,7 @@ public class StatusInvestFinanceServiceTests
     public void GetAssetValue_BlankName_ThrowsArgumentException()
     {
         var service = new StatusInvestFinanceService();
-        var request = new AssetValueRequest { Name = "" };
+        var request = new AssetValueRequestDTO { Name = "" };
 
         Action act = () => service.GetAssetValue(request);
 
@@ -31,7 +31,7 @@ public class StatusInvestFinanceServiceTests
     {
         var snapshot = new AssetValueSnapshot("TESOURO IPCA+ 2029", "TESOURO IPCA+ 2029", 1234.56m, DateTimeOffset.UtcNow);
         var service = new StatusInvestFinanceService(name => name == "TESOURO IPCA+ 2029" ? snapshot : throw new InvalidOperationException());
-        var request = new AssetValueRequest { Name = "TESOURO IPCA+ 2029" };
+        var request = new AssetValueRequestDTO { Name = "TESOURO IPCA+ 2029" };
 
         var result = service.GetAssetValue(request);
 

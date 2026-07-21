@@ -1,15 +1,16 @@
 using Financial.Application.DTOs;
 using Financial.Domain.Entities;
 using Financial.Domain.ValueObjects;
+using Financial.Infrastructure.DTOs;
 using Financial.Infrastructure.Interfaces;
 
 namespace Financial.Infrastructure.Services;
 
 public sealed class BondAssetPriceFetcher : IAssetPriceFetcher
 {
-    private readonly StatusInvestFinanceService _statusInvestFinanceService;
+    private readonly IFinanceService _statusInvestFinanceService;
 
-    public BondAssetPriceFetcher(StatusInvestFinanceService statusInvestFinanceService)
+    public BondAssetPriceFetcher(IFinanceService statusInvestFinanceService)
     {
         _statusInvestFinanceService = statusInvestFinanceService ?? throw new ArgumentNullException(nameof(statusInvestFinanceService));
     }
@@ -23,6 +24,6 @@ public sealed class BondAssetPriceFetcher : IAssetPriceFetcher
             throw new ArgumentException("Name is required for bond assets.", nameof(request));
         }
 
-        return _statusInvestFinanceService.GetAssetValue(new AssetValueRequest { Name = request.Name });
+        return _statusInvestFinanceService.GetAssetValue(new AssetValueRequestDTO { Name = request.Name });
     }
 }

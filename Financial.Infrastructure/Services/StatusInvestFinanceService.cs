@@ -1,4 +1,5 @@
 using Financial.Domain.ValueObjects;
+using Financial.Infrastructure.DTOs;
 using Financial.Infrastructure.Integrations.WebPageParser;
 using Financial.Infrastructure.Interfaces;
 
@@ -17,7 +18,7 @@ public sealed class StatusInvestFinanceService : IFinanceService
         _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
     }
 
-    public AssetValueSnapshot GetAssetValue(AssetValueRequest request)
+    public AssetValueSnapshot GetAssetValue(AssetValueRequestDTO request)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
         {
