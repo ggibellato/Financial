@@ -114,22 +114,28 @@ public class CashFlowDataTests
     {
         var data = CashFlowData.Create();
 
-        data.AddRecurringBillTemplate(RecurringBillTemplate.Create());
+        data.AddRecurringBillTemplate(CreateRecurringBillTemplate());
 
         data.RecurringBillTemplates.Should().ContainSingle();
         data.RecurringBillInstances.Should().BeEmpty();
     }
+
+    private static RecurringBillTemplate CreateRecurringBillTemplate() =>
+        RecurringBillTemplate.Create(10, "Test bill", 100m, Area.Brasil, string.Empty, null, null);
 
     [Fact]
     public void AddRecurringBillInstance_AddsOnlyToRecurringBillInstancesCollection()
     {
         var data = CashFlowData.Create();
 
-        data.AddRecurringBillInstance(RecurringBillInstance.Create());
+        data.AddRecurringBillInstance(CreateRecurringBillInstance());
 
         data.RecurringBillInstances.Should().ContainSingle();
         data.RecurringBillTemplates.Should().BeEmpty();
     }
+
+    private static RecurringBillInstance CreateRecurringBillInstance() =>
+        RecurringBillInstance.Create(Guid.NewGuid(), 2026, 7, 100m);
 
     [Fact]
     public void AddMaeLedgerEntry_AddsOnlyToMaeLedgerEntriesCollection()

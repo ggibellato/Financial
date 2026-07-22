@@ -21,8 +21,8 @@ public class CashFlowSerializerAdapterTests
             CreditCard.BarclaysPlatinumVisa8003);
         var reserveMovement = ReserveMovement.Create(ReserveBucket.Investimento, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split");
         var cardStatement = CardStatement.Create();
-        var recurringBillTemplate = RecurringBillTemplate.Create();
-        var recurringBillInstance = RecurringBillInstance.Create();
+        var recurringBillTemplate = RecurringBillTemplate.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1412m);
+        var recurringBillInstance = RecurringBillInstance.Create(Guid.NewGuid(), 2026, 7, 850m);
         var maeLedgerEntry = MaeLedgerEntry.Create();
         var investmentSnapshot = InvestmentSnapshot.Create();
 
