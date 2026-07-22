@@ -82,6 +82,19 @@ describe('useMonthly', () => {
     expect(result.current.adjustmentTotal).toBe(100)
   })
 
+  it('computes category totals sum and per-bank totals from the fetched expenses', async () => {
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.categoryTotalsSum).toBe(42.5)
+    expect(result.current.bankTotals).toEqual([
+      { bank: 'Barclays', totalValue: 42.5 },
+      { bank: 'Trading212', totalValue: 0 },
+      { bank: 'Chase', totalValue: 0 },
+    ])
+    expect(result.current.bankTotalsSum).toBe(42.5)
+  })
+
   it('re-fetches for a new month when the month input changes', async () => {
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

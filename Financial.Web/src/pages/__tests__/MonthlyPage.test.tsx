@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MonthlyPage from '../MonthlyPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -79,6 +79,27 @@ describe('MonthlyPage', () => {
     expect(screen.getAllByText('100.00').length).toBeGreaterThan(0)
   })
 
+  it('renders a Banks grid with a row per payment source and its own total, alongside the other grids', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
+    expect(screen.getByText('Banks')).toBeInTheDocument()
+
+    const banksSection = within(screen.getByText('Banks').closest('section')!)
+    expect(banksSection.getByRole('cell', { name: 'Barclays' })).toBeInTheDocument()
+    expect(banksSection.getByRole('cell', { name: 'Trading212' })).toBeInTheDocument()
+    expect(banksSection.getByRole('cell', { name: 'Chase' })).toBeInTheDocument()
+
+    // The single expense (42.50) is on Barclays, so Trading212/Chase are zero and the
+    // Barclays row plus the Banks total both show 42.50.
+    expect(banksSection.getAllByText('42.50').length).toBe(2)
+    expect(banksSection.getAllByText('0.00').length).toBe(2)
+
+    expect(screen.getByText('Category Totals').closest('section')).toHaveClass('monthly-page__section--grid')
+    expect(screen.getByText('Cards').closest('section')).toHaveClass('monthly-page__section--grid')
+    expect(screen.getByText('Banks').closest('section')).toHaveClass('monthly-page__section--grid')
+  })
+
   it('only shows Mark Paid for unpaid cards', async () => {
     render(<MonthlyPage />)
 
@@ -129,7 +150,8 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(updateExpenseMock).toHaveBeenCalledWith('e1', expect.objectContaining({ value: 50 })))
-    await waitFor(() => expect(screen.getByText('50.00')).toBeInTheDocument())
+    const expensesSection = within(screen.getByText('Expenses').closest('section')!)
+    await waitFor(() => expect(expensesSection.getByText('50.00')).toBeInTheDocument())
   })
 
   it('deletes an expense after confirmation', async () => {
