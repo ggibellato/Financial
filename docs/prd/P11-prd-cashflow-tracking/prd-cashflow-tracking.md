@@ -619,8 +619,8 @@ graph TD
 - [x] Entering a month's income fields immediately reflects the resulting split in each bucket's displayed balance
 
 ### F14. Web — Mensais View
-- [ ] The view shows Brasil and UK bills as two separate grouped sections for the selected month
-- [ ] A bill instance's status or value can be updated from this view without affecting other months
+- [x] The view shows Brasil and UK bills as two separate grouped sections for the selected month
+- [x] A bill instance's status or value can be updated from this view without affecting other months
 
 ### F15. Web — Controle Mae View
 - [ ] The view shows both BRL and GBP values for every ledger entry
