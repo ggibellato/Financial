@@ -41,3 +41,19 @@ export function formatShortDate(isoString: string | null | undefined): string {
 export function toInputDate(isoString: string): string {
   return isoString.split('T')[0]
 }
+
+export function currentYearMonth(): { year: number; month: number } {
+  const now = new Date()
+  return { year: now.getFullYear(), month: now.getMonth() + 1 }
+}
+
+export function formatMonthInputValue(year: number, month: number): string {
+  return `${year}-${pad(month)}`
+}
+
+export function parseMonthInputValue(value: string): { year: number; month: number } | null {
+  const [yearStr, monthStr] = value.split('-')
+  const year = Number(yearStr)
+  const month = Number(monthStr)
+  return Number.isFinite(year) && Number.isFinite(month) ? { year, month } : null
+}

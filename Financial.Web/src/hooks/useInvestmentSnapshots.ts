@@ -1,12 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { InvestmentSnapshotDto } from '../api/types'
-import { pad } from '../utils/formatters'
-
-function currentYearMonth(): { year: number; month: number } {
-  const now = new Date()
-  return { year: now.getFullYear(), month: now.getMonth() + 1 }
-}
+import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
 
 interface InvestmentSnapshotsState {
   year: number
@@ -112,14 +107,12 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
       })
   }, [apiClient, state.year, state.month, state.retryCount])
 
-  const monthInputValue = `${state.year}-${pad(state.month)}`
+  const monthInputValue = formatMonthInputValue(state.year, state.month)
 
   const setMonthInputValue = useCallback((value: string) => {
-    const [yearStr, monthStr] = value.split('-')
-    const year = Number(yearStr)
-    const month = Number(monthStr)
-    if (!Number.isFinite(year) || !Number.isFinite(month)) return
-    dispatch({ type: 'SET_MONTH', payload: { year, month } })
+    const parsed = parseMonthInputValue(value)
+    if (!parsed) return
+    dispatch({ type: 'SET_MONTH', payload: parsed })
   }, [])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])

@@ -134,8 +134,19 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     : API_BASE_URL
   const fetcher = options.fetch ?? fetch
 
-  const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
+  const sendRequest = async (path: string, init?: RequestInit): Promise<Response> => {
     const url = `${baseUrl}${path}`
+    const response = await fetcher(url, init)
+
+    if (!response.ok) {
+      const method = init?.method ?? 'GET'
+      throw new ApiError(await buildErrorMessage(response, method, url), response.status)
+    }
+
+    return response
+  }
+
+  const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
     const headers = new Headers(init?.headers)
     if (!headers.has('Accept')) {
       headers.set('Accept', 'application/json')
@@ -144,27 +155,12 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       headers.set('Content-Type', 'application/json')
     }
 
-    const response = await fetcher(url, {
-      ...init,
-      headers,
-    })
-
-    if (!response.ok) {
-      const method = init?.method ?? 'GET'
-      throw new ApiError(await buildErrorMessage(response, method, url), response.status)
-    }
-
+    const response = await sendRequest(path, { ...init, headers })
     return (await response.json()) as T
   }
 
   const requestVoid = async (path: string, init?: RequestInit): Promise<void> => {
-    const url = `${baseUrl}${path}`
-    const response = await fetcher(url, init)
-
-    if (!response.ok) {
-      const method = init?.method ?? 'GET'
-      throw new ApiError(await buildErrorMessage(response, method, url), response.status)
-    }
+    await sendRequest(path, init)
   }
 
   const buildExchangeQuery = (exchange?: string) => {
