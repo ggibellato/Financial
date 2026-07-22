@@ -13,6 +13,7 @@ public static class CashFlowApplicationServiceCollectionExtensions
         services.AddSingleton<IMensaisService, MensaisService>();
         services.AddSingleton<IControleMaeService, ControleMaeService>();
         services.AddSingleton<IInvestmentSnapshotService, InvestmentSnapshotService>();
+        services.AddSingleton<ICardStatementService, CardStatementService>();
 
         return services;
     }
