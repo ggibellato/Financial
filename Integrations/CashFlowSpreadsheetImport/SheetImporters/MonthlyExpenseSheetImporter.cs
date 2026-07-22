@@ -9,8 +9,13 @@ namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImpo
 /// <summary>
 /// Parses one "MonYYYY" monthly expense tab into <see cref="Expense"/> entities. Tolerant of the
 /// 11-18 column range across eras and the "Quem"/"Motivo" header-label swap (see
-/// <see cref="ColumnResolver"/>). No per-transaction credit-card attribution is imported — the
-/// source data never records which of the 5 cards a charge used (see F10's spec.md).
+/// <see cref="ColumnResolver"/>). Historical months never record which of the 5 cards a charge
+/// used, so no <see cref="Expense.CardTag"/> is set for them (see F10's spec.md). For the months
+/// listed in <see cref="MonthsWithFixedCardSections"/>, the source spreadsheet instead groups
+/// card charges into sections that each start at a known row number (see
+/// <see cref="CardSectionStartRows"/>), so rows in those months are tagged by row position - but
+/// only when column E has no explicit "T"/"C" payment-source tag, which still takes precedence
+/// when present.
 /// </summary>
 public static class MonthlyExpenseSheetImporter
 {
@@ -19,6 +24,28 @@ public static class MonthlyExpenseSheetImporter
     private const int PaymentSourceColumn = 5;
     private const int FirstDataRow = 2;
     private const int MaxColumnSampleRows = 200;
+
+    private const int BarclaysPlatinumVisa8003StartRow = 129;
+    private const int BarclaysPlatinumVisa6007StartRow = 142;
+    private const int ChaseMaster4023StartRow = 205;
+    private const int BaAmexStartRow = 226;
+
+    private static readonly (int StartRow, CreditCard Card)[] CardSectionStartRows =
+    [
+        (BarclaysPlatinumVisa8003StartRow, CreditCard.BarclaysPlatinumVisa8003),
+        (BarclaysPlatinumVisa6007StartRow, CreditCard.BarclaysPlatinumVisa6007),
+        (ChaseMaster4023StartRow, CreditCard.ChaseMaster4023),
+        (BaAmexStartRow, CreditCard.BaAmex),
+    ];
+
+    // Only the sheets for these months follow the fixed-row card layout above; every other month
+    // (past or future) keeps using the column-E "T"/"C" tag exclusively. Extend this list as later
+    // months are confirmed to follow the same layout.
+    private static readonly (int Year, int Month)[] MonthsWithFixedCardSections =
+    [
+        (2026, 7),
+        (2026, 8),
+    ];
 
     public static IReadOnlyList<Expense> Import(IXLWorksheet sheet, int year, int month, ImportReport report)
     {
@@ -66,9 +93,11 @@ public static class MonthlyExpenseSheetImporter
             }
 
             var description = sheet.Cell(row, descriptionColumn).GetString();
-            var paymentSource = ResolvePaymentSource(sheet.Cell(row, PaymentSourceColumn).GetString());
+            var rawPaymentSourceTag = sheet.Cell(row, PaymentSourceColumn).GetString();
+            var paymentSource = ResolvePaymentSource(rawPaymentSourceTag);
+            var cardTag = ResolveCardTag(row, year, month, rawPaymentSourceTag);
 
-            expenses.Add(Expense.Create(date, description, value.Value, category, paymentSource, cardTag: null));
+            expenses.Add(Expense.Create(date, description, value.Value, category, paymentSource, cardTag));
         }
 
         return expenses;
@@ -100,4 +129,28 @@ public static class MonthlyExpenseSheetImporter
             "C" => PaymentSource.Chase,
             _ => PaymentSource.Barclays,
         };
+
+    private static CreditCard? ResolveCardTag(int row, int year, int month, string? rawPaymentSourceTag)
+    {
+        if (!string.IsNullOrWhiteSpace(rawPaymentSourceTag))
+        {
+            return null;
+        }
+
+        if (!MonthsWithFixedCardSections.Contains((year, month)))
+        {
+            return null;
+        }
+
+        CreditCard? cardTag = null;
+        foreach (var (startRow, card) in CardSectionStartRows)
+        {
+            if (row >= startRow)
+            {
+                cardTag = card;
+            }
+        }
+
+        return cardTag;
+    }
 }
