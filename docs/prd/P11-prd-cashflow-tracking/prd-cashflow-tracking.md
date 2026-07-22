@@ -623,8 +623,8 @@ graph TD
 - [x] A bill instance's status or value can be updated from this view without affecting other months
 
 ### F15. Web — Controle Mae View
-- [ ] The view shows both BRL and GBP values for every ledger entry
-- [ ] A new entry can be created with automatic FX conversion, and either currency value can be manually adjusted before saving
+- [x] The view shows both BRL and GBP values for every ledger entry
+- [x] A new entry can be created with automatic FX conversion, and either currency value can be manually adjusted before saving
 
 ### F16. Web — Investment Snapshots View
 - [ ] The view shows all 11 tracked accounts for the selected month with their current values
