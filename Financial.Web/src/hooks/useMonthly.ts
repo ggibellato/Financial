@@ -27,6 +27,7 @@ interface MonthlyState {
   isLoading: boolean
   error: string | null
   retryCount: number
+  isCreateFormOpen: boolean
   createDate: string
   createDescription: string
   createValue: string
@@ -55,6 +56,8 @@ type MonthlyAction =
     }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
+  | { type: 'SHOW_CREATE_FORM' }
+  | { type: 'CANCEL_CREATE_FORM' }
   | { type: 'SET_CREATE_FIELD'; payload: { field: CreateFormField; value: string } }
   | { type: 'CREATE_START' }
   | { type: 'CREATE_SUCCESS' }
@@ -87,6 +90,7 @@ const INITIAL_STATE: MonthlyState = {
   isLoading: true,
   error: null,
   retryCount: 0,
+  isCreateFormOpen: false,
   ...BLANK_CREATE_FORM,
   isCreating: false,
   createError: null,
@@ -119,17 +123,22 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
       return { ...state, retryCount: state.retryCount + 1 }
+    case 'SHOW_CREATE_FORM':
+      return { ...state, isCreateFormOpen: true, editingId: null, saveError: null }
+    case 'CANCEL_CREATE_FORM':
+      return { ...state, ...BLANK_CREATE_FORM, isCreateFormOpen: false, createError: null }
     case 'SET_CREATE_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'CREATE_START':
       return { ...state, isCreating: true, createError: null }
     case 'CREATE_SUCCESS':
-      return { ...state, ...BLANK_CREATE_FORM, isCreating: false }
+      return { ...state, ...BLANK_CREATE_FORM, isCreateFormOpen: false, isCreating: false }
     case 'CREATE_ERROR':
       return { ...state, isCreating: false, createError: action.payload }
     case 'SHOW_EDIT_FORM':
       return {
         ...state,
+        isCreateFormOpen: false,
         editingId: action.payload.id,
         editDate: action.payload.date,
         editDescription: action.payload.description,
@@ -186,6 +195,7 @@ export interface MonthlyData {
   isLoading: boolean
   error: string | null
   retry: () => void
+  isCreateFormOpen: boolean
   createDate: string
   createDescription: string
   createValue: string
@@ -194,6 +204,8 @@ export interface MonthlyData {
   createCardTag: string
   isCreating: boolean
   createError: string | null
+  showCreateForm: () => void
+  cancelCreateForm: () => void
   setCreateField: (field: CreateFormField, value: string) => void
   submitCreate: () => void
   editingId: string | null
@@ -241,6 +253,10 @@ export function useMonthly(): MonthlyData {
   }, [])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
+
+  const showCreateForm = useCallback(() => dispatch({ type: 'SHOW_CREATE_FORM' }), [])
+
+  const cancelCreateForm = useCallback(() => dispatch({ type: 'CANCEL_CREATE_FORM' }), [])
 
   const setCreateField = useCallback(
     (field: CreateFormField, value: string) => dispatch({ type: 'SET_CREATE_FIELD', payload: { field, value } }),
@@ -374,6 +390,7 @@ export function useMonthly(): MonthlyData {
     isLoading: state.isLoading,
     error: state.error,
     retry,
+    isCreateFormOpen: state.isCreateFormOpen,
     createDate: state.createDate,
     createDescription: state.createDescription,
     createValue: state.createValue,
@@ -382,6 +399,8 @@ export function useMonthly(): MonthlyData {
     createCardTag: state.createCardTag,
     isCreating: state.isCreating,
     createError: state.createError,
+    showCreateForm,
+    cancelCreateForm,
     setCreateField,
     submitCreate,
     editingId: state.editingId,

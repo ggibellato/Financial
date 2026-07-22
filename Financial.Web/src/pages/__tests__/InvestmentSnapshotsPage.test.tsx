@@ -61,6 +61,7 @@ describe('InvestmentSnapshotsPage', () => {
     const editButtons = screen.getAllByRole('button', { name: 'Edit' })
     fireEvent.click(editButtons[0])
 
+    expect(screen.getByText('Edit Snapshot')).toBeInTheDocument()
     const valueInput = screen.getByDisplayValue('0')
     fireEvent.change(valueInput, { target: { value: '999' } })
 

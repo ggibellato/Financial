@@ -26,7 +26,7 @@ export default function YearlySummaryPage() {
       ) : error ? (
         <ErrorState message={error} onRetry={retry} />
       ) : (
-        <>
+        <div className="yearly-summary-page__content">
           <section className="yearly-summary-page__section">
             <h2>Category Totals</h2>
             <table className="yearly-summary-page__table data-table">
@@ -111,7 +111,7 @@ export default function YearlySummaryPage() {
               </table>
             </section>
           )}
-        </>
+        </div>
       )}
     </div>
   )

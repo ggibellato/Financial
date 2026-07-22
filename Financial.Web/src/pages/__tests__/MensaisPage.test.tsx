@@ -77,7 +77,7 @@ describe('MensaisPage', () => {
     expect(screen.getByText('Council Tax')).toBeInTheDocument()
   })
 
-  it('edits a row status/value and saves, updating the displayed row', async () => {
+  it('edits a row status/value via the toggled panel and saves, updating the displayed row', async () => {
     updateMensaisInstanceMock.mockResolvedValue({ ...INSTANCES[0], status: 'Paid', value: 900 })
     render(<MensaisPage />)
 
@@ -86,6 +86,7 @@ describe('MensaisPage', () => {
     const editButtons = screen.getAllByRole('button', { name: 'Edit' })
     fireEvent.click(editButtons[0])
 
+    expect(screen.getByText('Edit Instance')).toBeInTheDocument()
     const valueInput = screen.getByDisplayValue('850')
     fireEvent.change(valueInput, { target: { value: '900' } })
     const statusSelect = screen.getByRole('combobox')

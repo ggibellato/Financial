@@ -22,6 +22,7 @@ interface ReservaState {
   isLoading: boolean
   error: string | null
   retryCount: number
+  isSplitFormOpen: boolean
   splitDate: string
   gleisonSalaryGross: string
   gleisonSalaryNet: string
@@ -31,6 +32,7 @@ interface ReservaState {
   dividendoJuros: string
   isSubmittingSplit: boolean
   splitError: string | null
+  isWithdrawalFormOpen: boolean
   withdrawalBucket: string
   withdrawalAmount: string
   withdrawalDate: string
@@ -44,10 +46,14 @@ type ReservaAction =
   | { type: 'FETCH_SUCCESS'; payload: { balances: ReserveBucketBalanceDto[]; movements: ReserveMovementDto[] } }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
+  | { type: 'SHOW_SPLIT_FORM' }
+  | { type: 'CANCEL_SPLIT_FORM' }
   | { type: 'SET_SPLIT_FIELD'; payload: { field: SplitFormField; value: string } }
   | { type: 'SPLIT_START' }
   | { type: 'SPLIT_SUCCESS' }
   | { type: 'SPLIT_ERROR'; payload: string }
+  | { type: 'SHOW_WITHDRAWAL_FORM' }
+  | { type: 'CANCEL_WITHDRAWAL_FORM' }
   | { type: 'SET_WITHDRAWAL_FIELD'; payload: { field: WithdrawalFormField; value: string } }
   | { type: 'WITHDRAWAL_START' }
   | { type: 'WITHDRAWAL_SUCCESS' }
@@ -76,9 +82,11 @@ const INITIAL_STATE: ReservaState = {
   isLoading: true,
   error: null,
   retryCount: 0,
+  isSplitFormOpen: false,
   ...BLANK_SPLIT_FORM,
   isSubmittingSplit: false,
   splitError: null,
+  isWithdrawalFormOpen: false,
   ...BLANK_WITHDRAWAL_FORM,
   isSubmittingWithdrawal: false,
   withdrawalError: null,
@@ -94,20 +102,28 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
       return { ...state, retryCount: state.retryCount + 1 }
+    case 'SHOW_SPLIT_FORM':
+      return { ...state, isSplitFormOpen: true }
+    case 'CANCEL_SPLIT_FORM':
+      return { ...state, ...BLANK_SPLIT_FORM, isSplitFormOpen: false, splitError: null }
     case 'SET_SPLIT_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SPLIT_START':
       return { ...state, isSubmittingSplit: true, splitError: null }
     case 'SPLIT_SUCCESS':
-      return { ...state, ...BLANK_SPLIT_FORM, isSubmittingSplit: false }
+      return { ...state, ...BLANK_SPLIT_FORM, isSplitFormOpen: false, isSubmittingSplit: false }
     case 'SPLIT_ERROR':
       return { ...state, isSubmittingSplit: false, splitError: action.payload }
+    case 'SHOW_WITHDRAWAL_FORM':
+      return { ...state, isWithdrawalFormOpen: true }
+    case 'CANCEL_WITHDRAWAL_FORM':
+      return { ...state, ...BLANK_WITHDRAWAL_FORM, isWithdrawalFormOpen: false, withdrawalError: null }
     case 'SET_WITHDRAWAL_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'WITHDRAWAL_START':
       return { ...state, isSubmittingWithdrawal: true, withdrawalError: null }
     case 'WITHDRAWAL_SUCCESS':
-      return { ...state, ...BLANK_WITHDRAWAL_FORM, isSubmittingWithdrawal: false }
+      return { ...state, ...BLANK_WITHDRAWAL_FORM, isWithdrawalFormOpen: false, isSubmittingWithdrawal: false }
     case 'WITHDRAWAL_ERROR':
       return { ...state, isSubmittingWithdrawal: false, withdrawalError: action.payload }
     default:
@@ -121,6 +137,7 @@ export interface ReservaData {
   isLoading: boolean
   error: string | null
   retry: () => void
+  isSplitFormOpen: boolean
   splitDate: string
   gleisonSalaryGross: string
   gleisonSalaryNet: string
@@ -130,14 +147,19 @@ export interface ReservaData {
   dividendoJuros: string
   isSubmittingSplit: boolean
   splitError: string | null
+  showSplitForm: () => void
+  cancelSplitForm: () => void
   setSplitField: (field: SplitFormField, value: string) => void
   submitIncomeSplit: () => void
+  isWithdrawalFormOpen: boolean
   withdrawalBucket: string
   withdrawalAmount: string
   withdrawalDate: string
   withdrawalDescription: string
   isSubmittingWithdrawal: boolean
   withdrawalError: string | null
+  showWithdrawalForm: () => void
+  cancelWithdrawalForm: () => void
   setWithdrawalField: (field: WithdrawalFormField, value: string) => void
   submitWithdrawal: () => void
 }
@@ -160,6 +182,14 @@ export function useReserva(): ReservaData {
   }, [fetchReservaData, state.retryCount])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
+
+  const showSplitForm = useCallback(() => dispatch({ type: 'SHOW_SPLIT_FORM' }), [])
+
+  const cancelSplitForm = useCallback(() => dispatch({ type: 'CANCEL_SPLIT_FORM' }), [])
+
+  const showWithdrawalForm = useCallback(() => dispatch({ type: 'SHOW_WITHDRAWAL_FORM' }), [])
+
+  const cancelWithdrawalForm = useCallback(() => dispatch({ type: 'CANCEL_WITHDRAWAL_FORM' }), [])
 
   const setSplitField = useCallback(
     (field: SplitFormField, value: string) => dispatch({ type: 'SET_SPLIT_FIELD', payload: { field, value } }),
@@ -272,6 +302,7 @@ export function useReserva(): ReservaData {
     isLoading: state.isLoading,
     error: state.error,
     retry,
+    isSplitFormOpen: state.isSplitFormOpen,
     splitDate: state.splitDate,
     gleisonSalaryGross: state.gleisonSalaryGross,
     gleisonSalaryNet: state.gleisonSalaryNet,
@@ -281,14 +312,19 @@ export function useReserva(): ReservaData {
     dividendoJuros: state.dividendoJuros,
     isSubmittingSplit: state.isSubmittingSplit,
     splitError: state.splitError,
+    showSplitForm,
+    cancelSplitForm,
     setSplitField,
     submitIncomeSplit,
+    isWithdrawalFormOpen: state.isWithdrawalFormOpen,
     withdrawalBucket: state.withdrawalBucket,
     withdrawalAmount: state.withdrawalAmount,
     withdrawalDate: state.withdrawalDate,
     withdrawalDescription: state.withdrawalDescription,
     isSubmittingWithdrawal: state.isSubmittingWithdrawal,
     withdrawalError: state.withdrawalError,
+    showWithdrawalForm,
+    cancelWithdrawalForm,
     setWithdrawalField,
     submitWithdrawal,
   }

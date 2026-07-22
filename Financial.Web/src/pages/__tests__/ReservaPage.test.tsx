@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ReservaPage from '../ReservaPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -63,13 +63,27 @@ describe('ReservaPage', () => {
     expect(screen.getByText('Monthly income split')).toBeInTheDocument()
   })
 
-  it('renders both the income-split and withdrawal forms', async () => {
+  it('shows the income-split form only after New Income Split is clicked', async () => {
     render(<ReservaPage />)
 
-    await waitFor(() => expect(screen.getByText('Post Monthly Income Split')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Income Split' })).toBeInTheDocument())
+    expect(screen.queryByText('Post Monthly Income Split')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Income Split' }))
+
+    expect(screen.getByText('Post Monthly Income Split')).toBeInTheDocument()
     expect(screen.getByLabelText('Salario Gleison (gross)')).toBeInTheDocument()
     expect(screen.getByLabelText('Salario Ariana (net)')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Post Income Split' })).toBeInTheDocument()
+  })
+
+  it('shows the withdrawal form only after New Withdrawal is clicked', async () => {
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Withdrawal' })).toBeInTheDocument())
+    expect(screen.queryByText('Record a Withdrawal')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Withdrawal' }))
 
     expect(screen.getByText('Record a Withdrawal')).toBeInTheDocument()
     expect(screen.getByLabelText('Bucket')).toBeInTheDocument()
