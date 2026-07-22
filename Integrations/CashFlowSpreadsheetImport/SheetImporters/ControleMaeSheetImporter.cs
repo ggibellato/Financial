@@ -24,23 +24,6 @@ public static partial class ControleMaeSheetImporter
     private const int GbpValueColumn = 3;
     private const int NoteColumn = 5;
 
-    private static readonly Dictionary<string, int> MonthAbbreviations = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["Jan"] = 1,
-        ["Fev"] = 2,
-        ["Mar"] = 3,
-        ["Abr"] = 4,
-        ["Mai"] = 5,
-        ["Maio"] = 5,
-        ["Jun"] = 6,
-        ["Jul"] = 7,
-        ["Ago"] = 8,
-        ["Set"] = 9,
-        ["Out"] = 10,
-        ["Nov"] = 11,
-        ["Dez"] = 12,
-    };
-
     private static readonly Regex FullDatePattern = BuildFullDatePattern();
     private static readonly Regex MonthYearPattern = BuildMonthYearPattern();
     private static readonly Regex YearMonthPattern = BuildYearMonthPattern();
@@ -118,7 +101,7 @@ public static partial class ControleMaeSheetImporter
             // A range like "Jan/2020-Dez/2020" matches twice - the last match is the end of the
             // period (or the only match, when there is no range), so it wins either way.
             var lastMatch = monthYearMatches[^1];
-            if (MonthAbbreviations.TryGetValue(lastMatch.Groups["month"].Value, out var monthNumber))
+            if (PortugueseMonthAbbreviations.Map.TryGetValue(lastMatch.Groups["month"].Value, out var monthNumber))
             {
                 date = new DateOnly(int.Parse(lastMatch.Groups["year"].Value), monthNumber, 1);
                 return true;

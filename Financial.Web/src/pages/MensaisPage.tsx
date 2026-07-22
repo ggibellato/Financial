@@ -1,4 +1,5 @@
 import type { RecurringBillInstanceDto } from '../api/types'
+import EditRowActions from '../components/EditRowActions'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import { useMensais } from '../hooks/useMensais'
@@ -53,12 +54,7 @@ function InstanceRow({
           </select>
         </td>
         <td>
-          <button type="button" disabled={isSaving} onClick={onSave}>
-            {isSaving ? 'Saving...' : 'Save'}
-          </button>
-          <button type="button" onClick={onCancel}>
-            Cancel
-          </button>
+          <EditRowActions isSaving={isSaving} onSave={onSave} onCancel={onCancel} />
         </td>
       </tr>
     )
