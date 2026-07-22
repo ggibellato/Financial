@@ -156,7 +156,7 @@ public class CashFlowDataTests
     {
         var data = CashFlowData.Create();
 
-        data.AddInvestmentSnapshot(InvestmentSnapshot.Create());
+        data.AddInvestmentSnapshot(InvestmentSnapshot.Create(InvestmentAccount.ChaseSave, 2026, 7, 100m));
 
         data.InvestmentSnapshots.Should().ContainSingle();
         data.Expenses.Should().BeEmpty();

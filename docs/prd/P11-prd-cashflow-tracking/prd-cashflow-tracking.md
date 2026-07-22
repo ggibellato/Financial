@@ -589,9 +589,9 @@ graph TD
 - [x] If the FX lookup is unavailable, the entry still saves with the entered currency populated and prompts for manual entry of the converted value
 
 ### F08. Monthly Investment Snapshot
-- [ ] All 11 canonical accounts can each have exactly one value entered per month
-- [ ] Editing one month's snapshot value for an account does not change any other month's value for that account
-- [ ] A liability account's value is stored and displayed as a positive magnitude
+- [x] All 11 canonical accounts can each have exactly one value entered per month
+- [x] Editing one month's snapshot value for an account does not change any other month's value for that account
+- [x] A liability account's value is stored and displayed as a positive magnitude
 
 ### F09. Yearly Summary & Month-over-Month Reporting
 - [ ] A year's total per expense category equals the sum of that category's 12 monthly totals
