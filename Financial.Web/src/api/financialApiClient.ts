@@ -17,6 +17,7 @@ import type {
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
   InvestmentScope,
+  InvestmentSnapshotDto,
   MaeLedgerEntryDto,
   PortfolioAssetSummaryItemDto,
   PortfolioBreakdownItemDto,
@@ -29,6 +30,7 @@ import type {
   TransactionSummaryItemDto,
   TransactionUpdateDto,
   TreeNodeDto,
+  UpdateInvestmentSnapshotValueDto,
   UpdateMaeLedgerEntryValuesDto,
   UpdateRecurringBillInstanceDto,
   WatchlistItemDto,
@@ -75,6 +77,8 @@ export interface FinancialApiClient {
   createMaeLedgerEntry: (request: CreateMaeLedgerEntryDto) => Promise<MaeLedgerEntryDto>
   getMaeLedgerEntriesByMonth: (year: number, month: number) => Promise<MaeLedgerEntryDto[]>
   updateMaeLedgerEntryValues: (id: string, request: UpdateMaeLedgerEntryValuesDto) => Promise<MaeLedgerEntryDto>
+  getInvestmentSnapshots: (year: number, month: number) => Promise<InvestmentSnapshotDto[]>
+  updateInvestmentSnapshotValue: (id: string, request: UpdateInvestmentSnapshotValueDto) => Promise<InvestmentSnapshotDto>
 }
 
 export interface FinancialApiClientOptions {
@@ -256,6 +260,13 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<MaeLedgerEntryDto[]>(`/controle-mae/entries/month/${year}/${month}`),
     updateMaeLedgerEntryValues: (id, requestBody) =>
       request<MaeLedgerEntryDto>(`/controle-mae/entries/${encodeURIComponent(id)}/values`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    getInvestmentSnapshots: (year, month) =>
+      request<InvestmentSnapshotDto[]>(`/investment-snapshots/${year}/${month}`),
+    updateInvestmentSnapshotValue: (id, requestBody) =>
+      request<InvestmentSnapshotDto>(`/investment-snapshots/${encodeURIComponent(id)}`, {
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),

@@ -8,11 +8,13 @@ import type {
   CreateMaeLedgerEntryDto,
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
+  InvestmentSnapshotDto,
   MaeLedgerEntryDto,
   RecurringBillInstanceDto,
   ReserveBucketBalanceDto,
   ReserveMovementDto,
   TreeNodeDto,
+  UpdateInvestmentSnapshotValueDto,
   UpdateMaeLedgerEntryValuesDto,
   UpdateRecurringBillInstanceDto,
   WithdrawalRequestDto,
@@ -520,6 +522,41 @@ describe('financialApiClient', () => {
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/controle-mae/entries/e1/values`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('calls the investment snapshots endpoint for a given year/month', async () => {
+    const responseBody: InvestmentSnapshotDto[] = [
+      { id: 's1', account: 'ChaseSave', isLiability: false, year: 2026, month: 7, value: 1000 },
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getInvestmentSnapshots(2026, 7)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/investment-snapshots/2026/7`)
+  })
+
+  it('puts an investment snapshot value update', async () => {
+    const requestBody: UpdateInvestmentSnapshotValueDto = { value: 1200 }
+    const responseBody: InvestmentSnapshotDto = {
+      id: 's1',
+      account: 'ChaseSave',
+      isLiability: false,
+      year: 2026,
+      month: 7,
+      value: 1200,
+    }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateInvestmentSnapshotValue('s1', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/investment-snapshots/s1`)
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
