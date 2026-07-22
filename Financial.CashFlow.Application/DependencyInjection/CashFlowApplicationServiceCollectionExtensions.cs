@@ -10,6 +10,7 @@ public static class CashFlowApplicationServiceCollectionExtensions
     {
         services.AddSingleton<IExpenseService, ExpenseService>();
         services.AddSingleton<IReserveService, ReserveService>();
+        services.AddSingleton<IMensaisService, MensaisService>();
 
         return services;
     }
