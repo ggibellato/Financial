@@ -16,6 +16,9 @@ COPY Financial.Api/Financial.Api.csproj Financial.Api/
 COPY Financial.Investment.Application/Financial.Investment.Application.csproj Financial.Investment.Application/
 COPY Financial.Investment.Domain/Financial.Investment.Domain.csproj Financial.Investment.Domain/
 COPY Financial.Investment.Infrastructure/Financial.Investment.Infrastructure.csproj Financial.Investment.Infrastructure/
+COPY Financial.CashFlow.Application/Financial.CashFlow.Application.csproj Financial.CashFlow.Application/
+COPY Financial.CashFlow.Domain/Financial.CashFlow.Domain.csproj Financial.CashFlow.Domain/
+COPY Financial.CashFlow.Infrastructure/Financial.CashFlow.Infrastructure.csproj Financial.CashFlow.Infrastructure/
 COPY Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj Financial.Shared.Infrastructure/
 COPY Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj Integrations/GoogleFinancialSupport/
 COPY Integrations/WebPageParser/WebPageParser.csproj Integrations/WebPageParser/
@@ -26,6 +29,9 @@ COPY Financial.Api/ Financial.Api/
 COPY Financial.Investment.Application/ Financial.Investment.Application/
 COPY Financial.Investment.Domain/ Financial.Investment.Domain/
 COPY Financial.Investment.Infrastructure/ Financial.Investment.Infrastructure/
+COPY Financial.CashFlow.Application/ Financial.CashFlow.Application/
+COPY Financial.CashFlow.Domain/ Financial.CashFlow.Domain/
+COPY Financial.CashFlow.Infrastructure/ Financial.CashFlow.Infrastructure/
 COPY Financial.Shared.Infrastructure/ Financial.Shared.Infrastructure/
 COPY Integrations/GoogleFinancialSupport/ Integrations/GoogleFinancialSupport/
 COPY Integrations/WebPageParser/ Integrations/WebPageParser/

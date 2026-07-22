@@ -6,5 +6,7 @@ services:
     environment:
       DataJsonFile: /app/data/data.json
       Repository__Provider: LocalJson
+      CashFlow__DataJsonFile: /app/data/data-cashflow.json
+      CashFlow__Repository__Provider: LocalJson
     volumes:
       - ./data:/app/data
