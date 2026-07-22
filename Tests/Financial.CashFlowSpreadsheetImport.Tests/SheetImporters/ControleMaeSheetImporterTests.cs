@@ -103,7 +103,7 @@ public class ControleMaeSheetImporterTests
     }
 
     [Fact]
-    public void Import_RowWithNoDateAtAllAndNoRecognizablePattern_IsSkippedAndFlagged()
+    public void Import_FirstRowHasNoExtractableDateAndNoPriorEntry_IsSkippedAndFlagged()
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Controle mae");
@@ -117,6 +117,88 @@ public class ControleMaeSheetImporterTests
 
         entries.Should().BeEmpty();
         report.RowIssues.Should().ContainSingle(i => i.SheetName == "Controle mae" && i.Row == 1);
+    }
+
+    [Fact]
+    public void Import_MonthYearRangeWithFullSpelledEndMonth_ResolvesToFirstDayOfEndMonth()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Controle mae");
+
+        sheet.Cell(1, 1).Value = "Seguro Jan/2021-Maio/2022";
+        sheet.Cell(1, 2).Value = 900.0;
+
+        var report = new ImportReport();
+
+        var entries = ControleMaeSheetImporter.Import(sheet, report);
+
+        entries.Should().ContainSingle();
+        entries[0].Date.Should().Be(new DateOnly(2022, 5, 1));
+    }
+
+    [Fact]
+    public void Import_MonthYearRange_ResolvesToFirstDayOfEndMonth()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Controle mae");
+
+        sheet.Cell(1, 1).Value = "Jan/2020-Dez/2020 - Seguro";
+        sheet.Cell(1, 2).Value = 1200.0;
+
+        var report = new ImportReport();
+
+        var entries = ControleMaeSheetImporter.Import(sheet, report);
+
+        entries.Should().ContainSingle();
+        entries[0].Date.Should().Be(new DateOnly(2020, 12, 1));
+        report.RowIssues.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Import_RowWithNoExtractableDateButPriorEntryExists_InfersPreviousDatePlusOneDayAndIsImported()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Controle mae");
+
+        sheet.Cell(1, 1).Value = "Acerto 29/12/2023";
+        sheet.Cell(1, 2).Value = 500.0;
+
+        sheet.Cell(2, 1).Value = "Conta Gabriel";
+        sheet.Cell(2, 2).Value = 100.0;
+
+        var report = new ImportReport();
+
+        var entries = ControleMaeSheetImporter.Import(sheet, report);
+
+        entries.Should().HaveCount(2);
+        entries[0].Date.Should().Be(new DateOnly(2023, 12, 29));
+        entries[1].Date.Should().Be(new DateOnly(2023, 12, 30));
+        report.RowIssues.Should().ContainSingle(i => i.Row == 2 && i.SheetName == "Controle mae");
+    }
+
+    [Fact]
+    public void Import_MultipleConsecutiveRowsWithoutDates_EachAdvancesOneDayFromThePrevious()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Controle mae");
+
+        sheet.Cell(1, 1).Value = "Acerto 10/01/2021";
+        sheet.Cell(1, 2).Value = 500.0;
+
+        sheet.Cell(2, 1).Value = "Sem data 1";
+        sheet.Cell(2, 2).Value = 10.0;
+
+        sheet.Cell(3, 1).Value = "Sem data 2";
+        sheet.Cell(3, 2).Value = 20.0;
+
+        var report = new ImportReport();
+
+        var entries = ControleMaeSheetImporter.Import(sheet, report);
+
+        entries.Should().HaveCount(3);
+        entries[0].Date.Should().Be(new DateOnly(2021, 1, 10));
+        entries[1].Date.Should().Be(new DateOnly(2021, 1, 11));
+        entries[2].Date.Should().Be(new DateOnly(2021, 1, 12));
     }
 
     [Fact]
