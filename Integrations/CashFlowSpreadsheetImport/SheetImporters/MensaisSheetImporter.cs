@@ -1,6 +1,7 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
 
@@ -47,15 +48,14 @@ public static class MensaisSheetImporter
 
             var dueDay = (int)dueDayCell.GetValue<double>();
             var description = descriptionCell.GetString();
-            var value = (decimal)(sheet.Cell(row, ValueColumn).GetValue<double?>() ?? 0);
+            var value = NumericCellReader.TryRead(sheet.Cell(row, ValueColumn)) ?? 0;
             var note = sheet.Cell(row, NoteColumn).GetString();
 
             var nitCell = sheet.Cell(row, NitNumberColumn);
             var nitNumber = currentArea == Area.Brasil && !nitCell.IsEmpty() ? nitCell.GetString() : null;
 
-            var minWageCell = sheet.Cell(row, MinimumWageValueColumn);
-            var minimumWageValue = currentArea == Area.Brasil && !minWageCell.IsEmpty()
-                ? (decimal?)minWageCell.GetValue<double>()
+            var minimumWageValue = currentArea == Area.Brasil
+                ? NumericCellReader.TryRead(sheet.Cell(row, MinimumWageValueColumn))
                 : null;
 
             var template = RecurringBillTemplate.Create(dueDay, description, value, currentArea.Value, note, nitNumber, minimumWageValue);

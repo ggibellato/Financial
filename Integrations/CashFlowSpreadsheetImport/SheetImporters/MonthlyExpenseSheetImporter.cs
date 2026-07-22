@@ -35,6 +35,13 @@ public static class MonthlyExpenseSheetImporter
                 continue;
             }
 
+            var value = NumericCellReader.TryRead(valueCell);
+            if (value is null)
+            {
+                report.RowFlagged(sheet.Name, row, "Value", valueCell.GetString(), "Value could not be parsed as a number - expense not imported");
+                continue;
+            }
+
             var rawCategory = sheet.Cell(row, categoryColumn).GetString();
             if (!CategoryResolver.TryResolve(rawCategory, out var category))
             {
@@ -59,10 +66,9 @@ public static class MonthlyExpenseSheetImporter
             }
 
             var description = sheet.Cell(row, descriptionColumn).GetString();
-            var value = (decimal)valueCell.GetValue<double>();
             var paymentSource = ResolvePaymentSource(sheet.Cell(row, PaymentSourceColumn).GetString());
 
-            expenses.Add(Expense.Create(date, description, value, category, paymentSource, cardTag: null));
+            expenses.Add(Expense.Create(date, description, value.Value, category, paymentSource, cardTag: null));
         }
 
         return expenses;

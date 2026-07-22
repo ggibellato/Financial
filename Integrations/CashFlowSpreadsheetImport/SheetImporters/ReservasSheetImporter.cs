@@ -1,6 +1,7 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
 
@@ -45,14 +46,13 @@ public static class ReservasSheetImporter
 
             foreach (var (column, bucket) in BucketColumns)
             {
-                var cell = sheet.Cell(row, column);
-                if (cell.IsEmpty())
+                var amount = NumericCellReader.TryRead(sheet.Cell(row, column));
+                if (amount is null)
                 {
                     continue;
                 }
 
-                var amount = (decimal)cell.GetValue<double>();
-                movements.Add(ReserveMovement.Create(bucket, amount, date, description));
+                movements.Add(ReserveMovement.Create(bucket, amount.Value, date, description));
             }
         }
 

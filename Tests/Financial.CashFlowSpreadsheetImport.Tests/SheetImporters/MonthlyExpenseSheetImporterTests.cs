@@ -147,4 +147,29 @@ public class MonthlyExpenseSheetImporterTests
         expenses[0].Value.Should().Be(130.0m);
         report.RowIssues.Should().ContainSingle(i => i.SheetName == "Fev2026" && i.RawValue == "29");
     }
+
+    [Fact]
+    public void Import_ValueEnteredAsTextWithCommaDecimalSeparator_ParsesAsDecimalNotInflated100x()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Mar2017");
+        sheet.Cell(1, 1).Value = "Dia";
+        sheet.Cell(1, 2).Value = "Motivo";
+        sheet.Cell(1, 3).Value = "Quem";
+        sheet.Cell(1, 4).Value = "Valor";
+
+        // Confirmed real-workbook data quality issue (Mar2017, cell D82): the value was entered as
+        // text "17,28" (comma decimal) instead of a genuine Excel number.
+        sheet.Cell(2, 1).Value = 30;
+        sheet.Cell(2, 2).Value = "THE RANGE";
+        sheet.Cell(2, 3).Value = "Casa";
+        sheet.Cell(2, 4).Value = "17,28";
+
+        var report = new ImportReport();
+
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2017, 3, report);
+
+        expenses.Should().ContainSingle().Which.Value.Should().Be(17.28m);
+        report.RowIssues.Should().BeEmpty();
+    }
 }

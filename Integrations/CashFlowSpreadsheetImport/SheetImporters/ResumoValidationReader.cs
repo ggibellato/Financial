@@ -1,6 +1,7 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
 
@@ -51,13 +52,13 @@ public static class ResumoValidationReader
 
             for (var i = 0; i < MonthCount; i++)
             {
-                var cell = sheet.Cell(row, FirstMonthColumn + i);
-                if (cell.IsEmpty() || !cell.TryGetValue<double>(out var rawValue))
+                var rawValue = NumericCellReader.TryRead(sheet.Cell(row, FirstMonthColumn + i));
+                if (rawValue is null)
                 {
                     continue;
                 }
 
-                snapshots.Add(InvestmentSnapshot.Create(account, year, i + 1, Math.Abs((decimal)rawValue)));
+                snapshots.Add(InvestmentSnapshot.Create(account, year, i + 1, Math.Abs(rawValue.Value)));
             }
         }
 
@@ -79,10 +80,10 @@ public static class ResumoValidationReader
             var totals = new Dictionary<int, decimal>();
             for (var i = 0; i < MonthCount; i++)
             {
-                var cell = sheet.Cell(row, FirstMonthColumn + i);
-                if (!cell.IsEmpty() && cell.TryGetValue<double>(out var rawValue))
+                var rawValue = NumericCellReader.TryRead(sheet.Cell(row, FirstMonthColumn + i));
+                if (rawValue is not null)
                 {
-                    totals[i + 1] = (decimal)rawValue;
+                    totals[i + 1] = rawValue.Value;
                 }
             }
 

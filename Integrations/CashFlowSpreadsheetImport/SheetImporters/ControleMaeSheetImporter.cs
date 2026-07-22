@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
@@ -58,8 +59,8 @@ public static partial class ControleMaeSheetImporter
                 continue;
             }
 
-            var brlValue = TryGetNumeric(sheet.Cell(row, BrlValueColumn));
-            var gbpValue = TryGetNumeric(sheet.Cell(row, GbpValueColumn));
+            var brlValue = NumericCellReader.TryRead(sheet.Cell(row, BrlValueColumn));
+            var gbpValue = NumericCellReader.TryRead(sheet.Cell(row, GbpValueColumn));
             if (brlValue is null && gbpValue is null)
             {
                 continue;
@@ -95,9 +96,6 @@ public static partial class ControleMaeSheetImporter
     }
 
     private static bool IsSeparatorLine(string description) => description.All(c => c is '-' or ' ');
-
-    private static decimal? TryGetNumeric(IXLCell cell) =>
-        !cell.IsEmpty() && cell.TryGetValue<double>(out var value) ? (decimal)value : null;
 
     private static bool TryExtractDate(string description, out DateOnly date)
     {
