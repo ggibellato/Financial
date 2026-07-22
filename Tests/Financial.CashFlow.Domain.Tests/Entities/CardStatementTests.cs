@@ -40,6 +40,17 @@ public class CardStatementTests
     }
 
     [Fact]
+    public void MarkUnpaid_AfterMarkPaid_SetsIsPaidBackToFalse()
+    {
+        var statement = CardStatement.Create(CreditCard.ChaseMaster4023, 2026, 7);
+        statement.MarkPaid();
+
+        statement.MarkUnpaid();
+
+        statement.IsPaid.Should().BeFalse();
+    }
+
+    [Fact]
     public void Create_TwoStatements_HaveDifferentIds()
     {
         var first = CardStatement.Create(CreditCard.BaAmex, 2026, 7);

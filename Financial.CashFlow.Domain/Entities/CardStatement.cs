@@ -27,4 +27,9 @@ public class CardStatement
     {
         IsPaid = true;
     }
+
+    public void MarkUnpaid()
+    {
+        IsPaid = false;
+    }
 }
