@@ -20,6 +20,7 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository
 
     public IEnumerable<Expense> GetExpenses() => _data.Expenses;
     public void AddExpense(Expense expense) => _data.AddExpense(expense);
+    public void DeleteExpense(Guid id) => _data.RemoveExpense(id);
 
     public IEnumerable<ReserveMovement> GetReserveMovements() => _data.ReserveMovements;
     public void AddReserveMovement(ReserveMovement movement) => _data.AddReserveMovement(movement);

@@ -1,3 +1,4 @@
+using Financial.CashFlow.Application.DependencyInjection;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DependencyInjection;
@@ -49,6 +50,7 @@ builder.Services.Configure<AssetPriceFetchOptions>(configuration.GetSection(Asse
 builder.Services.AddFinancialApplication();
 builder.Services.AddGoogleDriveFileClient();
 builder.Services.AddFinancialInfrastructure(configuration);
+builder.Services.AddFinancialCashFlowApplication();
 builder.Services.AddFinancialCashFlowInfrastructure(configuration);
 
 var app = builder.Build();

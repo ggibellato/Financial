@@ -6,6 +6,7 @@ public interface ICashFlowRepository
 {
     IEnumerable<Expense> GetExpenses();
     void AddExpense(Expense expense);
+    void DeleteExpense(Guid id);
 
     IEnumerable<ReserveMovement> GetReserveMovements();
     void AddReserveMovement(ReserveMovement movement);
