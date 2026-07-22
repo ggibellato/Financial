@@ -631,8 +631,8 @@ graph TD
 - [x] Editing one account's value for a month does not affect other months or other accounts
 
 ### F17. Web — Yearly Summary View
-- [ ] Selecting a year shows a monthly-totals-per-expense-category table with a yearly total column
-- [ ] The same view shows a month-over-month diff table per investment account, plus the combined net position, for the selected year
+- [x] Selecting a year shows a monthly-totals-per-expense-category table with a yearly total column
+- [x] The same view shows a month-over-month diff table per investment account, plus the combined net position, for the selected year
 
 ### Cross-Feature Integration
 - [x] The `Financial.Investment.Infrastructure` project created by F01 builds and runs correctly referencing `Financial.Shared.Infrastructure`, and F02's `Financial.CashFlow.Infrastructure` references the same shared project without duplication
@@ -644,4 +644,4 @@ graph TD
 - [x] F10's historical import correctly populates every one of F02's six storage collections, matching the shapes defined by F03, F04, F05, F06, F07, and F08
 - [x] F12's Web Monthly View correctly displays expense data from F03 and card data from F04, and its Investments-domain content is correctly scoped by F11's domain switcher
 - [x] F13, F14, F15, and F16 each correctly display data from F05, F06, F07, and F08 respectively, all nested inside F11's CashFlow selection
-- [ ] F17's Web Yearly Summary View correctly displays the totals and diffs computed by F09
+- [x] F17's Web Yearly Summary View correctly displays the totals and diffs computed by F09
