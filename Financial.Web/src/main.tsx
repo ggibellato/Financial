@@ -11,6 +11,7 @@ import HistoricInvestmentsPage from './pages/HistoricInvestmentsPage'
 import DividendCheckPage from './pages/DividendCheckPage'
 import CurrentValuesPage from './pages/CurrentValuesPage'
 import CashFlowPlaceholderPage from './pages/CashFlowPlaceholderPage'
+import ControleMaePage from './pages/ControleMaePage'
 import MensaisPage from './pages/MensaisPage'
 import ReservaPage from './pages/ReservaPage'
 import RootRedirect from './pages/RootRedirect'
@@ -33,7 +34,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="monthly" element={<CashFlowPlaceholderPage title="Monthly" />} />
             <Route path="reserva" element={<ReservaPage />} />
             <Route path="mensais" element={<MensaisPage />} />
-            <Route path="controle-mae" element={<CashFlowPlaceholderPage title="Controle Mae" />} />
+            <Route path="controle-mae" element={<ControleMaePage />} />
             <Route
               path="investment-snapshots"
               element={<CashFlowPlaceholderPage title="Investment Snapshots" />}
