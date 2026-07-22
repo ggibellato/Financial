@@ -103,7 +103,7 @@ public class CashFlowDataTests
     {
         var data = CashFlowData.Create();
 
-        data.AddCardStatement(CardStatement.Create());
+        data.AddCardStatement(CardStatement.Create(CreditCard.BarclaysPlatinumVisa8003, 2026, 7));
 
         data.CardStatements.Should().ContainSingle();
         data.Expenses.Should().BeEmpty();
