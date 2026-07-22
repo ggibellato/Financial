@@ -343,6 +343,48 @@ export interface UpdateMaeLedgerEntryValuesDto {
   gbpValue: number | null
 }
 
+export interface ExpenseDto {
+  id: string
+  date: string
+  description: string
+  value: number
+  category: string
+  paymentSource: string
+  cardTag: string | null
+}
+
+export interface CreateExpenseDto {
+  date: string
+  description: string
+  value: number
+  category: string
+  paymentSource: string
+  cardTag: string | null
+}
+
+export interface UpdateExpenseDto {
+  date: string
+  description: string
+  value: number
+  category: string
+  paymentSource: string
+  cardTag: string | null
+}
+
+export interface CategoryTotalDto {
+  category: string
+  totalValue: number
+}
+
+export interface CardStatementDto {
+  id: string
+  card: string
+  year: number
+  month: number
+  isPaid: boolean
+  outstandingTotal: number
+}
+
 export interface InvestmentSnapshotDto {
   id: string
   account: string

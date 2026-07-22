@@ -7,6 +7,9 @@ import type {
   AssetPriceDto,
   BrokerNodeDto,
   CalculateXirrRequestDto,
+  CardStatementDto,
+  CategoryTotalDto,
+  CreateExpenseDto,
   CreateMaeLedgerEntryDto,
   CreditCreateDto,
   CreditDeleteDto,
@@ -14,6 +17,7 @@ import type {
   CreditUpdateDto,
   DividendHistoryItemDto,
   DividendSummaryDto,
+  ExpenseDto,
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
   InvestmentScope,
@@ -30,6 +34,7 @@ import type {
   TransactionSummaryItemDto,
   TransactionUpdateDto,
   TreeNodeDto,
+  UpdateExpenseDto,
   UpdateInvestmentSnapshotValueDto,
   UpdateMaeLedgerEntryValuesDto,
   UpdateRecurringBillInstanceDto,
@@ -79,6 +84,13 @@ export interface FinancialApiClient {
   updateMaeLedgerEntryValues: (id: string, request: UpdateMaeLedgerEntryValuesDto) => Promise<MaeLedgerEntryDto>
   getInvestmentSnapshots: (year: number, month: number) => Promise<InvestmentSnapshotDto[]>
   updateInvestmentSnapshotValue: (id: string, request: UpdateInvestmentSnapshotValueDto) => Promise<InvestmentSnapshotDto>
+  getExpensesByMonth: (year: number, month: number) => Promise<ExpenseDto[]>
+  getCategoryTotalsByMonth: (year: number, month: number) => Promise<CategoryTotalDto[]>
+  createExpense: (request: CreateExpenseDto) => Promise<ExpenseDto>
+  updateExpense: (id: string, request: UpdateExpenseDto) => Promise<ExpenseDto>
+  deleteExpense: (id: string) => Promise<void>
+  getCardStatementsByMonth: (year: number, month: number) => Promise<CardStatementDto[]>
+  markCardStatementPaid: (id: string) => Promise<CardStatementDto>
 }
 
 export interface FinancialApiClientOptions {
@@ -139,6 +151,16 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     }
 
     return (await response.json()) as T
+  }
+
+  const requestVoid = async (path: string, init?: RequestInit): Promise<void> => {
+    const url = `${baseUrl}${path}`
+    const response = await fetcher(url, init)
+
+    if (!response.ok) {
+      const method = init?.method ?? 'GET'
+      throw new ApiError(await buildErrorMessage(response, method, url), response.status)
+    }
   }
 
   const buildExchangeQuery = (exchange?: string) => {
@@ -269,6 +291,26 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<InvestmentSnapshotDto>(`/investment-snapshots/${encodeURIComponent(id)}`, {
         method: 'PUT',
         body: JSON.stringify(requestBody),
+      }),
+    getExpensesByMonth: (year, month) => request<ExpenseDto[]>(`/expenses/month/${year}/${month}`),
+    getCategoryTotalsByMonth: (year, month) =>
+      request<CategoryTotalDto[]>(`/expenses/month/${year}/${month}/category-totals`),
+    createExpense: (requestBody) =>
+      request<ExpenseDto>('/expenses', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    updateExpense: (id, requestBody) =>
+      request<ExpenseDto>(`/expenses/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    deleteExpense: (id) => requestVoid(`/expenses/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    getCardStatementsByMonth: (year, month) =>
+      request<CardStatementDto[]>(`/card-statements/${year}/${month}`),
+    markCardStatementPaid: (id) =>
+      request<CardStatementDto>(`/card-statements/${encodeURIComponent(id)}/mark-paid`, {
+        method: 'POST',
       }),
   }
 }
