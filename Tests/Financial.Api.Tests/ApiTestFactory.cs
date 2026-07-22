@@ -7,11 +7,13 @@ namespace Financial.Api.Tests;
 internal sealed class ApiTestFactory : WebApplicationFactory<Program>
 {
     private readonly string _dataFilePath;
+    private readonly string _cashFlowDataFilePath;
     private bool _disposed;
 
     public ApiTestFactory()
     {
         _dataFilePath = CreateTempDataFile();
+        _cashFlowDataFilePath = CreateTempCashFlowDataFilePath();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -21,7 +23,9 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             var settings = new Dictionary<string, string?>
             {
                 ["Repository:Provider"] = "LocalJson",
-                ["DataJsonFile"] = _dataFilePath
+                ["DataJsonFile"] = _dataFilePath,
+                ["CashFlow:Repository:Provider"] = "LocalJson",
+                ["CashFlow:DataJsonFile"] = _cashFlowDataFilePath
             };
             config.AddInMemoryCollection(settings);
         });
@@ -34,7 +38,8 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         if (disposing && !_disposed)
         {
             _disposed = true;
-            TryDeleteTempDataFile();
+            TryDeleteTempFile(_dataFilePath);
+            TryDeleteTempFile(_cashFlowDataFilePath);
         }
     }
 
@@ -45,22 +50,25 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         return tempPath;
     }
 
-    private void TryDeleteTempDataFile()
+    private static string CreateTempCashFlowDataFilePath() =>
+        Path.Combine(Path.GetTempPath(), $"financial-api-cashflow-{Guid.NewGuid():N}.json");
+
+    private static void TryDeleteTempFile(string path)
     {
         try
         {
-            if (File.Exists(_dataFilePath))
+            if (File.Exists(path))
             {
-                File.Delete(_dataFilePath);
+                File.Delete(path);
             }
         }
         catch (IOException ex)
         {
-            Console.Error.WriteLine($"Failed to delete temp data file '{_dataFilePath}': {ex.Message}");
+            Console.Error.WriteLine($"Failed to delete temp data file '{path}': {ex.Message}");
         }
         catch (UnauthorizedAccessException ex)
         {
-            Console.Error.WriteLine($"Failed to delete temp data file '{_dataFilePath}': {ex.Message}");
+            Console.Error.WriteLine($"Failed to delete temp data file '{path}': {ex.Message}");
         }
     }
 }

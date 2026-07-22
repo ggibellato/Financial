@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Financial.CashFlow.Application\Financial.CashFlow.Application.csproj" />
     <ProjectReference Include="..\Financial.CashFlow.Infrastructure\Financial.CashFlow.Infrastructure.csproj" />
     <ProjectReference Include="..\Financial.Investment.Application\Financial.Investment.Application.csproj" />
     <ProjectReference Include="..\Financial.Investment.Infrastructure\Financial.Investment.Infrastructure.csproj" />
