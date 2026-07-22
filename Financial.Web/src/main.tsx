@@ -10,13 +10,13 @@ import ActiveInvestmentsPage from './pages/ActiveInvestmentsPage'
 import HistoricInvestmentsPage from './pages/HistoricInvestmentsPage'
 import DividendCheckPage from './pages/DividendCheckPage'
 import CurrentValuesPage from './pages/CurrentValuesPage'
-import CashFlowPlaceholderPage from './pages/CashFlowPlaceholderPage'
 import ControleMaePage from './pages/ControleMaePage'
 import InvestmentSnapshotsPage from './pages/InvestmentSnapshotsPage'
 import MensaisPage from './pages/MensaisPage'
 import MonthlyPage from './pages/MonthlyPage'
 import ReservaPage from './pages/ReservaPage'
 import RootRedirect from './pages/RootRedirect'
+import YearlySummaryPage from './pages/YearlySummaryPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -38,7 +38,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="mensais" element={<MensaisPage />} />
             <Route path="controle-mae" element={<ControleMaePage />} />
             <Route path="investment-snapshots" element={<InvestmentSnapshotsPage />} />
-            <Route path="yearly-summary" element={<CashFlowPlaceholderPage title="Yearly Summary" />} />
+            <Route path="yearly-summary" element={<YearlySummaryPage />} />
           </Route>
           <Route path="*" element={<div>Page not found.</div>} />
         </Route>
