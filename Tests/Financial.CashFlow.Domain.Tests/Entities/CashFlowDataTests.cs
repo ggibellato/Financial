@@ -142,11 +142,14 @@ public class CashFlowDataTests
     {
         var data = CashFlowData.Create();
 
-        data.AddMaeLedgerEntry(MaeLedgerEntry.Create());
+        data.AddMaeLedgerEntry(CreateMaeLedgerEntry());
 
         data.MaeLedgerEntries.Should().ContainSingle();
         data.Expenses.Should().BeEmpty();
     }
+
+    private static MaeLedgerEntry CreateMaeLedgerEntry() =>
+        MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "Test entry", string.Empty, Currency.BRL, 100m, 15m);
 
     [Fact]
     public void AddInvestmentSnapshot_AddsOnlyToInvestmentSnapshotsCollection()

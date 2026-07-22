@@ -584,9 +584,9 @@ graph TD
 - [x] Brasil-area rows can carry an optional NIT number and minimum-wage value; UK-area rows do not require them
 
 ### F07. Controle Mae Ledger
-- [ ] Entering a value in one currency and a valid past date auto-populates the converted value in the other currency using that date's historical exchange rate
-- [ ] An entry with a future date is rejected
-- [ ] If the FX lookup is unavailable, the entry still saves with the entered currency populated and prompts for manual entry of the converted value
+- [x] Entering a value in one currency and a valid past date auto-populates the converted value in the other currency using that date's historical exchange rate
+- [x] An entry with a future date is rejected
+- [x] If the FX lookup is unavailable, the entry still saves with the entered currency populated and prompts for manual entry of the converted value
 
 ### F08. Monthly Investment Snapshot
 - [ ] All 11 canonical accounts can each have exactly one value entered per month

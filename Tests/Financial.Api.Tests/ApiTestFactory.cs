@@ -1,6 +1,10 @@
+using Financial.CashFlow.Application.Interfaces;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Financial.Api.Tests;
 
@@ -8,12 +12,14 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
 {
     private readonly string _dataFilePath;
     private readonly string _cashFlowDataFilePath;
+    private readonly IExchangeRateProvider? _exchangeRateProviderOverride;
     private bool _disposed;
 
-    public ApiTestFactory()
+    public ApiTestFactory(IExchangeRateProvider? exchangeRateProviderOverride = null)
     {
         _dataFilePath = CreateTempDataFile();
         _cashFlowDataFilePath = CreateTempCashFlowDataFilePath();
+        _exchangeRateProviderOverride = exchangeRateProviderOverride;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -29,6 +35,15 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             };
             config.AddInMemoryCollection(settings);
         });
+
+        if (_exchangeRateProviderOverride is not null)
+        {
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<IExchangeRateProvider>();
+                services.AddSingleton(_exchangeRateProviderOverride);
+            });
+        }
     }
 
     protected override void Dispose(bool disposing)
