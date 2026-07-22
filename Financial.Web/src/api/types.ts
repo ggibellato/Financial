@@ -385,6 +385,30 @@ export interface CardStatementDto {
   outstandingTotal: number
 }
 
+export interface CategoryYearlyTotalDto {
+  category: string
+  monthlyTotals: number[]
+  yearlyTotal: number
+}
+
+export interface InvestmentAccountYearlyDiffDto {
+  account: string
+  isLiability: boolean
+  monthlyValues: number[]
+  monthlyDiffs: number[]
+}
+
+export interface NetPositionYearlyDiffDto {
+  monthlyValues: number[]
+  monthlyDiffs: number[]
+  fullYearNetChange: number
+}
+
+export interface InvestmentDiffsYearlyDto {
+  accounts: InvestmentAccountYearlyDiffDto[]
+  netPosition: NetPositionYearlyDiffDto
+}
+
 export interface InvestmentSnapshotDto {
   id: string
   account: string

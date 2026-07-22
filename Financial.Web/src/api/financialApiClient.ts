@@ -9,6 +9,7 @@ import type {
   CalculateXirrRequestDto,
   CardStatementDto,
   CategoryTotalDto,
+  CategoryYearlyTotalDto,
   CreateExpenseDto,
   CreateMaeLedgerEntryDto,
   CreditCreateDto,
@@ -20,6 +21,7 @@ import type {
   ExpenseDto,
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
+  InvestmentDiffsYearlyDto,
   InvestmentScope,
   InvestmentSnapshotDto,
   MaeLedgerEntryDto,
@@ -91,6 +93,8 @@ export interface FinancialApiClient {
   deleteExpense: (id: string) => Promise<void>
   getCardStatementsByMonth: (year: number, month: number) => Promise<CardStatementDto[]>
   markCardStatementPaid: (id: string) => Promise<CardStatementDto>
+  getCategoryTotalsForYear: (year: number) => Promise<CategoryYearlyTotalDto[]>
+  getInvestmentDiffsForYear: (year: number) => Promise<InvestmentDiffsYearlyDto>
 }
 
 export interface FinancialApiClientOptions {
@@ -312,5 +316,9 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<CardStatementDto>(`/card-statements/${encodeURIComponent(id)}/mark-paid`, {
         method: 'POST',
       }),
+    getCategoryTotalsForYear: (year) =>
+      request<CategoryYearlyTotalDto[]>(`/yearly-summary/${year}/expense-categories`),
+    getInvestmentDiffsForYear: (year) =>
+      request<InvestmentDiffsYearlyDto>(`/yearly-summary/${year}/investment-diffs`),
   }
 }
