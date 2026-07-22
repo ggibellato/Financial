@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Persistence;
 using FluentAssertions;
 
@@ -11,7 +12,13 @@ public class CashFlowSerializerAdapterTests
     {
         var serializer = new CashFlowSerializerAdapter();
         var original = CashFlowData.Create();
-        var expense = Expense.Create();
+        var expense = Expense.Create(
+            new DateOnly(2026, 7, 15),
+            "Weekly groceries",
+            54.32m,
+            Category.Mercado,
+            PaymentSource.Barclays,
+            CreditCard.BarclaysPlatinumVisa8003);
         var reserveMovement = ReserveMovement.Create();
         var cardStatement = CardStatement.Create();
         var recurringBillTemplate = RecurringBillTemplate.Create();
@@ -30,7 +37,14 @@ public class CashFlowSerializerAdapterTests
         var json = serializer.Serialize(original);
         var result = serializer.Deserialize(json);
 
-        result.Expenses.Should().ContainSingle().Which.Id.Should().Be(expense.Id);
+        var resultExpense = result.Expenses.Should().ContainSingle().Which;
+        resultExpense.Id.Should().Be(expense.Id);
+        resultExpense.Date.Should().Be(expense.Date);
+        resultExpense.Description.Should().Be(expense.Description);
+        resultExpense.Value.Should().Be(expense.Value);
+        resultExpense.Category.Should().Be(expense.Category);
+        resultExpense.PaymentSource.Should().Be(expense.PaymentSource);
+        resultExpense.CardTag.Should().Be(expense.CardTag);
         result.ReserveMovements.Should().ContainSingle().Which.Id.Should().Be(reserveMovement.Id);
         result.CardStatements.Should().ContainSingle().Which.Id.Should().Be(cardStatement.Id);
         result.RecurringBillTemplates.Should().ContainSingle().Which.Id.Should().Be(recurringBillTemplate.Id);

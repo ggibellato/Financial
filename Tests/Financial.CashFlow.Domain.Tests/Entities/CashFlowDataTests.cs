@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 
 namespace Financial.CashFlow.Domain.Tests;
@@ -24,11 +25,39 @@ public class CashFlowDataTests
     {
         var data = CashFlowData.Create();
 
-        data.AddExpense(Expense.Create());
+        data.AddExpense(CreateExpense());
 
         data.Expenses.Should().ContainSingle();
         data.ReserveMovements.Should().BeEmpty();
     }
+
+    [Fact]
+    public void RemoveExpense_RemovesOnlyTheMatchingExpense()
+    {
+        var data = CashFlowData.Create();
+        var toKeep = CreateExpense();
+        var toRemove = CreateExpense();
+        data.AddExpense(toKeep);
+        data.AddExpense(toRemove);
+
+        data.RemoveExpense(toRemove.Id);
+
+        data.Expenses.Should().ContainSingle().Which.Id.Should().Be(toKeep.Id);
+    }
+
+    [Fact]
+    public void RemoveExpense_WithUnknownId_LeavesCollectionUnchanged()
+    {
+        var data = CashFlowData.Create();
+        data.AddExpense(CreateExpense());
+
+        data.RemoveExpense(Guid.NewGuid());
+
+        data.Expenses.Should().ContainSingle();
+    }
+
+    private static Expense CreateExpense() =>
+        Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, PaymentSource.Chase, null);
 
     [Fact]
     public void AddReserveMovement_AddsOnlyToReserveMovementsCollection()

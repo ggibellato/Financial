@@ -50,7 +50,13 @@ public class CashFlowLoaderTests
         var path = Path.Combine(Path.GetTempPath(), $"cashflow-valid-{Guid.NewGuid()}.json");
         var serializer = new CashFlowSerializerAdapter();
         var original = Financial.CashFlow.Domain.Entities.CashFlowData.Create();
-        original.AddExpense(Financial.CashFlow.Domain.Entities.Expense.Create());
+        original.AddExpense(Financial.CashFlow.Domain.Entities.Expense.Create(
+            new DateOnly(2026, 7, 1),
+            "Test expense",
+            10m,
+            Financial.CashFlow.Domain.Enums.Category.Casa,
+            Financial.CashFlow.Domain.Enums.PaymentSource.Chase,
+            null));
         File.WriteAllText(path, serializer.Serialize(original));
         var storage = new LocalJsonStorage(path);
 

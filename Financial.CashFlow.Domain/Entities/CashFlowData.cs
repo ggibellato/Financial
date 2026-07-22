@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Financial.CashFlow.Domain.Entities;
@@ -65,6 +66,8 @@ public class CashFlowData
     public static CashFlowData Create() => new();
 
     public void AddExpense(Expense expense) => _expenses.Add(expense);
+
+    public void RemoveExpense(Guid id) => _expenses.RemoveAll(e => e.Id == id);
 
     public void AddReserveMovement(ReserveMovement movement) => _reserveMovements.Add(movement);
 
