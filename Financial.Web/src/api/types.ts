@@ -319,3 +319,26 @@ export interface UpdateRecurringBillInstanceDto {
   status: string
   value: number
 }
+
+export interface MaeLedgerEntryDto {
+  id: string
+  date: string
+  description: string
+  note: string
+  sourceCurrency: string
+  brlValue: number | null
+  gbpValue: number | null
+}
+
+export interface CreateMaeLedgerEntryDto {
+  date: string
+  description: string
+  note: string
+  sourceCurrency: string
+  sourceValue: number
+}
+
+export interface UpdateMaeLedgerEntryValuesDto {
+  brlValue: number | null
+  gbpValue: number | null
+}
