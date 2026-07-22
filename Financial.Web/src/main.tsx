@@ -12,6 +12,7 @@ import DividendCheckPage from './pages/DividendCheckPage'
 import CurrentValuesPage from './pages/CurrentValuesPage'
 import CashFlowPlaceholderPage from './pages/CashFlowPlaceholderPage'
 import ControleMaePage from './pages/ControleMaePage'
+import InvestmentSnapshotsPage from './pages/InvestmentSnapshotsPage'
 import MensaisPage from './pages/MensaisPage'
 import ReservaPage from './pages/ReservaPage'
 import RootRedirect from './pages/RootRedirect'
@@ -35,10 +36,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="reserva" element={<ReservaPage />} />
             <Route path="mensais" element={<MensaisPage />} />
             <Route path="controle-mae" element={<ControleMaePage />} />
-            <Route
-              path="investment-snapshots"
-              element={<CashFlowPlaceholderPage title="Investment Snapshots" />}
-            />
+            <Route path="investment-snapshots" element={<InvestmentSnapshotsPage />} />
             <Route path="yearly-summary" element={<CashFlowPlaceholderPage title="Yearly Summary" />} />
           </Route>
           <Route path="*" element={<div>Page not found.</div>} />

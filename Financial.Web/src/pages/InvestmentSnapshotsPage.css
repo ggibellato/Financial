@@ -1,0 +1,22 @@
+.investment-snapshots-page {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.investment-snapshots-page__month-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.investment-snapshots-page__table {
+  width: 100%;
+  max-width: 640px;
+}
+
+.investment-snapshots-page__error {
+  color: var(--error, #c0392b);
+}
