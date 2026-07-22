@@ -120,9 +120,6 @@ static void ImportControleMaeSheet(XLWorkbook workbook, CashFlowData data, Impor
 
 static void ImportResumoSheets(XLWorkbook workbook, CashFlowData data, ImportReport report)
 {
-    const int FirstInScopeYear = 2017;
-    const int LastInScopeYear = 2026;
-
     var resumoSheets = workbook.Worksheets
         .Where(sheet => sheet.Name.StartsWith(ResumoSheetPrefix, StringComparison.OrdinalIgnoreCase))
         .Select(sheet => (Sheet: sheet, Parsed: int.TryParse(sheet.Name[ResumoSheetPrefix.Length..], out var year), Year: year))
@@ -131,9 +128,11 @@ static void ImportResumoSheets(XLWorkbook workbook, CashFlowData data, ImportRep
 
     foreach (var (sheet, _, year) in resumoSheets)
     {
-        if (year < FirstInScopeYear || year > LastInScopeYear)
+        if (year < SheetNameParser.FirstInScopeYear || year > SheetNameParser.LastInScopeYear)
         {
-            report.SheetSkipped(sheet.Name, $"Year {year} predates the import's Feb {FirstInScopeYear}-{LastInScopeYear} scope");
+            report.SheetSkipped(
+                sheet.Name,
+                $"Year {year} predates the import's Feb {SheetNameParser.FirstInScopeYear}-{SheetNameParser.LastInScopeYear} scope");
             continue;
         }
 

@@ -9,21 +9,8 @@ namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImpo
 /// </summary>
 public static partial class SheetNameParser
 {
-    private static readonly Dictionary<string, int> MonthAbbreviations = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["Jan"] = 1,
-        ["Fev"] = 2,
-        ["Mar"] = 3,
-        ["Abr"] = 4,
-        ["Mai"] = 5,
-        ["Jun"] = 6,
-        ["Jul"] = 7,
-        ["Ago"] = 8,
-        ["Set"] = 9,
-        ["Out"] = 10,
-        ["Nov"] = 11,
-        ["Dez"] = 12,
-    };
+    public const int FirstInScopeYear = 2017;
+    public const int LastInScopeYear = 2026;
 
     private static readonly Regex MonthlySheetNamePattern = BuildMonthlySheetNamePattern();
 
@@ -38,7 +25,7 @@ public static partial class SheetNameParser
             return false;
         }
 
-        if (!MonthAbbreviations.TryGetValue(match.Groups["month"].Value, out month))
+        if (!PortugueseMonthAbbreviations.Map.TryGetValue(match.Groups["month"].Value, out month))
         {
             return false;
         }
@@ -48,7 +35,7 @@ public static partial class SheetNameParser
     }
 
     public static bool IsInScope(int year, int month) =>
-        year <= 2026 && (year > 2017 || (year == 2017 && month >= 2));
+        year <= LastInScopeYear && (year > FirstInScopeYear || (year == FirstInScopeYear && month >= 2));
 
     [GeneratedRegex(@"^(?<month>Jan|Fev|Mar|Abr|Mai|Jun|Jul|Ago|Set|Out|Nov|Dez)(?<year>\d{4})$", RegexOptions.IgnoreCase)]
     private static partial Regex BuildMonthlySheetNamePattern();

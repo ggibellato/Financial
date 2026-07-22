@@ -1,4 +1,5 @@
 using ClosedXML.Excel;
+using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
@@ -35,7 +36,7 @@ public static class MensaisSheetImporter
             var dueDayCell = sheet.Cell(row, DueDayColumn);
             var descriptionCell = sheet.Cell(row, DescriptionColumn);
 
-            if (dueDayCell.IsEmpty() && TryResolveAreaLabel(descriptionCell.GetString(), out var area))
+            if (dueDayCell.IsEmpty() && AreaParser.TryParse(descriptionCell.GetString(), out var area))
             {
                 currentArea = area;
                 continue;
@@ -68,25 +69,6 @@ public static class MensaisSheetImporter
         }
 
         return (templates, instances);
-    }
-
-    private static bool TryResolveAreaLabel(string label, out Area area)
-    {
-        var trimmed = label.Trim();
-        if (string.Equals(trimmed, "Brasil", StringComparison.OrdinalIgnoreCase))
-        {
-            area = Area.Brasil;
-            return true;
-        }
-
-        if (string.Equals(trimmed, "UK", StringComparison.OrdinalIgnoreCase))
-        {
-            area = Area.UK;
-            return true;
-        }
-
-        area = default;
-        return false;
     }
 
     private static BillStatus ResolveStatus(string? tag) =>

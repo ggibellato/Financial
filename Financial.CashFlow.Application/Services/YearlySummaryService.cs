@@ -18,7 +18,10 @@ public sealed class YearlySummaryService : IYearlySummaryService
 
     public IReadOnlyList<CategoryYearlyTotalDTO> GetCategoryTotalsForYear(int year)
     {
-        var expenses = _repository.GetExpenses().Where(e => e.Date.Year == year).ToList();
+        var totalsByCategoryAndMonth = _repository.GetExpenses()
+            .Where(e => e.Date.Year == year)
+            .GroupBy(e => (e.Category, e.Date.Month))
+            .ToDictionary(g => g.Key, g => g.Sum(e => e.Value));
 
         return Enum.GetValues<Category>()
             .Select(category =>
@@ -26,9 +29,7 @@ public sealed class YearlySummaryService : IYearlySummaryService
                 var monthlyTotals = new decimal[MonthsInYear];
                 for (var month = 1; month <= MonthsInYear; month++)
                 {
-                    monthlyTotals[month - 1] = expenses
-                        .Where(e => e.Category == category && e.Date.Month == month)
-                        .Sum(e => e.Value);
+                    monthlyTotals[month - 1] = totalsByCategoryAndMonth.GetValueOrDefault((category, month));
                 }
 
                 return new CategoryYearlyTotalDTO
@@ -43,7 +44,10 @@ public sealed class YearlySummaryService : IYearlySummaryService
 
     public InvestmentDiffsYearlyDTO GetInvestmentDiffsForYear(int year)
     {
-        var snapshots = _repository.GetInvestmentSnapshots().Where(s => s.Year == year).ToList();
+        var valueByAccountAndMonth = _repository.GetInvestmentSnapshots()
+            .Where(s => s.Year == year)
+            .GroupBy(s => (s.Account, s.Month))
+            .ToDictionary(g => g.Key, g => g.First().Value);
 
         var accounts = Enum.GetValues<InvestmentAccount>()
             .Select(account =>
@@ -51,8 +55,7 @@ public sealed class YearlySummaryService : IYearlySummaryService
                 var monthlyValues = new decimal[MonthsInYear];
                 for (var month = 1; month <= MonthsInYear; month++)
                 {
-                    monthlyValues[month - 1] = snapshots
-                        .FirstOrDefault(s => s.Account == account && s.Month == month)?.Value ?? 0m;
+                    monthlyValues[month - 1] = valueByAccountAndMonth.GetValueOrDefault((account, month));
                 }
 
                 return new InvestmentAccountYearlyDiffDTO

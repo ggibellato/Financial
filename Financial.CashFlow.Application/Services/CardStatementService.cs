@@ -41,7 +41,12 @@ public sealed class CardStatementService : ICardStatementService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
         }
 
-        return existingStatements.Select(ToDto).ToList();
+        var outstandingByCard = _repository.GetExpenses()
+            .Where(e => e.Date.Year == year && e.Date.Month == month && e.CardTag.HasValue)
+            .GroupBy(e => e.CardTag!.Value)
+            .ToDictionary(g => g.Key, g => g.Sum(e => e.Value));
+
+        return existingStatements.Select(s => ToDto(s, outstandingByCard)).ToList();
     }
 
     public async Task<CardStatementDTO> MarkStatementPaidAsync(Guid id)
@@ -66,14 +71,17 @@ public sealed class CardStatementService : ICardStatementService
             throw;
         }
 
-        return ToDto(statement);
+        return ToDto(statement, outstandingByCard: null);
     }
 
-    private CardStatementDTO ToDto(CardStatement statement)
+    private CardStatementDTO ToDto(CardStatement statement, IReadOnlyDictionary<CreditCard, decimal>? outstandingByCard = null)
     {
-        var outstandingTotal = statement.IsPaid ? 0m : _repository.GetExpenses()
-            .Where(e => e.CardTag == statement.Card && e.Date.Year == statement.Year && e.Date.Month == statement.Month)
-            .Sum(e => e.Value);
+        var outstandingTotal = statement.IsPaid
+            ? 0m
+            : outstandingByCard?.GetValueOrDefault(statement.Card)
+                ?? _repository.GetExpenses()
+                    .Where(e => e.CardTag == statement.Card && e.Date.Year == statement.Year && e.Date.Month == statement.Month)
+                    .Sum(e => e.Value);
 
         return new CardStatementDTO
         {
