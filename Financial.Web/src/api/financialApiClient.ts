@@ -7,6 +7,7 @@ import type {
   AssetPriceDto,
   BrokerNodeDto,
   CalculateXirrRequestDto,
+  CreateMaeLedgerEntryDto,
   CreditCreateDto,
   CreditDeleteDto,
   CreditDto,
@@ -16,6 +17,7 @@ import type {
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
   InvestmentScope,
+  MaeLedgerEntryDto,
   PortfolioAssetSummaryItemDto,
   PortfolioBreakdownItemDto,
   PortfolioReferenceDto,
@@ -27,6 +29,7 @@ import type {
   TransactionSummaryItemDto,
   TransactionUpdateDto,
   TreeNodeDto,
+  UpdateMaeLedgerEntryValuesDto,
   UpdateRecurringBillInstanceDto,
   WatchlistItemDto,
   WithdrawalRequestDto,
@@ -69,6 +72,9 @@ export interface FinancialApiClient {
   postWithdrawal: (request: WithdrawalRequestDto) => Promise<ReserveMovementDto>
   getMensaisInstances: (year: number, month: number) => Promise<RecurringBillInstanceDto[]>
   updateMensaisInstance: (id: string, request: UpdateRecurringBillInstanceDto) => Promise<RecurringBillInstanceDto>
+  createMaeLedgerEntry: (request: CreateMaeLedgerEntryDto) => Promise<MaeLedgerEntryDto>
+  getMaeLedgerEntriesByMonth: (year: number, month: number) => Promise<MaeLedgerEntryDto[]>
+  updateMaeLedgerEntryValues: (id: string, request: UpdateMaeLedgerEntryValuesDto) => Promise<MaeLedgerEntryDto>
 }
 
 export interface FinancialApiClientOptions {
@@ -238,6 +244,18 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<RecurringBillInstanceDto[]>(`/mensais/${year}/${month}`),
     updateMensaisInstance: (id, requestBody) =>
       request<RecurringBillInstanceDto>(`/mensais/instances/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    createMaeLedgerEntry: (requestBody) =>
+      request<MaeLedgerEntryDto>('/controle-mae/entries', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    getMaeLedgerEntriesByMonth: (year, month) =>
+      request<MaeLedgerEntryDto[]>(`/controle-mae/entries/month/${year}/${month}`),
+    updateMaeLedgerEntryValues: (id, requestBody) =>
+      request<MaeLedgerEntryDto>(`/controle-mae/entries/${encodeURIComponent(id)}/values`, {
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),

@@ -1,0 +1,281 @@
+import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { createFinancialApiClient } from '../api/financialApiClient'
+import type { MaeLedgerEntryDto } from '../api/types'
+import { pad } from '../utils/formatters'
+
+function currentYearMonth(): { year: number; month: number } {
+  const now = new Date()
+  return { year: now.getFullYear(), month: now.getMonth() + 1 }
+}
+
+export type CreateFormField = 'createDate' | 'createDescription' | 'createNote' | 'createSourceCurrency' | 'createSourceValue'
+export type EditField = 'editBrlValue' | 'editGbpValue'
+
+interface ControleMaeState {
+  year: number
+  month: number
+  entries: MaeLedgerEntryDto[]
+  isLoading: boolean
+  error: string | null
+  retryCount: number
+  createDate: string
+  createDescription: string
+  createNote: string
+  createSourceCurrency: string
+  createSourceValue: string
+  isCreating: boolean
+  createError: string | null
+  editingId: string | null
+  editBrlValue: string
+  editGbpValue: string
+  isSaving: boolean
+  saveError: string | null
+}
+
+type ControleMaeAction =
+  | { type: 'SET_MONTH'; payload: { year: number; month: number } }
+  | { type: 'FETCH_START' }
+  | { type: 'FETCH_SUCCESS'; payload: MaeLedgerEntryDto[] }
+  | { type: 'FETCH_ERROR'; payload: string }
+  | { type: 'RETRY' }
+  | { type: 'SET_CREATE_FIELD'; payload: { field: CreateFormField; value: string } }
+  | { type: 'CREATE_START' }
+  | { type: 'CREATE_SUCCESS' }
+  | { type: 'CREATE_ERROR'; payload: string }
+  | { type: 'SHOW_EDIT_FORM'; payload: MaeLedgerEntryDto }
+  | { type: 'CANCEL_EDIT' }
+  | { type: 'SET_EDIT_FIELD'; payload: { field: EditField; value: string } }
+  | { type: 'SAVE_START' }
+  | { type: 'SAVE_SUCCESS' }
+  | { type: 'SAVE_ERROR'; payload: string }
+
+const { year: DEFAULT_YEAR, month: DEFAULT_MONTH } = currentYearMonth()
+
+const BLANK_CREATE_FORM = {
+  createDate: '',
+  createDescription: '',
+  createNote: '',
+  createSourceCurrency: 'BRL',
+  createSourceValue: '',
+} as const
+
+const INITIAL_STATE: ControleMaeState = {
+  year: DEFAULT_YEAR,
+  month: DEFAULT_MONTH,
+  entries: [],
+  isLoading: true,
+  error: null,
+  retryCount: 0,
+  ...BLANK_CREATE_FORM,
+  isCreating: false,
+  createError: null,
+  editingId: null,
+  editBrlValue: '',
+  editGbpValue: '',
+  isSaving: false,
+  saveError: null,
+}
+
+function reducer(state: ControleMaeState, action: ControleMaeAction): ControleMaeState {
+  switch (action.type) {
+    case 'SET_MONTH':
+      return { ...state, year: action.payload.year, month: action.payload.month }
+    case 'FETCH_START':
+      return { ...state, isLoading: true, error: null }
+    case 'FETCH_SUCCESS':
+      return { ...state, isLoading: false, entries: action.payload }
+    case 'FETCH_ERROR':
+      return { ...state, isLoading: false, error: action.payload }
+    case 'RETRY':
+      return { ...state, retryCount: state.retryCount + 1 }
+    case 'SET_CREATE_FIELD':
+      return { ...state, [action.payload.field]: action.payload.value }
+    case 'CREATE_START':
+      return { ...state, isCreating: true, createError: null }
+    case 'CREATE_SUCCESS':
+      return { ...state, ...BLANK_CREATE_FORM, isCreating: false }
+    case 'CREATE_ERROR':
+      return { ...state, isCreating: false, createError: action.payload }
+    case 'SHOW_EDIT_FORM':
+      return {
+        ...state,
+        editingId: action.payload.id,
+        editBrlValue: action.payload.brlValue !== null ? String(action.payload.brlValue) : '',
+        editGbpValue: action.payload.gbpValue !== null ? String(action.payload.gbpValue) : '',
+        saveError: null,
+      }
+    case 'CANCEL_EDIT':
+      return { ...state, editingId: null, editBrlValue: '', editGbpValue: '', saveError: null }
+    case 'SET_EDIT_FIELD':
+      return { ...state, [action.payload.field]: action.payload.value }
+    case 'SAVE_START':
+      return { ...state, isSaving: true, saveError: null }
+    case 'SAVE_SUCCESS':
+      return { ...state, isSaving: false, editingId: null, editBrlValue: '', editGbpValue: '' }
+    case 'SAVE_ERROR':
+      return { ...state, isSaving: false, saveError: action.payload }
+    default:
+      return state
+  }
+}
+
+export interface ControleMaeData {
+  monthInputValue: string
+  setMonthInputValue: (value: string) => void
+  entries: MaeLedgerEntryDto[]
+  isLoading: boolean
+  error: string | null
+  retry: () => void
+  createDate: string
+  createDescription: string
+  createNote: string
+  createSourceCurrency: string
+  createSourceValue: string
+  isCreating: boolean
+  createError: string | null
+  setCreateField: (field: CreateFormField, value: string) => void
+  submitCreate: () => void
+  editingId: string | null
+  editBrlValue: string
+  editGbpValue: string
+  isSaving: boolean
+  saveError: string | null
+  setEditField: (field: EditField, value: string) => void
+  showEditForm: (entry: MaeLedgerEntryDto) => void
+  cancelEdit: () => void
+  saveEdit: () => void
+}
+
+export function useControleMae(): ControleMaeData {
+  const apiClient = useMemo(() => createFinancialApiClient(), [])
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+
+  useEffect(() => {
+    dispatch({ type: 'FETCH_START' })
+    void apiClient
+      .getMaeLedgerEntriesByMonth(state.year, state.month)
+      .then((entries) => dispatch({ type: 'FETCH_SUCCESS', payload: entries }))
+      .catch((err: unknown) => {
+        dispatch({ type: 'FETCH_ERROR', payload: err instanceof Error ? err.message : 'Unable to load Controle Mae data' })
+      })
+  }, [apiClient, state.year, state.month, state.retryCount])
+
+  const monthInputValue = `${state.year}-${pad(state.month)}`
+
+  const setMonthInputValue = useCallback((value: string) => {
+    const [yearStr, monthStr] = value.split('-')
+    const year = Number(yearStr)
+    const month = Number(monthStr)
+    if (!Number.isFinite(year) || !Number.isFinite(month)) return
+    dispatch({ type: 'SET_MONTH', payload: { year, month } })
+  }, [])
+
+  const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
+
+  const setCreateField = useCallback(
+    (field: CreateFormField, value: string) => dispatch({ type: 'SET_CREATE_FIELD', payload: { field, value } }),
+    [],
+  )
+
+  function submitCreate() {
+    const { createDate, createDescription, createSourceCurrency, createSourceValue, createNote } = state
+
+    if (!createDate.trim()) {
+      dispatch({ type: 'CREATE_ERROR', payload: 'Date is required' })
+      return
+    }
+
+    if (!createDescription.trim()) {
+      dispatch({ type: 'CREATE_ERROR', payload: 'Description is required' })
+      return
+    }
+
+    const sourceValue = Number(createSourceValue)
+    if (!createSourceValue.trim() || !isFinite(sourceValue) || sourceValue === 0) {
+      dispatch({ type: 'CREATE_ERROR', payload: 'Value must be a non-zero number' })
+      return
+    }
+
+    dispatch({ type: 'CREATE_START' })
+
+    void apiClient
+      .createMaeLedgerEntry({
+        date: createDate,
+        description: createDescription,
+        note: createNote,
+        sourceCurrency: createSourceCurrency,
+        sourceValue,
+      })
+      .then(() => {
+        dispatch({ type: 'CREATE_SUCCESS' })
+        dispatch({ type: 'RETRY' })
+      })
+      .catch((err: unknown) => {
+        dispatch({
+          type: 'CREATE_ERROR',
+          payload: err instanceof Error ? err.message : 'Failed to create entry',
+        })
+      })
+  }
+
+  const setEditField = useCallback(
+    (field: EditField, value: string) => dispatch({ type: 'SET_EDIT_FIELD', payload: { field, value } }),
+    [],
+  )
+
+  const showEditForm = useCallback(
+    (entry: MaeLedgerEntryDto) => dispatch({ type: 'SHOW_EDIT_FORM', payload: entry }),
+    [],
+  )
+
+  const cancelEdit = useCallback(() => dispatch({ type: 'CANCEL_EDIT' }), [])
+
+  function saveEdit() {
+    if (!state.editingId) return
+
+    const brlValue = state.editBrlValue.trim() === '' ? null : Number(state.editBrlValue)
+    const gbpValue = state.editGbpValue.trim() === '' ? null : Number(state.editGbpValue)
+
+    dispatch({ type: 'SAVE_START' })
+
+    void apiClient
+      .updateMaeLedgerEntryValues(state.editingId, { brlValue, gbpValue })
+      .then(() => {
+        dispatch({ type: 'SAVE_SUCCESS' })
+        dispatch({ type: 'RETRY' })
+      })
+      .catch((err: unknown) => {
+        dispatch({
+          type: 'SAVE_ERROR',
+          payload: err instanceof Error ? err.message : 'Failed to update entry',
+        })
+      })
+  }
+
+  return {
+    monthInputValue,
+    setMonthInputValue,
+    entries: state.entries,
+    isLoading: state.isLoading,
+    error: state.error,
+    retry,
+    createDate: state.createDate,
+    createDescription: state.createDescription,
+    createNote: state.createNote,
+    createSourceCurrency: state.createSourceCurrency,
+    createSourceValue: state.createSourceValue,
+    isCreating: state.isCreating,
+    createError: state.createError,
+    setCreateField,
+    submitCreate,
+    editingId: state.editingId,
+    editBrlValue: state.editBrlValue,
+    editGbpValue: state.editGbpValue,
+    isSaving: state.isSaving,
+    saveError: state.saveError,
+    setEditField,
+    showEditForm,
+    cancelEdit,
+    saveEdit,
+  }
+}
