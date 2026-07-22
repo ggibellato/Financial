@@ -7,9 +7,11 @@ import type {
   AssetPriceDto,
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
+  RecurringBillInstanceDto,
   ReserveBucketBalanceDto,
   ReserveMovementDto,
   TreeNodeDto,
+  UpdateRecurringBillInstanceDto,
   WithdrawalRequestDto,
   XirrResultDto,
 } from './types'
@@ -389,6 +391,60 @@ describe('financialApiClient', () => {
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/reserve/withdrawals`)
     expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('calls the mensais instances endpoint for a given year/month', async () => {
+    const responseBody: RecurringBillInstanceDto[] = [
+      {
+        id: 'i1',
+        templateId: 't1',
+        year: 2026,
+        month: 7,
+        dueDay: 10,
+        description: 'INSS',
+        area: 'Brasil',
+        note: '',
+        nitNumber: null,
+        minimumWageValue: null,
+        value: 850,
+        status: 'Unset',
+      },
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getMensaisInstances(2026, 7)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/mensais/2026/7`)
+  })
+
+  it('puts a mensais instance update', async () => {
+    const requestBody: UpdateRecurringBillInstanceDto = { status: 'Paid', value: 900 }
+    const responseBody: RecurringBillInstanceDto = {
+      id: 'i1',
+      templateId: 't1',
+      year: 2026,
+      month: 7,
+      dueDay: 10,
+      description: 'INSS',
+      area: 'Brasil',
+      note: '',
+      nitNumber: null,
+      minimumWageValue: null,
+      value: 900,
+      status: 'Paid',
+    }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateMensaisInstance('i1', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/mensais/instances/i1`)
+    expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 })
