@@ -260,3 +260,42 @@ export interface PortfolioAssetSummaryItemDto {
   estimatedAnnualPercent: number | null
   currentMonthCredits: number
 }
+
+export interface ReserveBucketBalanceDto {
+  bucket: string
+  balance: number
+}
+
+export interface ReserveMovementDto {
+  id: string
+  bucket: string
+  amount: number
+  date: string
+  description: string
+}
+
+export interface IncomeSplitRequestDto {
+  date: string
+  gleisonSalaryGross: number
+  gleisonSalaryNet: number
+  arianaSalaryGross: number
+  arianaSalaryNet: number
+  lottery: number
+  dividendoJuros: number
+}
+
+export interface IncomeSplitResultDto {
+  dizimo: number
+  investimento: number
+  houseTreats: number
+  ariana: number
+  gleison: number
+}
+
+export interface WithdrawalRequestDto {
+  bucket: string
+  amount: number
+  date: string
+  description: string
+  confirmed: boolean
+}

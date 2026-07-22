@@ -1,3 +1,4 @@
+import { ApiError } from './apiError'
 import { API_BASE_URL } from './config'
 import type {
   AggregatedSummaryDto,
@@ -12,16 +13,21 @@ import type {
   CreditUpdateDto,
   DividendHistoryItemDto,
   DividendSummaryDto,
+  IncomeSplitRequestDto,
+  IncomeSplitResultDto,
   InvestmentScope,
   PortfolioAssetSummaryItemDto,
   PortfolioBreakdownItemDto,
   PortfolioReferenceDto,
+  ReserveBucketBalanceDto,
+  ReserveMovementDto,
   TransactionCreateDto,
   TransactionDeleteDto,
   TransactionSummaryItemDto,
   TransactionUpdateDto,
   TreeNodeDto,
   WatchlistItemDto,
+  WithdrawalRequestDto,
   XirrResultDto,
 } from './types'
 
@@ -55,6 +61,10 @@ export interface FinancialApiClient {
   getAssetPriceFetchScope: () => Promise<PortfolioReferenceDto[]>
   getPortfolioAssetsSummary: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<PortfolioAssetSummaryItemDto[]>
   calculateXirr: (cashFlows: AssetCashFlowDto[], terminalValue: number) => Promise<XirrResultDto>
+  getReserveBalances: () => Promise<ReserveBucketBalanceDto[]>
+  getReserveMovements: () => Promise<ReserveMovementDto[]>
+  postIncomeSplit: (request: IncomeSplitRequestDto) => Promise<IncomeSplitResultDto>
+  postWithdrawal: (request: WithdrawalRequestDto) => Promise<ReserveMovementDto>
 }
 
 export interface FinancialApiClientOptions {
@@ -111,7 +121,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
 
     if (!response.ok) {
       const method = init?.method ?? 'GET'
-      throw new Error(await buildErrorMessage(response, method, url))
+      throw new ApiError(await buildErrorMessage(response, method, url), response.status)
     }
 
     return (await response.json()) as T
@@ -207,6 +217,18 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<XirrResultDto>('/xirr/calculate', {
         method: 'POST',
         body: JSON.stringify({ cashFlows, terminalValue } satisfies CalculateXirrRequestDto),
+      }),
+    getReserveBalances: () => request<ReserveBucketBalanceDto[]>('/reserve/balances'),
+    getReserveMovements: () => request<ReserveMovementDto[]>('/reserve/movements'),
+    postIncomeSplit: (requestBody) =>
+      request<IncomeSplitResultDto>('/reserve/income-split', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    postWithdrawal: (requestBody) =>
+      request<ReserveMovementDto>('/reserve/withdrawals', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
       }),
   }
 }

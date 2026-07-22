@@ -615,8 +615,8 @@ graph TD
 - [ ] A card statement can be marked paid from this view
 
 ### F13. Web — Reserva View
-- [ ] The view shows all 5 bucket balances and their movement history
-- [ ] Entering a month's income fields immediately reflects the resulting split in each bucket's displayed balance
+- [x] The view shows all 5 bucket balances and their movement history
+- [x] Entering a month's income fields immediately reflects the resulting split in each bucket's displayed balance
 
 ### F14. Web — Mensais View
 - [ ] The view shows Brasil and UK bills as two separate grouped sections for the selected month
