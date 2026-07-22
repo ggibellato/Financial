@@ -19,6 +19,7 @@ import type {
   PortfolioAssetSummaryItemDto,
   PortfolioBreakdownItemDto,
   PortfolioReferenceDto,
+  RecurringBillInstanceDto,
   ReserveBucketBalanceDto,
   ReserveMovementDto,
   TransactionCreateDto,
@@ -26,6 +27,7 @@ import type {
   TransactionSummaryItemDto,
   TransactionUpdateDto,
   TreeNodeDto,
+  UpdateRecurringBillInstanceDto,
   WatchlistItemDto,
   WithdrawalRequestDto,
   XirrResultDto,
@@ -65,6 +67,8 @@ export interface FinancialApiClient {
   getReserveMovements: () => Promise<ReserveMovementDto[]>
   postIncomeSplit: (request: IncomeSplitRequestDto) => Promise<IncomeSplitResultDto>
   postWithdrawal: (request: WithdrawalRequestDto) => Promise<ReserveMovementDto>
+  getMensaisInstances: (year: number, month: number) => Promise<RecurringBillInstanceDto[]>
+  updateMensaisInstance: (id: string, request: UpdateRecurringBillInstanceDto) => Promise<RecurringBillInstanceDto>
 }
 
 export interface FinancialApiClientOptions {
@@ -228,6 +232,13 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     postWithdrawal: (requestBody) =>
       request<ReserveMovementDto>('/reserve/withdrawals', {
         method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    getMensaisInstances: (year, month) =>
+      request<RecurringBillInstanceDto[]>(`/mensais/${year}/${month}`),
+    updateMensaisInstance: (id, requestBody) =>
+      request<RecurringBillInstanceDto>(`/mensais/instances/${encodeURIComponent(id)}`, {
+        method: 'PUT',
         body: JSON.stringify(requestBody),
       }),
   }

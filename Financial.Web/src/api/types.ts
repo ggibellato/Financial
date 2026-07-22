@@ -299,3 +299,23 @@ export interface WithdrawalRequestDto {
   description: string
   confirmed: boolean
 }
+
+export interface RecurringBillInstanceDto {
+  id: string
+  templateId: string
+  year: number
+  month: number
+  dueDay: number
+  description: string
+  area: string
+  note: string
+  nitNumber: string | null
+  minimumWageValue: number | null
+  value: number
+  status: string
+}
+
+export interface UpdateRecurringBillInstanceDto {
+  status: string
+  value: number
+}
