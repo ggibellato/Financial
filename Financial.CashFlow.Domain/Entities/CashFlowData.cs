@@ -71,6 +71,8 @@ public class CashFlowData
 
     public void AddReserveMovement(ReserveMovement movement) => _reserveMovements.Add(movement);
 
+    public void RemoveReserveMovement(Guid id) => _reserveMovements.RemoveAll(m => m.Id == id);
+
     public void AddCardStatement(CardStatement statement) => _cardStatements.Add(statement);
 
     public void AddRecurringBillTemplate(RecurringBillTemplate template) => _recurringBillTemplates.Add(template);

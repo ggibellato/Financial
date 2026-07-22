@@ -64,11 +64,39 @@ public class CashFlowDataTests
     {
         var data = CashFlowData.Create();
 
-        data.AddReserveMovement(ReserveMovement.Create());
+        data.AddReserveMovement(CreateReserveMovement());
 
         data.ReserveMovements.Should().ContainSingle();
         data.Expenses.Should().BeEmpty();
     }
+
+    [Fact]
+    public void RemoveReserveMovement_RemovesOnlyTheMatchingMovement()
+    {
+        var data = CashFlowData.Create();
+        var toKeep = CreateReserveMovement();
+        var toRemove = CreateReserveMovement();
+        data.AddReserveMovement(toKeep);
+        data.AddReserveMovement(toRemove);
+
+        data.RemoveReserveMovement(toRemove.Id);
+
+        data.ReserveMovements.Should().ContainSingle().Which.Id.Should().Be(toKeep.Id);
+    }
+
+    [Fact]
+    public void RemoveReserveMovement_WithUnknownId_LeavesCollectionUnchanged()
+    {
+        var data = CashFlowData.Create();
+        data.AddReserveMovement(CreateReserveMovement());
+
+        data.RemoveReserveMovement(Guid.NewGuid());
+
+        data.ReserveMovements.Should().ContainSingle();
+    }
+
+    private static ReserveMovement CreateReserveMovement() =>
+        ReserveMovement.Create(ReserveBucket.Dizimo, 10m, new DateOnly(2026, 7, 1), "Test movement");
 
     [Fact]
     public void AddCardStatement_AddsOnlyToCardStatementsCollection()

@@ -19,7 +19,7 @@ public class CashFlowSerializerAdapterTests
             Category.Mercado,
             PaymentSource.Barclays,
             CreditCard.BarclaysPlatinumVisa8003);
-        var reserveMovement = ReserveMovement.Create();
+        var reserveMovement = ReserveMovement.Create(ReserveBucket.Investimento, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split");
         var cardStatement = CardStatement.Create();
         var recurringBillTemplate = RecurringBillTemplate.Create();
         var recurringBillInstance = RecurringBillInstance.Create();
@@ -45,7 +45,12 @@ public class CashFlowSerializerAdapterTests
         resultExpense.Category.Should().Be(expense.Category);
         resultExpense.PaymentSource.Should().Be(expense.PaymentSource);
         resultExpense.CardTag.Should().Be(expense.CardTag);
-        result.ReserveMovements.Should().ContainSingle().Which.Id.Should().Be(reserveMovement.Id);
+        var resultMovement = result.ReserveMovements.Should().ContainSingle().Which;
+        resultMovement.Id.Should().Be(reserveMovement.Id);
+        resultMovement.Bucket.Should().Be(reserveMovement.Bucket);
+        resultMovement.Amount.Should().Be(reserveMovement.Amount);
+        resultMovement.Date.Should().Be(reserveMovement.Date);
+        resultMovement.Description.Should().Be(reserveMovement.Description);
         result.CardStatements.Should().ContainSingle().Which.Id.Should().Be(cardStatement.Id);
         result.RecurringBillTemplates.Should().ContainSingle().Which.Id.Should().Be(recurringBillTemplate.Id);
         result.RecurringBillInstances.Should().ContainSingle().Which.Id.Should().Be(recurringBillInstance.Id);
