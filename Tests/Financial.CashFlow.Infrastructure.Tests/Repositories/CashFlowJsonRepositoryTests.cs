@@ -77,4 +77,17 @@ public class CashFlowJsonRepositoryTests
 
         repository.GetExpenses().Should().BeEmpty();
     }
+
+    [Fact]
+    public void DeleteReserveMovement_RemovesTheMatchingMovement()
+    {
+        var data = CashFlowData.Create();
+        var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(Path.GetTempFileName()), new CashFlowSerializerAdapter());
+        var movement = ReserveMovement.Create(ReserveBucket.Dizimo, 10m, new DateOnly(2026, 7, 1), "Test movement");
+        repository.AddReserveMovement(movement);
+
+        repository.DeleteReserveMovement(movement.Id);
+
+        repository.GetReserveMovements().Should().BeEmpty();
+    }
 }

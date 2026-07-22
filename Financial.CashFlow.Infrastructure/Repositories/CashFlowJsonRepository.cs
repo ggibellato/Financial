@@ -24,6 +24,7 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository
 
     public IEnumerable<ReserveMovement> GetReserveMovements() => _data.ReserveMovements;
     public void AddReserveMovement(ReserveMovement movement) => _data.AddReserveMovement(movement);
+    public void DeleteReserveMovement(Guid id) => _data.RemoveReserveMovement(id);
 
     public IEnumerable<CardStatement> GetCardStatements() => _data.CardStatements;
     public void AddCardStatement(CardStatement statement) => _data.AddCardStatement(statement);

@@ -254,6 +254,7 @@ public class ExpenseServiceTests
 
         public IEnumerable<ReserveMovement> GetReserveMovements() => Array.Empty<ReserveMovement>();
         public void AddReserveMovement(ReserveMovement movement) { }
+        public void DeleteReserveMovement(Guid id) { }
 
         public IEnumerable<CardStatement> GetCardStatements() => Array.Empty<CardStatement>();
         public void AddCardStatement(CardStatement statement) { }
