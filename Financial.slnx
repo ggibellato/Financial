@@ -14,6 +14,7 @@
 		<Project Path="Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj" />
 	</Folder>
 	<Folder Name="/Integrations/">
+		<Project Path="Integrations/CashFlowSpreadsheetImport/CashFlowSpreadsheetImport.csproj" />
 		<Project Path="Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj" />
 		<Project Path="Integrations/ImportGoogleSpreadSheets/ImportGoogleSpreadSheets.csproj" />
 		<Project Path="Integrations/WebPageParser/WebPageParser.csproj" />
@@ -28,6 +29,7 @@
 		<Project Path="Tests/Financial.CashFlow.Domain.Tests/Financial.CashFlow.Domain.Tests.csproj" />
 		<Project Path="Tests/Financial.CashFlow.Application.Tests/Financial.CashFlow.Application.Tests.csproj" />
 		<Project Path="Tests/Financial.CashFlow.Infrastructure.Tests/Financial.CashFlow.Infrastructure.Tests.csproj" />
+		<Project Path="Tests/Financial.CashFlowSpreadsheetImport.Tests/Financial.CashFlowSpreadsheetImport.Tests.csproj" />
 	</Folder>
 	<Folder Name="/Presentation/">
 		<Project Path="Financial.App/Financial.App.csproj" />

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport</RootNamespace>
+    <AssemblyName>Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Financial.CashFlow.Application\Financial.CashFlow.Application.csproj" />
+    <ProjectReference Include="..\..\Financial.CashFlow.Domain\Financial.CashFlow.Domain.csproj" />
+    <ProjectReference Include="..\..\Financial.CashFlow.Infrastructure\Financial.CashFlow.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Financial.Shared.Infrastructure\Financial.Shared.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
