@@ -10,6 +10,7 @@ public interface ICashFlowRepository
 
     IEnumerable<ReserveMovement> GetReserveMovements();
     void AddReserveMovement(ReserveMovement movement);
+    void DeleteReserveMovement(Guid id);
 
     IEnumerable<CardStatement> GetCardStatements();
     void AddCardStatement(CardStatement statement);
