@@ -1,5 +1,4 @@
 import type { MaeLedgerEntryDto } from '../api/types'
-import EditRowActions from '../components/EditRowActions'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import { useControleMae } from '../hooks/useControleMae'
@@ -8,56 +7,10 @@ import './ControleMaePage.css'
 
 interface EntryRowProps {
   entry: MaeLedgerEntryDto
-  isEditing: boolean
-  editBrlValue: string
-  editGbpValue: string
-  isSaving: boolean
   onEdit: (entry: MaeLedgerEntryDto) => void
-  onFieldChange: (field: 'editBrlValue' | 'editGbpValue', value: string) => void
-  onSave: () => void
-  onCancel: () => void
 }
 
-function EntryRow({
-  entry,
-  isEditing,
-  editBrlValue,
-  editGbpValue,
-  isSaving,
-  onEdit,
-  onFieldChange,
-  onSave,
-  onCancel,
-}: EntryRowProps) {
-  if (isEditing) {
-    return (
-      <tr>
-        <td>{formatShortDate(entry.date)}</td>
-        <td>{entry.description}</td>
-        <td>{entry.note}</td>
-        <td className="data-table__col--numeric">
-          <input
-            type="number"
-            step="0.01"
-            value={editBrlValue}
-            onChange={(e) => onFieldChange('editBrlValue', e.target.value)}
-          />
-        </td>
-        <td className="data-table__col--numeric">
-          <input
-            type="number"
-            step="0.01"
-            value={editGbpValue}
-            onChange={(e) => onFieldChange('editGbpValue', e.target.value)}
-          />
-        </td>
-        <td>
-          <EditRowActions isSaving={isSaving} onSave={onSave} onCancel={onCancel} />
-        </td>
-      </tr>
-    )
-  }
-
+function EntryRow({ entry, onEdit }: EntryRowProps) {
   return (
     <tr>
       <td>{formatShortDate(entry.date)}</td>
@@ -82,6 +35,7 @@ export default function ControleMaePage() {
     isLoading,
     error,
     retry,
+    isCreateFormOpen,
     createDate,
     createDescription,
     createNote,
@@ -89,6 +43,8 @@ export default function ControleMaePage() {
     createSourceValue,
     isCreating,
     createError,
+    showCreateForm,
+    cancelCreateForm,
     setCreateField,
     submitCreate,
     editingId,
@@ -102,113 +58,145 @@ export default function ControleMaePage() {
     saveEdit,
   } = useControleMae()
 
+  const isEditing = editingId !== null
+  const isFormVisible = isCreateFormOpen || isEditing
+
   return (
     <div className="controle-mae-page">
-      <div className="controle-mae-page__month-picker">
-        <label htmlFor="controle-mae-month">Month</label>
-        <input
-          id="controle-mae-month"
-          type="month"
-          value={monthInputValue}
-          onChange={(e) => setMonthInputValue(e.target.value)}
-        />
+      <div className="controle-mae-page__header">
+        <div className="controle-mae-page__month-picker">
+          <label htmlFor="controle-mae-month">Month</label>
+          <input
+            id="controle-mae-month"
+            type="month"
+            value={monthInputValue}
+            onChange={(e) => setMonthInputValue(e.target.value)}
+          />
+        </div>
+        <button className="controle-mae-page__new-btn" type="button" onClick={showCreateForm}>
+          New Entry
+        </button>
       </div>
 
-      <section className="controle-mae-page__section">
-        <h2>New Entry</h2>
-        <div className="controle-mae-page__form">
-          <div className="controle-mae-page__form-field">
-            <label htmlFor="create-date">Date</label>
-            <input
-              id="create-date"
-              type="date"
-              value={createDate}
-              onChange={(e) => setCreateField('createDate', e.target.value)}
-            />
+      {isFormVisible && (
+        <div className="controle-mae-page__form-panel">
+          <p className="controle-mae-page__form-title">{isEditing ? 'Edit Entry' : 'New Entry'}</p>
+          {isEditing ? (
+            <div className="controle-mae-page__form">
+              <div className="controle-mae-page__form-field">
+                <label htmlFor="edit-brl-value">BRL</label>
+                <input
+                  id="edit-brl-value"
+                  type="number"
+                  step="0.01"
+                  value={editBrlValue}
+                  onChange={(e) => setEditField('editBrlValue', e.target.value)}
+                />
+              </div>
+              <div className="controle-mae-page__form-field">
+                <label htmlFor="edit-gbp-value">GBP</label>
+                <input
+                  id="edit-gbp-value"
+                  type="number"
+                  step="0.01"
+                  value={editGbpValue}
+                  onChange={(e) => setEditField('editGbpValue', e.target.value)}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="controle-mae-page__form">
+              <div className="controle-mae-page__form-field">
+                <label htmlFor="create-date">Date</label>
+                <input
+                  id="create-date"
+                  type="date"
+                  value={createDate}
+                  onChange={(e) => setCreateField('createDate', e.target.value)}
+                />
+              </div>
+              <div className="controle-mae-page__form-field">
+                <label htmlFor="create-description">Description</label>
+                <input
+                  id="create-description"
+                  type="text"
+                  value={createDescription}
+                  onChange={(e) => setCreateField('createDescription', e.target.value)}
+                />
+              </div>
+              <div className="controle-mae-page__form-field">
+                <label htmlFor="create-note">Note</label>
+                <input
+                  id="create-note"
+                  type="text"
+                  value={createNote}
+                  onChange={(e) => setCreateField('createNote', e.target.value)}
+                />
+              </div>
+              <div className="controle-mae-page__form-field">
+                <label htmlFor="create-currency">Currency</label>
+                <select
+                  id="create-currency"
+                  value={createSourceCurrency}
+                  onChange={(e) => setCreateField('createSourceCurrency', e.target.value)}
+                >
+                  <option value="BRL">BRL</option>
+                  <option value="GBP">GBP</option>
+                </select>
+              </div>
+              <div className="controle-mae-page__form-field">
+                <label htmlFor="create-value">Value</label>
+                <input
+                  id="create-value"
+                  type="number"
+                  step="0.01"
+                  value={createSourceValue}
+                  onChange={(e) => setCreateField('createSourceValue', e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+          <div className="controle-mae-page__form-actions">
+            <button type="button" disabled={isEditing ? isSaving : isCreating} onClick={isEditing ? saveEdit : submitCreate}>
+              {isEditing ? (isSaving ? 'Saving...' : 'Save') : isCreating ? 'Saving...' : 'Add Entry'}
+            </button>
+            <button type="button" onClick={isEditing ? cancelEdit : cancelCreateForm}>
+              Cancel
+            </button>
           </div>
-          <div className="controle-mae-page__form-field">
-            <label htmlFor="create-description">Description</label>
-            <input
-              id="create-description"
-              type="text"
-              value={createDescription}
-              onChange={(e) => setCreateField('createDescription', e.target.value)}
-            />
-          </div>
-          <div className="controle-mae-page__form-field">
-            <label htmlFor="create-note">Note</label>
-            <input
-              id="create-note"
-              type="text"
-              value={createNote}
-              onChange={(e) => setCreateField('createNote', e.target.value)}
-            />
-          </div>
-          <div className="controle-mae-page__form-field">
-            <label htmlFor="create-currency">Currency</label>
-            <select
-              id="create-currency"
-              value={createSourceCurrency}
-              onChange={(e) => setCreateField('createSourceCurrency', e.target.value)}
-            >
-              <option value="BRL">BRL</option>
-              <option value="GBP">GBP</option>
-            </select>
-          </div>
-          <div className="controle-mae-page__form-field">
-            <label htmlFor="create-value">Value</label>
-            <input
-              id="create-value"
-              type="number"
-              step="0.01"
-              value={createSourceValue}
-              onChange={(e) => setCreateField('createSourceValue', e.target.value)}
-            />
-          </div>
-          <button type="button" disabled={isCreating} onClick={submitCreate}>
-            {isCreating ? 'Saving...' : 'Add Entry'}
-          </button>
-          {createError && <p className="controle-mae-page__error">{createError}</p>}
+          {(isEditing ? saveError : createError) && (
+            <p className="controle-mae-page__error">{isEditing ? saveError : createError}</p>
+          )}
         </div>
-      </section>
+      )}
 
       {isLoading ? (
         <LoadingState />
       ) : error ? (
         <ErrorState message={error} onRetry={retry} />
       ) : (
-        <section className="controle-mae-page__section">
-          <h2>Ledger</h2>
-          <table className="controle-mae-page__table data-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Description</th>
-                <th>Note</th>
-                <th className="data-table__col--numeric">BRL</th>
-                <th className="data-table__col--numeric">GBP</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((entry) => (
-                <EntryRow
-                  key={entry.id}
-                  entry={entry}
-                  isEditing={editingId === entry.id}
-                  editBrlValue={editBrlValue}
-                  editGbpValue={editGbpValue}
-                  isSaving={isSaving}
-                  onEdit={showEditForm}
-                  onFieldChange={setEditField}
-                  onSave={saveEdit}
-                  onCancel={cancelEdit}
-                />
-              ))}
-            </tbody>
-          </table>
-          {saveError && <p className="controle-mae-page__error">{saveError}</p>}
-        </section>
+        <div className="controle-mae-page__content">
+          <section className="controle-mae-page__section">
+            <h2>Ledger</h2>
+            <table className="controle-mae-page__table data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th>Note</th>
+                  <th className="data-table__col--numeric">BRL</th>
+                  <th className="data-table__col--numeric">GBP</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((entry) => (
+                  <EntryRow key={entry.id} entry={entry} onEdit={showEditForm} />
+                ))}
+              </tbody>
+            </table>
+          </section>
+        </div>
       )}
     </div>
   )

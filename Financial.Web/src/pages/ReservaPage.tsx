@@ -21,6 +21,7 @@ export default function ReservaPage() {
     isLoading,
     error,
     retry,
+    isSplitFormOpen,
     splitDate,
     gleisonSalaryGross,
     gleisonSalaryNet,
@@ -30,14 +31,19 @@ export default function ReservaPage() {
     dividendoJuros,
     isSubmittingSplit,
     splitError,
+    showSplitForm,
+    cancelSplitForm,
     setSplitField,
     submitIncomeSplit,
+    isWithdrawalFormOpen,
     withdrawalBucket,
     withdrawalAmount,
     withdrawalDate,
     withdrawalDescription,
     isSubmittingWithdrawal,
     withdrawalError,
+    showWithdrawalForm,
+    cancelWithdrawalForm,
     setWithdrawalField,
     submitWithdrawal,
   } = useReserva()
@@ -69,134 +75,161 @@ export default function ReservaPage() {
 
   return (
     <div className="reserva-page">
-      <section className="reserva-page__section">
-        <h2>Bucket Balances</h2>
-        <table className="reserva-page__table data-table">
-          <thead>
-            <tr>
-              <th>Bucket</th>
-              <th className="data-table__col--numeric">Balance</th>
-            </tr>
-          </thead>
-          <tbody>
-            {balances.map((b) => (
-              <tr key={b.bucket}>
-                <td>{b.bucket}</td>
-                <td className="data-table__col--numeric">{formatN2(b.balance)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+      <div className="reserva-page__header">
+        <div className="reserva-page__toolbar">
+          <button className="reserva-page__new-btn" type="button" onClick={showSplitForm}>
+            New Income Split
+          </button>
+          <button className="reserva-page__new-btn" type="button" onClick={showWithdrawalForm}>
+            New Withdrawal
+          </button>
+        </div>
+      </div>
 
-      <section className="reserva-page__section">
-        <h2>Post Monthly Income Split</h2>
-        <div className="reserva-page__form">
-          <div className="reserva-page__form-field">
-            <label htmlFor="split-date">Date</label>
-            <input
-              id="split-date"
-              type="date"
-              value={splitDate}
-              required
-              onChange={(e) => setSplitField('splitDate', e.target.value)}
-            />
-          </div>
-          {SPLIT_FIELDS.map(({ field, label }) => (
-            <div className="reserva-page__form-field" key={field}>
-              <label htmlFor={`split-${field}`}>{label}</label>
+      {isSplitFormOpen && (
+        <div className="reserva-page__form-panel">
+          <p className="reserva-page__form-title">Post Monthly Income Split</p>
+          <div className="reserva-page__form">
+            <div className="reserva-page__form-field">
+              <label htmlFor="split-date">Date</label>
               <input
-                id={`split-${field}`}
-                type="number"
-                step="0.01"
-                value={splitValues[field]}
-                onChange={(e) => setSplitField(field, e.target.value)}
+                id="split-date"
+                type="date"
+                value={splitDate}
+                required
+                onChange={(e) => setSplitField('splitDate', e.target.value)}
               />
             </div>
-          ))}
-          <button type="button" disabled={isSubmittingSplit} onClick={submitIncomeSplit}>
-            {isSubmittingSplit ? 'Posting...' : 'Post Income Split'}
-          </button>
+            {SPLIT_FIELDS.map(({ field, label }) => (
+              <div className="reserva-page__form-field" key={field}>
+                <label htmlFor={`split-${field}`}>{label}</label>
+                <input
+                  id={`split-${field}`}
+                  type="number"
+                  step="0.01"
+                  value={splitValues[field]}
+                  onChange={(e) => setSplitField(field, e.target.value)}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="reserva-page__form-actions">
+            <button type="button" disabled={isSubmittingSplit} onClick={submitIncomeSplit}>
+              {isSubmittingSplit ? 'Posting...' : 'Post Income Split'}
+            </button>
+            <button type="button" onClick={cancelSplitForm}>
+              Cancel
+            </button>
+          </div>
           {splitError && <p className="reserva-page__error">{splitError}</p>}
         </div>
-      </section>
+      )}
 
-      <section className="reserva-page__section">
-        <h2>Record a Withdrawal</h2>
-        <div className="reserva-page__form">
-          <div className="reserva-page__form-field">
-            <label htmlFor="withdrawal-bucket">Bucket</label>
-            <select
-              id="withdrawal-bucket"
-              value={withdrawalValues.withdrawalBucket}
-              onChange={(e) => setWithdrawalField('withdrawalBucket', e.target.value)}
-            >
-              {RESERVE_BUCKETS.map((bucket) => (
-                <option key={bucket} value={bucket}>
-                  {bucket}
-                </option>
-              ))}
-            </select>
+      {isWithdrawalFormOpen && (
+        <div className="reserva-page__form-panel">
+          <p className="reserva-page__form-title">Record a Withdrawal</p>
+          <div className="reserva-page__form">
+            <div className="reserva-page__form-field">
+              <label htmlFor="withdrawal-bucket">Bucket</label>
+              <select
+                id="withdrawal-bucket"
+                value={withdrawalValues.withdrawalBucket}
+                onChange={(e) => setWithdrawalField('withdrawalBucket', e.target.value)}
+              >
+                {RESERVE_BUCKETS.map((bucket) => (
+                  <option key={bucket} value={bucket}>
+                    {bucket}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="reserva-page__form-field">
+              <label htmlFor="withdrawal-amount">Amount</label>
+              <input
+                id="withdrawal-amount"
+                type="number"
+                step="0.01"
+                min="0"
+                value={withdrawalValues.withdrawalAmount}
+                onChange={(e) => setWithdrawalField('withdrawalAmount', e.target.value)}
+              />
+            </div>
+            <div className="reserva-page__form-field">
+              <label htmlFor="withdrawal-date">Date</label>
+              <input
+                id="withdrawal-date"
+                type="date"
+                value={withdrawalValues.withdrawalDate}
+                onChange={(e) => setWithdrawalField('withdrawalDate', e.target.value)}
+              />
+            </div>
+            <div className="reserva-page__form-field">
+              <label htmlFor="withdrawal-description">Description</label>
+              <input
+                id="withdrawal-description"
+                type="text"
+                value={withdrawalValues.withdrawalDescription}
+                onChange={(e) => setWithdrawalField('withdrawalDescription', e.target.value)}
+              />
+            </div>
           </div>
-          <div className="reserva-page__form-field">
-            <label htmlFor="withdrawal-amount">Amount</label>
-            <input
-              id="withdrawal-amount"
-              type="number"
-              step="0.01"
-              min="0"
-              value={withdrawalValues.withdrawalAmount}
-              onChange={(e) => setWithdrawalField('withdrawalAmount', e.target.value)}
-            />
+          <div className="reserva-page__form-actions">
+            <button type="button" disabled={isSubmittingWithdrawal} onClick={submitWithdrawal}>
+              {isSubmittingWithdrawal ? 'Saving...' : 'Record Withdrawal'}
+            </button>
+            <button type="button" onClick={cancelWithdrawalForm}>
+              Cancel
+            </button>
           </div>
-          <div className="reserva-page__form-field">
-            <label htmlFor="withdrawal-date">Date</label>
-            <input
-              id="withdrawal-date"
-              type="date"
-              value={withdrawalValues.withdrawalDate}
-              onChange={(e) => setWithdrawalField('withdrawalDate', e.target.value)}
-            />
-          </div>
-          <div className="reserva-page__form-field">
-            <label htmlFor="withdrawal-description">Description</label>
-            <input
-              id="withdrawal-description"
-              type="text"
-              value={withdrawalValues.withdrawalDescription}
-              onChange={(e) => setWithdrawalField('withdrawalDescription', e.target.value)}
-            />
-          </div>
-          <button type="button" disabled={isSubmittingWithdrawal} onClick={submitWithdrawal}>
-            {isSubmittingWithdrawal ? 'Saving...' : 'Record Withdrawal'}
-          </button>
           {withdrawalError && <p className="reserva-page__error">{withdrawalError}</p>}
         </div>
-      </section>
+      )}
 
-      <section className="reserva-page__section">
-        <h2>Movement History</h2>
-        <table className="reserva-page__table data-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Bucket</th>
-              <th>Description</th>
-              <th className="data-table__col--numeric">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {movements.map((m) => (
-              <tr key={m.id}>
-                <td>{formatShortDate(m.date)}</td>
-                <td>{m.bucket}</td>
-                <td>{m.description}</td>
-                <td className="data-table__col--numeric">{formatN2(m.amount)}</td>
+      <div className="reserva-page__content">
+        <section className="reserva-page__section">
+          <h2>Bucket Balances</h2>
+          <table className="reserva-page__table data-table">
+            <thead>
+              <tr>
+                <th>Bucket</th>
+                <th className="data-table__col--numeric">Balance</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+            </thead>
+            <tbody>
+              {balances.map((b) => (
+                <tr key={b.bucket}>
+                  <td>{b.bucket}</td>
+                  <td className="data-table__col--numeric">{formatN2(b.balance)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+
+        <section className="reserva-page__section reserva-page__section--main">
+          <h2>Movement History</h2>
+          <table className="reserva-page__table data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Bucket</th>
+                <th>Description</th>
+                <th className="data-table__col--numeric">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {movements.map((m) => (
+                <tr key={m.id}>
+                  <td>{formatShortDate(m.date)}</td>
+                  <td>{m.bucket}</td>
+                  <td>{m.description}</td>
+                  <td className="data-table__col--numeric">{formatN2(m.amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      </div>
     </div>
   )
 }

@@ -96,11 +96,14 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1'))
   })
 
-  it('renders the add-expense form and submits a new expense', async () => {
+  it('shows the add-expense form only after New Expense is clicked, and submits a new expense', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByText('New Expense')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
+    expect(screen.queryByLabelText('Date')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
     fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Waitrose' } })
     fireEvent.change(screen.getByLabelText('Value'), { target: { value: '15.5' } })
@@ -111,13 +114,14 @@ describe('MonthlyPage', () => {
     )
   })
 
-  it('edits an expense value and saves, updating the displayed row', async () => {
+  it('edits an expense value via the toggled panel and saves, updating the displayed row', async () => {
     updateExpenseMock.mockResolvedValue({ ...EXPENSES[0], value: 50 })
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0])
+    expect(screen.getByText('Edit Expense')).toBeInTheDocument()
     const valueInput = screen.getByDisplayValue('42.5')
     fireEvent.change(valueInput, { target: { value: '50' } })
 

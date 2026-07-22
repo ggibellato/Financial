@@ -1,9 +1,62 @@
 .reserva-page {
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 24px 24px 0;
+  gap: 16px;
+}
+
+.reserva-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.reserva-page__toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.reserva-page__new-btn {
+  font: inherit;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+  background: #007acc;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+}
+
+.reserva-page__new-btn:hover {
+  background: #005fa3;
+}
+
+.reserva-page__form-panel {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--border, #e5e4e7);
+  border-radius: 6px;
+  background: var(--bg-subtle, #f9f9f9);
+}
+
+.reserva-page__form-title {
+  font-size: 13px;
+  font-weight: bold;
+  margin: 0 0 10px;
+}
+
+.reserva-page__content {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 32px;
+  padding-bottom: 24px;
 }
 
 .reserva-page__section h2 {
@@ -19,9 +72,8 @@
 .reserva-page__form {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  align-items: flex-end;
-  max-width: 720px;
+  gap: 8px 16px;
+  margin-bottom: 10px;
 }
 
 .reserva-page__form-field {
@@ -30,7 +82,14 @@
   gap: 4px;
 }
 
+.reserva-page__form-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .reserva-page__error {
+  margin-top: 6px;
   color: var(--error, #c0392b);
   width: 100%;
 }

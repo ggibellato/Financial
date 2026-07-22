@@ -1,5 +1,4 @@
 import type { InvestmentSnapshotDto } from '../api/types'
-import EditRowActions from '../components/EditRowActions'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import { useInvestmentSnapshots } from '../hooks/useInvestmentSnapshots'
@@ -8,40 +7,11 @@ import './InvestmentSnapshotsPage.css'
 
 interface SnapshotRowProps {
   snapshot: InvestmentSnapshotDto
-  isEditing: boolean
-  editValue: string
-  isSaving: boolean
   onEdit: (snapshot: InvestmentSnapshotDto) => void
-  onValueChange: (value: string) => void
-  onSave: () => void
-  onCancel: () => void
 }
 
-function SnapshotRow({
-  snapshot,
-  isEditing,
-  editValue,
-  isSaving,
-  onEdit,
-  onValueChange,
-  onSave,
-  onCancel,
-}: SnapshotRowProps) {
+function SnapshotRow({ snapshot, onEdit }: SnapshotRowProps) {
   const label = snapshot.isLiability ? `${snapshot.account} (liability)` : snapshot.account
-
-  if (isEditing) {
-    return (
-      <tr>
-        <td>{label}</td>
-        <td className="data-table__col--numeric">
-          <input type="number" step="0.01" min="0" value={editValue} onChange={(e) => onValueChange(e.target.value)} />
-        </td>
-        <td>
-          <EditRowActions isSaving={isSaving} onSave={onSave} onCancel={onCancel} />
-        </td>
-      </tr>
-    )
-  }
 
   return (
     <tr>
@@ -74,6 +44,8 @@ export default function InvestmentSnapshotsPage() {
     saveEdit,
   } = useInvestmentSnapshots()
 
+  const isEditing = editingId !== null
+
   return (
     <div className="investment-snapshots-page">
       <div className="investment-snapshots-page__month-picker">
@@ -86,38 +58,57 @@ export default function InvestmentSnapshotsPage() {
         />
       </div>
 
+      {isEditing && (
+        <div className="investment-snapshots-page__form-panel">
+          <p className="investment-snapshots-page__form-title">Edit Snapshot</p>
+          <div className="investment-snapshots-page__form">
+            <div className="investment-snapshots-page__form-field">
+              <label htmlFor="snapshot-edit-value">Value</label>
+              <input
+                id="snapshot-edit-value"
+                type="number"
+                step="0.01"
+                min="0"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="investment-snapshots-page__form-actions">
+            <button type="button" disabled={isSaving} onClick={saveEdit}>
+              {isSaving ? 'Saving...' : 'Save'}
+            </button>
+            <button type="button" onClick={cancelEdit}>
+              Cancel
+            </button>
+          </div>
+          {saveError && <p className="investment-snapshots-page__error">{saveError}</p>}
+        </div>
+      )}
+
       {isLoading ? (
         <LoadingState />
       ) : error ? (
         <ErrorState message={error} onRetry={retry} />
       ) : (
-        <section className="investment-snapshots-page__section">
-          <table className="investment-snapshots-page__table data-table">
-            <thead>
-              <tr>
-                <th>Account</th>
-                <th className="data-table__col--numeric">Value</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {snapshots.map((snapshot) => (
-                <SnapshotRow
-                  key={snapshot.id}
-                  snapshot={snapshot}
-                  isEditing={editingId === snapshot.id}
-                  editValue={editValue}
-                  isSaving={isSaving}
-                  onEdit={showEditForm}
-                  onValueChange={setEditValue}
-                  onSave={saveEdit}
-                  onCancel={cancelEdit}
-                />
-              ))}
-            </tbody>
-          </table>
-          {saveError && <p className="investment-snapshots-page__error">{saveError}</p>}
-        </section>
+        <div className="investment-snapshots-page__content">
+          <section className="investment-snapshots-page__section">
+            <table className="investment-snapshots-page__table data-table">
+              <thead>
+                <tr>
+                  <th>Account</th>
+                  <th className="data-table__col--numeric">Value</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {snapshots.map((snapshot) => (
+                  <SnapshotRow key={snapshot.id} snapshot={snapshot} onEdit={showEditForm} />
+                ))}
+              </tbody>
+            </table>
+          </section>
+        </div>
       )}
     </div>
   )

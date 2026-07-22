@@ -57,23 +57,28 @@ describe('ControleMaePage', () => {
     expect(screen.getByText('51.10')).toBeInTheDocument()
   })
 
-  it('renders the create-entry form', async () => {
+  it('shows the create-entry form only after New Entry is clicked', async () => {
     render(<ControleMaePage />)
 
-    await waitFor(() => expect(screen.getByText('New Entry')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Entry' })).toBeInTheDocument())
+    expect(screen.queryByLabelText('Date')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Entry' }))
+
     expect(screen.getByLabelText('Date')).toBeInTheDocument()
     expect(screen.getByLabelText('Description')).toBeInTheDocument()
     expect(screen.getByLabelText('Currency')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add Entry' })).toBeInTheDocument()
   })
 
-  it('edits an entry values and saves, updating the displayed row', async () => {
+  it('edits an entry values via the toggled panel and saves, updating the displayed row', async () => {
     updateMaeLedgerEntryValuesMock.mockResolvedValue({ ...ENTRIES[0], brlValue: 355, gbpValue: 51.6 })
     render(<ControleMaePage />)
 
     await waitFor(() => expect(screen.getByText('School supplies')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    expect(screen.getByText('Edit Entry')).toBeInTheDocument()
     const brlInput = screen.getByDisplayValue('350')
     fireEvent.change(brlInput, { target: { value: '355' } })
 

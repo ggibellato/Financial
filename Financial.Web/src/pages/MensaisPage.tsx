@@ -1,5 +1,4 @@
 import type { RecurringBillInstanceDto } from '../api/types'
-import EditRowActions from '../components/EditRowActions'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import { useMensais } from '../hooks/useMensais'
@@ -10,56 +9,10 @@ const STATUSES = ['Unset', 'Scheduled', 'Paid']
 
 interface InstanceRowProps {
   instance: RecurringBillInstanceDto
-  isEditing: boolean
-  editStatus: string
-  editValue: string
-  isSaving: boolean
   onEdit: (instance: RecurringBillInstanceDto) => void
-  onFieldChange: (field: 'editStatus' | 'editValue', value: string) => void
-  onSave: () => void
-  onCancel: () => void
 }
 
-function InstanceRow({
-  instance,
-  isEditing,
-  editStatus,
-  editValue,
-  isSaving,
-  onEdit,
-  onFieldChange,
-  onSave,
-  onCancel,
-}: InstanceRowProps) {
-  if (isEditing) {
-    return (
-      <tr>
-        <td>{instance.dueDay}</td>
-        <td>{instance.description}</td>
-        <td className="data-table__col--numeric">
-          <input
-            type="number"
-            step="0.01"
-            value={editValue}
-            onChange={(e) => onFieldChange('editValue', e.target.value)}
-          />
-        </td>
-        <td>
-          <select value={editStatus} onChange={(e) => onFieldChange('editStatus', e.target.value)}>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </td>
-        <td>
-          <EditRowActions isSaving={isSaving} onSave={onSave} onCancel={onCancel} />
-        </td>
-      </tr>
-    )
-  }
-
+function InstanceRow({ instance, onEdit }: InstanceRowProps) {
   return (
     <tr>
       <td>{instance.dueDay}</td>
@@ -78,28 +31,10 @@ function InstanceRow({
 interface InstanceTableProps {
   title: string
   instances: RecurringBillInstanceDto[]
-  editingId: string | null
-  editStatus: string
-  editValue: string
-  isSaving: boolean
   onEdit: (instance: RecurringBillInstanceDto) => void
-  onFieldChange: (field: 'editStatus' | 'editValue', value: string) => void
-  onSave: () => void
-  onCancel: () => void
 }
 
-function InstanceTable({
-  title,
-  instances,
-  editingId,
-  editStatus,
-  editValue,
-  isSaving,
-  onEdit,
-  onFieldChange,
-  onSave,
-  onCancel,
-}: InstanceTableProps) {
+function InstanceTable({ title, instances, onEdit }: InstanceTableProps) {
   return (
     <section className="mensais-page__section">
       <h2>{title}</h2>
@@ -115,18 +50,7 @@ function InstanceTable({
         </thead>
         <tbody>
           {instances.map((instance) => (
-            <InstanceRow
-              key={instance.id}
-              instance={instance}
-              isEditing={editingId === instance.id}
-              editStatus={editStatus}
-              editValue={editValue}
-              isSaving={isSaving}
-              onEdit={onEdit}
-              onFieldChange={onFieldChange}
-              onSave={onSave}
-              onCancel={onCancel}
-            />
+            <InstanceRow key={instance.id} instance={instance} onEdit={onEdit} />
           ))}
         </tbody>
       </table>
@@ -154,6 +78,8 @@ export default function MensaisPage() {
     saveEdit,
   } = useMensais()
 
+  const isEditing = editingId !== null
+
   return (
     <div className="mensais-page">
       <div className="mensais-page__month-picker">
@@ -166,38 +92,56 @@ export default function MensaisPage() {
         />
       </div>
 
+      {isEditing && (
+        <div className="mensais-page__form-panel">
+          <p className="mensais-page__form-title">Edit Instance</p>
+          <div className="mensais-page__form">
+            <div className="mensais-page__form-field">
+              <label htmlFor="mensais-edit-value">Value</label>
+              <input
+                id="mensais-edit-value"
+                type="number"
+                step="0.01"
+                value={editValue}
+                onChange={(e) => setEditField('editValue', e.target.value)}
+              />
+            </div>
+            <div className="mensais-page__form-field">
+              <label htmlFor="mensais-edit-status">Status</label>
+              <select
+                id="mensais-edit-status"
+                value={editStatus}
+                onChange={(e) => setEditField('editStatus', e.target.value)}
+              >
+                {STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="mensais-page__form-actions">
+            <button type="button" disabled={isSaving} onClick={saveEdit}>
+              {isSaving ? 'Saving...' : 'Save'}
+            </button>
+            <button type="button" onClick={cancelEdit}>
+              Cancel
+            </button>
+          </div>
+          {saveError && <p className="mensais-page__error">{saveError}</p>}
+        </div>
+      )}
+
       {isLoading ? (
         <LoadingState />
       ) : error ? (
         <ErrorState message={error} onRetry={retry} />
       ) : (
-        <>
-          <InstanceTable
-            title="Brasil"
-            instances={brasilInstances}
-            editingId={editingId}
-            editStatus={editStatus}
-            editValue={editValue}
-            isSaving={isSaving}
-            onEdit={showEditForm}
-            onFieldChange={setEditField}
-            onSave={saveEdit}
-            onCancel={cancelEdit}
-          />
-          <InstanceTable
-            title="UK"
-            instances={ukInstances}
-            editingId={editingId}
-            editStatus={editStatus}
-            editValue={editValue}
-            isSaving={isSaving}
-            onEdit={showEditForm}
-            onFieldChange={setEditField}
-            onSave={saveEdit}
-            onCancel={cancelEdit}
-          />
-          {saveError && <p className="mensais-page__error">{saveError}</p>}
-        </>
+        <div className="mensais-page__content">
+          <InstanceTable title="Brasil" instances={brasilInstances} onEdit={showEditForm} />
+          <InstanceTable title="UK" instances={ukInstances} onEdit={showEditForm} />
+        </div>
       )}
     </div>
   )

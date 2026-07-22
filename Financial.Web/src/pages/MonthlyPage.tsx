@@ -1,10 +1,29 @@
 import type { ExpenseDto } from '../api/types'
-import EditRowActions from '../components/EditRowActions'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
-import { useMonthly, type EditField } from '../hooks/useMonthly'
+import { useMonthly, type CreateFormField, type EditField } from '../hooks/useMonthly'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './MonthlyPage.css'
+
+type ExpenseFormField = 'date' | 'description' | 'value' | 'category' | 'paymentSource' | 'cardTag'
+
+const CREATE_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, CreateFormField> = {
+  date: 'createDate',
+  description: 'createDescription',
+  value: 'createValue',
+  category: 'createCategory',
+  paymentSource: 'createPaymentSource',
+  cardTag: 'createCardTag',
+}
+
+const EDIT_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, EditField> = {
+  date: 'editDate',
+  description: 'editDescription',
+  value: 'editValue',
+  category: 'editCategory',
+  paymentSource: 'editPaymentSource',
+  cardTag: 'editCardTag',
+}
 
 const CATEGORIES = [
   'Ariana',
@@ -29,88 +48,11 @@ const CARDS = ['BarclaysPlatinumVisa8003', 'BarclaysPlatinumVisa6007', 'ChaseMas
 
 interface ExpenseRowProps {
   expense: ExpenseDto
-  isEditing: boolean
-  editDate: string
-  editDescription: string
-  editValue: string
-  editCategory: string
-  editPaymentSource: string
-  editCardTag: string
-  isSaving: boolean
   onEdit: (expense: ExpenseDto) => void
-  onFieldChange: (field: EditField, value: string) => void
-  onSave: () => void
-  onCancel: () => void
   onDelete: (id: string) => void
 }
 
-function ExpenseRow({
-  expense,
-  isEditing,
-  editDate,
-  editDescription,
-  editValue,
-  editCategory,
-  editPaymentSource,
-  editCardTag,
-  isSaving,
-  onEdit,
-  onFieldChange,
-  onSave,
-  onCancel,
-  onDelete,
-}: ExpenseRowProps) {
-  if (isEditing) {
-    return (
-      <tr>
-        <td>
-          <input type="date" value={editDate} onChange={(e) => onFieldChange('editDate', e.target.value)} />
-        </td>
-        <td>
-          <input
-            type="text"
-            value={editDescription}
-            onChange={(e) => onFieldChange('editDescription', e.target.value)}
-          />
-        </td>
-        <td>
-          <select value={editCategory} onChange={(e) => onFieldChange('editCategory', e.target.value)}>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </td>
-        <td className="data-table__col--numeric">
-          <input type="number" step="0.01" value={editValue} onChange={(e) => onFieldChange('editValue', e.target.value)} />
-        </td>
-        <td>
-          <select value={editPaymentSource} onChange={(e) => onFieldChange('editPaymentSource', e.target.value)}>
-            {PAYMENT_SOURCES.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </td>
-        <td>
-          <select value={editCardTag} onChange={(e) => onFieldChange('editCardTag', e.target.value)}>
-            <option value="">—</option>
-            {CARDS.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </td>
-        <td>
-          <EditRowActions isSaving={isSaving} onSave={onSave} onCancel={onCancel} />
-        </td>
-      </tr>
-    )
-  }
-
+function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
   return (
     <tr>
       <td>{formatShortDate(expense.date)}</td>
@@ -131,6 +73,124 @@ function ExpenseRow({
   )
 }
 
+interface ExpenseFormProps {
+  isEditing: boolean
+  date: string
+  description: string
+  value: string
+  category: string
+  paymentSource: string
+  cardTag: string
+  isSaving: boolean
+  saveError: string | null
+  onFieldChange: (field: ExpenseFormField, value: string) => void
+  onSave: () => void
+  onCancel: () => void
+}
+
+function ExpenseForm({
+  isEditing,
+  date,
+  description,
+  value,
+  category,
+  paymentSource,
+  cardTag,
+  isSaving,
+  saveError,
+  onFieldChange,
+  onSave,
+  onCancel,
+}: ExpenseFormProps) {
+  return (
+    <div className="monthly-page__form-panel">
+      <p className="monthly-page__form-title">{isEditing ? 'Edit Expense' : 'New Expense'}</p>
+      <div className="monthly-page__form">
+        <div className="monthly-page__form-field">
+          <label htmlFor="expense-date">Date</label>
+          <input
+            id="expense-date"
+            type="date"
+            value={date}
+            onChange={(e) => onFieldChange('date', e.target.value)}
+          />
+        </div>
+        <div className="monthly-page__form-field">
+          <label htmlFor="expense-description">Description</label>
+          <input
+            id="expense-description"
+            type="text"
+            value={description}
+            onChange={(e) => onFieldChange('description', e.target.value)}
+          />
+        </div>
+        <div className="monthly-page__form-field">
+          <label htmlFor="expense-category">Category</label>
+          <select
+            id="expense-category"
+            value={category}
+            onChange={(e) => onFieldChange('category', e.target.value)}
+          >
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="monthly-page__form-field">
+          <label htmlFor="expense-value">Value</label>
+          <input
+            id="expense-value"
+            type="number"
+            step="0.01"
+            value={value}
+            onChange={(e) => onFieldChange('value', e.target.value)}
+          />
+        </div>
+        <div className="monthly-page__form-field">
+          <label htmlFor="expense-payment-source">Payment Source</label>
+          <select
+            id="expense-payment-source"
+            value={paymentSource}
+            onChange={(e) => onFieldChange('paymentSource', e.target.value)}
+          >
+            {PAYMENT_SOURCES.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="monthly-page__form-field">
+          <label htmlFor="expense-card-tag">Card</label>
+          <select
+            id="expense-card-tag"
+            value={cardTag}
+            onChange={(e) => onFieldChange('cardTag', e.target.value)}
+          >
+            <option value="">—</option>
+            {CARDS.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="monthly-page__form-actions">
+        <button type="button" disabled={isSaving} onClick={onSave}>
+          {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Expense'}
+        </button>
+        <button type="button" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+      {saveError && <p className="monthly-page__error">{saveError}</p>}
+    </div>
+  )
+}
+
 export default function MonthlyPage() {
   const {
     monthInputValue,
@@ -142,6 +202,7 @@ export default function MonthlyPage() {
     isLoading,
     error,
     retry,
+    isCreateFormOpen,
     createDate,
     createDescription,
     createValue,
@@ -150,6 +211,8 @@ export default function MonthlyPage() {
     createCardTag,
     isCreating,
     createError,
+    showCreateForm,
+    cancelCreateForm,
     setCreateField,
     submitCreate,
     editingId,
@@ -169,24 +232,53 @@ export default function MonthlyPage() {
     markStatementPaid,
   } = useMonthly()
 
+  const isEditing = editingId !== null
+  const isFormVisible = isCreateFormOpen || isEditing
+
   return (
     <div className="monthly-page">
-      <div className="monthly-page__month-picker">
-        <label htmlFor="monthly-month">Month</label>
-        <input
-          id="monthly-month"
-          type="month"
-          value={monthInputValue}
-          onChange={(e) => setMonthInputValue(e.target.value)}
-        />
+      <div className="monthly-page__header">
+        <div className="monthly-page__month-picker">
+          <label htmlFor="monthly-month">Month</label>
+          <input
+            id="monthly-month"
+            type="month"
+            value={monthInputValue}
+            onChange={(e) => setMonthInputValue(e.target.value)}
+          />
+        </div>
+        <button className="monthly-page__new-btn" type="button" onClick={showCreateForm}>
+          New Expense
+        </button>
       </div>
+
+      {isFormVisible && (
+        <ExpenseForm
+          isEditing={isEditing}
+          date={isEditing ? editDate : createDate}
+          description={isEditing ? editDescription : createDescription}
+          value={isEditing ? editValue : createValue}
+          category={isEditing ? editCategory : createCategory}
+          paymentSource={isEditing ? editPaymentSource : createPaymentSource}
+          cardTag={isEditing ? editCardTag : createCardTag}
+          isSaving={isEditing ? isSaving : isCreating}
+          saveError={isEditing ? saveError : createError}
+          onFieldChange={(field, value) =>
+            isEditing
+              ? setEditField(EDIT_FIELD_BY_FORM_FIELD[field], value)
+              : setCreateField(CREATE_FIELD_BY_FORM_FIELD[field], value)
+          }
+          onSave={isEditing ? saveEdit : submitCreate}
+          onCancel={isEditing ? cancelEdit : cancelCreateForm}
+        />
+      )}
 
       {isLoading ? (
         <LoadingState />
       ) : error ? (
         <ErrorState message={error} onRetry={retry} />
       ) : (
-        <>
+        <div className="monthly-page__content">
           <section className="monthly-page__section">
             <h2>Category Totals</h2>
             <table className="monthly-page__table data-table">
@@ -240,88 +332,7 @@ export default function MonthlyPage() {
             </p>
           </section>
 
-          <section className="monthly-page__section">
-            <h2>New Expense</h2>
-            <div className="monthly-page__form">
-              <div className="monthly-page__form-field">
-                <label htmlFor="create-date">Date</label>
-                <input
-                  id="create-date"
-                  type="date"
-                  value={createDate}
-                  onChange={(e) => setCreateField('createDate', e.target.value)}
-                />
-              </div>
-              <div className="monthly-page__form-field">
-                <label htmlFor="create-description">Description</label>
-                <input
-                  id="create-description"
-                  type="text"
-                  value={createDescription}
-                  onChange={(e) => setCreateField('createDescription', e.target.value)}
-                />
-              </div>
-              <div className="monthly-page__form-field">
-                <label htmlFor="create-category">Category</label>
-                <select
-                  id="create-category"
-                  value={createCategory}
-                  onChange={(e) => setCreateField('createCategory', e.target.value)}
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="monthly-page__form-field">
-                <label htmlFor="create-value">Value</label>
-                <input
-                  id="create-value"
-                  type="number"
-                  step="0.01"
-                  value={createValue}
-                  onChange={(e) => setCreateField('createValue', e.target.value)}
-                />
-              </div>
-              <div className="monthly-page__form-field">
-                <label htmlFor="create-payment-source">Payment Source</label>
-                <select
-                  id="create-payment-source"
-                  value={createPaymentSource}
-                  onChange={(e) => setCreateField('createPaymentSource', e.target.value)}
-                >
-                  {PAYMENT_SOURCES.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="monthly-page__form-field">
-                <label htmlFor="create-card-tag">Card</label>
-                <select
-                  id="create-card-tag"
-                  value={createCardTag}
-                  onChange={(e) => setCreateField('createCardTag', e.target.value)}
-                >
-                  <option value="">—</option>
-                  {CARDS.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <button type="button" disabled={isCreating} onClick={submitCreate}>
-                {isCreating ? 'Saving...' : 'Add Expense'}
-              </button>
-              {createError && <p className="monthly-page__error">{createError}</p>}
-            </div>
-          </section>
-
-          <section className="monthly-page__section">
+          <section className="monthly-page__section monthly-page__section--main">
             <h2>Expenses</h2>
             <table className="monthly-page__table data-table">
               <thead>
@@ -337,29 +348,12 @@ export default function MonthlyPage() {
               </thead>
               <tbody>
                 {expenses.map((expense) => (
-                  <ExpenseRow
-                    key={expense.id}
-                    expense={expense}
-                    isEditing={editingId === expense.id}
-                    editDate={editDate}
-                    editDescription={editDescription}
-                    editValue={editValue}
-                    editCategory={editCategory}
-                    editPaymentSource={editPaymentSource}
-                    editCardTag={editCardTag}
-                    isSaving={isSaving}
-                    onEdit={showEditForm}
-                    onFieldChange={setEditField}
-                    onSave={saveEdit}
-                    onCancel={cancelEdit}
-                    onDelete={deleteExpense}
-                  />
+                  <ExpenseRow key={expense.id} expense={expense} onEdit={showEditForm} onDelete={deleteExpense} />
                 ))}
               </tbody>
             </table>
-            {saveError && <p className="monthly-page__error">{saveError}</p>}
           </section>
-        </>
+        </div>
       )}
     </div>
   )

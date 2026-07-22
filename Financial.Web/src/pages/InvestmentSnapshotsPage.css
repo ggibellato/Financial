@@ -1,15 +1,58 @@
 .investment-snapshots-page {
-  padding: 24px;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 24px 24px 0;
+  gap: 16px;
 }
 
 .investment-snapshots-page__month-picker {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+}
+
+.investment-snapshots-page__form-panel {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--border, #e5e4e7);
+  border-radius: 6px;
+  background: var(--bg-subtle, #f9f9f9);
+}
+
+.investment-snapshots-page__form-title {
+  font-size: 13px;
+  font-weight: bold;
+  margin: 0 0 10px;
+}
+
+.investment-snapshots-page__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 10px;
+}
+
+.investment-snapshots-page__form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.investment-snapshots-page__form-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.investment-snapshots-page__content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 24px;
 }
 
 .investment-snapshots-page__table {
@@ -18,5 +61,6 @@
 }
 
 .investment-snapshots-page__error {
+  margin-top: 6px;
   color: var(--error, #c0392b);
 }

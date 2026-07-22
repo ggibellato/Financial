@@ -13,6 +13,7 @@ interface ControleMaeState {
   isLoading: boolean
   error: string | null
   retryCount: number
+  isCreateFormOpen: boolean
   createDate: string
   createDescription: string
   createNote: string
@@ -33,6 +34,8 @@ type ControleMaeAction =
   | { type: 'FETCH_SUCCESS'; payload: MaeLedgerEntryDto[] }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
+  | { type: 'SHOW_CREATE_FORM' }
+  | { type: 'CANCEL_CREATE_FORM' }
   | { type: 'SET_CREATE_FIELD'; payload: { field: CreateFormField; value: string } }
   | { type: 'CREATE_START' }
   | { type: 'CREATE_SUCCESS' }
@@ -61,6 +64,7 @@ const INITIAL_STATE: ControleMaeState = {
   isLoading: true,
   error: null,
   retryCount: 0,
+  isCreateFormOpen: false,
   ...BLANK_CREATE_FORM,
   isCreating: false,
   createError: null,
@@ -83,17 +87,22 @@ function reducer(state: ControleMaeState, action: ControleMaeAction): ControleMa
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
       return { ...state, retryCount: state.retryCount + 1 }
+    case 'SHOW_CREATE_FORM':
+      return { ...state, isCreateFormOpen: true, editingId: null, saveError: null }
+    case 'CANCEL_CREATE_FORM':
+      return { ...state, ...BLANK_CREATE_FORM, isCreateFormOpen: false, createError: null }
     case 'SET_CREATE_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'CREATE_START':
       return { ...state, isCreating: true, createError: null }
     case 'CREATE_SUCCESS':
-      return { ...state, ...BLANK_CREATE_FORM, isCreating: false }
+      return { ...state, ...BLANK_CREATE_FORM, isCreateFormOpen: false, isCreating: false }
     case 'CREATE_ERROR':
       return { ...state, isCreating: false, createError: action.payload }
     case 'SHOW_EDIT_FORM':
       return {
         ...state,
+        isCreateFormOpen: false,
         editingId: action.payload.id,
         editBrlValue: action.payload.brlValue !== null ? String(action.payload.brlValue) : '',
         editGbpValue: action.payload.gbpValue !== null ? String(action.payload.gbpValue) : '',
@@ -121,6 +130,7 @@ export interface ControleMaeData {
   isLoading: boolean
   error: string | null
   retry: () => void
+  isCreateFormOpen: boolean
   createDate: string
   createDescription: string
   createNote: string
@@ -128,6 +138,8 @@ export interface ControleMaeData {
   createSourceValue: string
   isCreating: boolean
   createError: string | null
+  showCreateForm: () => void
+  cancelCreateForm: () => void
   setCreateField: (field: CreateFormField, value: string) => void
   submitCreate: () => void
   editingId: string | null
@@ -164,6 +176,10 @@ export function useControleMae(): ControleMaeData {
   }, [])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
+
+  const showCreateForm = useCallback(() => dispatch({ type: 'SHOW_CREATE_FORM' }), [])
+
+  const cancelCreateForm = useCallback(() => dispatch({ type: 'CANCEL_CREATE_FORM' }), [])
 
   const setCreateField = useCallback(
     (field: CreateFormField, value: string) => dispatch({ type: 'SET_CREATE_FIELD', payload: { field, value } }),
@@ -252,6 +268,7 @@ export function useControleMae(): ControleMaeData {
     isLoading: state.isLoading,
     error: state.error,
     retry,
+    isCreateFormOpen: state.isCreateFormOpen,
     createDate: state.createDate,
     createDescription: state.createDescription,
     createNote: state.createNote,
@@ -259,6 +276,8 @@ export function useControleMae(): ControleMaeData {
     createSourceValue: state.createSourceValue,
     isCreating: state.isCreating,
     createError: state.createError,
+    showCreateForm,
+    cancelCreateForm,
     setCreateField,
     submitCreate,
     editingId: state.editingId,
