@@ -14,6 +14,7 @@ import CashFlowPlaceholderPage from './pages/CashFlowPlaceholderPage'
 import ControleMaePage from './pages/ControleMaePage'
 import InvestmentSnapshotsPage from './pages/InvestmentSnapshotsPage'
 import MensaisPage from './pages/MensaisPage'
+import MonthlyPage from './pages/MonthlyPage'
 import ReservaPage from './pages/ReservaPage'
 import RootRedirect from './pages/RootRedirect'
 
@@ -32,7 +33,7 @@ createRoot(document.getElementById('root')!).render(
           </Route>
           <Route path="cashflow" element={<CashFlowLayout />}>
             <Route index element={<Navigate to="/cashflow/monthly" replace />} />
-            <Route path="monthly" element={<CashFlowPlaceholderPage title="Monthly" />} />
+            <Route path="monthly" element={<MonthlyPage />} />
             <Route path="reserva" element={<ReservaPage />} />
             <Route path="mensais" element={<MensaisPage />} />
             <Route path="controle-mae" element={<ControleMaePage />} />
