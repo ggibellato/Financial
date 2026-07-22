@@ -26,6 +26,7 @@
 		<Project Path="Tests/Financial.Shared.Infrastructure.Tests/Financial.Shared.Infrastructure.Tests.csproj" />
 		<Project Path="Tests/Financial.Presentation.Tests/Financial.Presentation.Tests.csproj" />
 		<Project Path="Tests/Financial.CashFlow.Domain.Tests/Financial.CashFlow.Domain.Tests.csproj" />
+		<Project Path="Tests/Financial.CashFlow.Application.Tests/Financial.CashFlow.Application.Tests.csproj" />
 		<Project Path="Tests/Financial.CashFlow.Infrastructure.Tests/Financial.CashFlow.Infrastructure.Tests.csproj" />
 	</Folder>
 	<Folder Name="/Presentation/">
