@@ -1,8 +1,8 @@
-import type { ExpenseDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
+import ExpensesSection from '../components/ExpensesSection'
 import LoadingState from '../components/LoadingState'
-import { useMonthly, type CreateFormField, type EditField } from '../hooks/useMonthly'
-import { formatN2, formatShortDate } from '../utils/formatters'
+import { PAYMENT_SOURCES, useMonthly, type CreateFormField, type EditField } from '../hooks/useMonthly'
+import { formatN2 } from '../utils/formatters'
 import './MonthlyPage.css'
 
 type ExpenseFormField = 'date' | 'description' | 'value' | 'category' | 'paymentSource' | 'cardTag'
@@ -42,36 +42,7 @@ const CATEGORIES = [
   'Reserva',
 ]
 
-const PAYMENT_SOURCES = ['Barclays', 'Trading212', 'Chase']
-
 const CARDS = ['BarclaysPlatinumVisa8003', 'BarclaysPlatinumVisa6007', 'ChaseMaster4023', 'BaAmex', 'PaypalCredit']
-
-interface ExpenseRowProps {
-  expense: ExpenseDto
-  onEdit: (expense: ExpenseDto) => void
-  onDelete: (id: string) => void
-}
-
-function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
-  return (
-    <tr>
-      <td>{formatShortDate(expense.date)}</td>
-      <td>{expense.description}</td>
-      <td>{expense.category}</td>
-      <td className="data-table__col--numeric">{formatN2(expense.value)}</td>
-      <td>{expense.paymentSource}</td>
-      <td>{expense.cardTag ?? '—'}</td>
-      <td>
-        <button type="button" onClick={() => onEdit(expense)}>
-          Edit
-        </button>
-        <button type="button" onClick={() => onDelete(expense.id)}>
-          Delete
-        </button>
-      </td>
-    </tr>
-  )
-}
 
 interface ExpenseFormProps {
   isEditing: boolean
@@ -197,8 +168,11 @@ export default function MonthlyPage() {
     setMonthInputValue,
     expenses,
     categoryTotals,
+    categoryTotalsSum,
     cardStatements,
     adjustmentTotal,
+    bankTotals,
+    bankTotalsSum,
     isLoading,
     error,
     retry,
@@ -247,9 +221,6 @@ export default function MonthlyPage() {
             onChange={(e) => setMonthInputValue(e.target.value)}
           />
         </div>
-        <button className="monthly-page__new-btn" type="button" onClick={showCreateForm}>
-          New Expense
-        </button>
       </div>
 
       {isFormVisible && (
@@ -279,80 +250,99 @@ export default function MonthlyPage() {
         <ErrorState message={error} onRetry={retry} />
       ) : (
         <div className="monthly-page__content">
-          <section className="monthly-page__section">
-            <h2>Category Totals</h2>
-            <table className="monthly-page__table data-table">
-              <thead>
-                <tr>
-                  <th>Category</th>
-                  <th className="data-table__col--numeric">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categoryTotals.map((c) => (
-                  <tr key={c.category}>
-                    <td>{c.category}</td>
-                    <td className="data-table__col--numeric">{formatN2(c.totalValue)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
+          <div className="monthly-page__grids-row">
+            <section className="monthly-page__section monthly-page__section--grid">
+              <h2>Category Totals</h2>
+              <div className="monthly-page__table-scroll">
+                <table className="monthly-page__table data-table">
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th className="data-table__col--numeric">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {categoryTotals.map((c) => (
+                      <tr key={c.category}>
+                        <td>{c.category}</td>
+                        <td className="data-table__col--numeric">{formatN2(c.totalValue)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="monthly-page__section-total">
+                Total: <strong>{formatN2(categoryTotalsSum)}</strong>
+              </p>
+            </section>
 
-          <section className="monthly-page__section">
-            <h2>Cards</h2>
-            <table className="monthly-page__table data-table">
-              <thead>
-                <tr>
-                  <th>Card</th>
-                  <th className="data-table__col--numeric">Outstanding</th>
-                  <th>Status</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {cardStatements.map((s) => (
-                  <tr key={s.id}>
-                    <td>{s.card}</td>
-                    <td className="data-table__col--numeric">{formatN2(s.outstandingTotal)}</td>
-                    <td>{s.isPaid ? 'Paid' : 'Unpaid'}</td>
-                    <td>
-                      {!s.isPaid && (
-                        <button type="button" onClick={() => markStatementPaid(s.id)}>
-                          Mark Paid
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="monthly-page__adjustment">
-              Combined adjustment figure: <strong>{formatN2(adjustmentTotal)}</strong>
-            </p>
-          </section>
+            <section className="monthly-page__section monthly-page__section--grid">
+              <h2>Cards</h2>
+              <div className="monthly-page__table-scroll">
+                <table className="monthly-page__table data-table">
+                  <thead>
+                    <tr>
+                      <th>Card</th>
+                      <th className="data-table__col--numeric">Outstanding</th>
+                      <th>Status</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cardStatements.map((s) => (
+                      <tr key={s.id}>
+                        <td>{s.card}</td>
+                        <td className="data-table__col--numeric">{formatN2(s.outstandingTotal)}</td>
+                        <td>{s.isPaid ? 'Paid' : 'Unpaid'}</td>
+                        <td>
+                          {!s.isPaid && (
+                            <button type="button" onClick={() => markStatementPaid(s.id)}>
+                              Mark Paid
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="monthly-page__section-total">
+                Combined adjustment figure: <strong>{formatN2(adjustmentTotal)}</strong>
+              </p>
+            </section>
 
-          <section className="monthly-page__section monthly-page__section--main">
-            <h2>Expenses</h2>
-            <table className="monthly-page__table data-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Category</th>
-                  <th className="data-table__col--numeric">Value</th>
-                  <th>Payment Source</th>
-                  <th>Card</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {expenses.map((expense) => (
-                  <ExpenseRow key={expense.id} expense={expense} onEdit={showEditForm} onDelete={deleteExpense} />
-                ))}
-              </tbody>
-            </table>
-          </section>
+            <section className="monthly-page__section monthly-page__section--grid">
+              <h2>Banks</h2>
+              <div className="monthly-page__table-scroll">
+                <table className="monthly-page__table data-table">
+                  <thead>
+                    <tr>
+                      <th>Bank</th>
+                      <th className="data-table__col--numeric">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bankTotals.map((b) => (
+                      <tr key={b.bank}>
+                        <td>{b.bank}</td>
+                        <td className="data-table__col--numeric">{formatN2(b.totalValue)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="monthly-page__section-total">
+                Total: <strong>{formatN2(bankTotalsSum)}</strong>
+              </p>
+            </section>
+          </div>
+
+          <ExpensesSection
+            expenses={expenses}
+            onEdit={showEditForm}
+            onDelete={deleteExpense}
+            onNewExpense={showCreateForm}
+          />
         </div>
       )}
     </div>

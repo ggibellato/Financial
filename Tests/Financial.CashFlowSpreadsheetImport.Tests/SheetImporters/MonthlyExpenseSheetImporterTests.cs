@@ -172,4 +172,76 @@ public class MonthlyExpenseSheetImporterTests
         expenses.Should().ContainSingle().Which.Value.Should().Be(17.28m);
         report.RowIssues.Should().BeEmpty();
     }
+
+    [Theory]
+    [InlineData(128, null)]
+    [InlineData(129, CreditCard.BarclaysPlatinumVisa8003)]
+    [InlineData(141, CreditCard.BarclaysPlatinumVisa8003)]
+    [InlineData(142, CreditCard.BarclaysPlatinumVisa6007)]
+    [InlineData(204, CreditCard.BarclaysPlatinumVisa6007)]
+    [InlineData(205, CreditCard.ChaseMaster4023)]
+    [InlineData(225, CreditCard.ChaseMaster4023)]
+    [InlineData(226, CreditCard.BaAmex)]
+    [InlineData(300, CreditCard.BaAmex)]
+    public void Import_FixedCardSectionMonth_BlankPaymentSourceTag_SetsCardTagByRowPosition(int row, CreditCard? expectedCardTag)
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Jul2026");
+        WriteExpenseRow(sheet, row, paymentSourceTag: null);
+
+        var report = new ImportReport();
+
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, report);
+
+        expenses.Should().ContainSingle().Which.CardTag.Should().Be(expectedCardTag);
+    }
+
+    [Fact]
+    public void Import_FixedCardSectionMonth_ExplicitPaymentSourceTagInCardRow_TakesPrecedenceOverRowPosition()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Ago2026");
+        WriteExpenseRow(sheet, row: 150, paymentSourceTag: "C");
+
+        var report = new ImportReport();
+
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 8, report);
+
+        var expense = expenses.Should().ContainSingle().Subject;
+        expense.PaymentSource.Should().Be(PaymentSource.Chase);
+        expense.CardTag.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(2017, 10)]
+    [InlineData(2026, 9)]
+    public void Import_MonthOutsideFixedCardSectionScope_BlankPaymentSourceInCardRowRange_CardTagStaysNull(int year, int month)
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet($"Sheet{year}{month}");
+        WriteExpenseRow(sheet, row: 129, paymentSourceTag: null);
+
+        var report = new ImportReport();
+
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, year, month, report);
+
+        expenses.Should().ContainSingle().Which.CardTag.Should().BeNull();
+    }
+
+    private static void WriteExpenseRow(IXLWorksheet sheet, int row, string? paymentSourceTag)
+    {
+        sheet.Cell(1, 1).Value = "Dia";
+        sheet.Cell(1, 2).Value = "Motivo";
+        sheet.Cell(1, 3).Value = "Quem";
+        sheet.Cell(1, 4).Value = "Valor";
+
+        sheet.Cell(row, 1).Value = 1;
+        sheet.Cell(row, 2).Value = "Test Charge";
+        sheet.Cell(row, 3).Value = "Casa";
+        sheet.Cell(row, 4).Value = 10.0;
+        if (paymentSourceTag is not null)
+        {
+            sheet.Cell(row, 5).Value = paymentSourceTag;
+        }
+    }
 }

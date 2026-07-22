@@ -3,6 +3,13 @@ import { createFinancialApiClient } from '../api/financialApiClient'
 import type { CardStatementDto, CategoryTotalDto, ExpenseDto } from '../api/types'
 import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
 
+export const PAYMENT_SOURCES = ['Barclays', 'Trading212', 'Chase'] as const
+
+export interface BankTotal {
+  bank: string
+  totalValue: number
+}
+
 export type CreateFormField =
   | 'createDate'
   | 'createDescription'
@@ -190,8 +197,11 @@ export interface MonthlyData {
   setMonthInputValue: (value: string) => void
   expenses: ExpenseDto[]
   categoryTotals: CategoryTotalDto[]
+  categoryTotalsSum: number
   cardStatements: CardStatementDto[]
   adjustmentTotal: number
+  bankTotals: BankTotal[]
+  bankTotalsSum: number
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -380,13 +390,26 @@ export function useMonthly(): MonthlyData {
 
   const adjustmentTotal = state.cardStatements.reduce((sum, statement) => sum + statement.outstandingTotal, 0)
 
+  const categoryTotalsSum = state.categoryTotals.reduce((sum, c) => sum + c.totalValue, 0)
+
+  const bankTotals: BankTotal[] = PAYMENT_SOURCES.map((bank) => ({
+    bank,
+    totalValue: state.expenses
+      .filter((expense) => expense.paymentSource === bank)
+      .reduce((sum, expense) => sum + expense.value, 0),
+  }))
+  const bankTotalsSum = bankTotals.reduce((sum, b) => sum + b.totalValue, 0)
+
   return {
     monthInputValue,
     setMonthInputValue,
     expenses: state.expenses,
     categoryTotals: state.categoryTotals,
+    categoryTotalsSum,
     cardStatements: state.cardStatements,
     adjustmentTotal,
+    bankTotals,
+    bankTotalsSum,
     isLoading: state.isLoading,
     error: state.error,
     retry,
