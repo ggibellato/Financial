@@ -24,7 +24,7 @@ public class CashFlowSerializerAdapterTests
         var recurringBillTemplate = RecurringBillTemplate.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1412m);
         var recurringBillInstance = RecurringBillInstance.Create(Guid.NewGuid(), 2026, 7, 850m);
         var maeLedgerEntry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 15), "School supplies", "Note", Currency.BRL, 350m, 51.23m);
-        var investmentSnapshot = InvestmentSnapshot.Create();
+        var investmentSnapshot = InvestmentSnapshot.Create(InvestmentAccount.PlatinumVisa8003, 2026, 7, 1250.00m);
 
         original.AddExpense(expense);
         original.AddReserveMovement(reserveMovement);
