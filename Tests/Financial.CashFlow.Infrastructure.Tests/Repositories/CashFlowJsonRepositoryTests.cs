@@ -64,4 +64,17 @@ public class CashFlowJsonRepositoryTests
 
         repository.GetExpenses().Should().ContainSingle().Which.Id.Should().Be(expense.Id);
     }
+
+    [Fact]
+    public void DeleteExpense_RemovesTheMatchingExpense()
+    {
+        var data = CashFlowData.Create();
+        var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(Path.GetTempFileName()), new CashFlowSerializerAdapter());
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, PaymentSource.Chase, null);
+        repository.AddExpense(expense);
+
+        repository.DeleteExpense(expense.Id);
+
+        repository.GetExpenses().Should().BeEmpty();
+    }
 }
