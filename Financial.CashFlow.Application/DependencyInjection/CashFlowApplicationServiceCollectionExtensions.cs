@@ -14,6 +14,7 @@ public static class CashFlowApplicationServiceCollectionExtensions
         services.AddSingleton<IControleMaeService, ControleMaeService>();
         services.AddSingleton<IInvestmentSnapshotService, InvestmentSnapshotService>();
         services.AddSingleton<ICardStatementService, CardStatementService>();
+        services.AddSingleton<IYearlySummaryService, YearlySummaryService>();
 
         return services;
     }
