@@ -579,9 +579,9 @@ graph TD
 - [x] A manual withdrawal from a single bucket updates only that bucket's running balance
 
 ### F06. Mensais Recurring Bills
-- [ ] Every active recurring bill template generates exactly one instance per calendar month, defaulting to unset status
-- [ ] Updating one month's instance status or value does not change the underlying template or any other month's instance
-- [ ] Brasil-area rows can carry an optional NIT number and minimum-wage value; UK-area rows do not require them
+- [x] Every active recurring bill template generates exactly one instance per calendar month, defaulting to unset status
+- [x] Updating one month's instance status or value does not change the underlying template or any other month's instance
+- [x] Brasil-area rows can carry an optional NIT number and minimum-wage value; UK-area rows do not require them
 
 ### F07. Controle Mae Ledger
 - [ ] Entering a value in one currency and a valid past date auto-populates the converted value in the other currency using that date's historical exchange rate
