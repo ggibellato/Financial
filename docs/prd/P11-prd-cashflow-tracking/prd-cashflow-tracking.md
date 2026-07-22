@@ -627,8 +627,8 @@ graph TD
 - [x] A new entry can be created with automatic FX conversion, and either currency value can be manually adjusted before saving
 
 ### F16. Web — Investment Snapshots View
-- [ ] The view shows all 11 tracked accounts for the selected month with their current values
-- [ ] Editing one account's value for a month does not affect other months or other accounts
+- [x] The view shows all 11 tracked accounts for the selected month with their current values
+- [x] Editing one account's value for a month does not affect other months or other accounts
 
 ### F17. Web — Yearly Summary View
 - [ ] Selecting a year shows a monthly-totals-per-expense-category table with a yearly total column
@@ -643,5 +643,5 @@ graph TD
 - [x] F09's yearly expense-category totals correctly reflect the underlying monthly expense totals (F03), and its month-over-month investment-account diffs correctly reflect F08's monthly snapshots
 - [ ] F10's historical import correctly populates every one of F02's six storage collections, matching the shapes defined by F03, F04, F05, F06, F07, and F08
 - [ ] F12's Web Monthly View correctly displays expense data from F03 and card data from F04, and its Investments-domain content is correctly scoped by F11's domain switcher
-- [ ] F13, F14, F15, and F16 each correctly display data from F05, F06, F07, and F08 respectively, all nested inside F11's CashFlow selection
+- [x] F13, F14, F15, and F16 each correctly display data from F05, F06, F07, and F08 respectively, all nested inside F11's CashFlow selection
 - [ ] F17's Web Yearly Summary View correctly displays the totals and diffs computed by F09

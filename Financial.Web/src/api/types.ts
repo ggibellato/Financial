@@ -342,3 +342,16 @@ export interface UpdateMaeLedgerEntryValuesDto {
   brlValue: number | null
   gbpValue: number | null
 }
+
+export interface InvestmentSnapshotDto {
+  id: string
+  account: string
+  isLiability: boolean
+  year: number
+  month: number
+  value: number
+}
+
+export interface UpdateInvestmentSnapshotValueDto {
+  value: number
+}
