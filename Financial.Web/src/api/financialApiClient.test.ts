@@ -10,6 +10,7 @@ import type {
   IncomeSplitResultDto,
   InvestmentSnapshotDto,
   MaeLedgerEntryDto,
+  MaeLedgerTotalsDto,
   RecurringBillInstanceDto,
   ReserveBucketBalanceDto,
   ReserveMovementDto,
@@ -482,7 +483,7 @@ describe('financialApiClient', () => {
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 
-  it('calls the mae ledger entries-by-month endpoint', async () => {
+  it('calls the mae ledger entries-from-date endpoint', async () => {
     const responseBody: MaeLedgerEntryDto[] = [
       {
         id: 'e1',
@@ -497,10 +498,21 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getMaeLedgerEntriesByMonth(2026, 7)
+    const result = await client.getMaeLedgerEntriesFromDate('2025-01-01')
 
     expect(result).toEqual(responseBody)
-    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/controle-mae/entries/month/2026/7`)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/controle-mae/entries/from/2025-01-01`)
+  })
+
+  it('calls the mae ledger totals endpoint', async () => {
+    const responseBody: MaeLedgerTotalsDto = { totalBrlValue: 1000, totalGbpValue: 145.3 }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getMaeLedgerTotals()
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/controle-mae/entries/totals`)
   })
 
   it('puts a mae ledger entry values update', async () => {

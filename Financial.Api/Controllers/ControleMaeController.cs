@@ -36,11 +36,18 @@ public sealed class ControleMaeController : ControllerBase
         }
     }
 
-    [HttpGet("entries/month/{year:int}/{month:int}")]
+    [HttpGet("entries/from/{fromDate}")]
     [ProducesResponseType(typeof(IReadOnlyList<MaeLedgerEntryDTO>), StatusCodes.Status200OK)]
-    public ActionResult<IReadOnlyList<MaeLedgerEntryDTO>> GetEntriesByMonth(int year, int month)
+    public ActionResult<IReadOnlyList<MaeLedgerEntryDTO>> GetEntriesFromDate(DateOnly fromDate)
     {
-        return Ok(_controleMaeService.GetEntriesByMonth(year, month));
+        return Ok(_controleMaeService.GetEntriesFromDate(fromDate));
+    }
+
+    [HttpGet("entries/totals")]
+    [ProducesResponseType(typeof(MaeLedgerTotalsDTO), StatusCodes.Status200OK)]
+    public ActionResult<MaeLedgerTotalsDTO> GetTotals()
+    {
+        return Ok(_controleMaeService.GetTotals());
     }
 
     [HttpPut("entries/{id:guid}/values")]

@@ -5,6 +5,19 @@ import { useControleMae } from '../hooks/useControleMae'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ControleMaePage.css'
 
+function LedgerColumns() {
+  return (
+    <colgroup>
+      <col className="controle-mae-page__col-date" />
+      <col />
+      <col className="controle-mae-page__col-note" />
+      <col className="controle-mae-page__col-value" />
+      <col className="controle-mae-page__col-value" />
+      <col className="controle-mae-page__col-actions" />
+    </colgroup>
+  )
+}
+
 interface EntryRowProps {
   entry: MaeLedgerEntryDto
   onEdit: (entry: MaeLedgerEntryDto) => void
@@ -29,9 +42,10 @@ function EntryRow({ entry, onEdit }: EntryRowProps) {
 
 export default function ControleMaePage() {
   const {
-    monthInputValue,
-    setMonthInputValue,
+    fromDateInputValue,
+    setFromDateInputValue,
     entries,
+    totals,
     isLoading,
     error,
     retry,
@@ -65,12 +79,12 @@ export default function ControleMaePage() {
     <div className="controle-mae-page">
       <div className="controle-mae-page__header">
         <div className="controle-mae-page__month-picker">
-          <label htmlFor="controle-mae-month">Month</label>
+          <label htmlFor="controle-mae-from-date">From</label>
           <input
-            id="controle-mae-month"
-            type="month"
-            value={monthInputValue}
-            onChange={(e) => setMonthInputValue(e.target.value)}
+            id="controle-mae-from-date"
+            type="date"
+            value={fromDateInputValue}
+            onChange={(e) => setFromDateInputValue(e.target.value)}
           />
         </div>
         <button className="controle-mae-page__new-btn" type="button" onClick={showCreateForm}>
@@ -179,6 +193,7 @@ export default function ControleMaePage() {
           <section className="controle-mae-page__section">
             <h2>Ledger</h2>
             <table className="controle-mae-page__table data-table">
+              <LedgerColumns />
               <thead>
                 <tr>
                   <th>Date</th>
@@ -197,6 +212,20 @@ export default function ControleMaePage() {
             </table>
           </section>
         </div>
+      )}
+
+      {!isLoading && !error && (
+        <table className="controle-mae-page__table controle-mae-page__totals-table data-table">
+          <LedgerColumns />
+          <tbody>
+            <tr className="controle-mae-page__totals-row">
+              <td colSpan={3}>Total (all entries)</td>
+              <td className="data-table__col--numeric">{totals ? formatN2(totals.totalBrlValue) : '—'}</td>
+              <td className="data-table__col--numeric">{totals ? formatN2(totals.totalGbpValue) : '—'}</td>
+              <td />
+            </tr>
+          </tbody>
+        </table>
       )}
     </div>
   )

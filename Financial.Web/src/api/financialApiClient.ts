@@ -25,6 +25,7 @@ import type {
   InvestmentScope,
   InvestmentSnapshotDto,
   MaeLedgerEntryDto,
+  MaeLedgerTotalsDto,
   PortfolioAssetSummaryItemDto,
   PortfolioBreakdownItemDto,
   PortfolioReferenceDto,
@@ -82,7 +83,8 @@ export interface FinancialApiClient {
   getMensaisInstances: (year: number, month: number) => Promise<RecurringBillInstanceDto[]>
   updateMensaisInstance: (id: string, request: UpdateRecurringBillInstanceDto) => Promise<RecurringBillInstanceDto>
   createMaeLedgerEntry: (request: CreateMaeLedgerEntryDto) => Promise<MaeLedgerEntryDto>
-  getMaeLedgerEntriesByMonth: (year: number, month: number) => Promise<MaeLedgerEntryDto[]>
+  getMaeLedgerEntriesFromDate: (fromDate: string) => Promise<MaeLedgerEntryDto[]>
+  getMaeLedgerTotals: () => Promise<MaeLedgerTotalsDto>
   updateMaeLedgerEntryValues: (id: string, request: UpdateMaeLedgerEntryValuesDto) => Promise<MaeLedgerEntryDto>
   getInvestmentSnapshots: (year: number, month: number) => Promise<InvestmentSnapshotDto[]>
   updateInvestmentSnapshotValue: (id: string, request: UpdateInvestmentSnapshotValueDto) => Promise<InvestmentSnapshotDto>
@@ -278,8 +280,9 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         method: 'POST',
         body: JSON.stringify(requestBody),
       }),
-    getMaeLedgerEntriesByMonth: (year, month) =>
-      request<MaeLedgerEntryDto[]>(`/controle-mae/entries/month/${year}/${month}`),
+    getMaeLedgerEntriesFromDate: (fromDate) =>
+      request<MaeLedgerEntryDto[]>(`/controle-mae/entries/from/${fromDate}`),
+    getMaeLedgerTotals: () => request<MaeLedgerTotalsDto>('/controle-mae/entries/totals'),
     updateMaeLedgerEntryValues: (id, requestBody) =>
       request<MaeLedgerEntryDto>(`/controle-mae/entries/${encodeURIComponent(id)}/values`, {
         method: 'PUT',

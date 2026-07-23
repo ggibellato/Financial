@@ -58,11 +58,22 @@ public sealed class ControleMaeService : IControleMaeService
         return ToDto(entry);
     }
 
-    public IReadOnlyList<MaeLedgerEntryDTO> GetEntriesByMonth(int year, int month) =>
+    public IReadOnlyList<MaeLedgerEntryDTO> GetEntriesFromDate(DateOnly fromDate) =>
         _repository.GetMaeLedgerEntries()
-            .Where(e => e.Date.Year == year && e.Date.Month == month)
+            .Where(e => e.Date >= fromDate)
+            .OrderBy(e => e.Date)
             .Select(ToDto)
             .ToList();
+
+    public MaeLedgerTotalsDTO GetTotals()
+    {
+        var entries = _repository.GetMaeLedgerEntries();
+        return new MaeLedgerTotalsDTO
+        {
+            TotalBrlValue = entries.Sum(e => e.BrlValue ?? 0m),
+            TotalGbpValue = entries.Sum(e => e.GbpValue ?? 0m)
+        };
+    }
 
     public async Task<MaeLedgerEntryDTO> UpdateEntryValuesAsync(Guid id, UpdateMaeLedgerEntryValuesDTO request)
     {

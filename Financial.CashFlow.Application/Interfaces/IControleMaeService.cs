@@ -5,6 +5,7 @@ namespace Financial.CashFlow.Application.Interfaces;
 public interface IControleMaeService
 {
     Task<MaeLedgerEntryDTO> CreateEntryAsync(CreateMaeLedgerEntryDTO request);
-    IReadOnlyList<MaeLedgerEntryDTO> GetEntriesByMonth(int year, int month);
+    IReadOnlyList<MaeLedgerEntryDTO> GetEntriesFromDate(DateOnly fromDate);
+    MaeLedgerTotalsDTO GetTotals();
     Task<MaeLedgerEntryDTO> UpdateEntryValuesAsync(Guid id, UpdateMaeLedgerEntryValuesDTO request);
 }
