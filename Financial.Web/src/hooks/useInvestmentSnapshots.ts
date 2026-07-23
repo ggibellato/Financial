@@ -77,6 +77,7 @@ export interface InvestmentSnapshotsData {
   monthInputValue: string
   setMonthInputValue: (value: string) => void
   snapshots: InvestmentSnapshotDto[]
+  totalValue: number
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -106,6 +107,11 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
         })
       })
   }, [apiClient, state.year, state.month, state.retryCount])
+
+  const totalValue = useMemo(
+    () => state.snapshots.reduce((sum, s) => sum + (s.isLiability ? -s.value : s.value), 0),
+    [state.snapshots],
+  )
 
   const monthInputValue = formatMonthInputValue(state.year, state.month)
 
@@ -155,6 +161,7 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
     monthInputValue,
     setMonthInputValue,
     snapshots: state.snapshots,
+    totalValue,
     isLoading: state.isLoading,
     error: state.error,
     retry,

@@ -12,6 +12,7 @@ public class InvestmentAccountClassificationTests
     [InlineData(InvestmentAccount.ChaseMaster4023)]
     [InlineData(InvestmentAccount.BaAmex)]
     [InlineData(InvestmentAccount.PaypalCredit)]
+    [InlineData(InvestmentAccount.ReservasPessoais)]
     public void IsLiability_ForLiabilityAccounts_ReturnsTrue(InvestmentAccount account)
     {
         InvestmentAccountClassification.IsLiability(account).Should().BeTrue();
@@ -23,7 +24,6 @@ public class InvestmentAccountClassificationTests
     [InlineData(InvestmentAccount.ChaseSave)]
     [InlineData(InvestmentAccount.ChipCashIsaAriana)]
     [InlineData(InvestmentAccount.Trading212Invested)]
-    [InlineData(InvestmentAccount.ReservasPessoais)]
     public void IsLiability_ForNonLiabilityAccounts_ReturnsFalse(InvestmentAccount account)
     {
         InvestmentAccountClassification.IsLiability(account).Should().BeFalse();

@@ -44,6 +44,13 @@ describe('useInvestmentSnapshots', () => {
     expect(result.current.snapshots).toEqual(SNAPSHOTS)
   })
 
+  it('computes the total value net of liability accounts', async () => {
+    const { result } = renderHook(() => useInvestmentSnapshots())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.totalValue).toBe(750) // 1000 asset - 250 liability
+  })
+
   it('re-fetches for a new month when the month input changes', async () => {
     const { result } = renderHook(() => useInvestmentSnapshots())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

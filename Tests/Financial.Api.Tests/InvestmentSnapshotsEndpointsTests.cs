@@ -19,7 +19,7 @@ public class InvestmentSnapshotsEndpointsTests
         var snapshots = await response.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
         snapshots.Should().HaveCount(11);
         snapshots.Should().OnlyContain(s => s.Value == 0m);
-        snapshots.Where(s => s.IsLiability).Should().HaveCount(5);
+        snapshots.Where(s => s.IsLiability).Should().HaveCount(6);
     }
 
     [Fact]
