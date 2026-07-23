@@ -21,6 +21,7 @@ function BillRow({ bill, showBrasilFields, isDeleting, onEdit, onDelete }: BillR
     <tr>
       <td>{bill.dueDay}</td>
       <td>{bill.description}</td>
+      <td>{bill.note}</td>
       {showBrasilFields && <td>{bill.nitNumber ?? ''}</td>}
       {showBrasilFields && <td className="data-table__col--numeric">{bill.minimumWageValue !== null ? formatN2(bill.minimumWageValue) : ''}</td>}
       <td className="data-table__col--numeric">{formatN2(bill.value)}</td>
@@ -64,6 +65,7 @@ function BillTable({ title, bills, showBrasilFields, deletingBillId, onEdit, onD
             <tr>
               <th>Due Day</th>
               <th>Description</th>
+              <th>Note</th>
               {showBrasilFields && <th>NIT</th>}
               {showBrasilFields && <th className="data-table__col--numeric">Min. Wage</th>}
               <th className="data-table__col--numeric">Value</th>
@@ -140,11 +142,12 @@ export default function MensaisPage() {
           onChange={(e) => setMonthInputValue(e.target.value)}
         />
         {!isAddFormOpen && (
-          <button type="button" onClick={showAddForm}>
+          <button className="mensais-page__new-btn" type="button" onClick={showAddForm}>
             Add Bill
           </button>
         )}
         <button
+          className="mensais-page__new-btn"
           type="button"
           disabled={isResetting}
           onClick={() => {

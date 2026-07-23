@@ -15,6 +15,21 @@
   flex-shrink: 0;
 }
 
+.mensais-page__new-btn {
+  font: inherit;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+  background: #007acc;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+}
+
+.mensais-page__new-btn:hover {
+  background: #005fa3;
+}
+
 .mensais-page__form-panel {
   flex-shrink: 0;
   padding: 12px 16px;
