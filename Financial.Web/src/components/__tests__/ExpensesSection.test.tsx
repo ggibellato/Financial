@@ -39,7 +39,7 @@ describe('ExpensesSection', () => {
     const onEdit = vi.fn()
     render(<ExpensesSection expenses={EXPENSES} onEdit={onEdit} onDelete={vi.fn()} onNewExpense={vi.fn()} />)
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit expense' })[0])
 
     expect(onEdit).toHaveBeenCalledWith(EXPENSES[0])
   })
@@ -48,7 +48,7 @@ describe('ExpensesSection', () => {
     const onDelete = vi.fn()
     render(<ExpensesSection expenses={EXPENSES} onEdit={vi.fn()} onDelete={onDelete} onNewExpense={vi.fn()} />)
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Delete' })[1])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete expense' })[1])
 
     expect(onDelete).toHaveBeenCalledWith('e2')
   })

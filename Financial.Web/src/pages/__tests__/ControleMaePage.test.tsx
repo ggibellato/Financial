@@ -90,7 +90,7 @@ describe('ControleMaePage', () => {
 
     await waitFor(() => expect(screen.getByText('School supplies')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Edit entry' }))
     expect(screen.getByText('Edit Entry')).toBeInTheDocument()
     const brlInput = screen.getByDisplayValue('350')
     fireEvent.change(brlInput, { target: { value: '355' } })
