@@ -26,34 +26,25 @@ public class ReserveServiceTests
         var result = await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
 
         repository.ReserveMovements.Should().HaveCount(4);
-        result.Dizimo.Should().Be(637m);
         result.Investimento.Should().Be(654.33m);
         result.HouseTreats.Should().Be(654.33m);
         result.Ariana.Should().Be(327.17m);
         result.Gleison.Should().Be(327.17m);
+        result.Total.Should().Be(1963.00m);
         repository.SaveChangesCallCount.Should().Be(1);
     }
 
     [Theory]
-    [InlineData(-1, 3600, 2600, 50, 120)]
-    [InlineData(4500, -1, 2600, 50, 120)]
-    [InlineData(4500, 3600, -1, 50, 120)]
-    [InlineData(4500, 3600, 2600, -1, 120)]
-    [InlineData(4500, 3600, 2600, 50, -1)]
-    public async Task PostIncomeSplitAsync_WithAnyNegativeField_ThrowsBeforeTouchingRepository(
-        decimal gleisonGross, decimal gleisonNet, decimal arianaGross, decimal arianaNet, decimal lottery)
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task PostIncomeSplitAsync_WithNonPositiveAmount_ThrowsBeforeTouchingRepository(decimal amount)
     {
         var repository = new StubCashFlowRepository();
         var service = new ReserveService(repository);
         var request = new IncomeSplitRequestDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            GleisonSalaryGross = gleisonGross,
-            GleisonSalaryNet = gleisonNet,
-            ArianaSalaryGross = arianaGross,
-            ArianaSalaryNet = arianaNet,
-            Lottery = lottery,
-            DividendoJuros = 120m
+            Amount = amount
         };
 
         var act = async () => await service.PostIncomeSplitAsync(request);
@@ -207,12 +198,7 @@ public class ReserveServiceTests
     private static IncomeSplitRequestDTO ValidIncomeSplitRequest() => new()
     {
         Date = new DateOnly(2026, 7, 1),
-        GleisonSalaryGross = 4500m,
-        GleisonSalaryNet = 3600m,
-        ArianaSalaryGross = 3200m,
-        ArianaSalaryNet = 2600m,
-        Lottery = 50m,
-        DividendoJuros = 120m
+        Amount = 1963m
     };
 
     private sealed class StubCashFlowRepository : ICashFlowRepository

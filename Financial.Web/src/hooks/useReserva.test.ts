@@ -68,35 +68,53 @@ describe('useReserva', () => {
 
   it('submits an income split and re-fetches balances/movements on success', async () => {
     postIncomeSplitMock.mockResolvedValue({
-      dizimo: 637,
       investimento: 654.33,
       houseTreats: 654.33,
       ariana: 327.17,
       gleison: 327.17,
+      total: 1963,
     })
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     act(() => result.current.setSplitField('splitDate', '2026-07-01'))
-    act(() => result.current.setSplitField('gleisonSalaryNet', '3600'))
+    act(() => result.current.setSplitField('splitAmount', '1963'))
     act(() => result.current.submitIncomeSplit())
 
     await waitFor(() => expect(postIncomeSplitMock).toHaveBeenCalledTimes(1))
-    expect(postIncomeSplitMock).toHaveBeenCalledWith(
-      expect.objectContaining({ date: '2026-07-01', gleisonSalaryNet: 3600 }),
-    )
+    expect(postIncomeSplitMock).toHaveBeenCalledWith({ date: '2026-07-01', amount: 1963 })
     await waitFor(() => expect(getReserveBalancesMock).toHaveBeenCalledTimes(2))
+    expect(result.current.lastSplitResult).toEqual({
+      investimento: 654.33,
+      houseTreats: 654.33,
+      ariana: 327.17,
+      gleison: 327.17,
+      total: 1963,
+    })
   })
 
-  it('surfaces a validation error from the backend on income split failure', async () => {
-    postIncomeSplitMock.mockRejectedValue(new Error('GleisonSalaryNet must not be negative.'))
+  it('rejects an income split with a non-positive amount before calling the API', async () => {
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     act(() => result.current.setSplitField('splitDate', '2026-07-01'))
+    act(() => result.current.setSplitField('splitAmount', '0'))
     act(() => result.current.submitIncomeSplit())
 
-    await waitFor(() => expect(result.current.splitError).toBe('GleisonSalaryNet must not be negative.'))
+    await waitFor(() => expect(result.current.splitError).toBe('Amount must be a positive number'))
+    expect(postIncomeSplitMock).not.toHaveBeenCalled()
+  })
+
+  it('surfaces a validation error from the backend on income split failure', async () => {
+    postIncomeSplitMock.mockRejectedValue(new Error('Amount must be greater than zero.'))
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setSplitField('splitDate', '2026-07-01'))
+    act(() => result.current.setSplitField('splitAmount', '1963'))
+    act(() => result.current.submitIncomeSplit())
+
+    await waitFor(() => expect(result.current.splitError).toBe('Amount must be greater than zero.'))
   })
 
   it('submits a withdrawal and re-fetches on success', async () => {

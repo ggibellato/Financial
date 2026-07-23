@@ -25,14 +25,7 @@ function MovementColumns() {
   )
 }
 
-const SPLIT_FIELDS: { field: SplitFormField; label: string }[] = [
-  { field: 'gleisonSalaryGross', label: 'Salario Gleison (gross)' },
-  { field: 'gleisonSalaryNet', label: 'Salario Gleison (net)' },
-  { field: 'arianaSalaryGross', label: 'Salario Ariana (gross)' },
-  { field: 'arianaSalaryNet', label: 'Salario Ariana (net)' },
-  { field: 'lottery', label: 'Lottery' },
-  { field: 'dividendoJuros', label: 'Dividendo/Juros' },
-]
+const SPLIT_FIELDS: { field: SplitFormField; label: string }[] = [{ field: 'splitAmount', label: 'Amount to Split' }]
 
 export default function ReservaPage() {
   const {
@@ -44,18 +37,15 @@ export default function ReservaPage() {
     retry,
     isSplitFormOpen,
     splitDate,
-    gleisonSalaryGross,
-    gleisonSalaryNet,
-    arianaSalaryGross,
-    arianaSalaryNet,
-    lottery,
-    dividendoJuros,
+    splitAmount,
     isSubmittingSplit,
     splitError,
+    lastSplitResult,
     showSplitForm,
     cancelSplitForm,
     setSplitField,
     submitIncomeSplit,
+    dismissSplitResult,
     isWithdrawalFormOpen,
     withdrawalBucket,
     withdrawalAmount,
@@ -79,12 +69,7 @@ export default function ReservaPage() {
 
   const splitValues: Record<SplitFormField, string> = {
     splitDate,
-    gleisonSalaryGross,
-    gleisonSalaryNet,
-    arianaSalaryGross,
-    arianaSalaryNet,
-    lottery,
-    dividendoJuros,
+    splitAmount,
   }
 
   const withdrawalValues: Record<WithdrawalFormField, string> = {
@@ -143,6 +128,42 @@ export default function ReservaPage() {
             </button>
           </div>
           {splitError && <p className="reserva-page__error">{splitError}</p>}
+        </div>
+      )}
+
+      {lastSplitResult && (
+        <div className="reserva-page__form-panel">
+          <p className="reserva-page__form-title">Income Split Posted</p>
+          <table className="reserva-page__table reserva-page__split-result-table data-table">
+            <BalanceColumns />
+            <tbody>
+              <tr>
+                <td>Investimento</td>
+                <td className="data-table__col--numeric">{formatN2(lastSplitResult.investimento)}</td>
+              </tr>
+              <tr>
+                <td>HouseTreats</td>
+                <td className="data-table__col--numeric">{formatN2(lastSplitResult.houseTreats)}</td>
+              </tr>
+              <tr>
+                <td>Ariana</td>
+                <td className="data-table__col--numeric">{formatN2(lastSplitResult.ariana)}</td>
+              </tr>
+              <tr>
+                <td>Gleison</td>
+                <td className="data-table__col--numeric">{formatN2(lastSplitResult.gleison)}</td>
+              </tr>
+              <tr className="reserva-page__totals-row">
+                <td>Total</td>
+                <td className="data-table__col--numeric">{formatN2(lastSplitResult.total)}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div className="reserva-page__form-actions">
+            <button type="button" onClick={dismissSplitResult}>
+              Dismiss
+            </button>
+          </div>
         </div>
       )}
 

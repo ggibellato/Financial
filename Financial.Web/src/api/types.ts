@@ -276,20 +276,15 @@ export interface ReserveMovementDto {
 
 export interface IncomeSplitRequestDto {
   date: string
-  gleisonSalaryGross: number
-  gleisonSalaryNet: number
-  arianaSalaryGross: number
-  arianaSalaryNet: number
-  lottery: number
-  dividendoJuros: number
+  amount: number
 }
 
 export interface IncomeSplitResultDto {
-  dizimo: number
   investimento: number
   houseTreats: number
   ariana: number
   gleison: number
+  total: number
 }
 
 export interface WithdrawalRequestDto {

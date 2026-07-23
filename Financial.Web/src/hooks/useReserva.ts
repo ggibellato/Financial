@@ -1,18 +1,11 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { ApiError } from '../api/apiError'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { ReserveBucketBalanceDto, ReserveMovementDto } from '../api/types'
+import type { IncomeSplitResultDto, ReserveBucketBalanceDto, ReserveMovementDto } from '../api/types'
 
 export const RESERVE_BUCKETS = ['Investimento', 'HouseTreats', 'Ariana', 'Gleison'] as const
 
-export type SplitFormField =
-  | 'splitDate'
-  | 'gleisonSalaryGross'
-  | 'gleisonSalaryNet'
-  | 'arianaSalaryGross'
-  | 'arianaSalaryNet'
-  | 'lottery'
-  | 'dividendoJuros'
+export type SplitFormField = 'splitDate' | 'splitAmount'
 
 export type WithdrawalFormField = 'withdrawalBucket' | 'withdrawalAmount' | 'withdrawalDate' | 'withdrawalDescription'
 
@@ -24,14 +17,10 @@ interface ReservaState {
   retryCount: number
   isSplitFormOpen: boolean
   splitDate: string
-  gleisonSalaryGross: string
-  gleisonSalaryNet: string
-  arianaSalaryGross: string
-  arianaSalaryNet: string
-  lottery: string
-  dividendoJuros: string
+  splitAmount: string
   isSubmittingSplit: boolean
   splitError: string | null
+  lastSplitResult: IncomeSplitResultDto | null
   isWithdrawalFormOpen: boolean
   withdrawalBucket: string
   withdrawalAmount: string
@@ -50,8 +39,9 @@ type ReservaAction =
   | { type: 'CANCEL_SPLIT_FORM' }
   | { type: 'SET_SPLIT_FIELD'; payload: { field: SplitFormField; value: string } }
   | { type: 'SPLIT_START' }
-  | { type: 'SPLIT_SUCCESS' }
+  | { type: 'SPLIT_SUCCESS'; payload: IncomeSplitResultDto }
   | { type: 'SPLIT_ERROR'; payload: string }
+  | { type: 'DISMISS_SPLIT_RESULT' }
   | { type: 'SHOW_WITHDRAWAL_FORM' }
   | { type: 'CANCEL_WITHDRAWAL_FORM' }
   | { type: 'SET_WITHDRAWAL_FIELD'; payload: { field: WithdrawalFormField; value: string } }
@@ -61,12 +51,7 @@ type ReservaAction =
 
 const BLANK_SPLIT_FORM = {
   splitDate: '',
-  gleisonSalaryGross: '',
-  gleisonSalaryNet: '',
-  arianaSalaryGross: '',
-  arianaSalaryNet: '',
-  lottery: '',
-  dividendoJuros: '',
+  splitAmount: '',
 } as const
 
 const BLANK_WITHDRAWAL_FORM = {
@@ -86,6 +71,7 @@ const INITIAL_STATE: ReservaState = {
   ...BLANK_SPLIT_FORM,
   isSubmittingSplit: false,
   splitError: null,
+  lastSplitResult: null,
   isWithdrawalFormOpen: false,
   ...BLANK_WITHDRAWAL_FORM,
   isSubmittingWithdrawal: false,
@@ -103,7 +89,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
     case 'RETRY':
       return { ...state, retryCount: state.retryCount + 1 }
     case 'SHOW_SPLIT_FORM':
-      return { ...state, isSplitFormOpen: true }
+      return { ...state, isSplitFormOpen: true, lastSplitResult: null }
     case 'CANCEL_SPLIT_FORM':
       return { ...state, ...BLANK_SPLIT_FORM, isSplitFormOpen: false, splitError: null }
     case 'SET_SPLIT_FIELD':
@@ -111,9 +97,17 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
     case 'SPLIT_START':
       return { ...state, isSubmittingSplit: true, splitError: null }
     case 'SPLIT_SUCCESS':
-      return { ...state, ...BLANK_SPLIT_FORM, isSplitFormOpen: false, isSubmittingSplit: false }
+      return {
+        ...state,
+        ...BLANK_SPLIT_FORM,
+        isSplitFormOpen: false,
+        isSubmittingSplit: false,
+        lastSplitResult: action.payload,
+      }
     case 'SPLIT_ERROR':
       return { ...state, isSubmittingSplit: false, splitError: action.payload }
+    case 'DISMISS_SPLIT_RESULT':
+      return { ...state, lastSplitResult: null }
     case 'SHOW_WITHDRAWAL_FORM':
       return { ...state, isWithdrawalFormOpen: true }
     case 'CANCEL_WITHDRAWAL_FORM':
@@ -140,18 +134,15 @@ export interface ReservaData {
   retry: () => void
   isSplitFormOpen: boolean
   splitDate: string
-  gleisonSalaryGross: string
-  gleisonSalaryNet: string
-  arianaSalaryGross: string
-  arianaSalaryNet: string
-  lottery: string
-  dividendoJuros: string
+  splitAmount: string
   isSubmittingSplit: boolean
   splitError: string | null
+  lastSplitResult: IncomeSplitResultDto | null
   showSplitForm: () => void
   cancelSplitForm: () => void
   setSplitField: (field: SplitFormField, value: string) => void
   submitIncomeSplit: () => void
+  dismissSplitResult: () => void
   isWithdrawalFormOpen: boolean
   withdrawalBucket: string
   withdrawalAmount: string
@@ -193,6 +184,8 @@ export function useReserva(): ReservaData {
 
   const cancelSplitForm = useCallback(() => dispatch({ type: 'CANCEL_SPLIT_FORM' }), [])
 
+  const dismissSplitResult = useCallback(() => dispatch({ type: 'DISMISS_SPLIT_RESULT' }), [])
+
   const showWithdrawalForm = useCallback(() => dispatch({ type: 'SHOW_WITHDRAWAL_FORM' }), [])
 
   const cancelWithdrawalForm = useCallback(() => dispatch({ type: 'CANCEL_WITHDRAWAL_FORM' }), [])
@@ -208,35 +201,25 @@ export function useReserva(): ReservaData {
   )
 
   function submitIncomeSplit() {
-    const {
-      splitDate,
-      gleisonSalaryGross,
-      gleisonSalaryNet,
-      arianaSalaryGross,
-      arianaSalaryNet,
-      lottery,
-      dividendoJuros,
-    } = state
+    const { splitDate, splitAmount } = state
 
     if (!splitDate.trim()) {
       dispatch({ type: 'SPLIT_ERROR', payload: 'Date is required' })
       return
     }
 
+    const amount = Number(splitAmount)
+    if (!splitAmount.trim() || !isFinite(amount) || amount <= 0) {
+      dispatch({ type: 'SPLIT_ERROR', payload: 'Amount must be a positive number' })
+      return
+    }
+
     dispatch({ type: 'SPLIT_START' })
 
     void apiClient
-      .postIncomeSplit({
-        date: splitDate,
-        gleisonSalaryGross: Number(gleisonSalaryGross) || 0,
-        gleisonSalaryNet: Number(gleisonSalaryNet) || 0,
-        arianaSalaryGross: Number(arianaSalaryGross) || 0,
-        arianaSalaryNet: Number(arianaSalaryNet) || 0,
-        lottery: Number(lottery) || 0,
-        dividendoJuros: Number(dividendoJuros) || 0,
-      })
-      .then(() => {
-        dispatch({ type: 'SPLIT_SUCCESS' })
+      .postIncomeSplit({ date: splitDate, amount })
+      .then((result) => {
+        dispatch({ type: 'SPLIT_SUCCESS', payload: result })
         fetchReservaData()
       })
       .catch((err: unknown) => {
@@ -311,18 +294,15 @@ export function useReserva(): ReservaData {
     retry,
     isSplitFormOpen: state.isSplitFormOpen,
     splitDate: state.splitDate,
-    gleisonSalaryGross: state.gleisonSalaryGross,
-    gleisonSalaryNet: state.gleisonSalaryNet,
-    arianaSalaryGross: state.arianaSalaryGross,
-    arianaSalaryNet: state.arianaSalaryNet,
-    lottery: state.lottery,
-    dividendoJuros: state.dividendoJuros,
+    splitAmount: state.splitAmount,
     isSubmittingSplit: state.isSubmittingSplit,
     splitError: state.splitError,
+    lastSplitResult: state.lastSplitResult,
     showSplitForm,
     cancelSplitForm,
     setSplitField,
     submitIncomeSplit,
+    dismissSplitResult,
     isWithdrawalFormOpen: state.isWithdrawalFormOpen,
     withdrawalBucket: state.withdrawalBucket,
     withdrawalAmount: state.withdrawalAmount,

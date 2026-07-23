@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ReservaPage from '../ReservaPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -79,9 +79,33 @@ describe('ReservaPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New Income Split' }))
 
     expect(screen.getByText('Post Monthly Income Split')).toBeInTheDocument()
-    expect(screen.getByLabelText('Salario Gleison (gross)')).toBeInTheDocument()
-    expect(screen.getByLabelText('Salario Ariana (net)')).toBeInTheDocument()
+    expect(screen.getByLabelText('Amount to Split')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Post Income Split' })).toBeInTheDocument()
+  })
+
+  it('shows the posted split breakdown and total after a successful submission', async () => {
+    postIncomeSplitMock.mockResolvedValue({
+      investimento: 654.33,
+      houseTreats: 654.33,
+      ariana: 327.17,
+      gleison: 327.17,
+      total: 1963,
+    })
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Income Split' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Income Split' }))
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-01' } })
+    fireEvent.change(screen.getByLabelText('Amount to Split'), { target: { value: '1963' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Post Income Split' }))
+
+    await waitFor(() => expect(screen.getByText('Income Split Posted')).toBeInTheDocument())
+    const resultPanel = screen.getByText('Income Split Posted').closest('.reserva-page__form-panel') as HTMLElement
+    expect(within(resultPanel).getAllByText('654.33')).toHaveLength(2)
+    expect(within(resultPanel).getByText('1,963.00')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
+    expect(screen.queryByText('Income Split Posted')).not.toBeInTheDocument()
   })
 
   it('shows the withdrawal form only after New Withdrawal is clicked', async () => {

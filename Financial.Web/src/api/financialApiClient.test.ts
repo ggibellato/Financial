@@ -348,19 +348,14 @@ describe('financialApiClient', () => {
   it('posts an income split request', async () => {
     const requestBody: IncomeSplitRequestDto = {
       date: '2026-07-01',
-      gleisonSalaryGross: 4500,
-      gleisonSalaryNet: 3600,
-      arianaSalaryGross: 3200,
-      arianaSalaryNet: 2600,
-      lottery: 50,
-      dividendoJuros: 120,
+      amount: 1963,
     }
     const responseBody: IncomeSplitResultDto = {
-      dizimo: 637,
-      investimento: 1854.33,
-      houseTreats: 1854.33,
-      ariana: 927.17,
-      gleison: 927.17,
+      investimento: 654.33,
+      houseTreats: 654.33,
+      ariana: 327.17,
+      gleison: 327.17,
+      total: 1963,
     }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })

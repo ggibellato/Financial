@@ -15,12 +15,7 @@ public class ReserveEndpointsTests
         var request = new IncomeSplitRequestDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            GleisonSalaryGross = 4500m,
-            GleisonSalaryNet = 3600m,
-            ArianaSalaryGross = 3200m,
-            ArianaSalaryNet = 2600m,
-            Lottery = 50m,
-            DividendoJuros = 120m
+            Amount = 1963m
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", request);
@@ -28,31 +23,26 @@ public class ReserveEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<IncomeSplitResultDTO>();
         result.Should().NotBeNull();
-        result!.Dizimo.Should().Be(637m);
-        result.Investimento.Should().Be(654.33m);
+        result!.Investimento.Should().Be(654.33m);
+        result.Total.Should().Be(1963.00m);
     }
 
     [Fact]
-    public async Task PostIncomeSplit_NegativeField_ReturnsBadRequestWithMessage()
+    public async Task PostIncomeSplit_NonPositiveAmount_ReturnsBadRequestWithMessage()
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
         var request = new IncomeSplitRequestDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            GleisonSalaryGross = 4500m,
-            GleisonSalaryNet = -100m,
-            ArianaSalaryGross = 3200m,
-            ArianaSalaryNet = 2600m,
-            Lottery = 50m,
-            DividendoJuros = 120m
+            Amount = 0m
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("must not be negative");
+        body.Should().Contain("greater than zero");
     }
 
     [Fact]
@@ -63,12 +53,7 @@ public class ReserveEndpointsTests
         await client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", new IncomeSplitRequestDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            GleisonSalaryGross = 4500m,
-            GleisonSalaryNet = 3600m,
-            ArianaSalaryGross = 3200m,
-            ArianaSalaryNet = 2600m,
-            Lottery = 50m,
-            DividendoJuros = 120m
+            Amount = 1963m
         });
 
         var response = await client.GetAsync("/api/v1/financial/reserve/balances");
@@ -87,12 +72,7 @@ public class ReserveEndpointsTests
         await client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", new IncomeSplitRequestDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            GleisonSalaryGross = 4500m,
-            GleisonSalaryNet = 3600m,
-            ArianaSalaryGross = 3200m,
-            ArianaSalaryNet = 2600m,
-            Lottery = 0m,
-            DividendoJuros = 0m
+            Amount = 1963m
         });
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/reserve/withdrawals", new WithdrawalRequestDTO
@@ -117,12 +97,7 @@ public class ReserveEndpointsTests
         await client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", new IncomeSplitRequestDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            GleisonSalaryGross = 4500m,
-            GleisonSalaryNet = 3600m,
-            ArianaSalaryGross = 3200m,
-            ArianaSalaryNet = 2600m,
-            Lottery = 0m,
-            DividendoJuros = 0m
+            Amount = 1963m
         });
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/reserve/withdrawals", new WithdrawalRequestDTO
@@ -147,12 +122,7 @@ public class ReserveEndpointsTests
         await client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", new IncomeSplitRequestDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            GleisonSalaryGross = 4500m,
-            GleisonSalaryNet = 3600m,
-            ArianaSalaryGross = 3200m,
-            ArianaSalaryNet = 2600m,
-            Lottery = 0m,
-            DividendoJuros = 0m
+            Amount = 1963m
         });
         var balancesBefore = await client.GetFromJsonAsync<List<ReserveBucketBalanceDTO>>("/api/v1/financial/reserve/balances");
         var gleisonBefore = balancesBefore!.Single(b => b.Bucket == "Gleison").Balance;
@@ -179,12 +149,7 @@ public class ReserveEndpointsTests
         await client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", new IncomeSplitRequestDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            GleisonSalaryGross = 4500m,
-            GleisonSalaryNet = 3600m,
-            ArianaSalaryGross = 3200m,
-            ArianaSalaryNet = 2600m,
-            Lottery = 0m,
-            DividendoJuros = 0m
+            Amount = 1963m
         });
 
         var response = await client.GetAsync("/api/v1/financial/reserve/movements");
