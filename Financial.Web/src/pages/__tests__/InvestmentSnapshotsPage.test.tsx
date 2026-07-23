@@ -48,8 +48,16 @@ describe('InvestmentSnapshotsPage', () => {
     render(<InvestmentSnapshotsPage />)
 
     await waitFor(() => expect(screen.getByText('Account0')).toBeInTheDocument())
-    expect(screen.getAllByRole('row')).toHaveLength(12) // header + 11 accounts
+    expect(screen.getAllByRole('row')).toHaveLength(13) // header + 11 accounts + totals row
     expect(screen.getByText('Account1 (liability)')).toBeInTheDocument()
+  })
+
+  it('renders the total value net of liability accounts', async () => {
+    render(<InvestmentSnapshotsPage />)
+
+    await waitFor(() => expect(screen.getByText('Account0')).toBeInTheDocument())
+    // values 0..1000 step 100 sum to 5500; Account1 (value 100) is a liability, so it is subtracted twice: 5500 - 200 = 5300
+    expect(screen.getByText('5,300.00')).toBeInTheDocument()
   })
 
   it('edits a row value and saves, updating the displayed row', async () => {

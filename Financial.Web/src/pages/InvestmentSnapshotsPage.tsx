@@ -5,6 +5,16 @@ import { useInvestmentSnapshots } from '../hooks/useInvestmentSnapshots'
 import { formatN2 } from '../utils/formatters'
 import './InvestmentSnapshotsPage.css'
 
+function SnapshotColumns() {
+  return (
+    <colgroup>
+      <col />
+      <col className="investment-snapshots-page__col-value" />
+      <col className="investment-snapshots-page__col-actions" />
+    </colgroup>
+  )
+}
+
 interface SnapshotRowProps {
   snapshot: InvestmentSnapshotDto
   onEdit: (snapshot: InvestmentSnapshotDto) => void
@@ -31,6 +41,7 @@ export default function InvestmentSnapshotsPage() {
     monthInputValue,
     setMonthInputValue,
     snapshots,
+    totalValue,
     isLoading,
     error,
     retry,
@@ -94,6 +105,7 @@ export default function InvestmentSnapshotsPage() {
         <div className="investment-snapshots-page__content">
           <section className="investment-snapshots-page__section">
             <table className="investment-snapshots-page__table data-table">
+              <SnapshotColumns />
               <thead>
                 <tr>
                   <th>Account</th>
@@ -109,6 +121,19 @@ export default function InvestmentSnapshotsPage() {
             </table>
           </section>
         </div>
+      )}
+
+      {!isLoading && !error && (
+        <table className="investment-snapshots-page__table investment-snapshots-page__totals-table data-table">
+          <SnapshotColumns />
+          <tbody>
+            <tr className="investment-snapshots-page__totals-row">
+              <td>Total (net of liabilities)</td>
+              <td className="data-table__col--numeric">{formatN2(totalValue)}</td>
+              <td />
+            </tr>
+          </tbody>
+        </table>
       )}
     </div>
   )
