@@ -36,14 +36,9 @@ using var workbook = new XLWorkbook(workbookPath);
 
 if (mensaisOnly)
 {
-    foreach (var template in data.RecurringBillTemplates.ToList())
+    foreach (var bill in data.RecurringBills.ToList())
     {
-        data.RemoveRecurringBillTemplate(template.Id);
-    }
-
-    foreach (var instance in data.RecurringBillInstances.ToList())
-    {
-        data.RemoveRecurringBillInstance(instance.Id);
+        data.RemoveRecurringBill(bill.Id);
     }
 
     ImportMensaisSheet(workbook, data, report);
@@ -108,16 +103,9 @@ static void ImportMensaisSheet(XLWorkbook workbook, CashFlowData data, ImportRep
         return;
     }
 
-    var now = DateTime.Now;
-    var (templates, instances) = MensaisSheetImporter.Import(sheet, now.Year, now.Month);
-    foreach (var template in templates)
+    foreach (var bill in MensaisSheetImporter.Import(sheet))
     {
-        data.AddRecurringBillTemplate(template);
-    }
-
-    foreach (var instance in instances)
-    {
-        data.AddRecurringBillInstance(instance);
+        data.AddRecurringBill(bill);
     }
 
     report.SheetImported(sheet.Name);

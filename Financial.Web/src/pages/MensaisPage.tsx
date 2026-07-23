@@ -1,4 +1,4 @@
-import type { RecurringBillInstanceDto } from '../api/types'
+import type { RecurringBillDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import { useMensais } from '../hooks/useMensais'
@@ -8,33 +8,33 @@ import './MensaisPage.css'
 const STATUSES = ['Unset', 'Scheduled', 'Paid']
 const AREAS = ['Brasil', 'UK']
 
-interface InstanceRowProps {
-  instance: RecurringBillInstanceDto
+interface BillRowProps {
+  bill: RecurringBillDto
   showBrasilFields: boolean
   isDeleting: boolean
-  onEdit: (instance: RecurringBillInstanceDto) => void
-  onDelete: (templateId: string) => void
+  onEdit: (bill: RecurringBillDto) => void
+  onDelete: (id: string) => void
 }
 
-function InstanceRow({ instance, showBrasilFields, isDeleting, onEdit, onDelete }: InstanceRowProps) {
+function BillRow({ bill, showBrasilFields, isDeleting, onEdit, onDelete }: BillRowProps) {
   return (
     <tr>
-      <td>{instance.dueDay}</td>
-      <td>{instance.description}</td>
-      {showBrasilFields && <td>{instance.nitNumber ?? ''}</td>}
-      {showBrasilFields && <td className="data-table__col--numeric">{instance.minimumWageValue !== null ? formatN2(instance.minimumWageValue) : ''}</td>}
-      <td className="data-table__col--numeric">{formatN2(instance.value)}</td>
-      <td>{instance.status}</td>
+      <td>{bill.dueDay}</td>
+      <td>{bill.description}</td>
+      {showBrasilFields && <td>{bill.nitNumber ?? ''}</td>}
+      {showBrasilFields && <td className="data-table__col--numeric">{bill.minimumWageValue !== null ? formatN2(bill.minimumWageValue) : ''}</td>}
+      <td className="data-table__col--numeric">{formatN2(bill.value)}</td>
+      <td>{bill.status}</td>
       <td>
-        <button type="button" onClick={() => onEdit(instance)}>
+        <button type="button" onClick={() => onEdit(bill)}>
           Edit
         </button>
         <button
           type="button"
           disabled={isDeleting}
           onClick={() => {
-            if (window.confirm(`Delete "${instance.description}"? This removes it from every month.`)) {
-              onDelete(instance.templateId)
+            if (window.confirm(`Delete "${bill.description}"? This removes it for good.`)) {
+              onDelete(bill.id)
             }
           }}
         >
@@ -45,16 +45,16 @@ function InstanceRow({ instance, showBrasilFields, isDeleting, onEdit, onDelete 
   )
 }
 
-interface InstanceTableProps {
+interface BillTableProps {
   title: string
-  instances: RecurringBillInstanceDto[]
+  bills: RecurringBillDto[]
   showBrasilFields: boolean
-  deletingTemplateId: string | null
-  onEdit: (instance: RecurringBillInstanceDto) => void
-  onDelete: (templateId: string) => void
+  deletingBillId: string | null
+  onEdit: (bill: RecurringBillDto) => void
+  onDelete: (id: string) => void
 }
 
-function InstanceTable({ title, instances, showBrasilFields, deletingTemplateId, onEdit, onDelete }: InstanceTableProps) {
+function BillTable({ title, bills, showBrasilFields, deletingBillId, onEdit, onDelete }: BillTableProps) {
   return (
     <section className="mensais-page__section">
       <h2>{title}</h2>
@@ -71,12 +71,12 @@ function InstanceTable({ title, instances, showBrasilFields, deletingTemplateId,
           </tr>
         </thead>
         <tbody>
-          {instances.map((instance) => (
-            <InstanceRow
-              key={instance.id}
-              instance={instance}
+          {bills.map((bill) => (
+            <BillRow
+              key={bill.id}
+              bill={bill}
               showBrasilFields={showBrasilFields}
-              isDeleting={deletingTemplateId === instance.templateId}
+              isDeleting={deletingBillId === bill.id}
               onEdit={onEdit}
               onDelete={onDelete}
             />
@@ -91,8 +91,8 @@ export default function MensaisPage() {
   const {
     monthInputValue,
     setMonthInputValue,
-    brasilInstances,
-    ukInstances,
+    brasilBills,
+    ukBills,
     isLoading,
     error,
     retry,
@@ -119,9 +119,12 @@ export default function MensaisPage() {
     showAddForm,
     cancelAdd,
     submitAdd,
-    deletingTemplateId,
+    deletingBillId,
     deleteError,
-    deleteTemplate,
+    deleteBill,
+    isResetting,
+    resetError,
+    resetAllToUnset,
   } = useMensais()
 
   const isEditing = editingId !== null
@@ -141,9 +144,21 @@ export default function MensaisPage() {
             Add Bill
           </button>
         )}
+        <button
+          type="button"
+          disabled={isResetting}
+          onClick={() => {
+            if (window.confirm('Reset every bill back to Unset for the new month?')) {
+              resetAllToUnset()
+            }
+          }}
+        >
+          {isResetting ? 'Resetting...' : 'Reset All to Unset'}
+        </button>
       </div>
 
       {deleteError && <p className="mensais-page__error">{deleteError}</p>}
+      {resetError && <p className="mensais-page__error">{resetError}</p>}
 
       {isAddFormOpen && (
         <div className="mensais-page__form-panel">
@@ -236,7 +251,7 @@ export default function MensaisPage() {
 
       {isEditing && (
         <div className="mensais-page__form-panel">
-          <p className="mensais-page__form-title">Edit Instance</p>
+          <p className="mensais-page__form-title">Edit Bill</p>
           <div className="mensais-page__form">
             <div className="mensais-page__form-field">
               <label htmlFor="mensais-edit-value">Value</label>
@@ -281,21 +296,21 @@ export default function MensaisPage() {
         <ErrorState message={error} onRetry={retry} />
       ) : (
         <div className="mensais-page__content">
-          <InstanceTable
+          <BillTable
             title="Brasil"
-            instances={brasilInstances}
+            bills={brasilBills}
             showBrasilFields
-            deletingTemplateId={deletingTemplateId}
+            deletingBillId={deletingBillId}
             onEdit={showEditForm}
-            onDelete={deleteTemplate}
+            onDelete={deleteBill}
           />
-          <InstanceTable
+          <BillTable
             title="UK"
-            instances={ukInstances}
+            bills={ukBills}
             showBrasilFields={false}
-            deletingTemplateId={deletingTemplateId}
+            deletingBillId={deletingBillId}
             onEdit={showEditForm}
-            onDelete={deleteTemplate}
+            onDelete={deleteBill}
           />
         </div>
       )}

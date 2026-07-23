@@ -29,13 +29,9 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository
     public IEnumerable<CardStatement> GetCardStatements() => _data.CardStatements;
     public void AddCardStatement(CardStatement statement) => _data.AddCardStatement(statement);
 
-    public IEnumerable<RecurringBillTemplate> GetRecurringBillTemplates() => _data.RecurringBillTemplates;
-    public void AddRecurringBillTemplate(RecurringBillTemplate template) => _data.AddRecurringBillTemplate(template);
-    public void DeleteRecurringBillTemplate(Guid id) => _data.RemoveRecurringBillTemplate(id);
-
-    public IEnumerable<RecurringBillInstance> GetRecurringBillInstances() => _data.RecurringBillInstances;
-    public void AddRecurringBillInstance(RecurringBillInstance instance) => _data.AddRecurringBillInstance(instance);
-    public void DeleteRecurringBillInstance(Guid id) => _data.RemoveRecurringBillInstance(id);
+    public IEnumerable<RecurringBill> GetRecurringBills() => _data.RecurringBills;
+    public void AddRecurringBill(RecurringBill bill) => _data.AddRecurringBill(bill);
+    public void DeleteRecurringBill(Guid id) => _data.RemoveRecurringBill(id);
 
     public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => _data.MaeLedgerEntries;
     public void AddMaeLedgerEntry(MaeLedgerEntry entry) => _data.AddMaeLedgerEntry(entry);

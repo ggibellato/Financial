@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { CreateRecurringBillTemplateDto, RecurringBillInstanceDto } from '../api/types'
+import type { CreateRecurringBillDto, RecurringBillDto } from '../api/types'
 import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
 
 export type EditField = 'editStatus' | 'editValue'
@@ -17,9 +17,9 @@ const EMPTY_ADD_FORM = {
 }
 
 interface MensaisState {
-  year: number
-  month: number
-  instances: RecurringBillInstanceDto[]
+  displayYear: number
+  displayMonth: number
+  bills: RecurringBillDto[]
   isLoading: boolean
   error: string | null
   retryCount: number
@@ -38,17 +38,19 @@ interface MensaisState {
   newMinimumWageValue: string
   isAdding: boolean
   addError: string | null
-  deletingTemplateId: string | null
+  deletingBillId: string | null
   deleteError: string | null
+  isResetting: boolean
+  resetError: string | null
 }
 
 type MensaisAction =
-  | { type: 'SET_MONTH'; payload: { year: number; month: number } }
+  | { type: 'SET_DISPLAY_MONTH'; payload: { year: number; month: number } }
   | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: RecurringBillInstanceDto[] }
+  | { type: 'FETCH_SUCCESS'; payload: RecurringBillDto[] }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
-  | { type: 'SHOW_EDIT_FORM'; payload: RecurringBillInstanceDto }
+  | { type: 'SHOW_EDIT_FORM'; payload: RecurringBillDto }
   | { type: 'CANCEL_EDIT' }
   | { type: 'SET_EDIT_FIELD'; payload: { field: EditField; value: string } }
   | { type: 'SAVE_START' }
@@ -63,13 +65,16 @@ type MensaisAction =
   | { type: 'DELETE_START'; payload: string }
   | { type: 'DELETE_SUCCESS' }
   | { type: 'DELETE_ERROR'; payload: string }
+  | { type: 'RESET_START' }
+  | { type: 'RESET_SUCCESS'; payload: RecurringBillDto[] }
+  | { type: 'RESET_ERROR'; payload: string }
 
 const { year: DEFAULT_YEAR, month: DEFAULT_MONTH } = currentYearMonth()
 
 const INITIAL_STATE: MensaisState = {
-  year: DEFAULT_YEAR,
-  month: DEFAULT_MONTH,
-  instances: [],
+  displayYear: DEFAULT_YEAR,
+  displayMonth: DEFAULT_MONTH,
+  bills: [],
   isLoading: true,
   error: null,
   retryCount: 0,
@@ -82,18 +87,20 @@ const INITIAL_STATE: MensaisState = {
   ...EMPTY_ADD_FORM,
   isAdding: false,
   addError: null,
-  deletingTemplateId: null,
+  deletingBillId: null,
   deleteError: null,
+  isResetting: false,
+  resetError: null,
 }
 
 function reducer(state: MensaisState, action: MensaisAction): MensaisState {
   switch (action.type) {
-    case 'SET_MONTH':
-      return { ...state, year: action.payload.year, month: action.payload.month }
+    case 'SET_DISPLAY_MONTH':
+      return { ...state, displayYear: action.payload.year, displayMonth: action.payload.month }
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null }
     case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, instances: action.payload }
+      return { ...state, isLoading: false, bills: action.payload }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
@@ -129,23 +136,27 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
     case 'ADD_ERROR':
       return { ...state, isAdding: false, addError: action.payload }
     case 'DELETE_START':
-      return { ...state, deletingTemplateId: action.payload, deleteError: null }
+      return { ...state, deletingBillId: action.payload, deleteError: null }
     case 'DELETE_SUCCESS':
-      return { ...state, deletingTemplateId: null }
+      return { ...state, deletingBillId: null }
     case 'DELETE_ERROR':
-      return { ...state, deletingTemplateId: null, deleteError: action.payload }
+      return { ...state, deletingBillId: null, deleteError: action.payload }
+    case 'RESET_START':
+      return { ...state, isResetting: true, resetError: null }
+    case 'RESET_SUCCESS':
+      return { ...state, isResetting: false, bills: action.payload }
+    case 'RESET_ERROR':
+      return { ...state, isResetting: false, resetError: action.payload }
     default:
       return state
   }
 }
 
 export interface MensaisData {
-  year: number
-  month: number
   monthInputValue: string
   setMonthInputValue: (value: string) => void
-  brasilInstances: RecurringBillInstanceDto[]
-  ukInstances: RecurringBillInstanceDto[]
+  brasilBills: RecurringBillDto[]
+  ukBills: RecurringBillDto[]
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -155,7 +166,7 @@ export interface MensaisData {
   isSaving: boolean
   saveError: string | null
   setEditField: (field: EditField, value: string) => void
-  showEditForm: (instance: RecurringBillInstanceDto) => void
+  showEditForm: (bill: RecurringBillDto) => void
   cancelEdit: () => void
   saveEdit: () => void
   isAddFormOpen: boolean
@@ -172,9 +183,12 @@ export interface MensaisData {
   showAddForm: () => void
   cancelAdd: () => void
   submitAdd: () => void
-  deletingTemplateId: string | null
+  deletingBillId: string | null
   deleteError: string | null
-  deleteTemplate: (templateId: string) => void
+  deleteBill: (id: string) => void
+  isResetting: boolean
+  resetError: string | null
+  resetAllToUnset: () => void
 }
 
 export function useMensais(): MensaisData {
@@ -184,19 +198,19 @@ export function useMensais(): MensaisData {
   useEffect(() => {
     dispatch({ type: 'FETCH_START' })
     void apiClient
-      .getMensaisInstances(state.year, state.month)
-      .then((instances) => dispatch({ type: 'FETCH_SUCCESS', payload: instances }))
+      .getMensaisBills()
+      .then((bills) => dispatch({ type: 'FETCH_SUCCESS', payload: bills }))
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: err instanceof Error ? err.message : 'Unable to load Mensais data' })
       })
-  }, [apiClient, state.year, state.month, state.retryCount])
+  }, [apiClient, state.retryCount])
 
-  const monthInputValue = formatMonthInputValue(state.year, state.month)
+  const monthInputValue = formatMonthInputValue(state.displayYear, state.displayMonth)
 
   const setMonthInputValue = useCallback((value: string) => {
     const parsed = parseMonthInputValue(value)
     if (!parsed) return
-    dispatch({ type: 'SET_MONTH', payload: parsed })
+    dispatch({ type: 'SET_DISPLAY_MONTH', payload: parsed })
   }, [])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
@@ -207,7 +221,7 @@ export function useMensais(): MensaisData {
   )
 
   const showEditForm = useCallback(
-    (instance: RecurringBillInstanceDto) => dispatch({ type: 'SHOW_EDIT_FORM', payload: instance }),
+    (bill: RecurringBillDto) => dispatch({ type: 'SHOW_EDIT_FORM', payload: bill }),
     [],
   )
 
@@ -225,7 +239,7 @@ export function useMensais(): MensaisData {
     dispatch({ type: 'SAVE_START' })
 
     void apiClient
-      .updateMensaisInstance(state.editingId, { status: state.editStatus, value })
+      .updateMensaisBill(state.editingId, { status: state.editStatus, value })
       .then(() => {
         dispatch({ type: 'SAVE_SUCCESS' })
         dispatch({ type: 'RETRY' })
@@ -233,7 +247,7 @@ export function useMensais(): MensaisData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to update instance',
+          payload: err instanceof Error ? err.message : 'Failed to update bill',
         })
       })
   }
@@ -272,7 +286,7 @@ export function useMensais(): MensaisData {
 
     dispatch({ type: 'ADD_START' })
 
-    const request: CreateRecurringBillTemplateDto = {
+    const request: CreateRecurringBillDto = {
       dueDay,
       description: state.newDescription,
       value,
@@ -283,7 +297,7 @@ export function useMensais(): MensaisData {
     }
 
     void apiClient
-      .createMensaisTemplate(request)
+      .createMensaisBill(request)
       .then(() => {
         dispatch({ type: 'ADD_SUCCESS' })
         dispatch({ type: 'RETRY' })
@@ -296,11 +310,11 @@ export function useMensais(): MensaisData {
       })
   }
 
-  function deleteTemplate(templateId: string) {
-    dispatch({ type: 'DELETE_START', payload: templateId })
+  function deleteBill(id: string) {
+    dispatch({ type: 'DELETE_START', payload: id })
 
     void apiClient
-      .deleteMensaisTemplate(templateId)
+      .deleteMensaisBill(id)
       .then(() => {
         dispatch({ type: 'DELETE_SUCCESS' })
         dispatch({ type: 'RETRY' })
@@ -313,19 +327,28 @@ export function useMensais(): MensaisData {
       })
   }
 
-  const brasilInstances = useMemo(
-    () => state.instances.filter((i) => i.area === 'Brasil'),
-    [state.instances],
-  )
-  const ukInstances = useMemo(() => state.instances.filter((i) => i.area === 'UK'), [state.instances])
+  function resetAllToUnset() {
+    dispatch({ type: 'RESET_START' })
+
+    void apiClient
+      .resetMensaisToUnset()
+      .then((bills) => dispatch({ type: 'RESET_SUCCESS', payload: bills }))
+      .catch((err: unknown) => {
+        dispatch({
+          type: 'RESET_ERROR',
+          payload: err instanceof Error ? err.message : 'Failed to reset bills',
+        })
+      })
+  }
+
+  const brasilBills = useMemo(() => state.bills.filter((b) => b.area === 'Brasil'), [state.bills])
+  const ukBills = useMemo(() => state.bills.filter((b) => b.area === 'UK'), [state.bills])
 
   return {
-    year: state.year,
-    month: state.month,
     monthInputValue,
     setMonthInputValue,
-    brasilInstances,
-    ukInstances,
+    brasilBills,
+    ukBills,
     isLoading: state.isLoading,
     error: state.error,
     retry,
@@ -352,8 +375,11 @@ export function useMensais(): MensaisData {
     showAddForm,
     cancelAdd,
     submitAdd,
-    deletingTemplateId: state.deletingTemplateId,
+    deletingBillId: state.deletingBillId,
     deleteError: state.deleteError,
-    deleteTemplate,
+    deleteBill,
+    isResetting: state.isResetting,
+    resetError: state.resetError,
+    resetAllToUnset,
   }
 }

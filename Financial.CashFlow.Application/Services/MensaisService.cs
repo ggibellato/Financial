@@ -18,7 +18,7 @@ public sealed class MensaisService : IMensaisService
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }
 
-    public async Task<RecurringBillTemplateDTO> CreateTemplateAsync(CreateRecurringBillTemplateDTO request)
+    public async Task<RecurringBillDTO> CreateBillAsync(CreateRecurringBillDTO request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -37,113 +37,68 @@ public sealed class MensaisService : IMensaisService
             throw new ArgumentException($"Area '{request.Area}' is not recognized.");
         }
 
-        var template = RecurringBillTemplate.Create(
+        var bill = RecurringBill.Create(
             request.DueDay, request.Description, request.Value, area, request.Note, request.NitNumber, request.MinimumWageValue);
 
-        _repository.AddRecurringBillTemplate(template);
+        _repository.AddRecurringBill(bill);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
 
-        return ToTemplateDto(template);
+        return ToDto(bill);
     }
 
-    public async Task DeleteTemplateAsync(Guid id)
+    public async Task DeleteBillAsync(Guid id)
     {
-        _ = _repository.GetRecurringBillTemplates().FirstOrDefault(t => t.Id == id)
-            ?? throw new KeyNotFoundException($"Recurring bill template '{id}' was not found.");
+        _ = _repository.GetRecurringBills().FirstOrDefault(b => b.Id == id)
+            ?? throw new KeyNotFoundException($"Recurring bill '{id}' was not found.");
 
-        foreach (var instance in _repository.GetRecurringBillInstances().Where(i => i.TemplateId == id).ToList())
-        {
-            _repository.DeleteRecurringBillInstance(instance.Id);
-        }
-
-        _repository.DeleteRecurringBillTemplate(id);
+        _repository.DeleteRecurringBill(id);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
     }
 
-    public IReadOnlyList<RecurringBillTemplateDTO> GetTemplates() =>
-        _repository.GetRecurringBillTemplates().Select(ToTemplateDto).ToList();
+    public IReadOnlyList<RecurringBillDTO> GetBills() =>
+        _repository.GetRecurringBills().Select(ToDto).ToList();
 
-    public async Task<IReadOnlyList<RecurringBillInstanceDTO>> GetInstancesForMonthAsync(int year, int month)
-    {
-        var templates = _repository.GetRecurringBillTemplates().Where(t => t.IsActive).ToList();
-        var existingInstances = _repository.GetRecurringBillInstances()
-            .Where(i => i.Year == year && i.Month == month)
-            .ToList();
-
-        var created = false;
-        foreach (var template in templates)
-        {
-            if (existingInstances.Any(i => i.TemplateId == template.Id))
-            {
-                continue;
-            }
-
-            var instance = RecurringBillInstance.Create(template.Id, year, month, template.Value);
-            _repository.AddRecurringBillInstance(instance);
-            existingInstances.Add(instance);
-            created = true;
-        }
-
-        if (created)
-        {
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
-        }
-
-        var templatesById = _repository.GetRecurringBillTemplates().ToDictionary(t => t.Id);
-
-        return existingInstances
-            .Where(i => templatesById.ContainsKey(i.TemplateId))
-            .Select(i => ToInstanceDto(i, templatesById[i.TemplateId]))
-            .ToList();
-    }
-
-    public async Task<RecurringBillInstanceDTO> UpdateInstanceAsync(Guid id, UpdateRecurringBillInstanceDTO request)
+    public async Task<RecurringBillDTO> UpdateBillAsync(Guid id, UpdateRecurringBillDTO request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var instance = _repository.GetRecurringBillInstances().FirstOrDefault(i => i.Id == id)
-            ?? throw new KeyNotFoundException($"Recurring bill instance '{id}' was not found.");
+        var bill = _repository.GetRecurringBills().FirstOrDefault(b => b.Id == id)
+            ?? throw new KeyNotFoundException($"Recurring bill '{id}' was not found.");
 
         if (!BillStatusParser.TryParse(request.Status, out var status))
         {
             throw new ArgumentException($"Status '{request.Status}' is not recognized.");
         }
 
-        var template = _repository.GetRecurringBillTemplates().FirstOrDefault(t => t.Id == instance.TemplateId)
-            ?? throw new KeyNotFoundException($"Template '{instance.TemplateId}' was not found.");
-
-        instance.Update(status, request.Value);
+        bill.Update(status, request.Value);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
 
-        return ToInstanceDto(instance, template);
+        return ToDto(bill);
     }
 
-    private static RecurringBillTemplateDTO ToTemplateDto(RecurringBillTemplate template) => new()
+    public async Task<IReadOnlyList<RecurringBillDTO>> ResetAllToUnsetAsync()
     {
-        Id = template.Id,
-        DueDay = template.DueDay,
-        Description = template.Description,
-        Value = template.Value,
-        Area = template.Area.ToString(),
-        Note = template.Note,
-        NitNumber = template.NitNumber,
-        MinimumWageValue = template.MinimumWageValue,
-        IsActive = template.IsActive
-    };
+        var bills = _repository.GetRecurringBills().ToList();
+        foreach (var bill in bills)
+        {
+            bill.ResetToUnset();
+        }
 
-    private static RecurringBillInstanceDTO ToInstanceDto(RecurringBillInstance instance, RecurringBillTemplate template) => new()
+        await _repository.SaveChangesAsync().ConfigureAwait(false);
+
+        return bills.Select(ToDto).ToList();
+    }
+
+    private static RecurringBillDTO ToDto(RecurringBill bill) => new()
     {
-        Id = instance.Id,
-        TemplateId = instance.TemplateId,
-        Year = instance.Year,
-        Month = instance.Month,
-        DueDay = template.DueDay,
-        Description = template.Description,
-        Area = template.Area.ToString(),
-        Note = template.Note,
-        NitNumber = template.NitNumber,
-        MinimumWageValue = template.MinimumWageValue,
-        Value = instance.Value,
-        Status = instance.Status.ToString()
+        Id = bill.Id,
+        DueDay = bill.DueDay,
+        Description = bill.Description,
+        Value = bill.Value,
+        Area = bill.Area.ToString(),
+        Note = bill.Note,
+        NitNumber = bill.NitNumber,
+        MinimumWageValue = bill.MinimumWageValue,
+        Status = bill.Status.ToString()
     };
 }

@@ -4,9 +4,9 @@ namespace Financial.CashFlow.Application.Interfaces;
 
 public interface IMensaisService
 {
-    Task<RecurringBillTemplateDTO> CreateTemplateAsync(CreateRecurringBillTemplateDTO request);
-    Task DeleteTemplateAsync(Guid id);
-    IReadOnlyList<RecurringBillTemplateDTO> GetTemplates();
-    Task<IReadOnlyList<RecurringBillInstanceDTO>> GetInstancesForMonthAsync(int year, int month);
-    Task<RecurringBillInstanceDTO> UpdateInstanceAsync(Guid id, UpdateRecurringBillInstanceDTO request);
+    Task<RecurringBillDTO> CreateBillAsync(CreateRecurringBillDTO request);
+    Task DeleteBillAsync(Guid id);
+    IReadOnlyList<RecurringBillDTO> GetBills();
+    Task<RecurringBillDTO> UpdateBillAsync(Guid id, UpdateRecurringBillDTO request);
+    Task<IReadOnlyList<RecurringBillDTO>> ResetAllToUnsetAsync();
 }

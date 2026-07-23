@@ -29,20 +29,12 @@ public class CashFlowData
         _cardStatements.AddRange(data);
     }
 
-    private List<RecurringBillTemplate> _recurringBillTemplates = new List<RecurringBillTemplate>();
-    public IReadOnlyCollection<RecurringBillTemplate> RecurringBillTemplates { get => _recurringBillTemplates.AsReadOnly(); private set => SetRecurringBillTemplates(value); }
-    private void SetRecurringBillTemplates(IReadOnlyCollection<RecurringBillTemplate> data)
+    private List<RecurringBill> _recurringBills = new List<RecurringBill>();
+    public IReadOnlyCollection<RecurringBill> RecurringBills { get => _recurringBills.AsReadOnly(); private set => SetRecurringBills(value); }
+    private void SetRecurringBills(IReadOnlyCollection<RecurringBill> data)
     {
-        _recurringBillTemplates.Clear();
-        _recurringBillTemplates.AddRange(data);
-    }
-
-    private List<RecurringBillInstance> _recurringBillInstances = new List<RecurringBillInstance>();
-    public IReadOnlyCollection<RecurringBillInstance> RecurringBillInstances { get => _recurringBillInstances.AsReadOnly(); private set => SetRecurringBillInstances(value); }
-    private void SetRecurringBillInstances(IReadOnlyCollection<RecurringBillInstance> data)
-    {
-        _recurringBillInstances.Clear();
-        _recurringBillInstances.AddRange(data);
+        _recurringBills.Clear();
+        _recurringBills.AddRange(data);
     }
 
     private List<MaeLedgerEntry> _maeLedgerEntries = new List<MaeLedgerEntry>();
@@ -75,13 +67,9 @@ public class CashFlowData
 
     public void AddCardStatement(CardStatement statement) => _cardStatements.Add(statement);
 
-    public void AddRecurringBillTemplate(RecurringBillTemplate template) => _recurringBillTemplates.Add(template);
+    public void AddRecurringBill(RecurringBill bill) => _recurringBills.Add(bill);
 
-    public void RemoveRecurringBillTemplate(Guid id) => _recurringBillTemplates.RemoveAll(t => t.Id == id);
-
-    public void AddRecurringBillInstance(RecurringBillInstance instance) => _recurringBillInstances.Add(instance);
-
-    public void RemoveRecurringBillInstance(Guid id) => _recurringBillInstances.RemoveAll(i => i.Id == id);
+    public void RemoveRecurringBill(Guid id) => _recurringBills.RemoveAll(b => b.Id == id);
 
     public void AddMaeLedgerEntry(MaeLedgerEntry entry) => _maeLedgerEntries.Add(entry);
 

@@ -8,7 +8,7 @@ namespace Financial.CashFlowSpreadsheetImport.Tests.SheetImporters;
 public class MensaisSheetImporterTests
 {
     [Fact]
-    public void Import_BrasilAndUkSections_CreatesOneTemplateAndInstancePerRow()
+    public void Import_BrasilAndUkSections_CreatesOneBillPerRow()
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Mensais");
@@ -29,30 +29,23 @@ public class MensaisSheetImporterTests
         sheet.Cell(4, 3).Value = 150.0;
         sheet.Cell(4, 4).Value = "A";
 
-        var (templates, instances) = MensaisSheetImporter.Import(sheet, 2026, 7);
+        var bills = MensaisSheetImporter.Import(sheet);
 
-        templates.Should().HaveCount(2);
-        instances.Should().HaveCount(2);
+        bills.Should().HaveCount(2);
 
-        var brasilTemplate = templates.Single(t => t.Description == "Aluguel");
-        brasilTemplate.Area.Should().Be(Area.Brasil);
-        brasilTemplate.DueDay.Should().Be(10);
-        brasilTemplate.Value.Should().Be(500.0m);
-        brasilTemplate.NitNumber.Should().Be("123456");
-        brasilTemplate.MinimumWageValue.Should().Be(1412.0m);
+        var brasilBill = bills.Single(b => b.Description == "Aluguel");
+        brasilBill.Area.Should().Be(Area.Brasil);
+        brasilBill.DueDay.Should().Be(10);
+        brasilBill.Value.Should().Be(500.0m);
+        brasilBill.NitNumber.Should().Be("123456");
+        brasilBill.MinimumWageValue.Should().Be(1412.0m);
+        brasilBill.Status.Should().Be(BillStatus.Paid);
 
-        var brasilInstance = instances.Single(i => i.TemplateId == brasilTemplate.Id);
-        brasilInstance.Year.Should().Be(2026);
-        brasilInstance.Month.Should().Be(7);
-        brasilInstance.Status.Should().Be(BillStatus.Paid);
-
-        var ukTemplate = templates.Single(t => t.Description == "Council Tax");
-        ukTemplate.Area.Should().Be(Area.UK);
-        ukTemplate.NitNumber.Should().BeNull();
-        ukTemplate.MinimumWageValue.Should().BeNull();
-
-        var ukInstance = instances.Single(i => i.TemplateId == ukTemplate.Id);
-        ukInstance.Status.Should().Be(BillStatus.Scheduled);
+        var ukBill = bills.Single(b => b.Description == "Council Tax");
+        ukBill.Area.Should().Be(Area.UK);
+        ukBill.NitNumber.Should().BeNull();
+        ukBill.MinimumWageValue.Should().BeNull();
+        ukBill.Status.Should().Be(BillStatus.Scheduled);
     }
 
     [Fact]
@@ -65,10 +58,9 @@ public class MensaisSheetImporterTests
         sheet.Cell(1, 2).Value = "Orphan bill";
         sheet.Cell(1, 3).Value = 10.0;
 
-        var (templates, instances) = MensaisSheetImporter.Import(sheet, 2026, 7);
+        var bills = MensaisSheetImporter.Import(sheet);
 
-        templates.Should().BeEmpty();
-        instances.Should().BeEmpty();
+        bills.Should().BeEmpty();
     }
 
     [Fact]
@@ -82,8 +74,8 @@ public class MensaisSheetImporterTests
         sheet.Cell(2, 2).Value = "Some bill";
         sheet.Cell(2, 3).Value = 20.0;
 
-        var (_, instances) = MensaisSheetImporter.Import(sheet, 2026, 7);
+        var bills = MensaisSheetImporter.Import(sheet);
 
-        instances.Should().ContainSingle().Which.Status.Should().Be(BillStatus.Unset);
+        bills.Should().ContainSingle().Which.Status.Should().Be(BillStatus.Unset);
     }
 }
