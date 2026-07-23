@@ -287,7 +287,7 @@ export default function ReservaPage() {
                       </tr>
                       {m.groupTotal !== null && (
                         <tr className="reserva-page__totals-row">
-                          <td colSpan={3}>Total</td>
+                          <td colSpan={3}>Total split for {m.description}</td>
                           <td className="data-table__col--numeric">{formatN2(m.groupTotal)}</td>
                         </tr>
                       )}

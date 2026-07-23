@@ -73,7 +73,7 @@ describe('ReservaPage', () => {
     const rows = within(movementSection).getAllByRole('row')
     // header + 4 movement rows + 1 group-total row
     expect(rows).toHaveLength(6)
-    expect(within(rows[5]).getByText('Total')).toBeInTheDocument()
+    expect(within(rows[5]).getByText('Total split for Ramsay')).toBeInTheDocument()
     expect(within(rows[5]).getByText('1,963.00')).toBeInTheDocument()
   })
 
