@@ -8,9 +8,9 @@ import './InvestmentSnapshotsPage.css'
 function SnapshotColumns() {
   return (
     <colgroup>
+      <col className="investment-snapshots-page__col-actions" />
       <col />
       <col className="investment-snapshots-page__col-value" />
-      <col className="investment-snapshots-page__col-actions" />
     </colgroup>
   )
 }
@@ -25,13 +25,18 @@ function SnapshotRow({ snapshot, onEdit }: SnapshotRowProps) {
 
   return (
     <tr>
-      <td>{label}</td>
-      <td className="data-table__col--numeric">{formatN2(snapshot.value)}</td>
       <td>
-        <button type="button" onClick={() => onEdit(snapshot)}>
-          Edit
+        <button
+          className="data-table__action-btn"
+          type="button"
+          aria-label="Edit snapshot"
+          onClick={() => onEdit(snapshot)}
+        >
+          ✏
         </button>
       </td>
+      <td>{label}</td>
+      <td className="data-table__col--numeric">{formatN2(snapshot.value)}</td>
     </tr>
   )
 }
@@ -108,9 +113,9 @@ export default function InvestmentSnapshotsPage() {
               <SnapshotColumns />
               <thead>
                 <tr>
+                  <th />
                   <th>Account</th>
                   <th className="data-table__col--numeric">Value</th>
-                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -128,9 +133,9 @@ export default function InvestmentSnapshotsPage() {
           <SnapshotColumns />
           <tbody>
             <tr className="investment-snapshots-page__totals-row">
+              <td />
               <td>Total (net of liabilities)</td>
               <td className="data-table__col--numeric">{formatN2(totalValue)}</td>
-              <td />
             </tr>
           </tbody>
         </table>

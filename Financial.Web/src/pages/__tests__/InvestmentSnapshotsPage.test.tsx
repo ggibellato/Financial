@@ -66,7 +66,7 @@ describe('InvestmentSnapshotsPage', () => {
 
     await waitFor(() => expect(screen.getByText('Account0')).toBeInTheDocument())
 
-    const editButtons = screen.getAllByRole('button', { name: 'Edit' })
+    const editButtons = screen.getAllByRole('button', { name: 'Edit snapshot' })
     fireEvent.click(editButtons[0])
 
     expect(screen.getByText('Edit Snapshot')).toBeInTheDocument()

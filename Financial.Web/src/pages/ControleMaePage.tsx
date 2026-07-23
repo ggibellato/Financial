@@ -8,12 +8,12 @@ import './ControleMaePage.css'
 function LedgerColumns() {
   return (
     <colgroup>
+      <col className="controle-mae-page__col-actions" />
       <col className="controle-mae-page__col-date" />
       <col className="controle-mae-page__col-description" />
       <col className="controle-mae-page__col-note" />
       <col className="controle-mae-page__col-value" />
       <col className="controle-mae-page__col-value" />
-      <col className="controle-mae-page__col-actions" />
     </colgroup>
   )
 }
@@ -26,16 +26,21 @@ interface EntryRowProps {
 function EntryRow({ entry, onEdit }: EntryRowProps) {
   return (
     <tr>
+      <td>
+        <button
+          className="data-table__action-btn"
+          type="button"
+          aria-label="Edit entry"
+          onClick={() => onEdit(entry)}
+        >
+          ✏
+        </button>
+      </td>
       <td>{formatShortDate(entry.date)}</td>
       <td>{entry.description}</td>
       <td>{entry.note}</td>
       <td className="data-table__col--numeric">{entry.brlValue !== null ? formatN2(entry.brlValue) : '—'}</td>
       <td className="data-table__col--numeric">{entry.gbpValue !== null ? formatN2(entry.gbpValue) : '—'}</td>
-      <td>
-        <button type="button" onClick={() => onEdit(entry)}>
-          Edit
-        </button>
-      </td>
     </tr>
   )
 }
@@ -196,12 +201,12 @@ export default function ControleMaePage() {
               <LedgerColumns />
               <thead>
                 <tr>
+                  <th />
                   <th>Date</th>
                   <th>Description</th>
                   <th>Note</th>
                   <th className="data-table__col--numeric">BRL</th>
                   <th className="data-table__col--numeric">GBP</th>
-                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -219,10 +224,10 @@ export default function ControleMaePage() {
           <LedgerColumns />
           <tbody>
             <tr className="controle-mae-page__totals-row">
+              <td />
               <td colSpan={3}>Total (all entries)</td>
               <td className="data-table__col--numeric">{totals ? formatN2(totals.totalBrlValue) : '—'}</td>
               <td className="data-table__col--numeric">{totals ? formatN2(totals.totalGbpValue) : '—'}</td>
-              <td />
             </tr>
           </tbody>
         </table>
