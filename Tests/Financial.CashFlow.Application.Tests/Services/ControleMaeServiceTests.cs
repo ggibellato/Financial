@@ -198,6 +198,30 @@ public class ControleMaeServiceTests
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
 
+    [Fact]
+    public async Task DeleteEntryAsync_ExistingId_RemovesEntryAndSaves()
+    {
+        var repository = new StubCashFlowRepository();
+        var entry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "School supplies", string.Empty, Currency.BRL, 350m, 51.1m);
+        repository.Entries.Add(entry);
+        var service = new ControleMaeService(repository, new StubExchangeRateProvider(1.5m));
+
+        await service.DeleteEntryAsync(entry.Id);
+
+        repository.Entries.Should().BeEmpty();
+        repository.SaveChangesCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task DeleteEntryAsync_WithUnknownId_ThrowsKeyNotFoundException()
+    {
+        var service = new ControleMaeService(new StubCashFlowRepository(), new StubExchangeRateProvider(1.5m));
+
+        var act = async () => await service.DeleteEntryAsync(Guid.NewGuid());
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+    }
+
     private sealed class StubExchangeRateProvider : IExchangeRateProvider
     {
         private readonly decimal? _rate;
@@ -238,6 +262,7 @@ public class ControleMaeServiceTests
 
         public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => Entries;
         public void AddMaeLedgerEntry(MaeLedgerEntry entry) => Entries.Add(entry);
+        public void DeleteMaeLedgerEntry(Guid id) => Entries.RemoveAll(e => e.Id == id);
 
         public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => Array.Empty<InvestmentSnapshot>();
         public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) { }

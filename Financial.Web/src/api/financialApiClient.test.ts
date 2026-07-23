@@ -592,6 +592,17 @@ describe('financialApiClient', () => {
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 
+  it('deletes a mae ledger entry', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteMaeLedgerEntry('e1')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/controle-mae/entries/e1`)
+    expect(init?.method).toBe('DELETE')
+  })
+
   it('calls the investment snapshots endpoint for a given year/month', async () => {
     const responseBody: InvestmentSnapshotDto[] = [
       { id: 's1', account: 'ChaseSave', isLiability: false, year: 2026, month: 7, value: 1000 },

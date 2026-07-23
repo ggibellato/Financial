@@ -184,6 +184,39 @@ public class ControleMaeEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async Task DeleteEntry_ExistingId_RemovesEntry()
+    {
+        await using var factory = new ApiTestFactory(new StubExchangeRateProvider(1.5m));
+        using var client = factory.CreateClient();
+        var created = await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            Description = "School supplies",
+            SourceCurrency = "BRL",
+            SourceValue = 350m
+        });
+        var entry = await created.Content.ReadFromJsonAsync<MaeLedgerEntryDTO>();
+
+        var response = await client.DeleteAsync($"/api/v1/financial/controle-mae/entries/{entry!.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var entries = await (await client.GetAsync("/api/v1/financial/controle-mae/entries/from/2020-01-01"))
+            .Content.ReadFromJsonAsync<List<MaeLedgerEntryDTO>>();
+        entries.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DeleteEntry_UnknownId_ReturnsNotFound()
+    {
+        await using var factory = new ApiTestFactory(new StubExchangeRateProvider(1.5m));
+        using var client = factory.CreateClient();
+
+        var response = await client.DeleteAsync($"/api/v1/financial/controle-mae/entries/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
     private sealed class StubExchangeRateProvider : IExchangeRateProvider
     {
         private readonly decimal? _rate;

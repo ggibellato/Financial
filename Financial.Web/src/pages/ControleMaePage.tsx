@@ -9,6 +9,7 @@ function LedgerColumns() {
   return (
     <colgroup>
       <col className="controle-mae-page__col-actions" />
+      <col className="controle-mae-page__col-actions" />
       <col className="controle-mae-page__col-date" />
       <col className="controle-mae-page__col-description" />
       <col className="controle-mae-page__col-note" />
@@ -20,10 +21,12 @@ function LedgerColumns() {
 
 interface EntryRowProps {
   entry: MaeLedgerEntryDto
+  isDeleting: boolean
   onEdit: (entry: MaeLedgerEntryDto) => void
+  onDelete: (id: string) => void
 }
 
-function EntryRow({ entry, onEdit }: EntryRowProps) {
+function EntryRow({ entry, isDeleting, onEdit, onDelete }: EntryRowProps) {
   return (
     <tr>
       <td>
@@ -34,6 +37,24 @@ function EntryRow({ entry, onEdit }: EntryRowProps) {
           onClick={() => onEdit(entry)}
         >
           ✏
+        </button>
+      </td>
+      <td>
+        <button
+          className="data-table__action-btn"
+          type="button"
+          aria-label={isDeleting ? 'Deleting entry' : 'Delete entry'}
+          disabled={isDeleting}
+          onClick={() => {
+            if (window.confirm(`Delete "${entry.description}"? This removes it for good.`)) {
+              onDelete(entry.id)
+            }
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M20 20H7L3 16a2 2 0 0 1 0-2.83L14.59 1.58a2 2 0 0 1 2.83 0l4 4a2 2 0 0 1 0 2.83L8 20" />
+            <path d="M6.5 15.5 15 7" />
+          </svg>
         </button>
       </td>
       <td>{formatShortDate(entry.date)}</td>
@@ -75,6 +96,9 @@ export default function ControleMaePage() {
     showEditForm,
     cancelEdit,
     saveEdit,
+    deletingId,
+    deleteError,
+    deleteEntry,
   } = useControleMae()
 
   const isEditing = editingId !== null
@@ -96,6 +120,8 @@ export default function ControleMaePage() {
           New Entry
         </button>
       </div>
+
+      {deleteError && <p className="controle-mae-page__error">{deleteError}</p>}
 
       {isFormVisible && (
         <div className="controle-mae-page__form-panel">
@@ -202,6 +228,7 @@ export default function ControleMaePage() {
               <thead>
                 <tr>
                   <th />
+                  <th />
                   <th>Date</th>
                   <th>Description</th>
                   <th>Note</th>
@@ -211,7 +238,13 @@ export default function ControleMaePage() {
               </thead>
               <tbody>
                 {entries.map((entry) => (
-                  <EntryRow key={entry.id} entry={entry} onEdit={showEditForm} />
+                  <EntryRow
+                    key={entry.id}
+                    entry={entry}
+                    isDeleting={deletingId === entry.id}
+                    onEdit={showEditForm}
+                    onDelete={deleteEntry}
+                  />
                 ))}
               </tbody>
             </table>
@@ -224,6 +257,7 @@ export default function ControleMaePage() {
           <LedgerColumns />
           <tbody>
             <tr className="controle-mae-page__totals-row">
+              <td />
               <td />
               <td colSpan={3}>Total (all entries)</td>
               <td className="data-table__col--numeric">{totals ? formatN2(totals.totalBrlValue) : '—'}</td>

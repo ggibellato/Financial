@@ -73,5 +73,7 @@ public class CashFlowData
 
     public void AddMaeLedgerEntry(MaeLedgerEntry entry) => _maeLedgerEntries.Add(entry);
 
+    public void RemoveMaeLedgerEntry(Guid id) => _maeLedgerEntries.RemoveAll(e => e.Id == id);
+
     public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => _investmentSnapshots.Add(snapshot);
 }

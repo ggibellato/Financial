@@ -162,6 +162,31 @@ public class CashFlowDataTests
         MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "Test entry", string.Empty, Currency.BRL, 100m, 15m);
 
     [Fact]
+    public void RemoveMaeLedgerEntry_RemovesOnlyTheMatchingEntry()
+    {
+        var data = CashFlowData.Create();
+        var toKeep = CreateMaeLedgerEntry();
+        var toRemove = CreateMaeLedgerEntry();
+        data.AddMaeLedgerEntry(toKeep);
+        data.AddMaeLedgerEntry(toRemove);
+
+        data.RemoveMaeLedgerEntry(toRemove.Id);
+
+        data.MaeLedgerEntries.Should().ContainSingle().Which.Id.Should().Be(toKeep.Id);
+    }
+
+    [Fact]
+    public void RemoveMaeLedgerEntry_WithUnknownId_LeavesCollectionUnchanged()
+    {
+        var data = CashFlowData.Create();
+        data.AddMaeLedgerEntry(CreateMaeLedgerEntry());
+
+        data.RemoveMaeLedgerEntry(Guid.NewGuid());
+
+        data.MaeLedgerEntries.Should().ContainSingle();
+    }
+
+    [Fact]
     public void AddInvestmentSnapshot_AddsOnlyToInvestmentSnapshotsCollection()
     {
         var data = CashFlowData.Create();

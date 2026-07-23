@@ -26,6 +26,8 @@ interface ControleMaeState {
   editGbpValue: string
   isSaving: boolean
   saveError: string | null
+  deletingId: string | null
+  deleteError: string | null
 }
 
 type ControleMaeAction =
@@ -47,6 +49,9 @@ type ControleMaeAction =
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS' }
   | { type: 'SAVE_ERROR'; payload: string }
+  | { type: 'DELETE_START'; payload: string }
+  | { type: 'DELETE_SUCCESS' }
+  | { type: 'DELETE_ERROR'; payload: string }
 
 const BLANK_CREATE_FORM = {
   createDate: '',
@@ -72,6 +77,8 @@ const INITIAL_STATE: ControleMaeState = {
   editGbpValue: '',
   isSaving: false,
   saveError: null,
+  deletingId: null,
+  deleteError: null,
 }
 
 function reducer(state: ControleMaeState, action: ControleMaeAction): ControleMaeState {
@@ -119,6 +126,12 @@ function reducer(state: ControleMaeState, action: ControleMaeAction): ControleMa
       return { ...state, isSaving: false, editingId: null, editBrlValue: '', editGbpValue: '' }
     case 'SAVE_ERROR':
       return { ...state, isSaving: false, saveError: action.payload }
+    case 'DELETE_START':
+      return { ...state, deletingId: action.payload, deleteError: null }
+    case 'DELETE_SUCCESS':
+      return { ...state, deletingId: null }
+    case 'DELETE_ERROR':
+      return { ...state, deletingId: null, deleteError: action.payload }
     default:
       return state
   }
@@ -153,6 +166,9 @@ export interface ControleMaeData {
   showEditForm: (entry: MaeLedgerEntryDto) => void
   cancelEdit: () => void
   saveEdit: () => void
+  deletingId: string | null
+  deleteError: string | null
+  deleteEntry: (id: string) => void
 }
 
 export function useControleMae(): ControleMaeData {
@@ -269,6 +285,23 @@ export function useControleMae(): ControleMaeData {
       })
   }
 
+  function deleteEntry(id: string) {
+    dispatch({ type: 'DELETE_START', payload: id })
+
+    void apiClient
+      .deleteMaeLedgerEntry(id)
+      .then(() => {
+        dispatch({ type: 'DELETE_SUCCESS' })
+        dispatch({ type: 'RETRY' })
+      })
+      .catch((err: unknown) => {
+        dispatch({
+          type: 'DELETE_ERROR',
+          payload: err instanceof Error ? err.message : 'Failed to delete entry',
+        })
+      })
+  }
+
   return {
     fromDateInputValue: state.fromDate,
     setFromDateInputValue,
@@ -298,5 +331,8 @@ export function useControleMae(): ControleMaeData {
     showEditForm,
     cancelEdit,
     saveEdit,
+    deletingId: state.deletingId,
+    deleteError: state.deleteError,
+    deleteEntry,
   }
 }
