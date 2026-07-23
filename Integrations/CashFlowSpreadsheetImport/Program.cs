@@ -11,10 +11,14 @@ const string ReservasSheetName = "Reservas";
 const string MensaisSheetName = "Mensais";
 const string ControleMaeSheetName = "Controle mae";
 const string ResumoSheetPrefix = "Resumo";
+const string MensaisOnlyFlag = "--mensais-only";
 
-var workbookPath = args.Length > 0 ? args[0] : @"C:\Users\ggibe\Downloads\Despesas.xlsx";
-var outputPath = args.Length > 1
-    ? args[1]
+var mensaisOnly = args.Contains(MensaisOnlyFlag);
+var positionalArgs = args.Where(a => a != MensaisOnlyFlag).ToArray();
+
+var workbookPath = positionalArgs.Length > 0 ? positionalArgs[0] : @"C:\Users\ggibe\Downloads\Despesas.xlsx";
+var outputPath = positionalArgs.Length > 1
+    ? positionalArgs[1]
     : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "data", "data-cashflow.json"));
 
 if (!File.Exists(workbookPath))
@@ -24,18 +28,35 @@ if (!File.Exists(workbookPath))
 }
 
 var report = new ImportReport();
-var data = CashFlowData.Create();
+var serializer = new CashFlowSerializerAdapter();
+var storage = new LocalJsonStorage(outputPath);
+var data = mensaisOnly ? CashFlowLoader.LoadSync(storage, serializer) : CashFlowData.Create();
 
 using var workbook = new XLWorkbook(workbookPath);
 
-ImportMonthlyExpenseSheets(workbook, data, report);
-ImportReservasSheet(workbook, data, report);
-ImportMensaisSheet(workbook, data, report);
-ImportControleMaeSheet(workbook, data, report);
-ImportResumoSheets(workbook, data, report);
+if (mensaisOnly)
+{
+    foreach (var template in data.RecurringBillTemplates.ToList())
+    {
+        data.RemoveRecurringBillTemplate(template.Id);
+    }
 
-var serializer = new CashFlowSerializerAdapter();
-var storage = new LocalJsonStorage(outputPath);
+    foreach (var instance in data.RecurringBillInstances.ToList())
+    {
+        data.RemoveRecurringBillInstance(instance.Id);
+    }
+
+    ImportMensaisSheet(workbook, data, report);
+}
+else
+{
+    ImportMonthlyExpenseSheets(workbook, data, report);
+    ImportReservasSheet(workbook, data, report);
+    ImportMensaisSheet(workbook, data, report);
+    ImportControleMaeSheet(workbook, data, report);
+    ImportResumoSheets(workbook, data, report);
+}
+
 var repository = new CashFlowJsonRepository(data, storage, serializer);
 await repository.SaveChangesAsync();
 

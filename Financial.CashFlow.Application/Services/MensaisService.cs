@@ -46,6 +46,20 @@ public sealed class MensaisService : IMensaisService
         return ToTemplateDto(template);
     }
 
+    public async Task DeleteTemplateAsync(Guid id)
+    {
+        _ = _repository.GetRecurringBillTemplates().FirstOrDefault(t => t.Id == id)
+            ?? throw new KeyNotFoundException($"Recurring bill template '{id}' was not found.");
+
+        foreach (var instance in _repository.GetRecurringBillInstances().Where(i => i.TemplateId == id).ToList())
+        {
+            _repository.DeleteRecurringBillInstance(instance.Id);
+        }
+
+        _repository.DeleteRecurringBillTemplate(id);
+        await _repository.SaveChangesAsync().ConfigureAwait(false);
+    }
+
     public IReadOnlyList<RecurringBillTemplateDTO> GetTemplates() =>
         _repository.GetRecurringBillTemplates().Select(ToTemplateDto).ToList();
 

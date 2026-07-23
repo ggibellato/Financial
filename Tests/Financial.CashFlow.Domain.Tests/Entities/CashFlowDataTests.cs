@@ -120,6 +120,31 @@ public class CashFlowDataTests
         data.RecurringBillInstances.Should().BeEmpty();
     }
 
+    [Fact]
+    public void RemoveRecurringBillTemplate_RemovesOnlyTheMatchingTemplate()
+    {
+        var data = CashFlowData.Create();
+        var toKeep = CreateRecurringBillTemplate();
+        var toRemove = CreateRecurringBillTemplate();
+        data.AddRecurringBillTemplate(toKeep);
+        data.AddRecurringBillTemplate(toRemove);
+
+        data.RemoveRecurringBillTemplate(toRemove.Id);
+
+        data.RecurringBillTemplates.Should().ContainSingle().Which.Id.Should().Be(toKeep.Id);
+    }
+
+    [Fact]
+    public void RemoveRecurringBillTemplate_WithUnknownId_LeavesCollectionUnchanged()
+    {
+        var data = CashFlowData.Create();
+        data.AddRecurringBillTemplate(CreateRecurringBillTemplate());
+
+        data.RemoveRecurringBillTemplate(Guid.NewGuid());
+
+        data.RecurringBillTemplates.Should().ContainSingle();
+    }
+
     private static RecurringBillTemplate CreateRecurringBillTemplate() =>
         RecurringBillTemplate.Create(10, "Test bill", 100m, Area.Brasil, string.Empty, null, null);
 
@@ -132,6 +157,31 @@ public class CashFlowDataTests
 
         data.RecurringBillInstances.Should().ContainSingle();
         data.RecurringBillTemplates.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RemoveRecurringBillInstance_RemovesOnlyTheMatchingInstance()
+    {
+        var data = CashFlowData.Create();
+        var toKeep = CreateRecurringBillInstance();
+        var toRemove = CreateRecurringBillInstance();
+        data.AddRecurringBillInstance(toKeep);
+        data.AddRecurringBillInstance(toRemove);
+
+        data.RemoveRecurringBillInstance(toRemove.Id);
+
+        data.RecurringBillInstances.Should().ContainSingle().Which.Id.Should().Be(toKeep.Id);
+    }
+
+    [Fact]
+    public void RemoveRecurringBillInstance_WithUnknownId_LeavesCollectionUnchanged()
+    {
+        var data = CashFlowData.Create();
+        data.AddRecurringBillInstance(CreateRecurringBillInstance());
+
+        data.RemoveRecurringBillInstance(Guid.NewGuid());
+
+        data.RecurringBillInstances.Should().ContainSingle();
     }
 
     private static RecurringBillInstance CreateRecurringBillInstance() =>

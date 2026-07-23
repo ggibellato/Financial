@@ -6,12 +6,14 @@ import type {
   AssetDetailsDto,
   AssetPriceDto,
   CreateMaeLedgerEntryDto,
+  CreateRecurringBillTemplateDto,
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
   InvestmentSnapshotDto,
   MaeLedgerEntryDto,
   MaeLedgerTotalsDto,
   RecurringBillInstanceDto,
+  RecurringBillTemplateDto,
   ReserveBucketBalanceDto,
   ReserveMovementDto,
   TreeNodeDto,
@@ -452,6 +454,40 @@ describe('financialApiClient', () => {
     expect(url).toBe(`${API_BASE_URL}/mensais/instances/i1`)
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('posts a mensais template create request', async () => {
+    const requestBody: CreateRecurringBillTemplateDto = {
+      dueDay: 10,
+      description: 'INSS',
+      value: 850,
+      area: 'Brasil',
+      note: '',
+      nitNumber: '12345678901',
+      minimumWageValue: 1621,
+    }
+    const responseBody: RecurringBillTemplateDto = { id: 't1', isActive: true, ...requestBody }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createMensaisTemplate(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/mensais/templates`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes a mensais template', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteMensaisTemplate('t1')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/mensais/templates/t1`)
+    expect(init?.method).toBe('DELETE')
   })
 
   it('posts a mae ledger entry create request', async () => {

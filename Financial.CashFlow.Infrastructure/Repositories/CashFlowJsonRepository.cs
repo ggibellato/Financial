@@ -31,9 +31,11 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository
 
     public IEnumerable<RecurringBillTemplate> GetRecurringBillTemplates() => _data.RecurringBillTemplates;
     public void AddRecurringBillTemplate(RecurringBillTemplate template) => _data.AddRecurringBillTemplate(template);
+    public void DeleteRecurringBillTemplate(Guid id) => _data.RemoveRecurringBillTemplate(id);
 
     public IEnumerable<RecurringBillInstance> GetRecurringBillInstances() => _data.RecurringBillInstances;
     public void AddRecurringBillInstance(RecurringBillInstance instance) => _data.AddRecurringBillInstance(instance);
+    public void DeleteRecurringBillInstance(Guid id) => _data.RemoveRecurringBillInstance(id);
 
     public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => _data.MaeLedgerEntries;
     public void AddMaeLedgerEntry(MaeLedgerEntry entry) => _data.AddMaeLedgerEntry(entry);

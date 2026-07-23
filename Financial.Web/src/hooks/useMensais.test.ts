@@ -14,11 +14,15 @@ const NEXT_MONTH_INPUT = `${NEXT_MONTH_YEAR}-${String(NEXT_MONTH).padStart(2, '0
 
 const getMensaisInstancesMock = vi.fn<FinancialApiClient['getMensaisInstances']>()
 const updateMensaisInstanceMock = vi.fn<FinancialApiClient['updateMensaisInstance']>()
+const createMensaisTemplateMock = vi.fn<FinancialApiClient['createMensaisTemplate']>()
+const deleteMensaisTemplateMock = vi.fn<FinancialApiClient['deleteMensaisTemplate']>()
 
 vi.mock('../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getMensaisInstances: getMensaisInstancesMock,
     updateMensaisInstance: updateMensaisInstanceMock,
+    createMensaisTemplate: createMensaisTemplateMock,
+    deleteMensaisTemplate: deleteMensaisTemplateMock,
   }),
 }))
 
@@ -121,5 +125,73 @@ describe('useMensais', () => {
     act(() => result.current.saveEdit())
 
     await waitFor(() => expect(result.current.saveError).toBe('Status is not recognized.'))
+  })
+
+  it('adds a new bill and re-fetches the current month', async () => {
+    createMensaisTemplateMock.mockResolvedValue({
+      id: 't3',
+      dueDay: 5,
+      description: 'Aluguel',
+      value: 1000,
+      area: 'Brasil',
+      note: '',
+      nitNumber: null,
+      minimumWageValue: null,
+      isActive: true,
+    })
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showAddForm())
+    act(() => result.current.setAddField('newDescription', 'Aluguel'))
+    act(() => result.current.setAddField('newDueDay', '5'))
+    act(() => result.current.setAddField('newValue', '1000'))
+    act(() => result.current.submitAdd())
+
+    await waitFor(() =>
+      expect(createMensaisTemplateMock).toHaveBeenCalledWith({
+        dueDay: 5,
+        description: 'Aluguel',
+        value: 1000,
+        area: 'Brasil',
+        note: '',
+        nitNumber: null,
+        minimumWageValue: null,
+      }),
+    )
+    await waitFor(() => expect(getMensaisInstancesMock).toHaveBeenCalledTimes(2))
+    expect(result.current.isAddFormOpen).toBe(false)
+  })
+
+  it('surfaces an add error without crashing', async () => {
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showAddForm())
+    act(() => result.current.submitAdd())
+
+    await waitFor(() => expect(result.current.addError).toBe('Description is required'))
+    expect(createMensaisTemplateMock).not.toHaveBeenCalled()
+  })
+
+  it('deletes a bill template and re-fetches the current month', async () => {
+    deleteMensaisTemplateMock.mockResolvedValue(undefined)
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.deleteTemplate('t1'))
+
+    await waitFor(() => expect(deleteMensaisTemplateMock).toHaveBeenCalledWith('t1'))
+    await waitFor(() => expect(getMensaisInstancesMock).toHaveBeenCalledTimes(2))
+  })
+
+  it('surfaces a delete error without crashing', async () => {
+    deleteMensaisTemplateMock.mockRejectedValue(new Error('Recurring bill template not found.'))
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.deleteTemplate('unknown'))
+
+    await waitFor(() => expect(result.current.deleteError).toBe('Recurring bill template not found.'))
   })
 })

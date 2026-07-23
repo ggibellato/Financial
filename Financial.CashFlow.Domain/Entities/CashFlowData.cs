@@ -77,7 +77,11 @@ public class CashFlowData
 
     public void AddRecurringBillTemplate(RecurringBillTemplate template) => _recurringBillTemplates.Add(template);
 
+    public void RemoveRecurringBillTemplate(Guid id) => _recurringBillTemplates.RemoveAll(t => t.Id == id);
+
     public void AddRecurringBillInstance(RecurringBillInstance instance) => _recurringBillInstances.Add(instance);
+
+    public void RemoveRecurringBillInstance(Guid id) => _recurringBillInstances.RemoveAll(i => i.Id == id);
 
     public void AddMaeLedgerEntry(MaeLedgerEntry entry) => _maeLedgerEntries.Add(entry);
 

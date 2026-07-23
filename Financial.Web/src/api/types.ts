@@ -320,6 +320,28 @@ export interface UpdateRecurringBillInstanceDto {
   value: number
 }
 
+export interface RecurringBillTemplateDto {
+  id: string
+  dueDay: number
+  description: string
+  value: number
+  area: string
+  note: string
+  nitNumber: string | null
+  minimumWageValue: number | null
+  isActive: boolean
+}
+
+export interface CreateRecurringBillTemplateDto {
+  dueDay: number
+  description: string
+  value: number
+  area: string
+  note: string
+  nitNumber: string | null
+  minimumWageValue: number | null
+}
+
 export interface MaeLedgerEntryDto {
   id: string
   date: string

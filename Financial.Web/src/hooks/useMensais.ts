@@ -1,9 +1,20 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { RecurringBillInstanceDto } from '../api/types'
+import type { CreateRecurringBillTemplateDto, RecurringBillInstanceDto } from '../api/types'
 import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
 
 export type EditField = 'editStatus' | 'editValue'
+export type AddField = 'newDueDay' | 'newDescription' | 'newValue' | 'newArea' | 'newNote' | 'newNitNumber' | 'newMinimumWageValue'
+
+const EMPTY_ADD_FORM = {
+  newDueDay: '',
+  newDescription: '',
+  newValue: '',
+  newArea: 'Brasil',
+  newNote: '',
+  newNitNumber: '',
+  newMinimumWageValue: '',
+}
 
 interface MensaisState {
   year: number
@@ -17,6 +28,18 @@ interface MensaisState {
   editValue: string
   isSaving: boolean
   saveError: string | null
+  isAddFormOpen: boolean
+  newDueDay: string
+  newDescription: string
+  newValue: string
+  newArea: string
+  newNote: string
+  newNitNumber: string
+  newMinimumWageValue: string
+  isAdding: boolean
+  addError: string | null
+  deletingTemplateId: string | null
+  deleteError: string | null
 }
 
 type MensaisAction =
@@ -31,6 +54,15 @@ type MensaisAction =
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS' }
   | { type: 'SAVE_ERROR'; payload: string }
+  | { type: 'SHOW_ADD_FORM' }
+  | { type: 'CANCEL_ADD' }
+  | { type: 'SET_ADD_FIELD'; payload: { field: AddField; value: string } }
+  | { type: 'ADD_START' }
+  | { type: 'ADD_SUCCESS' }
+  | { type: 'ADD_ERROR'; payload: string }
+  | { type: 'DELETE_START'; payload: string }
+  | { type: 'DELETE_SUCCESS' }
+  | { type: 'DELETE_ERROR'; payload: string }
 
 const { year: DEFAULT_YEAR, month: DEFAULT_MONTH } = currentYearMonth()
 
@@ -46,6 +78,12 @@ const INITIAL_STATE: MensaisState = {
   editValue: '',
   isSaving: false,
   saveError: null,
+  isAddFormOpen: false,
+  ...EMPTY_ADD_FORM,
+  isAdding: false,
+  addError: null,
+  deletingTemplateId: null,
+  deleteError: null,
 }
 
 function reducer(state: MensaisState, action: MensaisAction): MensaisState {
@@ -78,6 +116,24 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
       return { ...state, isSaving: false, editingId: null, editStatus: '', editValue: '' }
     case 'SAVE_ERROR':
       return { ...state, isSaving: false, saveError: action.payload }
+    case 'SHOW_ADD_FORM':
+      return { ...state, isAddFormOpen: true, ...EMPTY_ADD_FORM, addError: null }
+    case 'CANCEL_ADD':
+      return { ...state, isAddFormOpen: false, ...EMPTY_ADD_FORM, addError: null }
+    case 'SET_ADD_FIELD':
+      return { ...state, [action.payload.field]: action.payload.value }
+    case 'ADD_START':
+      return { ...state, isAdding: true, addError: null }
+    case 'ADD_SUCCESS':
+      return { ...state, isAdding: false, isAddFormOpen: false, ...EMPTY_ADD_FORM }
+    case 'ADD_ERROR':
+      return { ...state, isAdding: false, addError: action.payload }
+    case 'DELETE_START':
+      return { ...state, deletingTemplateId: action.payload, deleteError: null }
+    case 'DELETE_SUCCESS':
+      return { ...state, deletingTemplateId: null }
+    case 'DELETE_ERROR':
+      return { ...state, deletingTemplateId: null, deleteError: action.payload }
     default:
       return state
   }
@@ -102,6 +158,23 @@ export interface MensaisData {
   showEditForm: (instance: RecurringBillInstanceDto) => void
   cancelEdit: () => void
   saveEdit: () => void
+  isAddFormOpen: boolean
+  newDueDay: string
+  newDescription: string
+  newValue: string
+  newArea: string
+  newNote: string
+  newNitNumber: string
+  newMinimumWageValue: string
+  isAdding: boolean
+  addError: string | null
+  setAddField: (field: AddField, value: string) => void
+  showAddForm: () => void
+  cancelAdd: () => void
+  submitAdd: () => void
+  deletingTemplateId: string | null
+  deleteError: string | null
+  deleteTemplate: (templateId: string) => void
 }
 
 export function useMensais(): MensaisData {
@@ -165,6 +238,81 @@ export function useMensais(): MensaisData {
       })
   }
 
+  const setAddField = useCallback(
+    (field: AddField, value: string) => dispatch({ type: 'SET_ADD_FIELD', payload: { field, value } }),
+    [],
+  )
+
+  const showAddForm = useCallback(() => dispatch({ type: 'SHOW_ADD_FORM' }), [])
+
+  const cancelAdd = useCallback(() => dispatch({ type: 'CANCEL_ADD' }), [])
+
+  function submitAdd() {
+    const dueDay = Number(state.newDueDay)
+    const value = Number(state.newValue)
+
+    if (!state.newDescription.trim()) {
+      dispatch({ type: 'ADD_ERROR', payload: 'Description is required' })
+      return
+    }
+    if (!state.newDueDay.trim() || !isFinite(dueDay)) {
+      dispatch({ type: 'ADD_ERROR', payload: 'Due day must be a number' })
+      return
+    }
+    if (!state.newValue.trim() || !isFinite(value)) {
+      dispatch({ type: 'ADD_ERROR', payload: 'Value must be a number' })
+      return
+    }
+
+    const minimumWageValue = state.newMinimumWageValue.trim() ? Number(state.newMinimumWageValue) : null
+    if (minimumWageValue !== null && !isFinite(minimumWageValue)) {
+      dispatch({ type: 'ADD_ERROR', payload: 'Minimum wage value must be a number' })
+      return
+    }
+
+    dispatch({ type: 'ADD_START' })
+
+    const request: CreateRecurringBillTemplateDto = {
+      dueDay,
+      description: state.newDescription,
+      value,
+      area: state.newArea,
+      note: state.newNote,
+      nitNumber: state.newNitNumber.trim() || null,
+      minimumWageValue,
+    }
+
+    void apiClient
+      .createMensaisTemplate(request)
+      .then(() => {
+        dispatch({ type: 'ADD_SUCCESS' })
+        dispatch({ type: 'RETRY' })
+      })
+      .catch((err: unknown) => {
+        dispatch({
+          type: 'ADD_ERROR',
+          payload: err instanceof Error ? err.message : 'Failed to add bill',
+        })
+      })
+  }
+
+  function deleteTemplate(templateId: string) {
+    dispatch({ type: 'DELETE_START', payload: templateId })
+
+    void apiClient
+      .deleteMensaisTemplate(templateId)
+      .then(() => {
+        dispatch({ type: 'DELETE_SUCCESS' })
+        dispatch({ type: 'RETRY' })
+      })
+      .catch((err: unknown) => {
+        dispatch({
+          type: 'DELETE_ERROR',
+          payload: err instanceof Error ? err.message : 'Failed to delete bill',
+        })
+      })
+  }
+
   const brasilInstances = useMemo(
     () => state.instances.filter((i) => i.area === 'Brasil'),
     [state.instances],
@@ -190,5 +338,22 @@ export function useMensais(): MensaisData {
     showEditForm,
     cancelEdit,
     saveEdit,
+    isAddFormOpen: state.isAddFormOpen,
+    newDueDay: state.newDueDay,
+    newDescription: state.newDescription,
+    newValue: state.newValue,
+    newArea: state.newArea,
+    newNote: state.newNote,
+    newNitNumber: state.newNitNumber,
+    newMinimumWageValue: state.newMinimumWageValue,
+    isAdding: state.isAdding,
+    addError: state.addError,
+    setAddField,
+    showAddForm,
+    cancelAdd,
+    submitAdd,
+    deletingTemplateId: state.deletingTemplateId,
+    deleteError: state.deleteError,
+    deleteTemplate,
   }
 }

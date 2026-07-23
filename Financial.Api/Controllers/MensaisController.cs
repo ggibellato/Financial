@@ -43,6 +43,22 @@ public sealed class MensaisController : ControllerBase
         return Ok(_mensaisService.GetTemplates());
     }
 
+    [HttpDelete("templates/{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteTemplate(Guid id)
+    {
+        try
+        {
+            await _mensaisService.DeleteTemplateAsync(id);
+            return Ok();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
+        }
+    }
+
     [HttpGet("{year:int}/{month:int}")]
     [ProducesResponseType(typeof(IReadOnlyList<RecurringBillInstanceDTO>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<RecurringBillInstanceDTO>>> GetInstancesForMonth(int year, int month)

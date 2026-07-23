@@ -110,6 +110,35 @@ public class MensaisServiceTests
     }
 
     [Fact]
+    public async Task DeleteTemplateAsync_RemovesTemplateAndItsInstancesAcrossAllMonths()
+    {
+        var repository = new StubCashFlowRepository();
+        var template = RecurringBillTemplate.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
+        repository.Templates.Add(template);
+        var otherTemplate = RecurringBillTemplate.Create(15, "Council Tax", 120m, Area.UK, string.Empty, null, null);
+        repository.Templates.Add(otherTemplate);
+        var service = new MensaisService(repository);
+        await service.GetInstancesForMonthAsync(2026, 7);
+        await service.GetInstancesForMonthAsync(2026, 8);
+
+        await service.DeleteTemplateAsync(template.Id);
+
+        repository.Templates.Should().ContainSingle().Which.Id.Should().Be(otherTemplate.Id);
+        repository.Instances.Should().HaveCount(2);
+        repository.Instances.Should().OnlyContain(i => i.TemplateId == otherTemplate.Id);
+    }
+
+    [Fact]
+    public async Task DeleteTemplateAsync_WithUnknownId_ThrowsKeyNotFoundException()
+    {
+        var service = new MensaisService(new StubCashFlowRepository());
+
+        var act = async () => await service.DeleteTemplateAsync(Guid.NewGuid());
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+    }
+
+    [Fact]
     public void GetTemplates_ReturnsAllTemplates()
     {
         var repository = new StubCashFlowRepository();
@@ -256,9 +285,11 @@ public class MensaisServiceTests
 
         public IEnumerable<RecurringBillTemplate> GetRecurringBillTemplates() => Templates;
         public void AddRecurringBillTemplate(RecurringBillTemplate template) => Templates.Add(template);
+        public void DeleteRecurringBillTemplate(Guid id) => Templates.RemoveAll(t => t.Id == id);
 
         public IEnumerable<RecurringBillInstance> GetRecurringBillInstances() => Instances;
         public void AddRecurringBillInstance(RecurringBillInstance instance) => Instances.Add(instance);
+        public void DeleteRecurringBillInstance(Guid id) => Instances.RemoveAll(i => i.Id == id);
 
         public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => Array.Empty<MaeLedgerEntry>();
         public void AddMaeLedgerEntry(MaeLedgerEntry entry) { }

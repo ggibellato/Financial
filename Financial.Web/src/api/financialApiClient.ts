@@ -12,6 +12,7 @@ import type {
   CategoryYearlyTotalDto,
   CreateExpenseDto,
   CreateMaeLedgerEntryDto,
+  CreateRecurringBillTemplateDto,
   CreditCreateDto,
   CreditDeleteDto,
   CreditDto,
@@ -30,6 +31,7 @@ import type {
   PortfolioBreakdownItemDto,
   PortfolioReferenceDto,
   RecurringBillInstanceDto,
+  RecurringBillTemplateDto,
   ReserveBucketBalanceDto,
   ReserveMovementDto,
   TransactionCreateDto,
@@ -82,6 +84,8 @@ export interface FinancialApiClient {
   postWithdrawal: (request: WithdrawalRequestDto) => Promise<ReserveMovementDto>
   getMensaisInstances: (year: number, month: number) => Promise<RecurringBillInstanceDto[]>
   updateMensaisInstance: (id: string, request: UpdateRecurringBillInstanceDto) => Promise<RecurringBillInstanceDto>
+  createMensaisTemplate: (request: CreateRecurringBillTemplateDto) => Promise<RecurringBillTemplateDto>
+  deleteMensaisTemplate: (id: string) => Promise<void>
   createMaeLedgerEntry: (request: CreateMaeLedgerEntryDto) => Promise<MaeLedgerEntryDto>
   getMaeLedgerEntriesFromDate: (fromDate: string) => Promise<MaeLedgerEntryDto[]>
   getMaeLedgerTotals: () => Promise<MaeLedgerTotalsDto>
@@ -275,6 +279,12 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),
+    createMensaisTemplate: (requestBody) =>
+      request<RecurringBillTemplateDto>('/mensais/templates', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    deleteMensaisTemplate: (id) => requestVoid(`/mensais/templates/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     createMaeLedgerEntry: (requestBody) =>
       request<MaeLedgerEntryDto>('/controle-mae/entries', {
         method: 'POST',

@@ -85,6 +85,35 @@ public class MensaisEndpointsTests
     }
 
     [Fact]
+    public async Task DeleteTemplate_ExistingId_RemovesTemplateAndItsInstances()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var created = await client.PostAsJsonAsync("/api/v1/financial/mensais/templates", ValidBrasilTemplateRequest());
+        var template = await created.Content.ReadFromJsonAsync<RecurringBillTemplateDTO>();
+        await client.GetAsync("/api/v1/financial/mensais/2026/7");
+
+        var response = await client.DeleteAsync($"/api/v1/financial/mensais/templates/{template!.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var templates = await (await client.GetAsync("/api/v1/financial/mensais/templates")).Content.ReadFromJsonAsync<List<RecurringBillTemplateDTO>>();
+        templates.Should().BeEmpty();
+        var instances = await (await client.GetAsync("/api/v1/financial/mensais/2026/7")).Content.ReadFromJsonAsync<List<RecurringBillInstanceDTO>>();
+        instances.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DeleteTemplate_UnknownId_ReturnsNotFound()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.DeleteAsync($"/api/v1/financial/mensais/templates/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task GetInstancesForMonth_FirstCall_GeneratesInstanceFromTemplate()
     {
         await using var factory = new ApiTestFactory();

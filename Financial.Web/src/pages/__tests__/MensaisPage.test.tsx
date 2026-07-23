@@ -6,11 +6,15 @@ import type { RecurringBillInstanceDto } from '../../api/types'
 
 const getMensaisInstancesMock = vi.fn<FinancialApiClient['getMensaisInstances']>()
 const updateMensaisInstanceMock = vi.fn<FinancialApiClient['updateMensaisInstance']>()
+const createMensaisTemplateMock = vi.fn<FinancialApiClient['createMensaisTemplate']>()
+const deleteMensaisTemplateMock = vi.fn<FinancialApiClient['deleteMensaisTemplate']>()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getMensaisInstances: getMensaisInstancesMock,
     updateMensaisInstance: updateMensaisInstanceMock,
+    createMensaisTemplate: createMensaisTemplateMock,
+    deleteMensaisTemplate: deleteMensaisTemplateMock,
   }),
 }))
 
@@ -99,5 +103,80 @@ describe('MensaisPage', () => {
       expect(updateMensaisInstanceMock).toHaveBeenCalledWith('i1', { status: 'Paid', value: 900 }),
     )
     await waitFor(() => expect(screen.getByText('Paid')).toBeInTheDocument())
+  })
+
+  it('shows NIT and Min. Wage columns only in the Brasil section', async () => {
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('Brasil')).toBeInTheDocument())
+
+    expect(screen.getAllByText('NIT')).toHaveLength(1)
+    expect(screen.getAllByText('Min. Wage')).toHaveLength(1)
+  })
+
+  it('adds a new bill via the Add Bill form', async () => {
+    createMensaisTemplateMock.mockResolvedValue({
+      id: 't3',
+      dueDay: 5,
+      description: 'Aluguel',
+      value: 1000,
+      area: 'Brasil',
+      note: '',
+      nitNumber: null,
+      minimumWageValue: null,
+      isActive: true,
+    })
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add Bill' }))
+    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Aluguel' } })
+    fireEvent.change(screen.getByLabelText('Due Day'), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '1000' } })
+
+    getMensaisInstancesMock.mockResolvedValue([
+      ...INSTANCES,
+      { ...INSTANCES[0], id: 'i3', templateId: 't3', description: 'Aluguel', dueDay: 5, value: 1000 },
+    ])
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
+    await waitFor(() =>
+      expect(createMensaisTemplateMock).toHaveBeenCalledWith({
+        dueDay: 5,
+        description: 'Aluguel',
+        value: 1000,
+        area: 'Brasil',
+        note: '',
+        nitNumber: null,
+        minimumWageValue: null,
+      }),
+    )
+    await waitFor(() => expect(screen.getByText('Aluguel')).toBeInTheDocument())
+  })
+
+  it('deletes a bill after confirming the prompt', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    deleteMensaisTemplateMock.mockResolvedValue(undefined)
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    getMensaisInstancesMock.mockResolvedValue([INSTANCES[1]])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete' })[0])
+
+    await waitFor(() => expect(deleteMensaisTemplateMock).toHaveBeenCalledWith('t1'))
+    await waitFor(() => expect(screen.queryByText('INSS')).not.toBeInTheDocument())
+  })
+
+  it('does not delete when the confirmation prompt is declined', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete' })[0])
+
+    expect(deleteMensaisTemplateMock).not.toHaveBeenCalled()
   })
 })

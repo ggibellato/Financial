@@ -237,9 +237,11 @@ public class ReserveServiceTests
 
         public IEnumerable<RecurringBillTemplate> GetRecurringBillTemplates() => Array.Empty<RecurringBillTemplate>();
         public void AddRecurringBillTemplate(RecurringBillTemplate template) { }
+        public void DeleteRecurringBillTemplate(Guid id) { }
 
         public IEnumerable<RecurringBillInstance> GetRecurringBillInstances() => Array.Empty<RecurringBillInstance>();
         public void AddRecurringBillInstance(RecurringBillInstance instance) { }
+        public void DeleteRecurringBillInstance(Guid id) { }
 
         public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => Array.Empty<MaeLedgerEntry>();
         public void AddMaeLedgerEntry(MaeLedgerEntry entry) { }

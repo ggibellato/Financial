@@ -5,6 +5,7 @@ namespace Financial.CashFlow.Application.Interfaces;
 public interface IMensaisService
 {
     Task<RecurringBillTemplateDTO> CreateTemplateAsync(CreateRecurringBillTemplateDTO request);
+    Task DeleteTemplateAsync(Guid id);
     IReadOnlyList<RecurringBillTemplateDTO> GetTemplates();
     Task<IReadOnlyList<RecurringBillInstanceDTO>> GetInstancesForMonthAsync(int year, int month);
     Task<RecurringBillInstanceDTO> UpdateInstanceAsync(Guid id, UpdateRecurringBillInstanceDTO request);

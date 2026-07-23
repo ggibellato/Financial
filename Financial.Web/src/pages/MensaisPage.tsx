@@ -6,22 +6,39 @@ import { formatN2 } from '../utils/formatters'
 import './MensaisPage.css'
 
 const STATUSES = ['Unset', 'Scheduled', 'Paid']
+const AREAS = ['Brasil', 'UK']
 
 interface InstanceRowProps {
   instance: RecurringBillInstanceDto
+  showBrasilFields: boolean
+  isDeleting: boolean
   onEdit: (instance: RecurringBillInstanceDto) => void
+  onDelete: (templateId: string) => void
 }
 
-function InstanceRow({ instance, onEdit }: InstanceRowProps) {
+function InstanceRow({ instance, showBrasilFields, isDeleting, onEdit, onDelete }: InstanceRowProps) {
   return (
     <tr>
       <td>{instance.dueDay}</td>
       <td>{instance.description}</td>
+      {showBrasilFields && <td>{instance.nitNumber ?? ''}</td>}
+      {showBrasilFields && <td className="data-table__col--numeric">{instance.minimumWageValue !== null ? formatN2(instance.minimumWageValue) : ''}</td>}
       <td className="data-table__col--numeric">{formatN2(instance.value)}</td>
       <td>{instance.status}</td>
       <td>
         <button type="button" onClick={() => onEdit(instance)}>
           Edit
+        </button>
+        <button
+          type="button"
+          disabled={isDeleting}
+          onClick={() => {
+            if (window.confirm(`Delete "${instance.description}"? This removes it from every month.`)) {
+              onDelete(instance.templateId)
+            }
+          }}
+        >
+          {isDeleting ? 'Deleting...' : 'Delete'}
         </button>
       </td>
     </tr>
@@ -31,10 +48,13 @@ function InstanceRow({ instance, onEdit }: InstanceRowProps) {
 interface InstanceTableProps {
   title: string
   instances: RecurringBillInstanceDto[]
+  showBrasilFields: boolean
+  deletingTemplateId: string | null
   onEdit: (instance: RecurringBillInstanceDto) => void
+  onDelete: (templateId: string) => void
 }
 
-function InstanceTable({ title, instances, onEdit }: InstanceTableProps) {
+function InstanceTable({ title, instances, showBrasilFields, deletingTemplateId, onEdit, onDelete }: InstanceTableProps) {
   return (
     <section className="mensais-page__section">
       <h2>{title}</h2>
@@ -43,6 +63,8 @@ function InstanceTable({ title, instances, onEdit }: InstanceTableProps) {
           <tr>
             <th>Due Day</th>
             <th>Description</th>
+            {showBrasilFields && <th>NIT</th>}
+            {showBrasilFields && <th className="data-table__col--numeric">Min. Wage</th>}
             <th className="data-table__col--numeric">Value</th>
             <th>Status</th>
             <th />
@@ -50,7 +72,14 @@ function InstanceTable({ title, instances, onEdit }: InstanceTableProps) {
         </thead>
         <tbody>
           {instances.map((instance) => (
-            <InstanceRow key={instance.id} instance={instance} onEdit={onEdit} />
+            <InstanceRow
+              key={instance.id}
+              instance={instance}
+              showBrasilFields={showBrasilFields}
+              isDeleting={deletingTemplateId === instance.templateId}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
           ))}
         </tbody>
       </table>
@@ -76,6 +105,23 @@ export default function MensaisPage() {
     showEditForm,
     cancelEdit,
     saveEdit,
+    isAddFormOpen,
+    newDueDay,
+    newDescription,
+    newValue,
+    newArea,
+    newNote,
+    newNitNumber,
+    newMinimumWageValue,
+    isAdding,
+    addError,
+    setAddField,
+    showAddForm,
+    cancelAdd,
+    submitAdd,
+    deletingTemplateId,
+    deleteError,
+    deleteTemplate,
   } = useMensais()
 
   const isEditing = editingId !== null
@@ -90,7 +136,103 @@ export default function MensaisPage() {
           value={monthInputValue}
           onChange={(e) => setMonthInputValue(e.target.value)}
         />
+        {!isAddFormOpen && (
+          <button type="button" onClick={showAddForm}>
+            Add Bill
+          </button>
+        )}
       </div>
+
+      {deleteError && <p className="mensais-page__error">{deleteError}</p>}
+
+      {isAddFormOpen && (
+        <div className="mensais-page__form-panel">
+          <p className="mensais-page__form-title">Add Bill</p>
+          <div className="mensais-page__form">
+            <div className="mensais-page__form-field">
+              <label htmlFor="mensais-new-description">Description</label>
+              <input
+                id="mensais-new-description"
+                type="text"
+                value={newDescription}
+                onChange={(e) => setAddField('newDescription', e.target.value)}
+              />
+            </div>
+            <div className="mensais-page__form-field">
+              <label htmlFor="mensais-new-due-day">Due Day</label>
+              <input
+                id="mensais-new-due-day"
+                type="number"
+                min="1"
+                max="31"
+                value={newDueDay}
+                onChange={(e) => setAddField('newDueDay', e.target.value)}
+              />
+            </div>
+            <div className="mensais-page__form-field">
+              <label htmlFor="mensais-new-value">Value</label>
+              <input
+                id="mensais-new-value"
+                type="number"
+                step="0.01"
+                value={newValue}
+                onChange={(e) => setAddField('newValue', e.target.value)}
+              />
+            </div>
+            <div className="mensais-page__form-field">
+              <label htmlFor="mensais-new-area">Area</label>
+              <select id="mensais-new-area" value={newArea} onChange={(e) => setAddField('newArea', e.target.value)}>
+                {AREAS.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mensais-page__form-field">
+              <label htmlFor="mensais-new-note">Note</label>
+              <input
+                id="mensais-new-note"
+                type="text"
+                value={newNote}
+                onChange={(e) => setAddField('newNote', e.target.value)}
+              />
+            </div>
+            {newArea === 'Brasil' && (
+              <div className="mensais-page__form-field">
+                <label htmlFor="mensais-new-nit">NIT</label>
+                <input
+                  id="mensais-new-nit"
+                  type="text"
+                  value={newNitNumber}
+                  onChange={(e) => setAddField('newNitNumber', e.target.value)}
+                />
+              </div>
+            )}
+            {newArea === 'Brasil' && (
+              <div className="mensais-page__form-field">
+                <label htmlFor="mensais-new-min-wage">Min. Wage</label>
+                <input
+                  id="mensais-new-min-wage"
+                  type="number"
+                  step="0.01"
+                  value={newMinimumWageValue}
+                  onChange={(e) => setAddField('newMinimumWageValue', e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+          <div className="mensais-page__form-actions">
+            <button type="button" disabled={isAdding} onClick={submitAdd}>
+              {isAdding ? 'Adding...' : 'Add'}
+            </button>
+            <button type="button" onClick={cancelAdd}>
+              Cancel
+            </button>
+          </div>
+          {addError && <p className="mensais-page__error">{addError}</p>}
+        </div>
+      )}
 
       {isEditing && (
         <div className="mensais-page__form-panel">
@@ -139,8 +281,22 @@ export default function MensaisPage() {
         <ErrorState message={error} onRetry={retry} />
       ) : (
         <div className="mensais-page__content">
-          <InstanceTable title="Brasil" instances={brasilInstances} onEdit={showEditForm} />
-          <InstanceTable title="UK" instances={ukInstances} onEdit={showEditForm} />
+          <InstanceTable
+            title="Brasil"
+            instances={brasilInstances}
+            showBrasilFields
+            deletingTemplateId={deletingTemplateId}
+            onEdit={showEditForm}
+            onDelete={deleteTemplate}
+          />
+          <InstanceTable
+            title="UK"
+            instances={ukInstances}
+            showBrasilFields={false}
+            deletingTemplateId={deletingTemplateId}
+            onEdit={showEditForm}
+            onDelete={deleteTemplate}
+          />
         </div>
       )}
     </div>
