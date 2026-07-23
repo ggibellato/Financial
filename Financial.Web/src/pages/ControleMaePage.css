@@ -64,7 +64,6 @@
 
 .controle-mae-page__table {
   width: 100%;
-  max-width: 840px;
   table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
@@ -74,8 +73,18 @@
   width: 110px;
 }
 
+/*
+ * Description/Note are the only percentage-width columns (all others are fixed px), and
+ * their percentages sum to 100% - a fixed-layout table allocates the space left over after
+ * the px columns to percentage columns in that ratio, so this splits it 80/20 without
+ * overflowing regardless of viewport width.
+ */
+.controle-mae-page__col-description {
+  width: 80%;
+}
+
 .controle-mae-page__col-note {
-  width: 160px;
+  width: 20%;
 }
 
 .controle-mae-page__col-value {
