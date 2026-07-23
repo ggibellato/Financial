@@ -26,11 +26,11 @@ describe('CashFlowLayout', () => {
     expect(links).toHaveLength(6)
     expect(links.map((link) => link.textContent)).toEqual([
       'Monthly',
+      'Investment Snapshots',
+      'Yearly Summary',
       'Reserva',
       'Mensais',
       'Controle Mae',
-      'Investment Snapshots',
-      'Yearly Summary',
     ])
   })
 
