@@ -142,8 +142,6 @@ describe('MensaisPage', () => {
         value: 1000,
         area: 'Brasil',
         note: '',
-        nitNumber: null,
-        minimumWageValue: null,
       }),
     )
     await waitFor(() => expect(screen.getByText('Aluguel')).toBeInTheDocument())

@@ -35,9 +35,7 @@ public class MensaisEndpointsTests
             Description = request.Description,
             Value = request.Value,
             Area = request.Area,
-            Note = request.Note,
-            NitNumber = request.NitNumber,
-            MinimumWageValue = request.MinimumWageValue
+            Note = request.Note
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/mensais", request);
@@ -48,21 +46,12 @@ public class MensaisEndpointsTests
     }
 
     [Fact]
-    public async Task CreateBill_UkBillWithoutNitOrMinimumWage_ReturnsOk()
+    public async Task CreateBill_NeverSetsNitOrMinimumWage_ThoseAreImportOnly()
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/mensais", new CreateRecurringBillDTO
-        {
-            DueDay = 15,
-            Description = "Council Tax",
-            Value = 120m,
-            Area = "UK",
-            Note = string.Empty,
-            NitNumber = null,
-            MinimumWageValue = null
-        });
+        var response = await client.PostAsJsonAsync("/api/v1/financial/mensais", ValidBrasilBillRequest());
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var bill = await response.Content.ReadFromJsonAsync<RecurringBillDTO>();
@@ -167,8 +156,6 @@ public class MensaisEndpointsTests
         Description = "INSS",
         Value = 850m,
         Area = "Brasil",
-        Note = "Direct debit",
-        NitNumber = "12345678901",
-        MinimumWageValue = 1621m
+        Note = "Direct debit"
     };
 }

@@ -37,8 +37,10 @@ public sealed class MensaisService : IMensaisService
             throw new ArgumentException($"Area '{request.Area}' is not recognized.");
         }
 
+        // NitNumber/MinimumWageValue are INSS-specific and only ever populated by the
+        // spreadsheet import (which builds RecurringBill directly); bills added here start without them.
         var bill = RecurringBill.Create(
-            request.DueDay, request.Description, request.Value, area, request.Note, request.NitNumber, request.MinimumWageValue);
+            request.DueDay, request.Description, request.Value, area, request.Note, nitNumber: null, minimumWageValue: null);
 
         _repository.AddRecurringBill(bill);
         await _repository.SaveChangesAsync().ConfigureAwait(false);

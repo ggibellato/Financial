@@ -4,7 +4,7 @@ import type { CreateRecurringBillDto, RecurringBillDto } from '../api/types'
 import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
 
 export type EditField = 'editStatus' | 'editValue'
-export type AddField = 'newDueDay' | 'newDescription' | 'newValue' | 'newArea' | 'newNote' | 'newNitNumber' | 'newMinimumWageValue'
+export type AddField = 'newDueDay' | 'newDescription' | 'newValue' | 'newArea' | 'newNote'
 
 const EMPTY_ADD_FORM = {
   newDueDay: '',
@@ -12,8 +12,6 @@ const EMPTY_ADD_FORM = {
   newValue: '',
   newArea: 'Brasil',
   newNote: '',
-  newNitNumber: '',
-  newMinimumWageValue: '',
 }
 
 interface MensaisState {
@@ -34,8 +32,6 @@ interface MensaisState {
   newValue: string
   newArea: string
   newNote: string
-  newNitNumber: string
-  newMinimumWageValue: string
   isAdding: boolean
   addError: string | null
   deletingBillId: string | null
@@ -175,8 +171,6 @@ export interface MensaisData {
   newValue: string
   newArea: string
   newNote: string
-  newNitNumber: string
-  newMinimumWageValue: string
   isAdding: boolean
   addError: string | null
   setAddField: (field: AddField, value: string) => void
@@ -278,12 +272,6 @@ export function useMensais(): MensaisData {
       return
     }
 
-    const minimumWageValue = state.newMinimumWageValue.trim() ? Number(state.newMinimumWageValue) : null
-    if (minimumWageValue !== null && !isFinite(minimumWageValue)) {
-      dispatch({ type: 'ADD_ERROR', payload: 'Minimum wage value must be a number' })
-      return
-    }
-
     dispatch({ type: 'ADD_START' })
 
     const request: CreateRecurringBillDto = {
@@ -292,8 +280,6 @@ export function useMensais(): MensaisData {
       value,
       area: state.newArea,
       note: state.newNote,
-      nitNumber: state.newNitNumber.trim() || null,
-      minimumWageValue,
     }
 
     void apiClient
@@ -367,8 +353,6 @@ export function useMensais(): MensaisData {
     newValue: state.newValue,
     newArea: state.newArea,
     newNote: state.newNote,
-    newNitNumber: state.newNitNumber,
-    newMinimumWageValue: state.newMinimumWageValue,
     isAdding: state.isAdding,
     addError: state.addError,
     setAddField,

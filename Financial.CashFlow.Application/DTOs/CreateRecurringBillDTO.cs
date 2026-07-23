@@ -10,6 +10,4 @@ public sealed class CreateRecurringBillDTO
     public required decimal Value { get; init; }
     public required string Area { get; init; }
     public string Note { get; init; } = string.Empty;
-    public string? NitNumber { get; init; }
-    public decimal? MinimumWageValue { get; init; }
 }

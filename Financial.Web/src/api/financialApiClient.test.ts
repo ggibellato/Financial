@@ -431,10 +431,14 @@ describe('financialApiClient', () => {
       value: 850,
       area: 'Brasil',
       note: '',
-      nitNumber: '12345678901',
-      minimumWageValue: 1621,
     }
-    const responseBody: RecurringBillDto = { id: 'b1', status: 'Unset', ...requestBody }
+    const responseBody: RecurringBillDto = {
+      id: 'b1',
+      status: 'Unset',
+      nitNumber: null,
+      minimumWageValue: null,
+      ...requestBody,
+    }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 

@@ -152,8 +152,6 @@ describe('useMensais', () => {
         value: 1000,
         area: 'Brasil',
         note: '',
-        nitNumber: null,
-        minimumWageValue: null,
       }),
     )
     await waitFor(() => expect(getMensaisBillsMock).toHaveBeenCalledTimes(2))

@@ -318,8 +318,6 @@ export interface CreateRecurringBillDto {
   value: number
   area: string
   note: string
-  nitNumber: string | null
-  minimumWageValue: number | null
 }
 
 export interface UpdateRecurringBillDto {

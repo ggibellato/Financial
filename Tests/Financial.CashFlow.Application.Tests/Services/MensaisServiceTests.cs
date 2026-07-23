@@ -32,21 +32,12 @@ public class MensaisServiceTests
     }
 
     [Fact]
-    public async Task CreateBillAsync_UkBillWithoutNitOrMinimumWage_Succeeds()
+    public async Task CreateBillAsync_NeverSetsNitOrMinimumWage_ThoseAreImportOnly()
     {
         var repository = new StubCashFlowRepository();
         var service = new MensaisService(repository);
 
-        var result = await service.CreateBillAsync(new CreateRecurringBillDTO
-        {
-            DueDay = 15,
-            Description = "Council Tax",
-            Value = 120m,
-            Area = "UK",
-            Note = string.Empty,
-            NitNumber = null,
-            MinimumWageValue = null
-        });
+        var result = await service.CreateBillAsync(ValidBrasilRequest());
 
         result.NitNumber.Should().BeNull();
         result.MinimumWageValue.Should().BeNull();
@@ -65,9 +56,7 @@ public class MensaisServiceTests
             Description = request.Description,
             Value = request.Value,
             Area = request.Area,
-            Note = request.Note,
-            NitNumber = request.NitNumber,
-            MinimumWageValue = request.MinimumWageValue
+            Note = request.Note
         };
 
         var act = async () => await service.CreateBillAsync(invalidRequest);
@@ -220,9 +209,7 @@ public class MensaisServiceTests
         Description = "INSS",
         Value = 850m,
         Area = "Brasil",
-        Note = "Direct debit",
-        NitNumber = "12345678901",
-        MinimumWageValue = 1621m
+        Note = "Direct debit"
     };
 
     private sealed class StubCashFlowRepository : ICashFlowRepository

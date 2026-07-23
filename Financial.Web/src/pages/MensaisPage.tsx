@@ -111,8 +111,6 @@ export default function MensaisPage() {
     newValue,
     newArea,
     newNote,
-    newNitNumber,
-    newMinimumWageValue,
     isAdding,
     addError,
     setAddField,
@@ -213,29 +211,6 @@ export default function MensaisPage() {
                 onChange={(e) => setAddField('newNote', e.target.value)}
               />
             </div>
-            {newArea === 'Brasil' && (
-              <div className="mensais-page__form-field">
-                <label htmlFor="mensais-new-nit">NIT</label>
-                <input
-                  id="mensais-new-nit"
-                  type="text"
-                  value={newNitNumber}
-                  onChange={(e) => setAddField('newNitNumber', e.target.value)}
-                />
-              </div>
-            )}
-            {newArea === 'Brasil' && (
-              <div className="mensais-page__form-field">
-                <label htmlFor="mensais-new-min-wage">Min. Wage</label>
-                <input
-                  id="mensais-new-min-wage"
-                  type="number"
-                  step="0.01"
-                  value={newMinimumWageValue}
-                  onChange={(e) => setAddField('newMinimumWageValue', e.target.value)}
-                />
-              </div>
-            )}
           </div>
           <div className="mensais-page__form-actions">
             <button type="button" disabled={isAdding} onClick={submitAdd}>
