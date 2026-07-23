@@ -5,6 +5,19 @@ import { useControleMae } from '../hooks/useControleMae'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ControleMaePage.css'
 
+function LedgerColumns() {
+  return (
+    <colgroup>
+      <col className="controle-mae-page__col-date" />
+      <col />
+      <col className="controle-mae-page__col-note" />
+      <col className="controle-mae-page__col-value" />
+      <col className="controle-mae-page__col-value" />
+      <col className="controle-mae-page__col-actions" />
+    </colgroup>
+  )
+}
+
 interface EntryRowProps {
   entry: MaeLedgerEntryDto
   onEdit: (entry: MaeLedgerEntryDto) => void
@@ -180,6 +193,7 @@ export default function ControleMaePage() {
           <section className="controle-mae-page__section">
             <h2>Ledger</h2>
             <table className="controle-mae-page__table data-table">
+              <LedgerColumns />
               <thead>
                 <tr>
                   <th>Date</th>
@@ -195,17 +209,23 @@ export default function ControleMaePage() {
                   <EntryRow key={entry.id} entry={entry} onEdit={showEditForm} />
                 ))}
               </tbody>
-              <tfoot>
-                <tr className="controle-mae-page__totals-row">
-                  <td colSpan={3}>Total (all entries)</td>
-                  <td className="data-table__col--numeric">{totals ? formatN2(totals.totalBrlValue) : '—'}</td>
-                  <td className="data-table__col--numeric">{totals ? formatN2(totals.totalGbpValue) : '—'}</td>
-                  <td />
-                </tr>
-              </tfoot>
             </table>
           </section>
         </div>
+      )}
+
+      {!isLoading && !error && (
+        <table className="controle-mae-page__table controle-mae-page__totals-table data-table">
+          <LedgerColumns />
+          <tbody>
+            <tr className="controle-mae-page__totals-row">
+              <td colSpan={3}>Total (all entries)</td>
+              <td className="data-table__col--numeric">{totals ? formatN2(totals.totalBrlValue) : '—'}</td>
+              <td className="data-table__col--numeric">{totals ? formatN2(totals.totalGbpValue) : '—'}</td>
+              <td />
+            </tr>
+          </tbody>
+        </table>
       )}
     </div>
   )

@@ -55,7 +55,6 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding-bottom: 24px;
 }
 
 .controle-mae-page__section h2 {
@@ -66,9 +65,35 @@
 .controle-mae-page__table {
   width: 100%;
   max-width: 840px;
-  /* border-collapse: collapse breaks sticky positioning on table cells (rows paint over the sticky footer). */
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
+}
+
+.controle-mae-page__col-date {
+  width: 110px;
+}
+
+.controle-mae-page__col-note {
+  width: 160px;
+}
+
+.controle-mae-page__col-value {
+  width: 100px;
+}
+
+.controle-mae-page__col-actions {
+  width: 70px;
+}
+
+.controle-mae-page__table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.controle-mae-page__totals-table {
+  flex-shrink: 0;
+  margin-bottom: 24px;
 }
 
 .controle-mae-page__form {
@@ -96,9 +121,6 @@
 }
 
 .controle-mae-page__totals-row td {
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
   background: var(--bg-subtle, #f9f9f9);
   font-weight: bold;
   border-top: 2px solid var(--border, #e5e4e7);
