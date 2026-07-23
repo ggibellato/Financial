@@ -49,6 +49,14 @@ describe('useReserva', () => {
     expect(result.current.error).toBeNull()
   })
 
+  it('computes the total balance across all buckets', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    // 654.33 + 654.33 + 327.17 + 327.17 = 1963.00
+    expect(result.current.totalBalance).toBeCloseTo(1963, 2)
+  })
+
   it('surfaces a fetch error', async () => {
     getReserveBalancesMock.mockRejectedValue(new Error('Network down'))
     const { result } = renderHook(() => useReserva())

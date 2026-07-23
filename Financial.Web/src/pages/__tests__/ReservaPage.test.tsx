@@ -62,6 +62,14 @@ describe('ReservaPage', () => {
     expect(screen.getByText('Monthly income split')).toBeInTheDocument()
   })
 
+  it('renders the total balance across all buckets, bold and always visible', async () => {
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getByText('Bucket Balances')).toBeInTheDocument())
+    // 654.33 + 654.33 + 327.17 + 327.17 = 1963.00
+    expect(screen.getByText('1,963.00')).toBeInTheDocument()
+  })
+
   it('shows the income-split form only after New Income Split is clicked', async () => {
     render(<ReservaPage />)
 

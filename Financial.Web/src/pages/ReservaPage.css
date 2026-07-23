@@ -103,6 +103,32 @@
   overflow: auto;
 }
 
+.reserva-page__section--balances .reserva-page__table {
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.reserva-page__section--balances .reserva-page__table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reserva-page__col-value {
+  width: 120px;
+}
+
+.reserva-page__totals-table {
+  flex-shrink: 0;
+  margin-top: 8px;
+}
+
+.reserva-page__totals-row td {
+  background: var(--bg-subtle, #f9f9f9);
+  font-weight: bold;
+  border-top: 2px solid var(--border, #e5e4e7);
+}
+
 .reserva-page__form {
   display: flex;
   flex-wrap: wrap;

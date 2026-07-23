@@ -5,6 +5,15 @@ import type { SplitFormField, WithdrawalFormField } from '../hooks/useReserva'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ReservaPage.css'
 
+function BalanceColumns() {
+  return (
+    <colgroup>
+      <col />
+      <col className="reserva-page__col-value" />
+    </colgroup>
+  )
+}
+
 const SPLIT_FIELDS: { field: SplitFormField; label: string }[] = [
   { field: 'gleisonSalaryGross', label: 'Salario Gleison (gross)' },
   { field: 'gleisonSalaryNet', label: 'Salario Gleison (net)' },
@@ -17,6 +26,7 @@ const SPLIT_FIELDS: { field: SplitFormField; label: string }[] = [
 export default function ReservaPage() {
   const {
     balances,
+    totalBalance,
     movements,
     isLoading,
     error,
@@ -191,6 +201,7 @@ export default function ReservaPage() {
             <h2>Bucket Balances</h2>
             <div className="reserva-page__table-scroll">
               <table className="reserva-page__table data-table">
+                <BalanceColumns />
                 <thead>
                   <tr>
                     <th>Bucket</th>
@@ -207,6 +218,15 @@ export default function ReservaPage() {
                 </tbody>
               </table>
             </div>
+            <table className="reserva-page__table reserva-page__totals-table data-table">
+              <BalanceColumns />
+              <tbody>
+                <tr className="reserva-page__totals-row">
+                  <td>Total</td>
+                  <td className="data-table__col--numeric">{formatN2(totalBalance)}</td>
+                </tr>
+              </tbody>
+            </table>
           </section>
 
           <section className="reserva-page__section reserva-page__section--grid reserva-page__section--movements">
