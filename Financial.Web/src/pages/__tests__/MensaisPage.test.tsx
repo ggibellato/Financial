@@ -26,7 +26,7 @@ const BILLS: RecurringBillDto[] = [
     dueDay: 10,
     description: 'INSS',
     area: 'Brasil',
-    note: '',
+    note: 'Paga via boleto',
     nitNumber: null,
     minimumWageValue: null,
     value: 850,
@@ -37,7 +37,7 @@ const BILLS: RecurringBillDto[] = [
     dueDay: 15,
     description: 'Council Tax',
     area: 'UK',
-    note: '',
+    note: 'Direct debit',
     nitNumber: null,
     minimumWageValue: null,
     value: 120,
@@ -97,6 +97,15 @@ describe('MensaisPage', () => {
       expect(updateMensaisBillMock).toHaveBeenCalledWith('b1', { status: 'Paid', value: 900 }),
     )
     await waitFor(() => expect(screen.getByText('Paid')).toBeInTheDocument())
+  })
+
+  it('shows each bill\'s Note in both the Brasil and UK grids', async () => {
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+    expect(screen.getAllByText('Note')).toHaveLength(2)
+    expect(screen.getByText('Paga via boleto')).toBeInTheDocument()
+    expect(screen.getByText('Direct debit')).toBeInTheDocument()
   })
 
   it('shows NIT and Min. Wage columns only in the Brasil section', async () => {

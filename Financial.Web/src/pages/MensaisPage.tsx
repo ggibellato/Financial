@@ -21,6 +21,7 @@ function BillRow({ bill, showBrasilFields, isDeleting, onEdit, onDelete }: BillR
     <tr>
       <td>{bill.dueDay}</td>
       <td>{bill.description}</td>
+      <td>{bill.note}</td>
       {showBrasilFields && <td>{bill.nitNumber ?? ''}</td>}
       {showBrasilFields && <td className="data-table__col--numeric">{bill.minimumWageValue !== null ? formatN2(bill.minimumWageValue) : ''}</td>}
       <td className="data-table__col--numeric">{formatN2(bill.value)}</td>
@@ -58,31 +59,34 @@ function BillTable({ title, bills, showBrasilFields, deletingBillId, onEdit, onD
   return (
     <section className="mensais-page__section">
       <h2>{title}</h2>
-      <table className="mensais-page__table data-table">
-        <thead>
-          <tr>
-            <th>Due Day</th>
-            <th>Description</th>
-            {showBrasilFields && <th>NIT</th>}
-            {showBrasilFields && <th className="data-table__col--numeric">Min. Wage</th>}
-            <th className="data-table__col--numeric">Value</th>
-            <th>Status</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {bills.map((bill) => (
-            <BillRow
-              key={bill.id}
-              bill={bill}
-              showBrasilFields={showBrasilFields}
-              isDeleting={deletingBillId === bill.id}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
-          ))}
-        </tbody>
-      </table>
+      <div className="mensais-page__table-scroll">
+        <table className="mensais-page__table data-table">
+          <thead>
+            <tr>
+              <th>Due Day</th>
+              <th>Description</th>
+              <th>Note</th>
+              {showBrasilFields && <th>NIT</th>}
+              {showBrasilFields && <th className="data-table__col--numeric">Min. Wage</th>}
+              <th className="data-table__col--numeric">Value</th>
+              <th>Status</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {bills.map((bill) => (
+              <BillRow
+                key={bill.id}
+                bill={bill}
+                showBrasilFields={showBrasilFields}
+                isDeleting={deletingBillId === bill.id}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   )
 }
@@ -138,11 +142,12 @@ export default function MensaisPage() {
           onChange={(e) => setMonthInputValue(e.target.value)}
         />
         {!isAddFormOpen && (
-          <button type="button" onClick={showAddForm}>
+          <button className="mensais-page__new-btn" type="button" onClick={showAddForm}>
             Add Bill
           </button>
         )}
         <button
+          className="mensais-page__new-btn"
           type="button"
           disabled={isResetting}
           onClick={() => {
