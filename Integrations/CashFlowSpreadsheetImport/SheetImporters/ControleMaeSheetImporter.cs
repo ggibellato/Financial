@@ -22,7 +22,7 @@ public static partial class ControleMaeSheetImporter
     private const int DescriptionColumn = 1;
     private const int BrlValueColumn = 2;
     private const int GbpValueColumn = 3;
-    private const int NoteColumn = 5;
+    private const int NoteColumn = 4;
 
     private static readonly Regex FullDatePattern = BuildFullDatePattern();
     private static readonly Regex MonthYearPattern = BuildMonthYearPattern();
