@@ -51,11 +51,19 @@
 .mensais-page__content {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  gap: 24px;
+  align-items: stretch;
+  padding-bottom: 24px;
+}
+
+.mensais-page__section {
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  padding-bottom: 24px;
+  min-height: 0;
 }
 
 .mensais-page__section h2 {
@@ -63,9 +71,15 @@
   margin-bottom: 12px;
 }
 
+.mensais-page__table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
 .mensais-page__table {
   width: 100%;
-  max-width: 720px;
+  max-width: none;
 }
 
 .mensais-page__error {

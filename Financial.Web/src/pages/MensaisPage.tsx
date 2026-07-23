@@ -58,31 +58,33 @@ function BillTable({ title, bills, showBrasilFields, deletingBillId, onEdit, onD
   return (
     <section className="mensais-page__section">
       <h2>{title}</h2>
-      <table className="mensais-page__table data-table">
-        <thead>
-          <tr>
-            <th>Due Day</th>
-            <th>Description</th>
-            {showBrasilFields && <th>NIT</th>}
-            {showBrasilFields && <th className="data-table__col--numeric">Min. Wage</th>}
-            <th className="data-table__col--numeric">Value</th>
-            <th>Status</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {bills.map((bill) => (
-            <BillRow
-              key={bill.id}
-              bill={bill}
-              showBrasilFields={showBrasilFields}
-              isDeleting={deletingBillId === bill.id}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
-          ))}
-        </tbody>
-      </table>
+      <div className="mensais-page__table-scroll">
+        <table className="mensais-page__table data-table">
+          <thead>
+            <tr>
+              <th>Due Day</th>
+              <th>Description</th>
+              {showBrasilFields && <th>NIT</th>}
+              {showBrasilFields && <th className="data-table__col--numeric">Min. Wage</th>}
+              <th className="data-table__col--numeric">Value</th>
+              <th>Status</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {bills.map((bill) => (
+              <BillRow
+                key={bill.id}
+                bill={bill}
+                showBrasilFields={showBrasilFields}
+                isDeleting={deletingBillId === bill.id}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   )
 }
