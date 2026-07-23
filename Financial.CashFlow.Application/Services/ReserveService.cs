@@ -10,8 +10,6 @@ namespace Financial.CashFlow.Application.Services;
 
 public sealed class ReserveService : IReserveService
 {
-    private const string IncomeSplitDescription = "Monthly income split";
-
     private readonly ICashFlowRepository _repository;
 
     public ReserveService(ICashFlowRepository repository)
@@ -23,22 +21,24 @@ public sealed class ReserveService : IReserveService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        ValidateNonNegative(request.GleisonSalaryGross, nameof(request.GleisonSalaryGross));
-        ValidateNonNegative(request.GleisonSalaryNet, nameof(request.GleisonSalaryNet));
-        ValidateNonNegative(request.ArianaSalaryGross, nameof(request.ArianaSalaryGross));
-        ValidateNonNegative(request.ArianaSalaryNet, nameof(request.ArianaSalaryNet));
-        ValidateNonNegative(request.Lottery, nameof(request.Lottery));
-        ValidateNonNegative(request.DividendoJuros, nameof(request.DividendoJuros));
+        if (request.Amount <= 0)
+        {
+            throw new ArgumentException("Amount must be greater than zero.", nameof(request.Amount));
+        }
 
-        var split = ReserveSplitCalculator.Calculate(
-            request.GleisonSalaryNet, request.ArianaSalaryNet, request.Lottery, request.DividendoJuros);
+        if (string.IsNullOrWhiteSpace(request.Description))
+        {
+            throw new ArgumentException("Description is required.", nameof(request.Description));
+        }
+
+        var split = ReserveSplitCalculator.Calculate(request.Amount);
 
         var movements = new[]
         {
-            ReserveMovement.Create(ReserveBucket.Investimento, split.Investimento, request.Date, IncomeSplitDescription),
-            ReserveMovement.Create(ReserveBucket.HouseTreats, split.HouseTreats, request.Date, IncomeSplitDescription),
-            ReserveMovement.Create(ReserveBucket.Ariana, split.Ariana, request.Date, IncomeSplitDescription),
-            ReserveMovement.Create(ReserveBucket.Gleison, split.Gleison, request.Date, IncomeSplitDescription)
+            ReserveMovement.Create(ReserveBucket.Investimento, split.Investimento, request.Date, request.Description),
+            ReserveMovement.Create(ReserveBucket.HouseTreats, split.HouseTreats, request.Date, request.Description),
+            ReserveMovement.Create(ReserveBucket.Ariana, split.Ariana, request.Date, request.Description),
+            ReserveMovement.Create(ReserveBucket.Gleison, split.Gleison, request.Date, request.Description)
         };
 
         foreach (var movement in movements)
@@ -62,11 +62,11 @@ public sealed class ReserveService : IReserveService
 
         return new IncomeSplitResultDTO
         {
-            Dizimo = split.Dizimo,
             Investimento = split.Investimento,
             HouseTreats = split.HouseTreats,
             Ariana = split.Ariana,
-            Gleison = split.Gleison
+            Gleison = split.Gleison,
+            Total = split.Investimento + split.HouseTreats + split.Ariana + split.Gleison
         };
     }
 
@@ -129,14 +129,6 @@ public sealed class ReserveService : IReserveService
 
     private decimal GetBalance(ReserveBucket bucket) =>
         _repository.GetReserveMovements().Where(m => m.Bucket == bucket).Sum(m => m.Amount);
-
-    private static void ValidateNonNegative(decimal value, string fieldName)
-    {
-        if (value < 0)
-        {
-            throw new ArgumentException($"{fieldName} must not be negative.");
-        }
-    }
 
     private static ReserveMovementDTO ToDto(ReserveMovement movement) => new()
     {

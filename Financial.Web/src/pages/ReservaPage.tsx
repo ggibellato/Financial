@@ -1,7 +1,8 @@
+import { Fragment } from 'react'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import { RESERVE_BUCKETS, useReserva } from '../hooks/useReserva'
-import type { SplitFormField, WithdrawalFormField } from '../hooks/useReserva'
+import type { WithdrawalFormField } from '../hooks/useReserva'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ReservaPage.css'
 
@@ -25,37 +26,26 @@ function MovementColumns() {
   )
 }
 
-const SPLIT_FIELDS: { field: SplitFormField; label: string }[] = [
-  { field: 'gleisonSalaryGross', label: 'Salario Gleison (gross)' },
-  { field: 'gleisonSalaryNet', label: 'Salario Gleison (net)' },
-  { field: 'arianaSalaryGross', label: 'Salario Ariana (gross)' },
-  { field: 'arianaSalaryNet', label: 'Salario Ariana (net)' },
-  { field: 'lottery', label: 'Lottery' },
-  { field: 'dividendoJuros', label: 'Dividendo/Juros' },
-]
-
 export default function ReservaPage() {
   const {
     balances,
     totalBalance,
-    movements,
+    movementRows,
     isLoading,
     error,
     retry,
     isSplitFormOpen,
     splitDate,
-    gleisonSalaryGross,
-    gleisonSalaryNet,
-    arianaSalaryGross,
-    arianaSalaryNet,
-    lottery,
-    dividendoJuros,
+    splitAmount,
+    splitDescription,
     isSubmittingSplit,
     splitError,
+    lastSplitResult,
     showSplitForm,
     cancelSplitForm,
     setSplitField,
     submitIncomeSplit,
+    dismissSplitResult,
     isWithdrawalFormOpen,
     withdrawalBucket,
     withdrawalAmount,
@@ -75,16 +65,6 @@ export default function ReservaPage() {
 
   if (error) {
     return <ErrorState message={error} onRetry={retry} />
-  }
-
-  const splitValues: Record<SplitFormField, string> = {
-    splitDate,
-    gleisonSalaryGross,
-    gleisonSalaryNet,
-    arianaSalaryGross,
-    arianaSalaryNet,
-    lottery,
-    dividendoJuros,
   }
 
   const withdrawalValues: Record<WithdrawalFormField, string> = {
@@ -121,18 +101,25 @@ export default function ReservaPage() {
                 onChange={(e) => setSplitField('splitDate', e.target.value)}
               />
             </div>
-            {SPLIT_FIELDS.map(({ field, label }) => (
-              <div className="reserva-page__form-field" key={field}>
-                <label htmlFor={`split-${field}`}>{label}</label>
-                <input
-                  id={`split-${field}`}
-                  type="number"
-                  step="0.01"
-                  value={splitValues[field]}
-                  onChange={(e) => setSplitField(field, e.target.value)}
-                />
-              </div>
-            ))}
+            <div className="reserva-page__form-field">
+              <label htmlFor="split-amount">Amount to Split</label>
+              <input
+                id="split-amount"
+                type="number"
+                step="0.01"
+                value={splitAmount}
+                onChange={(e) => setSplitField('splitAmount', e.target.value)}
+              />
+            </div>
+            <div className="reserva-page__form-field">
+              <label htmlFor="split-description">Description</label>
+              <input
+                id="split-description"
+                type="text"
+                value={splitDescription}
+                onChange={(e) => setSplitField('splitDescription', e.target.value)}
+              />
+            </div>
           </div>
           <div className="reserva-page__form-actions">
             <button type="button" disabled={isSubmittingSplit} onClick={submitIncomeSplit}>
@@ -143,6 +130,42 @@ export default function ReservaPage() {
             </button>
           </div>
           {splitError && <p className="reserva-page__error">{splitError}</p>}
+        </div>
+      )}
+
+      {lastSplitResult && (
+        <div className="reserva-page__form-panel">
+          <p className="reserva-page__form-title">Income Split Posted</p>
+          <table className="reserva-page__table reserva-page__split-result-table data-table">
+            <BalanceColumns />
+            <tbody>
+              <tr>
+                <td>Investimento</td>
+                <td className="data-table__col--numeric">{formatN2(lastSplitResult.investimento)}</td>
+              </tr>
+              <tr>
+                <td>HouseTreats</td>
+                <td className="data-table__col--numeric">{formatN2(lastSplitResult.houseTreats)}</td>
+              </tr>
+              <tr>
+                <td>Ariana</td>
+                <td className="data-table__col--numeric">{formatN2(lastSplitResult.ariana)}</td>
+              </tr>
+              <tr>
+                <td>Gleison</td>
+                <td className="data-table__col--numeric">{formatN2(lastSplitResult.gleison)}</td>
+              </tr>
+              <tr className="reserva-page__totals-row">
+                <td>Total</td>
+                <td className="data-table__col--numeric">{formatN2(lastSplitResult.total)}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div className="reserva-page__form-actions">
+            <button type="button" onClick={dismissSplitResult}>
+              Dismiss
+            </button>
+          </div>
         </div>
       )}
 
@@ -254,13 +277,21 @@ export default function ReservaPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {movements.map((m) => (
-                    <tr key={m.id}>
-                      <td>{formatShortDate(m.date)}</td>
-                      <td>{m.bucket}</td>
-                      <td>{m.description}</td>
-                      <td className="data-table__col--numeric">{formatN2(m.amount)}</td>
-                    </tr>
+                  {movementRows.map((m) => (
+                    <Fragment key={m.id}>
+                      <tr>
+                        <td>{formatShortDate(m.date)}</td>
+                        <td>{m.bucket}</td>
+                        <td>{m.description}</td>
+                        <td className="data-table__col--numeric">{formatN2(m.amount)}</td>
+                      </tr>
+                      {m.groupTotal !== null && (
+                        <tr className="reserva-page__totals-row">
+                          <td colSpan={3}>Total split for {m.description}</td>
+                          <td className="data-table__col--numeric">{formatN2(m.groupTotal)}</td>
+                        </tr>
+                      )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
