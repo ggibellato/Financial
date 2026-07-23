@@ -90,6 +90,7 @@ export interface FinancialApiClient {
   getMaeLedgerEntriesFromDate: (fromDate: string) => Promise<MaeLedgerEntryDto[]>
   getMaeLedgerTotals: () => Promise<MaeLedgerTotalsDto>
   updateMaeLedgerEntryValues: (id: string, request: UpdateMaeLedgerEntryValuesDto) => Promise<MaeLedgerEntryDto>
+  deleteMaeLedgerEntry: (id: string) => Promise<void>
   getInvestmentSnapshots: (year: number, month: number) => Promise<InvestmentSnapshotDto[]>
   updateInvestmentSnapshotValue: (id: string, request: UpdateInvestmentSnapshotValueDto) => Promise<InvestmentSnapshotDto>
   getExpensesByMonth: (year: number, month: number) => Promise<ExpenseDto[]>
@@ -298,6 +299,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),
+    deleteMaeLedgerEntry: (id) => requestVoid(`/controle-mae/entries/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getInvestmentSnapshots: (year, month) =>
       request<InvestmentSnapshotDto[]>(`/investment-snapshots/${year}/${month}`),
     updateInvestmentSnapshotValue: (id, requestBody) =>

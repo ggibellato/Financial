@@ -8,6 +8,7 @@ const getMaeLedgerEntriesFromDateMock = vi.fn<FinancialApiClient['getMaeLedgerEn
 const getMaeLedgerTotalsMock = vi.fn<FinancialApiClient['getMaeLedgerTotals']>()
 const createMaeLedgerEntryMock = vi.fn<FinancialApiClient['createMaeLedgerEntry']>()
 const updateMaeLedgerEntryValuesMock = vi.fn<FinancialApiClient['updateMaeLedgerEntryValues']>()
+const deleteMaeLedgerEntryMock = vi.fn<FinancialApiClient['deleteMaeLedgerEntry']>()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
@@ -15,6 +16,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getMaeLedgerTotals: getMaeLedgerTotalsMock,
     createMaeLedgerEntry: createMaeLedgerEntryMock,
     updateMaeLedgerEntryValues: updateMaeLedgerEntryValuesMock,
+    deleteMaeLedgerEntry: deleteMaeLedgerEntryMock,
   }),
 }))
 
@@ -102,5 +104,30 @@ describe('ControleMaePage', () => {
       expect(updateMaeLedgerEntryValuesMock).toHaveBeenCalledWith('e1', { brlValue: 355, gbpValue: 51.1 }),
     )
     await waitFor(() => expect(screen.getByText('355.00')).toBeInTheDocument())
+  })
+
+  it('deletes an entry after confirming the prompt', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    deleteMaeLedgerEntryMock.mockResolvedValue(undefined)
+    render(<ControleMaePage />)
+
+    await waitFor(() => expect(screen.getByText('School supplies')).toBeInTheDocument())
+
+    getMaeLedgerEntriesFromDateMock.mockResolvedValue([])
+    fireEvent.click(screen.getByRole('button', { name: 'Delete entry' }))
+
+    await waitFor(() => expect(deleteMaeLedgerEntryMock).toHaveBeenCalledWith('e1'))
+    await waitFor(() => expect(screen.queryByText('School supplies')).not.toBeInTheDocument())
+  })
+
+  it('does not delete when the confirmation prompt is declined', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(<ControleMaePage />)
+
+    await waitFor(() => expect(screen.getByText('School supplies')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete entry' }))
+
+    expect(deleteMaeLedgerEntryMock).not.toHaveBeenCalled()
   })
 })

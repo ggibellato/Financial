@@ -70,4 +70,20 @@ public sealed class ControleMaeController : ControllerBase
             return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
         }
     }
+
+    [HttpDelete("entries/{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteEntry(Guid id)
+    {
+        try
+        {
+            await _controleMaeService.DeleteEntryAsync(id);
+            return Ok();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
+        }
+    }
 }

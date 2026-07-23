@@ -88,6 +88,15 @@ public sealed class ControleMaeService : IControleMaeService
         return ToDto(entry);
     }
 
+    public async Task DeleteEntryAsync(Guid id)
+    {
+        _ = _repository.GetMaeLedgerEntries().FirstOrDefault(e => e.Id == id)
+            ?? throw new KeyNotFoundException($"Mae ledger entry '{id}' was not found.");
+
+        _repository.DeleteMaeLedgerEntry(id);
+        await _repository.SaveChangesAsync().ConfigureAwait(false);
+    }
+
     private static MaeLedgerEntryDTO ToDto(MaeLedgerEntry entry) => new()
     {
         Id = entry.Id,

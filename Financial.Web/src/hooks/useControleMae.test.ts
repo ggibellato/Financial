@@ -12,6 +12,7 @@ const getMaeLedgerEntriesFromDateMock = vi.fn<FinancialApiClient['getMaeLedgerEn
 const getMaeLedgerTotalsMock = vi.fn<FinancialApiClient['getMaeLedgerTotals']>()
 const createMaeLedgerEntryMock = vi.fn<FinancialApiClient['createMaeLedgerEntry']>()
 const updateMaeLedgerEntryValuesMock = vi.fn<FinancialApiClient['updateMaeLedgerEntryValues']>()
+const deleteMaeLedgerEntryMock = vi.fn<FinancialApiClient['deleteMaeLedgerEntry']>()
 
 vi.mock('../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
@@ -19,6 +20,7 @@ vi.mock('../api/financialApiClient', () => ({
     getMaeLedgerTotals: getMaeLedgerTotalsMock,
     createMaeLedgerEntry: createMaeLedgerEntryMock,
     updateMaeLedgerEntryValues: updateMaeLedgerEntryValuesMock,
+    deleteMaeLedgerEntry: deleteMaeLedgerEntryMock,
   }),
 }))
 
@@ -127,5 +129,27 @@ describe('useControleMae', () => {
     )
     await waitFor(() => expect(getMaeLedgerEntriesFromDateMock).toHaveBeenCalledTimes(2))
     await waitFor(() => expect(getMaeLedgerTotalsMock).toHaveBeenCalledTimes(2))
+  })
+
+  it('deletes an entry and re-fetches entries and totals on success', async () => {
+    deleteMaeLedgerEntryMock.mockResolvedValue(undefined)
+    const { result } = renderHook(() => useControleMae())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.deleteEntry('e1'))
+
+    await waitFor(() => expect(deleteMaeLedgerEntryMock).toHaveBeenCalledWith('e1'))
+    await waitFor(() => expect(getMaeLedgerEntriesFromDateMock).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(getMaeLedgerTotalsMock).toHaveBeenCalledTimes(2))
+  })
+
+  it('surfaces a delete error without crashing', async () => {
+    deleteMaeLedgerEntryMock.mockRejectedValue(new Error('Mae ledger entry not found.'))
+    const { result } = renderHook(() => useControleMae())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.deleteEntry('unknown'))
+
+    await waitFor(() => expect(result.current.deleteError).toBe('Mae ledger entry not found.'))
   })
 })

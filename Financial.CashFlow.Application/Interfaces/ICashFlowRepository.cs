@@ -21,6 +21,7 @@ public interface ICashFlowRepository
 
     IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries();
     void AddMaeLedgerEntry(MaeLedgerEntry entry);
+    void DeleteMaeLedgerEntry(Guid id);
 
     IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots();
     void AddInvestmentSnapshot(InvestmentSnapshot snapshot);

@@ -8,4 +8,5 @@ public interface IControleMaeService
     IReadOnlyList<MaeLedgerEntryDTO> GetEntriesFromDate(DateOnly fromDate);
     MaeLedgerTotalsDTO GetTotals();
     Task<MaeLedgerEntryDTO> UpdateEntryValuesAsync(Guid id, UpdateMaeLedgerEntryValuesDTO request);
+    Task DeleteEntryAsync(Guid id);
 }

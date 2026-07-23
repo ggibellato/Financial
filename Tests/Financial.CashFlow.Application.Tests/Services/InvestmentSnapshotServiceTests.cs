@@ -120,6 +120,7 @@ public class InvestmentSnapshotServiceTests
 
         public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => Array.Empty<MaeLedgerEntry>();
         public void AddMaeLedgerEntry(MaeLedgerEntry entry) { }
+        public void DeleteMaeLedgerEntry(Guid id) { }
 
         public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => Snapshots;
         public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => Snapshots.Add(snapshot);

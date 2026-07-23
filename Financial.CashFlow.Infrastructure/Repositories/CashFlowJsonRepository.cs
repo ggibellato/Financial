@@ -35,6 +35,7 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository
 
     public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => _data.MaeLedgerEntries;
     public void AddMaeLedgerEntry(MaeLedgerEntry entry) => _data.AddMaeLedgerEntry(entry);
+    public void DeleteMaeLedgerEntry(Guid id) => _data.RemoveMaeLedgerEntry(id);
 
     public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => _data.InvestmentSnapshots;
     public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => _data.AddInvestmentSnapshot(snapshot);

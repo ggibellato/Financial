@@ -234,6 +234,7 @@ public class MensaisServiceTests
 
         public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => Array.Empty<MaeLedgerEntry>();
         public void AddMaeLedgerEntry(MaeLedgerEntry entry) { }
+        public void DeleteMaeLedgerEntry(Guid id) { }
 
         public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => Array.Empty<InvestmentSnapshot>();
         public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) { }
