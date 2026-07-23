@@ -27,7 +27,10 @@ const BALANCES: ReserveBucketBalanceDto[] = [
 ]
 
 const MOVEMENTS: ReserveMovementDto[] = [
-  { id: 'm1', bucket: 'Investimento', amount: 654.33, date: '2026-07-01', description: 'Monthly income split' },
+  { id: 'm1', bucket: 'Investimento', amount: 654.33, date: '2026-07-17', description: 'Ramsay' },
+  { id: 'm2', bucket: 'HouseTreats', amount: 654.33, date: '2026-07-17', description: 'Ramsay' },
+  { id: 'm3', bucket: 'Ariana', amount: 327.17, date: '2026-07-17', description: 'Ramsay' },
+  { id: 'm4', bucket: 'Gleison', amount: 327.17, date: '2026-07-17', description: 'Ramsay' },
 ]
 
 describe('useReserva', () => {
@@ -47,6 +50,25 @@ describe('useReserva', () => {
     expect(result.current.balances).toEqual(BALANCES)
     expect(result.current.movements).toEqual(MOVEMENTS)
     expect(result.current.error).toBeNull()
+  })
+
+  it('marks the last movement of a same date+description group with the group total', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    const groupTotals = result.current.movementRows.map((m) => m.groupTotal)
+    expect(groupTotals.slice(0, 3)).toEqual([null, null, null])
+    expect(groupTotals[3]).toBeCloseTo(1963, 2)
+  })
+
+  it('does not attach a group total to a lone movement', async () => {
+    getReserveMovementsMock.mockResolvedValue([
+      { id: 'm5', bucket: 'Investimento', amount: -30, date: '2026-07-18', description: 'Groceries top-up' },
+    ])
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.movementRows[0].groupTotal).toBeNull()
   })
 
   it('computes the total balance across all buckets', async () => {
@@ -79,10 +101,11 @@ describe('useReserva', () => {
 
     act(() => result.current.setSplitField('splitDate', '2026-07-01'))
     act(() => result.current.setSplitField('splitAmount', '1963'))
+    act(() => result.current.setSplitField('splitDescription', 'Ramsay'))
     act(() => result.current.submitIncomeSplit())
 
     await waitFor(() => expect(postIncomeSplitMock).toHaveBeenCalledTimes(1))
-    expect(postIncomeSplitMock).toHaveBeenCalledWith({ date: '2026-07-01', amount: 1963 })
+    expect(postIncomeSplitMock).toHaveBeenCalledWith({ date: '2026-07-01', amount: 1963, description: 'Ramsay' })
     await waitFor(() => expect(getReserveBalancesMock).toHaveBeenCalledTimes(2))
     expect(result.current.lastSplitResult).toEqual({
       investimento: 654.33,
@@ -105,6 +128,18 @@ describe('useReserva', () => {
     expect(postIncomeSplitMock).not.toHaveBeenCalled()
   })
 
+  it('rejects an income split with a missing description before calling the API', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setSplitField('splitDate', '2026-07-01'))
+    act(() => result.current.setSplitField('splitAmount', '1963'))
+    act(() => result.current.submitIncomeSplit())
+
+    await waitFor(() => expect(result.current.splitError).toBe('Description is required'))
+    expect(postIncomeSplitMock).not.toHaveBeenCalled()
+  })
+
   it('surfaces a validation error from the backend on income split failure', async () => {
     postIncomeSplitMock.mockRejectedValue(new Error('Amount must be greater than zero.'))
     const { result } = renderHook(() => useReserva())
@@ -112,6 +147,7 @@ describe('useReserva', () => {
 
     act(() => result.current.setSplitField('splitDate', '2026-07-01'))
     act(() => result.current.setSplitField('splitAmount', '1963'))
+    act(() => result.current.setSplitField('splitDescription', 'Ramsay'))
     act(() => result.current.submitIncomeSplit())
 
     await waitFor(() => expect(result.current.splitError).toBe('Amount must be greater than zero.'))

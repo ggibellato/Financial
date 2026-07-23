@@ -10,8 +10,6 @@ namespace Financial.CashFlow.Application.Services;
 
 public sealed class ReserveService : IReserveService
 {
-    private const string IncomeSplitDescription = "Monthly income split";
-
     private readonly ICashFlowRepository _repository;
 
     public ReserveService(ICashFlowRepository repository)
@@ -28,14 +26,19 @@ public sealed class ReserveService : IReserveService
             throw new ArgumentException("Amount must be greater than zero.", nameof(request.Amount));
         }
 
+        if (string.IsNullOrWhiteSpace(request.Description))
+        {
+            throw new ArgumentException("Description is required.", nameof(request.Description));
+        }
+
         var split = ReserveSplitCalculator.Calculate(request.Amount);
 
         var movements = new[]
         {
-            ReserveMovement.Create(ReserveBucket.Investimento, split.Investimento, request.Date, IncomeSplitDescription),
-            ReserveMovement.Create(ReserveBucket.HouseTreats, split.HouseTreats, request.Date, IncomeSplitDescription),
-            ReserveMovement.Create(ReserveBucket.Ariana, split.Ariana, request.Date, IncomeSplitDescription),
-            ReserveMovement.Create(ReserveBucket.Gleison, split.Gleison, request.Date, IncomeSplitDescription)
+            ReserveMovement.Create(ReserveBucket.Investimento, split.Investimento, request.Date, request.Description),
+            ReserveMovement.Create(ReserveBucket.HouseTreats, split.HouseTreats, request.Date, request.Description),
+            ReserveMovement.Create(ReserveBucket.Ariana, split.Ariana, request.Date, request.Description),
+            ReserveMovement.Create(ReserveBucket.Gleison, split.Gleison, request.Date, request.Description)
         };
 
         foreach (var movement in movements)

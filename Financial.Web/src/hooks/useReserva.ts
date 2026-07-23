@@ -5,9 +5,17 @@ import type { IncomeSplitResultDto, ReserveBucketBalanceDto, ReserveMovementDto 
 
 export const RESERVE_BUCKETS = ['Investimento', 'HouseTreats', 'Ariana', 'Gleison'] as const
 
-export type SplitFormField = 'splitDate' | 'splitAmount'
+export type SplitFormField = 'splitDate' | 'splitAmount' | 'splitDescription'
 
 export type WithdrawalFormField = 'withdrawalBucket' | 'withdrawalAmount' | 'withdrawalDate' | 'withdrawalDescription'
+
+/**
+ * A movement row for display, with `groupTotal` set on the last movement of a same
+ * date+description group (2+ movements) — how a split's total is found when browsing history.
+ */
+export interface ReserveMovementRow extends ReserveMovementDto {
+  groupTotal: number | null
+}
 
 interface ReservaState {
   balances: ReserveBucketBalanceDto[]
@@ -18,6 +26,7 @@ interface ReservaState {
   isSplitFormOpen: boolean
   splitDate: string
   splitAmount: string
+  splitDescription: string
   isSubmittingSplit: boolean
   splitError: string | null
   lastSplitResult: IncomeSplitResultDto | null
@@ -52,6 +61,7 @@ type ReservaAction =
 const BLANK_SPLIT_FORM = {
   splitDate: '',
   splitAmount: '',
+  splitDescription: '',
 } as const
 
 const BLANK_WITHDRAWAL_FORM = {
@@ -129,12 +139,14 @@ export interface ReservaData {
   balances: ReserveBucketBalanceDto[]
   totalBalance: number
   movements: ReserveMovementDto[]
+  movementRows: ReserveMovementRow[]
   isLoading: boolean
   error: string | null
   retry: () => void
   isSplitFormOpen: boolean
   splitDate: string
   splitAmount: string
+  splitDescription: string
   isSubmittingSplit: boolean
   splitError: string | null
   lastSplitResult: IncomeSplitResultDto | null
@@ -154,6 +166,23 @@ export interface ReservaData {
   cancelWithdrawalForm: () => void
   setWithdrawalField: (field: WithdrawalFormField, value: string) => void
   submitWithdrawal: () => void
+}
+
+function buildMovementRows(movements: ReserveMovementDto[]): ReserveMovementRow[] {
+  const groups = new Map<string, { total: number; count: number; lastIndex: number }>()
+  movements.forEach((m, index) => {
+    const key = `${m.date}|${m.description}`
+    const group = groups.get(key) ?? { total: 0, count: 0, lastIndex: index }
+    group.total += m.amount
+    group.count += 1
+    group.lastIndex = index
+    groups.set(key, group)
+  })
+
+  return movements.map((m, index) => {
+    const group = groups.get(`${m.date}|${m.description}`)!
+    return { ...m, groupTotal: group.count > 1 && group.lastIndex === index ? group.total : null }
+  })
 }
 
 export function useReserva(): ReservaData {
@@ -178,6 +207,8 @@ export function useReserva(): ReservaData {
     [state.balances],
   )
 
+  const movementRows = useMemo(() => buildMovementRows(state.movements), [state.movements])
+
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
   const showSplitForm = useCallback(() => dispatch({ type: 'SHOW_SPLIT_FORM' }), [])
@@ -201,7 +232,7 @@ export function useReserva(): ReservaData {
   )
 
   function submitIncomeSplit() {
-    const { splitDate, splitAmount } = state
+    const { splitDate, splitAmount, splitDescription } = state
 
     if (!splitDate.trim()) {
       dispatch({ type: 'SPLIT_ERROR', payload: 'Date is required' })
@@ -214,10 +245,15 @@ export function useReserva(): ReservaData {
       return
     }
 
+    if (!splitDescription.trim()) {
+      dispatch({ type: 'SPLIT_ERROR', payload: 'Description is required' })
+      return
+    }
+
     dispatch({ type: 'SPLIT_START' })
 
     void apiClient
-      .postIncomeSplit({ date: splitDate, amount })
+      .postIncomeSplit({ date: splitDate, amount, description: splitDescription })
       .then((result) => {
         dispatch({ type: 'SPLIT_SUCCESS', payload: result })
         fetchReservaData()
@@ -289,12 +325,14 @@ export function useReserva(): ReservaData {
     balances: state.balances,
     totalBalance,
     movements: state.movements,
+    movementRows,
     isLoading: state.isLoading,
     error: state.error,
     retry,
     isSplitFormOpen: state.isSplitFormOpen,
     splitDate: state.splitDate,
     splitAmount: state.splitAmount,
+    splitDescription: state.splitDescription,
     isSubmittingSplit: state.isSubmittingSplit,
     splitError: state.splitError,
     lastSplitResult: state.lastSplitResult,

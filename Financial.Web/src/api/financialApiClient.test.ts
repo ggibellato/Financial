@@ -349,6 +349,7 @@ describe('financialApiClient', () => {
     const requestBody: IncomeSplitRequestDto = {
       date: '2026-07-01',
       amount: 1963,
+      description: 'Ramsay',
     }
     const responseBody: IncomeSplitResultDto = {
       investimento: 654.33,

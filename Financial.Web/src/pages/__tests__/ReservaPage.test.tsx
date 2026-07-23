@@ -26,7 +26,10 @@ const BALANCES: ReserveBucketBalanceDto[] = [
 ]
 
 const MOVEMENTS: ReserveMovementDto[] = [
-  { id: 'm1', bucket: 'Investimento', amount: 654.33, date: '2026-07-01', description: 'Monthly income split' },
+  { id: 'm1', bucket: 'Investimento', amount: 654.33, date: '2026-07-17', description: 'Ramsay' },
+  { id: 'm2', bucket: 'HouseTreats', amount: 654.33, date: '2026-07-17', description: 'Ramsay' },
+  { id: 'm3', bucket: 'Ariana', amount: 327.17, date: '2026-07-17', description: 'Ramsay' },
+  { id: 'm4', bucket: 'Gleison', amount: 327.17, date: '2026-07-17', description: 'Ramsay' },
 ]
 
 describe('ReservaPage', () => {
@@ -59,15 +62,28 @@ describe('ReservaPage', () => {
     for (const b of BALANCES) {
       expect(screen.getAllByText(b.bucket).length).toBeGreaterThan(0)
     }
-    expect(screen.getByText('Monthly income split')).toBeInTheDocument()
+    expect(screen.getAllByText('Ramsay').length).toBe(4)
+  })
+
+  it('shows a group total after the last movement of a same date+description split in history', async () => {
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getByText('Movement History')).toBeInTheDocument())
+    const movementSection = screen.getByText('Movement History').closest('section') as HTMLElement
+    const rows = within(movementSection).getAllByRole('row')
+    // header + 4 movement rows + 1 group-total row
+    expect(rows).toHaveLength(6)
+    expect(within(rows[5]).getByText('Total')).toBeInTheDocument()
+    expect(within(rows[5]).getByText('1,963.00')).toBeInTheDocument()
   })
 
   it('renders the total balance across all buckets, bold and always visible', async () => {
     render(<ReservaPage />)
 
     await waitFor(() => expect(screen.getByText('Bucket Balances')).toBeInTheDocument())
+    const balancesSection = screen.getByText('Bucket Balances').closest('section') as HTMLElement
     // 654.33 + 654.33 + 327.17 + 327.17 = 1963.00
-    expect(screen.getByText('1,963.00')).toBeInTheDocument()
+    expect(within(balancesSection).getByText('1,963.00')).toBeInTheDocument()
   })
 
   it('shows the income-split form only after New Income Split is clicked', async () => {
@@ -97,6 +113,7 @@ describe('ReservaPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New Income Split' }))
     fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-01' } })
     fireEvent.change(screen.getByLabelText('Amount to Split'), { target: { value: '1963' } })
+    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Ramsay' } })
     fireEvent.click(screen.getByRole('button', { name: 'Post Income Split' }))
 
     await waitFor(() => expect(screen.getByText('Income Split Posted')).toBeInTheDocument())

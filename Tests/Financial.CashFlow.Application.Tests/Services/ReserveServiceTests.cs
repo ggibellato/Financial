@@ -26,6 +26,7 @@ public class ReserveServiceTests
         var result = await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
 
         repository.ReserveMovements.Should().HaveCount(4);
+        repository.ReserveMovements.Should().OnlyContain(m => m.Description == "Ramsay");
         result.Investimento.Should().Be(654.33m);
         result.HouseTreats.Should().Be(654.33m);
         result.Ariana.Should().Be(327.17m);
@@ -44,7 +45,29 @@ public class ReserveServiceTests
         var request = new IncomeSplitRequestDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            Amount = amount
+            Amount = amount,
+            Description = "Ramsay"
+        };
+
+        var act = async () => await service.PostIncomeSplitAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        repository.ReserveMovements.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task PostIncomeSplitAsync_WithMissingDescription_ThrowsBeforeTouchingRepository(string? description)
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new ReserveService(repository);
+        var request = new IncomeSplitRequestDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            Amount = 1963m,
+            Description = description!
         };
 
         var act = async () => await service.PostIncomeSplitAsync(request);
@@ -198,7 +221,8 @@ public class ReserveServiceTests
     private static IncomeSplitRequestDTO ValidIncomeSplitRequest() => new()
     {
         Date = new DateOnly(2026, 7, 1),
-        Amount = 1963m
+        Amount = 1963m,
+        Description = "Ramsay"
     };
 
     private sealed class StubCashFlowRepository : ICashFlowRepository

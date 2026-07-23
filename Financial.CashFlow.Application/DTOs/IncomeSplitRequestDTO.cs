@@ -10,4 +10,7 @@ public sealed class IncomeSplitRequestDTO
 
     /// <summary>The amount to split across the Reserva buckets.</summary>
     public required decimal Amount { get; init; }
+
+    /// <summary>Description to record on each of the 4 posted movements.</summary>
+    public required string Description { get; init; }
 }

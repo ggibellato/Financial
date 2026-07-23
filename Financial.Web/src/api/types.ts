@@ -277,6 +277,7 @@ export interface ReserveMovementDto {
 export interface IncomeSplitRequestDto {
   date: string
   amount: number
+  description: string
 }
 
 export interface IncomeSplitResultDto {

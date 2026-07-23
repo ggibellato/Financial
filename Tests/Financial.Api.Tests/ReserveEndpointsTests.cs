@@ -15,7 +15,8 @@ public class ReserveEndpointsTests
         var request = new IncomeSplitRequestDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            Amount = 1963m
+            Amount = 1963m,
+            Description = "Ramsay"
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", request);
@@ -35,7 +36,8 @@ public class ReserveEndpointsTests
         var request = new IncomeSplitRequestDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            Amount = 0m
+            Amount = 0m,
+            Description = "Ramsay"
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", request);
@@ -46,6 +48,25 @@ public class ReserveEndpointsTests
     }
 
     [Fact]
+    public async Task PostIncomeSplit_MissingDescription_ReturnsBadRequestWithMessage()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new IncomeSplitRequestDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            Amount = 1963m,
+            Description = ""
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("Description is required");
+    }
+
+    [Fact]
     public async Task GetBucketBalances_ReflectsPostedIncomeSplit()
     {
         await using var factory = new ApiTestFactory();
@@ -53,7 +74,8 @@ public class ReserveEndpointsTests
         await client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", new IncomeSplitRequestDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            Amount = 1963m
+            Amount = 1963m,
+            Description = "Ramsay"
         });
 
         var response = await client.GetAsync("/api/v1/financial/reserve/balances");
@@ -72,7 +94,8 @@ public class ReserveEndpointsTests
         await client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", new IncomeSplitRequestDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            Amount = 1963m
+            Amount = 1963m,
+            Description = "Ramsay"
         });
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/reserve/withdrawals", new WithdrawalRequestDTO
@@ -97,7 +120,8 @@ public class ReserveEndpointsTests
         await client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", new IncomeSplitRequestDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            Amount = 1963m
+            Amount = 1963m,
+            Description = "Ramsay"
         });
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/reserve/withdrawals", new WithdrawalRequestDTO
@@ -122,7 +146,8 @@ public class ReserveEndpointsTests
         await client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", new IncomeSplitRequestDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            Amount = 1963m
+            Amount = 1963m,
+            Description = "Ramsay"
         });
         var balancesBefore = await client.GetFromJsonAsync<List<ReserveBucketBalanceDTO>>("/api/v1/financial/reserve/balances");
         var gleisonBefore = balancesBefore!.Single(b => b.Bucket == "Gleison").Balance;
@@ -149,7 +174,8 @@ public class ReserveEndpointsTests
         await client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", new IncomeSplitRequestDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            Amount = 1963m
+            Amount = 1963m,
+            Description = "Ramsay"
         });
 
         var response = await client.GetAsync("/api/v1/financial/reserve/movements");
@@ -157,5 +183,6 @@ public class ReserveEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var movements = await response.Content.ReadFromJsonAsync<List<ReserveMovementDTO>>();
         movements.Should().HaveCount(4);
+        movements.Should().OnlyContain(m => m.Description == "Ramsay");
     }
 }
