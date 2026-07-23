@@ -3,7 +3,7 @@ import { ApiError } from '../api/apiError'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { ReserveBucketBalanceDto, ReserveMovementDto } from '../api/types'
 
-export const RESERVE_BUCKETS = ['Dizimo', 'Investimento', 'HouseTreats', 'Ariana', 'Gleison'] as const
+export const RESERVE_BUCKETS = ['Investimento', 'HouseTreats', 'Ariana', 'Gleison'] as const
 
 export type SplitFormField =
   | 'splitDate'

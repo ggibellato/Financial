@@ -20,15 +20,14 @@ vi.mock('../api/financialApiClient', () => ({
 }))
 
 const BALANCES: ReserveBucketBalanceDto[] = [
-  { bucket: 'Dizimo', balance: 637 },
-  { bucket: 'Investimento', balance: 1854.33 },
-  { bucket: 'HouseTreats', balance: 1854.33 },
-  { bucket: 'Ariana', balance: 927.17 },
-  { bucket: 'Gleison', balance: 927.17 },
+  { bucket: 'Investimento', balance: 654.33 },
+  { bucket: 'HouseTreats', balance: 654.33 },
+  { bucket: 'Ariana', balance: 327.17 },
+  { bucket: 'Gleison', balance: 327.17 },
 ]
 
 const MOVEMENTS: ReserveMovementDto[] = [
-  { id: 'm1', bucket: 'Dizimo', amount: 637, date: '2026-07-01', description: 'Monthly income split' },
+  { id: 'm1', bucket: 'Investimento', amount: 654.33, date: '2026-07-01', description: 'Monthly income split' },
 ]
 
 describe('useReserva', () => {
@@ -62,10 +61,10 @@ describe('useReserva', () => {
   it('submits an income split and re-fetches balances/movements on success', async () => {
     postIncomeSplitMock.mockResolvedValue({
       dizimo: 637,
-      investimento: 1854.33,
-      houseTreats: 1854.33,
-      ariana: 927.17,
-      gleison: 927.17,
+      investimento: 654.33,
+      houseTreats: 654.33,
+      ariana: 327.17,
+      gleison: 327.17,
     })
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

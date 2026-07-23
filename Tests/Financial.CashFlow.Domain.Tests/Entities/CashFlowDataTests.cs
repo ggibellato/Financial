@@ -96,7 +96,7 @@ public class CashFlowDataTests
     }
 
     private static ReserveMovement CreateReserveMovement() =>
-        ReserveMovement.Create(ReserveBucket.Dizimo, 10m, new DateOnly(2026, 7, 1), "Test movement");
+        ReserveMovement.Create(ReserveBucket.Investimento, 10m, new DateOnly(2026, 7, 1), "Test movement");
 
     [Fact]
     public void AddCardStatement_AddsOnlyToCardStatementsCollection()

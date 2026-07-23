@@ -1,7 +1,8 @@
 namespace Financial.CashFlow.Application.DTOs;
 
 /// <summary>
-/// The 5 amounts computed and posted by a monthly income split.
+/// The amounts computed by a monthly income split. Dizimo (tithe) is informational only — it is
+/// not posted as a Reserva bucket movement. The remaining 4 amounts are posted to their buckets.
 /// </summary>
 public sealed class IncomeSplitResultDTO
 {

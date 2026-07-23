@@ -52,11 +52,10 @@
 .reserva-page__content {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 32px;
-  padding-bottom: 24px;
 }
 
 .reserva-page__section h2 {
@@ -67,6 +66,41 @@
 .reserva-page__table {
   width: 100%;
   max-width: 640px;
+}
+
+.reserva-page__grids-row {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.reserva-page__section--grid {
+  min-width: 260px;
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.reserva-page__section--grid .reserva-page__table {
+  max-width: none;
+}
+
+.reserva-page__section--balances {
+  flex: 1 1 300px;
+}
+
+.reserva-page__section--movements {
+  flex: 2 1 480px;
+}
+
+.reserva-page__table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 .reserva-page__form {
