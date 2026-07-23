@@ -191,7 +191,7 @@ public class ReserveServiceTests
     }
 
     [Fact]
-    public void GetMovementHistory_ReturnsAllMovementsOrderedByDate()
+    public void GetMovementHistory_ReturnsAllMovementsOrderedByDateDescending()
     {
         var repository = new StubCashFlowRepository();
         repository.Seed(ReserveBucket.Investimento, 10m, new DateOnly(2026, 8, 1));
@@ -201,7 +201,7 @@ public class ReserveServiceTests
         var history = service.GetMovementHistory();
 
         history.Should().HaveCount(2);
-        history.Select(m => m.Date).Should().BeInAscendingOrder();
+        history.Select(m => m.Date).Should().BeInDescendingOrder();
     }
 
     private static IncomeSplitRequestDTO ValidIncomeSplitRequest() => new()

@@ -123,7 +123,7 @@ public sealed class ReserveService : IReserveService
 
     public IReadOnlyList<ReserveMovementDTO> GetMovementHistory() =>
         _repository.GetReserveMovements()
-            .OrderBy(m => m.Date)
+            .OrderByDescending(m => m.Date)
             .Select(ToDto)
             .ToList();
 

@@ -14,6 +14,17 @@ function BalanceColumns() {
   )
 }
 
+function MovementColumns() {
+  return (
+    <colgroup>
+      <col className="reserva-page__col-date" />
+      <col className="reserva-page__col-bucket" />
+      <col />
+      <col className="reserva-page__col-value" />
+    </colgroup>
+  )
+}
+
 const SPLIT_FIELDS: { field: SplitFormField; label: string }[] = [
   { field: 'gleisonSalaryGross', label: 'Salario Gleison (gross)' },
   { field: 'gleisonSalaryNet', label: 'Salario Gleison (net)' },
@@ -233,6 +244,7 @@ export default function ReservaPage() {
             <h2>Movement History</h2>
             <div className="reserva-page__table-scroll">
               <table className="reserva-page__table data-table">
+                <MovementColumns />
                 <thead>
                   <tr>
                     <th>Date</th>
