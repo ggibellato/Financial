@@ -11,7 +11,8 @@ public static class InvestmentAccountClassification
         InvestmentAccount.PlatinumVisa6007,
         InvestmentAccount.ChaseMaster4023,
         InvestmentAccount.BaAmex,
-        InvestmentAccount.PaypalCredit
+        InvestmentAccount.PaypalCredit,
+        InvestmentAccount.ReservasPessoais
     ];
 
     public static bool IsLiability(InvestmentAccount account) => LiabilityAccounts.Contains(account);

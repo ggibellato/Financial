@@ -30,15 +30,16 @@ public class InvestmentSnapshotServiceTests
     }
 
     [Fact]
-    public async Task GetSnapshotsForMonthAsync_MarksTheFiveLiabilityAccountsCorrectly()
+    public async Task GetSnapshotsForMonthAsync_MarksTheSixLiabilityAccountsCorrectly()
     {
         var repository = new StubCashFlowRepository();
         var service = new InvestmentSnapshotService(repository);
 
         var result = await service.GetSnapshotsForMonthAsync(2026, 7);
 
-        result.Where(s => s.IsLiability).Should().HaveCount(5);
+        result.Where(s => s.IsLiability).Should().HaveCount(6);
         result.Should().ContainSingle(s => s.Account == "PlatinumVisa8003" && s.IsLiability);
+        result.Should().ContainSingle(s => s.Account == "ReservasPessoais" && s.IsLiability);
         result.Should().ContainSingle(s => s.Account == "ChaseSave" && !s.IsLiability);
     }
 
