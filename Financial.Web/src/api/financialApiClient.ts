@@ -12,6 +12,7 @@ import type {
   CategoryYearlyTotalDto,
   CreateExpenseDto,
   CreateMaeLedgerEntryDto,
+  CreateRecurringBillDto,
   CreditCreateDto,
   CreditDeleteDto,
   CreditDto,
@@ -29,7 +30,7 @@ import type {
   PortfolioAssetSummaryItemDto,
   PortfolioBreakdownItemDto,
   PortfolioReferenceDto,
-  RecurringBillInstanceDto,
+  RecurringBillDto,
   ReserveBucketBalanceDto,
   ReserveMovementDto,
   TransactionCreateDto,
@@ -40,7 +41,7 @@ import type {
   UpdateExpenseDto,
   UpdateInvestmentSnapshotValueDto,
   UpdateMaeLedgerEntryValuesDto,
-  UpdateRecurringBillInstanceDto,
+  UpdateRecurringBillDto,
   WatchlistItemDto,
   WithdrawalRequestDto,
   XirrResultDto,
@@ -80,8 +81,11 @@ export interface FinancialApiClient {
   getReserveMovements: () => Promise<ReserveMovementDto[]>
   postIncomeSplit: (request: IncomeSplitRequestDto) => Promise<IncomeSplitResultDto>
   postWithdrawal: (request: WithdrawalRequestDto) => Promise<ReserveMovementDto>
-  getMensaisInstances: (year: number, month: number) => Promise<RecurringBillInstanceDto[]>
-  updateMensaisInstance: (id: string, request: UpdateRecurringBillInstanceDto) => Promise<RecurringBillInstanceDto>
+  getMensaisBills: () => Promise<RecurringBillDto[]>
+  createMensaisBill: (request: CreateRecurringBillDto) => Promise<RecurringBillDto>
+  updateMensaisBill: (id: string, request: UpdateRecurringBillDto) => Promise<RecurringBillDto>
+  deleteMensaisBill: (id: string) => Promise<void>
+  resetMensaisToUnset: () => Promise<RecurringBillDto[]>
   createMaeLedgerEntry: (request: CreateMaeLedgerEntryDto) => Promise<MaeLedgerEntryDto>
   getMaeLedgerEntriesFromDate: (fromDate: string) => Promise<MaeLedgerEntryDto[]>
   getMaeLedgerTotals: () => Promise<MaeLedgerTotalsDto>
@@ -268,13 +272,19 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         method: 'POST',
         body: JSON.stringify(requestBody),
       }),
-    getMensaisInstances: (year, month) =>
-      request<RecurringBillInstanceDto[]>(`/mensais/${year}/${month}`),
-    updateMensaisInstance: (id, requestBody) =>
-      request<RecurringBillInstanceDto>(`/mensais/instances/${encodeURIComponent(id)}`, {
+    getMensaisBills: () => request<RecurringBillDto[]>('/mensais'),
+    createMensaisBill: (requestBody) =>
+      request<RecurringBillDto>('/mensais', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    updateMensaisBill: (id, requestBody) =>
+      request<RecurringBillDto>(`/mensais/${encodeURIComponent(id)}`, {
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),
+    deleteMensaisBill: (id) => requestVoid(`/mensais/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    resetMensaisToUnset: () => request<RecurringBillDto[]>('/mensais/reset', { method: 'POST' }),
     createMaeLedgerEntry: (requestBody) =>
       request<MaeLedgerEntryDto>('/controle-mae/entries', {
         method: 'POST',

@@ -17,36 +17,27 @@ public class MensaisServiceTests
     }
 
     [Fact]
-    public async Task CreateTemplateAsync_WithValidRequest_SavesAndReturnsTemplate()
+    public async Task CreateBillAsync_WithValidRequest_SavesAndReturnsBill()
     {
         var repository = new StubCashFlowRepository();
         var service = new MensaisService(repository);
 
-        var result = await service.CreateTemplateAsync(ValidBrasilRequest());
+        var result = await service.CreateBillAsync(ValidBrasilRequest());
 
         result.Description.Should().Be("INSS");
         result.Area.Should().Be("Brasil");
-        result.IsActive.Should().BeTrue();
-        repository.Templates.Should().ContainSingle();
+        result.Status.Should().Be("Unset");
+        repository.Bills.Should().ContainSingle();
         repository.SaveChangesCallCount.Should().Be(1);
     }
 
     [Fact]
-    public async Task CreateTemplateAsync_UkTemplateWithoutNitOrMinimumWage_Succeeds()
+    public async Task CreateBillAsync_NeverSetsNitOrMinimumWage_ThoseAreImportOnly()
     {
         var repository = new StubCashFlowRepository();
         var service = new MensaisService(repository);
 
-        var result = await service.CreateTemplateAsync(new CreateRecurringBillTemplateDTO
-        {
-            DueDay = 15,
-            Description = "Council Tax",
-            Value = 120m,
-            Area = "UK",
-            Note = string.Empty,
-            NitNumber = null,
-            MinimumWageValue = null
-        });
+        var result = await service.CreateBillAsync(ValidBrasilRequest());
 
         result.NitNumber.Should().BeNull();
         result.MinimumWageValue.Should().BeNull();
@@ -55,32 +46,30 @@ public class MensaisServiceTests
     [Theory]
     [InlineData(0)]
     [InlineData(32)]
-    public async Task CreateTemplateAsync_WithInvalidDueDay_Throws(int dueDay)
+    public async Task CreateBillAsync_WithInvalidDueDay_Throws(int dueDay)
     {
         var service = new MensaisService(new StubCashFlowRepository());
         var request = ValidBrasilRequest();
-        var invalidRequest = new CreateRecurringBillTemplateDTO
+        var invalidRequest = new CreateRecurringBillDTO
         {
             DueDay = dueDay,
             Description = request.Description,
             Value = request.Value,
             Area = request.Area,
-            Note = request.Note,
-            NitNumber = request.NitNumber,
-            MinimumWageValue = request.MinimumWageValue
+            Note = request.Note
         };
 
-        var act = async () => await service.CreateTemplateAsync(invalidRequest);
+        var act = async () => await service.CreateBillAsync(invalidRequest);
 
         await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
-    public async Task CreateTemplateAsync_WithBlankDescription_Throws()
+    public async Task CreateBillAsync_WithBlankDescription_Throws()
     {
         var service = new MensaisService(new StubCashFlowRepository());
 
-        var act = async () => await service.CreateTemplateAsync(new CreateRecurringBillTemplateDTO
+        var act = async () => await service.CreateBillAsync(new CreateRecurringBillDTO
         {
             DueDay = 10,
             Description = "   ",
@@ -93,11 +82,11 @@ public class MensaisServiceTests
     }
 
     [Fact]
-    public async Task CreateTemplateAsync_WithUnrecognizedArea_Throws()
+    public async Task CreateBillAsync_WithUnrecognizedArea_Throws()
     {
         var service = new MensaisService(new StubCashFlowRepository());
 
-        var act = async () => await service.CreateTemplateAsync(new CreateRecurringBillTemplateDTO
+        var act = async () => await service.CreateBillAsync(new CreateRecurringBillDTO
         {
             DueDay = 10,
             Description = "Test",
@@ -110,77 +99,51 @@ public class MensaisServiceTests
     }
 
     [Fact]
-    public void GetTemplates_ReturnsAllTemplates()
+    public async Task DeleteBillAsync_RemovesTheBill()
     {
         var repository = new StubCashFlowRepository();
-        repository.Templates.Add(RecurringBillTemplate.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null));
+        var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
+        repository.Bills.Add(bill);
+        var otherBill = RecurringBill.Create(15, "Council Tax", 120m, Area.UK, string.Empty, null, null);
+        repository.Bills.Add(otherBill);
         var service = new MensaisService(repository);
 
-        var result = service.GetTemplates();
+        await service.DeleteBillAsync(bill.Id);
 
-        result.Should().ContainSingle(t => t.Description == "INSS");
+        repository.Bills.Should().ContainSingle().Which.Id.Should().Be(otherBill.Id);
     }
 
     [Fact]
-    public async Task GetInstancesForMonthAsync_FirstCall_GeneratesOneInstancePerActiveTemplate()
+    public async Task DeleteBillAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var repository = new StubCashFlowRepository();
-        repository.Templates.Add(RecurringBillTemplate.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null));
-        repository.Templates.Add(RecurringBillTemplate.Create(15, "Council Tax", 120m, Area.UK, string.Empty, null, null));
-        var service = new MensaisService(repository);
+        var service = new MensaisService(new StubCashFlowRepository());
 
-        var result = await service.GetInstancesForMonthAsync(2026, 7);
+        var act = async () => await service.DeleteBillAsync(Guid.NewGuid());
 
-        result.Should().HaveCount(2);
-        result.Should().OnlyContain(i => i.Status == "Unset");
-        result.Should().ContainSingle(i => i.Description == "INSS" && i.Value == 850m);
-        repository.Instances.Should().HaveCount(2);
+        await act.Should().ThrowAsync<KeyNotFoundException>();
     }
 
     [Fact]
-    public async Task GetInstancesForMonthAsync_SecondCallSameMonth_DoesNotCreateDuplicates()
+    public void GetBills_ReturnsAllBills()
     {
         var repository = new StubCashFlowRepository();
-        repository.Templates.Add(RecurringBillTemplate.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null));
+        repository.Bills.Add(RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null));
         var service = new MensaisService(repository);
 
-        await service.GetInstancesForMonthAsync(2026, 7);
-        var result = await service.GetInstancesForMonthAsync(2026, 7);
+        var result = service.GetBills();
 
-        result.Should().ContainSingle();
-        repository.Instances.Should().ContainSingle();
-        repository.SaveChangesCallCount.Should().Be(1);
+        result.Should().ContainSingle(b => b.Description == "INSS");
     }
 
     [Fact]
-    public async Task GetInstancesForMonthAsync_SkipsInactiveTemplates()
+    public async Task UpdateBillAsync_UpdatesStatusAndValue()
     {
         var repository = new StubCashFlowRepository();
-        var inactiveTemplate = RecurringBillTemplate.Create(10, "Cancelled", 50m, Area.UK, string.Empty, null, null);
-        typeof(RecurringBillTemplate).GetProperty(nameof(RecurringBillTemplate.IsActive))!
-            .SetValue(inactiveTemplate, false);
-        repository.Templates.Add(inactiveTemplate);
+        var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
+        repository.Bills.Add(bill);
         var service = new MensaisService(repository);
 
-        var result = await service.GetInstancesForMonthAsync(2026, 7);
-
-        result.Should().BeEmpty();
-        repository.Instances.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task UpdateInstanceAsync_UpdatesStatusAndValueWithoutTouchingTemplateOrOtherMonths()
-    {
-        var repository = new StubCashFlowRepository();
-        var template = RecurringBillTemplate.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
-        repository.Templates.Add(template);
-        var service = new MensaisService(repository);
-        await service.GetInstancesForMonthAsync(2026, 7);
-        await service.GetInstancesForMonthAsync(2026, 8);
-        var julyInstance = repository.Instances.Single(i => i.Month == 7);
-        var augustInstance = repository.Instances.Single(i => i.Month == 8);
-
-        var result = await service.UpdateInstanceAsync(julyInstance.Id, new UpdateRecurringBillInstanceDTO
+        var result = await service.UpdateBillAsync(bill.Id, new UpdateRecurringBillDTO
         {
             Status = "Paid",
             Value = 900m
@@ -188,17 +151,14 @@ public class MensaisServiceTests
 
         result.Status.Should().Be("Paid");
         result.Value.Should().Be(900m);
-        template.Value.Should().Be(850m);
-        augustInstance.Status.Should().Be(BillStatus.Unset);
-        augustInstance.Value.Should().Be(850m);
     }
 
     [Fact]
-    public async Task UpdateInstanceAsync_WithUnknownId_ThrowsKeyNotFoundException()
+    public async Task UpdateBillAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
         var service = new MensaisService(new StubCashFlowRepository());
 
-        var act = async () => await service.UpdateInstanceAsync(Guid.NewGuid(), new UpdateRecurringBillInstanceDTO
+        var act = async () => await service.UpdateBillAsync(Guid.NewGuid(), new UpdateRecurringBillDTO
         {
             Status = "Paid",
             Value = 100m
@@ -208,16 +168,14 @@ public class MensaisServiceTests
     }
 
     [Fact]
-    public async Task UpdateInstanceAsync_WithInvalidStatus_ThrowsArgumentException()
+    public async Task UpdateBillAsync_WithInvalidStatus_ThrowsArgumentException()
     {
         var repository = new StubCashFlowRepository();
-        var template = RecurringBillTemplate.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
-        repository.Templates.Add(template);
+        var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
+        repository.Bills.Add(bill);
         var service = new MensaisService(repository);
-        await service.GetInstancesForMonthAsync(2026, 7);
-        var instance = repository.Instances.Single();
 
-        var act = async () => await service.UpdateInstanceAsync(instance.Id, new UpdateRecurringBillInstanceDTO
+        var act = async () => await service.UpdateBillAsync(bill.Id, new UpdateRecurringBillDTO
         {
             Status = "NotAStatus",
             Value = 100m
@@ -226,21 +184,37 @@ public class MensaisServiceTests
         await act.Should().ThrowAsync<ArgumentException>();
     }
 
-    private static CreateRecurringBillTemplateDTO ValidBrasilRequest() => new()
+    [Fact]
+    public async Task ResetAllToUnsetAsync_SetsEveryBillStatusBackToUnset()
+    {
+        var repository = new StubCashFlowRepository();
+        var paidBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
+        paidBill.Update(BillStatus.Paid, 850m);
+        var scheduledBill = RecurringBill.Create(15, "Council Tax", 120m, Area.UK, string.Empty, null, null);
+        scheduledBill.Update(BillStatus.Scheduled, 120m);
+        repository.Bills.Add(paidBill);
+        repository.Bills.Add(scheduledBill);
+        var service = new MensaisService(repository);
+
+        var result = await service.ResetAllToUnsetAsync();
+
+        result.Should().OnlyContain(b => b.Status == "Unset");
+        repository.Bills.Should().OnlyContain(b => b.Status == BillStatus.Unset);
+        repository.SaveChangesCallCount.Should().Be(1);
+    }
+
+    private static CreateRecurringBillDTO ValidBrasilRequest() => new()
     {
         DueDay = 10,
         Description = "INSS",
         Value = 850m,
         Area = "Brasil",
-        Note = "Direct debit",
-        NitNumber = "12345678901",
-        MinimumWageValue = 1412m
+        Note = "Direct debit"
     };
 
     private sealed class StubCashFlowRepository : ICashFlowRepository
     {
-        public List<RecurringBillTemplate> Templates { get; } = new();
-        public List<RecurringBillInstance> Instances { get; } = new();
+        public List<RecurringBill> Bills { get; } = new();
         public int SaveChangesCallCount { get; private set; }
 
         public IEnumerable<Expense> GetExpenses() => Array.Empty<Expense>();
@@ -254,11 +228,9 @@ public class MensaisServiceTests
         public IEnumerable<CardStatement> GetCardStatements() => Array.Empty<CardStatement>();
         public void AddCardStatement(CardStatement statement) { }
 
-        public IEnumerable<RecurringBillTemplate> GetRecurringBillTemplates() => Templates;
-        public void AddRecurringBillTemplate(RecurringBillTemplate template) => Templates.Add(template);
-
-        public IEnumerable<RecurringBillInstance> GetRecurringBillInstances() => Instances;
-        public void AddRecurringBillInstance(RecurringBillInstance instance) => Instances.Add(instance);
+        public IEnumerable<RecurringBill> GetRecurringBills() => Bills;
+        public void AddRecurringBill(RecurringBill bill) => Bills.Add(bill);
+        public void DeleteRecurringBill(Guid id) => Bills.RemoveAll(b => b.Id == id);
 
         public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => Array.Empty<MaeLedgerEntry>();
         public void AddMaeLedgerEntry(MaeLedgerEntry entry) { }

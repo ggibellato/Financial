@@ -1,4 +1,4 @@
-import type { RecurringBillInstanceDto } from '../api/types'
+import type { RecurringBillDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import { useMensais } from '../hooks/useMensais'
@@ -6,35 +6,55 @@ import { formatN2 } from '../utils/formatters'
 import './MensaisPage.css'
 
 const STATUSES = ['Unset', 'Scheduled', 'Paid']
+const AREAS = ['Brasil', 'UK']
 
-interface InstanceRowProps {
-  instance: RecurringBillInstanceDto
-  onEdit: (instance: RecurringBillInstanceDto) => void
+interface BillRowProps {
+  bill: RecurringBillDto
+  showBrasilFields: boolean
+  isDeleting: boolean
+  onEdit: (bill: RecurringBillDto) => void
+  onDelete: (id: string) => void
 }
 
-function InstanceRow({ instance, onEdit }: InstanceRowProps) {
+function BillRow({ bill, showBrasilFields, isDeleting, onEdit, onDelete }: BillRowProps) {
   return (
     <tr>
-      <td>{instance.dueDay}</td>
-      <td>{instance.description}</td>
-      <td className="data-table__col--numeric">{formatN2(instance.value)}</td>
-      <td>{instance.status}</td>
+      <td>{bill.dueDay}</td>
+      <td>{bill.description}</td>
+      {showBrasilFields && <td>{bill.nitNumber ?? ''}</td>}
+      {showBrasilFields && <td className="data-table__col--numeric">{bill.minimumWageValue !== null ? formatN2(bill.minimumWageValue) : ''}</td>}
+      <td className="data-table__col--numeric">{formatN2(bill.value)}</td>
+      <td>{bill.status}</td>
       <td>
-        <button type="button" onClick={() => onEdit(instance)}>
+        <button type="button" onClick={() => onEdit(bill)}>
           Edit
+        </button>
+        <button
+          type="button"
+          disabled={isDeleting}
+          onClick={() => {
+            if (window.confirm(`Delete "${bill.description}"? This removes it for good.`)) {
+              onDelete(bill.id)
+            }
+          }}
+        >
+          {isDeleting ? 'Deleting...' : 'Delete'}
         </button>
       </td>
     </tr>
   )
 }
 
-interface InstanceTableProps {
+interface BillTableProps {
   title: string
-  instances: RecurringBillInstanceDto[]
-  onEdit: (instance: RecurringBillInstanceDto) => void
+  bills: RecurringBillDto[]
+  showBrasilFields: boolean
+  deletingBillId: string | null
+  onEdit: (bill: RecurringBillDto) => void
+  onDelete: (id: string) => void
 }
 
-function InstanceTable({ title, instances, onEdit }: InstanceTableProps) {
+function BillTable({ title, bills, showBrasilFields, deletingBillId, onEdit, onDelete }: BillTableProps) {
   return (
     <section className="mensais-page__section">
       <h2>{title}</h2>
@@ -43,14 +63,23 @@ function InstanceTable({ title, instances, onEdit }: InstanceTableProps) {
           <tr>
             <th>Due Day</th>
             <th>Description</th>
+            {showBrasilFields && <th>NIT</th>}
+            {showBrasilFields && <th className="data-table__col--numeric">Min. Wage</th>}
             <th className="data-table__col--numeric">Value</th>
             <th>Status</th>
             <th />
           </tr>
         </thead>
         <tbody>
-          {instances.map((instance) => (
-            <InstanceRow key={instance.id} instance={instance} onEdit={onEdit} />
+          {bills.map((bill) => (
+            <BillRow
+              key={bill.id}
+              bill={bill}
+              showBrasilFields={showBrasilFields}
+              isDeleting={deletingBillId === bill.id}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
           ))}
         </tbody>
       </table>
@@ -62,8 +91,8 @@ export default function MensaisPage() {
   const {
     monthInputValue,
     setMonthInputValue,
-    brasilInstances,
-    ukInstances,
+    brasilBills,
+    ukBills,
     isLoading,
     error,
     retry,
@@ -76,6 +105,24 @@ export default function MensaisPage() {
     showEditForm,
     cancelEdit,
     saveEdit,
+    isAddFormOpen,
+    newDueDay,
+    newDescription,
+    newValue,
+    newArea,
+    newNote,
+    isAdding,
+    addError,
+    setAddField,
+    showAddForm,
+    cancelAdd,
+    submitAdd,
+    deletingBillId,
+    deleteError,
+    deleteBill,
+    isResetting,
+    resetError,
+    resetAllToUnset,
   } = useMensais()
 
   const isEditing = editingId !== null
@@ -90,11 +137,96 @@ export default function MensaisPage() {
           value={monthInputValue}
           onChange={(e) => setMonthInputValue(e.target.value)}
         />
+        {!isAddFormOpen && (
+          <button type="button" onClick={showAddForm}>
+            Add Bill
+          </button>
+        )}
+        <button
+          type="button"
+          disabled={isResetting}
+          onClick={() => {
+            if (window.confirm('Reset every bill back to Unset for the new month?')) {
+              resetAllToUnset()
+            }
+          }}
+        >
+          {isResetting ? 'Resetting...' : 'Reset All to Unset'}
+        </button>
       </div>
+
+      {deleteError && <p className="mensais-page__error">{deleteError}</p>}
+      {resetError && <p className="mensais-page__error">{resetError}</p>}
+
+      {isAddFormOpen && (
+        <div className="mensais-page__form-panel">
+          <p className="mensais-page__form-title">Add Bill</p>
+          <div className="mensais-page__form">
+            <div className="mensais-page__form-field">
+              <label htmlFor="mensais-new-description">Description</label>
+              <input
+                id="mensais-new-description"
+                type="text"
+                value={newDescription}
+                onChange={(e) => setAddField('newDescription', e.target.value)}
+              />
+            </div>
+            <div className="mensais-page__form-field">
+              <label htmlFor="mensais-new-due-day">Due Day</label>
+              <input
+                id="mensais-new-due-day"
+                type="number"
+                min="1"
+                max="31"
+                value={newDueDay}
+                onChange={(e) => setAddField('newDueDay', e.target.value)}
+              />
+            </div>
+            <div className="mensais-page__form-field">
+              <label htmlFor="mensais-new-value">Value</label>
+              <input
+                id="mensais-new-value"
+                type="number"
+                step="0.01"
+                value={newValue}
+                onChange={(e) => setAddField('newValue', e.target.value)}
+              />
+            </div>
+            <div className="mensais-page__form-field">
+              <label htmlFor="mensais-new-area">Area</label>
+              <select id="mensais-new-area" value={newArea} onChange={(e) => setAddField('newArea', e.target.value)}>
+                {AREAS.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mensais-page__form-field">
+              <label htmlFor="mensais-new-note">Note</label>
+              <input
+                id="mensais-new-note"
+                type="text"
+                value={newNote}
+                onChange={(e) => setAddField('newNote', e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="mensais-page__form-actions">
+            <button type="button" disabled={isAdding} onClick={submitAdd}>
+              {isAdding ? 'Adding...' : 'Add'}
+            </button>
+            <button type="button" onClick={cancelAdd}>
+              Cancel
+            </button>
+          </div>
+          {addError && <p className="mensais-page__error">{addError}</p>}
+        </div>
+      )}
 
       {isEditing && (
         <div className="mensais-page__form-panel">
-          <p className="mensais-page__form-title">Edit Instance</p>
+          <p className="mensais-page__form-title">Edit Bill</p>
           <div className="mensais-page__form">
             <div className="mensais-page__form-field">
               <label htmlFor="mensais-edit-value">Value</label>
@@ -139,8 +271,22 @@ export default function MensaisPage() {
         <ErrorState message={error} onRetry={retry} />
       ) : (
         <div className="mensais-page__content">
-          <InstanceTable title="Brasil" instances={brasilInstances} onEdit={showEditForm} />
-          <InstanceTable title="UK" instances={ukInstances} onEdit={showEditForm} />
+          <BillTable
+            title="Brasil"
+            bills={brasilBills}
+            showBrasilFields
+            deletingBillId={deletingBillId}
+            onEdit={showEditForm}
+            onDelete={deleteBill}
+          />
+          <BillTable
+            title="UK"
+            bills={ukBills}
+            showBrasilFields={false}
+            deletingBillId={deletingBillId}
+            onEdit={showEditForm}
+            onDelete={deleteBill}
+          />
         </div>
       )}
     </div>

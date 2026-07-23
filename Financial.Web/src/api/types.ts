@@ -300,11 +300,8 @@ export interface WithdrawalRequestDto {
   confirmed: boolean
 }
 
-export interface RecurringBillInstanceDto {
+export interface RecurringBillDto {
   id: string
-  templateId: string
-  year: number
-  month: number
   dueDay: number
   description: string
   area: string
@@ -315,7 +312,15 @@ export interface RecurringBillInstanceDto {
   status: string
 }
 
-export interface UpdateRecurringBillInstanceDto {
+export interface CreateRecurringBillDto {
+  dueDay: number
+  description: string
+  value: number
+  area: string
+  note: string
+}
+
+export interface UpdateRecurringBillDto {
   status: string
   value: number
 }

@@ -3,7 +3,7 @@ using Financial.CashFlow.Domain.Enums;
 
 namespace Financial.CashFlow.Domain.Entities;
 
-public class RecurringBillTemplate
+public class RecurringBill
 {
     public Guid Id { get; private set; }
     public int DueDay { get; private set; }
@@ -13,11 +13,11 @@ public class RecurringBillTemplate
     public string Note { get; private set; } = string.Empty;
     public string? NitNumber { get; private set; }
     public decimal? MinimumWageValue { get; private set; }
-    public bool IsActive { get; private set; }
+    public BillStatus Status { get; private set; }
 
-    private RecurringBillTemplate() { }
+    private RecurringBill() { }
 
-    public static RecurringBillTemplate Create(
+    public static RecurringBill Create(
         int dueDay,
         string description,
         decimal value,
@@ -35,6 +35,14 @@ public class RecurringBillTemplate
             Note = note,
             NitNumber = nitNumber,
             MinimumWageValue = minimumWageValue,
-            IsActive = true
+            Status = BillStatus.Unset
         };
+
+    public void Update(BillStatus status, decimal value)
+    {
+        Status = status;
+        Value = value;
+    }
+
+    public void ResetToUnset() => Status = BillStatus.Unset;
 }

@@ -15,10 +15,10 @@ public sealed class MensaisController : ControllerBase
         _mensaisService = mensaisService ?? throw new ArgumentNullException(nameof(mensaisService));
     }
 
-    [HttpPost("templates")]
-    [ProducesResponseType(typeof(RecurringBillTemplateDTO), StatusCodes.Status200OK)]
+    [HttpPost]
+    [ProducesResponseType(typeof(RecurringBillDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<RecurringBillTemplateDTO>> CreateTemplate([FromBody] CreateRecurringBillTemplateDTO? request)
+    public async Task<ActionResult<RecurringBillDTO>> CreateBill([FromBody] CreateRecurringBillDTO? request)
     {
         if (request is null)
         {
@@ -27,8 +27,8 @@ public sealed class MensaisController : ControllerBase
 
         try
         {
-            var template = await _mensaisService.CreateTemplateAsync(request);
-            return Ok(template);
+            var bill = await _mensaisService.CreateBillAsync(request);
+            return Ok(bill);
         }
         catch (ArgumentException ex)
         {
@@ -36,26 +36,34 @@ public sealed class MensaisController : ControllerBase
         }
     }
 
-    [HttpGet("templates")]
-    [ProducesResponseType(typeof(IReadOnlyList<RecurringBillTemplateDTO>), StatusCodes.Status200OK)]
-    public ActionResult<IReadOnlyList<RecurringBillTemplateDTO>> GetTemplates()
+    [HttpGet]
+    [ProducesResponseType(typeof(IReadOnlyList<RecurringBillDTO>), StatusCodes.Status200OK)]
+    public ActionResult<IReadOnlyList<RecurringBillDTO>> GetBills()
     {
-        return Ok(_mensaisService.GetTemplates());
+        return Ok(_mensaisService.GetBills());
     }
 
-    [HttpGet("{year:int}/{month:int}")]
-    [ProducesResponseType(typeof(IReadOnlyList<RecurringBillInstanceDTO>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<RecurringBillInstanceDTO>>> GetInstancesForMonth(int year, int month)
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteBill(Guid id)
     {
-        var result = await _mensaisService.GetInstancesForMonthAsync(year, month);
-        return Ok(result);
+        try
+        {
+            await _mensaisService.DeleteBillAsync(id);
+            return Ok();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
+        }
     }
 
-    [HttpPut("instances/{id:guid}")]
-    [ProducesResponseType(typeof(RecurringBillInstanceDTO), StatusCodes.Status200OK)]
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(RecurringBillDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<RecurringBillInstanceDTO>> UpdateInstance(Guid id, [FromBody] UpdateRecurringBillInstanceDTO? request)
+    public async Task<ActionResult<RecurringBillDTO>> UpdateBill(Guid id, [FromBody] UpdateRecurringBillDTO? request)
     {
         if (request is null)
         {
@@ -64,7 +72,7 @@ public sealed class MensaisController : ControllerBase
 
         try
         {
-            var result = await _mensaisService.UpdateInstanceAsync(id, request);
+            var result = await _mensaisService.UpdateBillAsync(id, request);
             return Ok(result);
         }
         catch (ArgumentException ex)
@@ -75,5 +83,13 @@ public sealed class MensaisController : ControllerBase
         {
             return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
         }
+    }
+
+    [HttpPost("reset")]
+    [ProducesResponseType(typeof(IReadOnlyList<RecurringBillDTO>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<RecurringBillDTO>>> ResetAllToUnset()
+    {
+        var result = await _mensaisService.ResetAllToUnsetAsync();
+        return Ok(result);
     }
 }

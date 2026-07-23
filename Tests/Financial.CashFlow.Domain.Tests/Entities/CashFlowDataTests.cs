@@ -7,15 +7,14 @@ namespace Financial.CashFlow.Domain.Tests;
 public class CashFlowDataTests
 {
     [Fact]
-    public void Create_StartsWithAllSevenCollectionsEmpty()
+    public void Create_StartsWithAllSixCollectionsEmpty()
     {
         var data = CashFlowData.Create();
 
         data.Expenses.Should().BeEmpty();
         data.ReserveMovements.Should().BeEmpty();
         data.CardStatements.Should().BeEmpty();
-        data.RecurringBillTemplates.Should().BeEmpty();
-        data.RecurringBillInstances.Should().BeEmpty();
+        data.RecurringBills.Should().BeEmpty();
         data.MaeLedgerEntries.Should().BeEmpty();
         data.InvestmentSnapshots.Should().BeEmpty();
     }
@@ -110,32 +109,43 @@ public class CashFlowDataTests
     }
 
     [Fact]
-    public void AddRecurringBillTemplate_AddsOnlyToRecurringBillTemplatesCollection()
+    public void AddRecurringBill_AddsOnlyToRecurringBillsCollection()
     {
         var data = CashFlowData.Create();
 
-        data.AddRecurringBillTemplate(CreateRecurringBillTemplate());
+        data.AddRecurringBill(CreateRecurringBill());
 
-        data.RecurringBillTemplates.Should().ContainSingle();
-        data.RecurringBillInstances.Should().BeEmpty();
+        data.RecurringBills.Should().ContainSingle();
+        data.Expenses.Should().BeEmpty();
     }
-
-    private static RecurringBillTemplate CreateRecurringBillTemplate() =>
-        RecurringBillTemplate.Create(10, "Test bill", 100m, Area.Brasil, string.Empty, null, null);
 
     [Fact]
-    public void AddRecurringBillInstance_AddsOnlyToRecurringBillInstancesCollection()
+    public void RemoveRecurringBill_RemovesOnlyTheMatchingBill()
     {
         var data = CashFlowData.Create();
+        var toKeep = CreateRecurringBill();
+        var toRemove = CreateRecurringBill();
+        data.AddRecurringBill(toKeep);
+        data.AddRecurringBill(toRemove);
 
-        data.AddRecurringBillInstance(CreateRecurringBillInstance());
+        data.RemoveRecurringBill(toRemove.Id);
 
-        data.RecurringBillInstances.Should().ContainSingle();
-        data.RecurringBillTemplates.Should().BeEmpty();
+        data.RecurringBills.Should().ContainSingle().Which.Id.Should().Be(toKeep.Id);
     }
 
-    private static RecurringBillInstance CreateRecurringBillInstance() =>
-        RecurringBillInstance.Create(Guid.NewGuid(), 2026, 7, 100m);
+    [Fact]
+    public void RemoveRecurringBill_WithUnknownId_LeavesCollectionUnchanged()
+    {
+        var data = CashFlowData.Create();
+        data.AddRecurringBill(CreateRecurringBill());
+
+        data.RemoveRecurringBill(Guid.NewGuid());
+
+        data.RecurringBills.Should().ContainSingle();
+    }
+
+    private static RecurringBill CreateRecurringBill() =>
+        RecurringBill.Create(10, "Test bill", 100m, Area.Brasil, string.Empty, null, null);
 
     [Fact]
     public void AddMaeLedgerEntry_AddsOnlyToMaeLedgerEntriesCollection()

@@ -6,18 +6,19 @@ import type {
   AssetDetailsDto,
   AssetPriceDto,
   CreateMaeLedgerEntryDto,
+  CreateRecurringBillDto,
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
   InvestmentSnapshotDto,
   MaeLedgerEntryDto,
   MaeLedgerTotalsDto,
-  RecurringBillInstanceDto,
+  RecurringBillDto,
   ReserveBucketBalanceDto,
   ReserveMovementDto,
   TreeNodeDto,
   UpdateInvestmentSnapshotValueDto,
   UpdateMaeLedgerEntryValuesDto,
-  UpdateRecurringBillInstanceDto,
+  UpdateRecurringBillDto,
   WithdrawalRequestDto,
   XirrResultDto,
 } from './types'
@@ -400,13 +401,10 @@ describe('financialApiClient', () => {
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 
-  it('calls the mensais instances endpoint for a given year/month', async () => {
-    const responseBody: RecurringBillInstanceDto[] = [
+  it('calls the mensais bills endpoint', async () => {
+    const responseBody: RecurringBillDto[] = [
       {
-        id: 'i1',
-        templateId: 't1',
-        year: 2026,
-        month: 7,
+        id: 'b1',
         dueDay: 10,
         description: 'INSS',
         area: 'Brasil',
@@ -420,19 +418,43 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getMensaisInstances(2026, 7)
+    const result = await client.getMensaisBills()
 
     expect(result).toEqual(responseBody)
-    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/mensais/2026/7`)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/mensais`)
   })
 
-  it('puts a mensais instance update', async () => {
-    const requestBody: UpdateRecurringBillInstanceDto = { status: 'Paid', value: 900 }
-    const responseBody: RecurringBillInstanceDto = {
-      id: 'i1',
-      templateId: 't1',
-      year: 2026,
-      month: 7,
+  it('posts a mensais bill create request', async () => {
+    const requestBody: CreateRecurringBillDto = {
+      dueDay: 10,
+      description: 'INSS',
+      value: 850,
+      area: 'Brasil',
+      note: '',
+    }
+    const responseBody: RecurringBillDto = {
+      id: 'b1',
+      status: 'Unset',
+      nitNumber: null,
+      minimumWageValue: null,
+      ...requestBody,
+    }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createMensaisBill(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/mensais`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts a mensais bill update', async () => {
+    const requestBody: UpdateRecurringBillDto = { status: 'Paid', value: 900 }
+    const responseBody: RecurringBillDto = {
+      id: 'b1',
       dueDay: 10,
       description: 'INSS',
       area: 'Brasil',
@@ -445,13 +467,49 @@ describe('financialApiClient', () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.updateMensaisInstance('i1', requestBody)
+    const result = await client.updateMensaisBill('b1', requestBody)
 
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/mensais/instances/i1`)
+    expect(url).toBe(`${API_BASE_URL}/mensais/b1`)
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes a mensais bill', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteMensaisBill('b1')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/mensais/b1`)
+    expect(init?.method).toBe('DELETE')
+  })
+
+  it('posts a mensais reset-to-unset request', async () => {
+    const responseBody: RecurringBillDto[] = [
+      {
+        id: 'b1',
+        dueDay: 10,
+        description: 'INSS',
+        area: 'Brasil',
+        note: '',
+        nitNumber: null,
+        minimumWageValue: null,
+        value: 850,
+        status: 'Unset',
+      },
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.resetMensaisToUnset()
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/mensais/reset`)
+    expect(init?.method).toBe('POST')
   })
 
   it('posts a mae ledger entry create request', async () => {

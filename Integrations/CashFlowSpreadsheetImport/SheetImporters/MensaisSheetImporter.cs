@@ -7,11 +7,9 @@ using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.P
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
 
 /// <summary>
-/// Parses the single continuous "Mensais" sheet into <see cref="RecurringBillTemplate"/>
-/// entities (one per Brasil/UK row) plus exactly one <see cref="RecurringBillInstance"/> per
-/// template. The sheet only ever shows a live current-state snapshot — the month label at the
-/// top has no year, so the caller supplies the actual year/month to stamp on every instance
-/// (the year/month the import itself is run in), rather than parsing an ambiguous cell.
+/// Parses the single continuous "Mensais" sheet into <see cref="RecurringBill"/> entities
+/// (one per Brasil/UK row), reading each row's status directly rather than stamping a
+/// separate month-scoped instance.
 /// </summary>
 public static class MensaisSheetImporter
 {
@@ -23,11 +21,9 @@ public static class MensaisSheetImporter
     private const int NitNumberColumn = 6;
     private const int MinimumWageValueColumn = 7;
 
-    public static (IReadOnlyList<RecurringBillTemplate> Templates, IReadOnlyList<RecurringBillInstance> Instances) Import(
-        IXLWorksheet sheet, int currentYear, int currentMonth)
+    public static IReadOnlyList<RecurringBill> Import(IXLWorksheet sheet)
     {
-        var templates = new List<RecurringBillTemplate>();
-        var instances = new List<RecurringBillInstance>();
+        var bills = new List<RecurringBill>();
         var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
         Area? currentArea = null;
 
@@ -59,16 +55,13 @@ public static class MensaisSheetImporter
                 ? NumericCellReader.TryRead(sheet.Cell(row, MinimumWageValueColumn))
                 : null;
 
-            var template = RecurringBillTemplate.Create(dueDay, description, value, currentArea.Value, note, nitNumber, minimumWageValue);
-            templates.Add(template);
-
+            var bill = RecurringBill.Create(dueDay, description, value, currentArea.Value, note, nitNumber, minimumWageValue);
             var status = ResolveStatus(sheet.Cell(row, StatusColumn).GetString());
-            var instance = RecurringBillInstance.Create(template.Id, currentYear, currentMonth, value);
-            instance.Update(status, value);
-            instances.Add(instance);
+            bill.Update(status, value);
+            bills.Add(bill);
         }
 
-        return (templates, instances);
+        return bills;
     }
 
     private static BillStatus ResolveStatus(string? tag) =>

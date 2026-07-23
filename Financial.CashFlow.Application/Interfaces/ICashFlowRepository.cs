@@ -15,11 +15,9 @@ public interface ICashFlowRepository
     IEnumerable<CardStatement> GetCardStatements();
     void AddCardStatement(CardStatement statement);
 
-    IEnumerable<RecurringBillTemplate> GetRecurringBillTemplates();
-    void AddRecurringBillTemplate(RecurringBillTemplate template);
-
-    IEnumerable<RecurringBillInstance> GetRecurringBillInstances();
-    void AddRecurringBillInstance(RecurringBillInstance instance);
+    IEnumerable<RecurringBill> GetRecurringBills();
+    void AddRecurringBill(RecurringBill bill);
+    void DeleteRecurringBill(Guid id);
 
     IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries();
     void AddMaeLedgerEntry(MaeLedgerEntry entry);

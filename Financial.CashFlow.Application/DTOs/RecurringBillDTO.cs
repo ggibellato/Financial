@@ -1,9 +1,9 @@
 namespace Financial.CashFlow.Application.DTOs;
 
 /// <summary>
-/// Read model for a recurring bill template.
+/// Read model for a recurring bill.
 /// </summary>
-public sealed class RecurringBillTemplateDTO
+public sealed class RecurringBillDTO
 {
     public required Guid Id { get; init; }
     public required int DueDay { get; init; }
@@ -13,5 +13,5 @@ public sealed class RecurringBillTemplateDTO
     public required string Note { get; init; }
     public string? NitNumber { get; init; }
     public decimal? MinimumWageValue { get; init; }
-    public required bool IsActive { get; init; }
+    public required string Status { get; init; }
 }

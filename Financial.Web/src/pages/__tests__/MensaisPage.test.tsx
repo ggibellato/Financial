@@ -2,26 +2,27 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MensaisPage from '../MensaisPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { RecurringBillInstanceDto } from '../../api/types'
+import type { RecurringBillDto } from '../../api/types'
 
-const getMensaisInstancesMock = vi.fn<FinancialApiClient['getMensaisInstances']>()
-const updateMensaisInstanceMock = vi.fn<FinancialApiClient['updateMensaisInstance']>()
+const getMensaisBillsMock = vi.fn<FinancialApiClient['getMensaisBills']>()
+const createMensaisBillMock = vi.fn<FinancialApiClient['createMensaisBill']>()
+const updateMensaisBillMock = vi.fn<FinancialApiClient['updateMensaisBill']>()
+const deleteMensaisBillMock = vi.fn<FinancialApiClient['deleteMensaisBill']>()
+const resetMensaisToUnsetMock = vi.fn<FinancialApiClient['resetMensaisToUnset']>()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
-    getMensaisInstances: getMensaisInstancesMock,
-    updateMensaisInstance: updateMensaisInstanceMock,
+    getMensaisBills: getMensaisBillsMock,
+    createMensaisBill: createMensaisBillMock,
+    updateMensaisBill: updateMensaisBillMock,
+    deleteMensaisBill: deleteMensaisBillMock,
+    resetMensaisToUnset: resetMensaisToUnsetMock,
   }),
 }))
 
-const NOW = new Date()
-
-const INSTANCES: RecurringBillInstanceDto[] = [
+const BILLS: RecurringBillDto[] = [
   {
-    id: 'i1',
-    templateId: 't1',
-    year: NOW.getFullYear(),
-    month: NOW.getMonth() + 1,
+    id: 'b1',
     dueDay: 10,
     description: 'INSS',
     area: 'Brasil',
@@ -32,10 +33,7 @@ const INSTANCES: RecurringBillInstanceDto[] = [
     status: 'Unset',
   },
   {
-    id: 'i2',
-    templateId: 't2',
-    year: NOW.getFullYear(),
-    month: NOW.getMonth() + 1,
+    id: 'b2',
     dueDay: 15,
     description: 'Council Tax',
     area: 'UK',
@@ -50,7 +48,7 @@ const INSTANCES: RecurringBillInstanceDto[] = [
 describe('MensaisPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    getMensaisInstancesMock.mockResolvedValue(INSTANCES)
+    getMensaisBillsMock.mockResolvedValue(BILLS)
   })
 
   it('shows a loading state before data arrives', () => {
@@ -60,7 +58,7 @@ describe('MensaisPage', () => {
   })
 
   it('shows an error state with retry when the fetch fails', async () => {
-    getMensaisInstancesMock.mockRejectedValue(new Error('Network down'))
+    getMensaisBillsMock.mockRejectedValue(new Error('Network down'))
 
     render(<MensaisPage />)
 
@@ -78,7 +76,7 @@ describe('MensaisPage', () => {
   })
 
   it('edits a row status/value via the toggled panel and saves, updating the displayed row', async () => {
-    updateMensaisInstanceMock.mockResolvedValue({ ...INSTANCES[0], status: 'Paid', value: 900 })
+    updateMensaisBillMock.mockResolvedValue({ ...BILLS[0], status: 'Paid', value: 900 })
     render(<MensaisPage />)
 
     await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
@@ -86,18 +84,117 @@ describe('MensaisPage', () => {
     const editButtons = screen.getAllByRole('button', { name: 'Edit' })
     fireEvent.click(editButtons[0])
 
-    expect(screen.getByText('Edit Instance')).toBeInTheDocument()
+    expect(screen.getByText('Edit Bill')).toBeInTheDocument()
     const valueInput = screen.getByDisplayValue('850')
     fireEvent.change(valueInput, { target: { value: '900' } })
     const statusSelect = screen.getByRole('combobox')
     fireEvent.change(statusSelect, { target: { value: 'Paid' } })
 
-    getMensaisInstancesMock.mockResolvedValue([{ ...INSTANCES[0], status: 'Paid', value: 900 }, INSTANCES[1]])
+    getMensaisBillsMock.mockResolvedValue([{ ...BILLS[0], status: 'Paid', value: 900 }, BILLS[1]])
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() =>
-      expect(updateMensaisInstanceMock).toHaveBeenCalledWith('i1', { status: 'Paid', value: 900 }),
+      expect(updateMensaisBillMock).toHaveBeenCalledWith('b1', { status: 'Paid', value: 900 }),
     )
     await waitFor(() => expect(screen.getByText('Paid')).toBeInTheDocument())
+  })
+
+  it('shows NIT and Min. Wage columns only in the Brasil section', async () => {
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('Brasil')).toBeInTheDocument())
+
+    expect(screen.getAllByText('NIT')).toHaveLength(1)
+    expect(screen.getAllByText('Min. Wage')).toHaveLength(1)
+  })
+
+  it('adds a new bill via the Add Bill form', async () => {
+    createMensaisBillMock.mockResolvedValue({
+      id: 'b3',
+      dueDay: 5,
+      description: 'Aluguel',
+      value: 1000,
+      area: 'Brasil',
+      note: '',
+      nitNumber: null,
+      minimumWageValue: null,
+      status: 'Unset',
+    })
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add Bill' }))
+    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Aluguel' } })
+    fireEvent.change(screen.getByLabelText('Due Day'), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '1000' } })
+
+    getMensaisBillsMock.mockResolvedValue([
+      ...BILLS,
+      { ...BILLS[0], id: 'b3', description: 'Aluguel', dueDay: 5, value: 1000 },
+    ])
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
+    await waitFor(() =>
+      expect(createMensaisBillMock).toHaveBeenCalledWith({
+        dueDay: 5,
+        description: 'Aluguel',
+        value: 1000,
+        area: 'Brasil',
+        note: '',
+      }),
+    )
+    await waitFor(() => expect(screen.getByText('Aluguel')).toBeInTheDocument())
+  })
+
+  it('deletes a bill after confirming the prompt', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    deleteMensaisBillMock.mockResolvedValue(undefined)
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    getMensaisBillsMock.mockResolvedValue([BILLS[1]])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete' })[0])
+
+    await waitFor(() => expect(deleteMensaisBillMock).toHaveBeenCalledWith('b1'))
+    await waitFor(() => expect(screen.queryByText('INSS')).not.toBeInTheDocument())
+  })
+
+  it('does not delete when the confirmation prompt is declined', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete' })[0])
+
+    expect(deleteMensaisBillMock).not.toHaveBeenCalled()
+  })
+
+  it('resets all bills to Unset after confirming the prompt', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    resetMensaisToUnsetMock.mockResolvedValue([
+      { ...BILLS[0], status: 'Unset' },
+      { ...BILLS[1], status: 'Unset' },
+    ])
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset All to Unset' }))
+
+    await waitFor(() => expect(resetMensaisToUnsetMock).toHaveBeenCalledTimes(1))
+  })
+
+  it('does not reset when the confirmation prompt is declined', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset All to Unset' }))
+
+    expect(resetMensaisToUnsetMock).not.toHaveBeenCalled()
   })
 })

@@ -18,8 +18,7 @@ public class CashFlowLoaderTests
         data.Expenses.Should().BeEmpty();
         data.ReserveMovements.Should().BeEmpty();
         data.CardStatements.Should().BeEmpty();
-        data.RecurringBillTemplates.Should().BeEmpty();
-        data.RecurringBillInstances.Should().BeEmpty();
+        data.RecurringBills.Should().BeEmpty();
         data.MaeLedgerEntries.Should().BeEmpty();
         data.InvestmentSnapshots.Should().BeEmpty();
     }
