@@ -42,6 +42,7 @@ import type {
   UpdateInvestmentSnapshotValueDto,
   UpdateMaeLedgerEntryValuesDto,
   UpdateRecurringBillDto,
+  UpdateReserveMovementDto,
   WatchlistItemDto,
   WithdrawalRequestDto,
   XirrResultDto,
@@ -81,6 +82,8 @@ export interface FinancialApiClient {
   getReserveMovements: () => Promise<ReserveMovementDto[]>
   postIncomeSplit: (request: IncomeSplitRequestDto) => Promise<IncomeSplitResultDto>
   postWithdrawal: (request: WithdrawalRequestDto) => Promise<ReserveMovementDto>
+  updateReserveMovement: (id: string, request: UpdateReserveMovementDto) => Promise<ReserveMovementDto>
+  deleteReserveMovement: (id: string) => Promise<void>
   getMensaisBills: () => Promise<RecurringBillDto[]>
   createMensaisBill: (request: CreateRecurringBillDto) => Promise<RecurringBillDto>
   updateMensaisBill: (id: string, request: UpdateRecurringBillDto) => Promise<RecurringBillDto>
@@ -273,6 +276,12 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         method: 'POST',
         body: JSON.stringify(requestBody),
       }),
+    updateReserveMovement: (id, requestBody) =>
+      request<ReserveMovementDto>(`/reserve/movements/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    deleteReserveMovement: (id) => requestVoid(`/reserve/movements/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getMensaisBills: () => request<RecurringBillDto[]>('/mensais'),
     createMensaisBill: (requestBody) =>
       request<RecurringBillDto>('/mensais', {

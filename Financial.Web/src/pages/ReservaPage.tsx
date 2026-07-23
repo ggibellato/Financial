@@ -2,7 +2,7 @@ import { Fragment } from 'react'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import { RESERVE_BUCKETS, useReserva } from '../hooks/useReserva'
-import type { WithdrawalFormField } from '../hooks/useReserva'
+import type { EditMovementField, WithdrawalFormField } from '../hooks/useReserva'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ReservaPage.css'
 
@@ -18,6 +18,8 @@ function BalanceColumns() {
 function MovementColumns() {
   return (
     <colgroup>
+      <col className="reserva-page__col-actions" />
+      <col className="reserva-page__col-actions" />
       <col className="reserva-page__col-date" />
       <col className="reserva-page__col-bucket" />
       <col />
@@ -57,6 +59,20 @@ export default function ReservaPage() {
     cancelWithdrawalForm,
     setWithdrawalField,
     submitWithdrawal,
+    editingMovementId,
+    editMovementBucket,
+    editMovementAmount,
+    editMovementDate,
+    editMovementDescription,
+    isSavingMovement,
+    saveMovementError,
+    showEditMovementForm,
+    cancelEditMovement,
+    setEditMovementField,
+    saveMovementEdit,
+    deletingMovementId,
+    deleteMovementError,
+    deleteMovement,
   } = useReserva()
 
   if (isLoading) {
@@ -72,6 +88,13 @@ export default function ReservaPage() {
     withdrawalAmount,
     withdrawalDate,
     withdrawalDescription,
+  }
+
+  const editMovementValues: Record<EditMovementField, string> = {
+    editMovementBucket,
+    editMovementAmount,
+    editMovementDate,
+    editMovementDescription,
   }
 
   return (
@@ -229,6 +252,67 @@ export default function ReservaPage() {
         </div>
       )}
 
+      {editingMovementId && (
+        <div className="reserva-page__form-panel">
+          <p className="reserva-page__form-title">Edit Movement</p>
+          <div className="reserva-page__form">
+            <div className="reserva-page__form-field">
+              <label htmlFor="edit-movement-bucket">Bucket</label>
+              <select
+                id="edit-movement-bucket"
+                value={editMovementValues.editMovementBucket}
+                onChange={(e) => setEditMovementField('editMovementBucket', e.target.value)}
+              >
+                {RESERVE_BUCKETS.map((bucket) => (
+                  <option key={bucket} value={bucket}>
+                    {bucket}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="reserva-page__form-field">
+              <label htmlFor="edit-movement-amount">Amount</label>
+              <input
+                id="edit-movement-amount"
+                type="number"
+                step="0.01"
+                value={editMovementValues.editMovementAmount}
+                onChange={(e) => setEditMovementField('editMovementAmount', e.target.value)}
+              />
+            </div>
+            <div className="reserva-page__form-field">
+              <label htmlFor="edit-movement-date">Date</label>
+              <input
+                id="edit-movement-date"
+                type="date"
+                value={editMovementValues.editMovementDate}
+                onChange={(e) => setEditMovementField('editMovementDate', e.target.value)}
+              />
+            </div>
+            <div className="reserva-page__form-field">
+              <label htmlFor="edit-movement-description">Description</label>
+              <input
+                id="edit-movement-description"
+                type="text"
+                value={editMovementValues.editMovementDescription}
+                onChange={(e) => setEditMovementField('editMovementDescription', e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="reserva-page__form-actions">
+            <button type="button" disabled={isSavingMovement} onClick={saveMovementEdit}>
+              {isSavingMovement ? 'Saving...' : 'Save'}
+            </button>
+            <button type="button" onClick={cancelEditMovement}>
+              Cancel
+            </button>
+          </div>
+          {saveMovementError && <p className="reserva-page__error">{saveMovementError}</p>}
+        </div>
+      )}
+
+      {deleteMovementError && <p className="reserva-page__error">{deleteMovementError}</p>}
+
       <div className="reserva-page__content">
         <div className="reserva-page__grids-row">
           <section className="reserva-page__section reserva-page__section--grid reserva-page__section--balances">
@@ -270,6 +354,8 @@ export default function ReservaPage() {
                 <MovementColumns />
                 <thead>
                   <tr>
+                    <th />
+                    <th />
                     <th>Date</th>
                     <th>Bucket</th>
                     <th>Description</th>
@@ -280,6 +366,37 @@ export default function ReservaPage() {
                   {movementRows.map((m) => (
                     <Fragment key={m.id}>
                       <tr>
+                        <td>
+                          <button
+                            className="data-table__action-btn"
+                            type="button"
+                            aria-label="Edit movement"
+                            onClick={() => showEditMovementForm(m)}
+                          >
+                            ✏
+                          </button>
+                        </td>
+                        <td>
+                          <button
+                            className="data-table__action-btn"
+                            type="button"
+                            aria-label={deletingMovementId === m.id ? 'Deleting movement' : 'Delete movement'}
+                            disabled={deletingMovementId === m.id}
+                            onClick={() => {
+                              const warning = m.isPartOfGroup
+                                ? `Delete "${m.description}"? This is part of a split and will delete all 4 lines.`
+                                : `Delete "${m.description}"? This removes it for good.`
+                              if (window.confirm(warning)) {
+                                deleteMovement(m.id)
+                              }
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M20 20H7L3 16a2 2 0 0 1 0-2.83L14.59 1.58a2 2 0 0 1 2.83 0l4 4a2 2 0 0 1 0 2.83L8 20" />
+                              <path d="M6.5 15.5 15 7" />
+                            </svg>
+                          </button>
+                        </td>
                         <td>{formatShortDate(m.date)}</td>
                         <td>{m.bucket}</td>
                         <td>{m.description}</td>
@@ -287,6 +404,8 @@ export default function ReservaPage() {
                       </tr>
                       {m.groupTotal !== null && (
                         <tr className="reserva-page__totals-row">
+                          <td />
+                          <td />
                           <td colSpan={3}>Total split for {m.description}</td>
                           <td className="data-table__col--numeric">{formatN2(m.groupTotal)}</td>
                         </tr>

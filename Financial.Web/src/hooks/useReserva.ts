@@ -9,12 +9,17 @@ export type SplitFormField = 'splitDate' | 'splitAmount' | 'splitDescription'
 
 export type WithdrawalFormField = 'withdrawalBucket' | 'withdrawalAmount' | 'withdrawalDate' | 'withdrawalDescription'
 
+export type EditMovementField = 'editMovementBucket' | 'editMovementAmount' | 'editMovementDate' | 'editMovementDescription'
+
 /**
- * A movement row for display, with `groupTotal` set on the last movement of a same
+ * A movement row for display. `groupTotal` is set only on the last movement of a same
  * date+description group (2+ movements) — how a split's total is found when browsing history.
+ * `isPartOfGroup` is set on every movement in such a group (used to warn before a cascading
+ * delete, since removing any one line of a split removes all of them).
  */
 export interface ReserveMovementRow extends ReserveMovementDto {
   groupTotal: number | null
+  isPartOfGroup: boolean
 }
 
 interface ReservaState {
@@ -37,6 +42,15 @@ interface ReservaState {
   withdrawalDescription: string
   isSubmittingWithdrawal: boolean
   withdrawalError: string | null
+  editingMovementId: string | null
+  editMovementBucket: string
+  editMovementAmount: string
+  editMovementDate: string
+  editMovementDescription: string
+  isSavingMovement: boolean
+  saveMovementError: string | null
+  deletingMovementId: string | null
+  deleteMovementError: string | null
 }
 
 type ReservaAction =
@@ -57,6 +71,15 @@ type ReservaAction =
   | { type: 'WITHDRAWAL_START' }
   | { type: 'WITHDRAWAL_SUCCESS' }
   | { type: 'WITHDRAWAL_ERROR'; payload: string }
+  | { type: 'SHOW_EDIT_MOVEMENT_FORM'; payload: ReserveMovementDto }
+  | { type: 'CANCEL_EDIT_MOVEMENT' }
+  | { type: 'SET_EDIT_MOVEMENT_FIELD'; payload: { field: EditMovementField; value: string } }
+  | { type: 'SAVE_MOVEMENT_START' }
+  | { type: 'SAVE_MOVEMENT_SUCCESS' }
+  | { type: 'SAVE_MOVEMENT_ERROR'; payload: string }
+  | { type: 'DELETE_MOVEMENT_START'; payload: string }
+  | { type: 'DELETE_MOVEMENT_SUCCESS' }
+  | { type: 'DELETE_MOVEMENT_ERROR'; payload: string }
 
 const BLANK_SPLIT_FORM = {
   splitDate: '',
@@ -86,6 +109,15 @@ const INITIAL_STATE: ReservaState = {
   ...BLANK_WITHDRAWAL_FORM,
   isSubmittingWithdrawal: false,
   withdrawalError: null,
+  editingMovementId: null,
+  editMovementBucket: RESERVE_BUCKETS[0],
+  editMovementAmount: '',
+  editMovementDate: '',
+  editMovementDescription: '',
+  isSavingMovement: false,
+  saveMovementError: null,
+  deletingMovementId: null,
+  deleteMovementError: null,
 }
 
 function reducer(state: ReservaState, action: ReservaAction): ReservaState {
@@ -130,6 +162,46 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
       return { ...state, ...BLANK_WITHDRAWAL_FORM, isWithdrawalFormOpen: false, isSubmittingWithdrawal: false }
     case 'WITHDRAWAL_ERROR':
       return { ...state, isSubmittingWithdrawal: false, withdrawalError: action.payload }
+    case 'SHOW_EDIT_MOVEMENT_FORM':
+      return {
+        ...state,
+        editingMovementId: action.payload.id,
+        editMovementBucket: action.payload.bucket,
+        editMovementAmount: String(action.payload.amount),
+        editMovementDate: action.payload.date,
+        editMovementDescription: action.payload.description,
+        saveMovementError: null,
+      }
+    case 'CANCEL_EDIT_MOVEMENT':
+      return {
+        ...state,
+        editingMovementId: null,
+        editMovementAmount: '',
+        editMovementDate: '',
+        editMovementDescription: '',
+        saveMovementError: null,
+      }
+    case 'SET_EDIT_MOVEMENT_FIELD':
+      return { ...state, [action.payload.field]: action.payload.value }
+    case 'SAVE_MOVEMENT_START':
+      return { ...state, isSavingMovement: true, saveMovementError: null }
+    case 'SAVE_MOVEMENT_SUCCESS':
+      return {
+        ...state,
+        isSavingMovement: false,
+        editingMovementId: null,
+        editMovementAmount: '',
+        editMovementDate: '',
+        editMovementDescription: '',
+      }
+    case 'SAVE_MOVEMENT_ERROR':
+      return { ...state, isSavingMovement: false, saveMovementError: action.payload }
+    case 'DELETE_MOVEMENT_START':
+      return { ...state, deletingMovementId: action.payload, deleteMovementError: null }
+    case 'DELETE_MOVEMENT_SUCCESS':
+      return { ...state, deletingMovementId: null }
+    case 'DELETE_MOVEMENT_ERROR':
+      return { ...state, deletingMovementId: null, deleteMovementError: action.payload }
     default:
       return state
   }
@@ -166,6 +238,20 @@ export interface ReservaData {
   cancelWithdrawalForm: () => void
   setWithdrawalField: (field: WithdrawalFormField, value: string) => void
   submitWithdrawal: () => void
+  editingMovementId: string | null
+  editMovementBucket: string
+  editMovementAmount: string
+  editMovementDate: string
+  editMovementDescription: string
+  isSavingMovement: boolean
+  saveMovementError: string | null
+  showEditMovementForm: (movement: ReserveMovementDto) => void
+  cancelEditMovement: () => void
+  setEditMovementField: (field: EditMovementField, value: string) => void
+  saveMovementEdit: () => void
+  deletingMovementId: string | null
+  deleteMovementError: string | null
+  deleteMovement: (id: string) => void
 }
 
 function buildMovementRows(movements: ReserveMovementDto[]): ReserveMovementRow[] {
@@ -181,7 +267,11 @@ function buildMovementRows(movements: ReserveMovementDto[]): ReserveMovementRow[
 
   return movements.map((m, index) => {
     const group = groups.get(`${m.date}|${m.description}`)!
-    return { ...m, groupTotal: group.count > 1 && group.lastIndex === index ? group.total : null }
+    return {
+      ...m,
+      groupTotal: group.count > 1 && group.lastIndex === index ? group.total : null,
+      isPartOfGroup: group.count > 1,
+    }
   })
 }
 
@@ -228,6 +318,18 @@ export function useReserva(): ReservaData {
 
   const setWithdrawalField = useCallback(
     (field: WithdrawalFormField, value: string) => dispatch({ type: 'SET_WITHDRAWAL_FIELD', payload: { field, value } }),
+    [],
+  )
+
+  const showEditMovementForm = useCallback(
+    (movement: ReserveMovementDto) => dispatch({ type: 'SHOW_EDIT_MOVEMENT_FORM', payload: movement }),
+    [],
+  )
+
+  const cancelEditMovement = useCallback(() => dispatch({ type: 'CANCEL_EDIT_MOVEMENT' }), [])
+
+  const setEditMovementField = useCallback(
+    (field: EditMovementField, value: string) => dispatch({ type: 'SET_EDIT_MOVEMENT_FIELD', payload: { field, value } }),
     [],
   )
 
@@ -321,6 +423,64 @@ export function useReserva(): ReservaData {
     performWithdrawal(false)
   }
 
+  function saveMovementEdit() {
+    const { editingMovementId, editMovementBucket, editMovementAmount, editMovementDate, editMovementDescription } = state
+    if (!editingMovementId) return
+
+    const amount = Number(editMovementAmount)
+    if (!editMovementAmount.trim() || !isFinite(amount)) {
+      dispatch({ type: 'SAVE_MOVEMENT_ERROR', payload: 'Amount must be a number' })
+      return
+    }
+
+    if (!editMovementDate.trim()) {
+      dispatch({ type: 'SAVE_MOVEMENT_ERROR', payload: 'Date is required' })
+      return
+    }
+
+    if (!editMovementDescription.trim()) {
+      dispatch({ type: 'SAVE_MOVEMENT_ERROR', payload: 'Description is required' })
+      return
+    }
+
+    dispatch({ type: 'SAVE_MOVEMENT_START' })
+
+    void apiClient
+      .updateReserveMovement(editingMovementId, {
+        bucket: editMovementBucket,
+        amount,
+        date: editMovementDate,
+        description: editMovementDescription,
+      })
+      .then(() => {
+        dispatch({ type: 'SAVE_MOVEMENT_SUCCESS' })
+        fetchReservaData()
+      })
+      .catch((err: unknown) => {
+        dispatch({
+          type: 'SAVE_MOVEMENT_ERROR',
+          payload: err instanceof Error ? err.message : 'Failed to update movement',
+        })
+      })
+  }
+
+  function deleteMovement(id: string) {
+    dispatch({ type: 'DELETE_MOVEMENT_START', payload: id })
+
+    void apiClient
+      .deleteReserveMovement(id)
+      .then(() => {
+        dispatch({ type: 'DELETE_MOVEMENT_SUCCESS' })
+        fetchReservaData()
+      })
+      .catch((err: unknown) => {
+        dispatch({
+          type: 'DELETE_MOVEMENT_ERROR',
+          payload: err instanceof Error ? err.message : 'Failed to delete movement',
+        })
+      })
+  }
+
   return {
     balances: state.balances,
     totalBalance,
@@ -352,5 +512,19 @@ export function useReserva(): ReservaData {
     cancelWithdrawalForm,
     setWithdrawalField,
     submitWithdrawal,
+    editingMovementId: state.editingMovementId,
+    editMovementBucket: state.editMovementBucket,
+    editMovementAmount: state.editMovementAmount,
+    editMovementDate: state.editMovementDate,
+    editMovementDescription: state.editMovementDescription,
+    isSavingMovement: state.isSavingMovement,
+    saveMovementError: state.saveMovementError,
+    showEditMovementForm,
+    cancelEditMovement,
+    setEditMovementField,
+    saveMovementEdit,
+    deletingMovementId: state.deletingMovementId,
+    deleteMovementError: state.deleteMovementError,
+    deleteMovement,
   }
 }

@@ -126,6 +126,10 @@
   width: 120px;
 }
 
+.reserva-page__col-actions {
+  width: 32px;
+}
+
 .reserva-page__totals-table {
   flex-shrink: 0;
   margin-top: 8px;

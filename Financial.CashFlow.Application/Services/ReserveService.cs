@@ -127,6 +127,48 @@ public sealed class ReserveService : IReserveService
             .Select(ToDto)
             .ToList();
 
+    public async Task<ReserveMovementDTO> UpdateMovementAsync(Guid id, UpdateReserveMovementDTO request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (string.IsNullOrWhiteSpace(request.Description))
+        {
+            throw new ArgumentException("Description is required.");
+        }
+
+        if (!ReserveBucketParser.TryParse(request.Bucket, out var bucket))
+        {
+            throw new ArgumentException($"Bucket '{request.Bucket}' is not recognized.");
+        }
+
+        var movement = _repository.GetReserveMovements().FirstOrDefault(m => m.Id == id)
+            ?? throw new KeyNotFoundException($"Reserve movement '{id}' was not found.");
+
+        movement.Update(bucket, request.Amount, request.Date, request.Description);
+        await _repository.SaveChangesAsync().ConfigureAwait(false);
+
+        return ToDto(movement);
+    }
+
+    public async Task DeleteMovementAsync(Guid id)
+    {
+        var movement = _repository.GetReserveMovements().FirstOrDefault(m => m.Id == id)
+            ?? throw new KeyNotFoundException($"Reserve movement '{id}' was not found.");
+
+        // Movements from the same income split share Date+Description (see PostIncomeSplitAsync) -
+        // deleting one deletes the whole split, not just this bucket's line.
+        var group = _repository.GetReserveMovements()
+            .Where(m => m.Date == movement.Date && m.Description == movement.Description)
+            .ToList();
+
+        foreach (var groupMovement in group)
+        {
+            _repository.DeleteReserveMovement(groupMovement.Id);
+        }
+
+        await _repository.SaveChangesAsync().ConfigureAwait(false);
+    }
+
     private decimal GetBalance(ReserveBucket bucket) =>
         _repository.GetReserveMovements().Where(m => m.Bucket == bucket).Sum(m => m.Amount);
 

@@ -19,6 +19,7 @@ import type {
   UpdateInvestmentSnapshotValueDto,
   UpdateMaeLedgerEntryValuesDto,
   UpdateRecurringBillDto,
+  UpdateReserveMovementDto,
   WithdrawalRequestDto,
   XirrResultDto,
 } from './types'
@@ -395,6 +396,43 @@ describe('financialApiClient', () => {
     expect(url).toBe(`${API_BASE_URL}/reserve/withdrawals`)
     expect(init?.method).toBe('POST')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts a reserve movement update', async () => {
+    const requestBody: UpdateReserveMovementDto = {
+      bucket: 'Ariana',
+      amount: -45,
+      date: '2026-07-03',
+      description: 'Groceries (corrected)',
+    }
+    const responseBody: ReserveMovementDto = {
+      id: 'm2',
+      bucket: 'Ariana',
+      amount: -45,
+      date: '2026-07-03',
+      description: 'Groceries (corrected)',
+    }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateReserveMovement('m2', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/reserve/movements/m2`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes a reserve movement', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteReserveMovement('m2')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/reserve/movements/m2`)
+    expect(init?.method).toBe('DELETE')
   })
 
   it('calls the mensais bills endpoint', async () => {

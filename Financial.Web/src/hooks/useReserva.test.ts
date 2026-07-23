@@ -9,6 +9,8 @@ const getReserveBalancesMock = vi.fn<FinancialApiClient['getReserveBalances']>()
 const getReserveMovementsMock = vi.fn<FinancialApiClient['getReserveMovements']>()
 const postIncomeSplitMock = vi.fn<FinancialApiClient['postIncomeSplit']>()
 const postWithdrawalMock = vi.fn<FinancialApiClient['postWithdrawal']>()
+const updateReserveMovementMock = vi.fn<FinancialApiClient['updateReserveMovement']>()
+const deleteReserveMovementMock = vi.fn<FinancialApiClient['deleteReserveMovement']>()
 
 vi.mock('../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
@@ -16,6 +18,8 @@ vi.mock('../api/financialApiClient', () => ({
     getReserveMovements: getReserveMovementsMock,
     postIncomeSplit: postIncomeSplitMock,
     postWithdrawal: postWithdrawalMock,
+    updateReserveMovement: updateReserveMovementMock,
+    deleteReserveMovement: deleteReserveMovementMock,
   }),
 }))
 
@@ -69,6 +73,14 @@ describe('useReserva', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(result.current.movementRows[0].groupTotal).toBeNull()
+    expect(result.current.movementRows[0].isPartOfGroup).toBe(false)
+  })
+
+  it('marks every movement of a split group as part of a group, not just the last', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.movementRows.map((m) => m.isPartOfGroup)).toEqual([true, true, true, true])
   })
 
   it('computes the total balance across all buckets', async () => {
@@ -214,5 +226,60 @@ describe('useReserva', () => {
 
     await waitFor(() => expect(result.current.withdrawalError).toBe('This withdrawal exceeds the balance.'))
     expect(postWithdrawalMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('saves a movement edit and re-fetches on success', async () => {
+    updateReserveMovementMock.mockResolvedValue({ ...MOVEMENTS[0], amount: 700 })
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditMovementForm(MOVEMENTS[0]))
+    act(() => result.current.setEditMovementField('editMovementAmount', '700'))
+    act(() => result.current.saveMovementEdit())
+
+    await waitFor(() =>
+      expect(updateReserveMovementMock).toHaveBeenCalledWith('m1', {
+        bucket: 'Investimento',
+        amount: 700,
+        date: '2026-07-17',
+        description: 'Ramsay',
+      }),
+    )
+    await waitFor(() => expect(getReserveBalancesMock).toHaveBeenCalledTimes(2))
+    expect(result.current.editingMovementId).toBeNull()
+  })
+
+  it('surfaces a movement-edit error without crashing', async () => {
+    updateReserveMovementMock.mockRejectedValue(new Error('Description is required.'))
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditMovementForm(MOVEMENTS[0]))
+    act(() => result.current.setEditMovementField('editMovementDescription', ''))
+    act(() => result.current.saveMovementEdit())
+
+    await waitFor(() => expect(result.current.saveMovementError).toBe('Description is required'))
+    expect(updateReserveMovementMock).not.toHaveBeenCalled()
+  })
+
+  it('deletes a movement and re-fetches on success', async () => {
+    deleteReserveMovementMock.mockResolvedValue(undefined)
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.deleteMovement('m1'))
+
+    await waitFor(() => expect(deleteReserveMovementMock).toHaveBeenCalledWith('m1'))
+    await waitFor(() => expect(getReserveBalancesMock).toHaveBeenCalledTimes(2))
+  })
+
+  it('surfaces a delete error without crashing', async () => {
+    deleteReserveMovementMock.mockRejectedValue(new Error('Reserve movement not found.'))
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.deleteMovement('unknown'))
+
+    await waitFor(() => expect(result.current.deleteMovementError).toBe('Reserve movement not found.'))
   })
 })

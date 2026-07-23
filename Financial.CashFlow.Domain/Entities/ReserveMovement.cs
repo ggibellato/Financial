@@ -22,4 +22,12 @@ public class ReserveMovement
             Date = date,
             Description = description
         };
+
+    public void Update(ReserveBucket bucket, decimal amount, DateOnly date, string description)
+    {
+        Bucket = bucket;
+        Amount = amount;
+        Date = date;
+        Description = description;
+    }
 }
