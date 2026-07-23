@@ -106,14 +106,13 @@
 }
 
 .monthly-page__submit-btn {
-  font: inherit;
-  font-weight: 600;
-  padding: 8px 16px;
+  font-size: 12px;
+  padding: 3px 12px;
   cursor: pointer;
   background: #007acc;
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 3px;
 }
 
 .monthly-page__submit-btn:hover {
@@ -126,14 +125,12 @@
 }
 
 .monthly-page__cancel-btn {
-  font: inherit;
-  font-weight: 600;
-  padding: 8px 16px;
+  font-size: 12px;
+  padding: 3px 10px;
   cursor: pointer;
   background: none;
-  color: var(--text, #333);
   border: 1px solid var(--border, #e5e4e7);
-  border-radius: 6px;
+  border-radius: 3px;
 }
 
 .monthly-page__cancel-btn:hover {
