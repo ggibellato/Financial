@@ -202,10 +202,15 @@ export default function ControleMaePage() {
             </div>
           )}
           <div className="controle-mae-page__form-actions">
-            <button type="button" disabled={isEditing ? isSaving : isCreating} onClick={isEditing ? saveEdit : submitCreate}>
+            <button
+              className="controle-mae-page__submit-btn"
+              type="button"
+              disabled={isEditing ? isSaving : isCreating}
+              onClick={isEditing ? saveEdit : submitCreate}
+            >
               {isEditing ? (isSaving ? 'Saving...' : 'Save') : isCreating ? 'Saving...' : 'Add Entry'}
             </button>
-            <button type="button" onClick={isEditing ? cancelEdit : cancelCreateForm}>
+            <button className="controle-mae-page__cancel-btn" type="button" onClick={isEditing ? cancelEdit : cancelCreateForm}>
               Cancel
             </button>
           </div>

@@ -145,10 +145,10 @@ export default function ReservaPage() {
             </div>
           </div>
           <div className="reserva-page__form-actions">
-            <button type="button" disabled={isSubmittingSplit} onClick={submitIncomeSplit}>
+            <button className="reserva-page__submit-btn" type="button" disabled={isSubmittingSplit} onClick={submitIncomeSplit}>
               {isSubmittingSplit ? 'Posting...' : 'Post Income Split'}
             </button>
-            <button type="button" onClick={cancelSplitForm}>
+            <button className="reserva-page__cancel-btn" type="button" onClick={cancelSplitForm}>
               Cancel
             </button>
           </div>
@@ -185,7 +185,7 @@ export default function ReservaPage() {
             </tbody>
           </table>
           <div className="reserva-page__form-actions">
-            <button type="button" onClick={dismissSplitResult}>
+            <button className="reserva-page__cancel-btn" type="button" onClick={dismissSplitResult}>
               Dismiss
             </button>
           </div>
@@ -241,10 +241,10 @@ export default function ReservaPage() {
             </div>
           </div>
           <div className="reserva-page__form-actions">
-            <button type="button" disabled={isSubmittingWithdrawal} onClick={submitWithdrawal}>
+            <button className="reserva-page__submit-btn" type="button" disabled={isSubmittingWithdrawal} onClick={submitWithdrawal}>
               {isSubmittingWithdrawal ? 'Saving...' : 'Record Withdrawal'}
             </button>
-            <button type="button" onClick={cancelWithdrawalForm}>
+            <button className="reserva-page__cancel-btn" type="button" onClick={cancelWithdrawalForm}>
               Cancel
             </button>
           </div>
@@ -300,10 +300,10 @@ export default function ReservaPage() {
             </div>
           </div>
           <div className="reserva-page__form-actions">
-            <button type="button" disabled={isSavingMovement} onClick={saveMovementEdit}>
+            <button className="reserva-page__submit-btn" type="button" disabled={isSavingMovement} onClick={saveMovementEdit}>
               {isSavingMovement ? 'Saving...' : 'Save'}
             </button>
-            <button type="button" onClick={cancelEditMovement}>
+            <button className="reserva-page__cancel-btn" type="button" onClick={cancelEditMovement}>
               Cancel
             </button>
           </div>

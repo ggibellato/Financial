@@ -150,10 +150,10 @@ function ExpenseForm({
         </div>
       </div>
       <div className="monthly-page__form-actions">
-        <button type="button" disabled={isSaving} onClick={onSave}>
+        <button className="monthly-page__submit-btn" type="button" disabled={isSaving} onClick={onSave}>
           {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Expense'}
         </button>
-        <button type="button" onClick={onCancel}>
+        <button className="monthly-page__cancel-btn" type="button" onClick={onCancel}>
           Cancel
         </button>
       </div>

@@ -124,6 +124,41 @@
   align-items: center;
 }
 
+.controle-mae-page__submit-btn {
+  font: inherit;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+  background: #007acc;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+}
+
+.controle-mae-page__submit-btn:hover {
+  background: #005fa3;
+}
+
+.controle-mae-page__submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.controle-mae-page__cancel-btn {
+  font: inherit;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+  background: none;
+  color: var(--text, #333);
+  border: 1px solid var(--border, #e5e4e7);
+  border-radius: 6px;
+}
+
+.controle-mae-page__cancel-btn:hover {
+  background: var(--bg-hover, #f0f0f0);
+}
+
 .controle-mae-page__error {
   margin-top: 6px;
   color: var(--error, #c0392b);
