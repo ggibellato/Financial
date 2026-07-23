@@ -9,7 +9,7 @@ function LedgerColumns() {
   return (
     <colgroup>
       <col className="controle-mae-page__col-date" />
-      <col />
+      <col className="controle-mae-page__col-description" />
       <col className="controle-mae-page__col-note" />
       <col className="controle-mae-page__col-value" />
       <col className="controle-mae-page__col-value" />
