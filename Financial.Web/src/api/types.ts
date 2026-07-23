@@ -296,6 +296,13 @@ export interface WithdrawalRequestDto {
   confirmed: boolean
 }
 
+export interface UpdateReserveMovementDto {
+  bucket: string
+  amount: number
+  date: string
+  description: string
+}
+
 export interface RecurringBillDto {
   id: string
   dueDay: number

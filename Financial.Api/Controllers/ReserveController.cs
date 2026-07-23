@@ -76,4 +76,46 @@ public sealed class ReserveController : ControllerBase
     {
         return Ok(_reserveService.GetMovementHistory());
     }
+
+    [HttpPut("movements/{id:guid}")]
+    [ProducesResponseType(typeof(ReserveMovementDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ReserveMovementDTO>> UpdateMovement(Guid id, [FromBody] UpdateReserveMovementDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        try
+        {
+            var result = await _reserveService.UpdateMovementAsync(id, request);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
+        }
+    }
+
+    [HttpDelete("movements/{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteMovement(Guid id)
+    {
+        try
+        {
+            await _reserveService.DeleteMovementAsync(id);
+            return Ok();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
+        }
+    }
 }

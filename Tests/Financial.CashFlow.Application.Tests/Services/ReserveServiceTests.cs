@@ -218,6 +218,101 @@ public class ReserveServiceTests
         history.Select(m => m.Date).Should().BeInDescendingOrder();
     }
 
+    [Fact]
+    public async Task UpdateMovementAsync_ExistingId_UpdatesFieldsAndSaves()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Seed(ReserveBucket.Investimento, 100m, new DateOnly(2026, 7, 1));
+        var movement = repository.ReserveMovements[0];
+        var service = new ReserveService(repository);
+
+        var result = await service.UpdateMovementAsync(movement.Id, new UpdateReserveMovementDTO
+        {
+            Bucket = "HouseTreats",
+            Amount = 150m,
+            Date = new DateOnly(2026, 7, 5),
+            Description = "Corrected"
+        });
+
+        result.Bucket.Should().Be("HouseTreats");
+        result.Amount.Should().Be(150m);
+        result.Date.Should().Be(new DateOnly(2026, 7, 5));
+        result.Description.Should().Be("Corrected");
+        repository.SaveChangesCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task UpdateMovementAsync_WithUnknownId_ThrowsKeyNotFoundException()
+    {
+        var service = new ReserveService(new StubCashFlowRepository());
+
+        var act = async () => await service.UpdateMovementAsync(Guid.NewGuid(), new UpdateReserveMovementDTO
+        {
+            Bucket = "Investimento",
+            Amount = 10m,
+            Date = new DateOnly(2026, 7, 1),
+            Description = "Test"
+        });
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+    }
+
+    [Fact]
+    public async Task UpdateMovementAsync_WithUnknownBucket_ThrowsArgumentException()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Seed(ReserveBucket.Investimento, 100m);
+        var service = new ReserveService(repository);
+
+        var act = async () => await service.UpdateMovementAsync(repository.ReserveMovements[0].Id, new UpdateReserveMovementDTO
+        {
+            Bucket = "NotABucket",
+            Amount = 10m,
+            Date = new DateOnly(2026, 7, 1),
+            Description = "Test"
+        });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*not recognized*");
+    }
+
+    [Fact]
+    public async Task DeleteMovementAsync_SoloMovement_DeletesOnlyThatOne()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Seed(ReserveBucket.Investimento, -30m, new DateOnly(2026, 7, 1));
+        var toDelete = repository.ReserveMovements[0];
+        repository.Seed(ReserveBucket.Ariana, -20m, new DateOnly(2026, 7, 2));
+        var service = new ReserveService(repository);
+
+        await service.DeleteMovementAsync(toDelete.Id);
+
+        repository.ReserveMovements.Should().ContainSingle();
+        repository.SaveChangesCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task DeleteMovementAsync_MovementFromASplit_DeletesAllFourSiblingMovements()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new ReserveService(repository);
+        await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
+        var oneLineOfTheSplit = repository.ReserveMovements[0];
+
+        await service.DeleteMovementAsync(oneLineOfTheSplit.Id);
+
+        repository.ReserveMovements.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DeleteMovementAsync_WithUnknownId_ThrowsKeyNotFoundException()
+    {
+        var service = new ReserveService(new StubCashFlowRepository());
+
+        var act = async () => await service.DeleteMovementAsync(Guid.NewGuid());
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+    }
+
     private static IncomeSplitRequestDTO ValidIncomeSplitRequest() => new()
     {
         Date = new DateOnly(2026, 7, 1),

@@ -185,4 +185,82 @@ public class ReserveEndpointsTests
         movements.Should().HaveCount(4);
         movements.Should().OnlyContain(m => m.Description == "Ramsay");
     }
+
+    [Fact]
+    public async Task UpdateMovement_ExistingId_ReturnsOkAndUpdatesFields()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var withdrawal = await client.PostAsJsonAsync("/api/v1/financial/reserve/withdrawals", new WithdrawalRequestDTO
+        {
+            Bucket = "Ariana",
+            Amount = 30m,
+            Date = new DateOnly(2026, 7, 2),
+            Description = "Groceries",
+            Confirmed = true
+        });
+        var movement = await withdrawal.Content.ReadFromJsonAsync<ReserveMovementDTO>();
+
+        var response = await client.PutAsJsonAsync($"/api/v1/financial/reserve/movements/{movement!.Id}", new UpdateReserveMovementDTO
+        {
+            Bucket = "Ariana",
+            Amount = -45m,
+            Date = new DateOnly(2026, 7, 3),
+            Description = "Groceries (corrected)"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<ReserveMovementDTO>();
+        updated!.Amount.Should().Be(-45m);
+        updated.Description.Should().Be("Groceries (corrected)");
+    }
+
+    [Fact]
+    public async Task UpdateMovement_UnknownId_ReturnsNotFound()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync($"/api/v1/financial/reserve/movements/{Guid.NewGuid()}", new UpdateReserveMovementDTO
+        {
+            Bucket = "Ariana",
+            Amount = 10m,
+            Date = new DateOnly(2026, 7, 1),
+            Description = "Test"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeleteMovement_MovementFromASplit_DeletesAllFourLines()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        await client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", new IncomeSplitRequestDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            Amount = 1963m,
+            Description = "Ramsay"
+        });
+        var movements = await client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
+        var oneLineOfTheSplit = movements!.First();
+
+        var response = await client.DeleteAsync($"/api/v1/financial/reserve/movements/{oneLineOfTheSplit.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var remaining = await client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
+        remaining.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DeleteMovement_UnknownId_ReturnsNotFound()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.DeleteAsync($"/api/v1/financial/reserve/movements/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
 }
