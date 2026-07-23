@@ -19,15 +19,14 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const BALANCES: ReserveBucketBalanceDto[] = [
-  { bucket: 'Dizimo', balance: 637 },
-  { bucket: 'Investimento', balance: 1854.33 },
-  { bucket: 'HouseTreats', balance: 1854.33 },
-  { bucket: 'Ariana', balance: 927.17 },
-  { bucket: 'Gleison', balance: 927.17 },
+  { bucket: 'Investimento', balance: 654.33 },
+  { bucket: 'HouseTreats', balance: 654.33 },
+  { bucket: 'Ariana', balance: 327.17 },
+  { bucket: 'Gleison', balance: 327.17 },
 ]
 
 const MOVEMENTS: ReserveMovementDto[] = [
-  { id: 'm1', bucket: 'Dizimo', amount: 637, date: '2026-07-01', description: 'Monthly income split' },
+  { id: 'm1', bucket: 'Investimento', amount: 654.33, date: '2026-07-01', description: 'Monthly income split' },
 ]
 
 describe('ReservaPage', () => {
@@ -53,7 +52,7 @@ describe('ReservaPage', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 
-  it('renders all 5 bucket balances and the movement history once loaded', async () => {
+  it('renders all 4 bucket balances and the movement history once loaded', async () => {
     render(<ReservaPage />)
 
     await waitFor(() => expect(screen.getByText('Bucket Balances')).toBeInTheDocument())
@@ -61,6 +60,14 @@ describe('ReservaPage', () => {
       expect(screen.getAllByText(b.bucket).length).toBeGreaterThan(0)
     }
     expect(screen.getByText('Monthly income split')).toBeInTheDocument()
+  })
+
+  it('renders the total balance across all buckets, bold and always visible', async () => {
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getByText('Bucket Balances')).toBeInTheDocument())
+    // 654.33 + 654.33 + 327.17 + 327.17 = 1963.00
+    expect(screen.getByText('1,963.00')).toBeInTheDocument()
   })
 
   it('shows the income-split form only after New Income Split is clicked', async () => {

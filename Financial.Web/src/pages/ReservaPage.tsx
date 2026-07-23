@@ -5,6 +5,26 @@ import type { SplitFormField, WithdrawalFormField } from '../hooks/useReserva'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ReservaPage.css'
 
+function BalanceColumns() {
+  return (
+    <colgroup>
+      <col />
+      <col className="reserva-page__col-value" />
+    </colgroup>
+  )
+}
+
+function MovementColumns() {
+  return (
+    <colgroup>
+      <col className="reserva-page__col-date" />
+      <col className="reserva-page__col-bucket" />
+      <col />
+      <col className="reserva-page__col-value" />
+    </colgroup>
+  )
+}
+
 const SPLIT_FIELDS: { field: SplitFormField; label: string }[] = [
   { field: 'gleisonSalaryGross', label: 'Salario Gleison (gross)' },
   { field: 'gleisonSalaryNet', label: 'Salario Gleison (net)' },
@@ -17,6 +37,7 @@ const SPLIT_FIELDS: { field: SplitFormField; label: string }[] = [
 export default function ReservaPage() {
   const {
     balances,
+    totalBalance,
     movements,
     isLoading,
     error,
@@ -186,49 +207,66 @@ export default function ReservaPage() {
       )}
 
       <div className="reserva-page__content">
-        <section className="reserva-page__section">
-          <h2>Bucket Balances</h2>
-          <table className="reserva-page__table data-table">
-            <thead>
-              <tr>
-                <th>Bucket</th>
-                <th className="data-table__col--numeric">Balance</th>
-              </tr>
-            </thead>
-            <tbody>
-              {balances.map((b) => (
-                <tr key={b.bucket}>
-                  <td>{b.bucket}</td>
-                  <td className="data-table__col--numeric">{formatN2(b.balance)}</td>
+        <div className="reserva-page__grids-row">
+          <section className="reserva-page__section reserva-page__section--grid reserva-page__section--balances">
+            <h2>Bucket Balances</h2>
+            <div className="reserva-page__table-scroll">
+              <table className="reserva-page__table data-table">
+                <BalanceColumns />
+                <thead>
+                  <tr>
+                    <th>Bucket</th>
+                    <th className="data-table__col--numeric">Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {balances.map((b) => (
+                    <tr key={b.bucket}>
+                      <td>{b.bucket}</td>
+                      <td className="data-table__col--numeric">{formatN2(b.balance)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <table className="reserva-page__table reserva-page__totals-table data-table">
+              <BalanceColumns />
+              <tbody>
+                <tr className="reserva-page__totals-row">
+                  <td>Total</td>
+                  <td className="data-table__col--numeric">{formatN2(totalBalance)}</td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+              </tbody>
+            </table>
+          </section>
 
-        <section className="reserva-page__section reserva-page__section--main">
-          <h2>Movement History</h2>
-          <table className="reserva-page__table data-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Bucket</th>
-                <th>Description</th>
-                <th className="data-table__col--numeric">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {movements.map((m) => (
-                <tr key={m.id}>
-                  <td>{formatShortDate(m.date)}</td>
-                  <td>{m.bucket}</td>
-                  <td>{m.description}</td>
-                  <td className="data-table__col--numeric">{formatN2(m.amount)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+          <section className="reserva-page__section reserva-page__section--grid reserva-page__section--movements">
+            <h2>Movement History</h2>
+            <div className="reserva-page__table-scroll">
+              <table className="reserva-page__table data-table">
+                <MovementColumns />
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Bucket</th>
+                    <th>Description</th>
+                    <th className="data-table__col--numeric">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {movements.map((m) => (
+                    <tr key={m.id}>
+                      <td>{formatShortDate(m.date)}</td>
+                      <td>{m.bucket}</td>
+                      <td>{m.description}</td>
+                      <td className="data-table__col--numeric">{formatN2(m.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   )

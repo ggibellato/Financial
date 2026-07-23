@@ -31,8 +31,8 @@ public class ReserveMovementTests
     [Fact]
     public void Create_TwoMovements_HaveDifferentIds()
     {
-        var first = ReserveMovement.Create(ReserveBucket.Dizimo, 10m, new DateOnly(2026, 7, 1), "A");
-        var second = ReserveMovement.Create(ReserveBucket.Dizimo, 10m, new DateOnly(2026, 7, 1), "B");
+        var first = ReserveMovement.Create(ReserveBucket.Investimento, 10m, new DateOnly(2026, 7, 1), "A");
+        var second = ReserveMovement.Create(ReserveBucket.Investimento, 10m, new DateOnly(2026, 7, 1), "B");
 
         first.Id.Should().NotBe(second.Id);
     }

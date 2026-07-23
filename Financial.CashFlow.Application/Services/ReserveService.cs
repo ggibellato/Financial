@@ -35,7 +35,6 @@ public sealed class ReserveService : IReserveService
 
         var movements = new[]
         {
-            ReserveMovement.Create(ReserveBucket.Dizimo, split.Dizimo, request.Date, IncomeSplitDescription),
             ReserveMovement.Create(ReserveBucket.Investimento, split.Investimento, request.Date, IncomeSplitDescription),
             ReserveMovement.Create(ReserveBucket.HouseTreats, split.HouseTreats, request.Date, IncomeSplitDescription),
             ReserveMovement.Create(ReserveBucket.Ariana, split.Ariana, request.Date, IncomeSplitDescription),
@@ -124,7 +123,7 @@ public sealed class ReserveService : IReserveService
 
     public IReadOnlyList<ReserveMovementDTO> GetMovementHistory() =>
         _repository.GetReserveMovements()
-            .OrderBy(m => m.Date)
+            .OrderByDescending(m => m.Date)
             .Select(ToDto)
             .ToList();
 

@@ -18,19 +18,19 @@ public class ReserveServiceTests
     }
 
     [Fact]
-    public async Task PostIncomeSplitAsync_WithValidRequest_PostsExactlyFiveMovementsAndReturnsAmounts()
+    public async Task PostIncomeSplitAsync_WithValidRequest_PostsExactlyFourMovementsAndReturnsAmounts()
     {
         var repository = new StubCashFlowRepository();
         var service = new ReserveService(repository);
 
         var result = await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
 
-        repository.ReserveMovements.Should().HaveCount(5);
+        repository.ReserveMovements.Should().HaveCount(4);
         result.Dizimo.Should().Be(637m);
-        result.Investimento.Should().Be(1854.33m);
-        result.HouseTreats.Should().Be(1854.33m);
-        result.Ariana.Should().Be(927.17m);
-        result.Gleison.Should().Be(927.17m);
+        result.Investimento.Should().Be(654.33m);
+        result.HouseTreats.Should().Be(654.33m);
+        result.Ariana.Should().Be(327.17m);
+        result.Gleison.Should().Be(327.17m);
         repository.SaveChangesCallCount.Should().Be(1);
     }
 
@@ -63,7 +63,7 @@ public class ReserveServiceTests
     }
 
     [Fact]
-    public async Task PostIncomeSplitAsync_WhenSaveFails_RollsBackAllFiveMovements()
+    public async Task PostIncomeSplitAsync_WhenSaveFails_RollsBackAllFourMovements()
     {
         var repository = new StubCashFlowRepository { ThrowOnSave = true };
         var service = new ReserveService(repository);
@@ -141,7 +141,7 @@ public class ReserveServiceTests
 
         var act = async () => await service.PostWithdrawalAsync(new WithdrawalRequestDTO
         {
-            Bucket = "Dizimo",
+            Bucket = "Investimento",
             Amount = 0m,
             Date = new DateOnly(2026, 7, 1),
             Description = "Nothing"
@@ -167,14 +167,14 @@ public class ReserveServiceTests
     }
 
     [Fact]
-    public void GetBucketBalances_AlwaysReturnsExactlyFiveBuckets()
+    public void GetBucketBalances_AlwaysReturnsExactlyFourBuckets()
     {
         var repository = new StubCashFlowRepository();
         var service = new ReserveService(repository);
 
         var balances = service.GetBucketBalances();
 
-        balances.Should().HaveCount(5);
+        balances.Should().HaveCount(4);
         balances.Should().OnlyContain(b => b.Balance == 0m);
     }
 
@@ -187,22 +187,21 @@ public class ReserveServiceTests
 
         var balances = service.GetBucketBalances();
 
-        balances.Should().ContainSingle(b => b.Bucket == "Dizimo" && b.Balance == 637m);
-        balances.Should().ContainSingle(b => b.Bucket == "Investimento" && b.Balance == 1854.33m);
+        balances.Should().ContainSingle(b => b.Bucket == "Investimento" && b.Balance == 654.33m);
     }
 
     [Fact]
-    public void GetMovementHistory_ReturnsAllMovementsOrderedByDate()
+    public void GetMovementHistory_ReturnsAllMovementsOrderedByDateDescending()
     {
         var repository = new StubCashFlowRepository();
-        repository.Seed(ReserveBucket.Dizimo, 10m, new DateOnly(2026, 8, 1));
-        repository.Seed(ReserveBucket.Dizimo, 5m, new DateOnly(2026, 7, 1));
+        repository.Seed(ReserveBucket.Investimento, 10m, new DateOnly(2026, 8, 1));
+        repository.Seed(ReserveBucket.Investimento, 5m, new DateOnly(2026, 7, 1));
         var service = new ReserveService(repository);
 
         var history = service.GetMovementHistory();
 
         history.Should().HaveCount(2);
-        history.Select(m => m.Date).Should().BeInAscendingOrder();
+        history.Select(m => m.Date).Should().BeInDescendingOrder();
     }
 
     private static IncomeSplitRequestDTO ValidIncomeSplitRequest() => new()

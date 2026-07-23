@@ -3,7 +3,7 @@ import { ApiError } from '../api/apiError'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { ReserveBucketBalanceDto, ReserveMovementDto } from '../api/types'
 
-export const RESERVE_BUCKETS = ['Dizimo', 'Investimento', 'HouseTreats', 'Ariana', 'Gleison'] as const
+export const RESERVE_BUCKETS = ['Investimento', 'HouseTreats', 'Ariana', 'Gleison'] as const
 
 export type SplitFormField =
   | 'splitDate'
@@ -133,6 +133,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
 
 export interface ReservaData {
   balances: ReserveBucketBalanceDto[]
+  totalBalance: number
   movements: ReserveMovementDto[]
   isLoading: boolean
   error: string | null
@@ -180,6 +181,11 @@ export function useReserva(): ReservaData {
   useEffect(() => {
     fetchReservaData()
   }, [fetchReservaData, state.retryCount])
+
+  const totalBalance = useMemo(
+    () => state.balances.reduce((sum, b) => sum + b.balance, 0),
+    [state.balances],
+  )
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
@@ -298,6 +304,7 @@ export function useReserva(): ReservaData {
 
   return {
     balances: state.balances,
+    totalBalance,
     movements: state.movements,
     isLoading: state.isLoading,
     error: state.error,

@@ -12,9 +12,12 @@ public static class ReserveSplitCalculator
         decimal lottery,
         decimal dividendoJuros)
     {
-        var combinedNetSalary = gleisonSalaryNet + arianaSalaryNet;
-        var dizimo = Round((combinedNetSalary + lottery + dividendoJuros) * DizimoRate);
-        var limpo = combinedNetSalary - dizimo;
+        // Dizimo (tithe) is computed on the combined household income but is informational only —
+        // it is paid outside the app and never funds the Reserva pool itself.
+        var dizimo = Round((gleisonSalaryNet + arianaSalaryNet + lottery + dividendoJuros) * DizimoRate);
+
+        // Only Ariana's wage, net of her share of the tithe, seeds the Reserva pool.
+        var limpo = arianaSalaryNet - dizimo;
 
         var investimento = Round(limpo / 3m);
         var houseTreats = Round(limpo / 3m);
