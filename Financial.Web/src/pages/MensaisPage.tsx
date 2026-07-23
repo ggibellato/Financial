@@ -146,31 +146,33 @@ export default function MensaisPage() {
 
   return (
     <div className="mensais-page">
-      <div className="mensais-page__month-picker">
-        <label htmlFor="mensais-month">Month</label>
-        <input
-          id="mensais-month"
-          type="month"
-          value={monthInputValue}
-          onChange={(e) => setMonthInputValue(e.target.value)}
-        />
-        {!isAddFormOpen && (
+      <div className="mensais-page__header">
+        <div className="mensais-page__month-picker">
+          <label htmlFor="mensais-month">Month</label>
+          <input
+            id="mensais-month"
+            type="month"
+            value={monthInputValue}
+            onChange={(e) => setMonthInputValue(e.target.value)}
+          />
+        </div>
+        <div className="mensais-page__toolbar">
           <button className="mensais-page__new-btn" type="button" onClick={showAddForm}>
             Add Bill
           </button>
-        )}
-        <button
-          className="mensais-page__new-btn"
-          type="button"
-          disabled={isResetting}
-          onClick={() => {
-            if (window.confirm('Reset every bill back to Unset for the new month?')) {
-              resetAllToUnset()
-            }
-          }}
-        >
-          {isResetting ? 'Resetting...' : 'Reset All to Unset'}
-        </button>
+          <button
+            className="mensais-page__new-btn"
+            type="button"
+            disabled={isResetting}
+            onClick={() => {
+              if (window.confirm('Reset every bill back to Unset for the new month?')) {
+                resetAllToUnset()
+              }
+            }}
+          >
+            {isResetting ? 'Resetting...' : 'Reset All to Unset'}
+          </button>
+        </div>
       </div>
 
       {deleteError && <p className="mensais-page__error">{deleteError}</p>}
@@ -231,10 +233,10 @@ export default function MensaisPage() {
             </div>
           </div>
           <div className="mensais-page__form-actions">
-            <button type="button" disabled={isAdding} onClick={submitAdd}>
+            <button className="mensais-page__submit-btn" type="button" disabled={isAdding} onClick={submitAdd}>
               {isAdding ? 'Adding...' : 'Add'}
             </button>
-            <button type="button" onClick={cancelAdd}>
+            <button className="mensais-page__cancel-btn" type="button" onClick={cancelAdd}>
               Cancel
             </button>
           </div>
@@ -272,10 +274,10 @@ export default function MensaisPage() {
             </div>
           </div>
           <div className="mensais-page__form-actions">
-            <button type="button" disabled={isSaving} onClick={saveEdit}>
+            <button className="mensais-page__submit-btn" type="button" disabled={isSaving} onClick={saveEdit}>
               {isSaving ? 'Saving...' : 'Save'}
             </button>
-            <button type="button" onClick={cancelEdit}>
+            <button className="mensais-page__cancel-btn" type="button" onClick={cancelEdit}>
               Cancel
             </button>
           </div>

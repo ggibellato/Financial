@@ -105,6 +105,38 @@
   align-items: center;
 }
 
+.monthly-page__submit-btn {
+  font-size: 12px;
+  padding: 3px 12px;
+  cursor: pointer;
+  background: #007acc;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+}
+
+.monthly-page__submit-btn:hover {
+  background: #005fa3;
+}
+
+.monthly-page__submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.monthly-page__cancel-btn {
+  font-size: 12px;
+  padding: 3px 10px;
+  cursor: pointer;
+  background: none;
+  border: 1px solid var(--border, #e5e4e7);
+  border-radius: 3px;
+}
+
+.monthly-page__cancel-btn:hover {
+  background: var(--bg-hover, #f0f0f0);
+}
+
 .monthly-page__error {
   margin-top: 6px;
   color: var(--error, #c0392b);
