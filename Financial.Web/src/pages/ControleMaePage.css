@@ -66,6 +66,9 @@
 .controle-mae-page__table {
   width: 100%;
   max-width: 840px;
+  /* border-collapse: collapse breaks sticky positioning on table cells (rows paint over the sticky footer). */
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .controle-mae-page__form {
@@ -95,7 +98,8 @@
 .controle-mae-page__totals-row td {
   position: sticky;
   bottom: 0;
-  background: var(--bg, #fff);
-  font-weight: 600;
+  z-index: 1;
+  background: var(--bg-subtle, #f9f9f9);
+  font-weight: bold;
   border-top: 2px solid var(--border, #e5e4e7);
 }
