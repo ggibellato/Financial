@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { MaeLedgerEntryDto } from '../api/types'
-import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
+import type { MaeLedgerEntryDto, MaeLedgerTotalsDto } from '../api/types'
+import { previousYearJanuaryFirst } from '../utils/formatters'
 
 export type CreateFormField = 'createDate' | 'createDescription' | 'createNote' | 'createSourceCurrency' | 'createSourceValue'
 export type EditField = 'editBrlValue' | 'editGbpValue'
 
 interface ControleMaeState {
-  year: number
-  month: number
+  fromDate: string
   entries: MaeLedgerEntryDto[]
+  totals: MaeLedgerTotalsDto | null
   isLoading: boolean
   error: string | null
   retryCount: number
@@ -29,10 +29,11 @@ interface ControleMaeState {
 }
 
 type ControleMaeAction =
-  | { type: 'SET_MONTH'; payload: { year: number; month: number } }
+  | { type: 'SET_FROM_DATE'; payload: string }
   | { type: 'FETCH_START' }
   | { type: 'FETCH_SUCCESS'; payload: MaeLedgerEntryDto[] }
   | { type: 'FETCH_ERROR'; payload: string }
+  | { type: 'FETCH_TOTALS_SUCCESS'; payload: MaeLedgerTotalsDto }
   | { type: 'RETRY' }
   | { type: 'SHOW_CREATE_FORM' }
   | { type: 'CANCEL_CREATE_FORM' }
@@ -47,8 +48,6 @@ type ControleMaeAction =
   | { type: 'SAVE_SUCCESS' }
   | { type: 'SAVE_ERROR'; payload: string }
 
-const { year: DEFAULT_YEAR, month: DEFAULT_MONTH } = currentYearMonth()
-
 const BLANK_CREATE_FORM = {
   createDate: '',
   createDescription: '',
@@ -58,9 +57,9 @@ const BLANK_CREATE_FORM = {
 } as const
 
 const INITIAL_STATE: ControleMaeState = {
-  year: DEFAULT_YEAR,
-  month: DEFAULT_MONTH,
+  fromDate: previousYearJanuaryFirst(),
   entries: [],
+  totals: null,
   isLoading: true,
   error: null,
   retryCount: 0,
@@ -77,14 +76,16 @@ const INITIAL_STATE: ControleMaeState = {
 
 function reducer(state: ControleMaeState, action: ControleMaeAction): ControleMaeState {
   switch (action.type) {
-    case 'SET_MONTH':
-      return { ...state, year: action.payload.year, month: action.payload.month }
+    case 'SET_FROM_DATE':
+      return { ...state, fromDate: action.payload }
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null }
     case 'FETCH_SUCCESS':
       return { ...state, isLoading: false, entries: action.payload }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
+    case 'FETCH_TOTALS_SUCCESS':
+      return { ...state, totals: action.payload }
     case 'RETRY':
       return { ...state, retryCount: state.retryCount + 1 }
     case 'SHOW_CREATE_FORM':
@@ -124,9 +125,10 @@ function reducer(state: ControleMaeState, action: ControleMaeAction): ControleMa
 }
 
 export interface ControleMaeData {
-  monthInputValue: string
-  setMonthInputValue: (value: string) => void
+  fromDateInputValue: string
+  setFromDateInputValue: (value: string) => void
   entries: MaeLedgerEntryDto[]
+  totals: MaeLedgerTotalsDto | null
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -160,19 +162,25 @@ export function useControleMae(): ControleMaeData {
   useEffect(() => {
     dispatch({ type: 'FETCH_START' })
     void apiClient
-      .getMaeLedgerEntriesByMonth(state.year, state.month)
+      .getMaeLedgerEntriesFromDate(state.fromDate)
       .then((entries) => dispatch({ type: 'FETCH_SUCCESS', payload: entries }))
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: err instanceof Error ? err.message : 'Unable to load Controle Mae data' })
       })
-  }, [apiClient, state.year, state.month, state.retryCount])
+  }, [apiClient, state.fromDate, state.retryCount])
 
-  const monthInputValue = formatMonthInputValue(state.year, state.month)
+  useEffect(() => {
+    void apiClient
+      .getMaeLedgerTotals()
+      .then((totals) => dispatch({ type: 'FETCH_TOTALS_SUCCESS', payload: totals }))
+      .catch(() => {
+        // Totals are supplementary to the ledger list; a failed refresh just keeps the last known values.
+      })
+  }, [apiClient, state.retryCount])
 
-  const setMonthInputValue = useCallback((value: string) => {
-    const parsed = parseMonthInputValue(value)
-    if (!parsed) return
-    dispatch({ type: 'SET_MONTH', payload: parsed })
+  const setFromDateInputValue = useCallback((value: string) => {
+    if (!value) return
+    dispatch({ type: 'SET_FROM_DATE', payload: value })
   }, [])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
@@ -262,9 +270,10 @@ export function useControleMae(): ControleMaeData {
   }
 
   return {
-    monthInputValue,
-    setMonthInputValue,
+    fromDateInputValue: state.fromDate,
+    setFromDateInputValue,
     entries: state.entries,
+    totals: state.totals,
     isLoading: state.isLoading,
     error: state.error,
     retry,

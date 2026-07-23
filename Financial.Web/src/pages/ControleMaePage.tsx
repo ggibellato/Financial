@@ -29,9 +29,10 @@ function EntryRow({ entry, onEdit }: EntryRowProps) {
 
 export default function ControleMaePage() {
   const {
-    monthInputValue,
-    setMonthInputValue,
+    fromDateInputValue,
+    setFromDateInputValue,
     entries,
+    totals,
     isLoading,
     error,
     retry,
@@ -65,12 +66,12 @@ export default function ControleMaePage() {
     <div className="controle-mae-page">
       <div className="controle-mae-page__header">
         <div className="controle-mae-page__month-picker">
-          <label htmlFor="controle-mae-month">Month</label>
+          <label htmlFor="controle-mae-from-date">From</label>
           <input
-            id="controle-mae-month"
-            type="month"
-            value={monthInputValue}
-            onChange={(e) => setMonthInputValue(e.target.value)}
+            id="controle-mae-from-date"
+            type="date"
+            value={fromDateInputValue}
+            onChange={(e) => setFromDateInputValue(e.target.value)}
           />
         </div>
         <button className="controle-mae-page__new-btn" type="button" onClick={showCreateForm}>
@@ -194,6 +195,14 @@ export default function ControleMaePage() {
                   <EntryRow key={entry.id} entry={entry} onEdit={showEditForm} />
                 ))}
               </tbody>
+              <tfoot>
+                <tr className="controle-mae-page__totals-row">
+                  <td colSpan={3}>Total (all entries)</td>
+                  <td className="data-table__col--numeric">{totals ? formatN2(totals.totalBrlValue) : '—'}</td>
+                  <td className="data-table__col--numeric">{totals ? formatN2(totals.totalGbpValue) : '—'}</td>
+                  <td />
+                </tr>
+              </tfoot>
             </table>
           </section>
         </div>

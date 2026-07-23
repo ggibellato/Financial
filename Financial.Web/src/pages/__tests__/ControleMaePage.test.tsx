@@ -2,15 +2,17 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ControleMaePage from '../ControleMaePage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { MaeLedgerEntryDto } from '../../api/types'
+import type { MaeLedgerEntryDto, MaeLedgerTotalsDto } from '../../api/types'
 
-const getMaeLedgerEntriesByMonthMock = vi.fn<FinancialApiClient['getMaeLedgerEntriesByMonth']>()
+const getMaeLedgerEntriesFromDateMock = vi.fn<FinancialApiClient['getMaeLedgerEntriesFromDate']>()
+const getMaeLedgerTotalsMock = vi.fn<FinancialApiClient['getMaeLedgerTotals']>()
 const createMaeLedgerEntryMock = vi.fn<FinancialApiClient['createMaeLedgerEntry']>()
 const updateMaeLedgerEntryValuesMock = vi.fn<FinancialApiClient['updateMaeLedgerEntryValues']>()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
-    getMaeLedgerEntriesByMonth: getMaeLedgerEntriesByMonthMock,
+    getMaeLedgerEntriesFromDate: getMaeLedgerEntriesFromDateMock,
+    getMaeLedgerTotals: getMaeLedgerTotalsMock,
     createMaeLedgerEntry: createMaeLedgerEntryMock,
     updateMaeLedgerEntryValues: updateMaeLedgerEntryValuesMock,
   }),
@@ -28,10 +30,13 @@ const ENTRIES: MaeLedgerEntryDto[] = [
   },
 ]
 
+const TOTALS: MaeLedgerTotalsDto = { totalBrlValue: 5000, totalGbpValue: 720.45 }
+
 describe('ControleMaePage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    getMaeLedgerEntriesByMonthMock.mockResolvedValue(ENTRIES)
+    getMaeLedgerEntriesFromDateMock.mockResolvedValue(ENTRIES)
+    getMaeLedgerTotalsMock.mockResolvedValue(TOTALS)
   })
 
   it('shows a loading state before data arrives', () => {
@@ -41,7 +46,7 @@ describe('ControleMaePage', () => {
   })
 
   it('shows an error state with retry when the fetch fails', async () => {
-    getMaeLedgerEntriesByMonthMock.mockRejectedValue(new Error('Network down'))
+    getMaeLedgerEntriesFromDateMock.mockRejectedValue(new Error('Network down'))
 
     render(<ControleMaePage />)
 
@@ -55,6 +60,14 @@ describe('ControleMaePage', () => {
     await waitFor(() => expect(screen.getByText('School supplies')).toBeInTheDocument())
     expect(screen.getByText('350.00')).toBeInTheDocument()
     expect(screen.getByText('51.10')).toBeInTheDocument()
+  })
+
+  it('renders the full BRL and GBP totals across all entries, not just the filtered ones', async () => {
+    render(<ControleMaePage />)
+
+    await waitFor(() => expect(screen.getByText('School supplies')).toBeInTheDocument())
+    expect(screen.getByText('5,000.00')).toBeInTheDocument()
+    expect(screen.getByText('720.45')).toBeInTheDocument()
   })
 
   it('shows the create-entry form only after New Entry is clicked', async () => {
@@ -82,7 +95,7 @@ describe('ControleMaePage', () => {
     const brlInput = screen.getByDisplayValue('350')
     fireEvent.change(brlInput, { target: { value: '355' } })
 
-    getMaeLedgerEntriesByMonthMock.mockResolvedValue([{ ...ENTRIES[0], brlValue: 355, gbpValue: 51.6 }])
+    getMaeLedgerEntriesFromDateMock.mockResolvedValue([{ ...ENTRIES[0], brlValue: 355, gbpValue: 51.6 }])
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() =>

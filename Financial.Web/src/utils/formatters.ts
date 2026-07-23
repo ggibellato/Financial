@@ -57,3 +57,7 @@ export function parseMonthInputValue(value: string): { year: number; month: numb
   const month = Number(monthStr)
   return Number.isFinite(year) && Number.isFinite(month) ? { year, month } : null
 }
+
+export function previousYearJanuaryFirst(): string {
+  return `${new Date().getFullYear() - 1}-01-01`
+}

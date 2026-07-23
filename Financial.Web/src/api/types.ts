@@ -338,6 +338,11 @@ export interface CreateMaeLedgerEntryDto {
   sourceValue: number
 }
 
+export interface MaeLedgerTotalsDto {
+  totalBrlValue: number
+  totalGbpValue: number
+}
+
 export interface UpdateMaeLedgerEntryValuesDto {
   brlValue: number | null
   gbpValue: number | null

@@ -135,16 +135,32 @@ public class ControleMaeServiceTests
     }
 
     [Fact]
-    public void GetEntriesByMonth_ReturnsOnlyEntriesForThatMonth()
+    public void GetEntriesFromDate_ReturnsOnlyEntriesOnOrAfterDate()
     {
         var repository = new StubCashFlowRepository();
-        repository.Entries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 7, 10), "July", string.Empty, Currency.BRL, 10m, 1m));
-        repository.Entries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 8, 10), "August", string.Empty, Currency.BRL, 10m, 1m));
+        repository.Entries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 6, 30), "Before", string.Empty, Currency.BRL, 10m, 1m));
+        repository.Entries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "OnDate", string.Empty, Currency.BRL, 10m, 1m));
+        repository.Entries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 8, 10), "After", string.Empty, Currency.BRL, 10m, 1m));
         var service = new ControleMaeService(repository, new StubExchangeRateProvider(1.5m));
 
-        var result = service.GetEntriesByMonth(2026, 7);
+        var result = service.GetEntriesFromDate(new DateOnly(2026, 7, 1));
 
-        result.Should().ContainSingle(e => e.Description == "July");
+        result.Should().HaveCount(2);
+        result.Select(e => e.Description).Should().ContainInOrder("OnDate", "After");
+    }
+
+    [Fact]
+    public void GetTotals_SumsBrlAndGbpAcrossAllEntriesRegardlessOfDate()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Entries.Add(MaeLedgerEntry.Create(new DateOnly(2020, 1, 1), "Old", string.Empty, Currency.BRL, 100m, 10m));
+        repository.Entries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 7, 10), "Recent", string.Empty, Currency.GBP, null, 5m));
+        var service = new ControleMaeService(repository, new StubExchangeRateProvider(1.5m));
+
+        var result = service.GetTotals();
+
+        result.TotalBrlValue.Should().Be(100m);
+        result.TotalGbpValue.Should().Be(15m);
     }
 
     [Fact]

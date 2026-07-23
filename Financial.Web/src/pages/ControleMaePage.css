@@ -91,3 +91,8 @@
   margin-top: 6px;
   color: var(--error, #c0392b);
 }
+
+.controle-mae-page__totals-row {
+  font-weight: 600;
+  border-top: 2px solid var(--border, #e5e4e7);
+}

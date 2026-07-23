@@ -90,10 +90,17 @@ public class ControleMaeEndpointsTests
     }
 
     [Fact]
-    public async Task GetEntriesByMonth_ReturnsOnlyEntriesForThatMonth()
+    public async Task GetEntriesFromDate_ReturnsOnlyEntriesOnOrAfterDate()
     {
         await using var factory = new ApiTestFactory(new StubExchangeRateProvider(1.5m));
         using var client = factory.CreateClient();
+        await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        {
+            Date = new DateOnly(2026, 6, 10),
+            Description = "June entry",
+            SourceCurrency = "BRL",
+            SourceValue = 10m
+        });
         await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
         {
             Date = new DateOnly(2026, 7, 10),
@@ -101,19 +108,39 @@ public class ControleMaeEndpointsTests
             SourceCurrency = "BRL",
             SourceValue = 10m
         });
-        await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
-        {
-            Date = new DateOnly(2026, 8, 10),
-            Description = "August entry",
-            SourceCurrency = "BRL",
-            SourceValue = 10m
-        });
 
-        var response = await client.GetAsync("/api/v1/financial/controle-mae/entries/month/2026/7");
+        var response = await client.GetAsync("/api/v1/financial/controle-mae/entries/from/2026-07-01");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var entries = await response.Content.ReadFromJsonAsync<List<MaeLedgerEntryDTO>>();
         entries.Should().ContainSingle(e => e.Description == "July entry");
+    }
+
+    [Fact]
+    public async Task GetTotals_SumsBrlAndGbpAcrossAllEntries()
+    {
+        await using var factory = new ApiTestFactory(new StubExchangeRateProvider(1.5m));
+        using var client = factory.CreateClient();
+        await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        {
+            Date = new DateOnly(2020, 1, 1),
+            Description = "Old entry",
+            SourceCurrency = "BRL",
+            SourceValue = 100m
+        });
+        await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        {
+            Date = new DateOnly(2026, 7, 10),
+            Description = "Recent entry",
+            SourceCurrency = "BRL",
+            SourceValue = 50m
+        });
+
+        var response = await client.GetAsync("/api/v1/financial/controle-mae/entries/totals");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var totals = await response.Content.ReadFromJsonAsync<MaeLedgerTotalsDTO>();
+        totals!.TotalBrlValue.Should().Be(150m);
     }
 
     [Fact]
