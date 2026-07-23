@@ -141,7 +141,7 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit expense' })[0])
     expect(screen.getByText('Edit Expense')).toBeInTheDocument()
     const valueInput = screen.getByDisplayValue('42.5')
     fireEvent.change(valueInput, { target: { value: '50' } })
@@ -159,7 +159,7 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
-    fireEvent.click(screen.getAllByRole('button', { name: 'Delete' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete expense' })[0])
 
     await waitFor(() => expect(deleteExpenseMock).toHaveBeenCalledWith('e1'))
   })

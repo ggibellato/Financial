@@ -81,7 +81,7 @@ describe('MensaisPage', () => {
 
     await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
 
-    const editButtons = screen.getAllByRole('button', { name: 'Edit' })
+    const editButtons = screen.getAllByRole('button', { name: 'Edit bill' })
     fireEvent.click(editButtons[0])
 
     expect(screen.getByText('Edit Bill')).toBeInTheDocument()
@@ -164,7 +164,7 @@ describe('MensaisPage', () => {
     await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
 
     getMensaisBillsMock.mockResolvedValue([BILLS[1]])
-    fireEvent.click(screen.getAllByRole('button', { name: 'Delete' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete bill' })[0])
 
     await waitFor(() => expect(deleteMensaisBillMock).toHaveBeenCalledWith('b1'))
     await waitFor(() => expect(screen.queryByText('INSS')).not.toBeInTheDocument())
@@ -176,7 +176,7 @@ describe('MensaisPage', () => {
 
     await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Delete' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete bill' })[0])
 
     expect(deleteMensaisBillMock).not.toHaveBeenCalled()
   })

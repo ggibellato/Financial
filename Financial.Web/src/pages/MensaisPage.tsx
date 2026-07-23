@@ -19,19 +19,21 @@ interface BillRowProps {
 function BillRow({ bill, showBrasilFields, isDeleting, onEdit, onDelete }: BillRowProps) {
   return (
     <tr>
-      <td>{bill.dueDay}</td>
-      <td>{bill.description}</td>
-      <td>{bill.note}</td>
-      {showBrasilFields && <td>{bill.nitNumber ?? ''}</td>}
-      {showBrasilFields && <td className="data-table__col--numeric">{bill.minimumWageValue !== null ? formatN2(bill.minimumWageValue) : ''}</td>}
-      <td className="data-table__col--numeric">{formatN2(bill.value)}</td>
-      <td>{bill.status}</td>
       <td>
-        <button type="button" onClick={() => onEdit(bill)}>
-          Edit
-        </button>
         <button
+          className="data-table__action-btn"
           type="button"
+          aria-label="Edit bill"
+          onClick={() => onEdit(bill)}
+        >
+          ✏
+        </button>
+      </td>
+      <td>
+        <button
+          className="data-table__action-btn"
+          type="button"
+          aria-label={isDeleting ? 'Deleting bill' : 'Delete bill'}
           disabled={isDeleting}
           onClick={() => {
             if (window.confirm(`Delete "${bill.description}"? This removes it for good.`)) {
@@ -39,9 +41,19 @@ function BillRow({ bill, showBrasilFields, isDeleting, onEdit, onDelete }: BillR
             }
           }}
         >
-          {isDeleting ? 'Deleting...' : 'Delete'}
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M20 20H7L3 16a2 2 0 0 1 0-2.83L14.59 1.58a2 2 0 0 1 2.83 0l4 4a2 2 0 0 1 0 2.83L8 20" />
+            <path d="M6.5 15.5 15 7" />
+          </svg>
         </button>
       </td>
+      <td>{bill.dueDay}</td>
+      <td>{bill.description}</td>
+      <td>{bill.note}</td>
+      {showBrasilFields && <td>{bill.nitNumber ?? ''}</td>}
+      {showBrasilFields && <td className="data-table__col--numeric">{bill.minimumWageValue !== null ? formatN2(bill.minimumWageValue) : ''}</td>}
+      <td className="data-table__col--numeric">{formatN2(bill.value)}</td>
+      <td>{bill.status}</td>
     </tr>
   )
 }
@@ -63,6 +75,8 @@ function BillTable({ title, bills, showBrasilFields, deletingBillId, onEdit, onD
         <table className="mensais-page__table data-table">
           <thead>
             <tr>
+              <th />
+              <th />
               <th>Due Day</th>
               <th>Description</th>
               <th>Note</th>
@@ -70,7 +84,6 @@ function BillTable({ title, bills, showBrasilFields, deletingBillId, onEdit, onD
               {showBrasilFields && <th className="data-table__col--numeric">Min. Wage</th>}
               <th className="data-table__col--numeric">Value</th>
               <th>Status</th>
-              <th />
             </tr>
           </thead>
           <tbody>
