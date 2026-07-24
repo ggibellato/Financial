@@ -439,6 +439,9 @@ export default function MonthlyPage() {
     cancelEditIncome,
     saveEditIncome,
     deleteIncome,
+    incomeTotals,
+    totalIncoming,
+    titheSummary,
   } = useMonthly()
 
   const isEditing = editingId !== null
@@ -620,6 +623,42 @@ export default function MonthlyPage() {
               </div>
               <p className="monthly-page__section-total">
                 Bank Balance: <strong>{formatN2(bankTotalsSum)}</strong> · Round-Up: <strong>{formatN2(roundUpTotalsSum)}</strong>
+              </p>
+            </section>
+
+            <section className="monthly-page__section monthly-page__section--grid">
+              <h2>Incoming</h2>
+              <div className="monthly-page__table-scroll">
+                <table className="monthly-page__table data-table">
+                  <thead>
+                    <tr>
+                      <th>Source</th>
+                      <th className="data-table__col--numeric">Gross</th>
+                      <th className="data-table__col--numeric">Net</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {incomeTotals.map((i) => (
+                      <tr key={i.source}>
+                        <td>{i.source}</td>
+                        <td className="data-table__col--numeric">
+                          {i.grossValue != null ? formatN2(i.grossValue) : '—'}
+                        </td>
+                        <td className="data-table__col--numeric">{formatN2(i.netValue)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="monthly-page__section-total">
+                Total Incoming: <strong>{formatN2(totalIncoming)}</strong>
+                {titheSummary && (
+                  <>
+                    {' '}
+                    · Calculated Tithe: <strong>{formatN2(titheSummary.calculatedTithe)}</strong> · Tithe Balance:{' '}
+                    <strong>{formatN2(titheSummary.titheBalance)}</strong>
+                  </>
+                )}
               </p>
             </section>
           </div>

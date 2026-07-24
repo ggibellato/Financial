@@ -2,7 +2,15 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MonthlyPage from '../MonthlyPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { BankBalanceDto, BankDto, CardStatementDto, CategoryTotalDto, ExpenseDto, IncomeDto } from '../../api/types'
+import type {
+  BankBalanceDto,
+  BankDto,
+  CardStatementDto,
+  CategoryTotalDto,
+  ExpenseDto,
+  IncomeDto,
+  TitheSummaryDto,
+} from '../../api/types'
 
 const getExpensesByMonthMock = vi.fn<FinancialApiClient['getExpensesByMonth']>()
 const getCategoryTotalsByMonthMock = vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>()
@@ -18,6 +26,7 @@ const createIncomeMock = vi.fn<FinancialApiClient['createIncome']>()
 const updateIncomeMock = vi.fn<FinancialApiClient['updateIncome']>()
 const deleteIncomeMock = vi.fn<FinancialApiClient['deleteIncome']>()
 const getBankBalancesByMonthMock = vi.fn<FinancialApiClient['getBankBalancesByMonth']>()
+const getTitheSummaryByMonthMock = vi.fn<FinancialApiClient['getTitheSummaryByMonth']>()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
@@ -35,6 +44,7 @@ vi.mock('../../api/financialApiClient', () => ({
     updateIncome: updateIncomeMock,
     deleteIncome: deleteIncomeMock,
     getBankBalancesByMonth: getBankBalancesByMonthMock,
+    getTitheSummaryByMonth: getTitheSummaryByMonthMock,
   }),
 }))
 
@@ -77,6 +87,8 @@ const BANK_BALANCES: BankBalanceDto[] = [
   { bank: 'Chase', balance: 0 },
 ]
 
+const TITHE_SUMMARY: TitheSummaryDto = { calculatedTithe: 245, titheBalance: 245 }
+
 describe('MonthlyPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -86,6 +98,7 @@ describe('MonthlyPage', () => {
     getBanksMock.mockResolvedValue(BANKS)
     getIncomesByMonthMock.mockResolvedValue(INCOMES)
     getBankBalancesByMonthMock.mockResolvedValue(BANK_BALANCES)
+    getTitheSummaryByMonthMock.mockResolvedValue(TITHE_SUMMARY)
     vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
@@ -346,7 +359,7 @@ describe('MonthlyPage', () => {
     updateIncomeMock.mockResolvedValue({ ...INCOMES[0], netValue: 500 })
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByText('Gleison')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Edit income' }).length).toBeGreaterThan(0))
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit income' })[0])
     expect(screen.getByText('Edit Income')).toBeInTheDocument()
@@ -365,10 +378,48 @@ describe('MonthlyPage', () => {
     deleteIncomeMock.mockResolvedValue(undefined)
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByText('Gleison')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Delete income' }).length).toBeGreaterThan(0))
     fireEvent.click(screen.getAllByRole('button', { name: 'Delete income' })[0])
 
     await waitFor(() => expect(deleteIncomeMock).toHaveBeenCalledWith('i1'))
+  })
+
+  it('renders the Incoming card with one row per source and the calculated tithe and tithe balance', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByText('Incoming')).toBeInTheDocument())
+    const incomingSection = within(screen.getByText('Incoming').closest('section')!)
+    expect(incomingSection.getByRole('cell', { name: 'Gleison' })).toBeInTheDocument()
+    expect(incomingSection.getByText('3,200.00')).toBeInTheDocument()
+    expect(incomingSection.getAllByText('2,450.00').length).toBeGreaterThanOrEqual(1)
+    expect(incomingSection.getByText(/Total Incoming:/)).toBeInTheDocument()
+    expect(incomingSection.getByText(/Calculated Tithe:/)).toBeInTheDocument()
+    expect(incomingSection.getByText(/Tithe Balance:/)).toBeInTheDocument()
+  })
+
+  it('updates the Incoming card after a new income entry is added', async () => {
+    createIncomeMock.mockResolvedValue({ id: 'i2', date: '2026-07-15', incomeSource: 'Lottery', grossValue: null, netValue: 100, bank: 'Chase' })
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-15' } })
+    fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'Lottery' } })
+    fireEvent.change(screen.getByLabelText('Net Value'), { target: { value: '100' } })
+
+    getIncomesByMonthMock.mockResolvedValue([...INCOMES, {
+      id: 'i2',
+      date: '2026-07-15',
+      incomeSource: 'Lottery',
+      grossValue: null,
+      netValue: 100,
+      bank: 'Chase',
+    }])
+    fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
+
+    await waitFor(() => expect(createIncomeMock).toHaveBeenCalled())
+    const incomingSection = within(screen.getByText('Incoming').closest('section')!)
+    await waitFor(() => expect(incomingSection.getByRole('cell', { name: 'Lottery' })).toBeInTheDocument())
   })
 
   it('bank picker and mark-paid picker list banks fetched from the API', async () => {
