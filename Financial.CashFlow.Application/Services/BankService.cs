@@ -32,6 +32,32 @@ public sealed class BankService : IBankService
         return ToDto(bank);
     }
 
+    public IReadOnlyList<BankBalanceDTO> GetBankBalancesByMonth(int year, int month)
+    {
+        var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
+        var incomes = _repository.GetIncomes().ToList();
+        var expenses = _repository.GetExpenses().ToList();
+
+        return _repository.GetBanks()
+            .Select(bank =>
+            {
+                var incomeTotal = incomes
+                    .Where(i => i.Bank == bank.Name && i.Date >= bank.OpeningBalanceDate && i.Date <= endOfMonth)
+                    .Sum(i => i.NetValue);
+
+                var expenseTotal = expenses
+                    .Where(e => e.PaymentSource == bank.Name && e.Date >= bank.OpeningBalanceDate && e.Date <= endOfMonth)
+                    .Sum(e => e.Value - (e.RoundUpAmount ?? 0));
+
+                return new BankBalanceDTO
+                {
+                    Bank = bank.Name,
+                    Balance = bank.OpeningBalance + incomeTotal - expenseTotal
+                };
+            })
+            .ToList();
+    }
+
     private static BankDTO ToDto(Bank bank) => new()
     {
         Name = bank.Name,

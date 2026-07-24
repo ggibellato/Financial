@@ -603,7 +603,7 @@ export default function MonthlyPage() {
                   <thead>
                     <tr>
                       <th>Bank</th>
-                      <th className="data-table__col--numeric">Balance</th>
+                      <th className="data-table__col--numeric">Bank Balance</th>
                       <th className="data-table__col--numeric">Round-Up</th>
                     </tr>
                   </thead>
@@ -619,7 +619,7 @@ export default function MonthlyPage() {
                 </table>
               </div>
               <p className="monthly-page__section-total">
-                Balance: <strong>{formatN2(bankTotalsSum)}</strong> · Round-Up: <strong>{formatN2(roundUpTotalsSum)}</strong>
+                Bank Balance: <strong>{formatN2(bankTotalsSum)}</strong> · Round-Up: <strong>{formatN2(roundUpTotalsSum)}</strong>
               </p>
             </section>
           </div>

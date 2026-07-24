@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../api/financialApiClient'
-import type { BankDto, CardStatementDto, CategoryTotalDto, ExpenseDto, IncomeDto } from '../api/types'
+import type { BankBalanceDto, BankDto, CardStatementDto, CategoryTotalDto, ExpenseDto, IncomeDto } from '../api/types'
 import { useMonthly } from './useMonthly'
 
 const NOW = new Date()
@@ -25,6 +25,7 @@ const getIncomesByMonthMock = vi.fn<FinancialApiClient['getIncomesByMonth']>()
 const createIncomeMock = vi.fn<FinancialApiClient['createIncome']>()
 const updateIncomeMock = vi.fn<FinancialApiClient['updateIncome']>()
 const deleteIncomeMock = vi.fn<FinancialApiClient['deleteIncome']>()
+const getBankBalancesByMonthMock = vi.fn<FinancialApiClient['getBankBalancesByMonth']>()
 
 vi.mock('../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
@@ -41,6 +42,7 @@ vi.mock('../api/financialApiClient', () => ({
     createIncome: createIncomeMock,
     updateIncome: updateIncomeMock,
     deleteIncome: deleteIncomeMock,
+    getBankBalancesByMonth: getBankBalancesByMonthMock,
   }),
 }))
 
@@ -84,6 +86,12 @@ const INCOMES: IncomeDto[] = [
   },
 ]
 
+const BANK_BALANCES: BankBalanceDto[] = [
+  { bank: 'Barclays', balance: 42.5 },
+  { bank: 'Trading212', balance: 0 },
+  { bank: 'Chase', balance: 0 },
+]
+
 describe('useMonthly', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -92,6 +100,7 @@ describe('useMonthly', () => {
     getCardStatementsByMonthMock.mockResolvedValue(CARD_STATEMENTS)
     getBanksMock.mockResolvedValue(BANKS)
     getIncomesByMonthMock.mockResolvedValue(INCOMES)
+    getBankBalancesByMonthMock.mockResolvedValue(BANK_BALANCES)
     vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
@@ -363,40 +372,31 @@ describe('useMonthly', () => {
     )
   })
 
-  it('bank totals count immediate and settled expenses per bank and exclude charges', async () => {
-    getExpensesByMonthMock.mockResolvedValue([
-      EXPENSES[0],
-      {
-        ...EXPENSES[0],
-        id: 'e5',
-        value: 20,
-        paymentSource: 'Barclays',
-        cardTag: 'BaAmex',
-        settledAt: '2026-07-20',
-        paymentStatus: 'CreditCardSettled',
-      },
-      {
-        ...EXPENSES[0],
-        id: 'e6',
-        value: 99,
-        paymentSource: null,
-        cardTag: 'ChaseMaster4023',
-        paymentStatus: 'CreditCardCharge',
-      },
+  it("sources each bank's balance from the fetched bank-balances data, not from summing the month's expenses", async () => {
+    getBankBalancesByMonthMock.mockResolvedValue([
+      { bank: 'Barclays', balance: 1875.32 },
+      { bank: 'Trading212', balance: 420.1 },
+      { bank: 'Chase', balance: -50 },
     ])
+    getExpensesByMonthMock.mockResolvedValue([{ ...EXPENSES[0], value: 999999, paymentSource: 'Barclays' }])
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
+    expect(getBankBalancesByMonthMock).toHaveBeenCalledWith(CURRENT_YEAR, CURRENT_MONTH)
     expect(result.current.bankTotals).toEqual([
-      { bank: 'Barclays', balance: 62.5, roundUpTotal: 0 },
-      { bank: 'Trading212', balance: 0, roundUpTotal: 0 },
-      { bank: 'Chase', balance: 0, roundUpTotal: 0 },
+      { bank: 'Barclays', balance: 1875.32, roundUpTotal: 0 },
+      { bank: 'Trading212', balance: 420.1, roundUpTotal: 0 },
+      { bank: 'Chase', balance: -50, roundUpTotal: 0 },
     ])
-    expect(result.current.bankTotalsSum).toBe(62.5)
-    expect(result.current.roundUpTotalsSum).toBe(0)
+    expect(result.current.bankTotalsSum).toBeCloseTo(2245.42)
   })
 
-  it("subtracts a bank's round-up total from its balance and sums round-up totals separately", async () => {
+  it("sums each bank's round-up total from the month's expenses independent of the fetched balance", async () => {
+    getBankBalancesByMonthMock.mockResolvedValue([
+      { bank: 'Barclays', balance: 0 },
+      { bank: 'Trading212', balance: 100 },
+      { bank: 'Chase', balance: 200 },
+    ])
     getExpensesByMonthMock.mockResolvedValue([
       { ...EXPENSES[0], id: 'e7', value: 9.4, paymentSource: 'Trading212', roundUpAmount: 0.6 },
       { ...EXPENSES[0], id: 'e8', value: 5, paymentSource: 'Trading212', roundUpAmount: null },
@@ -407,10 +407,9 @@ describe('useMonthly', () => {
 
     expect(result.current.bankTotals).toEqual([
       { bank: 'Barclays', balance: 0, roundUpTotal: 0 },
-      { bank: 'Trading212', balance: 13.8, roundUpTotal: 0.6 },
-      { bank: 'Chase', balance: 19.9, roundUpTotal: 0.1 },
+      { bank: 'Trading212', balance: 100, roundUpTotal: 0.6 },
+      { bank: 'Chase', balance: 200, roundUpTotal: 0.1 },
     ])
-    expect(result.current.bankTotalsSum).toBeCloseTo(33.7)
     expect(result.current.roundUpTotalsSum).toBeCloseTo(0.7)
   })
 
