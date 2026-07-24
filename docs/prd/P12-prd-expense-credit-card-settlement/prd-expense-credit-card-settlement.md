@@ -230,11 +230,11 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Expense Payment State Model
-- [ ] An expense saved with a `PaymentSource` set and no `CardTag` saves successfully and computes to `ImmediatePayment`
-- [ ] An expense saved with a `CardTag` set and no `PaymentSource` saves successfully and computes to `CreditCardCharge`
-- [ ] Saving an expense with neither `PaymentSource` nor `CardTag` set is rejected with a validation message
-- [ ] Saving an expense with both `PaymentSource` and `CardTag` set outside of F02's settlement cascade is rejected with a validation message
-- [ ] Saving an expense whose `SettledAt` is inconsistent with its `PaymentSource`/`CardTag` combination is rejected with a validation message
+- [x] An expense saved with a `PaymentSource` set and no `CardTag` saves successfully and computes to `ImmediatePayment`
+- [x] An expense saved with a `CardTag` set and no `PaymentSource` saves successfully and computes to `CreditCardCharge`
+- [x] Saving an expense with neither `PaymentSource` nor `CardTag` set is rejected with a validation message
+- [x] Saving an expense with both `PaymentSource` and `CardTag` set outside of F02's settlement cascade is rejected with a validation message
+- [x] Saving an expense whose `SettledAt` is inconsistent with its `PaymentSource`/`CardTag` combination is rejected with a validation message
 
 ### F02. Credit Card Statement Settlement with Payment Source
 - [ ] Marking a statement paid without a `PaymentSource` selected is rejected before any expense changes

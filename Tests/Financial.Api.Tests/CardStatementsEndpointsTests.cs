@@ -32,7 +32,7 @@ public class CardStatementsEndpointsTests
             Description = "Card charge",
             Value = 45m,
             Category = "Mercado",
-            PaymentSource = "Barclays",
+            PaymentSource = null,
             CardTag = "BarclaysPlatinumVisa8003"
         });
 
@@ -53,7 +53,7 @@ public class CardStatementsEndpointsTests
             Description = "Card charge",
             Value = 45m,
             Category = "Mercado",
-            PaymentSource = "Barclays",
+            PaymentSource = null,
             CardTag = "BarclaysPlatinumVisa8003"
         });
         var monthResponse = await client.GetAsync("/api/v1/financial/card-statements/2026/7");

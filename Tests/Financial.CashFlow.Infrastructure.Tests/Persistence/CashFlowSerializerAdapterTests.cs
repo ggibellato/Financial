@@ -17,8 +17,9 @@ public class CashFlowSerializerAdapterTests
             "Weekly groceries",
             54.32m,
             Category.Mercado,
-            PaymentSource.Barclays,
+            null,
             CreditCard.BarclaysPlatinumVisa8003);
+        expense.Settle(PaymentSource.Barclays, new DateOnly(2026, 7, 31));
         var reserveMovement = ReserveMovement.Create(ReserveBucket.Investimento, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split");
         var cardStatement = CardStatement.Create(CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
         var recurringBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
@@ -43,6 +44,7 @@ public class CashFlowSerializerAdapterTests
         resultExpense.Category.Should().Be(expense.Category);
         resultExpense.PaymentSource.Should().Be(expense.PaymentSource);
         resultExpense.CardTag.Should().Be(expense.CardTag);
+        resultExpense.SettledAt.Should().Be(expense.SettledAt);
         var resultMovement = result.ReserveMovements.Should().ContainSingle().Which;
         resultMovement.Id.Should().Be(reserveMovement.Id);
         resultMovement.Bucket.Should().Be(reserveMovement.Bucket);

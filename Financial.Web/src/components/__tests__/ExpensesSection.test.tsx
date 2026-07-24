@@ -12,6 +12,8 @@ const EXPENSES: ExpenseDto[] = [
     category: 'Mercado',
     paymentSource: 'Barclays',
     cardTag: null,
+    settledAt: null,
+    paymentStatus: 'ImmediatePayment',
   },
   {
     id: 'e2',
@@ -19,8 +21,10 @@ const EXPENSES: ExpenseDto[] = [
     description: 'Amazon',
     value: 9.99,
     category: 'Extras',
-    paymentSource: 'Trading212',
+    paymentSource: null,
     cardTag: 'BarclaysPlatinumVisa8003',
+    settledAt: null,
+    paymentStatus: 'CreditCardCharge',
   },
 ]
 

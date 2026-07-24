@@ -362,8 +362,10 @@ export interface ExpenseDto {
   description: string
   value: number
   category: string
-  paymentSource: string
+  paymentSource: string | null
   cardTag: string | null
+  settledAt: string | null
+  paymentStatus: string
 }
 
 export interface CreateExpenseDto {
@@ -371,7 +373,7 @@ export interface CreateExpenseDto {
   description: string
   value: number
   category: string
-  paymentSource: string
+  paymentSource: string | null
   cardTag: string | null
 }
 
@@ -380,7 +382,7 @@ export interface UpdateExpenseDto {
   description: string
   value: number
   category: string
-  paymentSource: string
+  paymentSource: string | null
   cardTag: string | null
 }
 

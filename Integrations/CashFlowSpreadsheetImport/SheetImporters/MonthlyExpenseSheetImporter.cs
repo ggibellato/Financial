@@ -94,8 +94,8 @@ public static class MonthlyExpenseSheetImporter
 
             var description = sheet.Cell(row, descriptionColumn).GetString();
             var rawPaymentSourceTag = sheet.Cell(row, PaymentSourceColumn).GetString();
-            var paymentSource = ResolvePaymentSource(rawPaymentSourceTag);
             var cardTag = ResolveCardTag(row, year, month, rawPaymentSourceTag);
+            PaymentSource? paymentSource = cardTag is null ? ResolvePaymentSource(rawPaymentSourceTag) : null;
 
             expenses.Add(Expense.Create(date, description, value.Value, category, paymentSource, cardTag));
         }

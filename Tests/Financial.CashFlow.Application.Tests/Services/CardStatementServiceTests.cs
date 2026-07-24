@@ -47,10 +47,10 @@ public class CardStatementServiceTests
     public async Task GetStatementsForMonthAsync_OutstandingTotalSumsThatMonthsTaggedExpensesForTheCard()
     {
         var repository = new StubCashFlowRepository();
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 10), "Charge 1", 30m, Category.Mercado, PaymentSource.Barclays, CreditCard.BarclaysPlatinumVisa8003));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 15), "Charge 2", 20m, Category.Mercado, PaymentSource.Barclays, CreditCard.BarclaysPlatinumVisa8003));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 8, 1), "Other month", 100m, Category.Mercado, PaymentSource.Barclays, CreditCard.BarclaysPlatinumVisa8003));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 12), "Other card", 999m, Category.Mercado, PaymentSource.Barclays, CreditCard.BaAmex));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 10), "Charge 1", 30m, Category.Mercado, null, CreditCard.BarclaysPlatinumVisa8003));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 15), "Charge 2", 20m, Category.Mercado, null, CreditCard.BarclaysPlatinumVisa8003));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 8, 1), "Other month", 100m, Category.Mercado, null, CreditCard.BarclaysPlatinumVisa8003));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 12), "Other card", 999m, Category.Mercado, null, CreditCard.BaAmex));
         var service = new CardStatementService(repository);
 
         var result = await service.GetStatementsForMonthAsync(2026, 7);
@@ -62,7 +62,7 @@ public class CardStatementServiceTests
     public async Task GetStatementsForMonthAsync_WhenStatementIsPaid_OutstandingTotalIsZeroDespiteTaggedExpenses()
     {
         var repository = new StubCashFlowRepository();
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 10), "Charge", 30m, Category.Mercado, PaymentSource.Barclays, CreditCard.BarclaysPlatinumVisa8003));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 10), "Charge", 30m, Category.Mercado, null, CreditCard.BarclaysPlatinumVisa8003));
         var service = new CardStatementService(repository);
         await service.GetStatementsForMonthAsync(2026, 7);
         var statement = repository.Statements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003);
@@ -77,7 +77,7 @@ public class CardStatementServiceTests
     public async Task MarkStatementPaidAsync_SetsIsPaidAndZeroesOutstandingTotal()
     {
         var repository = new StubCashFlowRepository();
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 10), "Charge", 30m, Category.Mercado, PaymentSource.Barclays, CreditCard.BarclaysPlatinumVisa8003));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 10), "Charge", 30m, Category.Mercado, null, CreditCard.BarclaysPlatinumVisa8003));
         var service = new CardStatementService(repository);
         await service.GetStatementsForMonthAsync(2026, 7);
         var statement = repository.Statements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003);
