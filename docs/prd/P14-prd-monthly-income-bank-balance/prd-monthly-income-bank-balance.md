@@ -280,9 +280,9 @@ graph TD
 - [x] The migration takes a backup of the data file before writing
 
 ### F03. Tithe Calculation
-- [ ] The calculated tithe for a month equals 10% of the sum of `NetValue` across all that month's `Income` entries, matching a manual reference calculation to the penny
-- [ ] The tithe balance equals the calculated tithe minus the sum of that month's `Dizimo`-category expenses, matching a manual reference calculation to the penny
-- [ ] A tithe balance can display as a negative value without error when Dizimo expenses exceed the calculated tithe
+- [x] The calculated tithe for a month equals 10% of the sum of `NetValue` across all that month's `Income` entries, matching a manual reference calculation to the penny
+- [x] The tithe balance equals the calculated tithe minus the sum of that month's `Dizimo`-category expenses, matching a manual reference calculation to the penny
+- [x] A tithe balance can display as a negative value without error when Dizimo expenses exceed the calculated tithe
 
 ### F04. Monthly Income Capture UI
 - [ ] An income entry can be added via the form with all required fields and appears in the month's list immediately after saving
@@ -311,7 +311,7 @@ graph TD
 - [ ] Lottery, tithe, and tithe balance do not appear anywhere in the Yearly Summary page
 
 ### Cross-Feature Integration
-- [ ] F03's tithe calculation correctly reads the net income totals produced by F01 for the selected month
+- [x] F03's tithe calculation correctly reads the net income totals produced by F01 for the selected month
 - [ ] F04's create/edit/delete actions correctly read and write through F01's `Income` entity contract
 - [ ] F05 correctly displays the income totals from F01 and the tithe/tithe balance from F03 for the selected month
 - [ ] F06 correctly combines F01's income data with F02's opening balance and date to produce each bank's balance
