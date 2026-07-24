@@ -218,4 +218,146 @@ describe('useMonthly', () => {
 
     expect(unmarkCardStatementPaidMock).not.toHaveBeenCalled()
   })
+
+  it('creates in bank mode with a null card tag by default', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setCreateField('createDate', '2026-07-16'))
+    act(() => result.current.setCreateField('createDescription', 'Waitrose'))
+    act(() => result.current.setCreateField('createValue', '15.5'))
+    act(() => result.current.submitCreate())
+
+    expect(result.current.createPaymentMode).toBe('bank')
+    await waitFor(() =>
+      expect(createExpenseMock).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentSource: 'Barclays', cardTag: null }),
+      ),
+    )
+  })
+
+  it('creates in card mode with a null payment source', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setCreateField('createDate', '2026-07-16'))
+    act(() => result.current.setCreateField('createDescription', 'Amazon'))
+    act(() => result.current.setCreateField('createValue', '9.99'))
+    act(() => result.current.setCreatePaymentMode('card'))
+    act(() => result.current.setCreateField('createCardTag', 'ChaseMaster4023'))
+    act(() => result.current.submitCreate())
+
+    await waitFor(() =>
+      expect(createExpenseMock).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentSource: null, cardTag: 'ChaseMaster4023' }),
+      ),
+    )
+  })
+
+  it('rejects card-mode create without a card before calling the API', async () => {
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setCreateField('createDate', '2026-07-16'))
+    act(() => result.current.setCreateField('createDescription', 'Amazon'))
+    act(() => result.current.setCreateField('createValue', '9.99'))
+    act(() => result.current.setCreatePaymentMode('card'))
+    act(() => result.current.submitCreate())
+
+    expect(result.current.createError).toBe('Card is required')
+    expect(createExpenseMock).not.toHaveBeenCalled()
+  })
+
+  it('switching create mode clears the field made irrelevant by the switch', async () => {
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setCreatePaymentMode('card'))
+    act(() => result.current.setCreateField('createCardTag', 'BaAmex'))
+    act(() => result.current.setCreatePaymentMode('bank'))
+
+    expect(result.current.createCardTag).toBe('')
+    expect(result.current.createPaymentSource).toBe('Barclays')
+
+    act(() => result.current.setCreatePaymentMode('card'))
+    expect(result.current.createPaymentSource).toBe('')
+  })
+
+  it('opens edit in card mode for a credit card charge', async () => {
+    const charge: ExpenseDto = {
+      ...EXPENSES[0],
+      id: 'e3',
+      paymentSource: null,
+      cardTag: 'BaAmex',
+      paymentStatus: 'CreditCardCharge',
+    }
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditForm(charge))
+
+    expect(result.current.editPaymentMode).toBe('card')
+    expect(result.current.editIsSettled).toBe(false)
+  })
+
+  it('saves a settled expense with its payment fields unchanged', async () => {
+    const settled: ExpenseDto = {
+      ...EXPENSES[0],
+      id: 'e4',
+      paymentSource: 'Trading212',
+      cardTag: 'BaAmex',
+      settledAt: '2026-07-20',
+      paymentStatus: 'CreditCardSettled',
+    }
+    updateExpenseMock.mockResolvedValue(settled)
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditForm(settled))
+    expect(result.current.editIsSettled).toBe(true)
+
+    act(() => result.current.setEditField('editDescription', 'Renamed'))
+    act(() => result.current.saveEdit())
+
+    await waitFor(() =>
+      expect(updateExpenseMock).toHaveBeenCalledWith(
+        'e4',
+        expect.objectContaining({ description: 'Renamed', paymentSource: 'Trading212', cardTag: 'BaAmex' }),
+      ),
+    )
+  })
+
+  it('bank totals count immediate and settled expenses per bank and exclude charges', async () => {
+    getExpensesByMonthMock.mockResolvedValue([
+      EXPENSES[0],
+      {
+        ...EXPENSES[0],
+        id: 'e5',
+        value: 20,
+        paymentSource: 'Barclays',
+        cardTag: 'BaAmex',
+        settledAt: '2026-07-20',
+        paymentStatus: 'CreditCardSettled',
+      },
+      {
+        ...EXPENSES[0],
+        id: 'e6',
+        value: 99,
+        paymentSource: null,
+        cardTag: 'ChaseMaster4023',
+        paymentStatus: 'CreditCardCharge',
+      },
+    ])
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.bankTotals).toEqual([
+      { bank: 'Barclays', totalValue: 62.5 },
+      { bank: 'Trading212', totalValue: 0 },
+      { bank: 'Chase', totalValue: 0 },
+    ])
+    expect(result.current.bankTotalsSum).toBe(62.5)
+  })
 })
