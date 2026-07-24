@@ -18,9 +18,11 @@ import type {
   CreditDeleteDto,
   CreditDto,
   CreditUpdateDto,
+  CreateIncomeDto,
   DividendHistoryItemDto,
   DividendSummaryDto,
   ExpenseDto,
+  IncomeDto,
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
   InvestmentDiffsYearlyDto,
@@ -41,6 +43,7 @@ import type {
   TransactionUpdateDto,
   TreeNodeDto,
   UpdateExpenseDto,
+  UpdateIncomeDto,
   UpdateInvestmentSnapshotValueDto,
   UpdateMaeLedgerEntryValuesDto,
   UpdateRecurringBillDto,
@@ -104,6 +107,10 @@ export interface FinancialApiClient {
   createExpense: (request: CreateExpenseDto) => Promise<ExpenseDto>
   updateExpense: (id: string, request: UpdateExpenseDto) => Promise<ExpenseDto>
   deleteExpense: (id: string) => Promise<void>
+  getIncomesByMonth: (year: number, month: number) => Promise<IncomeDto[]>
+  createIncome: (request: CreateIncomeDto) => Promise<IncomeDto>
+  updateIncome: (id: string, request: UpdateIncomeDto) => Promise<IncomeDto>
+  deleteIncome: (id: string) => Promise<void>
   getCardStatementsByMonth: (year: number, month: number) => Promise<CardStatementDto[]>
   markCardStatementPaid: (id: string, request: MarkCardStatementPaidDto) => Promise<CardStatementDto>
   unmarkCardStatementPaid: (id: string) => Promise<CardStatementDto>
@@ -335,6 +342,18 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         body: JSON.stringify(requestBody),
       }),
     deleteExpense: (id) => requestVoid(`/expenses/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    getIncomesByMonth: (year, month) => request<IncomeDto[]>(`/incomes/month/${year}/${month}`),
+    createIncome: (requestBody) =>
+      request<IncomeDto>('/incomes', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    updateIncome: (id, requestBody) =>
+      request<IncomeDto>(`/incomes/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    deleteIncome: (id) => requestVoid(`/incomes/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getCardStatementsByMonth: (year, month) =>
       request<CardStatementDto[]>(`/card-statements/${year}/${month}`),
     markCardStatementPaid: (id, requestBody) =>

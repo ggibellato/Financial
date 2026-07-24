@@ -395,6 +395,31 @@ export interface BankDto {
   roundUpEnabled: boolean
 }
 
+export interface IncomeDto {
+  id: string
+  date: string
+  incomeSource: string
+  grossValue: number | null
+  netValue: number
+  bank: string
+}
+
+export interface CreateIncomeDto {
+  date: string
+  incomeSource: string
+  grossValue: number | null
+  netValue: number
+  bank: string
+}
+
+export interface UpdateIncomeDto {
+  date: string
+  incomeSource: string
+  grossValue: number | null
+  netValue: number
+  bank: string
+}
+
 export interface CategoryTotalDto {
   category: string
   totalValue: number
