@@ -8,7 +8,7 @@ namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 public class CashFlowSerializerAdapterTests
 {
     [Fact]
-    public void SerializeThenDeserialize_RoundTripsAllSevenCollections()
+    public void SerializeThenDeserialize_RoundTripsAllEightCollections()
     {
         var serializer = new CashFlowSerializerAdapter();
         var original = CashFlowData.Create();
@@ -19,12 +19,13 @@ public class CashFlowSerializerAdapterTests
             Category.Mercado,
             null,
             CreditCard.BarclaysPlatinumVisa8003);
-        expense.Settle(PaymentSource.Barclays, new DateOnly(2026, 7, 31));
+        expense.Settle("Barclays", new DateOnly(2026, 7, 31));
         var reserveMovement = ReserveMovement.Create(ReserveBucket.Investimento, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split");
         var cardStatement = CardStatement.Create(CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
         var recurringBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
         var maeLedgerEntry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 15), "School supplies", "Note", Currency.BRL, 350m, 51.23m);
         var investmentSnapshot = InvestmentSnapshot.Create(InvestmentAccount.PlatinumVisa8003, 2026, 7, 1250.00m);
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
 
         original.AddExpense(expense);
         original.AddReserveMovement(reserveMovement);
@@ -32,6 +33,7 @@ public class CashFlowSerializerAdapterTests
         original.AddRecurringBill(recurringBill);
         original.AddMaeLedgerEntry(maeLedgerEntry);
         original.AddInvestmentSnapshot(investmentSnapshot);
+        original.AddBank(bank);
 
         var json = serializer.Serialize(original);
         var result = serializer.Deserialize(json);
@@ -55,6 +57,9 @@ public class CashFlowSerializerAdapterTests
         result.RecurringBills.Should().ContainSingle().Which.Id.Should().Be(recurringBill.Id);
         result.MaeLedgerEntries.Should().ContainSingle().Which.Id.Should().Be(maeLedgerEntry.Id);
         result.InvestmentSnapshots.Should().ContainSingle().Which.Id.Should().Be(investmentSnapshot.Id);
+        var resultBank = result.Banks.Should().ContainSingle().Which;
+        resultBank.Name.Should().Be(bank.Name);
+        resultBank.RoundUpEnabled.Should().Be(bank.RoundUpEnabled);
     }
 
     [Fact]
@@ -72,5 +77,6 @@ public class CashFlowSerializerAdapterTests
         result.RecurringBills.Should().BeEmpty();
         result.MaeLedgerEntries.Should().BeEmpty();
         result.InvestmentSnapshots.Should().BeEmpty();
+        result.Banks.Should().BeEmpty();
     }
 }

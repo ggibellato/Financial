@@ -20,7 +20,7 @@ public class CashFlowJsonRepositoryTests
 
         try
         {
-            repository.AddExpense(Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, PaymentSource.Chase, null));
+            repository.AddExpense(Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, "Chase", null));
 
             await repository.SaveChangesAsync();
 
@@ -58,7 +58,7 @@ public class CashFlowJsonRepositoryTests
     {
         var data = CashFlowData.Create();
         var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(Path.GetTempFileName()), new CashFlowSerializerAdapter());
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, PaymentSource.Chase, null);
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, "Chase", null);
 
         repository.AddExpense(expense);
 
@@ -70,7 +70,7 @@ public class CashFlowJsonRepositoryTests
     {
         var data = CashFlowData.Create();
         var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(Path.GetTempFileName()), new CashFlowSerializerAdapter());
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, PaymentSource.Chase, null);
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, "Chase", null);
         repository.AddExpense(expense);
 
         repository.DeleteExpense(expense.Id);
@@ -89,5 +89,15 @@ public class CashFlowJsonRepositoryTests
         repository.DeleteReserveMovement(movement.Id);
 
         repository.GetReserveMovements().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetBanks_ReturnsBanksFromTheUnderlyingData()
+    {
+        var data = CashFlowData.Create();
+        data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
+        var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(Path.GetTempFileName()), new CashFlowSerializerAdapter());
+
+        repository.GetBanks().Should().ContainSingle().Which.Name.Should().Be("Barclays");
     }
 }

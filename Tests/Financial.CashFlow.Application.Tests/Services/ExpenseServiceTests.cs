@@ -286,6 +286,12 @@ public class ExpenseServiceTests
     private sealed class StubCashFlowRepository : ICashFlowRepository
     {
         public List<Expense> Expenses { get; } = new();
+        public List<Bank> Banks { get; } = new()
+        {
+            Bank.Create("Barclays", roundUpEnabled: false),
+            Bank.Create("Trading212", roundUpEnabled: true),
+            Bank.Create("Chase", roundUpEnabled: true)
+        };
         public int SaveChangesCallCount { get; private set; }
 
         public IEnumerable<Expense> GetExpenses() => Expenses;
@@ -309,6 +315,8 @@ public class ExpenseServiceTests
 
         public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => Array.Empty<InvestmentSnapshot>();
         public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) { }
+
+        public IEnumerable<Bank> GetBanks() => Banks;
 
         public Task SaveChangesAsync()
         {

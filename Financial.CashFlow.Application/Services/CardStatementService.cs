@@ -56,7 +56,7 @@ public sealed class CardStatementService : ICardStatementService
             return ToDto(statement);
         }
 
-        if (!PaymentSourceParser.TryParse(request.PaymentSource, out var paymentSource))
+        if (!BankNameResolver.TryResolve(request.PaymentSource, _repository.GetBanks(), out var bank))
         {
             throw new ArgumentException($"Payment source '{request.PaymentSource}' is not recognized.");
         }
@@ -67,7 +67,7 @@ public sealed class CardStatementService : ICardStatementService
         statement.MarkPaid();
         foreach (var charge in charges)
         {
-            charge.Settle(paymentSource, settledAt);
+            charge.Settle(bank!.Name, settledAt);
         }
 
         try
@@ -99,7 +99,7 @@ public sealed class CardStatementService : ICardStatementService
 
         var settledExpenses = GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardSettled);
         var settlements = settledExpenses
-            .Select(e => (Expense: e, PaymentSource: e.PaymentSource!.Value, SettledAt: e.SettledAt!.Value))
+            .Select(e => (Expense: e, PaymentSource: e.PaymentSource!, SettledAt: e.SettledAt!.Value))
             .ToList();
 
         statement.MarkUnpaid();

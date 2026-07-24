@@ -98,7 +98,7 @@ public static class MonthlyExpenseSheetImporter
             var description = sheet.Cell(row, descriptionColumn).GetString();
             var rawPaymentSourceTag = sheet.Cell(row, PaymentSourceColumn).GetString();
             var cardTag = ResolveCardTag(row, year, month, rawPaymentSourceTag);
-            PaymentSource? paymentSource = cardTag is null ? ResolvePaymentSource(rawPaymentSourceTag) : null;
+            string? paymentSource = cardTag is null ? ResolvePaymentSource(rawPaymentSourceTag) : null;
 
             expenses.Add(Expense.Create(date, description, value.Value, category, paymentSource, cardTag));
         }
@@ -125,12 +125,12 @@ public static class MonthlyExpenseSheetImporter
             : (ColumnC, ColumnB);
     }
 
-    private static PaymentSource ResolvePaymentSource(string? tag) =>
+    private static string ResolvePaymentSource(string? tag) =>
         tag?.Trim().ToUpperInvariant() switch
         {
-            "T" => PaymentSource.Trading212,
-            "C" => PaymentSource.Chase,
-            _ => PaymentSource.Barclays,
+            "T" => "Trading212",
+            "C" => "Chase",
+            _ => "Barclays",
         };
 
     private static CreditCard? ResolveCardTag(int row, int year, int month, string? rawPaymentSourceTag)

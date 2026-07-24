@@ -40,6 +40,7 @@ public sealed class ExpenseService : IExpenseService
         var (category, paymentSource, cardTag) = ValidateFields(
             request.Description, request.Value, request.Category, request.PaymentSource, request.CardTag);
 
+
         expense.UpdateDetails(request.Date, request.Description, request.Value, category, paymentSource, cardTag);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
 
@@ -75,7 +76,7 @@ public sealed class ExpenseService : IExpenseService
         _repository.GetExpenses().FirstOrDefault(e => e.Id == id)
             ?? throw new KeyNotFoundException($"Expense '{id}' was not found.");
 
-    private static (Category Category, PaymentSource? PaymentSource, CreditCard? CardTag) ValidateFields(
+    private (Category Category, string? PaymentSource, CreditCard? CardTag) ValidateFields(
         string description, decimal value, string category, string? paymentSource, string? cardTag)
     {
         if (string.IsNullOrWhiteSpace(description))
@@ -98,15 +99,15 @@ public sealed class ExpenseService : IExpenseService
             throw new ArgumentException($"Category '{category}' is not recognized.");
         }
 
-        PaymentSource? parsedPaymentSource = null;
+        string? parsedPaymentSource = null;
         if (!string.IsNullOrWhiteSpace(paymentSource))
         {
-            if (!PaymentSourceParser.TryParse(paymentSource, out var source))
+            if (!BankNameResolver.TryResolve(paymentSource, _repository.GetBanks(), out var bank))
             {
                 throw new ArgumentException($"Payment source '{paymentSource}' is not recognized.");
             }
 
-            parsedPaymentSource = source;
+            parsedPaymentSource = bank!.Name;
         }
 
         CreditCard? parsedCardTag = null;
@@ -130,7 +131,7 @@ public sealed class ExpenseService : IExpenseService
         Description = expense.Description,
         Value = expense.Value,
         Category = expense.Category.ToString(),
-        PaymentSource = expense.PaymentSource?.ToString(),
+        PaymentSource = expense.PaymentSource,
         CardTag = expense.CardTag?.ToString(),
         SettledAt = expense.SettledAt,
         PaymentStatus = expense.PaymentStatus.ToString()

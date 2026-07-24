@@ -39,11 +39,11 @@ public class MonthlyExpenseSheetImporterTests
         first.Category.Should().Be(Category.Mercado);
         first.Value.Should().Be(71.04m);
         first.Date.Should().Be(new DateOnly(2017, 2, 1));
-        first.PaymentSource.Should().Be(PaymentSource.Barclays);
+        first.PaymentSource.Should().Be("Barclays");
 
         var second = expenses.Single(e => e.Description == "Amazon Digital Video");
         second.Category.Should().Be(Category.Extras);
-        second.PaymentSource.Should().Be(PaymentSource.Trading212);
+        second.PaymentSource.Should().Be("Trading212");
         report.RowIssues.Should().BeEmpty();
     }
 
@@ -72,7 +72,7 @@ public class MonthlyExpenseSheetImporterTests
         var expense = expenses.Single();
         expense.Description.Should().Be("Chartered Society");
         expense.Category.Should().Be(Category.Ariana);
-        expense.PaymentSource.Should().Be(PaymentSource.Chase);
+        expense.PaymentSource.Should().Be("Chase");
     }
 
     [Fact]
@@ -197,7 +197,7 @@ public class MonthlyExpenseSheetImporterTests
         expense.CardTag.Should().Be(expectedCardTag);
         if (expectedCardTag is null)
         {
-            expense.PaymentSource.Should().Be(PaymentSource.Barclays);
+            expense.PaymentSource.Should().Be("Barclays");
         }
         else
         {
@@ -217,7 +217,7 @@ public class MonthlyExpenseSheetImporterTests
         var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 8, report);
 
         var expense = expenses.Should().ContainSingle().Subject;
-        expense.PaymentSource.Should().Be(PaymentSource.Chase);
+        expense.PaymentSource.Should().Be("Chase");
         expense.CardTag.Should().BeNull();
     }
 

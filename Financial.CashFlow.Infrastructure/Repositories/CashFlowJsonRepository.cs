@@ -40,6 +40,8 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository
     public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => _data.InvestmentSnapshots;
     public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => _data.AddInvestmentSnapshot(snapshot);
 
+    public IEnumerable<Bank> GetBanks() => _data.Banks;
+
     public async Task SaveChangesAsync()
     {
         var json = _serializer.Serialize(_data);

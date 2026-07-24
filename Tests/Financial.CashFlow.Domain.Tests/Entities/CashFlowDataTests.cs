@@ -7,7 +7,7 @@ namespace Financial.CashFlow.Domain.Tests;
 public class CashFlowDataTests
 {
     [Fact]
-    public void Create_StartsWithAllSixCollectionsEmpty()
+    public void Create_StartsWithAllSevenCollectionsEmpty()
     {
         var data = CashFlowData.Create();
 
@@ -17,6 +17,18 @@ public class CashFlowDataTests
         data.RecurringBills.Should().BeEmpty();
         data.MaeLedgerEntries.Should().BeEmpty();
         data.InvestmentSnapshots.Should().BeEmpty();
+        data.Banks.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AddBank_AddsOnlyToBanksCollection()
+    {
+        var data = CashFlowData.Create();
+
+        data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
+
+        data.Banks.Should().ContainSingle();
+        data.Expenses.Should().BeEmpty();
     }
 
     [Fact]
@@ -56,7 +68,7 @@ public class CashFlowDataTests
     }
 
     private static Expense CreateExpense() =>
-        Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, PaymentSource.Chase, null);
+        Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, "Chase", null);
 
     [Fact]
     public void AddReserveMovement_AddsOnlyToReserveMovementsCollection()

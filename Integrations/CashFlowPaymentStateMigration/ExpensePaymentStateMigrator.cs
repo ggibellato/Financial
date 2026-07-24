@@ -75,7 +75,7 @@ public static class ExpensePaymentStateMigrator
             return;
         }
 
-        var settlingBank = expense.PaymentSource.Value;
+        var settlingBank = expense.PaymentSource!;
         expense.Unsettle();
         expense.Settle(settlingBank, LastDayOfMonth(expense.Date));
         summary.CountNewlySettled();

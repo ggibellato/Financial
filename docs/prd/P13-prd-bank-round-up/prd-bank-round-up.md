@@ -208,11 +208,11 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Bank Entity & Payment-Source Migration
-- [ ] The 3 seeded banks carry `RoundUpEnabled` values of `false` (Barclays), `true` (Trading212), and `true` (Chase) immediately after migration
-- [ ] Every expense's bank tag correctly resolves to the matching new `Bank` reference after the one-time migration runs
-- [ ] Running the migration a second time against already-migrated data produces the same result (idempotent)
-- [ ] A backup of the pre-migration data file exists after the run, independent of whether the run succeeded or failed partway through
-- [ ] Card statement settlement (mark paid / unmark paid) continues to function exactly as it did before this change, now referencing a bank instead of the old enum
+- [x] The 3 seeded banks carry `RoundUpEnabled` values of `false` (Barclays), `true` (Trading212), and `true` (Chase) immediately after migration
+- [x] Every expense's bank tag correctly resolves to the matching new `Bank` reference after the one-time migration runs
+- [x] Running the migration a second time against already-migrated data produces the same result (idempotent)
+- [x] A backup of the pre-migration data file exists after the run, independent of whether the run succeeded or failed partway through
+- [x] Card statement settlement (mark paid / unmark paid) continues to function exactly as it did before this change, now referencing a bank instead of the old enum
 
 ### F02. Expense Round-Up Capture
 - [ ] An eligible expense (paid directly from a `RoundUpEnabled` bank) with value £9.40 is offered a suggested round-up of £0.60
