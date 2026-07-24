@@ -140,6 +140,62 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(unmarkCardStatementPaidMock).toHaveBeenCalledWith('c2'))
   })
 
+  it('bank mode shows only the bank picker and card mode only the card picker', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
+
+    expect(screen.getByLabelText('Payment Source')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Card')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Charge to card' }))
+
+    expect(screen.queryByLabelText('Payment Source')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Card')).toBeInTheDocument()
+  })
+
+  it('submits a card-mode expense with a null payment source', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
+    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Amazon' } })
+    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '9.99' } })
+    fireEvent.click(screen.getByRole('radio', { name: 'Charge to card' }))
+    fireEvent.change(screen.getByLabelText('Card'), { target: { value: 'BaAmex' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add Expense' }))
+
+    await waitFor(() =>
+      expect(createExpenseMock).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentSource: null, cardTag: 'BaAmex' }),
+      ),
+    )
+  })
+
+  it('shows read-only payment fields with a settlement note when editing a settled expense', async () => {
+    getExpensesByMonthMock.mockResolvedValue([
+      {
+        ...EXPENSES[0],
+        paymentSource: 'Trading212',
+        cardTag: 'BaAmex',
+        settledAt: '2026-07-20',
+        paymentStatus: 'CreditCardSettled',
+      },
+    ])
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit expense' })[0])
+
+    expect(screen.getByText(/Settled via its card statement/)).toBeInTheDocument()
+    expect(screen.queryByLabelText('Payment Source')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Card')).not.toBeInTheDocument()
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument()
+  })
+
   it('shows the add-expense form only after New Expense is clicked, and submits a new expense', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
     render(<MonthlyPage />)
