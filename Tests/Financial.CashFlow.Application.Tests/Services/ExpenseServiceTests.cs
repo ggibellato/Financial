@@ -264,6 +264,17 @@ public class ExpenseServiceTests
     }
 
     [Fact]
+    public async Task AddExpenseAsync_WithRoundUpAmountOfZero_SavesExplicitZero()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository());
+        var request = ToCreateDto(ValidCreateRequest() with { PaymentSource = "Trading212", Value = 10.00m, RoundUpAmount = 0.00m });
+
+        var result = await service.AddExpenseAsync(request);
+
+        result.RoundUpAmount.Should().Be(0.00m);
+    }
+
+    [Fact]
     public async Task AddExpenseAsync_WithRoundUpAmountOnNonRoundUpBank_ThrowsNamingTheBank()
     {
         var service = new ExpenseService(new StubCashFlowRepository());
