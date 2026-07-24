@@ -267,6 +267,101 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(deleteExpenseMock).toHaveBeenCalledWith('e1'))
   })
 
+  it('renders the income list alongside the expense list', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByText('Income')).toBeInTheDocument())
+    const incomeSection = within(screen.getByText('Income').closest('section')!)
+    expect(incomeSection.getByText('Gleison')).toBeInTheDocument()
+    expect(incomeSection.getByText('2,450.00')).toBeInTheDocument()
+  })
+
+  it('shows the add-income form only after New Income is clicked, and submits a new income entry', async () => {
+    createIncomeMock.mockResolvedValue({ ...INCOMES[0], id: 'i2' })
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
+    expect(screen.queryByLabelText('Net Value')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
+    fireEvent.change(screen.getByLabelText('Net Value'), { target: { value: '400' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
+
+    await waitFor(() =>
+      expect(createIncomeMock).toHaveBeenCalledWith(
+        expect.objectContaining({ date: '2026-07-16', incomeSource: 'Gleison', netValue: 400, bank: 'Barclays' }),
+      ),
+    )
+  })
+
+  it('hides the gross value field for Lottery and DividendoJuros sources', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
+    expect(screen.getByLabelText('Gross Value')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'Lottery' } })
+
+    expect(screen.queryByLabelText('Gross Value')).not.toBeInTheDocument()
+  })
+
+  it('opening New Income closes an open expense form, and vice versa', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
+    expect(screen.getByRole('button', { name: 'Add Expense' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
+    expect(screen.queryByRole('button', { name: 'Add Expense' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add Income' })).toBeInTheDocument()
+  })
+
+  it('shows a validation error and does not call the API when no bank is available to select', async () => {
+    getBanksMock.mockResolvedValue([])
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
+    fireEvent.change(screen.getByLabelText('Net Value'), { target: { value: '400' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
+
+    expect(await screen.findByText('Bank is required')).toBeInTheDocument()
+    expect(createIncomeMock).not.toHaveBeenCalled()
+  })
+
+  it('edits an income entry via the toggled panel and saves, updating the displayed row', async () => {
+    updateIncomeMock.mockResolvedValue({ ...INCOMES[0], netValue: 500 })
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByText('Gleison')).toBeInTheDocument())
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit income' })[0])
+    expect(screen.getByText('Edit Income')).toBeInTheDocument()
+    const netValueInput = screen.getByDisplayValue('2450')
+    fireEvent.change(netValueInput, { target: { value: '500' } })
+
+    getIncomesByMonthMock.mockResolvedValue([{ ...INCOMES[0], netValue: 500 }])
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(updateIncomeMock).toHaveBeenCalledWith('i1', expect.objectContaining({ netValue: 500 })))
+    const incomeSection = within(screen.getByText('Income').closest('section')!)
+    await waitFor(() => expect(incomeSection.getByText('500.00')).toBeInTheDocument())
+  })
+
+  it('deletes an income entry after confirmation', async () => {
+    deleteIncomeMock.mockResolvedValue(undefined)
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByText('Gleison')).toBeInTheDocument())
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete income' })[0])
+
+    await waitFor(() => expect(deleteIncomeMock).toHaveBeenCalledWith('i1'))
+  })
+
   it('bank picker and mark-paid picker list banks fetched from the API', async () => {
     render(<MonthlyPage />)
 
