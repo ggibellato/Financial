@@ -14,6 +14,8 @@ const EXPENSES: ExpenseDto[] = [
     cardTag: null,
     settledAt: null,
     paymentStatus: 'ImmediatePayment',
+    roundUpAmount: null,
+    suggestedRoundUpAmount: null,
   },
   {
     id: 'e2',
@@ -25,6 +27,8 @@ const EXPENSES: ExpenseDto[] = [
     cardTag: 'BarclaysPlatinumVisa8003',
     settledAt: null,
     paymentStatus: 'CreditCardCharge',
+    roundUpAmount: null,
+    suggestedRoundUpAmount: null,
   },
 ]
 

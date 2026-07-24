@@ -163,7 +163,8 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
       return { ...state, year: action.payload.year, month: action.payload.month }
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null }
-    case 'FETCH_SUCCESS':
+    case 'FETCH_SUCCESS': {
+      const defaultBankStillUnset = state.createPaymentMode === 'bank' && state.createPaymentSource === ''
       return {
         ...state,
         isLoading: false,
@@ -171,7 +172,11 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         categoryTotals: action.payload.categoryTotals,
         cardStatements: action.payload.cardStatements,
         banks: action.payload.banks,
+        createPaymentSource: defaultBankStillUnset
+          ? (action.payload.banks[0]?.name ?? '')
+          : state.createPaymentSource,
       }
+    }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
