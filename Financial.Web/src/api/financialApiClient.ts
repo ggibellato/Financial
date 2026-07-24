@@ -27,6 +27,7 @@ import type {
   InvestmentSnapshotDto,
   MaeLedgerEntryDto,
   MaeLedgerTotalsDto,
+  MarkCardStatementPaidDto,
   PortfolioAssetSummaryItemDto,
   PortfolioBreakdownItemDto,
   PortfolioReferenceDto,
@@ -102,7 +103,8 @@ export interface FinancialApiClient {
   updateExpense: (id: string, request: UpdateExpenseDto) => Promise<ExpenseDto>
   deleteExpense: (id: string) => Promise<void>
   getCardStatementsByMonth: (year: number, month: number) => Promise<CardStatementDto[]>
-  markCardStatementPaid: (id: string) => Promise<CardStatementDto>
+  markCardStatementPaid: (id: string, request: MarkCardStatementPaidDto) => Promise<CardStatementDto>
+  unmarkCardStatementPaid: (id: string) => Promise<CardStatementDto>
   getCategoryTotalsForYear: (year: number) => Promise<CategoryYearlyTotalDto[]>
   getInvestmentDiffsForYear: (year: number) => Promise<InvestmentDiffsYearlyDto>
 }
@@ -332,8 +334,13 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     deleteExpense: (id) => requestVoid(`/expenses/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getCardStatementsByMonth: (year, month) =>
       request<CardStatementDto[]>(`/card-statements/${year}/${month}`),
-    markCardStatementPaid: (id) =>
+    markCardStatementPaid: (id, requestBody) =>
       request<CardStatementDto>(`/card-statements/${encodeURIComponent(id)}/mark-paid`, {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    unmarkCardStatementPaid: (id) =>
+      request<CardStatementDto>(`/card-statements/${encodeURIComponent(id)}/unmark-paid`, {
         method: 'POST',
       }),
     getCategoryTotalsForYear: (year) =>
