@@ -252,9 +252,9 @@ graph TD
 - [x] No status field is added to `data-cashflow.json`'s expense records — only `PaymentSource` and `SettledAt` values change; `CardTag` is untouched
 
 ### F04. Historical Import Update
-- [ ] A row that resolves a `CreditCard` tag during import produces an expense with that `CardTag` set and `PaymentSource = null`, regardless of its column-E value
-- [ ] A row with no resolved `CreditCard` tag continues to import with `PaymentSource` resolved from column E exactly as before this change
-- [ ] No row is imported with both `PaymentSource` and `CardTag` set
+- [x] A row that resolves a `CreditCard` tag during import produces an expense with that `CardTag` set and `PaymentSource = null`, regardless of its column-E value
+- [x] A row with no resolved `CreditCard` tag continues to import with `PaymentSource` resolved from column E exactly as before this change
+- [x] No row is imported with both `PaymentSource` and `CardTag` set
 
 ### F05. Expense Form & Panels UX Update
 - [ ] The expense form's "Pay immediately" mode shows only the bank picker and saves the expense as `ImmediatePayment`
@@ -267,7 +267,7 @@ graph TD
 ### Cross-Feature Integration
 - [x] F02's mark-paid/unmark-paid cascades correctly read and write the `PaymentSource` and `SettledAt` fields defined by F01, and reject the action if the resulting `PaymentSource`/`CardTag`/`SettledAt` combination would violate F01's validation rule
 - [x] F03's backfill correctly writes expenses into the `PaymentSource`/`CardTag`/`SettledAt` shape defined by F01, with zero resulting records violating F01's validation rule
-- [ ] F04's updated importer produces expenses in the `PaymentSource`/`CardTag` shape defined by F01, with zero imported card-tagged rows carrying a non-null `PaymentSource`
+- [x] F04's updated importer produces expenses in the `PaymentSource`/`CardTag` shape defined by F01, with zero imported card-tagged rows carrying a non-null `PaymentSource`
 - [ ] F05's Cards and Banks panels correctly reflect the field changes produced by F02's mark-paid/unmark-paid cascade immediately after each action
 - [ ] F05's expense form correctly enforces F01's validation rule for both create and edit, with no path in the UI that can produce a rejected combination
 - [ ] The computed payment status is derived identically everywhere it's exposed (API responses consumed by F05, the F03 migration's own classification logic) — there is no second, independently-maintained derivation that could disagree with F01's rule
