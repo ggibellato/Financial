@@ -41,6 +41,8 @@ const EXPENSES: ExpenseDto[] = [
     category: 'Mercado',
     paymentSource: 'Barclays',
     cardTag: null,
+    settledAt: null,
+    paymentStatus: 'ImmediatePayment',
   },
 ]
 

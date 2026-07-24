@@ -193,7 +193,16 @@ public class MonthlyExpenseSheetImporterTests
 
         var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, report);
 
-        expenses.Should().ContainSingle().Which.CardTag.Should().Be(expectedCardTag);
+        var expense = expenses.Should().ContainSingle().Which;
+        expense.CardTag.Should().Be(expectedCardTag);
+        if (expectedCardTag is null)
+        {
+            expense.PaymentSource.Should().Be(PaymentSource.Barclays);
+        }
+        else
+        {
+            expense.PaymentSource.Should().BeNull();
+        }
     }
 
     [Fact]

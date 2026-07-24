@@ -5,6 +5,12 @@ import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '.
 
 export const PAYMENT_SOURCES = ['Barclays', 'Trading212', 'Chase'] as const
 
+// A card-tagged expense is an unsettled credit card charge and must carry no bank tag.
+function toPaymentSourcePayload(paymentSource: string, cardTag: string): string | null {
+  if (cardTag.trim() !== '') return null
+  return paymentSource.trim() === '' ? null : paymentSource
+}
+
 export interface BankTotal {
   bank: string
   totalValue: number
@@ -151,7 +157,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editDescription: action.payload.description,
         editValue: String(action.payload.value),
         editCategory: action.payload.category,
-        editPaymentSource: action.payload.paymentSource,
+        editPaymentSource: action.payload.paymentSource ?? '',
         editCardTag: action.payload.cardTag ?? '',
         saveError: null,
       }
@@ -300,7 +306,7 @@ export function useMonthly(): MonthlyData {
         description: createDescription,
         value,
         category: createCategory,
-        paymentSource: createPaymentSource,
+        paymentSource: toPaymentSourcePayload(createPaymentSource, createCardTag),
         cardTag: createCardTag.trim() === '' ? null : createCardTag,
       })
       .then(() => {
@@ -341,7 +347,7 @@ export function useMonthly(): MonthlyData {
         description: state.editDescription,
         value,
         category: state.editCategory,
-        paymentSource: state.editPaymentSource,
+        paymentSource: toPaymentSourcePayload(state.editPaymentSource, state.editCardTag),
         cardTag: state.editCardTag.trim() === '' ? null : state.editCardTag,
       })
       .then(() => {
