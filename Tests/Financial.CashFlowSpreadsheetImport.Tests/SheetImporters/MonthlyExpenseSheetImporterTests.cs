@@ -221,6 +221,31 @@ public class MonthlyExpenseSheetImporterTests
         expense.CardTag.Should().BeNull();
     }
 
+    [Fact]
+    public void Import_MixedSheet_NoExpenseEverCarriesBothPaymentSourceAndCardTag()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Jul2026");
+        WriteExpenseRow(sheet, row: 10, paymentSourceTag: null);
+        WriteExpenseRow(sheet, row: 11, paymentSourceTag: "T");
+        WriteExpenseRow(sheet, row: 130, paymentSourceTag: null);
+        WriteExpenseRow(sheet, row: 150, paymentSourceTag: "C");
+        WriteExpenseRow(sheet, row: 210, paymentSourceTag: null);
+        WriteExpenseRow(sheet, row: 230, paymentSourceTag: null);
+
+        var report = new ImportReport();
+
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, report);
+
+        expenses.Should().HaveCount(6);
+        expenses.Should().NotContain(e => e.PaymentSource != null && e.CardTag != null);
+        expenses.Should().OnlyContain(e => e.SettledAt == null);
+        expenses.Should().OnlyContain(e =>
+            e.PaymentStatus == ExpensePaymentStatus.ImmediatePayment
+            || e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge);
+        expenses.Count(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge).Should().Be(3);
+    }
+
     [Theory]
     [InlineData(2017, 10)]
     [InlineData(2026, 9)]
