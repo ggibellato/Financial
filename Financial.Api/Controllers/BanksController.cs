@@ -48,4 +48,12 @@ public sealed class BanksController : ControllerBase
             return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
         }
     }
+
+    [HttpGet("month/{year:int}/{month:int}/balances")]
+    [ProducesResponseType(typeof(IReadOnlyList<BankBalanceDTO>), StatusCodes.Status200OK)]
+    public ActionResult<IReadOnlyList<BankBalanceDTO>> GetBankBalancesByMonth(int year, int month)
+    {
+        var result = _bankService.GetBankBalancesByMonth(year, month);
+        return Ok(result);
+    }
 }

@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
@@ -92,12 +93,108 @@ public class BankServiceTests
         await act.Should().ThrowAsync<ArgumentException>();
     }
 
+    [Fact]
+    public void GetBankBalancesByMonth_CombinesOpeningBalanceIncomeAndExpenses()
+    {
+        var repository = new StubCashFlowRepository();
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
+        repository.Banks.Add(bank);
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Gleison, null, 500m, "Barclays"));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Mercado, "Barclays", null));
+        var service = new BankService(repository);
+
+        var result = service.GetBankBalancesByMonth(2026, 7);
+
+        result.Should().ContainSingle(b => b.Bank == "Barclays" && b.Balance == 550m);
+    }
+
+    [Fact]
+    public void GetBankBalancesByMonth_SubtractsRoundUpAmountFromExpenseValue()
+    {
+        var repository = new StubCashFlowRepository();
+        var bank = Bank.Create("Trading212", roundUpEnabled: true);
+        bank.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
+        repository.Banks.Add(bank);
+        var expense = Expense.Create(new DateOnly(2026, 7, 5), "TfL", 9.40m, Category.Extras, "Trading212", null);
+        expense.SetRoundUpAmount(0.60m);
+        repository.Expenses.Add(expense);
+        var service = new BankService(repository);
+
+        var result = service.GetBankBalancesByMonth(2026, 7);
+
+        result.Should().ContainSingle(b => b.Bank == "Trading212" && b.Balance == -8.80m);
+    }
+
+    [Fact]
+    public void GetBankBalancesByMonth_ExcludesActivityBeforeOpeningBalanceDate()
+    {
+        var repository = new StubCashFlowRepository();
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        bank.SetOpeningBalance(100m, new DateOnly(2026, 7, 1));
+        repository.Banks.Add(bank);
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 6, 30), IncomeSource.Gleison, null, 500m, "Barclays"));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 6, 30), "Groceries", 50m, Category.Mercado, "Barclays", null));
+        var service = new BankService(repository);
+
+        var result = service.GetBankBalancesByMonth(2026, 7);
+
+        result.Should().ContainSingle(b => b.Bank == "Barclays" && b.Balance == 100m);
+    }
+
+    [Fact]
+    public void GetBankBalancesByMonth_ExcludesActivityAfterSelectedMonth()
+    {
+        var repository = new StubCashFlowRepository();
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
+        repository.Banks.Add(bank);
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 8, 1), IncomeSource.Gleison, null, 500m, "Barclays"));
+        var service = new BankService(repository);
+
+        var result = service.GetBankBalancesByMonth(2026, 7);
+
+        result.Should().ContainSingle(b => b.Bank == "Barclays" && b.Balance == 100m);
+    }
+
+    [Fact]
+    public void GetBankBalancesByMonth_WithNoActivity_ReturnsOpeningBalance()
+    {
+        var repository = new StubCashFlowRepository();
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        bank.SetOpeningBalance(250m, new DateOnly(2026, 1, 1));
+        repository.Banks.Add(bank);
+        var service = new BankService(repository);
+
+        var result = service.GetBankBalancesByMonth(2026, 7);
+
+        result.Should().ContainSingle(b => b.Bank == "Barclays" && b.Balance == 250m);
+    }
+
+    [Fact]
+    public void GetBankBalancesByMonth_IgnoresActivityTaggedToADifferentBank()
+    {
+        var repository = new StubCashFlowRepository();
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        bank.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
+        repository.Banks.Add(bank);
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Gleison, null, 500m, "Chase"));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Mercado, "Chase", null));
+        var service = new BankService(repository);
+
+        var result = service.GetBankBalancesByMonth(2026, 7);
+
+        result.Should().ContainSingle(b => b.Bank == "Barclays" && b.Balance == 0m);
+    }
+
     private sealed class StubCashFlowRepository : ICashFlowRepository
     {
         public List<Bank> Banks { get; } = new();
+        public List<Expense> Expenses { get; } = new();
+        public List<Income> Incomes { get; } = new();
         public int SaveChangesCallCount { get; private set; }
 
-        public IEnumerable<Expense> GetExpenses() => Array.Empty<Expense>();
+        public IEnumerable<Expense> GetExpenses() => Expenses;
         public void AddExpense(Expense expense) { }
         public void DeleteExpense(Guid id) { }
 
@@ -121,7 +218,7 @@ public class BankServiceTests
 
         public IEnumerable<Bank> GetBanks() => Banks;
 
-        public IEnumerable<Income> GetIncomes() => Array.Empty<Income>();
+        public IEnumerable<Income> GetIncomes() => Incomes;
         public void AddIncome(Income income) { }
         public void DeleteIncome(Guid id) { }
 

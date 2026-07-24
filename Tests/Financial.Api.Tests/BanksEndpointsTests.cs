@@ -91,4 +91,53 @@ public class BanksEndpointsTests
         var banks = await response.Content.ReadFromJsonAsync<List<BankDTO>>();
         banks.Should().ContainSingle(b => b.Name == "Chase" && b.OpeningBalance == 500m && b.OpeningBalanceDate == new DateOnly(2026, 6, 15));
     }
+
+    [Fact]
+    public async Task GetBankBalancesByMonth_CombinesOpeningBalanceIncomeAndExpenses()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        await client.PutAsJsonAsync("/api/v1/financial/banks/Barclays/opening-balance", new BankOpeningBalanceUpdateDTO
+        {
+            OpeningBalance = 100m,
+            OpeningBalanceDate = new DateOnly(2026, 1, 1)
+        });
+        await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            IncomeSource = "Gleison",
+            GrossValue = null,
+            NetValue = 500m,
+            Bank = "Barclays"
+        });
+        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 5),
+            Description = "Groceries",
+            Value = 50m,
+            Category = "Mercado",
+            PaymentSource = "Barclays",
+            CardTag = null
+        });
+
+        var response = await client.GetAsync("/api/v1/financial/banks/month/2026/7/balances");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var balances = await response.Content.ReadFromJsonAsync<List<BankBalanceDTO>>();
+        balances.Should().ContainSingle(b => b.Bank == "Barclays" && b.Balance == 550m);
+    }
+
+    [Fact]
+    public async Task GetBankBalancesByMonth_WithNoActivity_ReturnsOpeningBalanceForEveryBank()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/banks/month/2026/7/balances");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var balances = await response.Content.ReadFromJsonAsync<List<BankBalanceDTO>>();
+        balances.Should().HaveCount(3);
+        balances.Should().OnlyContain(b => b.Balance == 0m);
+    }
 }
