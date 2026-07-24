@@ -257,17 +257,17 @@ graph TD
 - [x] No row is imported with both `PaymentSource` and `CardTag` set
 
 ### F05. Expense Form & Panels UX Update
-- [ ] The expense form's "Pay immediately" mode shows only the bank picker and saves the expense as `ImmediatePayment`
-- [ ] The expense form's "Charge to card" mode shows only the card picker and saves the expense as `CreditCardCharge`
-- [ ] A `CreditCardSettled` expense's payment fields are shown read-only on the form, with no way to edit them directly
-- [ ] The Cards panel's outstanding total for a card equals the sum of that card's `CreditCardCharge` expenses for the selected month
-- [ ] The Banks panel's total for a bank equals the sum of that bank's `ImmediatePayment` expenses plus `CreditCardSettled` expenses settled by that bank for the selected month, excluding all `CreditCardCharge` expenses
-- [ ] The Cards panel's "Mark Paid" control requires a bank selection before it can be confirmed, and a paid statement shows an "Unmark Paid" control
+- [x] The expense form's "Pay immediately" mode shows only the bank picker and saves the expense as `ImmediatePayment`
+- [x] The expense form's "Charge to card" mode shows only the card picker and saves the expense as `CreditCardCharge`
+- [x] A `CreditCardSettled` expense's payment fields are shown read-only on the form, with no way to edit them directly
+- [x] The Cards panel's outstanding total for a card equals the sum of that card's `CreditCardCharge` expenses for the selected month
+- [x] The Banks panel's total for a bank equals the sum of that bank's `ImmediatePayment` expenses plus `CreditCardSettled` expenses settled by that bank for the selected month, excluding all `CreditCardCharge` expenses
+- [x] The Cards panel's "Mark Paid" control requires a bank selection before it can be confirmed, and a paid statement shows an "Unmark Paid" control
 
 ### Cross-Feature Integration
 - [x] F02's mark-paid/unmark-paid cascades correctly read and write the `PaymentSource` and `SettledAt` fields defined by F01, and reject the action if the resulting `PaymentSource`/`CardTag`/`SettledAt` combination would violate F01's validation rule
 - [x] F03's backfill correctly writes expenses into the `PaymentSource`/`CardTag`/`SettledAt` shape defined by F01, with zero resulting records violating F01's validation rule
 - [x] F04's updated importer produces expenses in the `PaymentSource`/`CardTag` shape defined by F01, with zero imported card-tagged rows carrying a non-null `PaymentSource`
-- [ ] F05's Cards and Banks panels correctly reflect the field changes produced by F02's mark-paid/unmark-paid cascade immediately after each action
-- [ ] F05's expense form correctly enforces F01's validation rule for both create and edit, with no path in the UI that can produce a rejected combination
-- [ ] The computed payment status is derived identically everywhere it's exposed (API responses consumed by F05, the F03 migration's own classification logic) — there is no second, independently-maintained derivation that could disagree with F01's rule
+- [x] F05's Cards and Banks panels correctly reflect the field changes produced by F02's mark-paid/unmark-paid cascade immediately after each action
+- [x] F05's expense form correctly enforces F01's validation rule for both create and edit, with no path in the UI that can produce a rejected combination
+- [x] The computed payment status is derived identically everywhere it's exposed (API responses consumed by F05, the F03 migration's own classification logic) — there is no second, independently-maintained derivation that could disagree with F01's rule
