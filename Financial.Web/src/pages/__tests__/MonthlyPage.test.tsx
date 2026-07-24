@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MonthlyPage from '../MonthlyPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { BankDto, CardStatementDto, CategoryTotalDto, ExpenseDto } from '../../api/types'
+import type { BankDto, CardStatementDto, CategoryTotalDto, ExpenseDto, IncomeDto } from '../../api/types'
 
 const getExpensesByMonthMock = vi.fn<FinancialApiClient['getExpensesByMonth']>()
 const getCategoryTotalsByMonthMock = vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>()
@@ -13,6 +13,10 @@ const updateExpenseMock = vi.fn<FinancialApiClient['updateExpense']>()
 const deleteExpenseMock = vi.fn<FinancialApiClient['deleteExpense']>()
 const markCardStatementPaidMock = vi.fn<FinancialApiClient['markCardStatementPaid']>()
 const unmarkCardStatementPaidMock = vi.fn<FinancialApiClient['unmarkCardStatementPaid']>()
+const getIncomesByMonthMock = vi.fn<FinancialApiClient['getIncomesByMonth']>()
+const createIncomeMock = vi.fn<FinancialApiClient['createIncome']>()
+const updateIncomeMock = vi.fn<FinancialApiClient['updateIncome']>()
+const deleteIncomeMock = vi.fn<FinancialApiClient['deleteIncome']>()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
@@ -25,6 +29,10 @@ vi.mock('../../api/financialApiClient', () => ({
     deleteExpense: deleteExpenseMock,
     markCardStatementPaid: markCardStatementPaidMock,
     unmarkCardStatementPaid: unmarkCardStatementPaidMock,
+    getIncomesByMonth: getIncomesByMonthMock,
+    createIncome: createIncomeMock,
+    updateIncome: updateIncomeMock,
+    deleteIncome: deleteIncomeMock,
   }),
 }))
 
@@ -57,6 +65,10 @@ const CARD_STATEMENTS: CardStatementDto[] = [
   { id: 'c2', card: 'ChaseMaster4023', year: 2026, month: 7, isPaid: true, outstandingTotal: 0 },
 ]
 
+const INCOMES: IncomeDto[] = [
+  { id: 'i1', date: '2026-07-01', incomeSource: 'Gleison', grossValue: 3200, netValue: 2450, bank: 'Barclays' },
+]
+
 describe('MonthlyPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -64,6 +76,7 @@ describe('MonthlyPage', () => {
     getCategoryTotalsByMonthMock.mockResolvedValue(CATEGORY_TOTALS)
     getCardStatementsByMonthMock.mockResolvedValue(CARD_STATEMENTS)
     getBanksMock.mockResolvedValue(BANKS)
+    getIncomesByMonthMock.mockResolvedValue(INCOMES)
     vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
