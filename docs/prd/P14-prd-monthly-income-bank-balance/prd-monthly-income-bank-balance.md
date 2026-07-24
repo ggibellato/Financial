@@ -274,10 +274,10 @@ graph TD
 - [x] Running the migration a second time against already-migrated data produces the same result (idempotent)
 
 ### F02. Bank Opening Balance
-- [ ] Each existing bank has `OpeningBalance` and `OpeningBalanceDate` fields populated with default values immediately after migration
-- [ ] `OpeningBalance` and `OpeningBalanceDate` can be edited after migration, and the new values are reflected in the next balance calculation
-- [ ] Setting `OpeningBalance` to a negative value is rejected with a validation message
-- [ ] The migration takes a backup of the data file before writing
+- [x] Each existing bank has `OpeningBalance` and `OpeningBalanceDate` fields populated with default values immediately after migration
+- [x] `OpeningBalance` and `OpeningBalanceDate` can be edited after migration, and the new values are reflected in the next balance calculation
+- [x] Setting `OpeningBalance` to a negative value is rejected with a validation message
+- [x] The migration takes a backup of the data file before writing
 
 ### F03. Tithe Calculation
 - [ ] The calculated tithe for a month equals 10% of the sum of `NetValue` across all that month's `Income` entries, matching a manual reference calculation to the penny

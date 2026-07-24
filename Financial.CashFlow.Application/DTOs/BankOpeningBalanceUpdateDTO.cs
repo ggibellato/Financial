@@ -1,16 +1,10 @@
 namespace Financial.CashFlow.Application.DTOs;
 
 /// <summary>
-/// Read model for a tracked bank.
+/// Request to update a bank's opening balance and effective date.
 /// </summary>
-public sealed class BankDTO
+public sealed class BankOpeningBalanceUpdateDTO
 {
-    /// <summary>Bank name.</summary>
-    public required string Name { get; init; }
-
-    /// <summary>Whether this bank rounds up card payments.</summary>
-    public required bool RoundUpEnabled { get; init; }
-
     /// <summary>Real-world balance as of <see cref="OpeningBalanceDate"/>.</summary>
     public required decimal OpeningBalance { get; init; }
 

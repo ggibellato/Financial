@@ -22,4 +22,30 @@ public sealed class BanksController : ControllerBase
         var result = _bankService.GetBanks();
         return Ok(result);
     }
+
+    [HttpPut("{name}/opening-balance")]
+    [ProducesResponseType(typeof(BankDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<BankDTO>> UpdateOpeningBalance(string name, [FromBody] BankOpeningBalanceUpdateDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        try
+        {
+            var bank = await _bankService.UpdateOpeningBalanceAsync(name, request);
+            return Ok(bank);
+        }
+        catch (ArgumentException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
+        }
+    }
 }
