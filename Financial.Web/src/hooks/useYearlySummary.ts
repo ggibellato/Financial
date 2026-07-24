@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { CategoryYearlyTotalDto, InvestmentDiffsYearlyDto } from '../api/types'
+import type { CategoryYearlyTotalDto, IncomeYearlySummaryDto, InvestmentDiffsYearlyDto } from '../api/types'
 
 interface YearlySummaryState {
   year: number
   categoryTotals: CategoryYearlyTotalDto[]
   investmentDiffs: InvestmentDiffsYearlyDto | null
+  incomeSummary: IncomeYearlySummaryDto | null
   isLoading: boolean
   error: string | null
   retryCount: number
@@ -14,7 +15,14 @@ interface YearlySummaryState {
 type YearlySummaryAction =
   | { type: 'SET_YEAR'; payload: number }
   | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: { categoryTotals: CategoryYearlyTotalDto[]; investmentDiffs: InvestmentDiffsYearlyDto } }
+  | {
+      type: 'FETCH_SUCCESS'
+      payload: {
+        categoryTotals: CategoryYearlyTotalDto[]
+        investmentDiffs: InvestmentDiffsYearlyDto
+        incomeSummary: IncomeYearlySummaryDto
+      }
+    }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
 
@@ -22,6 +30,7 @@ const INITIAL_STATE: YearlySummaryState = {
   year: new Date().getFullYear(),
   categoryTotals: [],
   investmentDiffs: null,
+  incomeSummary: null,
   isLoading: true,
   error: null,
   retryCount: 0,
@@ -39,6 +48,7 @@ function reducer(state: YearlySummaryState, action: YearlySummaryAction): Yearly
         isLoading: false,
         categoryTotals: action.payload.categoryTotals,
         investmentDiffs: action.payload.investmentDiffs,
+        incomeSummary: action.payload.incomeSummary,
       }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
@@ -54,6 +64,7 @@ export interface YearlySummaryData {
   setYear: (year: number) => void
   categoryTotals: CategoryYearlyTotalDto[]
   investmentDiffs: InvestmentDiffsYearlyDto | null
+  incomeSummary: IncomeYearlySummaryDto | null
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -65,9 +76,13 @@ export function useYearlySummary(): YearlySummaryData {
 
   useEffect(() => {
     dispatch({ type: 'FETCH_START' })
-    void Promise.all([apiClient.getCategoryTotalsForYear(state.year), apiClient.getInvestmentDiffsForYear(state.year)])
-      .then(([categoryTotals, investmentDiffs]) =>
-        dispatch({ type: 'FETCH_SUCCESS', payload: { categoryTotals, investmentDiffs } }),
+    void Promise.all([
+      apiClient.getCategoryTotalsForYear(state.year),
+      apiClient.getInvestmentDiffsForYear(state.year),
+      apiClient.getIncomeSummaryForYear(state.year),
+    ])
+      .then(([categoryTotals, investmentDiffs, incomeSummary]) =>
+        dispatch({ type: 'FETCH_SUCCESS', payload: { categoryTotals, investmentDiffs, incomeSummary } }),
       )
       .catch((err: unknown) => {
         dispatch({
@@ -89,6 +104,7 @@ export function useYearlySummary(): YearlySummaryData {
     setYear,
     categoryTotals: state.categoryTotals,
     investmentDiffs: state.investmentDiffs,
+    incomeSummary: state.incomeSummary,
     isLoading: state.isLoading,
     error: state.error,
     retry,

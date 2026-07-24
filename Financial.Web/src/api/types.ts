@@ -467,6 +467,17 @@ export interface InvestmentDiffsYearlyDto {
   netPosition: NetPositionYearlyDiffDto
 }
 
+export interface IncomeYearlySummaryDto {
+  salaryMonthly: number[]
+  salaryYearlyTotal: number
+  salaryAfterTaxesMonthly: number[]
+  salaryAfterTaxesYearlyTotal: number
+  taxDifferenceMonthly: number[]
+  taxDifferenceYearlyTotal: number
+  dividendoJurosMonthly: number[]
+  dividendoJurosYearlyTotal: number
+}
+
 export interface InvestmentSnapshotDto {
   id: string
   account: string
