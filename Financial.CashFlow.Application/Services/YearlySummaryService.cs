@@ -89,6 +89,46 @@ public sealed class YearlySummaryService : IYearlySummaryService
         };
     }
 
+    public IncomeYearlySummaryDTO GetIncomeSummaryForYear(int year)
+    {
+        var salaryMonthly = new decimal[MonthsInYear];
+        var salaryAfterTaxesMonthly = new decimal[MonthsInYear];
+        var dividendoJurosMonthly = new decimal[MonthsInYear];
+
+        foreach (var income in _repository.GetIncomes().Where(i => i.Date.Year == year))
+        {
+            var monthIndex = income.Date.Month - 1;
+
+            if (income.IncomeSource is IncomeSource.Gleison or IncomeSource.Ariana)
+            {
+                salaryMonthly[monthIndex] += income.GrossValue ?? 0m;
+                salaryAfterTaxesMonthly[monthIndex] += income.NetValue;
+            }
+            else if (income.IncomeSource == IncomeSource.DividendoJuros)
+            {
+                dividendoJurosMonthly[monthIndex] += income.NetValue;
+            }
+        }
+
+        var taxDifferenceMonthly = new decimal[MonthsInYear];
+        for (var month = 0; month < MonthsInYear; month++)
+        {
+            taxDifferenceMonthly[month] = salaryMonthly[month] - salaryAfterTaxesMonthly[month];
+        }
+
+        return new IncomeYearlySummaryDTO
+        {
+            SalaryMonthly = salaryMonthly,
+            SalaryYearlyTotal = salaryMonthly.Sum(),
+            SalaryAfterTaxesMonthly = salaryAfterTaxesMonthly,
+            SalaryAfterTaxesYearlyTotal = salaryAfterTaxesMonthly.Sum(),
+            TaxDifferenceMonthly = taxDifferenceMonthly,
+            TaxDifferenceYearlyTotal = taxDifferenceMonthly.Sum(),
+            DividendoJurosMonthly = dividendoJurosMonthly,
+            DividendoJurosYearlyTotal = dividendoJurosMonthly.Sum()
+        };
+    }
+
     private static decimal[] ComputeDiffs(decimal[] monthlyValues)
     {
         var diffs = new decimal[monthlyValues.Length - 1];
