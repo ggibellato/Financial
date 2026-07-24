@@ -58,6 +58,7 @@ interface MonthlyState {
   editCardTag: string
   isSaving: boolean
   saveError: string | null
+  markPaidSources: Record<string, string>
 }
 
 type MonthlyAction =
@@ -82,6 +83,7 @@ type MonthlyAction =
   | { type: 'SAVE_SUCCESS' }
   | { type: 'SAVE_ERROR'; payload: string }
   | { type: 'MARK_PAID_ERROR'; payload: string }
+  | { type: 'SET_MARK_PAID_SOURCE'; payload: { id: string; value: string } }
 
 const { year: DEFAULT_YEAR, month: DEFAULT_MONTH } = currentYearMonth()
 
@@ -116,6 +118,7 @@ const INITIAL_STATE: MonthlyState = {
   editCardTag: '',
   isSaving: false,
   saveError: null,
+  markPaidSources: {},
 }
 
 function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
@@ -193,6 +196,8 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
       return { ...state, isSaving: false, saveError: action.payload }
     case 'MARK_PAID_ERROR':
       return { ...state, saveError: action.payload }
+    case 'SET_MARK_PAID_SOURCE':
+      return { ...state, markPaidSources: { ...state.markPaidSources, [action.payload.id]: action.payload.value } }
     default:
       return state
   }
@@ -238,7 +243,10 @@ export interface MonthlyData {
   cancelEdit: () => void
   saveEdit: () => void
   deleteExpense: (id: string) => void
-  markStatementPaid: (id: string) => void
+  markPaidSources: Record<string, string>
+  setMarkPaidSource: (id: string, value: string) => void
+  markStatementPaid: (id: string, paymentSource: string) => void
+  unmarkStatementPaid: (id: string) => void
 }
 
 export function useMonthly(): MonthlyData {
@@ -379,15 +387,37 @@ export function useMonthly(): MonthlyData {
     [apiClient],
   )
 
+  const setMarkPaidSource = useCallback(
+    (id: string, value: string) => dispatch({ type: 'SET_MARK_PAID_SOURCE', payload: { id, value } }),
+    [],
+  )
+
   const markStatementPaid = useCallback(
-    (id: string) => {
+    (id: string, paymentSource: string) => {
       void apiClient
-        .markCardStatementPaid(id)
+        .markCardStatementPaid(id, { paymentSource })
         .then(() => dispatch({ type: 'RETRY' }))
         .catch((err: unknown) => {
           dispatch({
             type: 'MARK_PAID_ERROR',
             payload: err instanceof Error ? err.message : 'Failed to mark statement paid',
+          })
+        })
+    },
+    [apiClient],
+  )
+
+  const unmarkStatementPaid = useCallback(
+    (id: string) => {
+      if (!window.confirm('Unmark this statement as paid? Its settled charges revert to unsettled.')) return
+
+      void apiClient
+        .unmarkCardStatementPaid(id)
+        .then(() => dispatch({ type: 'RETRY' }))
+        .catch((err: unknown) => {
+          dispatch({
+            type: 'MARK_PAID_ERROR',
+            payload: err instanceof Error ? err.message : 'Failed to unmark statement paid',
           })
         })
     },
@@ -446,6 +476,9 @@ export function useMonthly(): MonthlyData {
     cancelEdit,
     saveEdit,
     deleteExpense,
+    markPaidSources: state.markPaidSources,
+    setMarkPaidSource,
     markStatementPaid,
+    unmarkStatementPaid,
   }
 }

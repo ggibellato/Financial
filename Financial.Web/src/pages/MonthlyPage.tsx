@@ -203,7 +203,10 @@ export default function MonthlyPage() {
     cancelEdit,
     saveEdit,
     deleteExpense,
+    markPaidSources,
+    setMarkPaidSource,
     markStatementPaid,
+    unmarkStatementPaid,
   } = useMonthly()
 
   const isEditing = editingId !== null
@@ -295,10 +298,32 @@ export default function MonthlyPage() {
                         <td className="data-table__col--numeric">{formatN2(s.outstandingTotal)}</td>
                         <td>{s.isPaid ? 'Paid' : 'Unpaid'}</td>
                         <td>
-                          {!s.isPaid && (
-                            <button type="button" onClick={() => markStatementPaid(s.id)}>
-                              Mark Paid
+                          {s.isPaid ? (
+                            <button type="button" onClick={() => unmarkStatementPaid(s.id)}>
+                              Unmark Paid
                             </button>
+                          ) : (
+                            <>
+                              <select
+                                aria-label={`Paying bank for ${s.card}`}
+                                value={markPaidSources[s.id] ?? ''}
+                                onChange={(e) => setMarkPaidSource(s.id, e.target.value)}
+                              >
+                                <option value="">Bank…</option>
+                                {PAYMENT_SOURCES.map((p) => (
+                                  <option key={p} value={p}>
+                                    {p}
+                                  </option>
+                                ))}
+                              </select>{' '}
+                              <button
+                                type="button"
+                                disabled={!markPaidSources[s.id]}
+                                onClick={() => markStatementPaid(s.id, markPaidSources[s.id])}
+                              >
+                                Mark Paid
+                              </button>
+                            </>
                           )}
                         </td>
                       </tr>

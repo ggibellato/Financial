@@ -19,6 +19,7 @@ const createExpenseMock = vi.fn<FinancialApiClient['createExpense']>()
 const updateExpenseMock = vi.fn<FinancialApiClient['updateExpense']>()
 const deleteExpenseMock = vi.fn<FinancialApiClient['deleteExpense']>()
 const markCardStatementPaidMock = vi.fn<FinancialApiClient['markCardStatementPaid']>()
+const unmarkCardStatementPaidMock = vi.fn<FinancialApiClient['unmarkCardStatementPaid']>()
 
 vi.mock('../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
@@ -29,6 +30,7 @@ vi.mock('../api/financialApiClient', () => ({
     updateExpense: updateExpenseMock,
     deleteExpense: deleteExpenseMock,
     markCardStatementPaid: markCardStatementPaidMock,
+    unmarkCardStatementPaid: unmarkCardStatementPaidMock,
   }),
 }))
 
@@ -176,14 +178,44 @@ describe('useMonthly', () => {
     expect(deleteExpenseMock).not.toHaveBeenCalled()
   })
 
-  it('marks a card statement paid and re-fetches', async () => {
+  it('marks a card statement paid with the selected bank and re-fetches', async () => {
     markCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 })
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    act(() => result.current.markStatementPaid('c1'))
+    act(() => result.current.markStatementPaid('c1', 'Trading212'))
 
-    await waitFor(() => expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1'))
+    await waitFor(() => expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSource: 'Trading212' }))
     await waitFor(() => expect(getCardStatementsByMonthMock).toHaveBeenCalledTimes(2))
+  })
+
+  it('tracks the selected paying bank per statement', async () => {
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setMarkPaidSource('c1', 'Chase'))
+
+    expect(result.current.markPaidSources).toEqual({ c1: 'Chase' })
+  })
+
+  it('unmarks a paid statement after confirmation and re-fetches', async () => {
+    unmarkCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[1], isPaid: false, outstandingTotal: 45 })
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.unmarkStatementPaid('c2'))
+
+    await waitFor(() => expect(unmarkCardStatementPaidMock).toHaveBeenCalledWith('c2'))
+    await waitFor(() => expect(getCardStatementsByMonthMock).toHaveBeenCalledTimes(2))
+  })
+
+  it('does not unmark when the user cancels the confirmation', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.unmarkStatementPaid('c2'))
+
+    expect(unmarkCardStatementPaidMock).not.toHaveBeenCalled()
   })
 })

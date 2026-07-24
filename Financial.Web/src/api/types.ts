@@ -400,6 +400,10 @@ export interface CardStatementDto {
   outstandingTotal: number
 }
 
+export interface MarkCardStatementPaidDto {
+  paymentSource: string
+}
+
 export interface CategoryYearlyTotalDto {
   category: string
   monthlyTotals: number[]

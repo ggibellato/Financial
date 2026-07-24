@@ -237,11 +237,11 @@ graph TD
 - [x] Saving an expense whose `SettledAt` is inconsistent with its `PaymentSource`/`CardTag` combination is rejected with a validation message
 
 ### F02. Credit Card Statement Settlement with Payment Source
-- [ ] Marking a statement paid without a `PaymentSource` selected is rejected before any expense changes
-- [ ] Marking a statement paid with a `PaymentSource` selected sets that `PaymentSource` and today's date as `SettledAt` on every `CreditCardCharge` expense on that card/month, computing each to `CreditCardSettled`
-- [ ] Unmarking a paid statement clears `PaymentSource` and `SettledAt` on every `CreditCardSettled` expense on that card/month, computing each back to `CreditCardCharge`
-- [ ] A save failure partway through either cascade leaves the statement's paid/unpaid flag and every expense in that cascade unchanged from before the action
-- [ ] Marking an already-paid statement paid again, or unmarking an already-unpaid statement, is a no-op with a confirmation message, not an error
+- [x] Marking a statement paid without a `PaymentSource` selected is rejected before any expense changes
+- [x] Marking a statement paid with a `PaymentSource` selected sets that `PaymentSource` and today's date as `SettledAt` on every `CreditCardCharge` expense on that card/month, computing each to `CreditCardSettled`
+- [x] Unmarking a paid statement clears `PaymentSource` and `SettledAt` on every `CreditCardSettled` expense on that card/month, computing each back to `CreditCardCharge`
+- [x] A save failure partway through either cascade leaves the statement's paid/unpaid flag and every expense in that cascade unchanged from before the action
+- [x] Marking an already-paid statement paid again, or unmarking an already-unpaid statement, is a no-op with a confirmation message, not an error
 
 ### F03. Legacy Data Migration
 - [ ] Running the backfill script against `data-cashflow.json` leaves every expense with no `CardTag` unchanged (computing to `ImmediatePayment` with its existing `PaymentSource`)
@@ -265,7 +265,7 @@ graph TD
 - [ ] The Cards panel's "Mark Paid" control requires a bank selection before it can be confirmed, and a paid statement shows an "Unmark Paid" control
 
 ### Cross-Feature Integration
-- [ ] F02's mark-paid/unmark-paid cascades correctly read and write the `PaymentSource` and `SettledAt` fields defined by F01, and reject the action if the resulting `PaymentSource`/`CardTag`/`SettledAt` combination would violate F01's validation rule
+- [x] F02's mark-paid/unmark-paid cascades correctly read and write the `PaymentSource` and `SettledAt` fields defined by F01, and reject the action if the resulting `PaymentSource`/`CardTag`/`SettledAt` combination would violate F01's validation rule
 - [ ] F03's backfill correctly writes expenses into the `PaymentSource`/`CardTag`/`SettledAt` shape defined by F01, with zero resulting records violating F01's validation rule
 - [ ] F04's updated importer produces expenses in the `PaymentSource`/`CardTag` shape defined by F01, with zero imported card-tagged rows carrying a non-null `PaymentSource`
 - [ ] F05's Cards and Banks panels correctly reflect the field changes produced by F02's mark-paid/unmark-paid cascade immediately after each action

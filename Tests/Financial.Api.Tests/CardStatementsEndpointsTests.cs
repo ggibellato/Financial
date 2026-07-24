@@ -43,7 +43,7 @@ public class CardStatementsEndpointsTests
     }
 
     [Fact]
-    public async Task MarkStatementPaid_ExistingId_ReturnsOkAndZeroesOutstandingTotal()
+    public async Task MarkStatementPaid_WithPaymentSource_SettlesChargesAndZeroesOutstandingTotal()
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
@@ -56,16 +56,47 @@ public class CardStatementsEndpointsTests
             PaymentSource = null,
             CardTag = "BarclaysPlatinumVisa8003"
         });
-        var monthResponse = await client.GetAsync("/api/v1/financial/card-statements/2026/7");
-        var statements = await monthResponse.Content.ReadFromJsonAsync<List<CardStatementDTO>>();
-        var target = statements!.First(s => s.Card == "BarclaysPlatinumVisa8003");
+        var target = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
 
-        var response = await client.PostAsync($"/api/v1/financial/card-statements/{target.Id}/mark-paid", null);
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/financial/card-statements/{target.Id}/mark-paid",
+            new MarkStatementPaidDTO { PaymentSource = "Trading212" });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var updated = await response.Content.ReadFromJsonAsync<CardStatementDTO>();
         updated!.IsPaid.Should().BeTrue();
         updated.OutstandingTotal.Should().Be(0m);
+
+        var expenses = await client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
+        var settled = expenses!.Single(e => e.Description == "Card charge");
+        settled.PaymentStatus.Should().Be("CreditCardSettled");
+        settled.PaymentSource.Should().Be("Trading212");
+        settled.SettledAt.Should().Be(DateOnly.FromDateTime(DateTime.Today));
+    }
+
+    [Fact]
+    public async Task MarkStatementPaid_WithoutPaymentSource_ReturnsBadRequestWithoutChangingExpenses()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 10),
+            Description = "Card charge",
+            Value = 45m,
+            Category = "Mercado",
+            PaymentSource = null,
+            CardTag = "BarclaysPlatinumVisa8003"
+        });
+        var target = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/financial/card-statements/{target.Id}/mark-paid",
+            new MarkStatementPaidDTO { PaymentSource = null });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var expenses = await client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
+        expenses!.Single(e => e.Description == "Card charge").PaymentStatus.Should().Be("CreditCardCharge");
     }
 
     [Fact]
@@ -73,12 +104,12 @@ public class CardStatementsEndpointsTests
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
-        var monthResponse = await client.GetAsync("/api/v1/financial/card-statements/2026/7");
-        var statements = await monthResponse.Content.ReadFromJsonAsync<List<CardStatementDTO>>();
-        var target = statements!.First();
-        await client.PostAsync($"/api/v1/financial/card-statements/{target.Id}/mark-paid", null);
+        var target = await GetFirstStatementAsync(client);
+        await MarkPaidAsync(client, target.Id, "Barclays");
 
-        var response = await client.PostAsync($"/api/v1/financial/card-statements/{target.Id}/mark-paid", null);
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/financial/card-statements/{target.Id}/mark-paid",
+            new MarkStatementPaidDTO { PaymentSource = "Barclays" });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -89,8 +120,83 @@ public class CardStatementsEndpointsTests
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.PostAsync($"/api/v1/financial/card-statements/{Guid.NewGuid()}/mark-paid", null);
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/financial/card-statements/{Guid.NewGuid()}/mark-paid",
+            new MarkStatementPaidDTO { PaymentSource = "Barclays" });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
+
+    [Fact]
+    public async Task UnmarkStatementPaid_RevertsSettledChargesToUnsettled()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 10),
+            Description = "Card charge",
+            Value = 45m,
+            Category = "Mercado",
+            PaymentSource = null,
+            CardTag = "BarclaysPlatinumVisa8003"
+        });
+        var target = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
+        await MarkPaidAsync(client, target.Id, "Trading212");
+
+        var response = await client.PostAsync($"/api/v1/financial/card-statements/{target.Id}/unmark-paid", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<CardStatementDTO>();
+        updated!.IsPaid.Should().BeFalse();
+        updated.OutstandingTotal.Should().Be(45m);
+
+        var expenses = await client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
+        var reverted = expenses!.Single(e => e.Description == "Card charge");
+        reverted.PaymentStatus.Should().Be("CreditCardCharge");
+        reverted.PaymentSource.Should().BeNull();
+        reverted.SettledAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UnmarkStatementPaid_OnUnpaidStatement_StillReturnsOk()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var target = await GetFirstStatementAsync(client);
+
+        var response = await client.PostAsync($"/api/v1/financial/card-statements/{target.Id}/unmark-paid", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<CardStatementDTO>();
+        updated!.IsPaid.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task UnmarkStatementPaid_UnknownId_ReturnsNotFound()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.PostAsync($"/api/v1/financial/card-statements/{Guid.NewGuid()}/unmark-paid", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    private static async Task<CardStatementDTO> GetStatementAsync(HttpClient client, string card)
+    {
+        var statements = await client.GetFromJsonAsync<List<CardStatementDTO>>("/api/v1/financial/card-statements/2026/7");
+        return statements!.First(s => s.Card == card);
+    }
+
+    private static async Task<CardStatementDTO> GetFirstStatementAsync(HttpClient client)
+    {
+        var statements = await client.GetFromJsonAsync<List<CardStatementDTO>>("/api/v1/financial/card-statements/2026/7");
+        return statements!.First();
+    }
+
+    private static Task<HttpResponseMessage> MarkPaidAsync(HttpClient client, Guid id, string paymentSource) =>
+        client.PostAsJsonAsync(
+            $"/api/v1/financial/card-statements/{id}/mark-paid",
+            new MarkStatementPaidDTO { PaymentSource = paymentSource });
 }

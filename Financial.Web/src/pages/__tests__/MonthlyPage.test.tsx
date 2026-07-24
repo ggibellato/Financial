@@ -11,6 +11,7 @@ const createExpenseMock = vi.fn<FinancialApiClient['createExpense']>()
 const updateExpenseMock = vi.fn<FinancialApiClient['updateExpense']>()
 const deleteExpenseMock = vi.fn<FinancialApiClient['deleteExpense']>()
 const markCardStatementPaidMock = vi.fn<FinancialApiClient['markCardStatementPaid']>()
+const unmarkCardStatementPaidMock = vi.fn<FinancialApiClient['unmarkCardStatementPaid']>()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
@@ -21,6 +22,7 @@ vi.mock('../../api/financialApiClient', () => ({
     updateExpense: updateExpenseMock,
     deleteExpense: deleteExpenseMock,
     markCardStatementPaid: markCardStatementPaidMock,
+    unmarkCardStatementPaid: unmarkCardStatementPaidMock,
   }),
 }))
 
@@ -102,21 +104,40 @@ describe('MonthlyPage', () => {
     expect(screen.getByText('Banks').closest('section')).toHaveClass('monthly-page__section--grid')
   })
 
-  it('only shows Mark Paid for unpaid cards', async () => {
+  it('shows Mark Paid with a bank picker for unpaid cards and Unmark Paid for paid ones', async () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
     expect(screen.getAllByRole('button', { name: 'Mark Paid' })).toHaveLength(1)
+    expect(screen.getByLabelText('Paying bank for BaAmex')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Unmark Paid' })).toHaveLength(1)
   })
 
-  it('marks a card statement paid when clicked', async () => {
+  it('disables Mark Paid until a bank is selected, then marks paid with that bank', async () => {
     markCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 })
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
+    const markPaidButton = screen.getByRole('button', { name: 'Mark Paid' })
+    expect(markPaidButton).toBeDisabled()
 
-    await waitFor(() => expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1'))
+    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'Trading212' } })
+    expect(markPaidButton).toBeEnabled()
+    fireEvent.click(markPaidButton)
+
+    await waitFor(() =>
+      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSource: 'Trading212' }),
+    )
+  })
+
+  it('unmarks a paid statement after confirmation', async () => {
+    unmarkCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[1], isPaid: false, outstandingTotal: 0 })
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseMaster4023' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Unmark Paid' }))
+
+    await waitFor(() => expect(unmarkCardStatementPaidMock).toHaveBeenCalledWith('c2'))
   })
 
   it('shows the add-expense form only after New Expense is clicked, and submits a new expense', async () => {
