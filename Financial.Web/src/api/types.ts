@@ -400,6 +400,11 @@ export interface BankBalanceDto {
   balance: number
 }
 
+export interface TitheSummaryDto {
+  calculatedTithe: number
+  titheBalance: number
+}
+
 export interface IncomeDto {
   id: string
   date: string

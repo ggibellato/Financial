@@ -39,6 +39,7 @@ import type {
   RecurringBillDto,
   ReserveBucketBalanceDto,
   ReserveMovementDto,
+  TitheSummaryDto,
   TransactionCreateDto,
   TransactionDeleteDto,
   TransactionSummaryItemDto,
@@ -111,6 +112,7 @@ export interface FinancialApiClient {
   updateExpense: (id: string, request: UpdateExpenseDto) => Promise<ExpenseDto>
   deleteExpense: (id: string) => Promise<void>
   getIncomesByMonth: (year: number, month: number) => Promise<IncomeDto[]>
+  getTitheSummaryByMonth: (year: number, month: number) => Promise<TitheSummaryDto>
   createIncome: (request: CreateIncomeDto) => Promise<IncomeDto>
   updateIncome: (id: string, request: UpdateIncomeDto) => Promise<IncomeDto>
   deleteIncome: (id: string) => Promise<void>
@@ -348,6 +350,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     deleteExpense: (id) => requestVoid(`/expenses/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getIncomesByMonth: (year, month) => request<IncomeDto[]>(`/incomes/month/${year}/${month}`),
+    getTitheSummaryByMonth: (year, month) => request<TitheSummaryDto>(`/tithe/month/${year}/${month}`),
     createIncome: (requestBody) =>
       request<IncomeDto>('/incomes', {
         method: 'POST',

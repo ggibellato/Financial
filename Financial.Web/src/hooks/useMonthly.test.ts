@@ -1,7 +1,15 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../api/financialApiClient'
-import type { BankBalanceDto, BankDto, CardStatementDto, CategoryTotalDto, ExpenseDto, IncomeDto } from '../api/types'
+import type {
+  BankBalanceDto,
+  BankDto,
+  CardStatementDto,
+  CategoryTotalDto,
+  ExpenseDto,
+  IncomeDto,
+  TitheSummaryDto,
+} from '../api/types'
 import { useMonthly } from './useMonthly'
 
 const NOW = new Date()
@@ -26,6 +34,7 @@ const createIncomeMock = vi.fn<FinancialApiClient['createIncome']>()
 const updateIncomeMock = vi.fn<FinancialApiClient['updateIncome']>()
 const deleteIncomeMock = vi.fn<FinancialApiClient['deleteIncome']>()
 const getBankBalancesByMonthMock = vi.fn<FinancialApiClient['getBankBalancesByMonth']>()
+const getTitheSummaryByMonthMock = vi.fn<FinancialApiClient['getTitheSummaryByMonth']>()
 
 vi.mock('../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
@@ -43,6 +52,7 @@ vi.mock('../api/financialApiClient', () => ({
     updateIncome: updateIncomeMock,
     deleteIncome: deleteIncomeMock,
     getBankBalancesByMonth: getBankBalancesByMonthMock,
+    getTitheSummaryByMonth: getTitheSummaryByMonthMock,
   }),
 }))
 
@@ -92,6 +102,8 @@ const BANK_BALANCES: BankBalanceDto[] = [
   { bank: 'Chase', balance: 0 },
 ]
 
+const TITHE_SUMMARY: TitheSummaryDto = { calculatedTithe: 245, titheBalance: 245 }
+
 describe('useMonthly', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -101,6 +113,7 @@ describe('useMonthly', () => {
     getBanksMock.mockResolvedValue(BANKS)
     getIncomesByMonthMock.mockResolvedValue(INCOMES)
     getBankBalancesByMonthMock.mockResolvedValue(BANK_BALANCES)
+    getTitheSummaryByMonthMock.mockResolvedValue(TITHE_SUMMARY)
     vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
@@ -550,5 +563,32 @@ describe('useMonthly', () => {
     await waitFor(() =>
       expect(updateExpenseMock).toHaveBeenCalledWith('e9', expect.objectContaining({ roundUpAmount: null })),
     )
+  })
+
+  it('fetches the tithe summary for the current month and exposes it', async () => {
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(getTitheSummaryByMonthMock).toHaveBeenCalledWith(CURRENT_YEAR, CURRENT_MONTH)
+    expect(result.current.titheSummary).toEqual(TITHE_SUMMARY)
+  })
+
+  it('groups income totals by source, summing net values and gross values only when present', async () => {
+    getIncomesByMonthMock.mockResolvedValue([
+      { id: 'i1', date: `${CURRENT_YEAR}-07-01`, incomeSource: 'Ariana', grossValue: 400, netValue: 350, bank: 'Chase' },
+      { id: 'i2', date: `${CURRENT_YEAR}-07-08`, incomeSource: 'Ariana', grossValue: 420, netValue: 370, bank: 'Chase' },
+      { id: 'i3', date: `${CURRENT_YEAR}-07-10`, incomeSource: 'Lottery', grossValue: null, netValue: 50, bank: 'Chase' },
+    ])
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.incomeTotals).toEqual(
+      expect.arrayContaining([
+        { source: 'Ariana', netValue: 720, grossValue: 820 },
+        { source: 'Lottery', netValue: 50, grossValue: null },
+      ]),
+    )
+    expect(result.current.incomeTotals).toHaveLength(2)
+    expect(result.current.totalIncoming).toBe(770)
   })
 })

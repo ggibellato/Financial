@@ -292,9 +292,9 @@ graph TD
 - [x] Saving an entry with no bank selected, a negative net value, or gross less than net is rejected with a validation message
 
 ### F05. Monthly Incoming and Tithe Display
-- [ ] The Incoming card shows one row per `IncomeSource` with the correct summed value for the selected month
-- [ ] The Incoming card shows the calculated tithe and tithe balance for the selected month
-- [ ] The Incoming card updates immediately after an income entry or a Dizimo-category expense is added, edited, or deleted
+- [x] The Incoming card shows one row per `IncomeSource` with the correct summed value for the selected month
+- [x] The Incoming card shows the calculated tithe and tithe balance for the selected month
+- [x] The Incoming card updates immediately after an income entry or a Dizimo-category expense is added, edited, or deleted
 
 ### F06. Real Bank Balance
 - [x] A bank's displayed balance equals `OpeningBalance + Σ(Income.NetValue) − Σ(Expense.Value − Expense.RoundUpAmount)` for that bank from its `OpeningBalanceDate` through the selected month, matching a manual reference calculation to the penny
@@ -313,6 +313,6 @@ graph TD
 ### Cross-Feature Integration
 - [x] F03's tithe calculation correctly reads the net income totals produced by F01 for the selected month
 - [x] F04's create/edit/delete actions correctly read and write through F01's `Income` entity contract
-- [ ] F05 correctly displays the income totals from F01 and the tithe/tithe balance from F03 for the selected month
+- [x] F05 correctly displays the income totals from F01 and the tithe/tithe balance from F03 for the selected month
 - [x] F06 correctly combines F01's income data with F02's opening balance and date to produce each bank's balance
 - [x] F07 correctly aggregates F01's income data across all 12 months of the selected year into the Yearly Summary's Income Summary table
