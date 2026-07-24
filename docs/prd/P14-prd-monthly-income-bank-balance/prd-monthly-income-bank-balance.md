@@ -285,11 +285,11 @@ graph TD
 - [x] A tithe balance can display as a negative value without error when Dizimo expenses exceed the calculated tithe
 
 ### F04. Monthly Income Capture UI
-- [ ] An income entry can be added via the form with all required fields and appears in the month's list immediately after saving
-- [ ] The gross value field is shown only when `Gleison` or `Ariana` is selected as the source
-- [ ] An existing income entry can be edited and the change is reflected in the list and in any dependent totals
-- [ ] An existing income entry can be deleted and is removed from the list immediately
-- [ ] Saving an entry with no bank selected, a negative net value, or gross less than net is rejected with a validation message
+- [x] An income entry can be added via the form with all required fields and appears in the month's list immediately after saving
+- [x] The gross value field is shown only when `Gleison` or `Ariana` is selected as the source
+- [x] An existing income entry can be edited and the change is reflected in the list and in any dependent totals
+- [x] An existing income entry can be deleted and is removed from the list immediately
+- [x] Saving an entry with no bank selected, a negative net value, or gross less than net is rejected with a validation message
 
 ### F05. Monthly Incoming and Tithe Display
 - [ ] The Incoming card shows one row per `IncomeSource` with the correct summed value for the selected month
@@ -312,7 +312,7 @@ graph TD
 
 ### Cross-Feature Integration
 - [x] F03's tithe calculation correctly reads the net income totals produced by F01 for the selected month
-- [ ] F04's create/edit/delete actions correctly read and write through F01's `Income` entity contract
+- [x] F04's create/edit/delete actions correctly read and write through F01's `Income` entity contract
 - [ ] F05 correctly displays the income totals from F01 and the tithe/tithe balance from F03 for the selected month
 - [ ] F06 correctly combines F01's income data with F02's opening balance and date to produce each bank's balance
 - [ ] F07 correctly aggregates F01's income data across all 12 months of the selected year into the Yearly Summary's Income Summary table
