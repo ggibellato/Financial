@@ -1,3 +1,4 @@
+using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
@@ -39,9 +40,62 @@ public class BankServiceTests
         result.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task UpdateOpeningBalanceAsync_WithValidRequest_UpdatesAndSaves()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Banks.Add(Bank.Create("Barclays", roundUpEnabled: false));
+        var service = new BankService(repository);
+        var request = new BankOpeningBalanceUpdateDTO { OpeningBalance = 1250.75m, OpeningBalanceDate = new DateOnly(2026, 7, 1) };
+
+        var result = await service.UpdateOpeningBalanceAsync("Barclays", request);
+
+        result.OpeningBalance.Should().Be(1250.75m);
+        result.OpeningBalanceDate.Should().Be(new DateOnly(2026, 7, 1));
+        repository.SaveChangesCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task UpdateOpeningBalanceAsync_ResolvesNameCaseInsensitively()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Banks.Add(Bank.Create("Barclays", roundUpEnabled: false));
+        var service = new BankService(repository);
+        var request = new BankOpeningBalanceUpdateDTO { OpeningBalance = 10m, OpeningBalanceDate = new DateOnly(2026, 7, 1) };
+
+        var result = await service.UpdateOpeningBalanceAsync("barclays", request);
+
+        result.Name.Should().Be("Barclays");
+    }
+
+    [Fact]
+    public async Task UpdateOpeningBalanceAsync_WithUnknownName_ThrowsKeyNotFoundException()
+    {
+        var service = new BankService(new StubCashFlowRepository());
+        var request = new BankOpeningBalanceUpdateDTO { OpeningBalance = 10m, OpeningBalanceDate = new DateOnly(2026, 7, 1) };
+
+        var act = async () => await service.UpdateOpeningBalanceAsync("NotABank", request);
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+    }
+
+    [Fact]
+    public async Task UpdateOpeningBalanceAsync_WithNegativeBalance_ThrowsArgumentException()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Banks.Add(Bank.Create("Barclays", roundUpEnabled: false));
+        var service = new BankService(repository);
+        var request = new BankOpeningBalanceUpdateDTO { OpeningBalance = -1m, OpeningBalanceDate = new DateOnly(2026, 7, 1) };
+
+        var act = async () => await service.UpdateOpeningBalanceAsync("Barclays", request);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
     private sealed class StubCashFlowRepository : ICashFlowRepository
     {
         public List<Bank> Banks { get; } = new();
+        public int SaveChangesCallCount { get; private set; }
 
         public IEnumerable<Expense> GetExpenses() => Array.Empty<Expense>();
         public void AddExpense(Expense expense) { }
@@ -71,6 +125,10 @@ public class BankServiceTests
         public void AddIncome(Income income) { }
         public void DeleteIncome(Guid id) { }
 
-        public Task SaveChangesAsync() => Task.CompletedTask;
+        public Task SaveChangesAsync()
+        {
+            SaveChangesCallCount++;
+            return Task.CompletedTask;
+        }
     }
 }

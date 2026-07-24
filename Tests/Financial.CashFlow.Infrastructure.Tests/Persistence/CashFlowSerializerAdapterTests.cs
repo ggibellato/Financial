@@ -26,6 +26,7 @@ public class CashFlowSerializerAdapterTests
         var maeLedgerEntry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 15), "School supplies", "Note", Currency.BRL, 350m, 51.23m);
         var investmentSnapshot = InvestmentSnapshot.Create(InvestmentAccount.PlatinumVisa8003, 2026, 7, 1250.00m);
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
         var income = Income.Create(new DateOnly(2026, 7, 25), IncomeSource.Gleison, 3200.00m, 2450.00m, "Barclays");
 
         original.AddExpense(expense);
@@ -62,6 +63,8 @@ public class CashFlowSerializerAdapterTests
         var resultBank = result.Banks.Should().ContainSingle().Which;
         resultBank.Name.Should().Be(bank.Name);
         resultBank.RoundUpEnabled.Should().Be(bank.RoundUpEnabled);
+        resultBank.OpeningBalance.Should().Be(bank.OpeningBalance);
+        resultBank.OpeningBalanceDate.Should().Be(bank.OpeningBalanceDate);
         var resultIncome = result.Incomes.Should().ContainSingle().Which;
         resultIncome.Id.Should().Be(income.Id);
         resultIncome.Date.Should().Be(income.Date);
