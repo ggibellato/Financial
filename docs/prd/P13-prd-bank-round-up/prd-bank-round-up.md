@@ -215,13 +215,13 @@ graph TD
 - [x] Card statement settlement (mark paid / unmark paid) continues to function exactly as it did before this change, now referencing a bank instead of the old enum
 
 ### F02. Expense Round-Up Capture
-- [ ] An eligible expense (paid directly from a `RoundUpEnabled` bank) with value £9.40 is offered a suggested round-up of £0.60
-- [ ] Saving a round-up amount on a credit-card-tagged expense is rejected with a validation message
-- [ ] Saving a round-up amount on an expense whose bank has `RoundUpEnabled = false` is rejected with a validation message
-- [ ] Saving a round-up amount outside the £0.00–£0.99 range is rejected with a validation message
-- [ ] A round-up amount can be explicitly saved as £0.00
-- [ ] Editing an expense's value after its round-up amount is saved leaves that round-up amount unchanged
-- [ ] A previously saved round-up amount can be directly edited to a new value at any time after the expense was created
+- [x] An eligible expense (paid directly from a `RoundUpEnabled` bank) with value £9.40 is offered a suggested round-up of £0.60
+- [x] Saving a round-up amount on a credit-card-tagged expense is rejected with a validation message
+- [x] Saving a round-up amount on an expense whose bank has `RoundUpEnabled = false` is rejected with a validation message
+- [x] Saving a round-up amount outside the £0.00–£0.99 range is rejected with a validation message
+- [x] A round-up amount can be explicitly saved as £0.00
+- [x] Editing an expense's value after its round-up amount is saved leaves that round-up amount unchanged
+- [x] A previously saved round-up amount can be directly edited to a new value at any time after the expense was created
 
 ### F03. Expense Form Bank Picker & Round-Up UX
 - [ ] The expense form's bank picker lists the banks resolved from F01 rather than a fixed set of options
@@ -237,6 +237,6 @@ graph TD
 - [ ] The Banks panel's balance and round-up total both update immediately after an expense is saved
 
 ### Cross-Feature Integration
-- [ ] F02's round-up suggestion and eligibility check correctly read each bank's `RoundUpEnabled` flag as defined by F01, offering a suggestion only for banks where it is `true`
+- [x] F02's round-up suggestion and eligibility check correctly read each bank's `RoundUpEnabled` flag as defined by F01, offering a suggestion only for banks where it is `true`
 - [ ] F03's bank picker and round-up field correctly reflect the bank list and `RoundUpEnabled` flags from F01, and correctly read and write the round-up amount contract defined by F02
 - [ ] F04's balance and round-up total calculations correctly group expenses by the bank identity defined by F01 and correctly sum the round-up amounts defined by F02

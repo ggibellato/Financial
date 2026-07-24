@@ -31,4 +31,10 @@ public sealed class ExpenseDTO
 
     /// <summary>Computed payment status derived from the payment source and card tag.</summary>
     public required string PaymentStatus { get; init; }
+
+    /// <summary>Saved round-up amount, or null if not yet decided.</summary>
+    public decimal? RoundUpAmount { get; init; }
+
+    /// <summary>Suggested round-up amount (difference to the next whole £1), present only when eligible and not yet saved.</summary>
+    public decimal? SuggestedRoundUpAmount { get; init; }
 }

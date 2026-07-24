@@ -204,4 +204,104 @@ public class ExpenseTests
 
         act.Should().Throw<ArgumentException>().WithMessage("*settled credit card expense*");
     }
+
+    [Theory]
+    [InlineData(9.40, 0.60)]
+    [InlineData(10.00, 0.00)]
+    [InlineData(0.01, 0.99)]
+    public void RoundUpSuggestion_ComputesDifferenceToNextWholePound(decimal value, decimal expected)
+    {
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test", value, Category.Mercado, "Chase", null);
+
+        expense.RoundUpSuggestion.Should().Be(expected);
+    }
+
+    [Fact]
+    public void SetRoundUpAmount_OnImmediatePaymentWithinRange_Succeeds()
+    {
+        var expense = CreateImmediateExpense();
+
+        expense.SetRoundUpAmount(0.60m);
+
+        expense.RoundUpAmount.Should().Be(0.60m);
+    }
+
+    [Theory]
+    [InlineData(0.00)]
+    [InlineData(0.99)]
+    public void SetRoundUpAmount_AtRangeBoundaries_Succeeds(decimal amount)
+    {
+        var expense = CreateImmediateExpense();
+
+        expense.SetRoundUpAmount(amount);
+
+        expense.RoundUpAmount.Should().Be(amount);
+    }
+
+    [Theory]
+    [InlineData(-0.01)]
+    [InlineData(1.00)]
+    public void SetRoundUpAmount_OutsideRange_Throws(decimal amount)
+    {
+        var expense = CreateImmediateExpense();
+
+        var act = () => expense.SetRoundUpAmount(amount);
+
+        act.Should().Throw<ArgumentException>().WithMessage("*between £0.00 and £0.99*");
+    }
+
+    [Fact]
+    public void SetRoundUpAmount_OnCreditCardCharge_Throws()
+    {
+        var expense = CreateCardCharge();
+
+        var act = () => expense.SetRoundUpAmount(0.50m);
+
+        act.Should().Throw<ArgumentException>().WithMessage("*not a credit-card charge*");
+    }
+
+    [Fact]
+    public void SetRoundUpAmount_OnSettledExpense_Throws()
+    {
+        var expense = CreateSettledExpense();
+
+        var act = () => expense.SetRoundUpAmount(0.50m);
+
+        act.Should().Throw<ArgumentException>().WithMessage("*not a credit-card charge*");
+    }
+
+    [Fact]
+    public void SetRoundUpAmount_Null_AlwaysSucceedsRegardlessOfShape()
+    {
+        var immediate = CreateImmediateExpense();
+        var charge = CreateCardCharge();
+
+        immediate.SetRoundUpAmount(null);
+        charge.SetRoundUpAmount(null);
+
+        immediate.RoundUpAmount.Should().BeNull();
+        charge.RoundUpAmount.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetRoundUpAmount_Null_ClearsAPreviouslySetAmount()
+    {
+        var expense = CreateImmediateExpense();
+        expense.SetRoundUpAmount(0.60m);
+
+        expense.SetRoundUpAmount(null);
+
+        expense.RoundUpAmount.Should().BeNull();
+    }
+
+    [Fact]
+    public void UpdateDetails_ChangingValue_LeavesRoundUpAmountUnchanged()
+    {
+        var expense = CreateImmediateExpense();
+        expense.SetRoundUpAmount(0.60m);
+
+        expense.UpdateDetails(expense.Date, expense.Description, 20m, expense.Category, expense.PaymentSource, expense.CardTag);
+
+        expense.RoundUpAmount.Should().Be(0.60m);
+    }
 }

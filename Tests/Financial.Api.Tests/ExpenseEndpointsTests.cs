@@ -293,4 +293,96 @@ public class ExpenseEndpointsTests
         var totals = await response.Content.ReadFromJsonAsync<List<CategoryTotalDTO>>();
         totals.Should().ContainSingle(t => t.Category == "Mercado" && t.TotalValue == 15m);
     }
+
+    [Fact]
+    public async Task AddExpense_RoundUpAmountOnRoundUpEnabledBank_ReturnsOkWithAmountSaved()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 15),
+            Description = "TfL",
+            Value = 9.40m,
+            Category = "Extras",
+            PaymentSource = "Trading212",
+            CardTag = null,
+            RoundUpAmount = 0.60m
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
+        expense!.RoundUpAmount.Should().Be(0.60m);
+        expense.SuggestedRoundUpAmount.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AddExpense_RoundUpAmountOnNonRoundUpBank_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 15),
+            Description = "Groceries",
+            Value = 9.40m,
+            Category = "Mercado",
+            PaymentSource = "Barclays",
+            CardTag = null,
+            RoundUpAmount = 0.60m
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("Barclays").And.Contain("does not support round-up");
+    }
+
+    [Fact]
+    public async Task AddExpense_RoundUpAmountWithCardTag_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 15),
+            Description = "Card charge",
+            Value = 9.40m,
+            Category = "Extras",
+            PaymentSource = null,
+            CardTag = "ChaseMaster4023",
+            RoundUpAmount = 0.60m
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("not a credit-card charge");
+    }
+
+    [Fact]
+    public async Task GetExpensesByMonth_EligibleExpenseWithNoSavedRoundUp_IncludesSuggestion()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 15),
+            Description = "TfL",
+            Value = 9.40m,
+            Category = "Extras",
+            PaymentSource = "Trading212",
+            CardTag = null
+        });
+
+        var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
+        items.Should().ContainSingle(e => e.Description == "TfL" && e.SuggestedRoundUpAmount == 0.60m);
+    }
 }

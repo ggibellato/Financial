@@ -5,6 +5,9 @@ namespace Financial.CashFlow.Domain.Entities;
 
 public class Expense
 {
+    private const decimal MinRoundUpAmount = 0.00m;
+    private const decimal MaxRoundUpAmount = 0.99m;
+
     public Guid Id { get; private set; }
     public DateOnly Date { get; private set; }
     public string Description { get; private set; } = string.Empty;
@@ -13,11 +16,14 @@ public class Expense
     public string? PaymentSource { get; private set; }
     public CreditCard? CardTag { get; private set; }
     public DateOnly? SettledAt { get; private set; }
+    public decimal? RoundUpAmount { get; private set; }
 
     public ExpensePaymentStatus PaymentStatus =>
         CardTag is null ? ExpensePaymentStatus.ImmediatePayment
         : PaymentSource is null ? ExpensePaymentStatus.CreditCardCharge
         : ExpensePaymentStatus.CreditCardSettled;
+
+    public decimal RoundUpSuggestion => Math.Ceiling(Value) - Value;
 
     private Expense() { }
 
@@ -92,6 +98,29 @@ public class Expense
 
         PaymentSource = null;
         SettledAt = null;
+    }
+
+    public void SetRoundUpAmount(decimal? amount)
+    {
+        if (amount is null)
+        {
+            RoundUpAmount = null;
+            return;
+        }
+
+        if (PaymentStatus != ExpensePaymentStatus.ImmediatePayment)
+        {
+            throw new ArgumentException(
+                "Round-up only applies to an expense paid directly from a bank, not a credit-card charge.");
+        }
+
+        if (amount < MinRoundUpAmount || amount > MaxRoundUpAmount)
+        {
+            throw new ArgumentException(
+                $"Round-up amount must be between £{MinRoundUpAmount:F2} and £{MaxRoundUpAmount:F2}.");
+        }
+
+        RoundUpAmount = amount;
     }
 
     private static void ValidatePaymentShape(string? paymentSource, CreditCard? cardTag)

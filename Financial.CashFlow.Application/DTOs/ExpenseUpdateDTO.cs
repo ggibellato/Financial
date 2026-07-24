@@ -22,4 +22,7 @@ public sealed class ExpenseUpdateDTO
 
     /// <summary>Optional credit-card tag name.</summary>
     public string? CardTag { get; init; }
+
+    /// <summary>Round-up amount. Full-replace: whatever is sent (including null) becomes the new stored value.</summary>
+    public decimal? RoundUpAmount { get; init; }
 }
