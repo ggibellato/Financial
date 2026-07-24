@@ -28,5 +28,9 @@ public interface ICashFlowRepository
 
     IEnumerable<Bank> GetBanks();
 
+    IEnumerable<Income> GetIncomes();
+    void AddIncome(Income income);
+    void DeleteIncome(Guid id);
+
     Task SaveChangesAsync();
 }

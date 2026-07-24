@@ -127,6 +127,10 @@ public class InvestmentSnapshotServiceTests
 
         public IEnumerable<Bank> GetBanks() => Array.Empty<Bank>();
 
+        public IEnumerable<Income> GetIncomes() => Array.Empty<Income>();
+        public void AddIncome(Income income) { }
+        public void DeleteIncome(Guid id) { }
+
         public Task SaveChangesAsync()
         {
             SaveChangesCallCount++;

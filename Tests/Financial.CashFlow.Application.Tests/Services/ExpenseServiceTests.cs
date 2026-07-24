@@ -467,6 +467,10 @@ public class ExpenseServiceTests
 
         public IEnumerable<Bank> GetBanks() => Banks;
 
+        public IEnumerable<Income> GetIncomes() => Array.Empty<Income>();
+        public void AddIncome(Income income) { }
+        public void DeleteIncome(Guid id) { }
+
         public Task SaveChangesAsync()
         {
             SaveChangesCallCount++;

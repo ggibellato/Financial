@@ -16,7 +16,8 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         typeof(RecurringBill),
         typeof(MaeLedgerEntry),
         typeof(InvestmentSnapshot),
-        typeof(Bank)
+        typeof(Bank),
+        typeof(Income)
     ];
 
     public override JsonTypeInfo GetTypeInfo(Type type, JsonSerializerOptions options)

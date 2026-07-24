@@ -7,7 +7,7 @@ namespace Financial.CashFlow.Domain.Tests;
 public class CashFlowDataTests
 {
     [Fact]
-    public void Create_StartsWithAllSevenCollectionsEmpty()
+    public void Create_StartsWithAllEightCollectionsEmpty()
     {
         var data = CashFlowData.Create();
 
@@ -18,6 +18,7 @@ public class CashFlowDataTests
         data.MaeLedgerEntries.Should().BeEmpty();
         data.InvestmentSnapshots.Should().BeEmpty();
         data.Banks.Should().BeEmpty();
+        data.Incomes.Should().BeEmpty();
     }
 
     [Fact]
@@ -208,4 +209,43 @@ public class CashFlowDataTests
         data.InvestmentSnapshots.Should().ContainSingle();
         data.Expenses.Should().BeEmpty();
     }
+
+    [Fact]
+    public void AddIncome_AddsOnlyToIncomesCollection()
+    {
+        var data = CashFlowData.Create();
+
+        data.AddIncome(CreateIncome());
+
+        data.Incomes.Should().ContainSingle();
+        data.Expenses.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RemoveIncome_RemovesOnlyTheMatchingIncome()
+    {
+        var data = CashFlowData.Create();
+        var toKeep = CreateIncome();
+        var toRemove = CreateIncome();
+        data.AddIncome(toKeep);
+        data.AddIncome(toRemove);
+
+        data.RemoveIncome(toRemove.Id);
+
+        data.Incomes.Should().ContainSingle().Which.Id.Should().Be(toKeep.Id);
+    }
+
+    [Fact]
+    public void RemoveIncome_WithUnknownId_LeavesCollectionUnchanged()
+    {
+        var data = CashFlowData.Create();
+        data.AddIncome(CreateIncome());
+
+        data.RemoveIncome(Guid.NewGuid());
+
+        data.Incomes.Should().ContainSingle();
+    }
+
+    private static Income CreateIncome() =>
+        Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Lottery, null, 10m, "Chase");
 }
