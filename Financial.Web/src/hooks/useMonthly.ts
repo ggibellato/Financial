@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { BankBalanceDto, BankDto, CardStatementDto, CategoryTotalDto, ExpenseDto, IncomeDto } from '../api/types'
+import type {
+  BankBalanceDto,
+  BankDto,
+  CardStatementDto,
+  CategoryTotalDto,
+  ExpenseDto,
+  IncomeDto,
+  TitheSummaryDto,
+} from '../api/types'
 import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
 
 export type PaymentMode = 'bank' | 'card'
@@ -32,6 +40,12 @@ export interface BankTotal {
   bank: string
   balance: number
   roundUpTotal: number
+}
+
+export interface IncomeTotal {
+  source: string
+  netValue: number
+  grossValue: number | null
 }
 
 export type CreateFormField =
@@ -73,6 +87,7 @@ interface MonthlyState {
   banks: BankDto[]
   bankBalances: BankBalanceDto[]
   incomes: IncomeDto[]
+  titheSummary: TitheSummaryDto | null
   isLoading: boolean
   error: string | null
   retryCount: number
@@ -130,6 +145,7 @@ type MonthlyAction =
         banks: BankDto[]
         bankBalances: BankBalanceDto[]
         incomes: IncomeDto[]
+        titheSummary: TitheSummaryDto
       }
     }
   | { type: 'FETCH_ERROR'; payload: string }
@@ -193,6 +209,7 @@ const INITIAL_STATE: MonthlyState = {
   banks: [],
   bankBalances: [],
   incomes: [],
+  titheSummary: null,
   isLoading: true,
   error: null,
   retryCount: 0,
@@ -245,6 +262,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         banks: action.payload.banks,
         bankBalances: action.payload.bankBalances,
         incomes: action.payload.incomes,
+        titheSummary: action.payload.titheSummary,
         createPaymentSource: defaultBankStillUnset
           ? (action.payload.banks[0]?.name ?? '')
           : state.createPaymentSource,
@@ -514,6 +532,9 @@ export interface MonthlyData {
   markStatementPaid: (id: string, paymentSource: string) => void
   unmarkStatementPaid: (id: string) => void
   incomes: IncomeDto[]
+  incomeTotals: IncomeTotal[]
+  totalIncoming: number
+  titheSummary: TitheSummaryDto | null
   isIncomeCreateFormOpen: boolean
   createIncomeDate: string
   createIncomeSource: string
@@ -554,11 +575,12 @@ export function useMonthly(): MonthlyData {
       apiClient.getBanks(),
       apiClient.getIncomesByMonth(state.year, state.month),
       apiClient.getBankBalancesByMonth(state.year, state.month),
+      apiClient.getTitheSummaryByMonth(state.year, state.month),
     ])
-      .then(([expenses, categoryTotals, cardStatements, banks, incomes, bankBalances]) =>
+      .then(([expenses, categoryTotals, cardStatements, banks, incomes, bankBalances, titheSummary]) =>
         dispatch({
           type: 'FETCH_SUCCESS',
-          payload: { expenses, categoryTotals, cardStatements, banks, incomes, bankBalances },
+          payload: { expenses, categoryTotals, cardStatements, banks, incomes, bankBalances, titheSummary },
         }),
       )
       .catch((err: unknown) => {
@@ -964,6 +986,26 @@ export function useMonthly(): MonthlyData {
   const bankTotalsSum = bankTotals.reduce((sum, b) => sum + b.balance, 0)
   const roundUpTotalsSum = bankTotals.reduce((sum, b) => sum + b.roundUpTotal, 0)
 
+  const incomeTotals: IncomeTotal[] = Array.from(
+    state.incomes
+      .reduce((bySource, income) => {
+        const entry = bySource.get(income.incomeSource) ?? { netValue: 0, grossValue: 0, hasGross: false }
+        entry.netValue += income.netValue
+        if (income.grossValue != null) {
+          entry.grossValue += income.grossValue
+          entry.hasGross = true
+        }
+        bySource.set(income.incomeSource, entry)
+        return bySource
+      }, new Map<string, { netValue: number; grossValue: number; hasGross: boolean }>())
+      .entries(),
+  ).map(([source, v]) => ({
+    source,
+    netValue: v.netValue,
+    grossValue: v.hasGross ? v.grossValue : null,
+  }))
+  const totalIncoming = incomeTotals.reduce((sum, i) => sum + i.netValue, 0)
+
   return {
     monthInputValue,
     setMonthInputValue,
@@ -1018,6 +1060,9 @@ export function useMonthly(): MonthlyData {
     markStatementPaid,
     unmarkStatementPaid,
     incomes: state.incomes,
+    incomeTotals,
+    totalIncoming,
+    titheSummary: state.titheSummary,
     isIncomeCreateFormOpen: state.isIncomeCreateFormOpen,
     createIncomeDate: state.createIncomeDate,
     createIncomeSource: state.createIncomeSource,
