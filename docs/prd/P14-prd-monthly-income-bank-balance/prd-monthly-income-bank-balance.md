@@ -297,10 +297,10 @@ graph TD
 - [ ] The Incoming card updates immediately after an income entry or a Dizimo-category expense is added, edited, or deleted
 
 ### F06. Real Bank Balance
-- [ ] A bank's displayed balance equals `OpeningBalance + Σ(Income.NetValue) − Σ(Expense.Value − Expense.RoundUpAmount)` for that bank from its `OpeningBalanceDate` through the selected month, matching a manual reference calculation to the penny
-- [ ] Income or expenses dated before a bank's `OpeningBalanceDate` do not affect its displayed balance
-- [ ] The Banks panel label reads "Bank Balance" instead of the prior expense-only label
-- [ ] The displayed balance updates immediately after an income entry or expense is saved
+- [x] A bank's displayed balance equals `OpeningBalance + Σ(Income.NetValue) − Σ(Expense.Value − Expense.RoundUpAmount)` for that bank from its `OpeningBalanceDate` through the selected month, matching a manual reference calculation to the penny
+- [x] Income or expenses dated before a bank's `OpeningBalanceDate` do not affect its displayed balance
+- [x] The Banks panel label reads "Bank Balance" instead of the prior expense-only label
+- [x] The displayed balance updates immediately after an income entry or expense is saved
 
 ### F07. Yearly Summary Income Rows
 - [ ] The Income Summary table's Salary row (row 2) equals the sum of Gleison and Ariana gross values for each month, matching a manual reference calculation
@@ -314,5 +314,5 @@ graph TD
 - [x] F03's tithe calculation correctly reads the net income totals produced by F01 for the selected month
 - [x] F04's create/edit/delete actions correctly read and write through F01's `Income` entity contract
 - [ ] F05 correctly displays the income totals from F01 and the tithe/tithe balance from F03 for the selected month
-- [ ] F06 correctly combines F01's income data with F02's opening balance and date to produce each bank's balance
+- [x] F06 correctly combines F01's income data with F02's opening balance and date to produce each bank's balance
 - [ ] F07 correctly aggregates F01's income data across all 12 months of the selected year into the Yearly Summary's Income Summary table
