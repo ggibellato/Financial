@@ -22,4 +22,7 @@ public sealed class ExpenseCreateDTO
 
     /// <summary>Optional credit-card tag name.</summary>
     public string? CardTag { get; init; }
+
+    /// <summary>Round-up amount to save immediately. Omit/null to leave "not yet decided".</summary>
+    public decimal? RoundUpAmount { get; init; }
 }

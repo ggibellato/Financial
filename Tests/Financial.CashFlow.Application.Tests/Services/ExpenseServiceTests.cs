@@ -252,6 +252,141 @@ public class ExpenseServiceTests
         result.Should().ContainSingle(t => t.Category == "Reserva" && t.TotalValue == 70m);
     }
 
+    [Fact]
+    public async Task AddExpenseAsync_WithRoundUpAmountOnRoundUpEnabledBank_SavesAmount()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository());
+        var request = ToCreateDto(ValidCreateRequest() with { PaymentSource = "Trading212", Value = 9.40m, RoundUpAmount = 0.60m });
+
+        var result = await service.AddExpenseAsync(request);
+
+        result.RoundUpAmount.Should().Be(0.60m);
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_WithRoundUpAmountOnNonRoundUpBank_ThrowsNamingTheBank()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository());
+        var request = ToCreateDto(ValidCreateRequest() with { PaymentSource = "Barclays", RoundUpAmount = 0.50m });
+
+        var act = async () => await service.AddExpenseAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Barclays*does not support round-up*");
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_WithRoundUpAmountOnCreditCardTaggedExpense_Throws()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository());
+        var request = ToCreateDto(ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023", RoundUpAmount = 0.50m });
+
+        var act = async () => await service.AddExpenseAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*not a credit-card charge*");
+    }
+
+    [Theory]
+    [InlineData(-0.01)]
+    [InlineData(1.00)]
+    public async Task AddExpenseAsync_WithRoundUpAmountOutsideRange_Throws(decimal roundUpAmount)
+    {
+        var service = new ExpenseService(new StubCashFlowRepository());
+        var request = ToCreateDto(ValidCreateRequest() with { PaymentSource = "Chase", RoundUpAmount = roundUpAmount });
+
+        var act = async () => await service.AddExpenseAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*between £0.00 and £0.99*");
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_EligibleWithNoRoundUpAmount_ReturnsSuggestedAmount()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository());
+        var request = ToCreateDto(ValidCreateRequest() with { PaymentSource = "Trading212", Value = 9.40m });
+
+        var result = await service.AddExpenseAsync(request);
+
+        result.RoundUpAmount.Should().BeNull();
+        result.SuggestedRoundUpAmount.Should().Be(0.60m);
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_EligibleWithRoundUpAmountAlreadySaved_ReturnsNoSuggestion()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository());
+        var request = ToCreateDto(ValidCreateRequest() with { PaymentSource = "Trading212", Value = 9.40m, RoundUpAmount = 0.60m });
+
+        var result = await service.AddExpenseAsync(request);
+
+        result.SuggestedRoundUpAmount.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_OnNonRoundUpBank_ReturnsNoSuggestion()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository());
+        var request = ToCreateDto(ValidCreateRequest() with { PaymentSource = "Barclays", Value = 9.40m });
+
+        var result = await service.AddExpenseAsync(request);
+
+        result.SuggestedRoundUpAmount.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_CreditCardCharge_ReturnsNoSuggestion()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository());
+        var request = ToCreateDto(ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023", Value = 9.40m });
+
+        var result = await service.AddExpenseAsync(request);
+
+        result.SuggestedRoundUpAmount.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_ChangingValueOnly_LeavesRoundUpAmountUnchanged()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new ExpenseService(repository);
+        var added = await service.AddExpenseAsync(ToCreateDto(
+            ValidCreateRequest() with { PaymentSource = "Trading212", Value = 9.40m, RoundUpAmount = 0.60m }));
+
+        var updateRequest = ToUpdateDto(
+            ValidCreateRequest() with { PaymentSource = "Trading212", Value = 20m, RoundUpAmount = 0.60m });
+        var result = await service.UpdateExpenseAsync(added.Id, updateRequest);
+
+        result.Value.Should().Be(20m);
+        result.RoundUpAmount.Should().Be(0.60m);
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_WithNewRoundUpAmount_ChangesIt()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new ExpenseService(repository);
+        var added = await service.AddExpenseAsync(ToCreateDto(
+            ValidCreateRequest() with { PaymentSource = "Trading212", RoundUpAmount = 0.60m }));
+
+        var updateRequest = ToUpdateDto(ValidCreateRequest() with { PaymentSource = "Trading212", RoundUpAmount = 0.10m });
+        var result = await service.UpdateExpenseAsync(added.Id, updateRequest);
+
+        result.RoundUpAmount.Should().Be(0.10m);
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_WithNullRoundUpAmount_ClearsAPreviouslySavedAmount()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new ExpenseService(repository);
+        var added = await service.AddExpenseAsync(ToCreateDto(
+            ValidCreateRequest() with { PaymentSource = "Trading212", RoundUpAmount = 0.60m }));
+
+        var updateRequest = ToUpdateDto(ValidCreateRequest() with { PaymentSource = "Trading212", RoundUpAmount = null });
+        var result = await service.UpdateExpenseAsync(added.Id, updateRequest);
+
+        result.RoundUpAmount.Should().BeNull();
+    }
+
     private static ExpenseCreateRequest ValidCreateRequest() => new(
         new DateOnly(2026, 7, 15),
         "Weekly groceries",
@@ -267,7 +402,8 @@ public class ExpenseServiceTests
         Value = r.Value,
         Category = r.Category,
         PaymentSource = r.PaymentSource,
-        CardTag = r.CardTag
+        CardTag = r.CardTag,
+        RoundUpAmount = r.RoundUpAmount
     };
 
     private static ExpenseUpdateDTO ToUpdateDto(ExpenseCreateRequest r) => new()
@@ -277,11 +413,13 @@ public class ExpenseServiceTests
         Value = r.Value,
         Category = r.Category,
         PaymentSource = r.PaymentSource,
-        CardTag = r.CardTag
+        CardTag = r.CardTag,
+        RoundUpAmount = r.RoundUpAmount
     };
 
     private sealed record ExpenseCreateRequest(
-        DateOnly Date, string Description, decimal Value, string Category, string? PaymentSource, string? CardTag);
+        DateOnly Date, string Description, decimal Value, string Category, string? PaymentSource, string? CardTag,
+        decimal? RoundUpAmount = null);
 
     private sealed class StubCashFlowRepository : ICashFlowRepository
     {

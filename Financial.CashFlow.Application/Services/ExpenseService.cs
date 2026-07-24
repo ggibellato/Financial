@@ -23,8 +23,10 @@ public sealed class ExpenseService : IExpenseService
 
         var (category, paymentSource, cardTag) = ValidateFields(
             request.Description, request.Value, request.Category, request.PaymentSource, request.CardTag);
+        ValidateRoundUpEligibility(request.RoundUpAmount, paymentSource);
 
         var expense = Expense.Create(request.Date, request.Description, request.Value, category, paymentSource, cardTag);
+        expense.SetRoundUpAmount(request.RoundUpAmount);
         _repository.AddExpense(expense);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
 
@@ -39,9 +41,10 @@ public sealed class ExpenseService : IExpenseService
 
         var (category, paymentSource, cardTag) = ValidateFields(
             request.Description, request.Value, request.Category, request.PaymentSource, request.CardTag);
-
+        ValidateRoundUpEligibility(request.RoundUpAmount, paymentSource);
 
         expense.UpdateDetails(request.Date, request.Description, request.Value, category, paymentSource, cardTag);
+        expense.SetRoundUpAmount(request.RoundUpAmount);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
 
         return ToDto(expense);
@@ -124,7 +127,20 @@ public sealed class ExpenseService : IExpenseService
         return (parsedCategory, parsedPaymentSource, parsedCardTag);
     }
 
-    private static ExpenseDTO ToDto(Expense expense) => new()
+    private void ValidateRoundUpEligibility(decimal? roundUpAmount, string? paymentSource)
+    {
+        if (roundUpAmount is null || paymentSource is null)
+        {
+            return;
+        }
+
+        if (BankNameResolver.TryResolve(paymentSource, _repository.GetBanks(), out var bank) && !bank!.RoundUpEnabled)
+        {
+            throw new ArgumentException($"Bank '{bank.Name}' does not support round-up.");
+        }
+    }
+
+    private ExpenseDTO ToDto(Expense expense) => new()
     {
         Id = expense.Id,
         Date = expense.Date,
@@ -134,6 +150,20 @@ public sealed class ExpenseService : IExpenseService
         PaymentSource = expense.PaymentSource,
         CardTag = expense.CardTag?.ToString(),
         SettledAt = expense.SettledAt,
-        PaymentStatus = expense.PaymentStatus.ToString()
+        PaymentStatus = expense.PaymentStatus.ToString(),
+        RoundUpAmount = expense.RoundUpAmount,
+        SuggestedRoundUpAmount = GetSuggestedRoundUpAmount(expense)
     };
+
+    private decimal? GetSuggestedRoundUpAmount(Expense expense)
+    {
+        if (expense.RoundUpAmount is not null || expense.PaymentStatus != ExpensePaymentStatus.ImmediatePayment)
+        {
+            return null;
+        }
+
+        return BankNameResolver.TryResolve(expense.PaymentSource, _repository.GetBanks(), out var bank) && bank!.RoundUpEnabled
+            ? expense.RoundUpSuggestion
+            : null;
+    }
 }
