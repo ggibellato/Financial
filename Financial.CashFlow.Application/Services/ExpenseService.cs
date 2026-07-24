@@ -75,8 +75,8 @@ public sealed class ExpenseService : IExpenseService
         _repository.GetExpenses().FirstOrDefault(e => e.Id == id)
             ?? throw new KeyNotFoundException($"Expense '{id}' was not found.");
 
-    private static (Category Category, PaymentSource PaymentSource, CreditCard? CardTag) ValidateFields(
-        string description, decimal value, string category, string paymentSource, string? cardTag)
+    private static (Category Category, PaymentSource? PaymentSource, CreditCard? CardTag) ValidateFields(
+        string description, decimal value, string category, string? paymentSource, string? cardTag)
     {
         if (string.IsNullOrWhiteSpace(description))
         {
@@ -98,9 +98,15 @@ public sealed class ExpenseService : IExpenseService
             throw new ArgumentException($"Category '{category}' is not recognized.");
         }
 
-        if (!PaymentSourceParser.TryParse(paymentSource, out var parsedPaymentSource))
+        PaymentSource? parsedPaymentSource = null;
+        if (!string.IsNullOrWhiteSpace(paymentSource))
         {
-            throw new ArgumentException($"Payment source '{paymentSource}' is not recognized.");
+            if (!PaymentSourceParser.TryParse(paymentSource, out var source))
+            {
+                throw new ArgumentException($"Payment source '{paymentSource}' is not recognized.");
+            }
+
+            parsedPaymentSource = source;
         }
 
         CreditCard? parsedCardTag = null;
@@ -124,7 +130,9 @@ public sealed class ExpenseService : IExpenseService
         Description = expense.Description,
         Value = expense.Value,
         Category = expense.Category.ToString(),
-        PaymentSource = expense.PaymentSource.ToString(),
-        CardTag = expense.CardTag?.ToString()
+        PaymentSource = expense.PaymentSource?.ToString(),
+        CardTag = expense.CardTag?.ToString(),
+        SettledAt = expense.SettledAt,
+        PaymentStatus = expense.PaymentStatus.ToString()
     };
 }

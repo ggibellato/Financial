@@ -29,20 +29,60 @@ public class ExpenseServiceTests
         result.Category.Should().Be("Mercado");
         result.PaymentSource.Should().Be("Barclays");
         result.CardTag.Should().BeNull();
+        result.SettledAt.Should().BeNull();
+        result.PaymentStatus.Should().Be("ImmediatePayment");
         repository.Expenses.Should().ContainSingle();
         repository.SaveChangesCallCount.Should().Be(1);
     }
 
     [Fact]
-    public async Task AddExpenseAsync_WithCardTag_SavesCardTag()
+    public async Task AddExpenseAsync_WithCardTagAndNoPaymentSource_SavesAsCreditCardCharge()
     {
         var repository = new StubCashFlowRepository();
         var service = new ExpenseService(repository);
-        var request = ValidCreateRequest() with { CardTag = "BarclaysPlatinumVisa8003" };
+        var request = ValidCreateRequest() with { PaymentSource = null, CardTag = "BarclaysPlatinumVisa8003" };
 
         var result = await service.AddExpenseAsync(ToCreateDto(request));
 
         result.CardTag.Should().Be("BarclaysPlatinumVisa8003");
+        result.PaymentSource.Should().BeNull();
+        result.SettledAt.Should().BeNull();
+        result.PaymentStatus.Should().Be("CreditCardCharge");
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_WithNeitherPaymentSourceNorCardTag_ThrowsArgumentException()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository());
+        var request = ToCreateDto(ValidCreateRequest() with { PaymentSource = null, CardTag = null });
+
+        var act = async () => await service.AddExpenseAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*payment source or a card tag*");
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_WithBothPaymentSourceAndCardTag_ThrowsArgumentException()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository());
+        var request = ToCreateDto(ValidCreateRequest() with { CardTag = "BarclaysPlatinumVisa8003" });
+
+        var act = async () => await service.AddExpenseAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*marking its card statement paid*");
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_WithBothPaymentSourceAndCardTag_ThrowsArgumentException()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new ExpenseService(repository);
+        var added = await service.AddExpenseAsync(ToCreateDto(ValidCreateRequest()));
+        var updateRequest = ToUpdateDto(ValidCreateRequest() with { CardTag = "BaAmex" });
+
+        var act = async () => await service.UpdateExpenseAsync(added.Id, updateRequest);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*marking its card statement paid*");
     }
 
     [Fact]
@@ -241,7 +281,7 @@ public class ExpenseServiceTests
     };
 
     private sealed record ExpenseCreateRequest(
-        DateOnly Date, string Description, decimal Value, string Category, string PaymentSource, string? CardTag);
+        DateOnly Date, string Description, decimal Value, string Category, string? PaymentSource, string? CardTag);
 
     private sealed class StubCashFlowRepository : ICashFlowRepository
     {

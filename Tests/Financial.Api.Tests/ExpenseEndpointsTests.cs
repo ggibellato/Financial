@@ -29,6 +29,77 @@ public class ExpenseEndpointsTests
         expense.Should().NotBeNull();
         expense!.Description.Should().Be("Weekly groceries");
         expense.Category.Should().Be("Mercado");
+        expense.PaymentStatus.Should().Be("ImmediatePayment");
+        expense.SettledAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AddExpense_CardTagWithoutPaymentSource_ReturnsCreditCardCharge()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 15),
+            Description = "Card charge",
+            Value = 30m,
+            Category = "Extras",
+            PaymentSource = null,
+            CardTag = "ChaseMaster4023"
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
+        expense!.PaymentSource.Should().BeNull();
+        expense.CardTag.Should().Be("ChaseMaster4023");
+        expense.SettledAt.Should().BeNull();
+        expense.PaymentStatus.Should().Be("CreditCardCharge");
+    }
+
+    [Fact]
+    public async Task AddExpense_NeitherPaymentSourceNorCardTag_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 15),
+            Description = "No payment shape",
+            Value = 30m,
+            Category = "Extras",
+            PaymentSource = null,
+            CardTag = null
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("payment source or a card tag");
+    }
+
+    [Fact]
+    public async Task AddExpense_BothPaymentSourceAndCardTag_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 15),
+            Description = "Both payment fields",
+            Value = 30m,
+            Category = "Extras",
+            PaymentSource = "Barclays",
+            CardTag = "ChaseMaster4023"
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("marking its card statement paid");
     }
 
     [Fact]

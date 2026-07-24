@@ -17,8 +17,8 @@ public sealed class ExpenseCreateDTO
     /// <summary>Expense category name.</summary>
     public required string Category { get; init; }
 
-    /// <summary>Payment source name.</summary>
-    public required string PaymentSource { get; init; }
+    /// <summary>Payment source name. Omit when charging to a credit card.</summary>
+    public string? PaymentSource { get; init; }
 
     /// <summary>Optional credit-card tag name.</summary>
     public string? CardTag { get; init; }
