@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
+using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 
@@ -41,25 +42,33 @@ public sealed class CardStatementService : ICardStatementService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
         }
 
-        var outstandingByCard = _repository.GetExpenses()
-            .Where(e => e.Date.Year == year && e.Date.Month == month && e.CardTag.HasValue)
-            .GroupBy(e => e.CardTag!.Value)
-            .ToDictionary(g => g.Key, g => g.Sum(e => e.Value));
-
-        return existingStatements.Select(s => ToDto(s, outstandingByCard)).ToList();
+        return existingStatements.Select(ToDto).ToList();
     }
 
-    public async Task<CardStatementDTO> MarkStatementPaidAsync(Guid id)
+    public async Task<CardStatementDTO> MarkStatementPaidAsync(Guid id, MarkStatementPaidDTO request)
     {
-        var statement = _repository.GetCardStatements().FirstOrDefault(s => s.Id == id)
-            ?? throw new KeyNotFoundException($"Card statement '{id}' was not found.");
+        ArgumentNullException.ThrowIfNull(request);
+
+        var statement = FindStatementOrThrow(id);
 
         if (statement.IsPaid)
         {
             return ToDto(statement);
         }
 
+        if (!PaymentSourceParser.TryParse(request.PaymentSource, out var paymentSource))
+        {
+            throw new ArgumentException($"Payment source '{request.PaymentSource}' is not recognized.");
+        }
+
+        var settledAt = DateOnly.FromDateTime(DateTime.Today);
+        var charges = GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardCharge);
+
         statement.MarkPaid();
+        foreach (var charge in charges)
+        {
+            charge.Settle(paymentSource, settledAt);
+        }
 
         try
         {
@@ -68,29 +77,74 @@ public sealed class CardStatementService : ICardStatementService
         catch
         {
             statement.MarkUnpaid();
+            foreach (var charge in charges)
+            {
+                charge.Unsettle();
+            }
+
             throw;
         }
 
-        return ToDto(statement, outstandingByCard: null);
+        return ToDto(statement);
     }
 
-    private CardStatementDTO ToDto(CardStatement statement, IReadOnlyDictionary<CreditCard, decimal>? outstandingByCard = null)
+    public async Task<CardStatementDTO> UnmarkStatementPaidAsync(Guid id)
     {
-        var outstandingTotal = statement.IsPaid
-            ? 0m
-            : outstandingByCard?.GetValueOrDefault(statement.Card)
-                ?? _repository.GetExpenses()
-                    .Where(e => e.CardTag == statement.Card && e.Date.Year == statement.Year && e.Date.Month == statement.Month)
-                    .Sum(e => e.Value);
+        var statement = FindStatementOrThrow(id);
 
-        return new CardStatementDTO
+        if (!statement.IsPaid)
         {
-            Id = statement.Id,
-            Card = statement.Card.ToString(),
-            Year = statement.Year,
-            Month = statement.Month,
-            IsPaid = statement.IsPaid,
-            OutstandingTotal = outstandingTotal
-        };
+            return ToDto(statement);
+        }
+
+        var settledExpenses = GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardSettled);
+        var settlements = settledExpenses
+            .Select(e => (Expense: e, PaymentSource: e.PaymentSource!.Value, SettledAt: e.SettledAt!.Value))
+            .ToList();
+
+        statement.MarkUnpaid();
+        foreach (var expense in settledExpenses)
+        {
+            expense.Unsettle();
+        }
+
+        try
+        {
+            await _repository.SaveChangesAsync().ConfigureAwait(false);
+        }
+        catch
+        {
+            statement.MarkPaid();
+            foreach (var (expense, paymentSource, settledAt) in settlements)
+            {
+                expense.Settle(paymentSource, settledAt);
+            }
+
+            throw;
+        }
+
+        return ToDto(statement);
     }
+
+    private CardStatement FindStatementOrThrow(Guid id) =>
+        _repository.GetCardStatements().FirstOrDefault(s => s.Id == id)
+            ?? throw new KeyNotFoundException($"Card statement '{id}' was not found.");
+
+    private List<Expense> GetStatementExpenses(CardStatement statement, ExpensePaymentStatus status) =>
+        _repository.GetExpenses()
+            .Where(e => e.CardTag == statement.Card
+                && e.Date.Year == statement.Year
+                && e.Date.Month == statement.Month
+                && e.PaymentStatus == status)
+            .ToList();
+
+    private CardStatementDTO ToDto(CardStatement statement) => new()
+    {
+        Id = statement.Id,
+        Card = statement.Card.ToString(),
+        Year = statement.Year,
+        Month = statement.Month,
+        IsPaid = statement.IsPaid,
+        OutstandingTotal = GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardCharge).Sum(e => e.Value)
+    };
 }
