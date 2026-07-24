@@ -244,12 +244,12 @@ graph TD
 - [x] Marking an already-paid statement paid again, or unmarking an already-unpaid statement, is a no-op with a confirmation message, not an error
 
 ### F03. Legacy Data Migration
-- [ ] Running the backfill script against `data-cashflow.json` leaves every expense with no `CardTag` unchanged (computing to `ImmediatePayment` with its existing `PaymentSource`)
-- [ ] Every expense with a `CardTag` whose matching statement is `IsPaid == true` keeps its existing `PaymentSource` and gets `SettledAt` defaulted to that statement month's last day, computing to `CreditCardSettled`
-- [ ] Every expense with a `CardTag` whose matching statement is `IsPaid == false` has `PaymentSource` cleared to null, computing to `CreditCardCharge`
-- [ ] Running the script a second time against its own output produces the same result as the first run (idempotent)
-- [ ] A backup of the pre-migration file exists after the run, independent of whether the run succeeded or failed partway through
-- [ ] No status field is added to `data-cashflow.json`'s expense records — only `PaymentSource` and `SettledAt` values change; `CardTag` is untouched
+- [x] Running the backfill script against `data-cashflow.json` leaves every expense with no `CardTag` unchanged (computing to `ImmediatePayment` with its existing `PaymentSource`)
+- [x] Every expense with a `CardTag` whose matching statement is `IsPaid == true` keeps its existing `PaymentSource` and gets `SettledAt` defaulted to that statement month's last day, computing to `CreditCardSettled`
+- [x] Every expense with a `CardTag` whose matching statement is `IsPaid == false` has `PaymentSource` cleared to null, computing to `CreditCardCharge`
+- [x] Running the script a second time against its own output produces the same result as the first run (idempotent)
+- [x] A backup of the pre-migration file exists after the run, independent of whether the run succeeded or failed partway through
+- [x] No status field is added to `data-cashflow.json`'s expense records — only `PaymentSource` and `SettledAt` values change; `CardTag` is untouched
 
 ### F04. Historical Import Update
 - [ ] A row that resolves a `CreditCard` tag during import produces an expense with that `CardTag` set and `PaymentSource = null`, regardless of its column-E value
@@ -266,7 +266,7 @@ graph TD
 
 ### Cross-Feature Integration
 - [x] F02's mark-paid/unmark-paid cascades correctly read and write the `PaymentSource` and `SettledAt` fields defined by F01, and reject the action if the resulting `PaymentSource`/`CardTag`/`SettledAt` combination would violate F01's validation rule
-- [ ] F03's backfill correctly writes expenses into the `PaymentSource`/`CardTag`/`SettledAt` shape defined by F01, with zero resulting records violating F01's validation rule
+- [x] F03's backfill correctly writes expenses into the `PaymentSource`/`CardTag`/`SettledAt` shape defined by F01, with zero resulting records violating F01's validation rule
 - [ ] F04's updated importer produces expenses in the `PaymentSource`/`CardTag` shape defined by F01, with zero imported card-tagged rows carrying a non-null `PaymentSource`
 - [ ] F05's Cards and Banks panels correctly reflect the field changes produced by F02's mark-paid/unmark-paid cascade immediately after each action
 - [ ] F05's expense form correctly enforces F01's validation rule for both create and edit, with no path in the UI that can produce a rejected combination
