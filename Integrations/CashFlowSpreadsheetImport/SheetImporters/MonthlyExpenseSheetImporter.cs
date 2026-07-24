@@ -15,7 +15,10 @@ namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImpo
 /// card charges into sections that each start at a known row number (see
 /// <see cref="CardSectionStartRows"/>), so rows in those months are tagged by row position - but
 /// only when column E has no explicit "T"/"C" payment-source tag, which still takes precedence
-/// when present.
+/// when present (column E never identifies a card; an explicit tag means the row was paid
+/// directly from that bank). A row that does resolve a card tag imports as an unsettled
+/// credit card charge - <see cref="Expense.PaymentSource"/> stays null - and settlement is
+/// applied afterward in-app by marking the card statement paid, never inferred by the import.
 /// </summary>
 public static class MonthlyExpenseSheetImporter
 {
