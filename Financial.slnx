@@ -15,6 +15,7 @@
 	</Folder>
 	<Folder Name="/Integrations/">
 		<Project Path="Integrations/CashFlowBankMigration/CashFlowBankMigration.csproj" />
+		<Project Path="Integrations/CashFlowIncomeMigration/CashFlowIncomeMigration.csproj" />
 		<Project Path="Integrations/CashFlowPaymentStateMigration/CashFlowPaymentStateMigration.csproj" />
 		<Project Path="Integrations/CashFlowSpreadsheetImport/CashFlowSpreadsheetImport.csproj" />
 		<Project Path="Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj" />
@@ -34,6 +35,7 @@
 		<Project Path="Tests/Financial.CashFlowSpreadsheetImport.Tests/Financial.CashFlowSpreadsheetImport.Tests.csproj" />
 		<Project Path="Tests/Financial.CashFlowPaymentStateMigration.Tests/Financial.CashFlowPaymentStateMigration.Tests.csproj" />
 		<Project Path="Tests/Financial.CashFlowBankMigration.Tests/Financial.CashFlowBankMigration.Tests.csproj" />
+		<Project Path="Tests/Financial.CashFlowIncomeMigration.Tests/Financial.CashFlowIncomeMigration.Tests.csproj" />
 	</Folder>
 	<Folder Name="/Presentation/">
 		<Project Path="Financial.App/Financial.App.csproj" />
