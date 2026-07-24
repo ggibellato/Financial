@@ -395,6 +395,11 @@ export interface BankDto {
   roundUpEnabled: boolean
 }
 
+export interface BankBalanceDto {
+  bank: string
+  balance: number
+}
+
 export interface IncomeDto {
   id: string
   date: string

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { BankDto, CardStatementDto, CategoryTotalDto, ExpenseDto, IncomeDto } from '../api/types'
+import type { BankBalanceDto, BankDto, CardStatementDto, CategoryTotalDto, ExpenseDto, IncomeDto } from '../api/types'
 import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
 
 export type PaymentMode = 'bank' | 'card'
@@ -71,6 +71,7 @@ interface MonthlyState {
   categoryTotals: CategoryTotalDto[]
   cardStatements: CardStatementDto[]
   banks: BankDto[]
+  bankBalances: BankBalanceDto[]
   incomes: IncomeDto[]
   isLoading: boolean
   error: string | null
@@ -127,6 +128,7 @@ type MonthlyAction =
         categoryTotals: CategoryTotalDto[]
         cardStatements: CardStatementDto[]
         banks: BankDto[]
+        bankBalances: BankBalanceDto[]
         incomes: IncomeDto[]
       }
     }
@@ -189,6 +191,7 @@ const INITIAL_STATE: MonthlyState = {
   categoryTotals: [],
   cardStatements: [],
   banks: [],
+  bankBalances: [],
   incomes: [],
   isLoading: true,
   error: null,
@@ -240,6 +243,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         categoryTotals: action.payload.categoryTotals,
         cardStatements: action.payload.cardStatements,
         banks: action.payload.banks,
+        bankBalances: action.payload.bankBalances,
         incomes: action.payload.incomes,
         createPaymentSource: defaultBankStillUnset
           ? (action.payload.banks[0]?.name ?? '')
@@ -549,9 +553,13 @@ export function useMonthly(): MonthlyData {
       apiClient.getCardStatementsByMonth(state.year, state.month),
       apiClient.getBanks(),
       apiClient.getIncomesByMonth(state.year, state.month),
+      apiClient.getBankBalancesByMonth(state.year, state.month),
     ])
-      .then(([expenses, categoryTotals, cardStatements, banks, incomes]) =>
-        dispatch({ type: 'FETCH_SUCCESS', payload: { expenses, categoryTotals, cardStatements, banks, incomes } }),
+      .then(([expenses, categoryTotals, cardStatements, banks, incomes, bankBalances]) =>
+        dispatch({
+          type: 'FETCH_SUCCESS',
+          payload: { expenses, categoryTotals, cardStatements, banks, incomes, bankBalances },
+        }),
       )
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: err instanceof Error ? err.message : 'Unable to load Monthly data' })
@@ -949,9 +957,9 @@ export function useMonthly(): MonthlyData {
 
   const bankTotals: BankTotal[] = state.banks.map((bank) => {
     const bankExpenses = state.expenses.filter((expense) => expense.paymentSource === bank.name)
-    const valueSum = bankExpenses.reduce((sum, expense) => sum + expense.value, 0)
     const roundUpTotal = bankExpenses.reduce((sum, expense) => sum + (expense.roundUpAmount ?? 0), 0)
-    return { bank: bank.name, balance: valueSum - roundUpTotal, roundUpTotal }
+    const balance = state.bankBalances.find((b) => b.bank === bank.name)?.balance ?? 0
+    return { bank: bank.name, balance, roundUpTotal }
   })
   const bankTotalsSum = bankTotals.reduce((sum, b) => sum + b.balance, 0)
   const roundUpTotalsSum = bankTotals.reduce((sum, b) => sum + b.roundUpTotal, 0)

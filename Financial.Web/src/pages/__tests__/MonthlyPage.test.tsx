@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MonthlyPage from '../MonthlyPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { BankDto, CardStatementDto, CategoryTotalDto, ExpenseDto, IncomeDto } from '../../api/types'
+import type { BankBalanceDto, BankDto, CardStatementDto, CategoryTotalDto, ExpenseDto, IncomeDto } from '../../api/types'
 
 const getExpensesByMonthMock = vi.fn<FinancialApiClient['getExpensesByMonth']>()
 const getCategoryTotalsByMonthMock = vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>()
@@ -17,6 +17,7 @@ const getIncomesByMonthMock = vi.fn<FinancialApiClient['getIncomesByMonth']>()
 const createIncomeMock = vi.fn<FinancialApiClient['createIncome']>()
 const updateIncomeMock = vi.fn<FinancialApiClient['updateIncome']>()
 const deleteIncomeMock = vi.fn<FinancialApiClient['deleteIncome']>()
+const getBankBalancesByMonthMock = vi.fn<FinancialApiClient['getBankBalancesByMonth']>()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
@@ -33,6 +34,7 @@ vi.mock('../../api/financialApiClient', () => ({
     createIncome: createIncomeMock,
     updateIncome: updateIncomeMock,
     deleteIncome: deleteIncomeMock,
+    getBankBalancesByMonth: getBankBalancesByMonthMock,
   }),
 }))
 
@@ -69,6 +71,12 @@ const INCOMES: IncomeDto[] = [
   { id: 'i1', date: '2026-07-01', incomeSource: 'Gleison', grossValue: 3200, netValue: 2450, bank: 'Barclays' },
 ]
 
+const BANK_BALANCES: BankBalanceDto[] = [
+  { bank: 'Barclays', balance: 42.5 },
+  { bank: 'Trading212', balance: 0 },
+  { bank: 'Chase', balance: 0 },
+]
+
 describe('MonthlyPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -77,6 +85,7 @@ describe('MonthlyPage', () => {
     getCardStatementsByMonthMock.mockResolvedValue(CARD_STATEMENTS)
     getBanksMock.mockResolvedValue(BANKS)
     getIncomesByMonthMock.mockResolvedValue(INCOMES)
+    getBankBalancesByMonthMock.mockResolvedValue(BANK_BALANCES)
     vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
@@ -428,6 +437,11 @@ describe('MonthlyPage', () => {
   it('shows a bank balance reduced by its round-up total, in a separate column', async () => {
     getExpensesByMonthMock.mockResolvedValue([
       { ...EXPENSES[0], paymentSource: 'Trading212', value: 9.4, roundUpAmount: 0.6 },
+    ])
+    getBankBalancesByMonthMock.mockResolvedValue([
+      { bank: 'Barclays', balance: 0 },
+      { bank: 'Trading212', balance: 8.8 },
+      { bank: 'Chase', balance: 0 },
     ])
     render(<MonthlyPage />)
 
