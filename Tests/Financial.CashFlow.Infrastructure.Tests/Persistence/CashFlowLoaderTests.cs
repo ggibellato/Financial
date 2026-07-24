@@ -21,6 +21,7 @@ public class CashFlowLoaderTests
         data.RecurringBills.Should().BeEmpty();
         data.MaeLedgerEntries.Should().BeEmpty();
         data.InvestmentSnapshots.Should().BeEmpty();
+        data.Banks.Should().BeEmpty();
     }
 
     [Fact]
@@ -54,7 +55,7 @@ public class CashFlowLoaderTests
             "Test expense",
             10m,
             Financial.CashFlow.Domain.Enums.Category.Casa,
-            Financial.CashFlow.Domain.Enums.PaymentSource.Chase,
+            "Chase",
             null));
         File.WriteAllText(path, serializer.Serialize(original));
         var storage = new LocalJsonStorage(path);

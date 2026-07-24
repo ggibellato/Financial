@@ -65,8 +65,23 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         return tempPath;
     }
 
-    private static string CreateTempCashFlowDataFilePath() =>
-        Path.Combine(Path.GetTempPath(), $"financial-api-cashflow-{Guid.NewGuid():N}.json");
+    private static string CreateTempCashFlowDataFilePath()
+    {
+        var tempPath = Path.Combine(Path.GetTempPath(), $"financial-api-cashflow-{Guid.NewGuid():N}.json");
+        File.WriteAllText(tempPath, SeededBanksJson);
+        return tempPath;
+    }
+
+    // Mirrors the banks a real deployment would have after running the F01 migration tool once.
+    private const string SeededBanksJson = """
+        {
+          "Banks": [
+            { "Name": "Barclays", "RoundUpEnabled": false },
+            { "Name": "Trading212", "RoundUpEnabled": true },
+            { "Name": "Chase", "RoundUpEnabled": true }
+          ]
+        }
+        """;
 
     private static void TryDeleteTempFile(string path)
     {

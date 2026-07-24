@@ -73,9 +73,9 @@ public class CardStatementServiceTests
     {
         var repository = new StubCashFlowRepository();
         var settled = AddCharge(repository, new DateOnly(2026, 7, 10), 30m, CreditCard.BarclaysPlatinumVisa8003);
-        settled.Settle(PaymentSource.Barclays, new DateOnly(2026, 7, 20));
+        settled.Settle("Barclays", new DateOnly(2026, 7, 20));
         AddCharge(repository, new DateOnly(2026, 7, 11), 20m, CreditCard.BarclaysPlatinumVisa8003);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 12), "Immediate", 5m, Category.Casa, PaymentSource.Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 12), "Immediate", 5m, Category.Casa, "Barclays", null));
         var service = new CardStatementService(repository);
 
         var result = await service.GetStatementsForMonthAsync(2026, 7);
@@ -103,7 +103,7 @@ public class CardStatementServiceTests
         foreach (var expense in new[] { first, second })
         {
             expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
-            expense.PaymentSource.Should().Be(PaymentSource.Trading212);
+            expense.PaymentSource.Should().Be("Trading212");
             expense.SettledAt.Should().Be(today);
         }
 
@@ -247,7 +247,7 @@ public class CardStatementServiceTests
         await act.Should().ThrowAsync<InvalidOperationException>();
         statement.IsPaid.Should().BeTrue();
         charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
-        charge.PaymentSource.Should().Be(PaymentSource.Trading212);
+        charge.PaymentSource.Should().Be("Trading212");
         charge.SettledAt.Should().Be(settledAt);
     }
 
@@ -265,6 +265,12 @@ public class CardStatementServiceTests
     {
         public List<CardStatement> Statements { get; } = new();
         public List<Expense> Expenses { get; } = new();
+        public List<Bank> Banks { get; } = new()
+        {
+            Bank.Create("Barclays", roundUpEnabled: false),
+            Bank.Create("Trading212", roundUpEnabled: true),
+            Bank.Create("Chase", roundUpEnabled: true)
+        };
         public int SaveChangesCallCount { get; private set; }
         public bool ThrowOnNextSave { get; set; }
 
@@ -289,6 +295,8 @@ public class CardStatementServiceTests
 
         public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => Array.Empty<InvestmentSnapshot>();
         public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) { }
+
+        public IEnumerable<Bank> GetBanks() => Banks;
 
         public Task SaveChangesAsync()
         {

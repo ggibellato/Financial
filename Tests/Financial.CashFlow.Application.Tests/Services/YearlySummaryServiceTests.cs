@@ -30,9 +30,9 @@ public class YearlySummaryServiceTests
     public void GetCategoryTotalsForYear_YearlyTotalEqualsSumOfMonthlyTotals()
     {
         var repository = new StubCashFlowRepository();
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan", 100m, Category.Mercado, PaymentSource.Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 3, 5), "Mar", 50m, Category.Mercado, PaymentSource.Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 12, 5), "Dec", 25m, Category.Mercado, PaymentSource.Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 3, 5), "Mar", 50m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 12, 5), "Dec", 25m, Category.Mercado, "Barclays", null));
         var service = new YearlySummaryService(repository);
 
         var result = service.GetCategoryTotalsForYear(2026);
@@ -49,7 +49,7 @@ public class YearlySummaryServiceTests
     public void GetCategoryTotalsForYear_ExcludesExpensesFromOtherYears()
     {
         var repository = new StubCashFlowRepository();
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Last year", 999m, Category.Mercado, PaymentSource.Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Last year", 999m, Category.Mercado, "Barclays", null));
         var service = new YearlySummaryService(repository);
 
         var result = service.GetCategoryTotalsForYear(2026);
@@ -164,6 +164,8 @@ public class YearlySummaryServiceTests
 
         public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => Snapshots;
         public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => Snapshots.Add(snapshot);
+
+        public IEnumerable<Bank> GetBanks() => Array.Empty<Bank>();
 
         public Task SaveChangesAsync() => Task.CompletedTask;
     }

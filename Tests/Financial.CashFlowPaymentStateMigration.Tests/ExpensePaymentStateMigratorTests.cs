@@ -20,7 +20,7 @@ public class ExpensePaymentStateMigratorTests
         return data;
     }
 
-    private static Expense LegacyCardExpense(CashFlowData data, PaymentSource bank, CreditCard card, DateOnly date)
+    private static Expense LegacyCardExpense(CashFlowData data, string bank, CreditCard card, DateOnly date)
     {
         // Legacy records carry both a bank and a card tag; that shape can no longer be produced
         // through Expense.Create, so build it the way deserialization does: charge + settle.
@@ -41,12 +41,12 @@ public class ExpensePaymentStateMigratorTests
     public void Migrate_ExpenseWithoutCardTag_IsLeftUntouched()
     {
         var data = CashFlowData.Create();
-        var expense = AddExpense(data, Expense.Create(new DateOnly(2026, 5, 10), "Groceries", 20m, Category.Mercado, PaymentSource.Barclays, null));
+        var expense = AddExpense(data, Expense.Create(new DateOnly(2026, 5, 10), "Groceries", 20m, Category.Mercado, "Barclays", null));
 
         var summary = ExpensePaymentStateMigrator.Migrate(data);
 
         expense.PaymentStatus.Should().Be(ExpensePaymentStatus.ImmediatePayment);
-        expense.PaymentSource.Should().Be(PaymentSource.Barclays);
+        expense.PaymentSource.Should().Be("Barclays");
         expense.SettledAt.Should().BeNull();
         summary.ImmediatePaymentCount.Should().Be(1);
     }
@@ -55,12 +55,12 @@ public class ExpensePaymentStateMigratorTests
     public void Migrate_LegacyCardExpenseWithPaidStatement_BecomesSettledWithMonthEndDate()
     {
         var data = DataWithStatement(CreditCard.ChaseMaster4023, 2026, 2, isPaid: true);
-        var expense = LegacyCardExpense(data, PaymentSource.Chase, CreditCard.ChaseMaster4023, new DateOnly(2026, 2, 10));
+        var expense = LegacyCardExpense(data, "Chase", CreditCard.ChaseMaster4023, new DateOnly(2026, 2, 10));
 
         var summary = ExpensePaymentStateMigrator.Migrate(data);
 
         expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
-        expense.PaymentSource.Should().Be(PaymentSource.Chase);
+        expense.PaymentSource.Should().Be("Chase");
         expense.SettledAt.Should().Be(new DateOnly(2026, 2, 28));
         expense.CardTag.Should().Be(CreditCard.ChaseMaster4023);
         summary.NewlySettledCount.Should().Be(1);
@@ -71,12 +71,12 @@ public class ExpensePaymentStateMigratorTests
     {
         var data = DataWithStatement(CreditCard.BaAmex, 2026, 7, isPaid: true);
         var expense = AddExpense(data, Expense.Create(new DateOnly(2026, 7, 5), "Settled via F02", 10m, Category.Extras, null, CreditCard.BaAmex));
-        expense.Settle(PaymentSource.Trading212, new DateOnly(2026, 7, 24));
+        expense.Settle("Trading212", new DateOnly(2026, 7, 24));
 
         var summary = ExpensePaymentStateMigrator.Migrate(data);
 
         expense.SettledAt.Should().Be(new DateOnly(2026, 7, 24));
-        expense.PaymentSource.Should().Be(PaymentSource.Trading212);
+        expense.PaymentSource.Should().Be("Trading212");
         summary.AlreadySettledCount.Should().Be(1);
         summary.NewlySettledCount.Should().Be(0);
     }
@@ -85,7 +85,7 @@ public class ExpensePaymentStateMigratorTests
     public void Migrate_LegacyCardExpenseWithUnpaidStatement_BecomesChargeWithClearedBank()
     {
         var data = DataWithStatement(CreditCard.BarclaysPlatinumVisa8003, 2026, 3, isPaid: false);
-        var expense = LegacyCardExpense(data, PaymentSource.Barclays, CreditCard.BarclaysPlatinumVisa8003, new DateOnly(2026, 3, 15));
+        var expense = LegacyCardExpense(data, "Barclays", CreditCard.BarclaysPlatinumVisa8003, new DateOnly(2026, 3, 15));
 
         var summary = ExpensePaymentStateMigrator.Migrate(data);
 
@@ -100,7 +100,7 @@ public class ExpensePaymentStateMigratorTests
     public void Migrate_LegacyCardExpenseWithNoMatchingStatement_BecomesChargeAndIsFlaggedForReview()
     {
         var data = CashFlowData.Create();
-        var expense = LegacyCardExpense(data, PaymentSource.Barclays, CreditCard.PaypalCredit, new DateOnly(2026, 4, 15));
+        var expense = LegacyCardExpense(data, "Barclays", CreditCard.PaypalCredit, new DateOnly(2026, 4, 15));
 
         var summary = ExpensePaymentStateMigrator.Migrate(data);
 
@@ -127,11 +127,11 @@ public class ExpensePaymentStateMigratorTests
     public void Migrate_SecondRunOverFirstRunsOutput_ChangesNothing()
     {
         var data = DataWithStatement(CreditCard.ChaseMaster4023, 2026, 2, isPaid: true);
-        var paidExpense = LegacyCardExpense(data, PaymentSource.Chase, CreditCard.ChaseMaster4023, new DateOnly(2026, 2, 10));
+        var paidExpense = LegacyCardExpense(data, "Chase", CreditCard.ChaseMaster4023, new DateOnly(2026, 2, 10));
         var unpaidData = CardStatement.Create(CreditCard.BaAmex, 2026, 2);
         data.AddCardStatement(unpaidData);
-        var unpaidExpense = LegacyCardExpense(data, PaymentSource.Barclays, CreditCard.BaAmex, new DateOnly(2026, 2, 12));
-        var immediate = AddExpense(data, Expense.Create(new DateOnly(2026, 2, 14), "Immediate", 5m, Category.Casa, PaymentSource.Trading212, null));
+        var unpaidExpense = LegacyCardExpense(data, "Barclays", CreditCard.BaAmex, new DateOnly(2026, 2, 12));
+        var immediate = AddExpense(data, Expense.Create(new DateOnly(2026, 2, 14), "Immediate", 5m, Category.Casa, "Trading212", null));
 
         ExpensePaymentStateMigrator.Migrate(data);
         var afterFirst = data.Expenses

@@ -26,5 +26,7 @@ public interface ICashFlowRepository
     IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots();
     void AddInvestmentSnapshot(InvestmentSnapshot snapshot);
 
+    IEnumerable<Bank> GetBanks();
+
     Task SaveChangesAsync();
 }

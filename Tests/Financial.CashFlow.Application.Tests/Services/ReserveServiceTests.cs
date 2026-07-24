@@ -351,6 +351,8 @@ public class ReserveServiceTests
         public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => Array.Empty<InvestmentSnapshot>();
         public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) { }
 
+        public IEnumerable<Bank> GetBanks() => Array.Empty<Bank>();
+
         public Task SaveChangesAsync()
         {
             SaveChangesCallCount++;
