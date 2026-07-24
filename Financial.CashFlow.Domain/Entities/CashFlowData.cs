@@ -53,6 +53,14 @@ public class CashFlowData
         _investmentSnapshots.AddRange(data);
     }
 
+    private List<Bank> _banks = new List<Bank>();
+    public IReadOnlyCollection<Bank> Banks { get => _banks.AsReadOnly(); private set => SetBanks(value); }
+    private void SetBanks(IReadOnlyCollection<Bank> data)
+    {
+        _banks.Clear();
+        _banks.AddRange(data);
+    }
+
     private CashFlowData() { }
 
     public static CashFlowData Create() => new();
@@ -76,4 +84,6 @@ public class CashFlowData
     public void RemoveMaeLedgerEntry(Guid id) => _maeLedgerEntries.RemoveAll(e => e.Id == id);
 
     public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => _investmentSnapshots.Add(snapshot);
+
+    public void AddBank(Bank bank) => _banks.Add(bank);
 }

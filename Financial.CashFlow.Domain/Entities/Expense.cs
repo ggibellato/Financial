@@ -10,7 +10,7 @@ public class Expense
     public string Description { get; private set; } = string.Empty;
     public decimal Value { get; private set; }
     public Category Category { get; private set; }
-    public PaymentSource? PaymentSource { get; private set; }
+    public string? PaymentSource { get; private set; }
     public CreditCard? CardTag { get; private set; }
     public DateOnly? SettledAt { get; private set; }
 
@@ -26,7 +26,7 @@ public class Expense
         string description,
         decimal value,
         Category category,
-        PaymentSource? paymentSource,
+        string? paymentSource,
         CreditCard? cardTag)
     {
         ValidatePaymentShape(paymentSource, cardTag);
@@ -48,7 +48,7 @@ public class Expense
         string description,
         decimal value,
         Category category,
-        PaymentSource? paymentSource,
+        string? paymentSource,
         CreditCard? cardTag)
     {
         if (PaymentStatus == ExpensePaymentStatus.CreditCardSettled)
@@ -72,7 +72,7 @@ public class Expense
         Category = category;
     }
 
-    public void Settle(PaymentSource paymentSource, DateOnly settledAt)
+    public void Settle(string paymentSource, DateOnly settledAt)
     {
         if (PaymentStatus != ExpensePaymentStatus.CreditCardCharge)
         {
@@ -94,7 +94,7 @@ public class Expense
         SettledAt = null;
     }
 
-    private static void ValidatePaymentShape(PaymentSource? paymentSource, CreditCard? cardTag)
+    private static void ValidatePaymentShape(string? paymentSource, CreditCard? cardTag)
     {
         if (paymentSource is null && cardTag is null)
         {
