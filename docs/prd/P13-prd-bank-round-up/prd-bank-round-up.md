@@ -224,11 +224,11 @@ graph TD
 - [x] A previously saved round-up amount can be directly edited to a new value at any time after the expense was created
 
 ### F03. Expense Form Bank Picker & Round-Up UX
-- [ ] The expense form's bank picker lists the banks resolved from F01 rather than a fixed set of options
-- [ ] Selecting a `RoundUpEnabled` bank in "pay immediately" mode shows a round-up field pre-filled with the suggested amount
-- [ ] Selecting a non-round-up bank, or switching to "charge to card" mode, hides the round-up field entirely
-- [ ] Editing an existing expense shows its currently saved round-up amount in the field, not a freshly recomputed suggestion
-- [ ] Editing an existing expense's round-up amount and saving persists the new value without altering the expense's value
+- [x] The expense form's bank picker lists the banks resolved from F01 rather than a fixed set of options
+- [x] Selecting a `RoundUpEnabled` bank in "pay immediately" mode shows a round-up field pre-filled with the suggested amount
+- [x] Selecting a non-round-up bank, or switching to "charge to card" mode, hides the round-up field entirely
+- [x] Editing an existing expense shows its currently saved round-up amount in the field, not a freshly recomputed suggestion
+- [x] Editing an existing expense's round-up amount and saving persists the new value without altering the expense's value
 
 ### F04. Bank Balance & Round-Up Totals
 - [ ] A bank's displayed balance for the selected month equals `sum(Expense.Value) − sum(Expense.RoundUpAmount)` across that bank's expenses
@@ -238,5 +238,5 @@ graph TD
 
 ### Cross-Feature Integration
 - [x] F02's round-up suggestion and eligibility check correctly read each bank's `RoundUpEnabled` flag as defined by F01, offering a suggestion only for banks where it is `true`
-- [ ] F03's bank picker and round-up field correctly reflect the bank list and `RoundUpEnabled` flags from F01, and correctly read and write the round-up amount contract defined by F02
+- [x] F03's bank picker and round-up field correctly reflect the bank list and `RoundUpEnabled` flags from F01, and correctly read and write the round-up amount contract defined by F02
 - [ ] F04's balance and round-up total calculations correctly group expenses by the bank identity defined by F01 and correctly sum the round-up amounts defined by F02
