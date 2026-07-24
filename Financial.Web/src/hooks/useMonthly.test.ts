@@ -105,11 +105,12 @@ describe('useMonthly', () => {
 
     expect(result.current.categoryTotalsSum).toBe(42.5)
     expect(result.current.bankTotals).toEqual([
-      { bank: 'Barclays', totalValue: 42.5 },
-      { bank: 'Trading212', totalValue: 0 },
-      { bank: 'Chase', totalValue: 0 },
+      { bank: 'Barclays', balance: 42.5, roundUpTotal: 0 },
+      { bank: 'Trading212', balance: 0, roundUpTotal: 0 },
+      { bank: 'Chase', balance: 0, roundUpTotal: 0 },
     ])
     expect(result.current.bankTotalsSum).toBe(42.5)
+    expect(result.current.roundUpTotalsSum).toBe(0)
   })
 
   it('re-fetches for a new month when the month input changes', async () => {
@@ -367,11 +368,30 @@ describe('useMonthly', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(result.current.bankTotals).toEqual([
-      { bank: 'Barclays', totalValue: 62.5 },
-      { bank: 'Trading212', totalValue: 0 },
-      { bank: 'Chase', totalValue: 0 },
+      { bank: 'Barclays', balance: 62.5, roundUpTotal: 0 },
+      { bank: 'Trading212', balance: 0, roundUpTotal: 0 },
+      { bank: 'Chase', balance: 0, roundUpTotal: 0 },
     ])
     expect(result.current.bankTotalsSum).toBe(62.5)
+    expect(result.current.roundUpTotalsSum).toBe(0)
+  })
+
+  it("subtracts a bank's round-up total from its balance and sums round-up totals separately", async () => {
+    getExpensesByMonthMock.mockResolvedValue([
+      { ...EXPENSES[0], id: 'e7', value: 9.4, paymentSource: 'Trading212', roundUpAmount: 0.6 },
+      { ...EXPENSES[0], id: 'e8', value: 5, paymentSource: 'Trading212', roundUpAmount: null },
+      { ...EXPENSES[0], id: 'e9', value: 20, paymentSource: 'Chase', roundUpAmount: 0.1 },
+    ])
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.bankTotals).toEqual([
+      { bank: 'Barclays', balance: 0, roundUpTotal: 0 },
+      { bank: 'Trading212', balance: 13.8, roundUpTotal: 0.6 },
+      { bank: 'Chase', balance: 19.9, roundUpTotal: 0.1 },
+    ])
+    expect(result.current.bankTotalsSum).toBeCloseTo(33.7)
+    expect(result.current.roundUpTotalsSum).toBeCloseTo(0.7)
   })
 
   it('picking a round-up-enabled bank auto-suggests when the field is blank', async () => {
