@@ -105,10 +105,10 @@ describe('MonthlyPage', () => {
     expect(banksSection.getByRole('cell', { name: 'Trading212' })).toBeInTheDocument()
     expect(banksSection.getByRole('cell', { name: 'Chase' })).toBeInTheDocument()
 
-    // The single expense (42.50) is on Barclays, so Trading212/Chase are zero and the
-    // Barclays row plus the Banks total both show 42.50.
+    // The single expense (42.50) is on Barclays with no round-up amount, so its balance
+    // is unchanged and every round-up figure (per-bank and the footer) is zero.
     expect(banksSection.getAllByText('42.50').length).toBe(2)
-    expect(banksSection.getAllByText('0.00').length).toBe(2)
+    expect(banksSection.getAllByText('0.00').length).toBe(6)
 
     expect(screen.getByText('Category Totals').closest('section')).toHaveClass('monthly-page__section--grid')
     expect(screen.getByText('Cards').closest('section')).toHaveClass('monthly-page__section--grid')
@@ -315,6 +315,23 @@ describe('MonthlyPage', () => {
     await waitFor(() =>
       expect(createExpenseMock).toHaveBeenCalledWith(expect.objectContaining({ roundUpAmount: 0.1 })),
     )
+  })
+
+  it('shows a bank balance reduced by its round-up total, in a separate column', async () => {
+    getExpensesByMonthMock.mockResolvedValue([
+      { ...EXPENSES[0], paymentSource: 'Trading212', value: 9.4, roundUpAmount: 0.6 },
+    ])
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
+    const banksSection = within(screen.getByText('Banks').closest('section')!)
+
+    const trading212Row = banksSection.getByRole('row', { name: /Trading212/ })
+    expect(within(trading212Row).getByRole('cell', { name: '8.80' })).toBeInTheDocument()
+    expect(within(trading212Row).getByRole('cell', { name: '0.60' })).toBeInTheDocument()
+
+    const barclaysRow = banksSection.getByRole('row', { name: /Barclays/ })
+    expect(within(barclaysRow).getAllByRole('cell', { name: '0.00' })).toHaveLength(2)
   })
 
   it('pre-fills the edit round-up field with the saved amount', async () => {

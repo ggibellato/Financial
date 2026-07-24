@@ -231,12 +231,12 @@ graph TD
 - [x] Editing an existing expense's round-up amount and saving persists the new value without altering the expense's value
 
 ### F04. Bank Balance & Round-Up Totals
-- [ ] A bank's displayed balance for the selected month equals `sum(Expense.Value) − sum(Expense.RoundUpAmount)` across that bank's expenses
-- [ ] A bank's round-up total for the selected month equals `sum(Expense.RoundUpAmount)` across that bank's expenses, displayed separately from its balance
-- [ ] Barclays (a non-round-up bank) always shows a round-up total of £0.00
-- [ ] The Banks panel's balance and round-up total both update immediately after an expense is saved
+- [x] A bank's displayed balance for the selected month equals `sum(Expense.Value) − sum(Expense.RoundUpAmount)` across that bank's expenses
+- [x] A bank's round-up total for the selected month equals `sum(Expense.RoundUpAmount)` across that bank's expenses, displayed separately from its balance
+- [x] Barclays (a non-round-up bank) always shows a round-up total of £0.00
+- [x] The Banks panel's balance and round-up total both update immediately after an expense is saved
 
 ### Cross-Feature Integration
 - [x] F02's round-up suggestion and eligibility check correctly read each bank's `RoundUpEnabled` flag as defined by F01, offering a suggestion only for banks where it is `true`
 - [x] F03's bank picker and round-up field correctly reflect the bank list and `RoundUpEnabled` flags from F01, and correctly read and write the round-up amount contract defined by F02
-- [ ] F04's balance and round-up total calculations correctly group expenses by the bank identity defined by F01 and correctly sum the round-up amounts defined by F02
+- [x] F04's balance and round-up total calculations correctly group expenses by the bank identity defined by F01 and correctly sum the round-up amounts defined by F02
