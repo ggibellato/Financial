@@ -303,16 +303,16 @@ graph TD
 - [x] The displayed balance updates immediately after an income entry or expense is saved
 
 ### F07. Yearly Summary Income Rows
-- [ ] The Income Summary table's Salary row (row 2) equals the sum of Gleison and Ariana gross values for each month, matching a manual reference calculation
-- [ ] The Salary after taxes row (row 3) equals the sum of Gleison and Ariana net values for each month
-- [ ] The Tax difference row (row 4) equals row 2 minus row 3 for each month
-- [ ] The Dividendo/Juros row (row 6) equals the sum of that month's DividendoJuros net values
-- [ ] Row 5 renders with no numeric value
-- [ ] Lottery, tithe, and tithe balance do not appear anywhere in the Yearly Summary page
+- [x] The Income Summary table's Salary row (row 2) equals the sum of Gleison and Ariana gross values for each month, matching a manual reference calculation
+- [x] The Salary after taxes row (row 3) equals the sum of Gleison and Ariana net values for each month
+- [x] The Tax difference row (row 4) equals row 2 minus row 3 for each month
+- [x] The Dividendo/Juros row (row 6) equals the sum of that month's DividendoJuros net values
+- [x] Row 5 renders with no numeric value
+- [x] Lottery, tithe, and tithe balance do not appear anywhere in the Yearly Summary page
 
 ### Cross-Feature Integration
 - [x] F03's tithe calculation correctly reads the net income totals produced by F01 for the selected month
 - [x] F04's create/edit/delete actions correctly read and write through F01's `Income` entity contract
 - [ ] F05 correctly displays the income totals from F01 and the tithe/tithe balance from F03 for the selected month
 - [x] F06 correctly combines F01's income data with F02's opening balance and date to produce each bank's balance
-- [ ] F07 correctly aggregates F01's income data across all 12 months of the selected year into the Yearly Summary's Income Summary table
+- [x] F07 correctly aggregates F01's income data across all 12 months of the selected year into the Yearly Summary's Income Summary table
