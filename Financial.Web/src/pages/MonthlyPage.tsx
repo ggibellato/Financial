@@ -239,6 +239,7 @@ export default function MonthlyPage() {
     adjustmentTotal,
     bankTotals,
     bankTotalsSum,
+    roundUpTotalsSum,
     isLoading,
     error,
     retry,
@@ -421,21 +422,23 @@ export default function MonthlyPage() {
                   <thead>
                     <tr>
                       <th>Bank</th>
-                      <th className="data-table__col--numeric">Total</th>
+                      <th className="data-table__col--numeric">Balance</th>
+                      <th className="data-table__col--numeric">Round-Up</th>
                     </tr>
                   </thead>
                   <tbody>
                     {bankTotals.map((b) => (
                       <tr key={b.bank}>
                         <td>{b.bank}</td>
-                        <td className="data-table__col--numeric">{formatN2(b.totalValue)}</td>
+                        <td className="data-table__col--numeric">{formatN2(b.balance)}</td>
+                        <td className="data-table__col--numeric">{formatN2(b.roundUpTotal)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
               <p className="monthly-page__section-total">
-                Total: <strong>{formatN2(bankTotalsSum)}</strong>
+                Balance: <strong>{formatN2(bankTotalsSum)}</strong> · Round-Up: <strong>{formatN2(roundUpTotalsSum)}</strong>
               </p>
             </section>
           </div>

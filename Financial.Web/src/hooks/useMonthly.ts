@@ -28,7 +28,8 @@ function suggestRoundUpAmount(banks: BankDto[], bankName: string, value: string)
 
 export interface BankTotal {
   bank: string
-  totalValue: number
+  balance: number
+  roundUpTotal: number
 }
 
 export type CreateFormField =
@@ -305,6 +306,7 @@ export interface MonthlyData {
   adjustmentTotal: number
   bankTotals: BankTotal[]
   bankTotalsSum: number
+  roundUpTotalsSum: number
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -605,13 +607,14 @@ export function useMonthly(): MonthlyData {
 
   const categoryTotalsSum = state.categoryTotals.reduce((sum, c) => sum + c.totalValue, 0)
 
-  const bankTotals: BankTotal[] = state.banks.map((bank) => ({
-    bank: bank.name,
-    totalValue: state.expenses
-      .filter((expense) => expense.paymentSource === bank.name)
-      .reduce((sum, expense) => sum + expense.value, 0),
-  }))
-  const bankTotalsSum = bankTotals.reduce((sum, b) => sum + b.totalValue, 0)
+  const bankTotals: BankTotal[] = state.banks.map((bank) => {
+    const bankExpenses = state.expenses.filter((expense) => expense.paymentSource === bank.name)
+    const valueSum = bankExpenses.reduce((sum, expense) => sum + expense.value, 0)
+    const roundUpTotal = bankExpenses.reduce((sum, expense) => sum + (expense.roundUpAmount ?? 0), 0)
+    return { bank: bank.name, balance: valueSum - roundUpTotal, roundUpTotal }
+  })
+  const bankTotalsSum = bankTotals.reduce((sum, b) => sum + b.balance, 0)
+  const roundUpTotalsSum = bankTotals.reduce((sum, b) => sum + b.roundUpTotal, 0)
 
   return {
     monthInputValue,
@@ -624,6 +627,7 @@ export function useMonthly(): MonthlyData {
     adjustmentTotal,
     bankTotals,
     bankTotalsSum,
+    roundUpTotalsSum,
     isLoading: state.isLoading,
     error: state.error,
     retry,
