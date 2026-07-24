@@ -366,6 +366,8 @@ export interface ExpenseDto {
   cardTag: string | null
   settledAt: string | null
   paymentStatus: string
+  roundUpAmount: number | null
+  suggestedRoundUpAmount: number | null
 }
 
 export interface CreateExpenseDto {
@@ -375,6 +377,7 @@ export interface CreateExpenseDto {
   category: string
   paymentSource: string | null
   cardTag: string | null
+  roundUpAmount: number | null
 }
 
 export interface UpdateExpenseDto {
@@ -384,6 +387,12 @@ export interface UpdateExpenseDto {
   category: string
   paymentSource: string | null
   cardTag: string | null
+  roundUpAmount: number | null
+}
+
+export interface BankDto {
+  name: string
+  roundUpEnabled: boolean
 }
 
 export interface CategoryTotalDto {

@@ -1,11 +1,12 @@
 import ErrorState from '../components/ErrorState'
 import ExpensesSection from '../components/ExpensesSection'
 import LoadingState from '../components/LoadingState'
-import { PAYMENT_SOURCES, useMonthly, type CreateFormField, type EditField, type PaymentMode } from '../hooks/useMonthly'
+import { useMonthly, type CreateFormField, type EditField, type PaymentMode } from '../hooks/useMonthly'
+import type { BankDto } from '../api/types'
 import { formatN2 } from '../utils/formatters'
 import './MonthlyPage.css'
 
-type ExpenseFormField = 'date' | 'description' | 'value' | 'category' | 'paymentSource' | 'cardTag'
+type ExpenseFormField = 'date' | 'description' | 'value' | 'category' | 'paymentSource' | 'cardTag' | 'roundUpAmount'
 
 const CREATE_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, CreateFormField> = {
   date: 'createDate',
@@ -14,6 +15,7 @@ const CREATE_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, CreateFormField> = {
   category: 'createCategory',
   paymentSource: 'createPaymentSource',
   cardTag: 'createCardTag',
+  roundUpAmount: 'createRoundUpAmount',
 }
 
 const EDIT_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, EditField> = {
@@ -23,6 +25,7 @@ const EDIT_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, EditField> = {
   category: 'editCategory',
   paymentSource: 'editPaymentSource',
   cardTag: 'editCardTag',
+  roundUpAmount: 'editRoundUpAmount',
 }
 
 const CATEGORIES = [
@@ -52,7 +55,9 @@ interface ExpenseFormProps {
   category: string
   paymentSource: string
   cardTag: string
+  roundUpAmount: string
   paymentMode: PaymentMode
+  banks: BankDto[]
   isSettled: boolean
   isSaving: boolean
   saveError: string | null
@@ -70,7 +75,9 @@ function ExpenseForm({
   category,
   paymentSource,
   cardTag,
+  roundUpAmount,
   paymentMode,
+  banks,
   isSettled,
   isSaving,
   saveError,
@@ -79,6 +86,8 @@ function ExpenseForm({
   onSave,
   onCancel,
 }: ExpenseFormProps) {
+  const selectedBank = banks.find((b) => b.name === paymentSource)
+  const showRoundUpField = paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
   return (
     <div className="monthly-page__form-panel">
       <p className="monthly-page__form-title">{isEditing ? 'Edit Expense' : 'New Expense'}</p>
@@ -157,20 +166,34 @@ function ExpenseForm({
               </label>
             </div>
             {paymentMode === 'bank' ? (
-              <div className="monthly-page__form-field">
-                <label htmlFor="expense-payment-source">Payment Source</label>
-                <select
-                  id="expense-payment-source"
-                  value={paymentSource}
-                  onChange={(e) => onFieldChange('paymentSource', e.target.value)}
-                >
-                  {PAYMENT_SOURCES.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <>
+                <div className="monthly-page__form-field">
+                  <label htmlFor="expense-payment-source">Payment Source</label>
+                  <select
+                    id="expense-payment-source"
+                    value={paymentSource}
+                    onChange={(e) => onFieldChange('paymentSource', e.target.value)}
+                  >
+                    {banks.map((b) => (
+                      <option key={b.name} value={b.name}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {showRoundUpField && (
+                  <div className="monthly-page__form-field">
+                    <label htmlFor="expense-round-up-amount">Round-Up</label>
+                    <input
+                      id="expense-round-up-amount"
+                      type="number"
+                      step="0.01"
+                      value={roundUpAmount}
+                      onChange={(e) => onFieldChange('roundUpAmount', e.target.value)}
+                    />
+                  </div>
+                )}
+              </>
             ) : (
               <div className="monthly-page__form-field">
                 <label htmlFor="expense-card-tag">Card</label>
@@ -212,6 +235,7 @@ export default function MonthlyPage() {
     categoryTotals,
     categoryTotalsSum,
     cardStatements,
+    banks,
     adjustmentTotal,
     bankTotals,
     bankTotalsSum,
@@ -225,6 +249,7 @@ export default function MonthlyPage() {
     createCategory,
     createPaymentSource,
     createCardTag,
+    createRoundUpAmount,
     createPaymentMode,
     setCreatePaymentMode,
     isCreating,
@@ -240,6 +265,7 @@ export default function MonthlyPage() {
     editCategory,
     editPaymentSource,
     editCardTag,
+    editRoundUpAmount,
     editPaymentMode,
     editIsSettled,
     setEditPaymentMode,
@@ -282,7 +308,9 @@ export default function MonthlyPage() {
           category={isEditing ? editCategory : createCategory}
           paymentSource={isEditing ? editPaymentSource : createPaymentSource}
           cardTag={isEditing ? editCardTag : createCardTag}
+          roundUpAmount={isEditing ? editRoundUpAmount : createRoundUpAmount}
           paymentMode={isEditing ? editPaymentMode : createPaymentMode}
+          banks={banks}
           isSettled={isEditing && editIsSettled}
           isSaving={isEditing ? isSaving : isCreating}
           saveError={isEditing ? saveError : createError}
@@ -360,9 +388,9 @@ export default function MonthlyPage() {
                                 onChange={(e) => setMarkPaidSource(s.id, e.target.value)}
                               >
                                 <option value="">Bank…</option>
-                                {PAYMENT_SOURCES.map((p) => (
-                                  <option key={p} value={p}>
-                                    {p}
+                                {banks.map((b) => (
+                                  <option key={b.name} value={b.name}>
+                                    {b.name}
                                   </option>
                                 ))}
                               </select>{' '}

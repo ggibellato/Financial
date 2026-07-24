@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../api/financialApiClient'
-import type { CardStatementDto, CategoryTotalDto, ExpenseDto } from '../api/types'
+import type { BankDto, CardStatementDto, CategoryTotalDto, ExpenseDto } from '../api/types'
 import { useMonthly } from './useMonthly'
 
 const NOW = new Date()
@@ -15,6 +15,7 @@ const NEXT_MONTH_INPUT = `${NEXT_MONTH_YEAR}-${String(NEXT_MONTH).padStart(2, '0
 const getExpensesByMonthMock = vi.fn<FinancialApiClient['getExpensesByMonth']>()
 const getCategoryTotalsByMonthMock = vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>()
 const getCardStatementsByMonthMock = vi.fn<FinancialApiClient['getCardStatementsByMonth']>()
+const getBanksMock = vi.fn<FinancialApiClient['getBanks']>()
 const createExpenseMock = vi.fn<FinancialApiClient['createExpense']>()
 const updateExpenseMock = vi.fn<FinancialApiClient['updateExpense']>()
 const deleteExpenseMock = vi.fn<FinancialApiClient['deleteExpense']>()
@@ -26,6 +27,7 @@ vi.mock('../api/financialApiClient', () => ({
     getExpensesByMonth: getExpensesByMonthMock,
     getCategoryTotalsByMonth: getCategoryTotalsByMonthMock,
     getCardStatementsByMonth: getCardStatementsByMonthMock,
+    getBanks: getBanksMock,
     createExpense: createExpenseMock,
     updateExpense: updateExpenseMock,
     deleteExpense: deleteExpenseMock,
@@ -33,6 +35,12 @@ vi.mock('../api/financialApiClient', () => ({
     unmarkCardStatementPaid: unmarkCardStatementPaidMock,
   }),
 }))
+
+const BANKS: BankDto[] = [
+  { name: 'Barclays', roundUpEnabled: false },
+  { name: 'Trading212', roundUpEnabled: true },
+  { name: 'Chase', roundUpEnabled: true },
+]
 
 const EXPENSES: ExpenseDto[] = [
   {
@@ -45,6 +53,8 @@ const EXPENSES: ExpenseDto[] = [
     cardTag: null,
     settledAt: null,
     paymentStatus: 'ImmediatePayment',
+    roundUpAmount: null,
+    suggestedRoundUpAmount: null,
   },
 ]
 
@@ -61,10 +71,11 @@ describe('useMonthly', () => {
     getExpensesByMonthMock.mockResolvedValue(EXPENSES)
     getCategoryTotalsByMonthMock.mockResolvedValue(CATEGORY_TOTALS)
     getCardStatementsByMonthMock.mockResolvedValue(CARD_STATEMENTS)
+    getBanksMock.mockResolvedValue(BANKS)
     vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
-  it('fetches expenses, category totals, and card statements for the current month on mount', async () => {
+  it('fetches expenses, category totals, card statements, and banks for the current month on mount', async () => {
     const { result } = renderHook(() => useMonthly())
 
     expect(result.current.isLoading).toBe(true)
@@ -73,10 +84,12 @@ describe('useMonthly', () => {
     expect(getExpensesByMonthMock).toHaveBeenCalledWith(CURRENT_YEAR, CURRENT_MONTH)
     expect(getCategoryTotalsByMonthMock).toHaveBeenCalledWith(CURRENT_YEAR, CURRENT_MONTH)
     expect(getCardStatementsByMonthMock).toHaveBeenCalledWith(CURRENT_YEAR, CURRENT_MONTH)
+    expect(getBanksMock).toHaveBeenCalledOnce()
     expect(result.current.monthInputValue).toBe(CURRENT_MONTH_INPUT)
     expect(result.current.expenses).toEqual(EXPENSES)
     expect(result.current.categoryTotals).toEqual(CATEGORY_TOTALS)
     expect(result.current.cardStatements).toEqual(CARD_STATEMENTS)
+    expect(result.current.banks).toEqual(BANKS)
   })
 
   it('computes the combined adjustment figure as the sum of outstanding totals', async () => {
@@ -86,7 +99,7 @@ describe('useMonthly', () => {
     expect(result.current.adjustmentTotal).toBe(100)
   })
 
-  it('computes category totals sum and per-bank totals from the fetched expenses', async () => {
+  it('computes category totals sum and per-bank totals from the fetched banks and expenses', async () => {
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
@@ -359,5 +372,144 @@ describe('useMonthly', () => {
       { bank: 'Chase', totalValue: 0 },
     ])
     expect(result.current.bankTotalsSum).toBe(62.5)
+  })
+
+  it('picking a round-up-enabled bank auto-suggests when the field is blank', async () => {
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setCreateField('createValue', '9.40'))
+    act(() => result.current.setCreateField('createPaymentSource', 'Trading212'))
+
+    expect(result.current.createRoundUpAmount).toBe('0.60')
+  })
+
+  it('picking a round-up-enabled bank does not overwrite an amount the user already typed', async () => {
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setCreateField('createValue', '9.40'))
+    act(() => result.current.setCreateField('createRoundUpAmount', '0.10'))
+    act(() => result.current.setCreateField('createPaymentSource', 'Chase'))
+
+    expect(result.current.createRoundUpAmount).toBe('0.10')
+  })
+
+  it('picking a non-round-up bank does not fill a suggestion', async () => {
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setCreateField('createValue', '9.40'))
+    act(() => result.current.setCreateField('createPaymentSource', 'Barclays'))
+
+    expect(result.current.createRoundUpAmount).toBe('')
+  })
+
+  it('sends the round-up amount on create for a round-up-enabled bank', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setCreateField('createDate', '2026-07-16'))
+    act(() => result.current.setCreateField('createDescription', 'TfL'))
+    act(() => result.current.setCreateField('createValue', '9.40'))
+    act(() => result.current.setCreateField('createPaymentSource', 'Trading212'))
+    act(() => result.current.submitCreate())
+
+    await waitFor(() =>
+      expect(createExpenseMock).toHaveBeenCalledWith(expect.objectContaining({ roundUpAmount: 0.6 })),
+    )
+  })
+
+  it('sends a null round-up amount when charging to card', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setCreateField('createDate', '2026-07-16'))
+    act(() => result.current.setCreateField('createDescription', 'Amazon'))
+    act(() => result.current.setCreateField('createValue', '9.99'))
+    act(() => result.current.setCreatePaymentMode('card'))
+    act(() => result.current.setCreateField('createCardTag', 'ChaseMaster4023'))
+    act(() => result.current.submitCreate())
+
+    await waitFor(() =>
+      expect(createExpenseMock).toHaveBeenCalledWith(expect.objectContaining({ roundUpAmount: null })),
+    )
+  })
+
+  it('rejects a round-up amount outside £0.00-£0.99 before calling the API', async () => {
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setCreateField('createDate', '2026-07-16'))
+    act(() => result.current.setCreateField('createDescription', 'TfL'))
+    act(() => result.current.setCreateField('createValue', '9.40'))
+    act(() => result.current.setCreateField('createPaymentSource', 'Trading212'))
+    act(() => result.current.setCreateField('createRoundUpAmount', '1.50'))
+    act(() => result.current.submitCreate())
+
+    expect(result.current.createError).toContain('between £0.00 and £0.99')
+    expect(createExpenseMock).not.toHaveBeenCalled()
+  })
+
+  it('pre-fills the edit round-up field from the saved amount, not the suggestion', async () => {
+    const expense: ExpenseDto = {
+      ...EXPENSES[0],
+      id: 'e7',
+      value: 9.4,
+      paymentSource: 'Trading212',
+      roundUpAmount: 0.1,
+      suggestedRoundUpAmount: null,
+    }
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditForm(expense))
+
+    expect(result.current.editRoundUpAmount).toBe('0.1')
+  })
+
+  it('leaves a saved round-up amount unchanged when only Value is edited', async () => {
+    const expense: ExpenseDto = {
+      ...EXPENSES[0],
+      id: 'e8',
+      value: 9.4,
+      paymentSource: 'Trading212',
+      roundUpAmount: 0.1,
+      suggestedRoundUpAmount: null,
+    }
+    updateExpenseMock.mockResolvedValue(expense)
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditForm(expense))
+    act(() => result.current.setEditField('editValue', '20'))
+    act(() => result.current.saveEdit())
+
+    await waitFor(() =>
+      expect(updateExpenseMock).toHaveBeenCalledWith('e8', expect.objectContaining({ value: 20, roundUpAmount: 0.1 })),
+    )
+  })
+
+  it('clears a saved round-up amount when the edit field is emptied', async () => {
+    const expense: ExpenseDto = {
+      ...EXPENSES[0],
+      id: 'e9',
+      paymentSource: 'Trading212',
+      roundUpAmount: 0.1,
+      suggestedRoundUpAmount: null,
+    }
+    updateExpenseMock.mockResolvedValue(expense)
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditForm(expense))
+    act(() => result.current.setEditField('editRoundUpAmount', ''))
+    act(() => result.current.saveEdit())
+
+    await waitFor(() =>
+      expect(updateExpenseMock).toHaveBeenCalledWith('e9', expect.objectContaining({ roundUpAmount: null })),
+    )
   })
 })

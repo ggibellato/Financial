@@ -1,14 +1,30 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { CardStatementDto, CategoryTotalDto, ExpenseDto } from '../api/types'
+import type { BankDto, CardStatementDto, CategoryTotalDto, ExpenseDto } from '../api/types'
 import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
-
-export const PAYMENT_SOURCES = ['Barclays', 'Trading212', 'Chase'] as const
 
 export type PaymentMode = 'bank' | 'card'
 
 const SETTLED_STATUS = 'CreditCardSettled'
 const CHARGE_STATUS = 'CreditCardCharge'
+
+const MIN_ROUND_UP_AMOUNT = 0
+const MAX_ROUND_UP_AMOUNT = 0.99
+
+function computeRoundUpSuggestion(value: number): number {
+  return Math.round((Math.ceil(value) - value) * 100) / 100
+}
+
+/** Suggests a round-up amount for the given bank/value, or null if not eligible or no value yet. */
+function suggestRoundUpAmount(banks: BankDto[], bankName: string, value: string): string | null {
+  const bank = banks.find((b) => b.name === bankName)
+  if (!bank?.roundUpEnabled) return null
+
+  const parsedValue = Number(value)
+  if (!value.trim() || !isFinite(parsedValue)) return null
+
+  return computeRoundUpSuggestion(parsedValue).toFixed(2)
+}
 
 export interface BankTotal {
   bank: string
@@ -22,6 +38,7 @@ export type CreateFormField =
   | 'createCategory'
   | 'createPaymentSource'
   | 'createCardTag'
+  | 'createRoundUpAmount'
 export type EditField =
   | 'editDate'
   | 'editDescription'
@@ -29,6 +46,7 @@ export type EditField =
   | 'editCategory'
   | 'editPaymentSource'
   | 'editCardTag'
+  | 'editRoundUpAmount'
 
 interface MonthlyState {
   year: number
@@ -36,6 +54,7 @@ interface MonthlyState {
   expenses: ExpenseDto[]
   categoryTotals: CategoryTotalDto[]
   cardStatements: CardStatementDto[]
+  banks: BankDto[]
   isLoading: boolean
   error: string | null
   retryCount: number
@@ -46,6 +65,7 @@ interface MonthlyState {
   createCategory: string
   createPaymentSource: string
   createCardTag: string
+  createRoundUpAmount: string
   isCreating: boolean
   createError: string | null
   editingId: string | null
@@ -55,6 +75,7 @@ interface MonthlyState {
   editCategory: string
   editPaymentSource: string
   editCardTag: string
+  editRoundUpAmount: string
   createPaymentMode: PaymentMode
   editPaymentMode: PaymentMode
   editIsSettled: boolean
@@ -68,7 +89,12 @@ type MonthlyAction =
   | { type: 'FETCH_START' }
   | {
       type: 'FETCH_SUCCESS'
-      payload: { expenses: ExpenseDto[]; categoryTotals: CategoryTotalDto[]; cardStatements: CardStatementDto[] }
+      payload: {
+        expenses: ExpenseDto[]
+        categoryTotals: CategoryTotalDto[]
+        cardStatements: CardStatementDto[]
+        banks: BankDto[]
+      }
     }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
@@ -96,8 +122,9 @@ const BLANK_CREATE_FORM = {
   createDescription: '',
   createValue: '',
   createCategory: 'Mercado',
-  createPaymentSource: 'Barclays',
+  createPaymentSource: '',
   createCardTag: '',
+  createRoundUpAmount: '',
   createPaymentMode: 'bank',
 } as const
 
@@ -107,6 +134,7 @@ const INITIAL_STATE: MonthlyState = {
   expenses: [],
   categoryTotals: [],
   cardStatements: [],
+  banks: [],
   isLoading: true,
   error: null,
   retryCount: 0,
@@ -121,6 +149,7 @@ const INITIAL_STATE: MonthlyState = {
   editCategory: '',
   editPaymentSource: '',
   editCardTag: '',
+  editRoundUpAmount: '',
   editPaymentMode: 'bank',
   editIsSettled: false,
   isSaving: false,
@@ -134,14 +163,20 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
       return { ...state, year: action.payload.year, month: action.payload.month }
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null }
-    case 'FETCH_SUCCESS':
+    case 'FETCH_SUCCESS': {
+      const defaultBankStillUnset = state.createPaymentMode === 'bank' && state.createPaymentSource === ''
       return {
         ...state,
         isLoading: false,
         expenses: action.payload.expenses,
         categoryTotals: action.payload.categoryTotals,
         cardStatements: action.payload.cardStatements,
+        banks: action.payload.banks,
+        createPaymentSource: defaultBankStillUnset
+          ? (action.payload.banks[0]?.name ?? '')
+          : state.createPaymentSource,
       }
+    }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
@@ -150,8 +185,16 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
       return { ...state, isCreateFormOpen: true, editingId: null, saveError: null }
     case 'CANCEL_CREATE_FORM':
       return { ...state, ...BLANK_CREATE_FORM, isCreateFormOpen: false, createError: null }
-    case 'SET_CREATE_FIELD':
-      return { ...state, [action.payload.field]: action.payload.value }
+    case 'SET_CREATE_FIELD': {
+      const next = { ...state, [action.payload.field]: action.payload.value }
+      if (action.payload.field === 'createPaymentSource' && state.createRoundUpAmount.trim() === '') {
+        const suggestion = suggestRoundUpAmount(state.banks, action.payload.value, state.createValue)
+        if (suggestion !== null) {
+          next.createRoundUpAmount = suggestion
+        }
+      }
+      return next
+    }
     case 'CREATE_START':
       return { ...state, isCreating: true, createError: null }
     case 'CREATE_SUCCESS':
@@ -169,6 +212,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editCategory: action.payload.category,
         editPaymentSource: action.payload.paymentSource ?? '',
         editCardTag: action.payload.cardTag ?? '',
+        editRoundUpAmount: action.payload.roundUpAmount != null ? String(action.payload.roundUpAmount) : '',
         editPaymentMode: action.payload.paymentStatus === CHARGE_STATUS ? 'card' : 'bank',
         editIsSettled: action.payload.paymentStatus === SETTLED_STATUS,
         saveError: null,
@@ -183,12 +227,21 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editCategory: '',
         editPaymentSource: '',
         editCardTag: '',
+        editRoundUpAmount: '',
         editPaymentMode: 'bank',
         editIsSettled: false,
         saveError: null,
       }
-    case 'SET_EDIT_FIELD':
-      return { ...state, [action.payload.field]: action.payload.value }
+    case 'SET_EDIT_FIELD': {
+      const next = { ...state, [action.payload.field]: action.payload.value }
+      if (action.payload.field === 'editPaymentSource' && state.editRoundUpAmount.trim() === '') {
+        const suggestion = suggestRoundUpAmount(state.banks, action.payload.value, state.editValue)
+        if (suggestion !== null) {
+          next.editRoundUpAmount = suggestion
+        }
+      }
+      return next
+    }
     case 'SAVE_START':
       return { ...state, isSaving: true, saveError: null }
     case 'SAVE_SUCCESS':
@@ -202,6 +255,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editCategory: '',
         editPaymentSource: '',
         editCardTag: '',
+        editRoundUpAmount: '',
         editPaymentMode: 'bank',
         editIsSettled: false,
       }
@@ -211,20 +265,30 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
       return { ...state, saveError: action.payload }
     case 'SET_MARK_PAID_SOURCE':
       return { ...state, markPaidSources: { ...state.markPaidSources, [action.payload.id]: action.payload.value } }
-    case 'SET_CREATE_MODE':
+    case 'SET_CREATE_MODE': {
+      const nextPaymentSource = action.payload === 'bank' ? (state.banks[0]?.name ?? '') : ''
+      const suggestion =
+        action.payload === 'bank' ? suggestRoundUpAmount(state.banks, nextPaymentSource, state.createValue) : null
       return {
         ...state,
         createPaymentMode: action.payload,
-        createPaymentSource: action.payload === 'bank' ? 'Barclays' : '',
+        createPaymentSource: nextPaymentSource,
         createCardTag: '',
+        createRoundUpAmount: suggestion ?? '',
       }
-    case 'SET_EDIT_MODE':
+    }
+    case 'SET_EDIT_MODE': {
+      const nextPaymentSource = action.payload === 'bank' ? (state.banks[0]?.name ?? '') : ''
+      const suggestion =
+        action.payload === 'bank' ? suggestRoundUpAmount(state.banks, nextPaymentSource, state.editValue) : null
       return {
         ...state,
         editPaymentMode: action.payload,
-        editPaymentSource: action.payload === 'bank' ? 'Barclays' : '',
+        editPaymentSource: nextPaymentSource,
         editCardTag: '',
+        editRoundUpAmount: suggestion ?? '',
       }
+    }
     default:
       return state
   }
@@ -237,6 +301,7 @@ export interface MonthlyData {
   categoryTotals: CategoryTotalDto[]
   categoryTotalsSum: number
   cardStatements: CardStatementDto[]
+  banks: BankDto[]
   adjustmentTotal: number
   bankTotals: BankTotal[]
   bankTotalsSum: number
@@ -250,6 +315,7 @@ export interface MonthlyData {
   createCategory: string
   createPaymentSource: string
   createCardTag: string
+  createRoundUpAmount: string
   createPaymentMode: PaymentMode
   isCreating: boolean
   createError: string | null
@@ -265,6 +331,7 @@ export interface MonthlyData {
   editCategory: string
   editPaymentSource: string
   editCardTag: string
+  editRoundUpAmount: string
   editPaymentMode: PaymentMode
   editIsSettled: boolean
   isSaving: boolean
@@ -291,9 +358,10 @@ export function useMonthly(): MonthlyData {
       apiClient.getExpensesByMonth(state.year, state.month),
       apiClient.getCategoryTotalsByMonth(state.year, state.month),
       apiClient.getCardStatementsByMonth(state.year, state.month),
+      apiClient.getBanks(),
     ])
-      .then(([expenses, categoryTotals, cardStatements]) =>
-        dispatch({ type: 'FETCH_SUCCESS', payload: { expenses, categoryTotals, cardStatements } }),
+      .then(([expenses, categoryTotals, cardStatements, banks]) =>
+        dispatch({ type: 'FETCH_SUCCESS', payload: { expenses, categoryTotals, cardStatements, banks } }),
       )
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: err instanceof Error ? err.message : 'Unable to load Monthly data' })
@@ -330,7 +398,17 @@ export function useMonthly(): MonthlyData {
   )
 
   function submitCreate() {
-    const { createDate, createDescription, createValue, createCategory, createPaymentMode, createPaymentSource, createCardTag } = state
+    const {
+      createDate,
+      createDescription,
+      createValue,
+      createCategory,
+      createPaymentMode,
+      createPaymentSource,
+      createCardTag,
+      createRoundUpAmount,
+      banks,
+    } = state
 
     if (!createDate.trim()) {
       dispatch({ type: 'CREATE_ERROR', payload: 'Date is required' })
@@ -353,6 +431,22 @@ export function useMonthly(): MonthlyData {
       return
     }
 
+    const selectedBank = banks.find((b) => b.name === createPaymentSource)
+    const roundUpEligible = createPaymentMode === 'bank' && selectedBank?.roundUpEnabled === true
+
+    let roundUpAmount: number | null = null
+    if (roundUpEligible && createRoundUpAmount.trim() !== '') {
+      const parsedRoundUp = Number(createRoundUpAmount)
+      if (!isFinite(parsedRoundUp) || parsedRoundUp < MIN_ROUND_UP_AMOUNT || parsedRoundUp > MAX_ROUND_UP_AMOUNT) {
+        dispatch({
+          type: 'CREATE_ERROR',
+          payload: `Round-up amount must be between £${MIN_ROUND_UP_AMOUNT.toFixed(2)} and £${MAX_ROUND_UP_AMOUNT.toFixed(2)}`,
+        })
+        return
+      }
+      roundUpAmount = parsedRoundUp
+    }
+
     dispatch({ type: 'CREATE_START' })
 
     void apiClient
@@ -363,6 +457,7 @@ export function useMonthly(): MonthlyData {
         category: createCategory,
         paymentSource: createPaymentMode === 'bank' ? createPaymentSource : null,
         cardTag: createPaymentMode === 'card' ? createCardTag : null,
+        roundUpAmount,
       })
       .then(() => {
         dispatch({ type: 'CREATE_SUCCESS' })
@@ -412,6 +507,23 @@ export function useMonthly(): MonthlyData {
           cardTag: state.editPaymentMode === 'card' ? state.editCardTag : null,
         }
 
+    const selectedBank = state.banks.find((b) => b.name === state.editPaymentSource)
+    const roundUpEligible =
+      !state.editIsSettled && state.editPaymentMode === 'bank' && selectedBank?.roundUpEnabled === true
+
+    let roundUpAmount: number | null = null
+    if (roundUpEligible && state.editRoundUpAmount.trim() !== '') {
+      const parsedRoundUp = Number(state.editRoundUpAmount)
+      if (!isFinite(parsedRoundUp) || parsedRoundUp < MIN_ROUND_UP_AMOUNT || parsedRoundUp > MAX_ROUND_UP_AMOUNT) {
+        dispatch({
+          type: 'SAVE_ERROR',
+          payload: `Round-up amount must be between £${MIN_ROUND_UP_AMOUNT.toFixed(2)} and £${MAX_ROUND_UP_AMOUNT.toFixed(2)}`,
+        })
+        return
+      }
+      roundUpAmount = parsedRoundUp
+    }
+
     dispatch({ type: 'SAVE_START' })
 
     void apiClient
@@ -421,6 +533,7 @@ export function useMonthly(): MonthlyData {
         value,
         category: state.editCategory,
         ...paymentFields,
+        roundUpAmount,
       })
       .then(() => {
         dispatch({ type: 'SAVE_SUCCESS' })
@@ -492,10 +605,10 @@ export function useMonthly(): MonthlyData {
 
   const categoryTotalsSum = state.categoryTotals.reduce((sum, c) => sum + c.totalValue, 0)
 
-  const bankTotals: BankTotal[] = PAYMENT_SOURCES.map((bank) => ({
-    bank,
+  const bankTotals: BankTotal[] = state.banks.map((bank) => ({
+    bank: bank.name,
     totalValue: state.expenses
-      .filter((expense) => expense.paymentSource === bank)
+      .filter((expense) => expense.paymentSource === bank.name)
       .reduce((sum, expense) => sum + expense.value, 0),
   }))
   const bankTotalsSum = bankTotals.reduce((sum, b) => sum + b.totalValue, 0)
@@ -507,6 +620,7 @@ export function useMonthly(): MonthlyData {
     categoryTotals: state.categoryTotals,
     categoryTotalsSum,
     cardStatements: state.cardStatements,
+    banks: state.banks,
     adjustmentTotal,
     bankTotals,
     bankTotalsSum,
@@ -520,6 +634,7 @@ export function useMonthly(): MonthlyData {
     createCategory: state.createCategory,
     createPaymentSource: state.createPaymentSource,
     createCardTag: state.createCardTag,
+    createRoundUpAmount: state.createRoundUpAmount,
     createPaymentMode: state.createPaymentMode,
     setCreatePaymentMode,
     isCreating: state.isCreating,
@@ -535,6 +650,7 @@ export function useMonthly(): MonthlyData {
     editCategory: state.editCategory,
     editPaymentSource: state.editPaymentSource,
     editCardTag: state.editCardTag,
+    editRoundUpAmount: state.editRoundUpAmount,
     editPaymentMode: state.editPaymentMode,
     editIsSettled: state.editIsSettled,
     setEditPaymentMode,

@@ -2,11 +2,12 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MonthlyPage from '../MonthlyPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { CardStatementDto, CategoryTotalDto, ExpenseDto } from '../../api/types'
+import type { BankDto, CardStatementDto, CategoryTotalDto, ExpenseDto } from '../../api/types'
 
 const getExpensesByMonthMock = vi.fn<FinancialApiClient['getExpensesByMonth']>()
 const getCategoryTotalsByMonthMock = vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>()
 const getCardStatementsByMonthMock = vi.fn<FinancialApiClient['getCardStatementsByMonth']>()
+const getBanksMock = vi.fn<FinancialApiClient['getBanks']>()
 const createExpenseMock = vi.fn<FinancialApiClient['createExpense']>()
 const updateExpenseMock = vi.fn<FinancialApiClient['updateExpense']>()
 const deleteExpenseMock = vi.fn<FinancialApiClient['deleteExpense']>()
@@ -18,6 +19,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getExpensesByMonth: getExpensesByMonthMock,
     getCategoryTotalsByMonth: getCategoryTotalsByMonthMock,
     getCardStatementsByMonth: getCardStatementsByMonthMock,
+    getBanks: getBanksMock,
     createExpense: createExpenseMock,
     updateExpense: updateExpenseMock,
     deleteExpense: deleteExpenseMock,
@@ -25,6 +27,12 @@ vi.mock('../../api/financialApiClient', () => ({
     unmarkCardStatementPaid: unmarkCardStatementPaidMock,
   }),
 }))
+
+const BANKS: BankDto[] = [
+  { name: 'Barclays', roundUpEnabled: false },
+  { name: 'Trading212', roundUpEnabled: true },
+  { name: 'Chase', roundUpEnabled: true },
+]
 
 const EXPENSES: ExpenseDto[] = [
   {
@@ -37,6 +45,8 @@ const EXPENSES: ExpenseDto[] = [
     cardTag: null,
     settledAt: null,
     paymentStatus: 'ImmediatePayment',
+    roundUpAmount: null,
+    suggestedRoundUpAmount: null,
   },
 ]
 
@@ -53,6 +63,7 @@ describe('MonthlyPage', () => {
     getExpensesByMonthMock.mockResolvedValue(EXPENSES)
     getCategoryTotalsByMonthMock.mockResolvedValue(CATEGORY_TOTALS)
     getCardStatementsByMonthMock.mockResolvedValue(CARD_STATEMENTS)
+    getBanksMock.mockResolvedValue(BANKS)
     vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
@@ -241,5 +252,80 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Delete expense' })[0])
 
     await waitFor(() => expect(deleteExpenseMock).toHaveBeenCalledWith('e1'))
+  })
+
+  it('bank picker and mark-paid picker list banks fetched from the API', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
+
+    const bankPicker = screen.getByLabelText('Payment Source')
+    expect(within(bankPicker).getByRole('option', { name: 'Barclays' })).toBeInTheDocument()
+    expect(within(bankPicker).getByRole('option', { name: 'Trading212' })).toBeInTheDocument()
+    expect(within(bankPicker).getByRole('option', { name: 'Chase' })).toBeInTheDocument()
+
+    const markPaidPicker = screen.getByLabelText('Paying bank for BaAmex')
+    expect(within(markPaidPicker).getByRole('option', { name: 'Trading212' })).toBeInTheDocument()
+  })
+
+  it('shows a pre-filled round-up field when a round-up-enabled bank is selected', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
+    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '9.40' } })
+
+    expect(screen.queryByLabelText('Round-Up')).not.toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'Trading212' } })
+
+    expect(screen.getByLabelText('Round-Up')).toHaveValue(0.6)
+  })
+
+  it('hides the round-up field for a non-round-up bank and for card mode', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
+    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '9.40' } })
+    fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'Trading212' } })
+    expect(screen.getByLabelText('Round-Up')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'Barclays' } })
+    expect(screen.queryByLabelText('Round-Up')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Charge to card' }))
+    expect(screen.queryByLabelText('Round-Up')).not.toBeInTheDocument()
+  })
+
+  it('submits a typed round-up amount with the new expense', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
+    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'TfL' } })
+    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '9.40' } })
+    fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'Trading212' } })
+    fireEvent.change(screen.getByLabelText('Round-Up'), { target: { value: '0.10' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add Expense' }))
+
+    await waitFor(() =>
+      expect(createExpenseMock).toHaveBeenCalledWith(expect.objectContaining({ roundUpAmount: 0.1 })),
+    )
+  })
+
+  it('pre-fills the edit round-up field with the saved amount', async () => {
+    getExpensesByMonthMock.mockResolvedValue([
+      { ...EXPENSES[0], paymentSource: 'Trading212', roundUpAmount: 0.6, suggestedRoundUpAmount: null },
+    ])
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit expense' })[0])
+
+    expect(screen.getByLabelText('Round-Up')).toHaveValue(0.6)
   })
 })

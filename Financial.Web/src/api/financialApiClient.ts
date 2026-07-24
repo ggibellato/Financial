@@ -5,6 +5,7 @@ import type {
   AssetCashFlowDto,
   AssetDetailsDto,
   AssetPriceDto,
+  BankDto,
   BrokerNodeDto,
   CalculateXirrRequestDto,
   CardStatementDto,
@@ -99,6 +100,7 @@ export interface FinancialApiClient {
   updateInvestmentSnapshotValue: (id: string, request: UpdateInvestmentSnapshotValueDto) => Promise<InvestmentSnapshotDto>
   getExpensesByMonth: (year: number, month: number) => Promise<ExpenseDto[]>
   getCategoryTotalsByMonth: (year: number, month: number) => Promise<CategoryTotalDto[]>
+  getBanks: () => Promise<BankDto[]>
   createExpense: (request: CreateExpenseDto) => Promise<ExpenseDto>
   updateExpense: (id: string, request: UpdateExpenseDto) => Promise<ExpenseDto>
   deleteExpense: (id: string) => Promise<void>
@@ -321,6 +323,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getExpensesByMonth: (year, month) => request<ExpenseDto[]>(`/expenses/month/${year}/${month}`),
     getCategoryTotalsByMonth: (year, month) =>
       request<CategoryTotalDto[]>(`/expenses/month/${year}/${month}/category-totals`),
+    getBanks: () => request<BankDto[]>('/banks'),
     createExpense: (requestBody) =>
       request<ExpenseDto>('/expenses', {
         method: 'POST',
