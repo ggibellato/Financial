@@ -8,7 +8,7 @@ namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 public class CashFlowSerializerAdapterTests
 {
     [Fact]
-    public void SerializeThenDeserialize_RoundTripsAllEightCollections()
+    public void SerializeThenDeserialize_RoundTripsAllNineCollections()
     {
         var serializer = new CashFlowSerializerAdapter();
         var original = CashFlowData.Create();
@@ -26,6 +26,7 @@ public class CashFlowSerializerAdapterTests
         var maeLedgerEntry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 15), "School supplies", "Note", Currency.BRL, 350m, 51.23m);
         var investmentSnapshot = InvestmentSnapshot.Create(InvestmentAccount.PlatinumVisa8003, 2026, 7, 1250.00m);
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var income = Income.Create(new DateOnly(2026, 7, 25), IncomeSource.Gleison, 3200.00m, 2450.00m, "Barclays");
 
         original.AddExpense(expense);
         original.AddReserveMovement(reserveMovement);
@@ -34,6 +35,7 @@ public class CashFlowSerializerAdapterTests
         original.AddMaeLedgerEntry(maeLedgerEntry);
         original.AddInvestmentSnapshot(investmentSnapshot);
         original.AddBank(bank);
+        original.AddIncome(income);
 
         var json = serializer.Serialize(original);
         var result = serializer.Deserialize(json);
@@ -60,6 +62,13 @@ public class CashFlowSerializerAdapterTests
         var resultBank = result.Banks.Should().ContainSingle().Which;
         resultBank.Name.Should().Be(bank.Name);
         resultBank.RoundUpEnabled.Should().Be(bank.RoundUpEnabled);
+        var resultIncome = result.Incomes.Should().ContainSingle().Which;
+        resultIncome.Id.Should().Be(income.Id);
+        resultIncome.Date.Should().Be(income.Date);
+        resultIncome.IncomeSource.Should().Be(income.IncomeSource);
+        resultIncome.GrossValue.Should().Be(income.GrossValue);
+        resultIncome.NetValue.Should().Be(income.NetValue);
+        resultIncome.Bank.Should().Be(income.Bank);
     }
 
     [Fact]
@@ -78,5 +87,6 @@ public class CashFlowSerializerAdapterTests
         result.MaeLedgerEntries.Should().BeEmpty();
         result.InvestmentSnapshots.Should().BeEmpty();
         result.Banks.Should().BeEmpty();
+        result.Incomes.Should().BeEmpty();
     }
 }
