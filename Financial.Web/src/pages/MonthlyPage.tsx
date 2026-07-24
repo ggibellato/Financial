@@ -1,7 +1,7 @@
 import ErrorState from '../components/ErrorState'
 import ExpensesSection from '../components/ExpensesSection'
 import LoadingState from '../components/LoadingState'
-import { PAYMENT_SOURCES, useMonthly, type CreateFormField, type EditField } from '../hooks/useMonthly'
+import { PAYMENT_SOURCES, useMonthly, type CreateFormField, type EditField, type PaymentMode } from '../hooks/useMonthly'
 import { formatN2 } from '../utils/formatters'
 import './MonthlyPage.css'
 
@@ -52,9 +52,12 @@ interface ExpenseFormProps {
   category: string
   paymentSource: string
   cardTag: string
+  paymentMode: PaymentMode
+  isSettled: boolean
   isSaving: boolean
   saveError: string | null
   onFieldChange: (field: ExpenseFormField, value: string) => void
+  onModeChange: (mode: PaymentMode) => void
   onSave: () => void
   onCancel: () => void
 }
@@ -67,9 +70,12 @@ function ExpenseForm({
   category,
   paymentSource,
   cardTag,
+  paymentMode,
+  isSettled,
   isSaving,
   saveError,
   onFieldChange,
+  onModeChange,
   onSave,
   onCancel,
 }: ExpenseFormProps) {
@@ -119,35 +125,71 @@ function ExpenseForm({
             onChange={(e) => onFieldChange('value', e.target.value)}
           />
         </div>
-        <div className="monthly-page__form-field">
-          <label htmlFor="expense-payment-source">Payment Source</label>
-          <select
-            id="expense-payment-source"
-            value={paymentSource}
-            onChange={(e) => onFieldChange('paymentSource', e.target.value)}
-          >
-            {PAYMENT_SOURCES.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="monthly-page__form-field">
-          <label htmlFor="expense-card-tag">Card</label>
-          <select
-            id="expense-card-tag"
-            value={cardTag}
-            onChange={(e) => onFieldChange('cardTag', e.target.value)}
-          >
-            <option value="">—</option>
-            {CARDS.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
+        {isSettled ? (
+          <div className="monthly-page__form-field">
+            <label>Payment</label>
+            <p className="monthly-page__settled-note">
+              Paid by {paymentSource} via card {cardTag}. Settled via its card statement — unmark the
+              statement paid to change these fields.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="monthly-page__form-field">
+              <span>Payment</span>
+              <label>
+                <input
+                  type="radio"
+                  name="expense-payment-mode"
+                  checked={paymentMode === 'bank'}
+                  onChange={() => onModeChange('bank')}
+                />
+                Pay immediately
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="expense-payment-mode"
+                  checked={paymentMode === 'card'}
+                  onChange={() => onModeChange('card')}
+                />
+                Charge to card
+              </label>
+            </div>
+            {paymentMode === 'bank' ? (
+              <div className="monthly-page__form-field">
+                <label htmlFor="expense-payment-source">Payment Source</label>
+                <select
+                  id="expense-payment-source"
+                  value={paymentSource}
+                  onChange={(e) => onFieldChange('paymentSource', e.target.value)}
+                >
+                  {PAYMENT_SOURCES.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div className="monthly-page__form-field">
+                <label htmlFor="expense-card-tag">Card</label>
+                <select
+                  id="expense-card-tag"
+                  value={cardTag}
+                  onChange={(e) => onFieldChange('cardTag', e.target.value)}
+                >
+                  <option value="">Select card…</option>
+                  {CARDS.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </>
+        )}
       </div>
       <div className="monthly-page__form-actions">
         <button className="monthly-page__submit-btn" type="button" disabled={isSaving} onClick={onSave}>
@@ -183,6 +225,8 @@ export default function MonthlyPage() {
     createCategory,
     createPaymentSource,
     createCardTag,
+    createPaymentMode,
+    setCreatePaymentMode,
     isCreating,
     createError,
     showCreateForm,
@@ -196,6 +240,9 @@ export default function MonthlyPage() {
     editCategory,
     editPaymentSource,
     editCardTag,
+    editPaymentMode,
+    editIsSettled,
+    setEditPaymentMode,
     isSaving,
     saveError,
     setEditField,
@@ -235,6 +282,8 @@ export default function MonthlyPage() {
           category={isEditing ? editCategory : createCategory}
           paymentSource={isEditing ? editPaymentSource : createPaymentSource}
           cardTag={isEditing ? editCardTag : createCardTag}
+          paymentMode={isEditing ? editPaymentMode : createPaymentMode}
+          isSettled={isEditing && editIsSettled}
           isSaving={isEditing ? isSaving : isCreating}
           saveError={isEditing ? saveError : createError}
           onFieldChange={(field, value) =>
@@ -242,6 +291,7 @@ export default function MonthlyPage() {
               ? setEditField(EDIT_FIELD_BY_FORM_FIELD[field], value)
               : setCreateField(CREATE_FIELD_BY_FORM_FIELD[field], value)
           }
+          onModeChange={isEditing ? setEditPaymentMode : setCreatePaymentMode}
           onSave={isEditing ? saveEdit : submitCreate}
           onCancel={isEditing ? cancelEdit : cancelCreateForm}
         />

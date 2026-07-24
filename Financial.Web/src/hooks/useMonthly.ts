@@ -5,11 +5,10 @@ import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '.
 
 export const PAYMENT_SOURCES = ['Barclays', 'Trading212', 'Chase'] as const
 
-// A card-tagged expense is an unsettled credit card charge and must carry no bank tag.
-function toPaymentSourcePayload(paymentSource: string, cardTag: string): string | null {
-  if (cardTag.trim() !== '') return null
-  return paymentSource.trim() === '' ? null : paymentSource
-}
+export type PaymentMode = 'bank' | 'card'
+
+const SETTLED_STATUS = 'CreditCardSettled'
+const CHARGE_STATUS = 'CreditCardCharge'
 
 export interface BankTotal {
   bank: string
@@ -56,6 +55,9 @@ interface MonthlyState {
   editCategory: string
   editPaymentSource: string
   editCardTag: string
+  createPaymentMode: PaymentMode
+  editPaymentMode: PaymentMode
+  editIsSettled: boolean
   isSaving: boolean
   saveError: string | null
   markPaidSources: Record<string, string>
@@ -84,6 +86,8 @@ type MonthlyAction =
   | { type: 'SAVE_ERROR'; payload: string }
   | { type: 'MARK_PAID_ERROR'; payload: string }
   | { type: 'SET_MARK_PAID_SOURCE'; payload: { id: string; value: string } }
+  | { type: 'SET_CREATE_MODE'; payload: PaymentMode }
+  | { type: 'SET_EDIT_MODE'; payload: PaymentMode }
 
 const { year: DEFAULT_YEAR, month: DEFAULT_MONTH } = currentYearMonth()
 
@@ -94,6 +98,7 @@ const BLANK_CREATE_FORM = {
   createCategory: 'Mercado',
   createPaymentSource: 'Barclays',
   createCardTag: '',
+  createPaymentMode: 'bank',
 } as const
 
 const INITIAL_STATE: MonthlyState = {
@@ -116,6 +121,8 @@ const INITIAL_STATE: MonthlyState = {
   editCategory: '',
   editPaymentSource: '',
   editCardTag: '',
+  editPaymentMode: 'bank',
+  editIsSettled: false,
   isSaving: false,
   saveError: null,
   markPaidSources: {},
@@ -162,6 +169,8 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editCategory: action.payload.category,
         editPaymentSource: action.payload.paymentSource ?? '',
         editCardTag: action.payload.cardTag ?? '',
+        editPaymentMode: action.payload.paymentStatus === CHARGE_STATUS ? 'card' : 'bank',
+        editIsSettled: action.payload.paymentStatus === SETTLED_STATUS,
         saveError: null,
       }
     case 'CANCEL_EDIT':
@@ -174,6 +183,8 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editCategory: '',
         editPaymentSource: '',
         editCardTag: '',
+        editPaymentMode: 'bank',
+        editIsSettled: false,
         saveError: null,
       }
     case 'SET_EDIT_FIELD':
@@ -191,6 +202,8 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editCategory: '',
         editPaymentSource: '',
         editCardTag: '',
+        editPaymentMode: 'bank',
+        editIsSettled: false,
       }
     case 'SAVE_ERROR':
       return { ...state, isSaving: false, saveError: action.payload }
@@ -198,6 +211,20 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
       return { ...state, saveError: action.payload }
     case 'SET_MARK_PAID_SOURCE':
       return { ...state, markPaidSources: { ...state.markPaidSources, [action.payload.id]: action.payload.value } }
+    case 'SET_CREATE_MODE':
+      return {
+        ...state,
+        createPaymentMode: action.payload,
+        createPaymentSource: action.payload === 'bank' ? 'Barclays' : '',
+        createCardTag: '',
+      }
+    case 'SET_EDIT_MODE':
+      return {
+        ...state,
+        editPaymentMode: action.payload,
+        editPaymentSource: action.payload === 'bank' ? 'Barclays' : '',
+        editCardTag: '',
+      }
     default:
       return state
   }
@@ -223,11 +250,13 @@ export interface MonthlyData {
   createCategory: string
   createPaymentSource: string
   createCardTag: string
+  createPaymentMode: PaymentMode
   isCreating: boolean
   createError: string | null
   showCreateForm: () => void
   cancelCreateForm: () => void
   setCreateField: (field: CreateFormField, value: string) => void
+  setCreatePaymentMode: (mode: PaymentMode) => void
   submitCreate: () => void
   editingId: string | null
   editDate: string
@@ -236,9 +265,12 @@ export interface MonthlyData {
   editCategory: string
   editPaymentSource: string
   editCardTag: string
+  editPaymentMode: PaymentMode
+  editIsSettled: boolean
   isSaving: boolean
   saveError: string | null
   setEditField: (field: EditField, value: string) => void
+  setEditPaymentMode: (mode: PaymentMode) => void
   showEditForm: (expense: ExpenseDto) => void
   cancelEdit: () => void
   saveEdit: () => void
@@ -287,8 +319,18 @@ export function useMonthly(): MonthlyData {
     [],
   )
 
+  const setCreatePaymentMode = useCallback(
+    (mode: PaymentMode) => dispatch({ type: 'SET_CREATE_MODE', payload: mode }),
+    [],
+  )
+
+  const setEditPaymentMode = useCallback(
+    (mode: PaymentMode) => dispatch({ type: 'SET_EDIT_MODE', payload: mode }),
+    [],
+  )
+
   function submitCreate() {
-    const { createDate, createDescription, createValue, createCategory, createPaymentSource, createCardTag } = state
+    const { createDate, createDescription, createValue, createCategory, createPaymentMode, createPaymentSource, createCardTag } = state
 
     if (!createDate.trim()) {
       dispatch({ type: 'CREATE_ERROR', payload: 'Date is required' })
@@ -306,6 +348,11 @@ export function useMonthly(): MonthlyData {
       return
     }
 
+    if (createPaymentMode === 'card' && createCardTag.trim() === '') {
+      dispatch({ type: 'CREATE_ERROR', payload: 'Card is required' })
+      return
+    }
+
     dispatch({ type: 'CREATE_START' })
 
     void apiClient
@@ -314,8 +361,8 @@ export function useMonthly(): MonthlyData {
         description: createDescription,
         value,
         category: createCategory,
-        paymentSource: toPaymentSourcePayload(createPaymentSource, createCardTag),
-        cardTag: createCardTag.trim() === '' ? null : createCardTag,
+        paymentSource: createPaymentMode === 'bank' ? createPaymentSource : null,
+        cardTag: createPaymentMode === 'card' ? createCardTag : null,
       })
       .then(() => {
         dispatch({ type: 'CREATE_SUCCESS' })
@@ -347,6 +394,24 @@ export function useMonthly(): MonthlyData {
       return
     }
 
+    if (!state.editIsSettled && state.editPaymentMode === 'card' && state.editCardTag.trim() === '') {
+      dispatch({ type: 'SAVE_ERROR', payload: 'Card is required' })
+      return
+    }
+
+    // A settled expense's payment fields are frozen: send them back unchanged so only
+    // the editable fields move; the server rejects any payment-field change until the
+    // statement is unmarked paid.
+    const paymentFields = state.editIsSettled
+      ? {
+          paymentSource: state.editPaymentSource.trim() === '' ? null : state.editPaymentSource,
+          cardTag: state.editCardTag.trim() === '' ? null : state.editCardTag,
+        }
+      : {
+          paymentSource: state.editPaymentMode === 'bank' ? state.editPaymentSource : null,
+          cardTag: state.editPaymentMode === 'card' ? state.editCardTag : null,
+        }
+
     dispatch({ type: 'SAVE_START' })
 
     void apiClient
@@ -355,8 +420,7 @@ export function useMonthly(): MonthlyData {
         description: state.editDescription,
         value,
         category: state.editCategory,
-        paymentSource: toPaymentSourcePayload(state.editPaymentSource, state.editCardTag),
-        cardTag: state.editCardTag.trim() === '' ? null : state.editCardTag,
+        ...paymentFields,
       })
       .then(() => {
         dispatch({ type: 'SAVE_SUCCESS' })
@@ -456,6 +520,8 @@ export function useMonthly(): MonthlyData {
     createCategory: state.createCategory,
     createPaymentSource: state.createPaymentSource,
     createCardTag: state.createCardTag,
+    createPaymentMode: state.createPaymentMode,
+    setCreatePaymentMode,
     isCreating: state.isCreating,
     createError: state.createError,
     showCreateForm,
@@ -469,6 +535,9 @@ export function useMonthly(): MonthlyData {
     editCategory: state.editCategory,
     editPaymentSource: state.editPaymentSource,
     editCardTag: state.editCardTag,
+    editPaymentMode: state.editPaymentMode,
+    editIsSettled: state.editIsSettled,
+    setEditPaymentMode,
     isSaving: state.isSaving,
     saveError: state.saveError,
     setEditField,
