@@ -138,10 +138,122 @@ public class YearlySummaryServiceTests
         result.NetPosition.FullYearNetChange.Should().Be(800m);
     }
 
+    [Fact]
+    public void GetIncomeSummaryForYear_SalaryRowSumsGleisonAndArianaGrossValuesPerMonth()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 1), IncomeSource.Gleison, 3200m, 2450m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 8), IncomeSource.Ariana, 400m, 350m, "Chase"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 2, 1), IncomeSource.Gleison, 3300m, 2500m, "Barclays"));
+        var service = new YearlySummaryService(repository);
+
+        var result = service.GetIncomeSummaryForYear(2026);
+
+        result.SalaryMonthly[0].Should().Be(3600m);
+        result.SalaryMonthly[1].Should().Be(3300m);
+        result.SalaryYearlyTotal.Should().Be(result.SalaryMonthly.Sum());
+    }
+
+    [Fact]
+    public void GetIncomeSummaryForYear_SalaryAfterTaxesRowSumsGleisonAndArianaNetValuesPerMonth()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 1), IncomeSource.Gleison, 3200m, 2450m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 8), IncomeSource.Ariana, 400m, 350m, "Chase"));
+        var service = new YearlySummaryService(repository);
+
+        var result = service.GetIncomeSummaryForYear(2026);
+
+        result.SalaryAfterTaxesMonthly[0].Should().Be(2800m);
+        result.SalaryAfterTaxesYearlyTotal.Should().Be(result.SalaryAfterTaxesMonthly.Sum());
+    }
+
+    [Fact]
+    public void GetIncomeSummaryForYear_TaxDifferenceRowEqualsSalaryMinusSalaryAfterTaxes()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 1), IncomeSource.Gleison, 3200m, 2450m, "Barclays"));
+        var service = new YearlySummaryService(repository);
+
+        var result = service.GetIncomeSummaryForYear(2026);
+
+        result.TaxDifferenceMonthly[0].Should().Be(750m);
+        result.TaxDifferenceYearlyTotal.Should().Be(result.TaxDifferenceMonthly.Sum());
+    }
+
+    [Fact]
+    public void GetIncomeSummaryForYear_DividendoJurosRowSumsOnlyThatSourcesNetValues()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 3, 1), IncomeSource.DividendoJuros, null, 15.50m, "Trading212"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 3, 5), IncomeSource.DividendoJuros, null, 4.50m, "Trading212"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 3, 10), IncomeSource.Gleison, 3200m, 2450m, "Barclays"));
+        var service = new YearlySummaryService(repository);
+
+        var result = service.GetIncomeSummaryForYear(2026);
+
+        result.DividendoJurosMonthly[2].Should().Be(20m);
+        result.DividendoJurosYearlyTotal.Should().Be(20m);
+    }
+
+    [Fact]
+    public void GetIncomeSummaryForYear_LotteryEntriesContributeToNoRow()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 4, 1), IncomeSource.Lottery, null, 500m, "Chase"));
+        var service = new YearlySummaryService(repository);
+
+        var result = service.GetIncomeSummaryForYear(2026);
+
+        result.SalaryMonthly.Should().OnlyContain(v => v == 0m);
+        result.SalaryAfterTaxesMonthly.Should().OnlyContain(v => v == 0m);
+        result.DividendoJurosMonthly.Should().OnlyContain(v => v == 0m);
+    }
+
+    [Fact]
+    public void GetIncomeSummaryForYear_EntryWithNullGrossValue_ContributesZeroToSalary()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 5, 1), IncomeSource.Ariana, null, 350m, "Chase"));
+        var service = new YearlySummaryService(repository);
+
+        var result = service.GetIncomeSummaryForYear(2026);
+
+        result.SalaryMonthly[4].Should().Be(0m);
+        result.SalaryAfterTaxesMonthly[4].Should().Be(350m);
+    }
+
+    [Fact]
+    public void GetIncomeSummaryForYear_ExcludesIncomeFromOtherYears()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 1), IncomeSource.Gleison, 3200m, 2450m, "Barclays"));
+        var service = new YearlySummaryService(repository);
+
+        var result = service.GetIncomeSummaryForYear(2026);
+
+        result.SalaryYearlyTotal.Should().Be(0m);
+    }
+
+    [Fact]
+    public void GetIncomeSummaryForYear_WithNoIncome_ReturnsAllZeros()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+
+        var result = service.GetIncomeSummaryForYear(2026);
+
+        result.SalaryMonthly.Should().OnlyContain(v => v == 0m);
+        result.SalaryAfterTaxesMonthly.Should().OnlyContain(v => v == 0m);
+        result.TaxDifferenceMonthly.Should().OnlyContain(v => v == 0m);
+        result.DividendoJurosMonthly.Should().OnlyContain(v => v == 0m);
+    }
+
     private sealed class StubCashFlowRepository : ICashFlowRepository
     {
         public List<Expense> Expenses { get; } = new();
         public List<InvestmentSnapshot> Snapshots { get; } = new();
+        public List<Income> Incomes { get; } = new();
 
         public IEnumerable<Expense> GetExpenses() => Expenses;
         public void AddExpense(Expense expense) => Expenses.Add(expense);
@@ -167,7 +279,7 @@ public class YearlySummaryServiceTests
 
         public IEnumerable<Bank> GetBanks() => Array.Empty<Bank>();
 
-        public IEnumerable<Income> GetIncomes() => Array.Empty<Income>();
+        public IEnumerable<Income> GetIncomes() => Incomes;
         public void AddIncome(Income income) { }
         public void DeleteIncome(Guid id) { }
 

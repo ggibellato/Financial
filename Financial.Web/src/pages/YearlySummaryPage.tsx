@@ -7,7 +7,7 @@ import './YearlySummaryPage.css'
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 export default function YearlySummaryPage() {
-  const { year, setYear, categoryTotals, investmentDiffs, isLoading, error, retry } = useYearlySummary()
+  const { year, setYear, categoryTotals, investmentDiffs, incomeSummary, isLoading, error, retry } = useYearlySummary()
 
   return (
     <div className="yearly-summary-page">
@@ -105,6 +105,79 @@ export default function YearlySummaryPage() {
                     ))}
                     <td className="data-table__col--numeric">
                       <strong>{formatN2(investmentDiffs.netPosition.fullYearNetChange)}</strong>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+          )}
+
+          {incomeSummary && (
+            <section className="yearly-summary-page__section">
+              <h2>Income Summary</h2>
+              <table className="yearly-summary-page__table data-table">
+                <thead>
+                  <tr>
+                    <th />
+                    {MONTH_LABELS.map((m) => (
+                      <th key={m} className="data-table__col--numeric">
+                        {m}
+                      </th>
+                    ))}
+                    <th className="data-table__col--numeric">Yearly Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colSpan={MONTH_LABELS.length + 2}>
+                      <strong>Income</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Salary</td>
+                    {incomeSummary.salaryMonthly.map((v, i) => (
+                      <td key={i} className="data-table__col--numeric">
+                        {formatN2(v)}
+                      </td>
+                    ))}
+                    <td className="data-table__col--numeric">
+                      <strong>{formatN2(incomeSummary.salaryYearlyTotal)}</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Salary after taxes</td>
+                    {incomeSummary.salaryAfterTaxesMonthly.map((v, i) => (
+                      <td key={i} className="data-table__col--numeric">
+                        {formatN2(v)}
+                      </td>
+                    ))}
+                    <td className="data-table__col--numeric">
+                      <strong>{formatN2(incomeSummary.salaryAfterTaxesYearlyTotal)}</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Tax difference</td>
+                    {incomeSummary.taxDifferenceMonthly.map((v, i) => (
+                      <td key={i} className="data-table__col--numeric">
+                        {formatN2(v)}
+                      </td>
+                    ))}
+                    <td className="data-table__col--numeric">
+                      <strong>{formatN2(incomeSummary.taxDifferenceYearlyTotal)}</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colSpan={MONTH_LABELS.length + 2} />
+                  </tr>
+                  <tr>
+                    <td>Dividendo/Juros</td>
+                    {incomeSummary.dividendoJurosMonthly.map((v, i) => (
+                      <td key={i} className="data-table__col--numeric">
+                        {formatN2(v)}
+                      </td>
+                    ))}
+                    <td className="data-table__col--numeric">
+                      <strong>{formatN2(incomeSummary.dividendoJurosYearlyTotal)}</strong>
                     </td>
                   </tr>
                 </tbody>

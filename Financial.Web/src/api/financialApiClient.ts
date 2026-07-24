@@ -26,6 +26,7 @@ import type {
   IncomeDto,
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
+  IncomeYearlySummaryDto,
   InvestmentDiffsYearlyDto,
   InvestmentScope,
   InvestmentSnapshotDto,
@@ -118,6 +119,7 @@ export interface FinancialApiClient {
   unmarkCardStatementPaid: (id: string) => Promise<CardStatementDto>
   getCategoryTotalsForYear: (year: number) => Promise<CategoryYearlyTotalDto[]>
   getInvestmentDiffsForYear: (year: number) => Promise<InvestmentDiffsYearlyDto>
+  getIncomeSummaryForYear: (year: number) => Promise<IncomeYearlySummaryDto>
 }
 
 export interface FinancialApiClientOptions {
@@ -372,5 +374,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<CategoryYearlyTotalDto[]>(`/yearly-summary/${year}/expense-categories`),
     getInvestmentDiffsForYear: (year) =>
       request<InvestmentDiffsYearlyDto>(`/yearly-summary/${year}/investment-diffs`),
+    getIncomeSummaryForYear: (year) =>
+      request<IncomeYearlySummaryDto>(`/yearly-summary/${year}/income-summary`),
   }
 }

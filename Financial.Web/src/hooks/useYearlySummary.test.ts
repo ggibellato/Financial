@@ -1,18 +1,20 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../api/financialApiClient'
-import type { CategoryYearlyTotalDto, InvestmentDiffsYearlyDto } from '../api/types'
+import type { CategoryYearlyTotalDto, IncomeYearlySummaryDto, InvestmentDiffsYearlyDto } from '../api/types'
 import { useYearlySummary } from './useYearlySummary'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
 const getCategoryTotalsForYearMock = vi.fn<FinancialApiClient['getCategoryTotalsForYear']>()
 const getInvestmentDiffsForYearMock = vi.fn<FinancialApiClient['getInvestmentDiffsForYear']>()
+const getIncomeSummaryForYearMock = vi.fn<FinancialApiClient['getIncomeSummaryForYear']>()
 
 vi.mock('../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getCategoryTotalsForYear: getCategoryTotalsForYearMock,
     getInvestmentDiffsForYear: getInvestmentDiffsForYearMock,
+    getIncomeSummaryForYear: getIncomeSummaryForYearMock,
   }),
 }))
 
@@ -36,14 +38,26 @@ const INVESTMENT_DIFFS: InvestmentDiffsYearlyDto = {
   },
 }
 
+const INCOME_SUMMARY: IncomeYearlySummaryDto = {
+  salaryMonthly: new Array(12).fill(3200),
+  salaryYearlyTotal: 38400,
+  salaryAfterTaxesMonthly: new Array(12).fill(2450),
+  salaryAfterTaxesYearlyTotal: 29400,
+  taxDifferenceMonthly: new Array(12).fill(750),
+  taxDifferenceYearlyTotal: 9000,
+  dividendoJurosMonthly: new Array(12).fill(15.5),
+  dividendoJurosYearlyTotal: 186,
+}
+
 describe('useYearlySummary', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     getCategoryTotalsForYearMock.mockResolvedValue(CATEGORY_TOTALS)
     getInvestmentDiffsForYearMock.mockResolvedValue(INVESTMENT_DIFFS)
+    getIncomeSummaryForYearMock.mockResolvedValue(INCOME_SUMMARY)
   })
 
-  it('fetches category totals and investment diffs for the current year on mount', async () => {
+  it('fetches category totals, investment diffs, and income summary for the current year on mount', async () => {
     const { result } = renderHook(() => useYearlySummary())
 
     expect(result.current.isLoading).toBe(true)
@@ -51,9 +65,11 @@ describe('useYearlySummary', () => {
 
     expect(getCategoryTotalsForYearMock).toHaveBeenCalledWith(CURRENT_YEAR)
     expect(getInvestmentDiffsForYearMock).toHaveBeenCalledWith(CURRENT_YEAR)
+    expect(getIncomeSummaryForYearMock).toHaveBeenCalledWith(CURRENT_YEAR)
     expect(result.current.year).toBe(CURRENT_YEAR)
     expect(result.current.categoryTotals).toEqual(CATEGORY_TOTALS)
     expect(result.current.investmentDiffs).toEqual(INVESTMENT_DIFFS)
+    expect(result.current.incomeSummary).toEqual(INCOME_SUMMARY)
   })
 
   it('re-fetches for a new year when the year changes', async () => {

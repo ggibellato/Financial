@@ -6,4 +6,5 @@ public interface IYearlySummaryService
 {
     IReadOnlyList<CategoryYearlyTotalDTO> GetCategoryTotalsForYear(int year);
     InvestmentDiffsYearlyDTO GetInvestmentDiffsForYear(int year);
+    IncomeYearlySummaryDTO GetIncomeSummaryForYear(int year);
 }

@@ -28,4 +28,11 @@ public sealed class YearlySummaryController : ControllerBase
     {
         return Ok(_yearlySummaryService.GetInvestmentDiffsForYear(year));
     }
+
+    [HttpGet("{year:int}/income-summary")]
+    [ProducesResponseType(typeof(IncomeYearlySummaryDTO), StatusCodes.Status200OK)]
+    public ActionResult<IncomeYearlySummaryDTO> GetIncomeSummary(int year)
+    {
+        return Ok(_yearlySummaryService.GetIncomeSummaryForYear(year));
+    }
 }
