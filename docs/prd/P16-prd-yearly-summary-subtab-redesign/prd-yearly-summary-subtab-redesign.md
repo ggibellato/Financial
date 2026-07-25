@@ -204,16 +204,16 @@ graph TD
 - [x] Total despesas and Resultado rows render visually emphasized (bold), consistent with existing yearly-total styling
 
 ### F03. Investments Sub-Tab
-- [ ] Each of the 11 account rows shows all 12 monthly balance values (not just January)
-- [ ] Liability accounts (Platinum Visa 8003, Platinum Visa 6007, Chase Master 4023, Paypal credit, Reservas pessoais) display a "(-)" suffix; asset accounts do not
-- [ ] The Total row's 12 monthly values match the existing net position values for the same year
-- [ ] The Month Result row's 11 values (Feb–Dec) match the existing net position month-over-month diffs for the same year, and the Jan column under Month Result is empty
-- [ ] Year Progress equals December's Total minus January's Total
-- [ ] Average Month Result equals the arithmetic mean of the 11 Month Result values
-- [ ] Sum of Month Results equals the sum of the 11 Month Result values, and is numerically equal to Year Progress
+- [x] Each of the 11 account rows shows all 12 monthly balance values (not just January)
+- [x] Liability accounts (Platinum Visa 8003, Platinum Visa 6007, Chase Master 4023, Paypal credit, Reservas pessoais) display a "(-)" suffix; asset accounts do not
+- [x] The Total row's 12 monthly values match the existing net position values for the same year
+- [x] The Month Result row's 11 values (Feb–Dec) match the existing net position month-over-month diffs for the same year, and the Jan column under Month Result is empty
+- [x] Year Progress equals December's Total minus January's Total
+- [x] Average Month Result equals the arithmetic mean of the 11 Month Result values
+- [x] Sum of Month Results equals the sum of the 11 Month Result values, and is numerically equal to Year Progress
 
 ### Cross-Feature Integration
 - [x] Selecting a different year while Category Totals is active re-scopes the entire combined table, including Resultado and Total despesas, to the new year (F01 → F02)
-- [ ] Selecting a different year while Investments is active re-scopes the account table, Total row, Month Result row, and the three summary figures to the new year (F01 → F03)
-- [ ] Switching from Category Totals to Investments and back displays each sub-tab's content without re-triggering a network refetch, confirming the shared year from F01 is reused rather than reset (F01 → F02, F03)
-- [ ] At every point in the flow, exactly one of Category Totals/Investments content is visible, confirming F01's active-tab state correctly gates F02 and F03 (F01 → F02, F03)
+- [x] Selecting a different year while Investments is active re-scopes the account table, Total row, Month Result row, and the three summary figures to the new year (F01 → F03)
+- [x] Switching from Category Totals to Investments and back displays each sub-tab's content without re-triggering a network refetch, confirming the shared year from F01 is reused rather than reset (F01 → F02, F03)
+- [x] At every point in the flow, exactly one of Category Totals/Investments content is visible, confirming F01's active-tab state correctly gates F02 and F03 (F01 → F02, F03)
