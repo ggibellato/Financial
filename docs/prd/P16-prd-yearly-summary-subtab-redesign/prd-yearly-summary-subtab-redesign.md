@@ -188,12 +188,12 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Yearly Summary Navigation Shell
-- [ ] Opening the Yearly Summary tab shows the year picker, the two sub-tab buttons (Category Totals, Investments), and Category Totals content by default
-- [ ] Exactly one sub-tab's content is visible/mounted at any time
-- [ ] Clicking a sub-tab button switches the visible content and marks that button as active
-- [ ] Switching sub-tabs does not change the year picker's value and does not trigger a new data fetch
-- [ ] Changing the year value refetches data and updates the currently active sub-tab's content without changing which sub-tab is active
-- [ ] If data loading fails, the error/retry state is shown regardless of the active sub-tab
+- [x] Opening the Yearly Summary tab shows the year picker, the two sub-tab buttons (Category Totals, Investments), and Category Totals content by default
+- [x] Exactly one sub-tab's content is visible/mounted at any time
+- [x] Clicking a sub-tab button switches the visible content and marks that button as active
+- [x] Switching sub-tabs does not change the year picker's value and does not trigger a new data fetch
+- [x] Changing the year value refetches data and updates the currently active sub-tab's content without changing which sub-tab is active
+- [x] If data loading fails, the error/retry state is shown regardless of the active sub-tab
 
 ### F02. Category Totals Sub-Tab
 - [ ] The table renders rows in the fixed order: Salary, Salary After Taxes, Tax Difference, Dividendo/Juros, the 14 categories in enum order, Resultado (R-D-Inv), Total despesas
