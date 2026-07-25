@@ -148,6 +148,29 @@ describe('MonthlyPage', () => {
     expect(screen.getByRole('button', { name: 'Incoming' })).not.toHaveClass('monthly-page__tab--active')
   })
 
+  it('re-scopes all 4 Summary grids when the month/year value changes', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    expect(screen.getAllByText('Mercado').length).toBeGreaterThan(0)
+
+    getCategoryTotalsByMonthMock.mockResolvedValue([{ category: 'Viagem', totalValue: 300 }])
+    getCardStatementsByMonthMock.mockResolvedValue([
+      { id: 'c3', card: 'PaypalCredit', year: 2026, month: 8, isPaid: false, outstandingTotal: 55 },
+    ])
+    getBankBalancesByMonthMock.mockResolvedValue([{ bank: 'Barclays', balance: 300 }])
+    getIncomesByMonthMock.mockResolvedValue([
+      { id: 'i2', date: '2026-08-01', incomeSource: 'Lottery', grossValue: null, netValue: 50, bank: 'Barclays' },
+    ])
+
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
+
+    await waitFor(() => expect(screen.getByText('Viagem')).toBeInTheDocument())
+    expect(screen.queryByText('Mercado')).not.toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'PaypalCredit' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Lottery' })).toBeInTheDocument()
+  })
+
   it('shows only the Expense tabs content after clicking Expense', async () => {
     render(<MonthlyPage />)
 
