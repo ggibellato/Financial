@@ -230,16 +230,16 @@ graph TD
 - [x] Switching to another sub-tab while the create/edit form is open closes the form and discards unsaved input
 
 ### F04. Monthly Incoming Sub-Tab
-- [ ] Incoming sub-tab renders the full income list for the selected month
-- [ ] Clicking "New Income" opens the create form within the Incoming sub-tab; the form is not visible when Summary or Expense is active
-- [ ] Creating an income entry with valid data adds it to the list and closes the form, identically to pre-redesign behavior
-- [ ] Editing an income entry pre-fills the form with its current values and saves changes identically to pre-redesign behavior
-- [ ] Deleting an income entry removes it from the list identically to pre-redesign behavior
-- [ ] Switching to another sub-tab while the create/edit form is open closes the form and discards unsaved input
+- [x] Incoming sub-tab renders the full income list for the selected month
+- [x] Clicking "New Income" opens the create form within the Incoming sub-tab; the form is not visible when Summary or Expense is active
+- [x] Creating an income entry with valid data adds it to the list and closes the form, identically to pre-redesign behavior
+- [x] Editing an income entry pre-fills the form with its current values and saves changes identically to pre-redesign behavior
+- [x] Deleting an income entry removes it from the list identically to pre-redesign behavior
+- [x] Switching to another sub-tab while the create/edit form is open closes the form and discards unsaved input
 
 ### Cross-Feature Integration
 - [x] Selecting a different month/year while Summary is active re-scopes all 4 grids to the new period (F01 → F02)
 - [x] Selecting a different month/year while Expense is active re-scopes the expense list to the new period (F01 → F03)
-- [ ] Selecting a different month/year while Incoming is active re-scopes the income list to the new period (F01 → F04)
-- [ ] Switching from Summary to Expense or Incoming and back displays each sub-tab's content without re-triggering a network refetch, confirming the shared period from F01 is reused rather than reset (F01 → F02, F03, F04)
-- [ ] At every point in the flow, exactly one of Summary/Expense/Incoming content is visible, confirming F01's active-tab state correctly gates F02, F03, and F04 (F01 → F02, F03, F04)
+- [x] Selecting a different month/year while Incoming is active re-scopes the income list to the new period (F01 → F04)
+- [x] Switching from Summary to Expense or Incoming and back displays each sub-tab's content without re-triggering a network refetch, confirming the shared period from F01 is reused rather than reset (F01 → F02, F03, F04)
+- [x] At every point in the flow, exactly one of Summary/Expense/Incoming content is visible, confirming F01's active-tab state correctly gates F02, F03, and F04 (F01 → F02, F03, F04)
