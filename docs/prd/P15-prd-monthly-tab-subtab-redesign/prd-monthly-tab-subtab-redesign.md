@@ -206,12 +206,12 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Monthly Tab Navigation Shell
-- [ ] Opening the Monthly tab shows the month/year picker, the three sub-tab buttons (Summary, Expense, Incoming), and Summary content by default
-- [ ] Exactly one sub-tab's content is visible/mounted at any time
-- [ ] Clicking a sub-tab button switches the visible content and marks that button as active
-- [ ] Switching sub-tabs does not change the month/year picker's value and does not trigger a new data fetch
-- [ ] Changing the month/year value refetches data and updates the currently active sub-tab's content without changing which sub-tab is active
-- [ ] If data loading fails, the error/retry state is shown regardless of the active sub-tab
+- [x] Opening the Monthly tab shows the month/year picker, the three sub-tab buttons (Summary, Expense, Incoming), and Summary content by default
+- [x] Exactly one sub-tab's content is visible/mounted at any time
+- [x] Clicking a sub-tab button switches the visible content and marks that button as active
+- [x] Switching sub-tabs does not change the month/year picker's value and does not trigger a new data fetch
+- [x] Changing the month/year value refetches data and updates the currently active sub-tab's content without changing which sub-tab is active
+- [x] If data loading fails, the error/retry state is shown regardless of the active sub-tab
 
 ### F02. Monthly Summary Sub-Tab
 - [ ] Summary sub-tab renders exactly 4 grids: Category Totals, Cards, Banks, Incoming
