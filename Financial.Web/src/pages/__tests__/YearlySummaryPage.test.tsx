@@ -95,7 +95,7 @@ describe('YearlySummaryPage', () => {
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument()
-    expect(screen.getByText('Income Summary')).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Salary' })).toBeInTheDocument()
     expect(screen.queryByText('Investment Diffs')).not.toBeInTheDocument()
   })
 
@@ -107,39 +107,69 @@ describe('YearlySummaryPage', () => {
     expect(screen.getByRole('button', { name: 'Investments' })).not.toHaveClass('yearly-summary-page__tab--active')
   })
 
-  it('renders the category-totals table with monthly values and a yearly total column', async () => {
+  it('renders the combined table in the fixed row order', async () => {
     render(<YearlySummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
-    expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument()
-    expect(screen.getByText('1,860.00')).toBeInTheDocument()
+    const rowLabels = screen
+      .getAllByRole('row')
+      .map((row) => row.querySelector('td')?.textContent ?? '')
+      .filter((label) => label !== '')
+
+    expect(rowLabels).toEqual([
+      'Salary',
+      'Salary after taxes',
+      'Tax difference',
+      'Dividendo/Juros',
+      'Mercado',
+      'Resultado (R-D-Inv)',
+      'Total despesas',
+    ])
   })
 
-  it('renders the income-summary table with the header row and the four data rows', async () => {
+  it('renders Salary/Dividendo rows and category rows in the same table (no standalone Income Summary section)', async () => {
     render(<YearlySummaryPage />)
 
-    await waitFor(() => expect(screen.getByText('Income Summary')).toBeInTheDocument())
-    const incomeSection = screen.getByText('Income Summary').closest('section')!
-    expect(within(incomeSection).getByText('Income')).toBeInTheDocument()
-    expect(within(incomeSection).getByRole('cell', { name: 'Salary' })).toBeInTheDocument()
-    expect(within(incomeSection).getByRole('cell', { name: 'Salary after taxes' })).toBeInTheDocument()
-    expect(within(incomeSection).getByRole('cell', { name: 'Tax difference' })).toBeInTheDocument()
-    expect(within(incomeSection).getByRole('cell', { name: 'Dividendo/Juros' })).toBeInTheDocument()
-    expect(within(incomeSection).getByText('38,800.00')).toBeInTheDocument()
-    expect(within(incomeSection).getByText('9,450.00')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    expect(screen.queryByText('Income Summary')).not.toBeInTheDocument()
+
+    const salaryCell = screen.getByRole('cell', { name: 'Salary' })
+    const mercadoCell = screen.getByRole('cell', { name: 'Mercado' })
+    expect(salaryCell.closest('table')).toBe(mercadoCell.closest('table'))
+    expect(within(salaryCell.closest('tr')!).getByText('38,800.00')).toBeInTheDocument()
+    const taxDifferenceRow = screen.getByRole('cell', { name: 'Tax difference' }).closest('tr')!
+    expect(within(taxDifferenceRow).getByText('9,450.00')).toBeInTheDocument()
   })
 
-  it('renders row 5 of the income-summary table blank, and shows no Lottery, tithe, or tithe-balance content anywhere', async () => {
+  it('shows an Average column between the Dec and Yearly Total columns for every row', async () => {
     render(<YearlySummaryPage />)
 
-    await waitFor(() => expect(screen.getByText('Income Summary')).toBeInTheDocument())
-    const incomeSection = screen.getByText('Income Summary').closest('section')!
-    const rows = within(incomeSection).getAllByRole('row')
-    const blankRow = rows[5]
-    expect(blankRow.textContent).toBe('')
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    const headerCells = screen.getAllByRole('columnheader').map((th) => th.textContent)
+    const decIndex = headerCells.indexOf('Dec')
+    const averageIndex = headerCells.indexOf('Average')
+    const yearlyTotalIndex = headerCells.indexOf('Yearly Total')
+    expect(averageIndex).toBe(decIndex + 1)
+    expect(yearlyTotalIndex).toBe(averageIndex + 1)
 
-    expect(screen.queryByText(/Lottery/i)).not.toBeInTheDocument()
-    expect(screen.queryByText(/Tithe/i)).not.toBeInTheDocument()
+    // Mercado average = 1860 / 12 = 155.00
+    const mercadoRow = screen.getByRole('cell', { name: 'Mercado' }).closest('tr')!
+    expect(within(mercadoRow).getByText('155.00')).toBeInTheDocument()
+  })
+
+  it('computes Resultado and Total despesas from already-fetched data and renders them with emphasized styling', async () => {
+    render(<YearlySummaryPage />)
+
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    // Total despesas yearly total = sum of Mercado's monthly totals = 1,860.00
+    const totalDespesasRow = screen.getByRole('cell', { name: 'Total despesas' }).closest('tr')!
+    expect(totalDespesasRow).toHaveClass('yearly-summary-page__emphasized-row')
+    expect(within(totalDespesasRow).getByText('1,860.00')).toBeInTheDocument()
+
+    // Resultado yearly total = sum(salaryAfterTaxesMonthly)=29,600 + sum(dividendoJurosMonthly)=20 - totalDespesasYearlyTotal=1,860 + 0 (no Investimento category) = 27,760
+    const resultadoRow = screen.getByRole('cell', { name: 'Resultado (R-D-Inv)' }).closest('tr')!
+    expect(resultadoRow).toHaveClass('yearly-summary-page__emphasized-row')
+    expect(within(resultadoRow).getByText('27,760.00')).toBeInTheDocument()
   })
 
   it('shows only the Investments tab content after clicking Investments', async () => {
@@ -148,7 +178,7 @@ describe('YearlySummaryPage', () => {
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
 
-    expect(screen.queryByText('Income Summary')).not.toBeInTheDocument()
+    expect(screen.queryByRole('cell', { name: 'Salary' })).not.toBeInTheDocument()
     expect(screen.queryByRole('cell', { name: 'Mercado' })).not.toBeInTheDocument()
     expect(screen.getByText('Investment Diffs')).toBeInTheDocument()
     expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument()
