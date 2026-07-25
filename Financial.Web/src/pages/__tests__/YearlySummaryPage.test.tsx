@@ -188,6 +188,27 @@ describe('YearlySummaryPage', () => {
     expect(screen.getByRole('button', { name: 'Investments' })).toHaveClass('yearly-summary-page__tab--active')
   })
 
+  it('re-scopes the combined table, including Resultado and Total despesas, when the year changes', async () => {
+    render(<YearlySummaryPage />)
+
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument()
+
+    const nextYearCategoryTotals: CategoryYearlyTotalDto[] = [
+      { category: 'Carro', monthlyTotals: new Array(12).fill(50), yearlyTotal: 600 },
+    ]
+    getCategoryTotalsForYearMock.mockResolvedValue(nextYearCategoryTotals)
+
+    fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2027' } })
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'Carro' })).toBeInTheDocument())
+    expect(screen.queryByRole('cell', { name: 'Mercado' })).not.toBeInTheDocument()
+
+    // Total despesas yearly total now sums only Carro = 600.00
+    const totalDespesasRow = screen.getByRole('cell', { name: 'Total despesas' }).closest('tr')!
+    expect(within(totalDespesasRow).getByText('600.00')).toBeInTheDocument()
+  })
+
   it('does not change the year picker value when switching tabs', async () => {
     render(<YearlySummaryPage />)
 
