@@ -473,6 +473,22 @@ describe('MonthlyPage', () => {
     expect(incomeSection.getByText('2,450.00')).toBeInTheDocument()
   })
 
+  it('re-scopes the income list when the month/year value changes while Incoming is active', async () => {
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Incoming' }))
+
+    await waitFor(() => expect(screen.getByText('Gleison')).toBeInTheDocument())
+
+    getIncomesByMonthMock.mockResolvedValue([
+      { id: 'i3', date: '2026-08-01', incomeSource: 'Lottery', grossValue: null, netValue: 75, bank: 'Barclays' },
+    ])
+
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
+
+    await waitFor(() => expect(screen.getByText('Lottery')).toBeInTheDocument())
+    expect(screen.queryByText('Gleison')).not.toBeInTheDocument()
+  })
+
   it('shows the add-income form only after New Income is clicked, and submits a new income entry', async () => {
     createIncomeMock.mockResolvedValue({ ...INCOMES[0], id: 'i2' })
     render(<MonthlyPage />)
