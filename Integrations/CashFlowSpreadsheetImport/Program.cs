@@ -1,5 +1,10 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Banks;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.BankOpeningBalance;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.PaymentState;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
@@ -27,10 +32,20 @@ if (!File.Exists(workbookPath))
     return 1;
 }
 
+if (File.Exists(outputPath))
+{
+    var backupPath = MigrationBackup.Create(outputPath);
+    Console.WriteLine($"Backed up data file to '{backupPath}'.");
+}
+
 var report = new ImportReport();
 var serializer = new CashFlowSerializerAdapter();
 var storage = new LocalJsonStorage(outputPath);
-var data = mensaisOnly ? CashFlowLoader.LoadSync(storage, serializer) : CashFlowData.Create();
+
+// Loaded once up front regardless of mode: this is also where Banks/Incomes/CardStatements
+// come from for a full rebuild below, since the spreadsheet never produces them itself.
+var existingData = CashFlowLoader.LoadSync(storage, serializer);
+var data = mensaisOnly ? existingData : CashFlowData.Create();
 
 using var workbook = new XLWorkbook(workbookPath);
 
@@ -50,7 +65,14 @@ else
     ImportMensaisSheet(workbook, data, report);
     ImportControleMaeSheet(workbook, data, report);
     ImportResumoSheets(workbook, data, report);
+    CarryOverDataTheSpreadsheetDoesNotOwn(existingData, data);
 }
+
+// Always run, in both modes: every migration below is idempotent, so re-running is always safe.
+var bankSummary = BankMigrator.Migrate(data);
+var bankOpeningBalanceSummary = BankOpeningBalanceMigrator.Migrate(data, DateOnly.FromDateTime(DateTime.Now));
+var incomeSummary = IncomeMigrator.Migrate(data, workbook);
+var paymentStateSummary = ExpensePaymentStateMigrator.Migrate(data);
 
 var repository = new CashFlowJsonRepository(data, storage, serializer);
 await repository.SaveChangesAsync();
@@ -58,7 +80,29 @@ await repository.SaveChangesAsync();
 Console.WriteLine($"Wrote imported data to '{outputPath}'.");
 Console.WriteLine();
 Console.WriteLine(report.Render());
+Console.WriteLine(bankSummary.Render());
+Console.WriteLine(bankOpeningBalanceSummary.Render());
+Console.WriteLine(incomeSummary.Render());
+Console.WriteLine(paymentStateSummary.Render());
 return 0;
+
+static void CarryOverDataTheSpreadsheetDoesNotOwn(CashFlowData existingData, CashFlowData data)
+{
+    foreach (var bank in existingData.Banks)
+    {
+        data.AddBank(bank);
+    }
+
+    foreach (var income in existingData.Incomes)
+    {
+        data.AddIncome(income);
+    }
+
+    foreach (var statement in existingData.CardStatements)
+    {
+        data.AddCardStatement(statement);
+    }
+}
 
 static void ImportMonthlyExpenseSheets(XLWorkbook workbook, CashFlowData data, ImportReport report)
 {
