@@ -259,6 +259,40 @@ describe('YearlySummaryPage', () => {
     expect(screen.getByRole('cell', { name: 'Salary' })).toBeInTheDocument()
   })
 
+  it('re-scopes the account table, Total row, Month Result row, and summary figures when the year changes on the Investments tab', async () => {
+    render(<YearlySummaryPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
+
+    const nextYearInvestmentDiffs: InvestmentDiffsYearlyDto = {
+      accounts: [
+        {
+          account: 'ChipCashIsaGleison',
+          isLiability: false,
+          monthlyValues: new Array(12).fill(2000),
+          monthlyDiffs: new Array(11).fill(0),
+        },
+      ],
+      netPosition: {
+        monthlyValues: new Array(12).fill(2000),
+        monthlyDiffs: new Array(11).fill(0),
+        fullYearNetChange: 0,
+      },
+    }
+    getInvestmentDiffsForYearMock.mockResolvedValue(nextYearInvestmentDiffs)
+
+    fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2027' } })
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChipCashIsaGleison' })).toBeInTheDocument())
+    expect(screen.queryByRole('cell', { name: 'ChaseSave' })).not.toBeInTheDocument()
+
+    const totalRow = screen.getByRole('cell', { name: 'Total' }).closest('tr')!
+    expect(within(totalRow).getAllByText('2,000.00').length).toBeGreaterThan(0)
+    const yearProgress = screen.getByText('Year Progress').closest('div')!
+    expect(within(yearProgress).getByText('0.00')).toBeInTheDocument()
+  })
+
   it('re-scopes the combined table, including Resultado and Total despesas, when the year changes', async () => {
     render(<YearlySummaryPage />)
 
