@@ -1,7 +1,11 @@
 import { useState } from 'react'
+import BanksGrid from '../components/BanksGrid'
+import CardsGrid from '../components/CardsGrid'
+import CategoryTotalsGrid from '../components/CategoryTotalsGrid'
 import ErrorState from '../components/ErrorState'
 import ExpensesSection from '../components/ExpensesSection'
 import IncomeSection from '../components/IncomeSection'
+import IncomingGrid from '../components/IncomingGrid'
 import LoadingState from '../components/LoadingState'
 import {
   useMonthly,
@@ -13,7 +17,6 @@ import {
   type PaymentMode,
 } from '../hooks/useMonthly'
 import type { BankDto } from '../api/types'
-import { formatN2 } from '../utils/formatters'
 import './MonthlyPage.css'
 
 type MonthlyTabId = 'summary' | 'expense' | 'incoming'
@@ -506,151 +509,23 @@ export default function MonthlyPage() {
       ) : (
         <div className="monthly-page__content">
           {activeTab === 'summary' && (
-          <div className="monthly-page__grids-row">
-            <section className="monthly-page__section monthly-page__section--grid">
-              <h2>Category Totals</h2>
-              <div className="monthly-page__table-scroll">
-                <table className="monthly-page__table data-table">
-                  <thead>
-                    <tr>
-                      <th>Category</th>
-                      <th className="data-table__col--numeric">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {categoryTotals.map((c) => (
-                      <tr key={c.category}>
-                        <td>{c.category}</td>
-                        <td className="data-table__col--numeric">{formatN2(c.totalValue)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="monthly-page__section-total">
-                Total: <strong>{formatN2(categoryTotalsSum)}</strong>
-              </p>
-            </section>
-
-            <section className="monthly-page__section monthly-page__section--grid">
-              <h2>Cards</h2>
-              <div className="monthly-page__table-scroll">
-                <table className="monthly-page__table data-table">
-                  <thead>
-                    <tr>
-                      <th>Card</th>
-                      <th className="data-table__col--numeric">Outstanding</th>
-                      <th>Status</th>
-                      <th />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cardStatements.map((s) => (
-                      <tr key={s.id}>
-                        <td>{s.card}</td>
-                        <td className="data-table__col--numeric">{formatN2(s.outstandingTotal)}</td>
-                        <td>{s.isPaid ? 'Paid' : 'Unpaid'}</td>
-                        <td>
-                          {s.isPaid ? (
-                            <button type="button" onClick={() => unmarkStatementPaid(s.id)}>
-                              Unmark Paid
-                            </button>
-                          ) : (
-                            <>
-                              <select
-                                aria-label={`Paying bank for ${s.card}`}
-                                value={markPaidSources[s.id] ?? ''}
-                                onChange={(e) => setMarkPaidSource(s.id, e.target.value)}
-                              >
-                                <option value="">Bank…</option>
-                                {banks.map((b) => (
-                                  <option key={b.name} value={b.name}>
-                                    {b.name}
-                                  </option>
-                                ))}
-                              </select>{' '}
-                              <button
-                                type="button"
-                                disabled={!markPaidSources[s.id]}
-                                onClick={() => markStatementPaid(s.id, markPaidSources[s.id])}
-                              >
-                                Mark Paid
-                              </button>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="monthly-page__section-total">
-                Combined adjustment figure: <strong>{formatN2(adjustmentTotal)}</strong>
-              </p>
-            </section>
-
-            <section className="monthly-page__section monthly-page__section--grid">
-              <h2>Banks</h2>
-              <div className="monthly-page__table-scroll">
-                <table className="monthly-page__table data-table">
-                  <thead>
-                    <tr>
-                      <th>Bank</th>
-                      <th className="data-table__col--numeric">Bank Balance</th>
-                      <th className="data-table__col--numeric">Round-Up</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bankTotals.map((b) => (
-                      <tr key={b.bank}>
-                        <td>{b.bank}</td>
-                        <td className="data-table__col--numeric">{formatN2(b.balance)}</td>
-                        <td className="data-table__col--numeric">{formatN2(b.roundUpTotal)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="monthly-page__section-total">
-                Bank Balance: <strong>{formatN2(bankTotalsSum)}</strong> · Round-Up: <strong>{formatN2(roundUpTotalsSum)}</strong>
-              </p>
-            </section>
-
-            <section className="monthly-page__section monthly-page__section--grid">
-              <h2>Incoming</h2>
-              <div className="monthly-page__table-scroll">
-                <table className="monthly-page__table data-table">
-                  <thead>
-                    <tr>
-                      <th>Source</th>
-                      <th className="data-table__col--numeric">Gross</th>
-                      <th className="data-table__col--numeric">Net</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {incomeTotals.map((i) => (
-                      <tr key={i.source}>
-                        <td>{i.source}</td>
-                        <td className="data-table__col--numeric">
-                          {i.grossValue != null ? formatN2(i.grossValue) : '—'}
-                        </td>
-                        <td className="data-table__col--numeric">{formatN2(i.netValue)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="monthly-page__section-total">
-                Total Incoming: <strong>{formatN2(totalIncoming)}</strong>
-                {titheSummary && (
-                  <>
-                    {' '}
-                    · Calculated Tithe: <strong>{formatN2(titheSummary.calculatedTithe)}</strong> · Tithe Balance:{' '}
-                    <strong>{formatN2(titheSummary.titheBalance)}</strong>
-                  </>
-                )}
-              </p>
-            </section>
+          <div className="monthly-page__summary-groups">
+            <div className="monthly-page__grids-row">
+              <CategoryTotalsGrid categoryTotals={categoryTotals} categoryTotalsSum={categoryTotalsSum} />
+              <CardsGrid
+                cardStatements={cardStatements}
+                banks={banks}
+                adjustmentTotal={adjustmentTotal}
+                markPaidSources={markPaidSources}
+                setMarkPaidSource={setMarkPaidSource}
+                markStatementPaid={markStatementPaid}
+                unmarkStatementPaid={unmarkStatementPaid}
+              />
+            </div>
+            <div className="monthly-page__grids-row">
+              <BanksGrid bankTotals={bankTotals} bankTotalsSum={bankTotalsSum} roundUpTotalsSum={roundUpTotalsSum} />
+              <IncomingGrid incomeTotals={incomeTotals} totalIncoming={totalIncoming} titheSummary={titheSummary} />
+            </div>
           </div>
           )}
 

@@ -148,6 +148,29 @@ describe('MonthlyPage', () => {
     expect(screen.getByRole('button', { name: 'Incoming' })).not.toHaveClass('monthly-page__tab--active')
   })
 
+  it('re-scopes all 4 Summary grids when the month/year value changes', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    expect(screen.getAllByText('Mercado').length).toBeGreaterThan(0)
+
+    getCategoryTotalsByMonthMock.mockResolvedValue([{ category: 'Viagem', totalValue: 300 }])
+    getCardStatementsByMonthMock.mockResolvedValue([
+      { id: 'c3', card: 'PaypalCredit', year: 2026, month: 8, isPaid: false, outstandingTotal: 55 },
+    ])
+    getBankBalancesByMonthMock.mockResolvedValue([{ bank: 'Barclays', balance: 300 }])
+    getIncomesByMonthMock.mockResolvedValue([
+      { id: 'i2', date: '2026-08-01', incomeSource: 'Lottery', grossValue: null, netValue: 50, bank: 'Barclays' },
+    ])
+
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
+
+    await waitFor(() => expect(screen.getByText('Viagem')).toBeInTheDocument())
+    expect(screen.queryByText('Mercado')).not.toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'PaypalCredit' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Lottery' })).toBeInTheDocument()
+  })
+
   it('shows only the Expense tabs content after clicking Expense', async () => {
     render(<MonthlyPage />)
 
@@ -286,6 +309,25 @@ describe('MonthlyPage', () => {
     await waitFor(() =>
       expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSource: 'Trading212' }),
     )
+  })
+
+  it('renders Category Totals and Cards in the first Summary row, Banks and Incoming in the second, with no heading between them', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+
+    const groups = document.querySelector('.monthly-page__summary-groups')
+    expect(groups).not.toBeNull()
+    const rows = groups!.querySelectorAll(':scope > .monthly-page__grids-row')
+    expect(rows).toHaveLength(2)
+
+    const firstRowHeadings = Array.from(rows[0].querySelectorAll('h2')).map((h) => h.textContent)
+    expect(firstRowHeadings).toEqual(['Category Totals', 'Cards'])
+
+    const secondRowHeadings = Array.from(rows[1].querySelectorAll('h2')).map((h) => h.textContent)
+    expect(secondRowHeadings).toEqual(['Banks', 'Incoming'])
+
+    expect(groups!.querySelectorAll(':scope > :not(.monthly-page__grids-row)')).toHaveLength(0)
   })
 
   it('unmarks a paid statement after confirmation', async () => {
