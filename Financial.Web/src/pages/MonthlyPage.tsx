@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import ErrorState from '../components/ErrorState'
 import ExpensesSection from '../components/ExpensesSection'
 import IncomeSection from '../components/IncomeSection'
@@ -14,6 +15,14 @@ import {
 import type { BankDto } from '../api/types'
 import { formatN2 } from '../utils/formatters'
 import './MonthlyPage.css'
+
+type MonthlyTabId = 'summary' | 'expense' | 'incoming'
+
+const MONTHLY_TABS: { id: MonthlyTabId; label: string }[] = [
+  { id: 'summary', label: 'Summary' },
+  { id: 'expense', label: 'Expense' },
+  { id: 'incoming', label: 'Incoming' },
+]
 
 type ExpenseFormField = 'date' | 'description' | 'value' | 'category' | 'paymentSource' | 'cardTag' | 'roundUpAmount'
 
@@ -444,10 +453,24 @@ export default function MonthlyPage() {
     titheSummary,
   } = useMonthly()
 
+  const [activeTab, setActiveTab] = useState<MonthlyTabId>('summary')
+
   const isEditing = editingId !== null
   const isFormVisible = isCreateFormOpen || isEditing
   const isIncomeEditing = editingIncomeId !== null
   const isIncomeFormVisible = isIncomeCreateFormOpen || isIncomeEditing
+
+  const handleTabClick = (tabId: MonthlyTabId) => {
+    if (activeTab === 'expense' && isFormVisible) {
+      if (isEditing) cancelEdit()
+      else cancelCreateForm()
+    }
+    if (activeTab === 'incoming' && isIncomeFormVisible) {
+      if (isIncomeEditing) cancelEditIncome()
+      else cancelCreateIncomeForm()
+    }
+    setActiveTab(tabId)
+  }
 
   return (
     <div className="monthly-page">
@@ -463,52 +486,18 @@ export default function MonthlyPage() {
         </div>
       </div>
 
-      {isFormVisible && (
-        <ExpenseForm
-          isEditing={isEditing}
-          date={isEditing ? editDate : createDate}
-          description={isEditing ? editDescription : createDescription}
-          value={isEditing ? editValue : createValue}
-          category={isEditing ? editCategory : createCategory}
-          paymentSource={isEditing ? editPaymentSource : createPaymentSource}
-          cardTag={isEditing ? editCardTag : createCardTag}
-          roundUpAmount={isEditing ? editRoundUpAmount : createRoundUpAmount}
-          paymentMode={isEditing ? editPaymentMode : createPaymentMode}
-          banks={banks}
-          isSettled={isEditing && editIsSettled}
-          isSaving={isEditing ? isSaving : isCreating}
-          saveError={isEditing ? saveError : createError}
-          onFieldChange={(field, value) =>
-            isEditing
-              ? setEditField(EDIT_FIELD_BY_FORM_FIELD[field], value)
-              : setCreateField(CREATE_FIELD_BY_FORM_FIELD[field], value)
-          }
-          onModeChange={isEditing ? setEditPaymentMode : setCreatePaymentMode}
-          onSave={isEditing ? saveEdit : submitCreate}
-          onCancel={isEditing ? cancelEdit : cancelCreateForm}
-        />
-      )}
-
-      {isIncomeFormVisible && (
-        <IncomeForm
-          isEditing={isIncomeEditing}
-          date={isIncomeEditing ? editIncomeDate : createIncomeDate}
-          incomeSource={isIncomeEditing ? editIncomeSource : createIncomeSource}
-          grossValue={isIncomeEditing ? editIncomeGrossValue : createIncomeGrossValue}
-          netValue={isIncomeEditing ? editIncomeNetValue : createIncomeNetValue}
-          bank={isIncomeEditing ? editIncomeBank : createIncomeBank}
-          banks={banks}
-          isSaving={isIncomeEditing ? isSavingIncome : isCreatingIncome}
-          saveError={isIncomeEditing ? saveIncomeError : createIncomeError}
-          onFieldChange={(field, value) =>
-            isIncomeEditing
-              ? setEditIncomeField(EDIT_INCOME_FIELD_BY_FORM_FIELD[field], value)
-              : setCreateIncomeField(CREATE_INCOME_FIELD_BY_FORM_FIELD[field], value)
-          }
-          onSave={isIncomeEditing ? saveEditIncome : submitCreateIncome}
-          onCancel={isIncomeEditing ? cancelEditIncome : cancelCreateIncomeForm}
-        />
-      )}
+      <div className="monthly-page__tabs">
+        {MONTHLY_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            className={`monthly-page__tab${activeTab === tab.id ? ' monthly-page__tab--active' : ''}`}
+            onClick={() => handleTabClick(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       {isLoading ? (
         <LoadingState />
@@ -516,6 +505,7 @@ export default function MonthlyPage() {
         <ErrorState message={error} onRetry={retry} />
       ) : (
         <div className="monthly-page__content">
+          {activeTab === 'summary' && (
           <div className="monthly-page__grids-row">
             <section className="monthly-page__section monthly-page__section--grid">
               <h2>Category Totals</h2>
@@ -662,20 +652,76 @@ export default function MonthlyPage() {
               </p>
             </section>
           </div>
+          )}
 
-          <ExpensesSection
-            expenses={expenses}
-            onEdit={showEditForm}
-            onDelete={deleteExpense}
-            onNewExpense={showCreateForm}
-          />
+          {activeTab === 'expense' && (
+            <>
+              {isFormVisible && (
+                <ExpenseForm
+                  isEditing={isEditing}
+                  date={isEditing ? editDate : createDate}
+                  description={isEditing ? editDescription : createDescription}
+                  value={isEditing ? editValue : createValue}
+                  category={isEditing ? editCategory : createCategory}
+                  paymentSource={isEditing ? editPaymentSource : createPaymentSource}
+                  cardTag={isEditing ? editCardTag : createCardTag}
+                  roundUpAmount={isEditing ? editRoundUpAmount : createRoundUpAmount}
+                  paymentMode={isEditing ? editPaymentMode : createPaymentMode}
+                  banks={banks}
+                  isSettled={isEditing && editIsSettled}
+                  isSaving={isEditing ? isSaving : isCreating}
+                  saveError={isEditing ? saveError : createError}
+                  onFieldChange={(field, value) =>
+                    isEditing
+                      ? setEditField(EDIT_FIELD_BY_FORM_FIELD[field], value)
+                      : setCreateField(CREATE_FIELD_BY_FORM_FIELD[field], value)
+                  }
+                  onModeChange={isEditing ? setEditPaymentMode : setCreatePaymentMode}
+                  onSave={isEditing ? saveEdit : submitCreate}
+                  onCancel={isEditing ? cancelEdit : cancelCreateForm}
+                />
+              )}
 
-          <IncomeSection
-            incomes={incomes}
-            onEdit={showEditIncomeForm}
-            onDelete={deleteIncome}
-            onNewIncome={showCreateIncomeForm}
-          />
+              <ExpensesSection
+                expenses={expenses}
+                onEdit={showEditForm}
+                onDelete={deleteExpense}
+                onNewExpense={showCreateForm}
+              />
+            </>
+          )}
+
+          {activeTab === 'incoming' && (
+            <>
+              {isIncomeFormVisible && (
+                <IncomeForm
+                  isEditing={isIncomeEditing}
+                  date={isIncomeEditing ? editIncomeDate : createIncomeDate}
+                  incomeSource={isIncomeEditing ? editIncomeSource : createIncomeSource}
+                  grossValue={isIncomeEditing ? editIncomeGrossValue : createIncomeGrossValue}
+                  netValue={isIncomeEditing ? editIncomeNetValue : createIncomeNetValue}
+                  bank={isIncomeEditing ? editIncomeBank : createIncomeBank}
+                  banks={banks}
+                  isSaving={isIncomeEditing ? isSavingIncome : isCreatingIncome}
+                  saveError={isIncomeEditing ? saveIncomeError : createIncomeError}
+                  onFieldChange={(field, value) =>
+                    isIncomeEditing
+                      ? setEditIncomeField(EDIT_INCOME_FIELD_BY_FORM_FIELD[field], value)
+                      : setCreateIncomeField(CREATE_INCOME_FIELD_BY_FORM_FIELD[field], value)
+                  }
+                  onSave={isIncomeEditing ? saveEditIncome : submitCreateIncome}
+                  onCancel={isIncomeEditing ? cancelEditIncome : cancelCreateIncomeForm}
+                />
+              )}
+
+              <IncomeSection
+                incomes={incomes}
+                onEdit={showEditIncomeForm}
+                onDelete={deleteIncome}
+                onNewIncome={showCreateIncomeForm}
+              />
+            </>
+          )}
         </div>
       )}
     </div>

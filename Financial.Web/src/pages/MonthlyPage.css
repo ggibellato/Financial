@@ -21,6 +21,33 @@
   gap: 8px;
 }
 
+.monthly-page__tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border, #e5e4e7);
+  flex-shrink: 0;
+}
+
+.monthly-page__tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 8px 16px;
+  color: var(--text, #333);
+  margin-bottom: -1px;
+}
+
+.monthly-page__tab:hover {
+  color: #007acc;
+}
+
+.monthly-page__tab--active {
+  border-bottom-color: #007acc;
+  font-weight: 600;
+  color: #007acc;
+}
+
 .monthly-page__form-panel {
   flex-shrink: 0;
   padding: 12px 16px;
