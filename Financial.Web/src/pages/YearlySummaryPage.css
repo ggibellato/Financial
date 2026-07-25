@@ -73,3 +73,25 @@
 .yearly-summary-page__emphasized-row {
   border-top: 2px solid var(--border, #ccc);
 }
+
+.yearly-summary-page__investment-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.yearly-summary-page__investment-total {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.yearly-summary-page__investment-total span {
+  color: var(--text, #333);
+  font-size: 13px;
+}
+
+.yearly-summary-page__investment-total strong {
+  font-size: 16px;
+}

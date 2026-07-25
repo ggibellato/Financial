@@ -46,6 +46,28 @@ function YearlySummaryRow({
   )
 }
 
+function InvestmentRow({
+  label,
+  monthlyValues,
+  emphasized = false,
+}: {
+  label: string
+  monthlyValues: (number | null)[]
+  emphasized?: boolean
+}) {
+  const cell = (content: ReactNode) => (emphasized ? <strong>{content}</strong> : content)
+  return (
+    <tr className={emphasized ? 'yearly-summary-page__emphasized-row' : undefined}>
+      <td>{cell(label)}</td>
+      {monthlyValues.map((v, i) => (
+        <td key={i} className="data-table__col--numeric">
+          {v === null ? null : cell(formatN2(v))}
+        </td>
+      ))}
+    </tr>
+  )
+}
+
 export default function YearlySummaryPage() {
   const {
     year,
@@ -173,54 +195,49 @@ export default function YearlySummaryPage() {
 
           {activeTab === 'investments' && investmentDiffs && (
             <section className="yearly-summary-page__section">
-              <h2>Investment Diffs</h2>
+              <h2>Investments</h2>
               <table className="yearly-summary-page__table data-table">
                 <thead>
                   <tr>
                     <th>Account</th>
-                    <th className="data-table__col--numeric">Jan</th>
-                    {MONTH_LABELS.slice(1).map((m) => (
+                    {MONTH_LABELS.map((m) => (
                       <th key={m} className="data-table__col--numeric">
-                        {m} Δ
+                        {m}
                       </th>
                     ))}
-                    <th className="data-table__col--numeric">Full Year Net Change</th>
                   </tr>
                 </thead>
                 <tbody>
                   {investmentDiffs.accounts.map((a) => (
-                    <tr key={a.account}>
-                      <td>
-                        {a.account}
-                        {a.isLiability ? ' (liability)' : ''}
-                      </td>
-                      <td className="data-table__col--numeric">{formatN2(a.monthlyValues[0])}</td>
-                      {a.monthlyDiffs.map((diff, i) => (
-                        <td key={i} className="data-table__col--numeric">
-                          {formatN2(diff)}
-                        </td>
-                      ))}
-                      <td className="data-table__col--numeric" />
-                    </tr>
+                    <InvestmentRow
+                      key={a.account}
+                      label={`${a.account}${a.isLiability ? ' (-)' : ''}`}
+                      monthlyValues={a.monthlyValues}
+                    />
                   ))}
-                  <tr className="yearly-summary-page__emphasized-row">
-                    <td>
-                      <strong>Net Position</strong>
-                    </td>
-                    <td className="data-table__col--numeric">
-                      <strong>{formatN2(investmentDiffs.netPosition.monthlyValues[0])}</strong>
-                    </td>
-                    {investmentDiffs.netPosition.monthlyDiffs.map((diff, i) => (
-                      <td key={i} className="data-table__col--numeric">
-                        <strong>{formatN2(diff)}</strong>
-                      </td>
-                    ))}
-                    <td className="data-table__col--numeric">
-                      <strong>{formatN2(investmentDiffs.netPosition.fullYearNetChange)}</strong>
-                    </td>
-                  </tr>
+                  <InvestmentRow label="Total" monthlyValues={investmentDiffs.netPosition.monthlyValues} emphasized />
+                  <InvestmentRow
+                    label="Month Result"
+                    monthlyValues={[null, ...investmentDiffs.netPosition.monthlyDiffs]}
+                    emphasized
+                  />
                 </tbody>
               </table>
+
+              <div className="yearly-summary-page__investment-totals">
+                <div className="yearly-summary-page__investment-total">
+                  <span>Year Progress</span>
+                  <strong>{formatN2(investmentDiffs.netPosition.fullYearNetChange)}</strong>
+                </div>
+                <div className="yearly-summary-page__investment-total">
+                  <span>Average Month Result</span>
+                  <strong>{formatN2(average(investmentDiffs.netPosition.monthlyDiffs))}</strong>
+                </div>
+                <div className="yearly-summary-page__investment-total">
+                  <span>Sum of Month Results</span>
+                  <strong>{formatN2(investmentDiffs.netPosition.monthlyDiffs.reduce((sum, v) => sum + v, 0))}</strong>
+                </div>
+              </div>
             </section>
           )}
         </div>
