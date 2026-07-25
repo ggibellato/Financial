@@ -1,18 +1,22 @@
+using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowIncomeMigration;
 
 /// <summary>
-/// Confirms the Incomes collection exists on the data file. There is no fixed data to seed
-/// (unlike the P13 bank migration) — CashFlowData.Incomes already default-initializes to an
-/// empty list, so this run's only job is to make the run auditable and backed up, per the PRD.
+/// Confirms the Incomes collection exists on the data file and, when a spreadsheet workbook is
+/// supplied, backfills historical entries from it via <see cref="IncomeBackfillImporter"/>. With
+/// no workbook, this is a no-op audit — CashFlowData.Incomes already default-initializes to an
+/// empty list, so the run's only job is to make it auditable and backed up.
 /// </summary>
 public static class IncomeMigrator
 {
-    public static IncomeMigrationSummary Migrate(CashFlowData data)
+    public static IncomeMigrationSummary Migrate(CashFlowData data, XLWorkbook? workbook = null)
     {
         ArgumentNullException.ThrowIfNull(data);
 
-        return new IncomeMigrationSummary(data.Incomes.Count);
+        var importedCount = workbook is null ? 0 : IncomeBackfillImporter.Import(data, workbook);
+
+        return new IncomeMigrationSummary(data.Incomes.Count, importedCount);
     }
 }
