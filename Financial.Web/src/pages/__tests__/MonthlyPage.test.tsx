@@ -250,6 +250,20 @@ describe('MonthlyPage', () => {
     expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument()
   })
 
+  it('re-scopes the expense list when the month/year value changes while Expense is active', async () => {
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+
+    await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
+
+    getExpensesByMonthMock.mockResolvedValue([{ ...EXPENSES[0], id: 'e3', description: 'TfL Top-Up' }])
+
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
+
+    await waitFor(() => expect(screen.getByText('TfL Top-Up')).toBeInTheDocument())
+    expect(screen.queryByText('Lidl UK')).not.toBeInTheDocument()
+  })
+
   it('renders category totals and card statements with the combined adjustment on Summary, and the expense list on the Expense tab', async () => {
     render(<MonthlyPage />)
 
