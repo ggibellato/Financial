@@ -70,6 +70,6 @@
   min-width: 900px;
 }
 
-.yearly-summary-page__net-position-row {
+.yearly-summary-page__emphasized-row {
   border-top: 2px solid var(--border, #ccc);
 }

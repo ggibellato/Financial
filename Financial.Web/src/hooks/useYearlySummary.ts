@@ -59,12 +59,18 @@ function reducer(state: YearlySummaryState, action: YearlySummaryAction): Yearly
   }
 }
 
+const INVESTIMENTO_CATEGORY = 'Investimento'
+
 export interface YearlySummaryData {
   year: number
   setYear: (year: number) => void
   categoryTotals: CategoryYearlyTotalDto[]
   investmentDiffs: InvestmentDiffsYearlyDto | null
   incomeSummary: IncomeYearlySummaryDto | null
+  totalDespesasMonthly: number[]
+  totalDespesasYearlyTotal: number
+  resultadoMonthly: number[]
+  resultadoYearlyTotal: number
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -99,12 +105,45 @@ export function useYearlySummary(): YearlySummaryData {
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
+  const totalDespesasMonthly = useMemo(
+    () =>
+      state.categoryTotals.length === 0
+        ? []
+        : Array.from({ length: 12 }, (_, month) =>
+            state.categoryTotals.reduce((sum, c) => sum + c.monthlyTotals[month], 0),
+          ),
+    [state.categoryTotals],
+  )
+
+  const totalDespesasYearlyTotal = useMemo(
+    () => totalDespesasMonthly.reduce((sum, v) => sum + v, 0),
+    [totalDespesasMonthly],
+  )
+
+  const resultadoMonthly = useMemo(() => {
+    if (!state.incomeSummary || totalDespesasMonthly.length === 0) return []
+    const investimento = state.categoryTotals.find((c) => c.category === INVESTIMENTO_CATEGORY)
+    return totalDespesasMonthly.map(
+      (totalDespesas, month) =>
+        state.incomeSummary!.salaryAfterTaxesMonthly[month] +
+        state.incomeSummary!.dividendoJurosMonthly[month] -
+        totalDespesas +
+        (investimento?.monthlyTotals[month] ?? 0),
+    )
+  }, [state.incomeSummary, state.categoryTotals, totalDespesasMonthly])
+
+  const resultadoYearlyTotal = useMemo(() => resultadoMonthly.reduce((sum, v) => sum + v, 0), [resultadoMonthly])
+
   return {
     year: state.year,
     setYear,
     categoryTotals: state.categoryTotals,
     investmentDiffs: state.investmentDiffs,
     incomeSummary: state.incomeSummary,
+    totalDespesasMonthly,
+    totalDespesasYearlyTotal,
+    resultadoMonthly,
+    resultadoYearlyTotal,
     isLoading: state.isLoading,
     error: state.error,
     retry,
