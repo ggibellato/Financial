@@ -97,4 +97,35 @@ describe('useYearlySummary', () => {
 
     await waitFor(() => expect(getCategoryTotalsForYearMock).toHaveBeenCalledTimes(2))
   })
+
+  it('computes total despesas as the sum of all category monthly totals', async () => {
+    const multiCategoryTotals: CategoryYearlyTotalDto[] = [
+      { category: 'Mercado', monthlyTotals: new Array(12).fill(100), yearlyTotal: 1200 },
+      { category: 'Investimento', monthlyTotals: new Array(12).fill(500), yearlyTotal: 6000 },
+      { category: 'Reserva', monthlyTotals: new Array(12).fill(50), yearlyTotal: 600 },
+    ]
+    getCategoryTotalsForYearMock.mockResolvedValue(multiCategoryTotals)
+
+    const { result } = renderHook(() => useYearlySummary())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.totalDespesasMonthly).toEqual(new Array(12).fill(650))
+    expect(result.current.totalDespesasYearlyTotal).toBe(7800)
+  })
+
+  it('computes resultado as net income minus every category except Investimento', async () => {
+    const multiCategoryTotals: CategoryYearlyTotalDto[] = [
+      { category: 'Mercado', monthlyTotals: new Array(12).fill(100), yearlyTotal: 1200 },
+      { category: 'Investimento', monthlyTotals: new Array(12).fill(500), yearlyTotal: 6000 },
+      { category: 'Reserva', monthlyTotals: new Array(12).fill(50), yearlyTotal: 600 },
+    ]
+    getCategoryTotalsForYearMock.mockResolvedValue(multiCategoryTotals)
+
+    const { result } = renderHook(() => useYearlySummary())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    // resultado = salaryAfterTaxes (2450) + dividendoJuros (15.5) - totalDespesas (650) + investimento (500)
+    expect(result.current.resultadoMonthly).toEqual(new Array(12).fill(2315.5))
+    expect(result.current.resultadoYearlyTotal).toBeCloseTo(27786, 5)
+  })
 })
