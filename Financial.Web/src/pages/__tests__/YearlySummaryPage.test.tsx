@@ -96,7 +96,7 @@ describe('YearlySummaryPage', () => {
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument()
     expect(screen.getByRole('cell', { name: 'Salary' })).toBeInTheDocument()
-    expect(screen.queryByText('Investment Diffs')).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Investments' })).not.toBeInTheDocument()
   })
 
   it('marks Category Totals as the active tab button by default', async () => {
@@ -180,12 +180,83 @@ describe('YearlySummaryPage', () => {
 
     expect(screen.queryByRole('cell', { name: 'Salary' })).not.toBeInTheDocument()
     expect(screen.queryByRole('cell', { name: 'Mercado' })).not.toBeInTheDocument()
-    expect(screen.getByText('Investment Diffs')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Investments' })).toBeInTheDocument()
     expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument()
-    expect(screen.getByText('PlatinumVisa8003 (liability)')).toBeInTheDocument()
-    expect(screen.getByText('Net Position')).toBeInTheDocument()
-    expect(screen.getByText('550.00')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Investments' })).toHaveClass('yearly-summary-page__tab--active')
+  })
+
+  it('shows all 12 monthly balance values for each account', async () => {
+    render(<YearlySummaryPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
+
+    const chaseSaveRow = screen.getByRole('cell', { name: 'ChaseSave' }).closest('tr')!
+    for (const value of INVESTMENT_DIFFS.accounts[0].monthlyValues) {
+      expect(within(chaseSaveRow).getByText(value.toLocaleString(undefined, { minimumFractionDigits: 2 }))).toBeInTheDocument()
+    }
+  })
+
+  it('marks liability accounts with a (-) suffix and asset accounts without one', async () => {
+    render(<YearlySummaryPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    await waitFor(() => expect(screen.getByText('PlatinumVisa8003 (-)')).toBeInTheDocument())
+    expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument()
+  })
+
+  it('renders a Total row matching the net position monthly values', async () => {
+    render(<YearlySummaryPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'Total' })).toBeInTheDocument())
+
+    const totalRow = screen.getByRole('cell', { name: 'Total' }).closest('tr')!
+    expect(totalRow).toHaveClass('yearly-summary-page__emphasized-row')
+    expect(within(totalRow).getByText('800.00')).toBeInTheDocument()
+    expect(within(totalRow).getByText('1,350.00')).toBeInTheDocument()
+  })
+
+  it('renders a Month Result row with a blank January cell and the net position diffs for Feb-Dec', async () => {
+    render(<YearlySummaryPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'Month Result' })).toBeInTheDocument())
+
+    const monthResultRow = screen.getByRole('cell', { name: 'Month Result' }).closest('tr')!
+    expect(monthResultRow).toHaveClass('yearly-summary-page__emphasized-row')
+    const cells = within(monthResultRow).getAllByRole('cell')
+    // cells[0] is the label; cells[1] is January, which must be blank
+    expect(cells[1].textContent).toBe('')
+    expect(within(monthResultRow).getAllByText('50.00').length).toBe(11)
+  })
+
+  it('shows Year Progress, Average Month Result, and Sum of Month Results, with Sum equal to Year Progress', async () => {
+    render(<YearlySummaryPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    await waitFor(() => expect(screen.getByText('Year Progress')).toBeInTheDocument())
+
+    const yearProgress = screen.getByText('Year Progress').closest('div')!
+    expect(within(yearProgress).getByText('550.00')).toBeInTheDocument()
+
+    const averageMonthResult = screen.getByText('Average Month Result').closest('div')!
+    expect(within(averageMonthResult).getByText('50.00')).toBeInTheDocument()
+
+    const sumOfMonthResults = screen.getByText('Sum of Month Results').closest('div')!
+    expect(within(sumOfMonthResults).getByText('550.00')).toBeInTheDocument()
+  })
+
+  it('does not affect the Category Totals tab content when viewing Investments', async () => {
+    render(<YearlySummaryPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Category Totals' }))
+
+    expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Salary' })).toBeInTheDocument()
   })
 
   it('re-scopes the combined table, including Resultado and Total despesas, when the year changes', async () => {
@@ -238,11 +309,11 @@ describe('YearlySummaryPage', () => {
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
-    await waitFor(() => expect(screen.getByText('Investment Diffs')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Investments' })).toBeInTheDocument())
 
     fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2027' } })
 
-    await waitFor(() => expect(screen.getByText('Investment Diffs')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Investments' })).toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'Investments' })).toHaveClass('yearly-summary-page__tab--active')
   })
 })
