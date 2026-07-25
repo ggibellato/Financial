@@ -19,6 +19,33 @@
   width: 100px;
 }
 
+.yearly-summary-page__tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border, #e5e4e7);
+  flex-shrink: 0;
+}
+
+.yearly-summary-page__tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 8px 16px;
+  color: var(--text, #333);
+  margin-bottom: -1px;
+}
+
+.yearly-summary-page__tab:hover {
+  color: #007acc;
+}
+
+.yearly-summary-page__tab--active {
+  border-bottom-color: #007acc;
+  font-weight: 600;
+  color: #007acc;
+}
+
 .yearly-summary-page__content {
   flex: 1;
   min-height: 0;
