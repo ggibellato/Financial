@@ -196,12 +196,12 @@ graph TD
 - [x] If data loading fails, the error/retry state is shown regardless of the active sub-tab
 
 ### F02. Category Totals Sub-Tab
-- [ ] The table renders rows in the fixed order: Salary, Salary After Taxes, Tax Difference, Dividendo/Juros, the 14 categories in enum order, Resultado (R-D-Inv), Total despesas
-- [ ] Salary, Salary After Taxes, Tax Difference, Dividendo/Juros, and each category row's monthly and yearly-total values match the values shown before the redesign for the same year
-- [ ] Total despesas for each month equals the sum of that month's 14 category values, including Investimento and Reserva
-- [ ] Resultado (R-D-Inv) for each month equals Salary After Taxes + Dividendo/Juros − Total despesas + Investimento for that month
-- [ ] Every row displays an Average column equal to the arithmetic mean of its 12 monthly values, positioned between the Dec column and the Yearly Total column
-- [ ] Total despesas and Resultado rows render visually emphasized (bold), consistent with existing yearly-total styling
+- [x] The table renders rows in the fixed order: Salary, Salary After Taxes, Tax Difference, Dividendo/Juros, the 14 categories in enum order, Resultado (R-D-Inv), Total despesas
+- [x] Salary, Salary After Taxes, Tax Difference, Dividendo/Juros, and each category row's monthly and yearly-total values match the values shown before the redesign for the same year
+- [x] Total despesas for each month equals the sum of that month's 14 category values, including Investimento and Reserva
+- [x] Resultado (R-D-Inv) for each month equals Salary After Taxes + Dividendo/Juros − Total despesas + Investimento for that month
+- [x] Every row displays an Average column equal to the arithmetic mean of its 12 monthly values, positioned between the Dec column and the Yearly Total column
+- [x] Total despesas and Resultado rows render visually emphasized (bold), consistent with existing yearly-total styling
 
 ### F03. Investments Sub-Tab
 - [ ] Each of the 11 account rows shows all 12 monthly balance values (not just January)
@@ -213,7 +213,7 @@ graph TD
 - [ ] Sum of Month Results equals the sum of the 11 Month Result values, and is numerically equal to Year Progress
 
 ### Cross-Feature Integration
-- [ ] Selecting a different year while Category Totals is active re-scopes the entire combined table, including Resultado and Total despesas, to the new year (F01 → F02)
+- [x] Selecting a different year while Category Totals is active re-scopes the entire combined table, including Resultado and Total despesas, to the new year (F01 → F02)
 - [ ] Selecting a different year while Investments is active re-scopes the account table, Total row, Month Result row, and the three summary figures to the new year (F01 → F03)
 - [ ] Switching from Category Totals to Investments and back displays each sub-tab's content without re-triggering a network refetch, confirming the shared year from F01 is reused rather than reset (F01 → F02, F03)
 - [ ] At every point in the flow, exactly one of Category Totals/Investments content is visible, confirming F01's active-tab state correctly gates F02 and F03 (F01 → F02, F03)
