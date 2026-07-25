@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import YearlySummaryPage from '../YearlySummaryPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -80,22 +80,39 @@ describe('YearlySummaryPage', () => {
     expect(screen.getByText('Network down')).toBeInTheDocument()
   })
 
+  it('shows the error/retry state regardless of the active tab', async () => {
+    getCategoryTotalsForYearMock.mockRejectedValue(new Error('Network down'))
+
+    render(<YearlySummaryPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
+    expect(screen.getByText('Network down')).toBeInTheDocument()
+  })
+
+  it('defaults to the Category Totals tab on load', async () => {
+    render(<YearlySummaryPage />)
+
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument()
+    expect(screen.getByText('Income Summary')).toBeInTheDocument()
+    expect(screen.queryByText('Investment Diffs')).not.toBeInTheDocument()
+  })
+
+  it('marks Category Totals as the active tab button by default', async () => {
+    render(<YearlySummaryPage />)
+
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: 'Category Totals' })).toHaveClass('yearly-summary-page__tab--active')
+    expect(screen.getByRole('button', { name: 'Investments' })).not.toHaveClass('yearly-summary-page__tab--active')
+  })
+
   it('renders the category-totals table with monthly values and a yearly total column', async () => {
     render(<YearlySummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument()
     expect(screen.getByText('1,860.00')).toBeInTheDocument()
-  })
-
-  it('renders the investment-diffs table with 11 monthly diff columns per account and the net position row', async () => {
-    render(<YearlySummaryPage />)
-
-    await waitFor(() => expect(screen.getByText('Investment Diffs')).toBeInTheDocument())
-    expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument()
-    expect(screen.getByText('PlatinumVisa8003 (liability)')).toBeInTheDocument()
-    expect(screen.getByText('Net Position')).toBeInTheDocument()
-    expect(screen.getByText('550.00')).toBeInTheDocument()
   })
 
   it('renders the income-summary table with the header row and the four data rows', async () => {
@@ -123,5 +140,58 @@ describe('YearlySummaryPage', () => {
 
     expect(screen.queryByText(/Lottery/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/Tithe/i)).not.toBeInTheDocument()
+  })
+
+  it('shows only the Investments tab content after clicking Investments', async () => {
+    render(<YearlySummaryPage />)
+
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+
+    expect(screen.queryByText('Income Summary')).not.toBeInTheDocument()
+    expect(screen.queryByRole('cell', { name: 'Mercado' })).not.toBeInTheDocument()
+    expect(screen.getByText('Investment Diffs')).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument()
+    expect(screen.getByText('PlatinumVisa8003 (liability)')).toBeInTheDocument()
+    expect(screen.getByText('Net Position')).toBeInTheDocument()
+    expect(screen.getByText('550.00')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Investments' })).toHaveClass('yearly-summary-page__tab--active')
+  })
+
+  it('does not change the year picker value when switching tabs', async () => {
+    render(<YearlySummaryPage />)
+
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    const yearInput = screen.getByLabelText('Year') as HTMLInputElement
+    const valueBefore = yearInput.value
+
+    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+
+    expect(yearInput.value).toBe(valueBefore)
+  })
+
+  it('does not refetch data when switching tabs', async () => {
+    render(<YearlySummaryPage />)
+
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    const callCountBefore = getCategoryTotalsForYearMock.mock.calls.length
+
+    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Category Totals' }))
+
+    expect(getCategoryTotalsForYearMock.mock.calls.length).toBe(callCountBefore)
+  })
+
+  it('keeps the active tab unchanged when the year value changes', async () => {
+    render(<YearlySummaryPage />)
+
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    await waitFor(() => expect(screen.getByText('Investment Diffs')).toBeInTheDocument())
+
+    fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2027' } })
+
+    await waitFor(() => expect(screen.getByText('Investment Diffs')).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: 'Investments' })).toHaveClass('yearly-summary-page__tab--active')
   })
 })
