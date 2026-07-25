@@ -81,6 +81,13 @@
   max-width: 960px;
 }
 
+.monthly-page__summary-groups {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
 .monthly-page__grids-row {
   flex-shrink: 0;
   display: flex;
