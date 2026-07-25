@@ -288,6 +288,25 @@ describe('MonthlyPage', () => {
     )
   })
 
+  it('renders Category Totals and Cards in the first Summary row, Banks and Incoming in the second, with no heading between them', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+
+    const groups = document.querySelector('.monthly-page__summary-groups')
+    expect(groups).not.toBeNull()
+    const rows = groups!.querySelectorAll(':scope > .monthly-page__grids-row')
+    expect(rows).toHaveLength(2)
+
+    const firstRowHeadings = Array.from(rows[0].querySelectorAll('h2')).map((h) => h.textContent)
+    expect(firstRowHeadings).toEqual(['Category Totals', 'Cards'])
+
+    const secondRowHeadings = Array.from(rows[1].querySelectorAll('h2')).map((h) => h.textContent)
+    expect(secondRowHeadings).toEqual(['Banks', 'Incoming'])
+
+    expect(groups!.querySelectorAll(':scope > :not(.monthly-page__grids-row)')).toHaveLength(0)
+  })
+
   it('unmarks a paid statement after confirmation', async () => {
     unmarkCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[1], isPaid: false, outstandingTotal: 0 })
     render(<MonthlyPage />)
