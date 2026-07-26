@@ -9,12 +9,12 @@ import './YearlySummaryPage.css'
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const SPACER_COL_SPAN = MONTH_LABELS.length + 3
 
-type YearlySummaryTabId = 'categoryTotals' | 'investments' | 'historicAverage'
+type YearlySummaryTabId = 'categoryTotals' | 'investments' | 'historicCategoriesAverage'
 
 const TABS: { id: YearlySummaryTabId; label: string }[] = [
   { id: 'categoryTotals', label: 'Category Totals' },
   { id: 'investments', label: 'Investments' },
-  { id: 'historicAverage', label: 'Historic Average' },
+  { id: 'historicCategoriesAverage', label: 'Historic Categories Average' },
 ]
 
 function YearlySummaryRow({
@@ -242,10 +242,10 @@ export default function YearlySummaryPage() {
             </section>
           )}
 
-          {activeTab === 'historicAverage' && (
+          {activeTab === 'historicCategoriesAverage' && (
             <section className="yearly-summary-page__section">
-              <h2>Historic Average</h2>
-              <p>This is the historic average section.</p>
+              <h2>Historic Categories Average</h2>
+              <p>This is the historic categories average section.</p>
             </section>
           )}
         </div>
