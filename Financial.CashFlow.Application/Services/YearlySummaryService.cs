@@ -53,6 +53,13 @@ public sealed class YearlySummaryService : IYearlySummaryService
             .GroupBy(s => (s.Account, s.Month))
             .ToDictionary(g => g.Key, g => g.First().Value);
 
+        var priorYearDecemberByAccount = allSnapshots
+            .Where(s => s.Year == year - 1 && s.Month == MonthsInYear)
+            .GroupBy(s => s.Account, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().Value, StringComparer.OrdinalIgnoreCase);
+
+        var hasPriorYearData = allSnapshots.Any(s => s.Year == year - 1);
+
         var accounts = scopedAccounts
             .Select(account =>
             {
@@ -62,12 +69,16 @@ public sealed class YearlySummaryService : IYearlySummaryService
                     monthlyValues[month - 1] = valueByAccountAndMonth.GetValueOrDefault((account.Name, month));
                 }
 
+                decimal? januaryDiff = hasPriorYearData
+                    ? monthlyValues[0] - priorYearDecemberByAccount.GetValueOrDefault(account.Name, 0m)
+                    : null;
+
                 return new InvestmentAccountYearlyDiffDTO
                 {
                     Account = account.Name,
                     IsLiability = account.IsLiability,
                     MonthlyValues = monthlyValues,
-                    MonthlyDiffs = ComputeDiffs(monthlyValues)
+                    MonthlyDiffs = ComputeDiffs(monthlyValues, januaryDiff)
                 };
             })
             .ToList();
@@ -79,10 +90,14 @@ public sealed class YearlySummaryService : IYearlySummaryService
                 .Sum(a => a.IsLiability ? -a.MonthlyValues[month] : a.MonthlyValues[month]);
         }
 
+        decimal? netPositionJanuaryDiff = hasPriorYearData
+            ? accounts.Sum(a => (a.IsLiability ? -1 : 1) * a.MonthlyDiffs[0]!.Value)
+            : null;
+
         var netPosition = new NetPositionYearlyDiffDTO
         {
             MonthlyValues = netPositionValues,
-            MonthlyDiffs = ComputeDiffs(netPositionValues),
+            MonthlyDiffs = ComputeDiffs(netPositionValues, netPositionJanuaryDiff),
             FullYearNetChange = netPositionValues[MonthsInYear - 1] - netPositionValues[0]
         };
 
@@ -133,12 +148,13 @@ public sealed class YearlySummaryService : IYearlySummaryService
         };
     }
 
-    private static decimal[] ComputeDiffs(decimal[] monthlyValues)
+    private static decimal?[] ComputeDiffs(decimal[] monthlyValues, decimal? januaryDiff)
     {
-        var diffs = new decimal[monthlyValues.Length - 1];
+        var diffs = new decimal?[monthlyValues.Length];
+        diffs[0] = januaryDiff;
         for (var month = 1; month < monthlyValues.Length; month++)
         {
-            diffs[month - 1] = monthlyValues[month] - monthlyValues[month - 1];
+            diffs[month] = monthlyValues[month] - monthlyValues[month - 1];
         }
 
         return diffs;

@@ -458,12 +458,12 @@ export interface InvestmentAccountYearlyDiffDto {
   account: string
   isLiability: boolean
   monthlyValues: number[]
-  monthlyDiffs: number[]
+  monthlyDiffs: (number | null)[]
 }
 
 export interface NetPositionYearlyDiffDto {
   monthlyValues: number[]
-  monthlyDiffs: number[]
+  monthlyDiffs: (number | null)[]
   fullYearNetChange: number
 }
 
