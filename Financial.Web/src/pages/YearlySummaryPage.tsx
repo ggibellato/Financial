@@ -86,12 +86,6 @@ export default function YearlySummaryPage() {
 
   const [activeTab, setActiveTab] = useState<YearlySummaryTabId>('categoryTotals')
 
-  // Feb-Dec only, matching Year Progress's Dec-minus-Jan telescoping sum identity - including
-  // January (which diffs against the *prior* year's December) would break that relationship.
-  // Feb-Dec are never null (only January can be); the filter is just a type-safe narrowing.
-  const monthResults =
-    investmentDiffs?.netPosition.monthlyDiffs.slice(1).filter((v): v is number => v !== null) ?? []
-
   return (
     <div className="yearly-summary-page">
       <div className="yearly-summary-page__year-picker">
@@ -237,11 +231,11 @@ export default function YearlySummaryPage() {
                 </div>
                 <div className="yearly-summary-page__investment-total">
                   <span>Average Month Result</span>
-                  <strong>{formatN2(average(monthResults))}</strong>
+                  <strong>{formatN2(investmentDiffs.netPosition.averageMonthResult)}</strong>
                 </div>
                 <div className="yearly-summary-page__investment-total">
                   <span>Sum of Month Results</span>
-                  <strong>{formatN2(monthResults.reduce((sum, v) => sum + v, 0))}</strong>
+                  <strong>{formatN2(investmentDiffs.netPosition.sumOfMonthResults)}</strong>
                 </div>
               </div>
             </section>

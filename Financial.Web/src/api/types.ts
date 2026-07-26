@@ -465,6 +465,8 @@ export interface NetPositionYearlyDiffDto {
   monthlyValues: number[]
   monthlyDiffs: (number | null)[]
   fullYearNetChange: number
+  averageMonthResult: number
+  sumOfMonthResults: number
 }
 
 export interface InvestmentDiffsYearlyDto {
