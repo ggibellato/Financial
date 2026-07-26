@@ -1,6 +1,7 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
 using FluentAssertions;
 
@@ -16,7 +17,7 @@ public class ResumoValidationReaderTests
     }
 
     [Fact]
-    public void ImportAccountSnapshots_CanonicalLayout_CreatesOneSnapshotPerMonthPerAccount()
+    public void ImportAccountSnapshots_CanonicalLayout_CreatesTwelveSnapshotsWithBlankMonthsAsZero()
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Resumo2026");
@@ -25,12 +26,13 @@ public class ResumoValidationReaderTests
         sheet.Cell(29, 2).Value = 5000.0;
         sheet.Cell(29, 3).Value = 5000.0;
 
-        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts());
+        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts(), new ImportReport());
 
-        snapshots.Should().HaveCount(2);
+        snapshots.Should().HaveCount(12);
         snapshots.Should().OnlyContain(s => s.Account == "BlueRewardsSaver" && s.Year == 2026);
         snapshots.Should().Contain(s => s.Month == 1 && s.Value == 5000.0m);
         snapshots.Should().Contain(s => s.Month == 2 && s.Value == 5000.0m);
+        snapshots.Where(s => s.Month is >= 3 and <= 12).Should().OnlyContain(s => s.Value == 0m);
     }
 
     [Fact]
@@ -42,11 +44,11 @@ public class ResumoValidationReaderTests
         sheet.Cell(30, 1).Value = "Platinum Visa 8003 (-)";
         sheet.Cell(30, 2).Value = 433.78;
 
-        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts());
+        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts(), new ImportReport());
 
-        snapshots.Should().ContainSingle();
-        snapshots[0].Account.Should().Be("PlatinumVisa8003");
-        snapshots[0].Value.Should().Be(-433.78m);
+        snapshots.Should().HaveCount(12);
+        snapshots.Should().ContainSingle(s => s.Month == 1).Which.Value.Should().Be(-433.78m);
+        snapshots.Where(s => s.Month != 1).Should().OnlyContain(s => s.Value == 0m);
     }
 
     [Fact]
@@ -58,11 +60,9 @@ public class ResumoValidationReaderTests
         sheet.Cell(30, 1).Value = "Platinum Visa 8003 (-)";
         sheet.Cell(30, 2).Value = -433.78;
 
-        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts());
+        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts(), new ImportReport());
 
-        snapshots.Should().ContainSingle();
-        snapshots[0].Account.Should().Be("PlatinumVisa8003");
-        snapshots[0].Value.Should().Be(433.78m);
+        snapshots.Should().ContainSingle(s => s.Month == 1).Which.Value.Should().Be(433.78m);
     }
 
     [Fact]
@@ -74,11 +74,9 @@ public class ResumoValidationReaderTests
         sheet.Cell(30, 1).Value = "Trading 212 Invested";
         sheet.Cell(30, 2).Value = 433.78;
 
-        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts());
+        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts(), new ImportReport());
 
-        snapshots.Should().ContainSingle();
-        snapshots[0].Account.Should().Be("Trading212Invested");
-        snapshots[0].Value.Should().Be(433.78m);
+        snapshots.Should().ContainSingle(s => s.Month == 1).Which.Value.Should().Be(433.78m);
     }
 
     [Fact]
@@ -90,11 +88,9 @@ public class ResumoValidationReaderTests
         sheet.Cell(30, 1).Value = "Trading 212 Invested";
         sheet.Cell(30, 2).Value = -433.78;
 
-        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts());
+        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts(), new ImportReport());
 
-        snapshots.Should().ContainSingle();
-        snapshots[0].Account.Should().Be("Trading212Invested");
-        snapshots[0].Value.Should().Be(-433.78m);
+        snapshots.Should().ContainSingle(s => s.Month == 1).Which.Value.Should().Be(-433.78m);
     }
 
 
@@ -107,9 +103,9 @@ public class ResumoValidationReaderTests
         sheet.Cell(31, 1).Value = "Chase Master  4023 (-)";
         sheet.Cell(31, 2).Value = -11526.59;
 
-        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts());
+        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts(), new ImportReport());
 
-        snapshots.Should().ContainSingle().Which.Account.Should().Be("ChaseMaster4023");
+        snapshots.Should().OnlyContain(s => s.Account == "ChaseMaster4023");
     }
 
     [Fact]
@@ -121,9 +117,10 @@ public class ResumoValidationReaderTests
         sheet.Cell(30, 1).Value = "Help to Buy ISA GGS";
         sheet.Cell(30, 2).Value = 15682.05;
 
-        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2023, SeededAccounts());
+        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2023, SeededAccounts(), new ImportReport());
 
-        snapshots.Should().ContainSingle().Which.Account.Should().Be("HelpToBuyIsaGgs");
+        snapshots.Should().OnlyContain(s => s.Account == "HelpToBuyIsaGgs");
+        snapshots.Should().ContainSingle(s => s.Month == 1).Which.Value.Should().Be(15682.05m);
     }
 
     [Fact]
@@ -135,7 +132,7 @@ public class ResumoValidationReaderTests
         sheet.Cell(30, 1).Value = "Some Unrecognized Account";
         sheet.Cell(30, 2).Value = 100.00;
 
-        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2023, SeededAccounts());
+        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2023, SeededAccounts(), new ImportReport());
 
         snapshots.Should().BeEmpty();
     }
@@ -149,9 +146,9 @@ public class ResumoValidationReaderTests
         sheet.Cell(23, 1).Value = "Barclays Blue Rewards";
         sheet.Cell(23, 2).Value = 250.00;
 
-        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2020, SeededAccounts());
+        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2020, SeededAccounts(), new ImportReport());
 
-        snapshots.Should().ContainSingle().Which.Account.Should().Be("BarclaysBlueRewards");
+        snapshots.Should().OnlyContain(s => s.Account == "BarclaysBlueRewards");
     }
 
     [Fact]
@@ -163,9 +160,9 @@ public class ResumoValidationReaderTests
         sheet.Cell(35, 1).Value = "Chip Cash ISA";
         sheet.Cell(35, 2).Value = 500.00;
 
-        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2024, SeededAccounts());
+        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2024, SeededAccounts(), new ImportReport());
 
-        snapshots.Should().ContainSingle().Which.Account.Should().Be("ChipCashIsaGleison");
+        snapshots.Should().OnlyContain(s => s.Account == "ChipCashIsaGleison");
     }
 
     [Fact]
@@ -177,13 +174,13 @@ public class ResumoValidationReaderTests
         sheet.Cell(20, 1).Value = "Instant ISE Issue 1";
         sheet.Cell(20, 2).Value = 1000.00;
 
-        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2017, SeededAccounts());
+        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2017, SeededAccounts(), new ImportReport());
 
-        snapshots.Should().ContainSingle().Which.Account.Should().Be("InstantIsaIssue1");
+        snapshots.Should().OnlyContain(s => s.Account == "InstantIsaIssue1");
     }
 
     [Fact]
-    public void ImportAccountSnapshots_EmptyMonthCell_IsSkippedForThatMonthOnly()
+    public void ImportAccountSnapshots_EmptyMonthCell_WritesExplicitZero()
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Resumo2026");
@@ -191,9 +188,30 @@ public class ResumoValidationReaderTests
         sheet.Cell(36, 1).Value = "Trading 212 Invested";
         sheet.Cell(36, 3).Value = 22644.98;
 
-        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts());
+        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts(), new ImportReport());
 
-        snapshots.Should().ContainSingle().Which.Month.Should().Be(2);
+        snapshots.Should().HaveCount(12);
+        snapshots.Should().ContainSingle(s => s.Month == 2).Which.Value.Should().Be(22644.98m);
+        snapshots.Where(s => s.Month != 2).Should().OnlyContain(s => s.Value == 0m);
+    }
+
+    [Fact]
+    public void ImportAccountSnapshots_MalformedMonthCell_LogsWarningAndWritesNoSnapshotForThatMonth()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Resumo2026");
+
+        sheet.Cell(36, 1).Value = "Trading 212 Invested";
+        sheet.Cell(36, 2).Value = "n/a";
+        sheet.Cell(36, 3).Value = 100.00;
+        var report = new ImportReport();
+
+        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026, SeededAccounts(), report);
+
+        snapshots.Should().HaveCount(11);
+        snapshots.Should().NotContain(s => s.Month == 1);
+        snapshots.Should().ContainSingle(s => s.Month == 2).Which.Value.Should().Be(100.00m);
+        report.RowIssues.Should().ContainSingle(i => i.SheetName == "Resumo2026" && i.Row == 36);
     }
 
     [Fact]
