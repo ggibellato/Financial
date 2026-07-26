@@ -227,9 +227,9 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Investment Account Registry
-- [ ] All 11 currently-active `InvestmentAccount` enum values have a corresponding registry entry with IsActive = true and the correct IsLiability value carried over from `InvestmentAccountClassification`
-- [ ] Every `InvestmentSnapshot` record present before migration (all years, months, accounts) exists after migration with identical Year, Month, and Value, now referencing its account by registry Id
-- [ ] Running the migration a second time makes no further changes and logs that migration was already applied
+- [x] All 11 currently-active `InvestmentAccount` enum values have a corresponding registry entry with IsActive = true and the correct IsLiability value carried over from `InvestmentAccountClassification`
+- [x] Every `InvestmentSnapshot` record present before migration (all years, months, accounts) exists after migration with identical Year, Month, and Value, now referencing its account by registry Id
+- [x] Running the migration a second time makes no further changes and logs that migration was already applied
 - [ ] If an unmigrated enum value with no seeded registry entry is encountered, the migration aborts without partial writes and logs the specific value, year, and month
 
 ### F02. Historical Account Seeding and Import Alias Resolution
