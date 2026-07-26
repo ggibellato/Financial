@@ -233,10 +233,10 @@ graph TD
 - [ ] If an unmigrated enum value with no seeded registry entry is encountered, the migration aborts without partial writes and logs the specific value, year, and month
 
 ### F02. Historical Account Seeding and Import Alias Resolution
-- [ ] The registry contains exactly 19 entries after seeding: 11 with IsActive = true and 8 with IsActive = false (Everyday Saver, Instant ISA Issue 1, Ariana ISA, Barclays Blue Rewards, Help to Buy ISA GGS, Help to Buy ISA AACS, Chip Easy access, Chip Easy access Ariana)
-- [ ] A Resumo sheet row labeled "Instant ISE Issue 1" resolves to the same registry entry as a row labeled "Instant ISA Issue 1"
-- [ ] A Resumo sheet row labeled "Chip Cash ISA" resolves to the same registry entry as "Chip Cash ISA Gleison"
-- [ ] A row label matching no registry alias is skipped, with no snapshot written and no error raised
+- [x] The registry contains exactly 19 entries after seeding: 11 with IsActive = true and 8 with IsActive = false (Everyday Saver, Instant ISA Issue 1, Ariana ISA, Barclays Blue Rewards, Help to Buy ISA GGS, Help to Buy ISA AACS, Chip Easy access, Chip Easy access Ariana)
+- [x] A Resumo sheet row labeled "Instant ISE Issue 1" resolves to the same registry entry as a row labeled "Instant ISA Issue 1"
+- [x] A Resumo sheet row labeled "Chip Cash ISA" resolves to the same registry entry as "Chip Cash ISA Gleison"
+- [x] A row label matching no registry alias is skipped, with no snapshot written and no error raised
 
 ### F03. Full Historical Re-Import (2017-2026)
 - [ ] After running the migration, every one of the 10 Resumo2017-Resumo2026 sheets reports 0 unmatched account rows
@@ -258,7 +258,7 @@ graph TD
 - [ ] February-December Month Result values for every year are unchanged from current behavior
 
 ### Cross-Feature Integration
-- [ ] Registry entries created by F01 are correctly consumed by F02 when seeding the 8 historical accounts and their aliases
+- [x] Registry entries created by F01 are correctly consumed by F02 when seeding the 8 historical accounts and their aliases
 - [ ] The seeded registry and alias-resolving importer produced by F02 are what F03's full re-import invokes across all 10 Resumo sheets
 - [ ] Snapshot data written by F03, together with F01's active-status flag, is what F04 queries to determine year-scoped account existence
 - [ ] The year-filtered account list and net position values produced by F04 are exactly what F05 consumes for its January diff calculation
