@@ -370,4 +370,24 @@ describe('YearlySummaryPage', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Investments' })).toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'Investments' })).toHaveClass('yearly-summary-page__tab--active')
   })
+
+  it('shows only the Historic Categories Average placeholder after clicking Historic Categories Average', async () => {
+    render(<YearlySummaryPage />)
+
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Historic Categories Average' }))
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Historic Categories Average' })).toBeInTheDocument())
+  })
+
+  it('does not affect the Category Totals tab content when viewing Historic Categories Average', async () => {
+    render(<YearlySummaryPage />)
+
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Historic Categories Average' }))
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Historic Categories Average' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Category Totals' }))
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Category Totals' })).toBeInTheDocument())
+  })
 })
