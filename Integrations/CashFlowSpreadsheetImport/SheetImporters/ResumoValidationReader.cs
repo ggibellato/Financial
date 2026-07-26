@@ -10,10 +10,11 @@ namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImpo
 /// (confirmed empirically: the canonical 2026-shaped sheet has all 11 accounts at rows 29-39, but
 /// older years use different row counts, different labels — e.g. "Help to Buy ISA GGS" instead of
 /// a Chip Cash ISA — and sometimes omit an account entirely), so rows are located by matching each
-/// row's own label text against the canonical account names rather than by fixed row number. Rows
-/// whose label doesn't match a known account (including every genuinely historical-only account
-/// name) are simply not written — no fabricated snapshot is ever created. This is also the only
-/// place <see cref="InvestmentSnapshot"/> data is sourced from, so it both validates and writes.
+/// row's own label text against the registry's known account aliases rather than by fixed row
+/// number. The registry (see <see cref="InvestmentAccountMigrator"/>) must already be seeded before
+/// this runs. Rows whose label matches no known alias are simply not written — no fabricated
+/// snapshot is ever created. This is also the only place <see cref="InvestmentSnapshot"/> data is
+/// sourced from, so it both validates and writes.
 /// </summary>
 public static class ResumoValidationReader
 {
@@ -22,32 +23,10 @@ public static class ResumoValidationReader
     private const int MonthCount = 12;
     private const int LabelScanLastRow = 60;
 
-    private static readonly Dictionary<string, string[]> AccountLabelAliases = new()
-    {
-        ["BlueRewardsSaver"] = ["Blue Rewards Saver", "Barclays Blue Rewards"],
-        ["PlatinumVisa8003"] = ["Platinum Visa 8003"],
-        ["PlatinumVisa6007"] = ["Platinum Visa 6007"],
-        ["ChaseMaster4023"] = ["Chase Master 4023"],
-        ["BaAmex"] = ["BA Amex"],
-        ["PaypalCredit"] = ["Paypal credit"],
-        ["ChipCashIsaGleison"] = ["Chip Cash ISA Gleison"],
-        ["ChaseSave"] = ["Chase save"],
-        ["ChipCashIsaAriana"] = ["Chip Cash ISA Ariana"],
-        ["Trading212Invested"] = ["Trading 212 Invested"],
-        ["ReservasPessoais"] = ["Reservas pessoais"],
-    };
-
-    private static readonly HashSet<string> LiabilityAccountNames =
-    [
-        "PlatinumVisa8003",
-        "PlatinumVisa6007",
-        "ChaseMaster4023",
-        "BaAmex",
-        "PaypalCredit",
-        "ReservasPessoais"
-    ];
-
-    public static IReadOnlyList<InvestmentSnapshot> ImportAccountSnapshots(IXLWorksheet sheet, int year)
+    public static IReadOnlyList<InvestmentSnapshot> ImportAccountSnapshots(
+        IXLWorksheet sheet,
+        int year,
+        IReadOnlyCollection<InvestmentAccount> accounts)
     {
         var snapshots = new List<InvestmentSnapshot>();
         var lastRow = Math.Min(sheet.LastRowUsed()?.RowNumber() ?? 1, LabelScanLastRow);
@@ -55,7 +34,7 @@ public static class ResumoValidationReader
         for (var row = 1; row <= lastRow; row++)
         {
             var label = sheet.Cell(row, LabelColumn).GetString();
-            if (string.IsNullOrWhiteSpace(label) || !TryResolveAccount(label, out var account))
+            if (string.IsNullOrWhiteSpace(label) || !TryResolveAccount(label, accounts, out var account))
             {
                 continue;
             }
@@ -68,8 +47,8 @@ public static class ResumoValidationReader
                     continue;
                 }
 
-                var adjustedValue = rawValue.Value * (LiabilityAccountNames.Contains(account) ? -1 : 1);
-                snapshots.Add(InvestmentSnapshot.Create(account, year, i + 1, adjustedValue));
+                var adjustedValue = rawValue.Value * (account!.IsLiability ? -1 : 1);
+                snapshots.Add(InvestmentSnapshot.Create(account.Name, year, i + 1, adjustedValue));
             }
         }
 
@@ -104,20 +83,13 @@ public static class ResumoValidationReader
         return null;
     }
 
-    private static bool TryResolveAccount(string rawLabel, out string account)
+    private static bool TryResolveAccount(string rawLabel, IReadOnlyCollection<InvestmentAccount> accounts, out InvestmentAccount? account)
     {
         var normalized = NormalizeLabel(rawLabel);
-        foreach (var (candidate, aliases) in AccountLabelAliases)
-        {
-            if (Array.Exists(aliases, alias => string.Equals(NormalizeLabel(alias), normalized, StringComparison.OrdinalIgnoreCase)))
-            {
-                account = candidate;
-                return true;
-            }
-        }
+        account = accounts.FirstOrDefault(a =>
+            a.Aliases.Any(alias => string.Equals(NormalizeLabel(alias), normalized, StringComparison.OrdinalIgnoreCase)));
 
-        account = string.Empty;
-        return false;
+        return account is not null;
     }
 
     private static string NormalizeLabel(string label)

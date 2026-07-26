@@ -48,6 +48,21 @@ var storage = new LocalJsonStorage(outputPath);
 var existingData = CashFlowLoader.LoadSync(storage, serializer);
 var data = mensaisOnly ? existingData : CashFlowData.Create();
 
+// Carrying over data the spreadsheet doesn't own, and seeding/backfilling the investment
+// account registry, must both happen before ImportResumoSheets: dynamic account resolution
+// there depends on the registry (existing accounts + this run's seed table) already being
+// in place. Safe to run unconditionally in mensaisOnly mode too, since data == existingData
+// there and both operations are no-ops/idempotent against already-present data.
+// The migrator also audits existing snapshots against the registry, but no snapshots exist
+// in `data` yet at this point in a full run - that audit result is discarded here and
+// recomputed for real once ImportResumoSheets has populated InvestmentSnapshots below.
+if (!mensaisOnly)
+{
+    CarryOverDataTheSpreadsheetDoesNotOwn(existingData, data);
+}
+
+InvestmentAccountMigrator.Migrate(data);
+
 using var workbook = new XLWorkbook(workbookPath);
 
 if (mensaisOnly)
@@ -66,7 +81,6 @@ else
     ImportMensaisSheet(workbook, data, report);
     ImportControleMaeSheet(workbook, data, report);
     ImportResumoSheets(workbook, data, report);
-    CarryOverDataTheSpreadsheetDoesNotOwn(existingData, data);
 }
 
 // Always run, in both modes: every migration below is idempotent, so re-running is always safe.
@@ -74,6 +88,8 @@ var bankSummary = BankMigrator.Migrate(data);
 var bankOpeningBalanceSummary = BankOpeningBalanceMigrator.Migrate(data, DateOnly.FromDateTime(DateTime.Now));
 var incomeSummary = IncomeMigrator.Migrate(data, workbook);
 var paymentStateSummary = ExpensePaymentStateMigrator.Migrate(data);
+// Re-run (seeding is idempotent) so the reported summary's snapshot audit reflects the
+// snapshots ImportResumoSheets just added above, not the empty pre-import state.
 var investmentAccountSummary = InvestmentAccountMigrator.Migrate(data);
 
 var repository = new CashFlowJsonRepository(data, storage, serializer);
@@ -197,7 +213,7 @@ static void ImportResumoSheets(XLWorkbook workbook, CashFlowData data, ImportRep
             continue;
         }
 
-        foreach (var snapshot in ResumoValidationReader.ImportAccountSnapshots(sheet, year))
+        foreach (var snapshot in ResumoValidationReader.ImportAccountSnapshots(sheet, year, data.InvestmentAccounts))
         {
             data.AddInvestmentSnapshot(snapshot);
         }
