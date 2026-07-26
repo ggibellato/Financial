@@ -109,6 +109,33 @@ public class YearlySummaryServiceTests
     }
 
     [Fact]
+    public void GetInvestmentDiffsForYear_2023_ReturnsExactlyTheNineAccountsConfirmedPresentThatYear()
+    {
+        // Mirrors PRD P18 F04's named acceptance criterion: Resumo2023 is confirmed (from the
+        // source spreadsheet inspection during PRD authoring) to contain exactly these 9 accounts.
+        var repository = new StubCashFlowRepository();
+        repository.Accounts.Add(InvestmentAccount.Create("EverydaySaver", isActive: false, isLiability: false));
+        repository.Accounts.Add(InvestmentAccount.Create("HelpToBuyIsaGgs", isActive: false, isLiability: false));
+        repository.Accounts.Add(InvestmentAccount.Create("HelpToBuyIsaAacs", isActive: false, isLiability: false));
+        repository.Accounts.Add(InvestmentAccount.Create("ChipEasyAccess", isActive: false, isLiability: false));
+        string[] presentIn2023 =
+        [
+            "EverydaySaver", "BlueRewardsSaver", "PlatinumVisa8003", "PlatinumVisa6007",
+            "PaypalCredit", "HelpToBuyIsaGgs", "HelpToBuyIsaAacs", "ChipEasyAccess", "ChaseSave"
+        ];
+        foreach (var name in presentIn2023)
+        {
+            repository.Snapshots.Add(InvestmentSnapshot.Create(name, 2023, 1, 100m));
+        }
+        // Accounts NOT present in 2023 (e.g. opened later, like Trading212Invested) get no snapshot that year.
+        var service = new YearlySummaryService(repository);
+
+        var result = service.GetInvestmentDiffsForYear(2023);
+
+        result.Accounts.Select(a => a.Account).Should().BeEquivalentTo(presentIn2023);
+    }
+
+    [Fact]
     public void GetInvestmentDiffsForYear_PastYearWithNoData_ReturnsNoAccounts()
     {
         var repository = new StubCashFlowRepository();
