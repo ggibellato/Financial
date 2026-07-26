@@ -105,6 +105,11 @@ static void CarryOverDataTheSpreadsheetDoesNotOwn(CashFlowData existingData, Cas
     {
         data.AddCardStatement(statement);
     }
+
+    foreach (var account in existingData.InvestmentAccounts)
+    {
+        data.AddInvestmentAccount(account);
+    }
 }
 
 static void ImportMonthlyExpenseSheets(XLWorkbook workbook, CashFlowData data, ImportReport report)
