@@ -8,6 +8,9 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class YearlySummaryServiceTests
 {
+    private static readonly int CurrentYear = DateTime.Now.Year;
+    private static readonly int PastYear = CurrentYear - 5;
+
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
@@ -71,26 +74,61 @@ public class YearlySummaryServiceTests
     }
 
     [Fact]
-    public void GetInvestmentDiffsForYear_ReturnsAllElevenAccounts()
+    public void GetInvestmentDiffsForYear_CurrentYear_ReturnsAllElevenActiveAccounts()
     {
         var repository = new StubCashFlowRepository();
         var service = new YearlySummaryService(repository);
 
-        var result = service.GetInvestmentDiffsForYear(2026);
+        var result = service.GetInvestmentDiffsForYear(CurrentYear);
 
         result.Accounts.Should().HaveCount(repository.Accounts.Count);
+    }
+
+    [Fact]
+    public void GetInvestmentDiffsForYear_CurrentYear_ExcludesDisabledAccounts()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Accounts.Add(InvestmentAccount.Create("EverydaySaver", isActive: false, isLiability: false));
+        var service = new YearlySummaryService(repository);
+
+        var result = service.GetInvestmentDiffsForYear(CurrentYear);
+
+        result.Accounts.Should().NotContain(a => a.Account == "EverydaySaver");
+    }
+
+    [Fact]
+    public void GetInvestmentDiffsForYear_PastYear_ReturnsOnlyAccountsPresentThatYear()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", PastYear, 1, 100m));
+        var service = new YearlySummaryService(repository);
+
+        var result = service.GetInvestmentDiffsForYear(PastYear);
+
+        result.Accounts.Should().ContainSingle().Which.Account.Should().Be("ChaseSave");
+    }
+
+    [Fact]
+    public void GetInvestmentDiffsForYear_PastYearWithNoData_ReturnsNoAccounts()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+
+        var result = service.GetInvestmentDiffsForYear(PastYear);
+
+        result.Accounts.Should().BeEmpty();
     }
 
     [Fact]
     public void GetInvestmentDiffsForYear_MonthlyDiffsEqualThisMonthMinusPrevMonth()
     {
         var repository = new StubCashFlowRepository();
-        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", 2026, 1, 1000m));
-        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", 2026, 2, 1200m));
-        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", 2026, 3, 1100m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", CurrentYear, 1, 1000m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", CurrentYear, 2, 1200m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", CurrentYear, 3, 1100m));
         var service = new YearlySummaryService(repository);
 
-        var result = service.GetInvestmentDiffsForYear(2026);
+        var result = service.GetInvestmentDiffsForYear(CurrentYear);
 
         var chaseSave = result.Accounts.Single(a => a.Account == "ChaseSave");
         chaseSave.MonthlyDiffs.Should().HaveCount(11);
@@ -102,10 +140,10 @@ public class YearlySummaryServiceTests
     public void GetInvestmentDiffsForYear_MissingSnapshotForAMonth_ContributesZero()
     {
         var repository = new StubCashFlowRepository();
-        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", 2026, 1, 500m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", CurrentYear, 1, 500m));
         var service = new YearlySummaryService(repository);
 
-        var result = service.GetInvestmentDiffsForYear(2026);
+        var result = service.GetInvestmentDiffsForYear(CurrentYear);
 
         var chaseSave = result.Accounts.Single(a => a.Account == "ChaseSave");
         chaseSave.MonthlyValues[1].Should().Be(0m);
@@ -116,24 +154,37 @@ public class YearlySummaryServiceTests
     public void GetInvestmentDiffsForYear_NetPositionSubtractsLiabilitiesFromAssets()
     {
         var repository = new StubCashFlowRepository();
-        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", 2026, 1, 1000m));
-        repository.Snapshots.Add(InvestmentSnapshot.Create("PlatinumVisa8003", 2026, 1, 300m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", CurrentYear, 1, 1000m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("PlatinumVisa8003", CurrentYear, 1, 300m));
         var service = new YearlySummaryService(repository);
 
-        var result = service.GetInvestmentDiffsForYear(2026);
+        var result = service.GetInvestmentDiffsForYear(CurrentYear);
 
         result.NetPosition.MonthlyValues[0].Should().Be(700m);
+    }
+
+    [Fact]
+    public void GetInvestmentDiffsForYear_NetPositionSumsOnlyScopedAccounts()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", PastYear, 1, 1000m));
+        // PlatinumVisa8003 has no snapshot in PastYear, so it's out of scope and must not contribute.
+        var service = new YearlySummaryService(repository);
+
+        var result = service.GetInvestmentDiffsForYear(PastYear);
+
+        result.NetPosition.MonthlyValues[0].Should().Be(1000m);
     }
 
     [Fact]
     public void GetInvestmentDiffsForYear_FullYearNetChangeEqualsDecemberMinusJanuary()
     {
         var repository = new StubCashFlowRepository();
-        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", 2026, 1, 1000m));
-        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", 2026, 12, 1800m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", CurrentYear, 1, 1000m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", CurrentYear, 12, 1800m));
         var service = new YearlySummaryService(repository);
 
-        var result = service.GetInvestmentDiffsForYear(2026);
+        var result = service.GetInvestmentDiffsForYear(CurrentYear);
 
         result.NetPosition.FullYearNetChange.Should().Be(800m);
     }
