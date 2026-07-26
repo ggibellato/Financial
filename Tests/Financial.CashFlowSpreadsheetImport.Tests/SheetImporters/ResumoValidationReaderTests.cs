@@ -26,7 +26,23 @@ public class ResumoValidationReaderTests
     }
 
     [Fact]
-    public void ImportAccountSnapshots_LiabilityNegativeValue_TakesAbsoluteValue()
+    public void ImportAccountSnapshots_LiabilityPositiveValue_TakesNegativeValue()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Resumo2026");
+
+        sheet.Cell(30, 1).Value = "Platinum Visa 8003 (-)";
+        sheet.Cell(30, 2).Value = 433.78;
+
+        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026);
+
+        snapshots.Should().ContainSingle();
+        snapshots[0].Account.Should().Be(InvestmentAccount.PlatinumVisa8003);
+        snapshots[0].Value.Should().Be(-433.78m);
+    }
+
+    [Fact]
+    public void ImportAccountSnapshots_LiabilityNegativeValue_TakesPositiveValue()
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Resumo2026");
@@ -40,6 +56,39 @@ public class ResumoValidationReaderTests
         snapshots[0].Account.Should().Be(InvestmentAccount.PlatinumVisa8003);
         snapshots[0].Value.Should().Be(433.78m);
     }
+
+    [Fact]
+    public void ImportAccountSnapshots_NonLiabilityPositiveValue_TakesPositiveValue()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Resumo2026");
+
+        sheet.Cell(30, 1).Value = "Trading 212 Invested";
+        sheet.Cell(30, 2).Value = 433.78;
+
+        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026);
+
+        snapshots.Should().ContainSingle();
+        snapshots[0].Account.Should().Be(InvestmentAccount.Trading212Invested);
+        snapshots[0].Value.Should().Be(433.78m);
+    }
+
+    [Fact]
+    public void ImportAccountSnapshots_NonLiabilityNegativeValue_TakesNegativeValue()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Resumo2026");
+
+        sheet.Cell(30, 1).Value = "Trading 212 Invested";
+        sheet.Cell(30, 2).Value = -433.78;
+
+        var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026);
+
+        snapshots.Should().ContainSingle();
+        snapshots[0].Account.Should().Be(InvestmentAccount.Trading212Invested);
+        snapshots[0].Value.Should().Be(-433.78m);
+    }
+
 
     [Fact]
     public void ImportAccountSnapshots_LabelWithDoubleSpaceVariant_StillResolves()

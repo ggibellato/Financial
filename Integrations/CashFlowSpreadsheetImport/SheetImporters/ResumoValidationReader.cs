@@ -1,6 +1,8 @@
 using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Office2013.WebExtension;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
@@ -58,7 +60,8 @@ public static class ResumoValidationReader
                     continue;
                 }
 
-                snapshots.Add(InvestmentSnapshot.Create(account, year, i + 1, Math.Abs(rawValue.Value)));
+                var adjustedValue = rawValue.Value * (InvestmentAccountClassification.IsLiability(account) ? -1 : 1);
+                snapshots.Add(InvestmentSnapshot.Create(account, year, i + 1, adjustedValue));
             }
         }
 
