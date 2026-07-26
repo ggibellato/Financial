@@ -61,7 +61,8 @@ public class YearlySummaryEndpointsTests
         var chaseSave = result.Accounts.Single(a => a.Account == "ChaseSave");
         chaseSave.MonthlyValues[0].Should().Be(1000m);
         chaseSave.MonthlyValues[1].Should().Be(1200m);
-        chaseSave.MonthlyDiffs[0].Should().Be(200m);
+        chaseSave.MonthlyDiffs[0].Should().BeNull();
+        chaseSave.MonthlyDiffs[1].Should().Be(200m);
         result.NetPosition.MonthlyValues[0].Should().Be(1000m);
         result.NetPosition.FullYearNetChange.Should().Be(-1000m);
     }

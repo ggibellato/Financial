@@ -30,18 +30,18 @@ const INVESTMENT_DIFFS: InvestmentDiffsYearlyDto = {
       account: 'ChaseSave',
       isLiability: false,
       monthlyValues: [1000, 1050, 1100, 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500, 1550],
-      monthlyDiffs: [50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50],
+      monthlyDiffs: [75, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50],
     },
     {
       account: 'PlatinumVisa8003',
       isLiability: true,
       monthlyValues: [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200],
-      monthlyDiffs: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      monthlyDiffs: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     },
   ],
   netPosition: {
     monthlyValues: [800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200, 1250, 1300, 1350],
-    monthlyDiffs: [50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50],
+    monthlyDiffs: [75, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50],
     fullYearNetChange: 550,
   },
 }
@@ -217,7 +217,7 @@ describe('YearlySummaryPage', () => {
     expect(within(totalRow).getByText('1,350.00')).toBeInTheDocument()
   })
 
-  it('renders a Month Result row with a blank January cell and the net position diffs for Feb-Dec', async () => {
+  it('renders a real January Month Result value when prior-year data exists, plus the Feb-Dec diffs', async () => {
     render(<YearlySummaryPage />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
@@ -226,7 +226,23 @@ describe('YearlySummaryPage', () => {
     const monthResultRow = screen.getByRole('cell', { name: 'Month Result' }).closest('tr')!
     expect(monthResultRow).toHaveClass('yearly-summary-page__emphasized-row')
     const cells = within(monthResultRow).getAllByRole('cell')
-    // cells[0] is the label; cells[1] is January, which must be blank
+    // cells[0] is the label; cells[1] is January
+    expect(cells[1].textContent).toBe('75.00')
+    expect(within(monthResultRow).getAllByText('50.00').length).toBe(11)
+  })
+
+  it('renders a blank January Month Result cell when the API returns null for it', async () => {
+    getInvestmentDiffsForYearMock.mockResolvedValue({
+      ...INVESTMENT_DIFFS,
+      netPosition: { ...INVESTMENT_DIFFS.netPosition, monthlyDiffs: [null, ...INVESTMENT_DIFFS.netPosition.monthlyDiffs.slice(1)] },
+    })
+    render(<YearlySummaryPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'Month Result' })).toBeInTheDocument())
+
+    const monthResultRow = screen.getByRole('cell', { name: 'Month Result' }).closest('tr')!
+    const cells = within(monthResultRow).getAllByRole('cell')
     expect(cells[1].textContent).toBe('')
     expect(within(monthResultRow).getAllByText('50.00').length).toBe(11)
   })
@@ -271,12 +287,12 @@ describe('YearlySummaryPage', () => {
           account: 'ChipCashIsaGleison',
           isLiability: false,
           monthlyValues: new Array(12).fill(2000),
-          monthlyDiffs: new Array(11).fill(0),
+          monthlyDiffs: new Array(12).fill(0),
         },
       ],
       netPosition: {
         monthlyValues: new Array(12).fill(2000),
-        monthlyDiffs: new Array(11).fill(0),
+        monthlyDiffs: new Array(12).fill(0),
         fullYearNetChange: 0,
       },
     }

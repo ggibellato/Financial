@@ -28,12 +28,12 @@ const INVESTMENT_DIFFS: InvestmentDiffsYearlyDto = {
       account: 'ChaseSave',
       isLiability: false,
       monthlyValues: new Array(12).fill(1000),
-      monthlyDiffs: new Array(11).fill(0),
+      monthlyDiffs: new Array(12).fill(0),
     },
   ],
   netPosition: {
     monthlyValues: new Array(12).fill(1000),
-    monthlyDiffs: new Array(11).fill(0),
+    monthlyDiffs: new Array(12).fill(0),
     fullYearNetChange: 0,
   },
 }
