@@ -78,16 +78,16 @@ public class YearlySummaryServiceTests
 
         var result = service.GetInvestmentDiffsForYear(2026);
 
-        result.Accounts.Should().HaveCount(Enum.GetValues<InvestmentAccount>().Length);
+        result.Accounts.Should().HaveCount(repository.Accounts.Count);
     }
 
     [Fact]
     public void GetInvestmentDiffsForYear_MonthlyDiffsEqualThisMonthMinusPrevMonth()
     {
         var repository = new StubCashFlowRepository();
-        repository.Snapshots.Add(InvestmentSnapshot.Create(InvestmentAccount.ChaseSave, 2026, 1, 1000m));
-        repository.Snapshots.Add(InvestmentSnapshot.Create(InvestmentAccount.ChaseSave, 2026, 2, 1200m));
-        repository.Snapshots.Add(InvestmentSnapshot.Create(InvestmentAccount.ChaseSave, 2026, 3, 1100m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", 2026, 1, 1000m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", 2026, 2, 1200m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", 2026, 3, 1100m));
         var service = new YearlySummaryService(repository);
 
         var result = service.GetInvestmentDiffsForYear(2026);
@@ -102,7 +102,7 @@ public class YearlySummaryServiceTests
     public void GetInvestmentDiffsForYear_MissingSnapshotForAMonth_ContributesZero()
     {
         var repository = new StubCashFlowRepository();
-        repository.Snapshots.Add(InvestmentSnapshot.Create(InvestmentAccount.ChaseSave, 2026, 1, 500m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", 2026, 1, 500m));
         var service = new YearlySummaryService(repository);
 
         var result = service.GetInvestmentDiffsForYear(2026);
@@ -116,8 +116,8 @@ public class YearlySummaryServiceTests
     public void GetInvestmentDiffsForYear_NetPositionSubtractsLiabilitiesFromAssets()
     {
         var repository = new StubCashFlowRepository();
-        repository.Snapshots.Add(InvestmentSnapshot.Create(InvestmentAccount.ChaseSave, 2026, 1, 1000m));
-        repository.Snapshots.Add(InvestmentSnapshot.Create(InvestmentAccount.PlatinumVisa8003, 2026, 1, 300m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", 2026, 1, 1000m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("PlatinumVisa8003", 2026, 1, 300m));
         var service = new YearlySummaryService(repository);
 
         var result = service.GetInvestmentDiffsForYear(2026);
@@ -129,8 +129,8 @@ public class YearlySummaryServiceTests
     public void GetInvestmentDiffsForYear_FullYearNetChangeEqualsDecemberMinusJanuary()
     {
         var repository = new StubCashFlowRepository();
-        repository.Snapshots.Add(InvestmentSnapshot.Create(InvestmentAccount.ChaseSave, 2026, 1, 1000m));
-        repository.Snapshots.Add(InvestmentSnapshot.Create(InvestmentAccount.ChaseSave, 2026, 12, 1800m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", 2026, 1, 1000m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", 2026, 12, 1800m));
         var service = new YearlySummaryService(repository);
 
         var result = service.GetInvestmentDiffsForYear(2026);
@@ -251,8 +251,25 @@ public class YearlySummaryServiceTests
 
     private sealed class StubCashFlowRepository : ICashFlowRepository
     {
+        private static readonly (string Name, bool IsLiability)[] SeededAccounts =
+        [
+            ("BlueRewardsSaver", false),
+            ("PlatinumVisa8003", true),
+            ("PlatinumVisa6007", true),
+            ("ChaseMaster4023", true),
+            ("BaAmex", true),
+            ("PaypalCredit", true),
+            ("ChipCashIsaGleison", false),
+            ("ChaseSave", false),
+            ("ChipCashIsaAriana", false),
+            ("Trading212Invested", false),
+            ("ReservasPessoais", true)
+        ];
+
         public List<Expense> Expenses { get; } = new();
         public List<InvestmentSnapshot> Snapshots { get; } = new();
+        public List<InvestmentAccount> Accounts { get; } =
+            SeededAccounts.Select(a => InvestmentAccount.Create(a.Name, isActive: true, isLiability: a.IsLiability)).ToList();
         public List<Income> Incomes { get; } = new();
 
         public IEnumerable<Expense> GetExpenses() => Expenses;
@@ -276,6 +293,9 @@ public class YearlySummaryServiceTests
 
         public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => Snapshots;
         public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => Snapshots.Add(snapshot);
+
+        public IEnumerable<InvestmentAccount> GetInvestmentAccounts() => Accounts;
+        public void AddInvestmentAccount(InvestmentAccount account) => Accounts.Add(account);
 
         public IEnumerable<Bank> GetBanks() => Array.Empty<Bank>();
 

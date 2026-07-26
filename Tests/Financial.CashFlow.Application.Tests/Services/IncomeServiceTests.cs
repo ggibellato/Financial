@@ -224,6 +224,9 @@ public class IncomeServiceTests
         public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => Array.Empty<InvestmentSnapshot>();
         public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) { }
 
+        public IEnumerable<InvestmentAccount> GetInvestmentAccounts() => Array.Empty<InvestmentAccount>();
+        public void AddInvestmentAccount(InvestmentAccount account) { }
+
         public IEnumerable<Bank> GetBanks() => Banks;
 
         public IEnumerable<Income> GetIncomes() => Incomes;

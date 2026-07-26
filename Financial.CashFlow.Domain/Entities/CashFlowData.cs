@@ -61,6 +61,14 @@ public class CashFlowData
         _banks.AddRange(data);
     }
 
+    private List<InvestmentAccount> _investmentAccounts = new List<InvestmentAccount>();
+    public IReadOnlyCollection<InvestmentAccount> InvestmentAccounts { get => _investmentAccounts.AsReadOnly(); private set => SetInvestmentAccounts(value); }
+    private void SetInvestmentAccounts(IReadOnlyCollection<InvestmentAccount> data)
+    {
+        _investmentAccounts.Clear();
+        _investmentAccounts.AddRange(data);
+    }
+
     private List<Income> _incomes = new List<Income>();
     public IReadOnlyCollection<Income> Incomes { get => _incomes.AsReadOnly(); private set => SetIncomes(value); }
     private void SetIncomes(IReadOnlyCollection<Income> data)
@@ -94,6 +102,8 @@ public class CashFlowData
     public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => _investmentSnapshots.Add(snapshot);
 
     public void AddBank(Bank bank) => _banks.Add(bank);
+
+    public void AddInvestmentAccount(InvestmentAccount account) => _investmentAccounts.Add(account);
 
     public void AddIncome(Income income) => _incomes.Add(income);
 

@@ -26,6 +26,9 @@ public interface ICashFlowRepository
     IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots();
     void AddInvestmentSnapshot(InvestmentSnapshot snapshot);
 
+    IEnumerable<InvestmentAccount> GetInvestmentAccounts();
+    void AddInvestmentAccount(InvestmentAccount account);
+
     IEnumerable<Bank> GetBanks();
 
     IEnumerable<Income> GetIncomes();

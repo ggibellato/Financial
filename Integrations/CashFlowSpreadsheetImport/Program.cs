@@ -4,6 +4,7 @@ using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.M
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Banks;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.BankOpeningBalance;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.PaymentState;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
@@ -73,6 +74,7 @@ var bankSummary = BankMigrator.Migrate(data);
 var bankOpeningBalanceSummary = BankOpeningBalanceMigrator.Migrate(data, DateOnly.FromDateTime(DateTime.Now));
 var incomeSummary = IncomeMigrator.Migrate(data, workbook);
 var paymentStateSummary = ExpensePaymentStateMigrator.Migrate(data);
+var investmentAccountSummary = InvestmentAccountMigrator.Migrate(data);
 
 var repository = new CashFlowJsonRepository(data, storage, serializer);
 await repository.SaveChangesAsync();
@@ -84,6 +86,7 @@ Console.WriteLine(bankSummary.Render());
 Console.WriteLine(bankOpeningBalanceSummary.Render());
 Console.WriteLine(incomeSummary.Render());
 Console.WriteLine(paymentStateSummary.Render());
+Console.WriteLine(investmentAccountSummary.Render());
 return 0;
 
 static void CarryOverDataTheSpreadsheetDoesNotOwn(CashFlowData existingData, CashFlowData data)
@@ -101,6 +104,11 @@ static void CarryOverDataTheSpreadsheetDoesNotOwn(CashFlowData existingData, Cas
     foreach (var statement in existingData.CardStatements)
     {
         data.AddCardStatement(statement);
+    }
+
+    foreach (var account in existingData.InvestmentAccounts)
+    {
+        data.AddInvestmentAccount(account);
     }
 }
 

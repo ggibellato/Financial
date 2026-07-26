@@ -1,8 +1,6 @@
 using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Office2013.WebExtension;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Enums;
-using Financial.CashFlow.Domain.Rules;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
@@ -24,20 +22,30 @@ public static class ResumoValidationReader
     private const int MonthCount = 12;
     private const int LabelScanLastRow = 60;
 
-    private static readonly Dictionary<InvestmentAccount, string[]> AccountLabelAliases = new()
+    private static readonly Dictionary<string, string[]> AccountLabelAliases = new()
     {
-        [InvestmentAccount.BlueRewardsSaver] = ["Blue Rewards Saver", "Barclays Blue Rewards"],
-        [InvestmentAccount.PlatinumVisa8003] = ["Platinum Visa 8003"],
-        [InvestmentAccount.PlatinumVisa6007] = ["Platinum Visa 6007"],
-        [InvestmentAccount.ChaseMaster4023] = ["Chase Master 4023"],
-        [InvestmentAccount.BaAmex] = ["BA Amex"],
-        [InvestmentAccount.PaypalCredit] = ["Paypal credit"],
-        [InvestmentAccount.ChipCashIsaGleison] = ["Chip Cash ISA Gleison"],
-        [InvestmentAccount.ChaseSave] = ["Chase save"],
-        [InvestmentAccount.ChipCashIsaAriana] = ["Chip Cash ISA Ariana"],
-        [InvestmentAccount.Trading212Invested] = ["Trading 212 Invested"],
-        [InvestmentAccount.ReservasPessoais] = ["Reservas pessoais"],
+        ["BlueRewardsSaver"] = ["Blue Rewards Saver", "Barclays Blue Rewards"],
+        ["PlatinumVisa8003"] = ["Platinum Visa 8003"],
+        ["PlatinumVisa6007"] = ["Platinum Visa 6007"],
+        ["ChaseMaster4023"] = ["Chase Master 4023"],
+        ["BaAmex"] = ["BA Amex"],
+        ["PaypalCredit"] = ["Paypal credit"],
+        ["ChipCashIsaGleison"] = ["Chip Cash ISA Gleison"],
+        ["ChaseSave"] = ["Chase save"],
+        ["ChipCashIsaAriana"] = ["Chip Cash ISA Ariana"],
+        ["Trading212Invested"] = ["Trading 212 Invested"],
+        ["ReservasPessoais"] = ["Reservas pessoais"],
     };
+
+    private static readonly HashSet<string> LiabilityAccountNames =
+    [
+        "PlatinumVisa8003",
+        "PlatinumVisa6007",
+        "ChaseMaster4023",
+        "BaAmex",
+        "PaypalCredit",
+        "ReservasPessoais"
+    ];
 
     public static IReadOnlyList<InvestmentSnapshot> ImportAccountSnapshots(IXLWorksheet sheet, int year)
     {
@@ -60,7 +68,7 @@ public static class ResumoValidationReader
                     continue;
                 }
 
-                var adjustedValue = rawValue.Value * (InvestmentAccountClassification.IsLiability(account) ? -1 : 1);
+                var adjustedValue = rawValue.Value * (LiabilityAccountNames.Contains(account) ? -1 : 1);
                 snapshots.Add(InvestmentSnapshot.Create(account, year, i + 1, adjustedValue));
             }
         }
@@ -96,7 +104,7 @@ public static class ResumoValidationReader
         return null;
     }
 
-    private static bool TryResolveAccount(string rawLabel, out InvestmentAccount account)
+    private static bool TryResolveAccount(string rawLabel, out string account)
     {
         var normalized = NormalizeLabel(rawLabel);
         foreach (var (candidate, aliases) in AccountLabelAliases)
@@ -108,7 +116,7 @@ public static class ResumoValidationReader
             }
         }
 
-        account = default;
+        account = string.Empty;
         return false;
     }
 

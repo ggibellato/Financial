@@ -2,7 +2,6 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
@@ -64,9 +63,9 @@ public class InvestmentSnapshotServiceTests
         var service = new InvestmentSnapshotService(repository);
         await service.GetSnapshotsForMonthAsync(2026, 7);
         await service.GetSnapshotsForMonthAsync(2026, 8);
-        var julySnapshot = repository.Snapshots.Single(s => s.Month == 7 && s.Account == InvestmentAccount.ChaseSave);
-        var augustSnapshot = repository.Snapshots.Single(s => s.Month == 8 && s.Account == InvestmentAccount.ChaseSave);
-        var otherAccountSnapshot = repository.Snapshots.Single(s => s.Month == 7 && s.Account == InvestmentAccount.PlatinumVisa8003);
+        var julySnapshot = repository.Snapshots.Single(s => s.Month == 7 && s.Account == "ChaseSave");
+        var augustSnapshot = repository.Snapshots.Single(s => s.Month == 8 && s.Account == "ChaseSave");
+        var otherAccountSnapshot = repository.Snapshots.Single(s => s.Month == 7 && s.Account == "PlatinumVisa8003");
 
         var result = await service.UpdateSnapshotValueAsync(julySnapshot.Id, new UpdateInvestmentSnapshotValueDTO { Value = 500m });
 
@@ -100,7 +99,24 @@ public class InvestmentSnapshotServiceTests
 
     private sealed class StubCashFlowRepository : ICashFlowRepository
     {
+        private static readonly (string Name, bool IsLiability)[] SeededAccounts =
+        [
+            ("BlueRewardsSaver", false),
+            ("PlatinumVisa8003", true),
+            ("PlatinumVisa6007", true),
+            ("ChaseMaster4023", true),
+            ("BaAmex", true),
+            ("PaypalCredit", true),
+            ("ChipCashIsaGleison", false),
+            ("ChaseSave", false),
+            ("ChipCashIsaAriana", false),
+            ("Trading212Invested", false),
+            ("ReservasPessoais", true)
+        ];
+
         public List<InvestmentSnapshot> Snapshots { get; } = new();
+        public List<InvestmentAccount> Accounts { get; } =
+            SeededAccounts.Select(a => InvestmentAccount.Create(a.Name, isActive: true, isLiability: a.IsLiability)).ToList();
         public int SaveChangesCallCount { get; private set; }
 
         public IEnumerable<Expense> GetExpenses() => Array.Empty<Expense>();
@@ -124,6 +140,9 @@ public class InvestmentSnapshotServiceTests
 
         public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => Snapshots;
         public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => Snapshots.Add(snapshot);
+
+        public IEnumerable<InvestmentAccount> GetInvestmentAccounts() => Accounts;
+        public void AddInvestmentAccount(InvestmentAccount account) => Accounts.Add(account);
 
         public IEnumerable<Bank> GetBanks() => Array.Empty<Bank>();
 

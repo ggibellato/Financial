@@ -1,15 +1,11 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Enums;
-using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.CashFlow.Application.Services;
 
 public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
 {
-    private static readonly InvestmentAccount[] AllAccounts = Enum.GetValues<InvestmentAccount>();
-
     private readonly ICashFlowRepository _repository;
 
     public InvestmentSnapshotService(ICashFlowRepository repository)
@@ -19,19 +15,21 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
 
     public async Task<IReadOnlyList<InvestmentSnapshotDTO>> GetSnapshotsForMonthAsync(int year, int month)
     {
+        var accounts = _repository.GetInvestmentAccounts().ToList();
+
         var existingSnapshots = _repository.GetInvestmentSnapshots()
             .Where(s => s.Year == year && s.Month == month)
             .ToList();
 
         var created = false;
-        foreach (var account in AllAccounts)
+        foreach (var account in accounts)
         {
-            if (existingSnapshots.Any(s => s.Account == account))
+            if (existingSnapshots.Any(s => s.Account == account.Name))
             {
                 continue;
             }
 
-            var snapshot = InvestmentSnapshot.Create(account, year, month, 0m);
+            var snapshot = InvestmentSnapshot.Create(account.Name, year, month, 0m);
             _repository.AddInvestmentSnapshot(snapshot);
             existingSnapshots.Add(snapshot);
             created = true;
@@ -42,7 +40,7 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
         }
 
-        return existingSnapshots.Select(ToDto).ToList();
+        return existingSnapshots.Select(s => ToDto(s, accounts)).ToList();
     }
 
     public async Task<InvestmentSnapshotDTO> UpdateSnapshotValueAsync(Guid id, UpdateInvestmentSnapshotValueDTO request)
@@ -60,16 +58,21 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
         snapshot.Update(request.Value);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
 
-        return ToDto(snapshot);
+        return ToDto(snapshot, _repository.GetInvestmentAccounts().ToList());
     }
 
-    private static InvestmentSnapshotDTO ToDto(InvestmentSnapshot snapshot) => new()
+    private static InvestmentSnapshotDTO ToDto(InvestmentSnapshot snapshot, IReadOnlyList<InvestmentAccount> accounts)
     {
-        Id = snapshot.Id,
-        Account = snapshot.Account.ToString(),
-        IsLiability = InvestmentAccountClassification.IsLiability(snapshot.Account),
-        Year = snapshot.Year,
-        Month = snapshot.Month,
-        Value = snapshot.Value
-    };
+        var account = accounts.FirstOrDefault(a => a.Name == snapshot.Account);
+
+        return new()
+        {
+            Id = snapshot.Id,
+            Account = snapshot.Account,
+            IsLiability = account?.IsLiability ?? false,
+            Year = snapshot.Year,
+            Month = snapshot.Month,
+            Value = snapshot.Value
+        };
+    }
 }
