@@ -94,11 +94,22 @@ public sealed class YearlySummaryService : IYearlySummaryService
             ? accounts.Sum(a => (a.IsLiability ? -1 : 1) * a.MonthlyDiffs[0]!.Value)
             : null;
 
+        var netPositionDiffs = ComputeDiffs(netPositionValues, netPositionJanuaryDiff);
+
+        // A future month (beyond the current calendar month, for the current year) has no
+        // snapshot yet, so its value defaults to 0 and its diff would misrepresent a real drop.
+        // Average/Sum only consider months that have actually happened; December always counts
+        // for a past year.
+        var lastRelevantMonth = year >= DateTime.Now.Year ? Math.Min(DateTime.Now.Month, MonthsInYear) : MonthsInYear;
+        var relevantDiffs = netPositionDiffs.Take(lastRelevantMonth).Where(d => d.HasValue).Select(d => d!.Value).ToList();
+
         var netPosition = new NetPositionYearlyDiffDTO
         {
             MonthlyValues = netPositionValues,
-            MonthlyDiffs = ComputeDiffs(netPositionValues, netPositionJanuaryDiff),
-            FullYearNetChange = netPositionValues[MonthsInYear - 1] - netPositionValues[0]
+            MonthlyDiffs = netPositionDiffs,
+            FullYearNetChange = netPositionValues[MonthsInYear - 1] - netPositionValues[0],
+            AverageMonthResult = relevantDiffs.Count > 0 ? relevantDiffs.Average() : 0m,
+            SumOfMonthResults = relevantDiffs.Sum()
         };
 
         return new InvestmentDiffsYearlyDTO
