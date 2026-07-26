@@ -35,6 +35,8 @@ const INVESTMENT_DIFFS: InvestmentDiffsYearlyDto = {
     monthlyValues: new Array(12).fill(1000),
     monthlyDiffs: new Array(12).fill(0),
     fullYearNetChange: 0,
+    averageMonthResult: 0,
+    sumOfMonthResults: 0,
   },
 }
 

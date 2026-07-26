@@ -43,6 +43,8 @@ const INVESTMENT_DIFFS: InvestmentDiffsYearlyDto = {
     monthlyValues: [800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200, 1250, 1300, 1350],
     monthlyDiffs: [75, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50],
     fullYearNetChange: 550,
+    averageMonthResult: 52.08,
+    sumOfMonthResults: 625,
   },
 }
 
@@ -247,7 +249,7 @@ describe('YearlySummaryPage', () => {
     expect(within(monthResultRow).getAllByText('50.00').length).toBe(11)
   })
 
-  it('shows Year Progress, Average Month Result, and Sum of Month Results, with Sum equal to Year Progress', async () => {
+  it('shows Year Progress, Average Month Result, and Sum of Month Results as returned by the API', async () => {
     render(<YearlySummaryPage />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
@@ -257,10 +259,10 @@ describe('YearlySummaryPage', () => {
     expect(within(yearProgress).getByText('550.00')).toBeInTheDocument()
 
     const averageMonthResult = screen.getByText('Average Month Result').closest('div')!
-    expect(within(averageMonthResult).getByText('50.00')).toBeInTheDocument()
+    expect(within(averageMonthResult).getByText('52.08')).toBeInTheDocument()
 
     const sumOfMonthResults = screen.getByText('Sum of Month Results').closest('div')!
-    expect(within(sumOfMonthResults).getByText('550.00')).toBeInTheDocument()
+    expect(within(sumOfMonthResults).getByText('625.00')).toBeInTheDocument()
   })
 
   it('does not affect the Category Totals tab content when viewing Investments', async () => {
@@ -294,6 +296,8 @@ describe('YearlySummaryPage', () => {
         monthlyValues: new Array(12).fill(2000),
         monthlyDiffs: new Array(12).fill(0),
         fullYearNetChange: 0,
+        averageMonthResult: 0,
+        sumOfMonthResults: 0,
       },
     }
     getInvestmentDiffsForYearMock.mockResolvedValue(nextYearInvestmentDiffs)

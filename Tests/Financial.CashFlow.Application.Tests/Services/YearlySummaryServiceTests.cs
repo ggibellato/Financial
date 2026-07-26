@@ -277,6 +277,49 @@ public class YearlySummaryServiceTests
     }
 
     [Fact]
+    public void GetInvestmentDiffsForYear_PastYear_AverageAndSumIncludeAllTwelveMonthsIncludingJanuary()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", PastYear - 1, 12, 800m));
+        var value = 900m;
+        for (var month = 1; month <= 12; month++)
+        {
+            repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", PastYear, month, value));
+            value += 50m;
+        }
+        var service = new YearlySummaryService(repository);
+
+        var result = service.GetInvestmentDiffsForYear(PastYear);
+
+        // January diff = 900 - 800 = 100; the remaining 11 months each diff by 50.
+        result.NetPosition.SumOfMonthResults.Should().Be(650m);
+        result.NetPosition.AverageMonthResult.Should().BeApproximately(650m / 12m, 0.0001m);
+    }
+
+    [Fact]
+    public void GetInvestmentDiffsForYear_CurrentYear_AverageAndSumOnlyIncludeMonthsThroughTheCurrentMonth()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", CurrentYear - 1, 12, 500m));
+        var currentMonth = DateTime.Now.Month;
+        var value = 600m;
+        for (var month = 1; month <= currentMonth; month++)
+        {
+            repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", CurrentYear, month, value));
+            value += 50m;
+        }
+        // No snapshots for any month after the current one - they must not contribute a fake
+        // "dropped to zero" diff to the totals.
+        var service = new YearlySummaryService(repository);
+
+        var result = service.GetInvestmentDiffsForYear(CurrentYear);
+
+        var expectedSum = 100m + 50m * (currentMonth - 1);
+        result.NetPosition.SumOfMonthResults.Should().Be(expectedSum);
+        result.NetPosition.AverageMonthResult.Should().BeApproximately(expectedSum / currentMonth, 0.0001m);
+    }
+
+    [Fact]
     public void GetIncomeSummaryForYear_SalaryRowSumsGleisonAndArianaGrossValuesPerMonth()
     {
         var repository = new StubCashFlowRepository();
