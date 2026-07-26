@@ -2,6 +2,7 @@ using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Office2013.WebExtension;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
 
@@ -13,8 +14,11 @@ namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImpo
 /// row's own label text against the registry's known account aliases rather than by fixed row
 /// number. The registry (see <see cref="InvestmentAccountMigrator"/>) must already be seeded before
 /// this runs. Rows whose label matches no known alias are simply not written — no fabricated
-/// snapshot is ever created. This is also the only place <see cref="InvestmentSnapshot"/> data is
-/// sourced from, so it both validates and writes.
+/// snapshot is ever created. For a matched row, every one of the 12 months gets a snapshot: a
+/// genuinely blank cell becomes an explicit 0 (so an account's existence in a year is derivable
+/// purely from snapshot presence afterward), while a non-blank cell that fails to parse is flagged
+/// on the report and left without a snapshot for that month. This is also the only place
+/// <see cref="InvestmentSnapshot"/> data is sourced from, so it both validates and writes.
 /// </summary>
 public static class ResumoValidationReader
 {
@@ -26,7 +30,8 @@ public static class ResumoValidationReader
     public static IReadOnlyList<InvestmentSnapshot> ImportAccountSnapshots(
         IXLWorksheet sheet,
         int year,
-        IReadOnlyCollection<InvestmentAccount> accounts)
+        IReadOnlyCollection<InvestmentAccount> accounts,
+        ImportReport report)
     {
         var snapshots = new List<InvestmentSnapshot>();
         var lastRow = Math.Min(sheet.LastRowUsed()?.RowNumber() ?? 1, LabelScanLastRow);
@@ -41,14 +46,32 @@ public static class ResumoValidationReader
 
             for (var i = 0; i < MonthCount; i++)
             {
-                var rawValue = NumericCellReader.TryRead(sheet.Cell(row, FirstMonthColumn + i));
-                if (rawValue is null)
+                var cell = sheet.Cell(row, FirstMonthColumn + i);
+                var month = i + 1;
+
+                var rawValue = NumericCellReader.TryRead(cell);
+                if (rawValue is not null)
                 {
+                    var adjustedValue = rawValue.Value * (account!.IsLiability ? -1 : 1);
+                    snapshots.Add(InvestmentSnapshot.Create(account.Name, year, month, adjustedValue));
                     continue;
                 }
 
-                var adjustedValue = rawValue.Value * (account!.IsLiability ? -1 : 1);
-                snapshots.Add(InvestmentSnapshot.Create(account.Name, year, i + 1, adjustedValue));
+                // TryRead returns null for both a genuinely blank cell and a non-blank cell whose
+                // text isn't a valid number (e.g. a formula that evaluated to ""), so re-check the
+                // cell's own emptiness here rather than trusting TryRead's null to mean "malformed".
+                if (cell.IsEmpty() || cell.GetString().Trim().Length == 0)
+                {
+                    snapshots.Add(InvestmentSnapshot.Create(account!.Name, year, month, 0m));
+                    continue;
+                }
+
+                report.RowFlagged(
+                    sheet.Name,
+                    row,
+                    $"{account!.Name} Month{month}",
+                    cell.GetString(),
+                    "Value could not be parsed as a number - snapshot not written for this account/month");
             }
         }
 

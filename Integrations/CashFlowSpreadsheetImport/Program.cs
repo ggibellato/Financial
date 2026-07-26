@@ -213,7 +213,7 @@ static void ImportResumoSheets(XLWorkbook workbook, CashFlowData data, ImportRep
             continue;
         }
 
-        foreach (var snapshot in ResumoValidationReader.ImportAccountSnapshots(sheet, year, data.InvestmentAccounts))
+        foreach (var snapshot in ResumoValidationReader.ImportAccountSnapshots(sheet, year, data.InvestmentAccounts, report))
         {
             data.AddInvestmentSnapshot(snapshot);
         }
