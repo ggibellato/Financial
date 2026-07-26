@@ -7,18 +7,40 @@ namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.InvestmentAccount
 public class InvestmentAccountMigratorTests
 {
     [Fact]
-    public void Migrate_OnEmptyData_SeedsAllElevenAccountsWithCorrectLiabilityFlags()
+    public void Migrate_OnEmptyData_SeedsElevenActiveAndEightDisabledAccountsWithAliases()
     {
         var data = CashFlowData.Create();
 
         var summary = InvestmentAccountMigrator.Migrate(data);
 
-        summary.AccountsSeededCount.Should().Be(11);
+        summary.AccountsSeededCount.Should().Be(19);
         summary.AccountsAlreadyPresentCount.Should().Be(0);
+        data.InvestmentAccounts.Should().HaveCount(19);
+        data.InvestmentAccounts.Where(a => a.IsActive).Should().HaveCount(11);
+        data.InvestmentAccounts.Where(a => !a.IsActive).Should().HaveCount(8);
         data.InvestmentAccounts.Should().ContainSingle(a => a.Name == "PlatinumVisa8003" && a.IsLiability);
-        data.InvestmentAccounts.Should().ContainSingle(a => a.Name == "ReservasPessoais" && a.IsLiability);
         data.InvestmentAccounts.Should().ContainSingle(a => a.Name == "ChaseSave" && !a.IsLiability);
-        data.InvestmentAccounts.Should().OnlyContain(a => a.IsActive);
+        data.InvestmentAccounts.Where(a => !a.IsActive).Should().OnlyContain(a => !a.IsLiability);
+        data.InvestmentAccounts.Should().ContainSingle(a => a.Name == "EverydaySaver" && !a.IsActive)
+            .Which.Aliases.Should().ContainSingle("Everyday Saver");
+        data.InvestmentAccounts.Should().ContainSingle(a => a.Name == "InstantIsaIssue1")
+            .Which.Aliases.Should().BeEquivalentTo("Instant ISA Issue 1", "Instant ISE Issue 1");
+        data.InvestmentAccounts.Should().ContainSingle(a => a.Name == "ChipCashIsaGleison")
+            .Which.Aliases.Should().BeEquivalentTo("Chip Cash ISA Gleison", "Chip Cash ISA");
+    }
+
+    [Fact]
+    public void Migrate_BlueRewardsSaverAndBarclaysBlueRewards_HaveDistinctNonOverlappingAliases()
+    {
+        var data = CashFlowData.Create();
+
+        InvestmentAccountMigrator.Migrate(data);
+
+        var blueRewardsSaver = data.InvestmentAccounts.Single(a => a.Name == "BlueRewardsSaver");
+        var barclaysBlueRewards = data.InvestmentAccounts.Single(a => a.Name == "BarclaysBlueRewards");
+        blueRewardsSaver.Aliases.Should().BeEquivalentTo("Blue Rewards Saver");
+        barclaysBlueRewards.Aliases.Should().BeEquivalentTo("Barclays Blue Rewards");
+        barclaysBlueRewards.IsActive.Should().BeFalse();
     }
 
     [Fact]
@@ -30,8 +52,8 @@ public class InvestmentAccountMigratorTests
         var secondSummary = InvestmentAccountMigrator.Migrate(data);
 
         secondSummary.AccountsSeededCount.Should().Be(0);
-        secondSummary.AccountsAlreadyPresentCount.Should().Be(11);
-        data.InvestmentAccounts.Should().HaveCount(11);
+        secondSummary.AccountsAlreadyPresentCount.Should().Be(19);
+        data.InvestmentAccounts.Should().HaveCount(19);
     }
 
     [Fact]
@@ -42,9 +64,26 @@ public class InvestmentAccountMigratorTests
 
         var summary = InvestmentAccountMigrator.Migrate(data);
 
-        summary.AccountsSeededCount.Should().Be(10);
+        summary.AccountsSeededCount.Should().Be(18);
         summary.AccountsAlreadyPresentCount.Should().Be(1);
-        data.InvestmentAccounts.Should().HaveCount(11);
+        data.InvestmentAccounts.Should().HaveCount(19);
+    }
+
+    [Fact]
+    public void Migrate_AccountSeededByPriorRunWithNoAliases_BackfillsAliasesWithoutDuplicating()
+    {
+        var data = CashFlowData.Create();
+        var preExisting = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+        data.AddInvestmentAccount(preExisting);
+        preExisting.Aliases.Should().BeEmpty();
+
+        InvestmentAccountMigrator.Migrate(data);
+
+        preExisting.Aliases.Should().BeEquivalentTo("Chase save");
+
+        InvestmentAccountMigrator.Migrate(data);
+
+        preExisting.Aliases.Should().BeEquivalentTo("Chase save");
     }
 
     [Fact]
@@ -66,15 +105,28 @@ public class InvestmentAccountMigratorTests
     public void Migrate_SnapshotWithUnresolvableAccountName_IsFlaggedForManualReviewAndLeftUntouched()
     {
         var data = CashFlowData.Create();
-        var snapshot = InvestmentSnapshot.Create("EverydaySaver", 2020, 7, 250m);
+        var snapshot = InvestmentSnapshot.Create("SomeUnknownAccount", 2020, 7, 250m);
         data.AddInvestmentSnapshot(snapshot);
 
         var summary = InvestmentAccountMigrator.Migrate(data);
 
         summary.UnresolvedSnapshots.Should().ContainSingle().Which.Id.Should().Be(snapshot.Id);
         summary.SnapshotsResolvedCount.Should().Be(0);
-        snapshot.Account.Should().Be("EverydaySaver");
+        snapshot.Account.Should().Be("SomeUnknownAccount");
         snapshot.Value.Should().Be(250m);
+    }
+
+    [Fact]
+    public void Migrate_SnapshotWithHistoricalAccountName_NowCountsAsResolved()
+    {
+        var data = CashFlowData.Create();
+        var snapshot = InvestmentSnapshot.Create("EverydaySaver", 2020, 7, 250m);
+        data.AddInvestmentSnapshot(snapshot);
+
+        var summary = InvestmentAccountMigrator.Migrate(data);
+
+        summary.SnapshotsResolvedCount.Should().Be(1);
+        summary.UnresolvedSnapshots.Should().BeEmpty();
     }
 
     [Fact]
@@ -82,7 +134,7 @@ public class InvestmentAccountMigratorTests
     {
         var data = CashFlowData.Create();
         var resolved = InvestmentSnapshot.Create("ChaseSave", 2026, 7, 500m);
-        var unresolved = InvestmentSnapshot.Create("EverydaySaver", 2020, 7, 250m);
+        var unresolved = InvestmentSnapshot.Create("SomeUnknownAccount", 2020, 7, 250m);
         data.AddInvestmentSnapshot(resolved);
         data.AddInvestmentSnapshot(unresolved);
 

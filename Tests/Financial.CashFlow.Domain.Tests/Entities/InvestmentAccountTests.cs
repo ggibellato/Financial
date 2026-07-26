@@ -43,4 +43,46 @@ public class InvestmentAccountTests
 
         first.Id.Should().NotBe(second.Id);
     }
+
+    [Fact]
+    public void Create_StartsWithNoAliases()
+    {
+        var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+
+        account.Aliases.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AddAlias_NewAlias_AddsIt()
+    {
+        var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+
+        account.AddAlias("Chase save");
+
+        account.Aliases.Should().ContainSingle().Which.Should().Be("Chase save");
+    }
+
+    [Fact]
+    public void AddAlias_DuplicateCaseInsensitive_DoesNotAddTwice()
+    {
+        var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+        account.AddAlias("Chase save");
+
+        account.AddAlias("chase SAVE");
+
+        account.Aliases.Should().ContainSingle();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void AddAlias_WithEmptyAlias_ThrowsArgumentException(string? alias)
+    {
+        var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+
+        var act = () => account.AddAlias(alias!);
+
+        act.Should().Throw<ArgumentException>();
+    }
 }
