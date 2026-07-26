@@ -252,13 +252,13 @@ graph TD
 - [x] The Yearly Summary Investments sub-tab's Total/Net Position row for a past year sums only the accounts shown for that year
 
 ### F05. Prior-Year December Carryover for January
-- [ ] For year 2024, January's Month Result equals January 2024's net position minus December 2023's net position
-- [ ] For year 2017, January's Month Result remains blank
-- [ ] For an account that opened partway through history (e.g., Trading 212 Invested, first active 2026), its January diff for the year it opened treats the prior year's December value as 0
-- [ ] February-December Month Result values for every year are unchanged from current behavior
+- [x] For year 2024, January's Month Result equals January 2024's net position minus December 2023's net position
+- [x] For year 2017, January's Month Result remains blank
+- [x] For an account that opened partway through history (e.g., Trading 212 Invested, first active 2026), its January diff for the year it opened treats the prior year's December value as 0
+- [x] February-December Month Result values for every year are unchanged from current behavior
 
 ### Cross-Feature Integration
 - [x] Registry entries created by F01 are correctly consumed by F02 when seeding the 8 historical accounts and their aliases
 - [x] The seeded registry and alias-resolving importer produced by F02 are what F03's full re-import invokes across all 10 Resumo sheets
 - [x] Snapshot data written by F03, together with F01's active-status flag, is what F04 queries to determine year-scoped account existence
-- [ ] The year-filtered account list and net position values produced by F04 are exactly what F05 consumes for its January diff calculation
+- [x] The year-filtered account list and net position values produced by F04 are exactly what F05 consumes for its January diff calculation
