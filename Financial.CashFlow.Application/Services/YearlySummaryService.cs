@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -43,12 +44,16 @@ public sealed class YearlySummaryService : IYearlySummaryService
 
     public InvestmentDiffsYearlyDTO GetInvestmentDiffsForYear(int year)
     {
-        var valueByAccountAndMonth = _repository.GetInvestmentSnapshots()
+        var allSnapshots = _repository.GetInvestmentSnapshots().ToList();
+        var allAccounts = _repository.GetInvestmentAccounts().ToList();
+        var scopedAccounts = YearScopedInvestmentAccountResolver.ResolveForYear(allAccounts, allSnapshots, year, DateTime.Now.Year);
+
+        var valueByAccountAndMonth = allSnapshots
             .Where(s => s.Year == year)
             .GroupBy(s => (s.Account, s.Month))
             .ToDictionary(g => g.Key, g => g.First().Value);
 
-        var accounts = _repository.GetInvestmentAccounts()
+        var accounts = scopedAccounts
             .Select(account =>
             {
                 var monthlyValues = new decimal[MonthsInYear];
