@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -16,13 +17,16 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
     public async Task<IReadOnlyList<InvestmentSnapshotDTO>> GetSnapshotsForMonthAsync(int year, int month)
     {
         var accounts = _repository.GetInvestmentAccounts().ToList();
+        var allSnapshots = _repository.GetInvestmentSnapshots().ToList();
+        var scopedAccounts = YearScopedInvestmentAccountResolver.ResolveForYear(accounts, allSnapshots, year, DateTime.Now.Year);
+        var scopedNames = scopedAccounts.Select(a => a.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var existingSnapshots = _repository.GetInvestmentSnapshots()
-            .Where(s => s.Year == year && s.Month == month)
+        var existingSnapshots = allSnapshots
+            .Where(s => s.Year == year && s.Month == month && scopedNames.Contains(s.Account))
             .ToList();
 
         var created = false;
-        foreach (var account in accounts)
+        foreach (var account in scopedAccounts)
         {
             if (existingSnapshots.Any(s => s.Account == account.Name))
             {

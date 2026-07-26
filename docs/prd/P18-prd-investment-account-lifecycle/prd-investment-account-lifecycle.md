@@ -246,10 +246,10 @@ graph TD
 - [x] If `Despesas.xlsx` is not found at the expected path, the command fails immediately with no snapshots written
 
 ### F04. Year-Scoped Investment Account Display
-- [ ] For year 2023, the Investment Snapshots page and the Yearly Summary Investments sub-tab show exactly the accounts confirmed present in Resumo2023 (Everyday Saver, Blue Rewards Saver, Platinum Visa 8003, Platinum Visa 6007, Paypal Credit, Help to Buy ISA GGS, Help to Buy ISA AACS, Chip Easy access, Chase Save) and no others
-- [ ] For the current calendar year, all 11 active registry accounts appear immediately, including any month with no snapshot yet (shown as zero), regardless of import status
-- [ ] A disabled account with historical data (e.g., Everyday Saver) does not appear in the current year's display
-- [ ] The Yearly Summary Investments sub-tab's Total/Net Position row for a past year sums only the accounts shown for that year
+- [x] For year 2023, the Investment Snapshots page and the Yearly Summary Investments sub-tab show exactly the accounts confirmed present in Resumo2023 (Everyday Saver, Blue Rewards Saver, Platinum Visa 8003, Platinum Visa 6007, Paypal Credit, Help to Buy ISA GGS, Help to Buy ISA AACS, Chip Easy access, Chase Save) and no others
+- [x] For the current calendar year, all 11 active registry accounts appear immediately, including any month with no snapshot yet (shown as zero), regardless of import status
+- [x] A disabled account with historical data (e.g., Everyday Saver) does not appear in the current year's display
+- [x] The Yearly Summary Investments sub-tab's Total/Net Position row for a past year sums only the accounts shown for that year
 
 ### F05. Prior-Year December Carryover for January
 - [ ] For year 2024, January's Month Result equals January 2024's net position minus December 2023's net position
@@ -260,5 +260,5 @@ graph TD
 ### Cross-Feature Integration
 - [x] Registry entries created by F01 are correctly consumed by F02 when seeding the 8 historical accounts and their aliases
 - [x] The seeded registry and alias-resolving importer produced by F02 are what F03's full re-import invokes across all 10 Resumo sheets
-- [ ] Snapshot data written by F03, together with F01's active-status flag, is what F04 queries to determine year-scoped account existence
+- [x] Snapshot data written by F03, together with F01's active-status flag, is what F04 queries to determine year-scoped account existence
 - [ ] The year-filtered account list and net position values produced by F04 are exactly what F05 consumes for its January diff calculation

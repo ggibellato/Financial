@@ -8,6 +8,9 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class InvestmentSnapshotServiceTests
 {
+    private static readonly int CurrentYear = DateTime.Now.Year;
+    private static readonly int PastYear = CurrentYear - 5;
+
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
@@ -21,7 +24,7 @@ public class InvestmentSnapshotServiceTests
         var repository = new StubCashFlowRepository();
         var service = new InvestmentSnapshotService(repository);
 
-        var result = await service.GetSnapshotsForMonthAsync(2026, 7);
+        var result = await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
 
         result.Should().HaveCount(11);
         result.Should().OnlyContain(s => s.Value == 0m);
@@ -34,7 +37,7 @@ public class InvestmentSnapshotServiceTests
         var repository = new StubCashFlowRepository();
         var service = new InvestmentSnapshotService(repository);
 
-        var result = await service.GetSnapshotsForMonthAsync(2026, 7);
+        var result = await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
 
         result.Where(s => s.IsLiability).Should().HaveCount(6);
         result.Should().ContainSingle(s => s.Account == "PlatinumVisa8003" && s.IsLiability);
@@ -48,8 +51,8 @@ public class InvestmentSnapshotServiceTests
         var repository = new StubCashFlowRepository();
         var service = new InvestmentSnapshotService(repository);
 
-        await service.GetSnapshotsForMonthAsync(2026, 7);
-        var result = await service.GetSnapshotsForMonthAsync(2026, 7);
+        await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
+        var result = await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
 
         result.Should().HaveCount(11);
         repository.Snapshots.Should().HaveCount(11);
@@ -57,12 +60,49 @@ public class InvestmentSnapshotServiceTests
     }
 
     [Fact]
+    public async Task GetSnapshotsForMonthAsync_CurrentYear_ExcludesDisabledAccounts()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Accounts.Add(InvestmentAccount.Create("EverydaySaver", isActive: false, isLiability: false));
+        var service = new InvestmentSnapshotService(repository);
+
+        var result = await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
+
+        result.Should().HaveCount(11);
+        result.Should().NotContain(s => s.Account == "EverydaySaver");
+    }
+
+    [Fact]
+    public async Task GetSnapshotsForMonthAsync_PastYearWithNoExistingData_ReturnsEmptyNotAllAccounts()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new InvestmentSnapshotService(repository);
+
+        var result = await service.GetSnapshotsForMonthAsync(PastYear, 7);
+
+        result.Should().BeEmpty();
+        repository.Snapshots.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetSnapshotsForMonthAsync_PastYearWithSomeAccountsPresent_ReturnsOnlyThose()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", PastYear, 7, 100m));
+        var service = new InvestmentSnapshotService(repository);
+
+        var result = await service.GetSnapshotsForMonthAsync(PastYear, 7);
+
+        result.Should().ContainSingle().Which.Account.Should().Be("ChaseSave");
+    }
+
+    [Fact]
     public async Task UpdateSnapshotValueAsync_UpdatesOnlyTheTargetedSnapshot()
     {
         var repository = new StubCashFlowRepository();
         var service = new InvestmentSnapshotService(repository);
-        await service.GetSnapshotsForMonthAsync(2026, 7);
-        await service.GetSnapshotsForMonthAsync(2026, 8);
+        await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
+        await service.GetSnapshotsForMonthAsync(CurrentYear, 8);
         var julySnapshot = repository.Snapshots.Single(s => s.Month == 7 && s.Account == "ChaseSave");
         var augustSnapshot = repository.Snapshots.Single(s => s.Month == 8 && s.Account == "ChaseSave");
         var otherAccountSnapshot = repository.Snapshots.Single(s => s.Month == 7 && s.Account == "PlatinumVisa8003");
@@ -79,7 +119,7 @@ public class InvestmentSnapshotServiceTests
     {
         var repository = new StubCashFlowRepository();
         var service = new InvestmentSnapshotService(repository);
-        await service.GetSnapshotsForMonthAsync(2026, 7);
+        await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
         var snapshot = repository.Snapshots.First();
 
         var act = async () => await service.UpdateSnapshotValueAsync(snapshot.Id, new UpdateInvestmentSnapshotValueDTO { Value = -1m });
