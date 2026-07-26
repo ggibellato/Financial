@@ -264,16 +264,39 @@ public class YearlySummaryServiceTests
     }
 
     [Fact]
-    public void GetInvestmentDiffsForYear_FullYearNetChangeEqualsDecemberMinusJanuary()
+    public void GetInvestmentDiffsForYear_PastYear_FullYearNetChangeEqualsDecemberMinusJanuary()
     {
         var repository = new StubCashFlowRepository();
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", PastYear, 1, 1000m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", PastYear, 12, 1800m));
+        var service = new YearlySummaryService(repository);
+
+        var result = service.GetInvestmentDiffsForYear(PastYear);
+
+        result.NetPosition.FullYearNetChange.Should().Be(800m);
+    }
+
+    [Fact]
+    public void GetInvestmentDiffsForYear_CurrentYear_FullYearNetChangeUsesCurrentMonthNotDecember()
+    {
+        var repository = new StubCashFlowRepository();
+        var currentMonth = DateTime.Now.Month;
         repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", CurrentYear, 1, 1000m));
-        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", CurrentYear, 12, 1800m));
+        if (currentMonth != 1)
+        {
+            repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", CurrentYear, currentMonth, 1300m));
+        }
+        if (currentMonth != 12)
+        {
+            // A December value exists but must NOT be used - it hasn't happened yet this year.
+            repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", CurrentYear, 12, 9999m));
+        }
         var service = new YearlySummaryService(repository);
 
         var result = service.GetInvestmentDiffsForYear(CurrentYear);
 
-        result.NetPosition.FullYearNetChange.Should().Be(800m);
+        var expected = currentMonth == 1 ? 0m : 300m;
+        result.NetPosition.FullYearNetChange.Should().Be(expected);
     }
 
     [Fact]
