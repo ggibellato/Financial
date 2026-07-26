@@ -97,9 +97,9 @@ public sealed class YearlySummaryService : IYearlySummaryService
         var netPositionDiffs = ComputeDiffs(netPositionValues, netPositionJanuaryDiff);
 
         // A future month (beyond the current calendar month, for the current year) has no
-        // snapshot yet, so its value defaults to 0 and its diff would misrepresent a real drop.
-        // Average/Sum only consider months that have actually happened; December always counts
-        // for a past year.
+        // snapshot yet, so its value defaults to 0 and would misrepresent a real drop to zero.
+        // FullYearNetChange, Average, and Sum all stop at the year's last relevant month:
+        // December for a past year, or the current calendar month for the current year.
         var lastRelevantMonth = year >= DateTime.Now.Year ? Math.Min(DateTime.Now.Month, MonthsInYear) : MonthsInYear;
         var relevantDiffs = netPositionDiffs.Take(lastRelevantMonth).Where(d => d.HasValue).Select(d => d!.Value).ToList();
 
@@ -107,7 +107,7 @@ public sealed class YearlySummaryService : IYearlySummaryService
         {
             MonthlyValues = netPositionValues,
             MonthlyDiffs = netPositionDiffs,
-            FullYearNetChange = netPositionValues[MonthsInYear - 1] - netPositionValues[0],
+            FullYearNetChange = netPositionValues[lastRelevantMonth - 1] - netPositionValues[0],
             AverageMonthResult = relevantDiffs.Count > 0 ? relevantDiffs.Average() : 0m,
             SumOfMonthResults = relevantDiffs.Sum()
         };
