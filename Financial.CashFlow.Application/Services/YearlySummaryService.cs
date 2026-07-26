@@ -1,7 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Enums;
-using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -49,19 +48,19 @@ public sealed class YearlySummaryService : IYearlySummaryService
             .GroupBy(s => (s.Account, s.Month))
             .ToDictionary(g => g.Key, g => g.First().Value);
 
-        var accounts = Enum.GetValues<InvestmentAccount>()
+        var accounts = _repository.GetInvestmentAccounts()
             .Select(account =>
             {
                 var monthlyValues = new decimal[MonthsInYear];
                 for (var month = 1; month <= MonthsInYear; month++)
                 {
-                    monthlyValues[month - 1] = valueByAccountAndMonth.GetValueOrDefault((account, month));
+                    monthlyValues[month - 1] = valueByAccountAndMonth.GetValueOrDefault((account.Name, month));
                 }
 
                 return new InvestmentAccountYearlyDiffDTO
                 {
-                    Account = account.ToString(),
-                    IsLiability = InvestmentAccountClassification.IsLiability(account),
+                    Account = account.Name,
+                    IsLiability = account.IsLiability,
                     MonthlyValues = monthlyValues,
                     MonthlyDiffs = ComputeDiffs(monthlyValues)
                 };

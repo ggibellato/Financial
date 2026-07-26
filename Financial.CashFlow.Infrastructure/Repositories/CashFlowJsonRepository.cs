@@ -40,6 +40,9 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository
     public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => _data.InvestmentSnapshots;
     public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => _data.AddInvestmentSnapshot(snapshot);
 
+    public IEnumerable<InvestmentAccount> GetInvestmentAccounts() => _data.InvestmentAccounts;
+    public void AddInvestmentAccount(InvestmentAccount account) => _data.AddInvestmentAccount(account);
+
     public IEnumerable<Bank> GetBanks() => _data.Banks;
 
     public IEnumerable<Income> GetIncomes() => _data.Incomes;
