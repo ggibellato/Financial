@@ -239,11 +239,11 @@ graph TD
 - [x] A row label matching no registry alias is skipped, with no snapshot written and no error raised
 
 ### F03. Full Historical Re-Import (2017-2026)
-- [ ] After running the migration, every one of the 10 Resumo2017-Resumo2026 sheets reports 0 unmatched account rows
-- [ ] For every matched account-year, exactly 12 `InvestmentSnapshot` records exist (one per month), with a value of 0 for any month whose source cell was blank
-- [ ] Liability accounts' imported values are negated, matching the existing sign-inversion rule
-- [ ] Running the command twice in a row produces the same final snapshot values, with the second run overwriting rather than duplicating
-- [ ] If `Despesas.xlsx` is not found at the expected path, the command fails immediately with no snapshots written
+- [x] After running the migration, every one of the 10 Resumo2017-Resumo2026 sheets reports 0 unmatched account rows
+- [x] For every matched account-year, exactly 12 `InvestmentSnapshot` records exist (one per month), with a value of 0 for any month whose source cell was blank
+- [x] Liability accounts' imported values are negated, matching the existing sign-inversion rule
+- [x] Running the command twice in a row produces the same final snapshot values, with the second run overwriting rather than duplicating
+- [x] If `Despesas.xlsx` is not found at the expected path, the command fails immediately with no snapshots written
 
 ### F04. Year-Scoped Investment Account Display
 - [ ] For year 2023, the Investment Snapshots page and the Yearly Summary Investments sub-tab show exactly the accounts confirmed present in Resumo2023 (Everyday Saver, Blue Rewards Saver, Platinum Visa 8003, Platinum Visa 6007, Paypal Credit, Help to Buy ISA GGS, Help to Buy ISA AACS, Chip Easy access, Chase Save) and no others
@@ -259,6 +259,6 @@ graph TD
 
 ### Cross-Feature Integration
 - [x] Registry entries created by F01 are correctly consumed by F02 when seeding the 8 historical accounts and their aliases
-- [ ] The seeded registry and alias-resolving importer produced by F02 are what F03's full re-import invokes across all 10 Resumo sheets
+- [x] The seeded registry and alias-resolving importer produced by F02 are what F03's full re-import invokes across all 10 Resumo sheets
 - [ ] Snapshot data written by F03, together with F01's active-status flag, is what F04 queries to determine year-scoped account existence
 - [ ] The year-filtered account list and net position values produced by F04 are exactly what F05 consumes for its January diff calculation
