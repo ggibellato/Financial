@@ -100,4 +100,15 @@ public class CashFlowJsonRepositoryTests
 
         repository.GetBanks().Should().ContainSingle().Which.Name.Should().Be("Barclays");
     }
+
+    [Fact]
+    public void GetInvestmentAccounts_ReturnsInvestmentAccountsFromTheUnderlyingData()
+    {
+        var data = CashFlowData.Create();
+        var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(Path.GetTempFileName()), new CashFlowSerializerAdapter());
+
+        repository.AddInvestmentAccount(InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false));
+
+        repository.GetInvestmentAccounts().Should().ContainSingle().Which.Name.Should().Be("ChaseSave");
+    }
 }

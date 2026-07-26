@@ -7,7 +7,7 @@ namespace Financial.CashFlow.Domain.Tests;
 public class CashFlowDataTests
 {
     [Fact]
-    public void Create_StartsWithAllEightCollectionsEmpty()
+    public void Create_StartsWithAllNineCollectionsEmpty()
     {
         var data = CashFlowData.Create();
 
@@ -17,6 +17,7 @@ public class CashFlowDataTests
         data.RecurringBills.Should().BeEmpty();
         data.MaeLedgerEntries.Should().BeEmpty();
         data.InvestmentSnapshots.Should().BeEmpty();
+        data.InvestmentAccounts.Should().BeEmpty();
         data.Banks.Should().BeEmpty();
         data.Incomes.Should().BeEmpty();
     }
@@ -204,9 +205,20 @@ public class CashFlowDataTests
     {
         var data = CashFlowData.Create();
 
-        data.AddInvestmentSnapshot(InvestmentSnapshot.Create(InvestmentAccount.ChaseSave, 2026, 7, 100m));
+        data.AddInvestmentSnapshot(InvestmentSnapshot.Create("ChaseSave", 2026, 7, 100m));
 
         data.InvestmentSnapshots.Should().ContainSingle();
+        data.Expenses.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AddInvestmentAccount_AddsOnlyToInvestmentAccountsCollection()
+    {
+        var data = CashFlowData.Create();
+
+        data.AddInvestmentAccount(InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false));
+
+        data.InvestmentAccounts.Should().ContainSingle();
         data.Expenses.Should().BeEmpty();
     }
 

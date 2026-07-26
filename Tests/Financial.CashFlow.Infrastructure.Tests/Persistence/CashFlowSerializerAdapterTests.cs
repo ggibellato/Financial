@@ -24,7 +24,8 @@ public class CashFlowSerializerAdapterTests
         var cardStatement = CardStatement.Create(CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
         var recurringBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
         var maeLedgerEntry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 15), "School supplies", "Note", Currency.BRL, 350m, 51.23m);
-        var investmentSnapshot = InvestmentSnapshot.Create(InvestmentAccount.PlatinumVisa8003, 2026, 7, 1250.00m);
+        var investmentSnapshot = InvestmentSnapshot.Create("PlatinumVisa8003", 2026, 7, 1250.00m);
+        var investmentAccount = InvestmentAccount.Create("PlatinumVisa8003", isActive: true, isLiability: true);
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
         var income = Income.Create(new DateOnly(2026, 7, 25), IncomeSource.Gleison, 3200.00m, 2450.00m, "Barclays");
@@ -35,6 +36,7 @@ public class CashFlowSerializerAdapterTests
         original.AddRecurringBill(recurringBill);
         original.AddMaeLedgerEntry(maeLedgerEntry);
         original.AddInvestmentSnapshot(investmentSnapshot);
+        original.AddInvestmentAccount(investmentAccount);
         original.AddBank(bank);
         original.AddIncome(income);
 
@@ -60,6 +62,11 @@ public class CashFlowSerializerAdapterTests
         result.RecurringBills.Should().ContainSingle().Which.Id.Should().Be(recurringBill.Id);
         result.MaeLedgerEntries.Should().ContainSingle().Which.Id.Should().Be(maeLedgerEntry.Id);
         result.InvestmentSnapshots.Should().ContainSingle().Which.Id.Should().Be(investmentSnapshot.Id);
+        var resultInvestmentAccount = result.InvestmentAccounts.Should().ContainSingle().Which;
+        resultInvestmentAccount.Id.Should().Be(investmentAccount.Id);
+        resultInvestmentAccount.Name.Should().Be(investmentAccount.Name);
+        resultInvestmentAccount.IsActive.Should().Be(investmentAccount.IsActive);
+        resultInvestmentAccount.IsLiability.Should().Be(investmentAccount.IsLiability);
         var resultBank = result.Banks.Should().ContainSingle().Which;
         resultBank.Name.Should().Be(bank.Name);
         resultBank.RoundUpEnabled.Should().Be(bank.RoundUpEnabled);
@@ -89,6 +96,7 @@ public class CashFlowSerializerAdapterTests
         result.RecurringBills.Should().BeEmpty();
         result.MaeLedgerEntries.Should().BeEmpty();
         result.InvestmentSnapshots.Should().BeEmpty();
+        result.InvestmentAccounts.Should().BeEmpty();
         result.Banks.Should().BeEmpty();
         result.Incomes.Should().BeEmpty();
     }

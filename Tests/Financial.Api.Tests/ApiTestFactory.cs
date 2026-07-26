@@ -72,13 +72,27 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         return tempPath;
     }
 
-    // Mirrors the banks a real deployment would have after running the F01 migration tool once.
+    // Mirrors the banks and investment accounts a real deployment would have after running
+    // the CashFlowSpreadsheetImport migration tool once (see BankMigrator / InvestmentAccountMigrator).
     private const string SeededBanksJson = """
         {
           "Banks": [
             { "Name": "Barclays", "RoundUpEnabled": false },
             { "Name": "Trading212", "RoundUpEnabled": true },
             { "Name": "Chase", "RoundUpEnabled": true }
+          ],
+          "InvestmentAccounts": [
+            { "Name": "BlueRewardsSaver", "IsActive": true, "IsLiability": false },
+            { "Name": "PlatinumVisa8003", "IsActive": true, "IsLiability": true },
+            { "Name": "PlatinumVisa6007", "IsActive": true, "IsLiability": true },
+            { "Name": "ChaseMaster4023", "IsActive": true, "IsLiability": true },
+            { "Name": "BaAmex", "IsActive": true, "IsLiability": true },
+            { "Name": "PaypalCredit", "IsActive": true, "IsLiability": true },
+            { "Name": "ChipCashIsaGleison", "IsActive": true, "IsLiability": false },
+            { "Name": "ChaseSave", "IsActive": true, "IsLiability": false },
+            { "Name": "ChipCashIsaAriana", "IsActive": true, "IsLiability": false },
+            { "Name": "Trading212Invested", "IsActive": true, "IsLiability": false },
+            { "Name": "ReservasPessoais", "IsActive": true, "IsLiability": true }
           ]
         }
         """;

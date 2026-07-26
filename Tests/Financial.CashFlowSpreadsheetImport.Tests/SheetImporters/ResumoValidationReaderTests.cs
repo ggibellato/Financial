@@ -1,5 +1,4 @@
 using ClosedXML.Excel;
-using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
 using FluentAssertions;
 
@@ -20,7 +19,7 @@ public class ResumoValidationReaderTests
         var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026);
 
         snapshots.Should().HaveCount(2);
-        snapshots.Should().OnlyContain(s => s.Account == InvestmentAccount.BlueRewardsSaver && s.Year == 2026);
+        snapshots.Should().OnlyContain(s => s.Account == "BlueRewardsSaver" && s.Year == 2026);
         snapshots.Should().Contain(s => s.Month == 1 && s.Value == 5000.0m);
         snapshots.Should().Contain(s => s.Month == 2 && s.Value == 5000.0m);
     }
@@ -37,7 +36,7 @@ public class ResumoValidationReaderTests
         var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026);
 
         snapshots.Should().ContainSingle();
-        snapshots[0].Account.Should().Be(InvestmentAccount.PlatinumVisa8003);
+        snapshots[0].Account.Should().Be("PlatinumVisa8003");
         snapshots[0].Value.Should().Be(-433.78m);
     }
 
@@ -53,7 +52,7 @@ public class ResumoValidationReaderTests
         var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026);
 
         snapshots.Should().ContainSingle();
-        snapshots[0].Account.Should().Be(InvestmentAccount.PlatinumVisa8003);
+        snapshots[0].Account.Should().Be("PlatinumVisa8003");
         snapshots[0].Value.Should().Be(433.78m);
     }
 
@@ -69,7 +68,7 @@ public class ResumoValidationReaderTests
         var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026);
 
         snapshots.Should().ContainSingle();
-        snapshots[0].Account.Should().Be(InvestmentAccount.Trading212Invested);
+        snapshots[0].Account.Should().Be("Trading212Invested");
         snapshots[0].Value.Should().Be(433.78m);
     }
 
@@ -85,7 +84,7 @@ public class ResumoValidationReaderTests
         var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026);
 
         snapshots.Should().ContainSingle();
-        snapshots[0].Account.Should().Be(InvestmentAccount.Trading212Invested);
+        snapshots[0].Account.Should().Be("Trading212Invested");
         snapshots[0].Value.Should().Be(-433.78m);
     }
 
@@ -101,7 +100,7 @@ public class ResumoValidationReaderTests
 
         var snapshots = ResumoValidationReader.ImportAccountSnapshots(sheet, 2026);
 
-        snapshots.Should().ContainSingle().Which.Account.Should().Be(InvestmentAccount.ChaseMaster4023);
+        snapshots.Should().ContainSingle().Which.Account.Should().Be("ChaseMaster4023");
     }
 
     [Fact]
