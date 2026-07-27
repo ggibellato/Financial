@@ -309,7 +309,7 @@ public sealed class YearlySummaryService : IYearlySummaryService
     private Dictionary<int, List<IncomeAverageDTO>> GetAnnualAverageIncomeByGroupIncome(int year)
     {
         var monthlySumByIncomeSource = _repository.GetIncomes()
-            .Where(e => e.Date.Year <= year)
+            .Where(e => e.Date.Year <= year && e.Date < new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1))
             .GroupBy(e => new { e.Date.Year, e.Date.Month, IncomeGroup = GetIncomeGroup(e.IncomeSource) })
             .Select(g => new
             {
@@ -337,7 +337,7 @@ public sealed class YearlySummaryService : IYearlySummaryService
     private IList<CategoryAnnualAverageDTO> GetHistoricCategoriesAverageFromYear(int year)
     {
         var monthlySumByCategory = _repository.GetExpenses()
-            .Where(e => e.Date.Year <= year)
+            .Where(e => e.Date.Year <= year && e.Date < new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1))
             .GroupBy(e => (e.Date.Year, e.Date.Month, e.Category))
             .Select(g => new
             {
