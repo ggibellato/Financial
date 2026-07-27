@@ -162,7 +162,54 @@ public sealed class YearlySummaryService : IYearlySummaryService
         };
     }
 
-    public IReadOnlyList<IncomeAnnualAverageDTO> GetHistoricIncomeAverageFromYear(int year)
+    public IReadOnlyList<CategoryAnnualAverageDTO> GetCategoryTotalsHistoricAverageFromYear(int year)
+    {
+        var incomeAverages = GetHistoricIncomeAverageFromYear(year);
+        var categoryAverages = GetHistoricCategoriesAverageFromYear(year);
+        AddIncomeToFinalResult(incomeAverages, categoryAverages);
+        return [.. categoryAverages];
+    }
+
+    private static void AddIncomeToFinalResult(IList<IncomeAnnualAverageDTO> incomeAverages, 
+        IList<CategoryAnnualAverageDTO> categoryAverages)
+    {
+        foreach (var incomeAverage in incomeAverages)
+        {
+            var yearAverage = categoryAverages.FirstOrDefault(c => c.Year == incomeAverage.Year);
+            if (yearAverage is null)
+            {
+                yearAverage = new CategoryAnnualAverageDTO
+                {
+                    Year = incomeAverage.Year,
+                    AnnualAverages = new List<CategoryAverageDTO>()
+                };
+                categoryAverages.Add(yearAverage);
+            }
+
+            yearAverage.AnnualAverages.Insert(0, new CategoryAverageDTO
+            {
+                Category = "Salary",
+                Average = incomeAverage.SalaryAverage
+            });
+            yearAverage.AnnualAverages.Insert(1, new CategoryAverageDTO
+            {
+                Category = "Salary after taxes",
+                Average = incomeAverage.SalaryAfterTaxesAverage
+            });
+            yearAverage.AnnualAverages.Insert(2, new CategoryAverageDTO
+            {
+                Category = "Tax difference",
+                Average = incomeAverage.SalaryAverage - incomeAverage.SalaryAfterTaxesAverage
+            });
+            yearAverage.AnnualAverages.Insert(3, new CategoryAverageDTO
+            {
+                Category = "Dividendo/Juros",
+                Average = incomeAverage.DividendoJurosAverage
+            });
+        }
+    }
+
+    private IList<IncomeAnnualAverageDTO> GetHistoricIncomeAverageFromYear(int year)
     {
         Dictionary<int, List<IncomeAverageDTO>> averageIncome = GetAnnualAverageIncomeByGroupIncome(year);
         Dictionary<int, IncomeAnnualAverageDTO> result = BuildAnnualIncomeAverages(averageIncome);
@@ -236,7 +283,7 @@ public sealed class YearlySummaryService : IYearlySummaryService
             ? SalaryIncomeGroup
             : IncomeSource.DividendoJuros.ToString();
 
-    public IReadOnlyList<CategoryAnnualAverageDTO> GetHistoricCategoriesAverageFromYear(int year)
+    private IList<CategoryAnnualAverageDTO> GetHistoricCategoriesAverageFromYear(int year)
     {
         var monthlySumByCategory = _repository.GetExpenses()
             .Where(e => e.Date.Year <= year)
