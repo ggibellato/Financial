@@ -4,7 +4,7 @@
 
 Yearly Summary Historical Averages Sub-Tab adds a third view to `Financial.CashFlow`'s Yearly Summary tab, alongside the existing Category Totals and Investments sub-tabs. It is used by the same single developer-maintainer that all prior CashFlow features serve. Today, seeing how a category or income line has trended across past years requires opening each year's `Resumo/xxxx` spreadsheet tab individually and comparing figures by hand — there is no in-app way to see multiple years side by side. This feature closes that gap by reproducing the spreadsheet's `Q1:Y25`-style historical block directly in the app: one column per year, one row per category/income line, each cell holding that line's yearly average.
 
-At a high level, the new "Historical Categories Averages" sub-tab shares the same year picker as Category Totals and Investments. It shows the exact same row set as Category Totals (income lines, the 14 expense categories, Resultado, Total despesas), but instead of 12 month columns it shows one column per calendar year — starting at the selected year and going backward to the earliest year with any recorded data — plus a trailing All-Years Average column. Every year's value is computed server-side in a single batch request, so opening the sub-tab never issues one network call per year.
+At a high level, the new "Historical Categories Averages" sub-tab shares the same year picker as Category Totals and Investments. It shows the exact same row set as Category Totals (income lines, the 14 expense categories, Resultado, Total despesas), but instead of 12 month columns it shows one column per calendar year — starting at the selected year and going backward to the earliest year with any recorded data. Every year's value is computed server-side in a single batch request, so opening the sub-tab never issues one network call per year.
 
 ## 2. Problem and Opportunity
 
@@ -66,7 +66,6 @@ At a high level, the new "Historical Categories Averages" sub-tab shares the sam
 - As the developer, I want each year's cell to be that row's average over however many months are actually recorded that year, so that partial historical years still contribute a useful figure instead of being blank
 - As the developer, I want years with absolutely no recorded data omitted from the range, so that the table isn't padded with meaningless empty columns
 - As the developer, I want the current year's average to exclude the in-progress current month, so that an incomplete month never skews the figure
-- As the developer, I want a trailing All-Years Average column so that I have one baseline number per row summarizing the whole displayed history
 - As the system, I want to compute every displayed year's averages in a single response so that the frontend never needs to issue one request per year
 
 ## 6. Functionalities
@@ -76,13 +75,12 @@ At a high level, the new "Historical Categories Averages" sub-tab shares the sam
 **Capabilities:**
 - Adds a third sub-tab, "Historical Categories Averages", after "Investments" on the existing Yearly Summary tab shell; selecting it never resets the shared year picker and never affects the other two sub-tabs' loaded data
 - Row set and order identical to Category Totals: Salary, Salary After Taxes, Tax Difference, Dividendo/Juros, then the 14 `Category` enum rows in declaration order (Ariana, Carro, Casa, Estudo, Extras, Familia, Gleison, Mercado, Samuel, Saude, Viagem, Dizimo, Investimento, Reserva), then Resultado (R-D-Inv), then Total despesas — using the same monthly value definitions established for Category Totals (Total despesas = sum of the 14 categories), with one deliberate exception: this sub-tab's Resultado = Salary After Taxes − Total despesas + Investimento, excluding Dividendo/Juros. This differs intentionally from Category Totals' own Resultado (which does include Dividendo/Juros) — a conscious divergence for the historic-average view, not an oversight
-- Column set: one column per calendar year, ordered left to right starting at the selected year and decreasing by one each column, continuing down to the earliest year for which at least one row has at least one recorded month; any year within that span with zero recorded data across every row is omitted entirely (no blank filler column); a trailing "All-Years Average" column follows the oldest displayed year
+- Column set: one column per calendar year, ordered left to right starting at the selected year and decreasing by one each column, continuing down to the earliest year for which at least one row has at least one recorded month; any year within that span with zero recorded data across every row is omitted entirely (no blank filler column)
 - Each year's cell value = arithmetic mean of that row's recorded monthly values for that year (partial years average over however many months are actually recorded, consistent with the existing per-row Average column behavior on Category Totals)
 - Monthly values are computed exactly as in `GetCategoryTotalsForYear`/`GetIncomeSummaryForYear`: same-month entries are summed together first (per category, or per combined income group for Salary/Salary After Taxes), and only that resulting per-month total feeds the year's average — never an average taken directly over individual transactions. This matches `Resumo{year}`'s own column N (`=AVERAGE(B{row}:M{row})`), where each of B:M is already a pre-summed monthly total, not a raw entry
 - Current-year exception: when the selected year equals the current calendar year, that year's column only averages months 1 through the last fully completed month (the in-progress current month is excluded from the average entirely, not treated as zero); if the current year has zero fully completed months yet (today falls in January), the current year column is omitted and the range starts at the previous year instead
-- All-Years Average column = arithmetic mean of that row's per-year average values across every year column actually displayed (each displayed year counts equally, regardless of how many months it contributed)
 - All years' averages are computed and returned by a single new batch endpoint/service call anchored at the selected year — the frontend never issues one request per year
-- All monthly, yearly, and All-Years Average figures use the existing 2-decimal numeric formatting (`formatN2`) used throughout the Yearly Summary tab today
+- All monthly and yearly figures use the existing 2-decimal numeric formatting (`formatN2`) used throughout the Yearly Summary tab today
 
 **Experience:**
 - Clicking "Historical Categories Averages" swaps the visible content exactly like switching between Category Totals and Investments; the tab is highlighted as active and the shared year picker remains unchanged
@@ -143,7 +141,6 @@ graph TD
 - [ ] A row's monthly value is the sum of same-month entries (per category, or per combined income group for Salary/Salary After Taxes) — a category or income group with more than one transaction in the same month never averages over those transactions directly
 - [ ] When the selected year is the current calendar year, that column's average only includes months through the last fully completed month, excluding the in-progress current month
 - [ ] If the current year has zero fully completed months (today is in January), the current year column is omitted and the range starts at the previous year
-- [ ] A trailing "All-Years Average" column shows the arithmetic mean of each row's displayed per-year averages, weighted equally per year
 - [ ] Opening the sub-tab (or changing the selected year while it is active) issues exactly one network request that returns every displayed year's figures at once
 - [ ] Resultado and Total despesas rows render bold, consistent with Category Totals styling
 - [ ] If the batch request fails, the existing Yearly Summary error/retry state is shown
