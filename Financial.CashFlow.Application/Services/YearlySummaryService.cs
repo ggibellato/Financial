@@ -1,6 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
-using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 
@@ -166,8 +165,60 @@ public sealed class YearlySummaryService : IYearlySummaryService
     {
         var incomeAverages = GetHistoricIncomeAverageFromYear(year);
         var categoryAverages = GetHistoricCategoriesAverageFromYear(year);
+        categoryAverages = AddMissingCategories(categoryAverages);
+        AddCategoryTotal(incomeAverages, categoryAverages);
         AddIncomeToFinalResult(incomeAverages, categoryAverages);
         return [.. categoryAverages];
+    }
+
+    private IList<CategoryAnnualAverageDTO> AddMissingCategories(IList<CategoryAnnualAverageDTO> categoryAverages)
+    {
+        var result = new List<CategoryAnnualAverageDTO>();
+
+        var uniqueListOfCategories = Enum.GetValues<Category>().Select(c => c.ToString()).ToList();
+
+        foreach (var yearAverage in categoryAverages)
+        {
+            foreach (var category in uniqueListOfCategories)
+            {
+                if (!yearAverage.AnnualAverages.Any(c => c.Category == category))
+                {
+                    yearAverage.AnnualAverages.Add(new CategoryAverageDTO
+                    {
+                        Category = category,
+                        Average = 0m
+                    });
+                }
+            }
+            result.Add(new CategoryAnnualAverageDTO{
+                Year = yearAverage.Year,
+                AnnualAverages = yearAverage.AnnualAverages.OrderBy(c => Enum.Parse<Category>(c.Category)).ToList()
+            });
+        }
+        return result;
+    }
+
+    private void AddCategoryTotal(IList<IncomeAnnualAverageDTO> incomeAverages, IList<CategoryAnnualAverageDTO> categoryAverages)
+    {
+        foreach (var yearAverage in categoryAverages)
+        {
+            var totalCategory = yearAverage.AnnualAverages.Sum(c => c.Average);
+            var investmentCategory = yearAverage.AnnualAverages.FirstOrDefault(c => c.Category == "Investimento")?.Average ?? 0m;
+
+            var salaryAfterTaxes = incomeAverages.FirstOrDefault(i => i.Year == yearAverage.Year)?.SalaryAfterTaxesAverage ?? 0m;
+
+            yearAverage.AnnualAverages.Add(new CategoryAverageDTO
+            {
+                Category = "Resultado (R-D-Inv)",
+                Average = salaryAfterTaxes - totalCategory + investmentCategory
+            });
+
+            yearAverage.AnnualAverages.Add(new CategoryAverageDTO
+            {
+                Category = "Total despesas",
+                Average = totalCategory
+            });
+        }
     }
 
     private static void AddIncomeToFinalResult(IList<IncomeAnnualAverageDTO> incomeAverages, 

@@ -590,6 +590,76 @@ public class YearlySummaryServiceTests
         result[0].AnnualAverages.Single(a => a.Category == "Salary after taxes").Average.Should().Be(800m);
     }
 
+    [Fact]
+    public void GetCategoryTotalsHistoricAverageFromYear_ComputesTotalDespesasAsSumOfCategoryRowsOnly()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Investing", 30m, Category.Investimento, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.DividendoJuros, null, 20m, "Barclays"));
+
+        var result = service.GetCategoryTotalsHistoricAverageFromYear(2026);
+
+        // Total despesas must be the sum of the 14 expense category rows only (Mercado 100 + Investimento 30 = 130),
+        // never the income rows (Salary/Salary after taxes/Tax difference/Dividendo/Juros) merged in ahead of them.
+        result[0].AnnualAverages.Single(a => a.Category == "Total despesas").Average.Should().Be(130m);
+    }
+
+    [Fact]
+    public void GetCategoryTotalsHistoricAverageFromYear_ComputesResultadoFromSalaryAfterTaxesTotalDespesasAndInvestimentoExcludingDividendoJuros()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Investing", 30m, Category.Investimento, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
+        // DividendoJuros is seeded deliberately: unlike Category Totals' own Resultado, this sub-tab's
+        // Resultado excludes Dividendo/Juros entirely, so this income must NOT affect the expected value.
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.DividendoJuros, null, 20m, "Barclays"));
+
+        var result = service.GetCategoryTotalsHistoricAverageFromYear(2026);
+
+        // Resultado (R-D-Inv) = SalaryAfterTaxes(800) - TotalDespesas(130) + Investimento(30) = 700
+        result[0].AnnualAverages.Single(a => a.Category == "Resultado (R-D-Inv)").Average.Should().Be(700m);
+    }
+
+    [Fact]
+    public void GetCategoryTotalsHistoricAverageFromYear_ZeroFillsCategoriesWithNoExpensesThatYear()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
+
+        var result = service.GetCategoryTotalsHistoricAverageFromYear(2026);
+
+        // Every one of the 14 Category enum values must appear, even with zero recorded expenses that year.
+        foreach (var category in Enum.GetValues<Category>())
+        {
+            var entry = result[0].AnnualAverages.Single(a => a.Category == category.ToString());
+            entry.Average.Should().Be(category == Category.Mercado ? 100m : 0m);
+        }
+    }
+
+    [Fact]
+    public void GetCategoryTotalsHistoricAverageFromYear_RowOrderMatchesCategoryTotalsFixedOrder()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.DividendoJuros, null, 20m, "Barclays"));
+
+        var result = service.GetCategoryTotalsHistoricAverageFromYear(2026);
+
+        var expectedOrder = new List<string> { "Salary", "Salary after taxes", "Tax difference", "Dividendo/Juros" }
+            .Concat(Enum.GetValues<Category>().Select(c => c.ToString()))
+            .Concat(["Resultado (R-D-Inv)", "Total despesas"]);
+
+        result[0].AnnualAverages.Select(a => a.Category).Should().Equal(expectedOrder);
+    }
+
     private sealed class StubCashFlowRepository : ICashFlowRepository
     {
         private static readonly (string Name, bool IsLiability)[] SeededAccounts =
