@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
+using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 
@@ -157,6 +158,68 @@ public sealed class YearlySummaryService : IYearlySummaryService
             DividendoJurosMonthly = dividendoJurosMonthly,
             DividendoJurosYearlyTotal = dividendoJurosMonthly.Sum()
         };
+    }
+
+    public IReadOnlyList<IncomeAnnualAverageDTO> GetHistoricIncomeAverageFromYear(int year)
+    {
+        var averageExpenseByYear = _repository.GetIncomes()
+            .Where(e => e.Date.Year <= year)
+            .GroupBy(e => e.Date.Year)
+            .ToDictionary(g => g.Key, g => g.GroupBy(e => e.IncomeSource)
+                .Select(a => new IncomeAverageDTO
+                {
+                    IncomeSource = a.Key,
+                    GrossAverageValue = a.Average(e => e.GrossValue ?? 0m),
+                    NetAverageValue = a.Average(e => e.NetValue)
+                }).ToList());
+        var result = new Dictionary<int, IncomeAnnualAverageDTO>();
+        foreach (var incomeYear in averageExpenseByYear)
+        {
+            var salary = 0m;
+            var salaryAfterTaxes = 0m;
+            var dividendoJuros = 0m;
+
+            foreach (var incomeAverage in incomeYear.Value)
+            {
+                if (incomeAverage.IncomeSource is IncomeSource.Gleison or IncomeSource.Ariana)
+                {
+                    salary += incomeAverage.GrossAverageValue ?? 0m;
+                    salaryAfterTaxes += incomeAverage.NetAverageValue;
+                }
+                else if (incomeAverage.IncomeSource == IncomeSource.DividendoJuros)
+                {
+                    dividendoJuros += incomeAverage.NetAverageValue;
+                }
+            }
+            result.Add(incomeYear.Key, new IncomeAnnualAverageDTO
+            {
+                Year = incomeYear.Key,
+                SalaryAverage = salary,
+                SalaryAfterTaxesAverage = salaryAfterTaxes,
+                TaxDifferenceAverage = salary - salaryAfterTaxes,
+                DividendoJurosAverage = dividendoJuros
+            });
+        }
+
+        return result.Values.OrderByDescending(a => a.Year).ToList();
+    }
+
+    public IReadOnlyList<CategoryAnnualAverageDTO> GetHistoricCategoriesAverageFromYear(int year)
+    {
+        var averageExpenseByYear = _repository.GetExpenses()
+            .Where(e => e.Date.Year <= year)
+            .GroupBy(e => e.Date.Year)
+            .Select(g => new CategoryAnnualAverageDTO
+            {
+                Year = g.Key,
+                AnnualAverages = [.. g.GroupBy(e => e.Category)
+                    .Select(a => new CategoryAverageDTO
+                    {
+                        Category = a.Key.ToString(),
+                        Average = a.Average(e => e.Value)
+                    })]
+            });
+        return [.. averageExpenseByYear.OrderByDescending(a => a.Year)];
     }
 
     private static decimal?[] ComputeDiffs(decimal[] monthlyValues, decimal? januaryDiff)

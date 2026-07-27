@@ -453,6 +453,98 @@ public class YearlySummaryServiceTests
         result.DividendoJurosMonthly.Should().OnlyContain(v => v == 0m);
     }
 
+
+    [Fact]
+    public void GetHistoricCategoriesAverageFromYear_ReturnsEmptyList_WhenNoExpensesForSpecifiedYear()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+        repository.Expenses.Add(Expense.Create(new DateOnly(2027, 4, 5), "Should not be there", 1000m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan", 100m, Category.Mercado, "Barclays", null));
+
+        var result = service.GetHistoricCategoriesAverageFromYear(2020);
+
+        result.Count.Should().Be(0);
+    }
+
+
+    [Fact]
+    public void GetHistoricCategoriesAverageFromYear_ReturnsYearsUpToAndIncludingSpecifiedYear()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+        repository.Expenses.Add(Expense.Create(new DateOnly(2027, 4, 5), "Should not be there", 1000m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan", 100m, Category.Mercado, "Barclays", null));
+
+        var result = service.GetHistoricCategoriesAverageFromYear(2026);
+        
+        result.Count.Should().Be(1);
+    }
+
+    [Fact]
+    public void GetHistoricCategoriesAverageFromYear_ReturnsTheYearsInOrderDescending()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 3, 5), "Mar", 50m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 12, 5), "Dec", 25m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 12, 5), "Dec", 55m, Category.Gleison, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 6, 5), "Jun", 120m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2023, 3, 5), "Mar", 52m, Category.Mercado, "Barclays", null));
+
+        var result = service.GetHistoricCategoriesAverageFromYear(2026);
+
+        result[0].Year.Should().Be(2026);
+        result[1].Year.Should().Be(2025);
+        result[2].Year.Should().Be(2023);
+    }
+
+    [Fact]
+    public void GetHistoricIncomeAverageFromYear_ReturnsEmptyList_WhenNoIncomesForSpecifiedYear()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+        repository.Incomes.Add(Income.Create(new DateOnly(2027, 4, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Gleison, 100m, 100m, "Barclays"));
+
+        var result = service.GetHistoricIncomeAverageFromYear(2020);
+
+        result.Count.Should().Be(0);
+    }
+
+    [Fact]
+    public void GetHistoricIncomeAverageFromYear_ReturnsYearsUpToAndIncludingSpecifiedYear()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+        repository.Incomes.Add(Income.Create(new DateOnly(2027, 4, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Gleison, 100m, 100m, "Barclays"));
+
+        var result = service.GetHistoricIncomeAverageFromYear(2026);
+
+        result.Count.Should().Be(1);
+    }
+
+    [Fact]
+    public void GetHistoricIncomeAverageFromYear_ReturnsTheYearsInOrderDescending()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Gleison, 100m, 100m, "Barclays" ));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 3, 5), IncomeSource.Gleison, 50m, 50m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 12, 5), IncomeSource.Gleison, 25m, 25m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 12, 5), IncomeSource.Gleison, 55m, 55m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2025, 6, 5), IncomeSource.Gleison, 120m, 120m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2023, 3, 5), IncomeSource.Gleison, 52m, 52m, "Barclays"));
+
+        var result = service.GetHistoricIncomeAverageFromYear(2026);
+
+        result[0].Year.Should().Be(2026);
+        result[1].Year.Should().Be(2025);
+        result[2].Year.Should().Be(2023);
+    }
+
     private sealed class StubCashFlowRepository : ICashFlowRepository
     {
         private static readonly (string Name, bool IsLiability)[] SeededAccounts =
