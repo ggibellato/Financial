@@ -9,6 +9,8 @@ namespace Financial.CashFlow.Application.Services;
 public sealed class YearlySummaryService : IYearlySummaryService
 {
     private const int MonthsInYear = 12;
+    private const string SalaryIncomeGroup = "Salary";
+    private const int AverageDecimalPlaces = 2;
 
     private readonly ICashFlowRepository _repository;
 
@@ -162,35 +164,17 @@ public sealed class YearlySummaryService : IYearlySummaryService
 
     public IReadOnlyList<IncomeAnnualAverageDTO> GetHistoricIncomeAverageFromYear(int year)
     {
-        var averageExpenseByYear = _repository.GetIncomes()
-            .Where(e => e.Date.Year <= year)
-            .GroupBy(e => e.Date.Year)
-            .ToDictionary(g => g.Key, g => g.GroupBy(e => e.IncomeSource)
-                .Select(a => new IncomeAverageDTO
-                {
-                    IncomeSource = a.Key,
-                    GrossAverageValue = a.Average(e => e.GrossValue ?? 0m),
-                    NetAverageValue = a.Average(e => e.NetValue)
-                }).ToList());
-        var result = new Dictionary<int, IncomeAnnualAverageDTO>();
-        foreach (var incomeYear in averageExpenseByYear)
-        {
-            var salary = 0m;
-            var salaryAfterTaxes = 0m;
-            var dividendoJuros = 0m;
+        Dictionary<int, List<IncomeAverageDTO>> averageIncome = GetAnnualAverageIncomeByGroupIncome(year);
+        Dictionary<int, IncomeAnnualAverageDTO> result = BuildAnnualIncomeAverages(averageIncome);
+        return result.Values.OrderByDescending(a => a.Year).ToList();
+    }
 
-            foreach (var incomeAverage in incomeYear.Value)
-            {
-                if (incomeAverage.IncomeSource is IncomeSource.Gleison or IncomeSource.Ariana)
-                {
-                    salary += incomeAverage.GrossAverageValue ?? 0m;
-                    salaryAfterTaxes += incomeAverage.NetAverageValue;
-                }
-                else if (incomeAverage.IncomeSource == IncomeSource.DividendoJuros)
-                {
-                    dividendoJuros += incomeAverage.NetAverageValue;
-                }
-            }
+    private static Dictionary<int, IncomeAnnualAverageDTO> BuildAnnualIncomeAverages(Dictionary<int, List<IncomeAverageDTO>> averageIncomeByYear)
+    {
+        var result = new Dictionary<int, IncomeAnnualAverageDTO>();
+        foreach (var incomeYear in averageIncomeByYear)
+        {
+            var (salary, salaryAfterTaxes, dividendoJuros) = CalculateAnnualIncomeDetails(incomeYear);
             result.Add(incomeYear.Key, new IncomeAnnualAverageDTO
             {
                 Year = incomeYear.Key,
@@ -200,24 +184,83 @@ public sealed class YearlySummaryService : IYearlySummaryService
                 DividendoJurosAverage = dividendoJuros
             });
         }
-
-        return result.Values.OrderByDescending(a => a.Year).ToList();
+        return result;
     }
+
+    private static (decimal salary, decimal salaryAfterTaxes, decimal dividendoJuros)
+        CalculateAnnualIncomeDetails(KeyValuePair<int, List<IncomeAverageDTO>> incomeYear)
+    {
+        var salary = 0m;
+        var salaryAfterTaxes = 0m;
+        var dividendoJuros = 0m;
+        foreach (var incomeAverage in incomeYear.Value)
+        {
+            if (incomeAverage.IncomeGroup == SalaryIncomeGroup)
+            {
+                salary += incomeAverage.GrossAverageValue ?? 0m;
+                salaryAfterTaxes += incomeAverage.NetAverageValue;
+            }
+            else if (incomeAverage.IncomeGroup == IncomeSource.DividendoJuros.ToString())
+            {
+                dividendoJuros += incomeAverage.NetAverageValue;
+            }
+        }
+        return (salary, salaryAfterTaxes, dividendoJuros);
+    }
+
+    private Dictionary<int, List<IncomeAverageDTO>> GetAnnualAverageIncomeByGroupIncome(int year)
+    {
+        var monthlySumByIncomeSource = _repository.GetIncomes()
+            .Where(e => e.Date.Year <= year)
+            .GroupBy(e => new { e.Date.Year, e.Date.Month, IncomeGroup = GetIncomeGroup(e.IncomeSource) })
+            .Select(g => new
+            {
+                Key = (g.Key.Year, g.Key.Month, g.Key.IncomeGroup),
+                GrossSumValue = g.Sum(e => e.GrossValue ?? 0m),
+                NetSumValue = g.Sum(e => e.NetValue)
+            }).ToList();
+        var averageExpenseByYear = monthlySumByIncomeSource
+            .GroupBy(e => e.Key.Year)
+            .ToDictionary(g => g.Key, g => g.GroupBy(e => e.Key.IncomeGroup)
+                .Select(a => new IncomeAverageDTO
+                {
+                    IncomeGroup = a.Key,
+                    GrossAverageValue = Math.Round(a.Average(e => e.GrossSumValue), AverageDecimalPlaces),
+                    NetAverageValue = Math.Round(a.Average(e => e.NetSumValue), AverageDecimalPlaces)
+                }).ToList());
+        return averageExpenseByYear;
+    }
+
+    private static string GetIncomeGroup(IncomeSource incomeSource) =>
+        incomeSource is IncomeSource.Gleison or IncomeSource.Ariana
+            ? SalaryIncomeGroup
+            : IncomeSource.DividendoJuros.ToString();
 
     public IReadOnlyList<CategoryAnnualAverageDTO> GetHistoricCategoriesAverageFromYear(int year)
     {
-        var averageExpenseByYear = _repository.GetExpenses()
+        var monthlySumByCategory = _repository.GetExpenses()
             .Where(e => e.Date.Year <= year)
-            .GroupBy(e => e.Date.Year)
-            .Select(g => new CategoryAnnualAverageDTO
+            .GroupBy(e => (e.Date.Year, e.Date.Month, e.Category))
+            .Select(g => new
             {
-                Year = g.Key,
-                AnnualAverages = [.. g.GroupBy(e => e.Category)
-                    .Select(a => new CategoryAverageDTO
+                Key = (g.Key.Year, g.Key.Month, g.Key.Category),
+                Sum = g.Sum(e => e.Value)
+            });
+        var averageExpenseByYear = monthlySumByCategory
+            .GroupBy(g => g.Key.Year)
+            .Select(yearGroup => new CategoryAnnualAverageDTO
+            {
+                Year = yearGroup.Key,
+                AnnualAverages =
+                [
+                    .. yearGroup
+                    .GroupBy(g => g.Key.Category)
+                    .Select(categoryGroup => new CategoryAverageDTO
                     {
-                        Category = a.Key.ToString(),
-                        Average = a.Average(e => e.Value)
-                    })]
+                        Category = categoryGroup.Key.ToString(),
+                        Average = Math.Round(categoryGroup.Average(monthGroup => monthGroup.Sum), AverageDecimalPlaces)
+                    })
+                ]
             });
         return [.. averageExpenseByYear.OrderByDescending(a => a.Year)];
     }

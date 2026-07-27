@@ -501,6 +501,23 @@ public class YearlySummaryServiceTests
     }
 
     [Fact]
+    public void GetHistoricCategoriesAverageFromYear_AveragesPerMonthNotPerTransaction()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan first", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 20), "Jan second", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 2, 10), "Feb", 400m, Category.Mercado, "Barclays", null));
+
+        var result = service.GetHistoricCategoriesAverageFromYear(2026);
+
+        var mercadoAverage = result[0].AnnualAverages.Single(a => a.Category == nameof(Category.Mercado)).Average;
+
+        // Per-month average (spec): Jan total 200 + Feb total 400 → avg over 2 months = 300
+        mercadoAverage.Should().Be(300m);
+    }
+
+    [Fact]
     public void GetHistoricIncomeAverageFromYear_ReturnsEmptyList_WhenNoIncomesForSpecifiedYear()
     {
         var repository = new StubCashFlowRepository();
@@ -543,6 +560,40 @@ public class YearlySummaryServiceTests
         result[0].Year.Should().Be(2026);
         result[1].Year.Should().Be(2025);
         result[2].Year.Should().Be(2023);
+    }
+
+    [Fact]
+    public void GetHistoricIncomeAverageFromYear_AveragesPerMonthNotPerTransaction()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 20), IncomeSource.Gleison, 500m, 400m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 2, 5), IncomeSource.Gleison, 3000m, 2400m, "Barclays"));
+
+        var result = service.GetHistoricIncomeAverageFromYear(2026);
+
+        // Per-month gross: Jan total 1500 + Feb total 3000 → avg over 2 months = 2250
+        result[0].SalaryAverage.Should().Be(2250m);
+
+        // Per-month net: Jan total 1200 + Feb total 2400 → avg over 2 months = 1800
+        result[0].SalaryAfterTaxesAverage.Should().Be(1800m);
+    }
+
+    [Fact]
+    public void GetHistoricIncomeAverageFromYear_SumsSourcesPerMonthBeforeAveragingWhenActiveMonthsDiffer()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 2, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 3, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Ariana, 500m, 500m, "Barclays"));
+
+        var result = service.GetHistoricIncomeAverageFromYear(2026);
+
+        // Combined per-month salary: Jan 1500, Feb 1000, Mar 1000 → avg over 3 months = 1166.67
+        result[0].SalaryAverage.Should().Be(1166.67m);
     }
 
     private sealed class StubCashFlowRepository : ICashFlowRepository
