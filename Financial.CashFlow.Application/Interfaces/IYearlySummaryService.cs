@@ -7,5 +7,5 @@ public interface IYearlySummaryService
     IReadOnlyList<CategoryYearlyTotalDTO> GetCategoryTotalsForYear(int year);
     InvestmentDiffsYearlyDTO GetInvestmentDiffsForYear(int year);
     IncomeYearlySummaryDTO GetIncomeSummaryForYear(int year);
-    IReadOnlyList<CategoryAnnualAverageDTO> GetCategoryTotalsHistoricAverageFromYear(int year);
+    IReadOnlyList<CategoryAnnualAverageDTO> GetHistoricSummaryAverageFromYear(int year);
 }
