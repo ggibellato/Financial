@@ -161,7 +161,7 @@ public sealed class YearlySummaryService : IYearlySummaryService
         };
     }
 
-    public IReadOnlyList<CategoryAnnualAverageDTO> GetCategoryTotalsHistoricAverageFromYear(int year)
+    public IReadOnlyList<CategoryAnnualAverageDTO> GetHistoricSummaryAverageFromYear(int year)
     {
         var incomeAverages = GetHistoricIncomeAverageFromYear(year);
         var categoryAverages = GetHistoricCategoriesAverageFromYear(year);

@@ -118,7 +118,7 @@ public class YearlySummaryEndpointsTests
     }
 
     [Fact]
-    public async Task GetHistoricCategoriesAverages_MergesIncomeIntoMatchingYearAndOmitsItFromYearsWithoutIncome()
+    public async Task GetHistoricSummaryAverages_MergesIncomeIntoMatchingYearAndOmitsItFromYearsWithoutIncome()
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
@@ -174,7 +174,7 @@ public class YearlySummaryEndpointsTests
             Bank = "Trading212"
         });
 
-        var response = await client.GetAsync("/api/v1/financial/yearly-summary/2026/historic-categories-averages");
+        var response = await client.GetAsync("/api/v1/financial/yearly-summary/2026/historic-summary-averages");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<List<CategoryAnnualAverageDTO>>();
