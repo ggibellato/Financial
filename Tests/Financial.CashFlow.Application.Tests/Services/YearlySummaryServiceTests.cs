@@ -660,6 +660,53 @@ public class YearlySummaryServiceTests
         result[0].AnnualAverages.Select(a => a.Category).Should().Equal(expectedOrder);
     }
 
+    [Fact]
+    public void GetCategoryTotalsHistoricAverageFromYear_ExcludesInProgressCurrentMonthFromCurrentYearAverage()
+    {
+        var today = DateTime.UtcNow;
+        if (today.Month == 1)
+        {
+            // No completed month exists yet this year; that scenario is covered by the
+            // "omits current year entirely" test below instead.
+            return;
+        }
+
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+        var currentYear = today.Year;
+        repository.Expenses.Add(Expense.Create(new DateOnly(currentYear, 1, 5), "Completed month", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(DateOnly.FromDateTime(today), "In-progress month", 9999m, Category.Mercado, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(currentYear, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
+        repository.Incomes.Add(Income.Create(DateOnly.FromDateTime(today), IncomeSource.Gleison, 9999m, 9999m, "Barclays"));
+
+        var result = service.GetCategoryTotalsHistoricAverageFromYear(currentYear);
+
+        var currentYearRow = result.Single(r => r.Year == currentYear);
+        // Only January's figures count; the in-progress current-month entries (9999) must be excluded entirely,
+        // not treated as a completed month with a low value.
+        currentYearRow.AnnualAverages.Single(a => a.Category == "Mercado").Average.Should().Be(100m);
+        currentYearRow.AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(1000m);
+        currentYearRow.AnnualAverages.Single(a => a.Category == "Salary after taxes").Average.Should().Be(800m);
+    }
+
+    [Fact]
+    public void GetCategoryTotalsHistoricAverageFromYear_OmitsCurrentYearEntirelyWhenOnlyInProgressMonthIsRecorded()
+    {
+        var today = DateTime.UtcNow;
+        var repository = new StubCashFlowRepository();
+        var service = new YearlySummaryService(repository);
+        var currentYear = today.Year;
+        repository.Expenses.Add(Expense.Create(DateOnly.FromDateTime(today), "In-progress month", 9999m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(currentYear - 1, 12, 5), "Prior year", 50m, Category.Mercado, "Barclays", null));
+
+        var result = service.GetCategoryTotalsHistoricAverageFromYear(currentYear);
+
+        // The current year has no fully completed month yet, so it must not appear at all;
+        // the range starts at the previous year instead.
+        result.Should().NotContain(r => r.Year == currentYear);
+        result.Should().ContainSingle(r => r.Year == currentYear - 1);
+    }
+
     private sealed class StubCashFlowRepository : ICashFlowRepository
     {
         private static readonly (string Name, bool IsLiability)[] SeededAccounts =
