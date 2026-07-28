@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -9,7 +10,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 {
     private const int MonthsInYear = 12;
     private const string SalaryIncomeGroup = "Salary";
-    private const int AverageDecimalPlaces = 2;
+    public const int AverageDecimalPlaces = 2;
 
     private readonly ICashFlowRepository _repository;
 
@@ -98,10 +99,6 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
         var netPositionDiffs = ComputeDiffs(netPositionValues, netPositionJanuaryDiff);
 
-        // A future month (beyond the current calendar month, for the current year) has no
-        // snapshot yet, so its value defaults to 0 and would misrepresent a real drop to zero.
-        // FullYearNetChange, Average, and Sum all stop at the year's last relevant month:
-        // December for a past year, or the current calendar month for the current year.
         var lastRelevantMonth = year >= DateTime.Now.Year ? Math.Min(DateTime.Now.Month, MonthsInYear) : MonthsInYear;
         var relevantDiffs = netPositionDiffs.Take(lastRelevantMonth).Where(d => d.HasValue).Select(d => d!.Value).ToList();
 
@@ -316,18 +313,25 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
                 Key = (g.Key.Year, g.Key.Month, g.Key.IncomeGroup),
                 GrossSumValue = g.Sum(e => e.GrossValue ?? 0m),
                 NetSumValue = g.Sum(e => e.NetValue)
-            }).ToList();
+            });
         var averageExpenseByYear = monthlySumByIncomeSource
             .GroupBy(e => e.Key.Year)
             .ToDictionary(g => g.Key, g => g.GroupBy(e => e.Key.IncomeGroup)
                 .Select(a => new IncomeAverageDTO
                 {
                     IncomeGroup = a.Key,
-                    GrossAverageValue = Math.Round(a.Average(e => e.GrossSumValue), AverageDecimalPlaces),
-                    NetAverageValue = Math.Round(a.Average(e => e.NetSumValue), AverageDecimalPlaces)
+                    GrossAverageValue = Math.Round(a.Sum(e => e.GrossSumValue)/NumberOfMonthsForAverage(g.Key), AverageDecimalPlaces),
+                    NetAverageValue = Math.Round(a.Sum(e => e.NetSumValue)/NumberOfMonthsForAverage(g.Key), AverageDecimalPlaces)
                 }).ToList());
         return averageExpenseByYear;
     }
+
+    private decimal NumberOfMonthsForAverage(int year) => year switch
+          {
+            var y when y == DateTime.UtcNow.Year => DateTime.UtcNow.Month - 1,
+            2017 => 11,
+            _ => 12,
+          };
 
     private static string GetIncomeGroup(IncomeSource incomeSource) =>
         incomeSource is IncomeSource.Gleison or IncomeSource.Ariana

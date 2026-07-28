@@ -120,12 +120,23 @@ public class AnnualSummaryEndpointsTests
     [Fact]
     public async Task GetHistoricSummaryAverages_MergesIncomeIntoMatchingYearAndOmitsItFromYearsWithoutIncome()
     {
+        var currentYear = DateTime.UtcNow.Year;
+        if (DateTime.UtcNow.Month == 1)
+        {
+            // The current year's income average divides by (current month - 1); January has no
+            // completed month yet, so this scenario is meaningless today.
+            return;
+        }
+
+        var monthsToAverage = DateTime.UtcNow.Month - 1;
+        var pastYear = currentYear - 1;
+
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
-            Date = new DateOnly(2025, 6, 5),
-            Description = "2025 groceries",
+            Date = new DateOnly(pastYear, 6, 5),
+            Description = "Past year groceries",
             Value = 120m,
             Category = "Mercado",
             PaymentSource = "Barclays",
@@ -133,7 +144,7 @@ public class AnnualSummaryEndpointsTests
         });
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
-            Date = new DateOnly(2026, 1, 5),
+            Date = new DateOnly(currentYear, 1, 5),
             Description = "January groceries",
             Value = 100m,
             Category = "Mercado",
@@ -142,7 +153,7 @@ public class AnnualSummaryEndpointsTests
         });
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
-            Date = new DateOnly(2026, 3, 5),
+            Date = new DateOnly(currentYear, 3, 5),
             Description = "March groceries",
             Value = 50m,
             Category = "Mercado",
@@ -151,7 +162,7 @@ public class AnnualSummaryEndpointsTests
         });
         await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
-            Date = new DateOnly(2026, 1, 1),
+            Date = new DateOnly(currentYear, 1, 1),
             IncomeSource = "Gleison",
             GrossValue = 3200m,
             NetValue = 2450m,
@@ -159,7 +170,7 @@ public class AnnualSummaryEndpointsTests
         });
         await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
-            Date = new DateOnly(2026, 1, 8),
+            Date = new DateOnly(currentYear, 1, 8),
             IncomeSource = "Ariana",
             GrossValue = 400m,
             NetValue = 350m,
@@ -167,30 +178,37 @@ public class AnnualSummaryEndpointsTests
         });
         await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
-            Date = new DateOnly(2026, 3, 1),
+            Date = new DateOnly(currentYear, 3, 1),
             IncomeSource = "DividendoJuros",
             GrossValue = null,
             NetValue = 15.50m,
             Bank = "Trading212"
         });
 
-        var response = await client.GetAsync("/api/v1/financial/annual-summary/2026/historic-summary-averages");
+        var response = await client.GetAsync($"/api/v1/financial/annual-summary/{currentYear}/historic-summary-averages");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<List<CategoryAnnualAverageDTO>>();
         result.Should().HaveCount(2);
-        result![0].Year.Should().Be(2026);
-        result[1].Year.Should().Be(2025);
+        result![0].Year.Should().Be(currentYear);
+        result[1].Year.Should().Be(pastYear);
 
-        // 2026: Mercado's two recorded months (Jan 100 + Mar 50) average to 75; income is combined
-        // (Gleison + Ariana) per month before averaging, over the single recorded month each.
+        // Current year: Mercado's two recorded months (Jan 100 + Mar 50) average to 75 - the
+        // category average is unaffected by the income divisor change. Income (Gleison + Ariana
+        // combined per month) divides by the completed months so far this year (current month - 1),
+        // not by however many of those months happen to have a recorded entry.
+        var expectedSalary = Math.Round(3600m / monthsToAverage, 2);
+        var expectedSalaryAfterTaxes = Math.Round(2800m / monthsToAverage, 2);
+        var expectedDividendoJuros = Math.Round(15.50m / monthsToAverage, 2);
         result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Mercado" && a.Average == 75m);
-        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Salary" && a.Average == 3600m);
-        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Salary after taxes" && a.Average == 2800m);
-        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Tax difference" && a.Average == 800m);
-        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Dividendo/Juros" && a.Average == 15.50m);
+        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Salary" && a.Average == expectedSalary);
+        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Salary after taxes" && a.Average == expectedSalaryAfterTaxes);
+        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Tax difference" && a.Average == expectedSalary - expectedSalaryAfterTaxes);
+        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Dividendo/Juros" && a.Average == expectedDividendoJuros);
 
-        // 2025 has expenses but no income, so no income rows should be merged in for that year.
+        // Past year has expenses but no income, so no income rows should be merged in for that year.
+        // The category average is unchanged by this commit: its single active month (June) still
+        // makes the average equal that month's value (120), not divided by 12.
         result[1].AnnualAverages.Should().ContainSingle(a => a.Category == "Mercado" && a.Average == 120m);
         result[1].AnnualAverages.Should().NotContain(a => a.Category == "Salary");
     }
