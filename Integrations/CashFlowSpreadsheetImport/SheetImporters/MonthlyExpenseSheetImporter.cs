@@ -13,12 +13,15 @@ namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImpo
 /// used, so no <see cref="Expense.CardTag"/> is set for them (see F10's spec.md). For the months
 /// listed in <see cref="MonthsWithFixedCardSections"/>, the source spreadsheet instead groups
 /// card charges into sections that each start at a known row number (see
-/// <see cref="CardSectionStartRows"/>), so rows in those months are tagged by row position - but
-/// only when column E has no explicit "T"/"C" payment-source tag, which still takes precedence
-/// when present (column E never identifies a card; an explicit tag means the row was paid
-/// directly from that bank). A row that does resolve a card tag imports as an unsettled
-/// credit card charge - <see cref="Expense.PaymentSource"/> stays null - and settlement is
-/// applied afterward in-app by marking the card statement paid, never inferred by the import.
+/// <see cref="CardSectionStartRows"/>), so rows in those months are tagged by row position when
+/// column E is blank or carries the "X"/"x" credit-card marker - "X" confirms the row belongs to
+/// the card section it falls in, it never names a specific card. An explicit "T"/"C" tag still
+/// takes precedence over row position (it means the row was paid directly from that bank, not a
+/// card). A row that does resolve a card tag imports as an unsettled credit card charge -
+/// <see cref="Expense.PaymentSource"/> stays null - and settlement is applied afterward in-app by
+/// marking the card statement paid, never inferred by the import. If "X" can't be matched to a
+/// card section (row/month falls outside every known section), the row is flagged and skipped
+/// rather than defaulting to the Barclays bank payment source blank rows fall back to.
 /// </summary>
 public static class MonthlyExpenseSheetImporter
 {
@@ -98,6 +101,15 @@ public static class MonthlyExpenseSheetImporter
             var description = sheet.Cell(row, descriptionColumn).GetString();
             var rawPaymentSourceTag = sheet.Cell(row, PaymentSourceColumn).GetString();
             var cardTag = ResolveCardTag(row, year, month, rawPaymentSourceTag);
+
+            if (cardTag is null && IsCreditCardMarker(rawPaymentSourceTag))
+            {
+                report.RowFlagged(
+                    sheet.Name, row, "PaymentSource", rawPaymentSourceTag,
+                    "Credit card marker (\"X\") could not be matched to a card section - expense not imported");
+                continue;
+            }
+
             string? paymentSource = cardTag is null ? ResolvePaymentSource(rawPaymentSourceTag) : null;
 
             expenses.Add(Expense.Create(date, description, value.Value, category, paymentSource, cardTag));
@@ -135,7 +147,8 @@ public static class MonthlyExpenseSheetImporter
 
     private static CreditCard? ResolveCardTag(int row, int year, int month, string? rawPaymentSourceTag)
     {
-        if (!string.IsNullOrWhiteSpace(rawPaymentSourceTag))
+        var isCardSectionEligible = string.IsNullOrWhiteSpace(rawPaymentSourceTag) || IsCreditCardMarker(rawPaymentSourceTag);
+        if (!isCardSectionEligible)
         {
             return null;
         }
@@ -156,4 +169,7 @@ public static class MonthlyExpenseSheetImporter
 
         return cardTag;
     }
+
+    private static bool IsCreditCardMarker(string? tag) =>
+        string.Equals(tag?.Trim(), "X", StringComparison.OrdinalIgnoreCase);
 }
