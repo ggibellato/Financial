@@ -504,16 +504,59 @@ public class AnnualSummaryServiceTests
     {
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan first", 100m, Category.Mercado, "Barclays", null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 20), "Jan second", 100m, Category.Mercado, "Barclays", null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 2, 10), "Feb", 400m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(PastYear, 1, 5), "Jan first", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(PastYear, 1, 20), "Jan second", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(PastYear, 2, 10), "Feb", 400m, Category.Mercado, "Barclays", null));
 
-        var result = service.GetHistoricSummaryAverageFromYear(2026);
+        var result = service.GetHistoricSummaryAverageFromYear(PastYear);
 
         var mercadoAverage = result[0].AnnualAverages.Single(a => a.Category == nameof(Category.Mercado)).Average;
 
-        // Per-month average (spec): Jan total 200 + Feb total 400 → avg over 2 months = 300
-        mercadoAverage.Should().Be(300m);
+        // Per-month sums (Jan 200 + Feb 400 = 600) still average over all 12 calendar months of a
+        // closed year, not just the 2 active ones: 600 / 12 = 50
+        mercadoAverage.Should().Be(50m);
+    }
+
+    [Fact]
+    public void GetHistoricSummaryAverageFromYear_PastYear_DividesByTwelveEvenWhenSomeMonthsHaveNoRecordedActivity()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new AnnualSummaryService(repository);
+        // Only 4 of the 12 months have any Mercado expense; the other 8 are genuinely zero spend,
+        // and still count toward the divisor for a fully closed year.
+        repository.Expenses.Add(Expense.Create(new DateOnly(PastYear, 1, 5), "Jan", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(PastYear, 2, 5), "Feb", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(PastYear, 3, 5), "Mar", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(PastYear, 4, 5), "Apr", 100m, Category.Mercado, "Barclays", null));
+
+        var result = service.GetHistoricSummaryAverageFromYear(PastYear);
+
+        // 400 total / 12 calendar months = 33.33, not / 4 active months = 100.00
+        result.Single(r => r.Year == PastYear).AnnualAverages.Single(a => a.Category == "Mercado").Average.Should().Be(33.33m);
+    }
+
+    [Fact]
+    public void GetHistoricSummaryAverageFromYear_CurrentYear_ZeroCompletedMonthStillCountsTowardTheDivisor()
+    {
+        var today = DateTime.UtcNow;
+        if (today.Month < 3)
+        {
+            // Need at least 2 completed months to demonstrate a zero one alongside a non-zero one.
+            return;
+        }
+
+        var repository = new StubCashFlowRepository();
+        var service = new AnnualSummaryService(repository);
+        var currentYear = today.Year;
+        // January has spend; February (a completed month) genuinely has none - it must still count
+        // toward the divisor, unlike the past-year rule which would exclude a zero month entirely.
+        repository.Expenses.Add(Expense.Create(new DateOnly(currentYear, 1, 5), "Jan", 200m, Category.Mercado, "Barclays", null));
+
+        var result = service.GetHistoricSummaryAverageFromYear(currentYear);
+
+        var monthsCompleted = today.Month - 1;
+        var expected = Math.Round(200m / monthsCompleted, 2);
+        result.Single(r => r.Year == currentYear).AnnualAverages.Single(a => a.Category == "Mercado").Average.Should().Be(expected);
     }
 
     [Fact]
@@ -521,24 +564,29 @@ public class AnnualSummaryServiceTests
     {
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2027, 4, 5), "Should not be there", 10m, Category.Mercado, "Barclays", null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 4, 5), "2026", 10m, Category.Mercado, "Barclays", null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 4, 5), "2025", 10m, Category.Mercado, "Barclays", null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2023, 4, 5), "2023", 10m, Category.Mercado, "Barclays", null));
-        repository.Incomes.Add(Income.Create(new DateOnly(2027, 4, 5), IncomeSource.Gleison, 9999m, 9999m, "Barclays"));
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 4, 5), IncomeSource.Gleison, 1500m, 1500m, "Barclays"));
-        repository.Incomes.Add(Income.Create(new DateOnly(2025, 4, 5), IncomeSource.Gleison, 1200m, 1200m, "Barclays"));
-        repository.Incomes.Add(Income.Create(new DateOnly(2023, 4, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
+        var futureYear = PastYear + 100; // guaranteed to be after PastYear, excluded from the requested range
+        var yearA = PastYear;
+        var yearB = PastYear - 2;
+        var yearC = PastYear - 4;
+        repository.Expenses.Add(Expense.Create(new DateOnly(futureYear, 4, 5), "Should not be there", 10m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(yearA, 4, 5), "yearA", 10m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(yearB, 4, 5), "yearB", 10m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(yearC, 4, 5), "yearC", 10m, Category.Mercado, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(futureYear, 4, 5), IncomeSource.Gleison, 9999m, 9999m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(yearA, 4, 5), IncomeSource.Gleison, 1500m, 1500m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(yearB, 4, 5), IncomeSource.Gleison, 1200m, 1200m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(yearC, 4, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
 
-        var result = service.GetHistoricSummaryAverageFromYear(2026);
+        var result = service.GetHistoricSummaryAverageFromYear(yearA);
 
         result.Count.Should().Be(3);
-        result[0].Year.Should().Be(2026);
-        result[1].Year.Should().Be(2025);
-        result[2].Year.Should().Be(2023);
-        result[0].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(1500m);
-        result[1].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(1200m);
-        result[2].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(1000m);
+        result[0].Year.Should().Be(yearA);
+        result[1].Year.Should().Be(yearB);
+        result[2].Year.Should().Be(yearC);
+        // Each year has a single April entry, but a closed year still averages over all 12 months.
+        result[0].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(125.00m); // 1500 / 12
+        result[1].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(100.00m); // 1200 / 12
+        result[2].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(83.33m);  // 1000 / 12
     }
 
     [Fact]
@@ -546,17 +594,17 @@ public class AnnualSummaryServiceTests
     {
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 20), IncomeSource.Gleison, 500m, 400m, "Barclays"));
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 2, 5), IncomeSource.Gleison, 3000m, 2400m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(PastYear, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(PastYear, 1, 20), IncomeSource.Gleison, 500m, 400m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(PastYear, 2, 5), IncomeSource.Gleison, 3000m, 2400m, "Barclays"));
 
-        var result = service.GetHistoricSummaryAverageFromYear(2026);
+        var result = service.GetHistoricSummaryAverageFromYear(PastYear);
 
-        // Per-month gross: Jan total 1500 + Feb total 3000 → avg over 2 months = 2250
-        result[0].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(2250m);
+        // Per-month gross: Jan total 1500 + Feb total 3000 = 4500, over all 12 months of a closed year = 375
+        result[0].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(375m);
 
-        // Per-month net: Jan total 1200 + Feb total 2400 → avg over 2 months = 1800
-        result[0].AnnualAverages.Single(a => a.Category == "Salary after taxes").Average.Should().Be(1800m);
+        // Per-month net: Jan total 1200 + Feb total 2400 = 3600, over 12 months = 300
+        result[0].AnnualAverages.Single(a => a.Category == "Salary after taxes").Average.Should().Be(300m);
     }
 
     [Fact]
@@ -564,15 +612,15 @@ public class AnnualSummaryServiceTests
     {
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 2, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 3, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Ariana, 500m, 500m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(PastYear, 1, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(PastYear, 2, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(PastYear, 3, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(PastYear, 1, 5), IncomeSource.Ariana, 500m, 500m, "Barclays"));
 
-        var result = service.GetHistoricSummaryAverageFromYear(2026);
+        var result = service.GetHistoricSummaryAverageFromYear(PastYear);
 
-        // Combined per-month salary: Jan 1500, Feb 1000, Mar 1000 → avg over 3 months = 1166.67
-        result[0].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(1166.67m);
+        // Combined per-month salary: Jan 1500, Feb 1000, Mar 1000 = 3500, over 12 months = 291.67
+        result[0].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(291.67m);
     }
 
     [Fact]
@@ -580,14 +628,14 @@ public class AnnualSummaryServiceTests
     {
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(PastYear, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
 
-        var result = service.GetHistoricSummaryAverageFromYear(2026);
+        var result = service.GetHistoricSummaryAverageFromYear(PastYear);
 
         result.Count.Should().Be(1);
-        result[0].Year.Should().Be(2026);
-        result[0].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(1000m);
-        result[0].AnnualAverages.Single(a => a.Category == "Salary after taxes").Average.Should().Be(800m);
+        result[0].Year.Should().Be(PastYear);
+        result[0].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(83.33m);  // 1000 / 12
+        result[0].AnnualAverages.Single(a => a.Category == "Salary after taxes").Average.Should().Be(66.67m); // 800 / 12
     }
 
     [Fact]
@@ -595,16 +643,16 @@ public class AnnualSummaryServiceTests
     {
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Investing", 30m, Category.Investimento, "Barclays", null));
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.DividendoJuros, null, 20m, "Barclays"));
+        repository.Expenses.Add(Expense.Create(new DateOnly(PastYear, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(PastYear, 1, 5), "Investing", 30m, Category.Investimento, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(PastYear, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(PastYear, 1, 5), IncomeSource.DividendoJuros, null, 20m, "Barclays"));
 
-        var result = service.GetHistoricSummaryAverageFromYear(2026);
+        var result = service.GetHistoricSummaryAverageFromYear(PastYear);
 
-        // Total despesas must be the sum of the 14 expense category rows only (Mercado 100 + Investimento 30 = 130),
-        // never the income rows (Salary/Salary after taxes/Tax difference/Dividendo/Juros) merged in ahead of them.
-        result[0].AnnualAverages.Single(a => a.Category == "Total despesas").Average.Should().Be(130m);
+        // Total despesas must be the sum of the 14 expense category rows only (Mercado 100/12=8.33 +
+        // Investimento 30/12=2.5 = 10.83), never the income rows merged in ahead of them.
+        result[0].AnnualAverages.Single(a => a.Category == "Total despesas").Average.Should().Be(10.83m);
     }
 
     [Fact]
@@ -612,17 +660,17 @@ public class AnnualSummaryServiceTests
     {
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Investing", 30m, Category.Investimento, "Barclays", null));
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
+        repository.Expenses.Add(Expense.Create(new DateOnly(PastYear, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(PastYear, 1, 5), "Investing", 30m, Category.Investimento, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(PastYear, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
         // DividendoJuros is seeded deliberately: unlike Category Totals' own Resultado, this sub-tab's
         // Resultado excludes Dividendo/Juros entirely, so this income must NOT affect the expected value.
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.DividendoJuros, null, 20m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(PastYear, 1, 5), IncomeSource.DividendoJuros, null, 20m, "Barclays"));
 
-        var result = service.GetHistoricSummaryAverageFromYear(2026);
+        var result = service.GetHistoricSummaryAverageFromYear(PastYear);
 
-        // Resultado (R-D-Inv) = SalaryAfterTaxes(800) - TotalDespesas(130) + Investimento(30) = 700
-        result[0].AnnualAverages.Single(a => a.Category == "Resultado (R-D-Inv)").Average.Should().Be(700m);
+        // Resultado (R-D-Inv) = SalaryAfterTaxes(66.67) - TotalDespesas(10.83) + Investimento(2.5) = 58.34
+        result[0].AnnualAverages.Single(a => a.Category == "Resultado (R-D-Inv)").Average.Should().Be(58.34m);
     }
 
     [Fact]
@@ -630,15 +678,15 @@ public class AnnualSummaryServiceTests
     {
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(PastYear, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
 
-        var result = service.GetHistoricSummaryAverageFromYear(2026);
+        var result = service.GetHistoricSummaryAverageFromYear(PastYear);
 
         // Every one of the 14 Category enum values must appear, even with zero recorded expenses that year.
         foreach (var category in Enum.GetValues<Category>())
         {
             var entry = result[0].AnnualAverages.Single(a => a.Category == category.ToString());
-            entry.Average.Should().Be(category == Category.Mercado ? 100m : 0m);
+            entry.Average.Should().Be(category == Category.Mercado ? 8.33m : 0m); // 100 / 12
         }
     }
 
@@ -674,16 +722,22 @@ public class AnnualSummaryServiceTests
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
         var currentYear = today.Year;
-        repository.Expenses.Add(Expense.Create(new DateOnly(currentYear, 1, 5), "Completed month", 100m, Category.Mercado, "Barclays", null));
+        // Every completed month gets the same figures, so the average equals that same value no
+        // matter how many months have elapsed - isolating the in-progress-month exclusion itself
+        // from the "divide by how many months elapsed" behavior covered by other tests.
+        for (var month = 1; month < today.Month; month++)
+        {
+            repository.Expenses.Add(Expense.Create(new DateOnly(currentYear, month, 5), $"Month {month}", 100m, Category.Mercado, "Barclays", null));
+            repository.Incomes.Add(Income.Create(new DateOnly(currentYear, month, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
+        }
         repository.Expenses.Add(Expense.Create(DateOnly.FromDateTime(today), "In-progress month", 9999m, Category.Mercado, "Barclays", null));
-        repository.Incomes.Add(Income.Create(new DateOnly(currentYear, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
         repository.Incomes.Add(Income.Create(DateOnly.FromDateTime(today), IncomeSource.Gleison, 9999m, 9999m, "Barclays"));
 
         var result = service.GetHistoricSummaryAverageFromYear(currentYear);
 
         var currentYearRow = result.Single(r => r.Year == currentYear);
-        // Only January's figures count; the in-progress current-month entries (9999) must be excluded entirely,
-        // not treated as a completed month with a low value.
+        // The in-progress current-month entries (9999) must be excluded entirely, not treated as a
+        // completed month with a low value, nor folded into the sum.
         currentYearRow.AnnualAverages.Single(a => a.Category == "Mercado").Average.Should().Be(100m);
         currentYearRow.AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(1000m);
         currentYearRow.AnnualAverages.Single(a => a.Category == "Salary after taxes").Average.Should().Be(800m);

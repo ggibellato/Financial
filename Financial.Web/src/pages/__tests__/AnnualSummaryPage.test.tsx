@@ -194,7 +194,7 @@ describe('AnnualSummaryPage', () => {
     })
   })
 
-  it('excludes zero-value months from the Average for a past year, for both category and income rows', async () => {
+  it('divides the Average by 12 for a past year even when some months are 0, for both category and income rows', async () => {
     getCategoryTotalsForYearMock.mockResolvedValue([
       { category: 'Mercado', monthlyTotals: [100, 100, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0], annualTotal: 400 },
     ])
@@ -203,20 +203,20 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2020' } })
 
-    // Mercado: 400 / 4 non-zero months = 100.00 (not 400 / 12 = 33.33). The Average column is the
-    // second-to-last cell (last is Annual Total); several monthly cells also happen to read "100.00"
-    // so the column is located by position rather than by text.
+    // Mercado: 400 / 12 calendar months = 33.33 (not / 4 non-zero months = 100.00). The Average
+    // column is the second-to-last cell (last is Annual Total); several monthly cells also happen
+    // to read "100.00" so the column is located by position rather than by text.
     await waitFor(() => {
       const mercadoRow = screen.getByRole('cell', { name: 'Mercado' }).closest('tr')!
       const cells = within(mercadoRow).getAllByRole('cell')
-      expect(cells[cells.length - 2].textContent).toBe('100.00')
+      expect(cells[cells.length - 2].textContent).toBe('33.33')
     })
 
     // Dividendo/Juros (from the shared INCOME_SUMMARY fixture): [0,0,15.5,0,0,0,0,0,0,0,0,4.5]
-    // sums to 20 over 2 non-zero months = 10.00 (not 20 / 12 = 1.67)
+    // sums to 20 over 12 calendar months = 1.67 (not / 2 non-zero months = 10.00)
     const dividendoRow = screen.getByRole('cell', { name: 'Dividendo/Juros' }).closest('tr')!
     const dividendoCells = within(dividendoRow).getAllByRole('cell')
-    expect(dividendoCells[dividendoCells.length - 2].textContent).toBe('10.00')
+    expect(dividendoCells[dividendoCells.length - 2].textContent).toBe('1.67')
   })
 
   it('averages the current (open) year over only the completed months, ignoring the in-progress month and any zero completed months', async () => {

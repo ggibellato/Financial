@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { average } from './math'
 
 describe('average', () => {
-  it('divides by the count of non-zero months when monthsElapsed is not provided', () => {
-    // 400 spread over 4 non-zero months = 100, not 400 / 12 = 33.33
+  it('divides by 12 (values.length) even when some months are 0, when monthsElapsed is not provided', () => {
+    // A closed year always averages over all 12 calendar months, matching the source spreadsheet's
+    // AVERAGE(B:M) over always-filled cells: 400 / 12 = 33.33, not / 4 non-zero months = 100.
     const values = [100, 100, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0]
-    expect(average(values)).toBe(100)
+    expect(average(values)).toBeCloseTo(33.33, 2)
   })
 
-  it('divides by 12 when all 12 months are non-zero (matches the old fixed-12 behavior)', () => {
+  it('divides by 12 when all 12 months are non-zero', () => {
     const values = [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210]
     expect(average(values)).toBe(155)
   })

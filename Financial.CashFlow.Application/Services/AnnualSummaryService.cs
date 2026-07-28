@@ -308,25 +308,38 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
     private Dictionary<int, List<IncomeAverageDTO>> GetAnnualAverageIncomeByGroupIncome(int year)
     {
-        var monthlySumByIncomeSource = _repository.GetIncomes()
+        var relevantIncomes = _repository.GetIncomes()
             .Where(e => e.Date.Year <= year && e.Date < new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1))
-            .GroupBy(e => new { e.Date.Year, e.Date.Month, IncomeGroup = GetIncomeGroup(e.IncomeSource) })
-            .Select(g => new
+            .ToList();
+
+        return relevantIncomes
+            .Select(e => e.Date.Year)
+            .Distinct()
+            .ToDictionary(incomeYear => incomeYear, incomeYear =>
             {
-                Key = (g.Key.Year, g.Key.Month, g.Key.IncomeGroup),
-                GrossSumValue = g.Sum(e => e.GrossValue ?? 0m),
-                NetSumValue = g.Sum(e => e.NetValue)
-            }).ToList();
-        var averageExpenseByYear = monthlySumByIncomeSource
-            .GroupBy(e => e.Key.Year)
-            .ToDictionary(g => g.Key, g => g.GroupBy(e => e.Key.IncomeGroup)
-                .Select(a => new IncomeAverageDTO
-                {
-                    IncomeGroup = a.Key,
-                    GrossAverageValue = Math.Round(a.Average(e => e.GrossSumValue), AverageDecimalPlaces),
-                    NetAverageValue = Math.Round(a.Average(e => e.NetSumValue), AverageDecimalPlaces)
-                }).ToList());
-        return averageExpenseByYear;
+                var monthsToAverage = GetMonthsToAverage(incomeYear);
+                return relevantIncomes
+                    .Where(e => e.Date.Year == incomeYear)
+                    .GroupBy(e => GetIncomeGroup(e.IncomeSource))
+                    .Select(incomeGroup =>
+                    {
+                        var grossMonthly = new decimal[MonthsInYear];
+                        var netMonthly = new decimal[MonthsInYear];
+                        foreach (var income in incomeGroup)
+                        {
+                            grossMonthly[income.Date.Month - 1] += income.GrossValue ?? 0m;
+                            netMonthly[income.Date.Month - 1] += income.NetValue;
+                        }
+
+                        return new IncomeAverageDTO
+                        {
+                            IncomeGroup = incomeGroup.Key,
+                            GrossAverageValue = Math.Round(AverageOverMonths(grossMonthly, monthsToAverage), AverageDecimalPlaces),
+                            NetAverageValue = Math.Round(AverageOverMonths(netMonthly, monthsToAverage), AverageDecimalPlaces)
+                        };
+                    })
+                    .ToList();
+            });
     }
 
     private static string GetIncomeGroup(IncomeSource incomeSource) =>
@@ -336,32 +349,55 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
     private IList<CategoryAnnualAverageDTO> GetHistoricCategoriesAverageFromYear(int year)
     {
-        var monthlySumByCategory = _repository.GetExpenses()
+        var relevantExpenses = _repository.GetExpenses()
             .Where(e => e.Date.Year <= year && e.Date < new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1))
-            .GroupBy(e => (e.Date.Year, e.Date.Month, e.Category))
-            .Select(g => new
+            .ToList();
+
+        return relevantExpenses
+            .Select(e => e.Date.Year)
+            .Distinct()
+            .OrderByDescending(expenseYear => expenseYear)
+            .Select(expenseYear =>
             {
-                Key = (g.Key.Year, g.Key.Month, g.Key.Category),
-                Sum = g.Sum(e => e.Value)
-            });
-        var averageExpenseByYear = monthlySumByCategory
-            .GroupBy(g => g.Key.Year)
-            .Select(yearGroup => new CategoryAnnualAverageDTO
-            {
-                Year = yearGroup.Key,
-                AnnualAverages =
-                [
-                    .. yearGroup
-                    .GroupBy(g => g.Key.Category)
-                    .Select(categoryGroup => new CategoryAverageDTO
-                    {
-                        Category = categoryGroup.Key.ToString(),
-                        Average = Math.Round(categoryGroup.Average(monthGroup => monthGroup.Sum), AverageDecimalPlaces)
-                    })
-                ]
-            });
-        return [.. averageExpenseByYear.OrderByDescending(a => a.Year)];
+                var monthsToAverage = GetMonthsToAverage(expenseYear);
+                return new CategoryAnnualAverageDTO
+                {
+                    Year = expenseYear,
+                    AnnualAverages = relevantExpenses
+                        .Where(e => e.Date.Year == expenseYear)
+                        .GroupBy(e => e.Category)
+                        .Select(categoryGroup =>
+                        {
+                            var monthlyTotals = new decimal[MonthsInYear];
+                            foreach (var expense in categoryGroup)
+                            {
+                                monthlyTotals[expense.Date.Month - 1] += expense.Value;
+                            }
+
+                            return new CategoryAverageDTO
+                            {
+                                Category = categoryGroup.Key.ToString(),
+                                Average = Math.Round(AverageOverMonths(monthlyTotals, monthsToAverage), AverageDecimalPlaces)
+                            };
+                        })
+                        .ToList()
+                };
+            })
+            .ToList();
     }
+
+    // A closed/past year always averages over all 12 calendar months - a month with no recorded
+    // movement still counts as a real elapsed month, matching the source spreadsheet's own
+    // AVERAGE(B:M) over always-filled cells. The current calendar year instead only averages over
+    // its fully completed months (current month - 1): the in-progress month is excluded entirely
+    // (never treated as a completed zero month), and a future year has no completed months at all.
+    private static int GetMonthsToAverage(int year) =>
+        year < DateTime.Now.Year ? MonthsInYear
+        : year == DateTime.Now.Year ? DateTime.Now.Month - 1
+        : 0;
+
+    private static decimal AverageOverMonths(decimal[] monthlyTotals, int monthsToAverage) =>
+        monthsToAverage == 0 ? 0m : monthlyTotals.Take(monthsToAverage).Sum() / monthsToAverage;
 
     private static decimal?[] ComputeDiffs(decimal[] monthlyValues, decimal? januaryDiff)
     {
