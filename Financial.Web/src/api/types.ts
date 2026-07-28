@@ -448,20 +448,20 @@ export interface MarkCardStatementPaidDto {
   paymentSource: string
 }
 
-export interface CategoryYearlyTotalDto {
+export interface CategoryAnnualTotalDto {
   category: string
   monthlyTotals: number[]
-  yearlyTotal: number
+  annualTotal: number
 }
 
-export interface InvestmentAccountYearlyDiffDto {
+export interface InvestmentAccountAnnualDiffDto {
   account: string
   isLiability: boolean
   monthlyValues: number[]
   monthlyDiffs: (number | null)[]
 }
 
-export interface NetPositionYearlyDiffDto {
+export interface NetPositionAnnualDiffDto {
   monthlyValues: number[]
   monthlyDiffs: (number | null)[]
   fullYearNetChange: number
@@ -469,20 +469,20 @@ export interface NetPositionYearlyDiffDto {
   sumOfMonthResults: number
 }
 
-export interface InvestmentDiffsYearlyDto {
-  accounts: InvestmentAccountYearlyDiffDto[]
-  netPosition: NetPositionYearlyDiffDto
+export interface InvestmentDiffsAnnualDto {
+  accounts: InvestmentAccountAnnualDiffDto[]
+  netPosition: NetPositionAnnualDiffDto
 }
 
-export interface IncomeYearlySummaryDto {
+export interface IncomeAnnualSummaryDto {
   salaryMonthly: number[]
-  salaryYearlyTotal: number
+  salaryAnnualTotal: number
   salaryAfterTaxesMonthly: number[]
-  salaryAfterTaxesYearlyTotal: number
+  salaryAfterTaxesAnnualTotal: number
   taxDifferenceMonthly: number[]
-  taxDifferenceYearlyTotal: number
+  taxDifferenceAnnualTotal: number
   dividendoJurosMonthly: number[]
-  dividendoJurosYearlyTotal: number
+  dividendoJurosAnnualTotal: number
 }
 
 export interface InvestmentSnapshotDto {

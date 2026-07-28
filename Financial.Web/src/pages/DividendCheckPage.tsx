@@ -162,7 +162,7 @@ export default function DividendCheckPage() {
             <div className="dividend-check__table-column">
               <h3>By Year</h3>
               {sortedYearTotals.length === 0 ? (
-                <p>No yearly totals available.</p>
+                <p>No annual totals available.</p>
               ) : (
                 <table className="data-table">
                   <thead>

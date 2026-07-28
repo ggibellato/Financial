@@ -1,4 +1,4 @@
-.yearly-summary-page {
+.annual-summary-page {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -8,24 +8,24 @@
   gap: 16px;
 }
 
-.yearly-summary-page__year-picker {
+.annual-summary-page__year-picker {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
 }
 
-.yearly-summary-page__year-picker input {
+.annual-summary-page__year-picker input {
   width: 100px;
 }
 
-.yearly-summary-page__tabs {
+.annual-summary-page__tabs {
   display: flex;
   border-bottom: 1px solid var(--border, #e5e4e7);
   flex-shrink: 0;
 }
 
-.yearly-summary-page__tab {
+.annual-summary-page__tab {
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -36,17 +36,17 @@
   margin-bottom: -1px;
 }
 
-.yearly-summary-page__tab:hover {
+.annual-summary-page__tab:hover {
   color: #007acc;
 }
 
-.yearly-summary-page__tab--active {
+.annual-summary-page__tab--active {
   border-bottom-color: #007acc;
   font-weight: 600;
   color: #007acc;
 }
 
-.yearly-summary-page__content {
+.annual-summary-page__content {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -56,42 +56,42 @@
   padding-bottom: 24px;
 }
 
-.yearly-summary-page__section {
+.annual-summary-page__section {
   overflow-x: auto;
 }
 
-.yearly-summary-page__section h2 {
+.annual-summary-page__section h2 {
   color: var(--text-h);
   margin-bottom: 12px;
 }
 
-.yearly-summary-page__table {
+.annual-summary-page__table {
   width: 100%;
   min-width: 900px;
 }
 
-.yearly-summary-page__emphasized-row {
+.annual-summary-page__emphasized-row {
   border-top: 2px solid var(--border, #ccc);
 }
 
-.yearly-summary-page__investment-totals {
+.annual-summary-page__investment-totals {
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
   margin-top: 16px;
 }
 
-.yearly-summary-page__investment-total {
+.annual-summary-page__investment-total {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.yearly-summary-page__investment-total span {
+.annual-summary-page__investment-total span {
   color: var(--text, #333);
   font-size: 13px;
 }
 
-.yearly-summary-page__investment-total strong {
+.annual-summary-page__investment-total strong {
   font-size: 16px;
 }

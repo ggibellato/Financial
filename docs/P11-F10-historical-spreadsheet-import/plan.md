@@ -35,7 +35,7 @@
 
 ### Stage 4: Resumo Validation, Investment Snapshots, and Final Assembly
 
-**12. Resumo validation reader and investment snapshot import** - Add the reader that both writes `InvestmentSnapshot` entities from each `Resumo{Year}` sheet's 11-account rows/columns and computes the values needed to compare against F09's own yearly totals/diffs after import.
+**12. Resumo validation reader and investment snapshot import** - Add the reader that both writes `InvestmentSnapshot` entities from each `Resumo{Year}` sheet's 11-account rows/columns and computes the values needed to compare against F09's own annual totals/diffs after import.
 
 **13. Program.cs assembly** - Wire every importer together: build a fresh `CashFlowData`, run all sheet importers, run the Resumo validation pass, serialize to `data-cashflow.json`, print the final report.
 

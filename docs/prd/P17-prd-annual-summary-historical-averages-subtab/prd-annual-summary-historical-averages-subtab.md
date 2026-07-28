@@ -1,8 +1,8 @@
-# Yearly Summary Historical Averages Sub-Tab
+# Annual Summary Historical Averages Sub-Tab
 
 ## 1. Executive Summary
 
-Yearly Summary Historical Averages Sub-Tab adds a third view to `Financial.CashFlow`'s Yearly Summary tab, alongside the existing Category Totals and Investments sub-tabs. It is used by the same single developer-maintainer that all prior CashFlow features serve. Today, seeing how a category or income line has trended across past years requires opening each year's `Resumo/xxxx` spreadsheet tab individually and comparing figures by hand — there is no in-app way to see multiple years side by side. This feature closes that gap by reproducing the spreadsheet's `Q1:Y25`-style historical block directly in the app: one column per year, one row per category/income line, each cell holding that line's yearly average.
+Annual Summary Historical Averages Sub-Tab adds a third view to `Financial.CashFlow`'s Annual Summary tab, alongside the existing Category Totals and Investments sub-tabs. It is used by the same single developer-maintainer that all prior CashFlow features serve. Today, seeing how a category or income line has trended across past years requires opening each year's `Resumo/xxxx` spreadsheet tab individually and comparing figures by hand — there is no in-app way to see multiple years side by side. This feature closes that gap by reproducing the spreadsheet's `Q1:Y25`-style historical block directly in the app: one column per year, one row per category/income line, each cell holding that line's annual average.
 
 At a high level, the new "Historical Summary Averages" sub-tab shares the same year picker as Category Totals and Investments. It shows the exact same row set as Category Totals (income lines, the 14 expense categories, Resultado, Total despesas), but instead of 12 month columns it shows one column per calendar year — starting at the selected year and going backward to the earliest year with any recorded data. Every year's value is computed server-side in a single batch request, so opening the sub-tab never issues one network call per year.
 
@@ -11,11 +11,11 @@ At a high level, the new "Historical Summary Averages" sub-tab shares the same y
 ### The Problem
 
 **Multi-year trends require manual cross-referencing today**
-- Comparing how a single category (e.g. Mercado) trended over the last 5+ years means opening each year's spreadsheet tab or Yearly Summary view one at a time and copying figures down by hand
+- Comparing how a single category (e.g. Mercado) trended over the last 5+ years means opening each year's spreadsheet tab or Annual Summary view one at a time and copying figures down by hand
 - There is no single screen showing every year's average for a given row at once
 
 **The app has no cross-year aggregation today**
-- The existing Yearly Summary endpoints (`expense-categories`, `investment-diffs`, `income-summary`) all accept exactly one year and return that year's monthly figures — there is no endpoint that reasons across multiple years
+- The existing Annual Summary endpoints (`expense-categories`, `investment-diffs`, `income-summary`) all accept exactly one year and return that year's monthly figures — there is no endpoint that reasons across multiple years
 - Adding a year to the visible range today would mean manually changing the year picker and re-reading the Category Totals table repeatedly
 
 **In-progress years distort naive averages**
@@ -27,7 +27,7 @@ At a high level, the new "Historical Summary Averages" sub-tab shares the same y
 ### The Opportunity
 
 - Manual cross-referencing → the new sub-tab renders every available year's average for every row in one table, eliminating the need to open past years individually
-- No cross-year aggregation → a new batch endpoint computes every year's averages server-side in one call, extending the existing per-year computation pattern (`YearlySummaryService`) to loop years internally
+- No cross-year aggregation → a new batch endpoint computes every year's averages server-side in one call, extending the existing per-year computation pattern (`AnnualSummaryService`) to loop years internally
 - In-progress years distorting averages → when the selected year is the current calendar year, the average excludes the in-progress current month, counting only fully completed months
 - Data gaps and varying start points → the earliest displayed year is derived dynamically from actual data (not a hardcoded floor), and any year with zero recorded data anywhere is simply omitted from the range rather than shown as a misleading blank column
 
@@ -36,7 +36,7 @@ At a high level, the new "Historical Summary Averages" sub-tab shares the same y
 ### Primary Users
 
 **Personal Finance Developer-Maintainer**
-- The sole user and maintainer of this self-hosted personal finance tool, already familiar with every category, income line, and figure on the Yearly Summary tab
+- The sole user and maintainer of this self-hosted personal finance tool, already familiar with every category, income line, and figure on the Annual Summary tab
 - Periodically reviews long-term spending and income trends per category (e.g. "has Mercado spending grown year over year?") rather than just a single year's figures
 - Values a simple, uncluttered layout over configurability — a single fixed row order and column range is preferable to any customization
 
@@ -44,7 +44,7 @@ At a high level, the new "Historical Summary Averages" sub-tab shares the same y
 
 **Product Objectives**
 
-- **Expose** every category and income line's year-over-year average in a single view, without leaving the Yearly Summary tab or opening past years' spreadsheets.
+- **Expose** every category and income line's year-over-year average in a single view, without leaving the Annual Summary tab or opening past years' spreadsheets.
   Metric: the table renders one column per year from the selected year back to the earliest year with any data, covering 100% of the rows already shown in Category Totals.
 
 - **Compute** all displayed years' averages in one server round trip rather than one request per year.
@@ -59,7 +59,7 @@ At a high level, the new "Historical Summary Averages" sub-tab shares the same y
 ## 5. User Stories
 
 ### F01. Historical Averages Sub-Tab
-- As the developer, I want a third "Historical Summary Averages" sub-tab next to Category Totals and Investments so that I can review year-over-year trends without leaving the Yearly Summary tab
+- As the developer, I want a third "Historical Summary Averages" sub-tab next to Category Totals and Investments so that I can review year-over-year trends without leaving the Annual Summary tab
 - As the developer, I want the same shared year picker to control this sub-tab so that I never have to re-select the year separately from the other two sub-tabs
 - As the developer, I want the same rows as Category Totals (Salary, Salary After Taxes, Tax Difference, Dividendo/Juros, the 14 expense categories, Resultado, Total despesas) so that the historical view lines up with the single-year view I already know
 - As the developer, I want one column per year, starting at the selected year and going backward to the earliest year with any data, so that I see the full available history at a glance
@@ -73,14 +73,14 @@ At a high level, the new "Historical Summary Averages" sub-tab shares the same y
 ### F01. Historical Averages Sub-Tab
 
 **Capabilities:**
-- Adds a third sub-tab, "Historical Summary Averages", after "Investments" on the existing Yearly Summary tab shell; selecting it never resets the shared year picker and never affects the other two sub-tabs' loaded data
+- Adds a third sub-tab, "Historical Summary Averages", after "Investments" on the existing Annual Summary tab shell; selecting it never resets the shared year picker and never affects the other two sub-tabs' loaded data
 - Row set and order identical to Category Totals: Salary, Salary After Taxes, Tax Difference, Dividendo/Juros, then the 14 `Category` enum rows in declaration order (Ariana, Carro, Casa, Estudo, Extras, Familia, Gleison, Mercado, Samuel, Saude, Viagem, Dizimo, Investimento, Reserva), then Resultado (R-D-Inv), then Total despesas — using the same monthly value definitions established for Category Totals (Total despesas = sum of the 14 categories), with one deliberate exception: this sub-tab's Resultado = Salary After Taxes − Total despesas + Investimento, excluding Dividendo/Juros. This differs intentionally from Category Totals' own Resultado (which does include Dividendo/Juros) — a conscious divergence for the historic-average view, not an oversight
 - Column set: one column per calendar year, ordered left to right starting at the selected year and decreasing by one each column, continuing down to the earliest year for which at least one row has at least one recorded month; any year within that span with zero recorded data across every row is omitted entirely (no blank filler column)
 - Each year's cell value = arithmetic mean of that row's recorded monthly values for that year (partial years average over however many months are actually recorded, consistent with the existing per-row Average column behavior on Category Totals)
 - Monthly values are computed exactly as in `GetCategoryTotalsForYear`/`GetIncomeSummaryForYear`: same-month entries are summed together first (per category, or per combined income group for Salary/Salary After Taxes), and only that resulting per-month total feeds the year's average — never an average taken directly over individual transactions. This matches `Resumo{year}`'s own column N (`=AVERAGE(B{row}:M{row})`), where each of B:M is already a pre-summed monthly total, not a raw entry
 - Current-year exception: when the selected year equals the current calendar year, that year's column only averages months 1 through the last fully completed month (the in-progress current month is excluded from the average entirely, not treated as zero); if the current year has zero fully completed months yet (today falls in January), the current year column is omitted and the range starts at the previous year instead
 - All years' averages are computed and returned by a single new batch endpoint/service call anchored at the selected year — the frontend never issues one request per year
-- All monthly and yearly figures use the existing 2-decimal numeric formatting (`formatN2`) used throughout the Yearly Summary tab today
+- All monthly and annual figures use the existing 2-decimal numeric formatting (`formatN2`) used throughout the Annual Summary tab today
 
 **Experience:**
 - Clicking "Historical Summary Averages" swaps the visible content exactly like switching between Category Totals and Investments; the tab is highlighted as active and the shared year picker remains unchanged
@@ -89,7 +89,7 @@ At a high level, the new "Historical Summary Averages" sub-tab shares the same y
 - A visual separator (blank spacer row) appears after Tax Difference, after Dividendo/Juros, and after Reserva (the last category), mirroring Category Totals' grouping convention
 - Resultado and Total despesas rows render visually emphasized (bold), consistent with Category Totals' existing styling
 - Changing the shared year picker (regardless of which sub-tab is active) triggers a new batched fetch, re-anchoring the whole displayed year range at the newly selected year
-- If the batch request fails, the existing error/retry pattern used elsewhere on the Yearly Summary tab is shown
+- If the batch request fails, the existing error/retry pattern used elsewhere on the Annual Summary tab is shown
 
 ## 7. Out of Scope
 
@@ -100,7 +100,7 @@ At a high level, the new "Historical Summary Averages" sub-tab shares the same y
 
 **Layout and navigation**
 - No user-configurable floor year, row order, or column set — the range and rows described in Section 6 are the only supported layout
-- No persistence of the active sub-tab across page reloads — consistent with the existing Yearly Summary tab behavior, it always resets to Category Totals on re-entry
+- No persistence of the active sub-tab across page reloads — consistent with the existing Annual Summary tab behavior, it always resets to Category Totals on re-entry
 - No URL-based deep-linking to the Historical Averages sub-tab specifically
 
 **Presentation and analysis**
@@ -133,7 +133,7 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Historical Averages Sub-Tab
-- [x] The Yearly Summary tab shows a third sub-tab, "Historical Summary Averages", after Investments, sharing the same year picker as the other two sub-tabs
+- [x] The Annual Summary tab shows a third sub-tab, "Historical Summary Averages", after Investments, sharing the same year picker as the other two sub-tabs
 - [x] The table's rows match Category Totals exactly, in the same fixed order: Salary, Salary After Taxes, Tax Difference, Dividendo/Juros, the 14 categories in enum order, Resultado (R-D-Inv), Total despesas
 - [x] The leftmost year column equals the currently selected year; each subsequent column decreases by one year, down to the earliest year with any recorded data across any row
 - [x] Any year in that span with zero recorded data in every row is omitted from the column set entirely
@@ -143,4 +143,4 @@ graph TD
 - [x] If the current year has zero fully completed months (today is in January), the current year column is omitted and the range starts at the previous year
 - [x] Changing the selected year triggers a single call to the historic-summary-averages endpoint (bundled with the Category Totals/Investments/Income Summary calls in the same batch), returning every displayed year's figures at once
 - [x] Resultado and Total despesas rows render bold, consistent with Category Totals styling
-- [x] If the batch request fails, the existing Yearly Summary error/retry state is shown
+- [x] If the batch request fails, the existing Annual Summary error/retry state is shown

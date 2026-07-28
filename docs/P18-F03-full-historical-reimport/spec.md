@@ -39,7 +39,7 @@ graph TD
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |-----------|--------------|---------|----------------------|
 | `SheetImporters/ResumoValidationReader.cs` | Modified | Resumo row → snapshot resolution | `ImportAccountSnapshots` gains an `ImportReport report` parameter; for each of the 12 month columns of a matched row, an empty cell now produces an explicit `InvestmentSnapshot` with `Value = 0` (sign-inversion still applied, though `0 * ±1 = 0`), a non-empty cell that fails to parse produces a `report.ValidationWarning(...)` citing the sheet name, row, month, and account, and writes no snapshot for that month; a successfully parsed cell is unchanged |
-| `Program.cs` | Modified | Pipeline entry point | The `ImportResumoSheets` → `ResumoValidationReader.ImportAccountSnapshots` call site passes the existing `report` object through (it already exists in scope for `ReadYearlyExpenseTotals`'s validation warnings, just wasn't threaded into this call before) |
+| `Program.cs` | Modified | Pipeline entry point | The `ImportResumoSheets` → `ResumoValidationReader.ImportAccountSnapshots` call site passes the existing `report` object through (it already exists in scope for `ReadAnnualExpenseTotals`'s validation warnings, just wasn't threaded into this call before) |
 
 No other files change — no new entities, no new migrator, no frontend/API surface.
 

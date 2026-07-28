@@ -215,7 +215,7 @@ public class ResumoValidationReaderTests
     }
 
     [Fact]
-    public void ReadYearlyExpenseTotals_ModernLabel_FindsRowAndReturnsMonthlyValues()
+    public void ReadAnnualExpenseTotals_ModernLabel_FindsRowAndReturnsMonthlyValues()
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Resumo2026");
@@ -224,7 +224,7 @@ public class ResumoValidationReaderTests
         sheet.Cell(25, 2).Value = 7636.01;
         sheet.Cell(25, 3).Value = 4776.93;
 
-        var totals = ResumoValidationReader.ReadYearlyExpenseTotals(sheet);
+        var totals = ResumoValidationReader.ReadAnnualExpenseTotals(sheet);
 
         totals.Should().NotBeNull();
         totals![1].Should().Be(7636.01m);
@@ -232,7 +232,7 @@ public class ResumoValidationReaderTests
     }
 
     [Fact]
-    public void ReadYearlyExpenseTotals_2017StyleShortLabel_FindsRowToo()
+    public void ReadAnnualExpenseTotals_2017StyleShortLabel_FindsRowToo()
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Resumo2017");
@@ -240,20 +240,20 @@ public class ResumoValidationReaderTests
         sheet.Cell(14, 1).Value = "Total";
         sheet.Cell(14, 3).Value = 4125.55;
 
-        var totals = ResumoValidationReader.ReadYearlyExpenseTotals(sheet);
+        var totals = ResumoValidationReader.ReadAnnualExpenseTotals(sheet);
 
         totals.Should().NotBeNull();
         totals![2].Should().Be(4125.55m);
     }
 
     [Fact]
-    public void ReadYearlyExpenseTotals_NoMatchingRow_ReturnsNull()
+    public void ReadAnnualExpenseTotals_NoMatchingRow_ReturnsNull()
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Resumo2026");
         sheet.Cell(1, 1).Value = "Something else";
 
-        var totals = ResumoValidationReader.ReadYearlyExpenseTotals(sheet);
+        var totals = ResumoValidationReader.ReadAnnualExpenseTotals(sheet);
 
         totals.Should().BeNull();
     }

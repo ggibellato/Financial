@@ -4,9 +4,9 @@
 
 Investment Account Lifecycle is a data and calculation correctness fix for the Financial app's investment tracking, replacing a fixed, always-on list of 11 investment accounts with a persisted, data-driven account registry that knows which accounts existed in which years. It is built for the single household user of this personal finance tool, who has tracked income, expenses, and investment/savings balances in a spreadsheet since 2017 and expects the app's historical views to match reality for every year, not just the current one.
 
-Today, the app's `InvestmentAccount` list is a fixed 11-value enum, and every year from 2017 through 2026 shows exactly those same 11 accounts — including accounts that did not open until 2025 or 2026, while silently omitting 8 real accounts that existed in earlier years and were never even importable from the source spreadsheet. This feature replaces the enum with a persisted registry carrying an active/disabled status per account, reworks the spreadsheet import to recognize historical account labels, backfills eight years of previously-inaccessible balance history, and updates every year-scoped view (Investment Snapshots page, Yearly Summary Investments sub-tab) to show only the accounts that genuinely existed in the selected year. It also fixes the Yearly Summary's January "Month Result," which today is always blank, by carrying over the prior year's December balance.
+Today, the app's `InvestmentAccount` list is a fixed 11-value enum, and every year from 2017 through 2026 shows exactly those same 11 accounts — including accounts that did not open until 2025 or 2026, while silently omitting 8 real accounts that existed in earlier years and were never even importable from the source spreadsheet. This feature replaces the enum with a persisted registry carrying an active/disabled status per account, reworks the spreadsheet import to recognize historical account labels, backfills eight years of previously-inaccessible balance history, and updates every year-scoped view (Investment Snapshots page, Annual Summary Investments sub-tab) to show only the accounts that genuinely existed in the selected year. It also fixes the Annual Summary's January "Month Result," which today is always blank, by carrying over the prior year's December balance.
 
-At a high level: a one-time migration seeds the new registry with all 19 known accounts (11 currently active, 8 historical/disabled) and their known spreadsheet label variants, a reworked importer resolves rows dynamically against that registry instead of a hardcoded list, a full re-import of the source spreadsheet (2017-2026) populates real historical values for the newly-recognized accounts, and the display and yearly-diff logic are updated to be year-aware.
+At a high level: a one-time migration seeds the new registry with all 19 known accounts (11 currently active, 8 historical/disabled) and their known spreadsheet label variants, a reworked importer resolves rows dynamically against that registry instead of a hardcoded list, a full re-import of the source spreadsheet (2017-2026) populates real historical values for the newly-recognized accounts, and the display and annual-diff logic are updated to be year-aware.
 
 ## 2. Problem and Opportunity
 
@@ -14,8 +14,8 @@ At a high level: a one-time migration seeds the new registry with all 19 known a
 
 - **Inaccurate historical account representation** — Every year from 2017-2025 currently displays the same fixed 11 accounts that only became the true list in 2026. For example, 2023's Investment Snapshots wrongly include accounts like "BA Amex," "Trading 212 Invested," and "Reservas Pessoais" that did not open until 2025 or 2026, while omitting 8 accounts that genuinely existed during some or all of that period.
 - **Unimportable historical data** — The spreadsheet importer only recognizes the current 11 account labels. 8 real historical accounts, covering up to 8 years of balance history (2017-2024), have never been captured in the app at all; importing older Resumo sheets silently drops those rows with no error or warning.
-- **Misleading Yearly Summary totals** — Because closed/historical accounts are invisible and phantom "future" accounts show zero-value rows for years before they existed, the Yearly Summary Investments sub-tab's net position and per-account totals for any year other than 2026 do not reflect the user's real financial position in that year.
-- **Broken monthly change tracking for January** — The "Month Result" row in the Yearly Summary Investments sub-tab always shows a blank cell for January, every year, because the diff calculation has no way to reference the prior year's December balance — masking the real month-over-month change for the first month of every year.
+- **Misleading Annual Summary totals** — Because closed/historical accounts are invisible and phantom "future" accounts show zero-value rows for years before they existed, the Annual Summary Investments sub-tab's net position and per-account totals for any year other than 2026 do not reflect the user's real financial position in that year.
+- **Broken monthly change tracking for January** — The "Month Result" row in the Annual Summary Investments sub-tab always shows a blank cell for January, every year, because the diff calculation has no way to reference the prior year's December balance — masking the real month-over-month change for the first month of every year.
 
 **The Opportunity**
 
@@ -30,7 +30,7 @@ At a high level: a one-time migration seeds the new registry with all 19 known a
 
 **The Household Financial Tracker (Gleison)**
 - Maintains a 10-year personal/household spreadsheet (`Despesas.xlsx`) of income, expenses, and investment/savings account balances, and has migrated this tracking into the Financial app.
-- Needs the app's historical views (Yearly Summary, Investment Snapshots) to match the true state of his accounts in each year, not just today's account list, since he reviews multi-year trends and does not want to manually cross-reference the spreadsheet to sanity-check numbers.
+- Needs the app's historical views (Annual Summary, Investment Snapshots) to match the true state of his accounts in each year, not just today's account list, since he reviews multi-year trends and does not want to manually cross-reference the spreadsheet to sanity-check numbers.
 - Periodically opens or closes real bank/investment accounts (roughly once a year) and expects the app to be extended for this via a small one-off backfill, not a self-service UI, consistent with how this personal project already handles rare structural changes.
 
 ## 4. Objectives
@@ -39,13 +39,13 @@ At a high level: a one-time migration seeds the new registry with all 19 known a
 1. **Eliminate** the misrepresentation of investment accounts in historical years by making account existence year-scoped instead of globally fixed.
 2. **Recover** previously unimportable historical account balance data by reworking the spreadsheet import to resolve dynamically against a full account registry.
 3. **Preserve** all currently-recorded investment snapshot data unchanged in value while migrating its underlying account reference from enum to registry entity.
-4. **Correct** the January Month Result gap in the Yearly Summary by carrying over the prior year's December net position.
+4. **Correct** the January Month Result gap in the Annual Summary by carrying over the prior year's December net position.
 
 **Success Metrics**
-1. For objective 1: 100% of the 8 confirmed historical accounts (Everyday Saver, Instant ISA Issue 1, Ariana ISA, Barclays Blue Rewards, Help to Buy ISA GGS, Help to Buy ISA AACS, Chip Easy access, Chip Easy access Ariana) are hidden from the Yearly Summary Investments sub-tab and Investment Snapshots page for every year outside their confirmed active range, verified by manual review of each year 2017-2026 after the migration runs.
+1. For objective 1: 100% of the 8 confirmed historical accounts (Everyday Saver, Instant ISA Issue 1, Ariana ISA, Barclays Blue Rewards, Help to Buy ISA GGS, Help to Buy ISA AACS, Chip Easy access, Chip Easy access Ariana) are hidden from the Annual Summary Investments sub-tab and Investment Snapshots page for every year outside their confirmed active range, verified by manual review of each year 2017-2026 after the migration runs.
 2. For objective 2: The full 2017-2026 re-import completes with 0 unmatched investment account rows across all 10 Resumo sheets (Resumo2017-Resumo2026), measured by the migration command's completion log.
 3. For objective 3: 100% of pre-migration InvestmentSnapshot values are identical (same year, month, account, value) after the registry migration, measured by comparing a pre-migration and post-migration export of the CashFlow JSON data store for the 11 currently-active accounts.
-4. For objective 4: Every year from 2018-2026 (9 years) shows a non-blank January Month Result value in the Yearly Summary Investments sub-tab, equal to January's net position minus the prior year's December net position; only 2017 remains blank.
+4. For objective 4: Every year from 2018-2026 (9 years) shows a non-blank January Month Result value in the Annual Summary Investments sub-tab, equal to January's net position minus the prior year's December net position; only 2017 remains blank.
 
 ## 5. User Stories
 
@@ -63,11 +63,11 @@ At a high level: a one-time migration seeds the new registry with all 19 known a
 
 ### F04. Year-Scoped Investment Account Display
 - As a user, I want the Investment Snapshots page for a past year to show only the accounts that existed that year so that I don't see accounts that hadn't been opened yet or had already closed
-- As a user, I want the Yearly Summary Investments sub-tab for a past year to show only the accounts that existed that year so that the net position total reflects my real accounts for that year
+- As a user, I want the Annual Summary Investments sub-tab for a past year to show only the accounts that existed that year so that the net position total reflects my real accounts for that year
 - As a user, I want the current, in-progress year to keep showing all active accounts immediately, even before that year's spreadsheet has been imported, so that I can keep manually tracking balances month by month as I do today
 
 ### F05. Prior-Year December Carryover for January
-- As a user, I want January's Month Result in the Yearly Summary Investments sub-tab to show the change from the prior year's December net position so that I can see my real month-over-month change for the first month of the year
+- As a user, I want January's Month Result in the Annual Summary Investments sub-tab to show the change from the prior year's December net position so that I can see my real month-over-month change for the first month of the year
 - As a user, I want the earliest year tracked by the app (2017) to keep showing a blank January Month Result so that the app doesn't fabricate a change against a year it has no data for
 
 ## 6. Functionalities
@@ -149,12 +149,12 @@ At a high level: a one-time migration seeds the new registry with all 19 known a
 **Capabilities:**
 - For any year strictly before the current calendar year, an account is included in that year's display if and only if it has at least one persisted `InvestmentSnapshot` for that year (any month) — this reliably reflects true existence since F03 guarantees full-month coverage for matched account-years.
 - For the current, in-progress calendar year, every registry account with IsActive = true is included, regardless of whether any snapshot exists yet for that year, preserving today's workflow of starting a new month with a blank zero row.
-- Applies identically to both the Investment Snapshots page (monthly manual entry) and the Yearly Summary Investments sub-tab.
+- Applies identically to both the Investment Snapshots page (monthly manual entry) and the Annual Summary Investments sub-tab.
 - Disabled (IsActive = false) accounts never appear for the current year, even though the same underlying store still holds their historical data from a prior active period.
 
 **Experience:**
 - On the Investment Snapshots page, selecting a past year shows rows only for accounts that existed that year; selecting the current year shows all 11 active accounts as it does today.
-- On the Yearly Summary Investments sub-tab, the account rows and the Total/Net Position row for a selected past year include only accounts present in that year's filtered list; totals are computed only over the accounts shown.
+- On the Annual Summary Investments sub-tab, the account rows and the Total/Net Position row for a selected past year include only accounts present in that year's filtered list; totals are computed only over the accounts shown.
 - No visual indicator distinguishes "hidden because disabled" from "never existed" — both simply don't render a row for that year, per the confirmed decision to hide disabled accounts entirely rather than show a closed/disabled badge.
 
 ### F05. Prior-Year December Carryover for January
@@ -163,16 +163,16 @@ At a high level: a one-time migration seeds the new registry with all 19 known a
 - F04: year-filtered account list and net position values, for the selected year and the prior year
 
 **Capabilities:**
-- `YearlySummaryService.GetInvestmentDiffsForYear(year)` is updated so `MonthlyDiffs` for January is computed as January's net position in `year` minus December's net position in `year - 1`, for both the aggregate `NetPositionYearlyDiffDTO` and each per-account `InvestmentAccountYearlyDiffDTO`.
+- `AnnualSummaryService.GetInvestmentDiffsForYear(year)` is updated so `MonthlyDiffs` for January is computed as January's net position in `year` minus December's net position in `year - 1`, for both the aggregate `NetPositionAnnualDiffDTO` and each per-account `InvestmentAccountAnnualDiffDTO`.
 - February-December diffs are unchanged (each month minus the prior month within the same year).
 - For year 2017 (the app's earliest tracked year, with no prior year of data at all), January's diff remains null/blank, unchanged from today's behavior.
 - For an account that is active in `year` but did not exist in `year - 1` (e.g., an account opened partway through history), December's net position for `year - 1` is treated as 0 for that account's January diff, so a newly-opened account's first January correctly shows its full opening balance as the change.
 - This explicitly supersedes the P16-F03 acceptance criterion stating January's Month Result is intentionally blank; that acceptance criterion is amended by this PRD.
 
 **Experience:**
-- The Yearly Summary Investments sub-tab's "Month Result" row shows a real, non-blank value in the January column for every year from 2018 onward, formatted identically to the other 11 months (same currency formatting, same color coding for positive/negative).
+- The Annual Summary Investments sub-tab's "Month Result" row shows a real, non-blank value in the January column for every year from 2018 onward, formatted identically to the other 11 months (same currency formatting, same color coding for positive/negative).
 - For year 2017, the January cell in "Month Result" remains blank, matching today's rendering for that one case.
-- `YearlySummaryPage.tsx` no longer hardcodes `null` for the January position in the `monthlyValues` array passed to `InvestmentRow`; it renders whatever the API returns for that month.
+- `AnnualSummaryPage.tsx` no longer hardcodes `null` for the January position in the `monthlyValues` array passed to `InvestmentRow`; it renders whatever the API returns for that month.
 
 ## 7. Out of Scope
 
@@ -188,7 +188,7 @@ At a high level: a one-time migration seeds the new registry with all 19 known a
 **Account Grouping**
 - No new capability to group accounts by bank/institution or currency; the flat account list structure is preserved, just made data-driven and year-aware.
 
-**Other Yearly Summary Data**
+**Other Annual Summary Data**
 - The Category and IncomeSource enums, and their historical representation, are unaffected. The Category Totals and Historical Averages sub-tabs (P16-F02, P17) are not modified by this PRD.
 
 ## 8. Dependency Graph
@@ -246,10 +246,10 @@ graph TD
 - [x] If `Despesas.xlsx` is not found at the expected path, the command fails immediately with no snapshots written
 
 ### F04. Year-Scoped Investment Account Display
-- [x] For year 2023, the Investment Snapshots page and the Yearly Summary Investments sub-tab show exactly the accounts confirmed present in Resumo2023 (Everyday Saver, Blue Rewards Saver, Platinum Visa 8003, Platinum Visa 6007, Paypal Credit, Help to Buy ISA GGS, Help to Buy ISA AACS, Chip Easy access, Chase Save) and no others
+- [x] For year 2023, the Investment Snapshots page and the Annual Summary Investments sub-tab show exactly the accounts confirmed present in Resumo2023 (Everyday Saver, Blue Rewards Saver, Platinum Visa 8003, Platinum Visa 6007, Paypal Credit, Help to Buy ISA GGS, Help to Buy ISA AACS, Chip Easy access, Chase Save) and no others
 - [x] For the current calendar year, all 11 active registry accounts appear immediately, including any month with no snapshot yet (shown as zero), regardless of import status
 - [x] A disabled account with historical data (e.g., Everyday Saver) does not appear in the current year's display
-- [x] The Yearly Summary Investments sub-tab's Total/Net Position row for a past year sums only the accounts shown for that year
+- [x] The Annual Summary Investments sub-tab's Total/Net Position row for a past year sums only the accounts shown for that year
 
 ### F05. Prior-Year December Carryover for January
 - [x] For year 2024, January's Month Result equals January 2024's net position minus December 2023's net position

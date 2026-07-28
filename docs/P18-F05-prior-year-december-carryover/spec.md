@@ -1,31 +1,31 @@
 ## 1. Technical Overview
 
-**What:** Change `YearlySummaryService.GetInvestmentDiffsForYear` so `MonthlyDiffs` becomes a full 12-entry array (index 0 = January) instead of the current 11-entry Feb-Dec-only array, with January computed as that month's value minus the prior year's December value (0 fallback per account if the account didn't exist in the prior year, `null` system-wide if no prior-year data exists at all). Update the frontend to stop hardcoding a blank January cell and instead render whatever the API returns.
+**What:** Change `AnnualSummaryService.GetInvestmentDiffsForYear` so `MonthlyDiffs` becomes a full 12-entry array (index 0 = January) instead of the current 11-entry Feb-Dec-only array, with January computed as that month's value minus the prior year's December value (0 fallback per account if the account didn't exist in the prior year, `null` system-wide if no prior-year data exists at all). Update the frontend to stop hardcoding a blank January cell and instead render whatever the API returns.
 
 **Why:** This explicitly supersedes the P16-F03 acceptance criterion that intentionally left January blank ("no prior month to diff against" — true only because the backend never looked at the prior *year*). With F01-F04 now making prior-year data reliably queryable and year-scoped, January can show a real month-over-month change like every other month, for every year except the very first one this app tracks anything for.
 
 **Scope:**
-- Included: backend `MonthlyDiffs` shape/computation change (`InvestmentAccountYearlyDiffDTO` and `NetPositionYearlyDiffDTO`, both DTOs used only by this one endpoint); the "no prior-year data at all" → blank rule (dynamically derived from snapshot presence, not a hardcoded earliest-year constant); the "account didn't exist in the prior year" → treat as 0 rule; frontend (`YearlySummaryPage.tsx`, `api/types.ts`) updated to consume the new 12-entry shape instead of prepending its own `null`.
+- Included: backend `MonthlyDiffs` shape/computation change (`InvestmentAccountAnnualDiffDTO` and `NetPositionAnnualDiffDTO`, both DTOs used only by this one endpoint); the "no prior-year data at all" → blank rule (dynamically derived from snapshot presence, not a hardcoded earliest-year constant); the "account didn't exist in the prior year" → treat as 0 rule; frontend (`AnnualSummaryPage.tsx`, `api/types.ts`) updated to consume the new 12-entry shape instead of prepending its own `null`.
 - Excluded: no change to `GetCategoryTotalsForYear` or `GetIncomeSummaryForYear` (different DTOs, unaffected); no change to the account year-scoping itself (F04, already correct); no change to `FullYearNetChange` (already Dec − Jan within the same year, unaffected by this).
 
 ## 2. Architecture Impact
 
 **Affected components:**
-- `Financial.CashFlow.Application/DTOs/InvestmentAccountYearlyDiffDTO.cs` (modified: `MonthlyDiffs` type)
-- `Financial.CashFlow.Application/DTOs/NetPositionYearlyDiffDTO.cs` (modified: `MonthlyDiffs` type)
-- `Financial.CashFlow.Application/Services/YearlySummaryService.cs` (modified: `GetInvestmentDiffsForYear`, `ComputeDiffs`)
+- `Financial.CashFlow.Application/DTOs/InvestmentAccountAnnualDiffDTO.cs` (modified: `MonthlyDiffs` type)
+- `Financial.CashFlow.Application/DTOs/NetPositionAnnualDiffDTO.cs` (modified: `MonthlyDiffs` type)
+- `Financial.CashFlow.Application/Services/AnnualSummaryService.cs` (modified: `GetInvestmentDiffsForYear`, `ComputeDiffs`)
 - `Financial.Web/src/api/types.ts` (modified: `monthlyDiffs` type on both DTOs)
-- `Financial.Web/src/pages/YearlySummaryPage.tsx` (modified: stop hardcoding `null` for January; filter `null` out of the Average/Sum-of-Month-Results calculations)
+- `Financial.Web/src/pages/AnnualSummaryPage.tsx` (modified: stop hardcoding `null` for January; filter `null` out of the Average/Sum-of-Month-Results calculations)
 
 ```mermaid
 graph TD
-    A["YearlySummaryService.GetInvestmentDiffsForYear"] --> B["Snapshots for year and year-1"]
+    A["AnnualSummaryService.GetInvestmentDiffsForYear"] --> B["Snapshots for year and year-1"]
     B --> C{"Any snapshot exists for year-1?"}
     C -->|no| D["January diff = null, every account and NetPosition"]
     C -->|yes| E["January diff = Jan value - Dec year-1 value (0 if account absent that year)"]
-    D --> F["InvestmentDiffsYearlyDTO.MonthlyDiffs[0]"]
+    D --> F["InvestmentDiffsAnnualDTO.MonthlyDiffs[0]"]
     E --> F
-    F --> G["YearlySummaryPage.tsx renders monthlyDiffs directly, no more hardcoded null"]
+    F --> G["AnnualSummaryPage.tsx renders monthlyDiffs directly, no more hardcoded null"]
 ```
 
 ## 3. Technical Decisions
@@ -44,22 +44,22 @@ graph TD
 
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |-----------|--------------|---------|----------------------|
-| `DTOs/InvestmentAccountYearlyDiffDTO.cs` | Modified | Per-account yearly diff read model | `MonthlyDiffs` becomes `decimal?[]`, 12 entries, index 0 = January; doc comment updated |
-| `DTOs/NetPositionYearlyDiffDTO.cs` | Modified | Aggregate net position read model | Same `MonthlyDiffs` shape change |
-| `Services/YearlySummaryService.cs` | Modified | Yearly investment diff computation | `GetInvestmentDiffsForYear` looks up `year - 1`'s December-per-account values and whether any `year - 1` data exists at all; `ComputeDiffs` takes an explicit January value (already resolved by the caller) instead of always starting the diff loop at February |
+| `DTOs/InvestmentAccountAnnualDiffDTO.cs` | Modified | Per-account annual diff read model | `MonthlyDiffs` becomes `decimal?[]`, 12 entries, index 0 = January; doc comment updated |
+| `DTOs/NetPositionAnnualDiffDTO.cs` | Modified | Aggregate net position read model | Same `MonthlyDiffs` shape change |
+| `Services/AnnualSummaryService.cs` | Modified | Annual investment diff computation | `GetInvestmentDiffsForYear` looks up `year - 1`'s December-per-account values and whether any `year - 1` data exists at all; `ComputeDiffs` takes an explicit January value (already resolved by the caller) instead of always starting the diff loop at February |
 
 **Frontend (`Financial.Web`):**
 
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |-----------|--------------|---------|----------------------|
-| `src/api/types.ts` | Modified | API response typing | `monthlyDiffs: number[]` → `monthlyDiffs: (number \| null)[]` on both `InvestmentAccountYearlyDiffDto` and `NetPositionYearlyDiffDto` |
-| `src/pages/YearlySummaryPage.tsx` | Modified | Yearly Summary page | The "Month Result" `InvestmentRow` is fed `investmentDiffs.netPosition.monthlyDiffs` directly (no more `[null, ...]` prepend); "Average Month Result" and "Sum of Month Results" filter `null` out of `monthlyDiffs` before computing |
+| `src/api/types.ts` | Modified | API response typing | `monthlyDiffs: number[]` → `monthlyDiffs: (number \| null)[]` on both `InvestmentAccountAnnualDiffDto` and `NetPositionAnnualDiffDto` |
+| `src/pages/AnnualSummaryPage.tsx` | Modified | Annual Summary page | The "Month Result" `InvestmentRow` is fed `investmentDiffs.netPosition.monthlyDiffs` directly (no more `[null, ...]` prepend); "Average Month Result" and "Sum of Month Results" filter `null` out of `monthlyDiffs` before computing |
 
 No Domain, Infrastructure, or Presentation-controller files change — this is a read-path computation and DTO shape change plus its direct frontend consumer.
 
 ## 5. API Contracts
 
-**Endpoint:** `GET` yearly-summary investments endpoint (unchanged path/method — see `YearlySummaryController`)
+**Endpoint:** `GET` annual-summary investments endpoint (unchanged path/method — see `AnnualSummaryController`)
 
 **Response field change:**
 
@@ -104,8 +104,8 @@ No entity or persisted JSON shape changes — this feature only changes a comput
 
 | Test File | Test Type | Target | Coverage Goal |
 |-----------|-----------|--------|----------------|
-| `Tests/Financial.CashFlow.Application.Tests/Services/YearlySummaryServiceTests.cs` | Unit | `YearlySummaryService` | Updated: `MonthlyDiffs` length/index expectations (12, not 11); new cases for January carryover with prior-year data, no prior-year data at all (null), and an account absent from the prior year (0 fallback) |
-| `Financial.Web/src/pages/__tests__/YearlySummaryPage.test.tsx` | Component | `YearlySummaryPage` | Updated: the existing "blank January" test becomes a "real January value" test using 12-entry mock diffs; a new test covers a `null` January cell when the mock API returns `null` for it |
+| `Tests/Financial.CashFlow.Application.Tests/Services/AnnualSummaryServiceTests.cs` | Unit | `AnnualSummaryService` | Updated: `MonthlyDiffs` length/index expectations (12, not 11); new cases for January carryover with prior-year data, no prior-year data at all (null), and an account absent from the prior year (0 fallback) |
+| `Financial.Web/src/pages/__tests__/AnnualSummaryPage.test.tsx` | Component | `AnnualSummaryPage` | Updated: the existing "blank January" test becomes a "real January value" test using 12-entry mock diffs; a new test covers a `null` January cell when the mock API returns `null` for it |
 
 **Key test functions:**
 

@@ -2,13 +2,13 @@
 
 ## 1. Technical Overview
 
-**What:** Restructure the Financial.Web app shell to add a top-level Investments/CashFlow domain switcher above the existing tab navigation, nest the 4 existing Investments routes under `/investments/*` (unchanged behavior), and stand up 6 placeholder `/cashflow/*` routes (Monthly, Reserva, Mensais, Controle Mae, Investment Snapshots, Yearly Summary) ready for F12–F17 to fill in.
+**What:** Restructure the Financial.Web app shell to add a top-level Investments/CashFlow domain switcher above the existing tab navigation, nest the 4 existing Investments routes under `/investments/*` (unchanged behavior), and stand up 6 placeholder `/cashflow/*` routes (Monthly, Reserva, Mensais, Controle Mae, Investment Snapshots, Annual Summary) ready for F12–F17 to fill in.
 
 **Why:** Every subsequent Web feature in this PRD (F12–F17) needs a place to render nested inside a "CashFlow" selection, and the existing Investments tabs need to keep working exactly as they do today once nested inside an "Investments" selection. This is a routing/shell restructure — no new API calls, no business logic.
 
 **Scope:**
 - Included: two-tier navigation (domain switcher + per-domain tabs), route restructuring for the 4 existing Investments pages, 6 new placeholder CashFlow routes sharing one placeholder component, sessionStorage-backed "last selected domain" persistence, root-path redirect logic.
-- Excluded: any real CashFlow tab content (Monthly/Reserva/Mensais/Controle Mae/Investment Snapshots/Yearly Summary — built by F12–F17), any change to Investments pages' internal behavior, any backend/API change, WPF app changes (CashFlow ships Web-only per PRD).
+- Excluded: any real CashFlow tab content (Monthly/Reserva/Mensais/Controle Mae/Investment Snapshots/Annual Summary — built by F12–F17), any change to Investments pages' internal behavior, any backend/API change, WPF app changes (CashFlow ships Web-only per PRD).
 
 ## 2. Architecture Impact
 
@@ -56,7 +56,7 @@ graph TD
 | `src/main.tsx` | Modified | Route tree | Nests the 4 Investments routes under `path="investments"` + `InvestmentsLayout`, adds 6 CashFlow routes under `path="cashflow"` + `CashFlowLayout`, adds `index` route rendering `RootRedirect`, keeps the `*` "Page not found" catch-all |
 | `src/components/layout/InvestmentsLayout.tsx` | New | Investments tab nav | Renders the 4 existing tab `NavLink`s (Active Investments, Historic Investments, Shares Dividend Check, Read Assets Current Values) + `<Outlet/>`; visually/structurally identical to today's `App.tsx` nav row |
 | `src/components/layout/InvestmentsLayout.css` | New | Tab styling | Reuses the existing `.app__nav` class names/rules moved from `App.css` |
-| `src/components/layout/CashFlowLayout.tsx` | New | CashFlow tab nav | Renders the 6 CashFlow tab `NavLink`s (Monthly, Reserva, Mensais, Controle Mae, Investment Snapshots, Yearly Summary) + `<Outlet/>` |
+| `src/components/layout/CashFlowLayout.tsx` | New | CashFlow tab nav | Renders the 6 CashFlow tab `NavLink`s (Monthly, Reserva, Mensais, Controle Mae, Investment Snapshots, Annual Summary) + `<Outlet/>` |
 | `src/components/layout/CashFlowLayout.css` | New | Tab styling | Same visual pattern as `InvestmentsLayout.css` |
 | `src/pages/cashflow/CashFlowPlaceholderPage.tsx` | New | Shared CashFlow placeholder | Accepts a `title: string` prop; renders a heading with the title and a "coming soon" message |
 | `src/pages/cashflow/CashFlowPlaceholderPage.css` | New | Placeholder styling | Minimal centered placeholder styling |
@@ -79,7 +79,7 @@ N/A — no persisted data changes. `sessionStorage` is browser-local UI state, n
 |-----------|-----------|--------|----------------|
 | `src/App.test.tsx` (existing, updated) | Unit/Integration | `App.tsx` domain switcher | Renders exactly 2 domain options; clicking each switches to that domain's default route; active domain link gets the `active` class |
 | `src/components/layout/__tests__/InvestmentsLayout.test.tsx` | Unit/Integration | `InvestmentsLayout` | Renders the 4 existing tab links; clicking a tab renders its page via `Outlet`; existing Investments behavior unchanged when reached through the new nested path |
-| `src/components/layout/__tests__/CashFlowLayout.test.tsx` | Unit/Integration | `CashFlowLayout` | Renders exactly the 6 CashFlow tab links in order (Monthly, Reserva, Mensais, Controle Mae, Investment Snapshots, Yearly Summary) |
+| `src/components/layout/__tests__/CashFlowLayout.test.tsx` | Unit/Integration | `CashFlowLayout` | Renders exactly the 6 CashFlow tab links in order (Monthly, Reserva, Mensais, Controle Mae, Investment Snapshots, Annual Summary) |
 | `src/pages/cashflow/__tests__/CashFlowPlaceholderPage.test.tsx` | Unit | `CashFlowPlaceholderPage` | Renders the given `title` prop and a "coming soon" message |
 | `src/pages/__tests__/RootRedirect.test.tsx` | Unit | `RootRedirect` | Redirects to `/investments/active-investments` when no stored domain; redirects to `/cashflow/monthly` when `"cashflow"` is stored |
 | `src/utils/domainStorage.test.ts` | Unit | `domainStorage` | Round-trips `get`/`setStoredDomain`; returns `null` when unset; does not throw when `sessionStorage` is unavailable |
@@ -87,7 +87,7 @@ N/A — no persisted data changes. `sessionStorage` is browser-local UI state, n
 **Acceptance tests (from PRD Section 9, F11):**
 - The top-level switcher shows exactly 2 options: Investments and CashFlow (`App.test.tsx`)
 - Selecting Investments shows only the existing Investments tabs, unchanged in behavior (`InvestmentsLayout.test.tsx`, existing `pages/__tests__/*` continue to pass unmodified against their page components)
-- Selecting CashFlow shows only the 6 CashFlow tabs (Monthly, Reserva, Mensais, Controle Mae, Investment Snapshots, Yearly Summary) (`CashFlowLayout.test.tsx`)
+- Selecting CashFlow shows only the 6 CashFlow tabs (Monthly, Reserva, Mensais, Controle Mae, Investment Snapshots, Annual Summary) (`CashFlowLayout.test.tsx`)
 
 **Cross-Feature Integration tests (from PRD Section 9, deferred):**
 - "F12's Web Monthly View... its Investments-domain content is correctly scoped by F11's domain switcher" — not testable until F12 exists; F11 only guarantees the `/cashflow/monthly` route and layout scoping are in place for F12 to build into.

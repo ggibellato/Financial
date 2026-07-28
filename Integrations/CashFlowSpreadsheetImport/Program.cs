@@ -218,7 +218,7 @@ static void ImportResumoSheets(XLWorkbook workbook, CashFlowData data, ImportRep
             data.AddInvestmentSnapshot(snapshot);
         }
 
-        var sheetTotals = ResumoValidationReader.ReadYearlyExpenseTotals(sheet);
+        var sheetTotals = ResumoValidationReader.ReadAnnualExpenseTotals(sheet);
         if (sheetTotals is not null)
         {
             ValidateExpenseTotals(data, year, sheetTotals, report);

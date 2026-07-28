@@ -25,15 +25,15 @@ This PRD does not touch how the developer actually pays their tithe — recordin
 - Per P13, a bank's displayed balance is `sum(Expense.Value) − sum(Expense.RoundUpAmount)` for the selected month only — it has no opening balance, doesn't carry forward between months, and (until this PRD) has no way to add money in at all
 - The panel is effectively labeled as a running total ("Balance") but behaves like a single month's net spend, which is not what the developer means when they say "bank balance"
 
-**The Yearly Summary has no income visibility**
-- `YearlySummaryPage` today shows only expense Category Totals and Investment Diffs; salary, taxes withheld, and dividends/interest — figures the developer's spreadsheet has always summarized per month across the year — aren't represented anywhere
+**The Annual Summary has no income visibility**
+- `AnnualSummaryPage` today shows only expense Category Totals and Investment Diffs; salary, taxes withheld, and dividends/interest — figures the developer's spreadsheet has always summarized per month across the year — aren't represented anywhere
 
 ### The Opportunity
 
 - No income side on the Monthly tab → **F01's `Income` entity** and **F04's capture UI** give the developer a place to enter every pay event, with no limit on entries per source per month
 - Tithe balance is a manual, disconnected calculation → **F03's tithe calculation** computes both the tithe and the tithe balance automatically from `Income` and existing `Dizimo`-category expenses, and **F05** surfaces both on the Monthly page
 - Bank balance isn't a real balance → **F02's opening balance** and **F06's balance recalculation** turn the Banks panel into a running account balance that includes income and carries forward month to month
-- No income visibility in the Yearly Summary → **F07** adds a per-month Income Summary table alongside the existing Category Totals and Investment Diffs tables
+- No income visibility in the Annual Summary → **F07** adds a per-month Income Summary table alongside the existing Category Totals and Investment Diffs tables
 
 ## 3. Target Audience
 
@@ -55,7 +55,7 @@ This PRD does not touch how the developer actually pays their tithe — recordin
 **Make bank balance reflect real money**
 - Metric: each bank's displayed balance equals `OpeningBalance + Σ(Income.NetValue) − Σ(Expense.Value − Expense.RoundUpAmount)` for that bank from its `OpeningBalanceDate` forward, matching to the penny in 100% of test fixtures
 
-**Surface income in the Yearly Summary**
+**Surface income in the Annual Summary**
 - Metric: the Income Summary table's rows 2 (Salary), 3 (Salary after taxes), 4 (Tax difference), and 6 (Dividendo/Juros) compute correctly for every month with income data, matching a manually-computed reference to the penny in 100% of test fixtures
 
 ## 5. User Stories
@@ -84,7 +84,7 @@ This PRD does not touch how the developer actually pays their tithe — recordin
 - As the developer, I want each bank's displayed balance to include income, not just expenses, so that the figure reflects money actually available in the account
 - As the developer, I want that balance to carry forward from a real opening balance rather than resetting to a single month's net spend, so that it behaves like an actual account balance
 
-### F07. Yearly Summary Income Rows
+### F07. Annual Summary Income Rows
 - As the developer, I want to see salary (gross and net), the tax difference, and Dividendo/Juros totals per month across the year so that I can review my income the same way I already review expense category totals
 
 ## 6. Functionalities
@@ -188,23 +188,23 @@ This PRD does not touch how the developer actually pays their tithe — recordin
 **Experience:**
 - The Banks panel the developer already checks after entering expenses now also updates when income is entered, and the balance carries forward month to month instead of resetting.
 
-### F07. Yearly Summary Income Rows
+### F07. Annual Summary Income Rows
 
 **Consumes:**
 - F01: income entries' gross and net values by category, across all 12 months of the selected year
 
 **Capabilities:**
-- The Yearly Summary page gains a new Income Summary table, laid out like the existing Category Totals table (one row per metric, 12 monthly columns plus a yearly total column):
+- The Annual Summary page gains a new Income Summary table, laid out like the existing Category Totals table (one row per metric, 12 monthly columns plus a annual total column):
   - Row 1: section header ("Income"), no numeric value
   - Row 2 "Salary": sum of `GrossValue` for that month's `Gleison` and `Ariana` entries
   - Row 3 "Salary after taxes": sum of `NetValue` for that month's `Gleison` and `Ariana` entries
   - Row 4 "Tax difference": row 2 minus row 3 for that month
   - Row 5: intentionally left blank
   - Row 6 "Dividendo/Juros": sum of `NetValue` for that month's `DividendoJuros` entries
-- Lottery, the calculated tithe, and the tithe balance are not shown in the Yearly Summary — they remain Monthly-page-only
+- Lottery, the calculated tithe, and the tithe balance are not shown in the Annual Summary — they remain Monthly-page-only
 
 **Experience:**
-- The Income Summary table appears on the Yearly Summary page alongside the existing Category Totals and Investment Diffs tables, using the same per-month column layout.
+- The Income Summary table appears on the Annual Summary page alongside the existing Category Totals and Investment Diffs tables, using the same per-month column layout.
 
 ## 7. Out of Scope
 
@@ -220,8 +220,8 @@ This PRD does not touch how the developer actually pays their tithe — recordin
 **Automatic tithe payment or expense creation**
 - Recording that a tithe was actually paid still means manually adding a `Dizimo`-category expense, exactly as today; this feature only calculates the balance against whatever `Dizimo` expenses already exist
 
-**Lottery and tithe rows in the Yearly Summary**
-- Per the developer's explicit scope, the Yearly Summary's Income Summary table only carries rows 2, 3, 4, and 6 — Lottery, tithe, and tithe balance are not represented there
+**Lottery and tithe rows in the Annual Summary**
+- Per the developer's explicit scope, the Annual Summary's Income Summary table only carries rows 2, 3, 4, and 6 — Lottery, tithe, and tithe balance are not represented there
 
 **Multi-currency income**
 - All income amounts are in the same currency as the rest of `Financial.CashFlow` (£); no currency selection or conversion is introduced
@@ -239,7 +239,7 @@ This PRD does not touch how the developer actually pays their tithe — recordin
 | F04 | Monthly Income Capture UI | 1 | F01 |
 | F05 | Monthly Incoming and Tithe Display | 1 | F01, F03 |
 | F06 | Real Bank Balance | 1 | F01, F02 |
-| F07 | Yearly Summary Income Rows | 2 | F01 |
+| F07 | Annual Summary Income Rows | 2 | F01 |
 
 ### Execution Waves
 Features within the same wave can be built in parallel. A wave starts only after every feature in earlier waves is complete.
@@ -259,7 +259,7 @@ graph TD
   F01 --> F04[Income Capture]
   F01 --> F06[Bank Balance]
   F02[Bank Opening Balance] --> F06
-  F01 --> F07[Yearly Summary]
+  F01 --> F07[Annual Summary]
   F01 --> F05[Incoming Display]
   F03 --> F05
 ```
@@ -302,17 +302,17 @@ graph TD
 - [x] The Banks panel label reads "Bank Balance" instead of the prior expense-only label
 - [x] The displayed balance updates immediately after an income entry or expense is saved
 
-### F07. Yearly Summary Income Rows
+### F07. Annual Summary Income Rows
 - [x] The Income Summary table's Salary row (row 2) equals the sum of Gleison and Ariana gross values for each month, matching a manual reference calculation
 - [x] The Salary after taxes row (row 3) equals the sum of Gleison and Ariana net values for each month
 - [x] The Tax difference row (row 4) equals row 2 minus row 3 for each month
 - [x] The Dividendo/Juros row (row 6) equals the sum of that month's DividendoJuros net values
 - [x] Row 5 renders with no numeric value
-- [x] Lottery, tithe, and tithe balance do not appear anywhere in the Yearly Summary page
+- [x] Lottery, tithe, and tithe balance do not appear anywhere in the Annual Summary page
 
 ### Cross-Feature Integration
 - [x] F03's tithe calculation correctly reads the net income totals produced by F01 for the selected month
 - [x] F04's create/edit/delete actions correctly read and write through F01's `Income` entity contract
 - [x] F05 correctly displays the income totals from F01 and the tithe/tithe balance from F03 for the selected month
 - [x] F06 correctly combines F01's income data with F02's opening balance and date to produce each bank's balance
-- [x] F07 correctly aggregates F01's income data across all 12 months of the selected year into the Yearly Summary's Income Summary table
+- [x] F07 correctly aggregates F01's income data across all 12 months of the selected year into the Annual Summary's Income Summary table

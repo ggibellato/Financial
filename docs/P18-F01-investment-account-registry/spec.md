@@ -6,7 +6,7 @@
 
 **Scope:**
 - Included: new `InvestmentAccount` Domain entity; `CashFlowData.InvestmentAccounts` collection; `InvestmentSnapshot.Account` type change (enum → string); repository methods to read/add accounts; idempotent seeding migrator wired into the existing `CashFlowSpreadsheetImport` pipeline; every call site that referenced the enum updated to compile against the new entity, with identical runtime behavior; deletion of the now-redundant `InvestmentAccountClassification` static rule and the unused `InvestmentAccountParser`.
-- Excluded (explicitly deferred to later PRD P18 features, per the PRD's dependency chain): dynamic alias resolution and the 8 historical accounts (F02); the full spreadsheet re-import (F03); year-scoped display filtering (F04); the January prior-year carryover (F05). No frontend changes — the API's `InvestmentSnapshotDTO.Account` and `InvestmentAccountYearlyDiffDTO.Account` were already typed as `string`, so the React app is unaffected.
+- Excluded (explicitly deferred to later PRD P18 features, per the PRD's dependency chain): dynamic alias resolution and the 8 historical accounts (F02); the full spreadsheet re-import (F03); year-scoped display filtering (F04); the January prior-year carryover (F05). No frontend changes — the API's `InvestmentSnapshotDTO.Account` and `InvestmentAccountAnnualDiffDTO.Account` were already typed as `string`, so the React app is unaffected.
 
 ## 2. Architecture Impact
 
@@ -20,7 +20,7 @@
 - `Financial.CashFlow.Infrastructure/Repositories/CashFlowJsonRepository.cs` (modified)
 - `Financial.CashFlow.Infrastructure/Persistence/CashFlowTypeInfoResolver.cs` (modified: register new type)
 - `Financial.CashFlow.Application/Services/InvestmentSnapshotService.cs` (modified)
-- `Financial.CashFlow.Application/Services/YearlySummaryService.cs` (modified)
+- `Financial.CashFlow.Application/Services/AnnualSummaryService.cs` (modified)
 - `Financial.CashFlow.Application/Validation/InvestmentAccountParser.cs` (deleted — unused, referenced the removed enum)
 - `Integrations/CashFlowSpreadsheetImport/Migrations/InvestmentAccounts/InvestmentAccountMigrator.cs` (new)
 - `Integrations/CashFlowSpreadsheetImport/Migrations/InvestmentAccounts/InvestmentAccountMigrationSummary.cs` (new)
@@ -33,7 +33,7 @@ graph TD
     B --> C["CashFlowData.InvestmentAccounts"]
     D["ResumoValidationReader"] --> E["CashFlowData.InvestmentSnapshots"]
     F["InvestmentSnapshotService"] --> G["ICashFlowRepository"]
-    H["YearlySummaryService"] --> G
+    H["AnnualSummaryService"] --> G
     G --> C
     G --> E
     I["CashFlowJsonRepository"] -.implements.-> G
@@ -44,7 +44,7 @@ graph TD
 
 | Decision | Chosen Approach | Alternative Considered | Trade-off |
 |----------|------------------|-------------------------|-----------|
-| How `InvestmentSnapshot` references its account | `Account` becomes a plain `string` matching the registry entry's `Name` by value (no FK object, no Guid reference) | `InvestmentSnapshot.Account` holds a `Guid` foreign key to `InvestmentAccount.Id` | This codebase already has the identical shape of problem solved this way: `Bank` (master list, no `Id` at all) is referenced from `Expense.PaymentSource` (a plain `string` matched by name), audited by `BankMigrator`. A string match keeps `InvestmentSnapshot` unchanged in every field except type, needs no join logic in `InvestmentSnapshotService`/`YearlySummaryService`, and — critically — needs **zero data migration**, because `JsonStringEnumConverter` already serializes every existing snapshot's `Account` as its exact enum member name (e.g. `"BlueRewardsSaver"`), which deserializes unchanged into a `string` property. A Guid FK would require rewriting every persisted snapshot and add a join the read paths don't otherwise need. |
+| How `InvestmentSnapshot` references its account | `Account` becomes a plain `string` matching the registry entry's `Name` by value (no FK object, no Guid reference) | `InvestmentSnapshot.Account` holds a `Guid` foreign key to `InvestmentAccount.Id` | This codebase already has the identical shape of problem solved this way: `Bank` (master list, no `Id` at all) is referenced from `Expense.PaymentSource` (a plain `string` matched by name), audited by `BankMigrator`. A string match keeps `InvestmentSnapshot` unchanged in every field except type, needs no join logic in `InvestmentSnapshotService`/`AnnualSummaryService`, and — critically — needs **zero data migration**, because `JsonStringEnumConverter` already serializes every existing snapshot's `Account` as its exact enum member name (e.g. `"BlueRewardsSaver"`), which deserializes unchanged into a `string` property. A Guid FK would require rewriting every persisted snapshot and add a join the read paths don't otherwise need. |
 | `InvestmentAccount.Name` value for the 11 seeded accounts | Exactly the existing enum member name (e.g. `"BlueRewardsSaver"`, `"PlatinumVisa8003"`) | A spaced, human-readable label (e.g. `"Blue Rewards Saver"`) | The frontend (`InvestmentSnapshotsPage.tsx`) already renders `snapshot.account` verbatim with no formatting step, so it already shows the PascalCase form today. Reusing the exact same string as `Name` means the migration touches zero existing `InvestmentSnapshot.Account` values and the UI is visually unchanged. Introducing a friendlier label is out of scope for this PRD and not requested by any objective; a display-label field can be added later without another data migration if ever needed. |
 | Where `IsLiability` is amended for the 11 accounts | The exact current values from the deleted `InvestmentAccountClassification.LiabilityAccounts` set are used to seed each account's `IsLiability` flag, unmodified | Auditing/correcting the classification while migrating it | PRD P18 explicitly scopes correcting any pre-existing liability misclassification (e.g. `BA Amex`) as out of scope; this migration is a mechanical carry-over, not a data review. |
 | Migration audit behavior when a persisted snapshot's `Account` string matches no seeded registry entry | Log and flag the snapshot for manual review (add an `UnresolvedSnapshots` list to the migration summary), continue running the rest of the pipeline, do not abort | Abort the whole `CashFlowSpreadsheetImport` run, per the PRD's F01 Error Handling wording ("aborts without partially migrating") | Because this design does zero rewriting of `InvestmentSnapshot.Account` values (see first decision), there is nothing to "partially migrate" — the migrator only ever adds new `InvestmentAccount` rows, it never touches existing snapshots. The closest real risk is a snapshot referencing a name the seed list doesn't know about; `BankMigrator.AuditExpenses` already established the pattern for exactly this shape of problem (flag-and-continue, not abort), and aborting the shared always-run pipeline over one unresolved historical row would also block the unrelated Bank/Income/PaymentState migrations that run in the same command. This is a refinement of the PRD's Error Handling section to match how the feature is actually implemented; it does not weaken the "no data silently dropped" intent — the flag is visible in the migration summary output every run until resolved. |
@@ -68,7 +68,7 @@ graph TD
 |-----------|--------------|---------|----------------------|
 | `Interfaces/ICashFlowRepository.cs` | Modified | Repository contract | Adds `GetInvestmentAccounts()` and `AddInvestmentAccount(InvestmentAccount account)`, mirroring the existing `GetBanks()`/no-add-for-banks... actually mirrors `GetIncomes()`/`AddIncome()` shape (read + add, no update/delete needed) |
 | `Services/InvestmentSnapshotService.cs` | Modified | Snapshot read/update use case | `AllAccounts` static field (`Enum.GetValues<InvestmentAccount>()`) replaced by querying `_repository.GetInvestmentAccounts()` at call time; `ToDto` reads `IsLiability` from the matching `InvestmentAccount` entity (by `Name`) instead of `InvestmentAccountClassification.IsLiability(...)` |
-| `Services/YearlySummaryService.cs` | Modified | Yearly investment diff computation | `Enum.GetValues<InvestmentAccount>()` replaced by `_repository.GetInvestmentAccounts()`; `Account = account.ToString()` becomes `Account = account.Name`; `IsLiability` read from the entity instead of the deleted static rule |
+| `Services/AnnualSummaryService.cs` | Modified | Annual investment diff computation | `Enum.GetValues<InvestmentAccount>()` replaced by `_repository.GetInvestmentAccounts()`; `Account = account.ToString()` becomes `Account = account.Name`; `IsLiability` read from the entity instead of the deleted static rule |
 | `Validation/InvestmentAccountParser.cs` | Deleted | — | Dead code (no production call sites), referenced the removed enum |
 
 **Backend — Infrastructure (`Financial.CashFlow.Infrastructure`):**
@@ -87,11 +87,11 @@ graph TD
 | `Program.cs` | Modified | Pipeline entry point | Adds `var investmentAccountSummary = InvestmentAccountMigrator.Migrate(data);` to the "always run, both modes" block and prints `investmentAccountSummary.Render()` alongside the other summaries |
 | `SheetImporters/ResumoValidationReader.cs` | Modified | Resumo sheet row → snapshot resolution | `AccountLabelAliases` re-typed from `Dictionary<InvestmentAccount, string[]>` to `Dictionary<string, string[]>`, keyed by the same 11 name strings with identical alias arrays; `TryResolveAccount`'s `out` parameter becomes `string`; `InvestmentSnapshot.Create` call site updated for the new `Account` type. `InvestmentAccountClassification.IsLiability(account)` call replaced by a lookup against the same hardcoded 11-name liability set inlined here as a local constant, since the classification rule was deleted and dynamic registry-driven liability lookup is F02's scope, not F01's |
 
-No frontend files are touched; `Financial.Web` already types `account` as `string` in `InvestmentSnapshotDto`/`InvestmentAccountYearlyDiffDto`.
+No frontend files are touched; `Financial.Web` already types `account` as `string` in `InvestmentSnapshotDto`/`InvestmentAccountAnnualDiffDto`.
 
 ## 5. API Contracts
 
-No new or changed HTTP endpoints. `InvestmentSnapshotsController` and `YearlySummaryController` are unmodified — both already exposed `Account` as `string` in their DTOs before this feature, so their JSON response shape is identical before and after.
+No new or changed HTTP endpoints. `InvestmentSnapshotsController` and `AnnualSummaryController` are unmodified — both already exposed `Account` as `string` in their DTOs before this feature, so their JSON response shape is identical before and after.
 
 ## 6. Data Model
 
@@ -131,7 +131,7 @@ All other `InvestmentSnapshot` properties (`Id`, `Year`, `Month`, `Value`) are u
 | `Tests/Financial.CashFlow.Infrastructure.Tests/Repositories/CashFlowJsonRepositoryTests.cs` | Unit | `CashFlowJsonRepository` | Updated: add `GetInvestmentAccounts`/`AddInvestmentAccount` coverage, mirroring existing `Get/AddIncome` tests |
 | `Tests/Financial.CashFlow.Infrastructure.Tests/Persistence/CashFlowSerializerAdapterTests.cs` | Unit | JSON round-trip | Updated: assert an `InvestmentAccount` round-trips through serialize/deserialize; assert an `InvestmentSnapshot` with a `string` `Account` round-trips unchanged |
 | `Tests/Financial.CashFlow.Application.Tests/Services/InvestmentSnapshotServiceTests.cs` | Unit | `InvestmentSnapshotService` | Updated: seed `InvestmentAccount` entities via a repository test double instead of relying on the enum; assert `GetSnapshotsForMonthAsync` still returns exactly 11 rows and `IsLiability` still reflects the seeded entity's flag |
-| `Tests/Financial.CashFlow.Application.Tests/Services/YearlySummaryServiceTests.cs` | Unit | `YearlySummaryService` | Updated: same account-seeding change; assert `GetInvestmentDiffsForYear` output is unchanged in shape and values for a year with the 11 known accounts |
+| `Tests/Financial.CashFlow.Application.Tests/Services/AnnualSummaryServiceTests.cs` | Unit | `AnnualSummaryService` | Updated: same account-seeding change; assert `GetInvestmentDiffsForYear` output is unchanged in shape and values for a year with the 11 known accounts |
 | `Tests/Financial.CashFlow.Application.Tests/Validation/InvestmentAccountParserTests.cs` | Unit | — | Deleted (class removed) |
 | `Tests/Financial.CashFlowSpreadsheetImport.Tests/Migrations/InvestmentAccounts/InvestmentAccountMigratorTests.cs` | Unit | `InvestmentAccountMigrator` | New, mirroring `BankMigratorTests.cs` structure exactly |
 | `Tests/Financial.CashFlowSpreadsheetImport.Tests/SheetImporters/ResumoValidationReaderTests.cs` | Unit | `ResumoValidationReader` | Updated: assertions against `string` accounts instead of enum values; behavior otherwise unchanged |
@@ -147,6 +147,6 @@ All other `InvestmentSnapshot` properties (`Id`, `Year`, `Month`, `Value`) are u
 | `Migrate_WithSomeAccountsAlreadySeeded_OnlySeedsTheMissingOnes` (`InvestmentAccountMigratorTests`) | Partial seed | Mirrors `BankMigratorTests`' equivalent case |
 | `Migrate_SnapshotWithUnresolvableAccountName_IsFlaggedForManualReviewAndLeftUntouched` (`InvestmentAccountMigratorTests`) | Audit | An `InvestmentSnapshot` whose `Account` matches no seeded name appears in `UnresolvedSnapshots`, and its `Account` value is unchanged |
 | `GetSnapshotsForMonthAsync_WithElevenSeededAccounts_CreatesAllMissingZeroValueSnapshots` (`InvestmentSnapshotServiceTests`) | Regression | Same 11-row-per-month behavior as before the entity swap |
-| `GetInvestmentDiffsForYear_WithElevenSeededAccounts_ReturnsSameShapeAndValuesAsBeforeMigration` (`YearlySummaryServiceTests`) | Regression | `Account` strings, `IsLiability` flags, and diff math identical to pre-F01 behavior |
+| `GetInvestmentDiffsForYear_WithElevenSeededAccounts_ReturnsSameShapeAndValuesAsBeforeMigration` (`AnnualSummaryServiceTests`) | Regression | `Account` strings, `IsLiability` flags, and diff math identical to pre-F01 behavior |
 
 **Integration-level check:** After implementation, run the actual `dotnet run --project Integrations/CashFlowSpreadsheetImport` command against a copy of the existing `data-cashflow.json` (not the live file) and confirm the tool exits 0, the migration summary reports `AccountsSeededCount == 11`, `AccountsAlreadyPresentCount == 0` on the first run and the reverse on a second run, and every pre-existing `InvestmentSnapshot` entry in the output JSON has an unchanged `Account`/`Year`/`Month`/`Value`.

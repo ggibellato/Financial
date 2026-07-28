@@ -7,7 +7,7 @@ using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.R
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
 
 /// <summary>
-/// Reads a "Resumo{Year}" yearly summary sheet. Account-row positions are NOT stable across years
+/// Reads a "Resumo{Year}" annual summary sheet. Account-row positions are NOT stable across years
 /// (confirmed empirically: the canonical 2026-shaped sheet has all 11 accounts at rows 29-39, but
 /// older years use different row counts, different labels — e.g. "Help to Buy ISA GGS" instead of
 /// a Chip Cash ISA — and sometimes omit an account entirely), so rows are located by matching each
@@ -78,7 +78,7 @@ public static class ResumoValidationReader
         return snapshots;
     }
 
-    public static IReadOnlyDictionary<int, decimal>? ReadYearlyExpenseTotals(IXLWorksheet sheet)
+    public static IReadOnlyDictionary<int, decimal>? ReadAnnualExpenseTotals(IXLWorksheet sheet)
     {
         var lastRow = Math.Min(sheet.LastRowUsed()?.RowNumber() ?? 1, LabelScanLastRow);
 

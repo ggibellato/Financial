@@ -16,7 +16,7 @@ import MensaisPage from './pages/MensaisPage'
 import MonthlyPage from './pages/MonthlyPage'
 import ReservaPage from './pages/ReservaPage'
 import RootRedirect from './pages/RootRedirect'
-import YearlySummaryPage from './pages/YearlySummaryPage'
+import AnnualSummaryPage from './pages/AnnualSummaryPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -38,7 +38,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="mensais" element={<MensaisPage />} />
             <Route path="controle-mae" element={<ControleMaePage />} />
             <Route path="investment-snapshots" element={<InvestmentSnapshotsPage />} />
-            <Route path="yearly-summary" element={<YearlySummaryPage />} />
+            <Route path="annual-summary" element={<AnnualSummaryPage />} />
           </Route>
           <Route path="*" element={<div>Page not found.</div>} />
         </Route>

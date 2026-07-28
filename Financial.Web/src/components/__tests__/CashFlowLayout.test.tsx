@@ -12,7 +12,7 @@ const CashFlowLayoutWithRoutes = ({ initialEntry = '/cashflow/monthly' }: { init
         <Route path="mensais" element={<p>Mensais placeholder</p>} />
         <Route path="controle-mae" element={<p>Controle Mae placeholder</p>} />
         <Route path="investment-snapshots" element={<p>Investment Snapshots placeholder</p>} />
-        <Route path="yearly-summary" element={<p>Yearly Summary placeholder</p>} />
+        <Route path="annual-summary" element={<p>Annual Summary placeholder</p>} />
       </Route>
     </Routes>
   </MemoryRouter>
@@ -27,7 +27,7 @@ describe('CashFlowLayout', () => {
     expect(links.map((link) => link.textContent)).toEqual([
       'Monthly',
       'Investment Snapshots',
-      'Yearly Summary',
+      'Annual Summary',
       'Reserva',
       'Mensais',
       'Controle Mae',

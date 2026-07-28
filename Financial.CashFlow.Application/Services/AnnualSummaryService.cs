@@ -5,7 +5,7 @@ using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.CashFlow.Application.Services;
 
-public sealed class YearlySummaryService : IYearlySummaryService
+public sealed class AnnualSummaryService : IAnnualSummaryService
 {
     private const int MonthsInYear = 12;
     private const string SalaryIncomeGroup = "Salary";
@@ -13,12 +13,12 @@ public sealed class YearlySummaryService : IYearlySummaryService
 
     private readonly ICashFlowRepository _repository;
 
-    public YearlySummaryService(ICashFlowRepository repository)
+    public AnnualSummaryService(ICashFlowRepository repository)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }
 
-    public IReadOnlyList<CategoryYearlyTotalDTO> GetCategoryTotalsForYear(int year)
+    public IReadOnlyList<CategoryAnnualTotalDTO> GetCategoryTotalsForYear(int year)
     {
         var totalsByCategoryAndMonth = _repository.GetExpenses()
             .Where(e => e.Date.Year == year)
@@ -34,17 +34,17 @@ public sealed class YearlySummaryService : IYearlySummaryService
                     monthlyTotals[month - 1] = totalsByCategoryAndMonth.GetValueOrDefault((category, month));
                 }
 
-                return new CategoryYearlyTotalDTO
+                return new CategoryAnnualTotalDTO
                 {
                     Category = category.ToString(),
                     MonthlyTotals = monthlyTotals,
-                    YearlyTotal = monthlyTotals.Sum()
+                    AnnualTotal = monthlyTotals.Sum()
                 };
             })
             .ToList();
     }
 
-    public InvestmentDiffsYearlyDTO GetInvestmentDiffsForYear(int year)
+    public InvestmentDiffsAnnualDTO GetInvestmentDiffsForYear(int year)
     {
         var allSnapshots = _repository.GetInvestmentSnapshots().ToList();
         var allAccounts = _repository.GetInvestmentAccounts().ToList();
@@ -75,7 +75,7 @@ public sealed class YearlySummaryService : IYearlySummaryService
                     ? monthlyValues[0] - priorYearDecemberByAccount.GetValueOrDefault(account.Name, 0m)
                     : null;
 
-                return new InvestmentAccountYearlyDiffDTO
+                return new InvestmentAccountAnnualDiffDTO
                 {
                     Account = account.Name,
                     IsLiability = account.IsLiability,
@@ -105,7 +105,7 @@ public sealed class YearlySummaryService : IYearlySummaryService
         var lastRelevantMonth = year >= DateTime.Now.Year ? Math.Min(DateTime.Now.Month, MonthsInYear) : MonthsInYear;
         var relevantDiffs = netPositionDiffs.Take(lastRelevantMonth).Where(d => d.HasValue).Select(d => d!.Value).ToList();
 
-        var netPosition = new NetPositionYearlyDiffDTO
+        var netPosition = new NetPositionAnnualDiffDTO
         {
             MonthlyValues = netPositionValues,
             MonthlyDiffs = netPositionDiffs,
@@ -114,14 +114,14 @@ public sealed class YearlySummaryService : IYearlySummaryService
             SumOfMonthResults = relevantDiffs.Sum()
         };
 
-        return new InvestmentDiffsYearlyDTO
+        return new InvestmentDiffsAnnualDTO
         {
             Accounts = accounts.ToArray(),
             NetPosition = netPosition
         };
     }
 
-    public IncomeYearlySummaryDTO GetIncomeSummaryForYear(int year)
+    public IncomeAnnualSummaryDTO GetIncomeSummaryForYear(int year)
     {
         var salaryMonthly = new decimal[MonthsInYear];
         var salaryAfterTaxesMonthly = new decimal[MonthsInYear];
@@ -148,16 +148,16 @@ public sealed class YearlySummaryService : IYearlySummaryService
             taxDifferenceMonthly[month] = salaryMonthly[month] - salaryAfterTaxesMonthly[month];
         }
 
-        return new IncomeYearlySummaryDTO
+        return new IncomeAnnualSummaryDTO
         {
             SalaryMonthly = salaryMonthly,
-            SalaryYearlyTotal = salaryMonthly.Sum(),
+            SalaryAnnualTotal = salaryMonthly.Sum(),
             SalaryAfterTaxesMonthly = salaryAfterTaxesMonthly,
-            SalaryAfterTaxesYearlyTotal = salaryAfterTaxesMonthly.Sum(),
+            SalaryAfterTaxesAnnualTotal = salaryAfterTaxesMonthly.Sum(),
             TaxDifferenceMonthly = taxDifferenceMonthly,
-            TaxDifferenceYearlyTotal = taxDifferenceMonthly.Sum(),
+            TaxDifferenceAnnualTotal = taxDifferenceMonthly.Sum(),
             DividendoJurosMonthly = dividendoJurosMonthly,
-            DividendoJurosYearlyTotal = dividendoJurosMonthly.Sum()
+            DividendoJurosAnnualTotal = dividendoJurosMonthly.Sum()
         };
     }
 

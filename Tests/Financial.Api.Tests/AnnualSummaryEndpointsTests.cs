@@ -5,10 +5,10 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
-public class YearlySummaryEndpointsTests
+public class AnnualSummaryEndpointsTests
 {
     [Fact]
-    public async Task GetExpenseCategoryTotals_ReturnsAllCategoriesWithCorrectYearlyTotal()
+    public async Task GetExpenseCategoryTotals_ReturnsAllCategoriesWithCorrectAnnualTotal()
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
@@ -31,12 +31,12 @@ public class YearlySummaryEndpointsTests
             CardTag = null
         });
 
-        var response = await client.GetAsync("/api/v1/financial/yearly-summary/2026/expense-categories");
+        var response = await client.GetAsync("/api/v1/financial/annual-summary/2026/expense-categories");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var totals = await response.Content.ReadFromJsonAsync<List<CategoryYearlyTotalDTO>>();
+        var totals = await response.Content.ReadFromJsonAsync<List<CategoryAnnualTotalDTO>>();
         totals.Should().HaveCount(14);
-        totals.Should().ContainSingle(t => t.Category == "Mercado" && t.YearlyTotal == 150m);
+        totals.Should().ContainSingle(t => t.Category == "Mercado" && t.AnnualTotal == 150m);
     }
 
     [Fact]
@@ -53,10 +53,10 @@ public class YearlySummaryEndpointsTests
         var chaseSaveFeb = february!.First(s => s.Account == "ChaseSave");
         await client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{chaseSaveFeb.Id}", new UpdateInvestmentSnapshotValueDTO { Value = 1200m });
 
-        var response = await client.GetAsync("/api/v1/financial/yearly-summary/2026/investment-diffs");
+        var response = await client.GetAsync("/api/v1/financial/annual-summary/2026/investment-diffs");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<InvestmentDiffsYearlyDTO>();
+        var result = await response.Content.ReadFromJsonAsync<InvestmentDiffsAnnualDTO>();
         result!.Accounts.Should().HaveCount(11);
         var chaseSave = result.Accounts.Single(a => a.Account == "ChaseSave");
         chaseSave.MonthlyValues[0].Should().Be(1000m);
@@ -105,16 +105,16 @@ public class YearlySummaryEndpointsTests
             Bank = "Chase"
         });
 
-        var response = await client.GetAsync("/api/v1/financial/yearly-summary/2026/income-summary");
+        var response = await client.GetAsync("/api/v1/financial/annual-summary/2026/income-summary");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<IncomeYearlySummaryDTO>();
+        var result = await response.Content.ReadFromJsonAsync<IncomeAnnualSummaryDTO>();
         result!.SalaryMonthly[0].Should().Be(3600m);
         result.SalaryAfterTaxesMonthly[0].Should().Be(2800m);
         result.TaxDifferenceMonthly[0].Should().Be(800m);
         result.DividendoJurosMonthly[2].Should().Be(15.50m);
         result.SalaryMonthly[3].Should().Be(0m);
-        result.SalaryYearlyTotal.Should().Be(3600m);
+        result.SalaryAnnualTotal.Should().Be(3600m);
     }
 
     [Fact]
@@ -174,7 +174,7 @@ public class YearlySummaryEndpointsTests
             Bank = "Trading212"
         });
 
-        var response = await client.GetAsync("/api/v1/financial/yearly-summary/2026/historic-summary-averages");
+        var response = await client.GetAsync("/api/v1/financial/annual-summary/2026/historic-summary-averages");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<List<CategoryAnnualAverageDTO>>();
