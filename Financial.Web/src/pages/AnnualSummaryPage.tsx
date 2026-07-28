@@ -1,36 +1,36 @@
 import { Fragment, useState, type ReactNode } from 'react'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
-import { useYearlySummary } from '../hooks/useYearlySummary'
+import { useAnnualSummary } from '../hooks/useAnnualSummary'
 import { formatN2 } from '../utils/formatters'
 import { average } from '../utils/math'
-import './YearlySummaryPage.css'
+import './AnnualSummaryPage.css'
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const SPACER_COL_SPAN = MONTH_LABELS.length + 3
 
-type YearlySummaryTabId = 'categoryTotals' | 'investments' | 'historicSummaryAverage'
+type AnnualSummaryTabId = 'categoryTotals' | 'investments' | 'historicSummaryAverage'
 
-const TABS: { id: YearlySummaryTabId; label: string }[] = [
+const TABS: { id: AnnualSummaryTabId; label: string }[] = [
   { id: 'categoryTotals', label: 'Category Totals' },
   { id: 'investments', label: 'Investments' },
   { id: 'historicSummaryAverage', label: 'Historic Summary Average' },
 ]
 
-function YearlySummaryRow({
+function AnnualSummaryRow({
   label,
   monthlyValues,
-  yearlyTotal,
+  annualTotal,
   emphasized = false,
 }: {
   label: string
   monthlyValues: number[]
-  yearlyTotal: number
+  annualTotal: number
   emphasized?: boolean
 }) {
   const cell = (content: ReactNode) => (emphasized ? <strong>{content}</strong> : content)
   return (
-    <tr className={emphasized ? 'yearly-summary-page__emphasized-row' : undefined}>
+    <tr className={emphasized ? 'annual-summary-page__emphasized-row' : undefined}>
       <td>{cell(label)}</td>
       {monthlyValues.map((v, i) => (
         <td key={i} className="data-table__col--numeric">
@@ -41,7 +41,7 @@ function YearlySummaryRow({
         <strong>{formatN2(average(monthlyValues))}</strong>
       </td>
       <td className="data-table__col--numeric">
-        <strong>{formatN2(yearlyTotal)}</strong>
+        <strong>{formatN2(annualTotal)}</strong>
       </td>
     </tr>
   )
@@ -60,7 +60,7 @@ function InvestmentRow({
   emphasized?: boolean
 }) {
   return (
-    <tr className={emphasized ? 'yearly-summary-page__emphasized-row' : undefined}>
+    <tr className={emphasized ? 'annual-summary-page__emphasized-row' : undefined}>
       <td>{optionalEmphasize(label, emphasized)}</td>
       {monthlyValues.map((v, i) => (
         <td key={i} className="data-table__col--numeric">
@@ -71,7 +71,7 @@ function InvestmentRow({
   )
 }
 
-export default function YearlySummaryPage() {
+export default function AnnualSummaryPage() {
   const {
     year,
     setYear,
@@ -80,36 +80,36 @@ export default function YearlySummaryPage() {
     incomeSummary,
     historicSummaryAverage,
     totalDespesasMonthly,
-    totalDespesasYearlyTotal,
+    totalDespesasAnnualTotal,
     resultadoMonthly,
-    resultadoYearlyTotal,
+    resultadoAnnualTotal,
     isLoading,
     error,
     retry,
-  } = useYearlySummary()
+  } = useAnnualSummary()
 
-  const [activeTab, setActiveTab] = useState<YearlySummaryTabId>('categoryTotals')
+  const [activeTab, setActiveTab] = useState<AnnualSummaryTabId>('categoryTotals')
   const HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER = new Set(['Tax difference', 'Dividendo/Juros', 'Reserva'])
   const HISTORIC_SUMMARY_AVERAGE_EMPHASIZED = new Set(['Resultado (R-D-Inv)', 'Total despesas'])
 
   return (
-    <div className="yearly-summary-page">
-      <div className="yearly-summary-page__year-picker">
-        <label htmlFor="yearly-summary-year">Year</label>
+    <div className="annual-summary-page">
+      <div className="annual-summary-page__year-picker">
+        <label htmlFor="annual-summary-year">Year</label>
         <input
-          id="yearly-summary-year"
+          id="annual-summary-year"
           type="number"
           value={year}
           onChange={(e) => setYear(Number(e.target.value))}
         />
       </div>
 
-      <div className="yearly-summary-page__tabs">
+      <div className="annual-summary-page__tabs">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
-            className={`yearly-summary-page__tab${activeTab === tab.id ? ' yearly-summary-page__tab--active' : ''}`}
+            className={`annual-summary-page__tab${activeTab === tab.id ? ' annual-summary-page__tab--active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
           >
             {tab.label}
@@ -122,11 +122,11 @@ export default function YearlySummaryPage() {
       ) : error ? (
         <ErrorState message={error} onRetry={retry} />
       ) : (
-        <div className="yearly-summary-page__content">
+        <div className="annual-summary-page__content">
           {activeTab === 'categoryTotals' && (
-            <section className="yearly-summary-page__section">
+            <section className="annual-summary-page__section">
               <h2>Category Totals</h2>
-              <table className="yearly-summary-page__table data-table">
+              <table className="annual-summary-page__table data-table">
                 <thead>
                   <tr>
                     <th />
@@ -136,34 +136,34 @@ export default function YearlySummaryPage() {
                       </th>
                     ))}
                     <th className="data-table__col--numeric">Average</th>
-                    <th className="data-table__col--numeric">Yearly Total</th>
+                    <th className="data-table__col--numeric">Annual Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   {incomeSummary && (
                     <>
-                      <YearlySummaryRow
+                      <AnnualSummaryRow
                         label="Salary"
                         monthlyValues={incomeSummary.salaryMonthly}
-                        yearlyTotal={incomeSummary.salaryYearlyTotal}
+                        annualTotal={incomeSummary.salaryAnnualTotal}
                       />
-                      <YearlySummaryRow
+                      <AnnualSummaryRow
                         label="Salary after taxes"
                         monthlyValues={incomeSummary.salaryAfterTaxesMonthly}
-                        yearlyTotal={incomeSummary.salaryAfterTaxesYearlyTotal}
+                        annualTotal={incomeSummary.salaryAfterTaxesAnnualTotal}
                       />
-                      <YearlySummaryRow
+                      <AnnualSummaryRow
                         label="Tax difference"
                         monthlyValues={incomeSummary.taxDifferenceMonthly}
-                        yearlyTotal={incomeSummary.taxDifferenceYearlyTotal}
+                        annualTotal={incomeSummary.taxDifferenceAnnualTotal}
                       />
                       <tr>
                         <td colSpan={SPACER_COL_SPAN} />
                       </tr>
-                      <YearlySummaryRow
+                      <AnnualSummaryRow
                         label="Dividendo/Juros"
                         monthlyValues={incomeSummary.dividendoJurosMonthly}
-                        yearlyTotal={incomeSummary.dividendoJurosYearlyTotal}
+                        annualTotal={incomeSummary.dividendoJurosAnnualTotal}
                       />
                     </>
                   )}
@@ -173,7 +173,7 @@ export default function YearlySummaryPage() {
                   </tr>
 
                   {categoryTotals.map((c) => (
-                    <YearlySummaryRow key={c.category} label={c.category} monthlyValues={c.monthlyTotals} yearlyTotal={c.yearlyTotal} />
+                    <AnnualSummaryRow key={c.category} label={c.category} monthlyValues={c.monthlyTotals} annualTotal={c.annualTotal} />
                   ))}
 
                   <tr>
@@ -181,17 +181,17 @@ export default function YearlySummaryPage() {
                   </tr>
 
                   {incomeSummary && (
-                    <YearlySummaryRow
+                    <AnnualSummaryRow
                       label="Resultado (R-D-Inv)"
                       monthlyValues={resultadoMonthly}
-                      yearlyTotal={resultadoYearlyTotal}
+                      annualTotal={resultadoAnnualTotal}
                       emphasized
                     />
                   )}
-                  <YearlySummaryRow
+                  <AnnualSummaryRow
                     label="Total despesas"
                     monthlyValues={totalDespesasMonthly}
-                    yearlyTotal={totalDespesasYearlyTotal}
+                    annualTotal={totalDespesasAnnualTotal}
                     emphasized
                   />
                 </tbody>
@@ -200,9 +200,9 @@ export default function YearlySummaryPage() {
           )}
 
           {activeTab === 'investments' && investmentDiffs && (
-            <section className="yearly-summary-page__section">
+            <section className="annual-summary-page__section">
               <h2>Investments</h2>
-              <table className="yearly-summary-page__table data-table">
+              <table className="annual-summary-page__table data-table">
                 <thead>
                   <tr>
                     <th>Account</th>
@@ -230,16 +230,16 @@ export default function YearlySummaryPage() {
                 </tbody>
               </table>
 
-              <div className="yearly-summary-page__investment-totals">
-                <div className="yearly-summary-page__investment-total">
+              <div className="annual-summary-page__investment-totals">
+                <div className="annual-summary-page__investment-total">
                   <span>Year Progress</span>
                   <strong>{formatN2(investmentDiffs.netPosition.fullYearNetChange)}</strong>
                 </div>
-                <div className="yearly-summary-page__investment-total">
+                <div className="annual-summary-page__investment-total">
                   <span>Average Month Result</span>
                   <strong>{formatN2(investmentDiffs.netPosition.averageMonthResult)}</strong>
                 </div>
-                <div className="yearly-summary-page__investment-total">
+                <div className="annual-summary-page__investment-total">
                   <span>Sum of Month Results</span>
                   <strong>{formatN2(investmentDiffs.netPosition.sumOfMonthResults)}</strong>
                 </div>
@@ -248,9 +248,9 @@ export default function YearlySummaryPage() {
           )}
 
           {activeTab === 'historicSummaryAverage' && (
-            <section className="yearly-summary-page__section">
+            <section className="annual-summary-page__section">
               <h2>Historic Summary Average</h2>
-              <table className="yearly-summary-page__table data-table">
+              <table className="annual-summary-page__table data-table">
                 <thead>
                   <tr>
                     <th />
@@ -268,7 +268,7 @@ export default function YearlySummaryPage() {
                     const isEmphasized = HISTORIC_SUMMARY_AVERAGE_EMPHASIZED.has(a.category)
                     return (
                       <Fragment key={a.category}>
-                        <tr className={isEmphasized ? 'yearly-summary-page__emphasized-row' : undefined}>
+                        <tr className={isEmphasized ? 'annual-summary-page__emphasized-row' : undefined}>
                           <td>{optionalEmphasize(a.category, isEmphasized)}</td>
                           {historicSummaryAverage.map((y) => (
                             <td key={y.year} className="data-table__col--numeric">

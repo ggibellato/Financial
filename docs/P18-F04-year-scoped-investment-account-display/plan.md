@@ -14,12 +14,12 @@
 
 **2. Investment Snapshot Service** - Apply the resolver so a month's snapshot request only auto-creates zero-value rows for, and only returns, accounts that belong to the requested year, replacing the current unconditional all-accounts behavior.
 
-**3. Yearly Summary Service** - Apply the same resolver so a year's investment diff computation only builds rows for, and only sums net position over, accounts that belong to that year.
+**3. Annual Summary Service** - Apply the same resolver so a year's investment diff computation only builds rows for, and only sums net position over, accounts that belong to that year.
 
 ### Stage 3: Test Suite Alignment
 
 **4. Domain Test Coverage** - Add unit tests for the resolver covering current-year (active-only), past-year (presence-only, independent of active status), and future-year (treated like current-year) cases.
 
-**5. Application Test Updates** - Update the snapshot service and yearly summary service test suites so their repository test doubles seed a mix of active and disabled accounts with varying snapshot years, and assert the year-scoped results.
+**5. Application Test Updates** - Update the snapshot service and annual summary service test suites so their repository test doubles seed a mix of active and disabled accounts with varying snapshot years, and assert the year-scoped results.
 
 **6. Full Suite Verification** - Run the complete test suite to confirm the new scoping behaves correctly and nothing else regresses.

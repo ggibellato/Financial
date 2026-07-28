@@ -174,7 +174,7 @@ This is a UI-only reorganization. No entity, calculation, API endpoint, or busin
 - No user-configurable grouping or sub-tab order — the Spending/Accounts grouping and Summary/Expense/Incoming order are fixed
 
 **Other CashFlow views**
-- No changes to the Mensais, Reserva, Controle Mãe, Yearly Summary, or any other CashFlow tab
+- No changes to the Mensais, Reserva, Controle Mãe, Annual Summary, or any other CashFlow tab
 
 ## 8. Dependency Graph
 

@@ -13,7 +13,7 @@
 
 **3. Investments layout** - Add a layout component that renders the 4 existing Investments tab links exactly as they appear today, with a nested outlet for the active page.
 
-**4. CashFlow layout** - Add a layout component that renders the 6 CashFlow tab links (Monthly, Reserva, Mensais, Controle Mae, Investment Snapshots, Yearly Summary), with a nested outlet for the active page.
+**4. CashFlow layout** - Add a layout component that renders the 6 CashFlow tab links (Monthly, Reserva, Mensais, Controle Mae, Investment Snapshots, Annual Summary), with a nested outlet for the active page.
 
 **5. Shared CashFlow placeholder page** - Add one reusable placeholder page component, parameterized by a title, to serve as the temporary destination for all 6 CashFlow routes until F12–F17 replace them individually.
 

@@ -4,11 +4,11 @@
 
 **What:** Flesh out the `Expense` domain entity (currently a placeholder from F02 with only an `Id`) with its real fields, add create/edit/delete/query capability through a new `IExpenseService`, expose it through a new `ExpensesController`, and add monthly per-category totals — all consumed later by F04, F09, F10, and F12.
 
-**Why:** F03 is the first CashFlow feature with real business logic. Every later CashFlow feature that touches expenses (card tagging in F04, yearly reporting in F09, historical import in F10, the Web Monthly View in F12) needs `Expense`'s real shape and a working create/edit/delete/query surface to build on.
+**Why:** F03 is the first CashFlow feature with real business logic. Every later CashFlow feature that touches expenses (card tagging in F04, annual reporting in F09, historical import in F10, the Web Monthly View in F12) needs `Expense`'s real shape and a working create/edit/delete/query surface to build on.
 
 **Scope:**
 - Included: `Expense` entity's real fields; `ICashFlowRepository` extended with `DeleteExpense`; `IExpenseService`/`ExpenseService` (create, update, delete, list-by-month, category-totals-by-month); `Financial.CashFlow.Application`'s first DI extension; `ExpensesController` with CRUD + monthly-totals endpoints; validation with descriptive error messages.
-- Excluded: card-tag statement-paid reconciliation (F04); yearly aggregation across months (F09); the historical spreadsheet import (F10); the Web Monthly View UI itself (F12) — F03 only builds the API surface F12 will call.
+- Excluded: card-tag statement-paid reconciliation (F04); annual aggregation across months (F09); the historical spreadsheet import (F10); the Web Monthly View UI itself (F12) — F03 only builds the API surface F12 will call.
 
 ## 2. Architecture Impact
 
@@ -170,6 +170,6 @@ No SQL schema — persisted via the existing JSON repository pattern (`CashFlowS
 **Cross-Feature Integration tests (from PRD Section 9, deferred):**
 - "Expense data written through F02's storage abstraction (F01/F02) is correctly read back by F03 as categorized expense records" — covered directly: `ExpenseServiceTests` and `ExpenseEndpointsTests` both exercise the full write-then-read path through `ICashFlowRepository`/`CashFlowJsonRepository`
 - "A card tag on an F03 expense correctly feeds F04's per-card outstanding total and combined adjustment figure" — not testable until F04 exists; F03 only guarantees `CardTag` is stored and round-trips correctly
-- "F09's yearly expense-category totals correctly reflect the underlying monthly expense totals (F03)" — not testable until F09 exists
+- "F09's annual expense-category totals correctly reflect the underlying monthly expense totals (F03)" — not testable until F09 exists
 - "F10's historical import correctly populates every one of F02's six storage collections, matching the shapes defined by F03..." — not testable until F10 exists
 - "F12's Web Monthly View correctly displays expense data from F03..." — not testable until F12 exists; F03 only guarantees the HTTP endpoints F12 will call

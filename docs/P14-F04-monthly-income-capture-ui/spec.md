@@ -8,7 +8,7 @@
 
 **Scope:**
 - Included: `IncomeDto`/`CreateIncomeDto`/`UpdateIncomeDto` types; 4 new `financialApiClient` methods; Income create/edit form fields and handlers added to `useMonthly`; a new `IncomeSection` presentational component (list + New/Edit/Delete), mirroring `ExpensesSection`; the income form embedded in `MonthlyPage.tsx` alongside the existing `ExpenseForm`, sharing the same `.monthly-page__form-panel` slot (only one form is visible at a time, exactly like today).
-- Excluded: the "Incoming" summary card and tithe display (F05); any bank-balance change (F06); the Yearly Summary income rows (F07).
+- Excluded: the "Incoming" summary card and tithe display (F05); any bank-balance change (F06); the Annual Summary income rows (F07).
 
 ## 2. Architecture Impact
 

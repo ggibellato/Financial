@@ -8,7 +8,7 @@ The scope is intentionally bounded to the UK-resident, GBP-denominated period. E
 
 Before CashFlow can be added, the existing Investments code needs an explicit identity of its own. Today's `Financial.Domain`/`Financial.Application`/`Financial.Infrastructure` projects carry no domain name, and a domain-agnostic JSON/Google-Drive storage engine lives entangled inside the Investments infrastructure project. This PRD's first feature renames those three projects to `Financial.Investment.Domain`/`.Application`/`.Infrastructure`, grouped under a new `DDD/Investment` solution folder alongside a new `DDD/CashFlow` folder for the projects this PRD adds, and extracts the shared storage engine into its own `Financial.Shared.Infrastructure` project inside a third `DDD/Shared` solution folder, so neither domain depends on the other's code.
 
-Functionally, the product covers: categorized monthly expense tracking; the Reserva reserve pool with its automated tithe-then-split logic; five credit cards with a statement-paid reconciliation mechanic; Brasil/UK recurring bills generated from templates; a BRL/GBP family cash-flow ledger with automatic historical exchange-rate lookup; an 11-account monthly investment snapshot; and an automated yearly summary with month-over-month diffs. The Web app (React) ships first, presented through a new top-level Investments/CashFlow domain switcher that keeps the two bounded contexts visually and functionally separate; WPF parity is deferred to a follow-up PRD.
+Functionally, the product covers: categorized monthly expense tracking; the Reserva reserve pool with its automated tithe-then-split logic; five credit cards with a statement-paid reconciliation mechanic; Brasil/UK recurring bills generated from templates; a BRL/GBP family cash-flow ledger with automatic historical exchange-rate lookup; an 11-account monthly investment snapshot; and an automated annual summary with month-over-month diffs. The Web app (React) ships first, presented through a new top-level Investments/CashFlow domain switcher that keeps the two bounded contexts visually and functionally separate; WPF parity is deferred to a follow-up PRD.
 
 ## 2. Problem and Opportunity
 
@@ -35,7 +35,7 @@ Functionally, the product covers: categorized monthly expense tracking; the Rese
 - Mensais (Brasil/UK recurring bills) and Controle mae (BRL/GBP family ledger) are plain lists with no automation: no auto-generated monthly bill instances, no automatic currency conversion
 - Pre-2019 Controle mae rows inconsistently fill both currency columns, some carrying only a rate note embedded in free text
 
-**Yearly reporting depends on fragile spreadsheet formulas**
+**Annual reporting depends on fragile spreadsheet formulas**
 - Resumo/Year previously had `#REF!` errors from a deleted column reference, showing how easily formula-based reporting breaks
 - Every new year requires copying and adjusting the same totals/diff formulas forward by hand
 
@@ -46,7 +46,7 @@ Functionally, the product covers: categorized monthly expense tracking; the Rese
 - Manual card reconciliation → **F04's structured per-card adjustment**: each card carries its own outstanding total and an explicit "mark statement paid" action, replacing the coincidental Ajuste cell
 - 9 years of evolving formats → **F10's format-tolerant importer**, built to parse every layout variant from February 2017 through 2026 into one canonical schema, preserving retired categories rather than dropping them
 - Ad hoc recurring/family tracking → **F06's template-driven Mensais generation** and **F07's automatic historical FX lookup** for Controle mae
-- Fragile yearly formulas → **F09's computed yearly totals and month-over-month diffs**, generated in code with no formula maintenance required as years are added
+- Fragile annual formulas → **F09's computed annual totals and month-over-month diffs**, generated in code with no formula maintenance required as years are added
 
 ## 3. Target Audience
 
@@ -54,7 +54,7 @@ Functionally, the product covers: categorized monthly expense tracking; the Rese
 
 **Developer-Maintainer**
 - Sole developer and sole end user of this personal-use financial application, now extending it beyond brokerage holdings into full household cash-flow tracking
-- Currently re-derives reserve splits, card adjustments, and yearly totals by hand every month across a spreadsheet whose format has evolved for 9 years
+- Currently re-derives reserve splits, card adjustments, and annual totals by hand every month across a spreadsheet whose format has evolved for 9 years
 - Values a data model correct by construction over spreadsheet formulas that silently break (per the `#REF!` incident), consistent with this project's "no over-engineering, but no shortcuts either" standing rule
 
 ## 4. Objectives
@@ -71,8 +71,8 @@ Functionally, the product covers: categorized monthly expense tracking; the Rese
 **Make credit card cash-flow impact accurate without manual reconciliation**
 - Metric: for 100% of the 5 tracked cards, the bank-balance-relevant adjustment figure reflects only unpaid tagged charges, with zero manual cell-based math required monthly
 
-**Deliver yearly financial reporting automatically**
-- Metric: yearly totals and month-over-month diffs are computed with zero manual spreadsheet formulas, matching the corrected 2026 Resumo/Year baseline for the reconciled period
+**Deliver annual financial reporting automatically**
+- Metric: annual totals and month-over-month diffs are computed with zero manual spreadsheet formulas, matching the corrected 2026 Resumo/Year baseline for the reconciled period
 
 **Fully retire the spreadsheet as source of truth**
 - Metric: 100% of new entries (expenses, reserve movements, card charges, bills, mae ledger, snapshots) are created in-app from go-live, with zero further edits made to `Despesas.xlsx`
@@ -110,8 +110,8 @@ Functionally, the product covers: categorized monthly expense tracking; the Rese
 ### F08. Monthly Investment Snapshot
 - As a user, I want to enter each of my 11 tracked account values once a month so that I can see my overall position trend over time, independent of the Financial.Investments domain
 
-### F09. Yearly Summary & Month-over-Month Reporting
-- As the system, I want yearly totals per expense category computed automatically from the 12 monthly totals so that no formula needs to be maintained as years are added
+### F09. Annual Summary & Month-over-Month Reporting
+- As the system, I want annual totals per expense category computed automatically from the 12 monthly totals so that no formula needs to be maintained as years are added
 - As a user, I want to see month-over-month change per investment account, and for my combined net position, so that I can tell whether my accounts moved in the right direction without building a comparison myself
 
 ### F10. Historical Spreadsheet Import
@@ -139,8 +139,8 @@ Functionally, the product covers: categorized monthly expense tracking; the Rese
 ### F16. Web — Investment Snapshots View
 - As a user, I want to see and update all 11 tracked account values for a selected month so that my snapshot history stays current
 
-### F17. Web — Yearly Summary View
-- As a user, I want to select a year and see monthly totals and a yearly total per expense category, plus month-over-month change per investment account, so that I can review my finances the way I do today's Resumo/Year sheet, without maintaining any formulas
+### F17. Web — Annual Summary View
+- As a user, I want to select a year and see monthly totals and a annual total per expense category, plus month-over-month change per investment account, so that I can review my finances the way I do today's Resumo/Year sheet, without maintaining any formulas
 
 ## 6. Functionalities
 
@@ -302,23 +302,23 @@ Functionally, the product covers: categorized monthly expense tracking; the Rese
 **Experience:**
 - A user viewing a month's snapshot sees all 11 accounts with their current entered value and can edit any single account's value for that month without affecting other months' snapshots
 
-### F09. Yearly Summary & Month-over-Month Reporting
+### F09. Annual Summary & Month-over-Month Reporting
 
 **Consumes:**
 - F03: monthly expense/category totals
 - F08: monthly investment account snapshots
 
 **Provides:**
-- Yearly totals per expense category and month-over-month investment-account diff figures (used by F17)
+- Annual totals per expense category and month-over-month investment-account diff figures (used by F17)
 
 **Capabilities:**
-- Yearly totals are computed per expense category by summing that category's 12 monthly totals (F03) for the selected year, matching the structure of today's Resumo/Year totals block (the per-category "Totais" column)
+- Annual totals are computed per expense category by summing that category's 12 monthly totals (F03) for the selected year, matching the structure of today's Resumo/Year totals block (the per-category "Totais" column)
 - Month-over-month change is computed per investment account (each of F08's 11 accounts) as thisMonth minus prevMonth, matching today's Resumo/Year per-account diff block; the same subtraction is also computed for the combined total across all 11 accounts (the aggregate net position), matching today's equivalent aggregate diff row
 - A full-year net change for the aggregate net position (December's combined total minus January's) is computed, matching today's equivalent Resumo/Year figure
 - Expense-category totals and investment-account diffs are two independent outputs of this feature — the current-year spreadsheet format's diff block covers investment accounts only, not expense categories, so no month-over-month expense-category comparison is produced
 
 **Experience:**
-- A user selects a year and sees a table of 12 monthly columns plus a yearly total column per expense category, and a second table showing month-over-month change per investment account plus the combined net position; no manual formula entry or maintenance is required when a new month is added
+- A user selects a year and sees a table of 12 monthly columns plus a annual total column per expense category, and a second table showing month-over-month change per investment account plus the combined net position; no manual formula entry or maintenance is required when a new month is added
 
 ### F10. Historical Spreadsheet Import
 
@@ -350,7 +350,7 @@ Functionally, the product covers: categorized monthly expense tracking; the Rese
 
 **Capabilities:**
 - The Web app's top-level navigation gains a domain switcher with exactly 2 options: Investments and CashFlow; selecting one shows only that domain's tab set below it
-- The existing Investments tabs (Active Investments, Historic Investments, etc.) move under the Investments selection, unchanged in behavior; CashFlow's 6 tabs (Monthly, Reserva, Mensais, Controle Mae, Investment Snapshots, Yearly Summary) appear under the CashFlow selection
+- The existing Investments tabs (Active Investments, Historic Investments, etc.) move under the Investments selection, unchanged in behavior; CashFlow's 6 tabs (Monthly, Reserva, Mensais, Controle Mae, Investment Snapshots, Annual Summary) appear under the CashFlow selection
 - The last-selected domain is remembered for the session so switching tabs within one domain doesn't require reselecting the domain
 
 **Experience:**
@@ -422,13 +422,13 @@ Functionally, the product covers: categorized monthly expense tracking; the Rese
 **Experience:**
 - A user picks a month, sees all 11 accounts, and updates any account's value as of the first day of that month
 
-### F17. Web — Yearly Summary View
+### F17. Web — Annual Summary View
 
 **Consumes:**
-- F09: yearly expense-category totals and month-over-month investment-account diffs
+- F09: annual expense-category totals and month-over-month investment-account diffs
 
 **Capabilities:**
-- Shows a year selector, a table of monthly totals per expense category plus a yearly total column, and a second table showing month-over-month change per investment account plus the combined net position
+- Shows a year selector, a table of monthly totals per expense category plus a annual total column, and a second table showing month-over-month change per investment account plus the combined net position
 
 **Experience:**
 - A user picks a year and sees both tables update to that year's data, matching the structure of today's Resumo/Year sheet without needing any spreadsheet formula maintenance
@@ -447,8 +447,8 @@ Functionally, the product covers: categorized monthly expense tracking; the Rese
 **Budgeting/forecasting features**
 - No budget targets, spend limits, or future cash-flow projections; this release is tracking/reporting only, not planning
 
-**Charts/visualizations beyond the yearly summary tables**
-- No pie charts, trend graphs, etc. for CashFlow, unlike Financial.Investment; the yearly summary is tabular, matching Resumo/Year
+**Charts/visualizations beyond the annual summary tables**
+- No pie charts, trend graphs, etc. for CashFlow, unlike Financial.Investment; the annual summary is tabular, matching Resumo/Year
 
 **Receipt/photo attachments**
 - No ability to attach a receipt image or PDF to an expense entry
@@ -481,14 +481,14 @@ Functionally, the product covers: categorized monthly expense tracking; the Rese
 | F07 | Controle Mae Ledger | 2 | F02 |
 | F08 | Monthly Investment Snapshot | 2 | F02 |
 | F04 | Credit Card Charge Tracking & Statement Reconciliation | 1 | F02, F03 |
-| F09 | Yearly Summary & Month-over-Month Reporting | 1 | F03, F08 |
+| F09 | Annual Summary & Month-over-Month Reporting | 1 | F03, F08 |
 | F13 | Web — Reserva View | 1 | F05, F11 |
 | F14 | Web — Mensais View | 2 | F06, F11 |
 | F15 | Web — Controle Mae View | 2 | F07, F11 |
 | F16 | Web — Investment Snapshots View | 2 | F08, F11 |
 | F10 | Historical Spreadsheet Import | 1 | F02, F03, F04, F05, F06, F07, F08 |
 | F12 | Web — Monthly View | 1 | F03, F04, F11 |
-| F17 | Web — Yearly Summary View | 1 | F09, F11 |
+| F17 | Web — Annual Summary View | 1 | F09, F11 |
 
 ### Foundation Features
 These features set up shared project infrastructure. In a greenfield project they must be implemented sequentially before or alongside any feature that depends on them:
@@ -520,7 +520,7 @@ graph TD
   F11 --> F15[Web Mae]
   F11 --> F16[Web Snapshots]
   F11 --> F12[Web Monthly]
-  F11 --> F17[Web Yearly]
+  F11 --> F17[Web Annual]
   F02 --> F03[Monthly Expenses]
   F02 --> F05[Reserva Split]
   F02 --> F06[Mensais]
@@ -528,7 +528,7 @@ graph TD
   F02 --> F08[Investment Snapshot]
   F02 --> F04[Card Tracking]
   F03 --> F04
-  F03 --> F09[Yearly Summary]
+  F03 --> F09[Annual Summary]
   F08 --> F09
   F05 --> F13
   F06 --> F14
@@ -593,7 +593,7 @@ graph TD
 - [x] Editing one month's snapshot value for an account does not change any other month's value for that account
 - [x] A liability account's value is stored and displayed as a positive magnitude
 
-### F09. Yearly Summary & Month-over-Month Reporting
+### F09. Annual Summary & Month-over-Month Reporting
 - [x] A year's total per expense category equals the sum of that category's 12 monthly totals
 - [x] A month-over-month diff for a given investment account equals thisMonth minus prevMonth for every consecutive month pair in the year
 - [x] The combined net position across all 11 investment accounts has its own month-over-month diff row, plus a full-year net change (December total minus January total)
@@ -607,7 +607,7 @@ graph TD
 ### F11. Web — App Shell: Investments/CashFlow Domain Switcher
 - [x] The top-level switcher shows exactly 2 options: Investments and CashFlow
 - [x] Selecting Investments shows only the existing Investments tabs, unchanged in behavior
-- [x] Selecting CashFlow shows only the 6 CashFlow tabs (Monthly, Reserva, Mensais, Controle Mae, Investment Snapshots, Yearly Summary)
+- [x] Selecting CashFlow shows only the 6 CashFlow tabs (Monthly, Reserva, Mensais, Controle Mae, Investment Snapshots, Annual Summary)
 
 ### F12. Web — Monthly View
 - [x] The view shows the selected month's categorized expenses and all 5 cards' outstanding totals and combined adjustment figure together
@@ -630,8 +630,8 @@ graph TD
 - [x] The view shows all 11 tracked accounts for the selected month with their current values
 - [x] Editing one account's value for a month does not affect other months or other accounts
 
-### F17. Web — Yearly Summary View
-- [x] Selecting a year shows a monthly-totals-per-expense-category table with a yearly total column
+### F17. Web — Annual Summary View
+- [x] Selecting a year shows a monthly-totals-per-expense-category table with a annual total column
 - [x] The same view shows a month-over-month diff table per investment account, plus the combined net position, for the selected year
 
 ### Cross-Feature Integration
@@ -640,8 +640,8 @@ graph TD
 - [x] A card tag on an F03 expense correctly feeds F04's per-card outstanding total and combined adjustment figure
 - [x] Reserve bucket movements posted by F05 persist and reload correctly through F02's storage abstraction
 - [ ] Recurring bill instances generated by F06, mae ledger entries from F07, and investment snapshots from F08 all persist and reload correctly through F02's storage abstraction
-- [x] F09's yearly expense-category totals correctly reflect the underlying monthly expense totals (F03), and its month-over-month investment-account diffs correctly reflect F08's monthly snapshots
+- [x] F09's annual expense-category totals correctly reflect the underlying monthly expense totals (F03), and its month-over-month investment-account diffs correctly reflect F08's monthly snapshots
 - [x] F10's historical import correctly populates every one of F02's six storage collections, matching the shapes defined by F03, F04, F05, F06, F07, and F08
 - [x] F12's Web Monthly View correctly displays expense data from F03 and card data from F04, and its Investments-domain content is correctly scoped by F11's domain switcher
 - [x] F13, F14, F15, and F16 each correctly display data from F05, F06, F07, and F08 respectively, all nested inside F11's CashFlow selection
-- [x] F17's Web Yearly Summary View correctly displays the totals and diffs computed by F09
+- [x] F17's Web Annual Summary View correctly displays the totals and diffs computed by F09

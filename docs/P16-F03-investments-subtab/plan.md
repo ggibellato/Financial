@@ -1,12 +1,12 @@
 # Implementation Plan: Investments Sub-Tab
 
 **Prerequisites:**
-- F01 (Yearly Summary Navigation Shell) merged to main — this feature reshapes content inside the Investments tab guard F01 introduced.
+- F01 (Annual Summary Navigation Shell) merged to main — this feature reshapes content inside the Investments tab guard F01 introduced.
 - No new dependencies, environment variables, or configuration.
 
 ### Stage 1: Reshaped Investments Table
 
-**1. Investment Row Component** - Add a local `InvestmentRow` component to `YearlySummaryPage.tsx` rendering a label plus 12 month cells, where a `null` value renders a blank cell (used for Month Result's January column) and an `emphasized` flag bolds the row.
+**1. Investment Row Component** - Add a local `InvestmentRow` component to `AnnualSummaryPage.tsx` rendering a label plus 12 month cells, where a `null` value renders a blank cell (used for Month Result's January column) and an `emphasized` flag bolds the row.
 
 **2. Account Rows** - Replace the current Jan + 11-diff account rows with full 12-month balance rows using each account's existing `monthlyValues` array, changing the liability marker from `(liability)` to `(-)`.
 

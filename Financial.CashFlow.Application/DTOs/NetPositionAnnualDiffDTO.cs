@@ -9,7 +9,7 @@ namespace Financial.CashFlow.Application.DTOs;
 /// relevant month - December for a past year, or the current calendar month for the current
 /// year, so months that haven't happened yet don't drag the figures toward zero.
 /// </summary>
-public sealed class NetPositionYearlyDiffDTO
+public sealed class NetPositionAnnualDiffDTO
 {
     public required decimal[] MonthlyValues { get; init; }
     public required decimal?[] MonthlyDiffs { get; init; }

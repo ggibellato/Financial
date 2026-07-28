@@ -18,7 +18,7 @@ This data is a different domain from the investment-tracking system already buil
 Two separate data files, one per domain, instead of a single shared data.json:
 
 - The existing investments data file stays with Financial.Investments.Infrastructure.
-- Financial.CashFlow.Infrastructure gets its own JSON file (e.g. data-cashflow.json) storing expenses, categories, reserve ledger, bank/card balances, and the monthly/yearly summaries — persisted via the same repository-abstraction pattern already used (LocalJson / GoogleDrive, selectable via config).
+- Financial.CashFlow.Infrastructure gets its own JSON file (e.g. data-cashflow.json) storing expenses, categories, reserve ledger, bank/card balances, and the monthly/annual summaries — persisted via the same repository-abstraction pattern already used (LocalJson / GoogleDrive, selectable via config).
 
 This is a documentation-only decision at this stage — no restructuring of the actual solution has been done yet. Actual project creation/migration should go through a proper plan (spec-writer / implement-feature) when this domain is ready to be built.
 
@@ -106,9 +106,9 @@ This information should be modeled as a regular monthly snapshot in the automati
 
 Summary sheets
 
-The Resumo/2026 sheet is my yearly report and contains several calculated sections. The total block at the bottom runs from lines 29 to 41, including totals. Below that, lines 47 to 57 show the differences between months within the year. These formulas have been fixed in the source file (previously there were #REF! errors from a deleted column reference) — every diff cell now consistently computes as thisMonth − prevMonth, following the same pattern as its neighbors. These calculations are part of my monthly and yearly reporting and need to be included in the automated version.
+The Resumo/2026 sheet is my annual report and contains several calculated sections. The total block at the bottom runs from lines 29 to 41, including totals. Below that, lines 47 to 57 show the differences between months within the year. These formulas have been fixed in the source file (previously there were #REF! errors from a deleted column reference) — every diff cell now consistently computes as thisMonth − prevMonth, following the same pattern as its neighbors. These calculations are part of my monthly and annual reporting and need to be included in the automated version.
 
-The Resumo/Year logic is important because it is not just a display sheet: it also contains formulas and comparisons that feed my financial reporting. The automation should generate monthly totals, yearly totals, and month-over-month differences as first-class outputs, not as manual spreadsheet artifacts.
+The Resumo/Year logic is important because it is not just a display sheet: it also contains formulas and comparisons that feed my financial reporting. The automation should generate monthly totals, annual totals, and month-over-month differences as first-class outputs, not as manual spreadsheet artifacts.
 
 Other tabs
 

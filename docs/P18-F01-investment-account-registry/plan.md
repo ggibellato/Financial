@@ -35,7 +35,7 @@
 
 **11. Investment Snapshot Service** - Replace the enum-based account enumeration with a query against the repository's account collection, and source each snapshot's liability flag from the matching account entity instead of the retired static rule.
 
-**12. Yearly Summary Service** - Apply the same enumeration and liability-flag sourcing change to the yearly investment diff computation, preserving its existing output shape and values.
+**12. Annual Summary Service** - Apply the same enumeration and liability-flag sourcing change to the annual investment diff computation, preserving its existing output shape and values.
 
 **13. Remove Unused Validation Helper** - Delete the account-name parser that referenced the retired enum, since it has no production call sites.
 
@@ -47,6 +47,6 @@
 
 **16. Import Pipeline Test Updates** - Add a migrator test suite mirroring the existing bank migrator's coverage (first run, idempotent re-run, partial seed, unresolved snapshot audit), and update the Resumo sheet importer's existing tests for the new string-based account type.
 
-**17. Application Test Updates** - Update the snapshot service and yearly summary service test suites to seed accounts through the repository rather than relying on the enum, and remove the tests for the deleted validation helper.
+**17. Application Test Updates** - Update the snapshot service and annual summary service test suites to seed accounts through the repository rather than relying on the enum, and remove the tests for the deleted validation helper.
 
 **18. Full Suite and Manual Import Verification** - Run the complete test suite to confirm nothing else references the retired enum or classification rule, then run the spreadsheet import command against a copy of the existing data file to confirm the migration seeds all eleven accounts on first run, is a no-op on a second run, and leaves every pre-existing snapshot value unchanged.

@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import YearlySummaryPage from '../YearlySummaryPage'
+import AnnualSummaryPage from '../AnnualSummaryPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { CategoryAnnualAverageDto, CategoryYearlyTotalDto, IncomeYearlySummaryDto, InvestmentDiffsYearlyDto } from '../../api/types'
+import type { CategoryAnnualAverageDto, CategoryAnnualTotalDto, IncomeAnnualSummaryDto, InvestmentDiffsAnnualDto } from '../../api/types'
 
 const getCategoryTotalsForYearMock = vi.fn<FinancialApiClient['getCategoryTotalsForYear']>()
 const getInvestmentDiffsForYearMock = vi.fn<FinancialApiClient['getInvestmentDiffsForYear']>()
@@ -18,15 +18,15 @@ vi.mock('../../api/financialApiClient', () => ({
   }),
 }))
 
-const CATEGORY_TOTALS: CategoryYearlyTotalDto[] = [
+const CATEGORY_TOTALS: CategoryAnnualTotalDto[] = [
   {
     category: 'Mercado',
     monthlyTotals: [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210],
-    yearlyTotal: 1860,
+    annualTotal: 1860,
   },
 ]
 
-const INVESTMENT_DIFFS: InvestmentDiffsYearlyDto = {
+const INVESTMENT_DIFFS: InvestmentDiffsAnnualDto = {
   accounts: [
     {
       account: 'ChaseSave',
@@ -50,15 +50,15 @@ const INVESTMENT_DIFFS: InvestmentDiffsYearlyDto = {
   },
 }
 
-const INCOME_SUMMARY: IncomeYearlySummaryDto = {
+const INCOME_SUMMARY: IncomeAnnualSummaryDto = {
   salaryMonthly: [3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3600],
-  salaryYearlyTotal: 38800,
+  salaryAnnualTotal: 38800,
   salaryAfterTaxesMonthly: [2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450, 2650],
-  salaryAfterTaxesYearlyTotal: 29350,
+  salaryAfterTaxesAnnualTotal: 29350,
   taxDifferenceMonthly: [750, 750, 750, 750, 750, 750, 750, 750, 750, 750, 750, 950],
-  taxDifferenceYearlyTotal: 9450,
+  taxDifferenceAnnualTotal: 9450,
   dividendoJurosMonthly: [0, 0, 15.5, 0, 0, 0, 0, 0, 0, 0, 0, 4.5],
-  dividendoJurosYearlyTotal: 20,
+  dividendoJurosAnnualTotal: 20,
 }
 
 const HISTORIC_SUMMARY_AVERAGE: CategoryAnnualAverageDto[] = [
@@ -90,7 +90,7 @@ const HISTORIC_SUMMARY_AVERAGE: CategoryAnnualAverageDto[] = [
   },
 ]
 
-describe('YearlySummaryPage', () => {
+describe('AnnualSummaryPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     getCategoryTotalsForYearMock.mockResolvedValue(CATEGORY_TOTALS)
@@ -100,7 +100,7 @@ describe('YearlySummaryPage', () => {
   })
 
   it('shows a loading state before data arrives', () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     expect(screen.getByText('Loading...')).toBeInTheDocument()
   })
@@ -108,7 +108,7 @@ describe('YearlySummaryPage', () => {
   it('shows an error state with retry when the fetch fails', async () => {
     getCategoryTotalsForYearMock.mockRejectedValue(new Error('Network down'))
 
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
     expect(screen.getByText('Network down')).toBeInTheDocument()
@@ -117,7 +117,7 @@ describe('YearlySummaryPage', () => {
   it('shows the error/retry state regardless of the active tab', async () => {
     getCategoryTotalsForYearMock.mockRejectedValue(new Error('Network down'))
 
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
@@ -125,7 +125,7 @@ describe('YearlySummaryPage', () => {
   })
 
   it('defaults to the Category Totals tab on load', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument()
@@ -134,15 +134,15 @@ describe('YearlySummaryPage', () => {
   })
 
   it('marks Category Totals as the active tab button by default', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
-    expect(screen.getByRole('button', { name: 'Category Totals' })).toHaveClass('yearly-summary-page__tab--active')
-    expect(screen.getByRole('button', { name: 'Investments' })).not.toHaveClass('yearly-summary-page__tab--active')
+    expect(screen.getByRole('button', { name: 'Category Totals' })).toHaveClass('annual-summary-page__tab--active')
+    expect(screen.getByRole('button', { name: 'Investments' })).not.toHaveClass('annual-summary-page__tab--active')
   })
 
   it('renders the combined table in the fixed row order', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     const rowLabels = screen
@@ -162,7 +162,7 @@ describe('YearlySummaryPage', () => {
   })
 
   it('renders Salary/Dividendo rows and category rows in the same table (no standalone Income Summary section)', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     expect(screen.queryByText('Income Summary')).not.toBeInTheDocument()
@@ -175,16 +175,16 @@ describe('YearlySummaryPage', () => {
     expect(within(taxDifferenceRow).getByText('9,450.00')).toBeInTheDocument()
   })
 
-  it('shows an Average column between the Dec and Yearly Total columns for every row', async () => {
-    render(<YearlySummaryPage />)
+  it('shows an Average column between the Dec and Annual Total columns for every row', async () => {
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     const headerCells = screen.getAllByRole('columnheader').map((th) => th.textContent)
     const decIndex = headerCells.indexOf('Dec')
     const averageIndex = headerCells.indexOf('Average')
-    const yearlyTotalIndex = headerCells.indexOf('Yearly Total')
+    const annualTotalIndex = headerCells.indexOf('Annual Total')
     expect(averageIndex).toBe(decIndex + 1)
-    expect(yearlyTotalIndex).toBe(averageIndex + 1)
+    expect(annualTotalIndex).toBe(averageIndex + 1)
 
     // Mercado average = 1860 / 12 = 155.00
     const mercadoRow = screen.getByRole('cell', { name: 'Mercado' }).closest('tr')!
@@ -192,22 +192,22 @@ describe('YearlySummaryPage', () => {
   })
 
   it('computes Resultado and Total despesas from already-fetched data and renders them with emphasized styling', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
-    // Total despesas yearly total = sum of Mercado's monthly totals = 1,860.00
+    // Total despesas annual total = sum of Mercado's monthly totals = 1,860.00
     const totalDespesasRow = screen.getByRole('cell', { name: 'Total despesas' }).closest('tr')!
-    expect(totalDespesasRow).toHaveClass('yearly-summary-page__emphasized-row')
+    expect(totalDespesasRow).toHaveClass('annual-summary-page__emphasized-row')
     expect(within(totalDespesasRow).getByText('1,860.00')).toBeInTheDocument()
 
-    // Resultado yearly total = sum(salaryAfterTaxesMonthly)=29,600 + sum(dividendoJurosMonthly)=20 - totalDespesasYearlyTotal=1,860 + 0 (no Investimento category) = 27,760
+    // Resultado annual total = sum(salaryAfterTaxesMonthly)=29,600 + sum(dividendoJurosMonthly)=20 - totalDespesasAnnualTotal=1,860 + 0 (no Investimento category) = 27,760
     const resultadoRow = screen.getByRole('cell', { name: 'Resultado (R-D-Inv)' }).closest('tr')!
-    expect(resultadoRow).toHaveClass('yearly-summary-page__emphasized-row')
+    expect(resultadoRow).toHaveClass('annual-summary-page__emphasized-row')
     expect(within(resultadoRow).getByText('27,760.00')).toBeInTheDocument()
   })
 
   it('shows only the Investments tab content after clicking Investments', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
@@ -216,11 +216,11 @@ describe('YearlySummaryPage', () => {
     expect(screen.queryByRole('cell', { name: 'Mercado' })).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Investments' })).toBeInTheDocument()
     expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Investments' })).toHaveClass('yearly-summary-page__tab--active')
+    expect(screen.getByRole('button', { name: 'Investments' })).toHaveClass('annual-summary-page__tab--active')
   })
 
   it('shows all 12 monthly balance values for each account', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
@@ -232,7 +232,7 @@ describe('YearlySummaryPage', () => {
   })
 
   it('marks liability accounts with a (-) suffix and asset accounts without one', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByText('PlatinumVisa8003 (-)')).toBeInTheDocument())
@@ -240,25 +240,25 @@ describe('YearlySummaryPage', () => {
   })
 
   it('renders a Total row matching the net position monthly values', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByRole('cell', { name: 'Total' })).toBeInTheDocument())
 
     const totalRow = screen.getByRole('cell', { name: 'Total' }).closest('tr')!
-    expect(totalRow).toHaveClass('yearly-summary-page__emphasized-row')
+    expect(totalRow).toHaveClass('annual-summary-page__emphasized-row')
     expect(within(totalRow).getByText('800.00')).toBeInTheDocument()
     expect(within(totalRow).getByText('1,350.00')).toBeInTheDocument()
   })
 
   it('renders a real January Month Result value when prior-year data exists, plus the Feb-Dec diffs', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByRole('cell', { name: 'Month Result' })).toBeInTheDocument())
 
     const monthResultRow = screen.getByRole('cell', { name: 'Month Result' }).closest('tr')!
-    expect(monthResultRow).toHaveClass('yearly-summary-page__emphasized-row')
+    expect(monthResultRow).toHaveClass('annual-summary-page__emphasized-row')
     const cells = within(monthResultRow).getAllByRole('cell')
     // cells[0] is the label; cells[1] is January
     expect(cells[1].textContent).toBe('75.00')
@@ -270,7 +270,7 @@ describe('YearlySummaryPage', () => {
       ...INVESTMENT_DIFFS,
       netPosition: { ...INVESTMENT_DIFFS.netPosition, monthlyDiffs: [null, ...INVESTMENT_DIFFS.netPosition.monthlyDiffs.slice(1)] },
     })
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByRole('cell', { name: 'Month Result' })).toBeInTheDocument())
@@ -282,7 +282,7 @@ describe('YearlySummaryPage', () => {
   })
 
   it('shows Year Progress, Average Month Result, and Sum of Month Results as returned by the API', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByText('Year Progress')).toBeInTheDocument())
@@ -298,7 +298,7 @@ describe('YearlySummaryPage', () => {
   })
 
   it('does not affect the Category Totals tab content when viewing Investments', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
@@ -310,12 +310,12 @@ describe('YearlySummaryPage', () => {
   })
 
   it('re-scopes the account table, Total row, Month Result row, and summary figures when the year changes on the Investments tab', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
 
-    const nextYearInvestmentDiffs: InvestmentDiffsYearlyDto = {
+    const nextYearInvestmentDiffs: InvestmentDiffsAnnualDto = {
       accounts: [
         {
           account: 'ChipCashIsaGleison',
@@ -346,13 +346,13 @@ describe('YearlySummaryPage', () => {
   })
 
   it('re-scopes the combined table, including Resultado and Total despesas, when the year changes', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument()
 
-    const nextYearCategoryTotals: CategoryYearlyTotalDto[] = [
-      { category: 'Carro', monthlyTotals: new Array(12).fill(50), yearlyTotal: 600 },
+    const nextYearCategoryTotals: CategoryAnnualTotalDto[] = [
+      { category: 'Carro', monthlyTotals: new Array(12).fill(50), annualTotal: 600 },
     ]
     getCategoryTotalsForYearMock.mockResolvedValue(nextYearCategoryTotals)
 
@@ -361,13 +361,13 @@ describe('YearlySummaryPage', () => {
     await waitFor(() => expect(screen.getByRole('cell', { name: 'Carro' })).toBeInTheDocument())
     expect(screen.queryByRole('cell', { name: 'Mercado' })).not.toBeInTheDocument()
 
-    // Total despesas yearly total now sums only Carro = 600.00
+    // Total despesas annual total now sums only Carro = 600.00
     const totalDespesasRow = screen.getByRole('cell', { name: 'Total despesas' }).closest('tr')!
     expect(within(totalDespesasRow).getByText('600.00')).toBeInTheDocument()
   })
 
   it('does not change the year picker value when switching tabs', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     const yearInput = screen.getByLabelText('Year') as HTMLInputElement
@@ -379,7 +379,7 @@ describe('YearlySummaryPage', () => {
   })
 
   it('does not refetch data when switching tabs', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     const callCountBefore = getCategoryTotalsForYearMock.mock.calls.length
@@ -391,7 +391,7 @@ describe('YearlySummaryPage', () => {
   })
 
   it('keeps the active tab unchanged when the year value changes', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
@@ -400,11 +400,11 @@ describe('YearlySummaryPage', () => {
     fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2027' } })
 
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Investments' })).toBeInTheDocument())
-    expect(screen.getByRole('button', { name: 'Investments' })).toHaveClass('yearly-summary-page__tab--active')
+    expect(screen.getByRole('button', { name: 'Investments' })).toHaveClass('annual-summary-page__tab--active')
   })
 
   it('renders one column per year and the correct category values in the Historic Summary Average table', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
@@ -420,7 +420,7 @@ describe('YearlySummaryPage', () => {
   })
 
   it('renders a spacer row after Tax difference, Dividendo/Juros, and Reserva in the Historic Summary Average table', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
@@ -447,23 +447,23 @@ describe('YearlySummaryPage', () => {
   })
 
   it('renders Resultado and Total despesas rows bold and emphasized in the Historic Summary Average table', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Historic Summary Average' })).toBeInTheDocument())
 
     const resultadoRow = screen.getByText('Resultado (R-D-Inv)').closest('tr')!
-    expect(resultadoRow).toHaveClass('yearly-summary-page__emphasized-row')
+    expect(resultadoRow).toHaveClass('annual-summary-page__emphasized-row')
     expect(within(resultadoRow).getByText('720.00').closest('strong')).toBeInTheDocument()
 
     const totalDespesasRow = screen.getByText('Total despesas').closest('tr')!
-    expect(totalDespesasRow).toHaveClass('yearly-summary-page__emphasized-row')
+    expect(totalDespesasRow).toHaveClass('annual-summary-page__emphasized-row')
     expect(within(totalDespesasRow).getByText('155.00').closest('strong')).toBeInTheDocument()
   })
 
   it('does not affect the Category Totals tab content when viewing Historic Summary Average', async () => {
-    render(<YearlySummaryPage />)
+    render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))

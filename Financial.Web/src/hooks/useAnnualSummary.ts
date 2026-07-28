@@ -1,34 +1,34 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { CategoryAnnualAverageDto, CategoryYearlyTotalDto, IncomeYearlySummaryDto, InvestmentDiffsYearlyDto } from '../api/types'
+import type { CategoryAnnualAverageDto, CategoryAnnualTotalDto, IncomeAnnualSummaryDto, InvestmentDiffsAnnualDto } from '../api/types'
 
-interface YearlySummaryState {
+interface AnnualSummaryState {
   year: number
-  categoryTotals: CategoryYearlyTotalDto[]
-  investmentDiffs: InvestmentDiffsYearlyDto | null
-  incomeSummary: IncomeYearlySummaryDto | null
+  categoryTotals: CategoryAnnualTotalDto[]
+  investmentDiffs: InvestmentDiffsAnnualDto | null
+  incomeSummary: IncomeAnnualSummaryDto | null
   historicSummaryAverage: CategoryAnnualAverageDto[]
   isLoading: boolean
   error: string | null
   retryCount: number
 }
 
-type YearlySummaryAction =
+type AnnualSummaryAction =
   | { type: 'SET_YEAR'; payload: number }
   | { type: 'FETCH_START' }
   | {
       type: 'FETCH_SUCCESS'
       payload: {
-        categoryTotals: CategoryYearlyTotalDto[]
-        investmentDiffs: InvestmentDiffsYearlyDto
-        incomeSummary: IncomeYearlySummaryDto
+        categoryTotals: CategoryAnnualTotalDto[]
+        investmentDiffs: InvestmentDiffsAnnualDto
+        incomeSummary: IncomeAnnualSummaryDto
         historicSummaryAverage: CategoryAnnualAverageDto[]
       }
     }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
 
-const INITIAL_STATE: YearlySummaryState = {
+const INITIAL_STATE: AnnualSummaryState = {
   year: new Date().getFullYear(),
   categoryTotals: [],
   investmentDiffs: null,
@@ -39,7 +39,7 @@ const INITIAL_STATE: YearlySummaryState = {
   retryCount: 0,
 }
 
-function reducer(state: YearlySummaryState, action: YearlySummaryAction): YearlySummaryState {
+function reducer(state: AnnualSummaryState, action: AnnualSummaryAction): AnnualSummaryState {
   switch (action.type) {
     case 'SET_YEAR':
       return { ...state, year: action.payload }
@@ -65,23 +65,23 @@ function reducer(state: YearlySummaryState, action: YearlySummaryAction): Yearly
 
 const INVESTIMENTO_CATEGORY = 'Investimento'
 
-export interface YearlySummaryData {
+export interface AnnualSummaryData {
   year: number
   setYear: (year: number) => void
-  categoryTotals: CategoryYearlyTotalDto[]
-  investmentDiffs: InvestmentDiffsYearlyDto | null
-  incomeSummary: IncomeYearlySummaryDto | null
+  categoryTotals: CategoryAnnualTotalDto[]
+  investmentDiffs: InvestmentDiffsAnnualDto | null
+  incomeSummary: IncomeAnnualSummaryDto | null
   historicSummaryAverage: CategoryAnnualAverageDto[]
   totalDespesasMonthly: number[]
-  totalDespesasYearlyTotal: number
+  totalDespesasAnnualTotal: number
   resultadoMonthly: number[]
-  resultadoYearlyTotal: number
+  resultadoAnnualTotal: number
   isLoading: boolean
   error: string | null
   retry: () => void
 }
 
-export function useYearlySummary(): YearlySummaryData {
+export function useAnnualSummary(): AnnualSummaryData {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
@@ -99,7 +99,7 @@ export function useYearlySummary(): YearlySummaryData {
       .catch((err: unknown) => {
         dispatch({
           type: 'FETCH_ERROR',
-          payload: err instanceof Error ? err.message : 'Unable to load Yearly Summary data',
+          payload: err instanceof Error ? err.message : 'Unable to load Annual Summary data',
         })
       })
   }, [apiClient, state.year, state.retryCount])
@@ -121,7 +121,7 @@ export function useYearlySummary(): YearlySummaryData {
     [state.categoryTotals],
   )
 
-  const totalDespesasYearlyTotal = useMemo(
+  const totalDespesasAnnualTotal = useMemo(
     () => totalDespesasMonthly.reduce((sum, v) => sum + v, 0),
     [totalDespesasMonthly],
   )
@@ -138,7 +138,7 @@ export function useYearlySummary(): YearlySummaryData {
     )
   }, [state.incomeSummary, state.categoryTotals, totalDespesasMonthly])
 
-  const resultadoYearlyTotal = useMemo(() => resultadoMonthly.reduce((sum, v) => sum + v, 0), [resultadoMonthly])
+  const resultadoAnnualTotal = useMemo(() => resultadoMonthly.reduce((sum, v) => sum + v, 0), [resultadoMonthly])
 
   return {
     year: state.year,
@@ -148,9 +148,9 @@ export function useYearlySummary(): YearlySummaryData {
     incomeSummary: state.incomeSummary,
     historicSummaryAverage: state.historicSummaryAverage,
     totalDespesasMonthly,
-    totalDespesasYearlyTotal,
+    totalDespesasAnnualTotal,
     resultadoMonthly,
-    resultadoYearlyTotal,
+    resultadoAnnualTotal,
     isLoading: state.isLoading,
     error: state.error,
     retry,
