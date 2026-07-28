@@ -1,4 +1,4 @@
-import { Fragment, useState, type ReactNode } from 'react'
+import { Fragment, useMemo, useState, type ReactNode } from 'react'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import { useAnnualSummary } from '../hooks/useAnnualSummary'
@@ -21,11 +21,13 @@ function AnnualSummaryRow({
   label,
   monthlyValues,
   annualTotal,
+  monthsElapsed,
   emphasized = false,
 }: {
   label: string
   monthlyValues: number[]
   annualTotal: number
+  monthsElapsed?: number
   emphasized?: boolean
 }) {
   const cell = (content: ReactNode) => (emphasized ? <strong>{content}</strong> : content)
@@ -38,13 +40,20 @@ function AnnualSummaryRow({
         </td>
       ))}
       <td className="data-table__col--numeric">
-        <strong>{formatN2(average(monthlyValues))}</strong>
+        <strong>{formatN2(average(monthlyValues, monthsElapsed))}</strong>
       </td>
       <td className="data-table__col--numeric">
         <strong>{formatN2(annualTotal)}</strong>
       </td>
     </tr>
   )
+}
+
+function getMonthsElapsed(year: number): number | undefined {
+  const now = new Date()
+  if (year < now.getFullYear()) return undefined
+  if (year > now.getFullYear()) return 0
+  return now.getMonth()
 }
 
 
@@ -89,6 +98,7 @@ export default function AnnualSummaryPage() {
   } = useAnnualSummary()
 
   const [activeTab, setActiveTab] = useState<AnnualSummaryTabId>('categoryTotals')
+  const monthsElapsed = useMemo(() => getMonthsElapsed(year), [year])
   const HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER = new Set(['Tax difference', 'Dividendo/Juros', 'Reserva'])
   const HISTORIC_SUMMARY_AVERAGE_EMPHASIZED = new Set(['Resultado (R-D-Inv)', 'Total despesas'])
 
@@ -146,16 +156,19 @@ export default function AnnualSummaryPage() {
                         label="Salary"
                         monthlyValues={incomeSummary.salaryMonthly}
                         annualTotal={incomeSummary.salaryAnnualTotal}
+                        monthsElapsed={monthsElapsed}
                       />
                       <AnnualSummaryRow
                         label="Salary after taxes"
                         monthlyValues={incomeSummary.salaryAfterTaxesMonthly}
                         annualTotal={incomeSummary.salaryAfterTaxesAnnualTotal}
+                        monthsElapsed={monthsElapsed}
                       />
                       <AnnualSummaryRow
                         label="Tax difference"
                         monthlyValues={incomeSummary.taxDifferenceMonthly}
                         annualTotal={incomeSummary.taxDifferenceAnnualTotal}
+                        monthsElapsed={monthsElapsed}
                       />
                       <tr>
                         <td colSpan={SPACER_COL_SPAN} />
@@ -164,6 +177,7 @@ export default function AnnualSummaryPage() {
                         label="Dividendo/Juros"
                         monthlyValues={incomeSummary.dividendoJurosMonthly}
                         annualTotal={incomeSummary.dividendoJurosAnnualTotal}
+                        monthsElapsed={monthsElapsed}
                       />
                     </>
                   )}
@@ -173,7 +187,13 @@ export default function AnnualSummaryPage() {
                   </tr>
 
                   {categoryTotals.map((c) => (
-                    <AnnualSummaryRow key={c.category} label={c.category} monthlyValues={c.monthlyTotals} annualTotal={c.annualTotal} />
+                    <AnnualSummaryRow
+                      key={c.category}
+                      label={c.category}
+                      monthlyValues={c.monthlyTotals}
+                      annualTotal={c.annualTotal}
+                      monthsElapsed={monthsElapsed}
+                    />
                   ))}
 
                   <tr>
@@ -185,6 +205,7 @@ export default function AnnualSummaryPage() {
                       label="Resultado (R-D-Inv)"
                       monthlyValues={resultadoMonthly}
                       annualTotal={resultadoAnnualTotal}
+                      monthsElapsed={monthsElapsed}
                       emphasized
                     />
                   )}
@@ -192,6 +213,7 @@ export default function AnnualSummaryPage() {
                     label="Total despesas"
                     monthlyValues={totalDespesasMonthly}
                     annualTotal={totalDespesasAnnualTotal}
+                    monthsElapsed={monthsElapsed}
                     emphasized
                   />
                 </tbody>

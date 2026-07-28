@@ -186,9 +186,66 @@ describe('AnnualSummaryPage', () => {
     expect(averageIndex).toBe(decIndex + 1)
     expect(annualTotalIndex).toBe(averageIndex + 1)
 
-    // Mercado average = 1860 / 12 = 155.00
-    const mercadoRow = screen.getByRole('cell', { name: 'Mercado' }).closest('tr')!
-    expect(within(mercadoRow).getByText('155.00')).toBeInTheDocument()
+    // A past (fully closed) year with all 12 months non-zero: Mercado average = 1860 / 12 = 155.00
+    fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2020' } })
+    await waitFor(() => {
+      const mercadoRow = screen.getByRole('cell', { name: 'Mercado' }).closest('tr')!
+      expect(within(mercadoRow).getByText('155.00')).toBeInTheDocument()
+    })
+  })
+
+  it('excludes zero-value months from the Average for a past year, for both category and income rows', async () => {
+    getCategoryTotalsForYearMock.mockResolvedValue([
+      { category: 'Mercado', monthlyTotals: [100, 100, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0], annualTotal: 400 },
+    ])
+    render(<AnnualSummaryPage />)
+
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2020' } })
+
+    // Mercado: 400 / 4 non-zero months = 100.00 (not 400 / 12 = 33.33). The Average column is the
+    // second-to-last cell (last is Annual Total); several monthly cells also happen to read "100.00"
+    // so the column is located by position rather than by text.
+    await waitFor(() => {
+      const mercadoRow = screen.getByRole('cell', { name: 'Mercado' }).closest('tr')!
+      const cells = within(mercadoRow).getAllByRole('cell')
+      expect(cells[cells.length - 2].textContent).toBe('100.00')
+    })
+
+    // Dividendo/Juros (from the shared INCOME_SUMMARY fixture): [0,0,15.5,0,0,0,0,0,0,0,0,4.5]
+    // sums to 20 over 2 non-zero months = 10.00 (not 20 / 12 = 1.67)
+    const dividendoRow = screen.getByRole('cell', { name: 'Dividendo/Juros' }).closest('tr')!
+    const dividendoCells = within(dividendoRow).getAllByRole('cell')
+    expect(dividendoCells[dividendoCells.length - 2].textContent).toBe('10.00')
+  })
+
+  it('averages the current (open) year over only the completed months, ignoring the in-progress month and any zero completed months', async () => {
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const monthsElapsed = now.getMonth()
+
+    // First `monthsElapsed` entries are completed months (one deliberately 0 - still counted, unlike
+    // a past year where a 0 month would be excluded); everything from index `monthsElapsed` onward
+    // (the in-progress current month and any real future months) must be ignored entirely.
+    const monthlyTotals: number[] = Array.from({ length: 12 }, (_, i) =>
+      i >= monthsElapsed ? 9999 : i === 0 ? 0 : 100,
+    )
+    const expectedSum = monthlyTotals.slice(0, monthsElapsed).reduce((a, b) => a + b, 0)
+    const expectedAverage = monthsElapsed === 0 ? 0 : expectedSum / monthsElapsed
+
+    getCategoryTotalsForYearMock.mockResolvedValue([
+      { category: 'Mercado', monthlyTotals, annualTotal: monthlyTotals.reduce((a, b) => a + b, 0) },
+    ])
+    render(<AnnualSummaryPage />)
+
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    fireEvent.change(screen.getByLabelText('Year'), { target: { value: String(currentYear) } })
+
+    await waitFor(() => {
+      const mercadoRow = screen.getByRole('cell', { name: 'Mercado' }).closest('tr')!
+      const cells = within(mercadoRow).getAllByRole('cell')
+      expect(cells[cells.length - 2].textContent).toBe(expectedAverage.toFixed(2))
+    })
   })
 
   it('computes Resultado and Total despesas from already-fetched data and renders them with emphasized styling', async () => {
