@@ -52,18 +52,22 @@ internal sealed class StubTransactionQueryService : ITransactionQueryService
     public string? LastBrokerName { get; private set; }
     public string? LastPortfolioBrokerName { get; private set; }
     public string? LastPortfolioName { get; private set; }
+    public InvestmentScope? LastBrokerScope { get; private set; }
+    public InvestmentScope? LastPortfolioScope { get; private set; }
 
-    public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByBroker(string brokerName)
+    public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByBroker(string brokerName, InvestmentScope scope = InvestmentScope.Active)
     {
         LastBrokerName = brokerName;
+        LastBrokerScope = scope;
         if (ExceptionToThrow != null) throw ExceptionToThrow;
         return BrokerTransactions;
     }
 
-    public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByPortfolio(string brokerName, string portfolioName)
+    public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByPortfolio(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
     {
         LastPortfolioBrokerName = brokerName;
         LastPortfolioName = portfolioName;
+        LastPortfolioScope = scope;
         if (ExceptionToThrow != null) throw ExceptionToThrow;
         return PortfolioTransactions;
     }

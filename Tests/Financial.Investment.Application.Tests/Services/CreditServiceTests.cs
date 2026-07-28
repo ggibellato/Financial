@@ -297,6 +297,30 @@ public class CreditServiceTests
         result.Should().BeEmpty();
     }
 
+    [Fact]
+    public void GetCreditsByBroker_DefaultsToActiveScope()
+    {
+        CreateService().GetCreditsByBroker("XPI");
+
+        _repository.LastBrokerScope.Should().Be(InvestmentScope.Active);
+    }
+
+    [Fact]
+    public void GetCreditsByBroker_ForwardsHistoricScopeToRepository()
+    {
+        CreateService().GetCreditsByBroker("XPI", InvestmentScope.Historic);
+
+        _repository.LastBrokerScope.Should().Be(InvestmentScope.Historic);
+    }
+
+    [Fact]
+    public void GetCreditsByPortfolio_ForwardsHistoricScopeToRepository()
+    {
+        CreateService().GetCreditsByPortfolio("XPI", "Default", InvestmentScope.Historic);
+
+        _repository.LastPortfolioScope.Should().Be(InvestmentScope.Historic);
+    }
+
     private CreditService CreateService() => new(_repository, new NavigationService(_repository));
 
     private static Asset MakeAsset(string name = "AAAA") =>
@@ -309,9 +333,21 @@ public class CreditServiceTests
         public IEnumerable<Asset> AssetsByBrokerPortfolio { get; set; } = [];
         public IEnumerable<Broker> Brokers { get; set; } = [];
         public int SaveChangesCallCount { get; private set; }
+        public InvestmentScope? LastBrokerScope { get; private set; }
+        public InvestmentScope? LastPortfolioScope { get; private set; }
 
-        public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) => AssetsByBroker;
-        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) => AssetsByBrokerPortfolio;
+        public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active)
+        {
+            LastBrokerScope = scope;
+            return AssetsByBroker;
+        }
+
+        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active)
+        {
+            LastPortfolioScope = scope;
+            return AssetsByBrokerPortfolio;
+        }
+
         public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) => Brokers;
         public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => Asset;
 

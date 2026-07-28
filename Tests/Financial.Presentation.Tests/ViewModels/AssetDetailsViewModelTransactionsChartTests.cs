@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
 using Financial.Presentation.App.Helpers;
@@ -11,7 +12,8 @@ public class AssetDetailsViewModelTransactionsChartTests
 {
     private static AssetDetailsViewModel BuildViewModel(
         IBrokerBreakdownService? brokerBreakdownService = null,
-        ITransactionQueryService? transactionQueryService = null)
+        ITransactionQueryService? transactionQueryService = null,
+        InvestmentScope scope = InvestmentScope.Active)
     {
         return new AssetDetailsViewModel(
             new StubTransactionService(),
@@ -20,7 +22,8 @@ public class AssetDetailsViewModelTransactionsChartTests
             brokerBreakdownService ?? new StubBrokerBreakdownService(),
             transactionQueryService ?? new StubTransactionQueryService(),
             new XirrCalculationService(),
-            new ProfitCalculationService());
+            new ProfitCalculationService(),
+            scope);
     }
 
     private static AssetDetailsDTO BuildAssetDetails(List<TransactionDTO> transactions) => new()
@@ -89,6 +92,39 @@ public class AssetDetailsViewModelTransactionsChartTests
 
         stub.LastPortfolioBrokerName.Should().Be("XPI");
         stub.LastPortfolioName.Should().Be("Acoes");
+    }
+
+    [Fact]
+    public async Task LoadBrokerTransactions_RequestsActiveScope()
+    {
+        var stub = new StubTransactionQueryService();
+        var vm = BuildViewModel(transactionQueryService: stub);
+
+        await vm.LoadBrokerTransactions("XPI");
+
+        stub.LastBrokerScope.Should().Be(InvestmentScope.Active);
+    }
+
+    [Fact]
+    public async Task LoadBrokerTransactions_HistoricScope_RequestsHistoricScope()
+    {
+        var stub = new StubTransactionQueryService();
+        var vm = BuildViewModel(transactionQueryService: stub, scope: InvestmentScope.Historic);
+
+        await vm.LoadBrokerTransactions("XPI");
+
+        stub.LastBrokerScope.Should().Be(InvestmentScope.Historic);
+    }
+
+    [Fact]
+    public async Task LoadPortfolioTransactions_HistoricScope_RequestsHistoricScope()
+    {
+        var stub = new StubTransactionQueryService();
+        var vm = BuildViewModel(transactionQueryService: stub, scope: InvestmentScope.Historic);
+
+        await vm.LoadPortfolioTransactions("XPI", "Acoes");
+
+        stub.LastPortfolioScope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]

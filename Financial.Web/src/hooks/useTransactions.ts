@@ -281,7 +281,7 @@ export function useTransactions(): TransactionsData {
     } else if (nodeType === 'Broker') {
       dispatch({ type: 'FETCH_START', payload: { key } })
       void apiClient
-        .getTransactionsByBroker(brokerName)
+        .getTransactionsByBroker(brokerName, scope)
         .then((result) => dispatch({ type: 'FETCH_TRANSACTIONS_SUCCESS', payload: result }))
         .catch((err: unknown) => {
           dispatch({
@@ -292,7 +292,7 @@ export function useTransactions(): TransactionsData {
     } else if (nodeType === 'Portfolio' && portfolioName) {
       dispatch({ type: 'FETCH_START', payload: { key } })
       void apiClient
-        .getTransactionsByPortfolio(brokerName, portfolioName)
+        .getTransactionsByPortfolio(brokerName, portfolioName, scope)
         .then((result) => dispatch({ type: 'FETCH_TRANSACTIONS_SUCCESS', payload: result }))
         .catch((err: unknown) => {
           dispatch({

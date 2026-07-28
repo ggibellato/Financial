@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
@@ -72,20 +73,20 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
             asset => asset.RemoveTransaction(request.Id));
     }
 
-    public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByBroker(string brokerName)
+    public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByBroker(string brokerName, InvestmentScope scope = InvestmentScope.Active)
     {
         if (string.IsNullOrWhiteSpace(brokerName))
             return Array.Empty<TransactionSummaryItemDTO>();
 
-        return MapAndSort(_repository.GetAssetsByBroker(brokerName));
+        return MapAndSort(_repository.GetAssetsByBroker(brokerName, scope));
     }
 
-    public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByPortfolio(string brokerName, string portfolioName)
+    public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByPortfolio(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
     {
         if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
             return Array.Empty<TransactionSummaryItemDTO>();
 
-        return MapAndSort(_repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName));
+        return MapAndSort(_repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope));
     }
 
     private static IReadOnlyList<TransactionSummaryItemDTO> MapAndSort(IEnumerable<Asset> assets)

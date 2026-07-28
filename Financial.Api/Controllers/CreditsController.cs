@@ -1,5 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Application.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Controllers;
@@ -76,9 +77,9 @@ public sealed class CreditsController : ControllerBase
 
     [HttpGet("broker/{brokerName}")]
     [ProducesResponseType(typeof(IReadOnlyList<CreditDTO>), StatusCodes.Status200OK)]
-    public ActionResult<IReadOnlyList<CreditDTO>> GetCreditsByBroker(string brokerName)
+    public ActionResult<IReadOnlyList<CreditDTO>> GetCreditsByBroker(string brokerName, [FromQuery] string? scope)
     {
-        var credits = _creditQueryService.GetCreditsByBroker(brokerName);
+        var credits = _creditQueryService.GetCreditsByBroker(brokerName, InvestmentScopeParser.ParseOrDefault(scope));
         return Ok(credits);
     }
 
@@ -86,9 +87,10 @@ public sealed class CreditsController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<CreditDTO>), StatusCodes.Status200OK)]
     public ActionResult<IReadOnlyList<CreditDTO>> GetCreditsByPortfolio(
         string brokerName,
-        string portfolioName)
+        string portfolioName,
+        [FromQuery] string? scope)
     {
-        var credits = _creditQueryService.GetCreditsByPortfolio(brokerName, portfolioName);
+        var credits = _creditQueryService.GetCreditsByPortfolio(brokerName, portfolioName, InvestmentScopeParser.ParseOrDefault(scope));
         return Ok(credits);
     }
 }

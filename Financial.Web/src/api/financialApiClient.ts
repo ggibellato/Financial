@@ -61,13 +61,13 @@ export interface FinancialApiClient {
   getNavigationTree: (scope?: InvestmentScope) => Promise<TreeNodeDto>
   getBrokers: () => Promise<BrokerNodeDto[]>
   getAssetDetails: (brokerName: string, portfolioName: string, assetName: string, scope?: InvestmentScope) => Promise<AssetDetailsDto>
-  getCreditsByBroker: (brokerName: string) => Promise<CreditDto[]>
-  getCreditsByPortfolio: (brokerName: string, portfolioName: string) => Promise<CreditDto[]>
+  getCreditsByBroker: (brokerName: string, scope?: InvestmentScope) => Promise<CreditDto[]>
+  getCreditsByPortfolio: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<CreditDto[]>
   getSummaryByBroker: (brokerName: string, scope?: InvestmentScope) => Promise<AggregatedSummaryDto>
   getSummaryByPortfolio: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<AggregatedSummaryDto>
   getBrokerBreakdown: (brokerName: string, scope?: InvestmentScope) => Promise<PortfolioBreakdownItemDto[]>
-  getTransactionsByBroker: (brokerName: string) => Promise<TransactionSummaryItemDto[]>
-  getTransactionsByPortfolio: (brokerName: string, portfolioName: string) => Promise<TransactionSummaryItemDto[]>
+  getTransactionsByBroker: (brokerName: string, scope?: InvestmentScope) => Promise<TransactionSummaryItemDto[]>
+  getTransactionsByPortfolio: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<TransactionSummaryItemDto[]>
   addTransaction: (request: TransactionCreateDto) => Promise<AssetDetailsDto>
   updateTransaction: (request: TransactionUpdateDto) => Promise<AssetDetailsDto>
   deleteTransaction: (request: TransactionDeleteDto) => Promise<AssetDetailsDto>
@@ -206,11 +206,11 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<AssetDetailsDto>(
         `/assets/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}/${encodeURIComponent(assetName)}${buildScopeQuery(scope)}`,
       ),
-    getCreditsByBroker: (brokerName) =>
-      request<CreditDto[]>(`/credits/broker/${encodeURIComponent(brokerName)}`),
-    getCreditsByPortfolio: (brokerName, portfolioName) =>
+    getCreditsByBroker: (brokerName, scope = 'active') =>
+      request<CreditDto[]>(`/credits/broker/${encodeURIComponent(brokerName)}${buildScopeQuery(scope)}`),
+    getCreditsByPortfolio: (brokerName, portfolioName, scope = 'active') =>
       request<CreditDto[]>(
-        `/credits/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}`,
+        `/credits/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}${buildScopeQuery(scope)}`,
       ),
     getSummaryByBroker: (brokerName, scope = 'active') =>
       request<AggregatedSummaryDto>(`/summary/broker/${encodeURIComponent(brokerName)}${buildScopeQuery(scope)}`),
@@ -220,11 +220,11 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       ),
     getBrokerBreakdown: (brokerName, scope = 'active') =>
       request<PortfolioBreakdownItemDto[]>(`/summary/broker/${encodeURIComponent(brokerName)}/breakdown${buildScopeQuery(scope)}`),
-    getTransactionsByBroker: (brokerName) =>
-      request<TransactionSummaryItemDto[]>(`/transactions/broker/${encodeURIComponent(brokerName)}`),
-    getTransactionsByPortfolio: (brokerName, portfolioName) =>
+    getTransactionsByBroker: (brokerName, scope = 'active') =>
+      request<TransactionSummaryItemDto[]>(`/transactions/broker/${encodeURIComponent(brokerName)}${buildScopeQuery(scope)}`),
+    getTransactionsByPortfolio: (brokerName, portfolioName, scope = 'active') =>
       request<TransactionSummaryItemDto[]>(
-        `/transactions/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}`,
+        `/transactions/portfolio/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}${buildScopeQuery(scope)}`,
       ),
     addTransaction: (requestBody) =>
       request<AssetDetailsDto>('/transactions', {

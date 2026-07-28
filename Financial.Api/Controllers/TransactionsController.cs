@@ -1,5 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Application.Validation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Controllers;
@@ -77,12 +78,12 @@ public sealed class TransactionsController : ControllerBase
     [HttpGet("broker/{brokerName}")]
     [ProducesResponseType(typeof(IReadOnlyList<TransactionSummaryItemDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<IReadOnlyList<TransactionSummaryItemDTO>> GetTransactionsByBroker(string brokerName)
+    public ActionResult<IReadOnlyList<TransactionSummaryItemDTO>> GetTransactionsByBroker(string brokerName, [FromQuery] string? scope)
     {
         if (string.IsNullOrWhiteSpace(brokerName))
             return BadRequest();
 
-        var result = _transactionQueryService.GetTransactionsByBroker(brokerName);
+        var result = _transactionQueryService.GetTransactionsByBroker(brokerName, InvestmentScopeParser.ParseOrDefault(scope));
         return Ok(result);
     }
 
@@ -91,12 +92,13 @@ public sealed class TransactionsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public ActionResult<IReadOnlyList<TransactionSummaryItemDTO>> GetTransactionsByPortfolio(
         string brokerName,
-        string portfolioName)
+        string portfolioName,
+        [FromQuery] string? scope)
     {
         if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
             return BadRequest();
 
-        var result = _transactionQueryService.GetTransactionsByPortfolio(brokerName, portfolioName);
+        var result = _transactionQueryService.GetTransactionsByPortfolio(brokerName, portfolioName, InvestmentScopeParser.ParseOrDefault(scope));
         return Ok(result);
     }
 }

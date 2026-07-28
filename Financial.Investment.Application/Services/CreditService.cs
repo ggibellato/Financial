@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
@@ -72,24 +73,24 @@ public sealed class CreditService : ICreditService, ICreditQueryService
             asset => asset.RemoveCredit(request.Id));
     }
 
-    public IReadOnlyList<CreditDTO> GetCreditsByBroker(string brokerName)
+    public IReadOnlyList<CreditDTO> GetCreditsByBroker(string brokerName, InvestmentScope scope = InvestmentScope.Active)
     {
         if (string.IsNullOrWhiteSpace(brokerName))
             return Array.Empty<CreditDTO>();
 
-        return _repository.GetAssetsByBroker(brokerName)
+        return _repository.GetAssetsByBroker(brokerName, scope)
             .SelectMany(asset => asset.Credits)
             .Select(NavigationMapper.MapCredit)
             .OrderByDescending(credit => credit.Date)
             .ToList();
     }
 
-    public IReadOnlyList<CreditDTO> GetCreditsByPortfolio(string brokerName, string portfolioName)
+    public IReadOnlyList<CreditDTO> GetCreditsByPortfolio(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
     {
         if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
             return Array.Empty<CreditDTO>();
 
-        return _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName)
+        return _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope)
             .SelectMany(asset => asset.Credits)
             .Select(NavigationMapper.MapCredit)
             .OrderByDescending(credit => credit.Date)
