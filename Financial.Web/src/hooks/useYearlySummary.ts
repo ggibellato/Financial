@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { CategoryYearlyTotalDto, IncomeYearlySummaryDto, InvestmentDiffsYearlyDto } from '../api/types'
+import type { CategoryAnnualAverageDto, CategoryYearlyTotalDto, IncomeYearlySummaryDto, InvestmentDiffsYearlyDto } from '../api/types'
 
 interface YearlySummaryState {
   year: number
   categoryTotals: CategoryYearlyTotalDto[]
   investmentDiffs: InvestmentDiffsYearlyDto | null
   incomeSummary: IncomeYearlySummaryDto | null
+  historicSummaryAverage: CategoryAnnualAverageDto[]
   isLoading: boolean
   error: string | null
   retryCount: number
@@ -21,6 +22,7 @@ type YearlySummaryAction =
         categoryTotals: CategoryYearlyTotalDto[]
         investmentDiffs: InvestmentDiffsYearlyDto
         incomeSummary: IncomeYearlySummaryDto
+        historicSummaryAverage: CategoryAnnualAverageDto[]
       }
     }
   | { type: 'FETCH_ERROR'; payload: string }
@@ -31,6 +33,7 @@ const INITIAL_STATE: YearlySummaryState = {
   categoryTotals: [],
   investmentDiffs: null,
   incomeSummary: null,
+  historicSummaryAverage: [],
   isLoading: true,
   error: null,
   retryCount: 0,
@@ -49,6 +52,7 @@ function reducer(state: YearlySummaryState, action: YearlySummaryAction): Yearly
         categoryTotals: action.payload.categoryTotals,
         investmentDiffs: action.payload.investmentDiffs,
         incomeSummary: action.payload.incomeSummary,
+        historicSummaryAverage: action.payload.historicSummaryAverage,
       }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
@@ -67,6 +71,7 @@ export interface YearlySummaryData {
   categoryTotals: CategoryYearlyTotalDto[]
   investmentDiffs: InvestmentDiffsYearlyDto | null
   incomeSummary: IncomeYearlySummaryDto | null
+  historicSummaryAverage: CategoryAnnualAverageDto[]
   totalDespesasMonthly: number[]
   totalDespesasYearlyTotal: number
   resultadoMonthly: number[]
@@ -86,9 +91,10 @@ export function useYearlySummary(): YearlySummaryData {
       apiClient.getCategoryTotalsForYear(state.year),
       apiClient.getInvestmentDiffsForYear(state.year),
       apiClient.getIncomeSummaryForYear(state.year),
+      apiClient.getHistoricSummaryAverageFromYear(state.year),
     ])
-      .then(([categoryTotals, investmentDiffs, incomeSummary]) =>
-        dispatch({ type: 'FETCH_SUCCESS', payload: { categoryTotals, investmentDiffs, incomeSummary } }),
+      .then(([categoryTotals, investmentDiffs, incomeSummary, historicSummaryAverage]) =>
+        dispatch({ type: 'FETCH_SUCCESS', payload: { categoryTotals, investmentDiffs, incomeSummary, historicSummaryAverage } }),
       )
       .catch((err: unknown) => {
         dispatch({
@@ -140,6 +146,7 @@ export function useYearlySummary(): YearlySummaryData {
     categoryTotals: state.categoryTotals,
     investmentDiffs: state.investmentDiffs,
     incomeSummary: state.incomeSummary,
+    historicSummaryAverage: state.historicSummaryAverage,
     totalDespesasMonthly,
     totalDespesasYearlyTotal,
     resultadoMonthly,

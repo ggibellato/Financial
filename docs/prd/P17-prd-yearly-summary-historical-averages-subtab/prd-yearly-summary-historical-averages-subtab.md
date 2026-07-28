@@ -84,11 +84,11 @@ At a high level, the new "Historical Summary Averages" sub-tab shares the same y
 
 **Experience:**
 - Clicking "Historical Summary Averages" swaps the visible content exactly like switching between Category Totals and Investments; the tab is highlighted as active and the shared year picker remains unchanged
-- Because this sub-tab's data is not already fetched by the other two sub-tabs, a loading indicator shows on first visit (and on every year change) while the batch request completes, independent of whether Category Totals/Investments data is cached
+- This sub-tab's data is fetched together with Category Totals and Investments' data, in the same batch of requests, whenever the page loads or the year changes — sharing the same single loading indicator and error/retry state as the other two sub-tabs, not fetched independently or lazily on first tab visit
 - The table scrolls horizontally when the year range exceeds the viewport width, consistent with how the existing month-column tables behave on narrow viewports
-- A visual separator (blank spacer row) appears between Dividendo/Juros and the first category row, and again before Resultado, mirroring Category Totals' grouping convention
+- A visual separator (blank spacer row) appears after Tax Difference, after Dividendo/Juros, and after Reserva (the last category), mirroring Category Totals' grouping convention
 - Resultado and Total despesas rows render visually emphasized (bold), consistent with Category Totals' existing styling
-- Changing the shared year picker while on this sub-tab triggers a new fetch, re-anchoring the whole displayed year range at the newly selected year
+- Changing the shared year picker (regardless of which sub-tab is active) triggers a new batched fetch, re-anchoring the whole displayed year range at the newly selected year
 - If the batch request fails, the existing error/retry pattern used elsewhere on the Yearly Summary tab is shown
 
 ## 7. Out of Scope
@@ -133,14 +133,14 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Historical Averages Sub-Tab
-- [ ] The Yearly Summary tab shows a third sub-tab, "Historical Summary Averages", after Investments, sharing the same year picker as the other two sub-tabs
-- [ ] The table's rows match Category Totals exactly, in the same fixed order: Salary, Salary After Taxes, Tax Difference, Dividendo/Juros, the 14 categories in enum order, Resultado (R-D-Inv), Total despesas
-- [ ] The leftmost year column equals the currently selected year; each subsequent column decreases by one year, down to the earliest year with any recorded data across any row
-- [ ] Any year in that span with zero recorded data in every row is omitted from the column set entirely
-- [ ] Each year's cell equals the arithmetic mean of that row's recorded monthly values for that year
-- [ ] A row's monthly value is the sum of same-month entries (per category, or per combined income group for Salary/Salary After Taxes) — a category or income group with more than one transaction in the same month never averages over those transactions directly
-- [ ] When the selected year is the current calendar year, that column's average only includes months through the last fully completed month, excluding the in-progress current month
-- [ ] If the current year has zero fully completed months (today is in January), the current year column is omitted and the range starts at the previous year
-- [ ] Opening the sub-tab (or changing the selected year while it is active) issues exactly one network request that returns every displayed year's figures at once
-- [ ] Resultado and Total despesas rows render bold, consistent with Category Totals styling
-- [ ] If the batch request fails, the existing Yearly Summary error/retry state is shown
+- [x] The Yearly Summary tab shows a third sub-tab, "Historical Summary Averages", after Investments, sharing the same year picker as the other two sub-tabs
+- [x] The table's rows match Category Totals exactly, in the same fixed order: Salary, Salary After Taxes, Tax Difference, Dividendo/Juros, the 14 categories in enum order, Resultado (R-D-Inv), Total despesas
+- [x] The leftmost year column equals the currently selected year; each subsequent column decreases by one year, down to the earliest year with any recorded data across any row
+- [x] Any year in that span with zero recorded data in every row is omitted from the column set entirely
+- [x] Each year's cell equals the arithmetic mean of that row's recorded monthly values for that year
+- [x] A row's monthly value is the sum of same-month entries (per category, or per combined income group for Salary/Salary After Taxes) — a category or income group with more than one transaction in the same month never averages over those transactions directly
+- [x] When the selected year is the current calendar year, that column's average only includes months through the last fully completed month, excluding the in-progress current month
+- [x] If the current year has zero fully completed months (today is in January), the current year column is omitted and the range starts at the previous year
+- [x] Changing the selected year triggers a single call to the historic-summary-averages endpoint (bundled with the Category Totals/Investments/Income Summary calls in the same batch), returning every displayed year's figures at once
+- [x] Resultado and Total despesas rows render bold, consistent with Category Totals styling
+- [x] If the batch request fails, the existing Yearly Summary error/retry state is shown

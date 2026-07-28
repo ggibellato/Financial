@@ -10,6 +10,7 @@ import type {
   BrokerNodeDto,
   CalculateXirrRequestDto,
   CardStatementDto,
+  CategoryAnnualAverageDto,
   CategoryTotalDto,
   CategoryYearlyTotalDto,
   CreateExpenseDto,
@@ -122,6 +123,7 @@ export interface FinancialApiClient {
   getCategoryTotalsForYear: (year: number) => Promise<CategoryYearlyTotalDto[]>
   getInvestmentDiffsForYear: (year: number) => Promise<InvestmentDiffsYearlyDto>
   getIncomeSummaryForYear: (year: number) => Promise<IncomeYearlySummaryDto>
+  getHistoricSummaryAverageFromYear: (year: number) => Promise<CategoryAnnualAverageDto[]>
 }
 
 export interface FinancialApiClientOptions {
@@ -379,5 +381,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<InvestmentDiffsYearlyDto>(`/yearly-summary/${year}/investment-diffs`),
     getIncomeSummaryForYear: (year) =>
       request<IncomeYearlySummaryDto>(`/yearly-summary/${year}/income-summary`),
+    getHistoricSummaryAverageFromYear: (year) =>
+      request<CategoryAnnualAverageDto[]>(`/yearly-summary/${year}/historic-summary-averages`),
   }
 }
