@@ -122,7 +122,7 @@ public class ControllerGuardClauseTests
     {
         var controller = new TransactionsController(new StubTransactionService(), new StubTransactionQueryService());
 
-        var result = controller.GetTransactionsByBroker(" ");
+        var result = controller.GetTransactionsByBroker(" ", null);
 
         result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
     }
@@ -132,7 +132,7 @@ public class ControllerGuardClauseTests
     {
         var controller = new TransactionsController(new StubTransactionService(), new StubTransactionQueryService());
 
-        var result = controller.GetTransactionsByPortfolio(" ", "Default");
+        var result = controller.GetTransactionsByPortfolio(" ", "Default", null);
 
         result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
     }
@@ -142,7 +142,7 @@ public class ControllerGuardClauseTests
     {
         var controller = new TransactionsController(new StubTransactionService(), new StubTransactionQueryService());
 
-        var result = controller.GetTransactionsByPortfolio("XPI", " ");
+        var result = controller.GetTransactionsByPortfolio("XPI", " ", null);
 
         result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
     }
@@ -267,8 +267,8 @@ public class ControllerGuardClauseTests
 
     private sealed class StubCreditQueryService : ICreditQueryService
     {
-        public IReadOnlyList<CreditDTO> GetCreditsByBroker(string brokerName) => throw new NotImplementedException();
-        public IReadOnlyList<CreditDTO> GetCreditsByPortfolio(string brokerName, string portfolioName) => throw new NotImplementedException();
+        public IReadOnlyList<CreditDTO> GetCreditsByBroker(string brokerName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
+        public IReadOnlyList<CreditDTO> GetCreditsByPortfolio(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
     }
 
     private sealed class StubCreditService : ICreditService
@@ -287,8 +287,8 @@ public class ControllerGuardClauseTests
 
     private sealed class StubTransactionQueryService : ITransactionQueryService
     {
-        public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByBroker(string brokerName) => throw new NotImplementedException();
-        public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByPortfolio(string brokerName, string portfolioName) => throw new NotImplementedException();
+        public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByBroker(string brokerName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
+        public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByPortfolio(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
     }
 
     private sealed class StubDividendService : IDividendService

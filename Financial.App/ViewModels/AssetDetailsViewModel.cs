@@ -565,7 +565,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         {
             try
             {
-                var transactions = _transactionQueryService.GetTransactionsByBroker(brokerName);
+                var transactions = _transactionQueryService.GetTransactionsByBroker(brokerName, _scope);
                 if (token.IsCancellationRequested) return;
                 ApplyFetchedTransactions(transactions);
             }
@@ -589,7 +589,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         {
             try
             {
-                var transactions = _transactionQueryService.GetTransactionsByPortfolio(brokerName, portfolioName);
+                var transactions = _transactionQueryService.GetTransactionsByPortfolio(brokerName, portfolioName, _scope);
                 if (token.IsCancellationRequested) return;
                 ApplyFetchedTransactions(transactions);
             }

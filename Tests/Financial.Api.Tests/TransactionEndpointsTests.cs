@@ -236,4 +236,62 @@ public class TransactionEndpointsTests
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    [Fact]
+    public async Task GetTransactionsByBroker_DefaultScope_ExcludesHistoricAssetTransactions()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/transactions/broker/XPI");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<List<TransactionSummaryItemDTO>>();
+        items.Should().NotBeNull();
+        items!.Should().OnlyContain(i => i.AssetName == "BCIA11");
+    }
+
+    [Fact]
+    public async Task GetTransactionsByBroker_ScopeHistoric_ReturnsOnlyHistoricAssetTransactions()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/transactions/broker/XPI?scope=historic");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<List<TransactionSummaryItemDTO>>();
+        items.Should().NotBeNull();
+        items!.Should().HaveCount(2);
+        items!.Should().OnlyContain(i => i.AssetName == "CLOSEDASSET");
+    }
+
+    [Fact]
+    public async Task GetTransactionsByPortfolio_ScopeHistoric_ReturnsOnlyHistoricPortfolioTransactions()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/transactions/portfolio/XPI/Uncategorized?scope=historic");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<List<TransactionSummaryItemDTO>>();
+        items.Should().NotBeNull();
+        items!.Should().HaveCount(2);
+        items!.Should().OnlyContain(i => i.AssetName == "CLOSEDASSET");
+    }
+
+    [Fact]
+    public async Task GetTransactionsByPortfolio_DefaultScope_DoesNotReturnHistoricOnlyPortfolio()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/transactions/portfolio/XPI/Uncategorized");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<List<TransactionSummaryItemDTO>>();
+        items.Should().NotBeNull();
+        items.Should().BeEmpty();
+    }
 }

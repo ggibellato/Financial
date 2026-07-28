@@ -193,4 +193,47 @@ public class CreditEndpointsTests
         asset.Should().NotBeNull();
         asset!.Credits.Should().NotContain(credit => credit.Id == creditId);
     }
+
+    [Fact]
+    public async Task GetCreditsByBroker_ScopeHistoric_ExcludesActiveAssetCredits()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        // CLOSEDASSET (Historic) has no credits, while the Active BCIA11 has two dividends
+        var response = await client.GetAsync("/api/v1/financial/credits/broker/XPI?scope=historic");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var credits = await response.Content.ReadFromJsonAsync<CreditDTO[]>();
+        credits.Should().NotBeNull();
+        credits.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetCreditsByPortfolio_ScopeHistoric_ExcludesActivePortfolioCredits()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/credits/portfolio/XPI/Uncategorized?scope=historic");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var credits = await response.Content.ReadFromJsonAsync<CreditDTO[]>();
+        credits.Should().NotBeNull();
+        credits.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetCreditsByPortfolio_DefaultScope_DoesNotReturnHistoricOnlyPortfolio()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/credits/portfolio/XPI/Uncategorized");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var credits = await response.Content.ReadFromJsonAsync<CreditDTO[]>();
+        credits.Should().NotBeNull();
+        credits.Should().BeEmpty();
+    }
 }

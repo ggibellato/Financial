@@ -363,7 +363,7 @@ describe('useTransactions', () => {
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(BROKER_NODE)
-    await waitFor(() => expect(getTransactionsByBrokerMock).toHaveBeenCalledWith('XPI'))
+    await waitFor(() => expect(getTransactionsByBrokerMock).toHaveBeenCalledWith('XPI', 'active'))
     await waitFor(() => expect(result.current.chartData.length).toBeGreaterThan(0))
   })
 
@@ -373,9 +373,27 @@ describe('useTransactions', () => {
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() =>
-      expect(getTransactionsByPortfolioMock).toHaveBeenCalledWith('XPI', 'Acoes'),
+      expect(getTransactionsByPortfolioMock).toHaveBeenCalledWith('XPI', 'Acoes', 'active'),
     )
     await waitFor(() => expect(result.current.chartData.length).toBeGreaterThan(0))
+  })
+
+  it('fetches_broker_transactions_with_historic_scope', async () => {
+    getTransactionsByBrokerMock.mockResolvedValue([SUMMARY_ITEM_A])
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    renderHook(() => useTransactions(), { wrapper })
+    setNode(BROKER_NODE)
+    await waitFor(() => expect(getTransactionsByBrokerMock).toHaveBeenCalledWith('XPI', 'historic'))
+  })
+
+  it('fetches_portfolio_transactions_with_historic_scope', async () => {
+    getTransactionsByPortfolioMock.mockResolvedValue([SUMMARY_ITEM_A])
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    renderHook(() => useTransactions(), { wrapper })
+    setNode(PORTFOLIO_NODE)
+    await waitFor(() =>
+      expect(getTransactionsByPortfolioMock).toHaveBeenCalledWith('XPI', 'Acoes', 'historic'),
+    )
   })
 
   it('transactions_fetch_error_sets_error_state', async () => {

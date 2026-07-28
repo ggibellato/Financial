@@ -137,6 +137,48 @@ public class MainNavigationViewModelBaseTests
     }
 
     [Fact]
+    public void SelectingBrokerNode_RequestsActiveScopeForCredits()
+    {
+        var summaryService = new StubSummaryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var creditQueryService = new StubCreditQueryService();
+        var vm = new TestableNavigationViewModel(summaryService, spy, creditQueryService: creditQueryService);
+
+        var brokerNode = BuildBrokerNode("XPI");
+        vm.SelectedNode = brokerNode;
+
+        creditQueryService.LastBrokerScope.Should().Be(InvestmentScope.Active);
+    }
+
+    [Fact]
+    public void SelectingBrokerNode_HistoricScope_RequestsHistoricScopeForCredits()
+    {
+        var summaryService = new StubSummaryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var creditQueryService = new StubCreditQueryService();
+        var vm = new TestableNavigationViewModel(summaryService, spy, scope: InvestmentScope.Historic, creditQueryService: creditQueryService);
+
+        var brokerNode = BuildBrokerNode("XPI");
+        vm.SelectedNode = brokerNode;
+
+        creditQueryService.LastBrokerScope.Should().Be(InvestmentScope.Historic);
+    }
+
+    [Fact]
+    public void SelectingPortfolioNode_HistoricScope_RequestsHistoricScopeForCredits()
+    {
+        var summaryService = new StubSummaryService();
+        var spy = new SpyAssetDetailsViewModel();
+        var creditQueryService = new StubCreditQueryService();
+        var vm = new TestableNavigationViewModel(summaryService, spy, scope: InvestmentScope.Historic, creditQueryService: creditQueryService);
+
+        var portfolioNode = BuildPortfolioNode("XPI", "FII");
+        vm.SelectedNode = portfolioNode;
+
+        creditQueryService.LastPortfolioScope.Should().Be(InvestmentScope.Historic);
+    }
+
+    [Fact]
     public void SelectingPortfolioNode_WhenMissingMetadata_ClearsDetails()
     {
         var summaryService = new StubSummaryService();
@@ -485,8 +527,9 @@ public class MainNavigationViewModelBaseTests
             SpyAssetDetailsViewModel spy,
             IPortfolioAssetSummaryService? portfolioAssetSummaryService = null,
             StubNavigationService? navigationService = null,
-            InvestmentScope scope = InvestmentScope.Active)
-            : this(navigationService ?? new StubNavigationService(), summaryService, spy, portfolioAssetSummaryService, scope)
+            InvestmentScope scope = InvestmentScope.Active,
+            ICreditQueryService? creditQueryService = null)
+            : this(navigationService ?? new StubNavigationService(), summaryService, spy, portfolioAssetSummaryService, scope, creditQueryService)
         {
         }
 
@@ -495,8 +538,9 @@ public class MainNavigationViewModelBaseTests
             ISummaryService summaryService,
             SpyAssetDetailsViewModel spy,
             IPortfolioAssetSummaryService? portfolioAssetSummaryService,
-            InvestmentScope scope)
-            : base(navigationService, new StubCreditQueryService(), summaryService, portfolioAssetSummaryService ?? new StubPortfolioAssetSummaryService(), spy, scope)
+            InvestmentScope scope,
+            ICreditQueryService? creditQueryService)
+            : base(navigationService, creditQueryService ?? new StubCreditQueryService(), summaryService, portfolioAssetSummaryService ?? new StubPortfolioAssetSummaryService(), spy, scope)
         {
             NavigationService = navigationService;
         }
@@ -637,7 +681,19 @@ public class MainNavigationViewModelBaseTests
 
     private sealed class StubCreditQueryService : ICreditQueryService
     {
-        public IReadOnlyList<CreditDTO> GetCreditsByBroker(string brokerName) => [];
-        public IReadOnlyList<CreditDTO> GetCreditsByPortfolio(string brokerName, string portfolioName) => [];
+        public InvestmentScope? LastBrokerScope { get; private set; }
+        public InvestmentScope? LastPortfolioScope { get; private set; }
+
+        public IReadOnlyList<CreditDTO> GetCreditsByBroker(string brokerName, InvestmentScope scope = InvestmentScope.Active)
+        {
+            LastBrokerScope = scope;
+            return [];
+        }
+
+        public IReadOnlyList<CreditDTO> GetCreditsByPortfolio(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
+        {
+            LastPortfolioScope = scope;
+            return [];
+        }
     }
 }

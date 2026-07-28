@@ -275,7 +275,7 @@ export function useCredits(): CreditsData {
         })
     } else if (nodeType === 'Broker') {
       void apiClient
-        .getCreditsByBroker(brokerName)
+        .getCreditsByBroker(brokerName, scope)
         .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result }))
         .catch((err: unknown) => {
           dispatch({
@@ -285,7 +285,7 @@ export function useCredits(): CreditsData {
         })
     } else if (nodeType === 'Portfolio' && portfolioName) {
       void apiClient
-        .getCreditsByPortfolio(brokerName, portfolioName)
+        .getCreditsByPortfolio(brokerName, portfolioName, scope)
         .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result }))
         .catch((err: unknown) => {
           dispatch({

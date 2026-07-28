@@ -289,7 +289,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         }
 
         var summary = _summaryService.GetPortfolioSummary(brokerName, portfolioName, _scope);
-        var credits = _creditQueryService.GetCreditsByPortfolio(brokerName, portfolioName);
+        var credits = _creditQueryService.GetCreditsByPortfolio(brokerName, portfolioName, _scope);
         var assetItems = _portfolioAssetSummaryService.GetPortfolioAssetsSummary(brokerName, portfolioName, _scope);
         AssetDetails.LoadPortfolioSummary(brokerName, portfolioName, summary, credits, assetItems);
         _ = AssetDetails.LoadPortfolioTransactions(brokerName, portfolioName);
@@ -305,7 +305,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         }
 
         var summary = _summaryService.GetBrokerSummary(brokerName, _scope);
-        var credits = _creditQueryService.GetCreditsByBroker(brokerName);
+        var credits = _creditQueryService.GetCreditsByBroker(brokerName, _scope);
         AssetDetails.LoadBrokerSummary(brokerName, summary, credits);
         _ = AssetDetails.LoadBrokerBreakdown(brokerName);
         _ = AssetDetails.LoadBrokerTransactions(brokerName);

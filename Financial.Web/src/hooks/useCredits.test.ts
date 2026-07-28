@@ -139,7 +139,7 @@ describe('useCredits', () => {
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(BROKER_NODE)
     await waitFor(() =>
-      expect(getCreditsByBrokerMock).toHaveBeenCalledWith('XPI'),
+      expect(getCreditsByBrokerMock).toHaveBeenCalledWith('XPI', 'active'),
     )
     await waitFor(() => expect(result.current.credits).toHaveLength(1))
   })
@@ -150,9 +150,29 @@ describe('useCredits', () => {
     const { result } = renderHook(() => useCredits(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() =>
-      expect(getCreditsByPortfolioMock).toHaveBeenCalledWith('XPI', 'Acoes'),
+      expect(getCreditsByPortfolioMock).toHaveBeenCalledWith('XPI', 'Acoes', 'active'),
     )
     await waitFor(() => expect(result.current.credits).toHaveLength(1))
+  })
+
+  it('fetches_broker_credits_with_historic_scope', async () => {
+    getCreditsByBrokerMock.mockResolvedValue([CREDIT_A])
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    renderHook(() => useCredits(), { wrapper })
+    setNode(BROKER_NODE)
+    await waitFor(() =>
+      expect(getCreditsByBrokerMock).toHaveBeenCalledWith('XPI', 'historic'),
+    )
+  })
+
+  it('fetches_portfolio_credits_with_historic_scope', async () => {
+    getCreditsByPortfolioMock.mockResolvedValue([CREDIT_B])
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    renderHook(() => useCredits(), { wrapper })
+    setNode(PORTFOLIO_NODE)
+    await waitFor(() =>
+      expect(getCreditsByPortfolioMock).toHaveBeenCalledWith('XPI', 'Acoes', 'historic'),
+    )
   })
 
   it('resets_credits_when_node_is_null', async () => {
