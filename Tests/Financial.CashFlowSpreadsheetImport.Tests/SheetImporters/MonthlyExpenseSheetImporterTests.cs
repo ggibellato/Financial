@@ -262,6 +262,61 @@ public class MonthlyExpenseSheetImporterTests
         expenses.Should().ContainSingle().Which.CardTag.Should().BeNull();
     }
 
+    [Theory]
+    [InlineData("X")]
+    [InlineData("x")]
+    [InlineData(" X ")]
+    public void Import_FixedCardSectionMonth_CreditCardMarkerTag_SetsCardTagByRowPositionNotBarclays(string tag)
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Jul2026");
+        WriteExpenseRow(sheet, row: 150, paymentSourceTag: tag);
+
+        var report = new ImportReport();
+
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, report);
+
+        var expense = expenses.Should().ContainSingle().Which;
+        expense.CardTag.Should().Be(CreditCard.BarclaysPlatinumVisa6007);
+        expense.PaymentSource.Should().BeNull();
+        expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+        report.RowIssues.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Import_FixedCardSectionMonth_CreditCardMarkerTagOutsideAnyCardSection_FlagsRowAndDoesNotImportAsBarclays()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Jul2026");
+        // Row 50 is before the first card section (BarclaysPlatinumVisa8003StartRow = 129), so an
+        // "X" here can't be matched to any card - it must not silently fall back to Barclays.
+        WriteExpenseRow(sheet, row: 50, paymentSourceTag: "X");
+
+        var report = new ImportReport();
+
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, report);
+
+        expenses.Should().BeEmpty();
+        report.RowIssues.Should().ContainSingle(i => i.SheetName == "Jul2026" && i.RawValue == "X");
+    }
+
+    [Theory]
+    [InlineData(2017, 10)]
+    [InlineData(2026, 9)]
+    public void Import_MonthOutsideFixedCardSectionScope_CreditCardMarkerTag_FlagsRowAndDoesNotImportAsBarclays(int year, int month)
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet($"Sheet{year}{month}");
+        WriteExpenseRow(sheet, row: 129, paymentSourceTag: "X");
+
+        var report = new ImportReport();
+
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, year, month, report);
+
+        expenses.Should().BeEmpty();
+        report.RowIssues.Should().ContainSingle(i => i.RawValue == "X");
+    }
+
     private static void WriteExpenseRow(IXLWorksheet sheet, int row, string? paymentSourceTag)
     {
         sheet.Cell(1, 1).Value = "Dia";
