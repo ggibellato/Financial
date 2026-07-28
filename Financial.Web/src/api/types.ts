@@ -497,3 +497,13 @@ export interface InvestmentSnapshotDto {
 export interface UpdateInvestmentSnapshotValueDto {
   value: number
 }
+
+export interface CategoryAnnualAverageDto {
+  year: number
+  annualAverages: CategoryAverageDto[]
+}
+
+export interface CategoryAverageDto {
+  category: string
+  average: number
+}

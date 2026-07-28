@@ -2,17 +2,19 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import YearlySummaryPage from '../YearlySummaryPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { CategoryYearlyTotalDto, IncomeYearlySummaryDto, InvestmentDiffsYearlyDto } from '../../api/types'
+import type { CategoryAnnualAverageDto, CategoryYearlyTotalDto, IncomeYearlySummaryDto, InvestmentDiffsYearlyDto } from '../../api/types'
 
 const getCategoryTotalsForYearMock = vi.fn<FinancialApiClient['getCategoryTotalsForYear']>()
 const getInvestmentDiffsForYearMock = vi.fn<FinancialApiClient['getInvestmentDiffsForYear']>()
 const getIncomeSummaryForYearMock = vi.fn<FinancialApiClient['getIncomeSummaryForYear']>()
+const getHistoricSummaryAverageFromYearMock = vi.fn<FinancialApiClient['getHistoricSummaryAverageFromYear']>()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getCategoryTotalsForYear: getCategoryTotalsForYearMock,
     getInvestmentDiffsForYear: getInvestmentDiffsForYearMock,
     getIncomeSummaryForYear: getIncomeSummaryForYearMock,
+    getHistoricSummaryAverageFromYear: getHistoricSummaryAverageFromYearMock,
   }),
 }))
 
@@ -59,12 +61,42 @@ const INCOME_SUMMARY: IncomeYearlySummaryDto = {
   dividendoJurosYearlyTotal: 20,
 }
 
+const HISTORIC_SUMMARY_AVERAGE: CategoryAnnualAverageDto[] = [
+  {
+    year: 2026,
+    annualAverages: [
+      { category: 'Salary', average: 3200 },
+      { category: 'Salary after taxes', average: 2450 },
+      { category: 'Tax difference', average: 750 },
+      { category: 'Dividendo/Juros', average: 15.5 },
+      { category: 'Mercado', average: 155 },
+      { category: 'Reserva', average: 0 },
+      { category: 'Resultado (R-D-Inv)', average: 720 },
+      { category: 'Total despesas', average: 155 },
+    ],
+  },
+  {
+    year: 2025,
+    annualAverages: [
+      { category: 'Salary', average: 3000 },
+      { category: 'Salary after taxes', average: 2300 },
+      { category: 'Tax difference', average: 700 },
+      { category: 'Dividendo/Juros', average: 10 },
+      { category: 'Mercado', average: 140 },
+      { category: 'Reserva', average: 0 },
+      { category: 'Resultado (R-D-Inv)', average: 650 },
+      { category: 'Total despesas', average: 140 },
+    ],
+  },
+]
+
 describe('YearlySummaryPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     getCategoryTotalsForYearMock.mockResolvedValue(CATEGORY_TOTALS)
     getInvestmentDiffsForYearMock.mockResolvedValue(INVESTMENT_DIFFS)
     getIncomeSummaryForYearMock.mockResolvedValue(INCOME_SUMMARY)
+    getHistoricSummaryAverageFromYearMock.mockResolvedValue(HISTORIC_SUMMARY_AVERAGE)
   })
 
   it('shows a loading state before data arrives', () => {
@@ -371,13 +403,63 @@ describe('YearlySummaryPage', () => {
     expect(screen.getByRole('button', { name: 'Investments' })).toHaveClass('yearly-summary-page__tab--active')
   })
 
-  it('shows only the Historic Summary Average placeholder after clicking Historic Summary Average', async () => {
+  it('renders one column per year and the correct category values in the Historic Summary Average table', async () => {
     render(<YearlySummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
 
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Historic Summary Average' })).toBeInTheDocument())
+
+    const headerCells = screen.getAllByRole('columnheader').map((th) => th.textContent)
+    expect(headerCells).toEqual(['', '2026', '2025'])
+
+    const mercadoRow = screen.getByText('Mercado').closest('tr')!
+    expect(within(mercadoRow).getByText('155.00')).toBeInTheDocument()
+    expect(within(mercadoRow).getByText('140.00')).toBeInTheDocument()
+  })
+
+  it('renders a spacer row after Tax difference, Dividendo/Juros, and Reserva in the Historic Summary Average table', async () => {
+    render(<YearlySummaryPage />)
+
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Historic Summary Average' })).toBeInTheDocument())
+
+    const rowLabels = screen
+      .getAllByRole('row')
+      .slice(1) // drop the header row
+      .map((row) => row.querySelector('td')?.textContent ?? '')
+
+    expect(rowLabels).toEqual([
+      'Salary',
+      'Salary after taxes',
+      'Tax difference',
+      '',
+      'Dividendo/Juros',
+      '',
+      'Mercado',
+      'Reserva',
+      '',
+      'Resultado (R-D-Inv)',
+      'Total despesas',
+    ])
+  })
+
+  it('renders Resultado and Total despesas rows bold and emphasized in the Historic Summary Average table', async () => {
+    render(<YearlySummaryPage />)
+
+    await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Historic Summary Average' })).toBeInTheDocument())
+
+    const resultadoRow = screen.getByText('Resultado (R-D-Inv)').closest('tr')!
+    expect(resultadoRow).toHaveClass('yearly-summary-page__emphasized-row')
+    expect(within(resultadoRow).getByText('720.00').closest('strong')).toBeInTheDocument()
+
+    const totalDespesasRow = screen.getByText('Total despesas').closest('tr')!
+    expect(totalDespesasRow).toHaveClass('yearly-summary-page__emphasized-row')
+    expect(within(totalDespesasRow).getByText('155.00').closest('strong')).toBeInTheDocument()
   })
 
   it('does not affect the Category Totals tab content when viewing Historic Summary Average', async () => {

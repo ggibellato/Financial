@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { Fragment, useState, type ReactNode } from 'react'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import { useYearlySummary } from '../hooks/useYearlySummary'
@@ -47,6 +47,9 @@ function YearlySummaryRow({
   )
 }
 
+
+const optionalEmphasize = (content: ReactNode, emphasized?: boolean) => (emphasized ? <strong>{content}</strong> : content)
+
 function InvestmentRow({
   label,
   monthlyValues,
@@ -56,13 +59,12 @@ function InvestmentRow({
   monthlyValues: (number | null)[]
   emphasized?: boolean
 }) {
-  const cell = (content: ReactNode) => (emphasized ? <strong>{content}</strong> : content)
   return (
     <tr className={emphasized ? 'yearly-summary-page__emphasized-row' : undefined}>
-      <td>{cell(label)}</td>
+      <td>{optionalEmphasize(label, emphasized)}</td>
       {monthlyValues.map((v, i) => (
         <td key={i} className="data-table__col--numeric">
-          {v === null ? null : cell(formatN2(v))}
+          {v === null ? null : optionalEmphasize(formatN2(v), emphasized)}
         </td>
       ))}
     </tr>
@@ -76,6 +78,7 @@ export default function YearlySummaryPage() {
     categoryTotals,
     investmentDiffs,
     incomeSummary,
+    historicSummaryAverage,
     totalDespesasMonthly,
     totalDespesasYearlyTotal,
     resultadoMonthly,
@@ -86,6 +89,8 @@ export default function YearlySummaryPage() {
   } = useYearlySummary()
 
   const [activeTab, setActiveTab] = useState<YearlySummaryTabId>('categoryTotals')
+  const HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER = new Set(['Tax difference', 'Dividendo/Juros', 'Reserva'])
+  const HISTORIC_SUMMARY_AVERAGE_EMPHASIZED = new Set(['Resultado (R-D-Inv)', 'Total despesas'])
 
   return (
     <div className="yearly-summary-page">
@@ -245,7 +250,42 @@ export default function YearlySummaryPage() {
           {activeTab === 'historicSummaryAverage' && (
             <section className="yearly-summary-page__section">
               <h2>Historic Summary Average</h2>
-              <p>This is the historic summary average section.</p>
+              <table className="yearly-summary-page__table data-table">
+                <thead>
+                  <tr>
+                    <th />
+                    {historicSummaryAverage && (
+                      historicSummaryAverage.map((y) => (
+                        <th key={y.year} className="data-table__col--numeric">
+                          {y.year}
+                        </th>
+                      ))
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {historicSummaryAverage && historicSummaryAverage[0].annualAverages.map((a) => {
+                    const isEmphasized = HISTORIC_SUMMARY_AVERAGE_EMPHASIZED.has(a.category)
+                    return (
+                      <Fragment key={a.category}>
+                        <tr className={isEmphasized ? 'yearly-summary-page__emphasized-row' : undefined}>
+                          <td>{optionalEmphasize(a.category, isEmphasized)}</td>
+                          {historicSummaryAverage.map((y) => (
+                            <td key={y.year} className="data-table__col--numeric">
+                              {optionalEmphasize(formatN2(y.annualAverages.find((d) => d.category === a.category)?.average ?? 0), 
+                                isEmphasized)}
+                            </td>
+                          ))}
+                        </tr>
+                        {HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER.has(a.category) && (
+                          <tr>
+                            <td colSpan={historicSummaryAverage.length + 1} />
+                          </tr>
+                        )}
+                      </Fragment>
+                  )})}
+                </tbody>
+              </table>  
             </section>
           )}
         </div>
