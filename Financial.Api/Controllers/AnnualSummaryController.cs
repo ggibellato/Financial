@@ -42,4 +42,11 @@ public sealed class AnnualSummaryController : ControllerBase
     {
         return Ok(_annualSummaryService.GetHistoricSummaryAverageFromYear(year));
     }
+
+    [HttpGet("{year:int}/category-totals")]
+    [ProducesResponseType(typeof(CategoryTotalsAnnualDTO), StatusCodes.Status200OK)]
+    public ActionResult<CategoryTotalsAnnualDTO> GetCategoryTotals(int year)
+    {
+        return Ok(_annualSummaryService.GetCategoryTotalsAnnualForYear(year));
+    }
 }

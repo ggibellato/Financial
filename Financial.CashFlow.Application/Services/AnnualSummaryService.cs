@@ -156,6 +156,34 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         };
     }
 
+    public CategoryTotalsAnnualDTO GetCategoryTotalsAnnualForYear(int year)
+    {
+        var categoryTotals = GetCategoryTotalsForYear(year);
+        var incomeSummary = GetIncomeSummaryForYear(year);
+
+        var totalDespesasSeries = categoryTotals.Aggregate(
+            MonthlySeries.Zero(),
+            (total, category) => total.Add(MonthlySeries.FromMonthlyValues(category.MonthlyTotals)));
+
+        var investimentoSeries = MonthlySeries.FromMonthlyValues(
+            categoryTotals.FirstOrDefault(c => c.Category == nameof(Category.Investimento))?.MonthlyTotals
+                ?? new decimal[MonthsInYear]);
+
+        var salaryAfterTaxesSeries = MonthlySeries.FromMonthlyValues(incomeSummary.SalaryAfterTaxesMonthly);
+
+        var resultadoSeries = AnnualResultCalculator.ComputeResultado(salaryAfterTaxesSeries, totalDespesasSeries, investimentoSeries);
+
+        return new CategoryTotalsAnnualDTO
+        {
+            CategoryTotals = categoryTotals,
+            IncomeSummary = incomeSummary,
+            TotalDespesasMonthly = totalDespesasSeries.AsReadOnly().ToArray(),
+            TotalDespesasAnnualTotal = totalDespesasSeries.Sum(),
+            ResultadoMonthly = resultadoSeries.AsReadOnly().ToArray(),
+            ResultadoAnnualTotal = resultadoSeries.Sum()
+        };
+    }
+
     public IReadOnlyList<CategoryAnnualGroupValueDTO> GetHistoricSummaryAverageFromYear(int year)
     {
         var incomeAverages = GetHistoricIncomeAverageFromYear(year);

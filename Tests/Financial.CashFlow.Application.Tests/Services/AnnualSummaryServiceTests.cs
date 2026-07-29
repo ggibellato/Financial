@@ -453,6 +453,84 @@ public class AnnualSummaryServiceTests
         result.DividendoJurosMonthly.Should().OnlyContain(v => v == 0m);
     }
 
+    [Fact]
+    public void GetCategoryTotalsAnnualForYear_TotalDespesasMonthlyEqualsSumOfAllCategoriesPerMonth()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Investing", 30m, Category.Investimento, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 2, 5), "Groceries", 50m, Category.Mercado, "Barclays", null));
+        var service = new AnnualSummaryService(repository);
+
+        var result = service.GetCategoryTotalsAnnualForYear(2026);
+
+        result.TotalDespesasMonthly[0].Should().Be(130m);
+        result.TotalDespesasMonthly[1].Should().Be(50m);
+        result.TotalDespesasMonthly.Skip(2).Should().OnlyContain(v => v == 0m);
+    }
+
+    [Fact]
+    public void GetCategoryTotalsAnnualForYear_ResultadoMonthlyExcludesDividendoJurosAndIncludesInvestimento()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Investing", 30m, Category.Investimento, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
+        // DividendoJuros is seeded deliberately: the corrected formula must exclude it entirely.
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.DividendoJuros, null, 20m, "Barclays"));
+        var service = new AnnualSummaryService(repository);
+
+        var result = service.GetCategoryTotalsAnnualForYear(2026);
+
+        // Resultado = SalaryAfterTaxes(800) - TotalDespesas(130) + Investimento(30) = 700, not 720.
+        result.ResultadoMonthly[0].Should().Be(700m);
+    }
+
+    [Fact]
+    public void GetCategoryTotalsAnnualForYear_AnnualTotalsEqualSumOfMonthlyValues()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 6, 5), "Investing", 30m, Category.Investimento, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 3, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
+        var service = new AnnualSummaryService(repository);
+
+        var result = service.GetCategoryTotalsAnnualForYear(2026);
+
+        result.TotalDespesasAnnualTotal.Should().Be(result.TotalDespesasMonthly.Sum());
+        result.ResultadoAnnualTotal.Should().Be(result.ResultadoMonthly.Sum());
+    }
+
+    [Fact]
+    public void GetCategoryTotalsAnnualForYear_NoRecordedData_ReturnsAllZeroSeries()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new AnnualSummaryService(repository);
+
+        var result = service.GetCategoryTotalsAnnualForYear(2026);
+
+        result.CategoryTotals.Should().HaveCount(Enum.GetValues<Category>().Length)
+            .And.OnlyContain(c => c.AnnualTotal == 0m);
+        result.IncomeSummary.SalaryAnnualTotal.Should().Be(0m);
+        result.TotalDespesasMonthly.Should().OnlyContain(v => v == 0m);
+        result.TotalDespesasAnnualTotal.Should().Be(0m);
+        result.ResultadoMonthly.Should().OnlyContain(v => v == 0m);
+        result.ResultadoAnnualTotal.Should().Be(0m);
+    }
+
+    [Fact]
+    public void GetCategoryTotalsAnnualForYear_NestedCategoryTotalsAndIncomeSummaryMatchStandaloneMethods()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
+        var service = new AnnualSummaryService(repository);
+
+        var result = service.GetCategoryTotalsAnnualForYear(2026);
+
+        result.CategoryTotals.Should().BeEquivalentTo(service.GetCategoryTotalsForYear(2026));
+        result.IncomeSummary.Should().BeEquivalentTo(service.GetIncomeSummaryForYear(2026));
+    }
 
     [Fact]
     public void GetHistoricSummaryAverageFromYear_ReturnsEmptyList_WhenNoExpensesForSpecifiedYear()
