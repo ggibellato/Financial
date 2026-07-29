@@ -224,13 +224,13 @@ graph TD
 - [x] Unit tests cover each method independently, including edge cases (empty/zero input, `null` `priorClosingValue`) — see `MonthlySeriesTests`, `AnnualResultCalculatorTests`, `IncomeClassifierTests`, `CategoryClassifierTests` in `Tests\Financial.CashFlow.Domain.Tests`
 
 ### F02. Category Totals Endpoint (Server-Side Computation)
-- [ ] `GET /annual-summary/{year}/category-totals` returns `200 OK` with a single JSON object containing `categoryTotals`, `incomeSummary`, `totalDespesasMonthly`, `totalDespesasAnnualTotal`, `resultadoMonthly`, `resultadoAnnualTotal`
-- [ ] `totalDespesasMonthly[m]` equals the sum of all category rows' monthly totals for month `m`, verified for every month 0-11 against a known test dataset
-- [ ] `resultadoMonthly[m]` equals `salaryAfterTaxesMonthly[m] - totalDespesasMonthly[m] + Investimento category's monthlyTotals[m]` (no Dividendo/Juros term), verified for every month against a known test dataset, including a case where Dividendo/Juros is non-zero to confirm it is correctly excluded
-- [ ] `totalDespesasAnnualTotal` equals the sum of `totalDespesasMonthly`, and `resultadoAnnualTotal` equals the sum of `resultadoMonthly`
-- [ ] A year with no recorded data returns all-zero series rather than an error or missing fields
+- [x] `GET /annual-summary/{year}/category-totals` returns `200 OK` with a single JSON object containing `categoryTotals`, `incomeSummary`, `totalDespesasMonthly`, `totalDespesasAnnualTotal`, `resultadoMonthly`, `resultadoAnnualTotal`
+- [x] `totalDespesasMonthly[m]` equals the sum of all category rows' monthly totals for month `m`, verified for every month 0-11 against a known test dataset
+- [x] `resultadoMonthly[m]` equals `salaryAfterTaxesMonthly[m] - totalDespesasMonthly[m] + Investimento category's monthlyTotals[m]` (no Dividendo/Juros term), verified for every month against a known test dataset, including a case where Dividendo/Juros is non-zero to confirm it is correctly excluded
+- [x] `totalDespesasAnnualTotal` equals the sum of `totalDespesasMonthly`, and `resultadoAnnualTotal` equals the sum of `resultadoMonthly`
+- [x] A year with no recorded data returns all-zero series rather than an error or missing fields
 - [ ] `GET /annual-summary/{year}/expense-categories` and `/income-summary` return `404 Not Found` (routes removed)
-- [ ] Unit tests cover the Total despesas/Resultado formulas, including an all-zero-data year and a year including a non-zero Investimento category value
+- [x] Unit tests cover the Total despesas/Resultado formulas, including an all-zero-data year and a year including a non-zero Investimento category value
 
 ### F03. Investment Annual Result Endpoint (Server-Side Computation)
 - [ ] `GET /annual-summary/{year}/investment-annual-result` returns `200 OK` with `accounts[]` and `netPosition`, matching the field shapes previously returned by `investment-diffs`
