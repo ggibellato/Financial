@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
+using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.CashFlow.Domain.ValueObjects;
@@ -10,6 +11,14 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 {
     private const int MonthsInYear = 12;
     public const int AverageDecimalPlaces = 2;
+
+    /// <summary>
+    /// Investment averages/sums are intentionally never rounded (unlike the 2-decimal-place
+    /// income/category averages), so this endpoint's values stay byte-identical to the
+    /// pre-refactor investment-diffs output. Decimal division already caps at this many
+    /// fractional digits, so rounding to it is a no-op in practice.
+    /// </summary>
+    private const int FullPrecisionDecimalPlaces = 28;
 
     private readonly ICashFlowRepository _repository;
 
@@ -44,6 +53,77 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
     public InvestmentDiffsAnnualDTO GetInvestmentDiffsForYear(int year)
     {
+        var series = ComputeInvestmentSeriesForYear(year);
+
+        var accounts = series.AccountSeries
+            .Select(a => new InvestmentAccountAnnualDiffDTO
+            {
+                Account = a.Account.Name,
+                IsLiability = a.Account.IsLiability,
+                MonthlyValues = a.MonthlyValues.AsReadOnly().ToArray(),
+                MonthlyDiffs = a.Diffs.ToArray()
+            })
+            .ToList();
+
+        var relevantDiffs = series.NetPositionDiffs.Take(series.LastRelevantMonth).Where(d => d.HasValue).Select(d => d!.Value).ToList();
+
+        var netPosition = new NetPositionAnnualDiffDTO
+        {
+            MonthlyValues = series.NetPositionSeries.AsReadOnly().ToArray(),
+            MonthlyDiffs = series.NetPositionDiffs.ToArray(),
+            FullYearNetChange = series.NetPositionSeries[series.LastRelevantMonth - 1] - series.NetPositionSeries[0],
+            AverageMonthResult = relevantDiffs.Count > 0 ? relevantDiffs.Average() : 0m,
+            SumOfMonthResults = relevantDiffs.Sum()
+        };
+
+        return new InvestmentDiffsAnnualDTO
+        {
+            Accounts = accounts.ToArray(),
+            NetPosition = netPosition
+        };
+    }
+
+    public InvestmentAnnualResultDTO GetInvestmentAnnualResultForYear(int year)
+    {
+        var series = ComputeInvestmentSeriesForYear(year);
+
+        var accounts = series.AccountSeries
+            .Select(a => new InvestmentAccountAnnualDiffDTO
+            {
+                Account = a.Account.Name,
+                IsLiability = a.Account.IsLiability,
+                MonthlyValues = a.MonthlyValues.AsReadOnly().ToArray(),
+                MonthlyDiffs = a.Diffs.ToArray()
+            })
+            .ToList();
+
+        var relevantDiffsSeries = MonthlySeries.FromMonthlyValues(Enumerable.Range(0, MonthsInYear)
+            .Select(month => month < series.LastRelevantMonth ? series.NetPositionDiffs[month] ?? 0m : 0m)
+            .ToArray());
+        var monthsElapsed = series.NetPositionDiffs.Take(series.LastRelevantMonth).Count(d => d.HasValue);
+
+        var netPosition = new NetPositionAnnualDiffDTO
+        {
+            MonthlyValues = series.NetPositionSeries.AsReadOnly().ToArray(),
+            MonthlyDiffs = series.NetPositionDiffs.ToArray(),
+            FullYearNetChange = series.NetPositionSeries[series.LastRelevantMonth - 1] - series.NetPositionSeries[0],
+            AverageMonthResult = relevantDiffsSeries.Average(monthsElapsed, FullPrecisionDecimalPlaces),
+            SumOfMonthResults = relevantDiffsSeries.Sum()
+        };
+
+        return new InvestmentAnnualResultDTO
+        {
+            Accounts = accounts.ToArray(),
+            NetPosition = netPosition
+        };
+    }
+
+    private (
+        List<(InvestmentAccount Account, MonthlySeries MonthlyValues, IReadOnlyList<decimal?> Diffs)> AccountSeries,
+        MonthlySeries NetPositionSeries,
+        IReadOnlyList<decimal?> NetPositionDiffs,
+        int LastRelevantMonth) ComputeInvestmentSeriesForYear(int year)
+    {
         var allSnapshots = _repository.GetInvestmentSnapshots().ToList();
         var allAccounts = _repository.GetInvestmentAccounts().ToList();
         var scopedAccounts = YearScopedInvestmentAccountResolver.ResolveForYear(allAccounts, allSnapshots, year, DateTime.Now.Year);
@@ -71,17 +151,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
                     ? priorYearDecemberByAccount.GetValueOrDefault(account.Name, 0m)
                     : null;
 
-                return (account, monthlyValues, diffs: monthlyValues.DiffsFrom(priorClosingValue));
-            })
-            .ToList();
-
-        var accounts = accountSeries
-            .Select(a => new InvestmentAccountAnnualDiffDTO
-            {
-                Account = a.account.Name,
-                IsLiability = a.account.IsLiability,
-                MonthlyValues = a.monthlyValues.AsReadOnly().ToArray(),
-                MonthlyDiffs = a.diffs.ToArray()
+                return (account, monthlyValues, diffs: (IReadOnlyList<decimal?>)monthlyValues.DiffsFrom(priorClosingValue));
             })
             .ToList();
 
@@ -97,22 +167,8 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         var netPositionDiffs = netPositionSeries.DiffsFrom(netPositionPriorClosingValue);
 
         var lastRelevantMonth = year >= DateTime.Now.Year ? Math.Min(DateTime.Now.Month, MonthsInYear) : MonthsInYear;
-        var relevantDiffs = netPositionDiffs.Take(lastRelevantMonth).Where(d => d.HasValue).Select(d => d!.Value).ToList();
 
-        var netPosition = new NetPositionAnnualDiffDTO
-        {
-            MonthlyValues = netPositionSeries.AsReadOnly().ToArray(),
-            MonthlyDiffs = netPositionDiffs.ToArray(),
-            FullYearNetChange = netPositionSeries[lastRelevantMonth - 1] - netPositionSeries[0],
-            AverageMonthResult = relevantDiffs.Count > 0 ? relevantDiffs.Average() : 0m,
-            SumOfMonthResults = relevantDiffs.Sum()
-        };
-
-        return new InvestmentDiffsAnnualDTO
-        {
-            Accounts = accounts.ToArray(),
-            NetPosition = netPosition
-        };
+        return (accountSeries, netPositionSeries, netPositionDiffs, lastRelevantMonth);
     }
 
     public IncomeAnnualSummaryDTO GetIncomeSummaryForYear(int year)
