@@ -1,6 +1,8 @@
 .data-table {
   width: 100%;
-  border-collapse: collapse;
+  /* border-collapse: collapse breaks position: sticky on th in Chromium/WebKit */
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 13px;
 }
 
@@ -10,6 +12,10 @@
   padding: 8px 10px;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg);
 }
 
 .data-table td {
