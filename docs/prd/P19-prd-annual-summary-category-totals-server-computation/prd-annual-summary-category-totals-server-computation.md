@@ -233,11 +233,11 @@ graph TD
 - [x] Unit tests cover the Total despesas/Resultado formulas, including an all-zero-data year and a year including a non-zero Investimento category value
 
 ### F03. Investment Annual Result Endpoint (Server-Side Computation)
-- [ ] `GET /annual-summary/{year}/investment-annual-result` returns `200 OK` with `accounts[]` and `netPosition`, matching the field shapes previously returned by `investment-diffs`
-- [ ] Values (`monthlyValues`, `monthlyDiffs`, `fullYearNetChange`, `averageMonthResult`, `sumOfMonthResults`) for a fixed test year are byte-identical to the pre-refactor `investment-diffs` output
+- [x] `GET /annual-summary/{year}/investment-annual-result` returns `200 OK` with `accounts[]` and `netPosition`, matching the field shapes previously returned by `investment-diffs`
+- [x] Values (`monthlyValues`, `monthlyDiffs`, `fullYearNetChange`, `averageMonthResult`, `sumOfMonthResults`) for a fixed test year are byte-identical to the pre-refactor `investment-diffs` output
 - [ ] `GET /annual-summary/{year}/investment-diffs` returns `404 Not Found` (route removed)
-- [ ] A year with no investment accounts or snapshots returns an empty `accounts` array and an all-zero `netPosition`
-- [ ] Unit tests confirm `averageMonthResult` and diff sequences are produced via F01's `MonthlySeries.Average`/`MonthlySeries.DiffsFrom`
+- [x] A year with no investment accounts or snapshots returns an empty `accounts` array and an all-zero `netPosition`
+- [x] Unit tests confirm `averageMonthResult` and diff sequences are produced via F01's `MonthlySeries.Average`/`MonthlySeries.DiffsFrom`
 
 ### F04. Historic Summary Average Migration to Shared Calculation Service
 - [x] `GET /annual-summary/{year}/historic-summary-averages` continues to return `200 OK` with its existing response shape, unchanged
