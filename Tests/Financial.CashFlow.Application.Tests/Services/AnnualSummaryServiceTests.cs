@@ -661,6 +661,26 @@ public class AnnualSummaryServiceTests
     }
 
     [Fact]
+    public void GetHistoricSummaryAverageFromYear_LotteryIncomeContributesToNoRow()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new AnnualSummaryService(repository);
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 120m, Category.Mercado, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), IncomeSource.DividendoJuros, null, 20m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), IncomeSource.Lottery, null, 500m, "Barclays"));
+
+        var result = service.GetHistoricSummaryAverageFromYear(2025);
+
+        // Lottery must not leak into Dividendo/Juros (or any other row) - it must have the same
+        // effect as if it were never recorded at all.
+        result[0].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(83.33m);
+        result[0].AnnualAverages.Single(a => a.Category == "Salary after taxes").Value.Should().Be(66.67m);
+        result[0].AnnualAverages.Single(a => a.Category == "Dividendo/Juros").Value.Should().Be(1.67m);
+        result[0].AnnualAverages.Single(a => a.Category == "Resultado (R-D-Inv)").Value.Should().Be(56.67m);
+    }
+
+    [Fact]
     public void GetHistoricSummaryAverageFromYear_ZeroFillsCategoriesWithNoExpensesThatYear()
     {
         var repository = new StubCashFlowRepository();

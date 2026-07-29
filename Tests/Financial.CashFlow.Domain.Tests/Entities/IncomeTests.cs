@@ -107,4 +107,16 @@ public class IncomeTests
 
         act.Should().Throw<ArgumentException>();
     }
+
+    [Theory]
+    [InlineData(IncomeSource.Gleison, IncomeGroup.Salary)]
+    [InlineData(IncomeSource.Ariana, IncomeGroup.Salary)]
+    [InlineData(IncomeSource.DividendoJuros, IncomeGroup.DividendoJuros)]
+    [InlineData(IncomeSource.Lottery, IncomeGroup.NonReportable)]
+    public void Group_ReflectsIncomeSourceClassification(IncomeSource incomeSource, IncomeGroup expected)
+    {
+        var income = Income.Create(new DateOnly(2026, 7, 1), incomeSource, null, 10m, "Chase");
+
+        income.Group.Should().Be(expected);
+    }
 }

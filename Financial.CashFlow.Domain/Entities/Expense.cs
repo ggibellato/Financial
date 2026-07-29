@@ -1,5 +1,6 @@
 using System;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.CashFlow.Domain.Entities;
 
@@ -24,6 +25,8 @@ public class Expense
         : ExpensePaymentStatus.CreditCardSettled;
 
     public decimal RoundUpSuggestion => Math.Ceiling(Value) - Value;
+
+    public bool IsInvestment => Category.IsInvestment();
 
     private Expense() { }
 

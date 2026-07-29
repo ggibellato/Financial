@@ -2,13 +2,13 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
+using Financial.CashFlow.Domain.ValueObjects;
 
 namespace Financial.CashFlow.Application.Services;
 
 public sealed class AnnualSummaryService : IAnnualSummaryService
 {
     private const int MonthsInYear = 12;
-    private const string SalaryIncomeGroup = "Salary";
     public const int AverageDecimalPlaces = 2;
 
     private readonly ICashFlowRepository _repository;
@@ -28,16 +28,14 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         return Enum.GetValues<Category>()
             .Select(category =>
             {
-                var monthlyTotals = new decimal[MonthsInYear];
-                for (var month = 1; month <= MonthsInYear; month++)
-                {
-                    monthlyTotals[month - 1] = totalsByCategoryAndMonth.GetValueOrDefault((category, month));
-                }
+                var monthlyTotals = MonthlySeries.FromMonthlyValues(Enumerable.Range(1, MonthsInYear)
+                    .Select(month => totalsByCategoryAndMonth.GetValueOrDefault((category, month)))
+                    .ToArray());
 
                 return new CategoryAnnualTotalDTO
                 {
                     Category = category.ToString(),
-                    MonthlyTotals = monthlyTotals,
+                    MonthlyTotals = monthlyTotals.AsReadOnly().ToArray(),
                     AnnualTotal = monthlyTotals.Sum()
                 };
             })
@@ -62,50 +60,50 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
         var hasPriorYearData = allSnapshots.Any(s => s.Year == year - 1);
 
-        var accounts = scopedAccounts
+        var accountSeries = scopedAccounts
             .Select(account =>
             {
-                var monthlyValues = new decimal[MonthsInYear];
-                for (var month = 1; month <= MonthsInYear; month++)
-                {
-                    monthlyValues[month - 1] = valueByAccountAndMonth.GetValueOrDefault((account.Name, month));
-                }
+                var monthlyValues = MonthlySeries.FromMonthlyValues(Enumerable.Range(1, MonthsInYear)
+                    .Select(month => valueByAccountAndMonth.GetValueOrDefault((account.Name, month)))
+                    .ToArray());
 
-                decimal? januaryDiff = hasPriorYearData
-                    ? monthlyValues[0] - priorYearDecemberByAccount.GetValueOrDefault(account.Name, 0m)
+                decimal? priorClosingValue = hasPriorYearData
+                    ? priorYearDecemberByAccount.GetValueOrDefault(account.Name, 0m)
                     : null;
 
-                return new InvestmentAccountAnnualDiffDTO
-                {
-                    Account = account.Name,
-                    IsLiability = account.IsLiability,
-                    MonthlyValues = monthlyValues,
-                    MonthlyDiffs = ComputeDiffs(monthlyValues, januaryDiff)
-                };
+                return (account, monthlyValues, diffs: monthlyValues.DiffsFrom(priorClosingValue));
             })
             .ToList();
 
-        var netPositionValues = new decimal[MonthsInYear];
-        for (var month = 0; month < MonthsInYear; month++)
-        {
-            netPositionValues[month] = accounts
-                .Sum(a => a.IsLiability ? -a.MonthlyValues[month] : a.MonthlyValues[month]);
-        }
+        var accounts = accountSeries
+            .Select(a => new InvestmentAccountAnnualDiffDTO
+            {
+                Account = a.account.Name,
+                IsLiability = a.account.IsLiability,
+                MonthlyValues = a.monthlyValues.AsReadOnly().ToArray(),
+                MonthlyDiffs = a.diffs.ToArray()
+            })
+            .ToList();
 
-        decimal? netPositionJanuaryDiff = hasPriorYearData
-            ? accounts.Sum(a => (a.IsLiability ? -1 : 1) * a.MonthlyDiffs[0]!.Value)
+        var netPositionSeries = accountSeries.Aggregate(MonthlySeries.Zero(), (net, a) =>
+            net.Add(a.account.IsLiability
+                ? MonthlySeries.FromMonthlyValues(a.monthlyValues.AsReadOnly().Select(v => -v).ToArray())
+                : a.monthlyValues));
+
+        decimal? netPositionPriorClosingValue = hasPriorYearData
+            ? accountSeries.Sum(a => (a.account.IsLiability ? -1m : 1m) * priorYearDecemberByAccount.GetValueOrDefault(a.account.Name, 0m))
             : null;
 
-        var netPositionDiffs = ComputeDiffs(netPositionValues, netPositionJanuaryDiff);
+        var netPositionDiffs = netPositionSeries.DiffsFrom(netPositionPriorClosingValue);
 
         var lastRelevantMonth = year >= DateTime.Now.Year ? Math.Min(DateTime.Now.Month, MonthsInYear) : MonthsInYear;
         var relevantDiffs = netPositionDiffs.Take(lastRelevantMonth).Where(d => d.HasValue).Select(d => d!.Value).ToList();
 
         var netPosition = new NetPositionAnnualDiffDTO
         {
-            MonthlyValues = netPositionValues,
-            MonthlyDiffs = netPositionDiffs,
-            FullYearNetChange = netPositionValues[lastRelevantMonth - 1] - netPositionValues[0],
+            MonthlyValues = netPositionSeries.AsReadOnly().ToArray(),
+            MonthlyDiffs = netPositionDiffs.ToArray(),
+            FullYearNetChange = netPositionSeries[lastRelevantMonth - 1] - netPositionSeries[0],
             AverageMonthResult = relevantDiffs.Count > 0 ? relevantDiffs.Average() : 0m,
             SumOfMonthResults = relevantDiffs.Sum()
         };
@@ -127,14 +125,15 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         {
             var monthIndex = income.Date.Month - 1;
 
-            if (income.IncomeSource is IncomeSource.Gleison or IncomeSource.Ariana)
+            switch (income.Group)
             {
-                salaryMonthly[monthIndex] += income.GrossValue ?? 0m;
-                salaryAfterTaxesMonthly[monthIndex] += income.NetValue;
-            }
-            else if (income.IncomeSource == IncomeSource.DividendoJuros)
-            {
-                dividendoJurosMonthly[monthIndex] += income.NetValue;
+                case IncomeGroup.Salary:
+                    salaryMonthly[monthIndex] += income.GrossValue ?? 0m;
+                    salaryAfterTaxesMonthly[monthIndex] += income.NetValue;
+                    break;
+                case IncomeGroup.DividendoJuros:
+                    dividendoJurosMonthly[monthIndex] += income.NetValue;
+                    break;
             }
         }
 
@@ -199,14 +198,14 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         foreach (var yearAverage in categoryAverages)
         {
             var totalCategory = yearAverage.AnnualAverages.Sum(c => c.Value);
-            var investmentCategory = yearAverage.AnnualAverages.FirstOrDefault(c => c.Category == "Investimento")?.Value ?? 0m;
+            var investmentCategory = yearAverage.AnnualAverages.FirstOrDefault(c => c.Category == nameof(Category.Investimento))?.Value ?? 0m;
 
             var salaryAfterTaxes = incomeAverages.FirstOrDefault(i => i.Year == yearAverage.Year)?.SalaryAfterTaxesAverage ?? 0m;
 
             yearAverage.AnnualAverages.Add(new CategoryGroupValueDTO
             {
                 Category = "Resultado (R-D-Inv)",
-                Value = salaryAfterTaxes - totalCategory + investmentCategory
+                Value = AnnualResultCalculator.ComputeResultado(salaryAfterTaxes, totalCategory, investmentCategory)
             });
 
             yearAverage.AnnualAverages.Add(new CategoryGroupValueDTO
@@ -289,12 +288,12 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         var dividendoJuros = 0m;
         foreach (var incomeAverage in incomeYear.Value)
         {
-            if (incomeAverage.IncomeGroup == SalaryIncomeGroup)
+            if (incomeAverage.IncomeGroup == IncomeGroup.Salary)
             {
                 salary += incomeAverage.GrossAverageValue ?? 0m;
                 salaryAfterTaxes += incomeAverage.NetAverageValue;
             }
-            else if (incomeAverage.IncomeGroup == IncomeSource.DividendoJuros.ToString())
+            else if (incomeAverage.IncomeGroup == IncomeGroup.DividendoJuros)
             {
                 dividendoJuros += incomeAverage.NetAverageValue;
             }
@@ -306,7 +305,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     {
         var monthlySumByIncomeSource = _repository.GetIncomes()
             .Where(e => e.Date.Year <= year && e.Date < new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1))
-            .GroupBy(e => new { e.Date.Year, e.Date.Month, IncomeGroup = GetIncomeGroup(e.IncomeSource) })
+            .GroupBy(e => new { e.Date.Year, e.Date.Month, IncomeGroup = e.Group })
             .Select(g => new
             {
                 Key = (g.Key.Year, g.Key.Month, g.Key.IncomeGroup),
@@ -331,11 +330,6 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             2017 => 11,
             _ => 12,
           };
-
-    private static string GetIncomeGroup(IncomeSource incomeSource) =>
-        incomeSource is IncomeSource.Gleison or IncomeSource.Ariana
-            ? SalaryIncomeGroup
-            : IncomeSource.DividendoJuros.ToString();
 
     private IList<CategoryAnnualGroupValueDTO> GetHistoricCategoriesAverageFromYear(int year)
     {
@@ -364,17 +358,5 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
                 ]
             });
         return [.. averageExpenseByYear.OrderByDescending(a => a.Year)];
-    }
-
-    private static decimal?[] ComputeDiffs(decimal[] monthlyValues, decimal? januaryDiff)
-    {
-        var diffs = new decimal?[monthlyValues.Length];
-        diffs[0] = januaryDiff;
-        for (var month = 1; month < monthlyValues.Length; month++)
-        {
-            diffs[month] = monthlyValues[month] - monthlyValues[month - 1];
-        }
-
-        return diffs;
     }
 }
