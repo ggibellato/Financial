@@ -2,7 +2,6 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -158,7 +157,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         };
     }
 
-    public IReadOnlyList<CategoryAnnualAverageDTO> GetHistoricSummaryAverageFromYear(int year)
+    public IReadOnlyList<CategoryAnnualGroupValueDTO> GetHistoricSummaryAverageFromYear(int year)
     {
         var incomeAverages = GetHistoricIncomeAverageFromYear(year);
         var categoryAverages = GetHistoricCategoriesAverageFromYear(year);
@@ -168,9 +167,9 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         return [.. categoryAverages];
     }
 
-    private IList<CategoryAnnualAverageDTO> AddMissingCategories(IList<CategoryAnnualAverageDTO> categoryAverages)
+    private IList<CategoryAnnualGroupValueDTO> AddMissingCategories(IList<CategoryAnnualGroupValueDTO> categoryAverages)
     {
-        var result = new List<CategoryAnnualAverageDTO>();
+        var result = new List<CategoryAnnualGroupValueDTO>();
 
         var uniqueListOfCategories = Enum.GetValues<Category>().Select(c => c.ToString()).ToList();
 
@@ -180,14 +179,14 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             {
                 if (!yearAverage.AnnualAverages.Any(c => c.Category == category))
                 {
-                    yearAverage.AnnualAverages.Add(new CategoryAverageDTO
+                    yearAverage.AnnualAverages.Add(new CategoryGroupValueDTO
                     {
                         Category = category,
-                        Average = 0m
+                        Value = 0m
                     });
                 }
             }
-            result.Add(new CategoryAnnualAverageDTO{
+            result.Add(new CategoryAnnualGroupValueDTO{
                 Year = yearAverage.Year,
                 AnnualAverages = yearAverage.AnnualAverages.OrderBy(c => Enum.Parse<Category>(c.Category)).ToList()
             });
@@ -195,76 +194,76 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         return result;
     }
 
-    private void AddCategoryTotal(IList<IncomeAnnualAverageDTO> incomeAverages, IList<CategoryAnnualAverageDTO> categoryAverages)
+    private void AddCategoryTotal(IList<IncomeAnnualAverageDTO> incomeAverages, IList<CategoryAnnualGroupValueDTO> categoryAverages)
     {
         foreach (var yearAverage in categoryAverages)
         {
-            var totalCategory = yearAverage.AnnualAverages.Sum(c => c.Average);
-            var investmentCategory = yearAverage.AnnualAverages.FirstOrDefault(c => c.Category == "Investimento")?.Average ?? 0m;
+            var totalCategory = yearAverage.AnnualAverages.Sum(c => c.Value);
+            var investmentCategory = yearAverage.AnnualAverages.FirstOrDefault(c => c.Category == "Investimento")?.Value ?? 0m;
 
             var salaryAfterTaxes = incomeAverages.FirstOrDefault(i => i.Year == yearAverage.Year)?.SalaryAfterTaxesAverage ?? 0m;
 
-            yearAverage.AnnualAverages.Add(new CategoryAverageDTO
+            yearAverage.AnnualAverages.Add(new CategoryGroupValueDTO
             {
                 Category = "Resultado (R-D-Inv)",
-                Average = salaryAfterTaxes - totalCategory + investmentCategory
+                Value = salaryAfterTaxes - totalCategory + investmentCategory
             });
 
-            yearAverage.AnnualAverages.Add(new CategoryAverageDTO
+            yearAverage.AnnualAverages.Add(new CategoryGroupValueDTO
             {
                 Category = "Total despesas",
-                Average = totalCategory
+                Value = totalCategory
             });
         }
     }
 
     private static void AddIncomeToFinalResult(IList<IncomeAnnualAverageDTO> incomeAverages, 
-        IList<CategoryAnnualAverageDTO> categoryAverages)
+        IList<CategoryAnnualGroupValueDTO> categoryAverages)
     {
         foreach (var incomeAverage in incomeAverages)
         {
             var yearAverage = categoryAverages.FirstOrDefault(c => c.Year == incomeAverage.Year);
             if (yearAverage is null)
             {
-                yearAverage = new CategoryAnnualAverageDTO
+                yearAverage = new CategoryAnnualGroupValueDTO
                 {
                     Year = incomeAverage.Year,
-                    AnnualAverages = new List<CategoryAverageDTO>()
+                    AnnualAverages = new List<CategoryGroupValueDTO>()
                 };
                 categoryAverages.Add(yearAverage);
             }
 
-            yearAverage.AnnualAverages.Insert(0, new CategoryAverageDTO
+            yearAverage.AnnualAverages.Insert(0, new CategoryGroupValueDTO
             {
                 Category = "Salary",
-                Average = incomeAverage.SalaryAverage
+                Value = incomeAverage.SalaryAverage
             });
-            yearAverage.AnnualAverages.Insert(1, new CategoryAverageDTO
+            yearAverage.AnnualAverages.Insert(1, new CategoryGroupValueDTO
             {
                 Category = "Salary after taxes",
-                Average = incomeAverage.SalaryAfterTaxesAverage
+                Value = incomeAverage.SalaryAfterTaxesAverage
             });
-            yearAverage.AnnualAverages.Insert(2, new CategoryAverageDTO
+            yearAverage.AnnualAverages.Insert(2, new CategoryGroupValueDTO
             {
                 Category = "Tax difference",
-                Average = incomeAverage.SalaryAverage - incomeAverage.SalaryAfterTaxesAverage
+                Value = incomeAverage.SalaryAverage - incomeAverage.SalaryAfterTaxesAverage
             });
-            yearAverage.AnnualAverages.Insert(3, new CategoryAverageDTO
+            yearAverage.AnnualAverages.Insert(3, new CategoryGroupValueDTO
             {
                 Category = "Dividendo/Juros",
-                Average = incomeAverage.DividendoJurosAverage
+                Value = incomeAverage.DividendoJurosAverage
             });
         }
     }
 
     private IList<IncomeAnnualAverageDTO> GetHistoricIncomeAverageFromYear(int year)
     {
-        Dictionary<int, List<IncomeAverageDTO>> averageIncome = GetAnnualAverageIncomeByGroupIncome(year);
+        Dictionary<int, List<IncomeGroupValueDTO>> averageIncome = GetAnnualAverageIncomeByGroupIncome(year);
         Dictionary<int, IncomeAnnualAverageDTO> result = BuildAnnualIncomeAverages(averageIncome);
         return result.Values.OrderByDescending(a => a.Year).ToList();
     }
 
-    private static Dictionary<int, IncomeAnnualAverageDTO> BuildAnnualIncomeAverages(Dictionary<int, List<IncomeAverageDTO>> averageIncomeByYear)
+    private static Dictionary<int, IncomeAnnualAverageDTO> BuildAnnualIncomeAverages(Dictionary<int, List<IncomeGroupValueDTO>> averageIncomeByYear)
     {
         var result = new Dictionary<int, IncomeAnnualAverageDTO>();
         foreach (var incomeYear in averageIncomeByYear)
@@ -283,7 +282,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     }
 
     private static (decimal salary, decimal salaryAfterTaxes, decimal dividendoJuros)
-        CalculateAnnualIncomeDetails(KeyValuePair<int, List<IncomeAverageDTO>> incomeYear)
+        CalculateAnnualIncomeDetails(KeyValuePair<int, List<IncomeGroupValueDTO>> incomeYear)
     {
         var salary = 0m;
         var salaryAfterTaxes = 0m;
@@ -303,7 +302,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         return (salary, salaryAfterTaxes, dividendoJuros);
     }
 
-    private Dictionary<int, List<IncomeAverageDTO>> GetAnnualAverageIncomeByGroupIncome(int year)
+    private Dictionary<int, List<IncomeGroupValueDTO>> GetAnnualAverageIncomeByGroupIncome(int year)
     {
         var monthlySumByIncomeSource = _repository.GetIncomes()
             .Where(e => e.Date.Year <= year && e.Date < new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1))
@@ -317,7 +316,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         var averageExpenseByYear = monthlySumByIncomeSource
             .GroupBy(e => e.Key.Year)
             .ToDictionary(g => g.Key, g => g.GroupBy(e => e.Key.IncomeGroup)
-                .Select(a => new IncomeAverageDTO
+                .Select(a => new IncomeGroupValueDTO
                 {
                     IncomeGroup = a.Key,
                     GrossAverageValue = Math.Round(a.Sum(e => e.GrossSumValue)/NumberOfMonthsForAverage(g.Key), AverageDecimalPlaces),
@@ -338,7 +337,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             ? SalaryIncomeGroup
             : IncomeSource.DividendoJuros.ToString();
 
-    private IList<CategoryAnnualAverageDTO> GetHistoricCategoriesAverageFromYear(int year)
+    private IList<CategoryAnnualGroupValueDTO> GetHistoricCategoriesAverageFromYear(int year)
     {
         var monthlySumByCategory = _repository.GetExpenses()
             .Where(e => e.Date.Year <= year && e.Date < new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1))
@@ -350,17 +349,17 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             });
         var averageExpenseByYear = monthlySumByCategory
             .GroupBy(g => g.Key.Year)
-            .Select(yearGroup => new CategoryAnnualAverageDTO
+            .Select(yearGroup => new CategoryAnnualGroupValueDTO
             {
                 Year = yearGroup.Key,
                 AnnualAverages =
                 [
                     .. yearGroup
                     .GroupBy(g => g.Key.Category)
-                    .Select(categoryGroup => new CategoryAverageDTO
+                    .Select(categoryGroup => new CategoryGroupValueDTO
                     {
                         Category = categoryGroup.Key.ToString(),
-                        Average = Math.Round(categoryGroup.Average(monthGroup => monthGroup.Sum), AverageDecimalPlaces)
+                        Value = Math.Round(categoryGroup.Sum(monthGroup => monthGroup.Sum)/NumberOfMonthsForAverage(yearGroup.Key), AverageDecimalPlaces)
                     })
                 ]
             });

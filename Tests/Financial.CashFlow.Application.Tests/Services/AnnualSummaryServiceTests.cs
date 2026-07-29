@@ -500,21 +500,37 @@ public class AnnualSummaryServiceTests
     }
 
     [Fact]
-    public void GetHistoricSummaryAverageFromYear_AveragesCategoryValuesPerMonthNotPerTransaction()
+    public void GetHistoricSummaryAverageFromYear_AveragesCategoryValuesForFullYear()
     {
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan first", 100m, Category.Mercado, "Barclays", null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 20), "Jan second", 100m, Category.Mercado, "Barclays", null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 2, 10), "Feb", 400m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Jan first", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 20), "Jan second", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 2, 10), "Feb", 400m, Category.Mercado, "Barclays", null));
 
         var result = service.GetHistoricSummaryAverageFromYear(2026);
 
-        var mercadoAverage = result[0].AnnualAverages.Single(a => a.Category == nameof(Category.Mercado)).Average;
+        var mercadoAverage = result[0].AnnualAverages.Single(a => a.Category == nameof(Category.Mercado)).Value;
 
-        // Per-month average (spec): Jan total 200 + Feb total 400 → avg over 2 months = 300
-        mercadoAverage.Should().Be(300m);
+        mercadoAverage.Should().Be(50m);
     }
+
+    [Fact]
+    public void GetHistoricSummaryAverageFromYear_AveragesCategoryValuesFor2017Year()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new AnnualSummaryService(repository);
+        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 5), "Jan first", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 20), "Jan second", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 2, 10), "Feb", 400m, Category.Mercado, "Barclays", null));
+
+        var result = service.GetHistoricSummaryAverageFromYear(2026);
+
+        var mercadoAverage = result[0].AnnualAverages.Single(a => a.Category == nameof(Category.Mercado)).Value;
+
+        mercadoAverage.Should().Be(54.55m);
+    }
+
 
     [Fact]
     public void GetHistoricSummaryAverageFromYear_MergesIncomeAveragesIntoMatchingYearsInDescendingOrder()
@@ -533,8 +549,8 @@ public class AnnualSummaryServiceTests
         result.Count.Should().Be(2);
         result[0].Year.Should().Be(2025);
         result[1].Year.Should().Be(2023);
-        result[0].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(100m);
-        result[1].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(75m);
+        result[0].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(100m);
+        result[1].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(75m);
     }
 
     [Fact]
@@ -561,14 +577,14 @@ public class AnnualSummaryServiceTests
         var result = service.GetHistoricSummaryAverageFromYear(2026);
 
         // current year only use the information before the current month, so if the current month is January, the average will be 0
-        result[0].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(currentYearZero ? 0 : 2400m/currentYearNumberOfMonths);
-        result[0].AnnualAverages.Single(a => a.Category == "Salary after taxes").Average.Should().Be(currentYearZero ? 0 : 900m/currentYearNumberOfMonths);
+        result[0].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(currentYearZero ? 0 : 2400m/currentYearNumberOfMonths);
+        result[0].AnnualAverages.Single(a => a.Category == "Salary after taxes").Value.Should().Be(currentYearZero ? 0 : 900m/currentYearNumberOfMonths);
 
-        result[1].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(375m);
-        result[1].AnnualAverages.Single(a => a.Category == "Salary after taxes").Average.Should().Be(300m);
+        result[1].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(375m);
+        result[1].AnnualAverages.Single(a => a.Category == "Salary after taxes").Value.Should().Be(300m);
 
-        result[2].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(100m);
-        result[2].AnnualAverages.Single(a => a.Category == "Salary after taxes").Average.Should().Be(10m);
+        result[2].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(100m);
+        result[2].AnnualAverages.Single(a => a.Category == "Salary after taxes").Value.Should().Be(10m);
     }
 
     [Fact]
@@ -591,7 +607,7 @@ public class AnnualSummaryServiceTests
         var result = service.GetHistoricSummaryAverageFromYear(DateTime.UtcNow.Year);
 
         // Combined per-month salary: Jan 1500, Feb 1000, Mar 1000 → avg over 3 months = 1166.67
-        result[0].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(Math.Round(3500m / currentYearNumberOfMonths, AnnualSummaryService.AverageDecimalPlaces));
+        result[0].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(Math.Round(3500m / currentYearNumberOfMonths, AnnualSummaryService.AverageDecimalPlaces));
     }
 
     [Fact]
@@ -605,8 +621,8 @@ public class AnnualSummaryServiceTests
 
         result.Count.Should().Be(1);
         result[0].Year.Should().Be(2025);
-        result[0].AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(100m);
-        result[0].AnnualAverages.Single(a => a.Category == "Salary after taxes").Average.Should().Be(50m);
+        result[0].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(100m);
+        result[0].AnnualAverages.Single(a => a.Category == "Salary after taxes").Value.Should().Be(50m);
     }
 
     [Fact]
@@ -614,16 +630,16 @@ public class AnnualSummaryServiceTests
     {
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Investing", 30m, Category.Investimento, "Barclays", null));
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), IncomeSource.DividendoJuros, null, 20m, "Barclays"));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Investing", 30m, Category.Investimento, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), IncomeSource.DividendoJuros, null, 20m, "Barclays"));
 
-        var result = service.GetHistoricSummaryAverageFromYear(2026);
+        var result = service.GetHistoricSummaryAverageFromYear(2025);
 
         // Total despesas must be the sum of the 14 expense category rows only (Mercado 100 + Investimento 30 = 130),
         // never the income rows (Salary/Salary after taxes/Tax difference/Dividendo/Juros) merged in ahead of them.
-        result[0].AnnualAverages.Single(a => a.Category == "Total despesas").Average.Should().Be(130m);
+        result[0].AnnualAverages.Single(a => a.Category == "Total despesas").Value.Should().Be(10.83m);
     }
 
     [Fact]
@@ -640,8 +656,8 @@ public class AnnualSummaryServiceTests
 
         var result = service.GetHistoricSummaryAverageFromYear(2025);
 
-        // Resultado (R-D-Inv) = SalaryAfterTaxes(800/12) - TotalDespesas(130) + Investimento(30) = 700
-        result[0].AnnualAverages.Single(a => a.Category == "Resultado (R-D-Inv)").Average.Should().Be(-33.33m);
+        // Resultado (R-D-Inv) = SalaryAfterTaxes(800/12) - TotalDespesas(130/12) + Investimento(30/12) = 700
+        result[0].AnnualAverages.Single(a => a.Category == "Resultado (R-D-Inv)").Value.Should().Be(58.34m);
     }
 
     [Fact]
@@ -649,15 +665,15 @@ public class AnnualSummaryServiceTests
     {
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 1200m, Category.Mercado, "Barclays", null));
 
-        var result = service.GetHistoricSummaryAverageFromYear(2026);
+        var result = service.GetHistoricSummaryAverageFromYear(2025);
 
         // Every one of the 14 Category enum values must appear, even with zero recorded expenses that year.
         foreach (var category in Enum.GetValues<Category>())
         {
             var entry = result[0].AnnualAverages.Single(a => a.Category == category.ToString());
-            entry.Average.Should().Be(category == Category.Mercado ? 100m : 0m);
+            entry.Value.Should().Be(category == Category.Mercado ? 100m : 0m);
         }
     }
 
@@ -683,6 +699,7 @@ public class AnnualSummaryServiceTests
     public void GetHistoricSummaryAverageFromYear_ExcludesInProgressCurrentMonthFromCurrentYearAverage()
     {
         var today = DateTime.UtcNow;
+        var currentMonth = today.Month;
         if (today.Month == 1)
         {
             // No completed month exists yet this year; that scenario is covered by the
@@ -690,23 +707,23 @@ public class AnnualSummaryServiceTests
             return;
         }
 
-        var numberOfMonthsInCurrentYear = today.Month - 1; // Exclude the current month, which is in progress.
+        var numberOfValidMonthsInCurrentYear = today.Month - 1; // Exclude the current month, which is in progress.
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
         var currentYear = today.Year;
-        repository.Expenses.Add(Expense.Create(new DateOnly(currentYear, 1, 5), "Completed month", 100m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(currentYear, 1, 5), "Completed month", 100m * numberOfValidMonthsInCurrentYear, Category.Mercado, "Barclays", null));
         repository.Expenses.Add(Expense.Create(DateOnly.FromDateTime(today), "In-progress month", 9999m, Category.Mercado, "Barclays", null));
-        repository.Incomes.Add(Income.Create(new DateOnly(currentYear, 1, 5), IncomeSource.Gleison, 1000m * numberOfMonthsInCurrentYear, 800m * numberOfMonthsInCurrentYear, "Barclays"));
-        repository.Incomes.Add(Income.Create(DateOnly.FromDateTime(today), IncomeSource.Gleison, 9999m * numberOfMonthsInCurrentYear, 9999m * numberOfMonthsInCurrentYear, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(currentYear, 1, 5), IncomeSource.Gleison, 1000m * numberOfValidMonthsInCurrentYear, 800m * numberOfValidMonthsInCurrentYear, "Barclays"));
+        repository.Incomes.Add(Income.Create(DateOnly.FromDateTime(today), IncomeSource.Gleison, 9999m * numberOfValidMonthsInCurrentYear, 9999m * numberOfValidMonthsInCurrentYear, "Barclays"));
 
         var result = service.GetHistoricSummaryAverageFromYear(currentYear);
 
         var currentYearRow = result.Single(r => r.Year == currentYear);
         // Only January's figures count; the in-progress current-month entries (9999) must be excluded entirely,
         // not treated as a completed month with a low value.
-        currentYearRow.AnnualAverages.Single(a => a.Category == "Mercado").Average.Should().Be(100m);
-        currentYearRow.AnnualAverages.Single(a => a.Category == "Salary").Average.Should().Be(1000m);
-        currentYearRow.AnnualAverages.Single(a => a.Category == "Salary after taxes").Average.Should().Be(800m);
+        currentYearRow.AnnualAverages.Single(a => a.Category == "Mercado").Value.Should().Be(100m);
+        currentYearRow.AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(1000m);
+        currentYearRow.AnnualAverages.Single(a => a.Category == "Salary after taxes").Value.Should().Be(800m);
     }
 
     [Fact]

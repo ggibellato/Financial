@@ -188,28 +188,27 @@ public class AnnualSummaryEndpointsTests
         var response = await client.GetAsync($"/api/v1/financial/annual-summary/{currentYear}/historic-summary-averages");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<List<CategoryAnnualAverageDTO>>();
+        var result = await response.Content.ReadFromJsonAsync<List<CategoryAnnualGroupValueDTO>>();
         result.Should().HaveCount(2);
         result![0].Year.Should().Be(currentYear);
         result[1].Year.Should().Be(pastYear);
 
-        // Current year: Mercado's two recorded months (Jan 100 + Mar 50) average to 75 - the
-        // category average is unaffected by the income divisor change. Income (Gleison + Ariana
-        // combined per month) divides by the completed months so far this year (current month - 1),
-        // not by however many of those months happen to have a recorded entry.
+        // Current year: Mercado's total (Jan 100 + Mar 50 = 150) divides by the completed months so
+        // far this year (current month - 1), same divisor as income, giving 150/monthsToAverage = 25 -
+        // not an average over only the months with a recorded entry.
         var expectedSalary = Math.Round(3600m / monthsToAverage, 2);
         var expectedSalaryAfterTaxes = Math.Round(2800m / monthsToAverage, 2);
         var expectedDividendoJuros = Math.Round(15.50m / monthsToAverage, 2);
-        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Mercado" && a.Average == 75m);
-        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Salary" && a.Average == expectedSalary);
-        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Salary after taxes" && a.Average == expectedSalaryAfterTaxes);
-        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Tax difference" && a.Average == expectedSalary - expectedSalaryAfterTaxes);
-        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Dividendo/Juros" && a.Average == expectedDividendoJuros);
+        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Mercado" && a.Value == 25m);
+        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Salary" && a.Value == expectedSalary);
+        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Salary after taxes" && a.Value == expectedSalaryAfterTaxes);
+        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Tax difference" && a.Value == expectedSalary - expectedSalaryAfterTaxes);
+        result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Dividendo/Juros" && a.Value == expectedDividendoJuros);
 
         // Past year has expenses but no income, so no income rows should be merged in for that year.
-        // The category average is unchanged by this commit: its single active month (June) still
-        // makes the average equal that month's value (120), not divided by 12.
-        result[1].AnnualAverages.Should().ContainSingle(a => a.Category == "Mercado" && a.Average == 120m);
+        // A full past year always divides by 12 regardless of how many months have a recorded entry:
+        // 120 / 12 = 10, not 120 (the June value) as a per-active-month average would give.
+        result[1].AnnualAverages.Should().ContainSingle(a => a.Category == "Mercado" && a.Value == 10m);
         result[1].AnnualAverages.Should().NotContain(a => a.Category == "Salary");
     }
 }
