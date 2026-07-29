@@ -57,8 +57,8 @@ const HISTORIC_SUMMARY_AVERAGE: CategoryAnnualAverageDto[] = [
   { 
     year: CURRENT_YEAR,
     annualAverages: [
-      { category: 'Mercado', average: 100 },
-      { category: 'Investimento', average: 500 },
+      { category: 'Mercado', value: 100 },
+      { category: 'Investimento', value: 500 },
     ],
    },
 ]
