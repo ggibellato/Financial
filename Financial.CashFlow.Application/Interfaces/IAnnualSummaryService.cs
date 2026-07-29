@@ -9,4 +9,5 @@ public interface IAnnualSummaryService
     IncomeAnnualSummaryDTO GetIncomeSummaryForYear(int year);
     IReadOnlyList<CategoryAnnualGroupValueDTO> GetHistoricSummaryAverageFromYear(int year);
     CategoryTotalsAnnualDTO GetCategoryTotalsAnnualForYear(int year);
+    InvestmentAnnualResultDTO GetInvestmentAnnualResultForYear(int year);
 }

@@ -343,6 +343,59 @@ public class AnnualSummaryServiceTests
     }
 
     [Fact]
+    public void GetInvestmentAnnualResultForYear_AccountsAndNetPositionMatchGetInvestmentDiffsForYearExactly()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", PastYear - 1, 12, 800m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", PastYear, 1, 1000m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", PastYear, 2, 1200m));
+        repository.Snapshots.Add(InvestmentSnapshot.Create("PlatinumVisa8003", PastYear, 1, 300m));
+        var service = new AnnualSummaryService(repository);
+
+        var expected = service.GetInvestmentDiffsForYear(PastYear);
+        var result = service.GetInvestmentAnnualResultForYear(PastYear);
+
+        result.Accounts.Should().BeEquivalentTo(expected.Accounts);
+        result.NetPosition.Should().BeEquivalentTo(expected.NetPosition);
+    }
+
+    [Fact]
+    public void GetInvestmentAnnualResultForYear_AverageMonthResultUsesMonthlySeriesAverageNotNaiveRounding()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", PastYear - 1, 12, 800m));
+        var value = 900m;
+        for (var month = 1; month <= 12; month++)
+        {
+            repository.Snapshots.Add(InvestmentSnapshot.Create("ChaseSave", PastYear, month, value));
+            value += 50m;
+        }
+        var service = new AnnualSummaryService(repository);
+
+        var result = service.GetInvestmentAnnualResultForYear(PastYear);
+
+        // Same data as GetInvestmentDiffsForYear_PastYear_AverageAndSumIncludeAllTwelveMonthsIncludingJanuary:
+        // January diff = 900 - 800 = 100; the remaining 11 months each diff by 50. Sum = 650, over 12 months.
+        result.NetPosition.SumOfMonthResults.Should().Be(650m);
+        result.NetPosition.AverageMonthResult.Should().Be(650m / 12m);
+    }
+
+    [Fact]
+    public void GetInvestmentAnnualResultForYear_NoAccountsOrSnapshots_ReturnsEmptyAccountsAndAllZeroNetPosition()
+    {
+        var repository = new StubCashFlowRepository();
+        var service = new AnnualSummaryService(repository);
+
+        var result = service.GetInvestmentAnnualResultForYear(PastYear);
+
+        result.Accounts.Should().BeEmpty();
+        result.NetPosition.MonthlyValues.Should().OnlyContain(v => v == 0m);
+        result.NetPosition.FullYearNetChange.Should().Be(0m);
+        result.NetPosition.AverageMonthResult.Should().Be(0m);
+        result.NetPosition.SumOfMonthResults.Should().Be(0m);
+    }
+
+    [Fact]
     public void GetIncomeSummaryForYear_SalaryRowSumsGleisonAndArianaGrossValuesPerMonth()
     {
         var repository = new StubCashFlowRepository();

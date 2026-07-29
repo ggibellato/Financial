@@ -279,4 +279,47 @@ public class AnnualSummaryEndpointsTests
         result.TotalDespesasMonthly.Should().OnlyContain(v => v == 0m);
         result.ResultadoMonthly.Should().OnlyContain(v => v == 0m);
     }
+
+    [Fact]
+    public async Task GetInvestmentAnnualResult_ReturnsOkMatchingSeededSnapshots()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var januarySnapshots = await client.GetAsync("/api/v1/financial/investment-snapshots/2026/1");
+        var january = await januarySnapshots.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
+        var chaseSaveJan = january!.First(s => s.Account == "ChaseSave");
+        await client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{chaseSaveJan.Id}", new UpdateInvestmentSnapshotValueDTO { Value = 1000m });
+        var februarySnapshots = await client.GetAsync("/api/v1/financial/investment-snapshots/2026/2");
+        var february = await februarySnapshots.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
+        var chaseSaveFeb = february!.First(s => s.Account == "ChaseSave");
+        await client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{chaseSaveFeb.Id}", new UpdateInvestmentSnapshotValueDTO { Value = 1200m });
+
+        var response = await client.GetAsync("/api/v1/financial/annual-summary/2026/investment-annual-result");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<InvestmentAnnualResultDTO>();
+        result!.Accounts.Should().HaveCount(11);
+        var chaseSave = result.Accounts.Single(a => a.Account == "ChaseSave");
+        chaseSave.MonthlyValues[0].Should().Be(1000m);
+        chaseSave.MonthlyValues[1].Should().Be(1200m);
+        chaseSave.MonthlyDiffs[0].Should().BeNull();
+        chaseSave.MonthlyDiffs[1].Should().Be(200m);
+        result.NetPosition.MonthlyValues[0].Should().Be(1000m);
+        result.NetPosition.FullYearNetChange.Should().Be(-1000m);
+    }
+
+    [Fact]
+    public async Task GetInvestmentAnnualResult_NoData_ReturnsEmptyAccountsArray()
+    {
+        var pastYear = DateTime.UtcNow.Year - 5;
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync($"/api/v1/financial/annual-summary/{pastYear}/investment-annual-result");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<InvestmentAnnualResultDTO>();
+        result!.Accounts.Should().BeEmpty();
+        result.NetPosition.MonthlyValues.Should().OnlyContain(v => v == 0m);
+    }
 }

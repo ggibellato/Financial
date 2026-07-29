@@ -49,4 +49,11 @@ public sealed class AnnualSummaryController : ControllerBase
     {
         return Ok(_annualSummaryService.GetCategoryTotalsAnnualForYear(year));
     }
+
+    [HttpGet("{year:int}/investment-annual-result")]
+    [ProducesResponseType(typeof(InvestmentAnnualResultDTO), StatusCodes.Status200OK)]
+    public ActionResult<InvestmentAnnualResultDTO> GetInvestmentAnnualResult(int year)
+    {
+        return Ok(_annualSummaryService.GetInvestmentAnnualResultForYear(year));
+    }
 }
