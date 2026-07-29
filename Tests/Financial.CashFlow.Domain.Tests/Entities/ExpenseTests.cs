@@ -304,4 +304,23 @@ public class ExpenseTests
 
         expense.RoundUpAmount.Should().Be(0.60m);
     }
+
+    [Fact]
+    public void IsInvestment_InvestimentoCategory_IsTrue()
+    {
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Trading212 top-up", 100m, Category.Investimento, "Chase", null);
+
+        expense.IsInvestment.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(Category.Mercado)]
+    [InlineData(Category.Casa)]
+    [InlineData(Category.Reserva)]
+    public void IsInvestment_OtherCategories_IsFalse(Category category)
+    {
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Not investment", 100m, category, "Chase", null);
+
+        expense.IsInvestment.Should().BeFalse();
+    }
 }
