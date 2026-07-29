@@ -1,0 +1,5 @@
+{
+  "Banks": [
+    { "Name": "Barclays", "RoundUpEnabled": false }
+  ]
+}
