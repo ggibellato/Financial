@@ -2,7 +2,7 @@
 
 namespace Financial.CashFlow.Application.DTOs
 {
-    public class IncomeAverageDTO
+    public class IncomeGroupValueDTO
     {
         public required string IncomeGroup { get; init; }
         public decimal? GrossAverageValue { get; init; }

@@ -272,7 +272,7 @@ export default function AnnualSummaryPage() {
                           <td>{optionalEmphasize(a.category, isEmphasized)}</td>
                           {historicSummaryAverage.map((y) => (
                             <td key={y.year} className="data-table__col--numeric">
-                              {optionalEmphasize(formatN2(y.annualAverages.find((d) => d.category === a.category)?.average ?? 0), 
+                              {optionalEmphasize(formatN2(y.annualAverages.find((d) => d.category === a.category)?.value ?? 0), 
                                 isEmphasized)}
                             </td>
                           ))}

@@ -505,5 +505,5 @@ export interface CategoryAnnualAverageDto {
 
 export interface CategoryAverageDto {
   category: string
-  average: number
+  value: number
 }
