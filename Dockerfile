@@ -1,5 +1,5 @@
 # Stage 1: Build React frontend
-FROM node:22-slim AS web-build
+FROM node:24.13.0-slim AS web-build
 WORKDIR /app
 COPY Financial.Web/package*.json .
 RUN npm install
