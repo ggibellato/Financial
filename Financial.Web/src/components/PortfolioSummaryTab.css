@@ -30,6 +30,12 @@
   text-align: center;
 }
 
+/* Second header row sits below the rowSpan=2 cells and group labels in the first row,
+   so its sticky offset must clear the first row's height instead of also using top: 0. */
+.portfolio-summary__table thead tr:nth-child(2) th {
+  top: 43px;
+}
+
 .portfolio-summary__profit--green {
   color: #2e7d32;
 }
