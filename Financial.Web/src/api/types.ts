@@ -469,7 +469,7 @@ export interface NetPositionAnnualDiffDto {
   sumOfMonthResults: number
 }
 
-export interface InvestmentDiffsAnnualDto {
+export interface InvestmentAnnualResultDto {
   accounts: InvestmentAccountAnnualDiffDto[]
   netPosition: NetPositionAnnualDiffDto
 }
@@ -483,6 +483,15 @@ export interface IncomeAnnualSummaryDto {
   taxDifferenceAnnualTotal: number
   dividendoJurosMonthly: number[]
   dividendoJurosAnnualTotal: number
+}
+
+export interface CategoryTotalsAnnualDto {
+  categoryTotals: CategoryAnnualTotalDto[]
+  incomeSummary: IncomeAnnualSummaryDto
+  totalDespesasMonthly: number[]
+  totalDespesasAnnualTotal: number
+  resultadoMonthly: number[]
+  resultadoAnnualTotal: number
 }
 
 export interface InvestmentSnapshotDto {

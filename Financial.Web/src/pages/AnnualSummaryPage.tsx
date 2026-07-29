@@ -76,7 +76,7 @@ export default function AnnualSummaryPage() {
     year,
     setYear,
     categoryTotals,
-    investmentDiffs,
+    investmentAnnualResult,
     incomeSummary,
     historicSummaryAverage,
     totalDespesasMonthly,
@@ -199,7 +199,7 @@ export default function AnnualSummaryPage() {
             </section>
           )}
 
-          {activeTab === 'investments' && investmentDiffs && (
+          {activeTab === 'investments' && investmentAnnualResult && (
             <section className="annual-summary-page__section">
               <h2>Investments</h2>
               <table className="annual-summary-page__table data-table">
@@ -214,17 +214,17 @@ export default function AnnualSummaryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {investmentDiffs.accounts.map((a) => (
+                  {investmentAnnualResult.accounts.map((a) => (
                     <InvestmentRow
                       key={a.account}
                       label={`${a.account}${a.isLiability ? ' (-)' : ''}`}
                       monthlyValues={a.monthlyValues}
                     />
                   ))}
-                  <InvestmentRow label="Total" monthlyValues={investmentDiffs.netPosition.monthlyValues} emphasized />
+                  <InvestmentRow label="Total" monthlyValues={investmentAnnualResult.netPosition.monthlyValues} emphasized />
                   <InvestmentRow
                     label="Month Result"
-                    monthlyValues={investmentDiffs.netPosition.monthlyDiffs}
+                    monthlyValues={investmentAnnualResult.netPosition.monthlyDiffs}
                     emphasized
                   />
                 </tbody>
@@ -233,15 +233,15 @@ export default function AnnualSummaryPage() {
               <div className="annual-summary-page__investment-totals">
                 <div className="annual-summary-page__investment-total">
                   <span>Year Progress</span>
-                  <strong>{formatN2(investmentDiffs.netPosition.fullYearNetChange)}</strong>
+                  <strong>{formatN2(investmentAnnualResult.netPosition.fullYearNetChange)}</strong>
                 </div>
                 <div className="annual-summary-page__investment-total">
                   <span>Average Month Result</span>
-                  <strong>{formatN2(investmentDiffs.netPosition.averageMonthResult)}</strong>
+                  <strong>{formatN2(investmentAnnualResult.netPosition.averageMonthResult)}</strong>
                 </div>
                 <div className="annual-summary-page__investment-total">
                   <span>Sum of Month Results</span>
-                  <strong>{formatN2(investmentDiffs.netPosition.sumOfMonthResults)}</strong>
+                  <strong>{formatN2(investmentAnnualResult.netPosition.sumOfMonthResults)}</strong>
                 </div>
               </div>
             </section>

@@ -1,30 +1,42 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../api/financialApiClient'
-import type { CategoryAnnualAverageDto, CategoryAnnualTotalDto, IncomeAnnualSummaryDto, InvestmentDiffsAnnualDto } from '../api/types'
+import type { CategoryAnnualAverageDto, CategoryTotalsAnnualDto, InvestmentAnnualResultDto } from '../api/types'
 import { useAnnualSummary } from './useAnnualSummary'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
-const getCategoryTotalsForYearMock = vi.fn<FinancialApiClient['getCategoryTotalsForYear']>()
-const getInvestmentDiffsForYearMock = vi.fn<FinancialApiClient['getInvestmentDiffsForYear']>()
-const getIncomeSummaryForYearMock = vi.fn<FinancialApiClient['getIncomeSummaryForYear']>()
+const getCategoryTotalsAnnualForYearMock = vi.fn<FinancialApiClient['getCategoryTotalsAnnualForYear']>()
+const getInvestmentAnnualResultForYearMock = vi.fn<FinancialApiClient['getInvestmentAnnualResultForYear']>()
 const getHistoricSummaryAverageFromYearMock = vi.fn<FinancialApiClient['getHistoricSummaryAverageFromYear']>()
 
 vi.mock('../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
-    getCategoryTotalsForYear: getCategoryTotalsForYearMock,
-    getInvestmentDiffsForYear: getInvestmentDiffsForYearMock,
-    getIncomeSummaryForYear: getIncomeSummaryForYearMock,
+    getCategoryTotalsAnnualForYear: getCategoryTotalsAnnualForYearMock,
+    getInvestmentAnnualResultForYear: getInvestmentAnnualResultForYearMock,
     getHistoricSummaryAverageFromYear: getHistoricSummaryAverageFromYearMock,
   }),
 }))
 
-const CATEGORY_TOTALS: CategoryAnnualTotalDto[] = [
-  { category: 'Mercado', monthlyTotals: new Array(12).fill(100), annualTotal: 1200 },
-]
+const CATEGORY_TOTALS_ANNUAL: CategoryTotalsAnnualDto = {
+  categoryTotals: [{ category: 'Mercado', monthlyTotals: new Array(12).fill(100), annualTotal: 1200 }],
+  incomeSummary: {
+    salaryMonthly: new Array(12).fill(3200),
+    salaryAnnualTotal: 38400,
+    salaryAfterTaxesMonthly: new Array(12).fill(2450),
+    salaryAfterTaxesAnnualTotal: 29400,
+    taxDifferenceMonthly: new Array(12).fill(750),
+    taxDifferenceAnnualTotal: 9000,
+    dividendoJurosMonthly: new Array(12).fill(15.5),
+    dividendoJurosAnnualTotal: 186,
+  },
+  totalDespesasMonthly: new Array(12).fill(100),
+  totalDespesasAnnualTotal: 1200,
+  resultadoMonthly: new Array(12).fill(2350),
+  resultadoAnnualTotal: 28200,
+}
 
-const INVESTMENT_DIFFS: InvestmentDiffsAnnualDto = {
+const INVESTMENT_ANNUAL_RESULT: InvestmentAnnualResultDto = {
   accounts: [
     {
       account: 'ChaseSave',
@@ -42,51 +54,67 @@ const INVESTMENT_DIFFS: InvestmentDiffsAnnualDto = {
   },
 }
 
-const INCOME_SUMMARY: IncomeAnnualSummaryDto = {
-  salaryMonthly: new Array(12).fill(3200),
-  salaryAnnualTotal: 38400,
-  salaryAfterTaxesMonthly: new Array(12).fill(2450),
-  salaryAfterTaxesAnnualTotal: 29400,
-  taxDifferenceMonthly: new Array(12).fill(750),
-  taxDifferenceAnnualTotal: 9000,
-  dividendoJurosMonthly: new Array(12).fill(15.5),
-  dividendoJurosAnnualTotal: 186,
-}
-
 const HISTORIC_SUMMARY_AVERAGE: CategoryAnnualAverageDto[] = [
-  { 
+  {
     year: CURRENT_YEAR,
     annualAverages: [
       { category: 'Mercado', value: 100 },
       { category: 'Investimento', value: 500 },
     ],
-   },
+  },
 ]
 
 describe('useAnnualSummary', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    getCategoryTotalsForYearMock.mockResolvedValue(CATEGORY_TOTALS)
-    getInvestmentDiffsForYearMock.mockResolvedValue(INVESTMENT_DIFFS)
-    getIncomeSummaryForYearMock.mockResolvedValue(INCOME_SUMMARY)
+    getCategoryTotalsAnnualForYearMock.mockResolvedValue(CATEGORY_TOTALS_ANNUAL)
+    getInvestmentAnnualResultForYearMock.mockResolvedValue(INVESTMENT_ANNUAL_RESULT)
     getHistoricSummaryAverageFromYearMock.mockResolvedValue(HISTORIC_SUMMARY_AVERAGE)
   })
 
-  it('fetches category totals, investment diffs, and income summary for the current year on mount', async () => {
+  it('fetches category totals, investment annual result, and historic summary average for the current year on mount', async () => {
     const { result } = renderHook(() => useAnnualSummary())
 
     expect(result.current.isLoading).toBe(true)
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    expect(getCategoryTotalsForYearMock).toHaveBeenCalledWith(CURRENT_YEAR)
-    expect(getInvestmentDiffsForYearMock).toHaveBeenCalledWith(CURRENT_YEAR)
-    expect(getIncomeSummaryForYearMock).toHaveBeenCalledWith(CURRENT_YEAR)
+    expect(getCategoryTotalsAnnualForYearMock).toHaveBeenCalledWith(CURRENT_YEAR)
+    expect(getInvestmentAnnualResultForYearMock).toHaveBeenCalledWith(CURRENT_YEAR)
     expect(getHistoricSummaryAverageFromYearMock).toHaveBeenCalledWith(CURRENT_YEAR)
     expect(result.current.year).toBe(CURRENT_YEAR)
-    expect(result.current.categoryTotals).toEqual(CATEGORY_TOTALS)
-    expect(result.current.investmentDiffs).toEqual(INVESTMENT_DIFFS)
-    expect(result.current.incomeSummary).toEqual(INCOME_SUMMARY)
+    expect(result.current.categoryTotals).toEqual(CATEGORY_TOTALS_ANNUAL.categoryTotals)
+    expect(result.current.incomeSummary).toEqual(CATEGORY_TOTALS_ANNUAL.incomeSummary)
+    expect(result.current.investmentAnnualResult).toEqual(INVESTMENT_ANNUAL_RESULT)
     expect(result.current.historicSummaryAverage).toEqual(HISTORIC_SUMMARY_AVERAGE)
+  })
+
+  it('issues exactly 3 requests per year load', async () => {
+    const { result } = renderHook(() => useAnnualSummary())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(getCategoryTotalsAnnualForYearMock).toHaveBeenCalledTimes(1)
+    expect(getInvestmentAnnualResultForYearMock).toHaveBeenCalledTimes(1)
+    expect(getHistoricSummaryAverageFromYearMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not recompute total despesas or resultado client-side', async () => {
+    // Values chosen so they would NOT match a client-side recomputation from categoryTotals/incomeSummary,
+    // proving the hook reads them straight from the API response instead of deriving them.
+    getCategoryTotalsAnnualForYearMock.mockResolvedValue({
+      ...CATEGORY_TOTALS_ANNUAL,
+      totalDespesasMonthly: new Array(12).fill(999),
+      totalDespesasAnnualTotal: 11988,
+      resultadoMonthly: new Array(12).fill(-42),
+      resultadoAnnualTotal: -504,
+    })
+
+    const { result } = renderHook(() => useAnnualSummary())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.totalDespesasMonthly).toEqual(new Array(12).fill(999))
+    expect(result.current.totalDespesasAnnualTotal).toBe(11988)
+    expect(result.current.resultadoMonthly).toEqual(new Array(12).fill(-42))
+    expect(result.current.resultadoAnnualTotal).toBe(-504)
   })
 
   it('re-fetches for a new year when the year changes', async () => {
@@ -95,13 +123,13 @@ describe('useAnnualSummary', () => {
 
     act(() => result.current.setYear(2020))
 
-    await waitFor(() => expect(getCategoryTotalsForYearMock).toHaveBeenCalledWith(2020))
-    await waitFor(() => expect(getInvestmentDiffsForYearMock).toHaveBeenCalledWith(2020))
+    await waitFor(() => expect(getCategoryTotalsAnnualForYearMock).toHaveBeenCalledWith(2020))
+    await waitFor(() => expect(getInvestmentAnnualResultForYearMock).toHaveBeenCalledWith(2020))
     await waitFor(() => expect(getHistoricSummaryAverageFromYearMock).toHaveBeenCalledWith(2020))
   })
 
   it('surfaces a fetch error without crashing', async () => {
-    getCategoryTotalsForYearMock.mockRejectedValue(new Error('Network down'))
+    getCategoryTotalsAnnualForYearMock.mockRejectedValue(new Error('Network down'))
     const { result } = renderHook(() => useAnnualSummary())
 
     await waitFor(() => expect(result.current.error).toBe('Network down'))
@@ -113,37 +141,6 @@ describe('useAnnualSummary', () => {
 
     act(() => result.current.retry())
 
-    await waitFor(() => expect(getCategoryTotalsForYearMock).toHaveBeenCalledTimes(2))
-  })
-
-  it('computes total despesas as the sum of all category monthly totals', async () => {
-    const multiCategoryTotals: CategoryAnnualTotalDto[] = [
-      { category: 'Mercado', monthlyTotals: new Array(12).fill(100), annualTotal: 1200 },
-      { category: 'Investimento', monthlyTotals: new Array(12).fill(500), annualTotal: 6000 },
-      { category: 'Reserva', monthlyTotals: new Array(12).fill(50), annualTotal: 600 },
-    ]
-    getCategoryTotalsForYearMock.mockResolvedValue(multiCategoryTotals)
-
-    const { result } = renderHook(() => useAnnualSummary())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    expect(result.current.totalDespesasMonthly).toEqual(new Array(12).fill(650))
-    expect(result.current.totalDespesasAnnualTotal).toBe(7800)
-  })
-
-  it('computes resultado as net income minus every category except Investimento', async () => {
-    const multiCategoryTotals: CategoryAnnualTotalDto[] = [
-      { category: 'Mercado', monthlyTotals: new Array(12).fill(100), annualTotal: 1200 },
-      { category: 'Investimento', monthlyTotals: new Array(12).fill(500), annualTotal: 6000 },
-      { category: 'Reserva', monthlyTotals: new Array(12).fill(50), annualTotal: 600 },
-    ]
-    getCategoryTotalsForYearMock.mockResolvedValue(multiCategoryTotals)
-
-    const { result } = renderHook(() => useAnnualSummary())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    // resultado = salaryAfterTaxes (2450) + dividendoJuros (15.5) - totalDespesas (650) + investimento (500)
-    expect(result.current.resultadoMonthly).toEqual(new Array(12).fill(2315.5))
-    expect(result.current.resultadoAnnualTotal).toBeCloseTo(27786, 5)
+    await waitFor(() => expect(getCategoryTotalsAnnualForYearMock).toHaveBeenCalledTimes(2))
   })
 })

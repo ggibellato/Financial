@@ -12,7 +12,7 @@ import type {
   CardStatementDto,
   CategoryAnnualAverageDto,
   CategoryTotalDto,
-  CategoryAnnualTotalDto,
+  CategoryTotalsAnnualDto,
   CreateExpenseDto,
   CreateMaeLedgerEntryDto,
   CreateRecurringBillDto,
@@ -27,8 +27,7 @@ import type {
   IncomeDto,
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
-  IncomeAnnualSummaryDto,
-  InvestmentDiffsAnnualDto,
+  InvestmentAnnualResultDto,
   InvestmentScope,
   InvestmentSnapshotDto,
   MaeLedgerEntryDto,
@@ -120,9 +119,8 @@ export interface FinancialApiClient {
   getCardStatementsByMonth: (year: number, month: number) => Promise<CardStatementDto[]>
   markCardStatementPaid: (id: string, request: MarkCardStatementPaidDto) => Promise<CardStatementDto>
   unmarkCardStatementPaid: (id: string) => Promise<CardStatementDto>
-  getCategoryTotalsForYear: (year: number) => Promise<CategoryAnnualTotalDto[]>
-  getInvestmentDiffsForYear: (year: number) => Promise<InvestmentDiffsAnnualDto>
-  getIncomeSummaryForYear: (year: number) => Promise<IncomeAnnualSummaryDto>
+  getCategoryTotalsAnnualForYear: (year: number) => Promise<CategoryTotalsAnnualDto>
+  getInvestmentAnnualResultForYear: (year: number) => Promise<InvestmentAnnualResultDto>
   getHistoricSummaryAverageFromYear: (year: number) => Promise<CategoryAnnualAverageDto[]>
 }
 
@@ -375,12 +373,10 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<CardStatementDto>(`/card-statements/${encodeURIComponent(id)}/unmark-paid`, {
         method: 'POST',
       }),
-    getCategoryTotalsForYear: (year) =>
-      request<CategoryAnnualTotalDto[]>(`/annual-summary/${year}/expense-categories`),
-    getInvestmentDiffsForYear: (year) =>
-      request<InvestmentDiffsAnnualDto>(`/annual-summary/${year}/investment-diffs`),
-    getIncomeSummaryForYear: (year) =>
-      request<IncomeAnnualSummaryDto>(`/annual-summary/${year}/income-summary`),
+    getCategoryTotalsAnnualForYear: (year) =>
+      request<CategoryTotalsAnnualDto>(`/annual-summary/${year}/category-totals`),
+    getInvestmentAnnualResultForYear: (year) =>
+      request<InvestmentAnnualResultDto>(`/annual-summary/${year}/investment-annual-result`),
     getHistoricSummaryAverageFromYear: (year) =>
       request<CategoryAnnualAverageDto[]>(`/annual-summary/${year}/historic-summary-averages`),
   }
