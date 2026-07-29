@@ -2,31 +2,46 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AnnualSummaryPage from '../AnnualSummaryPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { CategoryAnnualAverageDto, CategoryAnnualTotalDto, IncomeAnnualSummaryDto, InvestmentDiffsAnnualDto } from '../../api/types'
+import type { CategoryAnnualAverageDto, CategoryTotalsAnnualDto, InvestmentAnnualResultDto } from '../../api/types'
 
-const getCategoryTotalsForYearMock = vi.fn<FinancialApiClient['getCategoryTotalsForYear']>()
-const getInvestmentDiffsForYearMock = vi.fn<FinancialApiClient['getInvestmentDiffsForYear']>()
-const getIncomeSummaryForYearMock = vi.fn<FinancialApiClient['getIncomeSummaryForYear']>()
+const getCategoryTotalsAnnualForYearMock = vi.fn<FinancialApiClient['getCategoryTotalsAnnualForYear']>()
+const getInvestmentAnnualResultForYearMock = vi.fn<FinancialApiClient['getInvestmentAnnualResultForYear']>()
 const getHistoricSummaryAverageFromYearMock = vi.fn<FinancialApiClient['getHistoricSummaryAverageFromYear']>()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
-    getCategoryTotalsForYear: getCategoryTotalsForYearMock,
-    getInvestmentDiffsForYear: getInvestmentDiffsForYearMock,
-    getIncomeSummaryForYear: getIncomeSummaryForYearMock,
+    getCategoryTotalsAnnualForYear: getCategoryTotalsAnnualForYearMock,
+    getInvestmentAnnualResultForYear: getInvestmentAnnualResultForYearMock,
     getHistoricSummaryAverageFromYear: getHistoricSummaryAverageFromYearMock,
   }),
 }))
 
-const CATEGORY_TOTALS: CategoryAnnualTotalDto[] = [
-  {
-    category: 'Mercado',
-    monthlyTotals: [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210],
-    annualTotal: 1860,
+const CATEGORY_TOTALS_ANNUAL: CategoryTotalsAnnualDto = {
+  categoryTotals: [
+    {
+      category: 'Mercado',
+      monthlyTotals: [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210],
+      annualTotal: 1860,
+    },
+  ],
+  incomeSummary: {
+    salaryMonthly: [3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3600],
+    salaryAnnualTotal: 38800,
+    salaryAfterTaxesMonthly: [2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450, 2650],
+    salaryAfterTaxesAnnualTotal: 29350,
+    taxDifferenceMonthly: [750, 750, 750, 750, 750, 750, 750, 750, 750, 750, 750, 950],
+    taxDifferenceAnnualTotal: 9450,
+    dividendoJurosMonthly: [0, 0, 15.5, 0, 0, 0, 0, 0, 0, 0, 0, 4.5],
+    dividendoJurosAnnualTotal: 20,
   },
-]
+  // Server-computed (corrected, no-Dividendo/Juros formula): sum(salaryAfterTaxesMonthly) - totalDespesasAnnualTotal + 0 (no Investimento category) = 27,490.00
+  totalDespesasMonthly: [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210],
+  totalDespesasAnnualTotal: 1860,
+  resultadoMonthly: [2350, 2340, 2330, 2320, 2310, 2300, 2290, 2280, 2270, 2260, 2250, 2440],
+  resultadoAnnualTotal: 27740,
+}
 
-const INVESTMENT_DIFFS: InvestmentDiffsAnnualDto = {
+const INVESTMENT_ANNUAL_RESULT: InvestmentAnnualResultDto = {
   accounts: [
     {
       account: 'ChaseSave',
@@ -48,17 +63,6 @@ const INVESTMENT_DIFFS: InvestmentDiffsAnnualDto = {
     averageMonthResult: 52.08,
     sumOfMonthResults: 625,
   },
-}
-
-const INCOME_SUMMARY: IncomeAnnualSummaryDto = {
-  salaryMonthly: [3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3600],
-  salaryAnnualTotal: 38800,
-  salaryAfterTaxesMonthly: [2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450, 2650],
-  salaryAfterTaxesAnnualTotal: 29350,
-  taxDifferenceMonthly: [750, 750, 750, 750, 750, 750, 750, 750, 750, 750, 750, 950],
-  taxDifferenceAnnualTotal: 9450,
-  dividendoJurosMonthly: [0, 0, 15.5, 0, 0, 0, 0, 0, 0, 0, 0, 4.5],
-  dividendoJurosAnnualTotal: 20,
 }
 
 const HISTORIC_SUMMARY_AVERAGE: CategoryAnnualAverageDto[] = [
@@ -93,9 +97,8 @@ const HISTORIC_SUMMARY_AVERAGE: CategoryAnnualAverageDto[] = [
 describe('AnnualSummaryPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    getCategoryTotalsForYearMock.mockResolvedValue(CATEGORY_TOTALS)
-    getInvestmentDiffsForYearMock.mockResolvedValue(INVESTMENT_DIFFS)
-    getIncomeSummaryForYearMock.mockResolvedValue(INCOME_SUMMARY)
+    getCategoryTotalsAnnualForYearMock.mockResolvedValue(CATEGORY_TOTALS_ANNUAL)
+    getInvestmentAnnualResultForYearMock.mockResolvedValue(INVESTMENT_ANNUAL_RESULT)
     getHistoricSummaryAverageFromYearMock.mockResolvedValue(HISTORIC_SUMMARY_AVERAGE)
   })
 
@@ -106,7 +109,7 @@ describe('AnnualSummaryPage', () => {
   })
 
   it('shows an error state with retry when the fetch fails', async () => {
-    getCategoryTotalsForYearMock.mockRejectedValue(new Error('Network down'))
+    getCategoryTotalsAnnualForYearMock.mockRejectedValue(new Error('Network down'))
 
     render(<AnnualSummaryPage />)
 
@@ -115,7 +118,7 @@ describe('AnnualSummaryPage', () => {
   })
 
   it('shows the error/retry state regardless of the active tab', async () => {
-    getCategoryTotalsForYearMock.mockRejectedValue(new Error('Network down'))
+    getCategoryTotalsAnnualForYearMock.mockRejectedValue(new Error('Network down'))
 
     render(<AnnualSummaryPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
@@ -191,19 +194,20 @@ describe('AnnualSummaryPage', () => {
     expect(within(mercadoRow).getByText('155.00')).toBeInTheDocument()
   })
 
-  it('computes Resultado and Total despesas from already-fetched data and renders them with emphasized styling', async () => {
+  it('renders Resultado and Total despesas using the server-computed values, with emphasized styling', async () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
-    // Total despesas annual total = sum of Mercado's monthly totals = 1,860.00
+    // Total despesas annual total comes straight from the mocked API response, not a client recomputation.
     const totalDespesasRow = screen.getByRole('cell', { name: 'Total despesas' }).closest('tr')!
     expect(totalDespesasRow).toHaveClass('annual-summary-page__emphasized-row')
     expect(within(totalDespesasRow).getByText('1,860.00')).toBeInTheDocument()
 
-    // Resultado annual total = sum(salaryAfterTaxesMonthly)=29,600 + sum(dividendoJurosMonthly)=20 - totalDespesasAnnualTotal=1,860 + 0 (no Investimento category) = 27,760
+    // Resultado annual total also comes straight from the mocked API response (corrected formula,
+    // excludes Dividendo/Juros) - proves no client-side recomputation occurs.
     const resultadoRow = screen.getByRole('cell', { name: 'Resultado (R-D-Inv)' }).closest('tr')!
     expect(resultadoRow).toHaveClass('annual-summary-page__emphasized-row')
-    expect(within(resultadoRow).getByText('27,760.00')).toBeInTheDocument()
+    expect(within(resultadoRow).getByText('27,740.00')).toBeInTheDocument()
   })
 
   it('shows only the Investments tab content after clicking Investments', async () => {
@@ -226,7 +230,7 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
 
     const chaseSaveRow = screen.getByRole('cell', { name: 'ChaseSave' }).closest('tr')!
-    for (const value of INVESTMENT_DIFFS.accounts[0].monthlyValues) {
+    for (const value of INVESTMENT_ANNUAL_RESULT.accounts[0].monthlyValues) {
       expect(within(chaseSaveRow).getByText(value.toLocaleString(undefined, { minimumFractionDigits: 2 }))).toBeInTheDocument()
     }
   })
@@ -266,9 +270,9 @@ describe('AnnualSummaryPage', () => {
   })
 
   it('renders a blank January Month Result cell when the API returns null for it', async () => {
-    getInvestmentDiffsForYearMock.mockResolvedValue({
-      ...INVESTMENT_DIFFS,
-      netPosition: { ...INVESTMENT_DIFFS.netPosition, monthlyDiffs: [null, ...INVESTMENT_DIFFS.netPosition.monthlyDiffs.slice(1)] },
+    getInvestmentAnnualResultForYearMock.mockResolvedValue({
+      ...INVESTMENT_ANNUAL_RESULT,
+      netPosition: { ...INVESTMENT_ANNUAL_RESULT.netPosition, monthlyDiffs: [null, ...INVESTMENT_ANNUAL_RESULT.netPosition.monthlyDiffs.slice(1)] },
     })
     render(<AnnualSummaryPage />)
 
@@ -315,7 +319,7 @@ describe('AnnualSummaryPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
     await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
 
-    const nextYearInvestmentDiffs: InvestmentDiffsAnnualDto = {
+    const nextYearInvestmentAnnualResult: InvestmentAnnualResultDto = {
       accounts: [
         {
           account: 'ChipCashIsaGleison',
@@ -332,7 +336,7 @@ describe('AnnualSummaryPage', () => {
         sumOfMonthResults: 0,
       },
     }
-    getInvestmentDiffsForYearMock.mockResolvedValue(nextYearInvestmentDiffs)
+    getInvestmentAnnualResultForYearMock.mockResolvedValue(nextYearInvestmentAnnualResult)
 
     fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2027' } })
 
@@ -351,17 +355,20 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     expect(screen.getByRole('cell', { name: 'Mercado' })).toBeInTheDocument()
 
-    const nextYearCategoryTotals: CategoryAnnualTotalDto[] = [
-      { category: 'Carro', monthlyTotals: new Array(12).fill(50), annualTotal: 600 },
-    ]
-    getCategoryTotalsForYearMock.mockResolvedValue(nextYearCategoryTotals)
+    const nextYearCategoryTotalsAnnual: CategoryTotalsAnnualDto = {
+      ...CATEGORY_TOTALS_ANNUAL,
+      categoryTotals: [{ category: 'Carro', monthlyTotals: new Array(12).fill(50), annualTotal: 600 }],
+      totalDespesasMonthly: new Array(12).fill(50),
+      totalDespesasAnnualTotal: 600,
+    }
+    getCategoryTotalsAnnualForYearMock.mockResolvedValue(nextYearCategoryTotalsAnnual)
 
     fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2027' } })
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'Carro' })).toBeInTheDocument())
     expect(screen.queryByRole('cell', { name: 'Mercado' })).not.toBeInTheDocument()
 
-    // Total despesas annual total now sums only Carro = 600.00
+    // Total despesas annual total now reflects the new mocked response = 600.00
     const totalDespesasRow = screen.getByRole('cell', { name: 'Total despesas' }).closest('tr')!
     expect(within(totalDespesasRow).getByText('600.00')).toBeInTheDocument()
   })
@@ -382,12 +389,12 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
-    const callCountBefore = getCategoryTotalsForYearMock.mock.calls.length
+    const callCountBefore = getCategoryTotalsAnnualForYearMock.mock.calls.length
 
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
     fireEvent.click(screen.getByRole('button', { name: 'Category Totals' }))
 
-    expect(getCategoryTotalsForYearMock.mock.calls.length).toBe(callCountBefore)
+    expect(getCategoryTotalsAnnualForYearMock.mock.calls.length).toBe(callCountBefore)
   })
 
   it('keeps the active tab unchanged when the year value changes', async () => {

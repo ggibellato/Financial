@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { CategoryAnnualAverageDto, CategoryAnnualTotalDto, IncomeAnnualSummaryDto, InvestmentDiffsAnnualDto } from '../api/types'
+import type { CategoryAnnualAverageDto, CategoryAnnualTotalDto, IncomeAnnualSummaryDto, InvestmentAnnualResultDto } from '../api/types'
 
 interface AnnualSummaryState {
   year: number
   categoryTotals: CategoryAnnualTotalDto[]
-  investmentDiffs: InvestmentDiffsAnnualDto | null
   incomeSummary: IncomeAnnualSummaryDto | null
+  totalDespesasMonthly: number[]
+  totalDespesasAnnualTotal: number
+  resultadoMonthly: number[]
+  resultadoAnnualTotal: number
+  investmentAnnualResult: InvestmentAnnualResultDto | null
   historicSummaryAverage: CategoryAnnualAverageDto[]
   isLoading: boolean
   error: string | null
@@ -20,8 +24,12 @@ type AnnualSummaryAction =
       type: 'FETCH_SUCCESS'
       payload: {
         categoryTotals: CategoryAnnualTotalDto[]
-        investmentDiffs: InvestmentDiffsAnnualDto
         incomeSummary: IncomeAnnualSummaryDto
+        totalDespesasMonthly: number[]
+        totalDespesasAnnualTotal: number
+        resultadoMonthly: number[]
+        resultadoAnnualTotal: number
+        investmentAnnualResult: InvestmentAnnualResultDto
         historicSummaryAverage: CategoryAnnualAverageDto[]
       }
     }
@@ -31,8 +39,12 @@ type AnnualSummaryAction =
 const INITIAL_STATE: AnnualSummaryState = {
   year: new Date().getFullYear(),
   categoryTotals: [],
-  investmentDiffs: null,
   incomeSummary: null,
+  totalDespesasMonthly: [],
+  totalDespesasAnnualTotal: 0,
+  resultadoMonthly: [],
+  resultadoAnnualTotal: 0,
+  investmentAnnualResult: null,
   historicSummaryAverage: [],
   isLoading: true,
   error: null,
@@ -50,8 +62,12 @@ function reducer(state: AnnualSummaryState, action: AnnualSummaryAction): Annual
         ...state,
         isLoading: false,
         categoryTotals: action.payload.categoryTotals,
-        investmentDiffs: action.payload.investmentDiffs,
         incomeSummary: action.payload.incomeSummary,
+        totalDespesasMonthly: action.payload.totalDespesasMonthly,
+        totalDespesasAnnualTotal: action.payload.totalDespesasAnnualTotal,
+        resultadoMonthly: action.payload.resultadoMonthly,
+        resultadoAnnualTotal: action.payload.resultadoAnnualTotal,
+        investmentAnnualResult: action.payload.investmentAnnualResult,
         historicSummaryAverage: action.payload.historicSummaryAverage,
       }
     case 'FETCH_ERROR':
@@ -63,19 +79,17 @@ function reducer(state: AnnualSummaryState, action: AnnualSummaryAction): Annual
   }
 }
 
-const INVESTIMENTO_CATEGORY = 'Investimento'
-
 export interface AnnualSummaryData {
   year: number
   setYear: (year: number) => void
   categoryTotals: CategoryAnnualTotalDto[]
-  investmentDiffs: InvestmentDiffsAnnualDto | null
   incomeSummary: IncomeAnnualSummaryDto | null
-  historicSummaryAverage: CategoryAnnualAverageDto[]
   totalDespesasMonthly: number[]
   totalDespesasAnnualTotal: number
   resultadoMonthly: number[]
   resultadoAnnualTotal: number
+  investmentAnnualResult: InvestmentAnnualResultDto | null
+  historicSummaryAverage: CategoryAnnualAverageDto[]
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -88,13 +102,24 @@ export function useAnnualSummary(): AnnualSummaryData {
   useEffect(() => {
     dispatch({ type: 'FETCH_START' })
     void Promise.all([
-      apiClient.getCategoryTotalsForYear(state.year),
-      apiClient.getInvestmentDiffsForYear(state.year),
-      apiClient.getIncomeSummaryForYear(state.year),
+      apiClient.getCategoryTotalsAnnualForYear(state.year),
+      apiClient.getInvestmentAnnualResultForYear(state.year),
       apiClient.getHistoricSummaryAverageFromYear(state.year),
     ])
-      .then(([categoryTotals, investmentDiffs, incomeSummary, historicSummaryAverage]) =>
-        dispatch({ type: 'FETCH_SUCCESS', payload: { categoryTotals, investmentDiffs, incomeSummary, historicSummaryAverage } }),
+      .then(([categoryTotalsAnnual, investmentAnnualResult, historicSummaryAverage]) =>
+        dispatch({
+          type: 'FETCH_SUCCESS',
+          payload: {
+            categoryTotals: categoryTotalsAnnual.categoryTotals,
+            incomeSummary: categoryTotalsAnnual.incomeSummary,
+            totalDespesasMonthly: categoryTotalsAnnual.totalDespesasMonthly,
+            totalDespesasAnnualTotal: categoryTotalsAnnual.totalDespesasAnnualTotal,
+            resultadoMonthly: categoryTotalsAnnual.resultadoMonthly,
+            resultadoAnnualTotal: categoryTotalsAnnual.resultadoAnnualTotal,
+            investmentAnnualResult,
+            historicSummaryAverage,
+          },
+        }),
       )
       .catch((err: unknown) => {
         dispatch({
@@ -111,46 +136,17 @@ export function useAnnualSummary(): AnnualSummaryData {
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
-  const totalDespesasMonthly = useMemo(
-    () =>
-      state.categoryTotals.length === 0
-        ? []
-        : Array.from({ length: 12 }, (_, month) =>
-            state.categoryTotals.reduce((sum, c) => sum + c.monthlyTotals[month], 0),
-          ),
-    [state.categoryTotals],
-  )
-
-  const totalDespesasAnnualTotal = useMemo(
-    () => totalDespesasMonthly.reduce((sum, v) => sum + v, 0),
-    [totalDespesasMonthly],
-  )
-
-  const resultadoMonthly = useMemo(() => {
-    if (!state.incomeSummary || totalDespesasMonthly.length === 0) return []
-    const investimento = state.categoryTotals.find((c) => c.category === INVESTIMENTO_CATEGORY)
-    return totalDespesasMonthly.map(
-      (totalDespesas, month) =>
-        state.incomeSummary!.salaryAfterTaxesMonthly[month] +
-        state.incomeSummary!.dividendoJurosMonthly[month] -
-        totalDespesas +
-        (investimento?.monthlyTotals[month] ?? 0),
-    )
-  }, [state.incomeSummary, state.categoryTotals, totalDespesasMonthly])
-
-  const resultadoAnnualTotal = useMemo(() => resultadoMonthly.reduce((sum, v) => sum + v, 0), [resultadoMonthly])
-
   return {
     year: state.year,
     setYear,
     categoryTotals: state.categoryTotals,
-    investmentDiffs: state.investmentDiffs,
     incomeSummary: state.incomeSummary,
+    totalDespesasMonthly: state.totalDespesasMonthly,
+    totalDespesasAnnualTotal: state.totalDespesasAnnualTotal,
+    resultadoMonthly: state.resultadoMonthly,
+    resultadoAnnualTotal: state.resultadoAnnualTotal,
+    investmentAnnualResult: state.investmentAnnualResult,
     historicSummaryAverage: state.historicSummaryAverage,
-    totalDespesasMonthly,
-    totalDespesasAnnualTotal,
-    resultadoMonthly,
-    resultadoAnnualTotal,
     isLoading: state.isLoading,
     error: state.error,
     retry,

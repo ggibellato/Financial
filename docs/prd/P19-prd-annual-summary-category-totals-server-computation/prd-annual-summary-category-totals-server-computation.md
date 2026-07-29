@@ -229,13 +229,13 @@ graph TD
 - [x] `resultadoMonthly[m]` equals `salaryAfterTaxesMonthly[m] - totalDespesasMonthly[m] + Investimento category's monthlyTotals[m]` (no Dividendo/Juros term), verified for every month against a known test dataset, including a case where Dividendo/Juros is non-zero to confirm it is correctly excluded
 - [x] `totalDespesasAnnualTotal` equals the sum of `totalDespesasMonthly`, and `resultadoAnnualTotal` equals the sum of `resultadoMonthly`
 - [x] A year with no recorded data returns all-zero series rather than an error or missing fields
-- [ ] `GET /annual-summary/{year}/expense-categories` and `/income-summary` return `404 Not Found` (routes removed)
+- [x] `GET /annual-summary/{year}/expense-categories` and `/income-summary` return `404 Not Found` (routes removed)
 - [x] Unit tests cover the Total despesas/Resultado formulas, including an all-zero-data year and a year including a non-zero Investimento category value
 
 ### F03. Investment Annual Result Endpoint (Server-Side Computation)
 - [x] `GET /annual-summary/{year}/investment-annual-result` returns `200 OK` with `accounts[]` and `netPosition`, matching the field shapes previously returned by `investment-diffs`
 - [x] Values (`monthlyValues`, `monthlyDiffs`, `fullYearNetChange`, `averageMonthResult`, `sumOfMonthResults`) for a fixed test year are byte-identical to the pre-refactor `investment-diffs` output
-- [ ] `GET /annual-summary/{year}/investment-diffs` returns `404 Not Found` (route removed)
+- [x] `GET /annual-summary/{year}/investment-diffs` returns `404 Not Found` (route removed)
 - [x] A year with no investment accounts or snapshots returns an empty `accounts` array and an all-zero `netPosition`
 - [x] Unit tests confirm `averageMonthResult` and diff sequences are produced via F01's `MonthlySeries.Average`/`MonthlySeries.DiffsFrom`
 
@@ -246,12 +246,12 @@ graph TD
 - [x] Existing Historic Summary Average unit tests continue to pass unmodified (aside from any internal refactor of test setup, not test expectations) — every `GetHistoricSummaryAverageFromYear_*` test in `AnnualSummaryServiceTests.cs` passed unmodified across both migrating PRs
 
 ### F05. Category Totals & Investments Tabs Consume New Endpoints
-- [ ] Loading the Annual Summary page for a given year issues exactly 3 HTTP requests (`category-totals`, `investment-annual-result`, `historic-summary-averages`)
-- [ ] The Category Totals tab displays values identical to its pre-refactor output for a fixed known test year/dataset, except the Resultado (R-D-Inv) row, whose values match the corrected server-computed figures
-- [ ] The Investments tab displays values identical to its pre-refactor output for a fixed known test year/dataset
-- [ ] `useAnnualSummary.ts` and `AnnualSummaryPage.tsx` contain no arithmetic computing Total despesas, Resultado, or investment averages/diffs after the refactor
-- [ ] Existing hook and page tests are updated to mock the two new endpoints and pass
+- [x] Loading the Annual Summary page for a given year issues exactly 3 HTTP requests (`category-totals`, `investment-annual-result`, `historic-summary-averages`)
+- [x] The Category Totals tab displays values identical to its pre-refactor output for a fixed known test year/dataset, except the Resultado (R-D-Inv) row, whose values match the corrected server-computed figures
+- [x] The Investments tab displays values identical to its pre-refactor output for a fixed known test year/dataset
+- [x] `useAnnualSummary.ts` and `AnnualSummaryPage.tsx` contain no arithmetic computing Total despesas, Resultado, or investment averages/diffs after the refactor
+- [x] Existing hook and page tests are updated to mock the two new endpoints and pass
 
 ### Cross-Feature Integration
-- [ ] Category totals, income summary, Total despesas, and Resultado data from F02 are correctly received by F05's hook and rendered by the Category Totals tab without any client-side recomputation beyond number formatting
-- [ ] Per-account and net-position investment data from F03 is correctly received by F05's hook and rendered by the Investments tab without any client-side recomputation beyond number formatting
+- [x] Category totals, income summary, Total despesas, and Resultado data from F02 are correctly received by F05's hook and rendered by the Category Totals tab without any client-side recomputation beyond number formatting
+- [x] Per-account and net-position investment data from F03 is correctly received by F05's hook and rendered by the Investments tab without any client-side recomputation beyond number formatting

@@ -4,9 +4,6 @@ namespace Financial.CashFlow.Application.Interfaces;
 
 public interface IAnnualSummaryService
 {
-    IReadOnlyList<CategoryAnnualTotalDTO> GetCategoryTotalsForYear(int year);
-    InvestmentDiffsAnnualDTO GetInvestmentDiffsForYear(int year);
-    IncomeAnnualSummaryDTO GetIncomeSummaryForYear(int year);
     IReadOnlyList<CategoryAnnualGroupValueDTO> GetHistoricSummaryAverageFromYear(int year);
     CategoryTotalsAnnualDTO GetCategoryTotalsAnnualForYear(int year);
     InvestmentAnnualResultDTO GetInvestmentAnnualResultForYear(int year);
