@@ -211,4 +211,72 @@ public class AnnualSummaryEndpointsTests
         result[1].AnnualAverages.Should().ContainSingle(a => a.Category == "Mercado" && a.Value == 10m);
         result[1].AnnualAverages.Should().NotContain(a => a.Category == "Salary");
     }
+
+    [Fact]
+    public async Task GetCategoryTotals_ReturnsCombinedShapeWithComputedTotalDespesasAndResultado()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 1, 5),
+            Description = "January groceries",
+            Value = 100m,
+            Category = "Mercado",
+            PaymentSource = "Barclays",
+            CardTag = null
+        });
+        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 1, 5),
+            Description = "January investing",
+            Value = 30m,
+            Category = "Investimento",
+            PaymentSource = "Barclays",
+            CardTag = null
+        });
+        await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        {
+            Date = new DateOnly(2026, 1, 1),
+            IncomeSource = "Gleison",
+            GrossValue = 1000m,
+            NetValue = 800m,
+            Bank = "Barclays"
+        });
+        await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        {
+            Date = new DateOnly(2026, 1, 1),
+            IncomeSource = "DividendoJuros",
+            GrossValue = null,
+            NetValue = 20m,
+            Bank = "Trading212"
+        });
+
+        var response = await client.GetAsync("/api/v1/financial/annual-summary/2026/category-totals");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<CategoryTotalsAnnualDTO>();
+        result!.CategoryTotals.Should().HaveCount(14);
+        result.IncomeSummary.SalaryAfterTaxesMonthly[0].Should().Be(800m);
+        result.TotalDespesasMonthly[0].Should().Be(130m);
+        result.TotalDespesasAnnualTotal.Should().Be(130m);
+        // Resultado = SalaryAfterTaxes(800) - TotalDespesas(130) + Investimento(30) = 700, excluding Dividendo/Juros.
+        result.ResultadoMonthly[0].Should().Be(700m);
+        result.ResultadoAnnualTotal.Should().Be(700m);
+    }
+
+    [Fact]
+    public async Task GetCategoryTotals_NoRecordedData_ReturnsAllZeroSeries()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/annual-summary/2026/category-totals");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<CategoryTotalsAnnualDTO>();
+        result!.CategoryTotals.Should().OnlyContain(c => c.AnnualTotal == 0m);
+        result.TotalDespesasMonthly.Should().OnlyContain(v => v == 0m);
+        result.ResultadoMonthly.Should().OnlyContain(v => v == 0m);
+    }
 }
