@@ -51,38 +51,6 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             .ToList();
     }
 
-    public InvestmentDiffsAnnualDTO GetInvestmentDiffsForYear(int year)
-    {
-        var series = ComputeInvestmentSeriesForYear(year);
-
-        var accounts = series.AccountSeries
-            .Select(a => new InvestmentAccountAnnualDiffDTO
-            {
-                Account = a.Account.Name,
-                IsLiability = a.Account.IsLiability,
-                MonthlyValues = a.MonthlyValues.AsReadOnly().ToArray(),
-                MonthlyDiffs = a.Diffs.ToArray()
-            })
-            .ToList();
-
-        var relevantDiffs = series.NetPositionDiffs.Take(series.LastRelevantMonth).Where(d => d.HasValue).Select(d => d!.Value).ToList();
-
-        var netPosition = new NetPositionAnnualDiffDTO
-        {
-            MonthlyValues = series.NetPositionSeries.AsReadOnly().ToArray(),
-            MonthlyDiffs = series.NetPositionDiffs.ToArray(),
-            FullYearNetChange = series.NetPositionSeries[series.LastRelevantMonth - 1] - series.NetPositionSeries[0],
-            AverageMonthResult = relevantDiffs.Count > 0 ? relevantDiffs.Average() : 0m,
-            SumOfMonthResults = relevantDiffs.Sum()
-        };
-
-        return new InvestmentDiffsAnnualDTO
-        {
-            Accounts = accounts.ToArray(),
-            NetPosition = netPosition
-        };
-    }
-
     public InvestmentAnnualResultDTO GetInvestmentAnnualResultForYear(int year)
     {
         var series = ComputeInvestmentSeriesForYear(year);
