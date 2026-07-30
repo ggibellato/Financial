@@ -7,6 +7,8 @@ namespace Financial.CashFlow.Infrastructure.Repositories;
 
 public sealed class CashFlowRepositoryFactory
 {
+    private const string DefaultDataFileName = "data-cashflow.json";
+
     private readonly ICashFlowSerializer _serializer;
     private readonly IRemoteFileClientFactory? _remoteFileClientFactory;
 
@@ -32,7 +34,7 @@ public sealed class CashFlowRepositoryFactory
         options.Provider switch
         {
             CashFlowRepositoryProvider.LocalJson =>
-                new LocalJsonStorage(options.LocalDataPath),
+                new LocalJsonStorage(options.LocalDataPath, DefaultDataFileName),
             CashFlowRepositoryProvider.GoogleDriveJson =>
                 CreateGoogleDriveStorage(options),
             _ => throw new ArgumentOutOfRangeException(

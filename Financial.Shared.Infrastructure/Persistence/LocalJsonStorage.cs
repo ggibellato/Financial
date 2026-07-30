@@ -1,5 +1,3 @@
-using Financial.Shared.Infrastructure.Configuration;
-
 namespace Financial.Shared.Infrastructure.Persistence;
 
 public sealed class LocalJsonStorage : IJsonStorage
@@ -7,10 +5,12 @@ public sealed class LocalJsonStorage : IJsonStorage
     public const string DefaultDataFileName = "data.json";
 
     private readonly string _dataFilePath;
+    private readonly string _defaultFileName;
 
-    public LocalJsonStorage(string? dataFilePath)
+    public LocalJsonStorage(string? dataFilePath, string defaultFileName = DefaultDataFileName)
     {
-        _dataFilePath = ResolveDataFilePath(dataFilePath);
+        _defaultFileName = defaultFileName;
+        _dataFilePath = ResolveDataFilePath(dataFilePath, defaultFileName);
     }
 
     public Task<string> ReadAsync()
@@ -18,7 +18,7 @@ public sealed class LocalJsonStorage : IJsonStorage
         if (!File.Exists(_dataFilePath))
         {
             throw new FileNotFoundException(
-                $"Data file not found at '{_dataFilePath}'. Configure '{RepositoryConfigurationKeys.LocalJsonDataFile}' or place '{DefaultDataFileName}' in the application directory.",
+                $"Data file not found at '{_dataFilePath}'. Configure the data file path, or place '{_defaultFileName}' in the application directory.",
                 _dataFilePath);
         }
 
@@ -30,15 +30,15 @@ public sealed class LocalJsonStorage : IJsonStorage
         return File.WriteAllTextAsync(_dataFilePath, json);
     }
 
-    private static string ResolveDataFilePath(string? dataFilePath)
+    private static string ResolveDataFilePath(string? dataFilePath, string defaultFileName)
     {
         var resolvedPath = string.IsNullOrWhiteSpace(dataFilePath)
-            ? Path.Combine(AppContext.BaseDirectory, DefaultDataFileName)
+            ? Path.Combine(AppContext.BaseDirectory, defaultFileName)
             : dataFilePath;
 
         if (Directory.Exists(resolvedPath))
         {
-            resolvedPath = Path.Combine(resolvedPath, DefaultDataFileName);
+            resolvedPath = Path.Combine(resolvedPath, defaultFileName);
         }
 
         if (!Path.IsPathRooted(resolvedPath))

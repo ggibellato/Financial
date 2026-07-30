@@ -1,11 +1,14 @@
 #folders in any place
-data
 .vs
 bin
 obj
 .vite
 node_modules
 dist
+
+#data directory - real data files are git-ignored, example files are tracked
+/data/*
+!/data/*.example.json
 
 #infrastructure
 .terraform

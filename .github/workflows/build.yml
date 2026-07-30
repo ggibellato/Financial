@@ -97,12 +97,15 @@ jobs:
         mkdir -p publish/wwwroot
         cp -r Financial.Web/dist/. publish/wwwroot/
 
-    - name: Prepare CashFlow test data
-      run: cp Tests/Financial.Api.Tests/TestData/data-cashflow.test.json /tmp/data-cashflow.smoke-test.json
+    - name: Prepare smoke test data
+      run: |
+        cp Tests/Financial.Api.Tests/TestData/data.test.json /tmp/data.smoke-test.json
+        cp Tests/Financial.Api.Tests/TestData/data-cashflow.test.json /tmp/data-cashflow.smoke-test.json
 
     - name: Run browser smoke test
       env:
-        DataJsonFile: ${{ github.workspace }}/Tests/Financial.Api.Tests/TestData/data.test.json
+        Investment__Repository__Provider: LocalJson
+        Investment__DataJsonFile: /tmp/data.smoke-test.json
         CashFlow__Repository__Provider: LocalJson
         CashFlow__DataJsonFile: /tmp/data-cashflow.smoke-test.json
         ASPNETCORE_URLS: http://localhost:8080
