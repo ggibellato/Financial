@@ -39,17 +39,9 @@ public class IncomeTests
     }
 
     [Fact]
-    public void Create_WithGrossValueBelowNetValue_Throws()
+    public void Create_WithGrossValueBelowNetValue_DoesNotThrow()
     {
         var act = () => Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Ariana, 100m, 150m, "Chase");
-
-        act.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
-    public void Create_WithGrossValueEqualToNetValue_DoesNotThrow()
-    {
-        var act = () => Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Ariana, 100m, 100m, "Chase");
 
         act.Should().NotThrow();
     }
@@ -89,13 +81,13 @@ public class IncomeTests
     }
 
     [Fact]
-    public void UpdateDetails_WithGrossValueBelowNetValue_Throws()
+    public void UpdateDetails_WithGrossValueBelowNetValue_DoesNotThrow()
     {
         var income = Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Gleison, 3000m, 2400m, "Barclays");
 
         var act = () => income.UpdateDetails(income.Date, income.IncomeSource, 100m, 200m, income.Bank);
 
-        act.Should().Throw<ArgumentException>();
+        act.Should().NotThrow();
     }
 
     [Fact]

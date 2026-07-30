@@ -61,11 +61,6 @@ public class Income
         {
             throw new ArgumentException("Net value cannot be negative.");
         }
-
-        if (grossValue is not null && grossValue < netValue)
-        {
-            throw new ArgumentException("Gross value must be greater than or equal to net value.");
-        }
     }
 
     private static void ValidateBank(string bank)
