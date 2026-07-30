@@ -1,6 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Domain.Tests;
 
@@ -13,13 +14,16 @@ public class MaeLedgerEntryTests
 
         var entry = MaeLedgerEntry.Create(date, "School supplies", "Bought at the start of term", Currency.BRL, 350m, 51.23m);
 
-        entry.Id.Should().NotBeEmpty();
-        entry.Date.Should().Be(date);
-        entry.Description.Should().Be("School supplies");
-        entry.Note.Should().Be("Bought at the start of term");
-        entry.SourceCurrency.Should().Be(Currency.BRL);
-        entry.BrlValue.Should().Be(350m);
-        entry.GbpValue.Should().Be(51.23m);
+        using (new AssertionScope())
+        {
+            entry.Id.Should().NotBeEmpty();
+            entry.Date.Should().Be(date);
+            entry.Description.Should().Be("School supplies");
+            entry.Note.Should().Be("Bought at the start of term");
+            entry.SourceCurrency.Should().Be(Currency.BRL);
+            entry.BrlValue.Should().Be(350m);
+            entry.GbpValue.Should().Be(51.23m);
+        }
     }
 
     [Fact]
@@ -39,12 +43,15 @@ public class MaeLedgerEntryTests
 
         entry.UpdateValues(320.50m, 40m);
 
-        entry.Id.Should().Be(originalId);
-        entry.Date.Should().Be(new DateOnly(2026, 7, 16));
-        entry.Description.Should().Be("Medical appointment");
-        entry.SourceCurrency.Should().Be(Currency.GBP);
-        entry.BrlValue.Should().Be(320.50m);
-        entry.GbpValue.Should().Be(40m);
+        using (new AssertionScope())
+        {
+            entry.Id.Should().Be(originalId);
+            entry.Date.Should().Be(new DateOnly(2026, 7, 16));
+            entry.Description.Should().Be("Medical appointment");
+            entry.SourceCurrency.Should().Be(Currency.GBP);
+            entry.BrlValue.Should().Be(320.50m);
+            entry.GbpValue.Should().Be(40m);
+        }
     }
 
     [Fact]

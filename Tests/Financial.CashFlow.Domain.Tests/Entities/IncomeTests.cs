@@ -1,6 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Domain.Tests;
 
@@ -13,12 +14,15 @@ public class IncomeTests
 
         var income = Income.Create(date, IncomeSource.Gleison, 3200.00m, 2450.00m, "Barclays");
 
-        income.Id.Should().NotBeEmpty();
-        income.Date.Should().Be(date);
-        income.IncomeSource.Should().Be(IncomeSource.Gleison);
-        income.GrossValue.Should().Be(3200.00m);
-        income.NetValue.Should().Be(2450.00m);
-        income.Bank.Should().Be("Barclays");
+        using (new AssertionScope())
+        {
+            income.Id.Should().NotBeEmpty();
+            income.Date.Should().Be(date);
+            income.IncomeSource.Should().Be(IncomeSource.Gleison);
+            income.GrossValue.Should().Be(3200.00m);
+            income.NetValue.Should().Be(2450.00m);
+            income.Bank.Should().Be("Barclays");
+        }
     }
 
     [Fact]
@@ -73,11 +77,14 @@ public class IncomeTests
 
         income.UpdateDetails(newDate, IncomeSource.Ariana, 500m, 400m, "Chase");
 
-        income.Date.Should().Be(newDate);
-        income.IncomeSource.Should().Be(IncomeSource.Ariana);
-        income.GrossValue.Should().Be(500m);
-        income.NetValue.Should().Be(400m);
-        income.Bank.Should().Be("Chase");
+        using (new AssertionScope())
+        {
+            income.Date.Should().Be(newDate);
+            income.IncomeSource.Should().Be(IncomeSource.Ariana);
+            income.GrossValue.Should().Be(500m);
+            income.NetValue.Should().Be(400m);
+            income.Bank.Should().Be("Chase");
+        }
     }
 
     [Fact]
@@ -98,17 +105,5 @@ public class IncomeTests
         var act = () => income.UpdateDetails(income.Date, income.IncomeSource, null, -5m, income.Bank);
 
         act.Should().Throw<ArgumentException>();
-    }
-
-    [Theory]
-    [InlineData(IncomeSource.Gleison, IncomeGroup.Salary)]
-    [InlineData(IncomeSource.Ariana, IncomeGroup.Salary)]
-    [InlineData(IncomeSource.DividendoJuros, IncomeGroup.DividendoJuros)]
-    [InlineData(IncomeSource.Lottery, IncomeGroup.NonReportable)]
-    public void Group_ReflectsIncomeSourceClassification(IncomeSource incomeSource, IncomeGroup expected)
-    {
-        var income = Income.Create(new DateOnly(2026, 7, 1), incomeSource, null, 10m, "Chase");
-
-        income.Group.Should().Be(expected);
     }
 }

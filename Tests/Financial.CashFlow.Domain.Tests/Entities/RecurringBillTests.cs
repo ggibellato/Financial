@@ -1,6 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Domain.Tests;
 
@@ -11,15 +12,18 @@ public class RecurringBillTests
     {
         var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
 
-        bill.Id.Should().NotBeEmpty();
-        bill.DueDay.Should().Be(10);
-        bill.Description.Should().Be("INSS");
-        bill.Value.Should().Be(850m);
-        bill.Area.Should().Be(Area.Brasil);
-        bill.Note.Should().Be("Direct debit");
-        bill.NitNumber.Should().Be("12345678901");
-        bill.MinimumWageValue.Should().Be(1621m);
-        bill.Status.Should().Be(BillStatus.Unset);
+        using (new AssertionScope())
+        {
+            bill.Id.Should().NotBeEmpty();
+            bill.DueDay.Should().Be(10);
+            bill.Description.Should().Be("INSS");
+            bill.Value.Should().Be(850m);
+            bill.Area.Should().Be(Area.Brasil);
+            bill.Note.Should().Be("Direct debit");
+            bill.NitNumber.Should().Be("12345678901");
+            bill.MinimumWageValue.Should().Be(1621m);
+            bill.Status.Should().Be(BillStatus.Unset);
+        }
     }
 
     [Fact]

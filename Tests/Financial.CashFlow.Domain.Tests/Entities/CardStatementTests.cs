@@ -1,6 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Domain.Tests;
 
@@ -11,11 +12,14 @@ public class CardStatementTests
     {
         var statement = CardStatement.Create(CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
 
-        statement.Id.Should().NotBeEmpty();
-        statement.Card.Should().Be(CreditCard.BarclaysPlatinumVisa8003);
-        statement.Year.Should().Be(2026);
-        statement.Month.Should().Be(7);
-        statement.IsPaid.Should().BeFalse();
+        using (new AssertionScope())
+        {
+            statement.Id.Should().NotBeEmpty();
+            statement.Card.Should().Be(CreditCard.BarclaysPlatinumVisa8003);
+            statement.Year.Should().Be(2026);
+            statement.Month.Should().Be(7);
+            statement.IsPaid.Should().BeFalse();
+        }
     }
 
     [Fact]

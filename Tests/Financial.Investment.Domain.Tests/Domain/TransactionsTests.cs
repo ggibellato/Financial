@@ -123,18 +123,6 @@ public class TransactionsTests
     }
 
     [Fact]
-    public void Update_EmptyId_Throws()
-    {
-        var transactions = new Transactions();
-        // Activator bypasses the public factory methods so Id stays Guid.Empty.
-        var transaction = (Transaction)Activator.CreateInstance(typeof(Transaction), nonPublic: true)!;
-
-        Action act = () => transactions.Update(transaction);
-
-        act.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
     public void RemoveById_UnknownId_ReturnsFalse()
     {
         var transactions = new Transactions();

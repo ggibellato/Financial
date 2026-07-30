@@ -1,5 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Domain.Tests;
 
@@ -43,9 +44,12 @@ public class BankTests
 
         var act = () => bank.SetOpeningBalance(-1m, new DateOnly(2026, 8, 1));
 
-        act.Should().Throw<ArgumentException>();
-        bank.OpeningBalance.Should().Be(100m);
-        bank.OpeningBalanceDate.Should().Be(new DateOnly(2026, 7, 1));
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>();
+            bank.OpeningBalance.Should().Be(100m);
+            bank.OpeningBalanceDate.Should().Be(new DateOnly(2026, 7, 1));
+        }
     }
 
     [Fact]

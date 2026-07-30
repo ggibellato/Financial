@@ -1,6 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Domain.Tests;
 
@@ -13,11 +14,14 @@ public class ReserveMovementTests
 
         var movement = ReserveMovement.Create(ReserveBucket.Investimento, 866.67m, date, "Monthly income split");
 
-        movement.Id.Should().NotBeEmpty();
-        movement.Bucket.Should().Be(ReserveBucket.Investimento);
-        movement.Amount.Should().Be(866.67m);
-        movement.Date.Should().Be(date);
-        movement.Description.Should().Be("Monthly income split");
+        using (new AssertionScope())
+        {
+            movement.Id.Should().NotBeEmpty();
+            movement.Bucket.Should().Be(ReserveBucket.Investimento);
+            movement.Amount.Should().Be(866.67m);
+            movement.Date.Should().Be(date);
+            movement.Description.Should().Be("Monthly income split");
+        }
     }
 
     [Fact]
