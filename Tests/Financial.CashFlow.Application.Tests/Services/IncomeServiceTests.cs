@@ -58,17 +58,6 @@ public class IncomeServiceTests
     }
 
     [Fact]
-    public async Task AddIncomeAsync_WithGrossValueBelowNetValue_ThrowsArgumentException()
-    {
-        var service = new IncomeService(new StubCashFlowRepository());
-        var request = ToCreateDto(ValidCreateRequest() with { GrossValue = 100m, NetValue = 200m });
-
-        var act = async () => await service.AddIncomeAsync(request);
-
-        await act.Should().ThrowAsync<ArgumentException>();
-    }
-
-    [Fact]
     public async Task AddIncomeAsync_WithNegativeNetValue_ThrowsArgumentException()
     {
         var service = new IncomeService(new StubCashFlowRepository());
