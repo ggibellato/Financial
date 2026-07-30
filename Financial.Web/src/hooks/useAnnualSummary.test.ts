@@ -19,21 +19,27 @@ vi.mock('../api/financialApiClient', () => ({
 }))
 
 const CATEGORY_TOTALS_ANNUAL: CategoryTotalsAnnualDto = {
-  categoryTotals: [{ category: 'Mercado', monthlyTotals: new Array(12).fill(100), annualTotal: 1200 }],
+  categoryTotals: [{ category: 'Mercado', monthlyTotals: new Array(12).fill(100), annualTotal: 1200, average: 100 }],
   incomeSummary: {
     salaryMonthly: new Array(12).fill(3200),
     salaryAnnualTotal: 38400,
+    salaryAverage: 3200,
     salaryAfterTaxesMonthly: new Array(12).fill(2450),
     salaryAfterTaxesAnnualTotal: 29400,
+    salaryAfterTaxesAverage: 2450,
     taxDifferenceMonthly: new Array(12).fill(750),
     taxDifferenceAnnualTotal: 9000,
+    taxDifferenceAverage: 750,
     dividendoJurosMonthly: new Array(12).fill(15.5),
     dividendoJurosAnnualTotal: 186,
+    dividendoJurosAverage: 15.5,
   },
   totalDespesasMonthly: new Array(12).fill(100),
   totalDespesasAnnualTotal: 1200,
+  totalDespesasAverage: 100,
   resultadoMonthly: new Array(12).fill(2350),
   resultadoAnnualTotal: 28200,
+  resultadoAverage: 2350,
 }
 
 const INVESTMENT_ANNUAL_RESULT: InvestmentAnnualResultDto = {

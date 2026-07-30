@@ -452,6 +452,7 @@ export interface CategoryAnnualTotalDto {
   category: string
   monthlyTotals: number[]
   annualTotal: number
+  average: number
 }
 
 export interface InvestmentAccountAnnualDiffDto {
@@ -477,12 +478,16 @@ export interface InvestmentAnnualResultDto {
 export interface IncomeAnnualSummaryDto {
   salaryMonthly: number[]
   salaryAnnualTotal: number
+  salaryAverage: number
   salaryAfterTaxesMonthly: number[]
   salaryAfterTaxesAnnualTotal: number
+  salaryAfterTaxesAverage: number
   taxDifferenceMonthly: number[]
   taxDifferenceAnnualTotal: number
+  taxDifferenceAverage: number
   dividendoJurosMonthly: number[]
   dividendoJurosAnnualTotal: number
+  dividendoJurosAverage: number
 }
 
 export interface CategoryTotalsAnnualDto {
@@ -490,8 +495,10 @@ export interface CategoryTotalsAnnualDto {
   incomeSummary: IncomeAnnualSummaryDto
   totalDespesasMonthly: number[]
   totalDespesasAnnualTotal: number
+  totalDespesasAverage: number
   resultadoMonthly: number[]
   resultadoAnnualTotal: number
+  resultadoAverage: number
 }
 
 export interface InvestmentSnapshotDto {
