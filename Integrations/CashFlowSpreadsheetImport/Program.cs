@@ -42,6 +42,7 @@ if (File.Exists(outputPath))
 var report = new ImportReport();
 var serializer = new CashFlowSerializerAdapter();
 var storage = new LocalJsonStorage(outputPath);
+var today = DateOnly.FromDateTime(DateTime.Now);
 
 // Loaded once up front regardless of mode: this is also where Banks/Incomes/CardStatements
 // come from for a full rebuild below, since the spreadsheet never produces them itself.
@@ -76,7 +77,7 @@ if (mensaisOnly)
 }
 else
 {
-    ImportMonthlyExpenseSheets(workbook, data, report);
+    ImportMonthlyExpenseSheets(workbook, data, report, today);
     ImportReservasSheet(workbook, data, report);
     ImportMensaisSheet(workbook, data, report);
     ImportControleMaeSheet(workbook, data, report);
@@ -85,7 +86,7 @@ else
 
 // Always run, in both modes: every migration below is idempotent, so re-running is always safe.
 var bankSummary = BankMigrator.Migrate(data);
-var bankOpeningBalanceSummary = BankOpeningBalanceMigrator.Migrate(data, DateOnly.FromDateTime(DateTime.Now));
+var bankOpeningBalanceSummary = BankOpeningBalanceMigrator.Migrate(data, today);
 var incomeSummary = IncomeMigrator.Migrate(data, workbook);
 var paymentStateSummary = ExpensePaymentStateMigrator.Migrate(data);
 // Re-run (seeding is idempotent) so the reported summary's snapshot audit reflects the
@@ -128,7 +129,7 @@ static void CarryOverDataTheSpreadsheetDoesNotOwn(CashFlowData existingData, Cas
     }
 }
 
-static void ImportMonthlyExpenseSheets(XLWorkbook workbook, CashFlowData data, ImportReport report)
+static void ImportMonthlyExpenseSheets(XLWorkbook workbook, CashFlowData data, ImportReport report, DateOnly today)
 {
     var monthlySheets = workbook.Worksheets
         .Select(sheet => (Sheet: sheet, Parsed: SheetNameParser.TryParseMonthlySheetName(sheet.Name, out var year, out var month), Year: year, Month: month))
@@ -137,7 +138,7 @@ static void ImportMonthlyExpenseSheets(XLWorkbook workbook, CashFlowData data, I
 
     foreach (var (sheet, _, year, month) in monthlySheets)
     {
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, year, month, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, year, month, today, report);
         foreach (var expense in expenses)
         {
             data.AddExpense(expense);
