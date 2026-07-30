@@ -1,9 +1,13 @@
+using Financial.Api.DTOs;
 using Financial.Investment.Application.Configuration;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
 namespace Financial.Api.Controllers;
 
+/// <summary>
+/// Diagnostic endpoints for checking API liveness and the active data repository configuration.
+/// </summary>
 [ApiController]
 [Route("")]
 public sealed class DiagnosticsController : ControllerBase
@@ -18,29 +22,33 @@ public sealed class DiagnosticsController : ControllerBase
         _environment = environment ?? throw new ArgumentNullException(nameof(environment));
     }
 
+    /// <summary>Reports whether the API is up and responding.</summary>
+    /// <returns>Always 200 OK with a static "ok" status when the API is reachable.</returns>
     [HttpGet("health")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public IActionResult GetHealth()
+    [ProducesResponseType(typeof(HealthStatusDTO), StatusCodes.Status200OK)]
+    public ActionResult<HealthStatusDTO> GetHealth()
     {
-        return Ok(new { status = "ok" });
+        return Ok(new HealthStatusDTO { Status = "ok" });
     }
 
+    /// <summary>Returns the active data repository configuration (provider and file paths).</summary>
+    /// <returns>200 OK with the configuration when running in Development; 404 Not Found otherwise.</returns>
     [HttpGet("config/repository")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RepositoryConfigDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult GetRepositoryConfig()
+    public ActionResult<RepositoryConfigDTO> GetRepositoryConfig()
     {
         if (!_environment.IsDevelopment())
         {
             return NotFound();
         }
 
-        return Ok(new
+        return Ok(new RepositoryConfigDTO
         {
-            provider = _repositorySettings.Provider,
-            dataJsonFile = _repositorySettings.DataJsonFile,
-            googleDriveCredentialsPath = _repositorySettings.GoogleDriveCredentialsPath,
-            googleDriveFilePath = _repositorySettings.GoogleDriveFilePath
+            Provider = _repositorySettings.Provider,
+            DataJsonFile = _repositorySettings.DataJsonFile,
+            GoogleDriveCredentialsPath = _repositorySettings.GoogleDriveCredentialsPath,
+            GoogleDriveFilePath = _repositorySettings.GoogleDriveFilePath
         });
     }
 }

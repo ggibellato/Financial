@@ -6,6 +6,9 @@ using Microsoft.Extensions.Options;
 
 namespace Financial.Api.Controllers;
 
+/// <summary>
+/// Provides dividend history and summary lookups for a given ticker.
+/// </summary>
 [ApiController]
 [Route("dividends")]
 public sealed class DividendsController : ControllerBase
@@ -19,6 +22,10 @@ public sealed class DividendsController : ControllerBase
         _defaultExchange = (dividendOptions ?? throw new ArgumentNullException(nameof(dividendOptions))).Value.DefaultExchange;
     }
 
+    /// <summary>Returns the historical dividend payments for a ticker.</summary>
+    /// <param name="ticker">The stock/ETF ticker symbol.</param>
+    /// <param name="exchange">Optional exchange code; defaults to the configured default exchange.</param>
+    /// <returns>200 OK with the dividend history, 400 Bad Request if <paramref name="ticker"/> is missing, or 404 Not Found if no dividend data exists for the ticker.</returns>
     [HttpGet("{ticker}/history")]
     [ProducesResponseType(typeof(IReadOnlyList<DividendHistoryItemDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -44,6 +51,10 @@ public sealed class DividendsController : ControllerBase
         }
     }
 
+    /// <summary>Returns a summarized view of dividend payments for a ticker (e.g. yearly totals).</summary>
+    /// <param name="ticker">The stock/ETF ticker symbol.</param>
+    /// <param name="exchange">Optional exchange code; defaults to the configured default exchange.</param>
+    /// <returns>200 OK with the dividend summary, 400 Bad Request if <paramref name="ticker"/> is missing, or 404 Not Found if no dividend data exists for the ticker.</returns>
     [HttpGet("{ticker}/summary")]
     [ProducesResponseType(typeof(DividendSummaryDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Controllers;
 
+/// <summary>
+/// Manages cash flow expenses.
+/// </summary>
 [ApiController]
 [Route("expenses")]
 public sealed class ExpensesController : ControllerBase
@@ -15,6 +18,9 @@ public sealed class ExpensesController : ControllerBase
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
     }
 
+    /// <summary>Records a new expense.</summary>
+    /// <param name="request">The expense to create.</param>
+    /// <returns>200 OK with the created expense, 400 Bad Request if the request is invalid or missing.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(ExpenseDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -36,6 +42,10 @@ public sealed class ExpensesController : ControllerBase
         }
     }
 
+    /// <summary>Updates an existing expense.</summary>
+    /// <param name="id">The expense's identifier.</param>
+    /// <param name="request">The new expense fields.</param>
+    /// <returns>200 OK with the updated expense, 400 Bad Request if the request is invalid, or 404 Not Found if the expense doesn't exist.</returns>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(ExpenseDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -62,6 +72,9 @@ public sealed class ExpensesController : ControllerBase
         }
     }
 
+    /// <summary>Deletes an expense.</summary>
+    /// <param name="id">The expense's identifier.</param>
+    /// <returns>200 OK if deleted, or 404 Not Found if the expense doesn't exist.</returns>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -78,6 +91,10 @@ public sealed class ExpensesController : ControllerBase
         }
     }
 
+    /// <summary>Lists expenses recorded in a given month.</summary>
+    /// <param name="year">The year.</param>
+    /// <param name="month">The month (1-12).</param>
+    /// <returns>200 OK with the matching expenses.</returns>
     [HttpGet("month/{year:int}/{month:int}")]
     [ProducesResponseType(typeof(IReadOnlyList<ExpenseDTO>), StatusCodes.Status200OK)]
     public ActionResult<IReadOnlyList<ExpenseDTO>> GetExpensesByMonth(int year, int month)
@@ -86,6 +103,10 @@ public sealed class ExpensesController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Returns expense totals grouped by category for a given month.</summary>
+    /// <param name="year">The year.</param>
+    /// <param name="month">The month (1-12).</param>
+    /// <returns>200 OK with the per-category totals.</returns>
     [HttpGet("month/{year:int}/{month:int}/category-totals")]
     [ProducesResponseType(typeof(IReadOnlyList<CategoryTotalDTO>), StatusCodes.Status200OK)]
     public ActionResult<IReadOnlyList<CategoryTotalDTO>> GetCategoryTotalsByMonth(int year, int month)

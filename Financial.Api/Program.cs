@@ -4,6 +4,8 @@ using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DependencyInjection;
 using Financial.Investment.Infrastructure.DependencyInjection;
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,9 +22,18 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
             retainedFileCountLimit: 14);
 });
 
+const string ApiRoutePrefix = "/api/v1/financial";
+
 builder.Services.AddProblemDetails();
-builder.Services.AddOpenApi();
-builder.Services.AddControllers();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, _, _) =>
+    {
+        document.Servers = [new OpenApiServer { Url = ApiRoutePrefix }];
+        return Task.CompletedTask;
+    });
+});
+builder.Services.AddControllers(options => options.Filters.Add(new ProducesAttribute("application/json")));
 
 const string CorsOriginsConfigurationKey = "Cors:AllowedOrigins";
 
@@ -58,6 +69,11 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "Financial API v1");
+        options.RoutePrefix = "swagger";
+    });
     app.UseDeveloperExceptionPage();
 }
 else
@@ -68,7 +84,7 @@ else
 app.UseCors();
 app.UseStaticFiles();
 
-var api = app.MapGroup("/api/v1/financial");
+var api = app.MapGroup(ApiRoutePrefix);
 api.MapControllers();
 
 app.MapFallbackToFile("index.html");

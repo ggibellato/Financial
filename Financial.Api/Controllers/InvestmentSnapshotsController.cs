@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Controllers;
 
+/// <summary>
+/// Manages month-end investment account balance snapshots used for cash flow tracking.
+/// </summary>
 [ApiController]
 [Route("investment-snapshots")]
 public sealed class InvestmentSnapshotsController : ControllerBase
@@ -15,6 +18,10 @@ public sealed class InvestmentSnapshotsController : ControllerBase
         _investmentSnapshotService = investmentSnapshotService ?? throw new ArgumentNullException(nameof(investmentSnapshotService));
     }
 
+    /// <summary>Lists investment account snapshots for a given month.</summary>
+    /// <param name="year">The year.</param>
+    /// <param name="month">The month (1-12).</param>
+    /// <returns>200 OK with the matching snapshots.</returns>
     [HttpGet("{year:int}/{month:int}")]
     [ProducesResponseType(typeof(IReadOnlyList<InvestmentSnapshotDTO>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<InvestmentSnapshotDTO>>> GetSnapshotsForMonth(int year, int month)
@@ -23,6 +30,10 @@ public sealed class InvestmentSnapshotsController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Updates the value recorded for an investment snapshot.</summary>
+    /// <param name="id">The snapshot's identifier.</param>
+    /// <param name="request">The new value.</param>
+    /// <returns>200 OK with the updated snapshot, 400 Bad Request if the request is invalid, or 404 Not Found if the snapshot doesn't exist.</returns>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(InvestmentSnapshotDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

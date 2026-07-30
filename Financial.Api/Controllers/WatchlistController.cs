@@ -4,6 +4,9 @@ using Microsoft.Extensions.Options;
 
 namespace Financial.Api.Controllers;
 
+/// <summary>
+/// Provides the user-configured watchlist of assets to keep an eye on.
+/// </summary>
 [ApiController]
 [Route("watchlist")]
 public sealed class WatchlistController : ControllerBase
@@ -15,6 +18,8 @@ public sealed class WatchlistController : ControllerBase
         _options = options.Value;
     }
 
+    /// <summary>Lists the configured watchlist items.</summary>
+    /// <returns>200 OK with the watchlist items.</returns>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<WatchlistItem>), StatusCodes.Status200OK)]
     public ActionResult<IReadOnlyList<WatchlistItem>> Get() => Ok(_options.Items);
