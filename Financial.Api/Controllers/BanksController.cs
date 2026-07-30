@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Controllers;
 
+/// <summary>
+/// Manages tracked banks and their opening balances.
+/// </summary>
 [ApiController]
 [Route("banks")]
 public sealed class BanksController : ControllerBase
@@ -15,6 +18,8 @@ public sealed class BanksController : ControllerBase
         _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
     }
 
+    /// <summary>Lists all tracked banks.</summary>
+    /// <returns>200 OK with the list of banks.</returns>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<BankDTO>), StatusCodes.Status200OK)]
     public ActionResult<IReadOnlyList<BankDTO>> GetBanks()
@@ -23,6 +28,10 @@ public sealed class BanksController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Updates a bank's opening balance and the date it's accurate as of.</summary>
+    /// <param name="name">The bank's name.</param>
+    /// <param name="request">The new opening balance and date.</param>
+    /// <returns>200 OK with the updated bank, 400 Bad Request if the request is invalid, or 404 Not Found if no such bank exists.</returns>
     [HttpPut("{name}/opening-balance")]
     [ProducesResponseType(typeof(BankDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -49,6 +58,10 @@ public sealed class BanksController : ControllerBase
         }
     }
 
+    /// <summary>Returns each bank's balance as of the end of the given month.</summary>
+    /// <param name="year">The year.</param>
+    /// <param name="month">The month (1-12).</param>
+    /// <returns>200 OK with the per-bank balances.</returns>
     [HttpGet("month/{year:int}/{month:int}/balances")]
     [ProducesResponseType(typeof(IReadOnlyList<BankBalanceDTO>), StatusCodes.Status200OK)]
     public ActionResult<IReadOnlyList<BankBalanceDTO>> GetBankBalancesByMonth(int year, int month)

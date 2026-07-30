@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Controllers;
 
+/// <summary>
+/// Looks up current market prices for individual assets.
+/// </summary>
 [ApiController]
 [Route("prices")]
 public sealed class AssetPricesController : ControllerBase
@@ -16,6 +19,13 @@ public sealed class AssetPricesController : ControllerBase
         _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
     }
 
+    /// <summary>Returns the current market price for an asset.</summary>
+    /// <param name="exchange">Optional exchange code.</param>
+    /// <param name="ticker">The stock/ETF ticker symbol. Required.</param>
+    /// <param name="assetClass">Optional asset class (e.g. "Stock", "Crypto"); defaults to "Unknown" if omitted or unrecognized.</param>
+    /// <param name="brokerName">Optional broker name, used for broker-specific pricing sources.</param>
+    /// <param name="name">Optional display name, used as a lookup fallback.</param>
+    /// <returns>200 OK with the current price, or 400 Bad Request if <paramref name="ticker"/> is missing or invalid.</returns>
     [HttpGet("current")]
     [ProducesResponseType(typeof(AssetPriceDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

@@ -4,6 +4,9 @@ using Microsoft.Extensions.Options;
 
 namespace Financial.Api.Controllers;
 
+/// <summary>
+/// Provides the configured list of portfolios whose asset prices should be auto-fetched.
+/// </summary>
 [ApiController]
 [Route("asset-price-fetch")]
 public sealed class AssetPriceFetchController : ControllerBase
@@ -15,6 +18,8 @@ public sealed class AssetPriceFetchController : ControllerBase
         _options = options.Value;
     }
 
+    /// <summary>Lists the portfolios configured for automatic asset price fetching.</summary>
+    /// <returns>200 OK with the configured portfolios.</returns>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<AssetPriceFetch>), StatusCodes.Status200OK)]
     public ActionResult<IReadOnlyList<AssetPriceFetch>> Get() => Ok(_options.Portfolios);

@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Controllers;
 
+/// <summary>
+/// Manages cash flow incomes.
+/// </summary>
 [ApiController]
 [Route("incomes")]
 public sealed class IncomesController : ControllerBase
@@ -15,6 +18,9 @@ public sealed class IncomesController : ControllerBase
         _incomeService = incomeService ?? throw new ArgumentNullException(nameof(incomeService));
     }
 
+    /// <summary>Records a new income.</summary>
+    /// <param name="request">The income to create.</param>
+    /// <returns>200 OK with the created income, 400 Bad Request if the request is invalid or missing.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(IncomeDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -36,6 +42,10 @@ public sealed class IncomesController : ControllerBase
         }
     }
 
+    /// <summary>Updates an existing income.</summary>
+    /// <param name="id">The income's identifier.</param>
+    /// <param name="request">The new income fields.</param>
+    /// <returns>200 OK with the updated income, 400 Bad Request if the request is invalid, or 404 Not Found if the income doesn't exist.</returns>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(IncomeDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -62,6 +72,9 @@ public sealed class IncomesController : ControllerBase
         }
     }
 
+    /// <summary>Deletes an income.</summary>
+    /// <param name="id">The income's identifier.</param>
+    /// <returns>200 OK if deleted, or 404 Not Found if the income doesn't exist.</returns>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -78,6 +91,10 @@ public sealed class IncomesController : ControllerBase
         }
     }
 
+    /// <summary>Lists incomes recorded in a given month.</summary>
+    /// <param name="year">The year.</param>
+    /// <param name="month">The month (1-12).</param>
+    /// <returns>200 OK with the matching incomes.</returns>
     [HttpGet("month/{year:int}/{month:int}")]
     [ProducesResponseType(typeof(IReadOnlyList<IncomeDTO>), StatusCodes.Status200OK)]
     public ActionResult<IReadOnlyList<IncomeDTO>> GetIncomesByMonth(int year, int month)

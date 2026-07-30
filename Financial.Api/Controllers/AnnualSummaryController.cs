@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Controllers;
 
+/// <summary>
+/// Provides year-level cash flow summaries: historic category averages, annual totals, and investment results.
+/// </summary>
 [ApiController]
 [Route("annual-summary")]
 public sealed class AnnualSummaryController : ControllerBase
@@ -15,6 +18,9 @@ public sealed class AnnualSummaryController : ControllerBase
         _annualSummaryService = annualSummaryService ?? throw new ArgumentNullException(nameof(annualSummaryService));
     }
 
+    /// <summary>Returns the historic average category values leading up to the given year.</summary>
+    /// <param name="year">The year to compute averages up to.</param>
+    /// <returns>200 OK with the historic averages.</returns>
     [HttpGet("{year:int}/historic-summary-averages")]
     [ProducesResponseType(typeof(IReadOnlyList<CategoryAnnualGroupValueDTO>), StatusCodes.Status200OK)]
     public ActionResult<IReadOnlyList<CategoryAnnualGroupValueDTO>> GetHistoricSummaryAverages(int year)
@@ -22,6 +28,9 @@ public sealed class AnnualSummaryController : ControllerBase
         return Ok(_annualSummaryService.GetHistoricSummaryAverageFromYear(year));
     }
 
+    /// <summary>Returns the category totals for a given year.</summary>
+    /// <param name="year">The year.</param>
+    /// <returns>200 OK with the annual category totals.</returns>
     [HttpGet("{year:int}/category-totals")]
     [ProducesResponseType(typeof(CategoryTotalsAnnualDTO), StatusCodes.Status200OK)]
     public ActionResult<CategoryTotalsAnnualDTO> GetCategoryTotals(int year)
@@ -29,6 +38,9 @@ public sealed class AnnualSummaryController : ControllerBase
         return Ok(_annualSummaryService.GetCategoryTotalsAnnualForYear(year));
     }
 
+    /// <summary>Returns the investment result (contributions vs. growth) for a given year.</summary>
+    /// <param name="year">The year.</param>
+    /// <returns>200 OK with the annual investment result.</returns>
     [HttpGet("{year:int}/investment-annual-result")]
     [ProducesResponseType(typeof(InvestmentAnnualResultDTO), StatusCodes.Status200OK)]
     public ActionResult<InvestmentAnnualResultDTO> GetInvestmentAnnualResult(int year)

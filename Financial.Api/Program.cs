@@ -58,6 +58,11 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "Financial API v1");
+        options.RoutePrefix = "swagger";
+    });
     app.UseDeveloperExceptionPage();
 }
 else
