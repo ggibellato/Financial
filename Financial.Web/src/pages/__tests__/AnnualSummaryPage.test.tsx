@@ -103,7 +103,9 @@ const HISTORIC_SUMMARY_AVERAGE: CategoryAnnualAverageDto[] = [
 
 describe('AnnualSummaryPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    getCategoryTotalsAnnualForYearMock.mockReset()
+    getInvestmentAnnualResultForYearMock.mockReset()
+    getHistoricSummaryAverageFromYearMock.mockReset()
     getCategoryTotalsAnnualForYearMock.mockResolvedValue(CATEGORY_TOTALS_ANNUAL)
     getInvestmentAnnualResultForYearMock.mockResolvedValue(INVESTMENT_ANNUAL_RESULT)
     getHistoricSummaryAverageFromYearMock.mockResolvedValue(HISTORIC_SUMMARY_AVERAGE)

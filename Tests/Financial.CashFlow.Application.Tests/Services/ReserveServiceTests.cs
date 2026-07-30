@@ -5,6 +5,7 @@ using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -25,14 +26,17 @@ public class ReserveServiceTests
 
         var result = await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
 
-        repository.ReserveMovements.Should().HaveCount(4);
-        repository.ReserveMovements.Should().OnlyContain(m => m.Description == "Ramsay");
-        result.Investimento.Should().Be(654.33m);
-        result.HouseTreats.Should().Be(654.33m);
-        result.Ariana.Should().Be(327.17m);
-        result.Gleison.Should().Be(327.17m);
-        result.Total.Should().Be(1963.00m);
-        repository.SaveChangesCallCount.Should().Be(1);
+        using (new AssertionScope())
+        {
+            repository.ReserveMovements.Should().HaveCount(4);
+            repository.ReserveMovements.Should().OnlyContain(m => m.Description == "Ramsay");
+            result.Investimento.Should().Be(654.33m);
+            result.HouseTreats.Should().Be(654.33m);
+            result.Ariana.Should().Be(327.17m);
+            result.Gleison.Should().Be(327.17m);
+            result.Total.Should().Be(1963.00m);
+            repository.SaveChangesCallCount.Should().Be(1);
+        }
     }
 
     [Theory]
@@ -234,11 +238,14 @@ public class ReserveServiceTests
             Description = "Corrected"
         });
 
-        result.Bucket.Should().Be("HouseTreats");
-        result.Amount.Should().Be(150m);
-        result.Date.Should().Be(new DateOnly(2026, 7, 5));
-        result.Description.Should().Be("Corrected");
-        repository.SaveChangesCallCount.Should().Be(1);
+        using (new AssertionScope())
+        {
+            result.Bucket.Should().Be("HouseTreats");
+            result.Amount.Should().Be(150m);
+            result.Date.Should().Be(new DateOnly(2026, 7, 5));
+            result.Description.Should().Be("Corrected");
+            repository.SaveChangesCallCount.Should().Be(1);
+        }
     }
 
     [Fact]

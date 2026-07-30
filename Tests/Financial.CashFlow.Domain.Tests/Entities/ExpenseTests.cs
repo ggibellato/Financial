@@ -1,6 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Domain.Tests;
 
@@ -26,14 +27,17 @@ public class ExpenseTests
 
         var expense = Expense.Create(date, "Weekly groceries", 54.32m, Category.Mercado, "Barclays", null);
 
-        expense.Id.Should().NotBeEmpty();
-        expense.Date.Should().Be(date);
-        expense.Description.Should().Be("Weekly groceries");
-        expense.Value.Should().Be(54.32m);
-        expense.Category.Should().Be(Category.Mercado);
-        expense.PaymentSource.Should().Be("Barclays");
-        expense.CardTag.Should().BeNull();
-        expense.SettledAt.Should().BeNull();
+        using (new AssertionScope())
+        {
+            expense.Id.Should().NotBeEmpty();
+            expense.Date.Should().Be(date);
+            expense.Description.Should().Be("Weekly groceries");
+            expense.Value.Should().Be(54.32m);
+            expense.Category.Should().Be(Category.Mercado);
+            expense.PaymentSource.Should().Be("Barclays");
+            expense.CardTag.Should().BeNull();
+            expense.SettledAt.Should().BeNull();
+        }
     }
 
     [Fact]
@@ -94,14 +98,17 @@ public class ExpenseTests
 
         expense.UpdateDetails(newDate, "Updated", 20m, Category.Mercado, null, CreditCard.ChaseMaster4023);
 
-        expense.Id.Should().Be(originalId);
-        expense.Date.Should().Be(newDate);
-        expense.Description.Should().Be("Updated");
-        expense.Value.Should().Be(20m);
-        expense.Category.Should().Be(Category.Mercado);
-        expense.PaymentSource.Should().BeNull();
-        expense.CardTag.Should().Be(CreditCard.ChaseMaster4023);
-        expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+        using (new AssertionScope())
+        {
+            expense.Id.Should().Be(originalId);
+            expense.Date.Should().Be(newDate);
+            expense.Description.Should().Be("Updated");
+            expense.Value.Should().Be(20m);
+            expense.Category.Should().Be(Category.Mercado);
+            expense.PaymentSource.Should().BeNull();
+            expense.CardTag.Should().Be(CreditCard.ChaseMaster4023);
+            expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+        }
     }
 
     [Fact]
@@ -132,12 +139,15 @@ public class ExpenseTests
 
         expense.UpdateDetails(new DateOnly(2026, 7, 2), "Renamed", 25m, Category.Mercado, expense.PaymentSource, expense.CardTag);
 
-        expense.Description.Should().Be("Renamed");
-        expense.Value.Should().Be(25m);
-        expense.PaymentSource.Should().Be("Barclays");
-        expense.CardTag.Should().Be(CreditCard.ChaseMaster4023);
-        expense.SettledAt.Should().Be(new DateOnly(2026, 7, 31));
-        expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
+        using (new AssertionScope())
+        {
+            expense.Description.Should().Be("Renamed");
+            expense.Value.Should().Be(25m);
+            expense.PaymentSource.Should().Be("Barclays");
+            expense.CardTag.Should().Be(CreditCard.ChaseMaster4023);
+            expense.SettledAt.Should().Be(new DateOnly(2026, 7, 31));
+            expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
+        }
     }
 
     [Fact]

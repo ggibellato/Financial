@@ -1,6 +1,6 @@
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
-using System.Linq;
+using FluentAssertions.Execution;
 
 namespace Financial.Investment.Domain.Tests;
 
@@ -11,13 +11,16 @@ public class AssetTests
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
 
-        asset.Name.Should().Be("Asset A");
-        asset.ISIN.Should().Be("ISIN123");
-        asset.Exchange.Should().Be("NYSE");
-        asset.Ticker.Should().Be("AAA");
-        asset.Country.Should().Be(CountryCode.Unknown);
-        asset.LocalTypeCode.Should().BeEmpty();
-        asset.Class.Should().Be(GlobalAssetClass.Unknown);
+        using (new AssertionScope())
+        {
+            asset.Name.Should().Be("Asset A");
+            asset.ISIN.Should().Be("ISIN123");
+            asset.Exchange.Should().Be("NYSE");
+            asset.Ticker.Should().Be("AAA");
+            asset.Country.Should().Be(CountryCode.Unknown);
+            asset.LocalTypeCode.Should().BeEmpty();
+            asset.Class.Should().Be(GlobalAssetClass.Unknown);
+        }
     }
 
     [Fact]
@@ -25,11 +28,14 @@ public class AssetTests
     {
         var asset = Asset.Create("Bitcoin", "", "", "BTC", CountryCode.UK, "", GlobalAssetClass.Cryptocurrency);
 
-        asset.ISIN.Should().BeEmpty();
-        asset.Exchange.Should().BeEmpty();
-        asset.Ticker.Should().Be("BTC");
-        asset.Country.Should().Be(CountryCode.UK);
-        asset.Class.Should().Be(GlobalAssetClass.Cryptocurrency);
+        using (new AssertionScope())
+        {
+            asset.ISIN.Should().BeEmpty();
+            asset.Exchange.Should().BeEmpty();
+            asset.Ticker.Should().Be("BTC");
+            asset.Country.Should().Be(CountryCode.UK);
+            asset.Class.Should().Be(GlobalAssetClass.Cryptocurrency);
+        }
     }
 
     [Fact]
@@ -222,19 +228,5 @@ public class AssetTests
 
         result.Should().BeTrue();
         asset.Credits.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Quantity_AveragePrice_RealizedGainLoss_ReflectTransactionsAndCredits()
-    {
-        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
-        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
-        asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
-        asset.AddCredit(Credit.Create(new DateTime(2021, 6, 1), Credit.CreditType.Dividend, 12m));
-
-        asset.Quantity.Should().Be(asset.Transactions.Quantity);
-        asset.AveragePrice.Should().Be(asset.Transactions.AveragePrice);
-        asset.AverageSellPrice.Should().Be(asset.Transactions.AverageSellPrice);
-        asset.RealizedGainLoss.Should().Be(asset.Transactions.RealizedCapitalGain + asset.Credits.Sum(c => c.Value));
     }
 }

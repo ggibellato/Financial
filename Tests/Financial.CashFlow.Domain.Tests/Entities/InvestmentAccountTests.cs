@@ -1,5 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Domain.Tests;
 
@@ -10,10 +11,13 @@ public class InvestmentAccountTests
     {
         var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
 
-        account.Id.Should().NotBeEmpty();
-        account.Name.Should().Be("ChaseSave");
-        account.IsActive.Should().BeTrue();
-        account.IsLiability.Should().BeFalse();
+        using (new AssertionScope())
+        {
+            account.Id.Should().NotBeEmpty();
+            account.Name.Should().Be("ChaseSave");
+            account.IsActive.Should().BeTrue();
+            account.IsLiability.Should().BeFalse();
+        }
     }
 
     [Fact]

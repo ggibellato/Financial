@@ -24,9 +24,9 @@ internal sealed class GoogleSheetsAssetReader
     private const int CreditTypeColumn = 3;
     private const string RentCreditType = "Aluguel";
 
-    private readonly GoogleService _service;
+    private readonly IGoogleSheetsDataSource _service;
 
-    internal GoogleSheetsAssetReader(GoogleService service)
+    internal GoogleSheetsAssetReader(IGoogleSheetsDataSource service)
     {
         _service = service;
     }

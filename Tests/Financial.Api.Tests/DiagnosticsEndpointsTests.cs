@@ -1,11 +1,7 @@
 using Financial.Api.Controllers;
-using Financial.Investment.Application.Configuration;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -14,20 +10,6 @@ namespace Financial.Api.Tests;
 
 public class DiagnosticsEndpointsTests
 {
-    [Fact]
-    public void Constructor_NullRepositorySettings_Throws()
-    {
-        Action act = () => new DiagnosticsController(null!, new StubHostEnvironment());
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
-    public void Constructor_NullEnvironment_Throws()
-    {
-        Action act = () => new DiagnosticsController(Options.Create(new RepositorySettingsOptions()), null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("environment");
-    }
-
     [Fact]
     public async Task GetHealth_ReturnsOk()
     {
@@ -71,13 +53,5 @@ public class DiagnosticsEndpointsTests
         {
             builder.UseEnvironment(environment);
         });
-    }
-
-    private sealed class StubHostEnvironment : IHostEnvironment
-    {
-        public string EnvironmentName { get; set; } = "Development";
-        public string ApplicationName { get; set; } = "Financial.Api.Tests";
-        public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 }

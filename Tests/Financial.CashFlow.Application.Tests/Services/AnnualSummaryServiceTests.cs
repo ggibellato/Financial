@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -147,10 +148,13 @@ public class AnnualSummaryServiceTests
         var result = service.GetInvestmentAnnualResultForYear(CurrentYear);
 
         var chaseSave = result.Accounts.Single(a => a.Account == "ChaseSave");
-        chaseSave.MonthlyDiffs.Should().HaveCount(12);
-        chaseSave.MonthlyDiffs[0].Should().BeNull();
-        chaseSave.MonthlyDiffs[1].Should().Be(200m);
-        chaseSave.MonthlyDiffs[2].Should().Be(-100m);
+        using (new AssertionScope())
+        {
+            chaseSave.MonthlyDiffs.Should().HaveCount(12);
+            chaseSave.MonthlyDiffs[0].Should().BeNull();
+            chaseSave.MonthlyDiffs[1].Should().Be(200m);
+            chaseSave.MonthlyDiffs[2].Should().Be(-100m);
+        }
     }
 
     [Fact]
@@ -340,11 +344,14 @@ public class AnnualSummaryServiceTests
 
         var result = service.GetInvestmentAnnualResultForYear(PastYear);
 
-        result.Accounts.Should().BeEmpty();
-        result.NetPosition.MonthlyValues.Should().OnlyContain(v => v == 0m);
-        result.NetPosition.FullYearNetChange.Should().Be(0m);
-        result.NetPosition.AverageMonthResult.Should().Be(0m);
-        result.NetPosition.SumOfMonthResults.Should().Be(0m);
+        using (new AssertionScope())
+        {
+            result.Accounts.Should().BeEmpty();
+            result.NetPosition.MonthlyValues.Should().OnlyContain(v => v == 0m);
+            result.NetPosition.FullYearNetChange.Should().Be(0m);
+            result.NetPosition.AverageMonthResult.Should().Be(0m);
+            result.NetPosition.SumOfMonthResults.Should().Be(0m);
+        }
     }
 
     [Fact]
@@ -414,9 +421,12 @@ public class AnnualSummaryServiceTests
 
         var result = service.GetIncomeSummaryForYear(2026);
 
-        result.SalaryMonthly.Should().OnlyContain(v => v == 0m);
-        result.SalaryAfterTaxesMonthly.Should().OnlyContain(v => v == 0m);
-        result.DividendoJurosMonthly.Should().OnlyContain(v => v == 0m);
+        using (new AssertionScope())
+        {
+            result.SalaryMonthly.Should().OnlyContain(v => v == 0m);
+            result.SalaryAfterTaxesMonthly.Should().OnlyContain(v => v == 0m);
+            result.DividendoJurosMonthly.Should().OnlyContain(v => v == 0m);
+        }
     }
 
     [Fact]
@@ -452,10 +462,13 @@ public class AnnualSummaryServiceTests
 
         var result = service.GetIncomeSummaryForYear(2026);
 
-        result.SalaryMonthly.Should().OnlyContain(v => v == 0m);
-        result.SalaryAfterTaxesMonthly.Should().OnlyContain(v => v == 0m);
-        result.TaxDifferenceMonthly.Should().OnlyContain(v => v == 0m);
-        result.DividendoJurosMonthly.Should().OnlyContain(v => v == 0m);
+        using (new AssertionScope())
+        {
+            result.SalaryMonthly.Should().OnlyContain(v => v == 0m);
+            result.SalaryAfterTaxesMonthly.Should().OnlyContain(v => v == 0m);
+            result.TaxDifferenceMonthly.Should().OnlyContain(v => v == 0m);
+            result.DividendoJurosMonthly.Should().OnlyContain(v => v == 0m);
+        }
     }
 
     [Fact]
@@ -469,9 +482,12 @@ public class AnnualSummaryServiceTests
 
         var result = service.GetCategoryTotalsAnnualForYear(2026);
 
-        result.TotalDespesasMonthly[0].Should().Be(130m);
-        result.TotalDespesasMonthly[1].Should().Be(50m);
-        result.TotalDespesasMonthly.Skip(2).Should().OnlyContain(v => v == 0m);
+        using (new AssertionScope())
+        {
+            result.TotalDespesasMonthly[0].Should().Be(130m);
+            result.TotalDespesasMonthly[1].Should().Be(50m);
+            result.TotalDespesasMonthly.Skip(2).Should().OnlyContain(v => v == 0m);
+        }
     }
 
     [Fact]
@@ -514,13 +530,16 @@ public class AnnualSummaryServiceTests
 
         var result = service.GetCategoryTotalsAnnualForYear(2026);
 
-        result.CategoryTotals.Should().HaveCount(Enum.GetValues<Category>().Length)
-            .And.OnlyContain(c => c.AnnualTotal == 0m);
-        result.IncomeSummary.SalaryAnnualTotal.Should().Be(0m);
-        result.TotalDespesasMonthly.Should().OnlyContain(v => v == 0m);
-        result.TotalDespesasAnnualTotal.Should().Be(0m);
-        result.ResultadoMonthly.Should().OnlyContain(v => v == 0m);
-        result.ResultadoAnnualTotal.Should().Be(0m);
+        using (new AssertionScope())
+        {
+            result.CategoryTotals.Should().HaveCount(Enum.GetValues<Category>().Length)
+                .And.OnlyContain(c => c.AnnualTotal == 0m);
+            result.IncomeSummary.SalaryAnnualTotal.Should().Be(0m);
+            result.TotalDespesasMonthly.Should().OnlyContain(v => v == 0m);
+            result.TotalDespesasAnnualTotal.Should().Be(0m);
+            result.ResultadoMonthly.Should().OnlyContain(v => v == 0m);
+            result.ResultadoAnnualTotal.Should().Be(0m);
+        }
     }
 
     [Fact]
@@ -577,9 +596,12 @@ public class AnnualSummaryServiceTests
 
         var result = service.GetHistoricSummaryAverageFromYear(2026);
 
-        result[0].Year.Should().Be(2026);
-        result[1].Year.Should().Be(2025);
-        result[2].Year.Should().Be(2023);
+        using (new AssertionScope())
+        {
+            result[0].Year.Should().Be(2026);
+            result[1].Year.Should().Be(2025);
+            result[2].Year.Should().Be(2023);
+        }
     }
 
     [Fact]
@@ -629,11 +651,14 @@ public class AnnualSummaryServiceTests
 
         var result = service.GetHistoricSummaryAverageFromYear(2026);
 
-        result.Count.Should().Be(2);
-        result[0].Year.Should().Be(2025);
-        result[1].Year.Should().Be(2023);
-        result[0].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(100m);
-        result[1].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(75m);
+        using (new AssertionScope())
+        {
+            result.Count.Should().Be(2);
+            result[0].Year.Should().Be(2025);
+            result[1].Year.Should().Be(2023);
+            result[0].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(100m);
+            result[1].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(75m);
+        }
     }
 
     [Fact]
@@ -673,24 +698,18 @@ public class AnnualSummaryServiceTests
     [Fact]
     public void GetHistoricSummaryAverageFromYear_SumsIncomeSourcesPerMonthBeforeAveragingWhenActiveMonthsDiffer()
     {
-        if(DateTime.UtcNow.Month <= 3)
-        {
-            // This test is meaningless in January, because the current year has no active months yet.
-            return;
-        }
-        var currentYearNumberOfMonths = DateTime.UtcNow.Month - 1;
-
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Incomes.Add(Income.Create(new DateOnly(DateTime.UtcNow.Year, 1, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
-        repository.Incomes.Add(Income.Create(new DateOnly(DateTime.UtcNow.Year, 2, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
-        repository.Incomes.Add(Income.Create(new DateOnly(DateTime.UtcNow.Year, 3, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
-        repository.Incomes.Add(Income.Create(new DateOnly(DateTime.UtcNow.Year, 1, 5), IncomeSource.Ariana, 500m, 500m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2025, 2, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2025, 3, 5), IncomeSource.Gleison, 1000m, 1000m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), IncomeSource.Ariana, 500m, 500m, "Barclays"));
 
-        var result = service.GetHistoricSummaryAverageFromYear(DateTime.UtcNow.Year);
+        var result = service.GetHistoricSummaryAverageFromYear(2025);
 
-        // Combined per-month salary: Jan 1500, Feb 1000, Mar 1000 → avg over 3 months = 1166.67
-        result[0].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(Math.Round(3500m / currentYearNumberOfMonths, AnnualSummaryService.AverageDecimalPlaces));
+        // Combined per-month salary: Jan 1500, Feb 1000, Mar 1000 → total 3500, averaged over all 12
+        // months of a completed past year (NumberOfMonthsForAverage returns 12 for any non-current year).
+        result[0].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(Math.Round(3500m / 12m, AnnualSummaryService.AverageDecimalPlaces));
     }
 
     [Fact]
@@ -802,14 +821,6 @@ public class AnnualSummaryServiceTests
     public void GetHistoricSummaryAverageFromYear_ExcludesInProgressCurrentMonthFromCurrentYearAverage()
     {
         var today = DateTime.UtcNow;
-        var currentMonth = today.Month;
-        if (today.Month == 1)
-        {
-            // No completed month exists yet this year; that scenario is covered by the
-            // "omits current year entirely" test below instead.
-            return;
-        }
-
         var numberOfValidMonthsInCurrentYear = today.Month - 1; // Exclude the current month, which is in progress.
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
@@ -821,12 +832,24 @@ public class AnnualSummaryServiceTests
 
         var result = service.GetHistoricSummaryAverageFromYear(currentYear);
 
+        if (numberOfValidMonthsInCurrentYear == 0)
+        {
+            // No completed month exists yet this year (today is in January): every seeded record
+            // falls within the in-progress cutoff, so the current year must not appear at all -
+            // the same behavior covered explicitly by the "omits current year entirely" test below.
+            result.Should().NotContain(r => r.Year == currentYear);
+            return;
+        }
+
         var currentYearRow = result.Single(r => r.Year == currentYear);
         // Only January's figures count; the in-progress current-month entries (9999) must be excluded entirely,
         // not treated as a completed month with a low value.
-        currentYearRow.AnnualAverages.Single(a => a.Category == "Mercado").Value.Should().Be(100m);
-        currentYearRow.AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(1000m);
-        currentYearRow.AnnualAverages.Single(a => a.Category == "Salary after taxes").Value.Should().Be(800m);
+        using (new AssertionScope())
+        {
+            currentYearRow.AnnualAverages.Single(a => a.Category == "Mercado").Value.Should().Be(100m);
+            currentYearRow.AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(1000m);
+            currentYearRow.AnnualAverages.Single(a => a.Category == "Salary after taxes").Value.Should().Be(800m);
+        }
     }
 
     [Fact]
@@ -879,12 +902,6 @@ public class AnnualSummaryServiceTests
     public void GetCategoryTotalsForYear_AverageForCurrentYearExcludesInProgressMonth()
     {
         var today = DateTime.UtcNow;
-        if (today.Month == 1)
-        {
-            // No completed month exists yet this year; nothing meaningful to assert.
-            return;
-        }
-
         var monthsElapsed = today.Month - 1;
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
@@ -895,8 +912,10 @@ public class AnnualSummaryServiceTests
         var result = service.GetCategoryTotalsForYear(currentYear);
 
         // The in-progress current-month entry (9999) must be excluded entirely from the average,
-        // not treated as a completed month with a low value.
-        result.Single(c => c.Category == "Mercado").Average.Should().Be(100m);
+        // not treated as a completed month with a low value. When today is in January there are no
+        // completed months yet, so MonthlySeries.Average's monthsElapsed<=0 rule yields zero.
+        var expectedAverage = monthsElapsed == 0 ? 0m : 100m;
+        result.Single(c => c.Category == "Mercado").Average.Should().Be(expectedAverage);
     }
 
     [Fact]
@@ -931,11 +950,6 @@ public class AnnualSummaryServiceTests
     public void GetIncomeSummaryForYear_AveragesForCurrentYearExcludeInProgressMonth()
     {
         var today = DateTime.UtcNow;
-        if (today.Month == 1)
-        {
-            return;
-        }
-
         var monthsElapsed = today.Month - 1;
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
@@ -945,8 +959,12 @@ public class AnnualSummaryServiceTests
 
         var result = service.GetIncomeSummaryForYear(currentYear);
 
-        result.SalaryAverage.Should().Be(1000m);
-        result.SalaryAfterTaxesAverage.Should().Be(800m);
+        // When today is in January there are no completed months yet, so MonthlySeries.Average's
+        // monthsElapsed<=0 rule yields zero instead of the completed-months figures below.
+        var expectedSalaryAverage = monthsElapsed == 0 ? 0m : 1000m;
+        var expectedSalaryAfterTaxesAverage = monthsElapsed == 0 ? 0m : 800m;
+        result.SalaryAverage.Should().Be(expectedSalaryAverage);
+        result.SalaryAfterTaxesAverage.Should().Be(expectedSalaryAfterTaxesAverage);
     }
 
     [Fact]
@@ -988,11 +1006,6 @@ public class AnnualSummaryServiceTests
     public void GetCategoryTotalsAnnualForYear_TotalDespesasAndResultadoAveragesForCurrentYearExcludeInProgressMonth()
     {
         var today = DateTime.UtcNow;
-        if (today.Month == 1)
-        {
-            return;
-        }
-
         var monthsElapsed = today.Month - 1;
         var repository = new StubCashFlowRepository();
         var service = new AnnualSummaryService(repository);
@@ -1004,8 +1017,12 @@ public class AnnualSummaryServiceTests
 
         var result = service.GetCategoryTotalsAnnualForYear(currentYear);
 
-        result.TotalDespesasAverage.Should().Be(100m);
-        result.ResultadoAverage.Should().Be(700m);
+        // When today is in January there are no completed months yet, so MonthlySeries.Average's
+        // monthsElapsed<=0 rule yields zero instead of the completed-months figures below.
+        var expectedTotalDespesasAverage = monthsElapsed == 0 ? 0m : 100m;
+        var expectedResultadoAverage = monthsElapsed == 0 ? 0m : 700m;
+        result.TotalDespesasAverage.Should().Be(expectedTotalDespesasAverage);
+        result.ResultadoAverage.Should().Be(expectedResultadoAverage);
     }
 
     private sealed class StubCashFlowRepository : ICashFlowRepository

@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -23,13 +24,16 @@ public class IncomeServiceTests
 
         var result = await service.AddIncomeAsync(ToCreateDto(ValidCreateRequest()));
 
-        result.Date.Should().Be(new DateOnly(2026, 7, 25));
-        result.IncomeSource.Should().Be("Gleison");
-        result.GrossValue.Should().Be(3200.00m);
-        result.NetValue.Should().Be(2450.00m);
-        result.Bank.Should().Be("Barclays");
-        repository.Incomes.Should().ContainSingle();
-        repository.SaveChangesCallCount.Should().Be(1);
+        using (new AssertionScope())
+        {
+            result.Date.Should().Be(new DateOnly(2026, 7, 25));
+            result.IncomeSource.Should().Be("Gleison");
+            result.GrossValue.Should().Be(3200.00m);
+            result.NetValue.Should().Be(2450.00m);
+            result.Bank.Should().Be("Barclays");
+            repository.Incomes.Should().ContainSingle();
+            repository.SaveChangesCallCount.Should().Be(1);
+        }
     }
 
     [Fact]
@@ -100,11 +104,14 @@ public class IncomeServiceTests
         var updateRequest = ToUpdateDto(ValidCreateRequest() with { NetValue = 500m, GrossValue = null, IncomeSource = "Lottery" });
         var result = await service.UpdateIncomeAsync(added.Id, updateRequest);
 
-        result.Id.Should().Be(added.Id);
-        result.NetValue.Should().Be(500m);
-        result.IncomeSource.Should().Be("Lottery");
-        repository.Incomes.Should().ContainSingle();
-        repository.SaveChangesCallCount.Should().Be(2);
+        using (new AssertionScope())
+        {
+            result.Id.Should().Be(added.Id);
+            result.NetValue.Should().Be(500m);
+            result.IncomeSource.Should().Be("Lottery");
+            repository.Incomes.Should().ContainSingle();
+            repository.SaveChangesCallCount.Should().Be(2);
+        }
     }
 
     [Fact]

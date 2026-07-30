@@ -68,11 +68,20 @@ describe('DetailPanel', () => {
     })
     vi.stubGlobal('alert', vi.fn())
     vi.stubGlobal('confirm', vi.fn())
+    getAssetDetailsMock.mockReset()
+    getCurrentPriceMock.mockReset()
+    getSummaryByBrokerMock.mockReset()
+    getSummaryByPortfolioMock.mockReset()
+    getPortfolioAssetsSummaryMock.mockReset()
+    getTransactionsByBrokerMock.mockReset()
+    getTransactionsByPortfolioMock.mockReset()
     getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
     getSummaryByBrokerMock.mockReturnValue(new Promise(() => {}))
     getSummaryByPortfolioMock.mockReturnValue(new Promise(() => {}))
     getPortfolioAssetsSummaryMock.mockReturnValue(new Promise(() => {}))
+    getTransactionsByBrokerMock.mockResolvedValue([])
+    getTransactionsByPortfolioMock.mockResolvedValue([])
   })
 
   it('shows empty state when selectedNode is null', () => {
@@ -202,7 +211,7 @@ describe('DetailPanel', () => {
     await waitFor(() =>
       expect(screen.getByText('Net Invested by Month')).toBeInTheDocument(),
     )
-    expect(document.querySelector('table')).not.toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
   it('renders_transactions_chart_for_portfolio_node', async () => {
@@ -212,7 +221,7 @@ describe('DetailPanel', () => {
     await waitFor(() =>
       expect(screen.getByText('Net Invested by Month')).toBeInTheDocument(),
     )
-    expect(document.querySelector('table')).not.toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
   it('active tab resets to Summary on selectedNode change', () => {

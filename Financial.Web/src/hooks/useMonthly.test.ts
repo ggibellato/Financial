@@ -106,7 +106,21 @@ const TITHE_SUMMARY: TitheSummaryDto = { calculatedTithe: 245, titheBalance: 245
 
 describe('useMonthly', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    getExpensesByMonthMock.mockReset()
+    getCategoryTotalsByMonthMock.mockReset()
+    getCardStatementsByMonthMock.mockReset()
+    getBanksMock.mockReset()
+    createExpenseMock.mockReset()
+    updateExpenseMock.mockReset()
+    deleteExpenseMock.mockReset()
+    markCardStatementPaidMock.mockReset()
+    unmarkCardStatementPaidMock.mockReset()
+    getIncomesByMonthMock.mockReset()
+    createIncomeMock.mockReset()
+    updateIncomeMock.mockReset()
+    deleteIncomeMock.mockReset()
+    getBankBalancesByMonthMock.mockReset()
+    getTitheSummaryByMonthMock.mockReset()
     getExpensesByMonthMock.mockResolvedValue(EXPENSES)
     getCategoryTotalsByMonthMock.mockResolvedValue(CATEGORY_TOTALS)
     getCardStatementsByMonthMock.mockResolvedValue(CARD_STATEMENTS)

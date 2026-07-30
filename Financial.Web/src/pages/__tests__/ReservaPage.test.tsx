@@ -38,7 +38,12 @@ const MOVEMENTS: ReserveMovementDto[] = [
 
 describe('ReservaPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    getReserveBalancesMock.mockReset()
+    getReserveMovementsMock.mockReset()
+    postIncomeSplitMock.mockReset()
+    postWithdrawalMock.mockReset()
+    updateReserveMovementMock.mockReset()
+    deleteReserveMovementMock.mockReset()
     getReserveBalancesMock.mockResolvedValue(BALANCES)
     getReserveMovementsMock.mockResolvedValue(MOVEMENTS)
   })
@@ -69,11 +74,12 @@ describe('ReservaPage', () => {
   })
 
   it('shows a group total after the last movement of a same date+description split in history', async () => {
-    const { container } = render(<ReservaPage />)
+    render(<ReservaPage />)
 
     await waitFor(() => expect(screen.getAllByText('Ramsay').length).toBe(4))
-    const movementSection = container.querySelector('.reserva-page__section--movements') as HTMLElement
-    const rows = within(movementSection).getAllByRole('row')
+    // "Date" is the movements table's own column header, distinguishing it from the balances table.
+    const movementsTable = screen.getByRole('columnheader', { name: 'Date' }).closest('table') as HTMLElement
+    const rows = within(movementsTable).getAllByRole('row')
     // header + 4 movement rows + 1 group-total row
     expect(rows).toHaveLength(6)
     expect(within(rows[5]).getByText('Total split for Ramsay')).toBeInTheDocument()
@@ -81,10 +87,11 @@ describe('ReservaPage', () => {
   })
 
   it('renders the total balance across all buckets, bold and always visible', async () => {
-    const { container } = render(<ReservaPage />)
+    render(<ReservaPage />)
 
     await waitFor(() => expect(screen.getAllByText('Ramsay').length).toBe(4))
-    const balancesSection = container.querySelector('.reserva-page__section--balances') as HTMLElement
+    // "Balance" is the balances table's own column header, distinguishing its section from movements.
+    const balancesSection = screen.getByRole('columnheader', { name: 'Balance' }).closest('section') as HTMLElement
     // 654.33 + 654.33 + 327.17 + 327.17 = 1963.00
     expect(within(balancesSection).getByText('1,963.00')).toBeInTheDocument()
   })

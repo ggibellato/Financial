@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -34,9 +35,12 @@ public class CardStatementServiceTests
 
         var result = await service.GetStatementsForMonthAsync(2026, 7);
 
-        result.Should().HaveCount(5);
-        result.Should().OnlyContain(s => !s.IsPaid);
-        repository.Statements.Should().HaveCount(5);
+        using (new AssertionScope())
+        {
+            result.Should().HaveCount(5);
+            result.Should().OnlyContain(s => !s.IsPaid);
+            repository.Statements.Should().HaveCount(5);
+        }
     }
 
     [Fact]
@@ -48,9 +52,12 @@ public class CardStatementServiceTests
         await service.GetStatementsForMonthAsync(2026, 7);
         var result = await service.GetStatementsForMonthAsync(2026, 7);
 
-        result.Should().HaveCount(5);
-        repository.Statements.Should().HaveCount(5);
-        repository.SaveChangesCallCount.Should().Be(1);
+        using (new AssertionScope())
+        {
+            result.Should().HaveCount(5);
+            repository.Statements.Should().HaveCount(5);
+            repository.SaveChangesCallCount.Should().Be(1);
+        }
     }
 
     [Fact]
@@ -97,18 +104,21 @@ public class CardStatementServiceTests
 
         var result = await service.MarkStatementPaidAsync(statement.Id, PaidBy("Trading212"));
 
-        result.IsPaid.Should().BeTrue();
-        result.OutstandingTotal.Should().Be(0m);
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        foreach (var expense in new[] { first, second })
+        using (new AssertionScope())
         {
-            expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
-            expense.PaymentSource.Should().Be("Trading212");
-            expense.SettledAt.Should().Be(today);
-        }
+            result.IsPaid.Should().BeTrue();
+            result.OutstandingTotal.Should().Be(0m);
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            foreach (var expense in new[] { first, second })
+            {
+                expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
+                expense.PaymentSource.Should().Be("Trading212");
+                expense.SettledAt.Should().Be(today);
+            }
 
-        otherMonth.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
-        otherCard.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+            otherMonth.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+            otherCard.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+        }
     }
 
     [Theory]
@@ -126,10 +136,13 @@ public class CardStatementServiceTests
 
         var act = async () => await service.MarkStatementPaidAsync(statement.Id, PaidBy(paymentSource));
 
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Payment source*not recognized*");
-        statement.IsPaid.Should().BeFalse();
-        charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
-        repository.SaveChangesCallCount.Should().Be(savesBefore);
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Payment source*not recognized*");
+            statement.IsPaid.Should().BeFalse();
+            charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+            repository.SaveChangesCallCount.Should().Be(savesBefore);
+        }
     }
 
     [Fact]
@@ -160,11 +173,14 @@ public class CardStatementServiceTests
 
         var act = async () => await service.MarkStatementPaidAsync(statement.Id, PaidBy("Barclays"));
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
-        statement.IsPaid.Should().BeFalse();
-        charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
-        charge.PaymentSource.Should().BeNull();
-        charge.SettledAt.Should().BeNull();
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<InvalidOperationException>();
+            statement.IsPaid.Should().BeFalse();
+            charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+            charge.PaymentSource.Should().BeNull();
+            charge.SettledAt.Should().BeNull();
+        }
     }
 
     [Fact]
@@ -190,13 +206,16 @@ public class CardStatementServiceTests
 
         var result = await service.UnmarkStatementPaidAsync(statement.Id);
 
-        result.IsPaid.Should().BeFalse();
-        result.OutstandingTotal.Should().Be(50m);
-        foreach (var expense in new[] { first, second })
+        using (new AssertionScope())
         {
-            expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
-            expense.PaymentSource.Should().BeNull();
-            expense.SettledAt.Should().BeNull();
+            result.IsPaid.Should().BeFalse();
+            result.OutstandingTotal.Should().Be(50m);
+            foreach (var expense in new[] { first, second })
+            {
+                expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+                expense.PaymentSource.Should().BeNull();
+                expense.SettledAt.Should().BeNull();
+            }
         }
     }
 
@@ -244,11 +263,14 @@ public class CardStatementServiceTests
 
         var act = async () => await service.UnmarkStatementPaidAsync(statement.Id);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
-        statement.IsPaid.Should().BeTrue();
-        charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
-        charge.PaymentSource.Should().Be("Trading212");
-        charge.SettledAt.Should().Be(settledAt);
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<InvalidOperationException>();
+            statement.IsPaid.Should().BeTrue();
+            charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
+            charge.PaymentSource.Should().Be("Trading212");
+            charge.SettledAt.Should().Be(settledAt);
+        }
     }
 
     [Fact]

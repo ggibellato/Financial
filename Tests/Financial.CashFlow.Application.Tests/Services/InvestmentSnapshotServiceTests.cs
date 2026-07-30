@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -26,9 +27,12 @@ public class InvestmentSnapshotServiceTests
 
         var result = await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
 
-        result.Should().HaveCount(11);
-        result.Should().OnlyContain(s => s.Value == 0m);
-        repository.Snapshots.Should().HaveCount(11);
+        using (new AssertionScope())
+        {
+            result.Should().HaveCount(11);
+            result.Should().OnlyContain(s => s.Value == 0m);
+            repository.Snapshots.Should().HaveCount(11);
+        }
     }
 
     [Fact]
@@ -39,10 +43,13 @@ public class InvestmentSnapshotServiceTests
 
         var result = await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
 
-        result.Where(s => s.IsLiability).Should().HaveCount(6);
-        result.Should().ContainSingle(s => s.Account == "PlatinumVisa8003" && s.IsLiability);
-        result.Should().ContainSingle(s => s.Account == "ReservasPessoais" && s.IsLiability);
-        result.Should().ContainSingle(s => s.Account == "ChaseSave" && !s.IsLiability);
+        using (new AssertionScope())
+        {
+            result.Where(s => s.IsLiability).Should().HaveCount(6);
+            result.Should().ContainSingle(s => s.Account == "PlatinumVisa8003" && s.IsLiability);
+            result.Should().ContainSingle(s => s.Account == "ReservasPessoais" && s.IsLiability);
+            result.Should().ContainSingle(s => s.Account == "ChaseSave" && !s.IsLiability);
+        }
     }
 
     [Fact]
@@ -54,9 +61,12 @@ public class InvestmentSnapshotServiceTests
         await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
         var result = await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
 
-        result.Should().HaveCount(11);
-        repository.Snapshots.Should().HaveCount(11);
-        repository.SaveChangesCallCount.Should().Be(1);
+        using (new AssertionScope())
+        {
+            result.Should().HaveCount(11);
+            repository.Snapshots.Should().HaveCount(11);
+            repository.SaveChangesCallCount.Should().Be(1);
+        }
     }
 
     [Fact]
@@ -109,9 +119,12 @@ public class InvestmentSnapshotServiceTests
 
         var result = await service.UpdateSnapshotValueAsync(julySnapshot.Id, new UpdateInvestmentSnapshotValueDTO { Value = 500m });
 
-        result.Value.Should().Be(500m);
-        augustSnapshot.Value.Should().Be(0m);
-        otherAccountSnapshot.Value.Should().Be(0m);
+        using (new AssertionScope())
+        {
+            result.Value.Should().Be(500m);
+            augustSnapshot.Value.Should().Be(0m);
+            otherAccountSnapshot.Value.Should().Be(0m);
+        }
     }
 
     [Fact]

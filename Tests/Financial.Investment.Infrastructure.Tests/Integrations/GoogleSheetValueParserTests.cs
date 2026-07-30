@@ -23,4 +23,17 @@ public class GoogleSheetValueParserTests
 
         result.Should().Be(1000m);
     }
+
+    [Fact]
+    public void ToDecimal_ExtendedValueWithNullNumberValue_FallsThroughToStringParsingAndThrows()
+    {
+        // ExtendedValue.ToString() does not surface StringValue (it isn't overridden), so this
+        // fallback path never actually recovers a numeric string from an ExtendedValue - it
+        // always throws. This pins that real, if surprising, behavior.
+        var value = new ExtendedValue { NumberValue = null, StringValue = "1,000" };
+
+        var act = () => GoogleSheetValueParser.ToDecimal(value);
+
+        act.Should().Throw<FormatException>();
+    }
 }

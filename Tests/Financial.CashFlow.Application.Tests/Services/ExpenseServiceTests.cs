@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -24,15 +25,18 @@ public class ExpenseServiceTests
 
         var result = await service.AddExpenseAsync(request);
 
-        result.Description.Should().Be("Weekly groceries");
-        result.Value.Should().Be(54.32m);
-        result.Category.Should().Be("Mercado");
-        result.PaymentSource.Should().Be("Barclays");
-        result.CardTag.Should().BeNull();
-        result.SettledAt.Should().BeNull();
-        result.PaymentStatus.Should().Be("ImmediatePayment");
-        repository.Expenses.Should().ContainSingle();
-        repository.SaveChangesCallCount.Should().Be(1);
+        using (new AssertionScope())
+        {
+            result.Description.Should().Be("Weekly groceries");
+            result.Value.Should().Be(54.32m);
+            result.Category.Should().Be("Mercado");
+            result.PaymentSource.Should().Be("Barclays");
+            result.CardTag.Should().BeNull();
+            result.SettledAt.Should().BeNull();
+            result.PaymentStatus.Should().Be("ImmediatePayment");
+            repository.Expenses.Should().ContainSingle();
+            repository.SaveChangesCallCount.Should().Be(1);
+        }
     }
 
     [Fact]
@@ -44,10 +48,13 @@ public class ExpenseServiceTests
 
         var result = await service.AddExpenseAsync(ToCreateDto(request));
 
-        result.CardTag.Should().Be("BarclaysPlatinumVisa8003");
-        result.PaymentSource.Should().BeNull();
-        result.SettledAt.Should().BeNull();
-        result.PaymentStatus.Should().Be("CreditCardCharge");
+        using (new AssertionScope())
+        {
+            result.CardTag.Should().Be("BarclaysPlatinumVisa8003");
+            result.PaymentSource.Should().BeNull();
+            result.SettledAt.Should().BeNull();
+            result.PaymentStatus.Should().Be("CreditCardCharge");
+        }
     }
 
     [Fact]
@@ -169,11 +176,14 @@ public class ExpenseServiceTests
         };
         var result = await service.UpdateExpenseAsync(added.Id, updateRequest);
 
-        result.Id.Should().Be(added.Id);
-        result.Description.Should().Be("Updated");
-        result.Category.Should().Be("Casa");
-        repository.Expenses.Should().ContainSingle();
-        repository.SaveChangesCallCount.Should().Be(2);
+        using (new AssertionScope())
+        {
+            result.Id.Should().Be(added.Id);
+            result.Description.Should().Be("Updated");
+            result.Category.Should().Be("Casa");
+            repository.Expenses.Should().ContainSingle();
+            repository.SaveChangesCallCount.Should().Be(2);
+        }
     }
 
     [Fact]
@@ -234,9 +244,12 @@ public class ExpenseServiceTests
 
         var result = service.GetCategoryTotalsByMonth(2026, 7);
 
-        result.Should().HaveCount(2);
-        result.Should().ContainSingle(t => t.Category == "Mercado" && t.TotalValue == 15m);
-        result.Should().ContainSingle(t => t.Category == "Casa" && t.TotalValue == 20m);
+        using (new AssertionScope())
+        {
+            result.Should().HaveCount(2);
+            result.Should().ContainSingle(t => t.Category == "Mercado" && t.TotalValue == 15m);
+            result.Should().ContainSingle(t => t.Category == "Casa" && t.TotalValue == 20m);
+        }
     }
 
     [Fact]

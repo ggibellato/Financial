@@ -1,0 +1,232 @@
+using Financial.Investment.Domain.Entities;
+using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+using FluentAssertions;
+
+namespace Financial.Investment.Infrastructure.Tests.Integrations;
+
+public class GoogleSheetsAssetReaderTests
+{
+    private sealed class StubDataSource : IGoogleSheetsDataSource
+    {
+        public IList<IList<object>>? Rows { get; set; }
+        public string? LastSpreadSheetId { get; private set; }
+        public string? LastRange { get; private set; }
+
+        public Task<IList<IList<object>>> GetSpreadSheetDataAsync(string spreadSheetId, string range)
+        {
+            LastSpreadSheetId = spreadSheetId;
+            LastRange = range;
+            return Task.FromResult<IList<IList<object>>>(Rows!);
+        }
+    }
+
+    [Fact]
+    public async Task GetAssetDataAsync_WithValidRow_ReturnsExchangeIdTickerAndIsin()
+    {
+        var dataSource = new StubDataSource
+        {
+            Rows = new List<IList<object>> { new List<object> { "BVMF", "PETR4", "BRPETRACNPR6" } }
+        };
+        var reader = new GoogleSheetsAssetReader(dataSource);
+
+        var result = await reader.GetAssetDataAsync("file1", "Sheet1");
+
+        result.exchangeId.Should().Be("BVMF");
+        result.ticker.Should().Be("PETR4");
+        result.isin.Should().Be("BRPETRACNPR6");
+    }
+
+    [Fact]
+    public async Task GetAssetDataAsync_NullResponse_ReturnsEmptyStrings()
+    {
+        var dataSource = new StubDataSource { Rows = null };
+        var reader = new GoogleSheetsAssetReader(dataSource);
+
+        var result = await reader.GetAssetDataAsync("file1", "Sheet1");
+
+        result.exchangeId.Should().BeEmpty();
+        result.ticker.Should().BeEmpty();
+        result.isin.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetAssetDataAsync_RowShorterThanExpectedColumns_ReturnsFieldsExtractedBeforeTheOutOfRangeAccess()
+    {
+        // ArgumentOutOfRangeException is caught, but fields are assigned sequentially before it's
+        // thrown, so exchangeId (column 0) is already set by the time ticker (column 1) fails.
+        var dataSource = new StubDataSource
+        {
+            Rows = new List<IList<object>> { new List<object> { "BVMF" } }
+        };
+        var reader = new GoogleSheetsAssetReader(dataSource);
+
+        var result = await reader.GetAssetDataAsync("file1", "Sheet1");
+
+        result.exchangeId.Should().Be("BVMF");
+        result.ticker.Should().BeEmpty();
+        result.isin.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetAssetDataAsync_RequestsTheQ2S2Range()
+    {
+        var dataSource = new StubDataSource { Rows = null };
+        var reader = new GoogleSheetsAssetReader(dataSource);
+
+        await reader.GetAssetDataAsync("file1", "Sheet1");
+
+        dataSource.LastSpreadSheetId.Should().Be("file1");
+        dataSource.LastRange.Should().Be("Sheet1!Q2:S2");
+    }
+
+    [Fact]
+    public async Task ReadTransactionsAsync_SellCode_MapsToSellTransactionType()
+    {
+        var dataSource = new StubDataSource
+        {
+            Rows = new List<IList<object>>
+            {
+                new List<object> { 45000L, "", "V", "10", "", "100", "0" }
+            }
+        };
+        var reader = new GoogleSheetsAssetReader(dataSource);
+
+        var result = await reader.ReadTransactionsAsync("file1", "Sheet1");
+
+        result.Should().ContainSingle().Which.Type.Should().Be(Transaction.TransactionType.Sell);
+    }
+
+    [Fact]
+    public async Task ReadTransactionsAsync_NonSellCode_MapsToBuyTransactionType()
+    {
+        var dataSource = new StubDataSource
+        {
+            Rows = new List<IList<object>>
+            {
+                new List<object> { 45000L, "", "C", "10", "", "100", "0" }
+            }
+        };
+        var reader = new GoogleSheetsAssetReader(dataSource);
+
+        var result = await reader.ReadTransactionsAsync("file1", "Sheet1");
+
+        result.Should().ContainSingle().Which.Type.Should().Be(Transaction.TransactionType.Buy);
+    }
+
+    [Fact]
+    public async Task ReadTransactionsAsync_MissingDateOnSubsequentRow_ReusesPreviousDate()
+    {
+        var dataSource = new StubDataSource
+        {
+            Rows = new List<IList<object>>
+            {
+                new List<object> { 45000L, "", "C", "10", "", "100", "0" },
+                new List<object> { "", "", "C", "5", "", "100", "0" }
+            }
+        };
+        var reader = new GoogleSheetsAssetReader(dataSource);
+
+        var result = await reader.ReadTransactionsAsync("file1", "Sheet1");
+
+        result.Should().HaveCount(2);
+        result[1].Date.Should().Be(result[0].Date);
+    }
+
+    [Fact]
+    public async Task ReadTransactionsAsync_ComputesFeesAsTotalPriceMinusUnitPriceTimesQuantity()
+    {
+        var dataSource = new StubDataSource
+        {
+            Rows = new List<IList<object>>
+            {
+                // Total price cell (column 6) = 1005, unitPrice*quantity = 100*10 = 1000, so fees = 5.
+                new List<object> { 45000L, "", "C", "10", "", "100", "1005" }
+            }
+        };
+        var reader = new GoogleSheetsAssetReader(dataSource);
+
+        var result = await reader.ReadTransactionsAsync("file1", "Sheet1");
+
+        result.Should().ContainSingle().Which.Fees.Should().Be(5m);
+    }
+
+    [Fact]
+    public async Task ReadTransactionsAsync_NegativeComputedFees_ClampsToZero()
+    {
+        var dataSource = new StubDataSource
+        {
+            Rows = new List<IList<object>>
+            {
+                // Total price cell (column 6) = 500, unitPrice*quantity = 100*10 = 1000, so raw fees = -500.
+                new List<object> { 45000L, "", "C", "10", "", "100", "500" }
+            }
+        };
+        var reader = new GoogleSheetsAssetReader(dataSource);
+
+        var result = await reader.ReadTransactionsAsync("file1", "Sheet1");
+
+        result.Should().ContainSingle().Which.Fees.Should().Be(0m);
+    }
+
+    [Fact]
+    public async Task ReadCreditsAsync_RentType_MapsToRentCreditType()
+    {
+        var dataSource = new StubDataSource
+        {
+            Rows = new List<IList<object>>
+            {
+                new List<object> { 45000L, "100", "", "Aluguel" }
+            }
+        };
+        var reader = new GoogleSheetsAssetReader(dataSource);
+
+        var result = await reader.ReadCreditsAsync("file1", "Sheet1");
+
+        result.Should().ContainSingle().Which.Type.Should().Be(Credit.CreditType.Rent);
+    }
+
+    [Fact]
+    public async Task ReadCreditsAsync_NonRentType_MapsToDividendCreditType()
+    {
+        var dataSource = new StubDataSource
+        {
+            Rows = new List<IList<object>>
+            {
+                new List<object> { 45000L, "100", "", "Dividendo" }
+            }
+        };
+        var reader = new GoogleSheetsAssetReader(dataSource);
+
+        var result = await reader.ReadCreditsAsync("file1", "Sheet1");
+
+        result.Should().ContainSingle().Which.Type.Should().Be(Credit.CreditType.Dividend);
+    }
+
+    [Fact]
+    public async Task ReadCreditsAsync_RowWithBlankDate_IsSkipped()
+    {
+        var dataSource = new StubDataSource
+        {
+            Rows = new List<IList<object>>
+            {
+                new List<object> { "", "100", "", "Dividendo" }
+            }
+        };
+        var reader = new GoogleSheetsAssetReader(dataSource);
+
+        var result = await reader.ReadCreditsAsync("file1", "Sheet1");
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ReadCreditsAsync_NullResponse_ReturnsEmptyList()
+    {
+        var dataSource = new StubDataSource { Rows = null };
+        var reader = new GoogleSheetsAssetReader(dataSource);
+
+        var result = await reader.ReadCreditsAsync("file1", "Sheet1");
+
+        result.Should().BeEmpty();
+    }
+}

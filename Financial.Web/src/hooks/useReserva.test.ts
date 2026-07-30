@@ -39,7 +39,12 @@ const MOVEMENTS: ReserveMovementDto[] = [
 
 describe('useReserva', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    getReserveBalancesMock.mockReset()
+    getReserveMovementsMock.mockReset()
+    postIncomeSplitMock.mockReset()
+    postWithdrawalMock.mockReset()
+    updateReserveMovementMock.mockReset()
+    deleteReserveMovementMock.mockReset()
     getReserveBalancesMock.mockResolvedValue(BALANCES)
     getReserveMovementsMock.mockResolvedValue(MOVEMENTS)
   })
