@@ -55,7 +55,11 @@ const BILLS: RecurringBillDto[] = [
 
 describe('useMensais', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    getMensaisBillsMock.mockReset()
+    createMensaisBillMock.mockReset()
+    updateMensaisBillMock.mockReset()
+    deleteMensaisBillMock.mockReset()
+    resetMensaisToUnsetMock.mockReset()
     getMensaisBillsMock.mockResolvedValue(BILLS)
   })
 

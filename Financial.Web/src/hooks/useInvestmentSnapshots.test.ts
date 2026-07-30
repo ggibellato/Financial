@@ -29,7 +29,8 @@ const SNAPSHOTS: InvestmentSnapshotDto[] = [
 
 describe('useInvestmentSnapshots', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    getInvestmentSnapshotsMock.mockReset()
+    updateInvestmentSnapshotValueMock.mockReset()
     getInvestmentSnapshotsMock.mockResolvedValue(SNAPSHOTS)
   })
 

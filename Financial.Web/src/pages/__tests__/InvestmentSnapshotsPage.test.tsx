@@ -25,7 +25,8 @@ const SNAPSHOTS: InvestmentSnapshotDto[] = Array.from({ length: 11 }, (_, i) => 
 
 describe('InvestmentSnapshotsPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    getInvestmentSnapshotsMock.mockReset()
+    updateInvestmentSnapshotValueMock.mockReset()
     getInvestmentSnapshotsMock.mockResolvedValue(SNAPSHOTS)
   })
 

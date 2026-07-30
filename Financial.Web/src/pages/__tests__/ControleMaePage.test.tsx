@@ -36,7 +36,11 @@ const TOTALS: MaeLedgerTotalsDto = { totalBrlValue: 5000, totalGbpValue: 720.45 
 
 describe('ControleMaePage', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    getMaeLedgerEntriesFromDateMock.mockReset()
+    getMaeLedgerTotalsMock.mockReset()
+    createMaeLedgerEntryMock.mockReset()
+    updateMaeLedgerEntryValuesMock.mockReset()
+    deleteMaeLedgerEntryMock.mockReset()
     getMaeLedgerEntriesFromDateMock.mockResolvedValue(ENTRIES)
     getMaeLedgerTotalsMock.mockResolvedValue(TOTALS)
   })
