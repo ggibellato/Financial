@@ -4,6 +4,7 @@ using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DependencyInjection;
 using Financial.Investment.Infrastructure.DependencyInjection;
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
 using Serilog;
 
@@ -32,7 +33,7 @@ builder.Services.AddOpenApi(options =>
         return Task.CompletedTask;
     });
 });
-builder.Services.AddControllers();
+builder.Services.AddControllers(options => options.Filters.Add(new ProducesAttribute("application/json")));
 
 const string CorsOriginsConfigurationKey = "Cors:AllowedOrigins";
 
