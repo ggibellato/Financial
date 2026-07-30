@@ -93,10 +93,10 @@ Persistence uses JSON files. Two storage backends are implemented and selectable
 * **LocalJson** — reads/writes a JSON file on the local filesystem (default).
 * **GoogleDrive** — reads/writes a JSON file stored in Google Drive via the Google Drive API.
 
-**The Investment and CashFlow domains each select their storage backend independently**, with their own configuration keys and their own JSON file:
+**The Investment and CashFlow domains each select their storage backend independently**, with their own nested configuration element and their own JSON file — never floating at the config root:
 
-* Investment: `Repository:Provider` → `data.json`.
-* CashFlow: its own provider key (`CashFlowRepositoryConfigurationKeys`) → `data-cashflow.json`.
+* Investment: `Investment:Repository:Provider` (`RepositoryConfigurationKeys` in `Financial.Investment.Infrastructure`) → `data.json`.
+* CashFlow: `CashFlow:Repository:Provider` (`CashFlowRepositoryConfigurationKeys`) → `data-cashflow.json`.
 
 The persistence layer is abstracted behind a repository interface per domain so that storage implementations can be replaced with minimal impact on the rest of the application.
 

@@ -28,8 +28,8 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         {
             var settings = new Dictionary<string, string?>
             {
-                ["Repository:Provider"] = "LocalJson",
-                ["DataJsonFile"] = _dataFilePath,
+                ["Investment:Repository:Provider"] = "LocalJson",
+                ["Investment:DataJsonFile"] = _dataFilePath,
                 ["CashFlow:Repository:Provider"] = "LocalJson",
                 ["CashFlow:DataJsonFile"] = _cashFlowDataFilePath
             };
