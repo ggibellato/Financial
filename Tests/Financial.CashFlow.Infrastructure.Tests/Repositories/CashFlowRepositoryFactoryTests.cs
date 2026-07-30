@@ -1,3 +1,4 @@
+using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.Shared.Infrastructure.Persistence;
@@ -85,6 +86,68 @@ public class CashFlowRepositoryFactoryTests
             .WithMessage("*IRemoteFileClientFactory*");
     }
 
+    [Fact]
+    public void Create_WithGoogleDriveProvider_ValidAbsoluteCredentialsPath_ReturnsCashFlowJsonRepository()
+    {
+        var credentialsPath = Path.GetTempFileName();
+        try
+        {
+            var options = new CashFlowRepositorySelectionOptions(
+                CashFlowRepositoryProvider.GoogleDriveJson,
+                null,
+                credentialsPath,
+                "Pessoais/Gleison/Financeiros");
+
+            var result = Factory.Create(options);
+
+            result.Should().BeOfType<CashFlowJsonRepository>();
+        }
+        finally
+        {
+            File.Delete(credentialsPath);
+        }
+    }
+
+    [Fact]
+    public void Create_WithGoogleDriveProvider_RelativeCredentialsPath_ResolvesRelativeToBaseDirectory()
+    {
+        var fileName = $"cashflow-credentials-{Guid.NewGuid()}.json";
+        var absolutePath = Path.Combine(AppContext.BaseDirectory, fileName);
+        File.WriteAllText(absolutePath, "{}");
+        try
+        {
+            var options = new CashFlowRepositorySelectionOptions(
+                CashFlowRepositoryProvider.GoogleDriveJson,
+                null,
+                fileName,
+                "Pessoais/Gleison/Financeiros");
+
+            var result = Factory.Create(options);
+
+            result.Should().BeOfType<CashFlowJsonRepository>();
+        }
+        finally
+        {
+            File.Delete(absolutePath);
+        }
+    }
+
+    [Fact]
+    public void Create_WithGoogleDriveProvider_CredentialsFileDoesNotExist_ThrowsFileNotFoundException()
+    {
+        var missingCredentialsPath = Path.Combine(Path.GetTempPath(), $"cashflow-credentials-{Guid.NewGuid()}.json");
+        var options = new CashFlowRepositorySelectionOptions(
+            CashFlowRepositoryProvider.GoogleDriveJson,
+            null,
+            missingCredentialsPath,
+            "Pessoais/Gleison/Financeiros");
+
+        Action act = () => Factory.Create(options);
+
+        act.Should().Throw<FileNotFoundException>()
+            .WithMessage("*Google Drive credentials file not found*");
+    }
+
     private sealed class StubRemoteFileClientFactory : IRemoteFileClientFactory
     {
         public IRemoteFileClient Create(string credentialsPath) => new StubRemoteFileClient();
@@ -92,7 +155,9 @@ public class CashFlowRepositoryFactoryTests
 
     private sealed class StubRemoteFileClient : IRemoteFileClient
     {
-        public string DownloadFileContent(string path) => throw new NotSupportedException();
+        public string DownloadFileContent(string path) =>
+            new CashFlowSerializerAdapter().Serialize(CashFlowData.Create());
+
         public void UploadFileContent(string path, string content) => throw new NotSupportedException();
     }
 }
