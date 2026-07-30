@@ -22,23 +22,30 @@ const CATEGORY_TOTALS_ANNUAL: CategoryTotalsAnnualDto = {
       category: 'Mercado',
       monthlyTotals: [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210],
       annualTotal: 1860,
+      average: 155,
     },
   ],
   incomeSummary: {
     salaryMonthly: [3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3600],
     salaryAnnualTotal: 38800,
+    salaryAverage: 3233.33,
     salaryAfterTaxesMonthly: [2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450, 2450, 2650],
     salaryAfterTaxesAnnualTotal: 29350,
+    salaryAfterTaxesAverage: 2445.83,
     taxDifferenceMonthly: [750, 750, 750, 750, 750, 750, 750, 750, 750, 750, 750, 950],
     taxDifferenceAnnualTotal: 9450,
+    taxDifferenceAverage: 787.5,
     dividendoJurosMonthly: [0, 0, 15.5, 0, 0, 0, 0, 0, 0, 0, 0, 4.5],
     dividendoJurosAnnualTotal: 20,
+    dividendoJurosAverage: 1.67,
   },
   // Server-computed (corrected, no-Dividendo/Juros formula): sum(salaryAfterTaxesMonthly) - totalDespesasAnnualTotal + 0 (no Investimento category) = 27,490.00
   totalDespesasMonthly: [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210],
   totalDespesasAnnualTotal: 1860,
+  totalDespesasAverage: 155,
   resultadoMonthly: [2350, 2340, 2330, 2320, 2310, 2300, 2290, 2280, 2270, 2260, 2250, 2440],
   resultadoAnnualTotal: 27740,
+  resultadoAverage: 2311.67,
 }
 
 const INVESTMENT_ANNUAL_RESULT: InvestmentAnnualResultDto = {
@@ -178,7 +185,7 @@ describe('AnnualSummaryPage', () => {
     expect(within(taxDifferenceRow).getByText('9,450.00')).toBeInTheDocument()
   })
 
-  it('shows an Average column between the Dec and Annual Total columns for every row', async () => {
+  it('shows an Average column between the Dec and Annual Total columns, using the server-computed value', async () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
@@ -189,7 +196,9 @@ describe('AnnualSummaryPage', () => {
     expect(averageIndex).toBe(decIndex + 1)
     expect(annualTotalIndex).toBe(averageIndex + 1)
 
-    // Mercado average = 1860 / 12 = 155.00
+    // Mercado's average (155.00) comes straight from the mocked API response, not a client
+    // recomputation from monthlyTotals - proven by the fact this must match CATEGORY_TOTALS_ANNUAL's
+    // explicit `average` field, not sum(monthlyTotals) / 12.
     const mercadoRow = screen.getByRole('cell', { name: 'Mercado' }).closest('tr')!
     expect(within(mercadoRow).getByText('155.00')).toBeInTheDocument()
   })
@@ -356,7 +365,7 @@ describe('AnnualSummaryPage', () => {
 
     const nextYearCategoryTotalsAnnual: CategoryTotalsAnnualDto = {
       ...CATEGORY_TOTALS_ANNUAL,
-      categoryTotals: [{ category: 'Carro', monthlyTotals: new Array(12).fill(50), annualTotal: 600 }],
+      categoryTotals: [{ category: 'Carro', monthlyTotals: new Array(12).fill(50), annualTotal: 600, average: 50 }],
       totalDespesasMonthly: new Array(12).fill(50),
       totalDespesasAnnualTotal: 600,
     }

@@ -3,7 +3,6 @@ import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import { useAnnualSummary } from '../hooks/useAnnualSummary'
 import { formatN2 } from '../utils/formatters'
-import { average } from '../utils/math'
 import './AnnualSummaryPage.css'
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -20,11 +19,13 @@ const TABS: { id: AnnualSummaryTabId; label: string }[] = [
 function AnnualSummaryRow({
   label,
   monthlyValues,
+  average,
   annualTotal,
   emphasized = false,
 }: {
   label: string
   monthlyValues: number[]
+  average: number
   annualTotal: number
   emphasized?: boolean
 }) {
@@ -38,7 +39,7 @@ function AnnualSummaryRow({
         </td>
       ))}
       <td className="data-table__col--numeric">
-        <strong>{formatN2(average(monthlyValues))}</strong>
+        <strong>{formatN2(average)}</strong>
       </td>
       <td className="data-table__col--numeric">
         <strong>{formatN2(annualTotal)}</strong>
@@ -81,8 +82,10 @@ export default function AnnualSummaryPage() {
     historicSummaryAverage,
     totalDespesasMonthly,
     totalDespesasAnnualTotal,
+    totalDespesasAverage,
     resultadoMonthly,
     resultadoAnnualTotal,
+    resultadoAverage,
     isLoading,
     error,
     retry,
@@ -144,16 +147,19 @@ export default function AnnualSummaryPage() {
                       <AnnualSummaryRow
                         label="Salary"
                         monthlyValues={incomeSummary.salaryMonthly}
+                        average={incomeSummary.salaryAverage}
                         annualTotal={incomeSummary.salaryAnnualTotal}
                       />
                       <AnnualSummaryRow
                         label="Salary after taxes"
                         monthlyValues={incomeSummary.salaryAfterTaxesMonthly}
+                        average={incomeSummary.salaryAfterTaxesAverage}
                         annualTotal={incomeSummary.salaryAfterTaxesAnnualTotal}
                       />
                       <AnnualSummaryRow
                         label="Tax difference"
                         monthlyValues={incomeSummary.taxDifferenceMonthly}
+                        average={incomeSummary.taxDifferenceAverage}
                         annualTotal={incomeSummary.taxDifferenceAnnualTotal}
                       />
                       <tr>
@@ -162,6 +168,7 @@ export default function AnnualSummaryPage() {
                       <AnnualSummaryRow
                         label="Dividendo/Juros"
                         monthlyValues={incomeSummary.dividendoJurosMonthly}
+                        average={incomeSummary.dividendoJurosAverage}
                         annualTotal={incomeSummary.dividendoJurosAnnualTotal}
                       />
                     </>
@@ -172,7 +179,13 @@ export default function AnnualSummaryPage() {
                   </tr>
 
                   {categoryTotals.map((c) => (
-                    <AnnualSummaryRow key={c.category} label={c.category} monthlyValues={c.monthlyTotals} annualTotal={c.annualTotal} />
+                    <AnnualSummaryRow
+                      key={c.category}
+                      label={c.category}
+                      monthlyValues={c.monthlyTotals}
+                      average={c.average}
+                      annualTotal={c.annualTotal}
+                    />
                   ))}
 
                   <tr>
@@ -183,6 +196,7 @@ export default function AnnualSummaryPage() {
                     <AnnualSummaryRow
                       label="Resultado (R-D-Inv)"
                       monthlyValues={resultadoMonthly}
+                      average={resultadoAverage}
                       annualTotal={resultadoAnnualTotal}
                       emphasized
                     />
@@ -190,6 +204,7 @@ export default function AnnualSummaryPage() {
                   <AnnualSummaryRow
                     label="Total despesas"
                     monthlyValues={totalDespesasMonthly}
+                    average={totalDespesasAverage}
                     annualTotal={totalDespesasAnnualTotal}
                     emphasized
                   />

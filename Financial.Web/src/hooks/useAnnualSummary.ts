@@ -8,8 +8,10 @@ interface AnnualSummaryState {
   incomeSummary: IncomeAnnualSummaryDto | null
   totalDespesasMonthly: number[]
   totalDespesasAnnualTotal: number
+  totalDespesasAverage: number
   resultadoMonthly: number[]
   resultadoAnnualTotal: number
+  resultadoAverage: number
   investmentAnnualResult: InvestmentAnnualResultDto | null
   historicSummaryAverage: CategoryAnnualAverageDto[]
   isLoading: boolean
@@ -27,8 +29,10 @@ type AnnualSummaryAction =
         incomeSummary: IncomeAnnualSummaryDto
         totalDespesasMonthly: number[]
         totalDespesasAnnualTotal: number
+        totalDespesasAverage: number
         resultadoMonthly: number[]
         resultadoAnnualTotal: number
+        resultadoAverage: number
         investmentAnnualResult: InvestmentAnnualResultDto
         historicSummaryAverage: CategoryAnnualAverageDto[]
       }
@@ -42,8 +46,10 @@ const INITIAL_STATE: AnnualSummaryState = {
   incomeSummary: null,
   totalDespesasMonthly: [],
   totalDespesasAnnualTotal: 0,
+  totalDespesasAverage: 0,
   resultadoMonthly: [],
   resultadoAnnualTotal: 0,
+  resultadoAverage: 0,
   investmentAnnualResult: null,
   historicSummaryAverage: [],
   isLoading: true,
@@ -65,8 +71,10 @@ function reducer(state: AnnualSummaryState, action: AnnualSummaryAction): Annual
         incomeSummary: action.payload.incomeSummary,
         totalDespesasMonthly: action.payload.totalDespesasMonthly,
         totalDespesasAnnualTotal: action.payload.totalDespesasAnnualTotal,
+        totalDespesasAverage: action.payload.totalDespesasAverage,
         resultadoMonthly: action.payload.resultadoMonthly,
         resultadoAnnualTotal: action.payload.resultadoAnnualTotal,
+        resultadoAverage: action.payload.resultadoAverage,
         investmentAnnualResult: action.payload.investmentAnnualResult,
         historicSummaryAverage: action.payload.historicSummaryAverage,
       }
@@ -86,8 +94,10 @@ export interface AnnualSummaryData {
   incomeSummary: IncomeAnnualSummaryDto | null
   totalDespesasMonthly: number[]
   totalDespesasAnnualTotal: number
+  totalDespesasAverage: number
   resultadoMonthly: number[]
   resultadoAnnualTotal: number
+  resultadoAverage: number
   investmentAnnualResult: InvestmentAnnualResultDto | null
   historicSummaryAverage: CategoryAnnualAverageDto[]
   isLoading: boolean
@@ -114,8 +124,10 @@ export function useAnnualSummary(): AnnualSummaryData {
             incomeSummary: categoryTotalsAnnual.incomeSummary,
             totalDespesasMonthly: categoryTotalsAnnual.totalDespesasMonthly,
             totalDespesasAnnualTotal: categoryTotalsAnnual.totalDespesasAnnualTotal,
+            totalDespesasAverage: categoryTotalsAnnual.totalDespesasAverage,
             resultadoMonthly: categoryTotalsAnnual.resultadoMonthly,
             resultadoAnnualTotal: categoryTotalsAnnual.resultadoAnnualTotal,
+            resultadoAverage: categoryTotalsAnnual.resultadoAverage,
             investmentAnnualResult,
             historicSummaryAverage,
           },
@@ -143,8 +155,10 @@ export function useAnnualSummary(): AnnualSummaryData {
     incomeSummary: state.incomeSummary,
     totalDespesasMonthly: state.totalDespesasMonthly,
     totalDespesasAnnualTotal: state.totalDespesasAnnualTotal,
+    totalDespesasAverage: state.totalDespesasAverage,
     resultadoMonthly: state.resultadoMonthly,
     resultadoAnnualTotal: state.resultadoAnnualTotal,
+    resultadoAverage: state.resultadoAverage,
     investmentAnnualResult: state.investmentAnnualResult,
     historicSummaryAverage: state.historicSummaryAverage,
     isLoading: state.isLoading,
