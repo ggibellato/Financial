@@ -73,17 +73,25 @@ public class CashFlowRepositoryFactoryTests
     [Fact]
     public void Create_WithGoogleDriveProvider_NoRemoteFileClientFactoryRegistered_ThrowsInvalidOperationException()
     {
-        var factoryWithoutRemoteFileClient = new CashFlowRepositoryFactory(new CashFlowSerializerAdapter());
-        var options = new CashFlowRepositorySelectionOptions(
-            CashFlowRepositoryProvider.GoogleDriveJson,
-            null,
-            Path.GetTempFileName(),
-            "Pessoais/Gleison/Financeiros");
+        var credentialsPath = Path.GetTempFileName();
+        try
+        {
+            var factoryWithoutRemoteFileClient = new CashFlowRepositoryFactory(new CashFlowSerializerAdapter());
+            var options = new CashFlowRepositorySelectionOptions(
+                CashFlowRepositoryProvider.GoogleDriveJson,
+                null,
+                credentialsPath,
+                "Pessoais/Gleison/Financeiros");
 
-        Action act = () => factoryWithoutRemoteFileClient.Create(options);
+            Action act = () => factoryWithoutRemoteFileClient.Create(options);
 
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*IRemoteFileClientFactory*");
+            act.Should().Throw<InvalidOperationException>()
+                .WithMessage("*IRemoteFileClientFactory*");
+        }
+        finally
+        {
+            File.Delete(credentialsPath);
+        }
     }
 
     [Fact]

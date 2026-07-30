@@ -49,66 +49,114 @@ public class CashFlowJsonRepositoryTests
     [Fact]
     public void Constructor_WithNullData_Throws()
     {
-        Action act = () => new CashFlowJsonRepository(null!, new LocalJsonStorage(Path.GetTempFileName()), new CashFlowSerializerAdapter());
-        act.Should().Throw<ArgumentNullException>().WithParameterName("data");
+        var path = Path.GetTempFileName();
+        try
+        {
+            Action act = () => new CashFlowJsonRepository(null!, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
+            act.Should().Throw<ArgumentNullException>().WithParameterName("data");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Fact]
     public void GetExpenses_ReturnsAddedExpenses()
     {
-        var data = CashFlowData.Create();
-        var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(Path.GetTempFileName()), new CashFlowSerializerAdapter());
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, "Chase", null);
+        var path = Path.GetTempFileName();
+        try
+        {
+            var data = CashFlowData.Create();
+            var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
+            var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, "Chase", null);
 
-        repository.AddExpense(expense);
+            repository.AddExpense(expense);
 
-        repository.GetExpenses().Should().ContainSingle().Which.Id.Should().Be(expense.Id);
+            repository.GetExpenses().Should().ContainSingle().Which.Id.Should().Be(expense.Id);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Fact]
     public void DeleteExpense_RemovesTheMatchingExpense()
     {
-        var data = CashFlowData.Create();
-        var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(Path.GetTempFileName()), new CashFlowSerializerAdapter());
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, "Chase", null);
-        repository.AddExpense(expense);
+        var path = Path.GetTempFileName();
+        try
+        {
+            var data = CashFlowData.Create();
+            var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
+            var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, "Chase", null);
+            repository.AddExpense(expense);
 
-        repository.DeleteExpense(expense.Id);
+            repository.DeleteExpense(expense.Id);
 
-        repository.GetExpenses().Should().BeEmpty();
+            repository.GetExpenses().Should().BeEmpty();
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Fact]
     public void DeleteReserveMovement_RemovesTheMatchingMovement()
     {
-        var data = CashFlowData.Create();
-        var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(Path.GetTempFileName()), new CashFlowSerializerAdapter());
-        var movement = ReserveMovement.Create(ReserveBucket.Investimento, 10m, new DateOnly(2026, 7, 1), "Test movement");
-        repository.AddReserveMovement(movement);
+        var path = Path.GetTempFileName();
+        try
+        {
+            var data = CashFlowData.Create();
+            var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
+            var movement = ReserveMovement.Create(ReserveBucket.Investimento, 10m, new DateOnly(2026, 7, 1), "Test movement");
+            repository.AddReserveMovement(movement);
 
-        repository.DeleteReserveMovement(movement.Id);
+            repository.DeleteReserveMovement(movement.Id);
 
-        repository.GetReserveMovements().Should().BeEmpty();
+            repository.GetReserveMovements().Should().BeEmpty();
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Fact]
     public void GetBanks_ReturnsBanksFromTheUnderlyingData()
     {
-        var data = CashFlowData.Create();
-        data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
-        var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(Path.GetTempFileName()), new CashFlowSerializerAdapter());
+        var path = Path.GetTempFileName();
+        try
+        {
+            var data = CashFlowData.Create();
+            data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
+            var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
 
-        repository.GetBanks().Should().ContainSingle().Which.Name.Should().Be("Barclays");
+            repository.GetBanks().Should().ContainSingle().Which.Name.Should().Be("Barclays");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Fact]
     public void GetInvestmentAccounts_ReturnsInvestmentAccountsFromTheUnderlyingData()
     {
-        var data = CashFlowData.Create();
-        var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(Path.GetTempFileName()), new CashFlowSerializerAdapter());
+        var path = Path.GetTempFileName();
+        try
+        {
+            var data = CashFlowData.Create();
+            var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
 
-        repository.AddInvestmentAccount(InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false));
+            repository.AddInvestmentAccount(InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false));
 
-        repository.GetInvestmentAccounts().Should().ContainSingle().Which.Name.Should().Be("ChaseSave");
+            repository.GetInvestmentAccounts().Should().ContainSingle().Which.Name.Should().Be("ChaseSave");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 }
