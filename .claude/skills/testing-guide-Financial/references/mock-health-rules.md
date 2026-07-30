@@ -4,45 +4,55 @@
 
 ## The Boundary Rule
 
-**Mock across architecturally significant boundaries, not within.**
-
-A boundary is where your code hands off to something outside your control: a file system, an HTTP endpoint, a message broker. Within a single layer, use real objects.
+**Mock across architecturally significant boundaries, not within.** A boundary is where your code hands off to something outside your control: a file system, an HTTP endpoint, Google's SDK, the browser's `fetch`. Within a single layer, use real objects.
 
 ---
 
-## C# (.NET)
+## C# (.NET) — no mocking framework, anywhere
 
-This project has **no mocking framework** — and that is correct for the current architecture. The only external dependency is a local JSON file, which is simple enough to use real implementations with temp files.
+This is a deliberate, project-wide, re-confirmed choice (no Moq/NSubstitute anywhere in the solution). Three real techniques cover every case instead:
 
-| Dependency | How to handle |
-|---|---|
-| Domain entities and value objects | Always real — these are the things being tested |
-| `JSONRepository` | Real instance with temp file (Infrastructure tests) |
-| `NavigationService` | Real instance — construct it with the same repository |
-| `LocalJsonStorage` | Real — it is just file I/O on the temp file |
-| `InvestmentsSerializerAdapter` | Real — serialization logic under test |
-| External HTTP API (if added in future) | Define a manual stub implementing the interface |
+| Situation | Technique | Example |
+|---|---|---|
+| Application service depends on an interface (repository, provider) | Hand-written stub class implementing the interface, only the members the test needs | `StubRepository`, `StubFinanceService`, `DividendServiceStub` |
+| Infrastructure crosses a real system boundary with no useful branching to isolate | Real implementation, real temp resource | `LocalJsonStorage` + temp file, `XLWorkbook` in-memory |
+| Infrastructure calls a configured library/HTTP client whose *configuration* is the thing under test | Real client, fake transport/delegate | `HttpClient` + `FakeHttpMessageHandler` (Frankfurter); `GoogleDriveJsonStorage`'s injected read/write delegates |
+| DI wiring | Real `ServiceProvider` built from real `IConfiguration` | `CashFlowInfrastructureServiceCollectionExtensionsTests` |
+| Whole-app HTTP behavior | Real `WebApplicationFactory<Program>`, swap only the one boundary under test via `RemoveAll<T>()`+`AddSingleton<T>()` | `ApiTestFactory` |
 
-### When a C# test needs many setup steps
+**When a C# test reaches for a mocking framework, that's the signal to stop and ask why** — either the unit under test has too many collaborators (split it), or business logic has leaked into a layer where it doesn't belong (Domain calling Infrastructure directly, for instance).
 
-If constructing a service requires assembling many dependencies, the test is a signal — not a problem to solve with mocks. Consider:
-1. Does the factory method `CreateService()` cover reuse of this setup?
-2. Is the class doing too many things (SRP violation)?
-
-### Inline stubs for future Command/Query handlers
-
-If Application-layer handlers are added and need isolation from the real repository, use a minimal inline stub instead of a mocking framework:
+### Stub pattern
 
 ```csharp
-private sealed class StubRepository : IRepository
+internal sealed class StubRepository : IRepository
 {
-    public Investments Data { get; set; } = Investments.Create();
-    public Task<Investments> GetAsync() => Task.FromResult(Data);
-    public Task SaveAsync(Investments data) { Data = data; return Task.CompletedTask; }
+    private readonly List<Broker> _brokers;
+    public StubRepository(IEnumerable<Broker> brokers) => _brokers = brokers.ToList();
+
+    public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) => _brokers;
+
+    // Anything the test under construction doesn't exercise stays unimplemented —
+    // a NotImplementedException here is a loud signal if a test accidentally needs it.
+    public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) =>
+        throw new NotImplementedException();
 }
 ```
 
-This is simpler than Moq for this project's scale and keeps the "no mocking framework" pattern.
+### Fake HTTP transport pattern
+
+```csharp
+private sealed class FakeHttpMessageHandler : HttpMessageHandler
+{
+    private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder;
+    public FakeHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responder) => _responder = responder;
+
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+        Task.FromResult(_responder(request));
+}
+```
+
+Copy this ~10-line shape for any new external-HTTP integration rather than introducing a mocking library.
 
 ---
 
@@ -50,17 +60,17 @@ This is simpler than Moq for this project's scale and keeps the "no mocking fram
 
 | Dependency | How to handle |
 |---|---|
-| `financialApiClient` factory | `vi.mock` the entire module once per test file |
+| `financialApiClient` factory | `vi.mock` the entire module once per test file, at the module boundary |
+| Individual `fetch` calls (outside `financialApiClient.ts` itself) | Never mock directly — mock the client factory instead |
 | `MemoryRouter` / `Routes` | Always real — pages require router context |
-| React context (if added) | Real test provider wrapping the component |
-| Individual `fetch` calls | Never — mock at the client factory, not lower |
+| `SelectedNodeContext` | Real test provider (`createSelectedNodeWrapper`) wrapping the component/hook |
 | Utility functions | Always real — they are pure functions being tested |
-| Child components | Real by default; only mock if a child has heavy side effects that are impossible to control in tests |
+| Child components | Real by default; only stub if a child has side effects impossible to control in tests |
 
 ### Mock scope
 
-One `vi.mock(...)` call per module per file. Do not add multiple partial mocks for the same module. If a page uses only 3 of 10 API methods, include only those 3 in the mock factory — missing methods are `undefined`, which will throw if accidentally called, making missing mocks visible.
+One `vi.mock(...)` call per module per file. If a page/hook uses only 3 of 10 API methods, include only those 3 in the mock factory — missing methods are `undefined`, which throws if accidentally called, making an incomplete mock visible immediately rather than silently returning stale data.
 
-### Signal: too many vi.fn() calls in one test
+### Signal: too many `vi.fn()` calls in one test
 
-A test that creates many `vi.fn()` instances may be an integration test in disguise. Consider whether a real implementation with controlled input would be simpler and more meaningful.
+A test that creates many `vi.fn()` instances just to get one component/hook under test may be answering an integration-test question with a unit test. Consider whether the seam is in the wrong place, or whether a smaller unit should be extracted.
