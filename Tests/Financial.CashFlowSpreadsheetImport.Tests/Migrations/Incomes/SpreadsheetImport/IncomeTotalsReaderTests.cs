@@ -58,11 +58,25 @@ public class IncomeTotalsReaderTests
     }
 
     [Fact]
-    public void ReadTotals_NoMatchingLabels_ReturnsEmpty()
+    public void ReadTotals_NoMatchingLabelsButBareValueAtJ1_ReadsItAsGleisonsNetIncome()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Fev2017");
+        sheet.Cell(1, 10).Value = 3744.97;
+
+        var totals = IncomeTotalsReader.ReadTotals(sheet);
+
+        var gleison = totals.Should().ContainSingle().Which;
+        gleison.Source.Should().Be(IncomeSource.Gleison);
+        gleison.GrossValue.Should().BeNull();
+        gleison.NetValue.Should().Be(3744.97m);
+    }
+
+    [Fact]
+    public void ReadTotals_NoMatchingLabelsAndNoValueAtJ1_ReturnsEmpty()
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Jan2017");
-        sheet.Cell(1, 10).Value = 3744.97;
 
         var totals = IncomeTotalsReader.ReadTotals(sheet);
 
@@ -70,7 +84,7 @@ public class IncomeTotalsReaderTests
     }
 
     [Fact]
-    public void ReadTotals_NetColumnExceedsGrossColumn_DropsGrossRatherThanViolatingTheDomainInvariant()
+    public void ReadTotals_NetColumnExceedsGrossColumn_ImportsGrossAsIs()
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Fev2026");
@@ -81,7 +95,7 @@ public class IncomeTotalsReaderTests
         var totals = IncomeTotalsReader.ReadTotals(sheet);
 
         var ariana = totals.Should().ContainSingle(t => t.Source == IncomeSource.Ariana).Which;
-        ariana.GrossValue.Should().BeNull();
+        ariana.GrossValue.Should().Be(343.18m);
         ariana.NetValue.Should().Be(642.18m);
     }
 
