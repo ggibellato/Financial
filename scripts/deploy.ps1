@@ -73,7 +73,7 @@ foreach ($pair in @(
         @{ Source = (Join-Path $repoRoot 'Financial.Api\appsettings.Production.json'); Target = (Join-Path $webDeployDir 'appsettings.Production.json') }
     )) {
     $settings = Get-Content $pair.Source -Raw | ConvertFrom-Json
-    $settings.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
+    $settings.Investment.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
     $settings | ConvertTo-Json -Depth 10 | Set-Content -Path $pair.Target -Encoding utf8
 }
 
