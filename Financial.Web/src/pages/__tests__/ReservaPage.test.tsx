@@ -62,18 +62,17 @@ describe('ReservaPage', () => {
   it('renders all 4 bucket balances and the movement history once loaded', async () => {
     render(<ReservaPage />)
 
-    await waitFor(() => expect(screen.getByText('Bucket Balances')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getAllByText('Ramsay').length).toBe(4))
     for (const b of BALANCES) {
       expect(screen.getAllByText(b.bucket).length).toBeGreaterThan(0)
     }
-    expect(screen.getAllByText('Ramsay').length).toBe(4)
   })
 
   it('shows a group total after the last movement of a same date+description split in history', async () => {
-    render(<ReservaPage />)
+    const { container } = render(<ReservaPage />)
 
-    await waitFor(() => expect(screen.getByText('Movement History')).toBeInTheDocument())
-    const movementSection = screen.getByText('Movement History').closest('section') as HTMLElement
+    await waitFor(() => expect(screen.getAllByText('Ramsay').length).toBe(4))
+    const movementSection = container.querySelector('.reserva-page__section--movements') as HTMLElement
     const rows = within(movementSection).getAllByRole('row')
     // header + 4 movement rows + 1 group-total row
     expect(rows).toHaveLength(6)
@@ -82,10 +81,10 @@ describe('ReservaPage', () => {
   })
 
   it('renders the total balance across all buckets, bold and always visible', async () => {
-    render(<ReservaPage />)
+    const { container } = render(<ReservaPage />)
 
-    await waitFor(() => expect(screen.getByText('Bucket Balances')).toBeInTheDocument())
-    const balancesSection = screen.getByText('Bucket Balances').closest('section') as HTMLElement
+    await waitFor(() => expect(screen.getAllByText('Ramsay').length).toBe(4))
+    const balancesSection = container.querySelector('.reserva-page__section--balances') as HTMLElement
     // 654.33 + 654.33 + 327.17 + 327.17 = 1963.00
     expect(within(balancesSection).getByText('1,963.00')).toBeInTheDocument()
   })

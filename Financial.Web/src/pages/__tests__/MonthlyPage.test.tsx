@@ -131,12 +131,12 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    expect(screen.getByText('Category Totals')).toBeInTheDocument()
-    expect(screen.getByText('Cards')).toBeInTheDocument()
-    expect(screen.getByText('Banks')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Incoming' })).toBeInTheDocument()
-    expect(screen.queryByText('Expenses')).not.toBeInTheDocument()
-    expect(screen.queryByText('Income')).not.toBeInTheDocument()
+    expect(screen.getByText(/^Total:/)).toBeInTheDocument()
+    expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
+    expect(screen.getByText(/Bank Balance:/)).toBeInTheDocument()
+    expect(screen.getByText(/Total Incoming:/)).toBeInTheDocument()
+    expect(document.querySelector('.expenses-section')).not.toBeInTheDocument()
+    expect(document.querySelector('.income-section')).not.toBeInTheDocument()
   })
 
   it('marks Summary as the active tab button by default', async () => {
@@ -177,9 +177,9 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
 
-    expect(screen.queryByText('Category Totals')).not.toBeInTheDocument()
-    expect(screen.queryByText('Income')).not.toBeInTheDocument()
-    expect(screen.getByText('Expenses')).toBeInTheDocument()
+    expect(screen.queryByText(/^Total:/)).not.toBeInTheDocument()
+    expect(document.querySelector('.income-section')).not.toBeInTheDocument()
+    expect(document.querySelector('.expenses-section')).toBeInTheDocument()
     expect(screen.getByText('Lidl UK')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Expense' })).toHaveClass('monthly-page__tab--active')
   })
@@ -190,9 +190,9 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Incoming' }))
 
-    expect(screen.queryByText('Category Totals')).not.toBeInTheDocument()
-    expect(screen.queryByText('Expenses')).not.toBeInTheDocument()
-    expect(screen.getByText('Income')).toBeInTheDocument()
+    expect(screen.queryByText(/^Total:/)).not.toBeInTheDocument()
+    expect(document.querySelector('.expenses-section')).not.toBeInTheDocument()
+    expect(document.querySelector('.income-section')).toBeInTheDocument()
     expect(screen.getByText('Gleison')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Incoming' })).toHaveClass('monthly-page__tab--active')
   })
@@ -227,11 +227,11 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
-    await waitFor(() => expect(screen.getByText('Expenses')).toBeInTheDocument())
+    await waitFor(() => expect(document.querySelector('.expenses-section')).toBeInTheDocument())
 
     fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
 
-    await waitFor(() => expect(screen.getByText('Expenses')).toBeInTheDocument())
+    await waitFor(() => expect(document.querySelector('.expenses-section')).toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'Expense' })).toHaveClass('monthly-page__tab--active')
   })
 
@@ -268,9 +268,8 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    expect(screen.getByText('Category Totals')).toBeInTheDocument()
+    expect(screen.getByText(/^Total:/)).toBeInTheDocument()
     expect(screen.getAllByText('Mercado').length).toBeGreaterThan(0)
-    expect(screen.getByText('Cards')).toBeInTheDocument()
     expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
     expect(screen.getAllByText('100.00').length).toBeGreaterThan(0)
 
@@ -282,9 +281,8 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    expect(screen.getByText('Banks')).toBeInTheDocument()
 
-    const banksSection = within(screen.getByText('Banks').closest('section')!)
+    const banksSection = within(screen.getByText(/Bank Balance:/).closest('section')!)
     expect(banksSection.getByRole('cell', { name: 'Barclays' })).toBeInTheDocument()
     expect(banksSection.getByRole('cell', { name: 'Trading212' })).toBeInTheDocument()
     expect(banksSection.getByRole('cell', { name: 'Chase' })).toBeInTheDocument()
@@ -294,9 +292,9 @@ describe('MonthlyPage', () => {
     expect(banksSection.getAllByText('42.50').length).toBe(2)
     expect(banksSection.getAllByText('0.00').length).toBe(6)
 
-    expect(screen.getByText('Category Totals').closest('section')).toHaveClass('monthly-page__section--grid')
-    expect(screen.getByText('Cards').closest('section')).toHaveClass('monthly-page__section--grid')
-    expect(screen.getByText('Banks').closest('section')).toHaveClass('monthly-page__section--grid')
+    expect(screen.getByText(/^Total:/).closest('section')).toHaveClass('monthly-page__section--grid')
+    expect(screen.getByText(/Combined adjustment figure/).closest('section')).toHaveClass('monthly-page__section--grid')
+    expect(screen.getByText(/Bank Balance:/).closest('section')).toHaveClass('monthly-page__section--grid')
   })
 
   it('shows Mark Paid with a bank picker for unpaid cards and Unmark Paid for paid ones', async () => {
@@ -325,7 +323,7 @@ describe('MonthlyPage', () => {
     )
   })
 
-  it('renders Category Totals and Cards in the first Summary row, Banks and Incoming in the second, with no heading between them', async () => {
+  it('renders Category Totals and Cards in the first Summary row, Banks and Incoming in the second', async () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
@@ -335,11 +333,13 @@ describe('MonthlyPage', () => {
     const rows = groups!.querySelectorAll(':scope > .monthly-page__grids-row')
     expect(rows).toHaveLength(2)
 
-    const firstRowHeadings = Array.from(rows[0].querySelectorAll('h2')).map((h) => h.textContent)
-    expect(firstRowHeadings).toEqual(['Category Totals', 'Cards'])
+    const firstRow = within(rows[0] as HTMLElement)
+    expect(firstRow.getByText(/^Total:/)).toBeInTheDocument()
+    expect(firstRow.getByText(/Combined adjustment figure/)).toBeInTheDocument()
 
-    const secondRowHeadings = Array.from(rows[1].querySelectorAll('h2')).map((h) => h.textContent)
-    expect(secondRowHeadings).toEqual(['Banks', 'Incoming'])
+    const secondRow = within(rows[1] as HTMLElement)
+    expect(secondRow.getByText(/Bank Balance:/)).toBeInTheDocument()
+    expect(secondRow.getByText(/Total Incoming:/)).toBeInTheDocument()
 
     expect(groups!.querySelectorAll(':scope > :not(.monthly-page__grids-row)')).toHaveLength(0)
   })
@@ -448,7 +448,7 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(updateExpenseMock).toHaveBeenCalledWith('e1', expect.objectContaining({ value: 50 })))
-    const expensesSection = within(screen.getByText('Expenses').closest('section')!)
+    const expensesSection = within(document.querySelector('.expenses-section')!)
     await waitFor(() => expect(expensesSection.getByText('50.00')).toBeInTheDocument())
   })
 
@@ -467,8 +467,8 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Incoming' }))
 
-    await waitFor(() => expect(screen.getByText('Income')).toBeInTheDocument())
-    const incomeSection = within(screen.getByText('Income').closest('section')!)
+    await waitFor(() => expect(document.querySelector('.income-section')).toBeInTheDocument())
+    const incomeSection = within(document.querySelector('.income-section')!)
     expect(incomeSection.getByText('Gleison')).toBeInTheDocument()
     expect(incomeSection.getByText('2,450.00')).toBeInTheDocument()
   })
@@ -553,7 +553,7 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(updateIncomeMock).toHaveBeenCalledWith('i1', expect.objectContaining({ netValue: 500 })))
-    const incomeSection = within(screen.getByText('Income').closest('section')!)
+    const incomeSection = within(document.querySelector('.income-section')!)
     await waitFor(() => expect(incomeSection.getByText('500.00')).toBeInTheDocument())
   })
 
@@ -571,8 +571,8 @@ describe('MonthlyPage', () => {
   it('renders the Incoming card with one row per source and the calculated tithe and tithe balance', async () => {
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Incoming' })).toBeInTheDocument())
-    const incomingSection = within(screen.getByRole('heading', { name: 'Incoming' }).closest('section')!)
+    await waitFor(() => expect(screen.getByText(/Total Incoming:/)).toBeInTheDocument())
+    const incomingSection = within(screen.getByText(/Total Incoming:/).closest('section')!)
     expect(incomingSection.getByRole('cell', { name: 'Gleison' })).toBeInTheDocument()
     expect(incomingSection.getByText('3,200.00')).toBeInTheDocument()
     expect(incomingSection.getAllByText('2,450.00').length).toBeGreaterThanOrEqual(1)
@@ -606,7 +606,7 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByText('Gleison')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
-    const incomingSection = within(screen.getByRole('heading', { name: 'Incoming' }).closest('section')!)
+    const incomingSection = within(screen.getByText(/Total Incoming:/).closest('section')!)
     await waitFor(() => expect(incomingSection.getByRole('cell', { name: 'Lottery' })).toBeInTheDocument())
   })
 
@@ -693,8 +693,8 @@ describe('MonthlyPage', () => {
     ])
     render(<MonthlyPage />)
 
-    await waitFor(() => expect(screen.getByText('Banks')).toBeInTheDocument())
-    const banksSection = within(screen.getByText('Banks').closest('section')!)
+    await waitFor(() => expect(screen.getByText(/Bank Balance:/)).toBeInTheDocument())
+    const banksSection = within(screen.getByText(/Bank Balance:/).closest('section')!)
 
     const trading212Row = await banksSection.findByRole('row', { name: /Trading212/ })
     expect(within(trading212Row).getByRole('cell', { name: '8.80' })).toBeInTheDocument()

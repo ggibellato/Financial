@@ -22,7 +22,6 @@ export default function CardsGrid({
 }: CardsGridProps) {
   return (
     <section className="monthly-page__section monthly-page__section--grid">
-      <h2>Cards</h2>
       <div className="monthly-page__table-scroll">
         <table className="monthly-page__table data-table">
           <thead>

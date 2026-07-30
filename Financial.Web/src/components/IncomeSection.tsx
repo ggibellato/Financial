@@ -54,7 +54,6 @@ export default function IncomeSection({ incomes, onEdit, onDelete, onNewIncome }
   return (
     <section className="income-section">
       <div className="income-section__header">
-        <h2>Income</h2>
         <button className="income-section__new-btn" type="button" onClick={onNewIncome}>
           New Income
         </button>

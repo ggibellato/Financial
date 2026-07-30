@@ -9,7 +9,6 @@ interface CategoryTotalsGridProps {
 export default function CategoryTotalsGrid({ categoryTotals, categoryTotalsSum }: CategoryTotalsGridProps) {
   return (
     <section className="monthly-page__section monthly-page__section--grid">
-      <h2>Category Totals</h2>
       <div className="monthly-page__table-scroll">
         <table className="monthly-page__table data-table">
           <thead>

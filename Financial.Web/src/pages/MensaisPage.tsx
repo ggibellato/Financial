@@ -59,7 +59,6 @@ function BillRow({ bill, showBrasilFields, isDeleting, onEdit, onDelete }: BillR
 }
 
 interface BillTableProps {
-  title: string
   bills: RecurringBillDto[]
   showBrasilFields: boolean
   deletingBillId: string | null
@@ -67,10 +66,9 @@ interface BillTableProps {
   onDelete: (id: string) => void
 }
 
-function BillTable({ title, bills, showBrasilFields, deletingBillId, onEdit, onDelete }: BillTableProps) {
+function BillTable({ bills, showBrasilFields, deletingBillId, onEdit, onDelete }: BillTableProps) {
   return (
     <section className="mensais-page__section">
-      <h2>{title}</h2>
       <div className="mensais-page__table-scroll">
         <table className="mensais-page__table data-table">
           <thead>
@@ -292,7 +290,6 @@ export default function MensaisPage() {
       ) : (
         <div className="mensais-page__content">
           <BillTable
-            title="Brasil"
             bills={brasilBills}
             showBrasilFields
             deletingBillId={deletingBillId}
@@ -300,7 +297,6 @@ export default function MensaisPage() {
             onDelete={deleteBill}
           />
           <BillTable
-            title="UK"
             bills={ukBills}
             showBrasilFields={false}
             deletingBillId={deletingBillId}

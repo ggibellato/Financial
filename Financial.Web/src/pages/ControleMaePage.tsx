@@ -227,7 +227,6 @@ export default function ControleMaePage() {
       ) : (
         <div className="controle-mae-page__content">
           <section className="controle-mae-page__section">
-            <h2>Ledger</h2>
             <table className="controle-mae-page__table data-table">
               <LedgerColumns />
               <thead>

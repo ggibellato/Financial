@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MensaisPage from '../MensaisPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -67,12 +67,15 @@ describe('MensaisPage', () => {
   })
 
   it('renders Brasil and UK as two separate grouped sections', async () => {
-    render(<MensaisPage />)
+    const { container } = render(<MensaisPage />)
 
-    await waitFor(() => expect(screen.getByText('Brasil')).toBeInTheDocument())
-    expect(screen.getByText('UK')).toBeInTheDocument()
-    expect(screen.getByText('INSS')).toBeInTheDocument()
-    expect(screen.getByText('Council Tax')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+    const sections = container.querySelectorAll('.mensais-page__section')
+    expect(sections).toHaveLength(2)
+    expect(within(sections[0] as HTMLElement).getByText('INSS')).toBeInTheDocument()
+    expect(within(sections[0] as HTMLElement).getByText('NIT')).toBeInTheDocument()
+    expect(within(sections[1] as HTMLElement).getByText('Council Tax')).toBeInTheDocument()
+    expect(within(sections[1] as HTMLElement).queryByText('NIT')).not.toBeInTheDocument()
   })
 
   it('edits a row status/value via the toggled panel and saves, updating the displayed row', async () => {
@@ -111,7 +114,7 @@ describe('MensaisPage', () => {
   it('shows NIT and Min. Wage columns only in the Brasil section', async () => {
     render(<MensaisPage />)
 
-    await waitFor(() => expect(screen.getByText('Brasil')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
 
     expect(screen.getAllByText('NIT')).toHaveLength(1)
     expect(screen.getAllByText('Min. Wage')).toHaveLength(1)
