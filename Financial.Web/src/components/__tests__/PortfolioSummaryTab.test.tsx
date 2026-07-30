@@ -1,9 +1,10 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AggregatedSummaryData } from '../../hooks/useAggregatedSummary'
 import type { PortfolioAssetSummaryData, RowPriceState } from '../../hooks/usePortfolioAssetSummary'
 import type { AggregatedSummaryDto, InvestmentScope, PortfolioAssetSummaryItemDto } from '../../api/types'
 import { SelectedNodeProvider } from '../../context/SelectedNodeContext'
+import { formatN2 } from '../../utils/formatters'
 import PortfolioSummaryTab from '../PortfolioSummaryTab'
 
 function renderComponent(scope: InvestmentScope = 'active') {
@@ -214,9 +215,11 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, averageSellPrice: null }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
-    const { container } = renderComponent('historic')
-    const cell = container.querySelector('tbody td:nth-child(9)')
-    expect(cell?.textContent).toBe('—')
+    renderComponent('historic')
+    // rows[0]/[1] are the two header rows; rows[2] is the single data row.
+    const dataRow = screen.getAllByRole('row')[2]
+    const cell = within(dataRow).getAllByRole('cell')[8] // "Sold Price" column
+    expect(cell.textContent).toBe('—')
   })
 
   it('computes_historic_profit_percent_from_realized_gain_loss_excluding_credits', () => {
@@ -252,11 +255,11 @@ describe('PortfolioSummaryTab', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, totalBought: 0, realizedGainLoss: 0 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
-    const { container } = renderComponent('historic')
-    const profitCell = container.querySelector('tbody td:nth-child(10)')
-    const profitWithCreditsCell = container.querySelector('tbody td:nth-child(11)')
-    expect(profitCell?.textContent).toBe('—')
-    expect(profitWithCreditsCell?.textContent).toBe('—')
+    renderComponent('historic')
+    // rows[0]/[1] are the two header rows; rows[2] is the single data row.
+    const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
+    expect(cells[9].textContent).toBe('—') // "Profit %" column
+    expect(cells[10].textContent).toBe('—') // "Profit % w/ Credits" column
   })
 
   it('computes_historic_xirr_from_cash_flows_with_zero_terminal_value', () => {
@@ -401,81 +404,108 @@ describe('PortfolioSummaryTab', () => {
     expect(dashes.length).toBeGreaterThanOrEqual(1)
   })
 
-  it('applies_green_class_to_positive_profit', () => {
-    // costBasis = 25 x 8 = 200
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 25, averagePrice: 8, totalInvested: 200 }
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
-    renderComponent()
-    const profitEl = document.querySelector('.portfolio-summary__profit--green')
-    expect(profitEl).toBeInTheDocument()
-  })
+  const PROFIT_CLASS_CASES: {
+    name: string
+    setup: () => void
+    // computed via the same profit formula the component uses, not the component's own code
+    expectedPercent: number
+    expectedClass: 'portfolio-summary__profit--green' | 'portfolio-summary__profit--red'
+  }[] = [
+    {
+      name: 'positive profit',
+      // costBasis = 25 x 8 = 200; currentValue = 10.5 x 25 = 262.50; profit% = (262.50-200)/200*100
+      // totalCredits is non-zero so "Profit %" and "Profit % w/ Credits" render different text
+      // (both would otherwise show 31.25% and make getByText ambiguous).
+      setup: () => {
+        const item: PortfolioAssetSummaryItemDto = {
+          ...ITEM_1,
+          currentQuantity: 25,
+          averagePrice: 8,
+          totalInvested: 200,
+          totalCredits: 10,
+        }
+        setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false }] })
+      },
+      expectedPercent: 31.25,
+      expectedClass: 'portfolio-summary__profit--green',
+    },
+    {
+      name: 'negative profit',
+      // costBasis = 25 x 12 = 300; currentValue = 262.50; profit% = (262.50-300)/300*100
+      // totalCredits is non-zero for the same reason as the "positive profit" case above.
+      setup: () => {
+        const item: PortfolioAssetSummaryItemDto = {
+          ...ITEM_1,
+          currentQuantity: 25,
+          averagePrice: 12,
+          totalInvested: 300,
+          totalCredits: 10,
+        }
+        setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false }] })
+      },
+      expectedPercent: -12.5,
+      expectedClass: 'portfolio-summary__profit--red',
+    },
+    {
+      name: 'positive profit with credits',
+      // costBasis = 25 x 12 = 300; currentValue = 262.50; totalCredits = 50
+      // profitWithCredits% = (262.50 + 50 - 300) / 300 * 100
+      setup: () => {
+        const item: PortfolioAssetSummaryItemDto = {
+          ...ITEM_1,
+          currentQuantity: 25,
+          averagePrice: 12,
+          totalInvested: 300,
+          totalCredits: 50,
+        }
+        setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false }] })
+      },
+      expectedPercent: (262.5 + 50 - 300) / 300 * 100,
+      expectedClass: 'portfolio-summary__profit--green',
+    },
+    {
+      name: 'negative profit with credits',
+      // averagePrice is NOT overridden here, so costBasis uses ITEM_1's averagePrice (100), not totalInvested:
+      // costBasis = 25 x 100 = 2500; currentValue = 262.50; totalCredits = 10
+      // profitWithCredits% = (262.50 + 10 - 2500) / 2500 * 100
+      setup: () => {
+        const item: PortfolioAssetSummaryItemDto = {
+          ...ITEM_1,
+          currentQuantity: 25,
+          totalInvested: 400,
+          totalCredits: 10,
+        }
+        setPortfolioMock({ items: [item], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false }] })
+      },
+      expectedPercent: (262.5 + 10 - 2500) / 2500 * 100,
+      expectedClass: 'portfolio-summary__profit--red',
+    },
+    {
+      name: 'positive xirr',
+      setup: () => {
+        xirrMock.mockReturnValue(0.1234)
+        setPortfolioMock({ items: [ITEM_1], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false }] })
+      },
+      expectedPercent: 12.34,
+      expectedClass: 'portfolio-summary__profit--green',
+    },
+    {
+      name: 'negative xirr',
+      setup: () => {
+        xirrMock.mockReturnValue(-0.05)
+        setPortfolioMock({ items: [ITEM_1], rowPrices: [{ isLoading: false, currentPrice: 10.5, fetchFailed: false }] })
+      },
+      expectedPercent: -5,
+      expectedClass: 'portfolio-summary__profit--red',
+    },
+  ]
 
-  it('applies_red_class_to_negative_profit', () => {
-    // costBasis = 25 x 12 = 300
-    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, currentQuantity: 25, averagePrice: 12, totalInvested: 300 }
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
+  it.each(PROFIT_CLASS_CASES)('applies the correct color class to $name', ({ setup, expectedPercent, expectedClass }) => {
     setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
+    setup()
     renderComponent()
-    const profitEl = document.querySelector('.portfolio-summary__profit--red')
-    expect(profitEl).toBeInTheDocument()
-  })
-
-  it('applies_green_class_to_positive_profit_with_credits', () => {
-    // currentValue = 10.5 * 25 = 262.50; costBasis = 25 x 12 = 300; totalCredits = 50
-    // profitWithCreditsPercent = (262.50 + 50 - 300) / 300 * 100 = 4.17% (positive)
-    const item: PortfolioAssetSummaryItemDto = {
-      ...ITEM_1,
-      currentQuantity: 25,
-      averagePrice: 12,
-      totalInvested: 300,
-      totalCredits: 50,
-    }
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
-    renderComponent()
-    const greenEls = document.querySelectorAll('.portfolio-summary__profit--green')
-    expect(greenEls.length).toBeGreaterThanOrEqual(1)
-  })
-
-  it('applies_red_class_to_negative_profit_with_credits', () => {
-    // currentValue = 10.5 * 25 = 262.50; totalInvested = 400; totalCredits = 10
-    // profitWithCreditsPercent = (262.50 + 10 - 400) / 400 * 100 = -31.875% (negative)
-    const item: PortfolioAssetSummaryItemDto = {
-      ...ITEM_1,
-      currentQuantity: 25,
-      totalInvested: 400,
-      totalCredits: 10,
-    }
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
-    renderComponent()
-    const redEls = document.querySelectorAll('.portfolio-summary__profit--red')
-    expect(redEls.length).toBeGreaterThanOrEqual(1)
-  })
-
-  it('applies_green_class_to_positive_xirr', () => {
-    xirrMock.mockReturnValue(0.1234)
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
-    renderComponent()
-    const greenEls = document.querySelectorAll('.portfolio-summary__profit--green')
-    expect(greenEls.length).toBeGreaterThanOrEqual(1)
-  })
-
-  it('applies_red_class_to_negative_xirr', () => {
-    xirrMock.mockReturnValue(-0.05)
-    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false }
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
-    renderComponent()
-    const redEls = document.querySelectorAll('.portfolio-summary__profit--red')
-    expect(redEls.length).toBeGreaterThanOrEqual(1)
+    const percentEl = screen.getByText(`${formatN2(expectedPercent)}%`)
+    expect(percentEl).toHaveClass(expectedClass)
   })
 
   it('renders_empty_string_for_null_first_investment_date', () => {

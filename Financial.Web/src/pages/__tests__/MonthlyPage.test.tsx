@@ -149,8 +149,8 @@ describe('MonthlyPage', () => {
     expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
     expect(screen.getByText(/Bank Balance:/)).toBeInTheDocument()
     expect(screen.getByText(/Total Incoming:/)).toBeInTheDocument()
-    expect(document.querySelector('.expenses-section')).not.toBeInTheDocument()
-    expect(document.querySelector('.income-section')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'New Expense' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'New Income' })).not.toBeInTheDocument()
   })
 
   it('marks Summary as the active tab button by default', async () => {
@@ -192,8 +192,8 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
 
     expect(screen.queryByText(/^Total:/)).not.toBeInTheDocument()
-    expect(document.querySelector('.income-section')).not.toBeInTheDocument()
-    expect(document.querySelector('.expenses-section')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'New Income' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument()
     expect(screen.getByText('Lidl UK')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Expense' })).toHaveClass('monthly-page__tab--active')
   })
@@ -205,8 +205,8 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Incoming' }))
 
     expect(screen.queryByText(/^Total:/)).not.toBeInTheDocument()
-    expect(document.querySelector('.expenses-section')).not.toBeInTheDocument()
-    expect(document.querySelector('.income-section')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'New Expense' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument()
     expect(screen.getByText('Gleison')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Incoming' })).toHaveClass('monthly-page__tab--active')
   })
@@ -241,11 +241,11 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
-    await waitFor(() => expect(document.querySelector('.expenses-section')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
 
     fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
 
-    await waitFor(() => expect(document.querySelector('.expenses-section')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'Expense' })).toHaveClass('monthly-page__tab--active')
   })
 
@@ -462,7 +462,7 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(updateExpenseMock).toHaveBeenCalledWith('e1', expect.objectContaining({ value: 50 })))
-    const expensesSection = within(document.querySelector('.expenses-section')!)
+    const expensesSection = within(screen.getByRole('button', { name: 'New Expense' }).closest('section')!)
     await waitFor(() => expect(expensesSection.getByText('50.00')).toBeInTheDocument())
   })
 
@@ -481,8 +481,8 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Incoming' }))
 
-    await waitFor(() => expect(document.querySelector('.income-section')).toBeInTheDocument())
-    const incomeSection = within(document.querySelector('.income-section')!)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
+    const incomeSection = within(screen.getByRole('button', { name: 'New Income' }).closest('section')!)
     expect(incomeSection.getByText('Gleison')).toBeInTheDocument()
     expect(incomeSection.getByText('2,450.00')).toBeInTheDocument()
   })
@@ -567,7 +567,7 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(updateIncomeMock).toHaveBeenCalledWith('i1', expect.objectContaining({ netValue: 500 })))
-    const incomeSection = within(document.querySelector('.income-section')!)
+    const incomeSection = within(screen.getByRole('button', { name: 'New Income' }).closest('section')!)
     await waitFor(() => expect(incomeSection.getByText('500.00')).toBeInTheDocument())
   })
 

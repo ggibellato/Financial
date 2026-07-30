@@ -4,16 +4,16 @@ import DividendCheckPage from '../DividendCheckPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { DividendHistoryItemDto, DividendSummaryDto } from '../../api/types'
 
-const getDividendSummaryMock = vi.fn()
-const getDividendHistoryMock = vi.fn()
-const getWatchlistMock = vi.fn()
+const getDividendSummaryMock = vi.fn<FinancialApiClient['getDividendSummary']>()
+const getDividendHistoryMock = vi.fn<FinancialApiClient['getDividendHistory']>()
+const getWatchlistMock = vi.fn<FinancialApiClient['getWatchlist']>()
 
 vi.mock('../../api/financialApiClient', () => ({
-  createFinancialApiClient: () => ({
+  createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getDividendSummary: getDividendSummaryMock,
     getDividendHistory: getDividendHistoryMock,
     getWatchlist: getWatchlistMock,
-  } satisfies Partial<FinancialApiClient>),
+  }),
 }))
 
 const baseSummary: DividendSummaryDto = {
@@ -85,26 +85,26 @@ describe('DividendCheckPage', () => {
     getDividendSummaryMock.mockResolvedValue({ ...baseSummary, currentPrice: 10, priceMaxBuy: 20 })
     getDividendHistoryMock.mockResolvedValue([])
 
-    const { container } = render(<DividendCheckPage />)
+    render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
 
-    await screen.findByText(/Price max buy:/)
-    expect(container.querySelector('.summary-card__price-max--positive')).toBeInTheDocument()
-    expect(container.querySelector('.summary-card__price-max--negative')).not.toBeInTheDocument()
+    const priceMaxText = await screen.findByText(/Price max buy:/)
+    expect(priceMaxText).toHaveClass('summary-card__price-max--positive')
+    expect(priceMaxText).not.toHaveClass('summary-card__price-max--negative')
   })
 
   it('applies negative class when current price is above price max buy', async () => {
     getDividendSummaryMock.mockResolvedValue({ ...baseSummary, currentPrice: 25, priceMaxBuy: 20 })
     getDividendHistoryMock.mockResolvedValue([])
 
-    const { container } = render(<DividendCheckPage />)
+    render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
 
-    await screen.findByText(/Price max buy:/)
-    expect(container.querySelector('.summary-card__price-max--negative')).toBeInTheDocument()
-    expect(container.querySelector('.summary-card__price-max--positive')).not.toBeInTheDocument()
+    const priceMaxText = await screen.findByText(/Price max buy:/)
+    expect(priceMaxText).toHaveClass('summary-card__price-max--negative')
+    expect(priceMaxText).not.toHaveClass('summary-card__price-max--positive')
   })
 
   it('shows dividend history in date descending order', async () => {

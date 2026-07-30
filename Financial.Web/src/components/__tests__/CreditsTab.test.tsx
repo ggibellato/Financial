@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CreditsData } from '../../hooks/useCredits'
@@ -288,8 +288,8 @@ describe('CreditsTab', () => {
   it('empty_table_renders_no_rows', () => {
     setMock({ credits: [] })
     render(<CreditsTab />)
-    const tbody = document.querySelector('tbody')
-    expect(tbody?.children.length).toBe(0)
+    const rows = within(screen.getByRole('table')).getAllByRole('row')
+    expect(rows).toHaveLength(1) // header row only, no data rows
   })
 
   it('renders_bar_line_toggle_defaulting_to_bar', () => {

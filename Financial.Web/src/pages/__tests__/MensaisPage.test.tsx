@@ -71,15 +71,16 @@ describe('MensaisPage', () => {
   })
 
   it('renders Brasil and UK as two separate grouped sections', async () => {
-    const { container } = render(<MensaisPage />)
+    render(<MensaisPage />)
 
     await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
-    const sections = container.querySelectorAll('.mensais-page__section')
-    expect(sections).toHaveLength(2)
-    expect(within(sections[0] as HTMLElement).getByText('INSS')).toBeInTheDocument()
-    expect(within(sections[0] as HTMLElement).getByText('NIT')).toBeInTheDocument()
-    expect(within(sections[1] as HTMLElement).getByText('Council Tax')).toBeInTheDocument()
-    expect(within(sections[1] as HTMLElement).queryByText('NIT')).not.toBeInTheDocument()
+    // Rendered in source order: Brasil's table first, UK's second.
+    const tables = screen.getAllByRole('table')
+    expect(tables).toHaveLength(2)
+    expect(within(tables[0]).getByText('INSS')).toBeInTheDocument()
+    expect(within(tables[0]).getByText('NIT')).toBeInTheDocument()
+    expect(within(tables[1]).getByText('Council Tax')).toBeInTheDocument()
+    expect(within(tables[1]).queryByText('NIT')).not.toBeInTheDocument()
   })
 
   it('edits a row status/value via the toggled panel and saves, updating the displayed row', async () => {

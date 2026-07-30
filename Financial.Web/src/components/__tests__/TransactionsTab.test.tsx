@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
 import type { TransactionMonthBucket, TransactionsData } from '../../hooks/useTransactions'
@@ -124,14 +124,14 @@ describe('TransactionsTab', () => {
     setMock({ nodeType: 'Broker', chartData: CHART_DATA })
     render(<TransactionsTab />)
     expect(screen.getByText('Net Invested by Month')).toBeInTheDocument()
-    expect(document.querySelector('table')).not.toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
   it('renders_chart_above_table_for_asset_node_selection', () => {
     setMock({ nodeType: 'Asset', chartData: CHART_DATA, transactions: [TRANSACTION_BUY] })
     render(<TransactionsTab />)
     expect(screen.getByText('Net Invested by Month')).toBeInTheDocument()
-    expect(document.querySelector('table')).toBeInTheDocument()
+    expect(screen.getByRole('table')).toBeInTheDocument()
     expect(screen.getByText('15/03/2024')).toBeInTheDocument()
   })
 
@@ -273,7 +273,7 @@ describe('TransactionsTab', () => {
   it('empty_table_renders_no_rows', () => {
     setMock({ transactions: [] })
     render(<TransactionsTab />)
-    const tbody = document.querySelector('tbody')
-    expect(tbody?.children.length).toBe(0)
+    const rows = within(screen.getByRole('table')).getAllByRole('row')
+    expect(rows).toHaveLength(1) // header row only, no data rows
   })
 })
