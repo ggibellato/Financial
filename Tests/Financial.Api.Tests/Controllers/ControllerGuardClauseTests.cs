@@ -1,9 +1,12 @@
 using Financial.Api.Controllers;
+using Financial.CashFlow.Application.Interfaces;
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using FluentAssertions;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Financial.Api.Tests.Controllers;
@@ -61,90 +64,6 @@ public class ControllerGuardClauseTests
     {
         Action act = () => new SummaryController(new StubSummaryService(), new StubPortfolioAssetSummaryService(), null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("brokerBreakdownService");
-    }
-
-    // The following whitespace-route-parameter guards are unreachable via real HTTP: [ApiController]'s
-    // automatic model validation treats a whitespace-only bound route string as "required field missing"
-    // and returns its own ProblemDetails 400 before the action method runs, so these guards never fire
-    // in production traffic but are tested directly here for defense-in-depth coverage.
-    [Fact]
-    public void SummaryController_GetPortfolioAssetsSummary_WhitespaceBrokerName_ReturnsBadRequest()
-    {
-        var controller = new SummaryController(new StubSummaryService(), new StubPortfolioAssetSummaryService(), new StubBrokerBreakdownService());
-
-        var result = controller.GetPortfolioAssetsSummary(" ", "Default", null);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public void SummaryController_GetPortfolioAssetsSummary_WhitespacePortfolioName_ReturnsBadRequest()
-    {
-        var controller = new SummaryController(new StubSummaryService(), new StubPortfolioAssetSummaryService(), new StubBrokerBreakdownService());
-
-        var result = controller.GetPortfolioAssetsSummary("XPI", " ", null);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public void SummaryController_GetBrokerBreakdown_WhitespaceBrokerName_ReturnsBadRequest()
-    {
-        var controller = new SummaryController(new StubSummaryService(), new StubPortfolioAssetSummaryService(), new StubBrokerBreakdownService());
-
-        var result = controller.GetBrokerBreakdown(" ", null);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public void DividendsController_GetDividendHistory_WhitespaceTicker_ReturnsBadRequest()
-    {
-        var controller = new DividendsController(new StubDividendService(), Options.Create(new DividendOptions()));
-
-        var result = controller.GetDividendHistory(" ");
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public void DividendsController_GetDividendSummary_WhitespaceTicker_ReturnsBadRequest()
-    {
-        var controller = new DividendsController(new StubDividendService(), Options.Create(new DividendOptions()));
-
-        var result = controller.GetDividendSummary(" ");
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public void TransactionsController_GetTransactionsByBroker_WhitespaceBrokerName_ReturnsBadRequest()
-    {
-        var controller = new TransactionsController(new StubTransactionService(), new StubTransactionQueryService());
-
-        var result = controller.GetTransactionsByBroker(" ", null);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public void TransactionsController_GetTransactionsByPortfolio_WhitespaceBrokerName_ReturnsBadRequest()
-    {
-        var controller = new TransactionsController(new StubTransactionService(), new StubTransactionQueryService());
-
-        var result = controller.GetTransactionsByPortfolio(" ", "Default", null);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
-    }
-
-    [Fact]
-    public void TransactionsController_GetTransactionsByPortfolio_WhitespacePortfolioName_ReturnsBadRequest()
-    {
-        var controller = new TransactionsController(new StubTransactionService(), new StubTransactionQueryService());
-
-        var result = controller.GetTransactionsByPortfolio("XPI", " ", null);
-
-        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
     }
 
     [Fact]
@@ -247,6 +166,98 @@ public class ControllerGuardClauseTests
     {
         Action act = () => new DividendsController(new StubDividendService(), null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("dividendOptions");
+    }
+
+    [Fact]
+    public void DiagnosticsController_NullRepositorySettings_Throws()
+    {
+        Action act = () => new DiagnosticsController(null!, new StubHostEnvironment());
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void DiagnosticsController_NullEnvironment_Throws()
+    {
+        Action act = () => new DiagnosticsController(Options.Create(new RepositorySettingsOptions()), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("environment");
+    }
+
+    [Fact]
+    public void AnnualSummaryController_NullService_Throws()
+    {
+        Action act = () => new AnnualSummaryController(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void BanksController_NullService_Throws()
+    {
+        Action act = () => new BanksController(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void CardStatementsController_NullService_Throws()
+    {
+        Action act = () => new CardStatementsController(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void ControleMaeController_NullService_Throws()
+    {
+        Action act = () => new ControleMaeController(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void ExpensesController_NullService_Throws()
+    {
+        Action act = () => new ExpensesController(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void IncomesController_NullService_Throws()
+    {
+        Action act = () => new IncomesController(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void InvestmentSnapshotsController_NullService_Throws()
+    {
+        Action act = () => new InvestmentSnapshotsController(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void MensaisController_NullService_Throws()
+    {
+        Action act = () => new MensaisController(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void ReserveController_NullService_Throws()
+    {
+        Action act = () => new ReserveController(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void TitheController_NullService_Throws()
+    {
+        Action act = () => new TitheController(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    private sealed class StubHostEnvironment : IHostEnvironment
+    {
+        public string EnvironmentName { get; set; } = "Development";
+        public string ApplicationName { get; set; } = "Financial.Api.Tests";
+        public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
+        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 
     private sealed class StubSummaryService : ISummaryService

@@ -238,6 +238,17 @@ public class TransactionEndpointsTests
     }
 
     [Fact]
+    public async Task GetTransactionsByPortfolio_Returns400ForWhitespaceBrokerName()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/transactions/portfolio/%20/Default");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task GetTransactionsByBroker_DefaultScope_ExcludesHistoricAssetTransactions()
     {
         await using var factory = new ApiTestFactory();
