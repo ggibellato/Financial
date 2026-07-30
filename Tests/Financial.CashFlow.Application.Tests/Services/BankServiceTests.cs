@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -26,9 +27,12 @@ public class BankServiceTests
 
         var result = service.GetBanks();
 
-        result.Should().HaveCount(2);
-        result.Should().ContainSingle(b => b.Name == "Barclays" && !b.RoundUpEnabled);
-        result.Should().ContainSingle(b => b.Name == "Trading212" && b.RoundUpEnabled);
+        using (new AssertionScope())
+        {
+            result.Should().HaveCount(2);
+            result.Should().ContainSingle(b => b.Name == "Barclays" && !b.RoundUpEnabled);
+            result.Should().ContainSingle(b => b.Name == "Trading212" && b.RoundUpEnabled);
+        }
     }
 
     [Fact]
@@ -51,9 +55,12 @@ public class BankServiceTests
 
         var result = await service.UpdateOpeningBalanceAsync("Barclays", request);
 
-        result.OpeningBalance.Should().Be(1250.75m);
-        result.OpeningBalanceDate.Should().Be(new DateOnly(2026, 7, 1));
-        repository.SaveChangesCallCount.Should().Be(1);
+        using (new AssertionScope())
+        {
+            result.OpeningBalance.Should().Be(1250.75m);
+            result.OpeningBalanceDate.Should().Be(new DateOnly(2026, 7, 1));
+            repository.SaveChangesCallCount.Should().Be(1);
+        }
     }
 
     [Fact]

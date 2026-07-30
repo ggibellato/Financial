@@ -22,4 +22,12 @@ public class CreditCardParserTests
 
         result.Should().BeFalse();
     }
+
+    [Fact]
+    public void TryParse_BlankValue_ReturnsFalse()
+    {
+        var result = CreditCardParser.TryParse(null, out _);
+
+        result.Should().BeFalse();
+    }
 }

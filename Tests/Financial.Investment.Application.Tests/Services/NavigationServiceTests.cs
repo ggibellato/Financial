@@ -11,7 +11,7 @@ namespace Financial.Investment.Application.Tests.Services;
 /// Tests that NavigationService correctly maps asset metadata so the WPF filter can
 /// use type-pattern matching on GlobalAssetClass values stored in TreeNodeDTO.Metadata.
 /// </summary>
-public class NavigationMapperTests
+public class NavigationServiceTests
 {
     private readonly StubRepository _repository = new();
     private NavigationService CreateService() => new(_repository);
@@ -201,6 +201,66 @@ public class NavigationMapperTests
         details!.AverageSellPrice.Should().BeNull();
     }
 
+    [Fact]
+    public void GetBrokers_ShouldOrderByNameAlphabetically()
+    {
+        _repository.Brokers = new[]
+        {
+            BuildBroker("Zeta"),
+            BuildBroker("Encerradas"),
+            BuildBroker("Alpha")
+        };
+
+        var brokerNames = CreateService().GetBrokers().Select(broker => broker.Name).ToList();
+
+        brokerNames.Should().ContainInOrder("Alpha", "Encerradas", "Zeta");
+    }
+
+    [Fact]
+    public void GetBrokers_PortfoliosShouldOrderByNameAlphabetically()
+    {
+        _repository.Broker = BuildBroker("Broker", "USD",
+            ("Zeta", new[] { "B" }),
+            ("Encerradas", new[] { "C" }),
+            ("Alpha", new[] { "A" }));
+
+        var portfolioNames = CreateService().GetBrokers().Single().Portfolios.Select(portfolio => portfolio.Name).ToList();
+
+        portfolioNames.Should().ContainInOrder("Alpha", "Encerradas", "Zeta");
+    }
+
+    [Fact]
+    public void GetBrokers_AssetsShouldOrderByNameAlphabetically()
+    {
+        _repository.Broker = BuildBroker("Broker", "USD",
+            ("Portfolio", new[] { "Zeta", "Encerradas", "Alpha" }));
+
+        var assetNames = CreateService().GetBrokers()
+            .Single()
+            .Portfolios.Single()
+            .Assets.Select(asset => asset.Name)
+            .ToList();
+
+        assetNames.Should().ContainInOrder("Alpha", "Encerradas", "Zeta");
+    }
+
+    private static Broker BuildBroker(string name, string currency = "USD",
+        params (string PortfolioName, string[] AssetNames)[] portfolios)
+    {
+        var broker = Broker.Create(name, currency);
+
+        foreach (var (portfolioName, assetNames) in portfolios)
+        {
+            var portfolio = broker.AddPortfolio(portfolioName);
+            foreach (var assetName in assetNames)
+            {
+                portfolio.AddAsset(Asset.Create(assetName, "ISIN", "EX", "TICKER"));
+            }
+        }
+
+        return broker;
+    }
+
     private static Asset BuildAssetWithQuantity(string name, decimal quantity)
     {
         var asset = Asset.Create(name, "ISIN", "BVMF", name, CountryCode.BR, "FII", GlobalAssetClass.Equity);
@@ -258,6 +318,7 @@ public class NavigationMapperTests
     private sealed class StubRepository : IRepository
     {
         public Broker? Broker { get; set; }
+        public IEnumerable<Broker>? Brokers { get; set; }
 
         public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) =>
             Broker == null ? [] : Broker.Portfolios.SelectMany(p => p.Assets);
@@ -265,7 +326,8 @@ public class NavigationMapperTests
         public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) =>
             Broker?.Portfolios.FirstOrDefault(p => p.Name == portfolio)?.Assets ?? [];
 
-        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) => Broker == null ? [] : [Broker];
+        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) =>
+            Brokers ?? (Broker == null ? [] : [Broker]);
 
         public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) =>
             Broker?.Portfolios.FirstOrDefault(p => p.Name == portfolioName)?.Assets.FirstOrDefault(a => a.Name == assetName);

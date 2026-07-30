@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -24,11 +25,14 @@ public class MensaisServiceTests
 
         var result = await service.CreateBillAsync(ValidBrasilRequest());
 
-        result.Description.Should().Be("INSS");
-        result.Area.Should().Be("Brasil");
-        result.Status.Should().Be("Unset");
-        repository.Bills.Should().ContainSingle();
-        repository.SaveChangesCallCount.Should().Be(1);
+        using (new AssertionScope())
+        {
+            result.Description.Should().Be("INSS");
+            result.Area.Should().Be("Brasil");
+            result.Status.Should().Be("Unset");
+            repository.Bills.Should().ContainSingle();
+            repository.SaveChangesCallCount.Should().Be(1);
+        }
     }
 
     [Fact]

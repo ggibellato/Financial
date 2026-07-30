@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -39,10 +40,13 @@ public class ControleMaeServiceTests
             SourceValue = 350m
         });
 
-        result.BrlValue.Should().Be(350m);
-        result.GbpValue.Should().Be(51.1m);
-        repository.Entries.Should().ContainSingle();
-        repository.SaveChangesCallCount.Should().Be(1);
+        using (new AssertionScope())
+        {
+            result.BrlValue.Should().Be(350m);
+            result.GbpValue.Should().Be(51.1m);
+            repository.Entries.Should().ContainSingle();
+            repository.SaveChangesCallCount.Should().Be(1);
+        }
     }
 
     [Fact]
@@ -60,9 +64,12 @@ public class ControleMaeServiceTests
             SourceValue = 40m
         });
 
-        result.GbpValue.Should().Be(40m);
-        result.BrlValue.Should().BeNull();
-        repository.Entries.Should().ContainSingle();
+        using (new AssertionScope())
+        {
+            result.GbpValue.Should().Be(40m);
+            result.BrlValue.Should().BeNull();
+            repository.Entries.Should().ContainSingle();
+        }
     }
 
     [Fact]
@@ -81,9 +88,12 @@ public class ControleMaeServiceTests
             SourceValue = 100m
         });
 
-        await act.Should().ThrowAsync<ArgumentException>();
-        repository.Entries.Should().BeEmpty();
-        provider.CallCount.Should().Be(0);
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>();
+            repository.Entries.Should().BeEmpty();
+            provider.CallCount.Should().Be(0);
+        }
     }
 
     [Fact]
@@ -177,11 +187,14 @@ public class ControleMaeServiceTests
             GbpValue = 40m
         });
 
-        result.BrlValue.Should().Be(320.50m);
-        result.GbpValue.Should().Be(40m);
-        entry.Date.Should().Be(new DateOnly(2026, 7, 1));
-        entry.Description.Should().Be("Medical appointment");
-        entry.Note.Should().Be("Note");
+        using (new AssertionScope())
+        {
+            result.BrlValue.Should().Be(320.50m);
+            result.GbpValue.Should().Be(40m);
+            entry.Date.Should().Be(new DateOnly(2026, 7, 1));
+            entry.Description.Should().Be("Medical appointment");
+            entry.Note.Should().Be("Note");
+        }
     }
 
     [Fact]
