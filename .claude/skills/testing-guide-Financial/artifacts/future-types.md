@@ -1,107 +1,33 @@
 > Part of the `testing-guide-Financial` skill (see `../SKILL.md`).
 
-# Future Artifact Types
+# Future Types — Not Yet Present
 
-Proactive guidance for types not yet present but likely to be added.
+Artifact types this stack could plausibly grow into, with proactive guidance so a first instance follows house conventions instead of importing patterns (mocking frameworks, snapshot tests) that conflict with this project's established style. (Custom hooks and E2E API tests were in this section in the previous revision of this guide — both are now real, first-class artifact types with their own guides: `artifacts/react-hooks.md` and `artifacts/api-endpoints-e2e.md`.)
 
----
+## Domain Events
 
-## C# — Application Commands / Queries (CQRS handlers)
+CLAUDE.md lists Domain Events as a Domain-layer concern, but none exist yet. If added: test them like `artifacts/value-objects.md` (construction, equality) plus, for any handler, like `artifacts/application-services.md` (branching logic, stub collaborators). No event-bus mocking framework — if a real in-process dispatcher is introduced, prefer testing its resolution the way `artifacts/dependency-injection-modules.md` tests DI resolution.
 
-If the Application layer introduces Commands and Queries (e.g., handled by MediatR or a custom dispatcher):
+## ASP.NET Core Middleware / Exception Filters
 
-- **Unit test the handler**: if the handler contains branching, use a manual inline stub for `IRepository` — no mocking framework needed.
-- **Integration test** (if warranted): use the same temp-file pattern as Infrastructure services.
+None exist beyond default `[ApiController]` behavior. If custom middleware or a global exception filter is added, test it via `artifacts/api-endpoints-e2e.md`'s `ApiTestFactory` — status code and response shape for the middleware's effect — not a standalone unit test, since middleware's whole job is to sit in the real HTTP pipeline.
 
-```csharp
-// Inline repository stub — define inside the test file
-private sealed class StubRepository : IRepository
-{
-    public Investments Data { get; set; } = Investments.Create();
-    public Task<Investments> GetAsync() => Task.FromResult(Data);
-    public Task SaveAsync(Investments investments) { Data = investments; return Task.CompletedTask; }
-}
+## FluentValidation-style Validators
 
-[Fact]
-public async Task Handler_WhenCondition_ExpectedResult()
-{
-    var repo = new StubRepository();
-    repo.Data = BuildTestData();
-    var handler = new SomeCommandHandler(repo);
+Current validation is hand-rolled parsers (`artifacts/application-parsers.md`) plus `[ApiController]`'s automatic model validation. If FluentValidation (or similar) is introduced, keep the existing pattern: one wiring test per endpoint in the E2E suite proving the validator fires, plus `[Theory]` coverage of the validator's own rules at the unit layer — don't duplicate rule coverage into the E2E suite.
 
-    var result = await handler.Handle(new SomeCommand { /* params */ }, CancellationToken.None);
+## Background/Hosted Services
 
-    result.Should().NotBeNull();
-}
-```
+None exist yet (no `IHostedService`/`BackgroundService`). If one is added (e.g., periodic price refresh): unit-test its branching logic with a stub collaborator (`artifacts/application-services.md` pattern); integration-test actual scheduling/execution only if the scheduling logic itself has bugs worth catching — don't test `IHostedService`'s own lifecycle, that's framework behavior.
 
----
+## React Suspense / `use()` Hook
 
-## C# — Domain Services
+Not used yet — the project is on React 19.2 / Testing Library 16.3, which support it, but current data-fetching hooks use plain `useState`/`useEffect`. If adopted: `renderHook`/component tests will need to wrap renders in a `<Suspense>` boundary and assert on the fallback separately from resolved content — otherwise follow `artifacts/react-hooks.md` unchanged.
 
-Test like domain entities: pure unit tests with no I/O, no mocks. Instantiate the service with its real dependencies (domain objects, value objects), call the method, assert the result.
+## New Integrations Projects
 
----
+If a new sibling to `WebPageParser`/`GoogleFinancialSupport`/`CashFlowSpreadsheetImport` is added, classify it up front using §1's questions in `../SKILL.md`: does it wrap a live third-party SDK needing real credentials (→ `artifacts/google-api-wrappers.md`'s accepted-gap pattern), call a plain external HTTP API (→ `artifacts/external-http-services.md`'s fake-`HttpMessageHandler` pattern), or parse a real file format in-memory (→ `artifacts/spreadsheet-import.md`'s in-memory-document pattern)?
 
-## TypeScript — Custom React Hooks (`use*.ts`)
+## C# Application Commands/Queries (CQRS)
 
-If pages extract data-fetching or state logic into custom hooks, test them with `renderHook` from `@testing-library/react` (included in the project's `@testing-library/react` 16.x).
-
-```typescript
-import { renderHook, waitFor } from '@testing-library/react'
-import { vi } from 'vitest'
-import { useMyHook } from '../hooks/useMyHook'
-
-const fetchMock = vi.fn()
-
-describe('useMyHook', () => {
-  beforeEach(() => fetchMock.mockReset())
-
-  it('fetches data on mount and returns it', async () => {
-    fetchMock.mockResolvedValue({ id: '1', name: 'Test' })
-
-    const { result } = renderHook(() => useMyHook(fetchMock))
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    expect(result.current.data).toEqual({ id: '1', name: 'Test' })
-  })
-
-  it('sets error when fetch rejects', async () => {
-    fetchMock.mockRejectedValue(new Error('network error'))
-
-    const { result } = renderHook(() => useMyHook(fetchMock))
-
-    await waitFor(() => expect(result.current.error).toBeTruthy())
-  })
-})
-```
-
----
-
-## TypeScript — Pure Utility Functions
-
-Any pure TypeScript function added to the codebase:
-
-```typescript
-import { describe, it, expect } from 'vitest'
-import { myUtility } from '../utils/myUtility'
-
-describe('myUtility', () => {
-  it('transforms input correctly', () => {
-    expect(myUtility('input')).toBe('expected output')
-  })
-
-  it('handles edge case', () => {
-    expect(myUtility('')).toBe('')
-  })
-})
-```
-
-Place test files in a `__tests__/` directory next to the source file being tested.
-
----
-
-## C# — Application DTOs with Validation Attributes
-
-If DTOs gain validation attributes (e.g., `[Required]`, `[Range]`), test them through the API endpoint tests (WebApplicationFactory), not as unit tests. Validation attribute behavior is a framework concern.
+Not used — Application Services are plain classes, not MediatR handlers. If introduced, treat exactly like `artifacts/application-services.md`: unit test with a hand-written stub repository, no mocking framework.

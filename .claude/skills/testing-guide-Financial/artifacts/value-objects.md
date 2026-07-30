@@ -1,6 +1,8 @@
 > Part of the `testing-guide-Financial` skill (see `../SKILL.md`).
 
-# Value Objects (Immutable types in `Financial.Domain/`)
+# Domain Value Objects (`*.Domain/ValueObjects/*.cs`)
+
+Examples: `AssetValueSnapshot`, `DividendType`, `DividendValue` (Investment); `MonthlySeries` (CashFlow).
 
 ## What to test
 
@@ -8,10 +10,11 @@
 - **Immutability**: operations return new instances rather than mutating the original
 - **Construction validation**: invalid inputs are rejected at construction time (e.g., negative amounts, null strings)
 - **Canonical form**: if a VO normalizes or transforms input (e.g., trims whitespace, normalizes currency code), assert the stored form
+- **Computed properties**: e.g., a `MonthlySeries` total or average derived from underlying values
 
 ## Layer assignment
 
-**Unit only** — value objects are pure data types with no external dependencies.
+**Unit only** — value objects are pure data types with no external dependencies, same reasoning as `artifacts/domain-entities.md`.
 
 ## Setup pattern
 
@@ -20,26 +23,17 @@
 [Fact]
 public void TwoInstances_WithSameData_AreEqual()
 {
-    var a = ValueObject.Create("same");
-    var b = ValueObject.Create("same");
+    var a = new DividendValue(10m, DividendType.Dividend);
+    var b = new DividendValue(10m, DividendType.Dividend);
 
     a.Should().Be(b);
 }
 
-[Fact]
-public void TwoInstances_WithDifferentData_AreNotEqual()
-{
-    var a = ValueObject.Create("one");
-    var b = ValueObject.Create("two");
-
-    a.Should().NotBe(b);
-}
-
 // Invalid construction
 [Fact]
-public void Create_WithNullInput_Throws()
+public void Constructor_WithNegativeAmount_ThrowsArgumentException()
 {
-    Action act = () => ValueObject.Create(null!);
+    Action act = () => new DividendValue(-1m, DividendType.Dividend);
 
     act.Should().Throw<ArgumentException>();
 }
@@ -70,8 +64,10 @@ public void Create_NormalizesInput(string input, string expected)
 
 ## When to skip
 
+- Static structure assertions (field exists, field has expected type) — test behavior/validation instead
 - C# `record` types where the compiler generates structural equality and there is no custom validation or normalization logic
 
 ## Examples from project
 
-Document value object instances here as they are added to the domain. As of the current codebase, value objects are embedded within entity classes rather than as standalone types. If a value type is extracted into its own class, add it here with its specific test scenarios.
+- `MonthlySeries` — has a computed average/total → unit test the computation, not the raw stored values
+- `AssetValueSnapshot` — carries a snapshot price + timestamp with no branching logic → construction test only, skip further coverage

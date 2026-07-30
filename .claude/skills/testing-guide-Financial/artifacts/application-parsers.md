@@ -1,13 +1,15 @@
 > Part of the `testing-guide-Financial` skill (see `../SKILL.md`).
 
-# Application Parsers / Validators (`*Parser.cs`, `*Validator.cs` in `Financial.Application/`)
+# Application Parsers & Validators (`*Parser.cs`, `*Validator.cs`, `*Resolver.cs` in `*.Application/Validation/`)
+
+Examples: `CreditTypeParser` (Investment); `AreaParser`, `BankNameResolver`, `BillStatusParser`, `CategoryParser`, `CreditCardParser`, `CurrencyParser`, `EnumParser`, `IncomeSourceParser`, `ReserveBucketParser` (CashFlow).
 
 ## What to test
 
 - **Normalization**: valid inputs map to their canonical form (case-insensitive matching, trimming, etc.)
 - **Rejection**: invalid or unknown inputs return `false` / throw, with no output value
 - **Null and empty**: explicit cases for `null`, `""`, `"   "` (whitespace-only)
-- **All known branches**: each recognized value in a `switch`/`if` chain has at least one passing test
+- **All known branches**: each recognized value in a `switch`/`if` chain has at least one passing test, including documented historical aliases/typos (e.g., `CategoryParser` mapping "Casas" → `Category.Casa`)
 
 ## Layer assignment
 
@@ -20,9 +22,8 @@
 [Theory]
 [InlineData("Dividend", "Dividend")]
 [InlineData("DIVIDEND", "Dividend")]
-[InlineData("dividend", "Dividend")]
-[InlineData("Rent", "Rent")]
-[InlineData("rENT", "Rent")]
+[InlineData("Mercado", "Mercado")]
+[InlineData("Casas", "Casa")] // historical typo
 public void TryNormalize_WhenValueMatches_ReturnsCanonicalValue(string input, string expected)
 {
     var result = Parser.TryNormalize(input, out var normalized);
@@ -31,50 +32,33 @@ public void TryNormalize_WhenValueMatches_ReturnsCanonicalValue(string input, st
     normalized.Should().Be(expected);
 }
 
-// Null — cannot use [InlineData] for null; use [MemberData] with nameof
-public static IEnumerable<object?[]> NullValues => new[] { new object?[] { null } };
-
+// Null, empty, whitespace, and unknown — grouped in one theory
 [Theory]
-[MemberData(nameof(NullValues))]
-public void TryNormalize_WhenNull_ReturnsFalseAndEmpty(string? input)
-{
-    var result = Parser.TryNormalize(input, out var normalized);
-
-    result.Should().BeFalse();
-    normalized.Should().BeEmpty();
-}
-
-// Empty and whitespace
-[Theory]
+[InlineData(null)]
 [InlineData("")]
 [InlineData("   ")]
-public void TryNormalize_WhenEmptyOrWhitespace_ReturnsFalse(string input)
+[InlineData("NotAKnownType")]
+public void TryNormalize_WhenInvalid_ReturnsFalse(string? input)
 {
     var result = Parser.TryNormalize(input, out _);
 
     result.Should().BeFalse();
 }
-
-// Unknown value
-[Fact]
-public void TryNormalize_WhenUnknownValue_ReturnsFalse()
-{
-    var result = Parser.TryNormalize("NotAKnownType", out _);
-
-    result.Should().BeFalse();
-}
 ```
 
-**`[MemberData]` rule**: always use `nameof()` — `[MemberData(nameof(NullValues))]` not `[MemberData("NullValues")]`.
+**`[MemberData]` rule**: when data doesn't fit `[InlineData]` (non-primitive values), always use `nameof()` — `[MemberData(nameof(NullValues))]` not `[MemberData("NullValues")]`, for rename safety.
 
 ## When to skip
 
 - Validation that simply delegates to a .NET framework attribute (`[Required]`, `[Range]`) — the framework tests its own behavior
+- A parser that's a 1:1 `Enum.Parse` wrapper with no aliasing/normalization logic
 
 ## Examples from project
 
 | Instance | Test focus |
 |---|---|
 | `CreditTypeParser.TryNormalize` | All known types (Dividend, Rent, ...) in multiple casing variants; null; empty string; whitespace; unknown string |
+| `CategoryParser.TryResolve` | Recognized names + documented historical typo ("Casas") + unknown/blank |
+| `CurrencyParser` | BRL/GBP/USD symbols and codes, plus one invalid case |
 
 When adding new parsers, use `CreditTypeParser` and its test file (`CreditTypeParserTests.cs`) as the reference implementation.

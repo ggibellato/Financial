@@ -1,6 +1,8 @@
 > Part of the `testing-guide-Financial` skill (see `../SKILL.md`).
 
-# Domain Entities (Classes in `Financial.Domain/`)
+# Domain Entities & Rules (`*.Domain/Entities/*.cs`, `*.Domain/Rules/*.cs`)
+
+Examples: `Asset`, `Broker`, `Portfolio`, `Transaction`, `Credit` (Investment); `Bank`, `Expense`, `Income`, `CardStatement`, `RecurringBill`, `ReserveMovement`, `InvestmentSnapshot`, `MaeLedgerEntry`, `InvestmentAccount` (CashFlow); calculators/classifiers `XirrCalculator`, `ProfitCalculator`, `DividendValuationRules`, `GlobalAssetClassMapping` (Investment) and `AnnualResultCalculator`, `CategoryClassifier`, `IncomeClassifier`, `ReserveSplitCalculator`, `YearScopedInvestmentAccountResolver` (CashFlow).
 
 ## What to test
 
@@ -9,10 +11,11 @@
 - Factory method validation (correct initial state after `Create(...)`)
 - State after multiple sequential operations (ordering matters for aggregate invariants)
 - Boolean flags that change with lifecycle (e.g., `Active` becomes false after a full sell)
+- Every branch in a calculator/classifier in `Rules/` (e.g., `ReserveSplitCalculator` splitting across buckets, `CategoryClassifier` mapping historical typos like "Casas" → `Casa`)
 
 ## Layer assignment
 
-**Unit only** — domain entities have zero external dependencies (no I/O, no framework). Instantiate → call method → assert observable state. No mocks, no temp files, no async setup.
+**Unit only** — domain entities and rules have zero external dependencies (no I/O, no framework), per the architecture rule that Domain must never depend on Infrastructure. Instantiate → call method → assert observable state. No mocks, no temp files, no async setup. If a "domain" test needs a stub or fake, the type has leaked infrastructure concerns and belongs in Application/Infrastructure instead.
 
 ## Setup pattern
 
@@ -60,13 +63,22 @@ public void MethodName_AllPropertiesUpdated()
         entity.Property3.Should().Be(expected3);
     }
 }
+
+// Rule/calculator — static or stateless, called directly
+[Fact]
+public void Split_WithPositiveAmount_AllocatesAcrossBuckets()
+{
+    var result = ReserveSplitCalculator.Split(1000m, buckets: [/* ... */]);
+
+    result.Should().ContainSingle(r => r.Bucket == ReserveBucket.Investimento && r.Amount == 400m);
+}
 ```
 
 ## When to skip
 
 - Properties that are simple auto-properties with no logic
 - Factory methods that assign fields with no validation (covered implicitly by behavior tests)
-- Framework-managed lifecycle (EF Core tracking, etc.)
+- Framework-managed lifecycle (EF Core tracking, etc. — not applicable here since persistence is JSON files, not an ORM)
 
 ## Examples from project
 
@@ -75,8 +87,7 @@ public void MethodName_AllPropertiesUpdated()
 | `Asset.AddTransaction(Buy)` | `Quantity` and `AveragePrice` recalculate correctly; `Active` = true |
 | `Asset.AddTransaction(Sell all)` | `Quantity` reaches 0; `Active` = false |
 | `Asset.UpdateTransaction(empty Id)` | `ArgumentException` thrown |
-| `Asset.AddTransaction` × 2 | Weighted average price across two buys |
 | `Broker.Create(...)` | Initial state: name and currency set correctly |
 | `Portfolio.AddAsset(...)` | Asset appears in `Assets` collection |
-| `Transaction.Create(...)` | Type, quantity, price, fees set correctly |
-| `Credit.Create(...)` | Date, type, value set correctly |
+| `CategoryClassifier` | Branching over category strings including legacy typos → `[Theory]`+`[InlineData]` per mapping |
+| `ReserveSplitCalculator.Split` | Every bucket-allocation branch, including zero-amount edge case |

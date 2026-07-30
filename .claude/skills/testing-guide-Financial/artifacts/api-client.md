@@ -1,76 +1,61 @@
 > Part of the `testing-guide-Financial` skill (see `../SKILL.md`).
 
-# API Client / Config / Utilities (`*.ts` in `Financial.Web/src/api/`)
+# API Client / Config / Utilities (`*.ts` in `Financial.Web/src/api/`, `src/utils/`)
+
+Examples: `financialApiClient.ts`, `apiError.ts`, `config.ts`, `types.ts`.
 
 ## What to test
 
-- **`config.ts`**: the exported URL is read from `import.meta.env.API_BASE_URL` — use `vi.stubEnv` to inject the env var and verify the value
-- **`financialApiClient.ts`**: the client itself is tested indirectly through page component tests via `vi.mock`. Add direct tests only if there is pure transformation logic (e.g., mapping a raw response shape to an internal DTO) that is separate from the HTTP call
+- **`financialApiClient.ts`**: request construction (URL, method, body) and response parsing/error handling for each method — this is the one file that's *allowed* to talk about `fetch`/`Response` directly, since it *is* the system boundary everything else mocks (see `financialApiClient.test.ts`'s `okResponse`/`errorResponse` helpers)
+- **`apiError.ts`**: error classification/formatting logic (`ApiError` construction from a failed response)
+- **`config.ts`**: `API_BASE_URL` resolution — this has a documented project-wide invariant (see `references/gotchas.md`): it must resolve to a relative path like `/api/v1/financial` and must **never** be empty, or Docker serves the SPA fallback HTML instead of JSON. The actual default comes from `vite.config.ts`'s `define`, not a runtime fallback — don't write a test asserting an empty-string fallback, since that would codify the exact failure mode the project has already been bitten by
 - **Pure utility functions**: any `.ts` function with branching or transformation logic
 
 ## Layer assignment
 
-**Unit** — pure functions, no DOM, no HTTP calls. Config tests use `vi.stubEnv` to inject environment variables.
+**Unit** — plain Vitest, no `jsdom`/RTL needed since these are not React components.
 
 ## Setup pattern
 
 ```typescript
-// Config test — must reset modules so env var change is re-evaluated at import time
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { ApiError } from './apiError'
+import { createFinancialApiClient } from './financialApiClient'
 
-describe('config', () => {
-  beforeEach(() => {
-    vi.resetModules()     // force re-import so stubbed env is picked up
-    vi.unstubAllEnvs()
+const okResponse = <T,>(payload: T) =>
+  ({ ok: true, status: 200, statusText: 'OK', json: async () => payload }) as Response
+
+const errorResponse = () =>
+  ({ ok: false, status: 500, statusText: 'Server Error', json: async () => ({}) }) as Response
+
+describe('financialApiClient', () => {
+  it('parses a successful JSON response', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue(okResponse({ ticker: 'BCIA11' }))
+
+    const client = createFinancialApiClient()
+    const result = await client.getAssetDetails('BCIA11', 'BVMF')
+
+    expect(result.ticker).toBe('BCIA11')
   })
 
-  it('reads API_BASE_URL from environment', async () => {
-    vi.stubEnv('API_BASE_URL', 'http://test-api.example.com')
+  it('throws ApiError on a non-ok response', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue(errorResponse())
 
-    const { apiBaseUrl } = await import('./config')
+    const client = createFinancialApiClient()
 
-    expect(apiBaseUrl).toBe('http://test-api.example.com')
-  })
-
-  it('returns empty string when API_BASE_URL is not set', async () => {
-    // env var not stubbed — falls back to undefined / empty
-
-    const { apiBaseUrl } = await import('./config')
-
-    expect(apiBaseUrl).toBe('')
-  })
-})
-
-// Pure utility function test
-import { describe, it, expect } from 'vitest'
-import { transformResponseData } from './utils'
-
-describe('transformResponseData', () => {
-  it('maps raw response fields to internal shape', () => {
-    const raw = { raw_field: 'value', amount: 100 }
-
-    const result = transformResponseData(raw)
-
-    expect(result.mappedField).toBe('value')
-    expect(result.amount).toBe(100)
-  })
-
-  it('handles empty response', () => {
-    const result = transformResponseData({})
-
-    expect(result).toBeDefined()
+    await expect(client.getAssetDetails('MISSING', 'BVMF')).rejects.toThrow(ApiError)
   })
 })
 ```
 
-**`vi.resetModules()`**: required when testing config values because `import.meta.env.*` is evaluated at module load time. Without resetting, a cached module is returned and the stubbed env is never read.
+This is the only file where mocking `fetch` directly is correct — everywhere else (pages, components, hooks), mock `financialApiClient` itself instead (see `references/mock-health-rules.md`).
 
 ## When to skip
 
-- HTTP fetch calls inside `financialApiClient.ts` — these are tested implicitly through page component tests that mock the client factory
-- TypeScript type definitions in `types.ts` — the compiler verifies these; no runtime test needed
-- The `createFinancialApiClient` factory function itself — it's a constructor wrapper; its behavior is covered by page tests
+- Don't test TypeScript's own type-checking — the compiler already guarantees method signatures match `types.ts`
+- Don't write a test per DTO field with no transformation — only test fields the client computes or transforms
+- Don't test `config.ts`'s empty-string branch as if it were a supported, correct outcome (see above)
 
 ## Examples from project
 
-`config.ts` reads `API_BASE_URL` from `import.meta.env`. A test that stubs this env var, resets modules, re-imports config, and asserts the exported value covers the environment variable wiring without making any HTTP call.
+- `financialApiClient.test.ts` — the reference example; covers every client method's success and error-mapping path using the `okResponse`/`errorResponse` helpers
