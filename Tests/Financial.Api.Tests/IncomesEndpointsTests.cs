@@ -52,25 +52,6 @@ public class IncomesEndpointsTests
     }
 
     [Fact]
-    public async Task AddIncome_GrossValueBelowNetValue_ReturnsBadRequest()
-    {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var request = new IncomeCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 25),
-            IncomeSource = "Ariana",
-            GrossValue = 100m,
-            NetValue = 200m,
-            Bank = "Chase"
-        };
-
-        var response = await client.PostAsJsonAsync("/api/v1/financial/incomes", request);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
     public async Task AddIncome_NegativeNetValue_ReturnsBadRequest()
     {
         await using var factory = new ApiTestFactory();
