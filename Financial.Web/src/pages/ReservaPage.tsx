@@ -316,7 +316,6 @@ export default function ReservaPage() {
       <div className="reserva-page__content">
         <div className="reserva-page__grids-row">
           <section className="reserva-page__section reserva-page__section--grid reserva-page__section--balances">
-            <h2>Bucket Balances</h2>
             <div className="reserva-page__table-scroll">
               <table className="reserva-page__table data-table">
                 <BalanceColumns />
@@ -348,7 +347,6 @@ export default function ReservaPage() {
           </section>
 
           <section className="reserva-page__section reserva-page__section--grid reserva-page__section--movements">
-            <h2>Movement History</h2>
             <div className="reserva-page__table-scroll">
               <table className="reserva-page__table data-table">
                 <MovementColumns />

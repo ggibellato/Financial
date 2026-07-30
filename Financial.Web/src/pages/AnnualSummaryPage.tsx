@@ -125,11 +125,10 @@ export default function AnnualSummaryPage() {
         <div className="annual-summary-page__content">
           {activeTab === 'categoryTotals' && (
             <section className="annual-summary-page__section">
-              <h2>Category Totals</h2>
               <table className="annual-summary-page__table data-table">
                 <thead>
                   <tr>
-                    <th />
+                    <th>Category</th>
                     {MONTH_LABELS.map((m) => (
                       <th key={m} className="data-table__col--numeric">
                         {m}
@@ -201,7 +200,6 @@ export default function AnnualSummaryPage() {
 
           {activeTab === 'investments' && investmentAnnualResult && (
             <section className="annual-summary-page__section">
-              <h2>Investments</h2>
               <table className="annual-summary-page__table data-table">
                 <thead>
                   <tr>
@@ -249,11 +247,10 @@ export default function AnnualSummaryPage() {
 
           {activeTab === 'historicSummaryAverage' && (
             <section className="annual-summary-page__section">
-              <h2>Historic Summary Average</h2>
               <table className="annual-summary-page__table data-table">
                 <thead>
                   <tr>
-                    <th />
+                    <th>Category</th>
                     {historicSummaryAverage && (
                       historicSummaryAverage.map((y) => (
                         <th key={y.year} className="data-table__col--numeric">

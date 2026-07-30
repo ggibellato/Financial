@@ -10,7 +10,6 @@ interface BanksGridProps {
 export default function BanksGrid({ bankTotals, bankTotalsSum, roundUpTotalsSum }: BanksGridProps) {
   return (
     <section className="monthly-page__section monthly-page__section--grid">
-      <h2>Banks</h2>
       <div className="monthly-page__table-scroll">
         <table className="monthly-page__table data-table">
           <thead>

@@ -55,7 +55,6 @@ export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpen
   return (
     <section className="expenses-section">
       <div className="expenses-section__header">
-        <h2>Expenses</h2>
         <button className="expenses-section__new-btn" type="button" onClick={onNewExpense}>
           New Expense
         </button>

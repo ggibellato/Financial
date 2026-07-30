@@ -218,7 +218,6 @@ describe('AnnualSummaryPage', () => {
 
     expect(screen.queryByRole('cell', { name: 'Salary' })).not.toBeInTheDocument()
     expect(screen.queryByRole('cell', { name: 'Mercado' })).not.toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Investments' })).toBeInTheDocument()
     expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Investments' })).toHaveClass('annual-summary-page__tab--active')
   })
@@ -402,11 +401,11 @@ describe('AnnualSummaryPage', () => {
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Investments' }))
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Investments' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
 
     fireEvent.change(screen.getByLabelText('Year'), { target: { value: '2027' } })
 
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Investments' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseSave' })).toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'Investments' })).toHaveClass('annual-summary-page__tab--active')
   })
 
@@ -416,10 +415,10 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
 
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Historic Summary Average' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('columnheader', { name: '2025' })).toBeInTheDocument())
 
     const headerCells = screen.getAllByRole('columnheader').map((th) => th.textContent)
-    expect(headerCells).toEqual(['', '2026', '2025'])
+    expect(headerCells).toEqual(['Category', '2026', '2025'])
 
     const mercadoRow = screen.getByText('Mercado').closest('tr')!
     expect(within(mercadoRow).getByText('155.00')).toBeInTheDocument()
@@ -431,7 +430,7 @@ describe('AnnualSummaryPage', () => {
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Historic Summary Average' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('columnheader', { name: '2025' })).toBeInTheDocument())
 
     const rowLabels = screen
       .getAllByRole('row')
@@ -458,7 +457,7 @@ describe('AnnualSummaryPage', () => {
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Historic Summary Average' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('columnheader', { name: '2025' })).toBeInTheDocument())
 
     const resultadoRow = screen.getByText('Resultado (R-D-Inv)').closest('tr')!
     expect(resultadoRow).toHaveClass('annual-summary-page__emphasized-row')
@@ -474,9 +473,9 @@ describe('AnnualSummaryPage', () => {
 
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Historic Summary Average' }))
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Historic Summary Average' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('columnheader', { name: '2025' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Category Totals' }))
 
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Category Totals' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'Salary' })).toBeInTheDocument())
   })
 })

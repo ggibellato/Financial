@@ -11,7 +11,6 @@ interface IncomingGridProps {
 export default function IncomingGrid({ incomeTotals, totalIncoming, titheSummary }: IncomingGridProps) {
   return (
     <section className="monthly-page__section monthly-page__section--grid">
-      <h2>Incoming</h2>
       <div className="monthly-page__table-scroll">
         <table className="monthly-page__table data-table">
           <thead>
