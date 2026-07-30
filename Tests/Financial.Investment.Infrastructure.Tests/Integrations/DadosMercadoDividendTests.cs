@@ -32,6 +32,16 @@ public class DadosMercadoDividendTests
     }
 
     [Fact]
+    public void ParseDividendRow_ValueWithFootnoteMarker_StripsMarkerBeforeParsing()
+    {
+        var cells = BuildCells("<tr><td>Dividendo</td><td>1,23* </td><td>x</td><td>y</td><td>01/03/2024</td></tr>");
+
+        var result = DadosMercadoDividend.ParseDividendRow(cells);
+
+        result.Value.Should().Be(1.23m);
+    }
+
+    [Fact]
     public void ParseDividendRow_DateWithLeadingWhitespace_IsTrimmedAndParsed()
     {
         var cells = BuildCells("<tr><td>Dividendo</td><td>1,00</td><td>x</td><td>y</td><td>  19/08/2026  </td></tr>");

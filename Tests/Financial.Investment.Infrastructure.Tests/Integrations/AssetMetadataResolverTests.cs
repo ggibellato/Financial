@@ -52,6 +52,39 @@ public class AssetMetadataResolverTests
     }
 
     [Fact]
+    public void ResolvePortfolioName_FreeTradeWithBlankColor_ReturnsEtf()
+    {
+        var resolver = CreateResolver();
+        var sheet = new SheetDTO { Id = 0, Name = "VUSA", Color = "" };
+
+        var portfolioName = resolver.ResolvePortfolioName("FreeTrade", sheet);
+
+        portfolioName.Should().Be("ETF");
+    }
+
+    [Fact]
+    public void ResolvePortfolioName_XPIWithBlankColor_ReturnsFII()
+    {
+        var resolver = CreateResolver();
+        var sheet = new SheetDTO { Id = 0, Name = "PETR4", Color = "" };
+
+        var portfolioName = resolver.ResolvePortfolioName("XPI", sheet);
+
+        portfolioName.Should().Be("FII");
+    }
+
+    [Fact]
+    public void ResolvePortfolioName_UnrecognizedBrokerWithBlankColor_ReturnsDefault()
+    {
+        var resolver = CreateResolver();
+        var sheet = new SheetDTO { Id = 0, Name = "VOO", Color = "" };
+
+        var portfolioName = resolver.ResolvePortfolioName("SomeOtherBroker", sheet);
+
+        portfolioName.Should().Be("Default");
+    }
+
+    [Fact]
     public void ResolvePortfolioName_Trading212WithIsaInSheetName_ReturnsEtfIsa()
     {
         var resolver = CreateResolver();

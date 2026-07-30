@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 
-public sealed class GoogleService : IRemoteFileClient
+public sealed class GoogleService : IRemoteFileClient, IGoogleSheetsDataSource
 {
     private readonly GoogleDriveClient _driveClient;
     private readonly GoogleSheetsClient _sheetsClient;
