@@ -1,5 +1,3 @@
-using Financial.Shared.Infrastructure.Configuration;
-
 namespace Financial.Shared.Infrastructure.Persistence;
 
 public sealed class GoogleDriveJsonStorage : IJsonStorage
@@ -33,7 +31,7 @@ public sealed class GoogleDriveJsonStorage : IJsonStorage
     {
         if (string.IsNullOrWhiteSpace(driveFilePath))
             throw new ArgumentException(
-                $"Drive file path must be configured via '{RepositoryConfigurationKeys.GoogleDriveFilePath}'.",
+                "Drive file path must be configured.",
                 nameof(driveFilePath));
         return driveFilePath;
     }

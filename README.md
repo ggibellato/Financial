@@ -14,19 +14,21 @@ The Investment and CashFlow domains each load their data from their own JSON fil
 - Investment: copy `data/data.example.json` to `data/data.json`.
 - CashFlow: copy `data/data-cashflow.example.json` to `data/data-cashflow.json`.
 
-Configure the paths via environment variable or `appsettings.json`:
+Configure the paths via environment variable or `appsettings.json`. Each domain's storage settings live under their own JSON element — `Investment` and `CashFlow` — never at the config root:
 
-- Investment: `DataJsonFile`. Defaults to `data.json` in the application directory if unset.
-- CashFlow: `CashFlow:DataJsonFile` (env: `CashFlow__DataJsonFile`). **This has no domain-specific default** — if left unset, it silently falls back to the same `data.json` used by the Investment domain, so the two domains would end up reading/writing the same file. Always set it explicitly (e.g. to `data-cashflow.json`).
+- Investment: `Investment:DataJsonFile` (env: `Investment__DataJsonFile`). Defaults to `data.json` in the application directory if unset.
+- CashFlow: `CashFlow:DataJsonFile` (env: `CashFlow__DataJsonFile`). Defaults to `data-cashflow.json` in the application directory if unset.
+
+Each domain has its own distinct default filename, so leaving either one unset no longer risks the two domains sharing a file.
 
 ### Storage providers
 
-The Investment and CashFlow domains each select their storage backend independently.
+The Investment and CashFlow domains each select their storage backend independently, under their own config element.
 
-**Investment** — via `Repository:Provider` (env: `Repository__Provider`):
+**Investment** — via `Investment:Repository:Provider` (env: `Investment__Repository__Provider`):
 
-- **`LocalJson`** (default) — reads/writes `data.json` from the local filesystem. Set `DataJsonFile` to the file path.
-- **`GoogleDrive`** — reads/writes a JSON file stored in Google Drive. Requires `GoogleDrive:CredentialsPath` (path to the service-account credentials JSON) and `GoogleDrive:FilePath` (the Drive file ID or path).
+- **`LocalJson`** (default) — reads/writes the file set by `Investment:DataJsonFile`.
+- **`GoogleDrive`** — reads/writes a JSON file stored in Google Drive. Requires `Investment:GoogleDrive:CredentialsPath` (path to the service-account credentials JSON) and `Investment:GoogleDrive:FilePath` (the Drive file ID or path).
 
 **CashFlow** — via `CashFlow:Repository:Provider` (env: `CashFlow__Repository__Provider`):
 
@@ -85,8 +87,8 @@ docker build -t financial .
 ```bash
 docker run -p 8080:8080 \
   -v ./data:/app/data \
-  -e DataJsonFile=/app/data/data.json \
-  -e Repository__Provider=LocalJson \
+  -e Investment__DataJsonFile=/app/data/data.json \
+  -e Investment__Repository__Provider=LocalJson \
   -e CashFlow__DataJsonFile=/app/data/data-cashflow.json \
   -e CashFlow__Repository__Provider=LocalJson \
   financial

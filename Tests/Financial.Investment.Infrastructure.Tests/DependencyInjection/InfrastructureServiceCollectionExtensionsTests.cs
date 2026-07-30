@@ -13,8 +13,8 @@ public class InfrastructureServiceCollectionExtensionsTests
     {
         var provider = BuildServiceProvider(new Dictionary<string, string?>
         {
-            ["Repository:Provider"] = "NotARealProvider",
-            ["DataJsonFile"] = TestDataPaths.DataJsonFile
+            ["Investment:Repository:Provider"] = "NotARealProvider",
+            ["Investment:DataJsonFile"] = TestDataPaths.DataJsonFile
         });
 
         Action act = () => provider.GetRequiredService<IRepository>();
@@ -28,7 +28,7 @@ public class InfrastructureServiceCollectionExtensionsTests
     {
         var provider = BuildServiceProvider(new Dictionary<string, string?>
         {
-            ["DataJsonFile"] = TestDataPaths.DataJsonFile
+            ["Investment:DataJsonFile"] = TestDataPaths.DataJsonFile
         });
 
         var repository = provider.GetRequiredService<IRepository>();

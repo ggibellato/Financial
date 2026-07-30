@@ -1,10 +1,10 @@
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Infrastructure.Configuration;
 using Financial.Investment.Infrastructure.Interfaces;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.Investment.Infrastructure.Services;
-using Financial.Shared.Infrastructure.Configuration;
 using Financial.Shared.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
