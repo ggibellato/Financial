@@ -14,8 +14,8 @@ Generate implementation-ready technical specifications based on the project's PR
 1. `spec.md` - Technical specification (7 sections)
 2. `plan.md` - Implementation plan (phases and steps)
 
-**Output location:** `docs/<pr-id>-<feature-id>-<kebab-name>/spec.md` and `docs/<feature-id>-<kebab-name>/plan.md`
-- The `<kebab-name>` is derived from the feature's name in the PRD Section 6 (lowercase, spaces → hyphens, special characters removed). Example: `F03. Video Upload` → `docs/F03-video-upload/`.
+**Output location:** `docs/prd/<PRD folder>/features/<pr-id>-<feature-id>-<kebab-name>/spec.md` and `docs/prd/<PRD folder>/features/<pr-id>-<feature-id>-<kebab-name>/plan.md`
+- The `<kebab-name>` is derived from the feature's name in the PRD Section 6 (lowercase, spaces → hyphens, special characters removed). Example: `F03. Video Upload` for PRD that leaves at `\docs\P02-video-management` → `docs/prd/P02-video-management/features/P02-F03-video-upload/`.
 
 ---
 
@@ -205,7 +205,7 @@ PLAN document:
 - [ ] Format: **N. Component** - High-level paragraph (1-3 sentences)
 - [ ] Steps describe WHAT, not HOW (spec has details)
 
-**Save both files to `docs/<feature-id>-<kebab-name>/spec.md` and `docs/<feature-id>-<kebab-name>/plan.md`.** Create the folder if it doesn't exist. Verify both files with the Read tool.
+**Save both files to `docs/prd/<PRD folder>/features/<pr-id>-<feature-id>-<kebab-name>/spec.md` and `docs/prd/<PRD folder>/features/<pr-id>-<feature-id>-<kebab-name>/plan.md`.** Create the folder if it doesn't exist. Verify both files with the Read tool.
 
 ### Step 6: Output Result
 
@@ -248,7 +248,7 @@ Step 1 (Resolve Input and Pre-Analysis) is adapted for the batch context as desc
 - If any feature name in the input is ambiguous (matches multiple features in the PRD, e.g., "upload" matches F03 and F11), list the candidates to the user and ask for disambiguation BEFORE proceeding to the rest of B.1. This is the second possible interactive pause before the consolidated plan.
 - If any feature ID or name does not exist in the PRD, reject with the list of available features.
 - Validate the same-wave rule.
-- For each target, check whether `docs/<feature-id>-<kebab-name>/spec.md` already exists. Mark such features as "already has spec".
+- For each target, check whether `docs/prd/<PRD folder>/features/<pr-id>-<feature-id>-<kebab-name>/spec.md` already exists. Mark such features as "already has spec".
 
 **B.2: Greenfield and Foundation classification**
 
@@ -273,7 +273,7 @@ Batch plan for <input>:
 Mode: parallel (N sub-agents)   # or "sequential (Foundation detected)" when applicable
 Codebase state: Foundation complete   # or greenfield / Partial Foundation
 Auto-accept: all spec-writer recommendations will be applied
-Destination: docs/F04-video-library/, docs/F07-background-processing-pipeline/, docs/F12-administration-panel/
+Destination: docs/prd/P02-video-management/features/P02-F04-video-library/, docs/prd/P02-video-management/features/P02-F07-background-processing-pipeline/, docs/prd/P02-video-management/features/P02-F12-administration-panel/
 
 OK to proceed? (yes/no)
 ```
@@ -305,9 +305,9 @@ Wait for all sub-agents. Report consolidated result:
 
 ```
 Batch complete: 3/4 features generated successfully
-✓ F04 → docs/F04-video-library/
-✓ F07 → docs/F07-background-processing-pipeline/
-✓ F12 → docs/F12-administration-panel/
+✓ F04 → docs/prd/P02-video-management/features/P02-F04-video-library/
+✓ F07 → docs/prd/P02-video-management/features/P02-F07-background-processing-pipeline/
+✓ F12 → docs/prd/P02-video-management/features/P02-F12-administration-panel/
 ✗ F05 → failed: <reason>
 ```
 
@@ -342,7 +342,7 @@ All other spec-writer rules (PRD-driven content, codebase pattern adherence, SPE
 **Precedence:** When a feature is running in Batch Mode, the `(Batch Mode)` rule groups below override any conflicting rule in the general `Always`/`Never` lists — notably, Batch Mode overrides the interview-related rules ("Preserve the iterative interview style", "Skip interview questions...", etc.). All non-conflicting rules still apply.
 
 **Always:**
-- Generate TWO files (spec and plan) in `docs/<feature-id>-<kebab-name>/`
+- Generate TWO files (spec and plan) in `docs/prd/<PRD folder>/features/<pr-id>-<feature-id>-<kebab-name>/`
 - Validate both documents before saving
 - Run Codebase Pattern Discovery in two layers (baseline + broad) before the interview
 - Read the target feature from the PRD and use Consumes/Provides/Core Scope/Full Scope/Capabilities/Experience/Error Handling/acceptance criteria as primary context
