@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
+using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
@@ -44,7 +45,7 @@ public class ControleMaeServiceTests
         {
             result.BrlValue.Should().Be(350m);
             result.GbpValue.Should().Be(51.1m);
-            repository.Entries.Should().ContainSingle();
+            repository.MaeLedgerEntries.Should().ContainSingle();
             repository.SaveChangesCallCount.Should().Be(1);
         }
     }
@@ -68,7 +69,7 @@ public class ControleMaeServiceTests
         {
             result.GbpValue.Should().Be(40m);
             result.BrlValue.Should().BeNull();
-            repository.Entries.Should().ContainSingle();
+            repository.MaeLedgerEntries.Should().ContainSingle();
         }
     }
 
@@ -91,7 +92,7 @@ public class ControleMaeServiceTests
         using (new AssertionScope())
         {
             await act.Should().ThrowAsync<ArgumentException>();
-            repository.Entries.Should().BeEmpty();
+            repository.MaeLedgerEntries.Should().BeEmpty();
             provider.CallCount.Should().Be(0);
         }
     }
@@ -148,9 +149,9 @@ public class ControleMaeServiceTests
     public void GetEntriesFromDate_ReturnsOnlyEntriesOnOrAfterDate()
     {
         var repository = new StubCashFlowRepository();
-        repository.Entries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 6, 30), "Before", string.Empty, Currency.BRL, 10m, 1m));
-        repository.Entries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "OnDate", string.Empty, Currency.BRL, 10m, 1m));
-        repository.Entries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 8, 10), "After", string.Empty, Currency.BRL, 10m, 1m));
+        repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 6, 30), "Before", string.Empty, Currency.BRL, 10m, 1m));
+        repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "OnDate", string.Empty, Currency.BRL, 10m, 1m));
+        repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 8, 10), "After", string.Empty, Currency.BRL, 10m, 1m));
         var service = new ControleMaeService(repository, new StubExchangeRateProvider(1.5m));
 
         var result = service.GetEntriesFromDate(new DateOnly(2026, 7, 1));
@@ -163,8 +164,8 @@ public class ControleMaeServiceTests
     public void GetTotals_SumsBrlAndGbpAcrossAllEntriesRegardlessOfDate()
     {
         var repository = new StubCashFlowRepository();
-        repository.Entries.Add(MaeLedgerEntry.Create(new DateOnly(2020, 1, 1), "Old", string.Empty, Currency.BRL, 100m, 10m));
-        repository.Entries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 7, 10), "Recent", string.Empty, Currency.GBP, null, 5m));
+        repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2020, 1, 1), "Old", string.Empty, Currency.BRL, 100m, 10m));
+        repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 7, 10), "Recent", string.Empty, Currency.GBP, null, 5m));
         var service = new ControleMaeService(repository, new StubExchangeRateProvider(1.5m));
 
         var result = service.GetTotals();
@@ -178,7 +179,7 @@ public class ControleMaeServiceTests
     {
         var repository = new StubCashFlowRepository();
         var entry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "Medical appointment", "Note", Currency.GBP, null, 40m);
-        repository.Entries.Add(entry);
+        repository.MaeLedgerEntries.Add(entry);
         var service = new ControleMaeService(repository, new StubExchangeRateProvider(1.5m));
 
         var result = await service.UpdateEntryValuesAsync(entry.Id, new UpdateMaeLedgerEntryValuesDTO
@@ -216,12 +217,12 @@ public class ControleMaeServiceTests
     {
         var repository = new StubCashFlowRepository();
         var entry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "School supplies", string.Empty, Currency.BRL, 350m, 51.1m);
-        repository.Entries.Add(entry);
+        repository.MaeLedgerEntries.Add(entry);
         var service = new ControleMaeService(repository, new StubExchangeRateProvider(1.5m));
 
         await service.DeleteEntryAsync(entry.Id);
 
-        repository.Entries.Should().BeEmpty();
+        repository.MaeLedgerEntries.Should().BeEmpty();
         repository.SaveChangesCallCount.Should().Be(1);
     }
 
@@ -253,56 +254,4 @@ public class ControleMaeServiceTests
         }
     }
 
-    private sealed class StubCashFlowRepository : ICashFlowRepository
-    {
-        public List<MaeLedgerEntry> Entries { get; } = new();
-        public int SaveChangesCallCount { get; private set; }
-
-        public IEnumerable<Expense> GetExpenses() => Array.Empty<Expense>();
-        public void AddExpense(Expense expense) { }
-        public void DeleteExpense(Guid id) { }
-
-        public IEnumerable<ReserveMovement> GetReserveMovements() => Array.Empty<ReserveMovement>();
-        public void AddReserveMovement(ReserveMovement movement) { }
-        public void DeleteReserveMovement(Guid id) { }
-
-        public IEnumerable<CardStatement> GetCardStatements() => Array.Empty<CardStatement>();
-        public void AddCardStatement(CardStatement statement) { }
-
-        public IEnumerable<RecurringBill> GetRecurringBills() => Array.Empty<RecurringBill>();
-        public void AddRecurringBill(RecurringBill bill) { }
-        public void DeleteRecurringBill(Guid id) { }
-
-        public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => Entries;
-        public void AddMaeLedgerEntry(MaeLedgerEntry entry) => Entries.Add(entry);
-        public void DeleteMaeLedgerEntry(Guid id) => Entries.RemoveAll(e => e.Id == id);
-
-        public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => Array.Empty<InvestmentSnapshot>();
-        public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) { }
-
-        public IEnumerable<InvestmentAccount> GetInvestmentAccounts() => Array.Empty<InvestmentAccount>();
-        public void AddInvestmentAccount(InvestmentAccount account) { }
-
-        public IEnumerable<Bank> GetBanks() => Array.Empty<Bank>();
-
-        public IEnumerable<Income> GetIncomes() => Array.Empty<Income>();
-        public void AddIncome(Income income) { }
-        public void DeleteIncome(Guid id) { }
-
-        public IEnumerable<Transfer> GetTransfers() => Array.Empty<Transfer>();
-        public void AddTransfer(Transfer transfer) { }
-        public void UpdateTransfer(Transfer transfer) { }
-        public void DeleteTransfer(Guid id) { }
-
-        public IEnumerable<BalanceAdjustment> GetBalanceAdjustments() => Array.Empty<BalanceAdjustment>();
-        public void AddBalanceAdjustment(BalanceAdjustment adjustment) { }
-        public void UpdateBalanceAdjustment(BalanceAdjustment adjustment) { }
-        public void DeleteBalanceAdjustment(Guid id) { }
-
-        public Task SaveChangesAsync()
-        {
-            SaveChangesCallCount++;
-            return Task.CompletedTask;
-        }
-    }
 }

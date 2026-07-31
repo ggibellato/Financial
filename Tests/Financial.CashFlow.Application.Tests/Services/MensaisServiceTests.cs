@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
+using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
@@ -30,7 +31,7 @@ public class MensaisServiceTests
             result.Description.Should().Be("INSS");
             result.Area.Should().Be("Brasil");
             result.Status.Should().Be("Unset");
-            repository.Bills.Should().ContainSingle();
+            repository.RecurringBills.Should().ContainSingle();
             repository.SaveChangesCallCount.Should().Be(1);
         }
     }
@@ -107,14 +108,14 @@ public class MensaisServiceTests
     {
         var repository = new StubCashFlowRepository();
         var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
-        repository.Bills.Add(bill);
+        repository.RecurringBills.Add(bill);
         var otherBill = RecurringBill.Create(15, "Council Tax", 120m, Area.UK, string.Empty, null, null);
-        repository.Bills.Add(otherBill);
+        repository.RecurringBills.Add(otherBill);
         var service = new MensaisService(repository);
 
         await service.DeleteBillAsync(bill.Id);
 
-        repository.Bills.Should().ContainSingle().Which.Id.Should().Be(otherBill.Id);
+        repository.RecurringBills.Should().ContainSingle().Which.Id.Should().Be(otherBill.Id);
     }
 
     [Fact]
@@ -131,7 +132,7 @@ public class MensaisServiceTests
     public void GetBills_ReturnsAllBills()
     {
         var repository = new StubCashFlowRepository();
-        repository.Bills.Add(RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null));
+        repository.RecurringBills.Add(RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null));
         var service = new MensaisService(repository);
 
         var result = service.GetBills();
@@ -144,7 +145,7 @@ public class MensaisServiceTests
     {
         var repository = new StubCashFlowRepository();
         var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
-        repository.Bills.Add(bill);
+        repository.RecurringBills.Add(bill);
         var service = new MensaisService(repository);
 
         var result = await service.UpdateBillAsync(bill.Id, new UpdateRecurringBillDTO
@@ -176,7 +177,7 @@ public class MensaisServiceTests
     {
         var repository = new StubCashFlowRepository();
         var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
-        repository.Bills.Add(bill);
+        repository.RecurringBills.Add(bill);
         var service = new MensaisService(repository);
 
         var act = async () => await service.UpdateBillAsync(bill.Id, new UpdateRecurringBillDTO
@@ -196,14 +197,14 @@ public class MensaisServiceTests
         paidBill.Update(BillStatus.Paid, 850m);
         var scheduledBill = RecurringBill.Create(15, "Council Tax", 120m, Area.UK, string.Empty, null, null);
         scheduledBill.Update(BillStatus.Scheduled, 120m);
-        repository.Bills.Add(paidBill);
-        repository.Bills.Add(scheduledBill);
+        repository.RecurringBills.Add(paidBill);
+        repository.RecurringBills.Add(scheduledBill);
         var service = new MensaisService(repository);
 
         var result = await service.ResetAllToUnsetAsync();
 
         result.Should().OnlyContain(b => b.Status == "Unset");
-        repository.Bills.Should().OnlyContain(b => b.Status == BillStatus.Unset);
+        repository.RecurringBills.Should().OnlyContain(b => b.Status == BillStatus.Unset);
         repository.SaveChangesCallCount.Should().Be(1);
     }
 
@@ -216,56 +217,4 @@ public class MensaisServiceTests
         Note = "Direct debit"
     };
 
-    private sealed class StubCashFlowRepository : ICashFlowRepository
-    {
-        public List<RecurringBill> Bills { get; } = new();
-        public int SaveChangesCallCount { get; private set; }
-
-        public IEnumerable<Expense> GetExpenses() => Array.Empty<Expense>();
-        public void AddExpense(Expense expense) { }
-        public void DeleteExpense(Guid id) { }
-
-        public IEnumerable<ReserveMovement> GetReserveMovements() => Array.Empty<ReserveMovement>();
-        public void AddReserveMovement(ReserveMovement movement) { }
-        public void DeleteReserveMovement(Guid id) { }
-
-        public IEnumerable<CardStatement> GetCardStatements() => Array.Empty<CardStatement>();
-        public void AddCardStatement(CardStatement statement) { }
-
-        public IEnumerable<RecurringBill> GetRecurringBills() => Bills;
-        public void AddRecurringBill(RecurringBill bill) => Bills.Add(bill);
-        public void DeleteRecurringBill(Guid id) => Bills.RemoveAll(b => b.Id == id);
-
-        public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => Array.Empty<MaeLedgerEntry>();
-        public void AddMaeLedgerEntry(MaeLedgerEntry entry) { }
-        public void DeleteMaeLedgerEntry(Guid id) { }
-
-        public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => Array.Empty<InvestmentSnapshot>();
-        public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) { }
-
-        public IEnumerable<InvestmentAccount> GetInvestmentAccounts() => Array.Empty<InvestmentAccount>();
-        public void AddInvestmentAccount(InvestmentAccount account) { }
-
-        public IEnumerable<Bank> GetBanks() => Array.Empty<Bank>();
-
-        public IEnumerable<Income> GetIncomes() => Array.Empty<Income>();
-        public void AddIncome(Income income) { }
-        public void DeleteIncome(Guid id) { }
-
-        public IEnumerable<Transfer> GetTransfers() => Array.Empty<Transfer>();
-        public void AddTransfer(Transfer transfer) { }
-        public void UpdateTransfer(Transfer transfer) { }
-        public void DeleteTransfer(Guid id) { }
-
-        public IEnumerable<BalanceAdjustment> GetBalanceAdjustments() => Array.Empty<BalanceAdjustment>();
-        public void AddBalanceAdjustment(BalanceAdjustment adjustment) { }
-        public void UpdateBalanceAdjustment(BalanceAdjustment adjustment) { }
-        public void DeleteBalanceAdjustment(Guid id) { }
-
-        public Task SaveChangesAsync()
-        {
-            SaveChangesCallCount++;
-            return Task.CompletedTask;
-        }
-    }
 }

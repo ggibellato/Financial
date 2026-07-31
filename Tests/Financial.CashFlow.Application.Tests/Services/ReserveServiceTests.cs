@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
+using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
@@ -83,7 +84,7 @@ public class ReserveServiceTests
     [Fact]
     public async Task PostIncomeSplitAsync_WhenSaveFails_RollsBackAllFourMovements()
     {
-        var repository = new StubCashFlowRepository { ThrowOnSave = true };
+        var repository = new StubCashFlowRepository { ThrowOnNextSave = true };
         var service = new ReserveService(repository);
 
         var act = async () => await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
@@ -327,65 +328,10 @@ public class ReserveServiceTests
         Description = "Ramsay"
     };
 
-    private sealed class StubCashFlowRepository : ICashFlowRepository
-    {
-        public List<ReserveMovement> ReserveMovements { get; } = new();
-        public int SaveChangesCallCount { get; private set; }
-        public bool ThrowOnSave { get; set; }
+}
 
-        public void Seed(ReserveBucket bucket, decimal amount, DateOnly? date = null) =>
-            ReserveMovements.Add(ReserveMovement.Create(bucket, amount, date ?? new DateOnly(2026, 1, 1), "Seed"));
-
-        public IEnumerable<Expense> GetExpenses() => Array.Empty<Expense>();
-        public void AddExpense(Expense expense) { }
-        public void DeleteExpense(Guid id) { }
-
-        public IEnumerable<ReserveMovement> GetReserveMovements() => ReserveMovements;
-        public void AddReserveMovement(ReserveMovement movement) => ReserveMovements.Add(movement);
-        public void DeleteReserveMovement(Guid id) => ReserveMovements.RemoveAll(m => m.Id == id);
-
-        public IEnumerable<CardStatement> GetCardStatements() => Array.Empty<CardStatement>();
-        public void AddCardStatement(CardStatement statement) { }
-
-        public IEnumerable<RecurringBill> GetRecurringBills() => Array.Empty<RecurringBill>();
-        public void AddRecurringBill(RecurringBill bill) { }
-        public void DeleteRecurringBill(Guid id) { }
-
-        public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => Array.Empty<MaeLedgerEntry>();
-        public void AddMaeLedgerEntry(MaeLedgerEntry entry) { }
-        public void DeleteMaeLedgerEntry(Guid id) { }
-
-        public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => Array.Empty<InvestmentSnapshot>();
-        public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) { }
-
-        public IEnumerable<InvestmentAccount> GetInvestmentAccounts() => Array.Empty<InvestmentAccount>();
-        public void AddInvestmentAccount(InvestmentAccount account) { }
-
-        public IEnumerable<Bank> GetBanks() => Array.Empty<Bank>();
-
-        public IEnumerable<Income> GetIncomes() => Array.Empty<Income>();
-        public void AddIncome(Income income) { }
-        public void DeleteIncome(Guid id) { }
-
-        public IEnumerable<Transfer> GetTransfers() => Array.Empty<Transfer>();
-        public void AddTransfer(Transfer transfer) { }
-        public void UpdateTransfer(Transfer transfer) { }
-        public void DeleteTransfer(Guid id) { }
-
-        public IEnumerable<BalanceAdjustment> GetBalanceAdjustments() => Array.Empty<BalanceAdjustment>();
-        public void AddBalanceAdjustment(BalanceAdjustment adjustment) { }
-        public void UpdateBalanceAdjustment(BalanceAdjustment adjustment) { }
-        public void DeleteBalanceAdjustment(Guid id) { }
-
-        public Task SaveChangesAsync()
-        {
-            SaveChangesCallCount++;
-            if (ThrowOnSave)
-            {
-                throw new InvalidOperationException("Simulated save failure.");
-            }
-
-            return Task.CompletedTask;
-        }
-    }
+internal static class ReserveServiceTestsStubExtensions
+{
+    public static void Seed(this StubCashFlowRepository repository, ReserveBucket bucket, decimal amount, DateOnly? date = null) =>
+        repository.ReserveMovements.Add(ReserveMovement.Create(bucket, amount, date ?? new DateOnly(2026, 1, 1), "Seed"));
 }

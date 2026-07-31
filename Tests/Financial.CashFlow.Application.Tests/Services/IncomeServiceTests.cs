@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
+using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -19,7 +20,7 @@ public class IncomeServiceTests
     [Fact]
     public async Task AddIncomeAsync_WithValidRequest_SavesAndReturnsIncome()
     {
-        var repository = new StubCashFlowRepository();
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         var service = new IncomeService(repository);
 
         var result = await service.AddIncomeAsync(ToCreateDto(ValidCreateRequest()));
@@ -39,7 +40,7 @@ public class IncomeServiceTests
     [Fact]
     public async Task AddIncomeAsync_WithoutGrossValue_SavesNull()
     {
-        var service = new IncomeService(new StubCashFlowRepository());
+        var service = new IncomeService(new StubCashFlowRepository(seedDefaultBanks: true));
         var request = ToCreateDto(ValidCreateRequest() with { GrossValue = null });
 
         var result = await service.AddIncomeAsync(request);
@@ -50,7 +51,7 @@ public class IncomeServiceTests
     [Fact]
     public async Task AddIncomeAsync_MultipleEntriesForSameSourceAndMonth_AllPersist()
     {
-        var repository = new StubCashFlowRepository();
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         var service = new IncomeService(repository);
         var request = ValidCreateRequest() with { IncomeSource = "Ariana", GrossValue = null };
 
@@ -64,7 +65,7 @@ public class IncomeServiceTests
     [Fact]
     public async Task AddIncomeAsync_WithNegativeNetValue_ThrowsArgumentException()
     {
-        var service = new IncomeService(new StubCashFlowRepository());
+        var service = new IncomeService(new StubCashFlowRepository(seedDefaultBanks: true));
         var request = ToCreateDto(ValidCreateRequest() with { GrossValue = null, NetValue = -1m });
 
         var act = async () => await service.AddIncomeAsync(request);
@@ -75,7 +76,7 @@ public class IncomeServiceTests
     [Fact]
     public async Task AddIncomeAsync_WithUnrecognizedIncomeSource_ThrowsArgumentException()
     {
-        var service = new IncomeService(new StubCashFlowRepository());
+        var service = new IncomeService(new StubCashFlowRepository(seedDefaultBanks: true));
         var request = ToCreateDto(ValidCreateRequest() with { IncomeSource = "NotASource" });
 
         var act = async () => await service.AddIncomeAsync(request);
@@ -86,7 +87,7 @@ public class IncomeServiceTests
     [Fact]
     public async Task AddIncomeAsync_WithUnrecognizedBank_ThrowsArgumentException()
     {
-        var service = new IncomeService(new StubCashFlowRepository());
+        var service = new IncomeService(new StubCashFlowRepository(seedDefaultBanks: true));
         var request = ToCreateDto(ValidCreateRequest() with { Bank = "NotABank" });
 
         var act = async () => await service.AddIncomeAsync(request);
@@ -97,7 +98,7 @@ public class IncomeServiceTests
     [Fact]
     public async Task UpdateIncomeAsync_WithExistingId_UpdatesInPlace()
     {
-        var repository = new StubCashFlowRepository();
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         var service = new IncomeService(repository);
         var added = await service.AddIncomeAsync(ToCreateDto(ValidCreateRequest()));
 
@@ -117,7 +118,7 @@ public class IncomeServiceTests
     [Fact]
     public async Task UpdateIncomeAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var service = new IncomeService(new StubCashFlowRepository());
+        var service = new IncomeService(new StubCashFlowRepository(seedDefaultBanks: true));
 
         var act = async () => await service.UpdateIncomeAsync(Guid.NewGuid(), ToUpdateDto(ValidCreateRequest()));
 
@@ -127,7 +128,7 @@ public class IncomeServiceTests
     [Fact]
     public async Task DeleteIncomeAsync_WithExistingId_RemovesAndSaves()
     {
-        var repository = new StubCashFlowRepository();
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         var service = new IncomeService(repository);
         var added = await service.AddIncomeAsync(ToCreateDto(ValidCreateRequest()));
 
@@ -140,7 +141,7 @@ public class IncomeServiceTests
     [Fact]
     public async Task DeleteIncomeAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var service = new IncomeService(new StubCashFlowRepository());
+        var service = new IncomeService(new StubCashFlowRepository(seedDefaultBanks: true));
 
         var act = async () => await service.DeleteIncomeAsync(Guid.NewGuid());
 
@@ -150,7 +151,7 @@ public class IncomeServiceTests
     [Fact]
     public async Task GetIncomesByMonth_ReturnsOnlyIncomesInThatMonth()
     {
-        var service = new IncomeService(new StubCashFlowRepository());
+        var service = new IncomeService(new StubCashFlowRepository(seedDefaultBanks: true));
         await service.AddIncomeAsync(ToCreateDto(ValidCreateRequest() with { Date = new DateOnly(2026, 7, 10) }));
         await service.AddIncomeAsync(ToCreateDto(ValidCreateRequest() with { Date = new DateOnly(2026, 8, 10) }));
 
@@ -187,62 +188,4 @@ public class IncomeServiceTests
     private sealed record IncomeCreateRequest(
         DateOnly Date, string IncomeSource, decimal? GrossValue, decimal NetValue, string Bank);
 
-    private sealed class StubCashFlowRepository : ICashFlowRepository
-    {
-        public List<Income> Incomes { get; } = new();
-        public List<Bank> Banks { get; } = new()
-        {
-            Bank.Create("Barclays", roundUpEnabled: false),
-            Bank.Create("Trading212", roundUpEnabled: true),
-            Bank.Create("Chase", roundUpEnabled: true)
-        };
-        public int SaveChangesCallCount { get; private set; }
-
-        public IEnumerable<Expense> GetExpenses() => Array.Empty<Expense>();
-        public void AddExpense(Expense expense) { }
-        public void DeleteExpense(Guid id) { }
-
-        public IEnumerable<ReserveMovement> GetReserveMovements() => Array.Empty<ReserveMovement>();
-        public void AddReserveMovement(ReserveMovement movement) { }
-        public void DeleteReserveMovement(Guid id) { }
-
-        public IEnumerable<CardStatement> GetCardStatements() => Array.Empty<CardStatement>();
-        public void AddCardStatement(CardStatement statement) { }
-
-        public IEnumerable<RecurringBill> GetRecurringBills() => Array.Empty<RecurringBill>();
-        public void AddRecurringBill(RecurringBill bill) { }
-        public void DeleteRecurringBill(Guid id) { }
-
-        public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => Array.Empty<MaeLedgerEntry>();
-        public void AddMaeLedgerEntry(MaeLedgerEntry entry) { }
-        public void DeleteMaeLedgerEntry(Guid id) { }
-
-        public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => Array.Empty<InvestmentSnapshot>();
-        public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) { }
-
-        public IEnumerable<InvestmentAccount> GetInvestmentAccounts() => Array.Empty<InvestmentAccount>();
-        public void AddInvestmentAccount(InvestmentAccount account) { }
-
-        public IEnumerable<Bank> GetBanks() => Banks;
-
-        public IEnumerable<Income> GetIncomes() => Incomes;
-        public void AddIncome(Income income) => Incomes.Add(income);
-        public void DeleteIncome(Guid id) => Incomes.RemoveAll(i => i.Id == id);
-
-        public IEnumerable<Transfer> GetTransfers() => Array.Empty<Transfer>();
-        public void AddTransfer(Transfer transfer) { }
-        public void UpdateTransfer(Transfer transfer) { }
-        public void DeleteTransfer(Guid id) { }
-
-        public IEnumerable<BalanceAdjustment> GetBalanceAdjustments() => Array.Empty<BalanceAdjustment>();
-        public void AddBalanceAdjustment(BalanceAdjustment adjustment) { }
-        public void UpdateBalanceAdjustment(BalanceAdjustment adjustment) { }
-        public void DeleteBalanceAdjustment(Guid id) { }
-
-        public Task SaveChangesAsync()
-        {
-            SaveChangesCallCount++;
-            return Task.CompletedTask;
-        }
-    }
 }
