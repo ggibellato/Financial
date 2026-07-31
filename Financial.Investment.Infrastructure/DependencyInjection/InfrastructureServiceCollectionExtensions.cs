@@ -28,7 +28,11 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IInvestmentsSerializer, InvestmentsSerializerAdapter>();
         services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
         services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();
-        services.AddSingleton<IFinanceService, GoogleFinanceService>();
+        services.AddSingleton<GoogleFinanceService>();
+        services.AddHttpClient<YahooFinanceService>();
+        services.AddSingleton<IFinanceService>(sp => new FallbackFinanceService(
+            sp.GetRequiredService<GoogleFinanceService>(),
+            sp.GetRequiredService<YahooFinanceService>()));
         services.AddSingleton<StatusInvestFinanceService>();
         services.AddSingleton<IAssetPriceFetcher, StandardAssetPriceFetcher>();
         services.AddSingleton<IAssetPriceFetcher, CryptocurrencyAssetPriceFetcher>();
