@@ -20,6 +20,7 @@ public class CashFlowDataTests
         data.InvestmentAccounts.Should().BeEmpty();
         data.Banks.Should().BeEmpty();
         data.Incomes.Should().BeEmpty();
+        data.Transfers.Should().BeEmpty();
     }
 
     [Fact]
@@ -260,4 +261,68 @@ public class CashFlowDataTests
 
     private static Income CreateIncome() =>
         Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Lottery, null, 10m, "Chase");
+
+    [Fact]
+    public void AddTransfer_AddsOnlyToTransfersCollection()
+    {
+        var data = CashFlowData.Create();
+
+        data.AddTransfer(CreateTransfer());
+
+        data.Transfers.Should().ContainSingle();
+        data.Expenses.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void UpdateTransfer_ReplacesTheMatchingEntry()
+    {
+        var data = CashFlowData.Create();
+        var transfer = CreateTransfer();
+        data.AddTransfer(transfer);
+        transfer.UpdateDetails(new DateOnly(2026, 8, 1), "Chase", "Trading212", 250m, "Updated");
+
+        data.UpdateTransfer(transfer);
+
+        data.Transfers.Should().ContainSingle().Which.Amount.Should().Be(250m);
+    }
+
+    [Fact]
+    public void UpdateTransfer_WithUnknownId_LeavesCollectionUnchanged()
+    {
+        var data = CashFlowData.Create();
+        data.AddTransfer(CreateTransfer());
+        var unknown = CreateTransfer();
+
+        data.UpdateTransfer(unknown);
+
+        data.Transfers.Should().ContainSingle().Which.Id.Should().NotBe(unknown.Id);
+    }
+
+    [Fact]
+    public void RemoveTransfer_RemovesOnlyTheMatchingTransfer()
+    {
+        var data = CashFlowData.Create();
+        var toKeep = CreateTransfer();
+        var toRemove = CreateTransfer();
+        data.AddTransfer(toKeep);
+        data.AddTransfer(toRemove);
+
+        data.RemoveTransfer(toRemove.Id);
+
+        data.Transfers.Should().ContainSingle().Which.Id.Should().Be(toKeep.Id);
+    }
+
+    [Fact]
+    public void RemoveTransfer_WithUnknownId_LeavesCollectionUnchanged()
+    {
+        var data = CashFlowData.Create();
+        data.AddTransfer(CreateTransfer());
+
+        data.RemoveTransfer(Guid.NewGuid());
+
+        data.Transfers.Should().ContainSingle();
+    }
+
+    private static Transfer CreateTransfer() =>
+        Transfer.Create(new DateOnly(2026, 7, 1), "Barclays", "Trading212", 500m, "Test transfer");
 }
