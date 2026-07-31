@@ -21,10 +21,12 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     private const int FullPrecisionDecimalPlaces = 28;
 
     private readonly ICashFlowRepository _repository;
+    private readonly TimeProvider _timeProvider;
 
-    public AnnualSummaryService(ICashFlowRepository repository)
+    public AnnualSummaryService(ICashFlowRepository repository, TimeProvider? timeProvider = null)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public IReadOnlyList<CategoryAnnualTotalDTO> GetCategoryTotalsForYear(int year)
@@ -53,7 +55,8 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     private IReadOnlyList<(Category Category, MonthlySeries Display, MonthlySeries ForAverage)> BuildAllCategorySeriesForYear(int year)
     {
         var yearExpenses = _repository.GetExpenses().Where(e => e.Date.Year == year).ToList();
-        var currentMonthCutoff = new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+        var now = _timeProvider.GetUtcNow();
+        var currentMonthCutoff = new DateOnly(now.Year, now.Month, 1);
 
         var totalsByCategoryAndMonth = BuildCategoryMonthlyTotals(yearExpenses);
         var totalsForAverageByCategoryAndMonth = BuildCategoryMonthlyTotals(yearExpenses.Where(e => e.Date < currentMonthCutoff));
@@ -116,7 +119,8 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     {
         var allSnapshots = _repository.GetInvestmentSnapshots().ToList();
         var allAccounts = _repository.GetInvestmentAccounts().ToList();
-        var scopedAccounts = YearScopedInvestmentAccountResolver.ResolveForYear(allAccounts, allSnapshots, year, DateTime.Now.Year);
+        var now = _timeProvider.GetUtcNow();
+        var scopedAccounts = YearScopedInvestmentAccountResolver.ResolveForYear(allAccounts, allSnapshots, year, now.Year);
 
         var valueByAccountAndMonth = allSnapshots
             .Where(s => s.Year == year)
@@ -156,7 +160,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
         var netPositionDiffs = netPositionSeries.DiffsFrom(netPositionPriorClosingValue);
 
-        var lastRelevantMonth = year >= DateTime.Now.Year ? Math.Min(DateTime.Now.Month, MonthsInYear) : MonthsInYear;
+        var lastRelevantMonth = year >= now.Year ? Math.Min(now.Month, MonthsInYear) : MonthsInYear;
 
         return (accountSeries, netPositionSeries, netPositionDiffs, lastRelevantMonth);
     }
@@ -192,7 +196,8 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     private (IncomeSeries Display, IncomeSeries ForAverage) BuildIncomeSeriesPairForYear(int year)
     {
         var yearIncomes = _repository.GetIncomes().Where(i => i.Date.Year == year).ToList();
-        var currentMonthCutoff = new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+        var now = _timeProvider.GetUtcNow();
+        var currentMonthCutoff = new DateOnly(now.Year, now.Month, 1);
 
         return (
             BuildIncomeSeries(yearIncomes),
@@ -437,8 +442,9 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
     private Dictionary<int, List<IncomeGroupValueDTO>> GetAnnualAverageIncomeByGroupIncome(int year)
     {
+        var now = _timeProvider.GetUtcNow();
         var incomes = _repository.GetIncomes()
-            .Where(e => e.Date.Year <= year && e.Date < new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1))
+            .Where(e => e.Date.Year <= year && e.Date < new DateOnly(now.Year, now.Month, 1))
             .ToList();
 
         var sumsByYearMonthGroup = incomes
@@ -474,17 +480,22 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             });
     }
 
-    private int NumberOfMonthsForAverage(int year) => year switch
-          {
-            var y when y == DateTime.UtcNow.Year => DateTime.UtcNow.Month - 1,
+    private int NumberOfMonthsForAverage(int year)
+    {
+        var now = _timeProvider.GetUtcNow();
+        return year switch
+        {
+            var y when y == now.Year => now.Month - 1,
             2017 => 11,
             _ => 12,
-          };
+        };
+    }
 
     private IList<CategoryAnnualGroupValueDTO> GetHistoricCategoriesAverageFromYear(int year)
     {
+        var now = _timeProvider.GetUtcNow();
         var expenses = _repository.GetExpenses()
-            .Where(e => e.Date.Year <= year && e.Date < new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1))
+            .Where(e => e.Date.Year <= year && e.Date < new DateOnly(now.Year, now.Month, 1))
             .ToList();
 
         var sumByYearMonthCategory = expenses

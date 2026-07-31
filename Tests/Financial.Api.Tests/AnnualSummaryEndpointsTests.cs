@@ -1,3 +1,4 @@
+using Financial.Api.Tests.TestHelpers;
 using Financial.CashFlow.Application.DTOs;
 using FluentAssertions;
 using System.Net;
@@ -43,18 +44,12 @@ public class AnnualSummaryEndpointsTests
     [Fact]
     public async Task GetHistoricSummaryAverages_MergesIncomeIntoMatchingYearAndOmitsItFromYearsWithoutIncome()
     {
-        var currentYear = DateTime.UtcNow.Year;
-        if (DateTime.UtcNow.Month == 1)
-        {
-            // The current year's income average divides by (current month - 1); January has no
-            // completed month yet, so this scenario is meaningless today.
-            return;
-        }
-
-        var monthsToAverage = DateTime.UtcNow.Month - 1;
+        var pinnedNow = new DateTimeOffset(2026, 7, 15, 0, 0, 0, TimeSpan.Zero);
+        var currentYear = pinnedNow.Year;
+        var monthsToAverage = pinnedNow.Month - 1;
         var pastYear = currentYear - 1;
 
-        await using var factory = new ApiTestFactory();
+        await using var factory = new ApiTestFactory(timeProviderOverride: new FakeTimeProvider(pinnedNow));
         using var client = factory.CreateClient();
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {

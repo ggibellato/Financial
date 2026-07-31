@@ -13,13 +13,15 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
     private readonly string _dataFilePath;
     private readonly string _cashFlowDataFilePath;
     private readonly IExchangeRateProvider? _exchangeRateProviderOverride;
+    private readonly TimeProvider? _timeProviderOverride;
     private bool _disposed;
 
-    public ApiTestFactory(IExchangeRateProvider? exchangeRateProviderOverride = null)
+    public ApiTestFactory(IExchangeRateProvider? exchangeRateProviderOverride = null, TimeProvider? timeProviderOverride = null)
     {
         _dataFilePath = CreateTempDataFile();
         _cashFlowDataFilePath = CreateTempCashFlowDataFilePath();
         _exchangeRateProviderOverride = exchangeRateProviderOverride;
+        _timeProviderOverride = timeProviderOverride;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -42,6 +44,15 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             {
                 services.RemoveAll<IExchangeRateProvider>();
                 services.AddSingleton(_exchangeRateProviderOverride);
+            });
+        }
+
+        if (_timeProviderOverride is not null)
+        {
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<TimeProvider>();
+                services.AddSingleton(_timeProviderOverride);
             });
         }
     }
