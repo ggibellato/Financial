@@ -85,6 +85,14 @@ public class CashFlowData
         _transfers.AddRange(data);
     }
 
+    private List<BalanceAdjustment> _balanceAdjustments = new List<BalanceAdjustment>();
+    public IReadOnlyCollection<BalanceAdjustment> BalanceAdjustments { get => _balanceAdjustments.AsReadOnly(); private set => SetBalanceAdjustments(value); }
+    private void SetBalanceAdjustments(IReadOnlyCollection<BalanceAdjustment> data)
+    {
+        _balanceAdjustments.Clear();
+        _balanceAdjustments.AddRange(data);
+    }
+
     private CashFlowData() { }
 
     public static CashFlowData Create() => new();
@@ -129,4 +137,17 @@ public class CashFlowData
     }
 
     public void RemoveTransfer(Guid id) => _transfers.RemoveAll(t => t.Id == id);
+
+    public void AddBalanceAdjustment(BalanceAdjustment adjustment) => _balanceAdjustments.Add(adjustment);
+
+    public void UpdateBalanceAdjustment(BalanceAdjustment adjustment)
+    {
+        var index = _balanceAdjustments.FindIndex(a => a.Id == adjustment.Id);
+        if (index >= 0)
+        {
+            _balanceAdjustments[index] = adjustment;
+        }
+    }
+
+    public void RemoveBalanceAdjustment(Guid id) => _balanceAdjustments.RemoveAll(a => a.Id == id);
 }
