@@ -1,0 +1,169 @@
+import { useMemo, useState } from 'react'
+import { createFinancialApiClient } from '../api/financialApiClient'
+import type { BankDto, TransferDto } from '../api/types'
+import { mapTransferErrorToField, type TransferFormField } from './mapTransferErrorToField'
+
+interface TransferFormState {
+  isOpen: boolean
+  isEditing: boolean
+  editingId: string | null
+  date: string
+  sourceBank: string
+  destinationBank: string
+  amount: string
+  note: string
+  isSaving: boolean
+  saveError: string | null
+  saveErrorField: TransferFormField | null
+}
+
+const BLANK_STATE: TransferFormState = {
+  isOpen: false,
+  isEditing: false,
+  editingId: null,
+  date: '',
+  sourceBank: '',
+  destinationBank: '',
+  amount: '',
+  note: '',
+  isSaving: false,
+  saveError: null,
+  saveErrorField: null,
+}
+
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+export interface UseTransferFormResult {
+  isOpen: boolean
+  isEditing: boolean
+  date: string
+  sourceBank: string
+  destinationBank: string
+  amount: string
+  note: string
+  isSaving: boolean
+  saveError: string | null
+  saveErrorField: TransferFormField | null
+  openCreateForm: () => void
+  openEditForm: (transfer: TransferDto) => void
+  cancel: () => void
+  setField: (field: TransferFormField, value: string) => void
+  submit: () => void
+}
+
+/** Owns a transfer's create/edit form state and orchestrates F01's create/update endpoints. */
+export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTransferFormResult {
+  const apiClient = useMemo(() => createFinancialApiClient(), [])
+  const [state, setState] = useState<TransferFormState>(BLANK_STATE)
+
+  function openCreateForm() {
+    setState({
+      ...BLANK_STATE,
+      isOpen: true,
+      date: todayIsoDate(),
+      sourceBank: banks[0]?.name ?? '',
+    })
+  }
+
+  function openEditForm(transfer: TransferDto) {
+    setState({
+      isOpen: true,
+      isEditing: true,
+      editingId: transfer.id,
+      date: transfer.date,
+      sourceBank: transfer.sourceBank,
+      destinationBank: transfer.destinationBank,
+      amount: String(transfer.amount),
+      note: transfer.note ?? '',
+      isSaving: false,
+      saveError: null,
+      saveErrorField: null,
+    })
+  }
+
+  function cancel() {
+    setState(BLANK_STATE)
+  }
+
+  function setField(field: TransferFormField, value: string) {
+    setState((s) => ({ ...s, [field]: value, saveError: null, saveErrorField: null }))
+  }
+
+  function submit() {
+    if (!state.date.trim()) {
+      setState((s) => ({ ...s, saveError: 'Date is required', saveErrorField: 'date' }))
+      return
+    }
+
+    if (!state.sourceBank.trim()) {
+      setState((s) => ({ ...s, saveError: 'Source bank is required', saveErrorField: 'sourceBank' }))
+      return
+    }
+
+    if (!state.destinationBank.trim()) {
+      setState((s) => ({ ...s, saveError: 'Destination bank is required', saveErrorField: 'destinationBank' }))
+      return
+    }
+
+    if (state.sourceBank === state.destinationBank) {
+      setState((s) => ({
+        ...s,
+        saveError: 'Source and destination must be different banks.',
+        saveErrorField: 'destinationBank',
+      }))
+      return
+    }
+
+    const amount = Number(state.amount)
+    if (!state.amount.trim() || !isFinite(amount) || amount <= 0) {
+      setState((s) => ({ ...s, saveError: 'Amount must be greater than zero.', saveErrorField: 'amount' }))
+      return
+    }
+
+    setState((s) => ({ ...s, isSaving: true, saveError: null, saveErrorField: null }))
+
+    const payload = {
+      date: state.date,
+      sourceBank: state.sourceBank,
+      destinationBank: state.destinationBank,
+      amount,
+      note: state.note.trim() === '' ? null : state.note,
+    }
+
+    const request =
+      state.isEditing && state.editingId
+        ? apiClient.updateTransfer(state.editingId, payload)
+        : apiClient.createTransfer(payload)
+
+    void request
+      .then(() => {
+        setState(BLANK_STATE)
+        onSaved()
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Failed to save transfer'
+        const field = mapTransferErrorToField(message, state.sourceBank, state.destinationBank)
+        setState((s) => ({ ...s, isSaving: false, saveError: message, saveErrorField: field }))
+      })
+  }
+
+  return {
+    isOpen: state.isOpen,
+    isEditing: state.isEditing,
+    date: state.date,
+    sourceBank: state.sourceBank,
+    destinationBank: state.destinationBank,
+    amount: state.amount,
+    note: state.note,
+    isSaving: state.isSaving,
+    saveError: state.saveError,
+    saveErrorField: state.saveErrorField,
+    openCreateForm,
+    openEditForm,
+    cancel,
+    setField,
+    submit,
+  }
+}
