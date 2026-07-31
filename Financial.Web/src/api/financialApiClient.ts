@@ -44,6 +44,9 @@ import type {
   TransactionDeleteDto,
   TransactionSummaryItemDto,
   TransactionUpdateDto,
+  TransferDto,
+  CreateTransferDto,
+  UpdateTransferDto,
   TreeNodeDto,
   UpdateExpenseDto,
   UpdateIncomeDto,
@@ -116,6 +119,8 @@ export interface FinancialApiClient {
   createIncome: (request: CreateIncomeDto) => Promise<IncomeDto>
   updateIncome: (id: string, request: UpdateIncomeDto) => Promise<IncomeDto>
   deleteIncome: (id: string) => Promise<void>
+  createTransfer: (request: CreateTransferDto) => Promise<TransferDto>
+  updateTransfer: (id: string, request: UpdateTransferDto) => Promise<TransferDto>
   getCardStatementsByMonth: (year: number, month: number) => Promise<CardStatementDto[]>
   markCardStatementPaid: (id: string, request: MarkCardStatementPaidDto) => Promise<CardStatementDto>
   unmarkCardStatementPaid: (id: string) => Promise<CardStatementDto>
@@ -362,6 +367,16 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         body: JSON.stringify(requestBody),
       }),
     deleteIncome: (id) => requestVoid(`/incomes/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    createTransfer: (requestBody) =>
+      request<TransferDto>('/transfers', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    updateTransfer: (id, requestBody) =>
+      request<TransferDto>(`/transfers/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
     getCardStatementsByMonth: (year, month) =>
       request<CardStatementDto[]>(`/card-statements/${year}/${month}`),
     markCardStatementPaid: (id, requestBody) =>

@@ -7,6 +7,7 @@ import type {
   AssetPriceDto,
   CreateMaeLedgerEntryDto,
   CreateRecurringBillDto,
+  CreateTransferDto,
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
   InvestmentSnapshotDto,
@@ -15,11 +16,13 @@ import type {
   RecurringBillDto,
   ReserveBucketBalanceDto,
   ReserveMovementDto,
+  TransferDto,
   TreeNodeDto,
   UpdateInvestmentSnapshotValueDto,
   UpdateMaeLedgerEntryValuesDto,
   UpdateRecurringBillDto,
   UpdateReserveMovementDto,
+  UpdateTransferDto,
   WithdrawalRequestDto,
   XirrResultDto,
 } from './types'
@@ -672,6 +675,48 @@ describe('financialApiClient', () => {
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/investment-snapshots/s1`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('posts a transfer create request', async () => {
+    const requestBody: CreateTransferDto = {
+      date: '2026-07-25',
+      sourceBank: 'Barclays',
+      destinationBank: 'Trading212',
+      amount: 500,
+      note: 'Round-up top-up',
+    }
+    const responseBody: TransferDto = { id: 't1', ...requestBody }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createTransfer(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/transfers`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts a transfer update', async () => {
+    const requestBody: UpdateTransferDto = {
+      date: '2026-07-25',
+      sourceBank: 'Chase',
+      destinationBank: 'Trading212',
+      amount: 250,
+      note: null,
+    }
+    const responseBody: TransferDto = { id: 't1', ...requestBody }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateTransfer('t1', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/transfers/t1`)
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
