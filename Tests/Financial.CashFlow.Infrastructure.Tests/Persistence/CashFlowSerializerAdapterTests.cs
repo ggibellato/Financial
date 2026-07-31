@@ -29,6 +29,7 @@ public class CashFlowSerializerAdapterTests
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
         var income = Income.Create(new DateOnly(2026, 7, 25), IncomeSource.Gleison, 3200.00m, 2450.00m, "Barclays");
+        var transfer = Transfer.Create(new DateOnly(2026, 7, 25), "Barclays", "Trading212", 500.00m, "Round-up top-up");
 
         original.AddExpense(expense);
         original.AddReserveMovement(reserveMovement);
@@ -39,6 +40,7 @@ public class CashFlowSerializerAdapterTests
         original.AddInvestmentAccount(investmentAccount);
         original.AddBank(bank);
         original.AddIncome(income);
+        original.AddTransfer(transfer);
 
         var json = serializer.Serialize(original);
         var result = serializer.Deserialize(json);
@@ -79,6 +81,13 @@ public class CashFlowSerializerAdapterTests
         resultIncome.GrossValue.Should().Be(income.GrossValue);
         resultIncome.NetValue.Should().Be(income.NetValue);
         resultIncome.Bank.Should().Be(income.Bank);
+        var resultTransfer = result.Transfers.Should().ContainSingle().Which;
+        resultTransfer.Id.Should().Be(transfer.Id);
+        resultTransfer.Date.Should().Be(transfer.Date);
+        resultTransfer.SourceBank.Should().Be(transfer.SourceBank);
+        resultTransfer.DestinationBank.Should().Be(transfer.DestinationBank);
+        resultTransfer.Amount.Should().Be(transfer.Amount);
+        resultTransfer.Note.Should().Be(transfer.Note);
     }
 
     [Fact]
@@ -99,5 +108,6 @@ public class CashFlowSerializerAdapterTests
         result.InvestmentAccounts.Should().BeEmpty();
         result.Banks.Should().BeEmpty();
         result.Incomes.Should().BeEmpty();
+        result.Transfers.Should().BeEmpty();
     }
 }
