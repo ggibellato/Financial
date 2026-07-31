@@ -858,6 +858,50 @@ describe('MonthlyPage', () => {
     expect(screen.getByLabelText('Target Balance')).toHaveValue(42.5)
   })
 
+  it('saving an edited transfer from the history list persists the change and refreshes balances and history', async () => {
+    updateTransferMock.mockResolvedValue(TRANSFERS[0])
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Expand history for Barclays' }))
+    await screen.findByText('Transfer Out')
+    fireEvent.click(screen.getByRole('button', { name: 'Edit transfer' }))
+
+    const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
+    const transfersCallsBefore = getTransfersByMonthMock.mock.calls.length
+
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '150' } })
+    const transferFormPanel = screen.getByLabelText('Amount').closest('.monthly-page__form-panel') as HTMLElement
+    fireEvent.click(within(transferFormPanel).getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(updateTransferMock).toHaveBeenCalledWith('t1', expect.objectContaining({ amount: 150 })))
+    await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
+    expect(getTransfersByMonthMock.mock.calls.length).toBeGreaterThan(transfersCallsBefore)
+  })
+
+  it('saving an edited adjustment from the history list persists the change and refreshes balances and history', async () => {
+    updateBalanceAdjustmentMock.mockResolvedValue({ ...ADJUSTMENTS[0], delta: 7.5 })
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Expand history for Barclays' }))
+    await screen.findByText('Adjustment')
+    fireEvent.click(screen.getByRole('button', { name: 'Edit balance adjustment' }))
+
+    const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
+    const adjustmentsCallsBefore = getAdjustmentsByBankMock.mock.calls.length
+
+    fireEvent.change(screen.getByLabelText('Target Balance'), { target: { value: '50' } })
+    const adjustmentFormPanel = screen.getByLabelText('Target Balance').closest('.monthly-page__form-panel') as HTMLElement
+    fireEvent.click(within(adjustmentFormPanel).getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(updateBalanceAdjustmentMock).toHaveBeenCalledWith('Barclays', 'a1', expect.objectContaining({ targetBalance: 50 })),
+    )
+    await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
+    expect(getAdjustmentsByBankMock.mock.calls.length).toBeGreaterThan(adjustmentsCallsBefore)
+  })
+
   it('deletes a transfer from the history list after confirmation, and refreshes balances', async () => {
     deleteTransferMock.mockResolvedValue(undefined)
     render(<MonthlyPage />)
