@@ -154,6 +154,24 @@ public class BalanceAdjustmentServiceTests
     }
 
     [Fact]
+    public async Task AddAdjustmentAsync_BankBalanceAsOfSameDateThenEqualsTargetBalanceExactly()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Lottery, null, 37m, "Barclays"));
+        var bankService = new BankService(repository);
+        var service = new BalanceAdjustmentService(repository, bankService);
+
+        await service.AddAdjustmentAsync("Barclays", new BalanceAdjustmentCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            TargetBalance = 240m
+        });
+
+        bankService.GetBankBalanceAsOf("Barclays", new DateOnly(2026, 7, 25)).Should().Be(240m);
+    }
+
+    [Fact]
     public async Task UpdateAdjustmentAsync_WithDateMovedEarlierThanItsPreviousDate_ComputesCorrectDelta()
     {
         // Regresses the scenario an "add back the old delta" approach would get wrong: since the
