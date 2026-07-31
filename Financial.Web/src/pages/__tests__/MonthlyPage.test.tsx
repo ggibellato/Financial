@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MonthlyPage from '../MonthlyPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type {
+  BalanceAdjustmentDto,
   BankBalanceDto,
   BankDto,
   CardStatementDto,
@@ -10,6 +11,7 @@ import type {
   ExpenseDto,
   IncomeDto,
   TitheSummaryDto,
+  TransferDto,
 } from '../../api/types'
 
 const getExpensesByMonthMock = vi.fn<FinancialApiClient['getExpensesByMonth']>()
@@ -27,6 +29,14 @@ const updateIncomeMock = vi.fn<FinancialApiClient['updateIncome']>()
 const deleteIncomeMock = vi.fn<FinancialApiClient['deleteIncome']>()
 const getBankBalancesByMonthMock = vi.fn<FinancialApiClient['getBankBalancesByMonth']>()
 const getTitheSummaryByMonthMock = vi.fn<FinancialApiClient['getTitheSummaryByMonth']>()
+const getTransfersByMonthMock = vi.fn<FinancialApiClient['getTransfersByMonth']>()
+const createTransferMock = vi.fn<FinancialApiClient['createTransfer']>()
+const updateTransferMock = vi.fn<FinancialApiClient['updateTransfer']>()
+const deleteTransferMock = vi.fn<FinancialApiClient['deleteTransfer']>()
+const getAdjustmentsByBankMock = vi.fn<FinancialApiClient['getAdjustmentsByBank']>()
+const createBalanceAdjustmentMock = vi.fn<FinancialApiClient['createBalanceAdjustment']>()
+const updateBalanceAdjustmentMock = vi.fn<FinancialApiClient['updateBalanceAdjustment']>()
+const deleteBalanceAdjustmentMock = vi.fn<FinancialApiClient['deleteBalanceAdjustment']>()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
@@ -45,6 +55,14 @@ vi.mock('../../api/financialApiClient', () => ({
     deleteIncome: deleteIncomeMock,
     getBankBalancesByMonth: getBankBalancesByMonthMock,
     getTitheSummaryByMonth: getTitheSummaryByMonthMock,
+    getTransfersByMonth: getTransfersByMonthMock,
+    createTransfer: createTransferMock,
+    updateTransfer: updateTransferMock,
+    deleteTransfer: deleteTransferMock,
+    getAdjustmentsByBank: getAdjustmentsByBankMock,
+    createBalanceAdjustment: createBalanceAdjustmentMock,
+    updateBalanceAdjustment: updateBalanceAdjustmentMock,
+    deleteBalanceAdjustment: deleteBalanceAdjustmentMock,
   }),
 }))
 
@@ -89,6 +107,21 @@ const BANK_BALANCES: BankBalanceDto[] = [
 
 const TITHE_SUMMARY: TitheSummaryDto = { calculatedTithe: 245, titheBalance: 245 }
 
+const TRANSFERS: TransferDto[] = [
+  {
+    id: 't1',
+    date: '2026-07-10',
+    sourceBank: 'Barclays',
+    destinationBank: 'Trading212',
+    amount: 100,
+    note: 'Top-up',
+  },
+]
+
+const ADJUSTMENTS: BalanceAdjustmentDto[] = [
+  { id: 'a1', date: '2026-07-12', bank: 'Barclays', targetBalance: 42.5, delta: 5, note: 'Matched statement' },
+]
+
 describe('MonthlyPage', () => {
   beforeEach(() => {
     getExpensesByMonthMock.mockReset()
@@ -106,6 +139,14 @@ describe('MonthlyPage', () => {
     deleteIncomeMock.mockReset()
     getBankBalancesByMonthMock.mockReset()
     getTitheSummaryByMonthMock.mockReset()
+    getTransfersByMonthMock.mockReset()
+    createTransferMock.mockReset()
+    updateTransferMock.mockReset()
+    deleteTransferMock.mockReset()
+    getAdjustmentsByBankMock.mockReset()
+    createBalanceAdjustmentMock.mockReset()
+    updateBalanceAdjustmentMock.mockReset()
+    deleteBalanceAdjustmentMock.mockReset()
     getExpensesByMonthMock.mockResolvedValue(EXPENSES)
     getCategoryTotalsByMonthMock.mockResolvedValue(CATEGORY_TOTALS)
     getCardStatementsByMonthMock.mockResolvedValue(CARD_STATEMENTS)
@@ -113,6 +154,10 @@ describe('MonthlyPage', () => {
     getIncomesByMonthMock.mockResolvedValue(INCOMES)
     getBankBalancesByMonthMock.mockResolvedValue(BANK_BALANCES)
     getTitheSummaryByMonthMock.mockResolvedValue(TITHE_SUMMARY)
+    getTransfersByMonthMock.mockResolvedValue(TRANSFERS)
+    getAdjustmentsByBankMock.mockImplementation((bankName: string) =>
+      Promise.resolve(bankName === 'Barclays' ? ADJUSTMENTS : []),
+    )
     vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
@@ -729,5 +774,117 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit expense' })[0])
 
     expect(screen.getByLabelText('Round-Up')).toHaveValue(0.6)
+  })
+
+  it('opens Move Money from a bank row pre-filled with that bank as the source, and refreshes balances and history on save', async () => {
+    createTransferMock.mockResolvedValue(TRANSFERS[0])
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    const trading212Row = screen.getByRole('row', { name: /Trading212/ })
+    fireEvent.click(within(trading212Row).getByRole('button', { name: 'Move Money' }))
+
+    expect(screen.getByText('Move Money', { selector: 'p' })).toBeInTheDocument()
+    expect(screen.getByLabelText('From')).toHaveValue('Trading212')
+
+    const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
+    const transfersCallsBefore = getTransfersByMonthMock.mock.calls.length
+
+    fireEvent.change(screen.getByLabelText('To'), { target: { value: 'Barclays' } })
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '50' } })
+    const transferFormPanel = screen.getByLabelText('From').closest('.monthly-page__form-panel') as HTMLElement
+    fireEvent.click(within(transferFormPanel).getByRole('button', { name: 'Move Money' }))
+
+    await waitFor(() => expect(createTransferMock).toHaveBeenCalled())
+    await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
+    expect(getTransfersByMonthMock.mock.calls.length).toBeGreaterThan(transfersCallsBefore)
+  })
+
+  it('opens Correct Balance from a bank row with the current balance, and refreshes balances and history on save', async () => {
+    createBalanceAdjustmentMock.mockResolvedValue({ ...ADJUSTMENTS[0], id: 'a2', delta: 2.5 })
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    const barclaysRow = screen.getByRole('row', { name: /Barclays/ })
+    fireEvent.click(within(barclaysRow).getByRole('button', { name: 'Correct Balance' }))
+
+    expect(screen.getByText(/Current calculated balance for Barclays: £42.50/)).toBeInTheDocument()
+
+    const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
+    const adjustmentsCallsBefore = getAdjustmentsByBankMock.mock.calls.length
+
+    fireEvent.change(screen.getByLabelText('Target Balance'), { target: { value: '45' } })
+    const adjustmentFormPanel = screen.getByLabelText('Target Balance').closest('.monthly-page__form-panel') as HTMLElement
+    fireEvent.click(within(adjustmentFormPanel).getByRole('button', { name: 'Correct Balance' }))
+
+    await waitFor(() => expect(createBalanceAdjustmentMock).toHaveBeenCalledWith('Barclays', expect.objectContaining({ targetBalance: 45 })))
+    await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
+    expect(getAdjustmentsByBankMock.mock.calls.length).toBeGreaterThan(adjustmentsCallsBefore)
+  })
+
+  it('expands a bank row to show its transfer and adjustment history', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Expand history for Barclays' }))
+
+    expect(await screen.findByText('Transfer Out')).toBeInTheDocument()
+    expect(screen.getByText('Adjustment')).toBeInTheDocument()
+  })
+
+  it('edits a transfer from the history list, opening TransferForm pre-filled with its values', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Expand history for Barclays' }))
+    await screen.findByText('Transfer Out')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit transfer' }))
+
+    expect(screen.getByText('Edit Transfer')).toBeInTheDocument()
+    expect(screen.getByLabelText('Amount')).toHaveValue(100)
+  })
+
+  it('edits an adjustment from the history list, opening BalanceAdjustmentForm pre-filled with its values', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Expand history for Barclays' }))
+    await screen.findByText('Adjustment')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit balance adjustment' }))
+
+    expect(screen.getByText('Edit Balance Adjustment')).toBeInTheDocument()
+    expect(screen.getByLabelText('Target Balance')).toHaveValue(42.5)
+  })
+
+  it('deletes a transfer from the history list after confirmation, and refreshes balances', async () => {
+    deleteTransferMock.mockResolvedValue(undefined)
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Expand history for Barclays' }))
+    await screen.findByText('Transfer Out')
+
+    const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
+    fireEvent.click(screen.getByRole('button', { name: 'Delete transfer' }))
+
+    await waitFor(() => expect(deleteTransferMock).toHaveBeenCalledWith('t1'))
+    await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
+  })
+
+  it('deletes an adjustment from the history list after confirmation, and refreshes balances', async () => {
+    deleteBalanceAdjustmentMock.mockResolvedValue(undefined)
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Expand history for Barclays' }))
+    await screen.findByText('Adjustment')
+
+    const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
+    fireEvent.click(screen.getByRole('button', { name: 'Delete balance adjustment' }))
+
+    await waitFor(() => expect(deleteBalanceAdjustmentMock).toHaveBeenCalledWith('Barclays', 'a1'))
+    await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
   })
 })
