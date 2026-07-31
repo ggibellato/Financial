@@ -195,4 +195,155 @@ public class BankServiceTests
         result.Should().ContainSingle(b => b.Bank == "Barclays" && b.Balance == 0m);
     }
 
+    [Fact]
+    public void GetBankBalancesByMonth_AddsTransferAmountToDestinationBank()
+    {
+        var repository = new StubCashFlowRepository();
+        var barclays = Bank.Create("Barclays", roundUpEnabled: false);
+        barclays.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
+        var trading212 = Bank.Create("Trading212", roundUpEnabled: false);
+        trading212.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
+        repository.Banks.Add(barclays);
+        repository.Banks.Add(trading212);
+        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), "Barclays", "Trading212", 500m, null));
+        var service = new BankService(repository);
+
+        var result = service.GetBankBalancesByMonth(2026, 7);
+
+        result.Should().ContainSingle(b => b.Bank == "Trading212" && b.Balance == 500m);
+    }
+
+    [Fact]
+    public void GetBankBalancesByMonth_SubtractsTransferAmountFromSourceBank()
+    {
+        var repository = new StubCashFlowRepository();
+        var barclays = Bank.Create("Barclays", roundUpEnabled: false);
+        barclays.SetOpeningBalance(1000m, new DateOnly(2026, 1, 1));
+        var trading212 = Bank.Create("Trading212", roundUpEnabled: false);
+        trading212.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
+        repository.Banks.Add(barclays);
+        repository.Banks.Add(trading212);
+        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), "Barclays", "Trading212", 500m, null));
+        var service = new BankService(repository);
+
+        var result = service.GetBankBalancesByMonth(2026, 7);
+
+        result.Should().ContainSingle(b => b.Bank == "Barclays" && b.Balance == 500m);
+    }
+
+    [Fact]
+    public void GetBankBalancesByMonth_IgnoresTransferTouchingNeitherRoleForTheBank()
+    {
+        var repository = new StubCashFlowRepository();
+        var barclays = Bank.Create("Barclays", roundUpEnabled: false);
+        barclays.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
+        var trading212 = Bank.Create("Trading212", roundUpEnabled: false);
+        var chase = Bank.Create("Chase", roundUpEnabled: false);
+        repository.Banks.Add(barclays);
+        repository.Banks.Add(trading212);
+        repository.Banks.Add(chase);
+        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), "Trading212", "Chase", 500m, null));
+        var service = new BankService(repository);
+
+        var result = service.GetBankBalancesByMonth(2026, 7);
+
+        result.Should().ContainSingle(b => b.Bank == "Barclays" && b.Balance == 100m);
+    }
+
+    [Fact]
+    public void GetBankBalancesByMonth_AddsBalanceAdjustmentDelta()
+    {
+        var repository = new StubCashFlowRepository();
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
+        repository.Banks.Add(bank);
+        repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 7, 5), "Barclays", 150m, 50m, null));
+        var service = new BankService(repository);
+
+        var result = service.GetBankBalancesByMonth(2026, 7);
+
+        result.Should().ContainSingle(b => b.Bank == "Barclays" && b.Balance == 150m);
+    }
+
+    [Fact]
+    public void GetBankBalancesByMonth_ExcludesTransferAndAdjustmentAfterTheAsOfDate()
+    {
+        var repository = new StubCashFlowRepository();
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
+        var trading212 = Bank.Create("Trading212", roundUpEnabled: false);
+        repository.Banks.Add(bank);
+        repository.Banks.Add(trading212);
+        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 8, 1), "Barclays", "Trading212", 500m, null));
+        repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 8, 1), "Barclays", 999m, 899m, null));
+        var service = new BankService(repository);
+
+        var result = service.GetBankBalancesByMonth(2026, 7);
+
+        result.Should().ContainSingle(b => b.Bank == "Barclays" && b.Balance == 100m);
+    }
+
+    [Fact]
+    public void GetBankBalancesByMonth_ExcludesTransferAndAdjustmentBeforeOpeningBalanceDate()
+    {
+        var repository = new StubCashFlowRepository();
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        bank.SetOpeningBalance(100m, new DateOnly(2026, 7, 1));
+        var trading212 = Bank.Create("Trading212", roundUpEnabled: false);
+        repository.Banks.Add(bank);
+        repository.Banks.Add(trading212);
+        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 6, 30), "Barclays", "Trading212", 500m, null));
+        repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 6, 30), "Barclays", 999m, 899m, null));
+        var service = new BankService(repository);
+
+        var result = service.GetBankBalancesByMonth(2026, 7);
+
+        result.Should().ContainSingle(b => b.Bank == "Barclays" && b.Balance == 100m);
+    }
+
+    [Fact]
+    public void GetBankBalanceAsOf_ComputesBalanceForAnArbitraryDateIndependentOfMonthBoundaries()
+    {
+        var repository = new StubCashFlowRepository();
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
+        repository.Banks.Add(bank);
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 10), IncomeSource.Gleison, null, 200m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 20), IncomeSource.Gleison, null, 300m, "Barclays"));
+        var service = new BankService(repository);
+
+        var result = service.GetBankBalanceAsOf("Barclays", new DateOnly(2026, 7, 15));
+
+        result.Should().Be(300m);
+    }
+
+    [Fact]
+    public void GetBankBalanceAsOf_WithExcludingAdjustmentId_OmitsOnlyThatAdjustment()
+    {
+        var repository = new StubCashFlowRepository();
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
+        repository.Banks.Add(bank);
+        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 1), "Barclays", "Chase", 20m, null));
+        var excluded = BalanceAdjustment.Create(new DateOnly(2026, 7, 1), "Barclays", 500m, 400m, null);
+        var included = BalanceAdjustment.Create(new DateOnly(2026, 7, 2), "Barclays", 50m, -30m, null);
+        repository.BalanceAdjustments.Add(excluded);
+        repository.BalanceAdjustments.Add(included);
+        var service = new BankService(repository);
+
+        var result = service.GetBankBalanceAsOf("Barclays", new DateOnly(2026, 7, 15), excludingAdjustmentId: excluded.Id);
+
+        // 100 (opening) - 20 (transfer out) - 30 (included adjustment delta) = 50; excluded adjustment's +400 is omitted
+        result.Should().Be(50m);
+    }
+
+    [Fact]
+    public void GetBankBalanceAsOf_WithUnresolvableBank_ThrowsKeyNotFoundException()
+    {
+        var service = new BankService(new StubCashFlowRepository());
+
+        var act = () => service.GetBankBalanceAsOf("NotABank", new DateOnly(2026, 7, 15));
+
+        act.Should().Throw<KeyNotFoundException>();
+    }
 }
