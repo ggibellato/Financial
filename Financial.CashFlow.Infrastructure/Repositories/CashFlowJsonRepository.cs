@@ -49,6 +49,11 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository
     public void AddIncome(Income income) => _data.AddIncome(income);
     public void DeleteIncome(Guid id) => _data.RemoveIncome(id);
 
+    public IEnumerable<Transfer> GetTransfers() => _data.Transfers;
+    public void AddTransfer(Transfer transfer) => _data.AddTransfer(transfer);
+    public void UpdateTransfer(Transfer transfer) => _data.UpdateTransfer(transfer);
+    public void DeleteTransfer(Guid id) => _data.RemoveTransfer(id);
+
     public async Task SaveChangesAsync()
     {
         var json = _serializer.Serialize(_data);

@@ -229,6 +229,11 @@ public class IncomeServiceTests
         public void AddIncome(Income income) => Incomes.Add(income);
         public void DeleteIncome(Guid id) => Incomes.RemoveAll(i => i.Id == id);
 
+        public IEnumerable<Transfer> GetTransfers() => Array.Empty<Transfer>();
+        public void AddTransfer(Transfer transfer) { }
+        public void UpdateTransfer(Transfer transfer) { }
+        public void DeleteTransfer(Guid id) { }
+
         public Task SaveChangesAsync()
         {
             SaveChangesCallCount++;

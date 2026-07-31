@@ -77,6 +77,14 @@ public class CashFlowData
         _incomes.AddRange(data);
     }
 
+    private List<Transfer> _transfers = new List<Transfer>();
+    public IReadOnlyCollection<Transfer> Transfers { get => _transfers.AsReadOnly(); private set => SetTransfers(value); }
+    private void SetTransfers(IReadOnlyCollection<Transfer> data)
+    {
+        _transfers.Clear();
+        _transfers.AddRange(data);
+    }
+
     private CashFlowData() { }
 
     public static CashFlowData Create() => new();
@@ -108,4 +116,17 @@ public class CashFlowData
     public void AddIncome(Income income) => _incomes.Add(income);
 
     public void RemoveIncome(Guid id) => _incomes.RemoveAll(i => i.Id == id);
+
+    public void AddTransfer(Transfer transfer) => _transfers.Add(transfer);
+
+    public void UpdateTransfer(Transfer transfer)
+    {
+        var index = _transfers.FindIndex(t => t.Id == transfer.Id);
+        if (index >= 0)
+        {
+            _transfers[index] = transfer;
+        }
+    }
+
+    public void RemoveTransfer(Guid id) => _transfers.RemoveAll(t => t.Id == id);
 }
