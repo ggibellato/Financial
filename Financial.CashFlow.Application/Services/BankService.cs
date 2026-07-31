@@ -37,25 +37,67 @@ public sealed class BankService : IBankService
         var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
         var incomes = _repository.GetIncomes().ToList();
         var expenses = _repository.GetExpenses().ToList();
+        var transfers = _repository.GetTransfers().ToList();
+        var adjustments = _repository.GetBalanceAdjustments().ToList();
 
         return _repository.GetBanks()
-            .Select(bank =>
+            .Select(bank => new BankBalanceDTO
             {
-                var incomeTotal = incomes
-                    .Where(i => i.Bank == bank.Name && i.Date >= bank.OpeningBalanceDate && i.Date <= endOfMonth)
-                    .Sum(i => i.NetValue);
-
-                var expenseTotal = expenses
-                    .Where(e => e.PaymentSource == bank.Name && e.Date >= bank.OpeningBalanceDate && e.Date <= endOfMonth)
-                    .Sum(e => e.Value - (e.RoundUpAmount ?? 0));
-
-                return new BankBalanceDTO
-                {
-                    Bank = bank.Name,
-                    Balance = bank.OpeningBalance + incomeTotal - expenseTotal
-                };
+                Bank = bank.Name,
+                Balance = ComputeBalance(bank, endOfMonth, incomes, expenses, transfers, adjustments, excludingAdjustmentId: null)
             })
             .ToList();
+    }
+
+    public decimal GetBankBalanceAsOf(string bankName, DateOnly asOfDate, Guid? excludingAdjustmentId = null)
+    {
+        if (!BankNameResolver.TryResolve(bankName, _repository.GetBanks(), out var bank))
+        {
+            throw new KeyNotFoundException($"Bank '{bankName}' was not found.");
+        }
+
+        return ComputeBalance(
+            bank!,
+            asOfDate,
+            _repository.GetIncomes(),
+            _repository.GetExpenses(),
+            _repository.GetTransfers(),
+            _repository.GetBalanceAdjustments(),
+            excludingAdjustmentId);
+    }
+
+    private static decimal ComputeBalance(
+        Bank bank,
+        DateOnly asOfDate,
+        IEnumerable<Income> incomes,
+        IEnumerable<Expense> expenses,
+        IEnumerable<Transfer> transfers,
+        IEnumerable<BalanceAdjustment> adjustments,
+        Guid? excludingAdjustmentId)
+    {
+        bool InWindow(DateOnly date) => date >= bank.OpeningBalanceDate && date <= asOfDate;
+
+        var incomeTotal = incomes
+            .Where(i => i.Bank == bank.Name && InWindow(i.Date))
+            .Sum(i => i.NetValue);
+
+        var expenseTotal = expenses
+            .Where(e => e.PaymentSource == bank.Name && InWindow(e.Date))
+            .Sum(e => e.Value - (e.RoundUpAmount ?? 0));
+
+        var transferInTotal = transfers
+            .Where(t => t.DestinationBank == bank.Name && InWindow(t.Date))
+            .Sum(t => t.Amount);
+
+        var transferOutTotal = transfers
+            .Where(t => t.SourceBank == bank.Name && InWindow(t.Date))
+            .Sum(t => t.Amount);
+
+        var adjustmentTotal = adjustments
+            .Where(a => a.Bank == bank.Name && InWindow(a.Date) && a.Id != excludingAdjustmentId)
+            .Sum(a => a.Delta);
+
+        return bank.OpeningBalance + incomeTotal - expenseTotal + transferInTotal - transferOutTotal + adjustmentTotal;
     }
 
     private static BankDTO ToDto(Bank bank) => new()
