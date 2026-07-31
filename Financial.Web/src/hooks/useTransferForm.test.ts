@@ -54,6 +54,14 @@ describe('useTransferForm', () => {
     expect(result.current.destinationBank).toBe('')
   })
 
+  it('openCreateForm uses the given preselected source bank instead of the first bank', () => {
+    const { result } = renderHook(() => useTransferForm(BANKS, vi.fn()))
+
+    act(() => result.current.openCreateForm('Trading212'))
+
+    expect(result.current.sourceBank).toBe('Trading212')
+  })
+
   it('openEditForm pre-fills every field from the given transfer', () => {
     const { result } = renderHook(() => useTransferForm(BANKS, vi.fn()))
 
