@@ -40,5 +40,10 @@ public interface ICashFlowRepository
     void UpdateTransfer(Transfer transfer);
     void DeleteTransfer(Guid id);
 
+    IEnumerable<BalanceAdjustment> GetBalanceAdjustments();
+    void AddBalanceAdjustment(BalanceAdjustment adjustment);
+    void UpdateBalanceAdjustment(BalanceAdjustment adjustment);
+    void DeleteBalanceAdjustment(Guid id);
+
     Task SaveChangesAsync();
 }

@@ -20,6 +20,7 @@ public static class CashFlowApplicationServiceCollectionExtensions
         services.AddSingleton<IIncomeService, IncomeService>();
         services.AddSingleton<ITitheService, TitheService>();
         services.AddSingleton<ITransferService, TransferService>();
+        services.AddSingleton<IBalanceAdjustmentService, BalanceAdjustmentService>();
 
         return services;
     }
