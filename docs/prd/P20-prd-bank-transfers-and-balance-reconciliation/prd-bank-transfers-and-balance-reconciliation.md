@@ -289,9 +289,9 @@ graph TD
 
 ### F04. Web Transfer Entry Form
 - [ ] Submitting the form with a valid source bank, destination bank, amount, and date creates a transfer visible in F06's history list.
-- [ ] Selecting the same bank for source and destination shows an inline validation error and blocks submission.
+- [x] Selecting the same bank for source and destination shows an inline validation error and blocks submission.
 - [ ] Editing an existing transfer via the form updates it, reflected in F06's balances and history after save.
-- [ ] A backend validation error (e.g. amount ≤ 0) is displayed inline under the amount field.
+- [x] A backend validation error (e.g. amount ≤ 0) is displayed inline under the amount field.
 
 ### F05. Web Balance Adjustment Entry Form
 - [ ] Opening the form for a bank displays the current calculated balance exactly as returned by the backend.
