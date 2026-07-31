@@ -129,8 +129,7 @@ public class YahooFinanceServiceTests
     private static YahooFinanceService CreateService(Func<HttpRequestMessage, HttpResponseMessage> responder)
     {
         var handler = new FakeHttpMessageHandler(responder);
-        var httpClient = new HttpClient(handler) { BaseAddress = new Uri(YahooFinanceService.BaseAddress) };
-        return new YahooFinanceService(httpClient);
+        return new YahooFinanceService(new HttpClient(handler));
     }
 
     private sealed class FakeHttpMessageHandler : HttpMessageHandler

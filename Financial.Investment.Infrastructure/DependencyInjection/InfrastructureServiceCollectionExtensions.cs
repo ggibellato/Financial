@@ -29,11 +29,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IDividendDataSource, DividendDataSourceAdapter>();
         services.AddSingleton<IAssetSnapshotSource, AssetSnapshotSourceAdapter>();
         services.AddSingleton<GoogleFinanceService>();
-        services.AddHttpClient<YahooFinanceService>(client =>
-        {
-            client.BaseAddress = new Uri(YahooFinanceService.BaseAddress);
-            client.DefaultRequestHeaders.UserAgent.ParseAdd(YahooFinanceService.UserAgent);
-        });
+        services.AddHttpClient<YahooFinanceService>();
         services.AddSingleton<IFinanceService>(sp => new FallbackFinanceService(
             sp.GetRequiredService<GoogleFinanceService>(),
             sp.GetRequiredService<YahooFinanceService>()));

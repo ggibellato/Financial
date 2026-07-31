@@ -11,9 +11,9 @@ namespace Financial.Investment.Infrastructure.Services;
 /// </summary>
 public sealed class YahooFinanceService : IFinanceService
 {
-    public const string BaseAddress = "https://query1.finance.yahoo.com/";
+    private const string BaseAddress = "https://query1.finance.yahoo.com/";
 
-    public const string UserAgent =
+    private const string UserAgent =
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
 
     private static readonly IReadOnlyDictionary<string, string> ExchangeSuffixes =
@@ -32,6 +32,8 @@ public sealed class YahooFinanceService : IFinanceService
     public YahooFinanceService(HttpClient httpClient)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _httpClient.BaseAddress = new Uri(BaseAddress);
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
     }
 
     public AssetValueSnapshot GetAssetValue(AssetValueRequestDTO request)
