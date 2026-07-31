@@ -1,7 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
-using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
+using Financial.Investment.Application.Tests.TestHelpers;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
 
@@ -315,22 +315,4 @@ public class NavigationServiceTests
         return broker;
     }
 
-    private sealed class StubRepository : IRepository
-    {
-        public Broker? Broker { get; set; }
-        public IEnumerable<Broker>? Brokers { get; set; }
-
-        public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) =>
-            Broker == null ? [] : Broker.Portfolios.SelectMany(p => p.Assets);
-
-        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) =>
-            Broker?.Portfolios.FirstOrDefault(p => p.Name == portfolio)?.Assets ?? [];
-
-        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) =>
-            Brokers ?? (Broker == null ? [] : [Broker]);
-
-        public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) =>
-            Broker?.Portfolios.FirstOrDefault(p => p.Name == portfolioName)?.Assets.FirstOrDefault(a => a.Name == assetName);
-        public Task SaveChangesAsync() => Task.CompletedTask;
-    }
 }

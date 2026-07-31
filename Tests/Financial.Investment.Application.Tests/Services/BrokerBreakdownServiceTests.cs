@@ -1,6 +1,6 @@
 using Financial.Investment.Application.Enums;
-using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
+using Financial.Investment.Application.Tests.TestHelpers;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
 
@@ -104,7 +104,7 @@ public class BrokerBreakdownServiceTests
 
         CreateService().GetBrokerBreakdown("XPI");
 
-        _repository.LastRequestedScope.Should().Be(InvestmentScope.Active);
+        _repository.LastGetBrokerListScope.Should().Be(InvestmentScope.Active);
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public class BrokerBreakdownServiceTests
 
         CreateService().GetBrokerBreakdown("XPI", InvestmentScope.Historic);
 
-        _repository.LastRequestedScope.Should().Be(InvestmentScope.Historic);
+        _repository.LastGetBrokerListScope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]
@@ -271,21 +271,4 @@ public class BrokerBreakdownServiceTests
         return broker;
     }
 
-    private sealed class StubRepository : IRepository
-    {
-        public IEnumerable<Asset> AssetsByBroker { get; set; } = [];
-        public IEnumerable<Asset> AssetsByBrokerPortfolio { get; set; } = [];
-        public IEnumerable<Broker> Brokers { get; set; } = [];
-        public InvestmentScope? LastRequestedScope { get; private set; }
-
-        public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) => AssetsByBroker;
-        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) => AssetsByBrokerPortfolio;
-        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active)
-        {
-            LastRequestedScope = scope;
-            return Brokers;
-        }
-        public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => null;
-        public Task SaveChangesAsync() => Task.CompletedTask;
-    }
 }
