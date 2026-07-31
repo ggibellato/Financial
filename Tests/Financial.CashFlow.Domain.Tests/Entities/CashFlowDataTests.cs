@@ -21,6 +21,7 @@ public class CashFlowDataTests
         data.Banks.Should().BeEmpty();
         data.Incomes.Should().BeEmpty();
         data.Transfers.Should().BeEmpty();
+        data.BalanceAdjustments.Should().BeEmpty();
     }
 
     [Fact]
@@ -325,4 +326,68 @@ public class CashFlowDataTests
 
     private static Transfer CreateTransfer() =>
         Transfer.Create(new DateOnly(2026, 7, 1), "Barclays", "Trading212", 500m, "Test transfer");
+
+    [Fact]
+    public void AddBalanceAdjustment_AddsOnlyToBalanceAdjustmentsCollection()
+    {
+        var data = CashFlowData.Create();
+
+        data.AddBalanceAdjustment(CreateBalanceAdjustment());
+
+        data.BalanceAdjustments.Should().ContainSingle();
+        data.Expenses.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void UpdateBalanceAdjustment_ReplacesTheMatchingEntry()
+    {
+        var data = CashFlowData.Create();
+        var adjustment = CreateBalanceAdjustment();
+        data.AddBalanceAdjustment(adjustment);
+        adjustment.UpdateDetails(new DateOnly(2026, 8, 1), 250m, 10m, "Updated");
+
+        data.UpdateBalanceAdjustment(adjustment);
+
+        data.BalanceAdjustments.Should().ContainSingle().Which.TargetBalance.Should().Be(250m);
+    }
+
+    [Fact]
+    public void UpdateBalanceAdjustment_WithUnknownId_LeavesCollectionUnchanged()
+    {
+        var data = CashFlowData.Create();
+        data.AddBalanceAdjustment(CreateBalanceAdjustment());
+        var unknown = CreateBalanceAdjustment();
+
+        data.UpdateBalanceAdjustment(unknown);
+
+        data.BalanceAdjustments.Should().ContainSingle().Which.Id.Should().NotBe(unknown.Id);
+    }
+
+    [Fact]
+    public void RemoveBalanceAdjustment_RemovesOnlyTheMatchingAdjustment()
+    {
+        var data = CashFlowData.Create();
+        var toKeep = CreateBalanceAdjustment();
+        var toRemove = CreateBalanceAdjustment();
+        data.AddBalanceAdjustment(toKeep);
+        data.AddBalanceAdjustment(toRemove);
+
+        data.RemoveBalanceAdjustment(toRemove.Id);
+
+        data.BalanceAdjustments.Should().ContainSingle().Which.Id.Should().Be(toKeep.Id);
+    }
+
+    [Fact]
+    public void RemoveBalanceAdjustment_WithUnknownId_LeavesCollectionUnchanged()
+    {
+        var data = CashFlowData.Create();
+        data.AddBalanceAdjustment(CreateBalanceAdjustment());
+
+        data.RemoveBalanceAdjustment(Guid.NewGuid());
+
+        data.BalanceAdjustments.Should().ContainSingle();
+    }
+
+    private static BalanceAdjustment CreateBalanceAdjustment() =>
+        BalanceAdjustment.Create(new DateOnly(2026, 7, 1), "Barclays", 100m, 0m, "Test adjustment");
 }

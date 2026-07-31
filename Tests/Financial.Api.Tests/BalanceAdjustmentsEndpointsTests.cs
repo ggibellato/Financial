@@ -1,0 +1,160 @@
+using Financial.CashFlow.Application.DTOs;
+using FluentAssertions;
+using System.Net;
+using System.Net.Http.Json;
+
+namespace Financial.Api.Tests;
+
+public class BalanceAdjustmentsEndpointsTests
+{
+    [Fact]
+    public async Task AddAdjustment_ValidRequest_ReturnsOkWithComputedDelta()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new BalanceAdjustmentCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            TargetBalance = 150.00m,
+            Note = "Matched against July statement"
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/banks/Barclays/adjustments", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var adjustment = await response.Content.ReadFromJsonAsync<BalanceAdjustmentDTO>();
+        adjustment.Should().NotBeNull();
+        adjustment!.Bank.Should().Be("Barclays");
+        adjustment.TargetBalance.Should().Be(150.00m);
+        adjustment.Delta.Should().Be(150.00m);
+        adjustment.Note.Should().Be("Matched against July statement");
+    }
+
+    [Fact]
+    public async Task AddAdjustment_UnresolvableBank_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new BalanceAdjustmentCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            TargetBalance = 100m
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/banks/NotABank/adjustments", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task AddAdjustment_NegativeTargetBalance_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new BalanceAdjustmentCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            TargetBalance = -1m
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/banks/Barclays/adjustments", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdateAdjustment_ExistingId_ReturnsOkAndRecomputesDelta()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var created = await client.PostAsJsonAsync("/api/v1/financial/banks/Barclays/adjustments", new BalanceAdjustmentCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            TargetBalance = 100m
+        });
+        var createdAdjustment = await created.Content.ReadFromJsonAsync<BalanceAdjustmentDTO>();
+
+        var response = await client.PutAsJsonAsync($"/api/v1/financial/banks/Barclays/adjustments/{createdAdjustment!.Id}", new BalanceAdjustmentUpdateDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            TargetBalance = 80m,
+            Note = "Corrected"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<BalanceAdjustmentDTO>();
+        updated!.TargetBalance.Should().Be(80m);
+        updated.Delta.Should().Be(80m);
+        updated.Note.Should().Be("Corrected");
+    }
+
+    [Fact]
+    public async Task UpdateAdjustment_UnknownId_ReturnsNotFound()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync($"/api/v1/financial/banks/Barclays/adjustments/{Guid.NewGuid()}", new BalanceAdjustmentUpdateDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            TargetBalance = 100m
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeleteAdjustment_ExistingId_ReturnsOkAndRemovesAdjustment()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var created = await client.PostAsJsonAsync("/api/v1/financial/banks/Barclays/adjustments", new BalanceAdjustmentCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            TargetBalance = 100m
+        });
+        var createdAdjustment = await created.Content.ReadFromJsonAsync<BalanceAdjustmentDTO>();
+
+        var response = await client.DeleteAsync($"/api/v1/financial/banks/Barclays/adjustments/{createdAdjustment!.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var list = await client.GetFromJsonAsync<List<BalanceAdjustmentDTO>>("/api/v1/financial/banks/Barclays/adjustments");
+        list.Should().NotContain(a => a.Id == createdAdjustment.Id);
+    }
+
+    [Fact]
+    public async Task DeleteAdjustment_UnknownId_ReturnsNotFound()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.DeleteAsync($"/api/v1/financial/banks/Barclays/adjustments/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetAdjustmentsByBank_ReturnsOnlyThatBanksAdjustments()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        await client.PostAsJsonAsync("/api/v1/financial/banks/Barclays/adjustments", new BalanceAdjustmentCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            TargetBalance = 100m
+        });
+        await client.PostAsJsonAsync("/api/v1/financial/banks/Chase/adjustments", new BalanceAdjustmentCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            TargetBalance = 50m
+        });
+
+        var response = await client.GetAsync("/api/v1/financial/banks/Barclays/adjustments");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<List<BalanceAdjustmentDTO>>();
+        items.Should().ContainSingle();
+        items!.Single().Bank.Should().Be("Barclays");
+    }
+}

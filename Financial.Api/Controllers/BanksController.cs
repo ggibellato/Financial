@@ -12,10 +12,12 @@ namespace Financial.Api.Controllers;
 public sealed class BanksController : ControllerBase
 {
     private readonly IBankService _bankService;
+    private readonly IBalanceAdjustmentService _balanceAdjustmentService;
 
-    public BanksController(IBankService bankService)
+    public BanksController(IBankService bankService, IBalanceAdjustmentService balanceAdjustmentService)
     {
         _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
+        _balanceAdjustmentService = balanceAdjustmentService ?? throw new ArgumentNullException(nameof(balanceAdjustmentService));
     }
 
     /// <summary>Lists all tracked banks.</summary>
@@ -67,6 +69,97 @@ public sealed class BanksController : ControllerBase
     public ActionResult<IReadOnlyList<BankBalanceDTO>> GetBankBalancesByMonth(int year, int month)
     {
         var result = _bankService.GetBankBalancesByMonth(year, month);
+        return Ok(result);
+    }
+
+    /// <summary>Records a new balance adjustment for a bank.</summary>
+    /// <param name="name">The bank's name.</param>
+    /// <param name="request">The adjustment to create.</param>
+    /// <returns>200 OK with the created adjustment and its computed delta, 400 Bad Request if the request is invalid.</returns>
+    [HttpPost("{name}/adjustments")]
+    [ProducesResponseType(typeof(BalanceAdjustmentDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<BalanceAdjustmentDTO>> AddAdjustment(string name, [FromBody] BalanceAdjustmentCreateDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        try
+        {
+            var adjustment = await _balanceAdjustmentService.AddAdjustmentAsync(name, request);
+            return Ok(adjustment);
+        }
+        catch (ArgumentException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
+        }
+    }
+
+    /// <summary>Updates an existing balance adjustment.</summary>
+    /// <param name="name">The bank's name.</param>
+    /// <param name="id">The adjustment's identifier.</param>
+    /// <param name="request">The new adjustment fields.</param>
+    /// <returns>200 OK with the updated adjustment, 400 Bad Request if the request is invalid, or 404 Not Found if the adjustment doesn't exist.</returns>
+    [HttpPut("{name}/adjustments/{id:guid}")]
+    [ProducesResponseType(typeof(BalanceAdjustmentDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<BalanceAdjustmentDTO>> UpdateAdjustment(string name, Guid id, [FromBody] BalanceAdjustmentUpdateDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        try
+        {
+            var adjustment = await _balanceAdjustmentService.UpdateAdjustmentAsync(name, id, request);
+            return Ok(adjustment);
+        }
+        catch (ArgumentException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
+        }
+    }
+
+    /// <summary>Deletes a balance adjustment.</summary>
+    /// <param name="name">The bank's name.</param>
+    /// <param name="id">The adjustment's identifier.</param>
+    /// <returns>200 OK if deleted, or 404 Not Found if the adjustment doesn't exist.</returns>
+    [HttpDelete("{name}/adjustments/{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteAdjustment(string name, Guid id)
+    {
+        try
+        {
+            await _balanceAdjustmentService.DeleteAdjustmentAsync(name, id);
+            return Ok();
+        }
+        catch (ArgumentException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
+        }
+    }
+
+    /// <summary>Lists all balance adjustments for a bank.</summary>
+    /// <param name="name">The bank's name.</param>
+    /// <returns>200 OK with the matching adjustments.</returns>
+    [HttpGet("{name}/adjustments")]
+    [ProducesResponseType(typeof(IReadOnlyList<BalanceAdjustmentDTO>), StatusCodes.Status200OK)]
+    public ActionResult<IReadOnlyList<BalanceAdjustmentDTO>> GetAdjustmentsByBank(string name)
+    {
+        var result = _balanceAdjustmentService.GetAdjustmentsByBank(name);
         return Ok(result);
     }
 }

@@ -274,12 +274,12 @@ graph TD
 - [x] Deleting a transfer removes it from `data-cashflow.json` and from all subsequent `GET` responses.
 
 ### F02. Balance Adjustment Domain & API
-- [ ] Creating a balance adjustment with a valid bank, non-negative target balance, and date succeeds and returns the computed `Delta`.
-- [ ] The returned `Delta` equals `TargetBalance` minus the balance computed by F03 as of the adjustment's date (excluding the new adjustment itself).
-- [ ] Creating an adjustment with a negative target balance fails with a 400 error.
-- [ ] Creating an adjustment with an unresolvable bank name fails with a 400 error.
-- [ ] Editing an adjustment's target balance or date recomputes and persists a new `Delta`.
-- [ ] Deleting an adjustment removes it and its `Delta` no longer contributes to that bank's computed balance.
+- [x] Creating a balance adjustment with a valid bank, non-negative target balance, and date succeeds and returns the computed `Delta`.
+- [x] The returned `Delta` equals `TargetBalance` minus the balance computed by F03 as of the adjustment's date (excluding the new adjustment itself).
+- [x] Creating an adjustment with a negative target balance fails with a 400 error.
+- [x] Creating an adjustment with an unresolvable bank name fails with a 400 error.
+- [x] Editing an adjustment's target balance or date recomputes and persists a new `Delta`.
+- [x] Deleting an adjustment removes it and its `Delta` no longer contributes to that bank's computed balance.
 
 ### F03. Bank Balance Calculation Engine
 - [ ] A transfer's amount is subtracted from the source bank's computed balance and added to the destination bank's computed balance, both for any as-of date on or after the transfer's date.

@@ -492,6 +492,11 @@ public class ExpenseServiceTests
         public void UpdateTransfer(Transfer transfer) { }
         public void DeleteTransfer(Guid id) { }
 
+        public IEnumerable<BalanceAdjustment> GetBalanceAdjustments() => Array.Empty<BalanceAdjustment>();
+        public void AddBalanceAdjustment(BalanceAdjustment adjustment) { }
+        public void UpdateBalanceAdjustment(BalanceAdjustment adjustment) { }
+        public void DeleteBalanceAdjustment(Guid id) { }
+
         public Task SaveChangesAsync()
         {
             SaveChangesCallCount++;

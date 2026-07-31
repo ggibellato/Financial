@@ -30,6 +30,7 @@ public class CashFlowSerializerAdapterTests
         bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
         var income = Income.Create(new DateOnly(2026, 7, 25), IncomeSource.Gleison, 3200.00m, 2450.00m, "Barclays");
         var transfer = Transfer.Create(new DateOnly(2026, 7, 25), "Barclays", "Trading212", 500.00m, "Round-up top-up");
+        var balanceAdjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), "Barclays", 2340.17m, -4.20m, "Matched against July statement");
 
         original.AddExpense(expense);
         original.AddReserveMovement(reserveMovement);
@@ -41,6 +42,7 @@ public class CashFlowSerializerAdapterTests
         original.AddBank(bank);
         original.AddIncome(income);
         original.AddTransfer(transfer);
+        original.AddBalanceAdjustment(balanceAdjustment);
 
         var json = serializer.Serialize(original);
         var result = serializer.Deserialize(json);
@@ -88,6 +90,13 @@ public class CashFlowSerializerAdapterTests
         resultTransfer.DestinationBank.Should().Be(transfer.DestinationBank);
         resultTransfer.Amount.Should().Be(transfer.Amount);
         resultTransfer.Note.Should().Be(transfer.Note);
+        var resultBalanceAdjustment = result.BalanceAdjustments.Should().ContainSingle().Which;
+        resultBalanceAdjustment.Id.Should().Be(balanceAdjustment.Id);
+        resultBalanceAdjustment.Date.Should().Be(balanceAdjustment.Date);
+        resultBalanceAdjustment.Bank.Should().Be(balanceAdjustment.Bank);
+        resultBalanceAdjustment.TargetBalance.Should().Be(balanceAdjustment.TargetBalance);
+        resultBalanceAdjustment.Delta.Should().Be(balanceAdjustment.Delta);
+        resultBalanceAdjustment.Note.Should().Be(balanceAdjustment.Note);
     }
 
     [Fact]
@@ -109,5 +118,6 @@ public class CashFlowSerializerAdapterTests
         result.Banks.Should().BeEmpty();
         result.Incomes.Should().BeEmpty();
         result.Transfers.Should().BeEmpty();
+        result.BalanceAdjustments.Should().BeEmpty();
     }
 }
