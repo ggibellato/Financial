@@ -523,3 +523,28 @@ export interface CategoryAverageDto {
   category: string
   value: number
 }
+
+export interface TransferDto {
+  id: string
+  date: string
+  sourceBank: string
+  destinationBank: string
+  amount: number
+  note: string | null
+}
+
+export interface CreateTransferDto {
+  date: string
+  sourceBank: string
+  destinationBank: string
+  amount: number
+  note: string | null
+}
+
+export interface UpdateTransferDto {
+  date: string
+  sourceBank: string
+  destinationBank: string
+  amount: number
+  note: string | null
+}
