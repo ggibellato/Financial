@@ -761,4 +761,54 @@ describe('financialApiClient', () => {
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
+
+  it('calls the transfers-by-month endpoint', async () => {
+    const responseBody: TransferDto[] = [
+      { id: 't1', date: '2026-07-05', sourceBank: 'Barclays', destinationBank: 'Trading212', amount: 500, note: null },
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getTransfersByMonth(2026, 7)
+
+    expect(result).toEqual(responseBody)
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/transfers/month/2026/7`)
+  })
+
+  it('deletes a transfer', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteTransfer('t1')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/transfers/t1`)
+    expect(init?.method).toBe('DELETE')
+  })
+
+  it('calls the adjustments-by-bank endpoint', async () => {
+    const responseBody: BalanceAdjustmentDto[] = [
+      { id: 'a1', date: '2026-07-05', bank: 'Barclays', targetBalance: 150, delta: 50, note: null },
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getAdjustmentsByBank('Barclays')
+
+    expect(result).toEqual(responseBody)
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/banks/Barclays/adjustments`)
+  })
+
+  it('deletes a balance adjustment', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteBalanceAdjustment('Barclays', 'a1')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/banks/Barclays/adjustments/a1`)
+    expect(init?.method).toBe('DELETE')
+  })
 })
