@@ -294,9 +294,9 @@ graph TD
 - [x] A backend validation error (e.g. amount ≤ 0) is displayed inline under the amount field.
 
 ### F05. Web Balance Adjustment Entry Form
-- [ ] Opening the form for a bank displays the current calculated balance exactly as returned by the backend.
-- [ ] Submitting a target balance creates an adjustment and displays the backend-returned delta, not a client-computed one.
-- [ ] Submitting a negative target balance shows an inline validation error and blocks submission.
+- [x] Opening the form for a bank displays the current calculated balance exactly as returned by the backend.
+- [x] Submitting a target balance creates an adjustment and displays the backend-returned delta, not a client-computed one.
+- [x] Submitting a negative target balance shows an inline validation error and blocks submission.
 - [ ] Editing an existing adjustment's target balance updates its stored delta, reflected in F06 after save.
 
 ### F06. Web Bank Balances & History View

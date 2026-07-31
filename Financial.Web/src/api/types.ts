@@ -548,3 +548,24 @@ export interface UpdateTransferDto {
   amount: number
   note: string | null
 }
+
+export interface BalanceAdjustmentDto {
+  id: string
+  date: string
+  bank: string
+  targetBalance: number
+  delta: number
+  note: string | null
+}
+
+export interface CreateBalanceAdjustmentDto {
+  date: string
+  targetBalance: number
+  note: string | null
+}
+
+export interface UpdateBalanceAdjustmentDto {
+  date: string
+  targetBalance: number
+  note: string | null
+}

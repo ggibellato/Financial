@@ -5,6 +5,8 @@ import { createFinancialApiClient } from './financialApiClient'
 import type {
   AssetDetailsDto,
   AssetPriceDto,
+  BalanceAdjustmentDto,
+  CreateBalanceAdjustmentDto,
   CreateMaeLedgerEntryDto,
   CreateRecurringBillDto,
   CreateTransferDto,
@@ -18,6 +20,7 @@ import type {
   ReserveMovementDto,
   TransferDto,
   TreeNodeDto,
+  UpdateBalanceAdjustmentDto,
   UpdateInvestmentSnapshotValueDto,
   UpdateMaeLedgerEntryValuesDto,
   UpdateRecurringBillDto,
@@ -717,6 +720,44 @@ describe('financialApiClient', () => {
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/transfers/t1`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('posts a balance adjustment create request', async () => {
+    const requestBody: CreateBalanceAdjustmentDto = {
+      date: '2026-07-25',
+      targetBalance: 2340.17,
+      note: 'Matched against July statement',
+    }
+    const responseBody: BalanceAdjustmentDto = { id: 'a1', bank: 'Barclays', delta: -4.2, ...requestBody }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createBalanceAdjustment('Barclays', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/banks/Barclays/adjustments`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts a balance adjustment update', async () => {
+    const requestBody: UpdateBalanceAdjustmentDto = {
+      date: '2026-07-25',
+      targetBalance: 120,
+      note: 'Corrected',
+    }
+    const responseBody: BalanceAdjustmentDto = { id: 'a1', bank: 'Barclays', delta: 20, ...requestBody }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateBalanceAdjustment('Barclays', 'a1', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/banks/Barclays/adjustments/a1`)
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
