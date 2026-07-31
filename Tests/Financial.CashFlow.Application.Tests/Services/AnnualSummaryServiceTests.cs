@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
+using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
@@ -11,6 +12,12 @@ public class AnnualSummaryServiceTests
 {
     private static readonly int CurrentYear = DateTime.Now.Year;
     private static readonly int PastYear = CurrentYear - 5;
+
+    // Pinned to a fixed mid-year date so "current year" averaging tests don't have to branch on
+    // (or silently no-op during) the real wall-clock month - June guarantees 5 completed months.
+    private static readonly DateTimeOffset PinnedNow = new(CurrentYear, 6, 15, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateOnly PinnedToday = DateOnly.FromDateTime(PinnedNow.UtcDateTime);
+    private const int PinnedMonthsElapsed = 5;
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
@@ -665,15 +672,10 @@ public class AnnualSummaryServiceTests
     public void GetHistoricSummaryAverageFromYear_AveragesIncomePerMonthNotPerTransaction()
     {
         var repository = new StubCashFlowRepository();
-        var service = new AnnualSummaryService(repository);
+        var service = new AnnualSummaryService(repository, new FakeTimeProvider(PinnedNow));
 
-        var currentYearZero = DateTime.UtcNow.Month == 1;
-        var currentYearNumberOfMonths = currentYearZero ? 0 : DateTime.UtcNow.Month - 1;
-        repository.Incomes.Add(Income.Create(new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
-        if(DateTime.UtcNow.Month > 1)
-        {
-            repository.Incomes.Add(Income.Create(new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month -1, 5), IncomeSource.Gleison, 2400m, 900m, "Barclays"));
-        }
+        repository.Incomes.Add(Income.Create(new DateOnly(CurrentYear, PinnedNow.Month, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(CurrentYear, PinnedNow.Month - 1, 5), IncomeSource.Gleison, 2400m, 900m, "Barclays"));
 
         repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), IncomeSource.Gleison, 1000m, 800m, "Barclays"));
         repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 20), IncomeSource.Gleison, 500m, 400m, "Barclays"));
@@ -681,12 +683,12 @@ public class AnnualSummaryServiceTests
 
         repository.Incomes.Add(Income.Create(new DateOnly(2017, 7, 5), IncomeSource.Gleison, 1100m, 110m, "Barclays"));
 
+        var result = service.GetHistoricSummaryAverageFromYear(CurrentYear);
 
-        var result = service.GetHistoricSummaryAverageFromYear(2026);
-
-        // current year only use the information before the current month, so if the current month is January, the average will be 0
-        result[0].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(currentYearZero ? 0 : 2400m/currentYearNumberOfMonths);
-        result[0].AnnualAverages.Single(a => a.Category == "Salary after taxes").Value.Should().Be(currentYearZero ? 0 : 900m/currentYearNumberOfMonths);
+        // Only the completed month (May, one month before the pinned June "now") counts toward the
+        // current year's average; the in-progress June entry is excluded entirely.
+        result[0].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(2400m / PinnedMonthsElapsed);
+        result[0].AnnualAverages.Single(a => a.Category == "Salary after taxes").Value.Should().Be(900m / PinnedMonthsElapsed);
 
         result[1].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(375m);
         result[1].AnnualAverages.Single(a => a.Category == "Salary after taxes").Value.Should().Be(300m);
@@ -820,30 +822,18 @@ public class AnnualSummaryServiceTests
     [Fact]
     public void GetHistoricSummaryAverageFromYear_ExcludesInProgressCurrentMonthFromCurrentYearAverage()
     {
-        var today = DateTime.UtcNow;
-        var numberOfValidMonthsInCurrentYear = today.Month - 1; // Exclude the current month, which is in progress.
         var repository = new StubCashFlowRepository();
-        var service = new AnnualSummaryService(repository);
-        var currentYear = today.Year;
-        repository.Expenses.Add(Expense.Create(new DateOnly(currentYear, 1, 5), "Completed month", 100m * numberOfValidMonthsInCurrentYear, Category.Mercado, "Barclays", null));
-        repository.Expenses.Add(Expense.Create(DateOnly.FromDateTime(today), "In-progress month", 9999m, Category.Mercado, "Barclays", null));
-        repository.Incomes.Add(Income.Create(new DateOnly(currentYear, 1, 5), IncomeSource.Gleison, 1000m * numberOfValidMonthsInCurrentYear, 800m * numberOfValidMonthsInCurrentYear, "Barclays"));
-        repository.Incomes.Add(Income.Create(DateOnly.FromDateTime(today), IncomeSource.Gleison, 9999m * numberOfValidMonthsInCurrentYear, 9999m * numberOfValidMonthsInCurrentYear, "Barclays"));
+        var service = new AnnualSummaryService(repository, new FakeTimeProvider(PinnedNow));
+        repository.Expenses.Add(Expense.Create(new DateOnly(CurrentYear, 1, 5), "Completed months", 100m * PinnedMonthsElapsed, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(PinnedToday, "In-progress month", 9999m, Category.Mercado, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(CurrentYear, 1, 5), IncomeSource.Gleison, 1000m * PinnedMonthsElapsed, 800m * PinnedMonthsElapsed, "Barclays"));
+        repository.Incomes.Add(Income.Create(PinnedToday, IncomeSource.Gleison, 9999m * PinnedMonthsElapsed, 9999m * PinnedMonthsElapsed, "Barclays"));
 
-        var result = service.GetHistoricSummaryAverageFromYear(currentYear);
+        var result = service.GetHistoricSummaryAverageFromYear(CurrentYear);
 
-        if (numberOfValidMonthsInCurrentYear == 0)
-        {
-            // No completed month exists yet this year (today is in January): every seeded record
-            // falls within the in-progress cutoff, so the current year must not appear at all -
-            // the same behavior covered explicitly by the "omits current year entirely" test below.
-            result.Should().NotContain(r => r.Year == currentYear);
-            return;
-        }
-
-        var currentYearRow = result.Single(r => r.Year == currentYear);
-        // Only January's figures count; the in-progress current-month entries (9999) must be excluded entirely,
-        // not treated as a completed month with a low value.
+        var currentYearRow = result.Single(r => r.Year == CurrentYear);
+        // Only the completed months' figures count; the in-progress current-month entries (9999)
+        // must be excluded entirely, not treated as a completed month with a low value.
         using (new AssertionScope())
         {
             currentYearRow.AnnualAverages.Single(a => a.Category == "Mercado").Value.Should().Be(100m);
@@ -855,19 +845,17 @@ public class AnnualSummaryServiceTests
     [Fact]
     public void GetHistoricSummaryAverageFromYear_OmitsCurrentYearEntirelyWhenOnlyInProgressMonthIsRecorded()
     {
-        var today = DateTime.UtcNow;
         var repository = new StubCashFlowRepository();
-        var service = new AnnualSummaryService(repository);
-        var currentYear = today.Year;
-        repository.Expenses.Add(Expense.Create(DateOnly.FromDateTime(today), "In-progress month", 9999m, Category.Mercado, "Barclays", null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(currentYear - 1, 12, 5), "Prior year", 50m, Category.Mercado, "Barclays", null));
+        var service = new AnnualSummaryService(repository, new FakeTimeProvider(PinnedNow));
+        repository.Expenses.Add(Expense.Create(PinnedToday, "In-progress month", 9999m, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(CurrentYear - 1, 12, 5), "Prior year", 50m, Category.Mercado, "Barclays", null));
 
-        var result = service.GetHistoricSummaryAverageFromYear(currentYear);
+        var result = service.GetHistoricSummaryAverageFromYear(CurrentYear);
 
         // The current year has no fully completed month yet, so it must not appear at all;
         // the range starts at the previous year instead.
-        result.Should().NotContain(r => r.Year == currentYear);
-        result.Should().ContainSingle(r => r.Year == currentYear - 1);
+        result.Should().NotContain(r => r.Year == CurrentYear);
+        result.Should().ContainSingle(r => r.Year == CurrentYear - 1);
     }
 
     [Fact]
@@ -901,21 +889,16 @@ public class AnnualSummaryServiceTests
     [Fact]
     public void GetCategoryTotalsForYear_AverageForCurrentYearExcludesInProgressMonth()
     {
-        var today = DateTime.UtcNow;
-        var monthsElapsed = today.Month - 1;
         var repository = new StubCashFlowRepository();
-        var service = new AnnualSummaryService(repository);
-        var currentYear = today.Year;
-        repository.Expenses.Add(Expense.Create(new DateOnly(currentYear, 1, 5), "Completed months", 100m * monthsElapsed, Category.Mercado, "Barclays", null));
-        repository.Expenses.Add(Expense.Create(DateOnly.FromDateTime(today), "In-progress month", 9999m, Category.Mercado, "Barclays", null));
+        var service = new AnnualSummaryService(repository, new FakeTimeProvider(PinnedNow));
+        repository.Expenses.Add(Expense.Create(new DateOnly(CurrentYear, 1, 5), "Completed months", 100m * PinnedMonthsElapsed, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(PinnedToday, "In-progress month", 9999m, Category.Mercado, "Barclays", null));
 
-        var result = service.GetCategoryTotalsForYear(currentYear);
+        var result = service.GetCategoryTotalsForYear(CurrentYear);
 
         // The in-progress current-month entry (9999) must be excluded entirely from the average,
-        // not treated as a completed month with a low value. When today is in January there are no
-        // completed months yet, so MonthlySeries.Average's monthsElapsed<=0 rule yields zero.
-        var expectedAverage = monthsElapsed == 0 ? 0m : 100m;
-        result.Single(c => c.Category == "Mercado").Average.Should().Be(expectedAverage);
+        // not treated as a completed month with a low value.
+        result.Single(c => c.Category == "Mercado").Average.Should().Be(100m);
     }
 
     [Fact]
@@ -949,22 +932,15 @@ public class AnnualSummaryServiceTests
     [Fact]
     public void GetIncomeSummaryForYear_AveragesForCurrentYearExcludeInProgressMonth()
     {
-        var today = DateTime.UtcNow;
-        var monthsElapsed = today.Month - 1;
         var repository = new StubCashFlowRepository();
-        var service = new AnnualSummaryService(repository);
-        var currentYear = today.Year;
-        repository.Incomes.Add(Income.Create(new DateOnly(currentYear, 1, 5), IncomeSource.Gleison, 1000m * monthsElapsed, 800m * monthsElapsed, "Barclays"));
-        repository.Incomes.Add(Income.Create(DateOnly.FromDateTime(today), IncomeSource.Gleison, 9999m * monthsElapsed, 9999m * monthsElapsed, "Barclays"));
+        var service = new AnnualSummaryService(repository, new FakeTimeProvider(PinnedNow));
+        repository.Incomes.Add(Income.Create(new DateOnly(CurrentYear, 1, 5), IncomeSource.Gleison, 1000m * PinnedMonthsElapsed, 800m * PinnedMonthsElapsed, "Barclays"));
+        repository.Incomes.Add(Income.Create(PinnedToday, IncomeSource.Gleison, 9999m * PinnedMonthsElapsed, 9999m * PinnedMonthsElapsed, "Barclays"));
 
-        var result = service.GetIncomeSummaryForYear(currentYear);
+        var result = service.GetIncomeSummaryForYear(CurrentYear);
 
-        // When today is in January there are no completed months yet, so MonthlySeries.Average's
-        // monthsElapsed<=0 rule yields zero instead of the completed-months figures below.
-        var expectedSalaryAverage = monthsElapsed == 0 ? 0m : 1000m;
-        var expectedSalaryAfterTaxesAverage = monthsElapsed == 0 ? 0m : 800m;
-        result.SalaryAverage.Should().Be(expectedSalaryAverage);
-        result.SalaryAfterTaxesAverage.Should().Be(expectedSalaryAfterTaxesAverage);
+        result.SalaryAverage.Should().Be(1000m);
+        result.SalaryAfterTaxesAverage.Should().Be(800m);
     }
 
     [Fact]
@@ -1005,24 +981,17 @@ public class AnnualSummaryServiceTests
     [Fact]
     public void GetCategoryTotalsAnnualForYear_TotalDespesasAndResultadoAveragesForCurrentYearExcludeInProgressMonth()
     {
-        var today = DateTime.UtcNow;
-        var monthsElapsed = today.Month - 1;
         var repository = new StubCashFlowRepository();
-        var service = new AnnualSummaryService(repository);
-        var currentYear = today.Year;
-        repository.Expenses.Add(Expense.Create(new DateOnly(currentYear, 1, 5), "Completed months", 100m * monthsElapsed, Category.Mercado, "Barclays", null));
-        repository.Expenses.Add(Expense.Create(DateOnly.FromDateTime(today), "In-progress month", 9999m, Category.Mercado, "Barclays", null));
-        repository.Incomes.Add(Income.Create(new DateOnly(currentYear, 1, 5), IncomeSource.Gleison, 1000m * monthsElapsed, 800m * monthsElapsed, "Barclays"));
-        repository.Incomes.Add(Income.Create(DateOnly.FromDateTime(today), IncomeSource.Gleison, 9999m * monthsElapsed, 9999m * monthsElapsed, "Barclays"));
+        var service = new AnnualSummaryService(repository, new FakeTimeProvider(PinnedNow));
+        repository.Expenses.Add(Expense.Create(new DateOnly(CurrentYear, 1, 5), "Completed months", 100m * PinnedMonthsElapsed, Category.Mercado, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(PinnedToday, "In-progress month", 9999m, Category.Mercado, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(CurrentYear, 1, 5), IncomeSource.Gleison, 1000m * PinnedMonthsElapsed, 800m * PinnedMonthsElapsed, "Barclays"));
+        repository.Incomes.Add(Income.Create(PinnedToday, IncomeSource.Gleison, 9999m * PinnedMonthsElapsed, 9999m * PinnedMonthsElapsed, "Barclays"));
 
-        var result = service.GetCategoryTotalsAnnualForYear(currentYear);
+        var result = service.GetCategoryTotalsAnnualForYear(CurrentYear);
 
-        // When today is in January there are no completed months yet, so MonthlySeries.Average's
-        // monthsElapsed<=0 rule yields zero instead of the completed-months figures below.
-        var expectedTotalDespesasAverage = monthsElapsed == 0 ? 0m : 100m;
-        var expectedResultadoAverage = monthsElapsed == 0 ? 0m : 700m;
-        result.TotalDespesasAverage.Should().Be(expectedTotalDespesasAverage);
-        result.ResultadoAverage.Should().Be(expectedResultadoAverage);
+        result.TotalDespesasAverage.Should().Be(100m);
+        result.ResultadoAverage.Should().Be(700m);
     }
 
     private sealed class StubCashFlowRepository : ICashFlowRepository
