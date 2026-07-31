@@ -46,7 +46,7 @@ export interface UseTransferFormResult {
   isSaving: boolean
   saveError: string | null
   saveErrorField: TransferFormField | null
-  openCreateForm: () => void
+  openCreateForm: (preselectedSourceBank?: string) => void
   openEditForm: (transfer: TransferDto) => void
   cancel: () => void
   setField: (field: TransferFormField, value: string) => void
@@ -58,12 +58,12 @@ export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTrans
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, setState] = useState<TransferFormState>(BLANK_STATE)
 
-  function openCreateForm() {
+  function openCreateForm(preselectedSourceBank?: string) {
     setState({
       ...BLANK_STATE,
       isOpen: true,
       date: todayIsoDate(),
-      sourceBank: banks[0]?.name ?? '',
+      sourceBank: preselectedSourceBank ?? banks[0]?.name ?? '',
     })
   }
 

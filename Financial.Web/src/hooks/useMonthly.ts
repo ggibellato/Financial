@@ -479,6 +479,8 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
 }
 
 export interface MonthlyData {
+  year: number
+  month: number
   monthInputValue: string
   setMonthInputValue: (value: string) => void
   expenses: ExpenseDto[]
@@ -1007,6 +1009,8 @@ export function useMonthly(): MonthlyData {
   const totalIncoming = incomeTotals.reduce((sum, i) => sum + i.netValue, 0)
 
   return {
+    year: state.year,
+    month: state.month,
     monthInputValue,
     setMonthInputValue,
     expenses: state.expenses,

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import BalanceAdjustmentForm from '../components/BalanceAdjustmentForm'
 import BanksGrid from '../components/BanksGrid'
 import CardsGrid from '../components/CardsGrid'
 import CategoryTotalsGrid from '../components/CategoryTotalsGrid'
@@ -9,6 +10,9 @@ import IncomeForm, { type IncomeFormField } from '../components/IncomeForm'
 import IncomeSection from '../components/IncomeSection'
 import IncomingGrid from '../components/IncomingGrid'
 import LoadingState from '../components/LoadingState'
+import TransferForm from '../components/TransferForm'
+import { useBalanceAdjustmentForm } from '../hooks/useBalanceAdjustmentForm'
+import { useBankHistory } from '../hooks/useBankHistory'
 import {
   useMonthly,
   type CreateFormField,
@@ -16,6 +20,7 @@ import {
   type EditField,
   type EditIncomeField,
 } from '../hooks/useMonthly'
+import { useTransferForm } from '../hooks/useTransferForm'
 import './MonthlyPage.css'
 
 type MonthlyTabId = 'summary' | 'expense' | 'incoming'
@@ -64,6 +69,8 @@ const EDIT_INCOME_FIELD_BY_FORM_FIELD: Record<IncomeFormField, EditIncomeField> 
 
 export default function MonthlyPage() {
   const {
+    year,
+    month,
     monthInputValue,
     setMonthInputValue,
     expenses,
@@ -147,7 +154,22 @@ export default function MonthlyPage() {
     titheSummary,
   } = useMonthly()
 
+  const bankHistory = useBankHistory(year, month, banks, retry)
+  const transferForm = useTransferForm(banks, () => {
+    retry()
+    bankHistory.retry()
+  })
+  const adjustmentForm = useBalanceAdjustmentForm(() => {
+    retry()
+    bankHistory.retry()
+  })
+
   const [activeTab, setActiveTab] = useState<MonthlyTabId>('summary')
+  const [expandedBank, setExpandedBank] = useState<string | null>(null)
+
+  const toggleExpandedBank = (bankName: string) => {
+    setExpandedBank((current) => (current === bankName ? null : bankName))
+  }
 
   const isEditing = editingId !== null
   const isFormVisible = isCreateFormOpen || isEditing
@@ -201,6 +223,40 @@ export default function MonthlyPage() {
         <div className="monthly-page__content">
           {activeTab === 'summary' && (
           <div className="monthly-page__summary-groups">
+            {transferForm.isOpen && (
+              <TransferForm
+                isEditing={transferForm.isEditing}
+                date={transferForm.date}
+                sourceBank={transferForm.sourceBank}
+                destinationBank={transferForm.destinationBank}
+                amount={transferForm.amount}
+                note={transferForm.note}
+                banks={banks}
+                isSaving={transferForm.isSaving}
+                saveError={transferForm.saveError}
+                saveErrorField={transferForm.saveErrorField}
+                onFieldChange={transferForm.setField}
+                onSave={transferForm.submit}
+                onCancel={transferForm.cancel}
+              />
+            )}
+            {adjustmentForm.isOpen && (
+              <BalanceAdjustmentForm
+                isEditing={adjustmentForm.isEditing}
+                bankName={adjustmentForm.bankName}
+                currentBalance={adjustmentForm.currentBalance}
+                date={adjustmentForm.date}
+                targetBalance={adjustmentForm.targetBalance}
+                note={adjustmentForm.note}
+                isSaving={adjustmentForm.isSaving}
+                saveError={adjustmentForm.saveError}
+                saveErrorField={adjustmentForm.saveErrorField}
+                savedDelta={adjustmentForm.savedDelta}
+                onFieldChange={adjustmentForm.setField}
+                onSave={adjustmentForm.submit}
+                onCancel={adjustmentForm.cancel}
+              />
+            )}
             <div className="monthly-page__grids-row">
               <CategoryTotalsGrid categoryTotals={categoryTotals} categoryTotalsSum={categoryTotalsSum} />
               <CardsGrid
@@ -214,7 +270,20 @@ export default function MonthlyPage() {
               />
             </div>
             <div className="monthly-page__grids-row">
-              <BanksGrid bankTotals={bankTotals} bankTotalsSum={bankTotalsSum} roundUpTotalsSum={roundUpTotalsSum} />
+              <BanksGrid
+                bankTotals={bankTotals}
+                bankTotalsSum={bankTotalsSum}
+                roundUpTotalsSum={roundUpTotalsSum}
+                historyByBank={bankHistory.historyByBank}
+                expandedBank={expandedBank}
+                onToggleExpand={toggleExpandedBank}
+                onMoveMoney={(bankName) => transferForm.openCreateForm(bankName)}
+                onCorrectBalance={(bankName, currentBalance) => adjustmentForm.openCreateForm(bankName, currentBalance)}
+                onEditTransfer={transferForm.openEditForm}
+                onEditAdjustment={adjustmentForm.openEditForm}
+                onDeleteTransfer={bankHistory.deleteTransfer}
+                onDeleteAdjustment={bankHistory.deleteAdjustment}
+              />
               <IncomingGrid incomeTotals={incomeTotals} totalIncoming={totalIncoming} titheSummary={titheSummary} />
             </div>
           </div>

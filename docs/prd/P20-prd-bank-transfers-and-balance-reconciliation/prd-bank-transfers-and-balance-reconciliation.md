@@ -288,26 +288,26 @@ graph TD
 - [x] The computed balance for a bank with no transfers or adjustments in the period is unchanged from the pre-existing Income/Expense-only formula.
 
 ### F04. Web Transfer Entry Form
-- [ ] Submitting the form with a valid source bank, destination bank, amount, and date creates a transfer visible in F06's history list.
+- [x] Submitting the form with a valid source bank, destination bank, amount, and date creates a transfer visible in F06's history list.
 - [x] Selecting the same bank for source and destination shows an inline validation error and blocks submission.
-- [ ] Editing an existing transfer via the form updates it, reflected in F06's balances and history after save.
+- [x] Editing an existing transfer via the form updates it, reflected in F06's balances and history after save.
 - [x] A backend validation error (e.g. amount ≤ 0) is displayed inline under the amount field.
 
 ### F05. Web Balance Adjustment Entry Form
 - [x] Opening the form for a bank displays the current calculated balance exactly as returned by the backend.
 - [x] Submitting a target balance creates an adjustment and displays the backend-returned delta, not a client-computed one.
 - [x] Submitting a negative target balance shows an inline validation error and blocks submission.
-- [ ] Editing an existing adjustment's target balance updates its stored delta, reflected in F06 after save.
+- [x] Editing an existing adjustment's target balance updates its stored delta, reflected in F06 after save.
 
 ### F06. Web Bank Balances & History View
-- [ ] Each bank row displays the balance figure exactly as returned by the balances endpoint, with no client-side recalculation.
-- [ ] The history section for a bank lists both transfers (in and out) and adjustments touching that bank, in reverse-chronological order.
-- [ ] Deleting a transfer or adjustment from the history list removes it after confirmation and refreshes the displayed balance.
-- [ ] Editing a transfer or adjustment from the history list opens the corresponding form (F04 or F05) pre-filled with its current values.
+- [x] Each bank row displays the balance figure exactly as returned by the balances endpoint, with no client-side recalculation.
+- [x] The history section for a bank lists both transfers (in and out) and adjustments touching that bank, in reverse-chronological order.
+- [x] Deleting a transfer or adjustment from the history list removes it after confirmation and refreshes the displayed balance.
+- [x] Editing a transfer or adjustment from the history list opens the corresponding form (F04 or F05) pre-filled with its current values.
 
 ### Cross-Feature Integration
 - [x] A transfer created via F01 is included in F03's balance computation for both its source and destination banks.
 - [x] A balance adjustment created via F02, whose delta depends on F03's computed balance as of its date, produces a delta that brings F03's subsequent computed balance to exactly the entered target balance.
-- [ ] A transfer created through F04 is persisted via F01 and appears correctly in F06's history list and balance display.
-- [ ] An adjustment created through F05, using F03's current-balance reference and F02's create endpoint, appears correctly in F06's history list and balance display.
-- [ ] F06's displayed balances and history are consistent with the raw data returned directly by F01, F02, and F03's endpoints (no divergence between what F06 shows and what the APIs return).
+- [x] A transfer created through F04 is persisted via F01 and appears correctly in F06's history list and balance display.
+- [x] An adjustment created through F05, using F03's current-balance reference and F02's create endpoint, appears correctly in F06's history list and balance display.
+- [x] F06's displayed balances and history are consistent with the raw data returned directly by F01, F02, and F03's endpoints (no divergence between what F06 shows and what the APIs return).
