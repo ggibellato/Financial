@@ -282,10 +282,10 @@ graph TD
 - [x] Deleting an adjustment removes it and its `Delta` no longer contributes to that bank's computed balance.
 
 ### F03. Bank Balance Calculation Engine
-- [ ] A transfer's amount is subtracted from the source bank's computed balance and added to the destination bank's computed balance, both for any as-of date on or after the transfer's date.
-- [ ] A balance adjustment's stored `Delta` is added to its bank's computed balance for any as-of date on or after the adjustment's date.
-- [ ] A transfer or adjustment dated after the requested as-of date has no effect on the computed balance for that request.
-- [ ] The computed balance for a bank with no transfers or adjustments in the period is unchanged from the pre-existing Income/Expense-only formula.
+- [x] A transfer's amount is subtracted from the source bank's computed balance and added to the destination bank's computed balance, both for any as-of date on or after the transfer's date.
+- [x] A balance adjustment's stored `Delta` is added to its bank's computed balance for any as-of date on or after the adjustment's date.
+- [x] A transfer or adjustment dated after the requested as-of date has no effect on the computed balance for that request.
+- [x] The computed balance for a bank with no transfers or adjustments in the period is unchanged from the pre-existing Income/Expense-only formula.
 
 ### F04. Web Transfer Entry Form
 - [ ] Submitting the form with a valid source bank, destination bank, amount, and date creates a transfer visible in F06's history list.
@@ -306,8 +306,8 @@ graph TD
 - [ ] Editing a transfer or adjustment from the history list opens the corresponding form (F04 or F05) pre-filled with its current values.
 
 ### Cross-Feature Integration
-- [ ] A transfer created via F01 is included in F03's balance computation for both its source and destination banks.
-- [ ] A balance adjustment created via F02, whose delta depends on F03's computed balance as of its date, produces a delta that brings F03's subsequent computed balance to exactly the entered target balance.
+- [x] A transfer created via F01 is included in F03's balance computation for both its source and destination banks.
+- [x] A balance adjustment created via F02, whose delta depends on F03's computed balance as of its date, produces a delta that brings F03's subsequent computed balance to exactly the entered target balance.
 - [ ] A transfer created through F04 is persisted via F01 and appears correctly in F06's history list and balance display.
 - [ ] An adjustment created through F05, using F03's current-balance reference and F02's create endpoint, appears correctly in F06's history list and balance display.
 - [ ] F06's displayed balances and history are consistent with the raw data returned directly by F01, F02, and F03's endpoints (no divergence between what F06 shows and what the APIs return).
