@@ -320,6 +320,7 @@ public class ControllerGuardClauseTests
         public IReadOnlyList<Financial.CashFlow.Application.DTOs.BankDTO> GetBanks() => throw new NotImplementedException();
         public Task<Financial.CashFlow.Application.DTOs.BankDTO> UpdateOpeningBalanceAsync(string name, Financial.CashFlow.Application.DTOs.BankOpeningBalanceUpdateDTO request) => throw new NotImplementedException();
         public IReadOnlyList<Financial.CashFlow.Application.DTOs.BankBalanceDTO> GetBankBalancesByMonth(int year, int month) => throw new NotImplementedException();
+        public decimal GetBankBalanceAsOf(string bankName, DateOnly asOfDate, Guid? excludingAdjustmentId = null) => throw new NotImplementedException();
     }
 
     private sealed class StubBalanceAdjustmentService : IBalanceAdjustmentService
