@@ -266,12 +266,12 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Bank Transfer Domain & API
-- [ ] Creating a transfer with two distinct, existing banks, a positive amount, and a date succeeds and is retrievable via `GET /transfers/month/{year}/{month}`.
-- [ ] Creating a transfer with the same bank as source and destination fails with a 400 error.
-- [ ] Creating a transfer with an amount of 0 or less fails with a 400 error.
-- [ ] Creating a transfer with an unresolvable bank name fails with a 400 error.
-- [ ] Editing a transfer's amount, date, or note persists the change and is reflected on the next `GET`.
-- [ ] Deleting a transfer removes it from `data-cashflow.json` and from all subsequent `GET` responses.
+- [x] Creating a transfer with two distinct, existing banks, a positive amount, and a date succeeds and is retrievable via `GET /transfers/month/{year}/{month}`.
+- [x] Creating a transfer with the same bank as source and destination fails with a 400 error.
+- [x] Creating a transfer with an amount of 0 or less fails with a 400 error.
+- [x] Creating a transfer with an unresolvable bank name fails with a 400 error.
+- [x] Editing a transfer's amount, date, or note persists the change and is reflected on the next `GET`.
+- [x] Deleting a transfer removes it from `data-cashflow.json` and from all subsequent `GET` responses.
 
 ### F02. Balance Adjustment Domain & API
 - [ ] Creating a balance adjustment with a valid bank, non-negative target balance, and date succeeds and returns the computed `Delta`.
