@@ -994,26 +994,10 @@ public class AnnualSummaryServiceTests
         result.ResultadoAverage.Should().Be(700m);
     }
 
-    private static readonly (string Name, bool IsLiability)[] SeededAccounts =
-    [
-        ("BlueRewardsSaver", false),
-        ("PlatinumVisa8003", true),
-        ("PlatinumVisa6007", true),
-        ("ChaseMaster4023", true),
-        ("BaAmex", true),
-        ("PaypalCredit", true),
-        ("ChipCashIsaGleison", false),
-        ("ChaseSave", false),
-        ("ChipCashIsaAriana", false),
-        ("Trading212Invested", false),
-        ("ReservasPessoais", true)
-    ];
-
     private static StubCashFlowRepository CreateRepository()
     {
         var repository = new StubCashFlowRepository();
-        repository.InvestmentAccounts.AddRange(
-            SeededAccounts.Select(a => InvestmentAccount.Create(a.Name, isActive: true, isLiability: a.IsLiability)));
+        SeededInvestmentAccounts.SeedInto(repository);
         return repository;
     }
 }

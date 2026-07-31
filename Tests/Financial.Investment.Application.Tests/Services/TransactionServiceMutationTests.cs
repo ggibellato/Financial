@@ -1,7 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
-using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
+using Financial.Investment.Application.Tests.TestHelpers;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
 
@@ -216,23 +216,4 @@ public class TransactionServiceMutationTests
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);
 
-    private sealed class StubRepository : IRepository
-    {
-        public Asset? Asset { get; set; }
-        public IEnumerable<Asset> AssetsByBroker { get; set; } = [];
-        public IEnumerable<Asset> AssetsByBrokerPortfolio { get; set; } = [];
-        public IEnumerable<Broker> Brokers { get; set; } = [];
-        public int SaveChangesCallCount { get; private set; }
-
-        public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) => AssetsByBroker;
-        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) => AssetsByBrokerPortfolio;
-        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) => Brokers;
-        public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => Asset;
-
-        public Task SaveChangesAsync()
-        {
-            SaveChangesCallCount++;
-            return Task.CompletedTask;
-        }
-    }
 }
