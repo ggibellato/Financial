@@ -35,5 +35,10 @@ public interface ICashFlowRepository
     void AddIncome(Income income);
     void DeleteIncome(Guid id);
 
+    IEnumerable<Transfer> GetTransfers();
+    void AddTransfer(Transfer transfer);
+    void UpdateTransfer(Transfer transfer);
+    void DeleteTransfer(Guid id);
+
     Task SaveChangesAsync();
 }
