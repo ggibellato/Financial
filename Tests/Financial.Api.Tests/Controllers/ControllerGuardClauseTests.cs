@@ -190,10 +190,17 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
-    public void BanksController_NullService_Throws()
+    public void BanksController_NullBankService_Throws()
     {
-        Action act = () => new BanksController(null!);
-        act.Should().Throw<ArgumentNullException>();
+        Action act = () => new BanksController(null!, new StubBalanceAdjustmentService());
+        act.Should().Throw<ArgumentNullException>().WithParameterName("bankService");
+    }
+
+    [Fact]
+    public void BanksController_NullBalanceAdjustmentService_Throws()
+    {
+        Action act = () => new BanksController(new StubBankService(), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("balanceAdjustmentService");
     }
 
     [Fact]
@@ -306,5 +313,20 @@ public class ControllerGuardClauseTests
     {
         public IReadOnlyList<DividendHistoryItemDTO> GetDividendHistory(DividendLookupRequestDTO request) => throw new NotImplementedException();
         public DividendSummaryDTO GetDividendSummary(DividendLookupRequestDTO request) => throw new NotImplementedException();
+    }
+
+    private sealed class StubBankService : IBankService
+    {
+        public IReadOnlyList<Financial.CashFlow.Application.DTOs.BankDTO> GetBanks() => throw new NotImplementedException();
+        public Task<Financial.CashFlow.Application.DTOs.BankDTO> UpdateOpeningBalanceAsync(string name, Financial.CashFlow.Application.DTOs.BankOpeningBalanceUpdateDTO request) => throw new NotImplementedException();
+        public IReadOnlyList<Financial.CashFlow.Application.DTOs.BankBalanceDTO> GetBankBalancesByMonth(int year, int month) => throw new NotImplementedException();
+    }
+
+    private sealed class StubBalanceAdjustmentService : IBalanceAdjustmentService
+    {
+        public Task<Financial.CashFlow.Application.DTOs.BalanceAdjustmentDTO> AddAdjustmentAsync(string bankName, Financial.CashFlow.Application.DTOs.BalanceAdjustmentCreateDTO request) => throw new NotImplementedException();
+        public Task<Financial.CashFlow.Application.DTOs.BalanceAdjustmentDTO> UpdateAdjustmentAsync(string bankName, Guid id, Financial.CashFlow.Application.DTOs.BalanceAdjustmentUpdateDTO request) => throw new NotImplementedException();
+        public Task DeleteAdjustmentAsync(string bankName, Guid id) => throw new NotImplementedException();
+        public IReadOnlyList<Financial.CashFlow.Application.DTOs.BalanceAdjustmentDTO> GetAdjustmentsByBank(string bankName) => throw new NotImplementedException();
     }
 }
