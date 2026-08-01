@@ -415,3 +415,36 @@ internal sealed class StubControleMaeService : IControleMaeService
         return Task.CompletedTask;
     }
 }
+
+internal sealed class StubInvestmentSnapshotService : IInvestmentSnapshotService
+{
+    public List<InvestmentSnapshotDTO> Snapshots { get; set; } = [];
+    public int GetSnapshotsForMonthCallCount { get; private set; }
+    public (Guid Id, UpdateInvestmentSnapshotValueDTO Request)? LastUpdateRequest { get; private set; }
+    public Exception? ThrowOnUpdate { get; set; }
+
+    public Task<IReadOnlyList<InvestmentSnapshotDTO>> GetSnapshotsForMonthAsync(int year, int month)
+    {
+        GetSnapshotsForMonthCallCount++;
+        return Task.FromResult<IReadOnlyList<InvestmentSnapshotDTO>>(
+            Snapshots.Where(s => s.Year == year && s.Month == month).ToList());
+    }
+
+    public Task<InvestmentSnapshotDTO> UpdateSnapshotValueAsync(Guid id, UpdateInvestmentSnapshotValueDTO request)
+    {
+        if (ThrowOnUpdate is { } ex)
+        {
+            throw ex;
+        }
+
+        LastUpdateRequest = (id, request);
+        var existing = Snapshots.First(s => s.Id == id);
+        var updated = new InvestmentSnapshotDTO
+        {
+            Id = id, Account = existing.Account, IsLiability = existing.IsLiability,
+            Year = existing.Year, Month = existing.Month, Value = request.Value,
+        };
+        Snapshots[Snapshots.IndexOf(existing)] = updated;
+        return Task.FromResult(updated);
+    }
+}
