@@ -71,6 +71,10 @@ namespace Financial.Presentation.App
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IMensaisService>(),
                         msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes));
                     services.AddTransient<MensaisView>();
+                    services.AddTransient<ControleMaeViewModel>(sp => new ControleMaeViewModel(
+                        sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IControleMaeService>(),
+                        msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes));
+                    services.AddTransient<ControleMaeView>();
                     services.AddTransient<MainWindow>();
                 })
                 .Build();
