@@ -113,8 +113,16 @@ public class MonthlyViewModel : ViewModelBase
         _ = RefreshAsync();
     }
 
-    private async Task RefreshAsync()
+    private int _refreshRequestId;
+
+    /// <summary>
+    /// Reloads expenses/incomes/category totals/banks/tithe for the selected period. Guards
+    /// against overlapping calls (e.g. the constructor's initial load racing a rapid year/month
+    /// change or a manual retry) by discarding a completion whose request has been superseded.
+    /// </summary>
+    internal async Task RefreshAsync()
     {
+        var requestId = ++_refreshRequestId;
         IsLoading = true;
         Error = null;
 
@@ -129,6 +137,11 @@ public class MonthlyViewModel : ViewModelBase
             var banks = await Task.Run(() => _bankService.GetBanks());
             var titheSummary = await Task.Run(() => _titheService.GetTitheSummary(year, month));
 
+            if (requestId != _refreshRequestId)
+            {
+                return;
+            }
+
             ReplaceAll(Expenses, expenses);
             ReplaceAll(Incomes, incomes);
             ReplaceAll(CategoryTotals, categoryTotals);
@@ -138,11 +151,17 @@ public class MonthlyViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            Error = ex.Message;
+            if (requestId == _refreshRequestId)
+            {
+                Error = ex.Message;
+            }
         }
         finally
         {
-            IsLoading = false;
+            if (requestId == _refreshRequestId)
+            {
+                IsLoading = false;
+            }
         }
     }
 
@@ -374,7 +393,7 @@ public class MonthlyViewModel : ViewModelBase
         return suggestion.ToString("0.##");
     }
 
-    private async Task SaveExpenseAsync()
+    internal async Task SaveExpenseAsync()
     {
         var validationMessage = ExpenseFormValidation.BuildValidationMessage(
             ExpenseFormDate, ExpenseFormDescription, ExpenseFormCategory, ExpenseFormValue,
@@ -441,7 +460,7 @@ public class MonthlyViewModel : ViewModelBase
         }
     }
 
-    private async Task DeleteExpenseAsync(ExpenseDTO? expense)
+    internal async Task DeleteExpenseAsync(ExpenseDTO? expense)
     {
         if (expense is null)
         {
@@ -594,7 +613,7 @@ public class MonthlyViewModel : ViewModelBase
         IncomeSaveError = null;
     }
 
-    private async Task SaveIncomeAsync()
+    internal async Task SaveIncomeAsync()
     {
         var validationMessage = IncomeFormValidation.BuildValidationMessage(
             IncomeFormDate, IncomeFormSource, IncomeFormNetValue, IncomeFormBank);
@@ -654,7 +673,7 @@ public class MonthlyViewModel : ViewModelBase
         }
     }
 
-    private async Task DeleteIncomeAsync(IncomeDTO? income)
+    internal async Task DeleteIncomeAsync(IncomeDTO? income)
     {
         if (income is null)
         {
