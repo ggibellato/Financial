@@ -299,3 +299,60 @@ internal sealed class StubReserveService : IReserveService
         return Task.CompletedTask;
     }
 }
+
+internal sealed class StubMensaisService : IMensaisService
+{
+    public List<RecurringBillDTO> Bills { get; set; } = [];
+    public CreateRecurringBillDTO? LastCreateRequest { get; private set; }
+    public (Guid Id, UpdateRecurringBillDTO Request)? LastUpdateRequest { get; private set; }
+    public Guid? LastDeletedId { get; private set; }
+    public int ResetAllToUnsetCallCount { get; private set; }
+
+    public Task<RecurringBillDTO> CreateBillAsync(CreateRecurringBillDTO request)
+    {
+        LastCreateRequest = request;
+        var bill = new RecurringBillDTO
+        {
+            Id = Guid.NewGuid(), DueDay = request.DueDay, Description = request.Description,
+            Value = request.Value, Area = request.Area, Note = request.Note,
+            NitNumber = null, MinimumWageValue = null, Status = "Unset",
+        };
+        Bills.Add(bill);
+        return Task.FromResult(bill);
+    }
+
+    public Task DeleteBillAsync(Guid id)
+    {
+        LastDeletedId = id;
+        Bills.RemoveAll(b => b.Id == id);
+        return Task.CompletedTask;
+    }
+
+    public IReadOnlyList<RecurringBillDTO> GetBills() => Bills;
+
+    public Task<RecurringBillDTO> UpdateBillAsync(Guid id, UpdateRecurringBillDTO request)
+    {
+        LastUpdateRequest = (id, request);
+        var existing = Bills.First(b => b.Id == id);
+        var updated = new RecurringBillDTO
+        {
+            Id = id, DueDay = existing.DueDay, Description = existing.Description,
+            Value = request.Value, Area = existing.Area, Note = existing.Note,
+            NitNumber = existing.NitNumber, MinimumWageValue = existing.MinimumWageValue, Status = request.Status,
+        };
+        Bills[Bills.IndexOf(existing)] = updated;
+        return Task.FromResult(updated);
+    }
+
+    public Task<IReadOnlyList<RecurringBillDTO>> ResetAllToUnsetAsync()
+    {
+        ResetAllToUnsetCallCount++;
+        Bills = Bills.Select(b => new RecurringBillDTO
+        {
+            Id = b.Id, DueDay = b.DueDay, Description = b.Description, Value = b.Value,
+            Area = b.Area, Note = b.Note, NitNumber = b.NitNumber, MinimumWageValue = b.MinimumWageValue,
+            Status = "Unset",
+        }).ToList();
+        return Task.FromResult<IReadOnlyList<RecurringBillDTO>>(Bills);
+    }
+}
