@@ -17,6 +17,16 @@
             </TabItem>
             <TabItem x:Name="dividendCheckTab" Header="Shares Dividend check"/>
             <TabItem x:Name="assetPriceTab" Header="Read Assets current values"/>
+            <TabItem Header="Cash Flow">
+                <TabControl>
+                    <TabItem Header="Monthly"/>
+                    <TabItem Header="Reserva"/>
+                    <TabItem Header="Mensais"/>
+                    <TabItem Header="Controle Mae"/>
+                    <TabItem Header="Investment Snapshots"/>
+                    <TabItem Header="Annual Summary"/>
+                </TabControl>
+            </TabItem>
         </TabControl>
     </Grid>
 </Window>
