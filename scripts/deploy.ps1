@@ -74,6 +74,7 @@ foreach ($pair in @(
     )) {
     $settings = Get-Content $pair.Source -Raw | ConvertFrom-Json
     $settings.Investment.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
+    $settings.CashFlow.GoogleDrive.CredentialsPath = $localSettings.GoogleDriveCredentialsPath
     $settings | ConvertTo-Json -Depth 10 | Set-Content -Path $pair.Target -Encoding utf8
 }
 
