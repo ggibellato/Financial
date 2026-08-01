@@ -66,6 +66,7 @@ public class ReservaViewModel : ViewModelBase
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
         InitializeSplitCommands();
         InitializeWithdrawalCommands();
+        InitializeEditDeleteCommands();
 
         _ = RefreshAsync();
     }
@@ -128,6 +129,7 @@ public class ReservaViewModel : ViewModelBase
     {
         CloseSplitForm();
         CloseWithdrawalForm();
+        CloseEditForm();
     }
 
     #region Income Split
@@ -405,6 +407,175 @@ public class ReservaViewModel : ViewModelBase
             }
 
             await PostWithdrawalWithOverdraftHandlingAsync(confirmed: true);
+        }
+    }
+
+    #endregion
+
+    #region Edit and Delete Movement
+
+    private bool _isEditFormOpen;
+    private Guid? _editingMovementId;
+    private string _editBucket = Buckets[0];
+    private string _editAmount = string.Empty;
+    private DateTime? _editDate;
+    private string _editDescription = string.Empty;
+    private bool _isSavingMovement;
+    private string? _editSaveError;
+
+    public bool IsEditFormOpen
+    {
+        get => _isEditFormOpen;
+        private set => SetProperty(ref _isEditFormOpen, value);
+    }
+
+    public string EditBucket
+    {
+        get => _editBucket;
+        set => SetProperty(ref _editBucket, value);
+    }
+
+    public string EditAmount
+    {
+        get => _editAmount;
+        set => SetProperty(ref _editAmount, value);
+    }
+
+    public DateTime? EditDate
+    {
+        get => _editDate;
+        set => SetProperty(ref _editDate, value);
+    }
+
+    public string EditDescription
+    {
+        get => _editDescription;
+        set => SetProperty(ref _editDescription, value);
+    }
+
+    public bool IsSavingMovement
+    {
+        get => _isSavingMovement;
+        private set => SetProperty(ref _isSavingMovement, value);
+    }
+
+    public string? EditSaveError
+    {
+        get => _editSaveError;
+        private set => SetProperty(ref _editSaveError, value);
+    }
+
+    private string? _deleteMovementError;
+
+    public string? DeleteMovementError
+    {
+        get => _deleteMovementError;
+        private set => SetProperty(ref _deleteMovementError, value);
+    }
+
+    public RelayCommand<ReserveMovementRow> EditMovementCommand { get; private set; } = null!;
+    public RelayCommand CancelEditFormCommand { get; private set; } = null!;
+    public RelayCommand SaveMovementEditCommand { get; private set; } = null!;
+    public RelayCommand<ReserveMovementRow> DeleteMovementCommand { get; private set; } = null!;
+
+    private void InitializeEditDeleteCommands()
+    {
+        EditMovementCommand = new RelayCommand<ReserveMovementRow>(ShowEditForm);
+        CancelEditFormCommand = new RelayCommand(CloseEditForm);
+        SaveMovementEditCommand = new RelayCommand(async () => await SaveMovementEditAsync());
+        DeleteMovementCommand = new RelayCommand<ReserveMovementRow>(async row => await DeleteMovementAsync(row));
+    }
+
+    private void ShowEditForm(ReserveMovementRow? row)
+    {
+        if (row is null)
+        {
+            return;
+        }
+
+        CloseAllForms();
+        _editingMovementId = row.Id;
+        EditBucket = row.Bucket;
+        EditAmount = row.Amount.ToString();
+        EditDate = row.Date.ToDateTime(TimeOnly.MinValue);
+        EditDescription = row.Description;
+        EditSaveError = null;
+        IsEditFormOpen = true;
+    }
+
+    private void CloseEditForm()
+    {
+        IsEditFormOpen = false;
+        EditSaveError = null;
+        _editingMovementId = null;
+    }
+
+    internal async Task SaveMovementEditAsync()
+    {
+        if (_editingMovementId is not { } id)
+        {
+            return;
+        }
+
+        var validationMessage = EditReserveMovementFormValidation.BuildValidationMessage(EditBucket, EditAmount, EditDate, EditDescription);
+        if (!string.IsNullOrEmpty(validationMessage))
+        {
+            EditSaveError = validationMessage;
+            return;
+        }
+
+        IsSavingMovement = true;
+        EditSaveError = null;
+
+        try
+        {
+            await _reserveService.UpdateMovementAsync(id, new UpdateReserveMovementDTO
+            {
+                Bucket = EditBucket,
+                Amount = decimal.Parse(EditAmount),
+                Date = DateOnly.FromDateTime(EditDate!.Value),
+                Description = EditDescription,
+            });
+
+            CloseEditForm();
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            EditSaveError = ex.Message;
+        }
+        finally
+        {
+            IsSavingMovement = false;
+        }
+    }
+
+    internal async Task DeleteMovementAsync(ReserveMovementRow? row)
+    {
+        if (row is null)
+        {
+            return;
+        }
+
+        var confirmMessage = row.IsPartOfGroup
+            ? $"Delete \"{row.Description}\"? This is part of a split and will delete all 4 lines."
+            : $"Delete \"{row.Description}\"? This removes it for good.";
+
+        if (!_confirm(confirmMessage))
+        {
+            return;
+        }
+
+        DeleteMovementError = null;
+
+        try
+        {
+            await _reserveService.DeleteMovementAsync(row.Id);
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            DeleteMovementError = ex.Message;
         }
     }
 
