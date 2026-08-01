@@ -12,8 +12,10 @@ public class MonthlyViewModelTests
         var incomes = new StubIncomeService();
         var banks = new StubBankService { Banks = [new BankDTO { Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) }, new BankDTO { Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) }] };
         var tithe = new StubTitheService { Summary = new TitheSummaryDTO { CalculatedTithe = 100m, TitheBalance = 50m } };
+        var transfers = new StubTransferService();
+        var adjustments = new StubBalanceAdjustmentService();
 
-        var viewModel = new MonthlyViewModel(expenses, incomes, banks, tithe, confirm: _ => confirmDeletes);
+        var viewModel = new MonthlyViewModel(expenses, incomes, banks, tithe, transfers, adjustments, confirm: _ => confirmDeletes);
         return (viewModel, expenses, incomes, banks, tithe);
     }
 

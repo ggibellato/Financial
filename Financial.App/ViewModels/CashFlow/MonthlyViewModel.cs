@@ -16,6 +16,8 @@ public class MonthlyViewModel : ViewModelBase
     private readonly IIncomeService _incomeService;
     private readonly IBankService _bankService;
     private readonly ITitheService _titheService;
+    private readonly ITransferService _transferService;
+    private readonly IBalanceAdjustmentService _balanceAdjustmentService;
 
     private int _year;
     private int _month;
@@ -102,12 +104,16 @@ public class MonthlyViewModel : ViewModelBase
         IIncomeService incomeService,
         IBankService bankService,
         ITitheService titheService,
+        ITransferService transferService,
+        IBalanceAdjustmentService balanceAdjustmentService,
         Func<string, bool> confirm)
     {
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
         _incomeService = incomeService ?? throw new ArgumentNullException(nameof(incomeService));
         _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
         _titheService = titheService ?? throw new ArgumentNullException(nameof(titheService));
+        _transferService = transferService ?? throw new ArgumentNullException(nameof(transferService));
+        _balanceAdjustmentService = balanceAdjustmentService ?? throw new ArgumentNullException(nameof(balanceAdjustmentService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
 
         var today = DateTime.Today;
@@ -146,6 +152,12 @@ public class MonthlyViewModel : ViewModelBase
             var banks = await Task.Run(() => _bankService.GetBanks());
             var bankBalances = await Task.Run(() => _bankService.GetBankBalancesByMonth(year, month));
             var titheSummary = await Task.Run(() => _titheService.GetTitheSummary(year, month));
+            var transfers = await Task.Run(() => _transferService.GetTransfersByMonth(year, month));
+            var adjustmentsByBank = new Dictionary<string, IReadOnlyList<BalanceAdjustmentDTO>>();
+            foreach (var bank in banks)
+            {
+                adjustmentsByBank[bank.Name] = await Task.Run(() => _balanceAdjustmentService.GetAdjustmentsByBank(bank.Name));
+            }
 
             if (requestId != _refreshRequestId)
             {
@@ -160,7 +172,7 @@ public class MonthlyViewModel : ViewModelBase
             OnPropertyChanged(nameof(CategoryTotalsSum));
 
             var previouslyExpanded = BankTotals.Where(b => b.IsExpanded).Select(b => b.Bank).ToHashSet();
-            var newBankTotals = BuildBankTotals(banks, expenses, bankBalances);
+            var newBankTotals = BuildBankTotals(banks, expenses, bankBalances, transfers, adjustmentsByBank, year, month);
             foreach (var row in newBankTotals)
             {
                 row.IsExpanded = previouslyExpanded.Contains(row.Bank);
@@ -196,7 +208,13 @@ public class MonthlyViewModel : ViewModelBase
 
     /// <summary>Mirrors useMonthly.ts's bankTotals: balance from the month's running total, round-up summed client-side from that bank's expenses.</summary>
     private static List<BankTotalRow> BuildBankTotals(
-        IReadOnlyList<BankDTO> banks, IReadOnlyList<ExpenseDTO> expenses, IReadOnlyList<BankBalanceDTO> bankBalances)
+        IReadOnlyList<BankDTO> banks,
+        IReadOnlyList<ExpenseDTO> expenses,
+        IReadOnlyList<BankBalanceDTO> bankBalances,
+        IReadOnlyList<TransferDTO> transfers,
+        IReadOnlyDictionary<string, IReadOnlyList<BalanceAdjustmentDTO>> adjustmentsByBank,
+        int year,
+        int month)
     {
         return banks.Select(bank =>
         {
@@ -204,8 +222,40 @@ public class MonthlyViewModel : ViewModelBase
                 .Where(e => e.PaymentSource == bank.Name)
                 .Sum(e => e.RoundUpAmount ?? 0m);
             var balance = bankBalances.FirstOrDefault(b => b.Bank == bank.Name)?.Balance ?? 0m;
-            return new BankTotalRow { Bank = bank.Name, Balance = balance, RoundUpTotal = roundUpTotal };
+            var row = new BankTotalRow { Bank = bank.Name, Balance = balance, RoundUpTotal = roundUpTotal };
+
+            foreach (var entry in BuildBankHistory(bank.Name, transfers, adjustmentsByBank.GetValueOrDefault(bank.Name, []), year, month))
+            {
+                row.History.Add(entry);
+            }
+
+            return row;
         }).ToList();
+    }
+
+    /// <summary>Merges a bank's transfers and adjustments for the month into one history list, newest first, mirroring useBankHistory.ts.</summary>
+    private static List<BankHistoryEntry> BuildBankHistory(
+        string bankName, IReadOnlyList<TransferDTO> transfers, IReadOnlyList<BalanceAdjustmentDTO> adjustments, int year, int month)
+    {
+        var entries = new List<BankHistoryEntry>();
+
+        foreach (var transfer in transfers)
+        {
+            if (transfer.SourceBank == bankName)
+            {
+                entries.Add(BankHistoryEntry.FromTransferOut(transfer));
+            }
+            else if (transfer.DestinationBank == bankName)
+            {
+                entries.Add(BankHistoryEntry.FromTransferIn(transfer));
+            }
+        }
+
+        entries.AddRange(adjustments
+            .Where(a => a.Date.Year == year && a.Date.Month == month)
+            .Select(BankHistoryEntry.FromAdjustment));
+
+        return entries.OrderByDescending(e => e.Date).ToList();
     }
 
     // ----- Expense CRUD -----
@@ -739,7 +789,16 @@ public class MonthlyViewModel : ViewModelBase
 
     // ----- Banks grid -----
 
+    private string? _bankHistoryError;
+
+    public string? BankHistoryError
+    {
+        get => _bankHistoryError;
+        private set => SetProperty(ref _bankHistoryError, value);
+    }
+
     public RelayCommand<BankTotalRow> ToggleBankExpandCommand { get; private set; } = null!;
+    public RelayCommand<BankHistoryEntry> DeleteHistoryEntryCommand { get; private set; } = null!;
 
     private void InitializeBankCommands()
     {
@@ -750,5 +809,43 @@ public class MonthlyViewModel : ViewModelBase
                 row.IsExpanded = !row.IsExpanded;
             }
         });
+        DeleteHistoryEntryCommand = new RelayCommand<BankHistoryEntry>(async entry => await DeleteHistoryEntryAsync(entry));
+    }
+
+    private async Task DeleteHistoryEntryAsync(BankHistoryEntry? entry)
+    {
+        if (entry is null)
+        {
+            return;
+        }
+
+        var confirmMessage = entry.Kind == BankHistoryEntryKind.Adjustment
+            ? "Delete this balance adjustment? This removes it for good."
+            : "Delete this transfer? This removes it for good.";
+
+        if (!_confirm(confirmMessage))
+        {
+            return;
+        }
+
+        BankHistoryError = null;
+
+        try
+        {
+            if (entry.Transfer is { } transfer)
+            {
+                await _transferService.DeleteTransferAsync(transfer.Id);
+            }
+            else if (entry.Adjustment is { } adjustment)
+            {
+                await _balanceAdjustmentService.DeleteAdjustmentAsync(adjustment.Bank, adjustment.Id);
+            }
+
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            BankHistoryError = ex.Message;
+        }
     }
 }
