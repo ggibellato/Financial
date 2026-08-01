@@ -25,7 +25,7 @@
                 <TabControl>
                     <TabItem x:Name="monthlyTab" Header="Monthly"/>
                     <TabItem x:Name="reservaTab" Header="Reserva"/>
-                    <TabItem Header="Mensais"/>
+                    <TabItem x:Name="mensaisTab" Header="Mensais"/>
                     <TabItem Header="Controle Mae"/>
                     <TabItem Header="Investment Snapshots"/>
                     <TabItem Header="Annual Summary"/>

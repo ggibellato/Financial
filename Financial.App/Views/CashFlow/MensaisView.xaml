@@ -1,0 +1,77 @@
+<UserControl x:Class="Financial.Presentation.App.Views.CashFlow.MensaisView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Financial.Presentation.App.Views.CashFlow"
+             xmlns:components="clr-namespace:Financial.Presentation.App.Components">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Loading..." FontSize="14"
+                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+        <StackPanel Grid.Row="0" Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock Text="{Binding Error}" Foreground="Red" TextWrapping="Wrap"/>
+            <Button Content="Retry" Command="{Binding RetryCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+        </StackPanel>
+
+        <Grid Grid.Row="0" Visibility="{Binding ShowContent, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+                <TextBlock Text="Month:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <components:MonthYearPicker SelectedYear="{Binding DisplayYear, Mode=TwoWay}"
+                                             SelectedMonth="{Binding DisplayMonth, Mode=TwoWay}"/>
+                <Button Content="Add Bill" Margin="16,0,0,0" Command="{Binding ShowAddFormCommand}"/>
+                <Button Margin="8,0,0,0" Command="{Binding ResetAllToUnsetCommand}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Content" Value="Reset All to Unset"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsResetting}" Value="True">
+                                    <Setter Property="Content" Value="Resetting..."/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </StackPanel>
+
+            <local:AddBillFormView Grid.Row="1" Visibility="{Binding IsAddFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            <local:EditBillFormView Grid.Row="2" Visibility="{Binding IsEditFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+            <StackPanel Grid.Row="3">
+                <TextBlock Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding DeleteError}"/>
+                <TextBlock Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding ResetError}"/>
+            </StackPanel>
+
+            <Grid Grid.Row="4" Margin="0,0,0,12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" FontWeight="Bold" Text="Brasil" Margin="0,0,0,4"/>
+                <local:BillTableView Grid.Row="1" Bills="{Binding BrasilBills}" ShowBrasilFields="True"
+                                      EditBillCommand="{Binding EditBillCommand}" DeleteBillCommand="{Binding DeleteBillCommand}"/>
+            </Grid>
+
+            <Grid Grid.Row="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" FontWeight="Bold" Text="UK" Margin="0,0,0,4"/>
+                <local:BillTableView Grid.Row="1" Bills="{Binding UkBills}" ShowBrasilFields="False"
+                                      EditBillCommand="{Binding EditBillCommand}" DeleteBillCommand="{Binding DeleteBillCommand}"/>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>
