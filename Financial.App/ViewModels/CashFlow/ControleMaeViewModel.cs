@@ -90,6 +90,7 @@ public class ControleMaeViewModel : ViewModelBase
             await RefreshEntriesAsync();
             await RefreshTotalsAsync();
         });
+        InitializeCreateCommands();
 
         _ = RefreshEntriesAsync();
         _ = RefreshTotalsAsync();
@@ -161,4 +162,137 @@ public class ControleMaeViewModel : ViewModelBase
             collection.Add(item);
         }
     }
+
+    /// <summary>Closes all inline forms — only one form panel may be open at a time.</summary>
+    private void CloseAllForms()
+    {
+        CloseCreateForm();
+    }
+
+    #region Create Entry
+
+    private bool _isCreateFormOpen;
+    private DateTime? _createDate;
+    private string _createDescription = string.Empty;
+    private string _createNote = string.Empty;
+    private string _createCurrency = Currencies[0];
+    private string _createValue = string.Empty;
+    private bool _isCreating;
+    private string? _createSaveError;
+
+    public bool IsCreateFormOpen
+    {
+        get => _isCreateFormOpen;
+        private set => SetProperty(ref _isCreateFormOpen, value);
+    }
+
+    public DateTime? CreateDate
+    {
+        get => _createDate;
+        set => SetProperty(ref _createDate, value);
+    }
+
+    public string CreateDescription
+    {
+        get => _createDescription;
+        set => SetProperty(ref _createDescription, value);
+    }
+
+    public string CreateNote
+    {
+        get => _createNote;
+        set => SetProperty(ref _createNote, value);
+    }
+
+    public string CreateCurrency
+    {
+        get => _createCurrency;
+        set => SetProperty(ref _createCurrency, value);
+    }
+
+    public string CreateValue
+    {
+        get => _createValue;
+        set => SetProperty(ref _createValue, value);
+    }
+
+    public bool IsCreating
+    {
+        get => _isCreating;
+        private set => SetProperty(ref _isCreating, value);
+    }
+
+    public string? CreateSaveError
+    {
+        get => _createSaveError;
+        private set => SetProperty(ref _createSaveError, value);
+    }
+
+    public RelayCommand ShowCreateFormCommand { get; private set; } = null!;
+    public RelayCommand CancelCreateFormCommand { get; private set; } = null!;
+    public RelayCommand SubmitCreateCommand { get; private set; } = null!;
+
+    private void InitializeCreateCommands()
+    {
+        ShowCreateFormCommand = new RelayCommand(ShowCreateForm);
+        CancelCreateFormCommand = new RelayCommand(CloseCreateForm);
+        SubmitCreateCommand = new RelayCommand(async () => await SubmitCreateAsync());
+    }
+
+    private void ShowCreateForm()
+    {
+        CloseAllForms();
+        CreateDate = DateTime.Today;
+        CreateDescription = string.Empty;
+        CreateNote = string.Empty;
+        CreateCurrency = Currencies[0];
+        CreateValue = string.Empty;
+        CreateSaveError = null;
+        IsCreateFormOpen = true;
+    }
+
+    private void CloseCreateForm()
+    {
+        IsCreateFormOpen = false;
+        CreateSaveError = null;
+    }
+
+    internal async Task SubmitCreateAsync()
+    {
+        var validationMessage = CreateEntryFormValidation.BuildValidationMessage(CreateDate, CreateDescription, CreateValue);
+        if (!string.IsNullOrEmpty(validationMessage))
+        {
+            CreateSaveError = validationMessage;
+            return;
+        }
+
+        IsCreating = true;
+        CreateSaveError = null;
+
+        try
+        {
+            await _controleMaeService.CreateEntryAsync(new CreateMaeLedgerEntryDTO
+            {
+                Date = DateOnly.FromDateTime(CreateDate!.Value),
+                Description = CreateDescription,
+                Note = string.IsNullOrWhiteSpace(CreateNote) ? string.Empty : CreateNote,
+                SourceCurrency = CreateCurrency,
+                SourceValue = decimal.Parse(CreateValue),
+            });
+
+            CloseCreateForm();
+            await RefreshEntriesAsync();
+            await RefreshTotalsAsync();
+        }
+        catch (Exception ex)
+        {
+            CreateSaveError = ex.Message;
+        }
+        finally
+        {
+            IsCreating = false;
+        }
+    }
+
+    #endregion
 }

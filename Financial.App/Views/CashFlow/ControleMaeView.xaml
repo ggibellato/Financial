@@ -18,6 +18,7 @@
         <Grid Grid.Row="0" Visibility="{Binding ShowContent, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
@@ -25,9 +26,12 @@
             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
                 <TextBlock Text="From:" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <DatePicker SelectedDate="{Binding FromDate, Mode=TwoWay}"/>
+                <Button Content="New Entry" Margin="16,0,0,0" Command="{Binding ShowCreateFormCommand}"/>
             </StackPanel>
 
-            <DataGrid Grid.Row="1" ItemsSource="{Binding Entries}" AutoGenerateColumns="False" IsReadOnly="True">
+            <local:CreateEntryFormView Grid.Row="1" Visibility="{Binding IsCreateFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+            <DataGrid Grid.Row="2" ItemsSource="{Binding Entries}" AutoGenerateColumns="False" IsReadOnly="True">
                 <DataGrid.Columns>
                     <DataGridTextColumn Binding="{Binding Date, StringFormat=d}" Header="Date" Width="100"
                                          ElementStyle="{StaticResource PlainColumnTextStyle}"/>
@@ -48,7 +52,7 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-            <Grid Grid.Row="2" Margin="0,8,0,0">
+            <Grid Grid.Row="3" Margin="0,8,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="240"/>
