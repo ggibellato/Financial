@@ -91,6 +91,7 @@ public class ControleMaeViewModel : ViewModelBase
             await RefreshTotalsAsync();
         });
         InitializeCreateCommands();
+        InitializeEditDeleteCommands();
 
         _ = RefreshEntriesAsync();
         _ = RefreshTotalsAsync();
@@ -167,6 +168,7 @@ public class ControleMaeViewModel : ViewModelBase
     private void CloseAllForms()
     {
         CloseCreateForm();
+        CloseEditForm();
     }
 
     #region Create Entry
@@ -291,6 +293,154 @@ public class ControleMaeViewModel : ViewModelBase
         finally
         {
             IsCreating = false;
+        }
+    }
+
+    #endregion
+
+    #region Edit and Delete Entry
+
+    private bool _isEditFormOpen;
+    private Guid? _editingEntryId;
+    private string _editBrlValue = string.Empty;
+    private string _editGbpValue = string.Empty;
+    private bool _isSaving;
+    private string? _editSaveError;
+    private string? _deleteError;
+
+    public bool IsEditFormOpen
+    {
+        get => _isEditFormOpen;
+        private set => SetProperty(ref _isEditFormOpen, value);
+    }
+
+    public string EditBrlValue
+    {
+        get => _editBrlValue;
+        set => SetProperty(ref _editBrlValue, value);
+    }
+
+    public string EditGbpValue
+    {
+        get => _editGbpValue;
+        set => SetProperty(ref _editGbpValue, value);
+    }
+
+    public bool IsSaving
+    {
+        get => _isSaving;
+        private set => SetProperty(ref _isSaving, value);
+    }
+
+    public string? EditSaveError
+    {
+        get => _editSaveError;
+        private set => SetProperty(ref _editSaveError, value);
+    }
+
+    public string? DeleteError
+    {
+        get => _deleteError;
+        private set => SetProperty(ref _deleteError, value);
+    }
+
+    public RelayCommand<MaeLedgerEntryDTO> EditEntryCommand { get; private set; } = null!;
+    public RelayCommand CancelEditFormCommand { get; private set; } = null!;
+    public RelayCommand SaveEditCommand { get; private set; } = null!;
+    public RelayCommand<MaeLedgerEntryDTO> DeleteEntryCommand { get; private set; } = null!;
+
+    private void InitializeEditDeleteCommands()
+    {
+        EditEntryCommand = new RelayCommand<MaeLedgerEntryDTO>(ShowEditForm);
+        CancelEditFormCommand = new RelayCommand(CloseEditForm);
+        SaveEditCommand = new RelayCommand(async () => await SaveEditAsync());
+        DeleteEntryCommand = new RelayCommand<MaeLedgerEntryDTO>(async entry => await DeleteEntryAsync(entry));
+    }
+
+    private void ShowEditForm(MaeLedgerEntryDTO? entry)
+    {
+        if (entry is null)
+        {
+            return;
+        }
+
+        CloseAllForms();
+        _editingEntryId = entry.Id;
+        EditBrlValue = entry.BrlValue?.ToString() ?? string.Empty;
+        EditGbpValue = entry.GbpValue?.ToString() ?? string.Empty;
+        EditSaveError = null;
+        IsEditFormOpen = true;
+    }
+
+    private void CloseEditForm()
+    {
+        IsEditFormOpen = false;
+        EditSaveError = null;
+        _editingEntryId = null;
+    }
+
+    internal async Task SaveEditAsync()
+    {
+        if (_editingEntryId is not { } id)
+        {
+            return;
+        }
+
+        var validationMessage = EditEntryFormValidation.BuildValidationMessage(EditBrlValue, EditGbpValue);
+        if (!string.IsNullOrEmpty(validationMessage))
+        {
+            EditSaveError = validationMessage;
+            return;
+        }
+
+        IsSaving = true;
+        EditSaveError = null;
+
+        try
+        {
+            await _controleMaeService.UpdateEntryValuesAsync(id, new UpdateMaeLedgerEntryValuesDTO
+            {
+                BrlValue = string.IsNullOrWhiteSpace(EditBrlValue) ? null : decimal.Parse(EditBrlValue),
+                GbpValue = string.IsNullOrWhiteSpace(EditGbpValue) ? null : decimal.Parse(EditGbpValue),
+            });
+
+            CloseEditForm();
+            await RefreshEntriesAsync();
+            await RefreshTotalsAsync();
+        }
+        catch (Exception ex)
+        {
+            EditSaveError = ex.Message;
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    internal async Task DeleteEntryAsync(MaeLedgerEntryDTO? entry)
+    {
+        if (entry is null)
+        {
+            return;
+        }
+
+        if (!_confirm($"Delete \"{entry.Description}\"? This removes it for good."))
+        {
+            return;
+        }
+
+        DeleteError = null;
+
+        try
+        {
+            await _controleMaeService.DeleteEntryAsync(entry.Id);
+            await RefreshEntriesAsync();
+            await RefreshTotalsAsync();
+        }
+        catch (Exception ex)
+        {
+            DeleteError = ex.Message;
         }
     }
 

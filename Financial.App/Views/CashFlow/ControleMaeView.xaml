@@ -19,6 +19,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
@@ -30,9 +31,30 @@
             </StackPanel>
 
             <local:CreateEntryFormView Grid.Row="1" Visibility="{Binding IsCreateFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            <local:EditEntryFormView Grid.Row="1" Visibility="{Binding IsEditFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-            <DataGrid Grid.Row="2" ItemsSource="{Binding Entries}" AutoGenerateColumns="False" IsReadOnly="True">
+            <TextBlock Grid.Row="2" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding DeleteError}"/>
+
+            <DataGrid Grid.Row="3" ItemsSource="{Binding Entries}" AutoGenerateColumns="False" IsReadOnly="True">
                 <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="" Width="34">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="✏" ToolTip="Edit" Padding="4,0"
+                                        Command="{Binding DataContext.EditEntryCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        CommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="" Width="34">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="🗑" ToolTip="Delete" Padding="4,0"
+                                        Command="{Binding DataContext.DeleteEntryCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        CommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Binding="{Binding Date, StringFormat=d}" Header="Date" Width="100"
                                          ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                     <DataGridTextColumn Binding="{Binding Description}" Header="Description" Width="*"
@@ -52,7 +74,7 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-            <Grid Grid.Row="3" Margin="0,8,0,0">
+            <Grid Grid.Row="4" Margin="0,8,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="240"/>
