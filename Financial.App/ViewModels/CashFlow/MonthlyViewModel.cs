@@ -824,7 +824,7 @@ public class MonthlyViewModel : ViewModelBase
         DeleteHistoryEntryCommand = new RelayCommand<BankHistoryEntry>(async entry => await DeleteHistoryEntryAsync(entry));
     }
 
-    private async Task DeleteHistoryEntryAsync(BankHistoryEntry? entry)
+    internal async Task DeleteHistoryEntryAsync(BankHistoryEntry? entry)
     {
         if (entry is null)
         {
