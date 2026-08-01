@@ -448,3 +448,54 @@ internal sealed class StubInvestmentSnapshotService : IInvestmentSnapshotService
         return Task.FromResult(updated);
     }
 }
+
+internal sealed class StubAnnualSummaryService : IAnnualSummaryService
+{
+    public CategoryTotalsAnnualDTO CategoryTotalsAnnual { get; set; } = new()
+    {
+        CategoryTotals = [],
+        IncomeSummary = new IncomeAnnualSummaryDTO
+        {
+            SalaryMonthly = new decimal[12], SalaryAnnualTotal = 0m, SalaryAverage = 0m,
+            SalaryAfterTaxesMonthly = new decimal[12], SalaryAfterTaxesAnnualTotal = 0m, SalaryAfterTaxesAverage = 0m,
+            TaxDifferenceMonthly = new decimal[12], TaxDifferenceAnnualTotal = 0m, TaxDifferenceAverage = 0m,
+            DividendoJurosMonthly = new decimal[12], DividendoJurosAnnualTotal = 0m, DividendoJurosAverage = 0m,
+        },
+        TotalDespesasMonthly = new decimal[12], TotalDespesasAnnualTotal = 0m, TotalDespesasAverage = 0m,
+        ResultadoMonthly = new decimal[12], ResultadoAnnualTotal = 0m, ResultadoAverage = 0m,
+    };
+
+    public InvestmentAnnualResultDTO InvestmentAnnualResult { get; set; } = new()
+    {
+        Accounts = [],
+        NetPosition = new NetPositionAnnualDiffDTO
+        {
+            MonthlyValues = new decimal[12], MonthlyDiffs = new decimal?[12],
+            FullYearNetChange = 0m, AverageMonthResult = 0m, SumOfMonthResults = 0m,
+        },
+    };
+
+    public List<CategoryAnnualGroupValueDTO> HistoricSummaryAverage { get; set; } = [];
+
+    public int GetCategoryTotalsAnnualForYearCallCount { get; private set; }
+    public int GetInvestmentAnnualResultForYearCallCount { get; private set; }
+    public int GetHistoricSummaryAverageFromYearCallCount { get; private set; }
+
+    public IReadOnlyList<CategoryAnnualGroupValueDTO> GetHistoricSummaryAverageFromYear(int year)
+    {
+        GetHistoricSummaryAverageFromYearCallCount++;
+        return HistoricSummaryAverage;
+    }
+
+    public CategoryTotalsAnnualDTO GetCategoryTotalsAnnualForYear(int year)
+    {
+        GetCategoryTotalsAnnualForYearCallCount++;
+        return CategoryTotalsAnnual;
+    }
+
+    public InvestmentAnnualResultDTO GetInvestmentAnnualResultForYear(int year)
+    {
+        GetInvestmentAnnualResultForYearCallCount++;
+        return InvestmentAnnualResult;
+    }
+}
