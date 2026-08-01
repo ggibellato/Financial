@@ -359,10 +359,10 @@ graph TD
 ### F02. WPF Monthly View — Expenses & Income
 - [ ] Monthly view shows Summary, Expense, and Incoming sub-tabs with a Month+Year selector
 - [x] Adding an expense with valid Date/Description/Category/Value/Payment fields creates it and it appears in the Expense grid for that month
-- [ ] Selecting "Charge to card" shows the 5-item Card ComboBox and hides Payment Source/Round-Up
+- [x] Selecting "Charge to card" shows the 5-item Card ComboBox and hides Payment Source/Round-Up
 - [x] Selecting "Pay immediately" with a round-up-enabled bank shows the Round-Up field constrained to £0.00–£0.99; an out-of-range value blocks save
 - [x] Selecting "Pay immediately" with a non-round-up bank hides the Round-Up field
-- [ ] A settled expense renders read-only with the settlement explanation and offers no edit/delete controls
+- [x] A settled expense renders read-only with the settlement explanation and offers no edit/delete controls
 - [x] Editing an expense updates it and the grid reflects the change; deleting it removes it after confirmation
 - [x] Adding an income entry with Source = Gleison or Ariana shows the Gross Value field; other sources hide it
 - [x] Editing/deleting an income entry updates/removes it from the Incoming grid
