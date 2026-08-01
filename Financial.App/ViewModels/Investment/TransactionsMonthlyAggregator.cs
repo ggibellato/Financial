@@ -1,6 +1,6 @@
 using Financial.Presentation.App.Helpers;
 
-namespace Financial.Presentation.App.ViewModels;
+namespace Financial.Presentation.App.ViewModels.Investment;
 
 internal sealed record TransactionMonthNet(DateTime Month, decimal NetInvested);
 

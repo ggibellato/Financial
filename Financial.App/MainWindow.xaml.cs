@@ -1,4 +1,4 @@
-using Financial.Presentation.App.Views;
+using Financial.Presentation.App.Views.Investment;
 using System.Windows;
 
 namespace Financial.Presentation.App

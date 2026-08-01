@@ -1,7 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using System.Windows;
 
-namespace Financial.Presentation.App.ViewModels;
+namespace Financial.Presentation.App.ViewModels.Investment;
 
 public abstract class AssetActionsBase
 {

@@ -4,6 +4,7 @@ using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Presentation.App.ViewModels;
+using Financial.Presentation.App.ViewModels.Investment;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 

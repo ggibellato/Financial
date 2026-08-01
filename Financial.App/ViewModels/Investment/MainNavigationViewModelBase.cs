@@ -4,7 +4,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using System.Collections.ObjectModel;
 
-namespace Financial.Presentation.App.ViewModels;
+namespace Financial.Presentation.App.ViewModels.Investment;
 
 /// <summary>
 /// Shared navigation view model logic for UI and Tools

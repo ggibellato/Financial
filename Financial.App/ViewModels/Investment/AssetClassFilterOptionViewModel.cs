@@ -1,6 +1,6 @@
 using Financial.Investment.Domain.Entities;
 
-namespace Financial.Presentation.App.ViewModels;
+namespace Financial.Presentation.App.ViewModels.Investment;
 
 public sealed class AssetClassFilterOptionViewModel : ViewModelBase
 {

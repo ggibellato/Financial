@@ -5,7 +5,7 @@ using Financial.Investment.Domain.Rules;
 using Microsoft.Extensions.Options;
 using System.Collections.ObjectModel;
 
-namespace Financial.Presentation.App.ViewModels;
+namespace Financial.Presentation.App.ViewModels.Investment;
 
 public class DividendCheckViewModel : ViewModelBase
 {

@@ -1,5 +1,6 @@
 using Financial.Presentation.App.Helpers;
 using Financial.Presentation.App.ViewModels;
+using Financial.Presentation.App.ViewModels.Investment;
 using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;

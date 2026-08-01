@@ -1,4 +1,4 @@
-<UserControl x:Class="Financial.Presentation.App.Views.DividendCheckView"
+<UserControl x:Class="Financial.Presentation.App.Views.Investment.DividendCheckView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid Margin="20">

@@ -1,7 +1,7 @@
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 
-namespace Financial.Presentation.App.ViewModels;
+namespace Financial.Presentation.App.ViewModels.Investment;
 
 /// <summary>
 /// Navigation ViewModel for the Historic Investments tab, mirroring MainNavigationViewModel

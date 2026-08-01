@@ -5,7 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 
-namespace Financial.Presentation.App.Views;
+namespace Financial.Presentation.App.Views.Investment;
 
 public partial class DividendCheckView : UserControl
 {

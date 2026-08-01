@@ -1,4 +1,5 @@
 using Financial.Presentation.App.ViewModels;
+using Financial.Presentation.App.ViewModels.Investment;
 using FluentAssertions;
 using OxyPlot.Series;
 

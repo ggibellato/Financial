@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Financial.Presentation.App.ViewModels;
+using Financial.Presentation.App.ViewModels.Investment;
 using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;

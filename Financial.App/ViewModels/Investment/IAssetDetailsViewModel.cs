@@ -1,6 +1,6 @@
 using Financial.Investment.Application.DTOs;
 
-namespace Financial.Presentation.App.ViewModels;
+namespace Financial.Presentation.App.ViewModels.Investment;
 
 public interface IAssetDetailsViewModel
 {

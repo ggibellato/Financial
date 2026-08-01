@@ -1,6 +1,6 @@
 using Financial.Investment.Application.Interfaces;
 
-namespace Financial.Presentation.App.ViewModels;
+namespace Financial.Presentation.App.ViewModels.Investment;
 
 /// <summary>
 /// Main ViewModel for the navigation view, coordinating the tree and detail panels

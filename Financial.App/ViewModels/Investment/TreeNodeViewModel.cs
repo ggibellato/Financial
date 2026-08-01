@@ -1,7 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using System.Collections.ObjectModel;
 
-namespace Financial.Presentation.App.ViewModels;
+namespace Financial.Presentation.App.ViewModels.Investment;
 
 /// <summary>
 /// ViewModel for hierarchical tree nodes (Broker, Portfolio, Asset)

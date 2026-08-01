@@ -1,4 +1,4 @@
-namespace Financial.Presentation.App.ViewModels;
+namespace Financial.Presentation.App.ViewModels.Investment;
 
 public enum CreditsTypeChartMode
 {

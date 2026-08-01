@@ -1,6 +1,6 @@
 using Financial.Investment.Application.Validation;
 
-namespace Financial.Presentation.App.ViewModels;
+namespace Financial.Presentation.App.ViewModels.Investment;
 
 public static class TransactionDialogValidation
 {

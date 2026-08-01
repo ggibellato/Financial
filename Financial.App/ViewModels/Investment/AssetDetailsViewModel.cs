@@ -9,7 +9,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
 
-namespace Financial.Presentation.App.ViewModels;
+namespace Financial.Presentation.App.ViewModels.Investment;
 
 public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 {

@@ -3,7 +3,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using System.Globalization;
 
-namespace Financial.Presentation.App.ViewModels;
+namespace Financial.Presentation.App.ViewModels.Investment;
 
 public class PortfolioAssetSummaryRowViewModel : ViewModelBase
 {

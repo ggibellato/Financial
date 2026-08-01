@@ -1,4 +1,4 @@
-namespace Financial.Presentation.App.ViewModels;
+namespace Financial.Presentation.App.ViewModels.Investment;
 
 /// <summary>
 /// Shared pixel widths for the Portfolio Summary grid's columns, bound TwoWay from the
