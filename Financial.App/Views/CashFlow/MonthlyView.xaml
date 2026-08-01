@@ -1,0 +1,38 @@
+<UserControl x:Class="Financial.Presentation.App.Views.CashFlow.MonthlyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:components="clr-namespace:Financial.Presentation.App.Components"
+             xmlns:local="clr-namespace:Financial.Presentation.App.Views.CashFlow">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+            <TextBlock Text="Month:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <components:MonthYearPicker SelectedYear="{Binding Year, Mode=TwoWay}"
+                                         SelectedMonth="{Binding Month, Mode=TwoWay}"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="1" Text="Loading..." FontSize="14"
+                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+        <StackPanel Grid.Row="1" Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock Text="{Binding Error}" Foreground="Red" TextWrapping="Wrap"/>
+            <Button Content="Retry" Command="{Binding RetryCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+        </StackPanel>
+
+        <TabControl Grid.Row="1" Visibility="{Binding ShowContent, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TabItem Header="Summary">
+                <local:MonthlySummaryView/>
+            </TabItem>
+            <TabItem Header="Expense">
+                <local:ExpenseSectionView/>
+            </TabItem>
+            <TabItem Header="Incoming">
+                <local:IncomeSectionView/>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>
