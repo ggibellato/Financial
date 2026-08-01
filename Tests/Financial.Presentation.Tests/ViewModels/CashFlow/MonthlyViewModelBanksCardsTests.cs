@@ -50,6 +50,23 @@ public class MonthlyViewModelBanksCardsTests
         barclaysRow.Balance.Should().Be(250m);
         barclaysRow.RoundUpTotal.Should().Be(0.50m);
         viewModel.BankTotals.Single(b => b.Bank == "Chase").RoundUpTotal.Should().Be(0m);
+        viewModel.BankTotalsSum.Should().Be(260m);
+        viewModel.RoundUpTotalsSum.Should().Be(0.50m);
+    }
+
+    [Fact]
+    public async Task ToggleBankExpand_ExpandsThenCollapses()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        var row = viewModel.BankTotals.Single(b => b.Bank == "Barclays");
+        row.IsExpanded.Should().BeFalse();
+
+        viewModel.ToggleBankExpandCommand.Execute(row);
+        row.IsExpanded.Should().BeTrue();
+
+        viewModel.ToggleBankExpandCommand.Execute(row);
+        row.IsExpanded.Should().BeFalse();
     }
 
     [Fact]
@@ -66,6 +83,18 @@ public class MonthlyViewModelBanksCardsTests
         history.Should().HaveCount(2);
         history[0].Kind.Should().Be(BankHistoryEntryKind.Adjustment);
         history[1].Kind.Should().Be(BankHistoryEntryKind.TransferOut);
+    }
+
+    [Fact]
+    public async Task BankHistory_TransferAppearsInBothSourceAndDestinationBankHistory()
+    {
+        var (viewModel, _, _, transfers, _, _) = CreateViewModel();
+        transfers.Transfers = [new TransferDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), SourceBank = "Barclays", DestinationBank = "Chase", Amount = 50m }];
+
+        await viewModel.RefreshAsync();
+
+        viewModel.BankTotals.Single(b => b.Bank == "Barclays").History.Should().ContainSingle(e => e.Kind == BankHistoryEntryKind.TransferOut);
+        viewModel.BankTotals.Single(b => b.Bank == "Chase").History.Should().ContainSingle(e => e.Kind == BankHistoryEntryKind.TransferIn);
     }
 
     [Fact]
@@ -155,6 +184,7 @@ public class MonthlyViewModelBanksCardsTests
         var row = viewModel.BankTotals.Single(b => b.Bank == "Barclays");
 
         viewModel.ShowCorrectBalanceFormCommand.Execute(row);
+        viewModel.AdjustmentFormCurrentBalance.Should().Be(42.5m);
         viewModel.AdjustmentFormDate = DateTime.Today;
         viewModel.AdjustmentFormTargetBalance = "50";
 
@@ -164,6 +194,51 @@ public class MonthlyViewModelBanksCardsTests
         adjustments.LastCreateRequest!.Value.Bank.Should().Be("Barclays");
         adjustments.LastCreateRequest.Value.Request.TargetBalance.Should().Be(50m);
         viewModel.AdjustmentSavedDelta.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task EditAdjustment_ValidForm_CallsUpdateServiceWithCorrectBankAndId()
+    {
+        var (viewModel, _, _, _, adjustments, _) = CreateViewModel();
+        var adjustment = new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Bank = "Barclays", TargetBalance = 100m, Delta = 5m };
+        var entry = BankHistoryEntry.FromAdjustment(adjustment);
+
+        viewModel.EditAdjustmentCommand.Execute(entry);
+        viewModel.AdjustmentFormTargetBalance = "120";
+
+        await viewModel.SaveAdjustmentAsync();
+
+        adjustments.LastUpdateRequest.Should().NotBeNull();
+        adjustments.LastUpdateRequest!.Value.Bank.Should().Be("Barclays");
+        adjustments.LastUpdateRequest.Value.Id.Should().Be(adjustment.Id);
+        adjustments.LastUpdateRequest.Value.Request.TargetBalance.Should().Be(120m);
+    }
+
+    [Fact]
+    public async Task DeleteAdjustment_Confirmed_CallsServiceWithBankAndId()
+    {
+        var (viewModel, _, _, _, adjustments, _) = CreateViewModel();
+        var adjustment = new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Bank = "Barclays", TargetBalance = 100m, Delta = 5m };
+        var entry = BankHistoryEntry.FromAdjustment(adjustment);
+
+        await viewModel.DeleteHistoryEntryAsync(entry);
+
+        adjustments.LastDeleted.Should().Be(("Barclays", adjustment.Id));
+    }
+
+    [Fact]
+    public async Task CardStatements_FooterShowsCombinedOutstandingTotal()
+    {
+        var (viewModel, _, _, _, _, cards) = CreateViewModel();
+        cards.Statements =
+        [
+            new CardStatementDTO { Id = Guid.NewGuid(), Card = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 100m },
+            new CardStatementDTO { Id = Guid.NewGuid(), Card = "ChaseMaster4023", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 50m },
+        ];
+
+        await viewModel.RefreshAsync();
+
+        viewModel.AdjustmentTotal.Should().Be(150m);
     }
 
     [Fact]
