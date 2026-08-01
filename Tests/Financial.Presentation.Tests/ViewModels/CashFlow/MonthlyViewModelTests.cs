@@ -91,6 +91,43 @@ public class MonthlyViewModelTests
     }
 
     [Fact]
+    public void SettingCardPaymentMode_TogglesIsCardPaymentModeAndExposesFiveCards()
+    {
+        var (viewModel, _, _, _, _) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute(null);
+
+        viewModel.SetCardPaymentModeCommand.Execute(null);
+        viewModel.IsCardPaymentMode.Should().BeTrue();
+        viewModel.IsBankPaymentMode.Should().BeFalse();
+        MonthlyViewModel.Cards.Should().HaveCount(5);
+
+        viewModel.SetBankPaymentModeCommand.Execute(null);
+        viewModel.IsCardPaymentMode.Should().BeFalse();
+        viewModel.IsBankPaymentMode.Should().BeTrue();
+    }
+
+    [Fact]
+    public void EditExpense_SettledExpense_HidesPaymentModeFieldsAndSaveButton()
+    {
+        var (viewModel, _, _, _, _) = CreateViewModel();
+        var settledExpense = new ExpenseDTO
+        {
+            Id = Guid.NewGuid(),
+            Date = DateOnly.FromDateTime(DateTime.Today),
+            Description = "Settled",
+            Value = 10m,
+            Category = "Mercado",
+            CardTag = "BaAmex",
+            PaymentStatus = "CreditCardSettled",
+        };
+
+        viewModel.EditExpenseCommand.Execute(settledExpense);
+
+        viewModel.ExpenseFormIsSettled.Should().BeTrue();
+        viewModel.ShowPaymentModeFields.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task SelectingRoundUpEnabledBank_ShowsRoundUpField()
     {
         var (viewModel, _, _, banks, _) = CreateViewModel();
