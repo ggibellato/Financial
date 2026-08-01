@@ -392,12 +392,12 @@ graph TD
 - [x] Missing/invalid fields on Income Split, Withdrawal, or Edit Movement forms block submission with a visible error
 
 ### F05. WPF Mensais View
-- [ ] Brasil and UK bill tables show the correct rows for the selected month, with Brasil showing NIT/Min. Wage columns and UK not showing them
-- [ ] Adding a bill with valid fields creates it in the correct table based on Area
-- [ ] Editing a bill's Value/Status saves correctly and both tables reflect the change
-- [ ] Deleting a bill removes it after confirmation
-- [ ] "Reset All to Unset" resets every bill's Status to Unset after confirmation, and the grids reflect it
-- [ ] Missing/invalid fields on Add or Edit block submission with a visible error
+- [x] Brasil and UK bill tables show the correct rows for the selected month, with Brasil showing NIT/Min. Wage columns and UK not showing them
+- [x] Adding a bill with valid fields creates it in the correct table based on Area
+- [x] Editing a bill's Value/Status saves correctly and both tables reflect the change
+- [x] Deleting a bill removes it after confirmation
+- [x] "Reset All to Unset" resets every bill's Status to Unset after confirmation, and the grids reflect it
+- [x] Missing/invalid fields on Add or Edit block submission with a visible error
 
 ### F06. WPF Controle Mãe View
 - [ ] Ledger grid shows entries on/after the selected "From" date with correct BRL/GBP values (or "—" for null) and a correct totals row
