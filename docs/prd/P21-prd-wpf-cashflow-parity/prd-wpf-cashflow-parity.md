@@ -382,14 +382,14 @@ graph TD
 - [x] A backend rejection on any of the above (transfer, adjustment, mark/unmark paid, edit, delete) keeps the form/dialog open with entered values intact and displays the server's error message
 
 ### F04. WPF Reserva View
-- [ ] Balances grid shows the 4 fixed buckets with correct balances and a correct Total row
-- [ ] Posting a valid Income Split distributes the amount across the 4 buckets per the backend's calculation and shows the result panel with matching figures
-- [ ] Posting a valid Withdrawal that doesn't overdraw a bucket succeeds and refreshes balances/movements
-- [ ] Posting a Withdrawal that would overdraw a bucket shows the backend's conflict warning and requires explicit confirmation before proceeding; declining leaves the bucket unchanged
-- [ ] Movements from the same date+description split render grouped with a correct "Total split for {description}" row
-- [ ] Deleting a split-group movement shows the "part of a split" warning; deleting a standalone movement shows the standard warning; confirming either calls delete and refreshes the grids
-- [ ] Editing a movement's Bucket/Amount/Date/Description saves correctly and refreshes balances/movements
-- [ ] Missing/invalid fields on Income Split, Withdrawal, or Edit Movement forms block submission with a visible error
+- [x] Balances grid shows the 4 fixed buckets with correct balances and a correct Total row
+- [x] Posting a valid Income Split distributes the amount across the 4 buckets per the backend's calculation and shows the result panel with matching figures
+- [x] Posting a valid Withdrawal that doesn't overdraw a bucket succeeds and refreshes balances/movements
+- [x] Posting a Withdrawal that would overdraw a bucket shows the backend's conflict warning and requires explicit confirmation before proceeding; declining leaves the bucket unchanged
+- [x] Movements from the same date+description split render grouped with a correct "Total split for {description}" row
+- [x] Deleting a split-group movement shows the "part of a split" warning; deleting a standalone movement shows the standard warning; confirming either calls delete and refreshes the grids
+- [x] Editing a movement's Bucket/Amount/Date/Description saves correctly and refreshes balances/movements
+- [x] Missing/invalid fields on Income Split, Withdrawal, or Edit Movement forms block submission with a visible error
 
 ### F05. WPF Mensais View
 - [ ] Brasil and UK bill tables show the correct rows for the selected month, with Brasil showing NIT/Min. Wage columns and UK not showing them

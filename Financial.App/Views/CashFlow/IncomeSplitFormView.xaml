@@ -1,0 +1,68 @@
+<UserControl x:Class="Financial.Presentation.App.Views.CashFlow.IncomeSplitFormView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border BorderBrush="#CCCCCC" BorderThickness="1" Padding="12" Margin="0,0,0,12" Background="#FAFAFA">
+        <Grid>
+            <!-- Post-save result -->
+            <StackPanel Visibility="{Binding HasSplitResult, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock FontWeight="Bold" Text="Income Split Posted" Margin="0,0,0,8"/>
+                <TextBlock Text="{Binding LastSplitResult.Investimento, StringFormat='Investimento: {0:N2}'}"/>
+                <TextBlock Text="{Binding LastSplitResult.HouseTreats, StringFormat='HouseTreats: {0:N2}'}"/>
+                <TextBlock Text="{Binding LastSplitResult.Ariana, StringFormat='Ariana: {0:N2}'}"/>
+                <TextBlock Text="{Binding LastSplitResult.Gleison, StringFormat='Gleison: {0:N2}'}"/>
+                <TextBlock FontWeight="Bold" Margin="0,4,0,0" Text="{Binding LastSplitResult.Total, StringFormat='Total: {0:N2}'}"/>
+                <Button Content="Close" Width="90" HorizontalAlignment="Left" Margin="0,12,0,0"
+                        Command="{Binding DismissSplitResultCommand}"/>
+            </StackPanel>
+
+            <!-- Form -->
+            <Grid Visibility="{Binding ShowSplitFormFields, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="150"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.ColumnSpan="2" FontWeight="Bold" Text="New Income Split" Margin="0,0,0,8"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Date:" VerticalAlignment="Center"/>
+                <DatePicker Grid.Row="1" Grid.Column="1" SelectedDate="{Binding SplitDate, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Amount to Split:" VerticalAlignment="Center"/>
+                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding SplitAmount, UpdateSourceTrigger=LostFocus}"
+                         PreviewTextInput="OnDecimalTextBoxPreviewTextInput"
+                         DataObject.Pasting="OnDecimalTextBoxPasting"
+                         LostFocus="OnDecimalTextBoxLostFocus"/>
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Description:" VerticalAlignment="Center"/>
+                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding SplitDescription, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Foreground="Red" TextWrapping="Wrap"
+                           Text="{Binding SplitSaveError}" Margin="0,8,0,0"/>
+
+                <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
+                    <Button Width="130" Command="{Binding SubmitSplitCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Content" Value="Post Income Split"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSubmittingSplit}" Value="True">
+                                        <Setter Property="Content" Value="Posting..."/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="Cancel" Width="90" Margin="8,0,0,0" Command="{Binding CancelSplitFormCommand}"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>
