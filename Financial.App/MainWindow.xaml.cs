@@ -17,6 +17,7 @@ namespace Financial.Presentation.App
             AssetPriceView assetPriceView,
             MonthlyView monthlyView,
             ReservaView reservaView,
+            MensaisView mensaisView,
             MainNavigationViewModel navigationViewModel,
             MainNavigationViewModelHistoric navigationViewModelHistoric)
         {
@@ -24,6 +25,7 @@ namespace Financial.Presentation.App
             ArgumentNullException.ThrowIfNull(assetPriceView);
             ArgumentNullException.ThrowIfNull(monthlyView);
             ArgumentNullException.ThrowIfNull(reservaView);
+            ArgumentNullException.ThrowIfNull(mensaisView);
             _navigationViewModel = navigationViewModel ?? throw new ArgumentNullException(nameof(navigationViewModel));
             _navigationViewModelHistoric = navigationViewModelHistoric ?? throw new ArgumentNullException(nameof(navigationViewModelHistoric));
 
@@ -32,6 +34,7 @@ namespace Financial.Presentation.App
             assetPriceTab.Content = assetPriceView;
             monthlyTab.Content = monthlyView;
             reservaTab.Content = reservaView;
+            mensaisTab.Content = mensaisView;
 
             Loaded += async (s, e) =>
             {
