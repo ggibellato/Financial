@@ -108,6 +108,7 @@ public class MonthlyViewModel : ViewModelBase
 
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
         InitializeExpenseCommands();
+        InitializeIncomeCommands();
 
         _ = RefreshAsync();
     }
@@ -457,6 +458,219 @@ public class MonthlyViewModel : ViewModelBase
         catch (Exception ex)
         {
             DeletingExpenseError = ex.Message;
+        }
+    }
+
+    // ----- Income CRUD -----
+
+    public static readonly IReadOnlyList<string> IncomeSources = ["Gleison", "Ariana", "Lottery", "DividendoJuros"];
+    private static readonly HashSet<string> IncomeSourcesWithGrossValue = ["Gleison", "Ariana"];
+
+    private bool _isIncomeFormOpen;
+    private Guid? _editingIncomeId;
+    private DateTime? _incomeFormDate;
+    private string _incomeFormSource = IncomeSources[0];
+    private string _incomeFormGrossValue = string.Empty;
+    private string _incomeFormNetValue = string.Empty;
+    private string _incomeFormBank = string.Empty;
+    private bool _isSavingIncome;
+    private string? _incomeSaveError;
+    private string? _deletingIncomeError;
+
+    public bool IsIncomeFormOpen
+    {
+        get => _isIncomeFormOpen;
+        private set => SetProperty(ref _isIncomeFormOpen, value);
+    }
+
+    public bool IsEditingIncome => _editingIncomeId != null;
+
+    public DateTime? IncomeFormDate
+    {
+        get => _incomeFormDate;
+        set => SetProperty(ref _incomeFormDate, value);
+    }
+
+    public string IncomeFormSource
+    {
+        get => _incomeFormSource;
+        set
+        {
+            if (SetProperty(ref _incomeFormSource, value))
+            {
+                OnPropertyChanged(nameof(ShowIncomeGrossValueField));
+            }
+        }
+    }
+
+    public bool ShowIncomeGrossValueField => IncomeSourcesWithGrossValue.Contains(IncomeFormSource);
+
+    public string IncomeFormGrossValue
+    {
+        get => _incomeFormGrossValue;
+        set => SetProperty(ref _incomeFormGrossValue, value);
+    }
+
+    public string IncomeFormNetValue
+    {
+        get => _incomeFormNetValue;
+        set => SetProperty(ref _incomeFormNetValue, value);
+    }
+
+    public string IncomeFormBank
+    {
+        get => _incomeFormBank;
+        set => SetProperty(ref _incomeFormBank, value);
+    }
+
+    public bool IsSavingIncome
+    {
+        get => _isSavingIncome;
+        private set => SetProperty(ref _isSavingIncome, value);
+    }
+
+    public string? IncomeSaveError
+    {
+        get => _incomeSaveError;
+        private set => SetProperty(ref _incomeSaveError, value);
+    }
+
+    public string? DeletingIncomeError
+    {
+        get => _deletingIncomeError;
+        private set => SetProperty(ref _deletingIncomeError, value);
+    }
+
+    public RelayCommand ShowCreateIncomeFormCommand { get; private set; } = null!;
+    public RelayCommand CancelIncomeFormCommand { get; private set; } = null!;
+    public RelayCommand SaveIncomeCommand { get; private set; } = null!;
+    public RelayCommand<IncomeDTO> EditIncomeCommand { get; private set; } = null!;
+    public RelayCommand<IncomeDTO> DeleteIncomeCommand { get; private set; } = null!;
+
+    private void InitializeIncomeCommands()
+    {
+        ShowCreateIncomeFormCommand = new RelayCommand(ShowCreateIncomeForm);
+        CancelIncomeFormCommand = new RelayCommand(CloseIncomeForm);
+        SaveIncomeCommand = new RelayCommand(async () => await SaveIncomeAsync(), () => !IsSavingIncome);
+        EditIncomeCommand = new RelayCommand<IncomeDTO>(ShowEditIncomeForm);
+        DeleteIncomeCommand = new RelayCommand<IncomeDTO>(async income => await DeleteIncomeAsync(income));
+    }
+
+    private void ShowCreateIncomeForm()
+    {
+        _editingIncomeId = null;
+        IncomeFormDate = DateTime.Today;
+        IncomeFormSource = IncomeSources[0];
+        IncomeFormGrossValue = string.Empty;
+        IncomeFormNetValue = string.Empty;
+        IncomeFormBank = Banks.Count > 0 ? Banks[0].Name : string.Empty;
+        IncomeSaveError = null;
+        OnPropertyChanged(nameof(IsEditingIncome));
+        IsIncomeFormOpen = true;
+    }
+
+    private void ShowEditIncomeForm(IncomeDTO? income)
+    {
+        if (income is null)
+        {
+            return;
+        }
+
+        _editingIncomeId = income.Id;
+        IncomeFormDate = income.Date.ToDateTime(TimeOnly.MinValue);
+        IncomeFormSource = income.IncomeSource;
+        IncomeFormGrossValue = income.GrossValue?.ToString("0.##") ?? string.Empty;
+        IncomeFormNetValue = income.NetValue.ToString("0.##");
+        IncomeFormBank = income.Bank;
+        IncomeSaveError = null;
+        OnPropertyChanged(nameof(IsEditingIncome));
+        IsIncomeFormOpen = true;
+    }
+
+    private void CloseIncomeForm()
+    {
+        IsIncomeFormOpen = false;
+        _editingIncomeId = null;
+        IncomeSaveError = null;
+    }
+
+    private async Task SaveIncomeAsync()
+    {
+        var validationMessage = IncomeFormValidation.BuildValidationMessage(
+            IncomeFormDate, IncomeFormSource, IncomeFormNetValue, IncomeFormBank);
+
+        if (!string.IsNullOrEmpty(validationMessage))
+        {
+            IncomeSaveError = validationMessage;
+            return;
+        }
+
+        IsSavingIncome = true;
+        SaveIncomeCommand.RaiseCanExecuteChanged();
+        IncomeSaveError = null;
+
+        try
+        {
+            var date = DateOnly.FromDateTime(IncomeFormDate!.Value);
+            var netValue = decimal.Parse(IncomeFormNetValue);
+            decimal? grossValue = ShowIncomeGrossValueField && decimal.TryParse(IncomeFormGrossValue, out var parsedGross)
+                ? parsedGross
+                : null;
+
+            if (_editingIncomeId is { } id)
+            {
+                await _incomeService.UpdateIncomeAsync(id, new IncomeUpdateDTO
+                {
+                    Date = date,
+                    IncomeSource = IncomeFormSource,
+                    GrossValue = grossValue,
+                    NetValue = netValue,
+                    Bank = IncomeFormBank,
+                });
+            }
+            else
+            {
+                await _incomeService.AddIncomeAsync(new IncomeCreateDTO
+                {
+                    Date = date,
+                    IncomeSource = IncomeFormSource,
+                    GrossValue = grossValue,
+                    NetValue = netValue,
+                    Bank = IncomeFormBank,
+                });
+            }
+
+            CloseIncomeForm();
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            IncomeSaveError = ex.Message;
+        }
+        finally
+        {
+            IsSavingIncome = false;
+            SaveIncomeCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    private async Task DeleteIncomeAsync(IncomeDTO? income)
+    {
+        if (income is null)
+        {
+            return;
+        }
+
+        DeletingIncomeError = null;
+
+        try
+        {
+            await _incomeService.DeleteIncomeAsync(income.Id);
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            DeletingIncomeError = ex.Message;
         }
     }
 }

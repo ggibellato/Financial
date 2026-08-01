@@ -1,4 +1,54 @@
 <UserControl x:Class="Financial.Presentation.App.Views.CashFlow.IncomeSectionView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Financial.Presentation.App.Views.CashFlow">
+    <Grid Margin="0,12,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Button Grid.Row="0" Content="New Income" HorizontalAlignment="Left" Margin="0,0,0,8"
+                Command="{Binding ShowCreateIncomeFormCommand}"/>
+
+        <local:IncomeFormView Grid.Row="1"
+                               Visibility="{Binding IsIncomeFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+        <TextBlock Grid.Row="1" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,8"
+                   Text="{Binding DeletingIncomeError}"/>
+
+        <DataGrid Grid.Row="2" ItemsSource="{Binding Incomes}">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="" Width="34">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="✏" ToolTip="Edit income" Padding="4,0"
+                                    Command="{Binding DataContext.EditIncomeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                    CommandParameter="{Binding}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="" Width="34">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="🗑" ToolTip="Delete income" Padding="4,0"
+                                    Command="{Binding DataContext.DeleteIncomeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                    CommandParameter="{Binding}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Binding="{Binding Date, StringFormat=d}" Header="Date" Width="100"
+                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                <DataGridTextColumn Binding="{Binding IncomeSource}" Header="Source" Width="140"
+                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                <DataGridTextColumn Binding="{Binding GrossValue, StringFormat=N2, TargetNullValue='—'}" Header="Gross" Width="100"
+                                     ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                <DataGridTextColumn Binding="{Binding NetValue, StringFormat=N2}" Header="Net" Width="100"
+                                     ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                <DataGridTextColumn Binding="{Binding Bank}" Header="Bank" Width="*"
+                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
 </UserControl>
