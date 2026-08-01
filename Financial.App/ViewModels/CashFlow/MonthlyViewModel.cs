@@ -91,16 +91,20 @@ public class MonthlyViewModel : ViewModelBase
 
     public RelayCommand RetryCommand { get; }
 
+    private readonly Func<string, bool> _confirm;
+
     public MonthlyViewModel(
         IExpenseService expenseService,
         IIncomeService incomeService,
         IBankService bankService,
-        ITitheService titheService)
+        ITitheService titheService,
+        Func<string, bool> confirm)
     {
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
         _incomeService = incomeService ?? throw new ArgumentNullException(nameof(incomeService));
         _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
         _titheService = titheService ?? throw new ArgumentNullException(nameof(titheService));
+        _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
 
         var today = DateTime.Today;
         _year = today.Year;
@@ -467,6 +471,11 @@ public class MonthlyViewModel : ViewModelBase
             return;
         }
 
+        if (!_confirm($"Delete \"{expense.Description}\"? This removes it for good."))
+        {
+            return;
+        }
+
         DeletingExpenseError = null;
 
         try
@@ -676,6 +685,11 @@ public class MonthlyViewModel : ViewModelBase
     internal async Task DeleteIncomeAsync(IncomeDTO? income)
     {
         if (income is null)
+        {
+            return;
+        }
+
+        if (!_confirm($"Delete this income entry from {income.IncomeSource}? This removes it for good."))
         {
             return;
         }

@@ -6,14 +6,14 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 public class MonthlyViewModelTests
 {
-    private static (MonthlyViewModel ViewModel, StubExpenseService Expenses, StubIncomeService Incomes, StubBankService Banks, StubTitheService Tithe) CreateViewModel()
+    private static (MonthlyViewModel ViewModel, StubExpenseService Expenses, StubIncomeService Incomes, StubBankService Banks, StubTitheService Tithe) CreateViewModel(bool confirmDeletes = true)
     {
         var expenses = new StubExpenseService();
         var incomes = new StubIncomeService();
         var banks = new StubBankService { Banks = [new BankDTO { Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) }, new BankDTO { Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) }] };
         var tithe = new StubTitheService { Summary = new TitheSummaryDTO { CalculatedTithe = 100m, TitheBalance = 50m } };
 
-        var viewModel = new MonthlyViewModel(expenses, incomes, banks, tithe);
+        var viewModel = new MonthlyViewModel(expenses, incomes, banks, tithe, confirm: _ => confirmDeletes);
         return (viewModel, expenses, incomes, banks, tithe);
     }
 
@@ -88,9 +88,10 @@ public class MonthlyViewModelTests
     }
 
     [Fact]
-    public void SelectingRoundUpEnabledBank_ShowsRoundUpField()
+    public async Task SelectingRoundUpEnabledBank_ShowsRoundUpField()
     {
         var (viewModel, _, _, banks, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
         viewModel.ShowCreateExpenseFormCommand.Execute(null);
 
         viewModel.ExpenseFormPaymentSource = banks.Banks[0].Name; // Barclays, round-up enabled
@@ -99,9 +100,10 @@ public class MonthlyViewModelTests
     }
 
     [Fact]
-    public void SelectingNonRoundUpBank_HidesRoundUpField()
+    public async Task SelectingNonRoundUpBank_HidesRoundUpField()
     {
         var (viewModel, _, _, banks, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
         viewModel.ShowCreateExpenseFormCommand.Execute(null);
 
         viewModel.ExpenseFormPaymentSource = banks.Banks[1].Name; // Chase, round-up disabled
@@ -136,6 +138,17 @@ public class MonthlyViewModelTests
         await viewModel.DeleteExpenseAsync(expense);
 
         expenses.LastDeletedId.Should().Be(expense.Id);
+    }
+
+    [Fact]
+    public async Task DeleteExpense_ConfirmationDeclined_DoesNotCallService()
+    {
+        var (viewModel, expenses, _, _, _) = CreateViewModel(confirmDeletes: false);
+        var expense = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "X", Value = 1m, Category = "Mercado", PaymentStatus = "ImmediatePayment" };
+
+        await viewModel.DeleteExpenseAsync(expense);
+
+        expenses.LastDeletedId.Should().BeNull();
     }
 
     [Fact]

@@ -53,7 +53,12 @@ namespace Financial.Presentation.App
                         msg => MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error)));
                     services.AddTransient<DividendCheckView>();
                     services.AddTransient<AssetPriceView>();
-                    services.AddTransient<MonthlyViewModel>();
+                    services.AddTransient<MonthlyViewModel>(sp => new MonthlyViewModel(
+                        sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IExpenseService>(),
+                        sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IIncomeService>(),
+                        sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IBankService>(),
+                        sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ITitheService>(),
+                        msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes));
                     services.AddTransient<MonthlyView>();
                     services.AddTransient<MainWindow>();
                 })
