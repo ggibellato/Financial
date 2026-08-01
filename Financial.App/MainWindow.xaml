@@ -28,7 +28,7 @@
                     <TabItem x:Name="mensaisTab" Header="Mensais"/>
                     <TabItem x:Name="controleMaeTab" Header="Controle Mae"/>
                     <TabItem x:Name="investmentSnapshotsTab" Header="Investment Snapshots"/>
-                    <TabItem Header="Annual Summary"/>
+                    <TabItem x:Name="annualSummaryTab" Header="Annual Summary"/>
                 </TabControl>
             </TabItem>
         </TabControl>

@@ -77,6 +77,8 @@ namespace Financial.Presentation.App
                     services.AddTransient<ControleMaeView>();
                     services.AddTransient<InvestmentSnapshotsViewModel>();
                     services.AddTransient<InvestmentSnapshotsView>();
+                    services.AddTransient<AnnualSummaryViewModel>();
+                    services.AddTransient<AnnualSummaryView>();
                     services.AddTransient<MainWindow>();
                 })
                 .Build();
