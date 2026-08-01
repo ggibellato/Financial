@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
@@ -234,5 +235,67 @@ internal sealed class StubCardStatementService : ICardStatementService
             Id = id, Card = existing.Card, Year = existing.Year, Month = existing.Month,
             IsPaid = false, OutstandingTotal = existing.OutstandingTotal,
         });
+    }
+}
+
+internal sealed class StubReserveService : IReserveService
+{
+    public List<ReserveBucketBalanceDTO> Balances { get; set; } = [];
+    public List<ReserveMovementDTO> Movements { get; set; } = [];
+    public IncomeSplitResultDTO SplitResult { get; set; } =
+        new() { Investimento = 10m, HouseTreats = 20m, Ariana = 5m, Gleison = 5m, Total = 40m };
+    public IncomeSplitRequestDTO? LastSplitRequest { get; private set; }
+    public List<WithdrawalRequestDTO> WithdrawalRequests { get; } = [];
+    public bool ThrowOverdraftOnUnconfirmedWithdrawal { get; set; }
+    public string OverdraftMessage { get; set; } = "This withdrawal exceeds the bucket's balance.";
+    public Exception? ThrowOnWithdrawal { get; set; }
+    public (Guid Id, UpdateReserveMovementDTO Request)? LastUpdateRequest { get; private set; }
+    public Guid? LastDeletedId { get; private set; }
+
+    public Task<IncomeSplitResultDTO> PostIncomeSplitAsync(IncomeSplitRequestDTO request)
+    {
+        LastSplitRequest = request;
+        return Task.FromResult(SplitResult);
+    }
+
+    public Task<ReserveMovementDTO> PostWithdrawalAsync(WithdrawalRequestDTO request)
+    {
+        WithdrawalRequests.Add(request);
+
+        if (ThrowOnWithdrawal is { } ex)
+        {
+            throw ex;
+        }
+
+        if (ThrowOverdraftOnUnconfirmedWithdrawal && !request.Confirmed)
+        {
+            throw new OverdraftConfirmationRequiredException(OverdraftMessage);
+        }
+
+        return Task.FromResult(new ReserveMovementDTO
+        {
+            Id = Guid.NewGuid(), Bucket = request.Bucket, Amount = -request.Amount,
+            Date = request.Date, Description = request.Description,
+        });
+    }
+
+    public IReadOnlyList<ReserveBucketBalanceDTO> GetBucketBalances() => Balances;
+
+    public IReadOnlyList<ReserveMovementDTO> GetMovementHistory() => Movements;
+
+    public Task<ReserveMovementDTO> UpdateMovementAsync(Guid id, UpdateReserveMovementDTO request)
+    {
+        LastUpdateRequest = (id, request);
+        return Task.FromResult(new ReserveMovementDTO
+        {
+            Id = id, Bucket = request.Bucket, Amount = request.Amount,
+            Date = request.Date, Description = request.Description,
+        });
+    }
+
+    public Task DeleteMovementAsync(Guid id)
+    {
+        LastDeletedId = id;
+        return Task.CompletedTask;
     }
 }
