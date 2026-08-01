@@ -1,10 +1,12 @@
 <UserControl x:Class="Financial.Presentation.App.Views.CashFlow.MonthlySummaryView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <!-- F03 appends Banks/Cards grid sections below this Grid's existing rows. -->
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Financial.Presentation.App.Views.CashFlow">
     <Grid Margin="0,12,0,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -25,5 +27,8 @@
             <TextBlock FontWeight="Bold" Text="{Binding TitheSummary.CalculatedTithe, StringFormat='Calculated Tithe: {0:N2}'}"/>
             <TextBlock FontWeight="Bold" Margin="16,0,0,0" Text="{Binding TitheSummary.TitheBalance, StringFormat='Tithe Balance: {0:N2}'}"/>
         </StackPanel>
+
+        <local:BanksGridView Grid.Row="3"/>
+        <local:CardsGridView Grid.Row="4"/>
     </Grid>
 </UserControl>

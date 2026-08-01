@@ -370,16 +370,16 @@ graph TD
 - [x] Missing required fields on any form block submission with a visible error and no service call is made
 
 ### F03. WPF Monthly View — Banks, Cards, Transfers & Balance Adjustments
-- [ ] Banks grid shows one row per bank with correct Bank Balance and Round-Up total, plus a correct footer sum
-- [ ] Expanding a bank row shows its transfer/adjustment history for the selected month; collapsing hides it
-- [ ] "Move Money" opens a dialog; selecting the same bank for From/To disables Confirm and shows the same-bank error
-- [ ] Submitting a valid transfer creates it, refreshes both banks' balances, and appears in both banks' history
-- [ ] "Correct Balance" opens a dialog showing the current calculated balance; submitting a valid target balance creates an adjustment and shows the resulting delta
-- [ ] Editing or deleting a transfer/adjustment from history updates/removes it and refreshes balances
-- [ ] Cards grid shows correct Outstanding totals and Status per card, and a correct combined adjustment footer figure
-- [ ] "Mark Paid" is disabled until a bank is selected; confirming it marks the statement paid and switches the row to show "Unmark Paid"
-- [ ] "Unmark Paid" reverts a paid statement to Unpaid with the bank picker shown again
-- [ ] A backend rejection on any of the above (transfer, adjustment, mark/unmark paid, edit, delete) keeps the form/dialog open with entered values intact and displays the server's error message
+- [x] Banks grid shows one row per bank with correct Bank Balance and Round-Up total, plus a correct footer sum
+- [x] Expanding a bank row shows its transfer/adjustment history for the selected month; collapsing hides it
+- [x] "Move Money" opens a dialog; selecting the same bank for From/To disables Confirm and shows the same-bank error
+- [x] Submitting a valid transfer creates it, refreshes both banks' balances, and appears in both banks' history
+- [x] "Correct Balance" opens a dialog showing the current calculated balance; submitting a valid target balance creates an adjustment and shows the resulting delta
+- [x] Editing or deleting a transfer/adjustment from history updates/removes it and refreshes balances
+- [x] Cards grid shows correct Outstanding totals and Status per card, and a correct combined adjustment footer figure
+- [x] "Mark Paid" is disabled until a bank is selected; confirming it marks the statement paid and switches the row to show "Unmark Paid"
+- [x] "Unmark Paid" reverts a paid statement to Unpaid with the bank picker shown again
+- [x] A backend rejection on any of the above (transfer, adjustment, mark/unmark paid, edit, delete) keeps the form/dialog open with entered values intact and displays the server's error message
 
 ### F04. WPF Reserva View
 - [ ] Balances grid shows the 4 fixed buckets with correct balances and a correct Total row
@@ -422,4 +422,4 @@ graph TD
 
 ### Cross-Feature Integration
 - [ ] The Cash Flow tab created by F01 correctly hosts and displays each of F02, F04, F05, F06, F07, F08's views in their respective nested tab, with no layout or data bleed between tabs
-- [ ] F03's Banks/Cards grids and Move Money/Correct Balance actions render correctly inside the Summary sub-tab container established by F02, without disrupting F02's Category Totals/tithe display already on that sub-tab
+- [x] F03's Banks/Cards grids and Move Money/Correct Balance actions render correctly inside the Summary sub-tab container established by F02, without disrupting F02's Category Totals/tithe display already on that sub-tab

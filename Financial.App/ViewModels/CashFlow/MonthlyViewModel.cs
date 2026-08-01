@@ -16,6 +16,9 @@ public class MonthlyViewModel : ViewModelBase
     private readonly IIncomeService _incomeService;
     private readonly IBankService _bankService;
     private readonly ITitheService _titheService;
+    private readonly ITransferService _transferService;
+    private readonly IBalanceAdjustmentService _balanceAdjustmentService;
+    private readonly ICardStatementService _cardStatementService;
 
     private int _year;
     private int _month;
@@ -79,6 +82,12 @@ public class MonthlyViewModel : ViewModelBase
     public ObservableCollection<IncomeDTO> Incomes { get; } = [];
     public ObservableCollection<CategoryTotalDTO> CategoryTotals { get; } = [];
     public ObservableCollection<BankDTO> Banks { get; } = [];
+    public ObservableCollection<BankTotalRow> BankTotals { get; } = [];
+    public ObservableCollection<CardStatementDTO> CardStatements { get; } = [];
+
+    public decimal BankTotalsSum => BankTotals.Sum(b => b.Balance);
+    public decimal RoundUpTotalsSum => BankTotals.Sum(b => b.RoundUpTotal);
+    public decimal AdjustmentTotal => CardStatements.Sum(s => s.OutstandingTotal);
 
     private TitheSummaryDTO? _titheSummary;
     public TitheSummaryDTO? TitheSummary
@@ -98,12 +107,18 @@ public class MonthlyViewModel : ViewModelBase
         IIncomeService incomeService,
         IBankService bankService,
         ITitheService titheService,
+        ITransferService transferService,
+        IBalanceAdjustmentService balanceAdjustmentService,
+        ICardStatementService cardStatementService,
         Func<string, bool> confirm)
     {
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
         _incomeService = incomeService ?? throw new ArgumentNullException(nameof(incomeService));
         _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
         _titheService = titheService ?? throw new ArgumentNullException(nameof(titheService));
+        _transferService = transferService ?? throw new ArgumentNullException(nameof(transferService));
+        _balanceAdjustmentService = balanceAdjustmentService ?? throw new ArgumentNullException(nameof(balanceAdjustmentService));
+        _cardStatementService = cardStatementService ?? throw new ArgumentNullException(nameof(cardStatementService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
 
         var today = DateTime.Today;
@@ -113,6 +128,10 @@ public class MonthlyViewModel : ViewModelBase
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
         InitializeExpenseCommands();
         InitializeIncomeCommands();
+        InitializeBankCommands();
+        InitializeTransferCommands();
+        InitializeAdjustmentCommands();
+        InitializeCardCommands();
 
         _ = RefreshAsync();
     }
@@ -139,7 +158,15 @@ public class MonthlyViewModel : ViewModelBase
             var incomes = await Task.Run(() => _incomeService.GetIncomesByMonth(year, month));
             var categoryTotals = await Task.Run(() => _expenseService.GetCategoryTotalsByMonth(year, month));
             var banks = await Task.Run(() => _bankService.GetBanks());
+            var bankBalances = await Task.Run(() => _bankService.GetBankBalancesByMonth(year, month));
             var titheSummary = await Task.Run(() => _titheService.GetTitheSummary(year, month));
+            var transfers = await Task.Run(() => _transferService.GetTransfersByMonth(year, month));
+            var adjustmentsByBank = new Dictionary<string, IReadOnlyList<BalanceAdjustmentDTO>>();
+            foreach (var bank in banks)
+            {
+                adjustmentsByBank[bank.Name] = await Task.Run(() => _balanceAdjustmentService.GetAdjustmentsByBank(bank.Name));
+            }
+            var cardStatements = await _cardStatementService.GetStatementsForMonthAsync(year, month);
 
             if (requestId != _refreshRequestId)
             {
@@ -152,6 +179,19 @@ public class MonthlyViewModel : ViewModelBase
             ReplaceAll(Banks, banks);
             TitheSummary = titheSummary;
             OnPropertyChanged(nameof(CategoryTotalsSum));
+
+            var previouslyExpanded = BankTotals.Where(b => b.IsExpanded).Select(b => b.Bank).ToHashSet();
+            var newBankTotals = BuildBankTotals(banks, expenses, bankBalances, transfers, adjustmentsByBank, year, month);
+            foreach (var row in newBankTotals)
+            {
+                row.IsExpanded = previouslyExpanded.Contains(row.Bank);
+            }
+            ReplaceAll(BankTotals, newBankTotals);
+            OnPropertyChanged(nameof(BankTotalsSum));
+            OnPropertyChanged(nameof(RoundUpTotalsSum));
+
+            ReplaceAll(CardStatements, cardStatements);
+            OnPropertyChanged(nameof(AdjustmentTotal));
         }
         catch (Exception ex)
         {
@@ -176,6 +216,58 @@ public class MonthlyViewModel : ViewModelBase
         {
             collection.Add(item);
         }
+    }
+
+    /// <summary>Mirrors useMonthly.ts's bankTotals: balance from the month's running total, round-up summed client-side from that bank's expenses.</summary>
+    private static List<BankTotalRow> BuildBankTotals(
+        IReadOnlyList<BankDTO> banks,
+        IReadOnlyList<ExpenseDTO> expenses,
+        IReadOnlyList<BankBalanceDTO> bankBalances,
+        IReadOnlyList<TransferDTO> transfers,
+        IReadOnlyDictionary<string, IReadOnlyList<BalanceAdjustmentDTO>> adjustmentsByBank,
+        int year,
+        int month)
+    {
+        return banks.Select(bank =>
+        {
+            var roundUpTotal = expenses
+                .Where(e => e.PaymentSource == bank.Name)
+                .Sum(e => e.RoundUpAmount ?? 0m);
+            var balance = bankBalances.FirstOrDefault(b => b.Bank == bank.Name)?.Balance ?? 0m;
+            var row = new BankTotalRow { Bank = bank.Name, Balance = balance, RoundUpTotal = roundUpTotal };
+
+            foreach (var entry in BuildBankHistory(bank.Name, transfers, adjustmentsByBank.GetValueOrDefault(bank.Name, []), year, month))
+            {
+                row.History.Add(entry);
+            }
+
+            return row;
+        }).ToList();
+    }
+
+    /// <summary>Merges a bank's transfers and adjustments for the month into one history list, newest first, mirroring useBankHistory.ts.</summary>
+    private static List<BankHistoryEntry> BuildBankHistory(
+        string bankName, IReadOnlyList<TransferDTO> transfers, IReadOnlyList<BalanceAdjustmentDTO> adjustments, int year, int month)
+    {
+        var entries = new List<BankHistoryEntry>();
+
+        foreach (var transfer in transfers)
+        {
+            if (transfer.SourceBank == bankName)
+            {
+                entries.Add(BankHistoryEntry.FromTransferOut(transfer));
+            }
+            else if (transfer.DestinationBank == bankName)
+            {
+                entries.Add(BankHistoryEntry.FromTransferIn(transfer));
+            }
+        }
+
+        entries.AddRange(adjustments
+            .Where(a => a.Date.Year == year && a.Date.Month == month)
+            .Select(BankHistoryEntry.FromAdjustment));
+
+        return entries.OrderByDescending(e => e.Date).ToList();
     }
 
     // ----- Expense CRUD -----
@@ -704,6 +796,526 @@ public class MonthlyViewModel : ViewModelBase
         catch (Exception ex)
         {
             DeletingIncomeError = ex.Message;
+        }
+    }
+
+    // ----- Banks grid -----
+
+    private string? _bankHistoryError;
+
+    public string? BankHistoryError
+    {
+        get => _bankHistoryError;
+        private set => SetProperty(ref _bankHistoryError, value);
+    }
+
+    public RelayCommand<BankTotalRow> ToggleBankExpandCommand { get; private set; } = null!;
+    public RelayCommand<BankHistoryEntry> DeleteHistoryEntryCommand { get; private set; } = null!;
+
+    private void InitializeBankCommands()
+    {
+        ToggleBankExpandCommand = new RelayCommand<BankTotalRow>(row =>
+        {
+            if (row is not null)
+            {
+                row.IsExpanded = !row.IsExpanded;
+            }
+        });
+        DeleteHistoryEntryCommand = new RelayCommand<BankHistoryEntry>(async entry => await DeleteHistoryEntryAsync(entry));
+    }
+
+    internal async Task DeleteHistoryEntryAsync(BankHistoryEntry? entry)
+    {
+        if (entry is null)
+        {
+            return;
+        }
+
+        var confirmMessage = entry.Kind == BankHistoryEntryKind.Adjustment
+            ? "Delete this balance adjustment? This removes it for good."
+            : "Delete this transfer? This removes it for good.";
+
+        if (!_confirm(confirmMessage))
+        {
+            return;
+        }
+
+        BankHistoryError = null;
+
+        try
+        {
+            if (entry.Transfer is { } transfer)
+            {
+                await _transferService.DeleteTransferAsync(transfer.Id);
+            }
+            else if (entry.Adjustment is { } adjustment)
+            {
+                await _balanceAdjustmentService.DeleteAdjustmentAsync(adjustment.Bank, adjustment.Id);
+            }
+
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            BankHistoryError = ex.Message;
+        }
+    }
+
+    // ----- Transfer form -----
+
+    private bool _isTransferFormOpen;
+    private Guid? _editingTransferId;
+    private DateTime? _transferFormDate;
+    private string _transferFormSourceBank = string.Empty;
+    private string _transferFormDestinationBank = string.Empty;
+    private string _transferFormAmount = string.Empty;
+    private string _transferFormNote = string.Empty;
+    private bool _isSavingTransfer;
+    private string? _transferSaveError;
+
+    public bool IsTransferFormOpen
+    {
+        get => _isTransferFormOpen;
+        private set => SetProperty(ref _isTransferFormOpen, value);
+    }
+
+    public bool IsEditingTransfer => _editingTransferId != null;
+
+    public DateTime? TransferFormDate
+    {
+        get => _transferFormDate;
+        set => SetProperty(ref _transferFormDate, value);
+    }
+
+    public string TransferFormSourceBank
+    {
+        get => _transferFormSourceBank;
+        set
+        {
+            if (SetProperty(ref _transferFormSourceBank, value))
+            {
+                OnPropertyChanged(nameof(IsSameBankTransfer));
+                OnPropertyChanged(nameof(SameBankTransferError));
+                SaveTransferCommand?.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public string TransferFormDestinationBank
+    {
+        get => _transferFormDestinationBank;
+        set
+        {
+            if (SetProperty(ref _transferFormDestinationBank, value))
+            {
+                OnPropertyChanged(nameof(IsSameBankTransfer));
+                OnPropertyChanged(nameof(SameBankTransferError));
+                SaveTransferCommand?.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    /// <summary>True when source and destination are both set and identical — Move Money's Confirm is disabled in this state, mirroring TransferForm.tsx's sameBankError.</summary>
+    public bool IsSameBankTransfer =>
+        !string.IsNullOrEmpty(TransferFormSourceBank)
+        && !string.IsNullOrEmpty(TransferFormDestinationBank)
+        && TransferFormSourceBank == TransferFormDestinationBank;
+
+    public string SameBankTransferError => IsSameBankTransfer ? "Source and destination must be different banks." : string.Empty;
+
+    public string TransferFormAmount
+    {
+        get => _transferFormAmount;
+        set => SetProperty(ref _transferFormAmount, value);
+    }
+
+    public string TransferFormNote
+    {
+        get => _transferFormNote;
+        set => SetProperty(ref _transferFormNote, value);
+    }
+
+    public bool IsSavingTransfer
+    {
+        get => _isSavingTransfer;
+        private set => SetProperty(ref _isSavingTransfer, value);
+    }
+
+    public string? TransferSaveError
+    {
+        get => _transferSaveError;
+        private set => SetProperty(ref _transferSaveError, value);
+    }
+
+    public RelayCommand<string> ShowMoveMoneyFormCommand { get; private set; } = null!;
+    public RelayCommand CancelTransferFormCommand { get; private set; } = null!;
+    public RelayCommand SaveTransferCommand { get; private set; } = null!;
+    public RelayCommand<TransferDTO> EditTransferCommand { get; private set; } = null!;
+
+    private void InitializeTransferCommands()
+    {
+        ShowMoveMoneyFormCommand = new RelayCommand<string>(ShowCreateTransferForm);
+        CancelTransferFormCommand = new RelayCommand(CloseTransferForm);
+        SaveTransferCommand = new RelayCommand(async () => await SaveTransferAsync(), () => !IsSavingTransfer && !IsSameBankTransfer);
+        EditTransferCommand = new RelayCommand<TransferDTO>(ShowEditTransferForm);
+    }
+
+    private void ShowCreateTransferForm(string? sourceBank)
+    {
+        _editingTransferId = null;
+        TransferFormDate = DateTime.Today;
+        TransferFormSourceBank = sourceBank ?? (Banks.Count > 0 ? Banks[0].Name : string.Empty);
+        TransferFormDestinationBank = string.Empty;
+        TransferFormAmount = string.Empty;
+        TransferFormNote = string.Empty;
+        TransferSaveError = null;
+        OnPropertyChanged(nameof(IsEditingTransfer));
+        IsTransferFormOpen = true;
+    }
+
+    private void ShowEditTransferForm(TransferDTO? transfer)
+    {
+        if (transfer is null)
+        {
+            return;
+        }
+
+        _editingTransferId = transfer.Id;
+        TransferFormDate = transfer.Date.ToDateTime(TimeOnly.MinValue);
+        TransferFormSourceBank = transfer.SourceBank;
+        TransferFormDestinationBank = transfer.DestinationBank;
+        TransferFormAmount = transfer.Amount.ToString("0.##");
+        TransferFormNote = transfer.Note ?? string.Empty;
+        TransferSaveError = null;
+        OnPropertyChanged(nameof(IsEditingTransfer));
+        IsTransferFormOpen = true;
+    }
+
+    private void CloseTransferForm()
+    {
+        IsTransferFormOpen = false;
+        _editingTransferId = null;
+        TransferSaveError = null;
+    }
+
+    internal async Task SaveTransferAsync()
+    {
+        var validationMessage = TransferFormValidation.BuildValidationMessage(
+            TransferFormDate, TransferFormSourceBank, TransferFormDestinationBank, TransferFormAmount);
+
+        if (!string.IsNullOrEmpty(validationMessage))
+        {
+            TransferSaveError = validationMessage;
+            return;
+        }
+
+        IsSavingTransfer = true;
+        SaveTransferCommand.RaiseCanExecuteChanged();
+        TransferSaveError = null;
+
+        try
+        {
+            var date = DateOnly.FromDateTime(TransferFormDate!.Value);
+            var amount = decimal.Parse(TransferFormAmount);
+            var note = string.IsNullOrWhiteSpace(TransferFormNote) ? null : TransferFormNote;
+
+            if (_editingTransferId is { } id)
+            {
+                await _transferService.UpdateTransferAsync(id, new TransferUpdateDTO
+                {
+                    Date = date, SourceBank = TransferFormSourceBank, DestinationBank = TransferFormDestinationBank,
+                    Amount = amount, Note = note,
+                });
+            }
+            else
+            {
+                await _transferService.AddTransferAsync(new TransferCreateDTO
+                {
+                    Date = date, SourceBank = TransferFormSourceBank, DestinationBank = TransferFormDestinationBank,
+                    Amount = amount, Note = note,
+                });
+            }
+
+            CloseTransferForm();
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            TransferSaveError = ex.Message;
+        }
+        finally
+        {
+            IsSavingTransfer = false;
+            SaveTransferCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    // ----- Balance Adjustment form -----
+
+    private bool _isAdjustmentFormOpen;
+    private string? _editingAdjustmentBank;
+    private Guid? _editingAdjustmentId;
+    private string _adjustmentFormBankName = string.Empty;
+    private decimal _adjustmentFormCurrentBalance;
+    private DateTime? _adjustmentFormDate;
+    private string _adjustmentFormTargetBalance = string.Empty;
+    private string _adjustmentFormNote = string.Empty;
+    private bool _isSavingAdjustment;
+    private string? _adjustmentSaveError;
+    private decimal? _adjustmentSavedDelta;
+
+    public bool IsAdjustmentFormOpen
+    {
+        get => _isAdjustmentFormOpen;
+        private set => SetProperty(ref _isAdjustmentFormOpen, value);
+    }
+
+    public bool IsEditingAdjustment => _editingAdjustmentId != null;
+
+    public string AdjustmentFormBankName
+    {
+        get => _adjustmentFormBankName;
+        private set => SetProperty(ref _adjustmentFormBankName, value);
+    }
+
+    public decimal AdjustmentFormCurrentBalance
+    {
+        get => _adjustmentFormCurrentBalance;
+        private set => SetProperty(ref _adjustmentFormCurrentBalance, value);
+    }
+
+    public DateTime? AdjustmentFormDate
+    {
+        get => _adjustmentFormDate;
+        set => SetProperty(ref _adjustmentFormDate, value);
+    }
+
+    public string AdjustmentFormTargetBalance
+    {
+        get => _adjustmentFormTargetBalance;
+        set => SetProperty(ref _adjustmentFormTargetBalance, value);
+    }
+
+    public string AdjustmentFormNote
+    {
+        get => _adjustmentFormNote;
+        set => SetProperty(ref _adjustmentFormNote, value);
+    }
+
+    public bool IsSavingAdjustment
+    {
+        get => _isSavingAdjustment;
+        private set => SetProperty(ref _isSavingAdjustment, value);
+    }
+
+    public string? AdjustmentSaveError
+    {
+        get => _adjustmentSaveError;
+        private set => SetProperty(ref _adjustmentSaveError, value);
+    }
+
+    /// <summary>Set after a successful save; the form shows this delta instead of the fields until dismissed.</summary>
+    public decimal? AdjustmentSavedDelta
+    {
+        get => _adjustmentSavedDelta;
+        private set
+        {
+            if (SetProperty(ref _adjustmentSavedDelta, value))
+            {
+                OnPropertyChanged(nameof(HasAdjustmentResult));
+                OnPropertyChanged(nameof(ShowAdjustmentForm));
+            }
+        }
+    }
+
+    public bool HasAdjustmentResult => AdjustmentSavedDelta != null;
+
+    public bool ShowAdjustmentForm => AdjustmentSavedDelta == null;
+
+    public RelayCommand<BankTotalRow> ShowCorrectBalanceFormCommand { get; private set; } = null!;
+    public RelayCommand<BankHistoryEntry> EditAdjustmentCommand { get; private set; } = null!;
+    public RelayCommand CancelAdjustmentFormCommand { get; private set; } = null!;
+    public RelayCommand SaveAdjustmentCommand { get; private set; } = null!;
+    public RelayCommand DismissAdjustmentResultCommand { get; private set; } = null!;
+
+    private void InitializeAdjustmentCommands()
+    {
+        ShowCorrectBalanceFormCommand = new RelayCommand<BankTotalRow>(ShowCreateAdjustmentForm);
+        EditAdjustmentCommand = new RelayCommand<BankHistoryEntry>(ShowEditAdjustmentForm);
+        CancelAdjustmentFormCommand = new RelayCommand(CloseAdjustmentForm);
+        SaveAdjustmentCommand = new RelayCommand(async () => await SaveAdjustmentAsync(), () => !IsSavingAdjustment);
+        DismissAdjustmentResultCommand = new RelayCommand(() => AdjustmentSavedDelta = null);
+    }
+
+    private void ShowCreateAdjustmentForm(BankTotalRow? row)
+    {
+        if (row is null)
+        {
+            return;
+        }
+
+        _editingAdjustmentBank = null;
+        _editingAdjustmentId = null;
+        AdjustmentFormBankName = row.Bank;
+        AdjustmentFormCurrentBalance = row.Balance;
+        AdjustmentFormDate = DateTime.Today;
+        AdjustmentFormTargetBalance = string.Empty;
+        AdjustmentFormNote = string.Empty;
+        AdjustmentSaveError = null;
+        AdjustmentSavedDelta = null;
+        OnPropertyChanged(nameof(IsEditingAdjustment));
+        IsAdjustmentFormOpen = true;
+    }
+
+    private void ShowEditAdjustmentForm(BankHistoryEntry? entry)
+    {
+        if (entry?.Adjustment is not { } adjustment)
+        {
+            return;
+        }
+
+        var row = BankTotals.FirstOrDefault(b => b.Bank == adjustment.Bank);
+
+        _editingAdjustmentBank = adjustment.Bank;
+        _editingAdjustmentId = adjustment.Id;
+        AdjustmentFormBankName = adjustment.Bank;
+        AdjustmentFormCurrentBalance = row?.Balance ?? 0m;
+        AdjustmentFormDate = adjustment.Date.ToDateTime(TimeOnly.MinValue);
+        AdjustmentFormTargetBalance = adjustment.TargetBalance.ToString("0.##");
+        AdjustmentFormNote = adjustment.Note ?? string.Empty;
+        AdjustmentSaveError = null;
+        AdjustmentSavedDelta = null;
+        OnPropertyChanged(nameof(IsEditingAdjustment));
+        IsAdjustmentFormOpen = true;
+    }
+
+    private void CloseAdjustmentForm()
+    {
+        IsAdjustmentFormOpen = false;
+        _editingAdjustmentBank = null;
+        _editingAdjustmentId = null;
+        AdjustmentSaveError = null;
+        AdjustmentSavedDelta = null;
+    }
+
+    internal async Task SaveAdjustmentAsync()
+    {
+        var validationMessage = BalanceAdjustmentFormValidation.BuildValidationMessage(AdjustmentFormDate, AdjustmentFormTargetBalance);
+
+        if (!string.IsNullOrEmpty(validationMessage))
+        {
+            AdjustmentSaveError = validationMessage;
+            return;
+        }
+
+        IsSavingAdjustment = true;
+        SaveAdjustmentCommand.RaiseCanExecuteChanged();
+        AdjustmentSaveError = null;
+
+        try
+        {
+            var date = DateOnly.FromDateTime(AdjustmentFormDate!.Value);
+            var targetBalance = decimal.Parse(AdjustmentFormTargetBalance);
+            var note = string.IsNullOrWhiteSpace(AdjustmentFormNote) ? null : AdjustmentFormNote;
+
+            BalanceAdjustmentDTO result;
+            if (_editingAdjustmentId is { } id && _editingAdjustmentBank is { } bank)
+            {
+                result = await _balanceAdjustmentService.UpdateAdjustmentAsync(bank, id, new BalanceAdjustmentUpdateDTO
+                {
+                    Date = date, TargetBalance = targetBalance, Note = note,
+                });
+            }
+            else
+            {
+                result = await _balanceAdjustmentService.AddAdjustmentAsync(AdjustmentFormBankName, new BalanceAdjustmentCreateDTO
+                {
+                    Date = date, TargetBalance = targetBalance, Note = note,
+                });
+            }
+
+            await RefreshAsync();
+            AdjustmentSavedDelta = result.Delta;
+        }
+        catch (Exception ex)
+        {
+            AdjustmentSaveError = ex.Message;
+        }
+        finally
+        {
+            IsSavingAdjustment = false;
+            SaveAdjustmentCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    // ----- Cards grid -----
+
+    private string? _cardStatementError;
+
+    public string? CardStatementError
+    {
+        get => _cardStatementError;
+        private set => SetProperty(ref _cardStatementError, value);
+    }
+
+    /// <summary>Pending "pay from" bank selection per unpaid card statement, keyed by statement id, mirroring useMonthly.ts's markPaidSources.</summary>
+    public Dictionary<Guid, string> MarkPaidSources { get; } = [];
+
+    public RelayCommand<CardStatementDTO> MarkStatementPaidCommand { get; private set; } = null!;
+    public RelayCommand<CardStatementDTO> UnmarkStatementPaidCommand { get; private set; } = null!;
+
+    private void InitializeCardCommands()
+    {
+        MarkStatementPaidCommand = new RelayCommand<CardStatementDTO>(
+            async statement => await MarkStatementPaidAsync(statement),
+            statement => statement != null && MarkPaidSources.ContainsKey(statement.Id));
+        UnmarkStatementPaidCommand = new RelayCommand<CardStatementDTO>(async statement => await UnmarkStatementPaidAsync(statement));
+    }
+
+    public void SetMarkPaidSource(Guid statementId, string bankName)
+    {
+        MarkPaidSources[statementId] = bankName;
+        MarkStatementPaidCommand.RaiseCanExecuteChanged();
+    }
+
+    internal async Task MarkStatementPaidAsync(CardStatementDTO? statement)
+    {
+        if (statement is null || !MarkPaidSources.TryGetValue(statement.Id, out var paymentSource))
+        {
+            return;
+        }
+
+        CardStatementError = null;
+
+        try
+        {
+            await _cardStatementService.MarkStatementPaidAsync(statement.Id, new MarkStatementPaidDTO { PaymentSource = paymentSource });
+            MarkPaidSources.Remove(statement.Id);
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            CardStatementError = ex.Message;
+        }
+    }
+
+    internal async Task UnmarkStatementPaidAsync(CardStatementDTO? statement)
+    {
+        if (statement is null)
+        {
+            return;
+        }
+
+        CardStatementError = null;
+
+        try
+        {
+            await _cardStatementService.UnmarkStatementPaidAsync(statement.Id);
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            CardStatementError = ex.Message;
         }
     }
 }
