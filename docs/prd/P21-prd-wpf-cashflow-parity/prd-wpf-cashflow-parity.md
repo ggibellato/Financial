@@ -400,12 +400,12 @@ graph TD
 - [x] Missing/invalid fields on Add or Edit block submission with a visible error
 
 ### F06. WPF Controle Mãe View
-- [ ] Ledger grid shows entries on/after the selected "From" date with correct BRL/GBP values (or "—" for null) and a correct totals row
-- [ ] Creating an entry in BRL converts and stores a matching GBP value (and vice versa) per the backend's FX lookup
-- [ ] Editing an entry's BRL/GBP values directly saves correctly and the grid/totals reflect the change
-- [ ] Deleting an entry removes it after confirmation and totals recompute
+- [x] Ledger grid shows entries on/after the selected "From" date with correct BRL/GBP values (or "—" for null) and a correct totals row
+- [x] Creating an entry in BRL converts and stores a matching GBP value (and vice versa) per the backend's FX lookup
+- [x] Editing an entry's BRL/GBP values directly saves correctly and the grid/totals reflect the change
+- [x] Deleting an entry removes it after confirmation and totals recompute
 - [ ] Changing the "From" date refetches and re-filters the grid and totals
-- [ ] Missing/invalid fields on Create or Edit block submission with a visible error
+- [x] Missing/invalid fields on Create or Edit block submission with a visible error
 
 ### F07. WPF Investment Snapshots View
 - [ ] Snapshot grid shows one row per account for the selected month, with liability accounts labeled "(liability)"

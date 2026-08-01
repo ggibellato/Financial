@@ -356,3 +356,62 @@ internal sealed class StubMensaisService : IMensaisService
         return Task.FromResult<IReadOnlyList<RecurringBillDTO>>(Bills);
     }
 }
+
+internal sealed class StubControleMaeService : IControleMaeService
+{
+    public List<MaeLedgerEntryDTO> Entries { get; set; } = [];
+    public MaeLedgerTotalsDTO Totals { get; set; } = new() { TotalBrlValue = 0m, TotalGbpValue = 0m };
+    public CreateMaeLedgerEntryDTO? LastCreateRequest { get; private set; }
+    public (Guid Id, UpdateMaeLedgerEntryValuesDTO Request)? LastUpdateRequest { get; private set; }
+    public Guid? LastDeletedId { get; private set; }
+    public int GetEntriesFromDateCallCount { get; private set; }
+    public int GetTotalsCallCount { get; private set; }
+    public DateOnly? LastFromDate { get; private set; }
+
+    public Task<MaeLedgerEntryDTO> CreateEntryAsync(CreateMaeLedgerEntryDTO request)
+    {
+        LastCreateRequest = request;
+        var entry = new MaeLedgerEntryDTO
+        {
+            Id = Guid.NewGuid(), Date = request.Date, Description = request.Description, Note = request.Note,
+            SourceCurrency = request.SourceCurrency,
+            BrlValue = request.SourceCurrency == "BRL" ? request.SourceValue : request.SourceValue * 5m,
+            GbpValue = request.SourceCurrency == "GBP" ? request.SourceValue : request.SourceValue / 5m,
+        };
+        Entries.Add(entry);
+        return Task.FromResult(entry);
+    }
+
+    public IReadOnlyList<MaeLedgerEntryDTO> GetEntriesFromDate(DateOnly fromDate)
+    {
+        GetEntriesFromDateCallCount++;
+        LastFromDate = fromDate;
+        return Entries.Where(e => e.Date >= fromDate).ToList();
+    }
+
+    public MaeLedgerTotalsDTO GetTotals()
+    {
+        GetTotalsCallCount++;
+        return Totals;
+    }
+
+    public Task<MaeLedgerEntryDTO> UpdateEntryValuesAsync(Guid id, UpdateMaeLedgerEntryValuesDTO request)
+    {
+        LastUpdateRequest = (id, request);
+        var existing = Entries.First(e => e.Id == id);
+        var updated = new MaeLedgerEntryDTO
+        {
+            Id = id, Date = existing.Date, Description = existing.Description, Note = existing.Note,
+            SourceCurrency = existing.SourceCurrency, BrlValue = request.BrlValue, GbpValue = request.GbpValue,
+        };
+        Entries[Entries.IndexOf(existing)] = updated;
+        return Task.FromResult(updated);
+    }
+
+    public Task DeleteEntryAsync(Guid id)
+    {
+        LastDeletedId = id;
+        Entries.RemoveAll(e => e.Id == id);
+        return Task.CompletedTask;
+    }
+}
