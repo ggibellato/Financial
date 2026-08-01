@@ -349,12 +349,12 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. WPF CashFlow Foundation & Navigation Shell
-- [ ] `Financial.App.csproj` references `Financial.CashFlow.Application` and `Financial.CashFlow.Infrastructure`
-- [ ] All 12 CashFlow services resolve successfully from the DI container at app startup
+- [x] `Financial.App.csproj` references `Financial.CashFlow.Application` and `Financial.CashFlow.Infrastructure`
+- [x] All 12 CashFlow services resolve successfully from the DI container at app startup
 - [ ] MainWindow shows a "Cash Flow" tab alongside the existing Investments tabs
 - [ ] The Cash Flow tab contains a nested tab strip with exactly 6 tabs in order: Monthly, Reserva, Mensais, Controle Mãe, Investment Snapshots, Annual Summary
 - [ ] Selecting the Cash Flow tab and its nested tabs does not affect the state or behavior of the existing Investments tabs
-- [ ] `dotnet build` succeeds for `Financial.App` and `Financial.Presentation.Tests` with the new references
+- [x] `dotnet build` succeeds for `Financial.App` and `Financial.Presentation.Tests` with the new references
 
 ### F02. WPF Monthly View — Expenses & Income
 - [ ] Monthly view shows Summary, Expense, and Incoming sub-tabs with a Month+Year selector
