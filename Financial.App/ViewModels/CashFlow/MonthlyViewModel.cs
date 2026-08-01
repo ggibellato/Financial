@@ -124,6 +124,7 @@ public class MonthlyViewModel : ViewModelBase
         InitializeExpenseCommands();
         InitializeIncomeCommands();
         InitializeBankCommands();
+        InitializeTransferCommands();
 
         _ = RefreshAsync();
     }
@@ -846,6 +847,171 @@ public class MonthlyViewModel : ViewModelBase
         catch (Exception ex)
         {
             BankHistoryError = ex.Message;
+        }
+    }
+
+    // ----- Transfer form -----
+
+    private bool _isTransferFormOpen;
+    private Guid? _editingTransferId;
+    private DateTime? _transferFormDate;
+    private string _transferFormSourceBank = string.Empty;
+    private string _transferFormDestinationBank = string.Empty;
+    private string _transferFormAmount = string.Empty;
+    private string _transferFormNote = string.Empty;
+    private bool _isSavingTransfer;
+    private string? _transferSaveError;
+
+    public bool IsTransferFormOpen
+    {
+        get => _isTransferFormOpen;
+        private set => SetProperty(ref _isTransferFormOpen, value);
+    }
+
+    public bool IsEditingTransfer => _editingTransferId != null;
+
+    public DateTime? TransferFormDate
+    {
+        get => _transferFormDate;
+        set => SetProperty(ref _transferFormDate, value);
+    }
+
+    public string TransferFormSourceBank
+    {
+        get => _transferFormSourceBank;
+        set => SetProperty(ref _transferFormSourceBank, value);
+    }
+
+    public string TransferFormDestinationBank
+    {
+        get => _transferFormDestinationBank;
+        set => SetProperty(ref _transferFormDestinationBank, value);
+    }
+
+    public string TransferFormAmount
+    {
+        get => _transferFormAmount;
+        set => SetProperty(ref _transferFormAmount, value);
+    }
+
+    public string TransferFormNote
+    {
+        get => _transferFormNote;
+        set => SetProperty(ref _transferFormNote, value);
+    }
+
+    public bool IsSavingTransfer
+    {
+        get => _isSavingTransfer;
+        private set => SetProperty(ref _isSavingTransfer, value);
+    }
+
+    public string? TransferSaveError
+    {
+        get => _transferSaveError;
+        private set => SetProperty(ref _transferSaveError, value);
+    }
+
+    public RelayCommand<string> ShowMoveMoneyFormCommand { get; private set; } = null!;
+    public RelayCommand CancelTransferFormCommand { get; private set; } = null!;
+    public RelayCommand SaveTransferCommand { get; private set; } = null!;
+    public RelayCommand<TransferDTO> EditTransferCommand { get; private set; } = null!;
+
+    private void InitializeTransferCommands()
+    {
+        ShowMoveMoneyFormCommand = new RelayCommand<string>(ShowCreateTransferForm);
+        CancelTransferFormCommand = new RelayCommand(CloseTransferForm);
+        SaveTransferCommand = new RelayCommand(async () => await SaveTransferAsync(), () => !IsSavingTransfer);
+        EditTransferCommand = new RelayCommand<TransferDTO>(ShowEditTransferForm);
+    }
+
+    private void ShowCreateTransferForm(string? sourceBank)
+    {
+        _editingTransferId = null;
+        TransferFormDate = DateTime.Today;
+        TransferFormSourceBank = sourceBank ?? (Banks.Count > 0 ? Banks[0].Name : string.Empty);
+        TransferFormDestinationBank = string.Empty;
+        TransferFormAmount = string.Empty;
+        TransferFormNote = string.Empty;
+        TransferSaveError = null;
+        OnPropertyChanged(nameof(IsEditingTransfer));
+        IsTransferFormOpen = true;
+    }
+
+    private void ShowEditTransferForm(TransferDTO? transfer)
+    {
+        if (transfer is null)
+        {
+            return;
+        }
+
+        _editingTransferId = transfer.Id;
+        TransferFormDate = transfer.Date.ToDateTime(TimeOnly.MinValue);
+        TransferFormSourceBank = transfer.SourceBank;
+        TransferFormDestinationBank = transfer.DestinationBank;
+        TransferFormAmount = transfer.Amount.ToString("0.##");
+        TransferFormNote = transfer.Note ?? string.Empty;
+        TransferSaveError = null;
+        OnPropertyChanged(nameof(IsEditingTransfer));
+        IsTransferFormOpen = true;
+    }
+
+    private void CloseTransferForm()
+    {
+        IsTransferFormOpen = false;
+        _editingTransferId = null;
+        TransferSaveError = null;
+    }
+
+    internal async Task SaveTransferAsync()
+    {
+        var validationMessage = TransferFormValidation.BuildValidationMessage(
+            TransferFormDate, TransferFormSourceBank, TransferFormDestinationBank, TransferFormAmount);
+
+        if (!string.IsNullOrEmpty(validationMessage))
+        {
+            TransferSaveError = validationMessage;
+            return;
+        }
+
+        IsSavingTransfer = true;
+        SaveTransferCommand.RaiseCanExecuteChanged();
+        TransferSaveError = null;
+
+        try
+        {
+            var date = DateOnly.FromDateTime(TransferFormDate!.Value);
+            var amount = decimal.Parse(TransferFormAmount);
+            var note = string.IsNullOrWhiteSpace(TransferFormNote) ? null : TransferFormNote;
+
+            if (_editingTransferId is { } id)
+            {
+                await _transferService.UpdateTransferAsync(id, new TransferUpdateDTO
+                {
+                    Date = date, SourceBank = TransferFormSourceBank, DestinationBank = TransferFormDestinationBank,
+                    Amount = amount, Note = note,
+                });
+            }
+            else
+            {
+                await _transferService.AddTransferAsync(new TransferCreateDTO
+                {
+                    Date = date, SourceBank = TransferFormSourceBank, DestinationBank = TransferFormDestinationBank,
+                    Amount = amount, Note = note,
+                });
+            }
+
+            CloseTransferForm();
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            TransferSaveError = ex.Message;
+        }
+        finally
+        {
+            IsSavingTransfer = false;
+            SaveTransferCommand.RaiseCanExecuteChanged();
         }
     }
 }

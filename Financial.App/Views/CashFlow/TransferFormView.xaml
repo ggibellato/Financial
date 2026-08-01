@@ -1,0 +1,79 @@
+<UserControl x:Class="Financial.Presentation.App.Views.CashFlow.TransferFormView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border BorderBrush="#CCCCCC" BorderThickness="1" Padding="12" Margin="0,0,0,12" Background="#FAFAFA">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="130"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" FontWeight="Bold" Margin="0,0,0,8">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Text" Value="Move Money"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsEditingTransfer}" Value="True">
+                                <Setter Property="Text" Value="Edit Transfer"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Date:" VerticalAlignment="Center"/>
+            <DatePicker Grid.Row="1" Grid.Column="1" SelectedDate="{Binding TransferFormDate, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="From:" VerticalAlignment="Center"/>
+            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
+                      SelectedValue="{Binding TransferFormSourceBank, UpdateSourceTrigger=PropertyChanged}"
+                      SelectedValuePath="Name"/>
+
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="To:" VerticalAlignment="Center"/>
+            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
+                      SelectedValue="{Binding TransferFormDestinationBank, UpdateSourceTrigger=PropertyChanged}"
+                      SelectedValuePath="Name"/>
+
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="Amount:" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding TransferFormAmount, UpdateSourceTrigger=LostFocus}"
+                     PreviewTextInput="OnDecimalTextBoxPreviewTextInput"
+                     DataObject.Pasting="OnDecimalTextBoxPasting"
+                     LostFocus="OnDecimalTextBoxLostFocus"/>
+
+            <TextBlock Grid.Row="5" Grid.Column="0" Text="Note:" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding TransferFormNote, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <TextBlock Grid.Row="6" Grid.ColumnSpan="2" Foreground="Red" TextWrapping="Wrap"
+                       Text="{Binding TransferSaveError}" Margin="0,8,0,0"/>
+
+            <StackPanel Grid.Row="7" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
+                <Button Width="100" Command="{Binding SaveTransferCommand}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Content" Value="Move Money"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsEditingTransfer}" Value="True">
+                                    <Setter Property="Content" Value="Save"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsSavingTransfer}" Value="True">
+                                    <Setter Property="Content" Value="Saving..."/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button Content="Cancel" Width="90" Margin="8,0,0,0" Command="{Binding CancelTransferFormCommand}"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>
