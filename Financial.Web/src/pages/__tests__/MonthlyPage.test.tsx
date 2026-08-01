@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import MonthlyPage from '../MonthlyPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type {
@@ -124,6 +124,13 @@ const ADJUSTMENTS: BalanceAdjustmentDto[] = [
 
 describe('MonthlyPage', () => {
   beforeEach(() => {
+    // Pin "now" to match the fixtures' July 2026 dates below, so useMonthly's default
+    // year/month (computed fresh at mount from the real clock) doesn't drift out of scope
+    // with adjustment/expense/income fixtures as real time passes.
+    // shouldAdvanceTime keeps real timers ticking (so RTL's waitFor/findBy* polling still
+    // resolves) while Date/new Date() stays pinned to the system time set below.
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.setSystemTime(new Date('2026-07-15T12:00:00Z'))
     getExpensesByMonthMock.mockReset()
     getCategoryTotalsByMonthMock.mockReset()
     getCardStatementsByMonthMock.mockReset()
@@ -159,6 +166,10 @@ describe('MonthlyPage', () => {
       Promise.resolve(bankName === 'Barclays' ? ADJUSTMENTS : []),
     )
     vi.spyOn(window, 'confirm').mockReturnValue(true)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('shows a loading state before data arrives', () => {
