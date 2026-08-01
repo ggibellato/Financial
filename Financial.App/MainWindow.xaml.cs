@@ -16,12 +16,14 @@ namespace Financial.Presentation.App
             DividendCheckView dividendCheckView,
             AssetPriceView assetPriceView,
             MonthlyView monthlyView,
+            ReservaView reservaView,
             MainNavigationViewModel navigationViewModel,
             MainNavigationViewModelHistoric navigationViewModelHistoric)
         {
             ArgumentNullException.ThrowIfNull(dividendCheckView);
             ArgumentNullException.ThrowIfNull(assetPriceView);
             ArgumentNullException.ThrowIfNull(monthlyView);
+            ArgumentNullException.ThrowIfNull(reservaView);
             _navigationViewModel = navigationViewModel ?? throw new ArgumentNullException(nameof(navigationViewModel));
             _navigationViewModelHistoric = navigationViewModelHistoric ?? throw new ArgumentNullException(nameof(navigationViewModelHistoric));
 
@@ -29,6 +31,7 @@ namespace Financial.Presentation.App
             dividendCheckTab.Content = dividendCheckView;
             assetPriceTab.Content = assetPriceView;
             monthlyTab.Content = monthlyView;
+            reservaTab.Content = reservaView;
 
             Loaded += async (s, e) =>
             {
