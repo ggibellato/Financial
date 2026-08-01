@@ -14,8 +14,9 @@ public class MonthlyViewModelTests
         var tithe = new StubTitheService { Summary = new TitheSummaryDTO { CalculatedTithe = 100m, TitheBalance = 50m } };
         var transfers = new StubTransferService();
         var adjustments = new StubBalanceAdjustmentService();
+        var cardStatements = new StubCardStatementService();
 
-        var viewModel = new MonthlyViewModel(expenses, incomes, banks, tithe, transfers, adjustments, confirm: _ => confirmDeletes);
+        var viewModel = new MonthlyViewModel(expenses, incomes, banks, tithe, transfers, adjustments, cardStatements, confirm: _ => confirmDeletes);
         return (viewModel, expenses, incomes, banks, tithe);
     }
 

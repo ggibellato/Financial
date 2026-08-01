@@ -60,6 +60,7 @@ namespace Financial.Presentation.App
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ITitheService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ITransferService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IBalanceAdjustmentService>(),
+                        sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ICardStatementService>(),
                         msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes));
                     services.AddTransient<MonthlyView>();
                     services.AddTransient<MainWindow>();

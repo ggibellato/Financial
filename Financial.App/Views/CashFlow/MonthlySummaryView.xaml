@@ -8,6 +8,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <DataGrid Grid.Row="0" ItemsSource="{Binding CategoryTotals}" MaxHeight="320">
@@ -28,5 +29,6 @@
         </StackPanel>
 
         <local:BanksGridView Grid.Row="3"/>
+        <local:CardsGridView Grid.Row="4"/>
     </Grid>
 </UserControl>

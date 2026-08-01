@@ -198,3 +198,35 @@ internal sealed class StubBalanceAdjustmentService : IBalanceAdjustmentService
     public IReadOnlyList<BalanceAdjustmentDTO> GetAdjustmentsByBank(string bankName) =>
         AdjustmentsByBank.GetValueOrDefault(bankName, []);
 }
+
+internal sealed class StubCardStatementService : ICardStatementService
+{
+    public List<CardStatementDTO> Statements { get; set; } = [];
+    public (Guid Id, MarkStatementPaidDTO Request)? LastMarkPaidRequest { get; private set; }
+    public Guid? LastUnmarkedId { get; private set; }
+
+    public Task<IReadOnlyList<CardStatementDTO>> GetStatementsForMonthAsync(int year, int month) =>
+        Task.FromResult<IReadOnlyList<CardStatementDTO>>(Statements);
+
+    public Task<CardStatementDTO> MarkStatementPaidAsync(Guid id, MarkStatementPaidDTO request)
+    {
+        LastMarkPaidRequest = (id, request);
+        var existing = Statements.First(s => s.Id == id);
+        return Task.FromResult(new CardStatementDTO
+        {
+            Id = id, Card = existing.Card, Year = existing.Year, Month = existing.Month,
+            IsPaid = true, OutstandingTotal = existing.OutstandingTotal,
+        });
+    }
+
+    public Task<CardStatementDTO> UnmarkStatementPaidAsync(Guid id)
+    {
+        LastUnmarkedId = id;
+        var existing = Statements.First(s => s.Id == id);
+        return Task.FromResult(new CardStatementDTO
+        {
+            Id = id, Card = existing.Card, Year = existing.Year, Month = existing.Month,
+            IsPaid = false, OutstandingTotal = existing.OutstandingTotal,
+        });
+    }
+}

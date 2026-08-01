@@ -18,6 +18,7 @@ public class MonthlyViewModel : ViewModelBase
     private readonly ITitheService _titheService;
     private readonly ITransferService _transferService;
     private readonly IBalanceAdjustmentService _balanceAdjustmentService;
+    private readonly ICardStatementService _cardStatementService;
 
     private int _year;
     private int _month;
@@ -82,9 +83,11 @@ public class MonthlyViewModel : ViewModelBase
     public ObservableCollection<CategoryTotalDTO> CategoryTotals { get; } = [];
     public ObservableCollection<BankDTO> Banks { get; } = [];
     public ObservableCollection<BankTotalRow> BankTotals { get; } = [];
+    public ObservableCollection<CardStatementDTO> CardStatements { get; } = [];
 
     public decimal BankTotalsSum => BankTotals.Sum(b => b.Balance);
     public decimal RoundUpTotalsSum => BankTotals.Sum(b => b.RoundUpTotal);
+    public decimal AdjustmentTotal => CardStatements.Sum(s => s.OutstandingTotal);
 
     private TitheSummaryDTO? _titheSummary;
     public TitheSummaryDTO? TitheSummary
@@ -106,6 +109,7 @@ public class MonthlyViewModel : ViewModelBase
         ITitheService titheService,
         ITransferService transferService,
         IBalanceAdjustmentService balanceAdjustmentService,
+        ICardStatementService cardStatementService,
         Func<string, bool> confirm)
     {
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
@@ -114,6 +118,7 @@ public class MonthlyViewModel : ViewModelBase
         _titheService = titheService ?? throw new ArgumentNullException(nameof(titheService));
         _transferService = transferService ?? throw new ArgumentNullException(nameof(transferService));
         _balanceAdjustmentService = balanceAdjustmentService ?? throw new ArgumentNullException(nameof(balanceAdjustmentService));
+        _cardStatementService = cardStatementService ?? throw new ArgumentNullException(nameof(cardStatementService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
 
         var today = DateTime.Today;
@@ -126,6 +131,7 @@ public class MonthlyViewModel : ViewModelBase
         InitializeBankCommands();
         InitializeTransferCommands();
         InitializeAdjustmentCommands();
+        InitializeCardCommands();
 
         _ = RefreshAsync();
     }
@@ -160,6 +166,7 @@ public class MonthlyViewModel : ViewModelBase
             {
                 adjustmentsByBank[bank.Name] = await Task.Run(() => _balanceAdjustmentService.GetAdjustmentsByBank(bank.Name));
             }
+            var cardStatements = await _cardStatementService.GetStatementsForMonthAsync(year, month);
 
             if (requestId != _refreshRequestId)
             {
@@ -182,6 +189,9 @@ public class MonthlyViewModel : ViewModelBase
             ReplaceAll(BankTotals, newBankTotals);
             OnPropertyChanged(nameof(BankTotalsSum));
             OnPropertyChanged(nameof(RoundUpTotalsSum));
+
+            ReplaceAll(CardStatements, cardStatements);
+            OnPropertyChanged(nameof(AdjustmentTotal));
         }
         catch (Exception ex)
         {
@@ -1211,6 +1221,77 @@ public class MonthlyViewModel : ViewModelBase
         {
             IsSavingAdjustment = false;
             SaveAdjustmentCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    // ----- Cards grid -----
+
+    private string? _cardStatementError;
+
+    public string? CardStatementError
+    {
+        get => _cardStatementError;
+        private set => SetProperty(ref _cardStatementError, value);
+    }
+
+    /// <summary>Pending "pay from" bank selection per unpaid card statement, keyed by statement id, mirroring useMonthly.ts's markPaidSources.</summary>
+    public Dictionary<Guid, string> MarkPaidSources { get; } = [];
+
+    public RelayCommand<CardStatementDTO> MarkStatementPaidCommand { get; private set; } = null!;
+    public RelayCommand<CardStatementDTO> UnmarkStatementPaidCommand { get; private set; } = null!;
+
+    private void InitializeCardCommands()
+    {
+        MarkStatementPaidCommand = new RelayCommand<CardStatementDTO>(
+            async statement => await MarkStatementPaidAsync(statement),
+            statement => statement != null && MarkPaidSources.ContainsKey(statement.Id));
+        UnmarkStatementPaidCommand = new RelayCommand<CardStatementDTO>(async statement => await UnmarkStatementPaidAsync(statement));
+    }
+
+    public void SetMarkPaidSource(Guid statementId, string bankName)
+    {
+        MarkPaidSources[statementId] = bankName;
+        MarkStatementPaidCommand.RaiseCanExecuteChanged();
+    }
+
+    internal async Task MarkStatementPaidAsync(CardStatementDTO? statement)
+    {
+        if (statement is null || !MarkPaidSources.TryGetValue(statement.Id, out var paymentSource))
+        {
+            return;
+        }
+
+        CardStatementError = null;
+
+        try
+        {
+            await _cardStatementService.MarkStatementPaidAsync(statement.Id, new MarkStatementPaidDTO { PaymentSource = paymentSource });
+            MarkPaidSources.Remove(statement.Id);
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            CardStatementError = ex.Message;
+        }
+    }
+
+    internal async Task UnmarkStatementPaidAsync(CardStatementDTO? statement)
+    {
+        if (statement is null)
+        {
+            return;
+        }
+
+        CardStatementError = null;
+
+        try
+        {
+            await _cardStatementService.UnmarkStatementPaidAsync(statement.Id);
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            CardStatementError = ex.Message;
         }
     }
 }
