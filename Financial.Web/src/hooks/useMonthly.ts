@@ -179,8 +179,6 @@ type MonthlyAction =
   | { type: 'SAVE_INCOME_SUCCESS' }
   | { type: 'SAVE_INCOME_ERROR'; payload: string }
 
-const { year: DEFAULT_YEAR, month: DEFAULT_MONTH } = currentYearMonth()
-
 const BLANK_CREATE_FORM = {
   createDate: '',
   createDescription: '',
@@ -200,9 +198,7 @@ const BLANK_CREATE_INCOME_FORM = {
   createIncomeBank: '',
 } as const
 
-const INITIAL_STATE: MonthlyState = {
-  year: DEFAULT_YEAR,
-  month: DEFAULT_MONTH,
+const INITIAL_STATE_BASE: Omit<MonthlyState, 'year' | 'month'> = {
   expenses: [],
   categoryTotals: [],
   cardStatements: [],
@@ -242,6 +238,13 @@ const INITIAL_STATE: MonthlyState = {
   editIncomeBank: '',
   isSavingIncome: false,
   saveIncomeError: null,
+}
+
+/** Reads the current year/month fresh at hook-mount time rather than at module-load time, so the
+ * default period doesn't go stale in a long-running session and can be pinned via fake timers in tests. */
+function buildInitialState(): MonthlyState {
+  const { year, month } = currentYearMonth()
+  return { ...INITIAL_STATE_BASE, year, month }
 }
 
 function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
@@ -566,7 +569,7 @@ export interface MonthlyData {
 
 export function useMonthly(): MonthlyData {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const [state, dispatch] = useReducer(reducer, undefined, buildInitialState)
 
   useEffect(() => {
     dispatch({ type: 'FETCH_START' })
