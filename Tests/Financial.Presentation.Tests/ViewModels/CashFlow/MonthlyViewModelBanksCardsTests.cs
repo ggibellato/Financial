@@ -139,6 +139,25 @@ public class MonthlyViewModelBanksCardsTests
     }
 
     [Fact]
+    public async Task AddTransfer_BackendRejects_KeepsFormOpenWithValuesAndShowsServerError()
+    {
+        var (viewModel, _, banks, transfers, _, _) = CreateViewModel();
+        transfers.ThrowOnAdd = "Insufficient funds in source bank.";
+        await viewModel.RefreshAsync();
+        viewModel.ShowMoveMoneyFormCommand.Execute(banks.Banks[0].Name);
+        viewModel.TransferFormDate = DateTime.Today;
+        viewModel.TransferFormDestinationBank = banks.Banks[1].Name;
+        viewModel.TransferFormAmount = "75";
+
+        await viewModel.SaveTransferAsync();
+
+        viewModel.IsTransferFormOpen.Should().BeTrue();
+        viewModel.TransferSaveError.Should().Be("Insufficient funds in source bank.");
+        viewModel.TransferFormAmount.Should().Be("75");
+        viewModel.TransferFormDestinationBank.Should().Be(banks.Banks[1].Name);
+    }
+
+    [Fact]
     public async Task EditTransfer_ValidForm_CallsUpdateServiceWithCorrectId()
     {
         var (viewModel, _, _, transfers, _, _) = CreateViewModel();

@@ -129,9 +129,15 @@ internal sealed class StubTransferService : ITransferService
     public TransferCreateDTO? LastCreateRequest { get; private set; }
     public (Guid Id, TransferUpdateDTO Request)? LastUpdateRequest { get; private set; }
     public Guid? LastDeletedId { get; private set; }
+    public string? ThrowOnAdd { get; set; }
 
     public Task<TransferDTO> AddTransferAsync(TransferCreateDTO request)
     {
+        if (ThrowOnAdd is { } message)
+        {
+            throw new InvalidOperationException(message);
+        }
+
         LastCreateRequest = request;
         return Task.FromResult(new TransferDTO
         {
