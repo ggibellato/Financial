@@ -31,12 +31,27 @@
                 <components:MonthYearPicker SelectedYear="{Binding DisplayYear, Mode=TwoWay}"
                                              SelectedMonth="{Binding DisplayMonth, Mode=TwoWay}"/>
                 <Button Content="Add Bill" Margin="16,0,0,0" Command="{Binding ShowAddFormCommand}"/>
+                <Button Margin="8,0,0,0" Command="{Binding ResetAllToUnsetCommand}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Content" Value="Reset All to Unset"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsResetting}" Value="True">
+                                    <Setter Property="Content" Value="Resetting..."/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
             </StackPanel>
 
             <local:AddBillFormView Grid.Row="1" Visibility="{Binding IsAddFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
             <local:EditBillFormView Grid.Row="2" Visibility="{Binding IsEditFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-            <TextBlock Grid.Row="3" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding DeleteError}"/>
+            <StackPanel Grid.Row="3">
+                <TextBlock Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding DeleteError}"/>
+                <TextBlock Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding ResetError}"/>
+            </StackPanel>
 
             <Grid Grid.Row="4" Margin="0,0,0,12">
                 <Grid.RowDefinitions>

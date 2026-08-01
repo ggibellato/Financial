@@ -82,6 +82,7 @@ public class MensaisViewModel : ViewModelBase
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
         InitializeAddBillCommands();
         InitializeEditDeleteCommands();
+        InitializeResetCommand();
 
         _ = RefreshAsync();
     }
@@ -410,6 +411,57 @@ public class MensaisViewModel : ViewModelBase
         catch (Exception ex)
         {
             DeleteError = ex.Message;
+        }
+    }
+
+    #endregion
+
+    #region Reset All to Unset
+
+    private bool _isResetting;
+    private string? _resetError;
+
+    public bool IsResetting
+    {
+        get => _isResetting;
+        private set => SetProperty(ref _isResetting, value);
+    }
+
+    public string? ResetError
+    {
+        get => _resetError;
+        private set => SetProperty(ref _resetError, value);
+    }
+
+    public RelayCommand ResetAllToUnsetCommand { get; private set; } = null!;
+
+    private void InitializeResetCommand()
+    {
+        ResetAllToUnsetCommand = new RelayCommand(async () => await ResetAllToUnsetAsync());
+    }
+
+    internal async Task ResetAllToUnsetAsync()
+    {
+        if (!_confirm("Reset every bill back to Unset for the new month?"))
+        {
+            return;
+        }
+
+        IsResetting = true;
+        ResetError = null;
+
+        try
+        {
+            var bills = await _mensaisService.ResetAllToUnsetAsync();
+            ApplyBills(bills);
+        }
+        catch (Exception ex)
+        {
+            ResetError = ex.Message;
+        }
+        finally
+        {
+            IsResetting = false;
         }
     }
 
