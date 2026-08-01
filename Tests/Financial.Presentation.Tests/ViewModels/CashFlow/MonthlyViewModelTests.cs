@@ -191,4 +191,72 @@ public class MonthlyViewModelTests
         incomes.LastCreateRequest.GrossValue.Should().BeNull();
         viewModel.IsIncomeFormOpen.Should().BeFalse();
     }
+
+    [Fact]
+    public async Task EditExpense_ValidForm_CallsUpdateServiceAndRefreshes()
+    {
+        var (viewModel, expenses, _, banks, _) = CreateViewModel();
+        var expense = new ExpenseDTO
+        {
+            Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Old",
+            Value = 10m, Category = "Mercado", PaymentSource = banks.Banks[1].Name, PaymentStatus = "ImmediatePayment",
+        };
+        await viewModel.RefreshAsync();
+
+        viewModel.EditExpenseCommand.Execute(expense);
+        viewModel.ExpenseFormDescription = "Updated";
+        viewModel.ExpenseFormValue = "20";
+
+        await viewModel.SaveExpenseAsync();
+
+        expenses.LastUpdateRequest.Should().NotBeNull();
+        expenses.LastUpdateRequest!.Value.Id.Should().Be(expense.Id);
+        expenses.LastUpdateRequest.Value.Request.Description.Should().Be("Updated");
+        expenses.LastUpdateRequest.Value.Request.Value.Should().Be(20m);
+        viewModel.IsExpenseFormOpen.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task EditIncome_ValidForm_CallsUpdateServiceAndRefreshes()
+    {
+        var (viewModel, _, incomes, banks, _) = CreateViewModel();
+        var income = new IncomeDTO
+        {
+            Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSource = "Lottery",
+            NetValue = 50m, Bank = banks.Banks[0].Name,
+        };
+        await viewModel.RefreshAsync();
+
+        viewModel.EditIncomeCommand.Execute(income);
+        viewModel.IncomeFormNetValue = "75";
+
+        await viewModel.SaveIncomeAsync();
+
+        incomes.LastUpdateRequest.Should().NotBeNull();
+        incomes.LastUpdateRequest!.Value.Id.Should().Be(income.Id);
+        incomes.LastUpdateRequest.Value.Request.NetValue.Should().Be(75m);
+        viewModel.IsIncomeFormOpen.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task DeleteIncome_CallsServiceAndRefreshes()
+    {
+        var (viewModel, _, incomes, _, _) = CreateViewModel();
+        var income = new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSource = "Lottery", NetValue = 10m, Bank = "Barclays" };
+
+        await viewModel.DeleteIncomeAsync(income);
+
+        incomes.LastDeletedId.Should().Be(income.Id);
+    }
+
+    [Fact]
+    public async Task DeleteIncome_ConfirmationDeclined_DoesNotCallService()
+    {
+        var (viewModel, _, incomes, _, _) = CreateViewModel(confirmDeletes: false);
+        var income = new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSource = "Lottery", NetValue = 10m, Bank = "Barclays" };
+
+        await viewModel.DeleteIncomeAsync(income);
+
+        incomes.LastDeletedId.Should().BeNull();
+    }
 }
