@@ -125,6 +125,7 @@ public class MonthlyViewModel : ViewModelBase
         InitializeIncomeCommands();
         InitializeBankCommands();
         InitializeTransferCommands();
+        InitializeAdjustmentCommands();
 
         _ = RefreshAsync();
     }
@@ -1012,6 +1013,204 @@ public class MonthlyViewModel : ViewModelBase
         {
             IsSavingTransfer = false;
             SaveTransferCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    // ----- Balance Adjustment form -----
+
+    private bool _isAdjustmentFormOpen;
+    private string? _editingAdjustmentBank;
+    private Guid? _editingAdjustmentId;
+    private string _adjustmentFormBankName = string.Empty;
+    private decimal _adjustmentFormCurrentBalance;
+    private DateTime? _adjustmentFormDate;
+    private string _adjustmentFormTargetBalance = string.Empty;
+    private string _adjustmentFormNote = string.Empty;
+    private bool _isSavingAdjustment;
+    private string? _adjustmentSaveError;
+    private decimal? _adjustmentSavedDelta;
+
+    public bool IsAdjustmentFormOpen
+    {
+        get => _isAdjustmentFormOpen;
+        private set => SetProperty(ref _isAdjustmentFormOpen, value);
+    }
+
+    public bool IsEditingAdjustment => _editingAdjustmentId != null;
+
+    public string AdjustmentFormBankName
+    {
+        get => _adjustmentFormBankName;
+        private set => SetProperty(ref _adjustmentFormBankName, value);
+    }
+
+    public decimal AdjustmentFormCurrentBalance
+    {
+        get => _adjustmentFormCurrentBalance;
+        private set => SetProperty(ref _adjustmentFormCurrentBalance, value);
+    }
+
+    public DateTime? AdjustmentFormDate
+    {
+        get => _adjustmentFormDate;
+        set => SetProperty(ref _adjustmentFormDate, value);
+    }
+
+    public string AdjustmentFormTargetBalance
+    {
+        get => _adjustmentFormTargetBalance;
+        set => SetProperty(ref _adjustmentFormTargetBalance, value);
+    }
+
+    public string AdjustmentFormNote
+    {
+        get => _adjustmentFormNote;
+        set => SetProperty(ref _adjustmentFormNote, value);
+    }
+
+    public bool IsSavingAdjustment
+    {
+        get => _isSavingAdjustment;
+        private set => SetProperty(ref _isSavingAdjustment, value);
+    }
+
+    public string? AdjustmentSaveError
+    {
+        get => _adjustmentSaveError;
+        private set => SetProperty(ref _adjustmentSaveError, value);
+    }
+
+    /// <summary>Set after a successful save; the form shows this delta instead of the fields until dismissed.</summary>
+    public decimal? AdjustmentSavedDelta
+    {
+        get => _adjustmentSavedDelta;
+        private set
+        {
+            if (SetProperty(ref _adjustmentSavedDelta, value))
+            {
+                OnPropertyChanged(nameof(HasAdjustmentResult));
+                OnPropertyChanged(nameof(ShowAdjustmentForm));
+            }
+        }
+    }
+
+    public bool HasAdjustmentResult => AdjustmentSavedDelta != null;
+
+    public bool ShowAdjustmentForm => AdjustmentSavedDelta == null;
+
+    public RelayCommand<BankTotalRow> ShowCorrectBalanceFormCommand { get; private set; } = null!;
+    public RelayCommand<BankHistoryEntry> EditAdjustmentCommand { get; private set; } = null!;
+    public RelayCommand CancelAdjustmentFormCommand { get; private set; } = null!;
+    public RelayCommand SaveAdjustmentCommand { get; private set; } = null!;
+    public RelayCommand DismissAdjustmentResultCommand { get; private set; } = null!;
+
+    private void InitializeAdjustmentCommands()
+    {
+        ShowCorrectBalanceFormCommand = new RelayCommand<BankTotalRow>(ShowCreateAdjustmentForm);
+        EditAdjustmentCommand = new RelayCommand<BankHistoryEntry>(ShowEditAdjustmentForm);
+        CancelAdjustmentFormCommand = new RelayCommand(CloseAdjustmentForm);
+        SaveAdjustmentCommand = new RelayCommand(async () => await SaveAdjustmentAsync(), () => !IsSavingAdjustment);
+        DismissAdjustmentResultCommand = new RelayCommand(() => AdjustmentSavedDelta = null);
+    }
+
+    private void ShowCreateAdjustmentForm(BankTotalRow? row)
+    {
+        if (row is null)
+        {
+            return;
+        }
+
+        _editingAdjustmentBank = null;
+        _editingAdjustmentId = null;
+        AdjustmentFormBankName = row.Bank;
+        AdjustmentFormCurrentBalance = row.Balance;
+        AdjustmentFormDate = DateTime.Today;
+        AdjustmentFormTargetBalance = string.Empty;
+        AdjustmentFormNote = string.Empty;
+        AdjustmentSaveError = null;
+        AdjustmentSavedDelta = null;
+        OnPropertyChanged(nameof(IsEditingAdjustment));
+        IsAdjustmentFormOpen = true;
+    }
+
+    private void ShowEditAdjustmentForm(BankHistoryEntry? entry)
+    {
+        if (entry?.Adjustment is not { } adjustment)
+        {
+            return;
+        }
+
+        var row = BankTotals.FirstOrDefault(b => b.Bank == adjustment.Bank);
+
+        _editingAdjustmentBank = adjustment.Bank;
+        _editingAdjustmentId = adjustment.Id;
+        AdjustmentFormBankName = adjustment.Bank;
+        AdjustmentFormCurrentBalance = row?.Balance ?? 0m;
+        AdjustmentFormDate = adjustment.Date.ToDateTime(TimeOnly.MinValue);
+        AdjustmentFormTargetBalance = adjustment.TargetBalance.ToString("0.##");
+        AdjustmentFormNote = adjustment.Note ?? string.Empty;
+        AdjustmentSaveError = null;
+        AdjustmentSavedDelta = null;
+        OnPropertyChanged(nameof(IsEditingAdjustment));
+        IsAdjustmentFormOpen = true;
+    }
+
+    private void CloseAdjustmentForm()
+    {
+        IsAdjustmentFormOpen = false;
+        _editingAdjustmentBank = null;
+        _editingAdjustmentId = null;
+        AdjustmentSaveError = null;
+        AdjustmentSavedDelta = null;
+    }
+
+    internal async Task SaveAdjustmentAsync()
+    {
+        var validationMessage = BalanceAdjustmentFormValidation.BuildValidationMessage(AdjustmentFormDate, AdjustmentFormTargetBalance);
+
+        if (!string.IsNullOrEmpty(validationMessage))
+        {
+            AdjustmentSaveError = validationMessage;
+            return;
+        }
+
+        IsSavingAdjustment = true;
+        SaveAdjustmentCommand.RaiseCanExecuteChanged();
+        AdjustmentSaveError = null;
+
+        try
+        {
+            var date = DateOnly.FromDateTime(AdjustmentFormDate!.Value);
+            var targetBalance = decimal.Parse(AdjustmentFormTargetBalance);
+            var note = string.IsNullOrWhiteSpace(AdjustmentFormNote) ? null : AdjustmentFormNote;
+
+            BalanceAdjustmentDTO result;
+            if (_editingAdjustmentId is { } id && _editingAdjustmentBank is { } bank)
+            {
+                result = await _balanceAdjustmentService.UpdateAdjustmentAsync(bank, id, new BalanceAdjustmentUpdateDTO
+                {
+                    Date = date, TargetBalance = targetBalance, Note = note,
+                });
+            }
+            else
+            {
+                result = await _balanceAdjustmentService.AddAdjustmentAsync(AdjustmentFormBankName, new BalanceAdjustmentCreateDTO
+                {
+                    Date = date, TargetBalance = targetBalance, Note = note,
+                });
+            }
+
+            await RefreshAsync();
+            AdjustmentSavedDelta = result.Delta;
+        }
+        catch (Exception ex)
+        {
+            AdjustmentSaveError = ex.Message;
+        }
+        finally
+        {
+            IsSavingAdjustment = false;
+            SaveAdjustmentCommand.RaiseCanExecuteChanged();
         }
     }
 }

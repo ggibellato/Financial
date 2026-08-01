@@ -12,8 +12,10 @@
 
         <TextBlock Grid.Row="0" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding BankHistoryError}"/>
 
-        <local:TransferFormView Grid.Row="1"
-                                 Visibility="{Binding IsTransferFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+        <StackPanel Grid.Row="1">
+            <local:TransferFormView Visibility="{Binding IsTransferFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            <local:BalanceAdjustmentFormView Visibility="{Binding IsAdjustmentFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+        </StackPanel>
 
         <DataGrid Grid.Row="2" ItemsSource="{Binding BankTotals}" AutoGenerateColumns="False">
             <DataGrid.Columns>
@@ -52,6 +54,15 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="" Width="120">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="Correct Balance" Padding="4,0"
+                                    Command="{Binding DataContext.ShowCorrectBalanceFormCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                    CommandParameter="{Binding}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
             <DataGrid.RowDetailsVisibilityMode>Collapsed</DataGrid.RowDetailsVisibilityMode>
             <DataGrid.RowStyle>
@@ -82,23 +93,39 @@
                                 <DataGridTemplateColumn Header="" Width="34">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Content="✏" ToolTip="Edit transfer" Padding="4,0" Visibility="Collapsed"
-                                                    Command="{Binding DataContext.EditTransferCommand, RelativeSource={RelativeSource AncestorType=DataGrid, AncestorLevel=2}}"
-                                                    CommandParameter="{Binding Transfer}">
-                                                <Button.Style>
-                                                    <Style TargetType="Button">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Kind}" Value="TransferOut">
-                                                                <Setter Property="Visibility" Value="Visible"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Kind}" Value="TransferIn">
-                                                                <Setter Property="Visibility" Value="Visible"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Button.Style>
-                                            </Button>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Content="✏" ToolTip="Edit transfer" Padding="4,0" Visibility="Collapsed"
+                                                        Command="{Binding DataContext.EditTransferCommand, RelativeSource={RelativeSource AncestorType=DataGrid, AncestorLevel=2}}"
+                                                        CommandParameter="{Binding Transfer}">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Kind}" Value="TransferOut">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Kind}" Value="TransferIn">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                                <Button Content="✏" ToolTip="Edit balance adjustment" Padding="4,0" Visibility="Collapsed"
+                                                        Command="{Binding DataContext.EditAdjustmentCommand, RelativeSource={RelativeSource AncestorType=DataGrid, AncestorLevel=2}}"
+                                                        CommandParameter="{Binding}">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Kind}" Value="Adjustment">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                            </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
