@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;
@@ -64,6 +65,7 @@ public class ReservaViewModel : ViewModelBase
 
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
         InitializeSplitCommands();
+        InitializeWithdrawalCommands();
 
         _ = RefreshAsync();
     }
@@ -125,6 +127,7 @@ public class ReservaViewModel : ViewModelBase
     private void CloseAllForms()
     {
         CloseSplitForm();
+        CloseWithdrawalForm();
     }
 
     #region Income Split
@@ -259,6 +262,149 @@ public class ReservaViewModel : ViewModelBase
         finally
         {
             IsSubmittingSplit = false;
+        }
+    }
+
+    #endregion
+
+    #region Withdrawal
+
+    private bool _isWithdrawalFormOpen;
+    private string _withdrawalBucket = Buckets[0];
+    private string _withdrawalAmount = string.Empty;
+    private DateTime? _withdrawalDate;
+    private string _withdrawalDescription = string.Empty;
+    private bool _isSubmittingWithdrawal;
+    private string? _withdrawalSaveError;
+
+    public bool IsWithdrawalFormOpen
+    {
+        get => _isWithdrawalFormOpen;
+        private set => SetProperty(ref _isWithdrawalFormOpen, value);
+    }
+
+    public string WithdrawalBucket
+    {
+        get => _withdrawalBucket;
+        set => SetProperty(ref _withdrawalBucket, value);
+    }
+
+    public string WithdrawalAmount
+    {
+        get => _withdrawalAmount;
+        set => SetProperty(ref _withdrawalAmount, value);
+    }
+
+    public DateTime? WithdrawalDate
+    {
+        get => _withdrawalDate;
+        set => SetProperty(ref _withdrawalDate, value);
+    }
+
+    public string WithdrawalDescription
+    {
+        get => _withdrawalDescription;
+        set => SetProperty(ref _withdrawalDescription, value);
+    }
+
+    public bool IsSubmittingWithdrawal
+    {
+        get => _isSubmittingWithdrawal;
+        private set => SetProperty(ref _isSubmittingWithdrawal, value);
+    }
+
+    public string? WithdrawalSaveError
+    {
+        get => _withdrawalSaveError;
+        private set => SetProperty(ref _withdrawalSaveError, value);
+    }
+
+    public RelayCommand ShowWithdrawalFormCommand { get; private set; } = null!;
+    public RelayCommand CancelWithdrawalFormCommand { get; private set; } = null!;
+    public RelayCommand SubmitWithdrawalCommand { get; private set; } = null!;
+
+    private void InitializeWithdrawalCommands()
+    {
+        ShowWithdrawalFormCommand = new RelayCommand(ShowWithdrawalForm);
+        CancelWithdrawalFormCommand = new RelayCommand(CloseWithdrawalForm);
+        SubmitWithdrawalCommand = new RelayCommand(async () => await SubmitWithdrawalAsync());
+    }
+
+    private void ShowWithdrawalForm()
+    {
+        CloseAllForms();
+        WithdrawalBucket = Buckets[0];
+        WithdrawalAmount = string.Empty;
+        WithdrawalDate = DateTime.Today;
+        WithdrawalDescription = string.Empty;
+        WithdrawalSaveError = null;
+        IsWithdrawalFormOpen = true;
+    }
+
+    private void CloseWithdrawalForm()
+    {
+        IsWithdrawalFormOpen = false;
+        WithdrawalSaveError = null;
+    }
+
+    internal async Task SubmitWithdrawalAsync()
+    {
+        var validationMessage = WithdrawalFormValidation.BuildValidationMessage(
+            WithdrawalBucket, WithdrawalAmount, WithdrawalDate, WithdrawalDescription);
+        if (!string.IsNullOrEmpty(validationMessage))
+        {
+            WithdrawalSaveError = validationMessage;
+            return;
+        }
+
+        IsSubmittingWithdrawal = true;
+        WithdrawalSaveError = null;
+
+        try
+        {
+            await PostWithdrawalWithOverdraftHandlingAsync(confirmed: false);
+            CloseWithdrawalForm();
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            WithdrawalSaveError = ex.Message;
+        }
+        finally
+        {
+            IsSubmittingWithdrawal = false;
+        }
+    }
+
+    /// <summary>
+    /// Posts the withdrawal; on an overdraft conflict, asks the user to confirm and resubmits
+    /// with the override flag set. Declining re-throws the server's conflict message so the
+    /// caller's catch block surfaces it as WithdrawalSaveError. Mirrors useReserva.ts's
+    /// ApiError(409) + window.confirm flow.
+    /// </summary>
+    private async Task PostWithdrawalWithOverdraftHandlingAsync(bool confirmed)
+    {
+        var request = new WithdrawalRequestDTO
+        {
+            Bucket = WithdrawalBucket,
+            Amount = decimal.Parse(WithdrawalAmount),
+            Date = DateOnly.FromDateTime(WithdrawalDate!.Value),
+            Description = WithdrawalDescription,
+            Confirmed = confirmed,
+        };
+
+        try
+        {
+            await _reserveService.PostWithdrawalAsync(request);
+        }
+        catch (OverdraftConfirmationRequiredException ex) when (!confirmed)
+        {
+            if (!_confirm($"{ex.Message}\n\nProceed anyway?"))
+            {
+                throw;
+            }
+
+            await PostWithdrawalWithOverdraftHandlingAsync(confirmed: true);
         }
     }
 

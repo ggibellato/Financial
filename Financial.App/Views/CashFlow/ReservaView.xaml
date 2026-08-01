@@ -25,10 +25,12 @@
 
             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
                 <Button Content="New Income Split" Command="{Binding ShowSplitFormCommand}"/>
+                <Button Content="New Withdrawal" Margin="8,0,0,0" Command="{Binding ShowWithdrawalFormCommand}"/>
             </StackPanel>
 
             <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,0,0,16">
                 <local:IncomeSplitFormView Visibility="{Binding IsSplitFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                <local:WithdrawalFormView Visibility="{Binding IsWithdrawalFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
                 <DataGrid ItemsSource="{Binding Balances}" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="180">
                     <DataGrid.Columns>
                         <DataGridTextColumn Binding="{Binding Bucket}" Header="Bucket" Width="180"

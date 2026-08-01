@@ -1,0 +1,59 @@
+<UserControl x:Class="Financial.Presentation.App.Views.CashFlow.WithdrawalFormView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Financial.Presentation.App.ViewModels.CashFlow">
+    <Border BorderBrush="#CCCCCC" BorderThickness="1" Padding="12" Margin="0,0,0,12" Background="#FAFAFA">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="150"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" FontWeight="Bold" Text="New Withdrawal" Margin="0,0,0,8"/>
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Bucket:" VerticalAlignment="Center"/>
+            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{x:Static vm:ReservaViewModel.Buckets}"
+                      SelectedItem="{Binding WithdrawalBucket, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Amount:" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding WithdrawalAmount, UpdateSourceTrigger=LostFocus}"
+                     PreviewTextInput="OnDecimalTextBoxPreviewTextInput"
+                     DataObject.Pasting="OnDecimalTextBoxPasting"
+                     LostFocus="OnDecimalTextBoxLostFocus"/>
+
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Date:" VerticalAlignment="Center"/>
+            <DatePicker Grid.Row="3" Grid.Column="1" SelectedDate="{Binding WithdrawalDate, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="Description:" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding WithdrawalDescription, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <TextBlock Grid.Row="5" Grid.ColumnSpan="2" Foreground="Red" TextWrapping="Wrap"
+                       Text="{Binding WithdrawalSaveError}" Margin="0,8,0,0"/>
+
+            <StackPanel Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
+                <Button Width="110" Command="{Binding SubmitWithdrawalCommand}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Content" Value="Withdraw"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsSubmittingWithdrawal}" Value="True">
+                                    <Setter Property="Content" Value="Withdrawing..."/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button Content="Cancel" Width="90" Margin="8,0,0,0" Command="{Binding CancelWithdrawalFormCommand}"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>
