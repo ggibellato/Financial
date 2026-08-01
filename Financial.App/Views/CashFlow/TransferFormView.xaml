@@ -40,9 +40,12 @@
                       SelectedValuePath="Name"/>
 
             <TextBlock Grid.Row="3" Grid.Column="0" Text="To:" VerticalAlignment="Center"/>
-            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
-                      SelectedValue="{Binding TransferFormDestinationBank, UpdateSourceTrigger=PropertyChanged}"
-                      SelectedValuePath="Name"/>
+            <StackPanel Grid.Row="3" Grid.Column="1">
+                <ComboBox ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
+                          SelectedValue="{Binding TransferFormDestinationBank, UpdateSourceTrigger=PropertyChanged}"
+                          SelectedValuePath="Name"/>
+                <TextBlock Foreground="Red" TextWrapping="Wrap" Text="{Binding SameBankTransferError}"/>
+            </StackPanel>
 
             <TextBlock Grid.Row="4" Grid.Column="0" Text="Amount:" VerticalAlignment="Center"/>
             <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding TransferFormAmount, UpdateSourceTrigger=LostFocus}"

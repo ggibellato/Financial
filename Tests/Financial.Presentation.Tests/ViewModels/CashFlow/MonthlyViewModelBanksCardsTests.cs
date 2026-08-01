@@ -96,10 +96,17 @@ public class MonthlyViewModelBanksCardsTests
         viewModel.TransferFormDestinationBank = banks.Banks[0].Name;
         viewModel.TransferFormAmount = "75";
 
+        viewModel.SaveTransferCommand.CanExecute(null).Should().BeFalse();
+        viewModel.SameBankTransferError.Should().NotBeNullOrEmpty();
+
         await viewModel.SaveTransferAsync();
 
         transfers.LastCreateRequest.Should().BeNull();
         viewModel.TransferSaveError.Should().NotBeNullOrEmpty();
+
+        viewModel.TransferFormDestinationBank = banks.Banks[1].Name;
+        viewModel.SaveTransferCommand.CanExecute(null).Should().BeTrue();
+        viewModel.SameBankTransferError.Should().BeEmpty();
     }
 
     [Fact]

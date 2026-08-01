@@ -890,14 +890,38 @@ public class MonthlyViewModel : ViewModelBase
     public string TransferFormSourceBank
     {
         get => _transferFormSourceBank;
-        set => SetProperty(ref _transferFormSourceBank, value);
+        set
+        {
+            if (SetProperty(ref _transferFormSourceBank, value))
+            {
+                OnPropertyChanged(nameof(IsSameBankTransfer));
+                OnPropertyChanged(nameof(SameBankTransferError));
+                SaveTransferCommand?.RaiseCanExecuteChanged();
+            }
+        }
     }
 
     public string TransferFormDestinationBank
     {
         get => _transferFormDestinationBank;
-        set => SetProperty(ref _transferFormDestinationBank, value);
+        set
+        {
+            if (SetProperty(ref _transferFormDestinationBank, value))
+            {
+                OnPropertyChanged(nameof(IsSameBankTransfer));
+                OnPropertyChanged(nameof(SameBankTransferError));
+                SaveTransferCommand?.RaiseCanExecuteChanged();
+            }
+        }
     }
+
+    /// <summary>True when source and destination are both set and identical — Move Money's Confirm is disabled in this state, mirroring TransferForm.tsx's sameBankError.</summary>
+    public bool IsSameBankTransfer =>
+        !string.IsNullOrEmpty(TransferFormSourceBank)
+        && !string.IsNullOrEmpty(TransferFormDestinationBank)
+        && TransferFormSourceBank == TransferFormDestinationBank;
+
+    public string SameBankTransferError => IsSameBankTransfer ? "Source and destination must be different banks." : string.Empty;
 
     public string TransferFormAmount
     {
@@ -932,7 +956,7 @@ public class MonthlyViewModel : ViewModelBase
     {
         ShowMoveMoneyFormCommand = new RelayCommand<string>(ShowCreateTransferForm);
         CancelTransferFormCommand = new RelayCommand(CloseTransferForm);
-        SaveTransferCommand = new RelayCommand(async () => await SaveTransferAsync(), () => !IsSavingTransfer);
+        SaveTransferCommand = new RelayCommand(async () => await SaveTransferAsync(), () => !IsSavingTransfer && !IsSameBankTransfer);
         EditTransferCommand = new RelayCommand<TransferDTO>(ShowEditTransferForm);
     }
 
