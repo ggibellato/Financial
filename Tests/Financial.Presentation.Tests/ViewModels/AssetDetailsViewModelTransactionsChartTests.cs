@@ -4,6 +4,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
 using Financial.Presentation.App.Helpers;
 using Financial.Presentation.App.ViewModels;
+using Financial.Presentation.App.ViewModels.Investment;
 using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;

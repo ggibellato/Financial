@@ -1,8 +1,10 @@
+using Financial.CashFlow.Application.DependencyInjection;
+using Financial.CashFlow.Infrastructure.DependencyInjection;
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DependencyInjection;
 using Financial.Investment.Infrastructure.DependencyInjection;
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
-using Financial.Presentation.App.Views;
+using Financial.Presentation.App.Views.Investment;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -34,6 +36,8 @@ namespace Financial.Presentation.App
                     services.AddFinancialApplication();
                     services.AddGoogleDriveFileClient();
                     services.AddFinancialInfrastructure(context.Configuration);
+                    services.AddFinancialCashFlowApplication();
+                    services.AddFinancialCashFlowInfrastructure(context.Configuration);
                     services.Configure<WatchlistOptions>(context.Configuration.GetSection(WatchlistOptions.SectionName));
                     services.Configure<AssetPriceFetchOptions>(context.Configuration.GetSection(AssetPriceFetchOptions.SectionName));
                     services.Configure<DividendOptions>(context.Configuration.GetSection(DividendOptions.SectionName));

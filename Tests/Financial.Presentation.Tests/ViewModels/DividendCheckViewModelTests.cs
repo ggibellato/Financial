@@ -2,6 +2,7 @@ using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
 using Financial.Presentation.App.ViewModels;
+using Financial.Presentation.App.ViewModels.Investment;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 

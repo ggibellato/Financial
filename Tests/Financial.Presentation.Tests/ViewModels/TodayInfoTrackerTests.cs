@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Presentation.App.ViewModels;
+using Financial.Presentation.App.ViewModels.Investment;
 using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
