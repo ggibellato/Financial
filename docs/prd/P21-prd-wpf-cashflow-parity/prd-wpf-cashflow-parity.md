@@ -105,13 +105,13 @@ WPF CashFlow Parity closes this gap by bringing `Financial.App` to full function
 **Capabilities:**
 - Adds project references from `Financial.App.csproj` to `Financial.CashFlow.Application` and `Financial.CashFlow.Infrastructure` (mirrors the existing `Financial.Investment.*` references).
 - Registers all 12 CashFlow Application services in `App.xaml.cs`'s DI container via the same `AddFinancialApplication()`/`AddFinancialInfrastructure()`-style extension methods the CashFlow projects already expose for `Financial.Api`.
-- Adds one new top-level `TabItem` ("Cash Flow") to `MainWindow.xaml`'s existing `TabControl`, positioned after the current Investments tabs.
-- The Cash Flow tab's content is a nested `TabControl` with 6 `TabItem`s in this order: Monthly, Reserva, Mensais, Controle Mãe, Investment Snapshots, Annual Summary — matching `CashFlowLayout.tsx`'s nav order on the web.
+- Restructures `MainWindow.xaml`'s top-level `TabControl` into a 2-item domain switcher — `Investments` and `Cash Flow` — matching the web app's top-level domain switcher (`App.tsx`) over `InvestmentsLayout`/`CashFlowLayout`. The 4 existing Investment tabs (Active Investments, Historic Investments, Shares Dividend check, Read Assets current values) move into a nested `TabControl` under the `Investments` `TabItem`, with no change to their content or behavior.
+- The Cash Flow domain tab's content is a nested `TabControl` with 6 `TabItem`s in this order: Monthly, Reserva, Mensais, Controle Mãe, Investment Snapshots, Annual Summary — matching `CashFlowLayout.tsx`'s nav order on the web.
 - Each nested tab's content is resolved from the DI container and assigned in `MainWindow.xaml.cs`'s constructor, the same way `DividendCheckView`/`AssetPriceView` are wired today.
 
 **Experience:**
-- On app launch, the Cash Flow tab is visible and selectable alongside the existing Investments tabs without affecting their behavior.
-- Selecting the Cash Flow tab shows the nested tab strip; selecting any of its 6 tabs shows that feature's view (populated by F02–F08 as they land — until then, an empty/placeholder `TabItem`).
+- On app launch, the top-level view is the Investments/Cash Flow domain switcher; the Cash Flow domain is visible and selectable without affecting the Investments domain's tabs or their behavior.
+- Selecting the Cash Flow domain tab shows its nested 6-tab strip; selecting any of its 6 tabs shows that feature's view (populated by F02–F08 as they land — until then, an empty/placeholder `TabItem`).
 - No data loading happens at the Foundation level — each nested view is responsible for its own data fetch when selected, same as Investments' `Loaded`-triggered `LoadNavigationTreeAsync()`.
 
 ### F02. WPF Monthly View — Expenses & Income
@@ -351,9 +351,9 @@ graph TD
 ### F01. WPF CashFlow Foundation & Navigation Shell
 - [x] `Financial.App.csproj` references `Financial.CashFlow.Application` and `Financial.CashFlow.Infrastructure`
 - [x] All 12 CashFlow services resolve successfully from the DI container at app startup
-- [ ] MainWindow shows a "Cash Flow" tab alongside the existing Investments tabs
+- [ ] MainWindow's top-level tab strip shows "Investments" and "Cash Flow" as two peer domain tabs, with the 4 former top-level Investment tabs now nested inside the "Investments" domain tab
 - [ ] The Cash Flow tab contains a nested tab strip with exactly 6 tabs in order: Monthly, Reserva, Mensais, Controle Mãe, Investment Snapshots, Annual Summary
-- [ ] Selecting the Cash Flow tab and its nested tabs does not affect the state or behavior of the existing Investments tabs
+- [ ] Selecting the Cash Flow tab and its nested tabs does not affect the state or behavior of the Investments domain's nested tabs
 - [x] `dotnet build` succeeds for `Financial.App` and `Financial.Presentation.Tests` with the new references
 
 ### F02. WPF Monthly View — Expenses & Income

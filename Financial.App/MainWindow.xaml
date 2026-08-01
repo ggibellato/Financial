@@ -9,14 +9,18 @@
         Title="Financial tools" Height="800" Width="1200" Icon="{StaticResource AppIcon}">
     <Grid>
         <TabControl SelectedIndex="0" Grid.ColumnSpan="2">
-            <TabItem Header="Active Investments">
-                <local:NavigationView DataContext="{Binding ElementName=root, Path=NavigationViewModel}"/>
+            <TabItem Header="Investments">
+                <TabControl>
+                    <TabItem Header="Active Investments">
+                        <local:NavigationView DataContext="{Binding ElementName=root, Path=NavigationViewModel}"/>
+                    </TabItem>
+                    <TabItem Header="Historic Investments">
+                        <local:NavigationView DataContext="{Binding ElementName=root, Path=NavigationViewModelHistoric}"/>
+                    </TabItem>
+                    <TabItem x:Name="dividendCheckTab" Header="Shares Dividend check"/>
+                    <TabItem x:Name="assetPriceTab" Header="Read Assets current values"/>
+                </TabControl>
             </TabItem>
-            <TabItem Header="Historic Investments">
-                <local:NavigationView DataContext="{Binding ElementName=root, Path=NavigationViewModelHistoric}"/>
-            </TabItem>
-            <TabItem x:Name="dividendCheckTab" Header="Shares Dividend check"/>
-            <TabItem x:Name="assetPriceTab" Header="Read Assets current values"/>
             <TabItem Header="Cash Flow">
                 <TabControl>
                     <TabItem Header="Monthly"/>

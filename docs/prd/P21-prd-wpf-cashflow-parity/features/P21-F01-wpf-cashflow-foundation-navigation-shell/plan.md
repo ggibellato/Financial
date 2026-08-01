@@ -23,9 +23,9 @@
 
 ### Stage 3: Cash Flow Navigation Shell
 
-**7. Add the Cash Flow tab and nested shell** - Add a new "Cash Flow" `TabItem` to `MainWindow.xaml`, positioned after the existing Investment tabs, containing a nested `TabControl` with 6 empty `TabItem`s in order: Monthly, Reserva, Mensais, Controle Mãe, Investment Snapshots, Annual Summary.
+**7. Restructure MainWindow into a two-level domain switcher** - Turn `MainWindow.xaml`'s top-level `TabControl` into an `Investments`/`Cash Flow` domain switcher matching the web app's structure; nest the 4 existing Investment tabs inside the `Investments` `TabItem`, and add a nested `TabControl` inside the `Cash Flow` `TabItem` with 6 empty `TabItem`s in order: Monthly, Reserva, Mensais, Controle Mãe, Investment Snapshots, Annual Summary.
 
-**8. Verify existing Investment tabs are unaffected** - Confirm the 4 existing top-level tabs (Active Investments, Historic Investments, Shares Dividend check, Read Assets current values) still function identically after the folder move and the new tab's addition.
+**8. Verify existing Investment tabs are unaffected** - Confirm the 4 existing Investment tabs (Active Investments, Historic Investments, Shares Dividend check, Read Assets current values), now nested one level deeper, still function identically after the folder move and the restructure.
 
 ### Stage 4: Verification
 
