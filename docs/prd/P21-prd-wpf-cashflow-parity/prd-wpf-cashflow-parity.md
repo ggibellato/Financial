@@ -414,12 +414,12 @@ graph TD
 - [x] Changing the Month/Year selector refetches the correct month's snapshots
 
 ### F08. WPF Annual Summary View
-- [ ] Changing the Year selector refetches and correctly displays all 3 sub-tabs for that year
-- [ ] Category Totals sub-tab shows correct monthly values, Average, and Annual Total for every income row, expense category row, Resultado, and Total despesas, matching the backend's `category-totals` response
-- [ ] Investments sub-tab shows correct monthly values per account (liabilities suffixed "(-)"), a correct Total row, Month Result row, and the 3 summary figures, matching the backend's `investment-annual-result` response
-- [ ] Historic Summary Average sub-tab shows one column per year with correct values per category, matching the backend's `historic-summary-averages` response
-- [ ] Spacer rows and emphasized rows (Resultado, Total despesas) render in the correct positions and styling on both applicable sub-tabs
+- [x] Changing the Year selector refetches and correctly displays all 3 sub-tabs for that year
+- [x] Category Totals sub-tab shows correct monthly values, Average, and Annual Total for every income row, expense category row, Resultado, and Total despesas, matching the backend's `category-totals` response
+- [x] Investments sub-tab shows correct monthly values per account (liabilities suffixed "(-)"), a correct Total row, Month Result row, and the 3 summary figures, matching the backend's `investment-annual-result` response
+- [x] Historic Summary Average sub-tab shows one column per year with correct values per category, matching the backend's `historic-summary-averages` response
+- [x] Spacer rows and emphasized rows (Resultado, Total despesas) render in the correct positions and styling on both applicable sub-tabs
 
 ### Cross-Feature Integration
-- [ ] The Cash Flow tab created by F01 correctly hosts and displays each of F02, F04, F05, F06, F07, F08's views in their respective nested tab, with no layout or data bleed between tabs
+- [x] The Cash Flow tab created by F01 correctly hosts and displays each of F02, F04, F05, F06, F07, F08's views in their respective nested tab, with no layout or data bleed between tabs
 - [x] F03's Banks/Cards grids and Move Money/Correct Balance actions render correctly inside the Summary sub-tab container established by F02, without disrupting F02's Category Totals/tithe display already on that sub-tab

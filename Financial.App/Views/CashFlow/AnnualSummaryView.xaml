@@ -1,0 +1,144 @@
+<UserControl x:Class="Financial.Presentation.App.Views.CashFlow.AnnualSummaryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="root">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Loading..." FontSize="14"
+                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+        <StackPanel Grid.Row="0" Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock Text="{Binding Error}" Foreground="Red" TextWrapping="Wrap"/>
+            <Button Content="Retry" Command="{Binding RetryCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+        </StackPanel>
+
+        <Grid Grid.Row="0" Visibility="{Binding ShowContent, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+                <TextBlock Text="Year:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBox Width="80" Text="{Binding Year, UpdateSourceTrigger=PropertyChanged}"/>
+            </StackPanel>
+
+            <TabControl Grid.Row="1">
+                <TabItem Header="Category Totals">
+                    <DataGrid ItemsSource="{Binding CategoryTotalRows}" AutoGenerateColumns="False" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Binding="{Binding Label}" Header="Category" Width="180"
+                                                 ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                            <DataGridTextColumn Binding="{Binding MonthlyValues[0], StringFormat=N2}" Header="Jan" Width="70" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                            <DataGridTextColumn Binding="{Binding MonthlyValues[1], StringFormat=N2}" Header="Feb" Width="70" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                            <DataGridTextColumn Binding="{Binding MonthlyValues[2], StringFormat=N2}" Header="Mar" Width="70" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                            <DataGridTextColumn Binding="{Binding MonthlyValues[3], StringFormat=N2}" Header="Apr" Width="70" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                            <DataGridTextColumn Binding="{Binding MonthlyValues[4], StringFormat=N2}" Header="May" Width="70" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                            <DataGridTextColumn Binding="{Binding MonthlyValues[5], StringFormat=N2}" Header="Jun" Width="70" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                            <DataGridTextColumn Binding="{Binding MonthlyValues[6], StringFormat=N2}" Header="Jul" Width="70" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                            <DataGridTextColumn Binding="{Binding MonthlyValues[7], StringFormat=N2}" Header="Aug" Width="70" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                            <DataGridTextColumn Binding="{Binding MonthlyValues[8], StringFormat=N2}" Header="Sep" Width="70" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                            <DataGridTextColumn Binding="{Binding MonthlyValues[9], StringFormat=N2}" Header="Oct" Width="70" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                            <DataGridTextColumn Binding="{Binding MonthlyValues[10], StringFormat=N2}" Header="Nov" Width="70" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                            <DataGridTextColumn Binding="{Binding MonthlyValues[11], StringFormat=N2}" Header="Dec" Width="70" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                            <DataGridTextColumn Binding="{Binding Average, StringFormat=N2}" Header="Average" Width="90" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                            <DataGridTextColumn Binding="{Binding AnnualTotal, StringFormat=N2}" Header="Annual Total" Width="100" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                        </DataGrid.Columns>
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsEmphasized}" Value="True">
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsSpacer}" Value="True">
+                                        <Setter Property="Height" Value="12"/>
+                                        <Setter Property="Foreground" Value="Transparent"/>
+                                        <Setter Property="IsHitTestVisible" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+                    </DataGrid>
+                </TabItem>
+
+                <TabItem Header="Investments">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <DataGrid Grid.Row="0" ItemsSource="{Binding InvestmentRows}" AutoGenerateColumns="False" IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Binding="{Binding Label}" Header="Account" Width="200"
+                                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                                <DataGridTextColumn Binding="{Binding MonthlyValues[0], StringFormat=N2}" Header="Jan" Width="80" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                                <DataGridTextColumn Binding="{Binding MonthlyValues[1], StringFormat=N2}" Header="Feb" Width="80" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                                <DataGridTextColumn Binding="{Binding MonthlyValues[2], StringFormat=N2}" Header="Mar" Width="80" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                                <DataGridTextColumn Binding="{Binding MonthlyValues[3], StringFormat=N2}" Header="Apr" Width="80" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                                <DataGridTextColumn Binding="{Binding MonthlyValues[4], StringFormat=N2}" Header="May" Width="80" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                                <DataGridTextColumn Binding="{Binding MonthlyValues[5], StringFormat=N2}" Header="Jun" Width="80" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                                <DataGridTextColumn Binding="{Binding MonthlyValues[6], StringFormat=N2}" Header="Jul" Width="80" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                                <DataGridTextColumn Binding="{Binding MonthlyValues[7], StringFormat=N2}" Header="Aug" Width="80" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                                <DataGridTextColumn Binding="{Binding MonthlyValues[8], StringFormat=N2}" Header="Sep" Width="80" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                                <DataGridTextColumn Binding="{Binding MonthlyValues[9], StringFormat=N2}" Header="Oct" Width="80" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                                <DataGridTextColumn Binding="{Binding MonthlyValues[10], StringFormat=N2}" Header="Nov" Width="80" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                                <DataGridTextColumn Binding="{Binding MonthlyValues[11], StringFormat=N2}" Header="Dec" Width="80" ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                            </DataGrid.Columns>
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEmphasized}" Value="True">
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+                        </DataGrid>
+
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,12,0,0">
+                            <StackPanel Margin="0,0,24,0">
+                                <TextBlock Text="Year Progress"/>
+                                <TextBlock FontWeight="Bold" Text="{Binding YearProgress, StringFormat=N2}"/>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,24,0">
+                                <TextBlock Text="Average Month Result"/>
+                                <TextBlock FontWeight="Bold" Text="{Binding AverageMonthResult, StringFormat=N2}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="Sum of Month Results"/>
+                                <TextBlock FontWeight="Bold" Text="{Binding SumOfMonthResults, StringFormat=N2}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Historic Summary Average">
+                    <DataGrid x:Name="historicSummaryGrid" ItemsSource="{Binding HistoricSummaryRows}" AutoGenerateColumns="False" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Binding="{Binding Category}" Header="Category" Width="180"
+                                                 ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                        </DataGrid.Columns>
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsEmphasized}" Value="True">
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsSpacer}" Value="True">
+                                        <Setter Property="Height" Value="12"/>
+                                        <Setter Property="Foreground" Value="Transparent"/>
+                                        <Setter Property="IsHitTestVisible" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+                    </DataGrid>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </Grid>
+</UserControl>

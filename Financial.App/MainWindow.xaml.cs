@@ -20,6 +20,7 @@ namespace Financial.Presentation.App
             MensaisView mensaisView,
             ControleMaeView controleMaeView,
             InvestmentSnapshotsView investmentSnapshotsView,
+            AnnualSummaryView annualSummaryView,
             MainNavigationViewModel navigationViewModel,
             MainNavigationViewModelHistoric navigationViewModelHistoric)
         {
@@ -30,6 +31,7 @@ namespace Financial.Presentation.App
             ArgumentNullException.ThrowIfNull(mensaisView);
             ArgumentNullException.ThrowIfNull(controleMaeView);
             ArgumentNullException.ThrowIfNull(investmentSnapshotsView);
+            ArgumentNullException.ThrowIfNull(annualSummaryView);
             _navigationViewModel = navigationViewModel ?? throw new ArgumentNullException(nameof(navigationViewModel));
             _navigationViewModelHistoric = navigationViewModelHistoric ?? throw new ArgumentNullException(nameof(navigationViewModelHistoric));
 
@@ -41,6 +43,7 @@ namespace Financial.Presentation.App
             mensaisTab.Content = mensaisView;
             controleMaeTab.Content = controleMaeView;
             investmentSnapshotsTab.Content = investmentSnapshotsView;
+            annualSummaryTab.Content = annualSummaryView;
 
             Loaded += async (s, e) =>
             {
