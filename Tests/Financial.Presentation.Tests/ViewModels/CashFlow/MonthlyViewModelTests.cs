@@ -259,4 +259,41 @@ public class MonthlyViewModelTests
 
         incomes.LastDeletedId.Should().BeNull();
     }
+
+    [Fact]
+    public async Task SaveExpense_MissingDescription_DoesNotCallServiceAndShowsError()
+    {
+        var (viewModel, expenses, _, banks, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateExpenseFormCommand.Execute(null);
+        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDescription = "";
+        viewModel.ExpenseFormCategory = "Mercado";
+        viewModel.ExpenseFormValue = "10";
+        viewModel.ExpenseFormPaymentSource = banks.Banks[0].Name;
+
+        await viewModel.SaveExpenseAsync();
+
+        expenses.LastCreateRequest.Should().BeNull();
+        viewModel.ExpenseSaveError.Should().NotBeNullOrEmpty();
+        viewModel.IsExpenseFormOpen.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SaveIncome_MissingBank_DoesNotCallServiceAndShowsError()
+    {
+        var (viewModel, _, incomes, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormSource = "Lottery";
+        viewModel.IncomeFormNetValue = "50";
+        viewModel.IncomeFormBank = "";
+
+        await viewModel.SaveIncomeAsync();
+
+        incomes.LastCreateRequest.Should().BeNull();
+        viewModel.IncomeSaveError.Should().NotBeNullOrEmpty();
+        viewModel.IsIncomeFormOpen.Should().BeTrue();
+    }
 }
