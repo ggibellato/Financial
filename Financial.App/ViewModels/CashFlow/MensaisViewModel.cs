@@ -81,6 +81,7 @@ public class MensaisViewModel : ViewModelBase
 
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
         InitializeAddBillCommands();
+        InitializeEditDeleteCommands();
 
         _ = RefreshAsync();
     }
@@ -262,6 +263,153 @@ public class MensaisViewModel : ViewModelBase
         finally
         {
             IsAdding = false;
+        }
+    }
+
+    #endregion
+
+    #region Edit and Delete Bill
+
+    public static readonly string[] Statuses = ["Unset", "Scheduled", "Paid"];
+
+    private bool _isEditFormOpen;
+    private Guid? _editingBillId;
+    private string _editValue = string.Empty;
+    private string _editStatus = Statuses[0];
+    private bool _isSaving;
+    private string? _editSaveError;
+    private string? _deleteError;
+
+    public bool IsEditFormOpen
+    {
+        get => _isEditFormOpen;
+        private set => SetProperty(ref _isEditFormOpen, value);
+    }
+
+    public string EditValue
+    {
+        get => _editValue;
+        set => SetProperty(ref _editValue, value);
+    }
+
+    public string EditStatus
+    {
+        get => _editStatus;
+        set => SetProperty(ref _editStatus, value);
+    }
+
+    public bool IsSaving
+    {
+        get => _isSaving;
+        private set => SetProperty(ref _isSaving, value);
+    }
+
+    public string? EditSaveError
+    {
+        get => _editSaveError;
+        private set => SetProperty(ref _editSaveError, value);
+    }
+
+    public string? DeleteError
+    {
+        get => _deleteError;
+        private set => SetProperty(ref _deleteError, value);
+    }
+
+    public RelayCommand<RecurringBillDTO> EditBillCommand { get; private set; } = null!;
+    public RelayCommand CancelEditFormCommand { get; private set; } = null!;
+    public RelayCommand SaveEditCommand { get; private set; } = null!;
+    public RelayCommand<RecurringBillDTO> DeleteBillCommand { get; private set; } = null!;
+
+    private void InitializeEditDeleteCommands()
+    {
+        EditBillCommand = new RelayCommand<RecurringBillDTO>(ShowEditForm);
+        CancelEditFormCommand = new RelayCommand(CloseEditForm);
+        SaveEditCommand = new RelayCommand(async () => await SaveEditAsync());
+        DeleteBillCommand = new RelayCommand<RecurringBillDTO>(async bill => await DeleteBillAsync(bill));
+    }
+
+    private void ShowEditForm(RecurringBillDTO? bill)
+    {
+        if (bill is null)
+        {
+            return;
+        }
+
+        _editingBillId = bill.Id;
+        EditValue = bill.Value.ToString();
+        EditStatus = bill.Status;
+        EditSaveError = null;
+        IsEditFormOpen = true;
+    }
+
+    private void CloseEditForm()
+    {
+        IsEditFormOpen = false;
+        EditSaveError = null;
+        _editingBillId = null;
+    }
+
+    internal async Task SaveEditAsync()
+    {
+        if (_editingBillId is not { } id)
+        {
+            return;
+        }
+
+        var validationMessage = EditBillFormValidation.BuildValidationMessage(EditValue, EditStatus);
+        if (!string.IsNullOrEmpty(validationMessage))
+        {
+            EditSaveError = validationMessage;
+            return;
+        }
+
+        IsSaving = true;
+        EditSaveError = null;
+
+        try
+        {
+            await _mensaisService.UpdateBillAsync(id, new UpdateRecurringBillDTO
+            {
+                Status = EditStatus,
+                Value = decimal.Parse(EditValue),
+            });
+
+            CloseEditForm();
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            EditSaveError = ex.Message;
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    internal async Task DeleteBillAsync(RecurringBillDTO? bill)
+    {
+        if (bill is null)
+        {
+            return;
+        }
+
+        if (!_confirm($"Delete \"{bill.Description}\"? This removes it for good."))
+        {
+            return;
+        }
+
+        DeleteError = null;
+
+        try
+        {
+            await _mensaisService.DeleteBillAsync(bill.Id);
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            DeleteError = ex.Message;
         }
     }
 
