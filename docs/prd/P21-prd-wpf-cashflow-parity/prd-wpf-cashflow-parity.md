@@ -408,10 +408,10 @@ graph TD
 - [x] Missing/invalid fields on Create or Edit block submission with a visible error
 
 ### F07. WPF Investment Snapshots View
-- [ ] Snapshot grid shows one row per account for the selected month, with liability accounts labeled "(liability)"
-- [ ] Editing a snapshot's Value saves correctly and the grid and Total (net of liabilities) row reflect the change
-- [ ] A negative or non-numeric Value blocks save with a visible error
-- [ ] Changing the Month/Year selector refetches the correct month's snapshots
+- [x] Snapshot grid shows one row per account for the selected month, with liability accounts labeled "(liability)"
+- [x] Editing a snapshot's Value saves correctly and the grid and Total (net of liabilities) row reflect the change
+- [x] A negative or non-numeric Value blocks save with a visible error
+- [x] Changing the Month/Year selector refetches the correct month's snapshots
 
 ### F08. WPF Annual Summary View
 - [ ] Changing the Year selector refetches and correctly displays all 3 sub-tabs for that year
