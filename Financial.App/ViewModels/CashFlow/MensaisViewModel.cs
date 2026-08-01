@@ -80,6 +80,7 @@ public class MensaisViewModel : ViewModelBase
         _displayMonth = today.Month;
 
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
+        InitializeAddBillCommands();
 
         _ = RefreshAsync();
     }
@@ -138,4 +139,131 @@ public class MensaisViewModel : ViewModelBase
             collection.Add(item);
         }
     }
+
+    #region Add Bill
+
+    public static readonly string[] Areas = ["Brasil", "UK"];
+
+    private bool _isAddFormOpen;
+    private string _newDescription = string.Empty;
+    private string _newDueDay = string.Empty;
+    private string _newValue = string.Empty;
+    private string _newArea = Areas[0];
+    private string _newNote = string.Empty;
+    private bool _isAdding;
+    private string? _addSaveError;
+
+    public bool IsAddFormOpen
+    {
+        get => _isAddFormOpen;
+        private set => SetProperty(ref _isAddFormOpen, value);
+    }
+
+    public string NewDescription
+    {
+        get => _newDescription;
+        set => SetProperty(ref _newDescription, value);
+    }
+
+    public string NewDueDay
+    {
+        get => _newDueDay;
+        set => SetProperty(ref _newDueDay, value);
+    }
+
+    public string NewValue
+    {
+        get => _newValue;
+        set => SetProperty(ref _newValue, value);
+    }
+
+    public string NewArea
+    {
+        get => _newArea;
+        set => SetProperty(ref _newArea, value);
+    }
+
+    public string NewNote
+    {
+        get => _newNote;
+        set => SetProperty(ref _newNote, value);
+    }
+
+    public bool IsAdding
+    {
+        get => _isAdding;
+        private set => SetProperty(ref _isAdding, value);
+    }
+
+    public string? AddSaveError
+    {
+        get => _addSaveError;
+        private set => SetProperty(ref _addSaveError, value);
+    }
+
+    public RelayCommand ShowAddFormCommand { get; private set; } = null!;
+    public RelayCommand CancelAddFormCommand { get; private set; } = null!;
+    public RelayCommand SubmitAddCommand { get; private set; } = null!;
+
+    private void InitializeAddBillCommands()
+    {
+        ShowAddFormCommand = new RelayCommand(ShowAddForm);
+        CancelAddFormCommand = new RelayCommand(CloseAddForm);
+        SubmitAddCommand = new RelayCommand(async () => await SubmitAddAsync());
+    }
+
+    private void ShowAddForm()
+    {
+        NewDescription = string.Empty;
+        NewDueDay = string.Empty;
+        NewValue = string.Empty;
+        NewArea = Areas[0];
+        NewNote = string.Empty;
+        AddSaveError = null;
+        IsAddFormOpen = true;
+    }
+
+    private void CloseAddForm()
+    {
+        IsAddFormOpen = false;
+        AddSaveError = null;
+    }
+
+    internal async Task SubmitAddAsync()
+    {
+        var validationMessage = AddBillFormValidation.BuildValidationMessage(NewDescription, NewDueDay, NewValue);
+        if (!string.IsNullOrEmpty(validationMessage))
+        {
+            AddSaveError = validationMessage;
+            return;
+        }
+
+        IsAdding = true;
+        AddSaveError = null;
+
+        try
+        {
+            await _mensaisService.CreateBillAsync(new CreateRecurringBillDTO
+            {
+                Description = NewDescription,
+                DueDay = int.Parse(NewDueDay),
+                Value = decimal.Parse(NewValue),
+                Area = NewArea,
+                Note = string.IsNullOrWhiteSpace(NewNote) ? string.Empty : NewNote,
+            });
+
+            CloseAddForm();
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            AddSaveError = ex.Message;
+        }
+        finally
+        {
+            IsAdding = false;
+        }
+    }
+
+    #endregion
 }

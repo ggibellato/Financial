@@ -20,6 +20,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
@@ -28,9 +29,12 @@
                 <TextBlock Text="Month:" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <components:MonthYearPicker SelectedYear="{Binding DisplayYear, Mode=TwoWay}"
                                              SelectedMonth="{Binding DisplayMonth, Mode=TwoWay}"/>
+                <Button Content="Add Bill" Margin="16,0,0,0" Command="{Binding ShowAddFormCommand}"/>
             </StackPanel>
 
-            <Grid Grid.Row="2" Margin="0,0,0,12">
+            <local:AddBillFormView Grid.Row="1" Visibility="{Binding IsAddFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+            <Grid Grid.Row="3" Margin="0,0,0,12">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
@@ -39,7 +43,7 @@
                 <local:BillTableView Grid.Row="1" Bills="{Binding BrasilBills}" ShowBrasilFields="True"/>
             </Grid>
 
-            <Grid Grid.Row="3">
+            <Grid Grid.Row="4">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
