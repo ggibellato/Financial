@@ -79,6 +79,10 @@ public class MonthlyViewModel : ViewModelBase
     public ObservableCollection<IncomeDTO> Incomes { get; } = [];
     public ObservableCollection<CategoryTotalDTO> CategoryTotals { get; } = [];
     public ObservableCollection<BankDTO> Banks { get; } = [];
+    public ObservableCollection<BankTotalRow> BankTotals { get; } = [];
+
+    public decimal BankTotalsSum => BankTotals.Sum(b => b.Balance);
+    public decimal RoundUpTotalsSum => BankTotals.Sum(b => b.RoundUpTotal);
 
     private TitheSummaryDTO? _titheSummary;
     public TitheSummaryDTO? TitheSummary
@@ -113,6 +117,7 @@ public class MonthlyViewModel : ViewModelBase
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
         InitializeExpenseCommands();
         InitializeIncomeCommands();
+        InitializeBankCommands();
 
         _ = RefreshAsync();
     }
@@ -139,6 +144,7 @@ public class MonthlyViewModel : ViewModelBase
             var incomes = await Task.Run(() => _incomeService.GetIncomesByMonth(year, month));
             var categoryTotals = await Task.Run(() => _expenseService.GetCategoryTotalsByMonth(year, month));
             var banks = await Task.Run(() => _bankService.GetBanks());
+            var bankBalances = await Task.Run(() => _bankService.GetBankBalancesByMonth(year, month));
             var titheSummary = await Task.Run(() => _titheService.GetTitheSummary(year, month));
 
             if (requestId != _refreshRequestId)
@@ -152,6 +158,16 @@ public class MonthlyViewModel : ViewModelBase
             ReplaceAll(Banks, banks);
             TitheSummary = titheSummary;
             OnPropertyChanged(nameof(CategoryTotalsSum));
+
+            var previouslyExpanded = BankTotals.Where(b => b.IsExpanded).Select(b => b.Bank).ToHashSet();
+            var newBankTotals = BuildBankTotals(banks, expenses, bankBalances);
+            foreach (var row in newBankTotals)
+            {
+                row.IsExpanded = previouslyExpanded.Contains(row.Bank);
+            }
+            ReplaceAll(BankTotals, newBankTotals);
+            OnPropertyChanged(nameof(BankTotalsSum));
+            OnPropertyChanged(nameof(RoundUpTotalsSum));
         }
         catch (Exception ex)
         {
@@ -176,6 +192,20 @@ public class MonthlyViewModel : ViewModelBase
         {
             collection.Add(item);
         }
+    }
+
+    /// <summary>Mirrors useMonthly.ts's bankTotals: balance from the month's running total, round-up summed client-side from that bank's expenses.</summary>
+    private static List<BankTotalRow> BuildBankTotals(
+        IReadOnlyList<BankDTO> banks, IReadOnlyList<ExpenseDTO> expenses, IReadOnlyList<BankBalanceDTO> bankBalances)
+    {
+        return banks.Select(bank =>
+        {
+            var roundUpTotal = expenses
+                .Where(e => e.PaymentSource == bank.Name)
+                .Sum(e => e.RoundUpAmount ?? 0m);
+            var balance = bankBalances.FirstOrDefault(b => b.Bank == bank.Name)?.Balance ?? 0m;
+            return new BankTotalRow { Bank = bank.Name, Balance = balance, RoundUpTotal = roundUpTotal };
+        }).ToList();
     }
 
     // ----- Expense CRUD -----
@@ -705,5 +735,20 @@ public class MonthlyViewModel : ViewModelBase
         {
             DeletingIncomeError = ex.Message;
         }
+    }
+
+    // ----- Banks grid -----
+
+    public RelayCommand<BankTotalRow> ToggleBankExpandCommand { get; private set; } = null!;
+
+    private void InitializeBankCommands()
+    {
+        ToggleBankExpandCommand = new RelayCommand<BankTotalRow>(row =>
+        {
+            if (row is not null)
+            {
+                row.IsExpanded = !row.IsExpanded;
+            }
+        });
     }
 }
