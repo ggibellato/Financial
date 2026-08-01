@@ -1,0 +1,29 @@
+<UserControl x:Class="Financial.Presentation.App.Views.CashFlow.MonthlySummaryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- F03 appends Banks/Cards grid sections below this Grid's existing rows. -->
+    <Grid Margin="0,12,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <DataGrid Grid.Row="0" ItemsSource="{Binding CategoryTotals}" MaxHeight="320">
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding Category}" Header="Category" Width="*"
+                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                <DataGridTextColumn Binding="{Binding TotalValue, StringFormat=N2}" Header="Total" Width="140"
+                                     ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Grid.Row="1" Margin="0,8,0,0" FontWeight="Bold"
+                   Text="{Binding CategoryTotalsSum, StringFormat='Total: {0:N2}'}"/>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4,0,0">
+            <TextBlock FontWeight="Bold" Text="{Binding TitheSummary.CalculatedTithe, StringFormat='Calculated Tithe: {0:N2}'}"/>
+            <TextBlock FontWeight="Bold" Margin="16,0,0,0" Text="{Binding TitheSummary.TitheBalance, StringFormat='Tithe Balance: {0:N2}'}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -358,16 +358,16 @@ graph TD
 
 ### F02. WPF Monthly View — Expenses & Income
 - [ ] Monthly view shows Summary, Expense, and Incoming sub-tabs with a Month+Year selector
-- [ ] Adding an expense with valid Date/Description/Category/Value/Payment fields creates it and it appears in the Expense grid for that month
+- [x] Adding an expense with valid Date/Description/Category/Value/Payment fields creates it and it appears in the Expense grid for that month
 - [ ] Selecting "Charge to card" shows the 5-item Card ComboBox and hides Payment Source/Round-Up
-- [ ] Selecting "Pay immediately" with a round-up-enabled bank shows the Round-Up field constrained to £0.00–£0.99; an out-of-range value blocks save
-- [ ] Selecting "Pay immediately" with a non-round-up bank hides the Round-Up field
+- [x] Selecting "Pay immediately" with a round-up-enabled bank shows the Round-Up field constrained to £0.00–£0.99; an out-of-range value blocks save
+- [x] Selecting "Pay immediately" with a non-round-up bank hides the Round-Up field
 - [ ] A settled expense renders read-only with the settlement explanation and offers no edit/delete controls
-- [ ] Editing an expense updates it and the grid reflects the change; deleting it removes it after confirmation
-- [ ] Adding an income entry with Source = Gleison or Ariana shows the Gross Value field; other sources hide it
-- [ ] Editing/deleting an income entry updates/removes it from the Incoming grid
-- [ ] Category Totals grid shows one row per category with the correct month total; tithe figure matches `ITitheService`'s computed value for the month
-- [ ] Missing required fields on any form block submission with a visible error and no service call is made
+- [x] Editing an expense updates it and the grid reflects the change; deleting it removes it after confirmation
+- [x] Adding an income entry with Source = Gleison or Ariana shows the Gross Value field; other sources hide it
+- [x] Editing/deleting an income entry updates/removes it from the Incoming grid
+- [x] Category Totals grid shows one row per category with the correct month total; tithe figure matches `ITitheService`'s computed value for the month
+- [x] Missing required fields on any form block submission with a visible error and no service call is made
 
 ### F03. WPF Monthly View — Banks, Cards, Transfers & Balance Adjustments
 - [ ] Banks grid shows one row per bank with correct Bank Balance and Round-Up total, plus a correct footer sum

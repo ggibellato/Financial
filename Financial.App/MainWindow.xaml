@@ -23,7 +23,7 @@
             </TabItem>
             <TabItem Header="Cash Flow">
                 <TabControl>
-                    <TabItem Header="Monthly"/>
+                    <TabItem x:Name="monthlyTab" Header="Monthly"/>
                     <TabItem Header="Reserva"/>
                     <TabItem Header="Mensais"/>
                     <TabItem Header="Controle Mae"/>
