@@ -1,13 +1,17 @@
-import { useEffect, useMemo, useReducer } from 'react'
+import { useEffect, useMemo, useReducer, useState } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { BalanceAdjustmentDto, BankDto, TransferDto } from '../api/types'
 
-export type BankHistoryEntry =
+/** Sentinel bank-filter value meaning "show every bank's operations, unfiltered". */
+export const ALL_BANKS_FILTER = 'All Banks'
+
+export type BankOperationEntry =
   | {
-      kind: 'transferIn' | 'transferOut'
+      kind: 'transfer'
       id: string
       date: string
-      counterpartBank: string
+      sourceBank: string
+      destinationBank: string
       amount: number
       note: string | null
       transfer: TransferDto
@@ -16,6 +20,7 @@ export type BankHistoryEntry =
       kind: 'adjustment'
       id: string
       date: string
+      bank: string
       delta: number
       note: string | null
       adjustment: BalanceAdjustmentDto
@@ -26,89 +31,69 @@ function isInMonth(dateIso: string, year: number, month: number): boolean {
   return y === year && m === month
 }
 
-function buildHistoryByBank(
-  banks: BankDto[],
+function buildOperations(
   transfers: TransferDto[],
-  adjustmentsByBank: Record<string, BalanceAdjustmentDto[]>,
-  year: number,
-  month: number,
-): Record<string, BankHistoryEntry[]> {
-  const result: Record<string, BankHistoryEntry[]> = {}
+  adjustments: BalanceAdjustmentDto[],
+): BankOperationEntry[] {
+  const transferEntries: BankOperationEntry[] = transfers.map((transfer) => ({
+    kind: 'transfer',
+    id: transfer.id,
+    date: transfer.date,
+    sourceBank: transfer.sourceBank,
+    destinationBank: transfer.destinationBank,
+    amount: transfer.amount,
+    note: transfer.note,
+    transfer,
+  }))
 
-  for (const bank of banks) {
-    const entries: BankHistoryEntry[] = []
+  const adjustmentEntries: BankOperationEntry[] = adjustments.map((adjustment) => ({
+    kind: 'adjustment',
+    id: adjustment.id,
+    date: adjustment.date,
+    bank: adjustment.bank,
+    delta: adjustment.delta,
+    note: adjustment.note,
+    adjustment,
+  }))
 
-    for (const transfer of transfers) {
-      if (transfer.sourceBank === bank.name) {
-        entries.push({
-          kind: 'transferOut',
-          id: transfer.id,
-          date: transfer.date,
-          counterpartBank: transfer.destinationBank,
-          amount: transfer.amount,
-          note: transfer.note,
-          transfer,
-        })
-      } else if (transfer.destinationBank === bank.name) {
-        entries.push({
-          kind: 'transferIn',
-          id: transfer.id,
-          date: transfer.date,
-          counterpartBank: transfer.sourceBank,
-          amount: transfer.amount,
-          note: transfer.note,
-          transfer,
-        })
-      }
-    }
-
-    for (const adjustment of adjustmentsByBank[bank.name] ?? []) {
-      if (isInMonth(adjustment.date, year, month)) {
-        entries.push({
-          kind: 'adjustment',
-          id: adjustment.id,
-          date: adjustment.date,
-          delta: adjustment.delta,
-          note: adjustment.note,
-          adjustment,
-        })
-      }
-    }
-
-    entries.sort((a, b) => b.date.localeCompare(a.date))
-    result[bank.name] = entries
-  }
-
-  return result
+  return [...transferEntries, ...adjustmentEntries].sort((a, b) => b.date.localeCompare(a.date))
 }
 
-interface BankHistoryState {
-  historyByBank: Record<string, BankHistoryEntry[]>
+function matchesBankFilter(entry: BankOperationEntry, bankFilter: string): boolean {
+  if (bankFilter === ALL_BANKS_FILTER) return true
+
+  return entry.kind === 'transfer'
+    ? entry.sourceBank === bankFilter || entry.destinationBank === bankFilter
+    : entry.bank === bankFilter
+}
+
+interface BankOperationsState {
+  operations: BankOperationEntry[]
   isLoading: boolean
   error: string | null
   retryCount: number
 }
 
-type BankHistoryAction =
+type BankOperationsAction =
   | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: Record<string, BankHistoryEntry[]> }
+  | { type: 'FETCH_SUCCESS'; payload: BankOperationEntry[] }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
   | { type: 'ACTION_ERROR'; payload: string }
 
-const INITIAL_STATE: BankHistoryState = {
-  historyByBank: {},
+const INITIAL_STATE: BankOperationsState = {
+  operations: [],
   isLoading: true,
   error: null,
   retryCount: 0,
 }
 
-function reducer(state: BankHistoryState, action: BankHistoryAction): BankHistoryState {
+function reducer(state: BankOperationsState, action: BankOperationsAction): BankOperationsState {
   switch (action.type) {
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null }
     case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, historyByBank: action.payload }
+      return { ...state, isLoading: false, operations: action.payload }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
@@ -120,8 +105,10 @@ function reducer(state: BankHistoryState, action: BankHistoryAction): BankHistor
   }
 }
 
-export interface UseBankHistoryResult {
-  historyByBank: Record<string, BankHistoryEntry[]>
+export interface UseBankOperationsResult {
+  operations: BankOperationEntry[]
+  bankFilter: string
+  setBankFilter: (bankFilter: string) => void
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -129,19 +116,29 @@ export interface UseBankHistoryResult {
   deleteAdjustment: (bankName: string, id: string) => void
 }
 
-/** Fetches, combines, and deletes a month's transfer/adjustment history per bank. */
-export function useBankHistory(
+/**
+ * Fetches the month's transfers (all banks) and each bank's adjustments (scoped to the
+ * month client-side), combines them into one flat, newest-first list, and exposes a
+ * client-side bank filter plus delete actions. Replaces the per-bank grouped useBankHistory.
+ */
+export function useBankOperations(
   year: number,
   month: number,
   banks: BankDto[],
   onChanged: () => void,
-): UseBankHistoryResult {
+): UseBankOperationsResult {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const [bankFilter, setBankFilter] = useState<string>(ALL_BANKS_FILTER)
 
   const bankNames = banks.map((bank) => bank.name).join(',')
 
   useEffect(() => {
+    // banks arrives asynchronously from the caller's own fetch (useMonthly) and starts as
+    // an empty array; skip fetching until it's actually populated so this hook doesn't run
+    // a throwaway zero-bank fetch and then immediately refetch once banks land.
+    if (banks.length === 0) return
+
     dispatch({ type: 'FETCH_START' })
 
     Promise.all([
@@ -149,17 +146,16 @@ export function useBankHistory(
       Promise.all(banks.map((bank) => apiClient.getAdjustmentsByBank(bank.name))),
     ])
       .then(([transfers, adjustmentsPerBank]) => {
-        const adjustmentsByBank: Record<string, BalanceAdjustmentDto[]> = {}
-        banks.forEach((bank, index) => {
-          adjustmentsByBank[bank.name] = adjustmentsPerBank[index]
-        })
-        dispatch({
-          type: 'FETCH_SUCCESS',
-          payload: buildHistoryByBank(banks, transfers, adjustmentsByBank, year, month),
-        })
+        const adjustments = adjustmentsPerBank
+          .flat()
+          .filter((adjustment) => isInMonth(adjustment.date, year, month))
+        dispatch({ type: 'FETCH_SUCCESS', payload: buildOperations(transfers, adjustments) })
       })
       .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: err instanceof Error ? err.message : 'Unable to load bank history' })
+        dispatch({
+          type: 'FETCH_ERROR',
+          payload: err instanceof Error ? err.message : 'Unable to load bank operations',
+        })
       })
     // banks is derived every render by the caller; bankNames is a stable key for its contents.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -198,8 +194,12 @@ export function useBankHistory(
       })
   }
 
+  const operations = state.operations.filter((entry) => matchesBankFilter(entry, bankFilter))
+
   return {
-    historyByBank: state.historyByBank,
+    operations,
+    bankFilter,
+    setBankFilter,
     isLoading: state.isLoading,
     error: state.error,
     retry,
