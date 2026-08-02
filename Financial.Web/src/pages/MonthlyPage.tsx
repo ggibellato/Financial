@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import BalanceAdjustmentForm from '../components/BalanceAdjustmentForm'
+import BankOperationsSection from '../components/BankOperationsSection'
 import BanksGrid from '../components/BanksGrid'
 import CardsGrid from '../components/CardsGrid'
 import CategoryTotalsGrid from '../components/CategoryTotalsGrid'
@@ -12,7 +13,7 @@ import IncomingGrid from '../components/IncomingGrid'
 import LoadingState from '../components/LoadingState'
 import TransferForm from '../components/TransferForm'
 import { useBalanceAdjustmentForm } from '../hooks/useBalanceAdjustmentForm'
-import { useBankHistory } from '../hooks/useBankHistory'
+import { useBankOperations } from '../hooks/useBankOperations'
 import {
   useMonthly,
   type CreateFormField,
@@ -23,12 +24,13 @@ import {
 import { useTransferForm } from '../hooks/useTransferForm'
 import './MonthlyPage.css'
 
-type MonthlyTabId = 'summary' | 'expense' | 'incoming'
+type MonthlyTabId = 'summary' | 'expense' | 'incoming' | 'bank'
 
 const MONTHLY_TABS: { id: MonthlyTabId; label: string }[] = [
   { id: 'summary', label: 'Summary' },
   { id: 'expense', label: 'Expense' },
   { id: 'incoming', label: 'Income' },
+  { id: 'bank', label: 'Bank' },
 ]
 
 const CREATE_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, CreateFormField> = {
@@ -154,27 +156,23 @@ export default function MonthlyPage() {
     titheSummary,
   } = useMonthly()
 
-  const bankHistory = useBankHistory(year, month, banks, retry)
+  const bankOperations = useBankOperations(year, month, banks, retry)
   const transferForm = useTransferForm(banks, () => {
     retry()
-    bankHistory.retry()
+    bankOperations.retry()
   })
-  const adjustmentForm = useBalanceAdjustmentForm(() => {
+  const adjustmentForm = useBalanceAdjustmentForm(bankTotals, () => {
     retry()
-    bankHistory.retry()
+    bankOperations.retry()
   })
 
   const [activeTab, setActiveTab] = useState<MonthlyTabId>('summary')
-  const [expandedBank, setExpandedBank] = useState<string | null>(null)
-
-  const toggleExpandedBank = (bankName: string) => {
-    setExpandedBank((current) => (current === bankName ? null : bankName))
-  }
 
   const isEditing = editingId !== null
   const isFormVisible = isCreateFormOpen || isEditing
   const isIncomeEditing = editingIncomeId !== null
   const isIncomeFormVisible = isIncomeCreateFormOpen || isIncomeEditing
+  const isBankFormVisible = transferForm.isOpen || adjustmentForm.isOpen
 
   const handleTabClick = (tabId: MonthlyTabId) => {
     if (activeTab === 'expense' && isFormVisible) {
@@ -184,6 +182,10 @@ export default function MonthlyPage() {
     if (activeTab === 'incoming' && isIncomeFormVisible) {
       if (isIncomeEditing) cancelEditIncome()
       else cancelCreateIncomeForm()
+    }
+    if (activeTab === 'bank' && isBankFormVisible) {
+      if (transferForm.isOpen) transferForm.cancel()
+      if (adjustmentForm.isOpen) adjustmentForm.cancel()
     }
     setActiveTab(tabId)
   }
@@ -223,40 +225,6 @@ export default function MonthlyPage() {
         <div className="monthly-page__content">
           {activeTab === 'summary' && (
           <div className="monthly-page__summary-groups">
-            {transferForm.isOpen && (
-              <TransferForm
-                isEditing={transferForm.isEditing}
-                date={transferForm.date}
-                sourceBank={transferForm.sourceBank}
-                destinationBank={transferForm.destinationBank}
-                amount={transferForm.amount}
-                note={transferForm.note}
-                banks={banks}
-                isSaving={transferForm.isSaving}
-                saveError={transferForm.saveError}
-                saveErrorField={transferForm.saveErrorField}
-                onFieldChange={transferForm.setField}
-                onSave={transferForm.submit}
-                onCancel={transferForm.cancel}
-              />
-            )}
-            {adjustmentForm.isOpen && (
-              <BalanceAdjustmentForm
-                isEditing={adjustmentForm.isEditing}
-                bankName={adjustmentForm.bankName}
-                currentBalance={adjustmentForm.currentBalance}
-                date={adjustmentForm.date}
-                targetBalance={adjustmentForm.targetBalance}
-                note={adjustmentForm.note}
-                isSaving={adjustmentForm.isSaving}
-                saveError={adjustmentForm.saveError}
-                saveErrorField={adjustmentForm.saveErrorField}
-                savedDelta={adjustmentForm.savedDelta}
-                onFieldChange={adjustmentForm.setField}
-                onSave={adjustmentForm.submit}
-                onCancel={adjustmentForm.cancel}
-              />
-            )}
             <div className="monthly-page__grids-row">
               <CategoryTotalsGrid categoryTotals={categoryTotals} categoryTotalsSum={categoryTotalsSum} />
               <CardsGrid
@@ -270,20 +238,7 @@ export default function MonthlyPage() {
               />
             </div>
             <div className="monthly-page__grids-row">
-              <BanksGrid
-                bankTotals={bankTotals}
-                bankTotalsSum={bankTotalsSum}
-                roundUpTotalsSum={roundUpTotalsSum}
-                historyByBank={bankHistory.historyByBank}
-                expandedBank={expandedBank}
-                onToggleExpand={toggleExpandedBank}
-                onMoveMoney={(bankName) => transferForm.openCreateForm(bankName)}
-                onCorrectBalance={(bankName, currentBalance) => adjustmentForm.openCreateForm(bankName, currentBalance)}
-                onEditTransfer={transferForm.openEditForm}
-                onEditAdjustment={adjustmentForm.openEditForm}
-                onDeleteTransfer={bankHistory.deleteTransfer}
-                onDeleteAdjustment={bankHistory.deleteAdjustment}
-              />
+              <BanksGrid bankTotals={bankTotals} bankTotalsSum={bankTotalsSum} roundUpTotalsSum={roundUpTotalsSum} />
               <IncomingGrid incomeTotals={incomeTotals} totalIncoming={totalIncoming} titheSummary={titheSummary} />
             </div>
           </div>
@@ -354,6 +309,65 @@ export default function MonthlyPage() {
                 onEdit={showEditIncomeForm}
                 onDelete={deleteIncome}
                 onNewIncome={showCreateIncomeForm}
+              />
+            </>
+          )}
+
+          {activeTab === 'bank' && bankOperations.isLoading && <LoadingState />}
+
+          {activeTab === 'bank' && !bankOperations.isLoading && bankOperations.error && (
+            <ErrorState message={bankOperations.error} onRetry={bankOperations.retry} />
+          )}
+
+          {activeTab === 'bank' && !bankOperations.isLoading && !bankOperations.error && (
+            <>
+              {transferForm.isOpen && (
+                <TransferForm
+                  isEditing={transferForm.isEditing}
+                  date={transferForm.date}
+                  sourceBank={transferForm.sourceBank}
+                  destinationBank={transferForm.destinationBank}
+                  amount={transferForm.amount}
+                  note={transferForm.note}
+                  banks={banks}
+                  isSaving={transferForm.isSaving}
+                  saveError={transferForm.saveError}
+                  saveErrorField={transferForm.saveErrorField}
+                  onFieldChange={transferForm.setField}
+                  onSave={transferForm.submit}
+                  onCancel={transferForm.cancel}
+                />
+              )}
+              {adjustmentForm.isOpen && (
+                <BalanceAdjustmentForm
+                  isEditing={adjustmentForm.isEditing}
+                  bankName={adjustmentForm.bankName}
+                  banks={banks}
+                  currentBalance={adjustmentForm.currentBalance}
+                  date={adjustmentForm.date}
+                  targetBalance={adjustmentForm.targetBalance}
+                  note={adjustmentForm.note}
+                  isSaving={adjustmentForm.isSaving}
+                  saveError={adjustmentForm.saveError}
+                  saveErrorField={adjustmentForm.saveErrorField}
+                  savedDelta={adjustmentForm.savedDelta}
+                  onFieldChange={adjustmentForm.setField}
+                  onSave={adjustmentForm.submit}
+                  onCancel={adjustmentForm.cancel}
+                />
+              )}
+
+              <BankOperationsSection
+                operations={bankOperations.operations}
+                bankFilter={bankOperations.bankFilter}
+                banks={banks}
+                onBankFilterChange={bankOperations.setBankFilter}
+                onNewTransfer={() => transferForm.openCreateForm()}
+                onNewBalanceCorrection={() => adjustmentForm.openCreateForm()}
+                onEditTransfer={transferForm.openEditForm}
+                onEditAdjustment={adjustmentForm.openEditForm}
+                onDeleteTransfer={bankOperations.deleteTransfer}
+                onDeleteAdjustment={bankOperations.deleteAdjustment}
               />
             </>
           )}

@@ -218,6 +218,14 @@ describe('MonthlyPage', () => {
     expect(screen.getByRole('button', { name: 'Income' })).not.toHaveClass('monthly-page__tab--active')
   })
 
+  it('lists Summary, Expense, Income, Bank in order in the tab strip', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    const tabLabels = screen.getAllByRole('button', { name: /Summary|Expense|Income|Bank/ }).map((b) => b.textContent)
+    expect(tabLabels).toEqual(['Summary', 'Expense', 'Income', 'Bank'])
+  })
+
   it('re-scopes all 4 Summary grids when the month/year value changes', async () => {
     render(<MonthlyPage />)
 
@@ -347,7 +355,7 @@ describe('MonthlyPage', () => {
     expect(screen.getByText('Lidl UK')).toBeInTheDocument()
   })
 
-  it('renders a Banks grid with a row per payment source and its own total, alongside the other grids', async () => {
+  it('renders a Banks grid with a row per payment source and its own total, alongside the other grids, with no expand or action controls', async () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
@@ -356,6 +364,7 @@ describe('MonthlyPage', () => {
     expect(banksSection.getByRole('cell', { name: 'Barclays' })).toBeInTheDocument()
     expect(banksSection.getByRole('cell', { name: 'Trading212' })).toBeInTheDocument()
     expect(banksSection.getByRole('cell', { name: 'Chase' })).toBeInTheDocument()
+    expect(banksSection.queryByRole('button')).not.toBeInTheDocument()
 
     // The single expense (42.50) is on Barclays with no round-up amount, so its balance
     // is unchanged and every round-up figure (per-bank and the footer) is zero.
@@ -787,21 +796,29 @@ describe('MonthlyPage', () => {
     expect(screen.getByLabelText('Round-Up')).toHaveValue(0.6)
   })
 
-  it('opens Move Money from a bank row pre-filled with that bank as the source, and refreshes balances and history on save', async () => {
+  it('shows the Bank tab operations list combining transfers and adjustments for the month, newest-first', async () => {
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+
+    await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
+    expect(screen.getByText('Adjustment')).toBeInTheDocument()
+    expect(screen.getByText('Barclays → Trading212')).toBeInTheDocument()
+  })
+
+  it('opens the New Transfer form with no bank pre-selected, creates a transfer, and refreshes balances and the operations list', async () => {
     createTransferMock.mockResolvedValue(TRANSFERS[0])
     render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    const trading212Row = screen.getByRole('row', { name: /Trading212/ })
-    fireEvent.click(within(trading212Row).getByRole('button', { name: 'Move Money' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: '+ New Transfer' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: '+ New Transfer' }))
 
     expect(screen.getByText('Move Money', { selector: 'p' })).toBeInTheDocument()
-    expect(screen.getByLabelText('From')).toHaveValue('Trading212')
 
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
     const transfersCallsBefore = getTransfersByMonthMock.mock.calls.length
 
-    fireEvent.change(screen.getByLabelText('To'), { target: { value: 'Barclays' } })
+    fireEvent.change(screen.getByLabelText('To'), { target: { value: 'Trading212' } })
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '50' } })
     const transferFormPanel = screen.getByLabelText('From').closest('.monthly-page__form-panel') as HTMLElement
     fireEvent.click(within(transferFormPanel).getByRole('button', { name: 'Move Money' }))
@@ -811,97 +828,81 @@ describe('MonthlyPage', () => {
     expect(getTransfersByMonthMock.mock.calls.length).toBeGreaterThan(transfersCallsBefore)
   })
 
-  it('opens Correct Balance from a bank row with the current balance, and refreshes balances and history on save', async () => {
+  it('gates New Balance Correction on a bank being chosen, then shows the resulting delta', async () => {
     createBalanceAdjustmentMock.mockResolvedValue({ ...ADJUSTMENTS[0], id: 'a2', delta: 2.5 })
     render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    const barclaysRow = screen.getByRole('row', { name: /Barclays/ })
-    fireEvent.click(within(barclaysRow).getByRole('button', { name: 'Correct Balance' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: '+ New Balance Correction' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: '+ New Balance Correction' }))
 
+    const correctBalanceFormPanel = screen.getByLabelText('Bank').closest('.monthly-page__form-panel') as HTMLElement
+    expect(within(correctBalanceFormPanel).getByRole('button', { name: 'Correct Balance' })).toBeDisabled()
+    expect(screen.queryByLabelText('Target Balance')).not.toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Bank'), { target: { value: 'Barclays' } })
     expect(screen.getByText(/Current calculated balance for Barclays: £42.50/)).toBeInTheDocument()
 
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
     const adjustmentsCallsBefore = getAdjustmentsByBankMock.mock.calls.length
 
     fireEvent.change(screen.getByLabelText('Target Balance'), { target: { value: '45' } })
-    const adjustmentFormPanel = screen.getByLabelText('Target Balance').closest('.monthly-page__form-panel') as HTMLElement
-    fireEvent.click(within(adjustmentFormPanel).getByRole('button', { name: 'Correct Balance' }))
+    fireEvent.click(within(correctBalanceFormPanel).getByRole('button', { name: 'Correct Balance' }))
 
     await waitFor(() => expect(createBalanceAdjustmentMock).toHaveBeenCalledWith('Barclays', expect.objectContaining({ targetBalance: 45 })))
+    expect(await screen.findByText(/Adjustment of £2.50 recorded/)).toBeInTheDocument()
     await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
     expect(getAdjustmentsByBankMock.mock.calls.length).toBeGreaterThan(adjustmentsCallsBefore)
   })
 
-  it('expands a bank row to show its transfer and adjustment history', async () => {
+  it('narrows the operations list via the bank filter with no additional network request', async () => {
     render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Expand history for Barclays' }))
+    await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
+    const transfersCallsBefore = getTransfersByMonthMock.mock.calls.length
+    const adjustmentsCallsBefore = getAdjustmentsByBankMock.mock.calls.length
 
-    expect(await screen.findByText('Transfer Out')).toBeInTheDocument()
-    expect(screen.getByText('Adjustment')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Filter by Bank'), { target: { value: 'Chase' } })
+
+    expect(screen.getByText('No transfers or balance corrections this month for Chase.')).toBeInTheDocument()
+    expect(getTransfersByMonthMock.mock.calls.length).toBe(transfersCallsBefore)
+    expect(getAdjustmentsByBankMock.mock.calls.length).toBe(adjustmentsCallsBefore)
   })
 
-  it('edits a transfer from the history list, opening TransferForm pre-filled with its values', async () => {
+  it('edits a transfer from the operations list, opening TransferForm pre-filled with its values, and persists the change', async () => {
+    updateTransferMock.mockResolvedValue(TRANSFERS[0])
     render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Expand history for Barclays' }))
-    await screen.findByText('Transfer Out')
-
+    await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Edit transfer' }))
 
     expect(screen.getByText('Edit Transfer')).toBeInTheDocument()
     expect(screen.getByLabelText('Amount')).toHaveValue(100)
-  })
-
-  it('edits an adjustment from the history list, opening BalanceAdjustmentForm pre-filled with its values', async () => {
-    render(<MonthlyPage />)
-
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Expand history for Barclays' }))
-    await screen.findByText('Adjustment')
-
-    fireEvent.click(screen.getByRole('button', { name: 'Edit balance adjustment' }))
-
-    expect(screen.getByText('Edit Balance Adjustment')).toBeInTheDocument()
-    expect(screen.getByLabelText('Target Balance')).toHaveValue(42.5)
-  })
-
-  it('saving an edited transfer from the history list persists the change and refreshes balances and history', async () => {
-    updateTransferMock.mockResolvedValue(TRANSFERS[0])
-    render(<MonthlyPage />)
-
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Expand history for Barclays' }))
-    await screen.findByText('Transfer Out')
-    fireEvent.click(screen.getByRole('button', { name: 'Edit transfer' }))
 
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
-    const transfersCallsBefore = getTransfersByMonthMock.mock.calls.length
-
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '150' } })
     const transferFormPanel = screen.getByLabelText('Amount').closest('.monthly-page__form-panel') as HTMLElement
     fireEvent.click(within(transferFormPanel).getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(updateTransferMock).toHaveBeenCalledWith('t1', expect.objectContaining({ amount: 150 })))
     await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
-    expect(getTransfersByMonthMock.mock.calls.length).toBeGreaterThan(transfersCallsBefore)
   })
 
-  it('saving an edited adjustment from the history list persists the change and refreshes balances and history', async () => {
+  it('edits an adjustment from the operations list with the bank fixed, and persists the change', async () => {
     updateBalanceAdjustmentMock.mockResolvedValue({ ...ADJUSTMENTS[0], delta: 7.5 })
     render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Expand history for Barclays' }))
-    await screen.findByText('Adjustment')
+    await waitFor(() => expect(screen.getByText('Adjustment')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Edit balance adjustment' }))
 
-    const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
-    const adjustmentsCallsBefore = getAdjustmentsByBankMock.mock.calls.length
+    expect(screen.getByText('Edit Balance Adjustment')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Bank')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Target Balance')).toHaveValue(42.5)
 
+    const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
     fireEvent.change(screen.getByLabelText('Target Balance'), { target: { value: '50' } })
     const adjustmentFormPanel = screen.getByLabelText('Target Balance').closest('.monthly-page__form-panel') as HTMLElement
     fireEvent.click(within(adjustmentFormPanel).getByRole('button', { name: 'Save' }))
@@ -910,17 +911,14 @@ describe('MonthlyPage', () => {
       expect(updateBalanceAdjustmentMock).toHaveBeenCalledWith('Barclays', 'a1', expect.objectContaining({ targetBalance: 50 })),
     )
     await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
-    expect(getAdjustmentsByBankMock.mock.calls.length).toBeGreaterThan(adjustmentsCallsBefore)
   })
 
-  it('deletes a transfer from the history list after confirmation, and refreshes balances', async () => {
+  it('deletes a transfer from the operations list after confirmation, and refreshes balances', async () => {
     deleteTransferMock.mockResolvedValue(undefined)
     render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Expand history for Barclays' }))
-    await screen.findByText('Transfer Out')
-
+    await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
     fireEvent.click(screen.getByRole('button', { name: 'Delete transfer' }))
 
@@ -928,18 +926,45 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
   })
 
-  it('deletes an adjustment from the history list after confirmation, and refreshes balances', async () => {
+  it('deletes an adjustment from the operations list after confirmation, and refreshes balances', async () => {
     deleteBalanceAdjustmentMock.mockResolvedValue(undefined)
     render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
 
-    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Expand history for Barclays' }))
-    await screen.findByText('Adjustment')
-
+    await waitFor(() => expect(screen.getByText('Adjustment')).toBeInTheDocument())
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
     fireEvent.click(screen.getByRole('button', { name: 'Delete balance adjustment' }))
 
     await waitFor(() => expect(deleteBalanceAdjustmentMock).toHaveBeenCalledWith('Barclays', 'a1'))
     await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
+  })
+
+  it('shows an error state with retry when the Bank tab operations fetch fails', async () => {
+    getTransfersByMonthMock.mockRejectedValue(new Error('Operations down'))
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
+    expect(screen.getByText('Operations down')).toBeInTheDocument()
+
+    getTransfersByMonthMock.mockResolvedValue(TRANSFERS)
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+
+    await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
+  })
+
+  it('cancels an open create form when switching away from the Bank tab and back', async () => {
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: '+ New Transfer' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: '+ New Transfer' }))
+    expect(screen.getByText('Move Money', { selector: 'p' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+
+    expect(screen.queryByText('Move Money', { selector: 'p' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '+ New Transfer' })).toBeInTheDocument()
   })
 })
