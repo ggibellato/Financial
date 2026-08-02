@@ -33,6 +33,9 @@
             <TabItem Header="Income">
                 <local:IncomeSectionView/>
             </TabItem>
+            <TabItem Header="Bank">
+                <local:BankSectionView/>
+            </TabItem>
         </TabControl>
     </Grid>
 </UserControl>

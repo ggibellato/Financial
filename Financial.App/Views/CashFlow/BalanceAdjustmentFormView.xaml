@@ -18,9 +18,6 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="150"/>
@@ -40,31 +37,62 @@
                     </TextBlock.Style>
                 </TextBlock>
 
-                <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Margin="0,0,0,8">
-                    <TextBlock.Text>
-                        <MultiBinding StringFormat="Current calculated balance for {0}: {1:N2}">
-                            <Binding Path="AdjustmentFormBankName"/>
-                            <Binding Path="AdjustmentFormCurrentBalance"/>
-                        </MultiBinding>
-                    </TextBlock.Text>
-                </TextBlock>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Bank:" VerticalAlignment="Center"/>
+                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
+                          SelectedValue="{Binding AdjustmentFormBankName, UpdateSourceTrigger=PropertyChanged}"
+                          SelectedValuePath="Name">
+                    <ComboBox.Style>
+                        <Style TargetType="ComboBox">
+                            <Setter Property="IsEnabled" Value="True"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsEditingAdjustment}" Value="True">
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ComboBox.Style>
+                </ComboBox>
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Date:" VerticalAlignment="Center"/>
-                <DatePicker Grid.Row="2" Grid.Column="1" SelectedDate="{Binding AdjustmentFormDate, UpdateSourceTrigger=PropertyChanged}"/>
+                <!-- Remaining fields activate only once a bank has been picked -->
+                <Grid Grid.Row="2" Grid.ColumnSpan="2" Visibility="{Binding IsAdjustmentBankSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="Target Balance:" VerticalAlignment="Center"/>
-                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding AdjustmentFormTargetBalance, UpdateSourceTrigger=LostFocus}"
-                         PreviewTextInput="OnDecimalTextBoxPreviewTextInput"
-                         DataObject.Pasting="OnDecimalTextBoxPasting"
-                         LostFocus="OnDecimalTextBoxLostFocus"/>
+                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Margin="0,4,0,8">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="Current calculated balance for {0}: {1:N2}">
+                                <Binding Path="AdjustmentFormBankName"/>
+                                <Binding Path="AdjustmentFormCurrentBalance"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
 
-                <TextBlock Grid.Row="4" Grid.Column="0" Text="Note:" VerticalAlignment="Center"/>
-                <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding AdjustmentFormNote, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Date:" VerticalAlignment="Center"/>
+                    <DatePicker Grid.Row="1" Grid.Column="1" SelectedDate="{Binding AdjustmentFormDate, UpdateSourceTrigger=PropertyChanged}"/>
 
-                <TextBlock Grid.Row="5" Grid.ColumnSpan="2" Foreground="Red" TextWrapping="Wrap"
-                           Text="{Binding AdjustmentSaveError}" Margin="0,8,0,0"/>
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Target Balance:" VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding AdjustmentFormTargetBalance, UpdateSourceTrigger=LostFocus}"
+                             PreviewTextInput="OnDecimalTextBoxPreviewTextInput"
+                             DataObject.Pasting="OnDecimalTextBoxPasting"
+                             LostFocus="OnDecimalTextBoxLostFocus"/>
 
-                <StackPanel Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Note:" VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding AdjustmentFormNote, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Foreground="Red" TextWrapping="Wrap"
+                               Text="{Binding AdjustmentSaveError}" Margin="0,8,0,0"/>
+                </Grid>
+
+                <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
                     <Button Width="110" Command="{Binding SaveAdjustmentCommand}">
                         <Button.Style>
                             <Style TargetType="Button">
