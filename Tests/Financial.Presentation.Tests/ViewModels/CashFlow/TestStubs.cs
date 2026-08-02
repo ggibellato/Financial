@@ -131,6 +131,7 @@ internal sealed class StubTransferService : ITransferService
     public (Guid Id, TransferUpdateDTO Request)? LastUpdateRequest { get; private set; }
     public Guid? LastDeletedId { get; private set; }
     public string? ThrowOnAdd { get; set; }
+    public int GetTransfersByMonthCallCount { get; private set; }
 
     public Task<TransferDTO> AddTransferAsync(TransferCreateDTO request)
     {
@@ -163,7 +164,11 @@ internal sealed class StubTransferService : ITransferService
         return Task.CompletedTask;
     }
 
-    public IReadOnlyList<TransferDTO> GetTransfersByMonth(int year, int month) => Transfers;
+    public IReadOnlyList<TransferDTO> GetTransfersByMonth(int year, int month)
+    {
+        GetTransfersByMonthCallCount++;
+        return Transfers;
+    }
 
     public IReadOnlyList<TransferDTO> GetTransfersByBank(string bankName) =>
         Transfers.Where(t => t.SourceBank == bankName || t.DestinationBank == bankName).ToList();
@@ -175,6 +180,7 @@ internal sealed class StubBalanceAdjustmentService : IBalanceAdjustmentService
     public (string Bank, BalanceAdjustmentCreateDTO Request)? LastCreateRequest { get; private set; }
     public (string Bank, Guid Id, BalanceAdjustmentUpdateDTO Request)? LastUpdateRequest { get; private set; }
     public (string Bank, Guid Id)? LastDeleted { get; private set; }
+    public int GetAdjustmentsByBankCallCount { get; private set; }
 
     public Task<BalanceAdjustmentDTO> AddAdjustmentAsync(string bankName, BalanceAdjustmentCreateDTO request)
     {
@@ -202,8 +208,11 @@ internal sealed class StubBalanceAdjustmentService : IBalanceAdjustmentService
         return Task.CompletedTask;
     }
 
-    public IReadOnlyList<BalanceAdjustmentDTO> GetAdjustmentsByBank(string bankName) =>
-        AdjustmentsByBank.GetValueOrDefault(bankName, []);
+    public IReadOnlyList<BalanceAdjustmentDTO> GetAdjustmentsByBank(string bankName)
+    {
+        GetAdjustmentsByBankCallCount++;
+        return AdjustmentsByBank.GetValueOrDefault(bankName, []);
+    }
 }
 
 internal sealed class StubCardStatementService : ICardStatementService
