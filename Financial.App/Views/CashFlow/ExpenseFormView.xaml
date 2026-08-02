@@ -39,7 +39,7 @@
             <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ExpenseFormDescription, UpdateSourceTrigger=PropertyChanged}"/>
 
             <TextBlock Grid.Row="3" Grid.Column="0" Text="Category:" VerticalAlignment="Center"/>
-            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding Categories}"
+            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding CategoryOptions}"
                       SelectedItem="{Binding ExpenseFormCategory, UpdateSourceTrigger=PropertyChanged}"/>
 
             <TextBlock Grid.Row="4" Grid.Column="0" Text="Value:" VerticalAlignment="Center"/>
@@ -74,7 +74,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="Card:" VerticalAlignment="Center"/>
-                    <ComboBox Grid.Column="1" ItemsSource="{Binding Cards}"
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding CardOptions}"
                               SelectedItem="{Binding ExpenseFormCardTag, UpdateSourceTrigger=PropertyChanged}"/>
                 </Grid>
 

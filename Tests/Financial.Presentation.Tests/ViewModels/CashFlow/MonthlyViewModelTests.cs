@@ -38,6 +38,29 @@ public class MonthlyViewModelTests
     }
 
     [Fact]
+    public async Task RefreshAsync_GroupsIncomesBySourceAndSumsGrossOnlyWhenPresent()
+    {
+        var (viewModel, _, incomes, _, _) = CreateViewModel();
+        incomes.Incomes =
+        [
+            new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSource = "Gleison", GrossValue = 120m, NetValue = 100m, Bank = "Barclays" },
+            new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSource = "Gleison", GrossValue = 60m, NetValue = 50m, Bank = "Barclays" },
+            new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSource = "Ariana", NetValue = 30m, Bank = "Chase" },
+        ];
+
+        await viewModel.RefreshAsync();
+
+        viewModel.IncomeTotals.Should().HaveCount(2);
+        var gleison = viewModel.IncomeTotals.Single(i => i.Source == "Gleison");
+        gleison.GrossValue.Should().Be(180m);
+        gleison.NetValue.Should().Be(150m);
+        var ariana = viewModel.IncomeTotals.Single(i => i.Source == "Ariana");
+        ariana.GrossValue.Should().BeNull();
+        ariana.NetValue.Should().Be(30m);
+        viewModel.TotalIncoming.Should().Be(180m);
+    }
+
+    [Fact]
     public async Task ChangingYearOrMonth_RefetchesAllFour()
     {
         var (viewModel, expenses, _, _, _) = CreateViewModel();
@@ -88,6 +111,17 @@ public class MonthlyViewModelTests
         expenses.LastCreateRequest.Should().NotBeNull();
         expenses.LastCreateRequest!.CardTag.Should().Be(MonthlyViewModel.Cards[0]);
         expenses.LastCreateRequest.PaymentSource.Should().BeNull();
+    }
+
+    [Fact]
+    public void CategoryAndCardOptions_ExposeStaticListsAsInstanceMembers()
+    {
+        // WPF's {Binding} only resolves instance members, never static fields — these
+        // instance-level wrappers are what the Category/Card ComboBoxes actually bind to.
+        var (viewModel, _, _, _, _) = CreateViewModel();
+
+        viewModel.CategoryOptions.Should().BeSameAs(MonthlyViewModel.Categories);
+        viewModel.CardOptions.Should().BeSameAs(MonthlyViewModel.Cards);
     }
 
     [Fact]
@@ -189,6 +223,16 @@ public class MonthlyViewModelTests
         await viewModel.DeleteExpenseAsync(expense);
 
         expenses.LastDeletedId.Should().BeNull();
+    }
+
+    [Fact]
+    public void IncomeSourceOptions_ExposesStaticListAsInstanceMember()
+    {
+        // WPF's {Binding} only resolves instance members, never static fields — this
+        // instance-level wrapper is what the Income form's Source ComboBox actually binds to.
+        var (viewModel, _, _, _, _) = CreateViewModel();
+
+        viewModel.IncomeSourceOptions.Should().BeSameAs(MonthlyViewModel.IncomeSources);
     }
 
     [Fact]

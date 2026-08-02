@@ -1,0 +1,35 @@
+<UserControl x:Class="Financial.Presentation.App.Views.CashFlow.IncomeTotalsGridView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="0,12,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <DataGrid Grid.Row="0" ItemsSource="{Binding IncomeTotals}" AutoGenerateColumns="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding Source}" Header="Source" Width="*"
+                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                <DataGridTextColumn Header="Gross" Width="110"
+                                     ElementStyle="{StaticResource NumericColumnTextStyle}">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="GrossValue" StringFormat="N2" TargetNullValue="—"/>
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Binding="{Binding NetValue, StringFormat=N2}" Header="Net" Width="110"
+                                     ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Grid.Row="1" Margin="0,8,0,0">
+            <TextBlock.Text>
+                <MultiBinding StringFormat="Total Incoming: {0:N2} · Calculated Tithe: {1:N2} · Tithe Balance: {2:N2}">
+                    <Binding Path="TotalIncoming"/>
+                    <Binding Path="TitheSummary.CalculatedTithe"/>
+                    <Binding Path="TitheSummary.TitheBalance"/>
+                </MultiBinding>
+            </TextBlock.Text>
+        </TextBlock>
+    </Grid>
+</UserControl>

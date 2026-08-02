@@ -84,10 +84,12 @@ public class MonthlyViewModel : ViewModelBase
     public ObservableCollection<BankDTO> Banks { get; } = [];
     public ObservableCollection<BankTotalRow> BankTotals { get; } = [];
     public ObservableCollection<CardStatementDTO> CardStatements { get; } = [];
+    public ObservableCollection<IncomeTotalRow> IncomeTotals { get; } = [];
 
     public decimal BankTotalsSum => BankTotals.Sum(b => b.Balance);
     public decimal RoundUpTotalsSum => BankTotals.Sum(b => b.RoundUpTotal);
     public decimal AdjustmentTotal => CardStatements.Sum(s => s.OutstandingTotal);
+    public decimal TotalIncoming => IncomeTotals.Sum(i => i.NetValue);
 
     private TitheSummaryDTO? _titheSummary;
     public TitheSummaryDTO? TitheSummary
@@ -192,6 +194,9 @@ public class MonthlyViewModel : ViewModelBase
 
             ReplaceAll(CardStatements, cardStatements);
             OnPropertyChanged(nameof(AdjustmentTotal));
+
+            ReplaceAll(IncomeTotals, BuildIncomeTotals(incomes));
+            OnPropertyChanged(nameof(TotalIncoming));
         }
         catch (Exception ex)
         {
@@ -245,6 +250,22 @@ public class MonthlyViewModel : ViewModelBase
         }).ToList();
     }
 
+    /// <summary>Mirrors useMonthly.ts's incomeTotals: net summed per source always, gross summed only across entries that report one.</summary>
+    private static List<IncomeTotalRow> BuildIncomeTotals(IReadOnlyList<IncomeDTO> incomes)
+    {
+        return incomes
+            .GroupBy(i => i.IncomeSource)
+            .Select(group => new IncomeTotalRow
+            {
+                Source = group.Key,
+                NetValue = group.Sum(i => i.NetValue),
+                GrossValue = group.Any(i => i.GrossValue.HasValue)
+                    ? group.Sum(i => i.GrossValue ?? 0m)
+                    : null,
+            })
+            .ToList();
+    }
+
     /// <summary>Merges a bank's transfers and adjustments for the month into one history list, newest first, mirroring useBankHistory.ts.</summary>
     private static List<BankHistoryEntry> BuildBankHistory(
         string bankName, IReadOnlyList<TransferDTO> transfers, IReadOnlyList<BalanceAdjustmentDTO> adjustments, int year, int month)
@@ -284,6 +305,12 @@ public class MonthlyViewModel : ViewModelBase
     [
         "BarclaysPlatinumVisa8003", "BarclaysPlatinumVisa6007", "ChaseMaster4023", "BaAmex", "PaypalCredit",
     ];
+
+    /// <summary>Instance-level accessor for <see cref="Categories"/> — WPF's Binding only resolves instance members, not static fields.</summary>
+    public IReadOnlyList<string> CategoryOptions => Categories;
+
+    /// <summary>Instance-level accessor for <see cref="Cards"/> — WPF's Binding only resolves instance members, not static fields.</summary>
+    public IReadOnlyList<string> CardOptions => Cards;
 
     private bool _isExpenseFormOpen;
     private Guid? _editingExpenseId;
@@ -585,6 +612,9 @@ public class MonthlyViewModel : ViewModelBase
 
     public static readonly IReadOnlyList<string> IncomeSources = ["Gleison", "Ariana", "Lottery", "DividendoJuros"];
     private static readonly HashSet<string> IncomeSourcesWithGrossValue = ["Gleison", "Ariana"];
+
+    /// <summary>Instance-level accessor for <see cref="IncomeSources"/> — WPF's Binding only resolves instance members, not static fields.</summary>
+    public IReadOnlyList<string> IncomeSourceOptions => IncomeSources;
 
     private bool _isIncomeFormOpen;
     private Guid? _editingIncomeId;
