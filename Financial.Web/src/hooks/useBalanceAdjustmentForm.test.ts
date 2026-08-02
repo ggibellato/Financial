@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../api/financialApiClient'
 import { ApiError } from '../api/apiError'
 import type { BalanceAdjustmentDto } from '../api/types'
+import type { BankTotal } from './useMonthly'
 import { useBalanceAdjustmentForm } from './useBalanceAdjustmentForm'
 
 const createBalanceAdjustmentMock = vi.fn<FinancialApiClient['createBalanceAdjustment']>()
@@ -14,6 +15,11 @@ vi.mock('../api/financialApiClient', () => ({
     updateBalanceAdjustment: updateBalanceAdjustmentMock,
   }),
 }))
+
+const BANK_TOTALS: BankTotal[] = [
+  { bank: 'Barclays', balance: 100, roundUpTotal: 0 },
+  { bank: 'Trading212', balance: 8.8, roundUpTotal: 0.6 },
+]
 
 const ADJUSTMENT: BalanceAdjustmentDto = {
   id: 'a1',
@@ -31,29 +37,48 @@ describe('useBalanceAdjustmentForm', () => {
   })
 
   it('starts closed', () => {
-    const { result } = renderHook(() => useBalanceAdjustmentForm(vi.fn()))
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
 
     expect(result.current.isOpen).toBe(false)
   })
 
-  it('openCreateForm defaults date to today and stores bank/currentBalance', () => {
-    const { result } = renderHook(() => useBalanceAdjustmentForm(vi.fn()))
+  it('openCreateForm defaults date to today and opens with no bank pre-selected', () => {
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
 
-    act(() => result.current.openCreateForm('Barclays', 100))
+    act(() => result.current.openCreateForm())
 
     const today = new Date().toISOString().slice(0, 10)
     expect(result.current.isOpen).toBe(true)
     expect(result.current.isEditing).toBe(false)
-    expect(result.current.bankName).toBe('Barclays')
-    expect(result.current.currentBalance).toBe(100)
+    expect(result.current.bankName).toBe('')
+    expect(result.current.currentBalance).toBe(0)
     expect(result.current.date).toBe(today)
     expect(result.current.savedDelta).toBeNull()
   })
 
-  it('openEditForm pre-fills targetBalance/date/note from the given adjustment', () => {
-    const { result } = renderHook(() => useBalanceAdjustmentForm(vi.fn()))
+  it('openCreateForm resolves currentBalance from bankTotals on bank selection', () => {
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
+    act(() => result.current.openCreateForm())
 
-    act(() => result.current.openEditForm('Barclays', 100, ADJUSTMENT))
+    act(() => result.current.setField('bankName', 'Trading212'))
+
+    expect(result.current.bankName).toBe('Trading212')
+    expect(result.current.currentBalance).toBe(8.8)
+  })
+
+  it('resolves currentBalance to 0 when the chosen bank has no matching BankTotal', () => {
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
+    act(() => result.current.openCreateForm())
+
+    act(() => result.current.setField('bankName', 'UnknownBank'))
+
+    expect(result.current.currentBalance).toBe(0)
+  })
+
+  it('openEditForm pre-fills bank/currentBalance/targetBalance/date/note from the given adjustment', () => {
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
+
+    act(() => result.current.openEditForm(ADJUSTMENT))
 
     expect(result.current.isOpen).toBe(true)
     expect(result.current.isEditing).toBe(true)
@@ -65,8 +90,8 @@ describe('useBalanceAdjustmentForm', () => {
   })
 
   it('cancel resets the form to closed and clears savedDelta', () => {
-    const { result } = renderHook(() => useBalanceAdjustmentForm(vi.fn()))
-    act(() => result.current.openEditForm('Barclays', 100, ADJUSTMENT))
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
+    act(() => result.current.openEditForm(ADJUSTMENT))
 
     act(() => result.current.cancel())
 
@@ -74,9 +99,20 @@ describe('useBalanceAdjustmentForm', () => {
     expect(result.current.savedDelta).toBeNull()
   })
 
+  it('submit is a no-op when no bank has been chosen', () => {
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
+    act(() => result.current.openCreateForm())
+
+    act(() => result.current.submit())
+
+    expect(result.current.saveError).toBeNull()
+    expect(createBalanceAdjustmentMock).not.toHaveBeenCalled()
+  })
+
   it('submit blocks with an error when the target balance is missing', () => {
-    const { result } = renderHook(() => useBalanceAdjustmentForm(vi.fn()))
-    act(() => result.current.openCreateForm('Barclays', 100))
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
+    act(() => result.current.openCreateForm())
+    act(() => result.current.setField('bankName', 'Barclays'))
 
     act(() => result.current.submit())
 
@@ -85,8 +121,9 @@ describe('useBalanceAdjustmentForm', () => {
   })
 
   it('submit blocks with an error when the target balance is negative', () => {
-    const { result } = renderHook(() => useBalanceAdjustmentForm(vi.fn()))
-    act(() => result.current.openCreateForm('Barclays', 100))
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
+    act(() => result.current.openCreateForm())
+    act(() => result.current.setField('bankName', 'Barclays'))
     act(() => result.current.setField('targetBalance', '-1'))
 
     act(() => result.current.submit())
@@ -99,8 +136,9 @@ describe('useBalanceAdjustmentForm', () => {
     let resolveCreate!: (value: BalanceAdjustmentDto) => void
     createBalanceAdjustmentMock.mockReturnValue(new Promise((resolve) => (resolveCreate = resolve)))
     const onSaved = vi.fn()
-    const { result } = renderHook(() => useBalanceAdjustmentForm(onSaved))
-    act(() => result.current.openCreateForm('Barclays', 100))
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, onSaved))
+    act(() => result.current.openCreateForm())
+    act(() => result.current.setField('bankName', 'Barclays'))
     act(() => result.current.setField('targetBalance', '150'))
 
     act(() => result.current.submit())
@@ -125,8 +163,8 @@ describe('useBalanceAdjustmentForm', () => {
 
   it('submit calls updateBalanceAdjustment when editing', async () => {
     updateBalanceAdjustmentMock.mockResolvedValue(ADJUSTMENT)
-    const { result } = renderHook(() => useBalanceAdjustmentForm(vi.fn()))
-    act(() => result.current.openEditForm('Barclays', 100, ADJUSTMENT))
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
+    act(() => result.current.openEditForm(ADJUSTMENT))
     act(() => result.current.setField('targetBalance', '120'))
 
     await act(async () => {
@@ -143,8 +181,9 @@ describe('useBalanceAdjustmentForm', () => {
 
   it('sets saveError and saveErrorField from a failed request', async () => {
     createBalanceAdjustmentMock.mockRejectedValue(new ApiError('Balance cannot be negative.', 400))
-    const { result } = renderHook(() => useBalanceAdjustmentForm(vi.fn()))
-    act(() => result.current.openCreateForm('Barclays', 100))
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
+    act(() => result.current.openCreateForm())
+    act(() => result.current.setField('bankName', 'Barclays'))
     act(() => result.current.setField('targetBalance', '150'))
 
     await act(async () => {

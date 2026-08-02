@@ -1,10 +1,17 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import BalanceAdjustmentForm from '../BalanceAdjustmentForm'
+import type { BankDto } from '../../api/types'
+
+const BANKS: BankDto[] = [
+  { name: 'Barclays', roundUpEnabled: false },
+  { name: 'Trading212', roundUpEnabled: true },
+]
 
 const baseProps = {
   isEditing: false,
   bankName: 'Barclays',
+  banks: BANKS,
   currentBalance: 100,
   date: '2026-07-25',
   targetBalance: '',
@@ -94,5 +101,47 @@ describe('BalanceAdjustmentForm', () => {
     render(<BalanceAdjustmentForm {...baseProps} isSaving />)
 
     expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
+  })
+
+  it('only the Bank dropdown is enabled before a bank is chosen', () => {
+    render(<BalanceAdjustmentForm {...baseProps} bankName="" currentBalance={0} />)
+
+    expect(screen.getByLabelText('Bank')).toBeInTheDocument()
+    expect(screen.queryByText(/Current calculated balance/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Date')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Target Balance')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Note')).not.toBeInTheDocument()
+  })
+
+  it('reveals the reference line and fields once a bank is chosen', () => {
+    render(<BalanceAdjustmentForm {...baseProps} bankName="Barclays" currentBalance={100} />)
+
+    expect(screen.getByText('Current calculated balance for Barclays: £100.00')).toBeInTheDocument()
+    expect(screen.getByLabelText('Date')).toBeInTheDocument()
+    expect(screen.getByLabelText('Target Balance')).toBeInTheDocument()
+    expect(screen.getByLabelText('Note')).toBeInTheDocument()
+  })
+
+  it('Save stays disabled until a bank is chosen', () => {
+    render(<BalanceAdjustmentForm {...baseProps} bankName="" currentBalance={0} />)
+
+    expect(screen.getByRole('button', { name: 'Correct Balance' })).toBeDisabled()
+  })
+
+  it('calls onFieldChange with the selected bank when the Bank dropdown changes', () => {
+    const onFieldChange = vi.fn()
+    render(<BalanceAdjustmentForm {...baseProps} bankName="" currentBalance={0} onFieldChange={onFieldChange} />)
+
+    fireEvent.change(screen.getByLabelText('Bank'), { target: { value: 'Trading212' } })
+
+    expect(onFieldChange).toHaveBeenCalledWith('bankName', 'Trading212')
+  })
+
+  it('renders the bank as static text (not a dropdown) when editing', () => {
+    render(<BalanceAdjustmentForm {...baseProps} isEditing bankName="Barclays" currentBalance={100} targetBalance="150" />)
+
+    expect(screen.queryByLabelText('Bank')).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.getByText('Current calculated balance for Barclays: £100.00')).toBeInTheDocument()
   })
 })
