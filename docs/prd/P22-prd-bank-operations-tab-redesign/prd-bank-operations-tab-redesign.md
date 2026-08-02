@@ -165,20 +165,20 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Web Bank Operations Tab
-- [ ] Summary tab's Banks grid renders only Bank, Balance, and Round-Up columns (plus totals row), with no expand control and no action buttons.
-- [ ] A "Bank" tab appears in the Monthly page's tab strip after Summary/Expense/Income.
-- [ ] Clicking "+ New Transfer" opens the existing Transfer form with source/destination selectable inline; saving creates the transfer, refreshes Summary balances, and adds the entry to the Bank tab's operations list.
-- [ ] Clicking "+ New Balance Correction" opens a form where only the Bank dropdown is initially enabled; other fields activate only after a bank is chosen, and the form then displays that bank's current calculated balance.
-- [ ] Saving a balance correction opened from the generic entry point updates the correct bank's balance and shows the resulting delta, matching today's confirmation behavior.
-- [ ] The operations list shows every Transfer and Balance Adjustment dated within the selected month, across all banks, sorted newest-first.
-- [ ] Each list row displays Date, Type, Bank(s) involved, Amount/Delta, Note, and working Edit/Delete controls.
-- [ ] Selecting a bank in the filter dropdown narrows the list to Transfers where that bank is source or destination, and Adjustments for that bank; selecting "All Banks" restores the full list, with no additional network request on filter change.
-- [ ] Editing a row opens the corresponding form pre-filled with that entry's data; for adjustments, the bank field is fixed and not editable.
-- [ ] Deleting a row prompts for confirmation, then removes the entry from the list and updates Summary balances on confirm.
-- [ ] When the list is empty, it shows "No transfers or balance corrections this month." (unfiltered) or the equivalent filtered-by-bank message, instead of an empty table.
-- [ ] A failed fetch of the month's operations shows an error state with a working retry action.
-- [ ] A failed save shows the existing inline field-level or general error message without closing the form or discarding entered values.
-- [ ] A failed delete shows an inline error message and the list reflects actual server state afterward.
+- [x] Summary tab's Banks grid renders only Bank, Balance, and Round-Up columns (plus totals row), with no expand control and no action buttons.
+- [x] A "Bank" tab appears in the Monthly page's tab strip after Summary/Expense/Income.
+- [x] Clicking "+ New Transfer" opens the existing Transfer form with source/destination selectable inline; saving creates the transfer, refreshes Summary balances, and adds the entry to the Bank tab's operations list.
+- [x] Clicking "+ New Balance Correction" opens a form where only the Bank dropdown is initially enabled; other fields activate only after a bank is chosen, and the form then displays that bank's current calculated balance.
+- [x] Saving a balance correction opened from the generic entry point updates the correct bank's balance and shows the resulting delta, matching today's confirmation behavior.
+- [x] The operations list shows every Transfer and Balance Adjustment dated within the selected month, across all banks, sorted newest-first.
+- [x] Each list row displays Date, Type, Bank(s) involved, Amount/Delta, Note, and working Edit/Delete controls.
+- [x] Selecting a bank in the filter dropdown narrows the list to Transfers where that bank is source or destination, and Adjustments for that bank; selecting "All Banks" restores the full list, with no additional network request on filter change.
+- [x] Editing a row opens the corresponding form pre-filled with that entry's data; for adjustments, the bank field is fixed and not editable.
+- [x] Deleting a row prompts for confirmation, then removes the entry from the list and updates Summary balances on confirm.
+- [x] When the list is empty, it shows "No transfers or balance corrections this month." (unfiltered) or the equivalent filtered-by-bank message, instead of an empty table.
+- [x] A failed fetch of the month's operations shows an error state with a working retry action.
+- [x] A failed save shows the existing inline field-level or general error message without closing the form or discarding entered values.
+- [x] A failed delete shows an inline error message and the list reflects actual server state afterward.
 
 ### F02. WPF Bank Operations Tab
 - [ ] Summary sub-tab's Banks grid renders only Bank, Balance, and Round-Up columns, with no expand control and no action buttons.
