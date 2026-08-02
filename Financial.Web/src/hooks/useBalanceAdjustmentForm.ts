@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { BalanceAdjustmentDto } from '../api/types'
+import type { BankTotal } from './useMonthly'
 import { mapBalanceAdjustmentErrorToField, type BalanceAdjustmentFormField } from './mapBalanceAdjustmentErrorToField'
 
 interface BalanceAdjustmentFormState {
@@ -37,6 +38,10 @@ function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
+function resolveCurrentBalance(bankTotals: BankTotal[], bankName: string): number {
+  return bankTotals.find((b) => b.bank === bankName)?.balance ?? 0
+}
+
 export interface UseBalanceAdjustmentFormResult {
   isOpen: boolean
   isEditing: boolean
@@ -49,35 +54,40 @@ export interface UseBalanceAdjustmentFormResult {
   saveError: string | null
   saveErrorField: BalanceAdjustmentFormField | null
   savedDelta: number | null
-  openCreateForm: (bankName: string, currentBalance: number) => void
-  openEditForm: (bankName: string, currentBalance: number, adjustment: BalanceAdjustmentDto) => void
+  openCreateForm: () => void
+  openEditForm: (adjustment: BalanceAdjustmentDto) => void
   cancel: () => void
   setField: (field: BalanceAdjustmentFormField, value: string) => void
   submit: () => void
 }
 
-/** Owns a balance adjustment's create/edit form state and orchestrates F02's create/update endpoints. */
-export function useBalanceAdjustmentForm(onSaved: () => void): UseBalanceAdjustmentFormResult {
+/**
+ * Owns a balance adjustment's create/edit form state and orchestrates F02's create/update
+ * endpoints. Create opens with no bank pre-selected; picking a bank resolves its current
+ * calculated balance client-side from the already-fetched bankTotals (no new network call).
+ */
+export function useBalanceAdjustmentForm(
+  bankTotals: BankTotal[],
+  onSaved: () => void,
+): UseBalanceAdjustmentFormResult {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, setState] = useState<BalanceAdjustmentFormState>(BLANK_STATE)
 
-  function openCreateForm(bankName: string, currentBalance: number) {
+  function openCreateForm() {
     setState({
       ...BLANK_STATE,
       isOpen: true,
-      bankName,
-      currentBalance,
       date: todayIsoDate(),
     })
   }
 
-  function openEditForm(bankName: string, currentBalance: number, adjustment: BalanceAdjustmentDto) {
+  function openEditForm(adjustment: BalanceAdjustmentDto) {
     setState({
       isOpen: true,
       isEditing: true,
       editingId: adjustment.id,
-      bankName,
-      currentBalance,
+      bankName: adjustment.bank,
+      currentBalance: resolveCurrentBalance(bankTotals, adjustment.bank),
       date: adjustment.date,
       targetBalance: String(adjustment.targetBalance),
       note: adjustment.note ?? '',
@@ -93,10 +103,26 @@ export function useBalanceAdjustmentForm(onSaved: () => void): UseBalanceAdjustm
   }
 
   function setField(field: BalanceAdjustmentFormField, value: string) {
+    if (field === 'bankName') {
+      setState((s) => ({
+        ...s,
+        bankName: value,
+        currentBalance: resolveCurrentBalance(bankTotals, value),
+        saveError: null,
+        saveErrorField: null,
+      }))
+      return
+    }
     setState((s) => ({ ...s, [field]: value, saveError: null, saveErrorField: null }))
   }
 
   function submit() {
+    if (!state.bankName.trim()) {
+      // Defensive guard: Save is disabled client-side until a bank is chosen (PRD Error
+      // Handling), so this path is unreachable via the UI and needs no error message.
+      return
+    }
+
     if (!state.date.trim()) {
       setState((s) => ({ ...s, saveError: 'Date is required', saveErrorField: 'date' }))
       return
