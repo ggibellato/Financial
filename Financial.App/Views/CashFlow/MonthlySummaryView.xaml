@@ -3,32 +3,37 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Financial.Presentation.App.Views.CashFlow">
     <Grid Margin="0,12,0,0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <DataGrid Grid.Row="0" ItemsSource="{Binding CategoryTotals}" MaxHeight="320">
-            <DataGrid.Columns>
-                <DataGridTextColumn Binding="{Binding Category}" Header="Category" Width="*"
-                                     ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                <DataGridTextColumn Binding="{Binding TotalValue, StringFormat=N2}" Header="Total" Width="140"
-                                     ElementStyle="{StaticResource NumericColumnTextStyle}"/>
-            </DataGrid.Columns>
-        </DataGrid>
+        <Grid Grid.Row="0" Grid.Column="0" Margin="0,0,12,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="1" Margin="0,8,0,0" FontWeight="Bold"
-                   Text="{Binding CategoryTotalsSum, StringFormat='Total: {0:N2}'}"/>
+            <DataGrid Grid.Row="0" ItemsSource="{Binding CategoryTotals}" MaxHeight="320">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Binding="{Binding Category}" Header="Category" Width="*"
+                                         ElementStyle="{StaticResource PlainColumnTextStyle}"/>
+                    <DataGridTextColumn Binding="{Binding TotalValue, StringFormat=N2}" Header="Total" Width="140"
+                                         ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                </DataGrid.Columns>
+            </DataGrid>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4,0,0">
-            <TextBlock FontWeight="Bold" Text="{Binding TitheSummary.CalculatedTithe, StringFormat='Calculated Tithe: {0:N2}'}"/>
-            <TextBlock FontWeight="Bold" Margin="16,0,0,0" Text="{Binding TitheSummary.TitheBalance, StringFormat='Tithe Balance: {0:N2}'}"/>
-        </StackPanel>
+            <TextBlock Grid.Row="1" Margin="0,8,0,0" FontWeight="Bold"
+                       Text="{Binding CategoryTotalsSum, StringFormat='Total: {0:N2}'}"/>
+        </Grid>
 
-        <local:BanksGridView Grid.Row="3"/>
-        <local:CardsGridView Grid.Row="4"/>
+        <local:CardsGridView Grid.Row="0" Grid.Column="1" Margin="12,0,0,0"/>
+
+        <local:BanksGridView Grid.Row="1" Grid.Column="0" Margin="0,12,12,0"/>
+        <local:IncomeTotalsGridView Grid.Row="1" Grid.Column="1" Margin="12,12,0,0"/>
     </Grid>
 </UserControl>

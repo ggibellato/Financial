@@ -28,7 +28,7 @@ type MonthlyTabId = 'summary' | 'expense' | 'incoming'
 const MONTHLY_TABS: { id: MonthlyTabId; label: string }[] = [
   { id: 'summary', label: 'Summary' },
   { id: 'expense', label: 'Expense' },
-  { id: 'incoming', label: 'Incoming' },
+  { id: 'incoming', label: 'Income' },
 ]
 
 const CREATE_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, CreateFormField> = {

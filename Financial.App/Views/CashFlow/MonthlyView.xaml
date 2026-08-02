@@ -30,7 +30,7 @@
             <TabItem Header="Expense">
                 <local:ExpenseSectionView/>
             </TabItem>
-            <TabItem Header="Incoming">
+            <TabItem Header="Income">
                 <local:IncomeSectionView/>
             </TabItem>
         </TabControl>
