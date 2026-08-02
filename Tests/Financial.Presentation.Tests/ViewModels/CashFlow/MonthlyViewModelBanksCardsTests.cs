@@ -55,49 +55,6 @@ public class MonthlyViewModelBanksCardsTests
     }
 
     [Fact]
-    public async Task ToggleBankExpand_ExpandsThenCollapses()
-    {
-        var (viewModel, _, _, _, _, _) = CreateViewModel();
-        await viewModel.RefreshAsync();
-        var row = viewModel.BankTotals.Single(b => b.Bank == "Barclays");
-        row.IsExpanded.Should().BeFalse();
-
-        viewModel.ToggleBankExpandCommand.Execute(row);
-        row.IsExpanded.Should().BeTrue();
-
-        viewModel.ToggleBankExpandCommand.Execute(row);
-        row.IsExpanded.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task BankHistory_MergesTransfersAndAdjustmentsSortedByDateDescending()
-    {
-        var (viewModel, _, _, transfers, adjustments, _) = CreateViewModel();
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        transfers.Transfers = [new TransferDTO { Id = Guid.NewGuid(), Date = today.AddDays(-1), SourceBank = "Barclays", DestinationBank = "Chase", Amount = 50m }];
-        adjustments.AdjustmentsByBank["Barclays"] = [new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = today, Bank = "Barclays", TargetBalance = 100m, Delta = 5m }];
-
-        await viewModel.RefreshAsync();
-
-        var history = viewModel.BankTotals.Single(b => b.Bank == "Barclays").History;
-        history.Should().HaveCount(2);
-        history[0].Kind.Should().Be(BankHistoryEntryKind.Adjustment);
-        history[1].Kind.Should().Be(BankHistoryEntryKind.TransferOut);
-    }
-
-    [Fact]
-    public async Task BankHistory_TransferAppearsInBothSourceAndDestinationBankHistory()
-    {
-        var (viewModel, _, _, transfers, _, _) = CreateViewModel();
-        transfers.Transfers = [new TransferDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), SourceBank = "Barclays", DestinationBank = "Chase", Amount = 50m }];
-
-        await viewModel.RefreshAsync();
-
-        viewModel.BankTotals.Single(b => b.Bank == "Barclays").History.Should().ContainSingle(e => e.Kind == BankHistoryEntryKind.TransferOut);
-        viewModel.BankTotals.Single(b => b.Bank == "Chase").History.Should().ContainSingle(e => e.Kind == BankHistoryEntryKind.TransferIn);
-    }
-
-    [Fact]
     public async Task AddTransfer_ValidForm_CallsServiceAndRefreshes()
     {
         var (viewModel, _, banks, transfers, _, _) = CreateViewModel();
@@ -180,9 +137,9 @@ public class MonthlyViewModelBanksCardsTests
     {
         var (viewModel, _, _, transfers, _, _) = CreateViewModel(confirmDeletes: confirmed);
         var transfer = new TransferDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), SourceBank = "Barclays", DestinationBank = "Chase", Amount = 50m };
-        var entry = BankHistoryEntry.FromTransferOut(transfer);
+        var row = BankOperationRow.FromTransfer(transfer);
 
-        await viewModel.DeleteHistoryEntryAsync(entry);
+        await viewModel.DeleteBankOperationAsync(row);
 
         if (confirmed)
         {
@@ -200,9 +157,9 @@ public class MonthlyViewModelBanksCardsTests
         var (viewModel, _, banks, _, adjustments, _) = CreateViewModel();
         banks.BankBalances = [new BankBalanceDTO { Bank = "Barclays", Balance = 42.5m }];
         await viewModel.RefreshAsync();
-        var row = viewModel.BankTotals.Single(b => b.Bank == "Barclays");
 
-        viewModel.ShowCorrectBalanceFormCommand.Execute(row);
+        viewModel.ShowCorrectBalanceFormCommand.Execute(null);
+        viewModel.AdjustmentFormBankName = "Barclays";
         viewModel.AdjustmentFormCurrentBalance.Should().Be(42.5m);
         viewModel.AdjustmentFormDate = DateTime.Today;
         viewModel.AdjustmentFormTargetBalance = "50";
@@ -220,9 +177,8 @@ public class MonthlyViewModelBanksCardsTests
     {
         var (viewModel, _, _, _, adjustments, _) = CreateViewModel();
         var adjustment = new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Bank = "Barclays", TargetBalance = 100m, Delta = 5m };
-        var entry = BankHistoryEntry.FromAdjustment(adjustment);
 
-        viewModel.EditAdjustmentCommand.Execute(entry);
+        viewModel.EditAdjustmentCommand.Execute(adjustment);
         viewModel.AdjustmentFormTargetBalance = "120";
 
         await viewModel.SaveAdjustmentAsync();
@@ -238,9 +194,9 @@ public class MonthlyViewModelBanksCardsTests
     {
         var (viewModel, _, _, _, adjustments, _) = CreateViewModel();
         var adjustment = new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Bank = "Barclays", TargetBalance = 100m, Delta = 5m };
-        var entry = BankHistoryEntry.FromAdjustment(adjustment);
+        var row = BankOperationRow.FromAdjustment(adjustment);
 
-        await viewModel.DeleteHistoryEntryAsync(entry);
+        await viewModel.DeleteBankOperationAsync(row);
 
         adjustments.LastDeleted.Should().Be(("Barclays", adjustment.Id));
     }

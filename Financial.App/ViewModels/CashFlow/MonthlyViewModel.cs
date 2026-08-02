@@ -182,15 +182,14 @@ public class MonthlyViewModel : ViewModelBase
             TitheSummary = titheSummary;
             OnPropertyChanged(nameof(CategoryTotalsSum));
 
-            var previouslyExpanded = BankTotals.Where(b => b.IsExpanded).Select(b => b.Bank).ToHashSet();
-            var newBankTotals = BuildBankTotals(banks, expenses, bankBalances, transfers, adjustmentsByBank, year, month);
-            foreach (var row in newBankTotals)
-            {
-                row.IsExpanded = previouslyExpanded.Contains(row.Bank);
-            }
+            var newBankTotals = BuildBankTotals(banks, expenses, bankBalances);
             ReplaceAll(BankTotals, newBankTotals);
             OnPropertyChanged(nameof(BankTotalsSum));
             OnPropertyChanged(nameof(RoundUpTotalsSum));
+
+            ReplaceAll(BankOperations, BuildBankOperations(transfers, adjustmentsByBank, year, month));
+            BankFilterOptions = BuildBankFilterOptions(banks);
+            ApplyBankFilter();
 
             ReplaceAll(CardStatements, cardStatements);
             OnPropertyChanged(nameof(AdjustmentTotal));
@@ -227,11 +226,7 @@ public class MonthlyViewModel : ViewModelBase
     private static List<BankTotalRow> BuildBankTotals(
         IReadOnlyList<BankDTO> banks,
         IReadOnlyList<ExpenseDTO> expenses,
-        IReadOnlyList<BankBalanceDTO> bankBalances,
-        IReadOnlyList<TransferDTO> transfers,
-        IReadOnlyDictionary<string, IReadOnlyList<BalanceAdjustmentDTO>> adjustmentsByBank,
-        int year,
-        int month)
+        IReadOnlyList<BankBalanceDTO> bankBalances)
     {
         return banks.Select(bank =>
         {
@@ -239,14 +234,7 @@ public class MonthlyViewModel : ViewModelBase
                 .Where(e => e.PaymentSource == bank.Name)
                 .Sum(e => e.RoundUpAmount ?? 0m);
             var balance = bankBalances.FirstOrDefault(b => b.Bank == bank.Name)?.Balance ?? 0m;
-            var row = new BankTotalRow { Bank = bank.Name, Balance = balance, RoundUpTotal = roundUpTotal };
-
-            foreach (var entry in BuildBankHistory(bank.Name, transfers, adjustmentsByBank.GetValueOrDefault(bank.Name, []), year, month))
-            {
-                row.History.Add(entry);
-            }
-
-            return row;
+            return new BankTotalRow { Bank = bank.Name, Balance = balance, RoundUpTotal = roundUpTotal };
         }).ToList();
     }
 
@@ -266,30 +254,28 @@ public class MonthlyViewModel : ViewModelBase
             .ToList();
     }
 
-    /// <summary>Merges a bank's transfers and adjustments for the month into one history list, newest first, mirroring useBankHistory.ts.</summary>
-    private static List<BankHistoryEntry> BuildBankHistory(
-        string bankName, IReadOnlyList<TransferDTO> transfers, IReadOnlyList<BalanceAdjustmentDTO> adjustments, int year, int month)
+    /// <summary>Combines every bank's transfers and adjustments for the month into one flat, newest-first list, mirroring the Bank tab's useMonthly.ts equivalent.</summary>
+    private static List<BankOperationRow> BuildBankOperations(
+        IReadOnlyList<TransferDTO> transfers,
+        IReadOnlyDictionary<string, IReadOnlyList<BalanceAdjustmentDTO>> adjustmentsByBank,
+        int year,
+        int month)
     {
-        var entries = new List<BankHistoryEntry>();
+        // Transfers are already month-scoped by ITransferService.GetTransfersByMonth; only
+        // adjustments (fetched per bank via GetAdjustmentsByBank, not month-scoped) need filtering here.
+        var rows = new List<BankOperationRow>(transfers.Select(BankOperationRow.FromTransfer));
 
-        foreach (var transfer in transfers)
-        {
-            if (transfer.SourceBank == bankName)
-            {
-                entries.Add(BankHistoryEntry.FromTransferOut(transfer));
-            }
-            else if (transfer.DestinationBank == bankName)
-            {
-                entries.Add(BankHistoryEntry.FromTransferIn(transfer));
-            }
-        }
-
-        entries.AddRange(adjustments
+        rows.AddRange(adjustmentsByBank.Values
+            .SelectMany(adjustments => adjustments)
             .Where(a => a.Date.Year == year && a.Date.Month == month)
-            .Select(BankHistoryEntry.FromAdjustment));
+            .Select(BankOperationRow.FromAdjustment));
 
-        return entries.OrderByDescending(e => e.Date).ToList();
+        return rows.OrderByDescending(r => r.Date).ToList();
     }
+
+    /// <summary>Options for the Bank tab's filter dropdown: "All Banks" plus each configured bank name.</summary>
+    private static IReadOnlyList<string> BuildBankFilterOptions(IReadOnlyList<BankDTO> banks) =>
+        new[] { AllBanksFilter }.Concat(banks.Select(b => b.Name)).ToList();
 
     // ----- Expense CRUD -----
 
@@ -829,39 +815,74 @@ public class MonthlyViewModel : ViewModelBase
         }
     }
 
-    // ----- Banks grid -----
+    // ----- Bank tab: flat operations list & filter -----
 
-    private string? _bankHistoryError;
+    public const string AllBanksFilter = "All Banks";
 
-    public string? BankHistoryError
+    private string? _bankOperationsError;
+    private string _selectedBankFilter = AllBanksFilter;
+    private IReadOnlyList<string> _bankFilterOptions = [AllBanksFilter];
+
+    public ObservableCollection<BankOperationRow> BankOperations { get; } = [];
+    public ObservableCollection<BankOperationRow> FilteredBankOperations { get; } = [];
+
+    public bool HasBankOperations => FilteredBankOperations.Count > 0;
+
+    public string BankOperationsEmptyMessage => SelectedBankFilter == AllBanksFilter
+        ? "No transfers or balance corrections this month."
+        : $"No transfers or balance corrections for {SelectedBankFilter} this month.";
+
+    public string? BankOperationsError
     {
-        get => _bankHistoryError;
-        private set => SetProperty(ref _bankHistoryError, value);
+        get => _bankOperationsError;
+        private set => SetProperty(ref _bankOperationsError, value);
     }
 
-    public RelayCommand<BankTotalRow> ToggleBankExpandCommand { get; private set; } = null!;
-    public RelayCommand<BankHistoryEntry> DeleteHistoryEntryCommand { get; private set; } = null!;
+    public string SelectedBankFilter
+    {
+        get => _selectedBankFilter;
+        set
+        {
+            if (SetProperty(ref _selectedBankFilter, value))
+            {
+                OnPropertyChanged(nameof(BankOperationsEmptyMessage));
+                ApplyBankFilter();
+            }
+        }
+    }
+
+    public IReadOnlyList<string> BankFilterOptions
+    {
+        get => _bankFilterOptions;
+        private set => SetProperty(ref _bankFilterOptions, value);
+    }
+
+    public RelayCommand<BankOperationRow> DeleteBankOperationCommand { get; private set; } = null!;
 
     private void InitializeBankCommands()
     {
-        ToggleBankExpandCommand = new RelayCommand<BankTotalRow>(row =>
-        {
-            if (row is not null)
-            {
-                row.IsExpanded = !row.IsExpanded;
-            }
-        });
-        DeleteHistoryEntryCommand = new RelayCommand<BankHistoryEntry>(async entry => await DeleteHistoryEntryAsync(entry));
+        DeleteBankOperationCommand = new RelayCommand<BankOperationRow>(async row => await DeleteBankOperationAsync(row));
     }
 
-    internal async Task DeleteHistoryEntryAsync(BankHistoryEntry? entry)
+    /// <summary>Recomputes <see cref="FilteredBankOperations"/> from the already-fetched <see cref="BankOperations"/> — no network request.</summary>
+    private void ApplyBankFilter()
     {
-        if (entry is null)
+        var matching = SelectedBankFilter == AllBanksFilter
+            ? BankOperations
+            : BankOperations.Where(row => row.MatchesBank(SelectedBankFilter));
+
+        ReplaceAll(FilteredBankOperations, matching);
+        OnPropertyChanged(nameof(HasBankOperations));
+    }
+
+    internal async Task DeleteBankOperationAsync(BankOperationRow? row)
+    {
+        if (row is null)
         {
             return;
         }
 
-        var confirmMessage = entry.Kind == BankHistoryEntryKind.Adjustment
+        var confirmMessage = row.Kind == BankOperationKind.Adjustment
             ? "Delete this balance adjustment? This removes it for good."
             : "Delete this transfer? This removes it for good.";
 
@@ -870,15 +891,15 @@ public class MonthlyViewModel : ViewModelBase
             return;
         }
 
-        BankHistoryError = null;
+        BankOperationsError = null;
 
         try
         {
-            if (entry.Transfer is { } transfer)
+            if (row.Transfer is { } transfer)
             {
                 await _transferService.DeleteTransferAsync(transfer.Id);
             }
-            else if (entry.Adjustment is { } adjustment)
+            else if (row.Adjustment is { } adjustment)
             {
                 await _balanceAdjustmentService.DeleteAdjustmentAsync(adjustment.Bank, adjustment.Id);
             }
@@ -887,7 +908,7 @@ public class MonthlyViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            BankHistoryError = ex.Message;
+            BankOperationsError = ex.Message;
         }
     }
 
@@ -1102,11 +1123,27 @@ public class MonthlyViewModel : ViewModelBase
 
     public bool IsEditingAdjustment => _editingAdjustmentId != null;
 
+    /// <summary>
+    /// The bank picked in the Correct Balance form. Setting it looks up that bank's already-loaded
+    /// <see cref="BankTotals"/> balance (D3) — the same figure the Summary grid shows — and reveals
+    /// the rest of the form via <see cref="IsAdjustmentBankSelected"/>.
+    /// </summary>
     public string AdjustmentFormBankName
     {
         get => _adjustmentFormBankName;
-        private set => SetProperty(ref _adjustmentFormBankName, value);
+        set
+        {
+            if (SetProperty(ref _adjustmentFormBankName, value))
+            {
+                AdjustmentFormCurrentBalance = BankTotals.FirstOrDefault(b => b.Bank == value)?.Balance ?? 0m;
+                OnPropertyChanged(nameof(IsAdjustmentBankSelected));
+                SaveAdjustmentCommand?.RaiseCanExecuteChanged();
+            }
+        }
     }
+
+    /// <summary>Gates the rest of the Correct Balance form and its Save action until a bank has been picked.</summary>
+    public bool IsAdjustmentBankSelected => !string.IsNullOrEmpty(AdjustmentFormBankName);
 
     public decimal AdjustmentFormCurrentBalance
     {
@@ -1162,59 +1199,51 @@ public class MonthlyViewModel : ViewModelBase
 
     public bool ShowAdjustmentForm => AdjustmentSavedDelta == null;
 
-    public RelayCommand<BankTotalRow> ShowCorrectBalanceFormCommand { get; private set; } = null!;
-    public RelayCommand<BankHistoryEntry> EditAdjustmentCommand { get; private set; } = null!;
+    public RelayCommand ShowCorrectBalanceFormCommand { get; private set; } = null!;
+    public RelayCommand<BalanceAdjustmentDTO> EditAdjustmentCommand { get; private set; } = null!;
     public RelayCommand CancelAdjustmentFormCommand { get; private set; } = null!;
     public RelayCommand SaveAdjustmentCommand { get; private set; } = null!;
     public RelayCommand DismissAdjustmentResultCommand { get; private set; } = null!;
 
     private void InitializeAdjustmentCommands()
     {
-        ShowCorrectBalanceFormCommand = new RelayCommand<BankTotalRow>(ShowCreateAdjustmentForm);
-        EditAdjustmentCommand = new RelayCommand<BankHistoryEntry>(ShowEditAdjustmentForm);
+        ShowCorrectBalanceFormCommand = new RelayCommand(ShowCreateAdjustmentForm);
+        EditAdjustmentCommand = new RelayCommand<BalanceAdjustmentDTO>(ShowEditAdjustmentForm);
         CancelAdjustmentFormCommand = new RelayCommand(CloseAdjustmentForm);
-        SaveAdjustmentCommand = new RelayCommand(async () => await SaveAdjustmentAsync(), () => !IsSavingAdjustment);
+        SaveAdjustmentCommand = new RelayCommand(async () => await SaveAdjustmentAsync(), () => !IsSavingAdjustment && IsAdjustmentBankSelected);
         DismissAdjustmentResultCommand = new RelayCommand(() => AdjustmentSavedDelta = null);
     }
 
-    private void ShowCreateAdjustmentForm(BankTotalRow? row)
+    /// <summary>Generic entry point (D-per-spec Section 3/PRD F02): opens with no bank pre-selected.</summary>
+    private void ShowCreateAdjustmentForm()
     {
-        if (row is null)
-        {
-            return;
-        }
-
         _editingAdjustmentBank = null;
         _editingAdjustmentId = null;
-        AdjustmentFormBankName = row.Bank;
-        AdjustmentFormCurrentBalance = row.Balance;
         AdjustmentFormDate = DateTime.Today;
         AdjustmentFormTargetBalance = string.Empty;
         AdjustmentFormNote = string.Empty;
         AdjustmentSaveError = null;
         AdjustmentSavedDelta = null;
+        AdjustmentFormBankName = string.Empty;
         OnPropertyChanged(nameof(IsEditingAdjustment));
         IsAdjustmentFormOpen = true;
     }
 
-    private void ShowEditAdjustmentForm(BankHistoryEntry? entry)
+    private void ShowEditAdjustmentForm(BalanceAdjustmentDTO? adjustment)
     {
-        if (entry?.Adjustment is not { } adjustment)
+        if (adjustment is null)
         {
             return;
         }
 
-        var row = BankTotals.FirstOrDefault(b => b.Bank == adjustment.Bank);
-
         _editingAdjustmentBank = adjustment.Bank;
         _editingAdjustmentId = adjustment.Id;
-        AdjustmentFormBankName = adjustment.Bank;
-        AdjustmentFormCurrentBalance = row?.Balance ?? 0m;
         AdjustmentFormDate = adjustment.Date.ToDateTime(TimeOnly.MinValue);
         AdjustmentFormTargetBalance = adjustment.TargetBalance.ToString("0.##");
         AdjustmentFormNote = adjustment.Note ?? string.Empty;
         AdjustmentSaveError = null;
         AdjustmentSavedDelta = null;
+        AdjustmentFormBankName = adjustment.Bank;
         OnPropertyChanged(nameof(IsEditingAdjustment));
         IsAdjustmentFormOpen = true;
     }

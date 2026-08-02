@@ -181,20 +181,20 @@ graph TD
 - [x] A failed delete shows an inline error message and the list reflects actual server state afterward.
 
 ### F02. WPF Bank Operations Tab
-- [ ] Summary sub-tab's Banks grid renders only Bank, Balance, and Round-Up columns, with no expand control and no action buttons.
-- [ ] A "Bank" tab appears in the Monthly view's tab control after Summary/Expense/Income.
-- [ ] Clicking "Move Money" opens the Transfer form with source/destination banks selectable inline; saving creates the transfer, refreshes Summary balances, and adds the entry to the Bank tab's operations list.
-- [ ] Clicking "Correct Balance" opens a form where only the bank picker is initially enabled; other fields activate only after a bank is chosen, and the form then displays that bank's current calculated balance.
-- [ ] Saving a balance correction opened from the generic entry point updates the correct bank's balance and shows the resulting delta.
-- [ ] The operations list shows every Transfer and Balance Adjustment dated within the selected month, across all banks, sorted newest-first.
-- [ ] Each list row displays Date, Type, Bank(s) involved, Amount/Delta, Note, and working Edit/Delete controls.
-- [ ] Selecting a bank in the filter control narrows the list using the same source/destination-OR matching semantics as F01; selecting "All Banks" restores the full list.
-- [ ] Editing a row opens the corresponding form pre-filled with that entry's data; for adjustments, the bank field is fixed.
-- [ ] Deleting a row prompts for confirmation, then removes the entry from the list and updates Summary balances on confirm.
-- [ ] When the list is empty, it shows empty-state text equivalent to F01, scoped to the active filter.
-- [ ] A failed fetch shows an inline error state consistent with the existing WPF Monthly view error handling.
-- [ ] A failed save keeps the form open and shows the existing validation error display.
-- [ ] A failed delete shows an inline error message and the list reflects actual server state afterward.
+- [x] Summary sub-tab's Banks grid renders only Bank, Balance, and Round-Up columns, with no expand control and no action buttons.
+- [x] A "Bank" tab appears in the Monthly view's tab control after Summary/Expense/Income.
+- [x] Clicking "Move Money" opens the Transfer form with source/destination banks selectable inline; saving creates the transfer, refreshes Summary balances, and adds the entry to the Bank tab's operations list.
+- [x] Clicking "Correct Balance" opens a form where only the bank picker is initially enabled; other fields activate only after a bank is chosen, and the form then displays that bank's current calculated balance.
+- [x] Saving a balance correction opened from the generic entry point updates the correct bank's balance and shows the resulting delta.
+- [x] The operations list shows every Transfer and Balance Adjustment dated within the selected month, across all banks, sorted newest-first.
+- [x] Each list row displays Date, Type, Bank(s) involved, Amount/Delta, Note, and working Edit/Delete controls.
+- [x] Selecting a bank in the filter control narrows the list using the same source/destination-OR matching semantics as F01; selecting "All Banks" restores the full list.
+- [x] Editing a row opens the corresponding form pre-filled with that entry's data; for adjustments, the bank field is fixed.
+- [x] Deleting a row prompts for confirmation, then removes the entry from the list and updates Summary balances on confirm.
+- [x] When the list is empty, it shows empty-state text equivalent to F01, scoped to the active filter.
+- [x] A failed fetch shows an inline error state consistent with the existing WPF Monthly view error handling.
+- [x] A failed save keeps the form open and shows the existing validation error display.
+- [x] A failed delete shows an inline error message and the list reflects actual server state afterward.
 
 ### Cross-Feature Integration
 F01 and F02 are independent, parallel implementations of the same redesign on two separate frontends. Neither declares a Consumes dependency on the other — each consumes only its own frontend's already-existing endpoints and services directly — so no cross-feature integration criteria apply between them.
