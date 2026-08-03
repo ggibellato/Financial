@@ -3,13 +3,13 @@ import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it } from 'vitest'
 import App from './App'
 
-const AppWithRoutes = ({ initialEntry = '/investments' }: { initialEntry?: string }) => (
+const AppWithRoutes = ({ initialEntry = '/investments/active-investments' }: { initialEntry?: string }) => (
   <MemoryRouter initialEntries={[initialEntry]}>
     <Routes>
       <Route path="/" element={<App />}>
-        <Route path="investments" element={<p>Investments domain content</p>} />
-        <Route path="cashflow" element={<p>CashFlow domain content</p>} />
-        <Route path="*" element={<Navigate to="/investments" replace />} />
+        <Route path="investments/active-investments" element={<p>Investments domain content</p>} />
+        <Route path="cashflow/monthly" element={<p>CashFlow domain content</p>} />
+        <Route path="*" element={<Navigate to="/investments/active-investments" replace />} />
       </Route>
     </Routes>
   </MemoryRouter>
@@ -18,46 +18,46 @@ const AppWithRoutes = ({ initialEntry = '/investments' }: { initialEntry?: strin
 describe('App', () => {
   afterEach(() => {
     sessionStorage.clear()
+    localStorage.clear()
   })
 
-  it('renders exactly two domain switcher options', () => {
+  it('renders the sidebar with both categories', () => {
     render(<AppWithRoutes />)
 
-    const links = screen.getAllByRole('link')
-    expect(links).toHaveLength(2)
-    expect(screen.getByRole('link', { name: 'Investments' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'CashFlow' })).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument()
+    expect(screen.getByText('Investments')).toBeInTheDocument()
+    expect(screen.getByText('CashFlow')).toBeInTheDocument()
   })
 
   it('switches to the cashflow domain content', () => {
     render(<AppWithRoutes />)
 
-    fireEvent.click(screen.getByRole('link', { name: 'CashFlow' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Monthly' }))
 
     expect(screen.getByText('CashFlow domain content')).toBeInTheDocument()
     expect(screen.queryByText('Investments domain content')).not.toBeInTheDocument()
   })
 
   it('switches back to the investments domain content', () => {
-    render(<AppWithRoutes initialEntry="/cashflow" />)
+    render(<AppWithRoutes initialEntry="/cashflow/monthly" />)
 
-    fireEvent.click(screen.getByRole('link', { name: 'Investments' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Active Investments' }))
 
     expect(screen.getByText('Investments domain content')).toBeInTheDocument()
     expect(screen.queryByText('CashFlow domain content')).not.toBeInTheDocument()
   })
 
-  it('active domain link receives active class', () => {
-    render(<AppWithRoutes initialEntry="/cashflow" />)
+  it('active nav link receives active class', () => {
+    render(<AppWithRoutes initialEntry="/cashflow/monthly" />)
 
-    expect(screen.getByRole('link', { name: 'CashFlow' })).toHaveClass('active')
-    expect(screen.getByRole('link', { name: 'Investments' })).not.toHaveClass('active')
+    expect(screen.getByRole('link', { name: 'Monthly' })).toHaveClass('active')
+    expect(screen.getByRole('link', { name: 'Active Investments' })).not.toHaveClass('active')
   })
 
   it('persists the active domain to sessionStorage on navigation', () => {
     render(<AppWithRoutes />)
 
-    fireEvent.click(screen.getByRole('link', { name: 'CashFlow' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Monthly' }))
 
     expect(sessionStorage.getItem('financial.selectedDomain')).toBe('cashflow')
   })

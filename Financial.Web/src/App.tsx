@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { setStoredDomain } from './utils/domainStorage'
+import Sidebar from './components/Sidebar'
 import './App.css'
 
 function App() {
@@ -16,10 +17,7 @@ function App() {
 
   return (
     <div className="app">
-      <nav className="app__domain-switcher" aria-label="Domain">
-        <NavLink to="/investments">Investments</NavLink>
-        <NavLink to="/cashflow">CashFlow</NavLink>
-      </nav>
+      <Sidebar />
       <main className="app__content">
         <Outlet />
       </main>
