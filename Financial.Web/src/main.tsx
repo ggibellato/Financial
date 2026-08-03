@@ -1,11 +1,9 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import './index.css'
 import './styles/data-table.css'
 import App from './App'
-import InvestmentsLayout from './components/InvestmentsLayout'
-import CashFlowLayout from './components/CashFlowLayout'
 import ActiveInvestmentsPage from './pages/ActiveInvestmentsPage'
 import HistoricInvestmentsPage from './pages/HistoricInvestmentsPage'
 import DividendCheckPage from './pages/DividendCheckPage'
@@ -24,22 +22,16 @@ createRoot(document.getElementById('root')!).render(
       <Routes>
         <Route path="/" element={<App />}>
           <Route index element={<RootRedirect />} />
-          <Route path="investments" element={<InvestmentsLayout />}>
-            <Route index element={<Navigate to="/investments/active-investments" replace />} />
-            <Route path="active-investments" element={<ActiveInvestmentsPage />} />
-            <Route path="historic-investments" element={<HistoricInvestmentsPage />} />
-            <Route path="dividend-check" element={<DividendCheckPage />} />
-            <Route path="current-values" element={<CurrentValuesPage />} />
-          </Route>
-          <Route path="cashflow" element={<CashFlowLayout />}>
-            <Route index element={<Navigate to="/cashflow/monthly" replace />} />
-            <Route path="monthly" element={<MonthlyPage />} />
-            <Route path="reserva" element={<ReservaPage />} />
-            <Route path="mensais" element={<MensaisPage />} />
-            <Route path="controle-mae" element={<ControleMaePage />} />
-            <Route path="investment-snapshots" element={<InvestmentSnapshotsPage />} />
-            <Route path="annual-summary" element={<AnnualSummaryPage />} />
-          </Route>
+          <Route path="investments/active-investments" element={<ActiveInvestmentsPage />} />
+          <Route path="investments/historic-investments" element={<HistoricInvestmentsPage />} />
+          <Route path="investments/dividend-check" element={<DividendCheckPage />} />
+          <Route path="investments/current-values" element={<CurrentValuesPage />} />
+          <Route path="cashflow/monthly" element={<MonthlyPage />} />
+          <Route path="cashflow/reserva" element={<ReservaPage />} />
+          <Route path="cashflow/mensais" element={<MensaisPage />} />
+          <Route path="cashflow/controle-mae" element={<ControleMaePage />} />
+          <Route path="cashflow/investment-snapshots" element={<InvestmentSnapshotsPage />} />
+          <Route path="cashflow/annual-summary" element={<AnnualSummaryPage />} />
           <Route path="*" element={<div>Page not found.</div>} />
         </Route>
       </Routes>
