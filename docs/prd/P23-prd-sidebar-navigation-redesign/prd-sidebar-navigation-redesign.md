@@ -266,14 +266,14 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Web Sidebar Navigation Shell
-- [ ] On first visit with no stored preference, the sidebar renders Expanded (240px, icons + labels)
-- [ ] Clicking the toggle button switches the sidebar to Collapsed (56px, icons only) and the content area immediately grows to fill the freed width
-- [ ] Clicking the toggle button again restores Expanded state
-- [ ] The sidebar state is written to `localStorage` under `financial.sidebarCollapsed` on every toggle
-- [ ] Reloading the page after collapsing renders the sidebar already Collapsed in the first frame, with no visible flash of the Expanded state
-- [ ] The nav item matching the current route is visually highlighted with the `--accent` color; no other item is highlighted
-- [ ] Category headers ("Investments", "CashFlow") do not navigate when clicked
-- [ ] All ten child routes remain reachable and navigate correctly via the sidebar
+- [x] On first visit with no stored preference, the sidebar renders Expanded (240px, icons + labels)
+- [x] Clicking the toggle button switches the sidebar to Collapsed (56px, icons only) and the content area immediately grows to fill the freed width
+- [x] Clicking the toggle button again restores Expanded state
+- [x] The sidebar state is written to `localStorage` under `financial.sidebarCollapsed` on every toggle
+- [x] Reloading the page after collapsing renders the sidebar already Collapsed in the first frame, with no visible flash of the Expanded state
+- [x] The nav item matching the current route is visually highlighted with the `--accent` color; no other item is highlighted
+- [x] Category headers ("Investments", "CashFlow") do not navigate when clicked
+- [x] All ten child routes remain reachable and navigate correctly via the sidebar
 
 ### F02. Web Collapsed-Mode Flyouts & Tooltips
 - [ ] With the sidebar Collapsed, hovering a category icon opens a flyout listing exactly that category's children, in the same order as the Expanded sidebar
