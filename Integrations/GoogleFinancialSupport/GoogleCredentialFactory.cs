@@ -1,3 +1,4 @@
+#nullable enable
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using System.IO;
@@ -9,16 +10,26 @@ internal sealed class GoogleCredentialFactory
     private const string GoogleApplicationName = "Financial";
 
     private readonly string _credentialsFilePath;
+    private GoogleCredential? _unscopedCredential;
 
     internal GoogleCredentialFactory(string credentialsFilePath)
     {
         _credentialsFilePath = credentialsFilePath;
     }
 
-    internal GoogleCredential Create(string[] scopes)
+    internal GoogleCredential Create(string[] scopes) =>
+        GetUnscopedCredential().CreateScoped(scopes);
+
+    private GoogleCredential GetUnscopedCredential()
     {
+        if (_unscopedCredential is not null)
+        {
+            return _unscopedCredential;
+        }
+
         using var stream = new FileStream(_credentialsFilePath, FileMode.Open, FileAccess.Read);
-        return GoogleCredential.FromStream(stream).CreateScoped(scopes);
+        _unscopedCredential = GoogleCredential.FromStream(stream);
+        return _unscopedCredential;
     }
 
     internal static BaseClientService.Initializer CreateInitializer(GoogleCredential credential)

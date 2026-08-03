@@ -84,4 +84,78 @@ public class GoogleRetryPolicyTests
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
+
+    [Fact]
+    public void ExecuteWithRetry_ActionSucceedsImmediately_ReturnsResultWithoutRetrying()
+    {
+        var callCount = 0;
+
+        var result = GoogleRetryPolicy.ExecuteWithRetry(() =>
+        {
+            callCount++;
+            return 42;
+        });
+
+        result.Should().Be(42);
+        callCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void ExecuteWithRetry_RateLimitedOnce_RetriesAndReturnsResult_InvokingLogger()
+    {
+        var callCount = 0;
+        var logMessages = new List<string>();
+
+        var result = GoogleRetryPolicy.ExecuteWithRetry(
+            () =>
+            {
+                callCount++;
+                if (callCount == 1)
+                {
+                    throw RateLimitedException();
+                }
+                return 7;
+            },
+            maxRetries: 3,
+            logger: logMessages.Add);
+
+        result.Should().Be(7);
+        callCount.Should().Be(2);
+        logMessages.Should().ContainSingle(m => m.Contains("Retry 1/3"));
+    }
+
+    [Fact]
+    public void ExecuteWithRetry_ExceedsMaxRetries_ThrowsHttpRequestExceptionWrappingOriginal()
+    {
+        var act = () => GoogleRetryPolicy.ExecuteWithRetry<int>(
+            () => throw RateLimitedException(),
+            maxRetries: 0);
+
+        var thrown = act.Should().Throw<HttpRequestException>();
+        thrown.Which.InnerException.Should().BeOfType<GoogleApiException>();
+    }
+
+    [Fact]
+    public void ExecuteWithRetry_NonRateLimitStatusCode_PropagatesImmediatelyWithoutRetrying()
+    {
+        var callCount = 0;
+
+        var act = () => GoogleRetryPolicy.ExecuteWithRetry<int>(() =>
+        {
+            callCount++;
+            throw new GoogleApiException("sheets", "Bad request") { HttpStatusCode = HttpStatusCode.BadRequest };
+        });
+
+        act.Should().Throw<GoogleApiException>();
+        callCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void ExecuteWithRetry_NonGoogleApiException_PropagatesImmediately()
+    {
+        var act = () => GoogleRetryPolicy.ExecuteWithRetry<int>(
+            () => throw new InvalidOperationException("Unrelated failure"));
+
+        act.Should().Throw<InvalidOperationException>();
+    }
 }
