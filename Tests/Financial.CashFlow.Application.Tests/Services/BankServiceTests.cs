@@ -118,7 +118,7 @@ public class BankServiceTests
     }
 
     [Fact]
-    public void GetBankBalancesByMonth_SubtractsRoundUpAmountFromExpenseValue()
+    public void GetBankBalancesByMonth_AddsRoundUpAmountToExpenseValue()
     {
         var repository = new StubCashFlowRepository();
         var bank = Bank.Create("Trading212", roundUpEnabled: true);
@@ -131,7 +131,7 @@ public class BankServiceTests
 
         var result = service.GetBankBalancesByMonth(2026, 7);
 
-        result.Should().ContainSingle(b => b.Bank == "Trading212" && b.Balance == -8.80m);
+        result.Should().ContainSingle(b => b.Bank == "Trading212" && b.Balance == -10.00m);
     }
 
     [Fact]

@@ -83,7 +83,7 @@ public sealed class BankService : IBankService
 
         var expenseTotal = expenses
             .Where(e => e.PaymentSource == bank.Name && InWindow(e.Date))
-            .Sum(e => e.Value - (e.RoundUpAmount ?? 0));
+            .Sum(e => e.Value + (e.RoundUpAmount ?? 0));
 
         var transferInTotal = transfers
             .Where(t => t.DestinationBank == bank.Name && InWindow(t.Date))
