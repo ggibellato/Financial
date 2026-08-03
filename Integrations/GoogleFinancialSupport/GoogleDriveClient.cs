@@ -1,3 +1,4 @@
+#nullable enable
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
 using Google.Apis.Drive.v3;
 using Google.Apis.Upload;
@@ -17,6 +18,10 @@ internal sealed class GoogleDriveClient
     private const string ShortcutMimeType = "application/vnd.google-apps.shortcut";
 
     private readonly GoogleCredentialFactory _credentialFactory;
+    private readonly Dictionary<string, string> _fileIdCache = new();
+
+    private DriveService? _readOnlyService;
+    private DriveService? _readWriteService;
 
     internal GoogleDriveClient(GoogleCredentialFactory credentialFactory)
     {
@@ -27,7 +32,7 @@ internal sealed class GoogleDriveClient
     {
         return await GoogleRetryPolicy.ExecuteWithRetryAsync(async () =>
         {
-            var service = CreateService(ReadOnlyScopes);
+            var service = GetReadOnlyService();
             var request = service.Files.List();
             request.PageSize = 100;
             request.Fields = "nextPageToken, files(webViewLink, name, id)";
@@ -45,14 +50,17 @@ internal sealed class GoogleDriveClient
             throw new ArgumentException("Drive path must be provided.", nameof(drivePath));
         }
 
-        var service = CreateService(ReadOnlyScopes);
+        var service = GetReadOnlyService();
         var fileId = ResolveFileId(service, drivePath);
 
-        using var stream = new MemoryStream();
-        service.Files.Get(fileId).Download(stream);
-        stream.Position = 0;
-        using var reader = new StreamReader(stream);
-        return reader.ReadToEnd();
+        return GoogleRetryPolicy.ExecuteWithRetry(() =>
+        {
+            using var stream = new MemoryStream();
+            service.Files.Get(fileId).Download(stream);
+            stream.Position = 0;
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
+        });
     }
 
     internal void UploadFileContent(string drivePath, string content)
@@ -62,20 +70,29 @@ internal sealed class GoogleDriveClient
             throw new ArgumentException("Drive path must be provided.", nameof(drivePath));
         }
 
-        var service = CreateService(ReadWriteScopes);
+        var service = GetReadWriteService();
         var fileId = ResolveFileId(service, drivePath);
-
         var payload = Encoding.UTF8.GetBytes(content ?? string.Empty);
-        using var stream = new MemoryStream(payload);
-        var request = service.Files.Update(new Google.Apis.Drive.v3.Data.File(), fileId, stream, "application/json");
-        var result = request.Upload();
-        if (result.Status != UploadStatus.Completed)
+
+        GoogleRetryPolicy.ExecuteWithRetry(() =>
         {
-            throw new InvalidOperationException(
-                $"Failed to upload file to '{drivePath}' (status: {result.Status}).",
-                result.Exception);
-        }
+            using var stream = new MemoryStream(payload);
+            var request = service.Files.Update(new Google.Apis.Drive.v3.Data.File(), fileId, stream, "application/json");
+            var result = request.Upload();
+            if (result.Status != UploadStatus.Completed)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to upload file to '{drivePath}' (status: {result.Status}).",
+                    result.Exception);
+            }
+
+            return result;
+        });
     }
+
+    private DriveService GetReadOnlyService() => _readOnlyService ??= CreateService(ReadOnlyScopes);
+
+    private DriveService GetReadWriteService() => _readWriteService ??= CreateService(ReadWriteScopes);
 
     private DriveService CreateService(string[] scopes)
     {
@@ -83,8 +100,13 @@ internal sealed class GoogleDriveClient
         return new DriveService(GoogleCredentialFactory.CreateInitializer(credential));
     }
 
-    private static string ResolveFileId(DriveService service, string drivePath)
+    private string ResolveFileId(DriveService service, string drivePath)
     {
+        if (_fileIdCache.TryGetValue(drivePath, out var cachedFileId))
+        {
+            return cachedFileId;
+        }
+
         var segments = drivePath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
         if (segments.Length == 0)
         {
@@ -92,13 +114,15 @@ internal sealed class GoogleDriveClient
         }
 
         var segment = segments.Last();
-        var file = FindFileByName(service, segment)
+        var file = GoogleRetryPolicy.ExecuteWithRetry(() => FindFileByName(service, segment))
             ?? throw new FileNotFoundException($"Drive path segment '{segment}' not found in '{drivePath}'.");
 
-        return ResolveShortcutTargetId(file);
+        var fileId = ResolveShortcutTargetId(file);
+        _fileIdCache[drivePath] = fileId;
+        return fileId;
     }
 
-    private static Google.Apis.Drive.v3.Data.File FindFileByName(DriveService service, string name)
+    private static Google.Apis.Drive.v3.Data.File? FindFileByName(DriveService service, string name)
     {
         var listRequest = service.Files.List();
         listRequest.PageSize = 10;

@@ -100,6 +100,17 @@ public class CashFlowSerializerAdapterTests
     }
 
     [Fact]
+    public void Serialize_ProducesCompactJsonWithoutIndentation()
+    {
+        var serializer = new CashFlowSerializerAdapter();
+        var data = CashFlowData.Create();
+
+        var json = serializer.Serialize(data);
+
+        json.Should().NotContain("\n");
+    }
+
+    [Fact]
     public void SerializeThenDeserialize_WhenAllCollectionsEmpty_RoundTripsEmpty()
     {
         var serializer = new CashFlowSerializerAdapter();
