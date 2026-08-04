@@ -97,4 +97,53 @@ public class MainShellViewModelTests
         raised.Should().Contain(nameof(MainShellViewModel.SelectedChildId));
         raised.Should().Contain(nameof(MainShellViewModel.SelectedContent));
     }
+
+    [Fact]
+    public void BreadcrumbText_DefaultsToFirstCategoryAndChild()
+    {
+        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: BuildViewMap());
+
+        vm.BreadcrumbText.Should().Be("Investments › Active Investments");
+    }
+
+    [Fact]
+    public void BreadcrumbText_UpdatesWhenSelectedItemChanges()
+    {
+        var views = BuildViewMap();
+        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: views);
+
+        foreach (var category in vm.Categories)
+        {
+            foreach (var child in category.Children)
+            {
+                vm.SelectItemCommand.Execute(child.ViewKey);
+
+                vm.BreadcrumbText.Should().Be($"{category.Label} › {child.Label}");
+            }
+        }
+    }
+
+    [Fact]
+    public void BreadcrumbText_FallsBackToEmDashForUnmatchedSelection()
+    {
+        var views = BuildViewMap();
+        views["extra-key"] = new object();
+        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: views);
+
+        vm.SelectItemCommand.Execute("extra-key");
+
+        vm.BreadcrumbText.Should().Be("—");
+    }
+
+    [Fact]
+    public void PropertyChanged_RaisedForBreadcrumbTextOnSelectionChange()
+    {
+        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: BuildViewMap());
+        var raised = new List<string>();
+        vm.PropertyChanged += (_, e) => raised.Add(e.PropertyName!);
+
+        vm.SelectItemCommand.Execute("monthly");
+
+        raised.Should().Contain(nameof(MainShellViewModel.BreadcrumbText));
+    }
 }
