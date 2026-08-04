@@ -25,7 +25,15 @@
                         </Style.Triggers>
                     </Style>
                 </Button.Style>
-                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE700;" FontSize="18" Foreground="#333333"/>
+                <Path Data="M5,3 L19,3 A2,2 0 0 1 21,5 L21,19 A2,2 0 0 1 19,21 L5,21 A2,2 0 0 1 3,19 L3,5 A2,2 0 0 1 5,3 Z M9,3 L9,21"
+                      Stroke="#333333"
+                      StrokeThickness="2"
+                      StrokeStartLineCap="Round"
+                      StrokeEndLineCap="Round"
+                      StrokeLineJoin="Round"
+                      Width="20"
+                      Height="20"
+                      Stretch="Uniform"/>
             </Button>
 
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -58,7 +66,26 @@
                                             </Style.Triggers>
                                         </Style>
                                     </StackPanel.Style>
-                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="{Binding IconGlyph}" FontSize="18" VerticalAlignment="Center"/>
+                                    <Path Data="{Binding IconData}"
+                                          StrokeThickness="2"
+                                          StrokeStartLineCap="Round"
+                                          StrokeEndLineCap="Round"
+                                          StrokeLineJoin="Round"
+                                          Width="20"
+                                          Height="20"
+                                          Stretch="Uniform"
+                                          VerticalAlignment="Center">
+                                        <Path.Style>
+                                            <Style TargetType="Path">
+                                                <Setter Property="Stroke" Value="#333333"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=StackPanel}}" Value="True">
+                                                        <Setter Property="Stroke" Value="#007ACC"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Path.Style>
+                                    </Path>
                                     <TextBlock Text="{Binding Label}" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
