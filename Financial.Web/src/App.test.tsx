@@ -29,6 +29,12 @@ describe('App', () => {
     expect(screen.getByText('CashFlow')).toBeInTheDocument()
   })
 
+  it('renders the breadcrumb above the routed content', () => {
+    render(<AppWithRoutes />)
+
+    expect(screen.getByText('Investments › Active Investments')).toBeInTheDocument()
+  })
+
   it('switches to the cashflow domain content', () => {
     render(<AppWithRoutes />)
 
