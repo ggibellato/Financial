@@ -33,7 +33,15 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type nav:NavCategory}">
                             <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="8,10,8,4">
+                                <StackPanel x:Name="CategoryHeaderPanel"
+                                            Orientation="Horizontal"
+                                            Margin="8,10,8,4"
+                                            Focusable="{Binding DataContext.IsCollapsed, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            MouseEnter="CategoryHeader_MouseEnter"
+                                            MouseLeave="CategoryHeader_MouseLeave"
+                                            GotKeyboardFocus="CategoryHeader_GotKeyboardFocus"
+                                            LostKeyboardFocus="CategoryHeader_LostKeyboardFocus"
+                                            PreviewKeyDown="CategoryHeader_PreviewKeyDown">
                                     <StackPanel.Tag>
                                         <MultiBinding Converter="{StaticResource CategoryHasSelectedChildConverter}">
                                             <Binding Path="Children"/>
@@ -106,6 +114,45 @@
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
+
+                                <Popup x:Name="CategoryFlyoutPopup"
+                                       PlacementTarget="{Binding ElementName=CategoryHeaderPanel}"
+                                       Placement="Right"
+                                       StaysOpen="True"
+                                       AllowsTransparency="True"
+                                       PopupAnimation="None">
+                                    <Border Background="White"
+                                            BorderBrush="#E0E0E0"
+                                            BorderThickness="1"
+                                            Padding="0,8"
+                                            MinWidth="180"
+                                            MouseEnter="FlyoutPopup_MouseEnter"
+                                            MouseLeave="FlyoutPopup_MouseLeave"
+                                            PreviewKeyDown="FlyoutPopup_PreviewKeyDown">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.25"/>
+                                        </Border.Effect>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Label}" FontWeight="Bold" Margin="12,4,12,8"/>
+                                            <ItemsControl ItemsSource="{Binding Children}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate DataType="{x:Type nav:NavChild}">
+                                                        <Button Command="{Binding DataContext.SelectItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding ViewKey}"
+                                                                Click="FlyoutChild_Click"
+                                                                HorizontalContentAlignment="Left"
+                                                                Background="Transparent"
+                                                                BorderThickness="0"
+                                                                Padding="12,6"
+                                                                Foreground="#333333">
+                                                            <TextBlock Text="{Binding Label}"/>
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </Popup>
                             </StackPanel>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
