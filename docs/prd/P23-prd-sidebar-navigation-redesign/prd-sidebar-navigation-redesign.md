@@ -310,13 +310,13 @@ graph TD
 - [x] Hovering the toggle button shows a native WPF tooltip naming its action; no popup appears for it
 
 ### F06. WPF Breadcrumb Header
-- [ ] The breadcrumb bar is visible above the content area in both Expanded and Collapsed sidebar states
-- [ ] Selecting any of the ten destination views updates the breadcrumb to "{Category Label} › {Child Label}" matching that view
-- [ ] The breadcrumb text is not clickable and has no hover/active styling
-- [ ] The breadcrumb's category and child labels exactly match the labels shown for that view in the sidebar
+- [x] The breadcrumb bar is visible above the content area in both Expanded and Collapsed sidebar states
+- [x] Selecting any of the ten destination views updates the breadcrumb to "{Category Label} › {Child Label}" matching that view
+- [x] The breadcrumb text is not clickable and has no hover/active styling
+- [x] The breadcrumb's category and child labels exactly match the labels shown for that view in the sidebar
 
 ### Cross-Feature Integration
 - [x] F02's flyout content (category label, child labels, child order) is generated from the same navigation tree definition F01 uses for the Expanded sidebar — changing a label in one place changes it in both
 - [x] F03's breadcrumb labels are generated from the same navigation tree definition F01 uses for the sidebar — for every one of the ten routes, the breadcrumb's two segments exactly match the sidebar's category and child labels for that route
 - [x] F05's popup content (category label, child labels, child order) is generated from the same navigation tree definition F04 uses for the Expanded sidebar — changing a label in one place changes it in both
-- [ ] F06's breadcrumb labels are generated from the same navigation tree definition F04 uses for the sidebar — for every one of the ten views, the breadcrumb's two segments exactly match the sidebar's category and child labels for that view
+- [x] F06's breadcrumb labels are generated from the same navigation tree definition F04 uses for the sidebar — for every one of the ten views, the breadcrumb's two segments exactly match the sidebar's category and child labels for that view
