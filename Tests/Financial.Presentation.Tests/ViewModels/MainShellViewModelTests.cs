@@ -1,0 +1,100 @@
+using Financial.Presentation.App.ViewModels;
+using FluentAssertions;
+
+namespace Financial.Presentation.Tests.ViewModels;
+
+public class MainShellViewModelTests
+{
+    private static Dictionary<string, object> BuildViewMap() => new()
+    {
+        ["active-investments"] = new object(),
+        ["historic-investments"] = new object(),
+        ["dividend-check"] = new object(),
+        ["current-values"] = new object(),
+        ["monthly"] = new object(),
+        ["reserva"] = new object(),
+        ["mensais"] = new object(),
+        ["controle-mae"] = new object(),
+        ["investment-snapshots"] = new object(),
+        ["annual-summary"] = new object(),
+    };
+
+    [Fact]
+    public void Constructor_DefaultsToExpandedWhenInitialCollapsedIsFalse()
+    {
+        var views = BuildViewMap();
+        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: views);
+
+        vm.IsCollapsed.Should().BeFalse();
+        vm.SelectedChildId.Should().Be("active-investments");
+        vm.SelectedContent.Should().BeSameAs(views["active-investments"]);
+    }
+
+    [Fact]
+    public void Constructor_HonorsStoredCollapsedState()
+    {
+        var vm = new MainShellViewModel(initialCollapsed: true, persistCollapsed: _ => { }, viewsByKey: BuildViewMap());
+
+        vm.IsCollapsed.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ToggleCollapsedCommand_FlipsStateAndInvokesPersistCallback()
+    {
+        var persisted = new List<bool>();
+        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: persisted.Add, viewsByKey: BuildViewMap());
+
+        vm.ToggleCollapsedCommand.Execute(null);
+        vm.IsCollapsed.Should().BeTrue();
+
+        vm.ToggleCollapsedCommand.Execute(null);
+        vm.IsCollapsed.Should().BeFalse();
+
+        persisted.Should().Equal(true, false);
+    }
+
+    [Fact]
+    public void SelectItemCommand_UpdatesSelectedContentAndChildId()
+    {
+        var views = BuildViewMap();
+        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: views);
+
+        foreach (var (viewKey, view) in views)
+        {
+            vm.SelectItemCommand.Execute(viewKey);
+
+            vm.SelectedChildId.Should().Be(viewKey);
+            vm.SelectedContent.Should().BeSameAs(view);
+        }
+    }
+
+    [Fact]
+    public void SelectItemCommand_UnknownViewKey_DoesNotThrowOrChangeSelection()
+    {
+        var views = BuildViewMap();
+        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: views);
+        var previousChildId = vm.SelectedChildId;
+        var previousContent = vm.SelectedContent;
+
+        Action act = () => vm.SelectItemCommand.Execute("unknown-key");
+
+        act.Should().NotThrow();
+        vm.SelectedChildId.Should().Be(previousChildId);
+        vm.SelectedContent.Should().BeSameAs(previousContent);
+    }
+
+    [Fact]
+    public void PropertyChanged_RaisedForIsCollapsedSelectedChildIdAndSelectedContent()
+    {
+        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: BuildViewMap());
+        var raised = new List<string>();
+        vm.PropertyChanged += (_, e) => raised.Add(e.PropertyName!);
+
+        vm.ToggleCollapsedCommand.Execute(null);
+        vm.SelectItemCommand.Execute("monthly");
+
+        raised.Should().Contain(nameof(MainShellViewModel.IsCollapsed));
+        raised.Should().Contain(nameof(MainShellViewModel.SelectedChildId));
+        raised.Should().Contain(nameof(MainShellViewModel.SelectedContent));
+    }
+}

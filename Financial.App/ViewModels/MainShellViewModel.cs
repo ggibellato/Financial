@@ -1,0 +1,74 @@
+using Financial.Presentation.App.Navigation;
+
+namespace Financial.Presentation.App.ViewModels;
+
+/// <summary>
+/// Owns the shell's collapsed/expanded state and the currently selected destination view.
+/// Persistence is delegated to an injected callback so this ViewModel has no dependency on
+/// <see cref="Properties.Settings"/> and stays unit-testable.
+/// </summary>
+public class MainShellViewModel : ViewModelBase
+{
+    private readonly IReadOnlyDictionary<string, object> _viewsByKey;
+    private readonly Action<bool> _persistCollapsed;
+    private bool _isCollapsed;
+    private string? _selectedChildId;
+    private object? _selectedContent;
+
+    public MainShellViewModel(
+        bool initialCollapsed,
+        Action<bool> persistCollapsed,
+        IReadOnlyDictionary<string, object> viewsByKey)
+    {
+        _persistCollapsed = persistCollapsed ?? throw new ArgumentNullException(nameof(persistCollapsed));
+        _viewsByKey = viewsByKey ?? throw new ArgumentNullException(nameof(viewsByKey));
+        _isCollapsed = initialCollapsed;
+
+        ToggleCollapsedCommand = new RelayCommand(ToggleCollapsed);
+        SelectItemCommand = new RelayCommand<string>(SelectItem);
+
+        var defaultChild = NavTree.Categories[0].Children[0];
+        SelectItem(defaultChild.ViewKey);
+    }
+
+    public IReadOnlyList<NavCategory> Categories => NavTree.Categories;
+
+    public bool IsCollapsed
+    {
+        get => _isCollapsed;
+        private set => SetProperty(ref _isCollapsed, value);
+    }
+
+    public string? SelectedChildId
+    {
+        get => _selectedChildId;
+        private set => SetProperty(ref _selectedChildId, value);
+    }
+
+    public object? SelectedContent
+    {
+        get => _selectedContent;
+        private set => SetProperty(ref _selectedContent, value);
+    }
+
+    public RelayCommand ToggleCollapsedCommand { get; }
+
+    public RelayCommand<string> SelectItemCommand { get; }
+
+    private void ToggleCollapsed()
+    {
+        IsCollapsed = !IsCollapsed;
+        _persistCollapsed(IsCollapsed);
+    }
+
+    private void SelectItem(string? viewKey)
+    {
+        if (viewKey is null || !_viewsByKey.TryGetValue(viewKey, out var view))
+        {
+            return;
+        }
+
+        SelectedChildId = viewKey;
+        SelectedContent = view;
+    }
+}
