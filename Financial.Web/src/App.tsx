@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { setStoredDomain } from './utils/domainStorage'
 import Sidebar from './components/Sidebar'
+import Breadcrumb from './components/Breadcrumb'
 import './App.css'
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
     <div className="app">
       <Sidebar />
       <main className="app__content">
+        <Breadcrumb />
         <Outlet />
       </main>
     </div>
