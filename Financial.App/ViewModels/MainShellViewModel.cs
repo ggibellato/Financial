@@ -42,7 +42,30 @@ public class MainShellViewModel : ViewModelBase
     public string? SelectedChildId
     {
         get => _selectedChildId;
-        private set => SetProperty(ref _selectedChildId, value);
+        private set
+        {
+            if (SetProperty(ref _selectedChildId, value))
+            {
+                OnPropertyChanged(nameof(BreadcrumbText));
+            }
+        }
+    }
+
+    public string BreadcrumbText
+    {
+        get
+        {
+            foreach (var category in Categories)
+            {
+                var child = category.Children.FirstOrDefault(c => c.ViewKey == _selectedChildId);
+                if (child != null)
+                {
+                    return $"{category.Label} › {child.Label}";
+                }
+            }
+
+            return "—";
+        }
     }
 
     public object? SelectedContent
