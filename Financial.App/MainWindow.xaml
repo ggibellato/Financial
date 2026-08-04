@@ -1,5 +1,4 @@
 <Window x:Class="Financial.Presentation.App.MainWindow"
-        x:Name="root"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -8,29 +7,11 @@
         mc:Ignorable="d"
         Title="Financial tools" Height="800" Width="1200" Icon="{StaticResource AppIcon}">
     <Grid>
-        <TabControl SelectedIndex="0" Grid.ColumnSpan="2">
-            <TabItem Header="Investments">
-                <TabControl>
-                    <TabItem Header="Active Investments">
-                        <local:NavigationView DataContext="{Binding ElementName=root, Path=NavigationViewModel}"/>
-                    </TabItem>
-                    <TabItem Header="Historic Investments">
-                        <local:NavigationView DataContext="{Binding ElementName=root, Path=NavigationViewModelHistoric}"/>
-                    </TabItem>
-                    <TabItem x:Name="dividendCheckTab" Header="Shares Dividend check"/>
-                    <TabItem x:Name="assetPriceTab" Header="Read Assets current values"/>
-                </TabControl>
-            </TabItem>
-            <TabItem Header="Cash Flow">
-                <TabControl>
-                    <TabItem x:Name="monthlyTab" Header="Monthly"/>
-                    <TabItem x:Name="reservaTab" Header="Reserva"/>
-                    <TabItem x:Name="mensaisTab" Header="Mensais"/>
-                    <TabItem x:Name="controleMaeTab" Header="Controle Mae"/>
-                    <TabItem x:Name="investmentSnapshotsTab" Header="Investment Snapshots"/>
-                    <TabItem x:Name="annualSummaryTab" Header="Annual Summary"/>
-                </TabControl>
-            </TabItem>
-        </TabControl>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="{Binding IsCollapsed, Converter={StaticResource BoolToSidebarWidthConverter}}"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <local:Sidebar Grid.Column="0"/>
+        <ContentControl Grid.Column="1" Content="{Binding SelectedContent}"/>
     </Grid>
 </Window>

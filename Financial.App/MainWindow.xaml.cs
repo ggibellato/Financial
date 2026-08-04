@@ -1,3 +1,6 @@
+using Financial.Presentation.App.Components;
+using Financial.Presentation.App.Properties;
+using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.Views.CashFlow;
 using Financial.Presentation.App.Views.Investment;
 using System.Windows;
@@ -8,9 +11,6 @@ namespace Financial.Presentation.App
     {
         private readonly MainNavigationViewModel _navigationViewModel;
         private readonly MainNavigationViewModelHistoric _navigationViewModelHistoric;
-
-        public MainNavigationViewModel NavigationViewModel => _navigationViewModel;
-        public MainNavigationViewModelHistoric NavigationViewModelHistoric => _navigationViewModelHistoric;
 
         public MainWindow(
             DividendCheckView dividendCheckView,
@@ -36,14 +36,29 @@ namespace Financial.Presentation.App
             _navigationViewModelHistoric = navigationViewModelHistoric ?? throw new ArgumentNullException(nameof(navigationViewModelHistoric));
 
             InitializeComponent();
-            dividendCheckTab.Content = dividendCheckView;
-            assetPriceTab.Content = assetPriceView;
-            monthlyTab.Content = monthlyView;
-            reservaTab.Content = reservaView;
-            mensaisTab.Content = mensaisView;
-            controleMaeTab.Content = controleMaeView;
-            investmentSnapshotsTab.Content = investmentSnapshotsView;
-            annualSummaryTab.Content = annualSummaryView;
+
+            var viewsByKey = new Dictionary<string, object>
+            {
+                ["active-investments"] = new NavigationView { DataContext = _navigationViewModel },
+                ["historic-investments"] = new NavigationView { DataContext = _navigationViewModelHistoric },
+                ["dividend-check"] = dividendCheckView,
+                ["current-values"] = assetPriceView,
+                ["monthly"] = monthlyView,
+                ["reserva"] = reservaView,
+                ["mensais"] = mensaisView,
+                ["controle-mae"] = controleMaeView,
+                ["investment-snapshots"] = investmentSnapshotsView,
+                ["annual-summary"] = annualSummaryView,
+            };
+
+            DataContext = new MainShellViewModel(
+                initialCollapsed: Settings.Default.IsNavigationSidebarCollapsed,
+                persistCollapsed: collapsed =>
+                {
+                    Settings.Default.IsNavigationSidebarCollapsed = collapsed;
+                    Settings.Default.Save();
+                },
+                viewsByKey: viewsByKey);
 
             Loaded += async (s, e) =>
             {
