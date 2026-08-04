@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Sidebar from '../Sidebar'
 import { NAV_TREE } from '../../navigation/navTree'
 
@@ -101,5 +101,122 @@ describe('Sidebar', () => {
         expect(screen.getByTestId('location')).toHaveTextContent(child.route)
       }
     }
+  })
+
+  describe('collapsed-mode flyouts', () => {
+    const collapse = () => fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
+
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('collapsed sidebar opens a flyout listing exactly that category\'s children on hover', () => {
+      renderSidebar()
+      collapse()
+
+      fireEvent.mouseEnter(screen.getByRole('button', { name: 'CashFlow' }))
+
+      const flyoutList = screen.getByRole('list', { name: 'CashFlow' })
+      const links = Array.from(flyoutList.querySelectorAll('a')).map((a) => a.textContent)
+      expect(links).toEqual(NAV_TREE[1].children.map((c) => c.label))
+    })
+
+    it('clicking a flyout child navigates and closes the flyout', () => {
+      renderSidebar()
+      collapse()
+
+      fireEvent.mouseEnter(screen.getByRole('button', { name: 'CashFlow' }))
+      const flyoutList = screen.getByRole('list', { name: 'CashFlow' })
+      fireEvent.click(within(flyoutList).getByRole('link', { name: 'Monthly' }))
+
+      expect(screen.getByTestId('location')).toHaveTextContent('/cashflow/monthly')
+      expect(screen.queryByRole('list', { name: 'CashFlow' })).not.toBeInTheDocument()
+    })
+
+    it('moving the pointer off both the icon and flyout closes it after ~250ms unless re-entered', () => {
+      renderSidebar()
+      collapse()
+
+      const trigger = screen.getByRole('button', { name: 'CashFlow' })
+      fireEvent.mouseEnter(trigger)
+      fireEvent.mouseLeave(trigger)
+
+      act(() => {
+        vi.advanceTimersByTime(100)
+      })
+      const flyoutList = screen.getByRole('list', { name: 'CashFlow' })
+      fireEvent.mouseEnter(flyoutList.closest('.sidebar-flyout')!)
+
+      act(() => {
+        vi.advanceTimersByTime(250)
+      })
+      expect(screen.getByRole('list', { name: 'CashFlow' })).toBeInTheDocument()
+
+      fireEvent.mouseLeave(flyoutList.closest('.sidebar-flyout')!)
+      act(() => {
+        vi.advanceTimersByTime(250)
+      })
+      expect(screen.queryByRole('list', { name: 'CashFlow' })).not.toBeInTheDocument()
+    })
+
+    it('tab-focusing a category icon opens the identical flyout as hovering does', () => {
+      renderSidebar()
+      collapse()
+
+      fireEvent.focus(screen.getByRole('button', { name: 'CashFlow' }))
+
+      const flyoutList = screen.getByRole('list', { name: 'CashFlow' })
+      const links = Array.from(flyoutList.querySelectorAll('a')).map((a) => a.textContent)
+      expect(links).toEqual(NAV_TREE[1].children.map((c) => c.label))
+    })
+
+    it('pressing Escape while a flyout is open closes it and returns focus to the triggering icon', () => {
+      renderSidebar()
+      collapse()
+
+      const trigger = screen.getByRole('button', { name: 'CashFlow' })
+      fireEvent.focus(trigger)
+      const flyoutRoot = screen.getByRole('list', { name: 'CashFlow' }).closest('.sidebar-flyout')!
+      fireEvent.keyDown(flyoutRoot, { key: 'Escape' })
+
+      expect(screen.queryByRole('list', { name: 'CashFlow' })).not.toBeInTheDocument()
+      expect(document.activeElement).toBe(trigger)
+    })
+
+    it('blurring to an element outside the trigger and flyout closes immediately', () => {
+      renderSidebar()
+      collapse()
+
+      const trigger = screen.getByRole('button', { name: 'CashFlow' })
+      fireEvent.focus(trigger)
+      expect(screen.getByRole('list', { name: 'CashFlow' })).toBeInTheDocument()
+
+      fireEvent.blur(trigger, { relatedTarget: document.body })
+
+      expect(screen.queryByRole('list', { name: 'CashFlow' })).not.toBeInTheDocument()
+    })
+
+    it('expanded sidebar shows no flyout on hover or focus', () => {
+      renderSidebar()
+
+      fireEvent.mouseEnter(screen.getByText('CashFlow'))
+
+      expect(document.querySelector('.sidebar-flyout')).not.toBeInTheDocument()
+    })
+
+    it('toggle button still shows only its native tooltip, no flyout', () => {
+      renderSidebar()
+      collapse()
+
+      const toggle = screen.getByRole('button', { name: 'Expand sidebar' })
+      fireEvent.mouseEnter(toggle)
+
+      expect(toggle).toHaveAttribute('title', 'Expand sidebar')
+      expect(document.querySelector('.sidebar-flyout')).not.toBeInTheDocument()
+    })
   })
 })
