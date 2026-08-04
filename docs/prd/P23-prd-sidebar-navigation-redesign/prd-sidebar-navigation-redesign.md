@@ -301,13 +301,13 @@ graph TD
 - [x] All ten destination views remain reachable and display correctly via the sidebar, with no change to their internal content or behavior
 
 ### F05. WPF Collapsed-Mode Flyouts & Tooltips
-- [ ] With the sidebar Collapsed, hovering a category icon opens a popup listing exactly that category's children, in the same order as the Expanded sidebar
-- [ ] Clicking a child item inside the popup selects that view and closes the popup
-- [ ] Moving the mouse off both the trigger icon and the popup closes it after approximately 250ms, unless the pointer re-enters within that window
-- [ ] Tab-focusing a category icon opens the identical popup as hovering does
-- [ ] Pressing Escape while a popup is open closes it and returns keyboard focus to the triggering icon
-- [ ] With the sidebar Expanded, no popup appears on hover or focus
-- [ ] Hovering the toggle button shows a native WPF tooltip naming its action; no popup appears for it
+- [x] With the sidebar Collapsed, hovering a category icon opens a popup listing exactly that category's children, in the same order as the Expanded sidebar
+- [x] Clicking a child item inside the popup selects that view and closes the popup
+- [x] Moving the mouse off both the trigger icon and the popup closes it after approximately 250ms, unless the pointer re-enters within that window
+- [x] Tab-focusing a category icon opens the identical popup as hovering does
+- [x] Pressing Escape while a popup is open closes it and returns keyboard focus to the triggering icon
+- [x] With the sidebar Expanded, no popup appears on hover or focus
+- [x] Hovering the toggle button shows a native WPF tooltip naming its action; no popup appears for it
 
 ### F06. WPF Breadcrumb Header
 - [ ] The breadcrumb bar is visible above the content area in both Expanded and Collapsed sidebar states
@@ -318,5 +318,5 @@ graph TD
 ### Cross-Feature Integration
 - [x] F02's flyout content (category label, child labels, child order) is generated from the same navigation tree definition F01 uses for the Expanded sidebar — changing a label in one place changes it in both
 - [x] F03's breadcrumb labels are generated from the same navigation tree definition F01 uses for the sidebar — for every one of the ten routes, the breadcrumb's two segments exactly match the sidebar's category and child labels for that route
-- [ ] F05's popup content (category label, child labels, child order) is generated from the same navigation tree definition F04 uses for the Expanded sidebar — changing a label in one place changes it in both
+- [x] F05's popup content (category label, child labels, child order) is generated from the same navigation tree definition F04 uses for the Expanded sidebar — changing a label in one place changes it in both
 - [ ] F06's breadcrumb labels are generated from the same navigation tree definition F04 uses for the sidebar — for every one of the ten views, the breadcrumb's two segments exactly match the sidebar's category and child labels for that view
