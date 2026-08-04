@@ -276,13 +276,13 @@ graph TD
 - [x] All ten child routes remain reachable and navigate correctly via the sidebar
 
 ### F02. Web Collapsed-Mode Flyouts & Tooltips
-- [ ] With the sidebar Collapsed, hovering a category icon opens a flyout listing exactly that category's children, in the same order as the Expanded sidebar
-- [ ] Clicking a child link inside the flyout navigates to that route and closes the flyout
-- [ ] Moving the mouse off both the trigger icon and the flyout closes it after approximately 250ms, unless the pointer re-enters within that window
-- [ ] Tab-focusing a category icon opens the identical flyout as hovering does
-- [ ] Pressing Escape while a flyout is open closes it and returns focus to the triggering icon
-- [ ] With the sidebar Expanded, no flyout appears on hover or focus
-- [ ] Hovering the toggle button shows a native tooltip naming its action; no flyout appears for it
+- [x] With the sidebar Collapsed, hovering a category icon opens a flyout listing exactly that category's children, in the same order as the Expanded sidebar
+- [x] Clicking a child link inside the flyout navigates to that route and closes the flyout
+- [x] Moving the mouse off both the trigger icon and the flyout closes it after approximately 250ms, unless the pointer re-enters within that window
+- [x] Tab-focusing a category icon opens the identical flyout as hovering does
+- [x] Pressing Escape while a flyout is open closes it and returns focus to the triggering icon
+- [x] With the sidebar Expanded, no flyout appears on hover or focus
+- [x] Hovering the toggle button shows a native tooltip naming its action; no flyout appears for it
 
 ### F03. Web Breadcrumb Header
 - [ ] The breadcrumb bar is visible at the top of the content area in both Expanded and Collapsed sidebar states
@@ -316,7 +316,7 @@ graph TD
 - [ ] The breadcrumb's category and child labels exactly match the labels shown for that view in the sidebar
 
 ### Cross-Feature Integration
-- [ ] F02's flyout content (category label, child labels, child order) is generated from the same navigation tree definition F01 uses for the Expanded sidebar — changing a label in one place changes it in both
+- [x] F02's flyout content (category label, child labels, child order) is generated from the same navigation tree definition F01 uses for the Expanded sidebar — changing a label in one place changes it in both
 - [ ] F03's breadcrumb labels are generated from the same navigation tree definition F01 uses for the sidebar — for every one of the ten routes, the breadcrumb's two segments exactly match the sidebar's category and child labels for that route
 - [ ] F05's popup content (category label, child labels, child order) is generated from the same navigation tree definition F04 uses for the Expanded sidebar — changing a label in one place changes it in both
 - [ ] F06's breadcrumb labels are generated from the same navigation tree definition F04 uses for the sidebar — for every one of the ten views, the breadcrumb's two segments exactly match the sidebar's category and child labels for that view

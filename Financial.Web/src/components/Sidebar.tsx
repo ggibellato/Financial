@@ -1,8 +1,11 @@
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type FocusEvent, type ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { NAV_TREE } from '../navigation/navTree'
 import { getStoredSidebarCollapsed, setStoredSidebarCollapsed } from '../utils/sidebarStorage'
+import SidebarFlyout from './SidebarFlyout'
 import './Sidebar.css'
+
+const CLOSE_DELAY_MS = 250
 
 function ToggleIcon() {
   return (
@@ -69,14 +72,76 @@ const CATEGORY_ICONS: Record<string, () => ReactNode> = {
   cashflow: CashFlowIcon,
 }
 
+interface FlyoutAnchor {
+  categoryId: string
+  rect: DOMRect
+}
+
 function Sidebar() {
   const [collapsed, setCollapsed] = useState(() => getStoredSidebarCollapsed())
+  const [flyoutAnchor, setFlyoutAnchor] = useState<FlyoutAnchor | null>(null)
   const location = useLocation()
+
+  const triggerRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const flyoutRef = useRef<HTMLDivElement | null>(null)
+  const closeTimerRef = useRef<number | null>(null)
+  const suppressFocusOpenRef = useRef(false)
 
   const toggleCollapsed = () => {
     const next = !collapsed
     setCollapsed(next)
     setStoredSidebarCollapsed(next)
+  }
+
+  const cancelClose = () => {
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
+    }
+  }
+
+  const scheduleClose = () => {
+    cancelClose()
+    closeTimerRef.current = window.setTimeout(() => {
+      setFlyoutAnchor(null)
+    }, CLOSE_DELAY_MS)
+  }
+
+  const openFlyout = (categoryId: string, trigger: HTMLDivElement) => {
+    if (suppressFocusOpenRef.current) {
+      suppressFocusOpenRef.current = false
+      return
+    }
+    cancelClose()
+    setFlyoutAnchor({ categoryId, rect: trigger.getBoundingClientRect() })
+  }
+
+  const closeFlyoutNow = (categoryId: string, refocus?: boolean) => {
+    cancelClose()
+    setFlyoutAnchor((current) => (current?.categoryId === categoryId ? null : current))
+    if (refocus) {
+      suppressFocusOpenRef.current = true
+      triggerRefs.current[categoryId]?.focus()
+    }
+  }
+
+  const isFocusStillWithinCategory = (relatedTarget: EventTarget | null, categoryId: string) => {
+    const node = relatedTarget as Node | null
+    const trigger = triggerRefs.current[categoryId]
+    const flyout = flyoutRef.current
+    return Boolean((trigger && node && trigger.contains(node)) || (flyout && node && flyout.contains(node)))
+  }
+
+  const handleTriggerBlur = (event: FocusEvent<HTMLDivElement>, categoryId: string) => {
+    if (!isFocusStillWithinCategory(event.relatedTarget, categoryId)) {
+      closeFlyoutNow(categoryId)
+    }
+  }
+
+  const handleFlyoutBlur = (event: FocusEvent<HTMLDivElement>, categoryId: string) => {
+    if (!isFocusStillWithinCategory(event.relatedTarget, categoryId)) {
+      closeFlyoutNow(categoryId)
+    }
   }
 
   return (
@@ -94,11 +159,24 @@ function Sidebar() {
       {NAV_TREE.map((category) => {
         const CategoryIcon = CATEGORY_ICONS[category.id]
         const hasActiveChild = category.children.some((child) => child.route === location.pathname)
+        const isOpen = collapsed && flyoutAnchor?.categoryId === category.id
 
         return (
           <div className="sidebar__category" key={category.id}>
             <div
+              ref={(el) => {
+                triggerRefs.current[category.id] = el
+              }}
               className={`sidebar__category-header${hasActiveChild ? ' sidebar__category-header--active' : ''}`}
+              tabIndex={collapsed ? 0 : -1}
+              role={collapsed ? 'button' : undefined}
+              aria-label={collapsed ? category.label : undefined}
+              aria-haspopup={collapsed ? 'true' : undefined}
+              aria-expanded={collapsed ? isOpen : undefined}
+              onMouseEnter={(event) => openFlyout(category.id, event.currentTarget)}
+              onMouseLeave={scheduleClose}
+              onFocus={(event) => openFlyout(category.id, event.currentTarget)}
+              onBlur={(event) => handleTriggerBlur(event, category.id)}
             >
               <CategoryIcon />
               {!collapsed && <span className="sidebar__category-label">{category.label}</span>}
@@ -113,6 +191,17 @@ function Sidebar() {
                   </li>
                 ))}
               </ul>
+            )}
+            {isOpen && flyoutAnchor && (
+              <SidebarFlyout
+                ref={flyoutRef}
+                category={category}
+                anchorRect={flyoutAnchor.rect}
+                onClose={(refocus) => closeFlyoutNow(category.id, refocus)}
+                onMouseEnter={cancelClose}
+                onMouseLeave={scheduleClose}
+                onBlur={(event) => handleFlyoutBlur(event, category.id)}
+              />
             )}
           </div>
         )
