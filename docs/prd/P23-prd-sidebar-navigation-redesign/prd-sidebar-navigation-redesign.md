@@ -291,14 +291,14 @@ graph TD
 - [ ] The breadcrumb's category and child labels exactly match the labels shown for that route in the sidebar
 
 ### F04. WPF Sidebar Navigation Shell
-- [ ] On first launch with no prior setting, the sidebar renders Expanded (240px, icons + labels)
-- [ ] Clicking the toggle button switches the sidebar to Collapsed (56px, icons only) and the content column immediately grows to fill the freed width
-- [ ] Clicking the toggle button again restores Expanded state
-- [ ] The sidebar state is written to `Properties.Settings.Default.IsNavigationSidebarCollapsed` and saved on every toggle
-- [ ] Restarting the app after collapsing shows the sidebar already Collapsed on the first rendered frame
-- [ ] The nav item matching the currently selected view is highlighted with the `#007ACC` accent brush; no other item is highlighted
-- [ ] Category headers ("Investments", "CashFlow") do not change the selected view when clicked
-- [ ] All ten destination views remain reachable and display correctly via the sidebar, with no change to their internal content or behavior
+- [x] On first launch with no prior setting, the sidebar renders Expanded (240px, icons + labels)
+- [x] Clicking the toggle button switches the sidebar to Collapsed (56px, icons only) and the content column immediately grows to fill the freed width
+- [x] Clicking the toggle button again restores Expanded state
+- [x] The sidebar state is written to `Properties.Settings.Default.IsNavigationSidebarCollapsed` and saved on every toggle
+- [x] Restarting the app after collapsing shows the sidebar already Collapsed on the first rendered frame
+- [x] The nav item matching the currently selected view is highlighted with the `#007ACC` accent brush; no other item is highlighted
+- [x] Category headers ("Investments", "CashFlow") do not change the selected view when clicked
+- [x] All ten destination views remain reachable and display correctly via the sidebar, with no change to their internal content or behavior
 
 ### F05. WPF Collapsed-Mode Flyouts & Tooltips
 - [ ] With the sidebar Collapsed, hovering a category icon opens a popup listing exactly that category's children, in the same order as the Expanded sidebar

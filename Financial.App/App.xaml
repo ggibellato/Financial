@@ -15,6 +15,9 @@
         <converters:BetweenTextSeparatorConverter x:Key="BetweenTextSeparatorConverter"/>
         <converters:DoubleToGridLengthConverter x:Key="DoubleToGridLengthConverter"/>
         <converters:DoubleToDataGridLengthConverter x:Key="DoubleToDataGridLengthConverter"/>
+        <converters:BoolToSidebarWidthConverter x:Key="BoolToSidebarWidthConverter"/>
+        <converters:CategoryHasSelectedChildConverter x:Key="CategoryHasSelectedChildConverter"/>
+        <converters:EqualityToBoolConverter x:Key="EqualityToBoolConverter"/>
 
         <DrawingImage x:Key="AppIcon">
             <DrawingImage.Drawing>
