@@ -235,8 +235,8 @@ graph TD
 - [ ] Marking a statement paid from one tab is reflected in the other tab's grid without a manual refresh.
 
 ### F04. Backend: Expose Unpaid Card Charge Expenses
-- [ ] For a given month, the new query returns every expense whose `PaymentStatus` is `CreditCardCharge` for that month, with date, description, value, category, and card tag.
-- [ ] Expenses that are `ImmediatePayment` or `CreditCardSettled` for that month are not included.
+- [x] For a given month, the new query returns every expense whose `PaymentStatus` is `CreditCardCharge` for that month, with date, description, value, category, and card tag.
+- [x] Expenses that are `ImmediatePayment` or `CreditCardSettled` for that month are not included.
 - [ ] Existing edit and delete endpoints continue to operate on an unpaid card charge by id without any change.
 
 ### F05. Web: Show Unpaid Card Expenses in Credit Card Tab
