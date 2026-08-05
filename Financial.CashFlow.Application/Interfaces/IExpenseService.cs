@@ -8,5 +8,6 @@ public interface IExpenseService
     Task<ExpenseDTO> UpdateExpenseAsync(Guid id, ExpenseUpdateDTO request);
     Task DeleteExpenseAsync(Guid id);
     IReadOnlyList<ExpenseDTO> GetExpensesByMonth(int year, int month);
+    IReadOnlyList<ExpenseDTO> GetUnpaidCardChargesByMonth(int year, int month);
     IReadOnlyList<CategoryTotalDTO> GetCategoryTotalsByMonth(int year, int month);
 }

@@ -8,8 +8,10 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 internal sealed class StubExpenseService : IExpenseService
 {
     public List<ExpenseDTO> Expenses { get; set; } = [];
+    public List<ExpenseDTO> UnpaidCardCharges { get; set; } = [];
     public List<CategoryTotalDTO> CategoryTotals { get; set; } = [];
     public int GetExpensesByMonthCallCount { get; private set; }
+    public int GetUnpaidCardChargesByMonthCallCount { get; private set; }
     public ExpenseCreateDTO? LastCreateRequest { get; private set; }
     public (Guid Id, ExpenseUpdateDTO Request)? LastUpdateRequest { get; private set; }
     public Guid? LastDeletedId { get; private set; }
@@ -38,6 +40,12 @@ internal sealed class StubExpenseService : IExpenseService
     {
         GetExpensesByMonthCallCount++;
         return Expenses;
+    }
+
+    public IReadOnlyList<ExpenseDTO> GetUnpaidCardChargesByMonth(int year, int month)
+    {
+        GetUnpaidCardChargesByMonthCallCount++;
+        return UnpaidCardCharges;
     }
 
     public IReadOnlyList<CategoryTotalDTO> GetCategoryTotalsByMonth(int year, int month) => CategoryTotals;

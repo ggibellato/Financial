@@ -103,6 +103,18 @@ public sealed class ExpensesController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Lists unpaid credit card charges (unsettled) recorded in a given month.</summary>
+    /// <param name="year">The year.</param>
+    /// <param name="month">The month (1-12).</param>
+    /// <returns>200 OK with the matching expenses.</returns>
+    [HttpGet("month/{year:int}/{month:int}/unpaid-card-charges")]
+    [ProducesResponseType(typeof(IReadOnlyList<ExpenseDTO>), StatusCodes.Status200OK)]
+    public ActionResult<IReadOnlyList<ExpenseDTO>> GetUnpaidCardChargesByMonth(int year, int month)
+    {
+        var result = _expenseService.GetUnpaidCardChargesByMonth(year, month);
+        return Ok(result);
+    }
+
     /// <summary>Returns expense totals grouped by category for a given month.</summary>
     /// <param name="year">The year.</param>
     /// <param name="month">The month (1-12).</param>

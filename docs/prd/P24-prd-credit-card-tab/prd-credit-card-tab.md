@@ -6,7 +6,7 @@ Credit Card Tab is a focused UI change to the Financial app's CashFlow → Month
 
 Today, the Monthly page's Summary tab embeds a "Cards grid" (per-card outstanding totals with mark-paid/unmark-paid actions) alongside category totals, bank balances, and incoming totals. At the same time, the Expense list shows every expense regardless of whether it was paid immediately from a bank or charged to a credit card and not yet settled, so unpaid card charges appear as if they were already-paid spend.
 
-This feature adds a second, identical rendering of the existing Cards grid inside a new dedicated "Credit Card" tab (positioned right after the Expense tab) on both the Web and WPF clients — the Summary tab keeps its Cards grid exactly as it is today, unchanged. It also excludes unpaid card charges from the normal Expense list so each expense is visible in exactly one place: the Expense list while paid from a bank (or once a card charge is settled), or the Card tab while an unpaid card charge. No new business logic, data model, or API is introduced — the mark-paid/unmark-paid workflow, statement grouping, and settlement cascade already shipped in a prior feature and are reused unchanged, and both grids read from the same underlying data so they always agree.
+This feature adds a second, identical rendering of the existing Cards grid inside a new dedicated "Credit Card" tab (positioned right after the Expense tab) on both the Web and WPF clients — the Summary tab keeps its Cards grid exactly as it is today, unchanged. It also excludes unpaid card charges from the normal Expense list so each expense is visible in exactly one place: the Expense list while paid from a bank (or once a card charge is settled), or the Card tab while an unpaid card charge. Because that exclusion means unpaid card charges are no longer visible anywhere as individual line items, the Credit Card tab also gains its own expense list — a flat, read/edit/delete-capable list of every unpaid card charge for the selected month, across all cards, positioned below the per-card totals grid — so nothing that used to be visible in the Expense list becomes invisible after this change, just relocated. The mark-paid/unmark-paid workflow, statement grouping, and settlement cascade already shipped in a prior feature and are reused unchanged, and all grids/lists read from the same underlying data so they always agree.
 
 ## 2. Problem and Opportunity
 
@@ -62,6 +62,17 @@ This feature adds a second, identical rendering of the existing Cards grid insid
 - As a user, I want the Credit Card tab to show the same per-card outstanding totals and mark-paid/unmark-paid controls I already have today in Summary, as its own copy
 - As a user, I want the Summary tab's Cards grid to remain exactly as it is today, so my existing at-a-glance view isn't disrupted
 
+### F04. Backend: Expose Unpaid Card Charge Expenses
+- As the system, I want to expose the list of unsettled credit card charge expenses for a given month so that both clients can display them without duplicating the filtering logic
+
+### F05. Web: Show Unpaid Card Expenses in Credit Card Tab
+- As a user, I want to see the actual list of unpaid credit card charges for the selected month in the Credit Card tab so that I know what makes up each card's outstanding total
+- As a user, I want to edit or delete an unpaid card charge from the Credit Card tab so that I keep the same correction ability I had before it was hidden from the Expense list
+
+### F06. WPF: Show Unpaid Card Expenses in Credit Card Tab
+- As a user, I want to see the actual list of unpaid credit card charges for the selected month in the WPF Credit Card tab so that I know what makes up each card's outstanding total
+- As a user, I want to edit or delete an unpaid card charge from the WPF Credit Card tab so that I keep the same correction ability I had before it was hidden from the Expense list
+
 ## 6. Functionalities
 
 ### F01. Exclude Unpaid Card Charges from Expense List
@@ -105,13 +116,58 @@ This feature adds a second, identical rendering of the existing Cards grid insid
 - Marking a statement paid from either tab is reflected immediately in the other tab's grid too, since both bind to the same view-model state.
 - Tab switching and month navigation behave exactly as they do for the existing Bank tab (same `TabControl` pattern already in place).
 
+### F04. Backend: Expose Unpaid Card Charge Expenses
+
+**Provides:**
+- List of unsettled credit card charge expenses for a month — expense id, date, description, value, category, and card tag (used by F05, F06)
+
+**Capabilities:**
+- New read-only query returning expenses for a given year/month whose computed `PaymentStatus` is `CreditCardCharge` — the exact inverse of F01's filter, reusing the same computed property, applied at the Application layer so both clients share one implementation.
+- Category on each returned expense is the original purchase category, unchanged by settlement state (matches existing `Expense.Category` behavior — settlement never rewrites it).
+- No new write operations, no new domain method, and no change to `Expense`, `CardStatement`, or the settlement cascade — purely an additive read query alongside the existing `GetExpensesByMonth`.
+- Existing edit (`PUT /expenses/{id}`) and delete (`DELETE /expenses/{id}`) endpoints already operate on any expense by id regardless of payment status, so no new write endpoint is needed for F05/F06 to support editing or deleting an unpaid card charge.
+
+**Experience:**
+- Not user-facing directly — this is the shared data source F05 and F06 render.
+
+### F05. Web: Show Unpaid Card Expenses in Credit Card Tab
+
+**Consumes:**
+- F04: unsettled credit card charge expenses for the month (date, description, value, category, card tag)
+
+**Capabilities:**
+- The Credit Card tab renders a flat expense list below the existing per-card totals grid, showing every unpaid card charge for the selected month across all cards — same columns as the existing Expense list (Date, Description, Value, Category) plus a Card column, reusing the existing expense list/edit/delete UI pattern.
+- Edit and Delete controls per row reuse the existing expense edit form and delete flow unchanged (same `PUT`/`DELETE /expenses/{id}` calls the Expense tab already uses) — editing an unpaid card charge's category tag, value, or description works exactly as it did before F01 hid it from the Expense list.
+- The list re-fetches whenever the Credit Card tab's other data does (month change, mark-paid/unmark-paid) so it always matches the per-card totals grid above it.
+
+**Experience:**
+- User opens the Credit Card tab: sees the per-card totals grid (unchanged from F02) followed by a list of every unpaid card charge for the month, newest first.
+- User clicks Edit on a row: the same expense edit form used on the Expense tab opens, pre-filled; saving updates the row in place.
+- User clicks Delete on a row: same confirmation and removal behavior as the Expense tab; the per-card totals grid above updates to reflect the smaller outstanding total.
+- Marking a statement paid removes its expenses from this list (they move to the normal Expense list, per F01) without a page reload, matching F02's existing cross-grid sync.
+
+### F06. WPF: Show Unpaid Card Expenses in Credit Card Tab
+
+**Consumes:**
+- F04: unsettled credit card charge expenses for the month (date, description, value, category, card tag)
+
+**Capabilities:**
+- The Credit Card tab renders a flat expense list below the existing per-card totals grid (`CardsGridView`), showing every unpaid card charge for the selected month across all cards — same columns as the existing WPF Expense list (Date, Description, Value, Category) plus a Card column, reusing the existing expense list/edit/delete UI pattern.
+- Edit and Delete controls per row reuse the existing `MonthlyViewModel` expense edit/delete commands unchanged — editing an unpaid card charge works exactly as it did before F01 hid it from the Expense tab.
+- The list refreshes alongside the tab's other data (month change, mark-paid/unmark-paid) so it always matches the per-card totals grid above it.
+
+**Experience:**
+- User selects the Credit Card tab: sees the per-card totals grid (unchanged from F03) followed by a list of every unpaid card charge for the month.
+- User edits or deletes a row: same form/confirmation behavior as the WPF Expense tab.
+- Marking a statement paid removes its expenses from this list without a manual refresh, matching F03's existing cross-grid sync.
+
 ## 7. Out of Scope
 
 **Reporting and category totals**
 - Excluding unsettled credit card charges from category totals, or counting settled card expenses in the month/year they were paid rather than charged. Category totals behavior is unchanged in this PRD.
 
 **Invoice detail**
-- Showing the list of individual expenses that make up a card statement/invoice (expense-level drill-down). The Card tab continues to show only per-card statement totals, as it does today.
+- Grouping the unpaid-charges list by individual card/statement (e.g., a collapsible section per card, or a list scoped to one statement at a time). F05/F06 add a single flat list covering all cards together; per-statement grouping is deferred.
 
 **Paid invoice history**
 - A history section listing past paid invoices across months. The Card tab shows only the current month's statements, as it does today.
@@ -131,11 +187,15 @@ This feature adds a second, identical rendering of the existing Cards grid insid
 | F01 | Exclude Unpaid Card Charges from Expense List | 1 | None |
 | F02 | Web: Dedicated Credit Card Tab | 1 | None |
 | F03 | WPF: Dedicated Credit Card Tab | 1 | None |
+| F04 | Backend: Expose Unpaid Card Charge Expenses | 1 | None |
+| F05 | Web: Show Unpaid Card Expenses in Credit Card Tab | 1 | F04 |
+| F06 | WPF: Show Unpaid Card Expenses in Credit Card Tab | 1 | F04 |
 
 ### Execution Waves
 Features within the same wave can be built in parallel. A wave starts only after every feature in earlier waves is complete.
 
-- **Wave 1**: F01, F02, F03
+- **Wave 1**: F01, F02, F03, F04
+- **Wave 2**: F05, F06
 
 ### Priority levels
 - **1** = Essential — product does not work without it
@@ -147,6 +207,9 @@ graph TD
   F01[Exclude Unpaid]
   F02[Web Credit Card Tab]
   F03[WPF Credit Card Tab]
+  F04[Backend Unpaid Card Expenses]
+  F04 --> F05[Web Card Expense List]
+  F04 --> F06[WPF Card Expense List]
 ```
 
 ## 9. Acceptance Criteria
@@ -171,5 +234,26 @@ graph TD
 - [ ] Mark Paid and Unmark Paid actions work identically from the Credit Card tab and from Summary (same bank-picker requirement, same resulting state).
 - [ ] Marking a statement paid from one tab is reflected in the other tab's grid without a manual refresh.
 
+### F04. Backend: Expose Unpaid Card Charge Expenses
+- [x] For a given month, the new query returns every expense whose `PaymentStatus` is `CreditCardCharge` for that month, with date, description, value, category, and card tag.
+- [x] Expenses that are `ImmediatePayment` or `CreditCardSettled` for that month are not included.
+- [ ] Existing edit and delete endpoints continue to operate on an unpaid card charge by id without any change.
+
+### F05. Web: Show Unpaid Card Expenses in Credit Card Tab
+- [ ] The Credit Card tab shows a list of every unpaid card charge for the selected month, across all cards, below the per-card totals grid.
+- [ ] Each row shows Date, Description, Value, Category, and Card.
+- [ ] Editing a row updates the underlying expense and is reflected in the list without a page reload.
+- [ ] Deleting a row removes it from the list and updates the per-card totals grid above.
+- [ ] After a statement is marked paid, its expenses disappear from this list without a page reload.
+
+### F06. WPF: Show Unpaid Card Expenses in Credit Card Tab
+- [ ] The Credit Card tab shows a list of every unpaid card charge for the selected month, across all cards, below the per-card totals grid.
+- [ ] Each row shows Date, Description, Value, Category, and Card.
+- [ ] Editing a row updates the underlying expense and is reflected in the list without a manual refresh.
+- [ ] Deleting a row removes it from the list and updates the per-card totals grid above.
+- [ ] After a statement is marked paid, its expenses disappear from this list without a manual refresh.
+
 ### Cross-Feature Integration
-- [ ] No cross-feature integration criteria apply to this PRD: F01, F02, and F03 have no functional data dependencies between them (no Consumes/Provides declared in Section 6).
+- [ ] No cross-feature integration criteria apply between F01, F02, and F03 (no Consumes/Provides declared in Section 6 for those three).
+- [ ] Unsettled credit card charge expenses provided by F04 (date, description, value, category, card tag) are correctly received and rendered by the Web Credit Card tab's expense list (F05).
+- [ ] Unsettled credit card charge expenses provided by F04 (date, description, value, category, card tag) are correctly received and rendered by the WPF Credit Card tab's expense list (F06).
