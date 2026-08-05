@@ -74,6 +74,58 @@ public class MonthlyViewModelTests
     }
 
     [Fact]
+    public async Task RefreshAsync_PopulatesUnpaidCardCharges()
+    {
+        var (viewModel, expenses, _, _, _) = CreateViewModel();
+        expenses.UnpaidCardCharges = [new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, Category = "Extras", CardTag = "BaAmex", PaymentStatus = "CreditCardCharge" }];
+
+        await viewModel.RefreshAsync();
+
+        viewModel.UnpaidCardCharges.Should().ContainSingle().Which.Description.Should().Be("Uber");
+    }
+
+    [Fact]
+    public async Task ChangingYearOrMonth_RefetchesUnpaidCardCharges()
+    {
+        var (viewModel, expenses, _, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        var callsBefore = expenses.GetUnpaidCardChargesByMonthCallCount;
+
+        viewModel.Year = viewModel.Year - 1;
+        await viewModel.RefreshAsync();
+
+        expenses.GetUnpaidCardChargesByMonthCallCount.Should().BeGreaterThan(callsBefore);
+    }
+
+    [Fact]
+    public void EditExpenseCommand_FromUnpaidCardCharges_OpensFormPrefilled()
+    {
+        var (viewModel, _, _, _, _) = CreateViewModel();
+        var unpaidCharge = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, Category = "Extras", CardTag = "BaAmex", PaymentStatus = "CreditCardCharge" };
+
+        viewModel.EditExpenseCommand.Execute(unpaidCharge);
+
+        viewModel.IsExpenseFormOpen.Should().BeTrue();
+        viewModel.IsEditingExpense.Should().BeTrue();
+        viewModel.ExpenseFormDescription.Should().Be("Uber");
+        viewModel.ExpenseFormCardTag.Should().Be("BaAmex");
+    }
+
+    [Fact]
+    public async Task DeleteExpenseCommand_FromUnpaidCardCharges_ConfirmedCallsDeleteAndRefreshes()
+    {
+        var (viewModel, expenses, _, _, _) = CreateViewModel();
+        var unpaidCharge = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, Category = "Extras", CardTag = "BaAmex", PaymentStatus = "CreditCardCharge" };
+        await viewModel.RefreshAsync();
+        var callsBefore = expenses.GetUnpaidCardChargesByMonthCallCount;
+
+        await viewModel.DeleteExpenseAsync(unpaidCharge);
+
+        expenses.LastDeletedId.Should().Be(unpaidCharge.Id);
+        expenses.GetUnpaidCardChargesByMonthCallCount.Should().BeGreaterThan(callsBefore);
+    }
+
+    [Fact]
     public async Task AddExpense_BankMode_CallsServiceWithPaymentSourceAndRefreshes()
     {
         var (viewModel, expenses, _, banks, _) = CreateViewModel();

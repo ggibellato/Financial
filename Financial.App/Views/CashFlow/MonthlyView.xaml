@@ -31,7 +31,14 @@
                 <local:ExpenseSectionView/>
             </TabItem>
             <TabItem Header="Credit Card">
-                <local:CardsGridView/>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <local:CardsGridView Grid.Row="0"/>
+                    <local:CreditCardExpensesView Grid.Row="1"/>
+                </Grid>
             </TabItem>
             <TabItem Header="Income">
                 <local:IncomeSectionView/>

@@ -247,13 +247,13 @@ graph TD
 - [x] After a statement is marked paid, its expenses disappear from this list without a page reload.
 
 ### F06. WPF: Show Unpaid Card Expenses in Credit Card Tab
-- [ ] The Credit Card tab shows a list of every unpaid card charge for the selected month, across all cards, below the per-card totals grid.
-- [ ] Each row shows Date, Description, Value, Category, and Card.
-- [ ] Editing a row updates the underlying expense and is reflected in the list without a manual refresh.
-- [ ] Deleting a row removes it from the list and updates the per-card totals grid above.
+- [x] The Credit Card tab shows a list of every unpaid card charge for the selected month, across all cards, below the per-card totals grid.
+- [x] Each row shows Date, Description, Value, Category, and Card.
+- [x] Editing a row updates the underlying expense and is reflected in the list without a manual refresh.
+- [x] Deleting a row removes it from the list and updates the per-card totals grid above.
 - [ ] After a statement is marked paid, its expenses disappear from this list without a manual refresh.
 
 ### Cross-Feature Integration
 - [ ] No cross-feature integration criteria apply between F01, F02, and F03 (no Consumes/Provides declared in Section 6 for those three).
 - [x] Unsettled credit card charge expenses provided by F04 (date, description, value, category, card tag) are correctly received and rendered by the Web Credit Card tab's expense list (F05).
-- [ ] Unsettled credit card charge expenses provided by F04 (date, description, value, category, card tag) are correctly received and rendered by the WPF Credit Card tab's expense list (F06).
+- [x] Unsettled credit card charge expenses provided by F04 (date, description, value, category, card tag) are correctly received and rendered by the WPF Credit Card tab's expense list (F06).
