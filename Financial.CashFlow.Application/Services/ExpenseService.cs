@@ -61,6 +61,7 @@ public sealed class ExpenseService : IExpenseService
     public IReadOnlyList<ExpenseDTO> GetExpensesByMonth(int year, int month) =>
         _repository.GetExpenses()
             .Where(e => e.Date.Year == year && e.Date.Month == month)
+            .Where(e => e.PaymentStatus != ExpensePaymentStatus.CreditCardCharge)
             .OrderByDescending(e => e.Date)
             .Select(ToDto)
             .ToList();

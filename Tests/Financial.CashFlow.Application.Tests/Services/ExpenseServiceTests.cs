@@ -252,6 +252,54 @@ public class ExpenseServiceTests
     }
 
     [Fact]
+    public async Task GetExpensesByMonth_UnsettledCreditCardCharge_IsExcluded()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new ExpenseService(repository);
+        await service.AddExpenseAsync(ToCreateDto(
+            ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
+
+        var result = service.GetExpensesByMonth(2026, 7);
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetExpensesByMonth_ImmediatePayment_IsIncluded()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new ExpenseService(repository);
+        await service.AddExpenseAsync(ToCreateDto(ValidCreateRequest()));
+
+        var result = service.GetExpensesByMonth(2026, 7);
+
+        result.Should().ContainSingle().Which.PaymentStatus.Should().Be("ImmediatePayment");
+    }
+
+    [Fact]
+    public async Task GetExpensesByMonth_MixOfStatuses_OnlyExcludesUnsettledCharge()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new ExpenseService(repository);
+        var immediate = await service.AddExpenseAsync(
+            ToCreateDto(ValidCreateRequest() with { Description = "Immediate" }));
+        await service.AddExpenseAsync(ToCreateDto(
+            ValidCreateRequest() with { Description = "Unsettled charge", PaymentSource = null, CardTag = "ChaseMaster4023" }));
+        var settledCharge = await service.AddExpenseAsync(ToCreateDto(
+            ValidCreateRequest() with { Description = "Settled charge", PaymentSource = null, CardTag = "BaAmex" }));
+        repository.Expenses.Single(e => e.Id == settledCharge.Id).Settle("Chase", new DateOnly(2026, 7, 20));
+
+        var result = service.GetExpensesByMonth(2026, 7);
+
+        using (new AssertionScope())
+        {
+            result.Should().HaveCount(2);
+            result.Should().Contain(e => e.Id == immediate.Id);
+            result.Should().Contain(e => e.Id == settledCharge.Id);
+        }
+    }
+
+    [Fact]
     public async Task GetCategoryTotalsByMonth_SumsValuesPerCategoryForThatMonth()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);

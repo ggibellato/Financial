@@ -95,8 +95,9 @@ public class CardStatementsEndpointsTests
             new MarkStatementPaidDTO { PaymentSource = null });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var expenses = await client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
-        expenses!.Single(e => e.Description == "Card charge").PaymentStatus.Should().Be("CreditCardCharge");
+        var unchanged = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
+        unchanged.IsPaid.Should().BeFalse();
+        unchanged.OutstandingTotal.Should().Be(45m);
     }
 
     [Fact]
@@ -151,11 +152,8 @@ public class CardStatementsEndpointsTests
         updated!.IsPaid.Should().BeFalse();
         updated.OutstandingTotal.Should().Be(45m);
 
-        var expenses = await client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
-        var reverted = expenses!.Single(e => e.Description == "Card charge");
-        reverted.PaymentStatus.Should().Be("CreditCardCharge");
-        reverted.PaymentSource.Should().BeNull();
-        reverted.SettledAt.Should().BeNull();
+        var reExpenses = await client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
+        reExpenses.Should().NotContain(e => e.Description == "Card charge");
     }
 
     [Fact]
