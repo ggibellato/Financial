@@ -263,11 +263,11 @@ graph TD
 - [x] Bank-only expenses (no `CardTag`) have `ChargeDate` and `InvoiceDate` both null and are unaffected by any of the above.
 
 ### F02. Invoice-Period Settlement Matching
-- [ ] Marking an invoice paid settles only charges whose `InvoiceDate` year/month match the statement's period, regardless of their `ChargeDate`.
-- [ ] A charge dated near a billing cutoff, with an `InvoiceDate` month different from its `ChargeDate`'s month, settles against the correct (invoice-period) statement, not the charge-month statement.
-- [ ] Unmarking a paid invoice reverts every charge it had settled, clearing `PaymentSource` and resetting `Date` to `ChargeDate` for each.
-- [ ] The bank balance changes only at mark-paid/unmark-paid time, matching today's behavior exactly (no regression).
-- [ ] A partial failure during settlement rolls back all changes for that statement; the statement remains unpaid.
+- [x] Marking an invoice paid settles only charges whose `InvoiceDate` year/month match the statement's period, regardless of their `ChargeDate`.
+- [x] A charge dated near a billing cutoff, with an `InvoiceDate` month different from its `ChargeDate`'s month, settles against the correct (invoice-period) statement, not the charge-month statement.
+- [x] Unmarking a paid invoice reverts every charge it had settled, clearing `PaymentSource` and resetting `Date` to `ChargeDate` for each.
+- [x] The bank balance changes only at mark-paid/unmark-paid time, matching today's behavior exactly (no regression).
+- [x] A partial failure during settlement rolls back all changes for that statement; the statement remains unpaid.
 
 ### F03. Invoice-Aware Category Totals
 - [ ] An unpaid credit card expense counts toward category totals in its `InvoiceDate`'s year/month, not its `ChargeDate`'s month.
@@ -311,7 +311,7 @@ graph TD
 - [ ] A pre-import backup is created before the import writes any changes, matching existing behavior.
 
 ### Cross-Feature Integration
-- [ ] `ChargeDate`/`InvoiceDate`/`Settle()`/`Unsettle()` from F01 are correctly used by F02's statement matching (charges settle by invoice period, not charge date).
+- [x] `ChargeDate`/`InvoiceDate`/`Settle()`/`Unsettle()` from F01 are correctly used by F02's statement matching (charges settle by invoice period, not charge date).
 - [ ] F01's fields are correctly consumed by F03's category-total grouping (unpaid vs. paid expenses grouped by the correct field).
 - [ ] F01's fields are correctly exposed end-to-end through F04's data contract and displayed/edited in F05 (Web) and F06 (WPF).
 - [ ] F02's corrected invoice-period matching is reflected in what F05 and F06 display as "this invoice's charges" in the Card tab.

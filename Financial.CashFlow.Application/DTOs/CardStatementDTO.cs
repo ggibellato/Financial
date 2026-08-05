@@ -11,4 +11,7 @@ public sealed class CardStatementDTO
     public required int Month { get; init; }
     public required bool IsPaid { get; init; }
     public required decimal OutstandingTotal { get; init; }
+
+    /// <summary>Present only when a mark-paid call matched zero charges for this statement's invoice period.</summary>
+    public string? Warning { get; init; }
 }
