@@ -44,8 +44,8 @@
 
             <TextBlock Grid.Row="4" Grid.Column="0" Text="Value:" VerticalAlignment="Center"/>
             <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding ExpenseFormValue, UpdateSourceTrigger=LostFocus}"
-                     PreviewTextInput="OnDecimalTextBoxPreviewTextInput"
-                     DataObject.Pasting="OnDecimalTextBoxPasting"
+                     PreviewTextInput="OnSignedDecimalTextBoxPreviewTextInput"
+                     DataObject.Pasting="OnSignedDecimalTextBoxPasting"
                      LostFocus="OnDecimalTextBoxLostFocus"/>
 
             <TextBlock Grid.Row="5" Grid.Column="0" Text="Payment:" VerticalAlignment="Top"

@@ -219,6 +219,8 @@ public class ExpenseTests
     [InlineData(9.40, 0.60)]
     [InlineData(10.00, 0.00)]
     [InlineData(0.01, 0.99)]
+    [InlineData(-9.40, 0.00)]
+    [InlineData(-10.00, 0.00)]
     public void RoundUpSuggestion_ComputesDifferenceToNextWholePound(decimal value, decimal expected)
     {
         var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test", value, Category.Mercado, "Chase", null);
@@ -258,6 +260,16 @@ public class ExpenseTests
         var act = () => expense.SetRoundUpAmount(amount);
 
         act.Should().Throw<ArgumentException>().WithMessage("*between £0.00 and £0.99*");
+    }
+
+    [Fact]
+    public void SetRoundUpAmount_OnNegativeValueExpense_Throws()
+    {
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Reimbursement", -10m, Category.Casa, "Chase", null);
+
+        var act = () => expense.SetRoundUpAmount(0.50m);
+
+        act.Should().Throw<ArgumentException>().WithMessage("*negative (reimbursement) expense*");
     }
 
     [Fact]

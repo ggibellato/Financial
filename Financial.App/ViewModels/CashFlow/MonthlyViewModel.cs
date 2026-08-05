@@ -493,7 +493,7 @@ public class MonthlyViewModel : ViewModelBase
 
     private string SuggestRoundUpAmount()
     {
-        if (!decimal.TryParse(ExpenseFormValue, out var value))
+        if (!decimal.TryParse(ExpenseFormValue, out var value) || value <= 0)
         {
             return string.Empty;
         }

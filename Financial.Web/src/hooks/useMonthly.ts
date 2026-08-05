@@ -31,7 +31,7 @@ function suggestRoundUpAmount(banks: BankDto[], bankName: string, value: string)
   if (!bank?.roundUpEnabled) return null
 
   const parsedValue = Number(value)
-  if (!value.trim() || !isFinite(parsedValue)) return null
+  if (!value.trim() || !isFinite(parsedValue) || parsedValue <= 0) return null
 
   return computeRoundUpSuggestion(parsedValue).toFixed(2)
 }
