@@ -289,11 +289,11 @@ graph TD
 - [x] An expense's position in the Card tab list is unchanged immediately before and after its invoice is marked paid.
 
 ### F06. WPF — Card Tab & Expense Form Support
-- [ ] Selecting a credit card in the WPF expense dialog reveals an editable invoice month/year field, pre-filled with the default.
-- [ ] Changing the invoice month/year before saving persists the overridden value, while the expense is unpaid.
-- [ ] The invoice month/year field is read-only once the expense is settled.
-- [ ] `CreditCardExpensesView`'s unpaid and paid/history lists are sorted/positioned by `ChargeDate`.
-- [ ] An expense's position in the Card tab list is unchanged immediately before and after its invoice is marked paid.
+- [x] Selecting a credit card in the WPF expense dialog reveals an editable invoice month/year field, pre-filled with the default.
+- [x] Changing the invoice month/year before saving persists the overridden value, while the expense is unpaid.
+- [x] The invoice month/year field is read-only once the expense is settled.
+- [x] `CreditCardExpensesView`'s unpaid and paid/history lists are sorted/positioned by `ChargeDate`.
+- [x] An expense's position in the Card tab list is unchanged immediately before and after its invoice is marked paid.
 
 ### F07. Existing Data Migration
 - [x] Running the migrator against a backup copy of `data-cashflow.json` populates `ChargeDate` for every credit card expense with no data loss (verified by diff against the pre-migration backup).
@@ -313,7 +313,7 @@ graph TD
 ### Cross-Feature Integration
 - [x] `ChargeDate`/`InvoiceDate`/`Settle()`/`Unsettle()` from F01 are correctly used by F02's statement matching (charges settle by invoice period, not charge date).
 - [x] F01's fields are correctly consumed by F03's category-total grouping (unpaid vs. paid expenses grouped by the correct field).
-- [ ] F01's fields are correctly exposed end-to-end through F04's data contract and displayed/edited in F05 (Web) and F06 (WPF).
-- [ ] F02's corrected invoice-period matching is reflected in what F05 and F06 display as "this invoice's charges" in the Card tab.
+- [x] F01's fields are correctly exposed end-to-end through F04's data contract and displayed/edited in F05 (Web) and F06 (WPF).
+- [x] F02's corrected invoice-period matching is reflected in what F05 and F06 display as "this invoice's charges" in the Card tab.
 - [x] F01's field definitions are correctly applied by F07's migration to 100% of pre-existing credit card expenses.
 - [x] F01's field definitions are correctly applied by F08 to every newly imported credit card expense going forward.
