@@ -427,20 +427,16 @@ public class MonthlyViewModel : ViewModelBase
         private set => SetProperty(ref _deletingExpenseError, value);
     }
 
-    public RelayCommand ShowCreateExpenseFormCommand { get; private set; } = null!;
+    public RelayCommand<string> ShowCreateExpenseFormCommand { get; private set; } = null!;
     public RelayCommand CancelExpenseFormCommand { get; private set; } = null!;
-    public RelayCommand SetBankPaymentModeCommand { get; private set; } = null!;
-    public RelayCommand SetCardPaymentModeCommand { get; private set; } = null!;
     public RelayCommand SaveExpenseCommand { get; private set; } = null!;
     public RelayCommand<ExpenseDTO> EditExpenseCommand { get; private set; } = null!;
     public RelayCommand<ExpenseDTO> DeleteExpenseCommand { get; private set; } = null!;
 
     private void InitializeExpenseCommands()
     {
-        ShowCreateExpenseFormCommand = new RelayCommand(ShowCreateExpenseForm);
+        ShowCreateExpenseFormCommand = new RelayCommand<string>(ShowCreateExpenseForm);
         CancelExpenseFormCommand = new RelayCommand(CloseExpenseForm);
-        SetBankPaymentModeCommand = new RelayCommand(() => IsCardPaymentMode = false);
-        SetCardPaymentModeCommand = new RelayCommand(() => IsCardPaymentMode = true);
         SaveExpenseCommand = new RelayCommand(async () => await SaveExpenseAsync(), () => !IsSavingExpense);
         EditExpenseCommand = new RelayCommand<ExpenseDTO>(ShowEditExpenseForm);
         DeleteExpenseCommand = new RelayCommand<ExpenseDTO>(
@@ -448,15 +444,17 @@ public class MonthlyViewModel : ViewModelBase
             expense => expense?.PaymentStatus != SettledStatus);
     }
 
-    private void ShowCreateExpenseForm()
+    private void ShowCreateExpenseForm(string? mode)
     {
         _editingExpenseId = null;
         ExpenseFormDate = DateTime.Today;
         ExpenseFormDescription = string.Empty;
         ExpenseFormCategory = Categories[0];
         ExpenseFormValue = string.Empty;
-        IsCardPaymentMode = false;
-        ExpenseFormPaymentSource = Banks.Count > 0 ? Banks[0].Name : string.Empty;
+        IsCardPaymentMode = mode == "card";
+        ExpenseFormPaymentSource = IsCardPaymentMode
+            ? string.Empty
+            : (Banks.Count > 0 ? Banks[0].Name : string.Empty);
         ExpenseFormCardTag = string.Empty;
         ExpenseFormRoundUpAmount = string.Empty;
         ExpenseFormIsSettled = false;

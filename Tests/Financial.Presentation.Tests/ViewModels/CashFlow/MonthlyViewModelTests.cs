@@ -130,7 +130,7 @@ public class MonthlyViewModelTests
     {
         var (viewModel, expenses, _, banks, _) = CreateViewModel();
         await viewModel.RefreshAsync();
-        viewModel.ShowCreateExpenseFormCommand.Execute(null);
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
         viewModel.ExpenseFormDate = DateTime.Today;
         viewModel.ExpenseFormDescription = "Groceries";
         viewModel.ExpenseFormCategory = "Mercado";
@@ -150,12 +150,11 @@ public class MonthlyViewModelTests
     {
         var (viewModel, expenses, _, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
-        viewModel.ShowCreateExpenseFormCommand.Execute(null);
+        viewModel.ShowCreateExpenseFormCommand.Execute("card");
         viewModel.ExpenseFormDate = DateTime.Today;
         viewModel.ExpenseFormDescription = "Flight";
         viewModel.ExpenseFormCategory = "Viagem";
         viewModel.ExpenseFormValue = "300";
-        viewModel.SetCardPaymentModeCommand.Execute(null);
         viewModel.ExpenseFormCardTag = MonthlyViewModel.Cards[0];
 
         await viewModel.SaveExpenseAsync();
@@ -177,19 +176,39 @@ public class MonthlyViewModelTests
     }
 
     [Fact]
-    public void SettingCardPaymentMode_TogglesIsCardPaymentModeAndExposesFiveCards()
+    public void ShowCreateExpenseFormCommand_CardMode_SetsIsCardPaymentModeAndExposesFiveCards()
     {
         var (viewModel, _, _, _, _) = CreateViewModel();
-        viewModel.ShowCreateExpenseFormCommand.Execute(null);
 
-        viewModel.SetCardPaymentModeCommand.Execute(null);
+        viewModel.ShowCreateExpenseFormCommand.Execute("card");
+
         viewModel.IsCardPaymentMode.Should().BeTrue();
         viewModel.IsBankPaymentMode.Should().BeFalse();
         MonthlyViewModel.Cards.Should().HaveCount(5);
+    }
 
-        viewModel.SetBankPaymentModeCommand.Execute(null);
+    [Fact]
+    public async Task ShowCreateExpenseFormCommand_BankMode_DefaultsToFirstBankAndEmptyCardTag()
+    {
+        var (viewModel, _, _, banks, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+
         viewModel.IsCardPaymentMode.Should().BeFalse();
-        viewModel.IsBankPaymentMode.Should().BeTrue();
+        viewModel.ExpenseFormPaymentSource.Should().Be(banks.Banks[0].Name);
+        viewModel.ExpenseFormCardTag.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ShowCreateExpenseFormCommand_CardMode_DefaultsToEmptyPaymentSourceAndCardTag()
+    {
+        var (viewModel, _, _, _, _) = CreateViewModel();
+
+        viewModel.ShowCreateExpenseFormCommand.Execute("card");
+
+        viewModel.ExpenseFormPaymentSource.Should().BeEmpty();
+        viewModel.ExpenseFormCardTag.Should().BeEmpty();
     }
 
     [Fact]
@@ -218,7 +237,7 @@ public class MonthlyViewModelTests
     {
         var (viewModel, _, _, banks, _) = CreateViewModel();
         await viewModel.RefreshAsync();
-        viewModel.ShowCreateExpenseFormCommand.Execute(null);
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
         viewModel.ExpenseFormPaymentSource = banks.Banks[0].Name; // Barclays, round-up enabled
 
@@ -230,7 +249,7 @@ public class MonthlyViewModelTests
     {
         var (viewModel, _, _, banks, _) = CreateViewModel();
         await viewModel.RefreshAsync();
-        viewModel.ShowCreateExpenseFormCommand.Execute(null);
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
         viewModel.ExpenseFormPaymentSource = banks.Banks[1].Name; // Chase, round-up disabled
 
@@ -242,7 +261,7 @@ public class MonthlyViewModelTests
     {
         var (viewModel, _, _, banks, _) = CreateViewModel();
         await viewModel.RefreshAsync();
-        viewModel.ShowCreateExpenseFormCommand.Execute(null);
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
         viewModel.ExpenseFormValue = "-9.40";
         viewModel.ExpenseFormPaymentSource = banks.Banks[0].Name; // Barclays, round-up enabled
@@ -414,7 +433,7 @@ public class MonthlyViewModelTests
     {
         var (viewModel, expenses, _, banks, _) = CreateViewModel();
         await viewModel.RefreshAsync();
-        viewModel.ShowCreateExpenseFormCommand.Execute(null);
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
         viewModel.ExpenseFormDate = DateTime.Today;
         viewModel.ExpenseFormDescription = "";
         viewModel.ExpenseFormCategory = "Mercado";

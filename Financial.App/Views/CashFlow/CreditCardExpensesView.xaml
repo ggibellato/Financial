@@ -11,7 +11,7 @@
         </Grid.RowDefinitions>
 
         <Button Grid.Row="0" Content="New Expense" HorizontalAlignment="Left" Margin="0,0,0,8"
-                Command="{Binding ShowCreateExpenseFormCommand}"/>
+                Command="{Binding ShowCreateExpenseFormCommand}" CommandParameter="card"/>
 
         <local:ExpenseFormView Grid.Row="1"
                                 Visibility="{Binding IsExpenseFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
