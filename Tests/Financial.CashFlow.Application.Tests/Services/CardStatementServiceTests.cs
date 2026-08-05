@@ -114,7 +114,7 @@ public class CardStatementServiceTests
             {
                 expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
                 expense.PaymentSource.Should().Be("Trading212");
-                expense.SettledAt.Should().Be(today);
+                expense.Date.Should().Be(today);
             }
 
             otherMonth.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
@@ -180,7 +180,7 @@ public class CardStatementServiceTests
             statement.IsPaid.Should().BeFalse();
             charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
             charge.PaymentSource.Should().BeNull();
-            charge.SettledAt.Should().BeNull();
+            charge.Date.Should().Be(charge.ChargeDate);
         }
     }
 
@@ -215,7 +215,7 @@ public class CardStatementServiceTests
             {
                 expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
                 expense.PaymentSource.Should().BeNull();
-                expense.SettledAt.Should().BeNull();
+                expense.Date.Should().Be(expense.ChargeDate);
             }
         }
     }
@@ -259,7 +259,7 @@ public class CardStatementServiceTests
         await service.GetStatementsForMonthAsync(2026, 7);
         var statement = repository.CardStatements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003);
         await service.MarkStatementPaidAsync(statement.Id, PaidBy("Trading212"));
-        var settledAt = charge.SettledAt;
+        var paymentDate = charge.Date;
         repository.ThrowOnNextSave = true;
 
         var act = async () => await service.UnmarkStatementPaidAsync(statement.Id);
@@ -270,7 +270,7 @@ public class CardStatementServiceTests
             statement.IsPaid.Should().BeTrue();
             charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
             charge.PaymentSource.Should().Be("Trading212");
-            charge.SettledAt.Should().Be(settledAt);
+            charge.Date.Should().Be(paymentDate);
         }
     }
 

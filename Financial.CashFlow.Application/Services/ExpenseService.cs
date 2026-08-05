@@ -159,7 +159,6 @@ public sealed class ExpenseService : IExpenseService
         Category = expense.Category.ToString(),
         PaymentSource = expense.PaymentSource,
         CardTag = expense.CardTag?.ToString(),
-        SettledAt = expense.SettledAt,
         PaymentStatus = expense.PaymentStatus.ToString(),
         RoundUpAmount = expense.RoundUpAmount,
         SuggestedRoundUpAmount = GetSuggestedRoundUpAmount(expense)
