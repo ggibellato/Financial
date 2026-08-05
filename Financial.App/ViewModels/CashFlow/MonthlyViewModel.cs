@@ -79,6 +79,7 @@ public class MonthlyViewModel : ViewModelBase
     public bool ShowContent => !IsLoading && !HasError;
 
     public ObservableCollection<ExpenseDTO> Expenses { get; } = [];
+    public ObservableCollection<ExpenseDTO> UnpaidCardCharges { get; } = [];
     public ObservableCollection<IncomeDTO> Incomes { get; } = [];
     public ObservableCollection<CategoryTotalDTO> CategoryTotals { get; } = [];
     public ObservableCollection<BankDTO> Banks { get; } = [];
@@ -157,6 +158,7 @@ public class MonthlyViewModel : ViewModelBase
             var month = Month;
 
             var expenses = await Task.Run(() => _expenseService.GetExpensesByMonth(year, month));
+            var unpaidCardCharges = await Task.Run(() => _expenseService.GetUnpaidCardChargesByMonth(year, month));
             var incomes = await Task.Run(() => _incomeService.GetIncomesByMonth(year, month));
             var categoryTotals = await Task.Run(() => _expenseService.GetCategoryTotalsByMonth(year, month));
             var banks = await Task.Run(() => _bankService.GetBanks());
@@ -176,6 +178,7 @@ public class MonthlyViewModel : ViewModelBase
             }
 
             ReplaceAll(Expenses, expenses);
+            ReplaceAll(UnpaidCardCharges, unpaidCardCharges);
             ReplaceAll(Incomes, incomes);
             ReplaceAll(CategoryTotals, categoryTotals);
             ReplaceAll(Banks, banks);
