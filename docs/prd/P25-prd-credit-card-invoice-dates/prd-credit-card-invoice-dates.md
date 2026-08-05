@@ -276,10 +276,10 @@ graph TD
 - [x] No expense is counted in more than one month/year in the same category total run.
 
 ### F04. Backend Exposure of Charge/Invoice Fields
-- [ ] Reading any credit card expense through the API/data contract returns non-null `ChargeDate` and `InvoiceDate`.
-- [ ] Creating/updating a credit card expense accepts an optional `InvoiceDate` override; omitting it applies the charge-month default.
-- [ ] Attempting to set `ChargeDate` directly via the create/update contract has no effect — it remains server-derived.
-- [ ] Attempting to update `InvoiceDate` on an already-settled expense is rejected.
+- [x] Reading any credit card expense through the API/data contract returns non-null `ChargeDate` and `InvoiceDate`.
+- [x] Creating/updating a credit card expense accepts an optional `InvoiceDate` override; omitting it applies the charge-month default.
+- [x] Attempting to set `ChargeDate` directly via the create/update contract has no effect — it remains server-derived.
+- [x] Attempting to update `InvoiceDate` on an already-settled expense is rejected.
 
 ### F05. Web — Card Tab & Expense Form Support
 - [ ] Selecting a credit card in the Web expense form reveals an editable invoice month/year field, pre-filled with the default.
