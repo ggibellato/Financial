@@ -118,6 +118,37 @@ public class Expense
         InvoiceDate = FirstOfMonth(invoiceDate);
     }
 
+    /// <summary>
+    /// One-time backfill for a pre-F01 record migrated by ExpenseChargeDateMigrator.
+    /// ChargeDate/InvoiceDate are otherwise only ever set at creation; this is the sole other
+    /// entry point, and only usable once (while ChargeDate is still unset).
+    /// </summary>
+    public void MigrateLegacyDates(DateOnly chargeDate, DateOnly invoiceDate, DateOnly? settledDate)
+    {
+        if (CardTag is null)
+        {
+            throw new ArgumentException("Legacy date migration only applies to a credit card expense.");
+        }
+
+        if (ChargeDate is not null)
+        {
+            throw new ArgumentException("This expense has already been migrated.");
+        }
+
+        if (settledDate is not null && PaymentStatus != ExpensePaymentStatus.CreditCardSettled)
+        {
+            throw new ArgumentException("A settled date can only be backfilled for an already-settled expense.");
+        }
+
+        ChargeDate = chargeDate;
+        InvoiceDate = FirstOfMonth(invoiceDate);
+
+        if (settledDate is not null)
+        {
+            Date = settledDate.Value;
+        }
+    }
+
     public void SetRoundUpAmount(decimal? amount)
     {
         if (amount is null)
