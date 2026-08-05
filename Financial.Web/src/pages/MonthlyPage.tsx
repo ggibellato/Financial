@@ -77,6 +77,7 @@ export default function MonthlyPage() {
     monthInputValue,
     setMonthInputValue,
     expenses,
+    unpaidCardCharges,
     categoryTotals,
     categoryTotalsSum,
     cardStatements,
@@ -175,8 +176,34 @@ export default function MonthlyPage() {
   const isIncomeFormVisible = isIncomeCreateFormOpen || isIncomeEditing
   const isBankFormVisible = transferForm.isOpen || adjustmentForm.isOpen
 
+  const expenseFormElement = isFormVisible && (
+    <ExpenseForm
+      isEditing={isEditing}
+      date={isEditing ? editDate : createDate}
+      description={isEditing ? editDescription : createDescription}
+      value={isEditing ? editValue : createValue}
+      category={isEditing ? editCategory : createCategory}
+      paymentSource={isEditing ? editPaymentSource : createPaymentSource}
+      cardTag={isEditing ? editCardTag : createCardTag}
+      roundUpAmount={isEditing ? editRoundUpAmount : createRoundUpAmount}
+      paymentMode={isEditing ? editPaymentMode : createPaymentMode}
+      banks={banks}
+      isSettled={isEditing && editIsSettled}
+      isSaving={isEditing ? isSaving : isCreating}
+      saveError={isEditing ? saveError : createError}
+      onFieldChange={(field, value) =>
+        isEditing
+          ? setEditField(EDIT_FIELD_BY_FORM_FIELD[field], value)
+          : setCreateField(CREATE_FIELD_BY_FORM_FIELD[field], value)
+      }
+      onModeChange={isEditing ? setEditPaymentMode : setCreatePaymentMode}
+      onSave={isEditing ? saveEdit : submitCreate}
+      onCancel={isEditing ? cancelEdit : cancelCreateForm}
+    />
+  )
+
   const handleTabClick = (tabId: MonthlyTabId) => {
-    if (activeTab === 'expense' && isFormVisible) {
+    if ((activeTab === 'expense' || activeTab === 'card') && isFormVisible) {
       if (isEditing) cancelEdit()
       else cancelCreateForm()
     }
@@ -247,31 +274,7 @@ export default function MonthlyPage() {
 
           {activeTab === 'expense' && (
             <>
-              {isFormVisible && (
-                <ExpenseForm
-                  isEditing={isEditing}
-                  date={isEditing ? editDate : createDate}
-                  description={isEditing ? editDescription : createDescription}
-                  value={isEditing ? editValue : createValue}
-                  category={isEditing ? editCategory : createCategory}
-                  paymentSource={isEditing ? editPaymentSource : createPaymentSource}
-                  cardTag={isEditing ? editCardTag : createCardTag}
-                  roundUpAmount={isEditing ? editRoundUpAmount : createRoundUpAmount}
-                  paymentMode={isEditing ? editPaymentMode : createPaymentMode}
-                  banks={banks}
-                  isSettled={isEditing && editIsSettled}
-                  isSaving={isEditing ? isSaving : isCreating}
-                  saveError={isEditing ? saveError : createError}
-                  onFieldChange={(field, value) =>
-                    isEditing
-                      ? setEditField(EDIT_FIELD_BY_FORM_FIELD[field], value)
-                      : setCreateField(CREATE_FIELD_BY_FORM_FIELD[field], value)
-                  }
-                  onModeChange={isEditing ? setEditPaymentMode : setCreatePaymentMode}
-                  onSave={isEditing ? saveEdit : submitCreate}
-                  onCancel={isEditing ? cancelEdit : cancelCreateForm}
-                />
-              )}
+              {expenseFormElement}
 
               <ExpensesSection
                 expenses={expenses}
@@ -283,15 +286,26 @@ export default function MonthlyPage() {
           )}
 
           {activeTab === 'card' && (
-            <CardsGrid
-              cardStatements={cardStatements}
-              banks={banks}
-              adjustmentTotal={adjustmentTotal}
-              markPaidSources={markPaidSources}
-              setMarkPaidSource={setMarkPaidSource}
-              markStatementPaid={markStatementPaid}
-              unmarkStatementPaid={unmarkStatementPaid}
-            />
+            <>
+              <CardsGrid
+                cardStatements={cardStatements}
+                banks={banks}
+                adjustmentTotal={adjustmentTotal}
+                markPaidSources={markPaidSources}
+                setMarkPaidSource={setMarkPaidSource}
+                markStatementPaid={markStatementPaid}
+                unmarkStatementPaid={unmarkStatementPaid}
+              />
+
+              {expenseFormElement}
+
+              <ExpensesSection
+                expenses={unpaidCardCharges}
+                onEdit={showEditForm}
+                onDelete={deleteExpense}
+                onNewExpense={showCreateForm}
+              />
+            </>
           )}
 
           {activeTab === 'incoming' && (

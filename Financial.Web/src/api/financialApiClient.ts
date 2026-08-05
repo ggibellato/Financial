@@ -111,6 +111,7 @@ export interface FinancialApiClient {
   getInvestmentSnapshots: (year: number, month: number) => Promise<InvestmentSnapshotDto[]>
   updateInvestmentSnapshotValue: (id: string, request: UpdateInvestmentSnapshotValueDto) => Promise<InvestmentSnapshotDto>
   getExpensesByMonth: (year: number, month: number) => Promise<ExpenseDto[]>
+  getUnpaidCardChargesByMonth: (year: number, month: number) => Promise<ExpenseDto[]>
   getCategoryTotalsByMonth: (year: number, month: number) => Promise<CategoryTotalDto[]>
   getBanks: () => Promise<BankDto[]>
   getBankBalancesByMonth: (year: number, month: number) => Promise<BankBalanceDto[]>
@@ -352,6 +353,8 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         body: JSON.stringify(requestBody),
       }),
     getExpensesByMonth: (year, month) => request<ExpenseDto[]>(`/expenses/month/${year}/${month}`),
+    getUnpaidCardChargesByMonth: (year, month) =>
+      request<ExpenseDto[]>(`/expenses/month/${year}/${month}/unpaid-card-charges`),
     getCategoryTotalsByMonth: (year, month) =>
       request<CategoryTotalDto[]>(`/expenses/month/${year}/${month}/category-totals`),
     getBanks: () => request<BankDto[]>('/banks'),
