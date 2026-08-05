@@ -5,7 +5,6 @@ using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.M
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.BankOpeningBalance;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
-using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.PaymentState;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
@@ -88,7 +87,6 @@ else
 var bankSummary = BankMigrator.Migrate(data);
 var bankOpeningBalanceSummary = BankOpeningBalanceMigrator.Migrate(data, today);
 var incomeSummary = IncomeMigrator.Migrate(data, workbook);
-var paymentStateSummary = ExpensePaymentStateMigrator.Migrate(data);
 // Re-run (seeding is idempotent) so the reported summary's snapshot audit reflects the
 // snapshots ImportResumoSheets just added above, not the empty pre-import state.
 var investmentAccountSummary = InvestmentAccountMigrator.Migrate(data);
@@ -102,7 +100,6 @@ Console.WriteLine(report.Render());
 Console.WriteLine(bankSummary.Render());
 Console.WriteLine(bankOpeningBalanceSummary.Render());
 Console.WriteLine(incomeSummary.Render());
-Console.WriteLine(paymentStateSummary.Render());
 Console.WriteLine(investmentAccountSummary.Render());
 return 0;
 
