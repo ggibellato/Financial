@@ -1,5 +1,6 @@
 using System.Globalization;
 using Financial.Presentation.App.Converters;
+using Financial.Presentation.App.Helpers;
 using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Converters;
@@ -19,27 +20,50 @@ public class DateFormatConverterTests
     }
 
     [Fact]
-    public void Convert_WithNullFormatParameter_UsesDisplayDatePattern()
+    public void Convert_WithNullFormatParameter_UsesPaddedShortDatePattern()
     {
-        var date = new DateTime(2026, 8, 27);
+        var date = new DateTime(2026, 7, 5);
 
         var result = _converter.Convert(date, typeof(string), null, CultureInfo.InvariantCulture);
 
-        result.Should().Be("27/08/2026");
+        var expectedFormat = DateFormatHelper.GetPaddedShortDatePattern();
+        result.Should().Be(date.ToString(expectedFormat, CultureInfo.CurrentCulture));
     }
 
     [Fact]
-    public void Convert_WithLowercaseDFormatParameter_UsesDisplayDatePattern()
+    public void Convert_WithLowercaseDFormatParameter_UsesPaddedShortDatePattern()
     {
-        var date = new DateTime(2026, 8, 27);
+        var date = new DateTime(2026, 7, 5);
 
         var result = _converter.Convert(date, typeof(string), "d", CultureInfo.InvariantCulture);
 
-        result.Should().Be("27/08/2026");
+        var expectedFormat = DateFormatHelper.GetPaddedShortDatePattern();
+        result.Should().Be(date.ToString(expectedFormat, CultureInfo.CurrentCulture));
     }
 
     [Fact]
-    public void Convert_NonDateTimeValue_ReturnsEmptyString()
+    public void Convert_WithDateOnlyValue_UsesPaddedShortDatePattern()
+    {
+        var date = new DateOnly(2026, 7, 5);
+
+        var result = _converter.Convert(date, typeof(string), null, CultureInfo.InvariantCulture);
+
+        var expectedFormat = DateFormatHelper.GetPaddedShortDatePattern();
+        result.Should().Be(date.ToDateTime(TimeOnly.MinValue).ToString(expectedFormat, CultureInfo.CurrentCulture));
+    }
+
+    [Fact]
+    public void Convert_WithDateOnlyValueAndExplicitFormatParameter_FormatsUsingThatFormat()
+    {
+        var date = new DateOnly(2026, 7, 5);
+
+        var result = _converter.Convert(date, typeof(string), "yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        result.Should().Be("2026-07-05");
+    }
+
+    [Fact]
+    public void Convert_NonDateValue_ReturnsEmptyString()
     {
         var result = _converter.Convert("not a date", typeof(string), null, CultureInfo.InvariantCulture);
 
