@@ -218,12 +218,14 @@ describe('MonthlyPage', () => {
     expect(screen.getByRole('button', { name: 'Income' })).not.toHaveClass('monthly-page__tab--active')
   })
 
-  it('lists Summary, Expense, Income, Bank in order in the tab strip', async () => {
+  it('lists Summary, Expense, Credit Card, Income, Bank in order in the tab strip', async () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
-    const tabLabels = screen.getAllByRole('button', { name: /Summary|Expense|Income|Bank/ }).map((b) => b.textContent)
-    expect(tabLabels).toEqual(['Summary', 'Expense', 'Income', 'Bank'])
+    const tabLabels = screen
+      .getAllByRole('button', { name: /Summary|Expense|Credit Card|Income|Bank/ })
+      .map((b) => b.textContent)
+    expect(tabLabels).toEqual(['Summary', 'Expense', 'Credit Card', 'Income', 'Bank'])
   })
 
   it('re-scopes all 4 Summary grids when the month/year value changes', async () => {
@@ -262,6 +264,59 @@ describe('MonthlyPage', () => {
     expect(screen.getByRole('button', { name: 'Expense' })).toHaveClass('monthly-page__tab--active')
   })
 
+  it('shows the same card statements on the Credit Card tab as on Summary', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+
+    expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'ChaseMaster4023' })).toBeInTheDocument()
+    expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Credit Card' })).toHaveClass('monthly-page__tab--active')
+  })
+
+  it('still renders the card statements on the Summary tab unchanged', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
+
+    expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument()
+    expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
+    expect(screen.getByText(/^Total:/)).toBeInTheDocument()
+  })
+
+  it('does not refetch card statements when switching to the Credit Card tab', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    const callCountBefore = getCardStatementsByMonthMock.mock.calls.length
+
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+
+    expect(getCardStatementsByMonthMock.mock.calls.length).toBe(callCountBefore)
+  })
+
+  it('marking a statement paid from the Credit Card tab updates the Summary tab too', async () => {
+    markCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 })
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'Trading212' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
+    await waitFor(() =>
+      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSource: 'Trading212' }),
+    )
+
+    getCardStatementsByMonthMock.mockResolvedValue([{ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 }, CARD_STATEMENTS[1]])
+    fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
+
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Unmark Paid' })).toHaveLength(2))
+  })
+
   it('shows only the Incoming tabs content after clicking Incoming', async () => {
     render(<MonthlyPage />)
 
@@ -294,6 +349,7 @@ describe('MonthlyPage', () => {
     const callCountBefore = getExpensesByMonthMock.mock.calls.length
 
     fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
     fireEvent.click(screen.getByRole('button', { name: 'Income' }))
     fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
 

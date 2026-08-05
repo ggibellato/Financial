@@ -24,11 +24,12 @@ import {
 import { useTransferForm } from '../hooks/useTransferForm'
 import './MonthlyPage.css'
 
-type MonthlyTabId = 'summary' | 'expense' | 'incoming' | 'bank'
+type MonthlyTabId = 'summary' | 'expense' | 'card' | 'incoming' | 'bank'
 
 const MONTHLY_TABS: { id: MonthlyTabId; label: string }[] = [
   { id: 'summary', label: 'Summary' },
   { id: 'expense', label: 'Expense' },
+  { id: 'card', label: 'Credit Card' },
   { id: 'incoming', label: 'Income' },
   { id: 'bank', label: 'Bank' },
 ]
@@ -279,6 +280,18 @@ export default function MonthlyPage() {
                 onNewExpense={showCreateForm}
               />
             </>
+          )}
+
+          {activeTab === 'card' && (
+            <CardsGrid
+              cardStatements={cardStatements}
+              banks={banks}
+              adjustmentTotal={adjustmentTotal}
+              markPaidSources={markPaidSources}
+              setMarkPaidSource={setMarkPaidSource}
+              markStatementPaid={markStatementPaid}
+              unmarkStatementPaid={unmarkStatementPaid}
+            />
           )}
 
           {activeTab === 'incoming' && (
