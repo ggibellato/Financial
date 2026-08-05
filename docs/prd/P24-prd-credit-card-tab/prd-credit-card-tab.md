@@ -73,6 +73,14 @@ This feature adds a second, identical rendering of the existing Cards grid insid
 - As a user, I want to see the actual list of unpaid credit card charges for the selected month in the WPF Credit Card tab so that I know what makes up each card's outstanding total
 - As a user, I want to edit or delete an unpaid card charge from the WPF Credit Card tab so that I keep the same correction ability I had before it was hidden from the Expense list
 
+### F07. Web: Lock Payment Mode by Tab Context
+- As a user, I want the expense form opened from the Expense tab to always be in bank-payment mode, with no toggle to switch to card, so that I can't accidentally add a card charge where it wouldn't belong
+- As a user, I want the expense form opened from the Credit Card tab to always be in card-payment mode, with no toggle to switch to bank, so that I can't accidentally add a bank expense where it wouldn't belong
+
+### F08. WPF: Lock Payment Mode by Tab Context
+- As a user, I want the expense form opened from the Expense tab to always be in bank-payment mode, with no toggle to switch to card, so that I can't accidentally add a card charge where it wouldn't belong
+- As a user, I want the expense form opened from the Credit Card tab to always be in card-payment mode, with no toggle to switch to bank, so that I can't accidentally add a bank expense where it wouldn't belong
+
 ## 6. Functionalities
 
 ### F01. Exclude Unpaid Card Charges from Expense List
@@ -161,6 +169,32 @@ This feature adds a second, identical rendering of the existing Cards grid insid
 - User edits or deletes a row: same form/confirmation behavior as the WPF Expense tab.
 - Marking a statement paid removes its expenses from this list without a manual refresh, matching F03's existing cross-grid sync.
 
+### F07. Web: Lock Payment Mode by Tab Context
+
+**Capabilities:**
+- `ExpenseForm`'s payment-mode radio toggle ("Pay immediately" / "Charge to card") is removed entirely. The component always renders exactly one field group — bank (Payment Source + Round-Up, when eligible) or card (Card) — based on its `paymentMode` prop; the prop is no longer user-changeable from within the form (the `onModeChange` prop is removed).
+- `useMonthly`'s `showCreateForm` takes a required `mode: 'bank' | 'card'` argument. The Expense tab's "New Expense" button calls it with `'bank'`; the Credit Card tab's calls it with `'card'`. Opening the form resets the payment-source/card-tag/round-up fields to the correct defaults for that mode (the same reset logic previously triggered by toggling, now applied once at open, per mode).
+- Editing is unaffected in mechanism: payment mode is already derived from the expense's own `CardTag`/`PaymentSource` when the edit form opens, and — because F01 already excludes unpaid card charges from the Expense tab — the Expense tab only ever contains bank-paid/settled expenses and the Credit Card tab only ever contains unsettled card charges. Removing the toggle only stops offering a switch that could never have produced a valid combination for that tab.
+- `setCreatePaymentMode`, `setEditPaymentMode`, and the `SET_CREATE_MODE`/`SET_EDIT_MODE` reducer actions are removed — they existed only to serve the now-removed toggle and have no other caller.
+
+**Experience:**
+- User clicks "New Expense" on the Expense tab: the form opens with only the Payment Source field (and Round-Up, if the selected bank supports it) — no "Payment" toggle, no Card field.
+- User clicks "New Expense" on the Credit Card tab: the form opens with only the Card field — no "Payment" toggle, no Payment Source or Round-Up field.
+- User clicks Edit on a row in either tab: the form shows the same tab-appropriate single field group (or, for a settled expense on the Expense tab, the existing frozen-payment-fields note — unchanged).
+
+### F08. WPF: Lock Payment Mode by Tab Context
+
+**Capabilities:**
+- `ExpenseFormView.xaml`'s `RadioButton` payment-mode toggle ("Pay immediately" / "Charge to card") is removed entirely. The Card field grid and the Payment Source/Round-Up section remain, each still shown based on `IsCardPaymentMode`/`IsBankPaymentMode` — but that value is now fixed for the form's lifetime rather than user-togglable.
+- `MonthlyViewModel.ShowCreateExpenseFormCommand` becomes `RelayCommand<string>`, taking `"bank"` or `"card"` as its `CommandParameter`. The Expense tab's "New Expense" button (`ExpenseSectionView.xaml`) passes `"bank"`; the Credit Card tab's (`CreditCardExpensesView.xaml`) passes `"card"`. Opening the form sets `IsCardPaymentMode` and resets the payment-source/card-tag/round-up fields to the correct defaults for that mode, mirroring F07's reset logic.
+- Editing is unaffected in mechanism, for the same reason as F07: the Expense tab only ever contains bank-paid/settled expenses and the Credit Card tab only ever contains unsettled card charges (per F01), so the mode a row edits into was already fixed by which tab it came from.
+- `SetBankPaymentModeCommand` and `SetCardPaymentModeCommand` are removed — they existed only to serve the now-removed toggle and have no other caller.
+
+**Experience:**
+- User clicks "New Expense" on the Expense tab: the form opens with only the Payment Source field (and Round-Up, if eligible) — no "Payment" toggle, no Card field.
+- User clicks "New Expense" on the Credit Card tab: the form opens with only the Card field — no "Payment" toggle, no Payment Source or Round-Up field.
+- User clicks the edit button on a row in either tab: the form shows the same tab-appropriate single field group (or, for a settled expense, the existing frozen-payment-fields note — unchanged).
+
 ## 7. Out of Scope
 
 **Reporting and category totals**
@@ -178,6 +212,9 @@ This feature adds a second, identical rendering of the existing Cards grid insid
 **Credit card management**
 - Adding, editing, or removing credit cards. The fixed set of supported cards is unchanged.
 
+**Payment mode toggle**
+- Reintroducing a payment-mode switch in either expense form. F07/F08 make the mode permanently determined by which tab the form was opened from — this is not a configurable preference.
+
 ## 8. Dependency Graph
 
 ### Part 1: Dependency Table
@@ -190,12 +227,15 @@ This feature adds a second, identical rendering of the existing Cards grid insid
 | F04 | Backend: Expose Unpaid Card Charge Expenses | 1 | None |
 | F05 | Web: Show Unpaid Card Expenses in Credit Card Tab | 1 | F04 |
 | F06 | WPF: Show Unpaid Card Expenses in Credit Card Tab | 1 | F04 |
+| F07 | Web: Lock Payment Mode by Tab Context | 2 | F05 |
+| F08 | WPF: Lock Payment Mode by Tab Context | 2 | F06 |
 
 ### Execution Waves
 Features within the same wave can be built in parallel. A wave starts only after every feature in earlier waves is complete.
 
 - **Wave 1**: F01, F02, F03, F04
 - **Wave 2**: F05, F06
+- **Wave 3**: F07, F08
 
 ### Priority levels
 - **1** = Essential — product does not work without it
@@ -210,6 +250,8 @@ graph TD
   F04[Backend Unpaid Card Expenses]
   F04 --> F05[Web Card Expense List]
   F04 --> F06[WPF Card Expense List]
+  F05 --> F07[Web Lock Payment Mode]
+  F06 --> F08[WPF Lock Payment Mode]
 ```
 
 ## 9. Acceptance Criteria
@@ -253,7 +295,22 @@ graph TD
 - [x] Deleting a row removes it from the list and updates the per-card totals grid above.
 - [ ] After a statement is marked paid, its expenses disappear from this list without a manual refresh.
 
+### F07. Web: Lock Payment Mode by Tab Context
+- [ ] Opening "New Expense" from the Expense tab shows the create form with no payment-mode toggle and only the bank Payment Source field (plus Round-Up when the selected bank is eligible).
+- [ ] Opening "New Expense" from the Credit Card tab shows the create form with no payment-mode toggle and only the Card field.
+- [ ] Submitting a new expense from the Expense tab always sends a bank payment source and a null card tag.
+- [ ] Submitting a new expense from the Credit Card tab always sends a card tag and a null payment source.
+- [ ] Editing a non-settled expense from either tab shows the same tab-appropriate single field group, with no toggle.
+
+### F08. WPF: Lock Payment Mode by Tab Context
+- [ ] Opening "New Expense" from the Expense tab shows the create form with no payment-mode toggle and only the Payment Source field (plus Round-Up when the selected bank is eligible).
+- [ ] Opening "New Expense" from the Credit Card tab shows the create form with no payment-mode toggle and only the Card field.
+- [ ] Submitting a new expense from the Expense tab always sends a bank payment source and a null card tag.
+- [ ] Submitting a new expense from the Credit Card tab always sends a card tag and a null payment source.
+- [ ] Editing a non-settled expense from either tab shows the same tab-appropriate single field group, with no toggle.
+
 ### Cross-Feature Integration
 - [ ] No cross-feature integration criteria apply between F01, F02, and F03 (no Consumes/Provides declared in Section 6 for those three).
 - [x] Unsettled credit card charge expenses provided by F04 (date, description, value, category, card tag) are correctly received and rendered by the Web Credit Card tab's expense list (F05).
 - [x] Unsettled credit card charge expenses provided by F04 (date, description, value, category, card tag) are correctly received and rendered by the WPF Credit Card tab's expense list (F06).
+- [ ] No cross-feature integration criteria apply between F07/F08 and other features (no Consumes/Provides declared in Section 6 for either — they modify existing UI, not a data flow between features).
