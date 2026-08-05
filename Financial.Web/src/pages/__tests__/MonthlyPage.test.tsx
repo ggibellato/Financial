@@ -402,6 +402,23 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getAllByRole('button', { name: 'Unmark Paid' })).toHaveLength(2))
   })
 
+  it("marking a statement paid removes its expenses from the Credit Card tab's list", async () => {
+    markCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 })
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+
+    await waitFor(() => expect(screen.getByText('Uber')).toBeInTheDocument())
+    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'Trading212' } })
+
+    getUnpaidCardChargesByMonthMock.mockResolvedValue([])
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
+    await waitFor(() =>
+      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSource: 'Trading212' }),
+    )
+
+    await waitFor(() => expect(screen.queryByText('Uber')).not.toBeInTheDocument())
+  })
+
   it('shows only the Incoming tabs content after clicking Incoming', async () => {
     render(<MonthlyPage />)
 
