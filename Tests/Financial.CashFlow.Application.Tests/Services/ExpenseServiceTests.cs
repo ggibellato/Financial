@@ -235,6 +235,23 @@ public class ExpenseServiceTests
     }
 
     [Fact]
+    public async Task GetExpensesByMonth_OrdersByDateDescending()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new ExpenseService(repository);
+        await service.AddExpenseAsync(ToCreateDto(ValidCreateRequest() with { Date = new DateOnly(2026, 7, 10) }));
+        await service.AddExpenseAsync(ToCreateDto(ValidCreateRequest() with { Date = new DateOnly(2026, 7, 25) }));
+        await service.AddExpenseAsync(ToCreateDto(ValidCreateRequest() with { Date = new DateOnly(2026, 7, 1) }));
+
+        var result = service.GetExpensesByMonth(2026, 7);
+
+        result.Select(e => e.Date).Should().Equal(
+            new DateOnly(2026, 7, 25),
+            new DateOnly(2026, 7, 10),
+            new DateOnly(2026, 7, 1));
+    }
+
+    [Fact]
     public async Task GetCategoryTotalsByMonth_SumsValuesPerCategoryForThatMonth()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
