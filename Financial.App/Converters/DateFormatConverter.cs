@@ -17,7 +17,7 @@ public class DateFormatConverter : IValueConverter
             var format = parameter as string;
             if (string.IsNullOrWhiteSpace(format) || string.Equals(format, "d", StringComparison.OrdinalIgnoreCase))
             {
-                format = DateFormatHelper.GetPaddedShortDatePattern();
+                format = DateFormatHelper.DisplayDatePattern;
             }
             return dateTime.ToString(format, effectiveCulture);
         }
