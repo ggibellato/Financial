@@ -264,6 +264,107 @@ public class ExpenseEndpointsTests
     }
 
     [Fact]
+    public async Task GetExpensesByMonth_UnpaidCardCharge_IsExcludedFromResponse()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 10),
+            Description = "Card charge",
+            Value = 45m,
+            Category = "Mercado",
+            PaymentSource = null,
+            CardTag = "BarclaysPlatinumVisa8003"
+        });
+
+        var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
+        items.Should().NotContain(e => e.Description == "Card charge");
+    }
+
+    [Fact]
+    public async Task GetExpensesByMonth_BankPaidExpense_StillIncludedInResponse()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 10),
+            Description = "Bank expense",
+            Value = 20m,
+            Category = "Casa",
+            PaymentSource = "Chase",
+            CardTag = null
+        });
+
+        var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");
+
+        var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
+        items.Should().ContainSingle(e => e.Description == "Bank expense");
+    }
+
+    [Fact]
+    public async Task GetExpensesByMonth_AfterMarkStatementPaid_CardChargeReappears()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var created = await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 10),
+            Description = "Card charge",
+            Value = 45m,
+            Category = "Mercado",
+            PaymentSource = null,
+            CardTag = "BarclaysPlatinumVisa8003"
+        });
+        var createdExpense = await created.Content.ReadFromJsonAsync<ExpenseDTO>();
+        var statement = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
+
+        await client.PostAsJsonAsync(
+            $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
+            new MarkStatementPaidDTO { PaymentSource = "Trading212" });
+        var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");
+
+        var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
+        items.Should().ContainSingle(e => e.Id == createdExpense!.Id && e.PaymentStatus == "CreditCardSettled");
+    }
+
+    [Fact]
+    public async Task GetExpensesByMonth_AfterUnmarkStatementPaid_CardChargeIsExcludedAgain()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 10),
+            Description = "Card charge",
+            Value = 45m,
+            Category = "Mercado",
+            PaymentSource = null,
+            CardTag = "BarclaysPlatinumVisa8003"
+        });
+        var statement = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
+        await client.PostAsJsonAsync(
+            $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
+            new MarkStatementPaidDTO { PaymentSource = "Trading212" });
+
+        await client.PostAsync($"/api/v1/financial/card-statements/{statement.Id}/unmark-paid", null);
+        var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");
+
+        var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
+        items.Should().NotContain(e => e.Description == "Card charge");
+    }
+
+    private static async Task<CardStatementDTO> GetStatementAsync(HttpClient client, string card)
+    {
+        var statements = await client.GetFromJsonAsync<List<CardStatementDTO>>("/api/v1/financial/card-statements/2026/7");
+        return statements!.First(s => s.Card == card);
+    }
+
+    [Fact]
     public async Task GetCategoryTotalsByMonth_ReturnsSummedTotalsPerCategory()
     {
         await using var factory = new ApiTestFactory();
