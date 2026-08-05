@@ -42,7 +42,7 @@ public sealed class CardStatementService : ICardStatementService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
         }
 
-        return existingStatements.Select(ToDto).ToList();
+        return existingStatements.Select(s => ToDto(s)).ToList();
     }
 
     public async Task<CardStatementDTO> MarkStatementPaidAsync(Guid id, MarkStatementPaidDTO request)
@@ -63,6 +63,9 @@ public sealed class CardStatementService : ICardStatementService
 
         var settledAt = DateOnly.FromDateTime(DateTime.Today);
         var charges = GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardCharge);
+        var warning = charges.Count == 0
+            ? $"No credit card charges matched this statement's invoice period ({statement.Year:D4}-{statement.Month:D2}); marked paid with 0 linked charges."
+            : null;
 
         statement.MarkPaid();
         foreach (var charge in charges)
@@ -85,7 +88,7 @@ public sealed class CardStatementService : ICardStatementService
             throw;
         }
 
-        return ToDto(statement);
+        return ToDto(statement, warning);
     }
 
     public async Task<CardStatementDTO> UnmarkStatementPaidAsync(Guid id)
@@ -133,19 +136,20 @@ public sealed class CardStatementService : ICardStatementService
     private List<Expense> GetStatementExpenses(CardStatement statement, ExpensePaymentStatus status) =>
         _repository.GetExpenses()
             .Where(e => e.CardTag == statement.Card
-                && e.ChargeDate is not null
-                && e.ChargeDate.Value.Year == statement.Year
-                && e.ChargeDate.Value.Month == statement.Month
+                && e.InvoiceDate is not null
+                && e.InvoiceDate.Value.Year == statement.Year
+                && e.InvoiceDate.Value.Month == statement.Month
                 && e.PaymentStatus == status)
             .ToList();
 
-    private CardStatementDTO ToDto(CardStatement statement) => new()
+    private CardStatementDTO ToDto(CardStatement statement, string? warning = null) => new()
     {
         Id = statement.Id,
         Card = statement.Card.ToString(),
         Year = statement.Year,
         Month = statement.Month,
         IsPaid = statement.IsPaid,
-        OutstandingTotal = GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardCharge).Sum(e => e.Value)
+        OutstandingTotal = GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardCharge).Sum(e => e.Value),
+        Warning = warning
     };
 }
