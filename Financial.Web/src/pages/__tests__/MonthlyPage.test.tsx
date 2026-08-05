@@ -309,6 +309,44 @@ describe('MonthlyPage', () => {
     expect(screen.getByText('Extras')).toBeInTheDocument()
   })
 
+  it("an expense's position in the Credit Card tab list is unchanged immediately before and after its invoice is marked paid", async () => {
+    // The actual ordering fix lives server-side (ExpenseService sorts by ChargeDate, not Date);
+    // this test guards against the frontend introducing its own conflicting client-side sort.
+    const chargedFirst = { ...UNPAID_CARD_CHARGES[0], id: 'e10', description: 'Charged First', cardTag: 'BaAmex', chargeDate: '2026-07-05', date: '2026-07-05' }
+    const chargedSecond = { ...UNPAID_CARD_CHARGES[0], id: 'e11', description: 'Charged Second', cardTag: 'BaAmex', chargeDate: '2026-07-20', date: '2026-07-20' }
+    getUnpaidCardChargesByMonthMock.mockResolvedValue([chargedSecond, chargedFirst])
+    markCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 })
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+
+    await waitFor(() => expect(screen.getByText('Charged First')).toBeInTheDocument())
+    const rowsBefore = screen.getAllByRole('row')
+    const secondIndexBefore = rowsBefore.findIndex((r) => r.textContent?.includes('Charged Second'))
+    const firstIndexBefore = rowsBefore.findIndex((r) => r.textContent?.includes('Charged First'))
+    expect(secondIndexBefore).toBeLessThan(firstIndexBefore)
+
+    // Mark the BaAmex statement paid: both charges settle and move to the general Expense
+    // tab's list. The (now-fixed) server still orders them by ChargeDate, so Second stays
+    // ahead of First - exactly the relative position they held before settlement.
+    getUnpaidCardChargesByMonthMock.mockResolvedValue([])
+    getExpensesByMonthMock.mockResolvedValue([
+      { ...chargedSecond, paymentSource: 'Trading212', date: '2026-08-03', paymentStatus: 'CreditCardSettled' },
+      { ...chargedFirst, paymentSource: 'Trading212', date: '2026-08-03', paymentStatus: 'CreditCardSettled' },
+    ])
+    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'Trading212' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
+    await waitFor(() =>
+      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSource: 'Trading212' }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    await waitFor(() => expect(screen.getByText('Charged Second')).toBeInTheDocument())
+    const rowsAfter = screen.getAllByRole('row')
+    const secondIndexAfter = rowsAfter.findIndex((r) => r.textContent?.includes('Charged Second'))
+    const firstIndexAfter = rowsAfter.findIndex((r) => r.textContent?.includes('Charged First'))
+    expect(secondIndexAfter).toBeLessThan(firstIndexAfter)
+  })
+
   it("editing a row from the Credit Card tab's list opens the shared edit form and saves", async () => {
     updateExpenseMock.mockResolvedValue({ ...UNPAID_CARD_CHARGES[0], value: 20 })
     render(<MonthlyPage />)

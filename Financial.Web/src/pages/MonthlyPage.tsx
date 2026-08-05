@@ -41,6 +41,7 @@ const CREATE_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, CreateFormField> = {
   category: 'createCategory',
   paymentSource: 'createPaymentSource',
   cardTag: 'createCardTag',
+  invoiceDate: 'createInvoiceDate',
   roundUpAmount: 'createRoundUpAmount',
 }
 
@@ -51,6 +52,7 @@ const EDIT_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, EditField> = {
   category: 'editCategory',
   paymentSource: 'editPaymentSource',
   cardTag: 'editCardTag',
+  invoiceDate: 'editInvoiceDate',
   roundUpAmount: 'editRoundUpAmount',
 }
 
@@ -96,6 +98,7 @@ export default function MonthlyPage() {
     createCategory,
     createPaymentSource,
     createCardTag,
+    createInvoiceDate,
     createRoundUpAmount,
     createPaymentMode,
     isCreating,
@@ -111,6 +114,7 @@ export default function MonthlyPage() {
     editCategory,
     editPaymentSource,
     editCardTag,
+    editInvoiceDate,
     editRoundUpAmount,
     editPaymentMode,
     editIsSettled,
@@ -183,6 +187,7 @@ export default function MonthlyPage() {
       category={isEditing ? editCategory : createCategory}
       paymentSource={isEditing ? editPaymentSource : createPaymentSource}
       cardTag={isEditing ? editCardTag : createCardTag}
+      invoiceDate={isEditing ? editInvoiceDate : createInvoiceDate}
       roundUpAmount={isEditing ? editRoundUpAmount : createRoundUpAmount}
       paymentMode={isEditing ? editPaymentMode : createPaymentMode}
       banks={banks}
