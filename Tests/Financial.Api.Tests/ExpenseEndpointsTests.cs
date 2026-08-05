@@ -30,7 +30,6 @@ public class ExpenseEndpointsTests
         expense!.Description.Should().Be("Weekly groceries");
         expense.Category.Should().Be("Mercado");
         expense.PaymentStatus.Should().Be("ImmediatePayment");
-        expense.SettledAt.Should().BeNull();
     }
 
     [Fact]
@@ -54,7 +53,6 @@ public class ExpenseEndpointsTests
         var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
         expense!.PaymentSource.Should().BeNull();
         expense.CardTag.Should().Be("ChaseMaster4023");
-        expense.SettledAt.Should().BeNull();
         expense.PaymentStatus.Should().Be("CreditCardCharge");
     }
 

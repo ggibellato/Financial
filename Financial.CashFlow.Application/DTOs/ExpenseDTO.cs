@@ -26,9 +26,6 @@ public sealed class ExpenseDTO
     /// <summary>Optional credit-card tag name.</summary>
     public string? CardTag { get; init; }
 
-    /// <summary>Date the expense's card statement was settled. Null unless settled.</summary>
-    public DateOnly? SettledAt { get; init; }
-
     /// <summary>Computed payment status derived from the payment source and card tag.</summary>
     public required string PaymentStatus { get; init; }
 

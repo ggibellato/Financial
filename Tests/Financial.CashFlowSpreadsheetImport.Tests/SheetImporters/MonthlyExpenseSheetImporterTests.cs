@@ -241,7 +241,6 @@ public class MonthlyExpenseSheetImporterTests
 
         expenses.Should().HaveCount(6);
         expenses.Should().NotContain(e => e.PaymentSource != null && e.CardTag != null);
-        expenses.Should().OnlyContain(e => e.SettledAt == null);
         expenses.Should().OnlyContain(e =>
             e.PaymentStatus == ExpensePaymentStatus.ImmediatePayment
             || e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge);

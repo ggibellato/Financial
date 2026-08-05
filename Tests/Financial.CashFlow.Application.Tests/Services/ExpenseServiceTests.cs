@@ -33,7 +33,6 @@ public class ExpenseServiceTests
             result.Category.Should().Be("Mercado");
             result.PaymentSource.Should().Be("Barclays");
             result.CardTag.Should().BeNull();
-            result.SettledAt.Should().BeNull();
             result.PaymentStatus.Should().Be("ImmediatePayment");
             repository.Expenses.Should().ContainSingle();
             repository.SaveChangesCallCount.Should().Be(1);
@@ -53,7 +52,6 @@ public class ExpenseServiceTests
         {
             result.CardTag.Should().Be("BarclaysPlatinumVisa8003");
             result.PaymentSource.Should().BeNull();
-            result.SettledAt.Should().BeNull();
             result.PaymentStatus.Should().Be("CreditCardCharge");
         }
     }

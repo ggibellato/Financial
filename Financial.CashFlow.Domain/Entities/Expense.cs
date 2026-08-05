@@ -16,7 +16,8 @@ public class Expense
     public Category Category { get; private set; }
     public string? PaymentSource { get; private set; }
     public CreditCard? CardTag { get; private set; }
-    public DateOnly? SettledAt { get; private set; }
+    public DateOnly? ChargeDate { get; private set; }
+    public DateOnly? InvoiceDate { get; private set; }
     public decimal? RoundUpAmount { get; private set; }
 
     public ExpensePaymentStatus PaymentStatus =>
@@ -36,7 +37,8 @@ public class Expense
         decimal value,
         Category category,
         string? paymentSource,
-        CreditCard? cardTag)
+        CreditCard? cardTag,
+        DateOnly? invoiceDate = null)
     {
         ValidatePaymentShape(paymentSource, cardTag);
 
@@ -48,7 +50,9 @@ public class Expense
             Value = value,
             Category = category,
             PaymentSource = paymentSource,
-            CardTag = cardTag
+            CardTag = cardTag,
+            ChargeDate = cardTag is not null ? date : null,
+            InvoiceDate = cardTag is not null ? FirstOfMonth(invoiceDate ?? date) : null
         };
     }
 
@@ -81,7 +85,7 @@ public class Expense
         Category = category;
     }
 
-    public void Settle(string paymentSource, DateOnly settledAt)
+    public void Settle(string paymentSource, DateOnly paymentDate)
     {
         if (PaymentStatus != ExpensePaymentStatus.CreditCardCharge)
         {
@@ -89,7 +93,7 @@ public class Expense
         }
 
         PaymentSource = paymentSource;
-        SettledAt = settledAt;
+        Date = paymentDate;
     }
 
     public void Unsettle()
@@ -100,7 +104,18 @@ public class Expense
         }
 
         PaymentSource = null;
-        SettledAt = null;
+        Date = ChargeDate!.Value;
+    }
+
+    public void SetInvoiceDate(DateOnly invoiceDate)
+    {
+        if (PaymentStatus != ExpensePaymentStatus.CreditCardCharge)
+        {
+            throw new ArgumentException(
+                "Invoice date can only be changed on an unsettled credit card charge.");
+        }
+
+        InvoiceDate = FirstOfMonth(invoiceDate);
     }
 
     public void SetRoundUpAmount(decimal? amount)
@@ -130,6 +145,8 @@ public class Expense
 
         RoundUpAmount = amount;
     }
+
+    private static DateOnly FirstOfMonth(DateOnly date) => new(date.Year, date.Month, 1);
 
     private static void ValidatePaymentShape(string? paymentSource, CreditCard? cardTag)
     {

@@ -99,7 +99,7 @@ public sealed class CardStatementService : ICardStatementService
 
         var settledExpenses = GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardSettled);
         var settlements = settledExpenses
-            .Select(e => (Expense: e, PaymentSource: e.PaymentSource!, SettledAt: e.SettledAt!.Value))
+            .Select(e => (Expense: e, PaymentSource: e.PaymentSource!, PaymentDate: e.Date))
             .ToList();
 
         statement.MarkUnpaid();
@@ -115,9 +115,9 @@ public sealed class CardStatementService : ICardStatementService
         catch
         {
             statement.MarkPaid();
-            foreach (var (expense, paymentSource, settledAt) in settlements)
+            foreach (var (expense, paymentSource, paymentDate) in settlements)
             {
-                expense.Settle(paymentSource, settledAt);
+                expense.Settle(paymentSource, paymentDate);
             }
 
             throw;
@@ -133,8 +133,9 @@ public sealed class CardStatementService : ICardStatementService
     private List<Expense> GetStatementExpenses(CardStatement statement, ExpensePaymentStatus status) =>
         _repository.GetExpenses()
             .Where(e => e.CardTag == statement.Card
-                && e.Date.Year == statement.Year
-                && e.Date.Month == statement.Month
+                && e.ChargeDate is not null
+                && e.ChargeDate.Value.Year == statement.Year
+                && e.ChargeDate.Value.Month == statement.Month
                 && e.PaymentStatus == status)
             .ToList();
 
