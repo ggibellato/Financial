@@ -4,6 +4,7 @@ using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.M
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Banks;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.BankOpeningBalance;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ExpenseChargeDate;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
@@ -32,10 +33,15 @@ if (!File.Exists(workbookPath))
     return 1;
 }
 
+string? legacyRawJson = null;
 if (File.Exists(outputPath))
 {
     var backupPath = MigrationBackup.Create(outputPath);
     Console.WriteLine($"Backed up data file to '{backupPath}'.");
+    // Captured before any typed load happens: this raw text is the only place a pre-existing
+    // settled expense's SettledAt value can still be read from, since Expense no longer
+    // declares that property and a normal deserialization silently drops it.
+    legacyRawJson = File.ReadAllText(backupPath);
 }
 
 var report = new ImportReport();
@@ -87,6 +93,7 @@ else
 var bankSummary = BankMigrator.Migrate(data);
 var bankOpeningBalanceSummary = BankOpeningBalanceMigrator.Migrate(data, today);
 var incomeSummary = IncomeMigrator.Migrate(data, workbook);
+var expenseChargeDateSummary = ExpenseChargeDateMigrator.Migrate(data, legacyRawJson);
 // Re-run (seeding is idempotent) so the reported summary's snapshot audit reflects the
 // snapshots ImportResumoSheets just added above, not the empty pre-import state.
 var investmentAccountSummary = InvestmentAccountMigrator.Migrate(data);
@@ -100,6 +107,7 @@ Console.WriteLine(report.Render());
 Console.WriteLine(bankSummary.Render());
 Console.WriteLine(bankOpeningBalanceSummary.Render());
 Console.WriteLine(incomeSummary.Render());
+Console.WriteLine(expenseChargeDateSummary.Render());
 Console.WriteLine(investmentAccountSummary.Render());
 return 0;
 

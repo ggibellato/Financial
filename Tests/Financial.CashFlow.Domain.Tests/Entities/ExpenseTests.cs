@@ -20,6 +20,16 @@ public class ExpenseTests
         return expense;
     }
 
+    // Expense.Create always populates ChargeDate for a card expense; a pre-F01 legacy record
+    // (ChargeDate/InvoiceDate both null) can no longer be produced through the public API, so
+    // this simulates that shape the same way deserialization of old data would.
+    private static Expense SimulateLegacyCardExpense(Expense expense)
+    {
+        typeof(Expense).GetProperty(nameof(Expense.ChargeDate))!.SetMethod!.Invoke(expense, new object?[] { null });
+        typeof(Expense).GetProperty(nameof(Expense.InvoiceDate))!.SetMethod!.Invoke(expense, new object?[] { null });
+        return expense;
+    }
+
     [Fact]
     public void Create_AssignsAllFieldsAndANewId()
     {
@@ -294,6 +304,70 @@ public class ExpenseTests
         var act = () => expense.SetInvoiceDate(new DateOnly(2026, 8, 1));
 
         act.Should().Throw<ArgumentException>().WithMessage("*unsettled credit card charge*");
+    }
+
+    [Fact]
+    public void MigrateLegacyDates_OnUnpaidCharge_SetsChargeDateAndInvoiceDate_LeavesDateUnchanged()
+    {
+        var expense = SimulateLegacyCardExpense(CreateCardCharge());
+        var originalDate = expense.Date;
+
+        expense.MigrateLegacyDates(chargeDate: originalDate, invoiceDate: new DateOnly(2026, 7, 1), settledDate: null);
+
+        using (new AssertionScope())
+        {
+            expense.ChargeDate.Should().Be(originalDate);
+            expense.InvoiceDate.Should().Be(new DateOnly(2026, 7, 1));
+            expense.Date.Should().Be(originalDate);
+        }
+    }
+
+    [Fact]
+    public void MigrateLegacyDates_OnSettledExpenseWithSettledDate_SetsAllThreeFields()
+    {
+        var expense = SimulateLegacyCardExpense(CreateCardCharge());
+        var originalChargeDate = expense.Date;
+        typeof(Expense).GetProperty(nameof(Expense.PaymentSource))!.SetMethod!.Invoke(expense, new object?[] { "Barclays" });
+        var recoveredSettledAt = new DateOnly(2026, 8, 3);
+
+        expense.MigrateLegacyDates(chargeDate: originalChargeDate, invoiceDate: new DateOnly(2026, 8, 1), settledDate: recoveredSettledAt);
+
+        using (new AssertionScope())
+        {
+            expense.ChargeDate.Should().Be(originalChargeDate);
+            expense.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
+            expense.Date.Should().Be(recoveredSettledAt);
+        }
+    }
+
+    [Fact]
+    public void MigrateLegacyDates_OnBankExpense_Throws()
+    {
+        var expense = CreateImmediateExpense();
+
+        var act = () => expense.MigrateLegacyDates(expense.Date, expense.Date, null);
+
+        act.Should().Throw<ArgumentException>().WithMessage("*credit card expense*");
+    }
+
+    [Fact]
+    public void MigrateLegacyDates_AlreadyMigrated_Throws()
+    {
+        var expense = CreateCardCharge();
+
+        var act = () => expense.MigrateLegacyDates(expense.Date, expense.Date, null);
+
+        act.Should().Throw<ArgumentException>().WithMessage("*already been migrated*");
+    }
+
+    [Fact]
+    public void MigrateLegacyDates_SettledDateOnUnpaidCharge_Throws()
+    {
+        var expense = SimulateLegacyCardExpense(CreateCardCharge());
+
+        var act = () => expense.MigrateLegacyDates(expense.Date, expense.Date, new DateOnly(2026, 8, 3));
+
+        act.Should().Throw<ArgumentException>().WithMessage("*already-settled expense*");
     }
 
     [Theory]
