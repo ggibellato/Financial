@@ -270,10 +270,10 @@ graph TD
 - [x] A partial failure during settlement rolls back all changes for that statement; the statement remains unpaid.
 
 ### F03. Invoice-Aware Category Totals
-- [ ] An unpaid credit card expense counts toward category totals in its `InvoiceDate`'s year/month, not its `ChargeDate`'s month.
-- [ ] A settled credit card expense counts toward category totals in the month/year of its (post-settlement) `Date`.
-- [ ] A bank expense counts toward category totals in the month/year of its `Date`, unchanged from today.
-- [ ] No expense is counted in more than one month/year in the same category total run.
+- [x] An unpaid credit card expense counts toward category totals in its `InvoiceDate`'s year/month, not its `ChargeDate`'s month.
+- [x] A settled credit card expense counts toward category totals in the month/year of its (post-settlement) `Date`.
+- [x] A bank expense counts toward category totals in the month/year of its `Date`, unchanged from today.
+- [x] No expense is counted in more than one month/year in the same category total run.
 
 ### F04. Backend Exposure of Charge/Invoice Fields
 - [ ] Reading any credit card expense through the API/data contract returns non-null `ChargeDate` and `InvoiceDate`.
@@ -312,7 +312,7 @@ graph TD
 
 ### Cross-Feature Integration
 - [x] `ChargeDate`/`InvoiceDate`/`Settle()`/`Unsettle()` from F01 are correctly used by F02's statement matching (charges settle by invoice period, not charge date).
-- [ ] F01's fields are correctly consumed by F03's category-total grouping (unpaid vs. paid expenses grouped by the correct field).
+- [x] F01's fields are correctly consumed by F03's category-total grouping (unpaid vs. paid expenses grouped by the correct field).
 - [ ] F01's fields are correctly exposed end-to-end through F04's data contract and displayed/edited in F05 (Web) and F06 (WPF).
 - [ ] F02's corrected invoice-period matching is reflected in what F05 and F06 display as "this invoice's charges" in the Card tab.
 - [ ] F01's field definitions are correctly applied by F07's migration to 100% of pre-existing credit card expenses.
