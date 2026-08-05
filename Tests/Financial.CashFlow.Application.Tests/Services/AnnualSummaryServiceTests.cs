@@ -82,6 +82,87 @@ public class AnnualSummaryServiceTests
     }
 
     [Fact]
+    public void GetCategoryTotalsForYear_UnpaidCardCharge_CountsTowardInvoiceMonthNotChargeMonth()
+    {
+        var repository = CreateRepository();
+        repository.Expenses.Add(Expense.Create(
+            new DateOnly(2026, 7, 29), "Cutoff charge", 40m, Category.Mercado, null,
+            CreditCard.BarclaysPlatinumVisa8003, new DateOnly(2026, 8, 1)));
+        var service = new AnnualSummaryService(repository);
+
+        var result = service.GetCategoryTotalsForYear(2026);
+
+        var mercado = result.Single(c => c.Category == "Mercado");
+        using (new AssertionScope())
+        {
+            mercado.MonthlyTotals[6].Should().Be(0m);
+            mercado.MonthlyTotals[7].Should().Be(40m);
+        }
+    }
+
+    [Fact]
+    public void GetCategoryTotalsForYear_SettledCardCharge_CountsTowardPostSettlementDateMonth()
+    {
+        var repository = CreateRepository();
+        var settled = Expense.Create(new DateOnly(2026, 7, 10), "Settled charge", 40m, Category.Mercado, null, CreditCard.BarclaysPlatinumVisa8003);
+        settled.Settle("Trading212", new DateOnly(2026, 8, 3));
+        repository.Expenses.Add(settled);
+        var service = new AnnualSummaryService(repository);
+
+        var result = service.GetCategoryTotalsForYear(2026);
+
+        var mercado = result.Single(c => c.Category == "Mercado");
+        using (new AssertionScope())
+        {
+            mercado.MonthlyTotals[6].Should().Be(0m);
+            mercado.MonthlyTotals[7].Should().Be(40m);
+        }
+    }
+
+    [Fact]
+    public void GetCategoryTotalsForYear_MixOfUnpaidSettledAndBank_NoExpenseCountedInMoreThanOneMonth()
+    {
+        var repository = CreateRepository();
+        repository.Expenses.Add(Expense.Create(
+            new DateOnly(2026, 7, 29), "Unpaid cutoff", 10m, Category.Mercado, null,
+            CreditCard.BarclaysPlatinumVisa8003, new DateOnly(2026, 8, 1)));
+        var settled = Expense.Create(new DateOnly(2026, 7, 12), "Settled", 20m, Category.Mercado, null, CreditCard.BaAmex);
+        settled.Settle("Trading212", new DateOnly(2026, 7, 20));
+        repository.Expenses.Add(settled);
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 15), "Bank", 30m, Category.Mercado, "Chase", null));
+        var service = new AnnualSummaryService(repository);
+
+        var result = service.GetCategoryTotalsForYear(2026);
+
+        var mercado = result.Single(c => c.Category == "Mercado");
+        using (new AssertionScope())
+        {
+            mercado.MonthlyTotals[6].Should().Be(50m);
+            mercado.MonthlyTotals[7].Should().Be(10m);
+            mercado.AnnualTotal.Should().Be(60m);
+        }
+    }
+
+    [Fact]
+    public void GetCategoryTotalsForYear_DecemberChargeInvoicedInJanuary_CountsTowardFollowingYearNotChargeYear()
+    {
+        var repository = CreateRepository();
+        repository.Expenses.Add(Expense.Create(
+            new DateOnly(2025, 12, 30), "Year-end cutoff", 40m, Category.Mercado, null,
+            CreditCard.BarclaysPlatinumVisa8003, new DateOnly(2026, 1, 1)));
+        var service = new AnnualSummaryService(repository);
+
+        var resultFor2025 = service.GetCategoryTotalsForYear(2025);
+        var resultFor2026 = service.GetCategoryTotalsForYear(2026);
+
+        using (new AssertionScope())
+        {
+            resultFor2025.Single(c => c.Category == "Mercado").AnnualTotal.Should().Be(0m);
+            resultFor2026.Single(c => c.Category == "Mercado").MonthlyTotals[0].Should().Be(40m);
+        }
+    }
+
+    [Fact]
     public void GetInvestmentAnnualResultForYear_CurrentYear_ReturnsAllElevenActiveAccounts()
     {
         var repository = CreateRepository();

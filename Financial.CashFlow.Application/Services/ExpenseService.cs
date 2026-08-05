@@ -76,7 +76,7 @@ public sealed class ExpenseService : IExpenseService
 
     public IReadOnlyList<CategoryTotalDTO> GetCategoryTotalsByMonth(int year, int month) =>
         _repository.GetExpenses()
-            .Where(e => OriginationDate(e).Year == year && OriginationDate(e).Month == month)
+            .Where(e => CategoryTotalDate(e).Year == year && CategoryTotalDate(e).Month == month)
             .GroupBy(e => e.Category)
             .Select(g => new CategoryTotalDTO
             {
@@ -86,6 +86,14 @@ public sealed class ExpenseService : IExpenseService
             .ToList();
 
     private static DateOnly OriginationDate(Expense expense) => expense.ChargeDate ?? expense.Date;
+
+    /// <summary>
+    /// The month/year an expense's value counts toward in category-total reporting: an unpaid
+    /// credit card charge counts toward its assigned invoice period, while a settled charge or a
+    /// bank expense counts toward its (post-settlement, for a charge) <see cref="Expense.Date"/>.
+    /// </summary>
+    private static DateOnly CategoryTotalDate(Expense expense) =>
+        expense.PaymentStatus == ExpensePaymentStatus.CreditCardCharge ? expense.InvoiceDate!.Value : expense.Date;
 
     private Expense FindExpenseOrThrow(Guid id) =>
         _repository.GetExpenses().FirstOrDefault(e => e.Id == id)

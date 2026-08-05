@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -370,6 +371,71 @@ public class ExpenseServiceTests
         var result = service.GetCategoryTotalsByMonth(2026, 7);
 
         result.Should().ContainSingle(t => t.Category == "Reserva" && t.TotalValue == 70m);
+    }
+
+    [Fact]
+    public void GetCategoryTotalsByMonth_UnpaidCardCharge_CountsTowardInvoiceMonthNotChargeMonth()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var charge = Expense.Create(
+            new DateOnly(2026, 7, 29), "Cutoff charge", 40m, Category.Mercado, null,
+            CreditCard.BarclaysPlatinumVisa8003, new DateOnly(2026, 8, 1));
+        repository.Expenses.Add(charge);
+        var service = new ExpenseService(repository);
+
+        var julyResult = service.GetCategoryTotalsByMonth(2026, 7);
+        var augustResult = service.GetCategoryTotalsByMonth(2026, 8);
+
+        using (new AssertionScope())
+        {
+            julyResult.Should().BeEmpty();
+            augustResult.Should().ContainSingle(t => t.Category == "Mercado" && t.TotalValue == 40m);
+        }
+    }
+
+    [Fact]
+    public void GetCategoryTotalsByMonth_SettledCardCharge_CountsTowardPostSettlementDateMonth()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var charge = Expense.Create(new DateOnly(2026, 7, 10), "Settled charge", 40m, Category.Mercado, null, CreditCard.BarclaysPlatinumVisa8003);
+        charge.Settle("Trading212", new DateOnly(2026, 8, 3));
+        repository.Expenses.Add(charge);
+        var service = new ExpenseService(repository);
+
+        var julyResult = service.GetCategoryTotalsByMonth(2026, 7);
+        var augustResult = service.GetCategoryTotalsByMonth(2026, 8);
+
+        using (new AssertionScope())
+        {
+            julyResult.Should().BeEmpty();
+            augustResult.Should().ContainSingle(t => t.Category == "Mercado" && t.TotalValue == 40m);
+        }
+    }
+
+    [Fact]
+    public void GetCategoryTotalsByMonth_MixOfUnpaidSettledAndBank_NoExpenseCountedInMoreThanOneMonth()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var unpaidCutoff = Expense.Create(
+            new DateOnly(2026, 7, 29), "Unpaid cutoff", 10m, Category.Mercado, null,
+            CreditCard.BarclaysPlatinumVisa8003, new DateOnly(2026, 8, 1));
+        var settled = Expense.Create(new DateOnly(2026, 7, 12), "Settled", 20m, Category.Mercado, null, CreditCard.BaAmex);
+        settled.Settle("Trading212", new DateOnly(2026, 7, 20));
+        var bank = Expense.Create(new DateOnly(2026, 7, 15), "Bank", 30m, Category.Mercado, "Chase", null);
+        repository.Expenses.Add(unpaidCutoff);
+        repository.Expenses.Add(settled);
+        repository.Expenses.Add(bank);
+        var service = new ExpenseService(repository);
+
+        var julyTotal = service.GetCategoryTotalsByMonth(2026, 7).Sum(t => t.TotalValue);
+        var augustTotal = service.GetCategoryTotalsByMonth(2026, 8).Sum(t => t.TotalValue);
+
+        using (new AssertionScope())
+        {
+            julyTotal.Should().Be(50m);
+            augustTotal.Should().Be(10m);
+            (julyTotal + augustTotal).Should().Be(60m);
+        }
     }
 
     [Fact]
