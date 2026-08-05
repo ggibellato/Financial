@@ -98,7 +98,6 @@ export default function MonthlyPage() {
     createCardTag,
     createRoundUpAmount,
     createPaymentMode,
-    setCreatePaymentMode,
     isCreating,
     createError,
     showCreateForm,
@@ -115,7 +114,6 @@ export default function MonthlyPage() {
     editRoundUpAmount,
     editPaymentMode,
     editIsSettled,
-    setEditPaymentMode,
     isSaving,
     saveError,
     setEditField,
@@ -196,7 +194,6 @@ export default function MonthlyPage() {
           ? setEditField(EDIT_FIELD_BY_FORM_FIELD[field], value)
           : setCreateField(CREATE_FIELD_BY_FORM_FIELD[field], value)
       }
-      onModeChange={isEditing ? setEditPaymentMode : setCreatePaymentMode}
       onSave={isEditing ? saveEdit : submitCreate}
       onCancel={isEditing ? cancelEdit : cancelCreateForm}
     />
@@ -280,7 +277,7 @@ export default function MonthlyPage() {
                 expenses={expenses}
                 onEdit={showEditForm}
                 onDelete={deleteExpense}
-                onNewExpense={showCreateForm}
+                onNewExpense={() => showCreateForm('bank')}
               />
             </>
           )}
@@ -303,7 +300,7 @@ export default function MonthlyPage() {
                 expenses={unpaidCardCharges}
                 onEdit={showEditForm}
                 onDelete={deleteExpense}
-                onNewExpense={showCreateForm}
+                onNewExpense={() => showCreateForm('card')}
               />
             </>
           )}
