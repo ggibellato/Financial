@@ -36,7 +36,8 @@ public class ExpenseTests
             expense.Category.Should().Be(Category.Mercado);
             expense.PaymentSource.Should().Be("Barclays");
             expense.CardTag.Should().BeNull();
-            expense.SettledAt.Should().BeNull();
+            expense.ChargeDate.Should().BeNull();
+            expense.InvoiceDate.Should().BeNull();
         }
     }
 
@@ -64,7 +65,50 @@ public class ExpenseTests
 
         expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
         expense.PaymentSource.Should().BeNull();
-        expense.SettledAt.Should().BeNull();
+        expense.ChargeDate.Should().Be(expense.Date);
+        expense.InvoiceDate.Should().Be(new DateOnly(expense.Date.Year, expense.Date.Month, 1));
+    }
+
+    [Fact]
+    public void Create_ForCreditCardExpense_SetsChargeDateEqualToDate()
+    {
+        var date = new DateOnly(2026, 7, 15);
+
+        var expense = Expense.Create(date, "Charge", 10m, Category.Extras, null, CreditCard.ChaseMaster4023);
+
+        expense.ChargeDate.Should().Be(date);
+    }
+
+    [Fact]
+    public void Create_ForCreditCardExpense_DefaultsInvoiceDateToFirstOfChargeMonth()
+    {
+        var date = new DateOnly(2026, 7, 15);
+
+        var expense = Expense.Create(date, "Charge", 10m, Category.Extras, null, CreditCard.ChaseMaster4023);
+
+        expense.InvoiceDate.Should().Be(new DateOnly(2026, 7, 1));
+    }
+
+    [Fact]
+    public void Create_ForCreditCardExpense_WithExplicitInvoiceDateOverride_NormalizesToFirstOfThatMonth()
+    {
+        var date = new DateOnly(2026, 7, 28);
+        var overrideInvoiceDate = new DateOnly(2026, 8, 17);
+
+        var expense = Expense.Create(
+            date, "Charge near cutoff", 10m, Category.Extras, null, CreditCard.ChaseMaster4023, overrideInvoiceDate);
+
+        expense.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
+        expense.ChargeDate.Should().Be(date);
+    }
+
+    [Fact]
+    public void Create_ForBankExpense_ChargeDateAndInvoiceDateAreNull()
+    {
+        var expense = CreateImmediateExpense();
+
+        expense.ChargeDate.Should().BeNull();
+        expense.InvoiceDate.Should().BeNull();
     }
 
     [Fact]
@@ -137,7 +181,7 @@ public class ExpenseTests
     {
         var expense = CreateSettledExpense();
 
-        expense.UpdateDetails(new DateOnly(2026, 7, 2), "Renamed", 25m, Category.Mercado, expense.PaymentSource, expense.CardTag);
+        expense.UpdateDetails(expense.Date, "Renamed", 25m, Category.Mercado, expense.PaymentSource, expense.CardTag);
 
         using (new AssertionScope())
         {
@@ -145,7 +189,7 @@ public class ExpenseTests
             expense.Value.Should().Be(25m);
             expense.PaymentSource.Should().Be("Barclays");
             expense.CardTag.Should().Be(CreditCard.ChaseMaster4023);
-            expense.SettledAt.Should().Be(new DateOnly(2026, 7, 31));
+            expense.Date.Should().Be(new DateOnly(2026, 7, 31));
             expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
         }
     }
@@ -161,16 +205,23 @@ public class ExpenseTests
     }
 
     [Fact]
-    public void Settle_OnCardCharge_SetsPaymentSourceAndSettledAt()
+    public void Settle_OnCardCharge_SetsDateToPaymentDate_LeavesChargeDateAndInvoiceDateUnchanged()
     {
         var expense = CreateCardCharge();
-        var settledAt = new DateOnly(2026, 7, 24);
+        var originalChargeDate = expense.ChargeDate;
+        var originalInvoiceDate = expense.InvoiceDate;
+        var paymentDate = new DateOnly(2026, 7, 24);
 
-        expense.Settle("Trading212", settledAt);
+        expense.Settle("Trading212", paymentDate);
 
-        expense.PaymentSource.Should().Be("Trading212");
-        expense.SettledAt.Should().Be(settledAt);
-        expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
+        using (new AssertionScope())
+        {
+            expense.PaymentSource.Should().Be("Trading212");
+            expense.Date.Should().Be(paymentDate);
+            expense.ChargeDate.Should().Be(originalChargeDate);
+            expense.InvoiceDate.Should().Be(originalInvoiceDate);
+            expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
+        }
     }
 
     [Fact]
@@ -194,14 +245,14 @@ public class ExpenseTests
     }
 
     [Fact]
-    public void Unsettle_OnSettledExpense_ClearsPaymentSourceAndSettledAt()
+    public void Unsettle_OnSettledExpense_RevertsDateToChargeDate_ClearsPaymentSource()
     {
         var expense = CreateSettledExpense();
 
         expense.Unsettle();
 
         expense.PaymentSource.Should().BeNull();
-        expense.SettledAt.Should().BeNull();
+        expense.Date.Should().Be(expense.ChargeDate);
         expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
     }
 
@@ -213,6 +264,36 @@ public class ExpenseTests
         var act = () => expense.Unsettle();
 
         act.Should().Throw<ArgumentException>().WithMessage("*settled credit card expense*");
+    }
+
+    [Fact]
+    public void SetInvoiceDate_WhileUnpaidCardCharge_UpdatesAndNormalizesToFirstOfMonth()
+    {
+        var expense = CreateCardCharge();
+
+        expense.SetInvoiceDate(new DateOnly(2026, 8, 17));
+
+        expense.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
+    }
+
+    [Fact]
+    public void SetInvoiceDate_WhenSettled_Throws()
+    {
+        var expense = CreateSettledExpense();
+
+        var act = () => expense.SetInvoiceDate(new DateOnly(2026, 8, 1));
+
+        act.Should().Throw<ArgumentException>().WithMessage("*unsettled credit card charge*");
+    }
+
+    [Fact]
+    public void SetInvoiceDate_OnBankExpense_Throws()
+    {
+        var expense = CreateImmediateExpense();
+
+        var act = () => expense.SetInvoiceDate(new DateOnly(2026, 8, 1));
+
+        act.Should().Throw<ArgumentException>().WithMessage("*unsettled credit card charge*");
     }
 
     [Theory]
