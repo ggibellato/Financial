@@ -464,4 +464,152 @@ public class MonthlyViewModelTests
         viewModel.IncomeSaveError.Should().NotBeNullOrEmpty();
         viewModel.IsIncomeFormOpen.Should().BeTrue();
     }
+
+    [Fact]
+    public void ShowCreateExpenseFormCommand_CardMode_DefaultsInvoiceDateFromExpenseFormDate()
+    {
+        var (viewModel, _, _, _, _) = CreateViewModel();
+
+        viewModel.ShowCreateExpenseFormCommand.Execute("card");
+
+        viewModel.ExpenseFormInvoiceYear.Should().Be(viewModel.ExpenseFormDate!.Value.Year);
+        viewModel.ExpenseFormInvoiceMonth.Should().Be(viewModel.ExpenseFormDate!.Value.Month);
+    }
+
+    [Fact]
+    public void ExpenseFormDate_ChangedBeforeInvoiceDateTouched_ResyncsInvoiceDefault()
+    {
+        var (viewModel, _, _, _, _) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute("card");
+
+        viewModel.ExpenseFormDate = new DateTime(2026, 3, 15);
+
+        viewModel.ExpenseFormInvoiceYear.Should().Be(2026);
+        viewModel.ExpenseFormInvoiceMonth.Should().Be(3);
+    }
+
+    [Fact]
+    public void ExpenseFormInvoiceMonth_SetByUser_StopsFurtherAutoResync()
+    {
+        var (viewModel, _, _, _, _) = CreateViewModel();
+        viewModel.ShowCreateExpenseFormCommand.Execute("card");
+
+        viewModel.ExpenseFormInvoiceYear = 2026;
+        viewModel.ExpenseFormInvoiceMonth = 4;
+        viewModel.ExpenseFormDate = new DateTime(2026, 3, 15);
+
+        viewModel.ExpenseFormInvoiceYear.Should().Be(2026);
+        viewModel.ExpenseFormInvoiceMonth.Should().Be(4);
+    }
+
+    [Fact]
+    public void EditExpenseCommand_FromUnpaidCardCharges_PrefillsInvoiceDateFromExpense()
+    {
+        var (viewModel, _, _, _, _) = CreateViewModel();
+        var unpaidCharge = new ExpenseDTO
+        {
+            Id = Guid.NewGuid(),
+            Date = new DateOnly(2026, 1, 20),
+            ChargeDate = new DateOnly(2026, 1, 20),
+            InvoiceDate = new DateOnly(2026, 2, 1),
+            Description = "Uber",
+            Value = 18.4m,
+            Category = "Extras",
+            CardTag = "BaAmex",
+            PaymentStatus = "CreditCardCharge",
+        };
+
+        viewModel.EditExpenseCommand.Execute(unpaidCharge);
+
+        viewModel.ExpenseFormInvoiceYear.Should().Be(2026);
+        viewModel.ExpenseFormInvoiceMonth.Should().Be(2);
+    }
+
+    [Fact]
+    public void EditExpense_SettledExpense_InvoiceDateFieldPresentButPaymentModeFieldsGated()
+    {
+        var (viewModel, _, _, _, _) = CreateViewModel();
+        var settledExpense = new ExpenseDTO
+        {
+            Id = Guid.NewGuid(),
+            Date = new DateOnly(2026, 2, 1),
+            ChargeDate = new DateOnly(2026, 1, 20),
+            InvoiceDate = new DateOnly(2026, 2, 1),
+            Description = "Settled",
+            Value = 10m,
+            Category = "Mercado",
+            CardTag = "BaAmex",
+            PaymentStatus = "CreditCardSettled",
+        };
+
+        viewModel.EditExpenseCommand.Execute(settledExpense);
+
+        viewModel.ExpenseFormInvoiceYear.Should().Be(2026);
+        viewModel.ExpenseFormInvoiceMonth.Should().Be(2);
+        viewModel.ShowPaymentModeFields.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AddExpense_CardMode_CallsServiceWithInvoiceDate()
+    {
+        var (viewModel, expenses, _, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateExpenseFormCommand.Execute("card");
+        viewModel.ExpenseFormDate = new DateTime(2026, 3, 15);
+        viewModel.ExpenseFormDescription = "Flight";
+        viewModel.ExpenseFormCategory = "Viagem";
+        viewModel.ExpenseFormValue = "300";
+        viewModel.ExpenseFormCardTag = MonthlyViewModel.Cards[0];
+
+        await viewModel.SaveExpenseAsync();
+
+        expenses.LastCreateRequest.Should().NotBeNull();
+        expenses.LastCreateRequest!.InvoiceDate.Should().Be(new DateOnly(2026, 3, 1));
+    }
+
+    [Fact]
+    public async Task AddExpense_BankMode_CallsServiceWithNullInvoiceDate()
+    {
+        var (viewModel, expenses, _, banks, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDescription = "Groceries";
+        viewModel.ExpenseFormCategory = "Mercado";
+        viewModel.ExpenseFormValue = "25.50";
+        viewModel.ExpenseFormPaymentSource = banks.Banks[1].Name;
+
+        await viewModel.SaveExpenseAsync();
+
+        expenses.LastCreateRequest.Should().NotBeNull();
+        expenses.LastCreateRequest!.InvoiceDate.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SaveExpenseAsync_EditingCardExpense_CallsServiceWithInvoiceDate()
+    {
+        var (viewModel, expenses, _, _, _) = CreateViewModel();
+        var expense = new ExpenseDTO
+        {
+            Id = Guid.NewGuid(),
+            Date = new DateOnly(2026, 1, 20),
+            ChargeDate = new DateOnly(2026, 1, 20),
+            InvoiceDate = new DateOnly(2026, 2, 1),
+            Description = "Uber",
+            Value = 18.4m,
+            Category = "Extras",
+            CardTag = "BaAmex",
+            PaymentStatus = "CreditCardCharge",
+        };
+        await viewModel.RefreshAsync();
+
+        viewModel.EditExpenseCommand.Execute(expense);
+        viewModel.ExpenseFormInvoiceYear = 2026;
+        viewModel.ExpenseFormInvoiceMonth = 3;
+
+        await viewModel.SaveExpenseAsync();
+
+        expenses.LastUpdateRequest.Should().NotBeNull();
+        expenses.LastUpdateRequest!.Value.Request.InvoiceDate.Should().Be(new DateOnly(2026, 3, 1));
+    }
 }

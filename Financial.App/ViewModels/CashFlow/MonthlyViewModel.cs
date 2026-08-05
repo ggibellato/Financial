@@ -312,6 +312,9 @@ public class MonthlyViewModel : ViewModelBase
     private string _expenseFormCardTag = string.Empty;
     private string _expenseFormRoundUpAmount = string.Empty;
     private bool _expenseFormIsSettled;
+    private int _expenseFormInvoiceYear;
+    private int _expenseFormInvoiceMonth;
+    private bool _invoiceDateTouchedByUser;
     private bool _isSavingExpense;
     private string? _expenseSaveError;
     private string? _deletingExpenseError;
@@ -327,7 +330,13 @@ public class MonthlyViewModel : ViewModelBase
     public DateTime? ExpenseFormDate
     {
         get => _expenseFormDate;
-        set => SetProperty(ref _expenseFormDate, value);
+        set
+        {
+            if (SetProperty(ref _expenseFormDate, value) && value.HasValue && IsCardPaymentMode && !_invoiceDateTouchedByUser)
+            {
+                SetDefaultInvoiceDate(value.Value.Year, value.Value.Month);
+            }
+        }
     }
 
     public string ExpenseFormDescription
@@ -409,6 +418,40 @@ public class MonthlyViewModel : ViewModelBase
 
     public bool ShowPaymentModeFields => !ExpenseFormIsSettled;
 
+    public int ExpenseFormInvoiceYear
+    {
+        get => _expenseFormInvoiceYear;
+        set
+        {
+            if (SetProperty(ref _expenseFormInvoiceYear, value))
+            {
+                _invoiceDateTouchedByUser = true;
+            }
+        }
+    }
+
+    public int ExpenseFormInvoiceMonth
+    {
+        get => _expenseFormInvoiceMonth;
+        set
+        {
+            if (SetProperty(ref _expenseFormInvoiceMonth, value))
+            {
+                _invoiceDateTouchedByUser = true;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Sets the invoice year/month without marking it as user-touched, so ExpenseFormDate's
+    /// setter keeps resyncing the default until the user actually edits the invoice picker.
+    /// </summary>
+    private void SetDefaultInvoiceDate(int year, int month)
+    {
+        SetProperty(ref _expenseFormInvoiceYear, year, nameof(ExpenseFormInvoiceYear));
+        SetProperty(ref _expenseFormInvoiceMonth, month, nameof(ExpenseFormInvoiceMonth));
+    }
+
     public bool IsSavingExpense
     {
         get => _isSavingExpense;
@@ -458,6 +501,11 @@ public class MonthlyViewModel : ViewModelBase
         ExpenseFormCardTag = string.Empty;
         ExpenseFormRoundUpAmount = string.Empty;
         ExpenseFormIsSettled = false;
+        _invoiceDateTouchedByUser = false;
+        if (IsCardPaymentMode)
+        {
+            SetDefaultInvoiceDate(ExpenseFormDate!.Value.Year, ExpenseFormDate.Value.Month);
+        }
         ExpenseSaveError = null;
         OnPropertyChanged(nameof(IsEditingExpense));
         IsExpenseFormOpen = true;
@@ -480,6 +528,12 @@ public class MonthlyViewModel : ViewModelBase
         ExpenseFormCardTag = expense.CardTag ?? string.Empty;
         ExpenseFormRoundUpAmount = expense.RoundUpAmount?.ToString("0.##") ?? string.Empty;
         ExpenseFormIsSettled = expense.PaymentStatus == SettledStatus;
+        _invoiceDateTouchedByUser = false;
+        if (IsCardPaymentMode)
+        {
+            var invoiceDate = expense.InvoiceDate ?? expense.ChargeDate ?? expense.Date;
+            SetDefaultInvoiceDate(invoiceDate.Year, invoiceDate.Month);
+        }
         ExpenseSaveError = null;
         OnPropertyChanged(nameof(IsEditingExpense));
         IsExpenseFormOpen = true;
@@ -525,6 +579,7 @@ public class MonthlyViewModel : ViewModelBase
             var value = decimal.Parse(ExpenseFormValue);
             var paymentSource = IsCardPaymentMode ? null : ExpenseFormPaymentSource;
             var cardTag = IsCardPaymentMode ? ExpenseFormCardTag : null;
+            DateOnly? invoiceDate = IsCardPaymentMode ? new DateOnly(ExpenseFormInvoiceYear, ExpenseFormInvoiceMonth, 1) : null;
             decimal? roundUpAmount = ShowRoundUpField && decimal.TryParse(ExpenseFormRoundUpAmount, out var parsedRoundUp)
                 ? parsedRoundUp
                 : null;
@@ -539,6 +594,7 @@ public class MonthlyViewModel : ViewModelBase
                     Category = ExpenseFormCategory,
                     PaymentSource = paymentSource,
                     CardTag = cardTag,
+                    InvoiceDate = invoiceDate,
                     RoundUpAmount = roundUpAmount,
                 });
             }
@@ -552,6 +608,7 @@ public class MonthlyViewModel : ViewModelBase
                     Category = ExpenseFormCategory,
                     PaymentSource = paymentSource,
                     CardTag = cardTag,
+                    InvoiceDate = invoiceDate,
                     RoundUpAmount = roundUpAmount,
                 });
             }
