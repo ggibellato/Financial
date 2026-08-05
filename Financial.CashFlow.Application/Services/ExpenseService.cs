@@ -25,7 +25,7 @@ public sealed class ExpenseService : IExpenseService
             request.Description, request.Value, request.Category, request.PaymentSource, request.CardTag);
         ValidateRoundUpEligibility(request.RoundUpAmount, paymentSource);
 
-        var expense = Expense.Create(request.Date, request.Description, request.Value, category, paymentSource, cardTag);
+        var expense = Expense.Create(request.Date, request.Description, request.Value, category, paymentSource, cardTag, request.InvoiceDate);
         expense.SetRoundUpAmount(request.RoundUpAmount);
         _repository.AddExpense(expense);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
@@ -45,6 +45,12 @@ public sealed class ExpenseService : IExpenseService
 
         expense.UpdateDetails(request.Date, request.Description, request.Value, category, paymentSource, cardTag);
         expense.SetRoundUpAmount(request.RoundUpAmount);
+
+        if (request.InvoiceDate is not null && request.InvoiceDate != expense.InvoiceDate)
+        {
+            expense.SetInvoiceDate(request.InvoiceDate.Value);
+        }
+
         await _repository.SaveChangesAsync().ConfigureAwait(false);
 
         return ToDto(expense);
@@ -169,6 +175,8 @@ public sealed class ExpenseService : IExpenseService
         Category = expense.Category.ToString(),
         PaymentSource = expense.PaymentSource,
         CardTag = expense.CardTag?.ToString(),
+        ChargeDate = expense.ChargeDate,
+        InvoiceDate = expense.InvoiceDate,
         PaymentStatus = expense.PaymentStatus.ToString(),
         RoundUpAmount = expense.RoundUpAmount,
         SuggestedRoundUpAmount = GetSuggestedRoundUpAmount(expense)

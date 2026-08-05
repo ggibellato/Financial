@@ -622,6 +622,7 @@ public class ExpenseServiceTests
         Category = r.Category,
         PaymentSource = r.PaymentSource,
         CardTag = r.CardTag,
+        InvoiceDate = r.InvoiceDate,
         RoundUpAmount = r.RoundUpAmount
     };
 
@@ -633,11 +634,123 @@ public class ExpenseServiceTests
         Category = r.Category,
         PaymentSource = r.PaymentSource,
         CardTag = r.CardTag,
+        InvoiceDate = r.InvoiceDate,
         RoundUpAmount = r.RoundUpAmount
     };
 
     private sealed record ExpenseCreateRequest(
         DateOnly Date, string Description, decimal Value, string Category, string? PaymentSource, string? CardTag,
-        decimal? RoundUpAmount = null);
+        decimal? RoundUpAmount = null, DateOnly? InvoiceDate = null);
 
+    [Fact]
+    public async Task AddExpenseAsync_CreditCardExpense_ReturnsNonNullChargeDateAndInvoiceDate()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository(seedDefaultBanks: true));
+        var request = ToCreateDto(ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" });
+
+        var result = await service.AddExpenseAsync(request);
+
+        using (new AssertionScope())
+        {
+            result.ChargeDate.Should().NotBeNull();
+            result.InvoiceDate.Should().NotBeNull();
+        }
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_WithInvoiceDateOverride_UsesProvidedMonth()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository(seedDefaultBanks: true));
+        var request = ToCreateDto(ValidCreateRequest() with
+        {
+            Date = new DateOnly(2026, 7, 29),
+            PaymentSource = null,
+            CardTag = "ChaseMaster4023",
+            InvoiceDate = new DateOnly(2026, 8, 17)
+        });
+
+        var result = await service.AddExpenseAsync(request);
+
+        result.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_WithoutInvoiceDateOverride_DefaultsToChargeMonth()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository(seedDefaultBanks: true));
+        var request = ToCreateDto(ValidCreateRequest() with
+        {
+            Date = new DateOnly(2026, 7, 15), PaymentSource = null, CardTag = "ChaseMaster4023"
+        });
+
+        var result = await service.AddExpenseAsync(request);
+
+        result.InvoiceDate.Should().Be(new DateOnly(2026, 7, 1));
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_BankExpense_ChargeDateAndInvoiceDateAreNull()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository(seedDefaultBanks: true));
+
+        var result = await service.AddExpenseAsync(ToCreateDto(ValidCreateRequest()));
+
+        using (new AssertionScope())
+        {
+            result.ChargeDate.Should().BeNull();
+            result.InvoiceDate.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_ChangingInvoiceDateWhileUnpaid_PersistsOverride()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository(seedDefaultBanks: true));
+        var added = await service.AddExpenseAsync(ToCreateDto(
+            ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
+        var updateRequest = ToUpdateDto(ValidCreateRequest() with
+        {
+            PaymentSource = null, CardTag = "ChaseMaster4023", InvoiceDate = new DateOnly(2026, 8, 12)
+        });
+
+        var result = await service.UpdateExpenseAsync(added.Id, updateRequest);
+
+        result.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_EchoingUnchangedInvoiceDateOnSettledExpense_Succeeds()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new ExpenseService(repository);
+        var added = await service.AddExpenseAsync(ToCreateDto(
+            ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
+        repository.Expenses.Single(e => e.Id == added.Id).Settle("Barclays", new DateOnly(2026, 7, 31));
+        var updateRequest = ToUpdateDto(ValidCreateRequest() with
+        {
+            Description = "Renamed", PaymentSource = "Barclays", CardTag = "ChaseMaster4023", InvoiceDate = added.InvoiceDate
+        });
+
+        var result = await service.UpdateExpenseAsync(added.Id, updateRequest);
+
+        result.Description.Should().Be("Renamed");
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_ChangingInvoiceDateOnSettledExpense_Throws()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new ExpenseService(repository);
+        var added = await service.AddExpenseAsync(ToCreateDto(
+            ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
+        repository.Expenses.Single(e => e.Id == added.Id).Settle("Barclays", new DateOnly(2026, 7, 31));
+        var updateRequest = ToUpdateDto(ValidCreateRequest() with
+        {
+            PaymentSource = "Barclays", CardTag = "ChaseMaster4023", InvoiceDate = new DateOnly(2026, 9, 1)
+        });
+
+        var act = async () => await service.UpdateExpenseAsync(added.Id, updateRequest);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*unsettled credit card charge*");
+    }
 }

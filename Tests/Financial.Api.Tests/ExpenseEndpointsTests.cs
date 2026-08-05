@@ -57,6 +57,50 @@ public class ExpenseEndpointsTests
     }
 
     [Fact]
+    public async Task AddExpense_CreditCardExpense_ReturnsNonNullChargeDateAndInvoiceDate()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 15),
+            Description = "Card charge",
+            Value = 30m,
+            Category = "Extras",
+            PaymentSource = null,
+            CardTag = "ChaseMaster4023"
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+
+        var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
+        expense!.ChargeDate.Should().Be(new DateOnly(2026, 7, 15));
+        expense.InvoiceDate.Should().Be(new DateOnly(2026, 7, 1));
+    }
+
+    [Fact]
+    public async Task AddExpense_WithInvoiceDateOverride_UsesProvidedMonth()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 29),
+            Description = "Cutoff charge",
+            Value = 30m,
+            Category = "Extras",
+            PaymentSource = null,
+            CardTag = "ChaseMaster4023",
+            InvoiceDate = new DateOnly(2026, 8, 17)
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+
+        var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
+        expense!.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
+    }
+
+    [Fact]
     public async Task AddExpense_NeitherPaymentSourceNorCardTag_ReturnsBadRequest()
     {
         await using var factory = new ApiTestFactory();

@@ -26,6 +26,12 @@ public sealed class ExpenseDTO
     /// <summary>Optional credit-card tag name.</summary>
     public string? CardTag { get; init; }
 
+    /// <summary>Immutable original purchase day. Non-null only for a credit card expense.</summary>
+    public DateOnly? ChargeDate { get; init; }
+
+    /// <summary>Invoice-period assignment (day is always the 1st). Non-null only for a credit card expense.</summary>
+    public DateOnly? InvoiceDate { get; init; }
+
     /// <summary>Computed payment status derived from the payment source and card tag.</summary>
     public required string PaymentStatus { get; init; }
 

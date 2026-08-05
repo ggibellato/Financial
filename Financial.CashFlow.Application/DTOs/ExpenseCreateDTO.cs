@@ -23,6 +23,9 @@ public sealed class ExpenseCreateDTO
     /// <summary>Optional credit-card tag name.</summary>
     public string? CardTag { get; init; }
 
+    /// <summary>Optional invoice-period override for a credit card expense. Omit to default to the 1st of the charge month.</summary>
+    public DateOnly? InvoiceDate { get; init; }
+
     /// <summary>Round-up amount to save immediately. Omit/null to leave "not yet decided".</summary>
     public decimal? RoundUpAmount { get; init; }
 }
