@@ -66,6 +66,14 @@ public sealed class ExpenseService : IExpenseService
             .Select(ToDto)
             .ToList();
 
+    public IReadOnlyList<ExpenseDTO> GetUnpaidCardChargesByMonth(int year, int month) =>
+        _repository.GetExpenses()
+            .Where(e => e.Date.Year == year && e.Date.Month == month)
+            .Where(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge)
+            .OrderByDescending(e => e.Date)
+            .Select(ToDto)
+            .ToList();
+
     public IReadOnlyList<CategoryTotalDTO> GetCategoryTotalsByMonth(int year, int month) =>
         _repository.GetExpenses()
             .Where(e => e.Date.Year == year && e.Date.Month == month)

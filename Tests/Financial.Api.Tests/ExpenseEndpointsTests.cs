@@ -358,6 +358,65 @@ public class ExpenseEndpointsTests
         items.Should().NotContain(e => e.Description == "Card charge");
     }
 
+    [Fact]
+    public async Task GetUnpaidCardChargesByMonth_ReturnsOnlyUnsettledCardCharges()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 10),
+            Description = "Bank expense",
+            Value = 20m,
+            Category = "Casa",
+            PaymentSource = "Chase",
+            CardTag = null
+        });
+        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 10),
+            Description = "Card charge",
+            Value = 45m,
+            Category = "Mercado",
+            PaymentSource = null,
+            CardTag = "BarclaysPlatinumVisa8003"
+        });
+
+        var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7/unpaid-card-charges");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
+        items.Should().ContainSingle();
+        items![0].Description.Should().Be("Card charge");
+        items[0].CardTag.Should().Be("BarclaysPlatinumVisa8003");
+        items[0].PaymentStatus.Should().Be("CreditCardCharge");
+    }
+
+    [Fact]
+    public async Task GetUnpaidCardChargesByMonth_AfterMarkStatementPaid_ExcludesSettledCharge()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 10),
+            Description = "Card charge",
+            Value = 45m,
+            Category = "Mercado",
+            PaymentSource = null,
+            CardTag = "BarclaysPlatinumVisa8003"
+        });
+        var statement = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
+        await client.PostAsJsonAsync(
+            $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
+            new MarkStatementPaidDTO { PaymentSource = "Trading212" });
+
+        var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7/unpaid-card-charges");
+
+        var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
+        items.Should().BeEmpty();
+    }
+
     private static async Task<CardStatementDTO> GetStatementAsync(HttpClient client, string card)
     {
         var statements = await client.GetFromJsonAsync<List<CardStatementDTO>>("/api/v1/financial/card-statements/2026/7");

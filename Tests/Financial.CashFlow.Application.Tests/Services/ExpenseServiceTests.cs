@@ -300,6 +300,49 @@ public class ExpenseServiceTests
     }
 
     [Fact]
+    public async Task GetUnpaidCardChargesByMonth_UnsettledCharge_IsIncluded()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new ExpenseService(repository);
+        await service.AddExpenseAsync(ToCreateDto(
+            ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
+
+        var result = service.GetUnpaidCardChargesByMonth(2026, 7);
+
+        result.Should().ContainSingle().Which.PaymentStatus.Should().Be("CreditCardCharge");
+    }
+
+    [Fact]
+    public async Task GetUnpaidCardChargesByMonth_ImmediatePaymentAndSettledCharge_AreExcluded()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new ExpenseService(repository);
+        await service.AddExpenseAsync(ToCreateDto(ValidCreateRequest() with { Description = "Immediate" }));
+        var settledCharge = await service.AddExpenseAsync(ToCreateDto(
+            ValidCreateRequest() with { Description = "Settled charge", PaymentSource = null, CardTag = "BaAmex" }));
+        repository.Expenses.Single(e => e.Id == settledCharge.Id).Settle("Chase", new DateOnly(2026, 7, 20));
+
+        var result = service.GetUnpaidCardChargesByMonth(2026, 7);
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetUnpaidCardChargesByMonth_OutsideMonth_IsExcluded()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new ExpenseService(repository);
+        await service.AddExpenseAsync(ToCreateDto(ValidCreateRequest() with
+        {
+            Date = new DateOnly(2026, 8, 10), PaymentSource = null, CardTag = "ChaseMaster4023"
+        }));
+
+        var result = service.GetUnpaidCardChargesByMonth(2026, 7);
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task GetCategoryTotalsByMonth_SumsValuesPerCategoryForThatMonth()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
