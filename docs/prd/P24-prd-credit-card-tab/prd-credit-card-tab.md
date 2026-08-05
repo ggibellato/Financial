@@ -270,11 +270,11 @@ graph TD
 - [x] Marking a statement paid from one tab is reflected in the other tab's grid without a page reload.
 
 ### F03. WPF: Dedicated Credit Card Tab
-- [ ] The Monthly view shows a "Credit Card" tab positioned immediately after the Expense tab (order: Summary, Expense, Credit Card, Incoming, Bank).
-- [ ] The Credit Card tab displays the same per-card outstanding totals shown in Summary, for the selected month.
-- [ ] The Summary tab continues to display its Cards grid unchanged — same content, same position, no regression.
-- [ ] Mark Paid and Unmark Paid actions work identically from the Credit Card tab and from Summary (same bank-picker requirement, same resulting state).
-- [ ] Marking a statement paid from one tab is reflected in the other tab's grid without a manual refresh.
+- [x] The Monthly view shows a "Credit Card" tab positioned immediately after the Expense tab (order: Summary, Expense, Credit Card, Incoming, Bank).
+- [x] The Credit Card tab displays the same per-card outstanding totals shown in Summary, for the selected month.
+- [x] The Summary tab continues to display its Cards grid unchanged — same content, same position, no regression.
+- [x] Mark Paid and Unmark Paid actions work identically from the Credit Card tab and from Summary (same bank-picker requirement, same resulting state).
+- [x] Marking a statement paid from one tab is reflected in the other tab's grid without a manual refresh.
 
 ### F04. Backend: Expose Unpaid Card Charge Expenses
 - [x] For a given month, the new query returns every expense whose `PaymentStatus` is `CreditCardCharge` for that month, with date, description, value, category, and card tag.
