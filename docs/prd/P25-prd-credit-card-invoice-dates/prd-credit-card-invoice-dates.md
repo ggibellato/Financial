@@ -255,12 +255,12 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Expense Payment-Date Domain Model Rework
-- [ ] A new credit card expense has `ChargeDate == Date` at creation, and both are non-null.
-- [ ] `InvoiceDate` defaults to the 1st of the charge date's month/year when not explicitly provided at creation.
-- [ ] Calling `Settle()` updates `Date` to the payment date and leaves `ChargeDate` and `InvoiceDate` unchanged.
-- [ ] Calling `Unsettle()` reverts `Date` to `ChargeDate` and clears `PaymentSource`.
-- [ ] `SettledAt` no longer exists on the `Expense` entity or in the serialized JSON schema.
-- [ ] Bank-only expenses (no `CardTag`) have `ChargeDate` and `InvoiceDate` both null and are unaffected by any of the above.
+- [x] A new credit card expense has `ChargeDate == Date` at creation, and both are non-null.
+- [x] `InvoiceDate` defaults to the 1st of the charge date's month/year when not explicitly provided at creation.
+- [x] Calling `Settle()` updates `Date` to the payment date and leaves `ChargeDate` and `InvoiceDate` unchanged.
+- [x] Calling `Unsettle()` reverts `Date` to `ChargeDate` and clears `PaymentSource`.
+- [x] `SettledAt` no longer exists on the `Expense` entity or in the serialized JSON schema.
+- [x] Bank-only expenses (no `CardTag`) have `ChargeDate` and `InvoiceDate` both null and are unaffected by any of the above.
 
 ### F02. Invoice-Period Settlement Matching
 - [ ] Marking an invoice paid settles only charges whose `InvoiceDate` year/month match the statement's period, regardless of their `ChargeDate`.
