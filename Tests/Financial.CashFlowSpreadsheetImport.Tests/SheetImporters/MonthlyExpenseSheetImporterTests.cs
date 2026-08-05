@@ -208,6 +208,55 @@ public class MonthlyExpenseSheetImporterTests
     }
 
     [Fact]
+    public void Import_CreditCardRow_SetsChargeDateEqualToImportedRowDate()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Ago2026");
+        WriteExpenseRow(sheet, row: 150, paymentSourceTag: null);
+
+        var report = new ImportReport();
+
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 8, Today, report);
+
+        var expense = expenses.Should().ContainSingle().Subject;
+        expense.CardTag.Should().NotBeNull();
+        expense.ChargeDate.Should().Be(expense.Date);
+        expense.ChargeDate.Should().Be(new DateOnly(2026, 8, 1));
+    }
+
+    [Fact]
+    public void Import_CreditCardRow_DefaultsInvoiceDateToFirstOfChargeMonth()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Ago2026");
+        WriteExpenseRow(sheet, row: 150, paymentSourceTag: null);
+
+        var report = new ImportReport();
+
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 8, Today, report);
+
+        var expense = expenses.Should().ContainSingle().Subject;
+        expense.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
+    }
+
+    [Fact]
+    public void Import_BankExpenseRow_ChargeDateAndInvoiceDateAreNull()
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Ago2026");
+        WriteExpenseRow(sheet, row: 150, paymentSourceTag: "C");
+
+        var report = new ImportReport();
+
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 8, Today, report);
+
+        var expense = expenses.Should().ContainSingle().Subject;
+        expense.CardTag.Should().BeNull();
+        expense.ChargeDate.Should().BeNull();
+        expense.InvoiceDate.Should().BeNull();
+    }
+
+    [Fact]
     public void Import_FixedCardSectionMonth_ExplicitPaymentSourceTagInCardRow_TakesPrecedenceOverRowPosition()
     {
         using var workbook = new XLWorkbook();
