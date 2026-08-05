@@ -15,6 +15,7 @@ import type {
 } from '../../api/types'
 
 const getExpensesByMonthMock = vi.fn<FinancialApiClient['getExpensesByMonth']>()
+const getUnpaidCardChargesByMonthMock = vi.fn<FinancialApiClient['getUnpaidCardChargesByMonth']>()
 const getCategoryTotalsByMonthMock = vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>()
 const getCardStatementsByMonthMock = vi.fn<FinancialApiClient['getCardStatementsByMonth']>()
 const getBanksMock = vi.fn<FinancialApiClient['getBanks']>()
@@ -41,6 +42,7 @@ const deleteBalanceAdjustmentMock = vi.fn<FinancialApiClient['deleteBalanceAdjus
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getExpensesByMonth: getExpensesByMonthMock,
+    getUnpaidCardChargesByMonth: getUnpaidCardChargesByMonthMock,
     getCategoryTotalsByMonth: getCategoryTotalsByMonthMock,
     getCardStatementsByMonth: getCardStatementsByMonthMock,
     getBanks: getBanksMock,
@@ -95,6 +97,22 @@ const CARD_STATEMENTS: CardStatementDto[] = [
   { id: 'c2', card: 'ChaseMaster4023', year: 2026, month: 7, isPaid: true, outstandingTotal: 0 },
 ]
 
+const UNPAID_CARD_CHARGES: ExpenseDto[] = [
+  {
+    id: 'e2',
+    date: '2026-07-08',
+    description: 'Uber',
+    value: 18.4,
+    category: 'Extras',
+    paymentSource: null,
+    cardTag: 'BaAmex',
+    settledAt: null,
+    paymentStatus: 'CreditCardCharge',
+    roundUpAmount: null,
+    suggestedRoundUpAmount: null,
+  },
+]
+
 const INCOMES: IncomeDto[] = [
   { id: 'i1', date: '2026-07-01', incomeSource: 'Gleison', grossValue: 3200, netValue: 2450, bank: 'Barclays' },
 ]
@@ -132,6 +150,7 @@ describe('MonthlyPage', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     vi.setSystemTime(new Date('2026-07-15T12:00:00Z'))
     getExpensesByMonthMock.mockReset()
+    getUnpaidCardChargesByMonthMock.mockReset()
     getCategoryTotalsByMonthMock.mockReset()
     getCardStatementsByMonthMock.mockReset()
     getBanksMock.mockReset()
@@ -155,6 +174,7 @@ describe('MonthlyPage', () => {
     updateBalanceAdjustmentMock.mockReset()
     deleteBalanceAdjustmentMock.mockReset()
     getExpensesByMonthMock.mockResolvedValue(EXPENSES)
+    getUnpaidCardChargesByMonthMock.mockResolvedValue(UNPAID_CARD_CHARGES)
     getCategoryTotalsByMonthMock.mockResolvedValue(CATEGORY_TOTALS)
     getCardStatementsByMonthMock.mockResolvedValue(CARD_STATEMENTS)
     getBanksMock.mockResolvedValue(BANKS)
@@ -270,10 +290,75 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
 
-    expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument()
+    expect(screen.getAllByRole('cell', { name: 'BaAmex' }).length).toBeGreaterThan(0)
     expect(screen.getByRole('cell', { name: 'ChaseMaster4023' })).toBeInTheDocument()
     expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Credit Card' })).toHaveClass('monthly-page__tab--active')
+  })
+
+  it('shows the unpaid card charge list on the Credit Card tab below the totals grid', async () => {
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+
+    expect(screen.getByText('Uber')).toBeInTheDocument()
+    expect(screen.getByText('18.40')).toBeInTheDocument()
+    expect(screen.getByText('Extras')).toBeInTheDocument()
+  })
+
+  it("editing a row from the Credit Card tab's list opens the shared edit form and saves", async () => {
+    updateExpenseMock.mockResolvedValue({ ...UNPAID_CARD_CHARGES[0], value: 20 })
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+
+    await waitFor(() => expect(screen.getByText('Uber')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Edit expense' }))
+    expect(screen.getByText('Edit Expense')).toBeInTheDocument()
+    fireEvent.change(screen.getByDisplayValue('18.4'), { target: { value: '20' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(updateExpenseMock).toHaveBeenCalledWith('e2', expect.objectContaining({ value: 20 })))
+  })
+
+  it("deleting a row from the Credit Card tab's list calls delete and refreshes", async () => {
+    deleteExpenseMock.mockResolvedValue(undefined)
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+
+    await waitFor(() => expect(screen.getByText('Uber')).toBeInTheDocument())
+    const callCountBefore = getUnpaidCardChargesByMonthMock.mock.calls.length
+    fireEvent.click(screen.getByRole('button', { name: 'Delete expense' }))
+
+    await waitFor(() => expect(deleteExpenseMock).toHaveBeenCalledWith('e2'))
+    await waitFor(() =>
+      expect(getUnpaidCardChargesByMonthMock.mock.calls.length).toBeGreaterThan(callCountBefore),
+    )
+  })
+
+  it('switching away from the Credit Card tab cancels an open edit form', async () => {
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+
+    await waitFor(() => expect(screen.getByText('Uber')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Edit expense' }))
+    expect(screen.getByText('Edit Expense')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
+
+    expect(screen.queryByText('Edit Expense')).not.toBeInTheDocument()
+  })
+
+  it('does not duplicate or omit rows already covered by the Expense tab', async () => {
+    render(<MonthlyPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+    await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
+    expect(screen.queryByText('Uber')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+    await waitFor(() => expect(screen.getByText('Uber')).toBeInTheDocument())
+    expect(screen.queryByText('Lidl UK')).not.toBeInTheDocument()
   })
 
   it('still renders the card statements on the Summary tab unchanged', async () => {
