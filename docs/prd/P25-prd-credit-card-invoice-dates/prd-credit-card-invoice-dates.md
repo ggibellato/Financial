@@ -305,10 +305,10 @@ graph TD
 - [x] A pre-migration backup file exists and is verified intact before the migration is applied to the live local file or the Google Drive copy.
 
 ### F08. Spreadsheet Import Update
-- [ ] Every newly imported credit card expense has `ChargeDate` equal to its imported row date.
-- [ ] Every newly imported credit card expense has `InvoiceDate` defaulted to the 1st of its charge date's month/year.
-- [ ] Existing import failure/skip behavior for unresolvable card tags is unchanged.
-- [ ] A pre-import backup is created before the import writes any changes, matching existing behavior.
+- [x] Every newly imported credit card expense has `ChargeDate` equal to its imported row date.
+- [x] Every newly imported credit card expense has `InvoiceDate` defaulted to the 1st of its charge date's month/year.
+- [x] Existing import failure/skip behavior for unresolvable card tags is unchanged.
+- [x] A pre-import backup is created before the import writes any changes, matching existing behavior.
 
 ### Cross-Feature Integration
 - [x] `ChargeDate`/`InvoiceDate`/`Settle()`/`Unsettle()` from F01 are correctly used by F02's statement matching (charges settle by invoice period, not charge date).
@@ -316,4 +316,4 @@ graph TD
 - [ ] F01's fields are correctly exposed end-to-end through F04's data contract and displayed/edited in F05 (Web) and F06 (WPF).
 - [ ] F02's corrected invoice-period matching is reflected in what F05 and F06 display as "this invoice's charges" in the Card tab.
 - [x] F01's field definitions are correctly applied by F07's migration to 100% of pre-existing credit card expenses.
-- [ ] F01's field definitions are correctly applied by F08 to every newly imported credit card expense going forward.
+- [x] F01's field definitions are correctly applied by F08 to every newly imported credit card expense going forward.
