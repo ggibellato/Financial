@@ -386,6 +386,28 @@ public class ExpenseServiceTests
     }
 
     [Fact]
+    public async Task AddExpenseAsync_NegativeValueOnRoundUpBank_ReturnsNoSuggestion()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository(seedDefaultBanks: true));
+        var request = ToCreateDto(ValidCreateRequest() with { PaymentSource = "Trading212", Value = -9.40m });
+
+        var result = await service.AddExpenseAsync(request);
+
+        result.SuggestedRoundUpAmount.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_WithRoundUpAmountOnNegativeValue_Throws()
+    {
+        var service = new ExpenseService(new StubCashFlowRepository(seedDefaultBanks: true));
+        var request = ToCreateDto(ValidCreateRequest() with { PaymentSource = "Trading212", Value = -9.40m, RoundUpAmount = 0.60m });
+
+        var act = async () => await service.AddExpenseAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*negative (reimbursement) expense*");
+    }
+
+    [Fact]
     public async Task UpdateExpenseAsync_ChangingValueOnly_LeavesRoundUpAmountUnchanged()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);

@@ -23,6 +23,17 @@ public partial class ExpenseFormView : UserControl
         e.Handled = !DecimalInputHelper.IsDecimalTextAllowed(textBox, e.Text);
     }
 
+    private void OnSignedDecimalTextBoxPreviewTextInput(object sender, TextCompositionEventArgs e)
+    {
+        if (sender is not TextBox textBox)
+        {
+            e.Handled = true;
+            return;
+        }
+
+        e.Handled = !DecimalInputHelper.IsSignedDecimalTextAllowed(textBox, e.Text);
+    }
+
     private void OnDecimalTextBoxPasting(object sender, DataObjectPastingEventArgs e)
     {
         if (sender is not TextBox textBox)
@@ -39,6 +50,27 @@ public partial class ExpenseFormView : UserControl
 
         var pasteText = e.SourceDataObject.GetData(DataFormats.Text) as string ?? string.Empty;
         if (!DecimalInputHelper.IsDecimalTextAllowed(textBox, pasteText))
+        {
+            e.CancelCommand();
+        }
+    }
+
+    private void OnSignedDecimalTextBoxPasting(object sender, DataObjectPastingEventArgs e)
+    {
+        if (sender is not TextBox textBox)
+        {
+            e.CancelCommand();
+            return;
+        }
+
+        if (!e.SourceDataObject.GetDataPresent(DataFormats.Text))
+        {
+            e.CancelCommand();
+            return;
+        }
+
+        var pasteText = e.SourceDataObject.GetData(DataFormats.Text) as string ?? string.Empty;
+        if (!DecimalInputHelper.IsSignedDecimalTextAllowed(textBox, pasteText))
         {
             e.CancelCommand();
         }

@@ -11,6 +11,12 @@ public static class DecimalInputHelper
         return IsValidDecimalInput(proposed);
     }
 
+    public static bool IsSignedDecimalTextAllowed(TextBox textBox, string input)
+    {
+        var proposed = GetProposedText(textBox, input);
+        return IsValidSignedDecimalInput(proposed);
+    }
+
     public static string GetProposedText(TextBox textBox, string input)
     {
         var text = textBox.Text ?? string.Empty;
@@ -60,6 +66,17 @@ public static class DecimalInputHelper
         }
 
         return true;
+    }
+
+    /// <summary>Like <see cref="IsValidDecimalInput"/> but also allows a single leading minus sign, for fields that accept reimbursements (negative amounts).</summary>
+    public static bool IsValidSignedDecimalInput(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return true;
+        }
+
+        return text[0] == '-' ? IsValidDecimalInput(text[1..]) : IsValidDecimalInput(text);
     }
 
     public static string NormalizeDecimalSeparator(string text)

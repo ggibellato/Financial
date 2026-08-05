@@ -471,6 +471,16 @@ describe('useMonthly', () => {
     expect(result.current.createRoundUpAmount).toBe('')
   })
 
+  it('a negative (reimbursement) value does not fill a round-up suggestion', async () => {
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setCreateField('createValue', '-9.40'))
+    act(() => result.current.setCreateField('createPaymentSource', 'Trading212'))
+
+    expect(result.current.createRoundUpAmount).toBe('')
+  })
+
   it('sends the round-up amount on create for a round-up-enabled bank', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
     const { result } = renderHook(() => useMonthly())

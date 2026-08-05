@@ -24,7 +24,7 @@ public class Expense
         : PaymentSource is null ? ExpensePaymentStatus.CreditCardCharge
         : ExpensePaymentStatus.CreditCardSettled;
 
-    public decimal RoundUpSuggestion => Math.Ceiling(Value) - Value;
+    public decimal RoundUpSuggestion => Value <= 0 ? 0m : Math.Ceiling(Value) - Value;
 
     public bool IsInvestment => Category.IsInvestment();
 
@@ -115,6 +115,11 @@ public class Expense
         {
             throw new ArgumentException(
                 "Round-up only applies to an expense paid directly from a bank, not a credit-card charge.");
+        }
+
+        if (Value <= 0)
+        {
+            throw new ArgumentException("Round-up does not apply to a negative (reimbursement) expense.");
         }
 
         if (amount < MinRoundUpAmount || amount > MaxRoundUpAmount)

@@ -186,6 +186,19 @@ public class MonthlyViewModelTests
     }
 
     [Fact]
+    public async Task NegativeValue_SelectingRoundUpEnabledBank_DoesNotSuggestRoundUp()
+    {
+        var (viewModel, _, _, banks, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateExpenseFormCommand.Execute(null);
+
+        viewModel.ExpenseFormValue = "-9.40";
+        viewModel.ExpenseFormPaymentSource = banks.Banks[0].Name; // Barclays, round-up enabled
+
+        viewModel.ExpenseFormRoundUpAmount.Should().BeEmpty();
+    }
+
+    [Fact]
     public void SettledExpense_DeleteCommandCannotExecute()
     {
         var (viewModel, _, _, _, _) = CreateViewModel();

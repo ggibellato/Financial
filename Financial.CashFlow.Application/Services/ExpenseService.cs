@@ -158,7 +158,9 @@ public sealed class ExpenseService : IExpenseService
 
     private decimal? GetSuggestedRoundUpAmount(Expense expense)
     {
-        if (expense.RoundUpAmount is not null || expense.PaymentStatus != ExpensePaymentStatus.ImmediatePayment)
+        if (expense.RoundUpAmount is not null
+            || expense.PaymentStatus != ExpensePaymentStatus.ImmediatePayment
+            || expense.Value <= 0)
         {
             return null;
         }
