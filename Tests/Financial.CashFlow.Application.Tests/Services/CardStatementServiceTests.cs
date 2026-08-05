@@ -21,6 +21,14 @@ public class CardStatementServiceTests
         return expense;
     }
 
+    private static Expense AddChargeWithInvoiceDate(
+        StubCashFlowRepository repository, DateOnly date, DateOnly invoiceDate, decimal value, CreditCard card)
+    {
+        var expense = Expense.Create(date, "Charge near cutoff", value, Category.Mercado, null, card, invoiceDate);
+        repository.Expenses.Add(expense);
+        return expense;
+    }
+
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
@@ -119,6 +127,100 @@ public class CardStatementServiceTests
 
             otherMonth.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
             otherCard.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+        }
+    }
+
+    [Fact]
+    public async Task MarkStatementPaidAsync_ChargeNearBillingCutoff_SettlesAgainstInvoicePeriodStatementNotChargeMonth()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var cutoffCharge = AddChargeWithInvoiceDate(
+            repository,
+            date: new DateOnly(2026, 7, 29),
+            invoiceDate: new DateOnly(2026, 8, 1),
+            value: 40m,
+            card: CreditCard.BarclaysPlatinumVisa8003);
+        var service = new CardStatementService(repository);
+        await service.GetStatementsForMonthAsync(2026, 7);
+        await service.GetStatementsForMonthAsync(2026, 8);
+        var julyStatement = repository.CardStatements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003 && s.Month == 7);
+        var augustStatement = repository.CardStatements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003 && s.Month == 8);
+
+        var julyResult = await service.MarkStatementPaidAsync(julyStatement.Id, PaidBy("Trading212"));
+
+        using (new AssertionScope())
+        {
+            julyResult.OutstandingTotal.Should().Be(0m);
+            julyResult.Warning.Should().NotBeNull();
+            cutoffCharge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+        }
+
+        var augustResult = await service.MarkStatementPaidAsync(augustStatement.Id, PaidBy("Trading212"));
+
+        using (new AssertionScope())
+        {
+            augustResult.OutstandingTotal.Should().Be(0m);
+            augustResult.Warning.Should().BeNull();
+            cutoffCharge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
+        }
+    }
+
+    [Fact]
+    public async Task MarkStatementPaidAsync_WithNoMatchingCharges_ReturnsWarningAndZeroOutstanding()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new CardStatementService(repository);
+        await service.GetStatementsForMonthAsync(2026, 7);
+        var statement = repository.CardStatements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003);
+
+        var result = await service.MarkStatementPaidAsync(statement.Id, PaidBy("Trading212"));
+
+        using (new AssertionScope())
+        {
+            result.IsPaid.Should().BeTrue();
+            result.OutstandingTotal.Should().Be(0m);
+            result.Warning.Should().NotBeNull();
+            result.Warning.Should().Contain("2026-07");
+        }
+    }
+
+    [Fact]
+    public async Task MarkStatementPaidAsync_WithMatchingCharges_WarningIsNull()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        AddCharge(repository, new DateOnly(2026, 7, 10), 30m, CreditCard.BarclaysPlatinumVisa8003);
+        var service = new CardStatementService(repository);
+        await service.GetStatementsForMonthAsync(2026, 7);
+        var statement = repository.CardStatements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003);
+
+        var result = await service.MarkStatementPaidAsync(statement.Id, PaidBy("Trading212"));
+
+        result.Warning.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UnmarkStatementPaidAsync_ChargeNearBillingCutoff_RevertsOnlyTheInvoicePeriodMatch()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var cutoffCharge = AddChargeWithInvoiceDate(
+            repository,
+            date: new DateOnly(2026, 7, 29),
+            invoiceDate: new DateOnly(2026, 8, 1),
+            value: 40m,
+            card: CreditCard.BarclaysPlatinumVisa8003);
+        var service = new CardStatementService(repository);
+        await service.GetStatementsForMonthAsync(2026, 8);
+        var augustStatement = repository.CardStatements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003 && s.Month == 8);
+        await service.MarkStatementPaidAsync(augustStatement.Id, PaidBy("Trading212"));
+
+        var result = await service.UnmarkStatementPaidAsync(augustStatement.Id);
+
+        using (new AssertionScope())
+        {
+            result.IsPaid.Should().BeFalse();
+            cutoffCharge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+            cutoffCharge.PaymentSource.Should().BeNull();
+            cutoffCharge.Date.Should().Be(cutoffCharge.ChargeDate);
         }
     }
 
