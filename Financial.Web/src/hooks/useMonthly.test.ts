@@ -21,6 +21,7 @@ const NEXT_MONTH_YEAR = CURRENT_MONTH === 12 ? CURRENT_YEAR + 1 : CURRENT_YEAR
 const NEXT_MONTH_INPUT = `${NEXT_MONTH_YEAR}-${String(NEXT_MONTH).padStart(2, '0')}`
 
 const getExpensesByMonthMock = vi.fn<FinancialApiClient['getExpensesByMonth']>()
+const getUnpaidCardChargesByMonthMock = vi.fn<FinancialApiClient['getUnpaidCardChargesByMonth']>()
 const getCategoryTotalsByMonthMock = vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>()
 const getCardStatementsByMonthMock = vi.fn<FinancialApiClient['getCardStatementsByMonth']>()
 const getBanksMock = vi.fn<FinancialApiClient['getBanks']>()
@@ -39,6 +40,7 @@ const getTitheSummaryByMonthMock = vi.fn<FinancialApiClient['getTitheSummaryByMo
 vi.mock('../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getExpensesByMonth: getExpensesByMonthMock,
+    getUnpaidCardChargesByMonth: getUnpaidCardChargesByMonthMock,
     getCategoryTotalsByMonth: getCategoryTotalsByMonthMock,
     getCardStatementsByMonth: getCardStatementsByMonthMock,
     getBanks: getBanksMock,
@@ -107,6 +109,7 @@ const TITHE_SUMMARY: TitheSummaryDto = { calculatedTithe: 245, titheBalance: 245
 describe('useMonthly', () => {
   beforeEach(() => {
     getExpensesByMonthMock.mockReset()
+    getUnpaidCardChargesByMonthMock.mockReset()
     getCategoryTotalsByMonthMock.mockReset()
     getCardStatementsByMonthMock.mockReset()
     getBanksMock.mockReset()
@@ -122,6 +125,7 @@ describe('useMonthly', () => {
     getBankBalancesByMonthMock.mockReset()
     getTitheSummaryByMonthMock.mockReset()
     getExpensesByMonthMock.mockResolvedValue(EXPENSES)
+    getUnpaidCardChargesByMonthMock.mockResolvedValue([])
     getCategoryTotalsByMonthMock.mockResolvedValue(CATEGORY_TOTALS)
     getCardStatementsByMonthMock.mockResolvedValue(CARD_STATEMENTS)
     getBanksMock.mockResolvedValue(BANKS)

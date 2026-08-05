@@ -82,6 +82,7 @@ interface MonthlyState {
   year: number
   month: number
   expenses: ExpenseDto[]
+  unpaidCardCharges: ExpenseDto[]
   categoryTotals: CategoryTotalDto[]
   cardStatements: CardStatementDto[]
   banks: BankDto[]
@@ -140,6 +141,7 @@ type MonthlyAction =
       type: 'FETCH_SUCCESS'
       payload: {
         expenses: ExpenseDto[]
+        unpaidCardCharges: ExpenseDto[]
         categoryTotals: CategoryTotalDto[]
         cardStatements: CardStatementDto[]
         banks: BankDto[]
@@ -200,6 +202,7 @@ const BLANK_CREATE_INCOME_FORM = {
 
 const INITIAL_STATE_BASE: Omit<MonthlyState, 'year' | 'month'> = {
   expenses: [],
+  unpaidCardCharges: [],
   categoryTotals: [],
   cardStatements: [],
   banks: [],
@@ -260,6 +263,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         ...state,
         isLoading: false,
         expenses: action.payload.expenses,
+        unpaidCardCharges: action.payload.unpaidCardCharges,
         categoryTotals: action.payload.categoryTotals,
         cardStatements: action.payload.cardStatements,
         banks: action.payload.banks,
@@ -487,6 +491,7 @@ export interface MonthlyData {
   monthInputValue: string
   setMonthInputValue: (value: string) => void
   expenses: ExpenseDto[]
+  unpaidCardCharges: ExpenseDto[]
   categoryTotals: CategoryTotalDto[]
   categoryTotalsSum: number
   cardStatements: CardStatementDto[]
@@ -575,6 +580,7 @@ export function useMonthly(): MonthlyData {
     dispatch({ type: 'FETCH_START' })
     void Promise.all([
       apiClient.getExpensesByMonth(state.year, state.month),
+      apiClient.getUnpaidCardChargesByMonth(state.year, state.month),
       apiClient.getCategoryTotalsByMonth(state.year, state.month),
       apiClient.getCardStatementsByMonth(state.year, state.month),
       apiClient.getBanks(),
@@ -582,11 +588,21 @@ export function useMonthly(): MonthlyData {
       apiClient.getBankBalancesByMonth(state.year, state.month),
       apiClient.getTitheSummaryByMonth(state.year, state.month),
     ])
-      .then(([expenses, categoryTotals, cardStatements, banks, incomes, bankBalances, titheSummary]) =>
-        dispatch({
-          type: 'FETCH_SUCCESS',
-          payload: { expenses, categoryTotals, cardStatements, banks, incomes, bankBalances, titheSummary },
-        }),
+      .then(
+        ([expenses, unpaidCardCharges, categoryTotals, cardStatements, banks, incomes, bankBalances, titheSummary]) =>
+          dispatch({
+            type: 'FETCH_SUCCESS',
+            payload: {
+              expenses,
+              unpaidCardCharges,
+              categoryTotals,
+              cardStatements,
+              banks,
+              incomes,
+              bankBalances,
+              titheSummary,
+            },
+          }),
       )
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: err instanceof Error ? err.message : 'Unable to load Monthly data' })
@@ -1017,6 +1033,7 @@ export function useMonthly(): MonthlyData {
     monthInputValue,
     setMonthInputValue,
     expenses: state.expenses,
+    unpaidCardCharges: state.unpaidCardCharges,
     categoryTotals: state.categoryTotals,
     categoryTotalsSum,
     cardStatements: state.cardStatements,
