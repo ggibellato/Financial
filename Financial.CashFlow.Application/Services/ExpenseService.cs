@@ -68,7 +68,7 @@ public sealed class ExpenseService : IExpenseService
         _repository.GetExpenses()
             .Where(e => OriginationDate(e).Year == year && OriginationDate(e).Month == month)
             .Where(e => e.PaymentStatus != ExpensePaymentStatus.CreditCardCharge)
-            .OrderByDescending(e => e.Date)
+            .OrderByDescending(OriginationDate)
             .Select(ToDto)
             .ToList();
 
@@ -76,7 +76,7 @@ public sealed class ExpenseService : IExpenseService
         _repository.GetExpenses()
             .Where(e => OriginationDate(e).Year == year && OriginationDate(e).Month == month)
             .Where(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge)
-            .OrderByDescending(e => e.Date)
+            .OrderByDescending(OriginationDate)
             .Select(ToDto)
             .ToList();
 
