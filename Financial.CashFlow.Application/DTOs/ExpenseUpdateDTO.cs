@@ -23,6 +23,9 @@ public sealed class ExpenseUpdateDTO
     /// <summary>Optional credit-card tag name.</summary>
     public string? CardTag { get; init; }
 
+    /// <summary>Invoice-period override for a credit card expense. Rejected if changed while the expense is already settled.</summary>
+    public DateOnly? InvoiceDate { get; init; }
+
     /// <summary>Round-up amount. Full-replace: whatever is sent (including null) becomes the new stored value.</summary>
     public decimal? RoundUpAmount { get; init; }
 }
