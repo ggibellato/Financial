@@ -296,13 +296,13 @@ graph TD
 - [ ] An expense's position in the Card tab list is unchanged immediately before and after its invoice is marked paid.
 
 ### F07. Existing Data Migration
-- [ ] Running the migrator against a backup copy of `data-cashflow.json` populates `ChargeDate` for every credit card expense with no data loss (verified by diff against the pre-migration backup).
-- [ ] For a still-unpaid expense, `Date` is unchanged and `ChargeDate` equals the pre-migration `Date`.
-- [ ] For an already-settled expense, `Date` becomes the pre-migration `SettledAt` value and `ChargeDate` becomes the pre-migration `Date` value.
-- [ ] `InvoiceDate` is populated for every credit card expense, derived from the matching `CardStatement` where one exists.
-- [ ] Re-running the migrator on already-migrated data makes zero further changes (idempotency).
-- [ ] Bank-only expenses are untouched by the migration (record count and field values identical before/after).
-- [ ] A pre-migration backup file exists and is verified intact before the migration is applied to the live local file or the Google Drive copy.
+- [x] Running the migrator against a backup copy of `data-cashflow.json` populates `ChargeDate` for every credit card expense with no data loss (verified by diff against the pre-migration backup).
+- [x] For a still-unpaid expense, `Date` is unchanged and `ChargeDate` equals the pre-migration `Date`.
+- [x] For an already-settled expense, `Date` becomes the pre-migration `SettledAt` value and `ChargeDate` becomes the pre-migration `Date` value.
+- [x] `InvoiceDate` is populated for every credit card expense, derived from the matching `CardStatement` where one exists.
+- [x] Re-running the migrator on already-migrated data makes zero further changes (idempotency).
+- [x] Bank-only expenses are untouched by the migration (record count and field values identical before/after).
+- [x] A pre-migration backup file exists and is verified intact before the migration is applied to the live local file or the Google Drive copy.
 
 ### F08. Spreadsheet Import Update
 - [ ] Every newly imported credit card expense has `ChargeDate` equal to its imported row date.
@@ -315,5 +315,5 @@ graph TD
 - [x] F01's fields are correctly consumed by F03's category-total grouping (unpaid vs. paid expenses grouped by the correct field).
 - [ ] F01's fields are correctly exposed end-to-end through F04's data contract and displayed/edited in F05 (Web) and F06 (WPF).
 - [ ] F02's corrected invoice-period matching is reflected in what F05 and F06 display as "this invoice's charges" in the Card tab.
-- [ ] F01's field definitions are correctly applied by F07's migration to 100% of pre-existing credit card expenses.
+- [x] F01's field definitions are correctly applied by F07's migration to 100% of pre-existing credit card expenses.
 - [ ] F01's field definitions are correctly applied by F08 to every newly imported credit card expense going forward.
