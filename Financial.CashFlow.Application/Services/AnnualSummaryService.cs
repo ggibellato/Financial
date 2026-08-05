@@ -54,12 +54,12 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     /// </summary>
     private IReadOnlyList<(Category Category, MonthlySeries Display, MonthlySeries ForAverage)> BuildAllCategorySeriesForYear(int year)
     {
-        var yearExpenses = _repository.GetExpenses().Where(e => e.Date.Year == year).ToList();
+        var yearExpenses = _repository.GetExpenses().Where(e => EffectiveDate(e).Year == year).ToList();
         var now = _timeProvider.GetUtcNow();
         var currentMonthCutoff = new DateOnly(now.Year, now.Month, 1);
 
         var totalsByCategoryAndMonth = BuildCategoryMonthlyTotals(yearExpenses);
-        var totalsForAverageByCategoryAndMonth = BuildCategoryMonthlyTotals(yearExpenses.Where(e => e.Date < currentMonthCutoff));
+        var totalsForAverageByCategoryAndMonth = BuildCategoryMonthlyTotals(yearExpenses.Where(e => EffectiveDate(e) < currentMonthCutoff));
 
         return Enum.GetValues<Category>()
             .Select(category => (
@@ -74,7 +74,15 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     }
 
     private static Dictionary<(Category, int), decimal> BuildCategoryMonthlyTotals(IEnumerable<Expense> expenses) =>
-        expenses.GroupBy(e => (e.Category, e.Date.Month)).ToDictionary(g => g.Key, g => g.Sum(e => e.Value));
+        expenses.GroupBy(e => (e.Category, EffectiveDate(e).Month)).ToDictionary(g => g.Key, g => g.Sum(e => e.Value));
+
+    /// <summary>
+    /// The month/year an expense's value counts toward in reporting: an unpaid credit card
+    /// charge counts toward its assigned invoice period, while a settled charge or a bank
+    /// expense counts toward its (post-settlement, for a charge) <see cref="Expense.Date"/>.
+    /// </summary>
+    private static DateOnly EffectiveDate(Expense expense) =>
+        expense.PaymentStatus == ExpensePaymentStatus.CreditCardCharge ? expense.InvoiceDate!.Value : expense.Date;
 
     public InvestmentAnnualResultDTO GetInvestmentAnnualResultForYear(int year)
     {
@@ -495,15 +503,15 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     {
         var now = _timeProvider.GetUtcNow();
         var expenses = _repository.GetExpenses()
-            .Where(e => e.Date.Year <= year && e.Date < new DateOnly(now.Year, now.Month, 1))
+            .Where(e => EffectiveDate(e).Year <= year && EffectiveDate(e) < new DateOnly(now.Year, now.Month, 1))
             .ToList();
 
         var sumByYearMonthCategory = expenses
-            .GroupBy(e => (e.Date.Year, e.Date.Month, e.Category))
+            .GroupBy(e => (EffectiveDate(e).Year, EffectiveDate(e).Month, e.Category))
             .ToDictionary(g => g.Key, g => g.Sum(e => e.Value));
 
         var categoriesByYear = expenses
-            .GroupBy(e => e.Date.Year)
+            .GroupBy(e => EffectiveDate(e).Year)
             .ToDictionary(g => g.Key, g => g.Select(e => e.Category).Distinct().ToList());
 
         var result = categoriesByYear.Select(yearGroup =>
