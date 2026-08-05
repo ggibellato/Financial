@@ -30,6 +30,9 @@
             <TabItem Header="Expense">
                 <local:ExpenseSectionView/>
             </TabItem>
+            <TabItem Header="Credit Card">
+                <local:CardsGridView/>
+            </TabItem>
             <TabItem Header="Income">
                 <local:IncomeSectionView/>
             </TabItem>
