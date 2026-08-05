@@ -296,11 +296,11 @@ graph TD
 - [ ] After a statement is marked paid, its expenses disappear from this list without a manual refresh.
 
 ### F07. Web: Lock Payment Mode by Tab Context
-- [ ] Opening "New Expense" from the Expense tab shows the create form with no payment-mode toggle and only the bank Payment Source field (plus Round-Up when the selected bank is eligible).
-- [ ] Opening "New Expense" from the Credit Card tab shows the create form with no payment-mode toggle and only the Card field.
-- [ ] Submitting a new expense from the Expense tab always sends a bank payment source and a null card tag.
-- [ ] Submitting a new expense from the Credit Card tab always sends a card tag and a null payment source.
-- [ ] Editing a non-settled expense from either tab shows the same tab-appropriate single field group, with no toggle.
+- [x] Opening "New Expense" from the Expense tab shows the create form with no payment-mode toggle and only the bank Payment Source field (plus Round-Up when the selected bank is eligible).
+- [x] Opening "New Expense" from the Credit Card tab shows the create form with no payment-mode toggle and only the Card field.
+- [x] Submitting a new expense from the Expense tab always sends a bank payment source and a null card tag.
+- [x] Submitting a new expense from the Credit Card tab always sends a card tag and a null payment source.
+- [x] Editing a non-settled expense from either tab shows the same tab-appropriate single field group, with no toggle.
 
 ### F08. WPF: Lock Payment Mode by Tab Context
 - [ ] Opening "New Expense" from the Expense tab shows the create form with no payment-mode toggle and only the Payment Source field (plus Round-Up when the selected bank is eligible).
