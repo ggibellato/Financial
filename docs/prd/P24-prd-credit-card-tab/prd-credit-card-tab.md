@@ -270,11 +270,11 @@ graph TD
 - [x] Marking a statement paid from one tab is reflected in the other tab's grid without a page reload.
 
 ### F03. WPF: Dedicated Credit Card Tab
-- [ ] The Monthly view shows a "Credit Card" tab positioned immediately after the Expense tab (order: Summary, Expense, Credit Card, Incoming, Bank).
-- [ ] The Credit Card tab displays the same per-card outstanding totals shown in Summary, for the selected month.
-- [ ] The Summary tab continues to display its Cards grid unchanged — same content, same position, no regression.
-- [ ] Mark Paid and Unmark Paid actions work identically from the Credit Card tab and from Summary (same bank-picker requirement, same resulting state).
-- [ ] Marking a statement paid from one tab is reflected in the other tab's grid without a manual refresh.
+- [x] The Monthly view shows a "Credit Card" tab positioned immediately after the Expense tab (order: Summary, Expense, Credit Card, Incoming, Bank).
+- [x] The Credit Card tab displays the same per-card outstanding totals shown in Summary, for the selected month.
+- [x] The Summary tab continues to display its Cards grid unchanged — same content, same position, no regression.
+- [x] Mark Paid and Unmark Paid actions work identically from the Credit Card tab and from Summary (same bank-picker requirement, same resulting state).
+- [x] Marking a statement paid from one tab is reflected in the other tab's grid without a manual refresh.
 
 ### F04. Backend: Expose Unpaid Card Charge Expenses
 - [x] For a given month, the new query returns every expense whose `PaymentStatus` is `CreditCardCharge` for that month, with date, description, value, category, and card tag.
@@ -303,11 +303,11 @@ graph TD
 - [x] Editing a non-settled expense from either tab shows the same tab-appropriate single field group, with no toggle.
 
 ### F08. WPF: Lock Payment Mode by Tab Context
-- [ ] Opening "New Expense" from the Expense tab shows the create form with no payment-mode toggle and only the Payment Source field (plus Round-Up when the selected bank is eligible).
-- [ ] Opening "New Expense" from the Credit Card tab shows the create form with no payment-mode toggle and only the Card field.
+- [x] Opening "New Expense" from the Expense tab shows the create form with no payment-mode toggle and only the Payment Source field (plus Round-Up when the selected bank is eligible).
+- [x] Opening "New Expense" from the Credit Card tab shows the create form with no payment-mode toggle and only the Card field.
 - [x] Submitting a new expense from the Expense tab always sends a bank payment source and a null card tag.
 - [x] Submitting a new expense from the Credit Card tab always sends a card tag and a null payment source.
-- [ ] Editing a non-settled expense from either tab shows the same tab-appropriate single field group, with no toggle.
+- [x] Editing a non-settled expense from either tab shows the same tab-appropriate single field group, with no toggle.
 
 ### Cross-Feature Integration
 - [ ] No cross-feature integration criteria apply between F01, F02, and F03 (no Consumes/Provides declared in Section 6 for those three).
