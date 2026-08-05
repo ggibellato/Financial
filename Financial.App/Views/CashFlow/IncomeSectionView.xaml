@@ -39,7 +39,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Binding="{Binding Date, StringFormat=d}" Header="Date" Width="100"
+                <DataGridTextColumn Binding="{Binding Date, StringFormat={}{0:dd/MM/yyyy}}" Header="Date" Width="100"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                 <DataGridTextColumn Binding="{Binding IncomeSource}" Header="Source" Width="140"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>

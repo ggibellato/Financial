@@ -25,7 +25,7 @@ public partial class DividendCheckView : UserControl
     private void DividendDataGrid_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
     {
         if (e.PropertyType == typeof(DateTime) && e.Column is DataGridTextColumn dateColumn)
-            dateColumn.Binding.StringFormat = DateFormatHelper.GetPaddedShortDatePattern();
+            dateColumn.Binding.StringFormat = DateFormatHelper.DisplayDatePattern;
 
         if (!ApplyValueColumnStyle(e, "Value"))
             ApplyPlainColumnStyle(e);

@@ -1,6 +1,5 @@
 using System.Globalization;
 using Financial.Presentation.App.Converters;
-using Financial.Presentation.App.Helpers;
 using FluentAssertions;
 
 namespace Financial.Presentation.Tests.Converters;
@@ -20,25 +19,23 @@ public class DateFormatConverterTests
     }
 
     [Fact]
-    public void Convert_WithNullFormatParameter_UsesPaddedShortDatePattern()
+    public void Convert_WithNullFormatParameter_UsesDisplayDatePattern()
     {
-        var date = new DateTime(2026, 7, 5);
+        var date = new DateTime(2026, 8, 27);
 
         var result = _converter.Convert(date, typeof(string), null, CultureInfo.InvariantCulture);
 
-        var expectedFormat = DateFormatHelper.GetPaddedShortDatePattern();
-        result.Should().Be(date.ToString(expectedFormat, CultureInfo.CurrentCulture));
+        result.Should().Be("27/08/2026");
     }
 
     [Fact]
-    public void Convert_WithLowercaseDFormatParameter_UsesPaddedShortDatePattern()
+    public void Convert_WithLowercaseDFormatParameter_UsesDisplayDatePattern()
     {
-        var date = new DateTime(2026, 7, 5);
+        var date = new DateTime(2026, 8, 27);
 
         var result = _converter.Convert(date, typeof(string), "d", CultureInfo.InvariantCulture);
 
-        var expectedFormat = DateFormatHelper.GetPaddedShortDatePattern();
-        result.Should().Be(date.ToString(expectedFormat, CultureInfo.CurrentCulture));
+        result.Should().Be("27/08/2026");
     }
 
     [Fact]
