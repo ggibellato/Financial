@@ -55,7 +55,8 @@ public class CashFlowSerializerAdapterTests
         resultExpense.Category.Should().Be(expense.Category);
         resultExpense.PaymentSource.Should().Be(expense.PaymentSource);
         resultExpense.CardTag.Should().Be(expense.CardTag);
-        resultExpense.SettledAt.Should().Be(expense.SettledAt);
+        resultExpense.ChargeDate.Should().Be(expense.ChargeDate);
+        resultExpense.InvoiceDate.Should().Be(expense.InvoiceDate);
         var resultMovement = result.ReserveMovements.Should().ContainSingle().Which;
         resultMovement.Id.Should().Be(reserveMovement.Id);
         resultMovement.Bucket.Should().Be(reserveMovement.Bucket);

@@ -60,7 +60,7 @@ public sealed class ExpenseService : IExpenseService
 
     public IReadOnlyList<ExpenseDTO> GetExpensesByMonth(int year, int month) =>
         _repository.GetExpenses()
-            .Where(e => e.Date.Year == year && e.Date.Month == month)
+            .Where(e => OriginationDate(e).Year == year && OriginationDate(e).Month == month)
             .Where(e => e.PaymentStatus != ExpensePaymentStatus.CreditCardCharge)
             .OrderByDescending(e => e.Date)
             .Select(ToDto)
@@ -68,7 +68,7 @@ public sealed class ExpenseService : IExpenseService
 
     public IReadOnlyList<ExpenseDTO> GetUnpaidCardChargesByMonth(int year, int month) =>
         _repository.GetExpenses()
-            .Where(e => e.Date.Year == year && e.Date.Month == month)
+            .Where(e => OriginationDate(e).Year == year && OriginationDate(e).Month == month)
             .Where(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge)
             .OrderByDescending(e => e.Date)
             .Select(ToDto)
@@ -76,7 +76,7 @@ public sealed class ExpenseService : IExpenseService
 
     public IReadOnlyList<CategoryTotalDTO> GetCategoryTotalsByMonth(int year, int month) =>
         _repository.GetExpenses()
-            .Where(e => e.Date.Year == year && e.Date.Month == month)
+            .Where(e => OriginationDate(e).Year == year && OriginationDate(e).Month == month)
             .GroupBy(e => e.Category)
             .Select(g => new CategoryTotalDTO
             {
@@ -84,6 +84,8 @@ public sealed class ExpenseService : IExpenseService
                 TotalValue = g.Sum(e => e.Value)
             })
             .ToList();
+
+    private static DateOnly OriginationDate(Expense expense) => expense.ChargeDate ?? expense.Date;
 
     private Expense FindExpenseOrThrow(Guid id) =>
         _repository.GetExpenses().FirstOrDefault(e => e.Id == id)

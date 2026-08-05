@@ -71,7 +71,7 @@ public class CardStatementsEndpointsTests
         var settled = expenses!.Single(e => e.Description == "Card charge");
         settled.PaymentStatus.Should().Be("CreditCardSettled");
         settled.PaymentSource.Should().Be("Trading212");
-        settled.SettledAt.Should().Be(DateOnly.FromDateTime(DateTime.Today));
+        settled.Date.Should().Be(DateOnly.FromDateTime(DateTime.Today));
     }
 
     [Fact]
