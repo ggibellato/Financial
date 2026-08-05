@@ -282,11 +282,11 @@ graph TD
 - [x] Attempting to update `InvoiceDate` on an already-settled expense is rejected.
 
 ### F05. Web — Card Tab & Expense Form Support
-- [ ] Selecting a credit card in the Web expense form reveals an editable invoice month/year field, pre-filled with the default.
-- [ ] Changing the invoice month/year before saving persists the overridden value, while the expense is unpaid.
-- [ ] The invoice month/year field is read-only once the expense is settled.
-- [ ] The Web Card tab's unpaid and paid/history lists are sorted/positioned by `ChargeDate`.
-- [ ] An expense's position in the Card tab list is unchanged immediately before and after its invoice is marked paid.
+- [x] Selecting a credit card in the Web expense form reveals an editable invoice month/year field, pre-filled with the default.
+- [x] Changing the invoice month/year before saving persists the overridden value, while the expense is unpaid.
+- [x] The invoice month/year field is read-only once the expense is settled.
+- [x] The Web Card tab's unpaid and paid/history lists are sorted/positioned by `ChargeDate`.
+- [x] An expense's position in the Card tab list is unchanged immediately before and after its invoice is marked paid.
 
 ### F06. WPF — Card Tab & Expense Form Support
 - [ ] Selecting a credit card in the WPF expense dialog reveals an editable invoice month/year field, pre-filled with the default.
