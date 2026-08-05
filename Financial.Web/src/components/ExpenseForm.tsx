@@ -37,7 +37,6 @@ interface ExpenseFormProps {
   isSaving: boolean
   saveError: string | null
   onFieldChange: (field: ExpenseFormField, value: string) => void
-  onModeChange: (mode: PaymentMode) => void
   onSave: () => void
   onCancel: () => void
 }
@@ -57,7 +56,6 @@ export default function ExpenseForm({
   isSaving,
   saveError,
   onFieldChange,
-  onModeChange,
   onSave,
   onCancel,
 }: ExpenseFormProps) {
@@ -119,27 +117,6 @@ export default function ExpenseForm({
           </div>
         ) : (
           <>
-            <div className="monthly-page__form-field">
-              <span>Payment</span>
-              <label>
-                <input
-                  type="radio"
-                  name="expense-payment-mode"
-                  checked={paymentMode === 'bank'}
-                  onChange={() => onModeChange('bank')}
-                />
-                Pay immediately
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="expense-payment-mode"
-                  checked={paymentMode === 'card'}
-                  onChange={() => onModeChange('card')}
-                />
-                Charge to card
-              </label>
-            </div>
             {paymentMode === 'bank' ? (
               <>
                 <div className="monthly-page__form-field">

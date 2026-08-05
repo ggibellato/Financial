@@ -315,6 +315,7 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByText('Uber')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Edit expense' }))
     expect(screen.getByText('Edit Expense')).toBeInTheDocument()
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument()
     fireEvent.change(screen.getByDisplayValue('18.4'), { target: { value: '20' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
@@ -591,7 +592,7 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(unmarkCardStatementPaidMock).toHaveBeenCalledWith('c2'))
   })
 
-  it('bank mode shows only the bank picker and card mode only the card picker', async () => {
+  it('opens the New Expense form on the Expense tab locked to bank mode, no toggle', async () => {
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
 
@@ -600,14 +601,42 @@ describe('MonthlyPage', () => {
 
     expect(screen.getByLabelText('Payment Source')).toBeInTheDocument()
     expect(screen.queryByLabelText('Card')).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Charge to card' }))
-
-    expect(screen.queryByLabelText('Payment Source')).not.toBeInTheDocument()
-    expect(screen.getByLabelText('Card')).toBeInTheDocument()
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
 
-  it('submits a card-mode expense with a null payment source', async () => {
+  it('opens the New Expense form on the Credit Card tab locked to card mode, no toggle', async () => {
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
+
+    expect(screen.getByLabelText('Card')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Payment Source')).not.toBeInTheDocument()
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument()
+  })
+
+  it('creates a card expense from the Credit Card tab with a null payment source', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
+    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Amazon' } })
+    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '9.99' } })
+    fireEvent.change(screen.getByLabelText('Card'), { target: { value: 'BaAmex' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add Expense' }))
+
+    await waitFor(() =>
+      expect(createExpenseMock).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentSource: null, cardTag: 'BaAmex' }),
+      ),
+    )
+  })
+
+  it('creates a bank expense from the Expense tab with a null card tag', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
@@ -615,15 +644,13 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
     fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
-    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Amazon' } })
-    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '9.99' } })
-    fireEvent.click(screen.getByRole('radio', { name: 'Charge to card' }))
-    fireEvent.change(screen.getByLabelText('Card'), { target: { value: 'BaAmex' } })
+    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Waitrose 2' } })
+    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '12' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Expense' }))
 
     await waitFor(() =>
       expect(createExpenseMock).toHaveBeenCalledWith(
-        expect.objectContaining({ paymentSource: null, cardTag: 'BaAmex' }),
+        expect.objectContaining({ paymentSource: 'Barclays', cardTag: null }),
       ),
     )
   })
@@ -678,6 +705,7 @@ describe('MonthlyPage', () => {
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit expense' })[0])
     expect(screen.getByText('Edit Expense')).toBeInTheDocument()
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument()
     const valueInput = screen.getByDisplayValue('42.5')
     fireEvent.change(valueInput, { target: { value: '50' } })
 
@@ -883,7 +911,7 @@ describe('MonthlyPage', () => {
     expect(screen.getByLabelText('Round-Up')).toHaveValue(0.6)
   })
 
-  it('hides the round-up field for a non-round-up bank and for card mode', async () => {
+  it('hides the round-up field for a non-round-up bank', async () => {
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
 
@@ -895,8 +923,16 @@ describe('MonthlyPage', () => {
 
     fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'Barclays' } })
     expect(screen.queryByLabelText('Round-Up')).not.toBeInTheDocument()
+  })
 
-    fireEvent.click(screen.getByRole('radio', { name: 'Charge to card' }))
+  it('never shows the round-up field in card mode', async () => {
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
+    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '9.40' } })
+
     expect(screen.queryByLabelText('Round-Up')).not.toBeInTheDocument()
   })
 

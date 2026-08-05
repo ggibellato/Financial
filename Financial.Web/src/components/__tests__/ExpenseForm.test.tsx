@@ -23,7 +23,6 @@ const baseProps = {
   isSaving: false,
   saveError: null,
   onFieldChange: vi.fn(),
-  onModeChange: vi.fn(),
   onSave: vi.fn(),
   onCancel: vi.fn(),
 }
@@ -56,14 +55,18 @@ describe('ExpenseForm', () => {
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
 
-  it('shows the bank picker in bank mode and the card picker in card mode', () => {
-    const { rerender } = render(<ExpenseForm {...baseProps} paymentMode="bank" />)
+  it('shows the bank picker and no toggle in bank mode', () => {
+    render(<ExpenseForm {...baseProps} paymentMode="bank" />)
     expect(screen.getByLabelText('Payment Source')).toBeInTheDocument()
     expect(screen.queryByLabelText('Card')).not.toBeInTheDocument()
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument()
+  })
 
-    rerender(<ExpenseForm {...baseProps} paymentMode="card" />)
+  it('shows the card picker and no toggle in card mode', () => {
+    render(<ExpenseForm {...baseProps} paymentMode="card" />)
     expect(screen.queryByLabelText('Payment Source')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Card')).toBeInTheDocument()
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
 
   it('shows the round-up field only for a round-up-enabled bank in bank mode', () => {
