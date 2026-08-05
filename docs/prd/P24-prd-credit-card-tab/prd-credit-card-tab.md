@@ -152,10 +152,10 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Exclude Unpaid Card Charges from Expense List
-- [ ] For a month with an unpaid credit card statement, expenses charged to that card and not yet settled do not appear in the monthly Expense list (Web and WPF).
-- [ ] For the same month, expenses paid directly from a bank still appear in the Expense list, unchanged.
-- [ ] After a card statement is marked paid, its expenses appear in the Expense list for that month on next load, without creating any new expense record.
-- [ ] After an unmark-paid action reverses a settlement, the affected expenses are excluded from the Expense list again.
+- [x] For a month with an unpaid credit card statement, expenses charged to that card and not yet settled do not appear in the monthly Expense list (Web and WPF).
+- [x] For the same month, expenses paid directly from a bank still appear in the Expense list, unchanged.
+- [x] After a card statement is marked paid, its expenses appear in the Expense list for that month on next load, without creating any new expense record.
+- [x] After an unmark-paid action reverses a settlement, the affected expenses are excluded from the Expense list again.
 
 ### F02. Web: Dedicated Credit Card Tab
 - [ ] The Monthly page shows a "Credit Card" tab positioned immediately after the Expense tab (order: Summary, Expense, Credit Card, Incoming, Bank).
