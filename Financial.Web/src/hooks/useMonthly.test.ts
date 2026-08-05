@@ -73,7 +73,8 @@ const EXPENSES: ExpenseDto[] = [
     category: 'Mercado',
     paymentSource: 'Barclays',
     cardTag: null,
-    settledAt: null,
+    chargeDate: null,
+    invoiceDate: null,
     paymentStatus: 'ImmediatePayment',
     roundUpAmount: null,
     suggestedRoundUpAmount: null,
@@ -389,7 +390,8 @@ describe('useMonthly', () => {
       id: 'e4',
       paymentSource: 'Trading212',
       cardTag: 'BaAmex',
-      settledAt: '2026-07-20',
+      chargeDate: EXPENSES[0].date,
+      invoiceDate: `${EXPENSES[0].date.slice(0, 7)}-01`,
       paymentStatus: 'CreditCardSettled',
     }
     updateExpenseMock.mockResolvedValue(settled)

@@ -251,6 +251,24 @@ public class ExpenseServiceTests
     }
 
     [Fact]
+    public async Task GetExpensesByMonth_SettledCardExpense_KeepsChargeDatePositionAfterSettlement()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new ExpenseService(repository);
+        var bankExpense = await service.AddExpenseAsync(ToCreateDto(
+            ValidCreateRequest() with { Description = "Bank", Date = new DateOnly(2026, 7, 15) }));
+        var cardExpense = await service.AddExpenseAsync(ToCreateDto(
+            ValidCreateRequest() with { Description = "Card", Date = new DateOnly(2026, 7, 10), PaymentSource = null, CardTag = "BaAmex" }));
+        // Settled after the bank expense's date - under the old Date-based sort this would put
+        // the card expense first; sorting by ChargeDate keeps it in its original charge position.
+        repository.Expenses.Single(e => e.Id == cardExpense.Id).Settle("Chase", new DateOnly(2026, 7, 25));
+
+        var result = service.GetExpensesByMonth(2026, 7);
+
+        result.Select(e => e.Id).Should().Equal(bankExpense.Id, cardExpense.Id);
+    }
+
+    [Fact]
     public async Task GetExpensesByMonth_UnsettledCreditCardCharge_IsExcluded()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);

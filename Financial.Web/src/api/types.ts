@@ -364,7 +364,8 @@ export interface ExpenseDto {
   category: string
   paymentSource: string | null
   cardTag: string | null
-  settledAt: string | null
+  chargeDate: string | null
+  invoiceDate: string | null
   paymentStatus: string
   roundUpAmount: number | null
   suggestedRoundUpAmount: number | null
@@ -377,6 +378,7 @@ export interface CreateExpenseDto {
   category: string
   paymentSource: string | null
   cardTag: string | null
+  invoiceDate: string | null
   roundUpAmount: number | null
 }
 
@@ -387,6 +389,7 @@ export interface UpdateExpenseDto {
   category: string
   paymentSource: string | null
   cardTag: string | null
+  invoiceDate: string | null
   roundUpAmount: number | null
 }
 

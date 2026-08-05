@@ -1,7 +1,15 @@
 import type { BankDto } from '../api/types'
 import type { PaymentMode } from '../hooks/useMonthly'
 
-export type ExpenseFormField = 'date' | 'description' | 'value' | 'category' | 'paymentSource' | 'cardTag' | 'roundUpAmount'
+export type ExpenseFormField =
+  | 'date'
+  | 'description'
+  | 'value'
+  | 'category'
+  | 'paymentSource'
+  | 'cardTag'
+  | 'invoiceDate'
+  | 'roundUpAmount'
 
 const CATEGORIES = [
   'Ariana',
@@ -30,6 +38,7 @@ interface ExpenseFormProps {
   category: string
   paymentSource: string
   cardTag: string
+  invoiceDate: string
   roundUpAmount: string
   paymentMode: PaymentMode
   banks: BankDto[]
@@ -49,6 +58,7 @@ export default function ExpenseForm({
   category,
   paymentSource,
   cardTag,
+  invoiceDate,
   roundUpAmount,
   paymentMode,
   banks,
@@ -61,6 +71,7 @@ export default function ExpenseForm({
 }: ExpenseFormProps) {
   const selectedBank = banks.find((b) => b.name === paymentSource)
   const showRoundUpField = paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
+  const invoiceDateDisplay = invoiceDate || (date ? date.slice(0, 7) : '')
   return (
     <div className="monthly-page__form-panel">
       <p className="monthly-page__form-title">{isEditing ? 'Edit Expense' : 'New Expense'}</p>
@@ -108,13 +119,19 @@ export default function ExpenseForm({
           />
         </div>
         {isSettled ? (
-          <div className="monthly-page__form-field">
-            <label>Payment</label>
-            <p className="monthly-page__settled-note">
-              Paid by {paymentSource} via card {cardTag}. Settled via its card statement — unmark the
-              statement paid to change these fields.
-            </p>
-          </div>
+          <>
+            <div className="monthly-page__form-field">
+              <label>Payment</label>
+              <p className="monthly-page__settled-note">
+                Paid by {paymentSource} via card {cardTag}. Settled via its card statement — unmark the
+                statement paid to change these fields.
+              </p>
+            </div>
+            <div className="monthly-page__form-field">
+              <label htmlFor="expense-invoice-date">Invoice Month</label>
+              <input id="expense-invoice-date" type="month" value={invoiceDateDisplay} disabled />
+            </div>
+          </>
         ) : (
           <>
             {paymentMode === 'bank' ? (
@@ -147,21 +164,32 @@ export default function ExpenseForm({
                 )}
               </>
             ) : (
-              <div className="monthly-page__form-field">
-                <label htmlFor="expense-card-tag">Card</label>
-                <select
-                  id="expense-card-tag"
-                  value={cardTag}
-                  onChange={(e) => onFieldChange('cardTag', e.target.value)}
-                >
-                  <option value="">Select card…</option>
-                  {CARDS.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <>
+                <div className="monthly-page__form-field">
+                  <label htmlFor="expense-card-tag">Card</label>
+                  <select
+                    id="expense-card-tag"
+                    value={cardTag}
+                    onChange={(e) => onFieldChange('cardTag', e.target.value)}
+                  >
+                    <option value="">Select card…</option>
+                    {CARDS.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="monthly-page__form-field">
+                  <label htmlFor="expense-invoice-date">Invoice Month</label>
+                  <input
+                    id="expense-invoice-date"
+                    type="month"
+                    value={invoiceDateDisplay}
+                    onChange={(e) => onFieldChange('invoiceDate', e.target.value)}
+                  />
+                </div>
+              </>
             )}
           </>
         )}

@@ -55,6 +55,7 @@ export type CreateFormField =
   | 'createCategory'
   | 'createPaymentSource'
   | 'createCardTag'
+  | 'createInvoiceDate'
   | 'createRoundUpAmount'
 export type EditField =
   | 'editDate'
@@ -63,6 +64,7 @@ export type EditField =
   | 'editCategory'
   | 'editPaymentSource'
   | 'editCardTag'
+  | 'editInvoiceDate'
   | 'editRoundUpAmount'
 
 export type CreateIncomeField =
@@ -99,6 +101,7 @@ interface MonthlyState {
   createCategory: string
   createPaymentSource: string
   createCardTag: string
+  createInvoiceDate: string
   createRoundUpAmount: string
   isCreating: boolean
   createError: string | null
@@ -109,6 +112,7 @@ interface MonthlyState {
   editCategory: string
   editPaymentSource: string
   editCardTag: string
+  editInvoiceDate: string
   editRoundUpAmount: string
   createPaymentMode: PaymentMode
   editPaymentMode: PaymentMode
@@ -186,6 +190,7 @@ const BLANK_CREATE_FORM = {
   createCategory: 'Mercado',
   createPaymentSource: '',
   createCardTag: '',
+  createInvoiceDate: '',
   createRoundUpAmount: '',
   createPaymentMode: 'bank',
 } as const
@@ -221,6 +226,7 @@ const INITIAL_STATE_BASE: Omit<MonthlyState, 'year' | 'month'> = {
   editCategory: '',
   editPaymentSource: '',
   editCardTag: '',
+  editInvoiceDate: '',
   editRoundUpAmount: '',
   editPaymentMode: 'bank',
   editIsSettled: false,
@@ -327,6 +333,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editCategory: action.payload.category,
         editPaymentSource: action.payload.paymentSource ?? '',
         editCardTag: action.payload.cardTag ?? '',
+        editInvoiceDate: action.payload.invoiceDate ? action.payload.invoiceDate.slice(0, 7) : '',
         editRoundUpAmount: action.payload.roundUpAmount != null ? String(action.payload.roundUpAmount) : '',
         editPaymentMode: action.payload.paymentStatus === CHARGE_STATUS ? 'card' : 'bank',
         editIsSettled: action.payload.paymentStatus === SETTLED_STATUS,
@@ -345,6 +352,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editCategory: '',
         editPaymentSource: '',
         editCardTag: '',
+        editInvoiceDate: '',
         editRoundUpAmount: '',
         editPaymentMode: 'bank',
         editIsSettled: false,
@@ -373,6 +381,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editCategory: '',
         editPaymentSource: '',
         editCardTag: '',
+        editInvoiceDate: '',
         editRoundUpAmount: '',
         editPaymentMode: 'bank',
         editIsSettled: false,
@@ -492,6 +501,7 @@ export interface MonthlyData {
   createCategory: string
   createPaymentSource: string
   createCardTag: string
+  createInvoiceDate: string
   createRoundUpAmount: string
   createPaymentMode: PaymentMode
   isCreating: boolean
@@ -507,6 +517,7 @@ export interface MonthlyData {
   editCategory: string
   editPaymentSource: string
   editCardTag: string
+  editInvoiceDate: string
   editRoundUpAmount: string
   editPaymentMode: PaymentMode
   editIsSettled: boolean
@@ -620,6 +631,7 @@ export function useMonthly(): MonthlyData {
       createPaymentMode,
       createPaymentSource,
       createCardTag,
+      createInvoiceDate,
       createRoundUpAmount,
       banks,
     } = state
@@ -671,6 +683,7 @@ export function useMonthly(): MonthlyData {
         category: createCategory,
         paymentSource: createPaymentMode === 'bank' ? createPaymentSource : null,
         cardTag: createPaymentMode === 'card' ? createCardTag : null,
+        invoiceDate: createPaymentMode === 'card' && createInvoiceDate ? `${createInvoiceDate}-01` : null,
         roundUpAmount,
       })
       .then(() => {
@@ -747,6 +760,7 @@ export function useMonthly(): MonthlyData {
         value,
         category: state.editCategory,
         ...paymentFields,
+        invoiceDate: state.editPaymentMode === 'card' && state.editInvoiceDate ? `${state.editInvoiceDate}-01` : null,
         roundUpAmount,
       })
       .then(() => {
@@ -1025,6 +1039,7 @@ export function useMonthly(): MonthlyData {
     createCategory: state.createCategory,
     createPaymentSource: state.createPaymentSource,
     createCardTag: state.createCardTag,
+    createInvoiceDate: state.createInvoiceDate,
     createRoundUpAmount: state.createRoundUpAmount,
     createPaymentMode: state.createPaymentMode,
     isCreating: state.isCreating,
@@ -1040,6 +1055,7 @@ export function useMonthly(): MonthlyData {
     editCategory: state.editCategory,
     editPaymentSource: state.editPaymentSource,
     editCardTag: state.editCardTag,
+    editInvoiceDate: state.editInvoiceDate,
     editRoundUpAmount: state.editRoundUpAmount,
     editPaymentMode: state.editPaymentMode,
     editIsSettled: state.editIsSettled,
