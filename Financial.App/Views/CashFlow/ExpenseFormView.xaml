@@ -59,15 +59,6 @@
 
             <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
                         Visibility="{Binding ShowPaymentModeFields, Converter={StaticResource BoolToVisibilityConverter}}">
-                <StackPanel Orientation="Horizontal">
-                    <RadioButton Content="Pay immediately" GroupName="ExpensePaymentMode"
-                                 IsChecked="{Binding IsBankPaymentMode, Mode=OneWay}"
-                                 Command="{Binding SetBankPaymentModeCommand}"/>
-                    <RadioButton Content="Charge to card" GroupName="ExpensePaymentMode" Margin="16,0,0,0"
-                                 IsChecked="{Binding IsCardPaymentMode, Mode=OneWay}"
-                                 Command="{Binding SetCardPaymentModeCommand}"/>
-                </StackPanel>
-
                 <Grid Margin="0,8,0,0" Visibility="{Binding IsCardPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="130"/>
