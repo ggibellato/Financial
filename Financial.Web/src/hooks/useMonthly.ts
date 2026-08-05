@@ -152,7 +152,7 @@ type MonthlyAction =
     }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
-  | { type: 'SHOW_CREATE_FORM' }
+  | { type: 'SHOW_CREATE_FORM'; payload: { mode: PaymentMode } }
   | { type: 'CANCEL_CREATE_FORM' }
   | { type: 'SET_CREATE_FIELD'; payload: { field: CreateFormField; value: string } }
   | { type: 'CREATE_START' }
@@ -166,8 +166,6 @@ type MonthlyAction =
   | { type: 'SAVE_ERROR'; payload: string }
   | { type: 'MARK_PAID_ERROR'; payload: string }
   | { type: 'SET_MARK_PAID_SOURCE'; payload: { id: string; value: string } }
-  | { type: 'SET_CREATE_MODE'; payload: PaymentMode }
-  | { type: 'SET_EDIT_MODE'; payload: PaymentMode }
   | { type: 'SHOW_CREATE_INCOME_FORM' }
   | { type: 'CANCEL_CREATE_INCOME_FORM' }
   | { type: 'SET_CREATE_INCOME_FIELD'; payload: { field: CreateIncomeField; value: string } }
@@ -282,7 +280,10 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
       return { ...state, retryCount: state.retryCount + 1 }
-    case 'SHOW_CREATE_FORM':
+    case 'SHOW_CREATE_FORM': {
+      const mode = action.payload.mode
+      const nextPaymentSource = mode === 'bank' ? (state.banks[0]?.name ?? '') : ''
+      const suggestion = mode === 'bank' ? suggestRoundUpAmount(state.banks, nextPaymentSource, state.createValue) : null
       return {
         ...state,
         isCreateFormOpen: true,
@@ -291,7 +292,12 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         isIncomeCreateFormOpen: false,
         editingIncomeId: null,
         saveIncomeError: null,
+        createPaymentMode: mode,
+        createPaymentSource: nextPaymentSource,
+        createCardTag: '',
+        createRoundUpAmount: suggestion ?? '',
       }
+    }
     case 'CANCEL_CREATE_FORM':
       return { ...state, ...BLANK_CREATE_FORM, isCreateFormOpen: false, createError: null }
     case 'SET_CREATE_FIELD': {
@@ -377,30 +383,6 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
       return { ...state, saveError: action.payload }
     case 'SET_MARK_PAID_SOURCE':
       return { ...state, markPaidSources: { ...state.markPaidSources, [action.payload.id]: action.payload.value } }
-    case 'SET_CREATE_MODE': {
-      const nextPaymentSource = action.payload === 'bank' ? (state.banks[0]?.name ?? '') : ''
-      const suggestion =
-        action.payload === 'bank' ? suggestRoundUpAmount(state.banks, nextPaymentSource, state.createValue) : null
-      return {
-        ...state,
-        createPaymentMode: action.payload,
-        createPaymentSource: nextPaymentSource,
-        createCardTag: '',
-        createRoundUpAmount: suggestion ?? '',
-      }
-    }
-    case 'SET_EDIT_MODE': {
-      const nextPaymentSource = action.payload === 'bank' ? (state.banks[0]?.name ?? '') : ''
-      const suggestion =
-        action.payload === 'bank' ? suggestRoundUpAmount(state.banks, nextPaymentSource, state.editValue) : null
-      return {
-        ...state,
-        editPaymentMode: action.payload,
-        editPaymentSource: nextPaymentSource,
-        editCardTag: '',
-        editRoundUpAmount: suggestion ?? '',
-      }
-    }
     case 'SHOW_CREATE_INCOME_FORM':
       return {
         ...state,
@@ -514,10 +496,9 @@ export interface MonthlyData {
   createPaymentMode: PaymentMode
   isCreating: boolean
   createError: string | null
-  showCreateForm: () => void
+  showCreateForm: (mode: PaymentMode) => void
   cancelCreateForm: () => void
   setCreateField: (field: CreateFormField, value: string) => void
-  setCreatePaymentMode: (mode: PaymentMode) => void
   submitCreate: () => void
   editingId: string | null
   editDate: string
@@ -532,7 +513,6 @@ export interface MonthlyData {
   isSaving: boolean
   saveError: string | null
   setEditField: (field: EditField, value: string) => void
-  setEditPaymentMode: (mode: PaymentMode) => void
   showEditForm: (expense: ExpenseDto) => void
   cancelEdit: () => void
   saveEdit: () => void
@@ -619,22 +599,15 @@ export function useMonthly(): MonthlyData {
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
-  const showCreateForm = useCallback(() => dispatch({ type: 'SHOW_CREATE_FORM' }), [])
+  const showCreateForm = useCallback(
+    (mode: PaymentMode) => dispatch({ type: 'SHOW_CREATE_FORM', payload: { mode } }),
+    [],
+  )
 
   const cancelCreateForm = useCallback(() => dispatch({ type: 'CANCEL_CREATE_FORM' }), [])
 
   const setCreateField = useCallback(
     (field: CreateFormField, value: string) => dispatch({ type: 'SET_CREATE_FIELD', payload: { field, value } }),
-    [],
-  )
-
-  const setCreatePaymentMode = useCallback(
-    (mode: PaymentMode) => dispatch({ type: 'SET_CREATE_MODE', payload: mode }),
-    [],
-  )
-
-  const setEditPaymentMode = useCallback(
-    (mode: PaymentMode) => dispatch({ type: 'SET_EDIT_MODE', payload: mode }),
     [],
   )
 
@@ -1054,7 +1027,6 @@ export function useMonthly(): MonthlyData {
     createCardTag: state.createCardTag,
     createRoundUpAmount: state.createRoundUpAmount,
     createPaymentMode: state.createPaymentMode,
-    setCreatePaymentMode,
     isCreating: state.isCreating,
     createError: state.createError,
     showCreateForm,
@@ -1071,7 +1043,6 @@ export function useMonthly(): MonthlyData {
     editRoundUpAmount: state.editRoundUpAmount,
     editPaymentMode: state.editPaymentMode,
     editIsSettled: state.editIsSettled,
-    setEditPaymentMode,
     isSaving: state.isSaving,
     saveError: state.saveError,
     setEditField,

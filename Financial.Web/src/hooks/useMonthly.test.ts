@@ -316,10 +316,10 @@ describe('useMonthly', () => {
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
+    act(() => result.current.showCreateForm('card'))
     act(() => result.current.setCreateField('createDate', '2026-07-16'))
     act(() => result.current.setCreateField('createDescription', 'Amazon'))
     act(() => result.current.setCreateField('createValue', '9.99'))
-    act(() => result.current.setCreatePaymentMode('card'))
     act(() => result.current.setCreateField('createCardTag', 'ChaseMaster4023'))
     act(() => result.current.submitCreate())
 
@@ -334,29 +334,36 @@ describe('useMonthly', () => {
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
+    act(() => result.current.showCreateForm('card'))
     act(() => result.current.setCreateField('createDate', '2026-07-16'))
     act(() => result.current.setCreateField('createDescription', 'Amazon'))
     act(() => result.current.setCreateField('createValue', '9.99'))
-    act(() => result.current.setCreatePaymentMode('card'))
     act(() => result.current.submitCreate())
 
     expect(result.current.createError).toBe('Card is required')
     expect(createExpenseMock).not.toHaveBeenCalled()
   })
 
-  it('switching create mode clears the field made irrelevant by the switch', async () => {
+  it("showCreateForm('bank') defaults to the first bank and an empty card tag", async () => {
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    act(() => result.current.setCreatePaymentMode('card'))
-    act(() => result.current.setCreateField('createCardTag', 'BaAmex'))
-    act(() => result.current.setCreatePaymentMode('bank'))
+    act(() => result.current.showCreateForm('bank'))
 
-    expect(result.current.createCardTag).toBe('')
+    expect(result.current.createPaymentMode).toBe('bank')
     expect(result.current.createPaymentSource).toBe('Barclays')
+    expect(result.current.createCardTag).toBe('')
+  })
 
-    act(() => result.current.setCreatePaymentMode('card'))
+  it("showCreateForm('card') defaults to an empty payment source and card tag", async () => {
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showCreateForm('card'))
+
+    expect(result.current.createPaymentMode).toBe('card')
     expect(result.current.createPaymentSource).toBe('')
+    expect(result.current.createCardTag).toBe('')
   })
 
   it('opens edit in card mode for a credit card charge', async () => {
@@ -506,10 +513,10 @@ describe('useMonthly', () => {
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
+    act(() => result.current.showCreateForm('card'))
     act(() => result.current.setCreateField('createDate', '2026-07-16'))
     act(() => result.current.setCreateField('createDescription', 'Amazon'))
     act(() => result.current.setCreateField('createValue', '9.99'))
-    act(() => result.current.setCreatePaymentMode('card'))
     act(() => result.current.setCreateField('createCardTag', 'ChaseMaster4023'))
     act(() => result.current.submitCreate())
 
