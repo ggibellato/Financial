@@ -296,10 +296,10 @@ graph TD
 - [x] `InvestmentSnapshot.Create` accepts an `InvestmentAccount` object
 
 ### F02. Infrastructure Reference-Resolution Persistence
-- [ ] Serializing a `CashFlowData` writes only `BankId`/`IncomeSourceId`/`InvestmentAccountId` (Guid) for reference-typed fields, not a nested object
-- [ ] Deserializing a valid file produces an `Income.Bank` that is reference-equal (same object instance) to the matching entry in the deserialized `CashFlowData.Banks`
-- [ ] Deserializing a file whose record references a Bank/IncomeSource/InvestmentAccount Id absent from the corresponding collection throws a descriptive exception naming the missing Id and owning record
-- [ ] A round-trip (serialize, then deserialize) of a `CashFlowData` with cross-references reproduces an equivalent object graph with no data loss
+- [x] Serializing a `CashFlowData` writes only `BankId`/`IncomeSourceId`/`InvestmentAccountId` (Guid) for reference-typed fields, not a nested object
+- [x] Deserializing a valid file produces an `Income.Bank` that is reference-equal (same object instance) to the matching entry in the deserialized `CashFlowData.Banks`
+- [x] Deserializing a file whose record references a Bank/IncomeSource/InvestmentAccount Id absent from the corresponding collection throws a descriptive exception naming the missing Id and owning record
+- [x] A round-trip (serialize, then deserialize) of a `CashFlowData` with cross-references reproduces an equivalent object graph with no data loss
 
 ### F03. Live-Data Reference Migration
 - [ ] Running the migrator against a pre-migration data file assigns a unique `Guid Id` to every existing `Bank` record
@@ -336,7 +336,7 @@ graph TD
 - [ ] Existing records display their correct bank/source/account name in read-only grids after this change
 
 ### Cross-Feature Integration
-- [ ] `Bank.Id` and the reference-typed entity properties from F01 are correctly read and written by the F02 JSON persistence layer, producing a real object graph on load
+- [x] `Bank.Id` and the reference-typed entity properties from F01 are correctly read and written by the F02 JSON persistence layer, producing a real object graph on load
 - [ ] The Id-based JSON write capability from F02 and the reference model from F01 are correctly used together by the F03 migrator to produce a fully-migrated data file with no unresolved records
 - [ ] The resolved object graph from F02 and the reference model from F01 are correctly consumed by the F04 resolvers/services, which reject an unresolvable Id and accept a valid one
 - [ ] The Id+Name DTOs provided by F04 are correctly exposed through the F05 API contract, including the new `/investment-accounts` endpoint and the Id-based bank-scoped routes

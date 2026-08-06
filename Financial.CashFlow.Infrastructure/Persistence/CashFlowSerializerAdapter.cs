@@ -8,7 +8,7 @@ public sealed class CashFlowSerializerAdapter : ICashFlowSerializer
 {
     private static readonly JsonSerializerOptions Options = new()
     {
-        Converters = { new JsonStringEnumConverter() },
+        Converters = { new JsonStringEnumConverter(), new CashFlowDataConverter() },
         WriteIndented = false,
         TypeInfoResolver = new CashFlowTypeInfoResolver()
     };

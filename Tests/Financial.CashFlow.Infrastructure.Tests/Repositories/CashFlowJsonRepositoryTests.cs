@@ -20,7 +20,9 @@ public class CashFlowJsonRepositoryTests
 
         try
         {
-            repository.AddExpense(Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, Bank.Create("Chase", roundUpEnabled: true), null));
+            var bank = Bank.Create("Chase", roundUpEnabled: true);
+            data.AddBank(bank);
+            repository.AddExpense(Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, bank, null));
 
             await repository.SaveChangesAsync();
 
