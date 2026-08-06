@@ -9,9 +9,9 @@ namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
 public class CashFlowTypeInfoResolverTests
 {
-    private static JsonSerializerOptions CreateOptions() => new()
+    private static JsonSerializerOptions CreateOptions(ReferenceResolutionContext? context = null) => new()
     {
-        TypeInfoResolver = new CashFlowTypeInfoResolver()
+        TypeInfoResolver = new CashFlowTypeInfoResolver(context)
     };
 
     [Fact]
@@ -63,10 +63,13 @@ public class CashFlowTypeInfoResolverTests
     [Fact]
     public void GetTypeInfo_RoundTripsExpenseThroughPrivateConstructor()
     {
-        var options = CreateOptions();
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Weekly groceries", 54.32m, Category.Mercado, Bank.Create("Barclays", roundUpEnabled: false), null);
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var context = new ReferenceResolutionContext();
+        context.Banks[bank.Id] = bank;
+        var options = CreateOptions(context);
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Weekly groceries", 54.32m, Category.Mercado, bank, null);
 
-        var json = JsonSerializer.Serialize(expense, options);
+        var json = JsonSerializer.Serialize(expense, CreateOptions());
         var deserialized = JsonSerializer.Deserialize<Expense>(json, options);
 
         deserialized.Should().NotBeNull();
@@ -74,7 +77,7 @@ public class CashFlowTypeInfoResolverTests
         deserialized.Description.Should().Be("Weekly groceries");
         deserialized.Value.Should().Be(54.32m);
         deserialized.Category.Should().Be(Category.Mercado);
-        deserialized.PaymentSourceBank!.Name.Should().Be("Barclays");
+        deserialized.PaymentSourceBank.Should().BeSameAs(bank);
     }
 
     [Fact]
