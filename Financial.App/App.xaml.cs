@@ -57,6 +57,7 @@ namespace Financial.Presentation.App
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IExpenseService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IIncomeService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IBankService>(),
+                        sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IIncomeSourceService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ITitheService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ITransferService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IBalanceAdjustmentService>(),

@@ -125,6 +125,22 @@ internal sealed class StubBankService : IBankService
     public decimal GetBankBalanceAsOf(string bankName, DateOnly asOfDate, Guid? excludingAdjustmentId = null) => 0m;
 }
 
+internal sealed class StubIncomeSourceService : IIncomeSourceService
+{
+    public List<IncomeSourceDTO> IncomeSources { get; set; } = [];
+    public Exception? ThrowOnGet { get; set; }
+
+    public IReadOnlyList<IncomeSourceDTO> GetIncomeSources()
+    {
+        if (ThrowOnGet is { } ex)
+        {
+            throw ex;
+        }
+
+        return IncomeSources;
+    }
+}
+
 internal sealed class StubTitheService : ITitheService
 {
     public TitheSummaryDTO Summary { get; set; } = new() { CalculatedTithe = 0m, TitheBalance = 0m };
