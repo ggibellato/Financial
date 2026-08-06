@@ -233,10 +233,10 @@ graph TD
 - [x] An `Income` record whose source name matches none of the four seeded names is reported in the migration's audit summary without failing the migration run
 
 ### F02. Income Source Validation on Create and Update
-- [ ] Creating an `Income` with a source name matching a seeded `IncomeSource` (case-insensitive) succeeds
-- [ ] Creating an `Income` with a source name that matches no seeded `IncomeSource` is rejected with a validation error naming the invalid source
-- [ ] Updating an existing `Income` to an unresolvable source name is rejected the same way as create
-- [ ] An income can be created/updated with a source name that resolves to an `IsActive = false` source (validation only checks name existence, not active status)
+- [x] Creating an `Income` with a source name matching a seeded `IncomeSource` (case-insensitive) succeeds
+- [x] Creating an `Income` with a source name that matches no seeded `IncomeSource` is rejected with a validation error naming the invalid source
+- [x] Updating an existing `Income` to an unresolvable source name is rejected the same way as create
+- [x] An income can be created/updated with a source name that resolves to an `IsActive = false` source (validation only checks name existence, not active status)
 
 ### F03. Income Group Resolution in Annual Summary
 - [ ] For a fixed set of test income records, the Annual Summary Income Summary table's Salary, SalaryAfterTaxes, TaxDifference, and DividendoJuros monthly/annual/average figures are byte-identical before and after this change
@@ -259,7 +259,7 @@ graph TD
 - [ ] If the API call fails, the combo box shows no options and the form's required-field validation blocks submission without a selected source
 
 ### Cross-Feature Integration
-- [ ] Seeded `IncomeSource` records from the migration (F01) are correctly retrievable through `ICashFlowRepository.GetIncomeSources()` and consumed by the validation resolver (F02) to accept/reject income source names
+- [x] Seeded `IncomeSource` records from the migration (F01) are correctly retrievable through `ICashFlowRepository.GetIncomeSources()` and consumed by the validation resolver (F02) to accept/reject income source names
 - [ ] Seeded `IncomeSource` records from the migration (F01) are correctly consumed by `AnnualSummaryService`'s group lookup (F03), producing unchanged Annual Summary figures
 - [ ] Seeded `IncomeSource` records from the migration (F01) are correctly returned by `GET /income-sources` (F04), including `id`, `name`, `isActive`, and `group`
 - [ ] The income source list returned by `GET /income-sources` (F04) is correctly fetched, filtered to active sources, and rendered as picklist options in both the web income form (F05) and the WPF income form (F06)
