@@ -18,7 +18,7 @@ public sealed class TransferService : ITransferService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var (sourceBank, destinationBank) = ResolveBanks(request.SourceBank, request.DestinationBank);
+        var (sourceBank, destinationBank) = ResolveBanks(request.SourceBankId, request.DestinationBankId);
 
         var transfer = Transfer.Create(request.Date, sourceBank, destinationBank, request.Amount, request.Note);
         _repository.AddTransfer(transfer);
@@ -32,7 +32,7 @@ public sealed class TransferService : ITransferService
         ArgumentNullException.ThrowIfNull(request);
 
         var transfer = FindTransferOrThrow(id);
-        var (sourceBank, destinationBank) = ResolveBanks(request.SourceBank, request.DestinationBank);
+        var (sourceBank, destinationBank) = ResolveBanks(request.SourceBankId, request.DestinationBankId);
 
         transfer.UpdateDetails(request.Date, sourceBank, destinationBank, request.Amount, request.Note);
         _repository.UpdateTransfer(transfer);
@@ -55,9 +55,9 @@ public sealed class TransferService : ITransferService
             .Select(ToDto)
             .ToList();
 
-    public IReadOnlyList<TransferDTO> GetTransfersByBank(string bankName)
+    public IReadOnlyList<TransferDTO> GetTransfersByBank(Guid bankId)
     {
-        if (!BankNameResolver.TryResolve(bankName, _repository.GetBanks(), out var bank))
+        if (!BankNameResolver.TryResolve(bankId, _repository.GetBanks(), out var bank))
         {
             return Array.Empty<TransferDTO>();
         }
@@ -72,18 +72,18 @@ public sealed class TransferService : ITransferService
         _repository.GetTransfers().FirstOrDefault(t => t.Id == id)
             ?? throw new KeyNotFoundException($"Transfer '{id}' was not found.");
 
-    private (Bank SourceBank, Bank DestinationBank) ResolveBanks(string sourceBank, string destinationBank)
+    private (Bank SourceBank, Bank DestinationBank) ResolveBanks(Guid sourceBankId, Guid destinationBankId)
     {
         var banks = _repository.GetBanks();
 
-        if (!BankNameResolver.TryResolve(sourceBank, banks, out var resolvedSource))
+        if (!BankNameResolver.TryResolve(sourceBankId, banks, out var resolvedSource))
         {
-            throw new ArgumentException($"Bank '{sourceBank}' was not found.");
+            throw new ArgumentException($"Bank '{sourceBankId}' was not found.");
         }
 
-        if (!BankNameResolver.TryResolve(destinationBank, banks, out var resolvedDestination))
+        if (!BankNameResolver.TryResolve(destinationBankId, banks, out var resolvedDestination))
         {
-            throw new ArgumentException($"Bank '{destinationBank}' was not found.");
+            throw new ArgumentException($"Bank '{destinationBankId}' was not found.");
         }
 
         return (resolvedSource!, resolvedDestination!);
@@ -93,8 +93,10 @@ public sealed class TransferService : ITransferService
     {
         Id = transfer.Id,
         Date = transfer.Date,
-        SourceBank = transfer.SourceBank.Name,
-        DestinationBank = transfer.DestinationBank.Name,
+        SourceBankId = transfer.SourceBank.Id,
+        SourceBankName = transfer.SourceBank.Name,
+        DestinationBankId = transfer.DestinationBank.Id,
+        DestinationBankName = transfer.DestinationBank.Name,
         Amount = transfer.Amount,
         Note = transfer.Note
     };

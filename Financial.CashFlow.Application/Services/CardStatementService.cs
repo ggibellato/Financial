@@ -56,9 +56,9 @@ public sealed class CardStatementService : ICardStatementService
             return ToDto(statement);
         }
 
-        if (!BankNameResolver.TryResolve(request.PaymentSource, _repository.GetBanks(), out var bank))
+        if (!BankNameResolver.TryResolve(request.PaymentSourceBankId, _repository.GetBanks(), out var bank))
         {
-            throw new ArgumentException($"Payment source '{request.PaymentSource}' is not recognized.");
+            throw new ArgumentException($"Payment source '{request.PaymentSourceBankId}' is not recognized.");
         }
 
         var settledAt = DateOnly.FromDateTime(DateTime.Today);

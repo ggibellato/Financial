@@ -22,7 +22,7 @@ public sealed class ExpenseService : IExpenseService
         ArgumentNullException.ThrowIfNull(request);
 
         var (category, paymentSource, cardTag) = ValidateFields(
-            request.Description, request.Value, request.Category, request.PaymentSource, request.CardTag);
+            request.Description, request.Value, request.Category, request.PaymentSourceBankId, request.CardTag);
         ValidateRoundUpEligibility(request.RoundUpAmount, paymentSource);
 
         var expense = Expense.Create(request.Date, request.Description, request.Value, category, paymentSource, cardTag, request.InvoiceDate);
@@ -40,7 +40,7 @@ public sealed class ExpenseService : IExpenseService
         var expense = FindExpenseOrThrow(id);
 
         var (category, paymentSource, cardTag) = ValidateFields(
-            request.Description, request.Value, request.Category, request.PaymentSource, request.CardTag);
+            request.Description, request.Value, request.Category, request.PaymentSourceBankId, request.CardTag);
         ValidateRoundUpEligibility(request.RoundUpAmount, paymentSource);
 
         expense.UpdateDetails(request.Date, request.Description, request.Value, category, paymentSource, cardTag);
@@ -112,7 +112,7 @@ public sealed class ExpenseService : IExpenseService
             ?? throw new KeyNotFoundException($"Expense '{id}' was not found.");
 
     private (Category Category, Bank? PaymentSourceBank, CreditCard? CardTag) ValidateFields(
-        string description, decimal value, string category, string? paymentSource, string? cardTag)
+        string description, decimal value, string category, Guid? paymentSourceBankId, string? cardTag)
     {
         if (string.IsNullOrWhiteSpace(description))
         {
@@ -135,11 +135,11 @@ public sealed class ExpenseService : IExpenseService
         }
 
         Bank? parsedPaymentSourceBank = null;
-        if (!string.IsNullOrWhiteSpace(paymentSource))
+        if (paymentSourceBankId is not null)
         {
-            if (!BankNameResolver.TryResolve(paymentSource, _repository.GetBanks(), out var bank))
+            if (!BankNameResolver.TryResolve(paymentSourceBankId, _repository.GetBanks(), out var bank))
             {
-                throw new ArgumentException($"Payment source '{paymentSource}' is not recognized.");
+                throw new ArgumentException($"Payment source '{paymentSourceBankId}' is not recognized.");
             }
 
             parsedPaymentSourceBank = bank!;
@@ -179,7 +179,8 @@ public sealed class ExpenseService : IExpenseService
         Description = expense.Description,
         Value = expense.Value,
         Category = expense.Category.ToString(),
-        PaymentSource = expense.PaymentSourceBank?.Name,
+        PaymentSourceBankId = expense.PaymentSourceBank?.Id,
+        PaymentSourceBankName = expense.PaymentSourceBank?.Name,
         CardTag = expense.CardTag?.ToString(),
         ChargeDate = expense.ChargeDate,
         InvoiceDate = expense.InvoiceDate,

@@ -16,12 +16,12 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
         _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
     }
 
-    public async Task<BalanceAdjustmentDTO> AddAdjustmentAsync(string bankName, BalanceAdjustmentCreateDTO request)
+    public async Task<BalanceAdjustmentDTO> AddAdjustmentAsync(Guid bankId, BalanceAdjustmentCreateDTO request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var bank = ResolveBank(bankName);
-        var currentBalance = _bankService.GetBankBalanceAsOf(bank.Name, request.Date);
+        var bank = ResolveBank(bankId);
+        var currentBalance = _bankService.GetBankBalanceAsOf(bank.Id, request.Date);
         var delta = request.TargetBalance - currentBalance;
 
         var adjustment = BalanceAdjustment.Create(request.Date, bank, request.TargetBalance, delta, request.Note);
@@ -31,13 +31,13 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
         return ToDto(adjustment);
     }
 
-    public async Task<BalanceAdjustmentDTO> UpdateAdjustmentAsync(string bankName, Guid id, BalanceAdjustmentUpdateDTO request)
+    public async Task<BalanceAdjustmentDTO> UpdateAdjustmentAsync(Guid bankId, Guid id, BalanceAdjustmentUpdateDTO request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var bank = ResolveBank(bankName);
+        var bank = ResolveBank(bankId);
         var adjustment = FindAdjustmentOrThrow(bank, id);
-        var currentBalance = _bankService.GetBankBalanceAsOf(bank.Name, request.Date, excludingAdjustmentId: id);
+        var currentBalance = _bankService.GetBankBalanceAsOf(bank.Id, request.Date, excludingAdjustmentId: id);
         var delta = request.TargetBalance - currentBalance;
 
         adjustment.UpdateDetails(request.Date, request.TargetBalance, delta, request.Note);
@@ -47,18 +47,18 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
         return ToDto(adjustment);
     }
 
-    public async Task DeleteAdjustmentAsync(string bankName, Guid id)
+    public async Task DeleteAdjustmentAsync(Guid bankId, Guid id)
     {
-        var bank = ResolveBank(bankName);
+        var bank = ResolveBank(bankId);
         FindAdjustmentOrThrow(bank, id);
 
         _repository.DeleteBalanceAdjustment(id);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
     }
 
-    public IReadOnlyList<BalanceAdjustmentDTO> GetAdjustmentsByBank(string bankName)
+    public IReadOnlyList<BalanceAdjustmentDTO> GetAdjustmentsByBank(Guid bankId)
     {
-        if (!BankNameResolver.TryResolve(bankName, _repository.GetBanks(), out var bank))
+        if (!BankNameResolver.TryResolve(bankId, _repository.GetBanks(), out var bank))
         {
             return Array.Empty<BalanceAdjustmentDTO>();
         }
@@ -69,11 +69,11 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
             .ToList();
     }
 
-    private Bank ResolveBank(string bankName)
+    private Bank ResolveBank(Guid bankId)
     {
-        if (!BankNameResolver.TryResolve(bankName, _repository.GetBanks(), out var bank))
+        if (!BankNameResolver.TryResolve(bankId, _repository.GetBanks(), out var bank))
         {
-            throw new ArgumentException($"Bank '{bankName}' was not found.");
+            throw new ArgumentException($"Bank '{bankId}' was not found.");
         }
 
         return bank!;
@@ -88,7 +88,8 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
     {
         Id = adjustment.Id,
         Date = adjustment.Date,
-        Bank = adjustment.Bank.Name,
+        BankId = adjustment.Bank.Id,
+        BankName = adjustment.Bank.Name,
         TargetBalance = adjustment.TargetBalance,
         Delta = adjustment.Delta,
         Note = adjustment.Note
