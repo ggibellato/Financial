@@ -47,7 +47,7 @@ public sealed class BanksController : ControllerBase
 
         try
         {
-            var bank = await _bankService.UpdateOpeningBalanceAsync(name, request);
+            var bank = await _bankService.UpdateOpeningBalanceAsync(ResolveBankId(name), request);
             return Ok(bank);
         }
         catch (ArgumentException ex)
@@ -88,10 +88,14 @@ public sealed class BanksController : ControllerBase
 
         try
         {
-            var adjustment = await _balanceAdjustmentService.AddAdjustmentAsync(name, request);
+            var adjustment = await _balanceAdjustmentService.AddAdjustmentAsync(ResolveBankId(name), request);
             return Ok(adjustment);
         }
         catch (ArgumentException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
+        }
+        catch (KeyNotFoundException ex)
         {
             return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
         }
@@ -115,7 +119,7 @@ public sealed class BanksController : ControllerBase
 
         try
         {
-            var adjustment = await _balanceAdjustmentService.UpdateAdjustmentAsync(name, id, request);
+            var adjustment = await _balanceAdjustmentService.UpdateAdjustmentAsync(ResolveBankId(name), id, request);
             return Ok(adjustment);
         }
         catch (ArgumentException ex)
@@ -139,7 +143,7 @@ public sealed class BanksController : ControllerBase
     {
         try
         {
-            await _balanceAdjustmentService.DeleteAdjustmentAsync(name, id);
+            await _balanceAdjustmentService.DeleteAdjustmentAsync(ResolveBankId(name), id);
             return Ok();
         }
         catch (ArgumentException ex)
@@ -159,7 +163,24 @@ public sealed class BanksController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<BalanceAdjustmentDTO>), StatusCodes.Status200OK)]
     public ActionResult<IReadOnlyList<BalanceAdjustmentDTO>> GetAdjustmentsByBank(string name)
     {
-        var result = _balanceAdjustmentService.GetAdjustmentsByBank(name);
+        if (!TryResolveBankId(name, out var bankId))
+        {
+            return Ok(Array.Empty<BalanceAdjustmentDTO>());
+        }
+
+        var result = _balanceAdjustmentService.GetAdjustmentsByBank(bankId);
         return Ok(result);
+    }
+
+    private Guid ResolveBankId(string name) =>
+        TryResolveBankId(name, out var bankId)
+            ? bankId
+            : throw new KeyNotFoundException($"Bank '{name}' was not found.");
+
+    private bool TryResolveBankId(string name, out Guid bankId)
+    {
+        var bank = _bankService.GetBanks().FirstOrDefault(b => b.Name == name);
+        bankId = bank?.Id ?? Guid.Empty;
+        return bank is not null;
     }
 }

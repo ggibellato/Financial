@@ -18,7 +18,7 @@ public sealed class SnapshotRow
     public static SnapshotRow FromDto(InvestmentSnapshotDTO dto) => new()
     {
         Id = dto.Id,
-        Account = dto.Account,
+        Account = dto.AccountName,
         IsLiability = dto.IsLiability,
         Value = dto.Value,
     };

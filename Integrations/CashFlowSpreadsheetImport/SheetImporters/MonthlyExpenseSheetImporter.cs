@@ -1,5 +1,4 @@
 using ClosedXML.Excel;
-using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
@@ -99,7 +98,7 @@ public static class MonthlyExpenseSheetImporter
             if (cardTag is null)
             {
                 var paymentSourceName = ResolvePaymentSource(rawPaymentSourceTag);
-                BankNameResolver.TryResolve(paymentSourceName, banks, out paymentSourceBank);
+                paymentSourceBank = banks.FirstOrDefault(b => b.Name == paymentSourceName);
             }
 
             expenses.Add(Expense.Create(date, description, value.Value, category, paymentSourceBank, cardTag));

@@ -40,9 +40,9 @@ public sealed class BankOperationRow
     {
         Kind = BankOperationKind.Transfer,
         Date = transfer.Date,
-        BankLabel = $"{transfer.SourceBank} → {transfer.DestinationBank}",
-        SourceBank = transfer.SourceBank,
-        DestinationBank = transfer.DestinationBank,
+        BankLabel = $"{transfer.SourceBankName} → {transfer.DestinationBankName}",
+        SourceBank = transfer.SourceBankName,
+        DestinationBank = transfer.DestinationBankName,
         Amount = transfer.Amount,
         Note = transfer.Note,
         Transfer = transfer,
@@ -52,8 +52,8 @@ public sealed class BankOperationRow
     {
         Kind = BankOperationKind.Adjustment,
         Date = adjustment.Date,
-        BankLabel = adjustment.Bank,
-        Bank = adjustment.Bank,
+        BankLabel = adjustment.BankName,
+        Bank = adjustment.BankName,
         Delta = adjustment.Delta,
         Note = adjustment.Note,
         Adjustment = adjustment,
