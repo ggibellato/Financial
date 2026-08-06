@@ -244,9 +244,9 @@ graph TD
 - [x] An income whose source resolves to `NonReportable` continues to be excluded from Salary and DividendoJuros totals, and does not raise an error
 
 ### F04. Income Sources API Endpoint
-- [ ] `GET /income-sources` returns all four seeded records with `id`, `name`, `isActive`, and `group` populated
-- [ ] The endpoint requires no request parameters and returns the full, unfiltered list regardless of `isActive` value
-- [ ] No `POST`, `PUT`, or `DELETE` route exists for income sources
+- [x] `GET /income-sources` returns all four seeded records with `id`, `name`, `isActive`, and `group` populated
+- [x] The endpoint requires no request parameters and returns the full, unfiltered list regardless of `isActive` value
+- [x] No `POST`, `PUT`, or `DELETE` route exists for income sources
 
 ### F05. Web Income Form Dynamic Source Picklist
 - [ ] The income entry form's source dropdown options match the set of `IncomeSource` records with `isActive = true` returned by `GET /income-sources`
@@ -261,5 +261,5 @@ graph TD
 ### Cross-Feature Integration
 - [x] Seeded `IncomeSource` records from the migration (F01) are correctly retrievable through `ICashFlowRepository.GetIncomeSources()` and consumed by the validation resolver (F02) to accept/reject income source names
 - [x] Seeded `IncomeSource` records from the migration (F01) are correctly consumed by `AnnualSummaryService`'s group lookup (F03), producing unchanged Annual Summary figures
-- [ ] Seeded `IncomeSource` records from the migration (F01) are correctly returned by `GET /income-sources` (F04), including `id`, `name`, `isActive`, and `group`
+- [x] Seeded `IncomeSource` records from the migration (F01) are correctly returned by `GET /income-sources` (F04), including `id`, `name`, `isActive`, and `group`
 - [ ] The income source list returned by `GET /income-sources` (F04) is correctly fetched, filtered to active sources, and rendered as picklist options in both the web income form (F05) and the WPF income form (F06)
