@@ -518,6 +518,24 @@ public class AnnualSummaryServiceTests
     }
 
     [Fact]
+    public void GetIncomeSummaryForYear_UnresolvedIncomeSource_DefaultsToNonReportableAndContributesToNoRow()
+    {
+        var repository = CreateRepository();
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 4, 1), "NotASeededSource", null, 500m, "Chase"));
+        var service = new AnnualSummaryService(repository);
+
+        var act = () => service.GetIncomeSummaryForYear(2026);
+
+        var result = act.Should().NotThrow().Which;
+        using (new AssertionScope())
+        {
+            result.SalaryMonthly.Should().OnlyContain(v => v == 0m);
+            result.SalaryAfterTaxesMonthly.Should().OnlyContain(v => v == 0m);
+            result.DividendoJurosMonthly.Should().OnlyContain(v => v == 0m);
+        }
+    }
+
+    [Fact]
     public void GetIncomeSummaryForYear_EntryWithNullGrossValue_ContributesZeroToSalary()
     {
         var repository = CreateRepository();
@@ -859,6 +877,27 @@ public class AnnualSummaryServiceTests
 
         // Lottery must not leak into Dividendo/Juros (or any other row) - it must have the same
         // effect as if it were never recorded at all.
+        result[0].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(83.33m);
+        result[0].AnnualAverages.Single(a => a.Category == "Salary after taxes").Value.Should().Be(66.67m);
+        result[0].AnnualAverages.Single(a => a.Category == "Dividendo/Juros").Value.Should().Be(1.67m);
+        result[0].AnnualAverages.Single(a => a.Category == "Resultado (R-D-Inv)").Value.Should().Be(56.67m);
+    }
+
+    [Fact]
+    public void GetHistoricSummaryAverageFromYear_UnresolvedIncomeSource_DefaultsToNonReportableAndContributesToNoRow()
+    {
+        var repository = CreateRepository();
+        var service = new AnnualSummaryService(repository);
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 120m, Category.Mercado, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), "Gleison", 1000m, 800m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), "DividendoJuros", null, 20m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), "NotASeededSource", null, 500m, "Barclays"));
+
+        var act = () => service.GetHistoricSummaryAverageFromYear(2025);
+
+        // An unresolved source name must not leak into Dividendo/Juros (or any other row) and must
+        // not throw - it must have the same effect as an income seeded to the NonReportable group.
+        var result = act.Should().NotThrow().Which;
         result[0].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(83.33m);
         result[0].AnnualAverages.Single(a => a.Category == "Salary after taxes").Value.Should().Be(66.67m);
         result[0].AnnualAverages.Single(a => a.Category == "Dividendo/Juros").Value.Should().Be(1.67m);
