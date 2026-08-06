@@ -5,6 +5,7 @@ using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.M
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.BankOpeningBalance;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.IncomeSources;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.EntityReferences;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ExpenseChargeDate;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
@@ -35,6 +36,7 @@ if (!File.Exists(workbookPath))
 }
 
 string? legacyRawJson = null;
+EntityReferenceMigrationSummary? entityReferenceSummary = null;
 if (File.Exists(outputPath))
 {
     var backupPath = MigrationBackup.Create(outputPath);
@@ -43,6 +45,10 @@ if (File.Exists(outputPath))
     // settled expense's SettledAt value can still be read from, since Expense no longer
     // declares that property and a normal deserialization silently drops it.
     legacyRawJson = File.ReadAllText(backupPath);
+
+    // Must run before CashFlowLoader.LoadSync below: the typed deserializer throws on a file
+    // still in the pre-F01/F02 legacy shape, so any rewrite has to happen on the raw file first.
+    entityReferenceSummary = EntityReferenceMigrator.Migrate(outputPath);
 }
 
 var report = new ImportReport();
@@ -93,7 +99,7 @@ else
 // Always run, in both modes: every migration below is idempotent, so re-running is always safe.
 var bankSummary = BankMigrator.Migrate(data);
 var bankOpeningBalanceSummary = BankOpeningBalanceMigrator.Migrate(data, today);
-var incomeSummary = IncomeMigrator.Migrate(data, workbook);
+var incomeSummary = IncomeMigrator.Migrate(data);
 // Runs after IncomeMigrator so its audit of Income.IncomeSource values covers backfilled
 // entries too, not just what was already on the data file before this run.
 var incomeSourceSummary = IncomeSourceMigrator.Migrate(data);
@@ -107,6 +113,10 @@ await repository.SaveChangesAsync();
 
 Console.WriteLine($"Wrote imported data to '{outputPath}'.");
 Console.WriteLine();
+if (entityReferenceSummary is not null)
+{
+    Console.WriteLine(entityReferenceSummary.Render());
+}
 Console.WriteLine(report.Render());
 Console.WriteLine(bankSummary.Render());
 Console.WriteLine(bankOpeningBalanceSummary.Render());
