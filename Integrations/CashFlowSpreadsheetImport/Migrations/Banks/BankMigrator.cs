@@ -3,9 +3,10 @@ using Financial.CashFlow.Domain.Entities;
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Banks;
 
 /// <summary>
-/// Idempotently seeds the 3 tracked banks and audits every expense's existing bank tag
-/// against them. No expense field is ever rewritten: an expense's stored bank name already
-/// matches a seeded bank's name, so the audit only counts resolved vs. unresolved tags.
+/// Idempotently seeds the 3 tracked banks and audits every expense's payment source. Since
+/// Expense.PaymentSourceBank is a real Bank reference (F01), an expense can no longer hold an
+/// unresolvable bank tag - the audit only counts applicable (bank-paid) vs. not-applicable
+/// (credit-card charge) expenses.
 /// </summary>
 public static class BankMigrator
 {
@@ -47,22 +48,13 @@ public static class BankMigrator
     {
         foreach (var expense in data.Expenses)
         {
-            if (expense.PaymentSource is null)
+            if (expense.PaymentSourceBank is null)
             {
                 summary.CountExpenseNotApplicable();
-                continue;
-            }
-
-            var resolves = data.Banks.Any(b =>
-                string.Equals(b.Name, expense.PaymentSource, StringComparison.OrdinalIgnoreCase));
-
-            if (resolves)
-            {
-                summary.CountExpenseResolved();
             }
             else
             {
-                summary.FlagUnresolvedExpense(expense);
+                summary.CountExpenseResolved();
             }
         }
     }

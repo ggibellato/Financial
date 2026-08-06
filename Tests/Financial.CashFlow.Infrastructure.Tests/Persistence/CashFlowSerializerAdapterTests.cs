@@ -12,6 +12,11 @@ public class CashFlowSerializerAdapterTests
     {
         var serializer = new CashFlowSerializerAdapter();
         var original = CashFlowData.Create();
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
+        var destinationBank = Bank.Create("Trading212", roundUpEnabled: true);
+        var investmentAccount = InvestmentAccount.Create("PlatinumVisa8003", isActive: true, isLiability: true);
+        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
         var expense = Expense.Create(
             new DateOnly(2026, 7, 15),
             "Weekly groceries",
@@ -19,19 +24,15 @@ public class CashFlowSerializerAdapterTests
             Category.Mercado,
             null,
             CreditCard.BarclaysPlatinumVisa8003);
-        expense.Settle("Barclays", new DateOnly(2026, 7, 31));
+        expense.Settle(bank, new DateOnly(2026, 7, 31));
         var reserveMovement = ReserveMovement.Create(ReserveBucket.Investimento, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split");
         var cardStatement = CardStatement.Create(CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
         var recurringBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
         var maeLedgerEntry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 15), "School supplies", "Note", Currency.BRL, 350m, 51.23m);
-        var investmentSnapshot = InvestmentSnapshot.Create("PlatinumVisa8003", 2026, 7, 1250.00m);
-        var investmentAccount = InvestmentAccount.Create("PlatinumVisa8003", isActive: true, isLiability: true);
-        var bank = Bank.Create("Barclays", roundUpEnabled: false);
-        bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
-        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
-        var income = Income.Create(new DateOnly(2026, 7, 25), "Gleison", 3200.00m, 2450.00m, "Barclays");
-        var transfer = Transfer.Create(new DateOnly(2026, 7, 25), "Barclays", "Trading212", 500.00m, "Round-up top-up");
-        var balanceAdjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), "Barclays", 2340.17m, -4.20m, "Matched against July statement");
+        var investmentSnapshot = InvestmentSnapshot.Create(investmentAccount, 2026, 7, 1250.00m);
+        var income = Income.Create(new DateOnly(2026, 7, 25), incomeSource, 3200.00m, 2450.00m, bank);
+        var transfer = Transfer.Create(new DateOnly(2026, 7, 25), bank, destinationBank, 500.00m, "Round-up top-up");
+        var balanceAdjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), bank, 2340.17m, -4.20m, "Matched against July statement");
 
         original.AddExpense(expense);
         original.AddReserveMovement(reserveMovement);
@@ -55,7 +56,7 @@ public class CashFlowSerializerAdapterTests
         resultExpense.Description.Should().Be(expense.Description);
         resultExpense.Value.Should().Be(expense.Value);
         resultExpense.Category.Should().Be(expense.Category);
-        resultExpense.PaymentSource.Should().Be(expense.PaymentSource);
+        resultExpense.PaymentSourceBank!.Name.Should().Be(expense.PaymentSourceBank!.Name);
         resultExpense.CardTag.Should().Be(expense.CardTag);
         resultExpense.ChargeDate.Should().Be(expense.ChargeDate);
         resultExpense.InvoiceDate.Should().Be(expense.InvoiceDate);
@@ -87,21 +88,21 @@ public class CashFlowSerializerAdapterTests
         var resultIncome = result.Incomes.Should().ContainSingle().Which;
         resultIncome.Id.Should().Be(income.Id);
         resultIncome.Date.Should().Be(income.Date);
-        resultIncome.IncomeSource.Should().Be(income.IncomeSource);
+        resultIncome.IncomeSource.Name.Should().Be(income.IncomeSource.Name);
         resultIncome.GrossValue.Should().Be(income.GrossValue);
         resultIncome.NetValue.Should().Be(income.NetValue);
-        resultIncome.Bank.Should().Be(income.Bank);
+        resultIncome.Bank.Name.Should().Be(income.Bank.Name);
         var resultTransfer = result.Transfers.Should().ContainSingle().Which;
         resultTransfer.Id.Should().Be(transfer.Id);
         resultTransfer.Date.Should().Be(transfer.Date);
-        resultTransfer.SourceBank.Should().Be(transfer.SourceBank);
-        resultTransfer.DestinationBank.Should().Be(transfer.DestinationBank);
+        resultTransfer.SourceBank.Name.Should().Be(transfer.SourceBank.Name);
+        resultTransfer.DestinationBank.Name.Should().Be(transfer.DestinationBank.Name);
         resultTransfer.Amount.Should().Be(transfer.Amount);
         resultTransfer.Note.Should().Be(transfer.Note);
         var resultBalanceAdjustment = result.BalanceAdjustments.Should().ContainSingle().Which;
         resultBalanceAdjustment.Id.Should().Be(balanceAdjustment.Id);
         resultBalanceAdjustment.Date.Should().Be(balanceAdjustment.Date);
-        resultBalanceAdjustment.Bank.Should().Be(balanceAdjustment.Bank);
+        resultBalanceAdjustment.Bank.Name.Should().Be(balanceAdjustment.Bank.Name);
         resultBalanceAdjustment.TargetBalance.Should().Be(balanceAdjustment.TargetBalance);
         resultBalanceAdjustment.Delta.Should().Be(balanceAdjustment.Delta);
         resultBalanceAdjustment.Note.Should().Be(balanceAdjustment.Note);

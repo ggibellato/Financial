@@ -37,7 +37,7 @@ public sealed class InvestmentAccountMigrationSummary
             builder.AppendLine("Snapshots whose account does not match any seeded account (review manually):");
             foreach (var snapshot in _unresolvedSnapshots)
             {
-                builder.AppendLine($"  {snapshot.Id} {snapshot.Year}-{snapshot.Month:D2} [{snapshot.Account}]");
+                builder.AppendLine($"  {snapshot.Id} {snapshot.Year}-{snapshot.Month:D2} [{snapshot.Account.Name}]");
             }
         }
 

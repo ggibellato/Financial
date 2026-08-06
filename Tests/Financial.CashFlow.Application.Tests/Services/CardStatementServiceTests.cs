@@ -88,10 +88,11 @@ public class CardStatementServiceTests
     public async Task GetStatementsForMonthAsync_ExcludesSettledAndImmediateExpensesFromOutstandingTotal()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var barclays = repository.Banks.First(b => b.Name == "Barclays");
         var settled = AddCharge(repository, new DateOnly(2026, 7, 10), 30m, CreditCard.BarclaysPlatinumVisa8003);
-        settled.Settle("Barclays", new DateOnly(2026, 7, 20));
+        settled.Settle(barclays, new DateOnly(2026, 7, 20));
         AddCharge(repository, new DateOnly(2026, 7, 11), 20m, CreditCard.BarclaysPlatinumVisa8003);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 12), "Immediate", 5m, Category.Casa, "Barclays", null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 12), "Immediate", 5m, Category.Casa, barclays, null));
         var service = new CardStatementService(repository);
 
         var result = await service.GetStatementsForMonthAsync(2026, 7);
@@ -121,7 +122,7 @@ public class CardStatementServiceTests
             foreach (var expense in new[] { first, second })
             {
                 expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
-                expense.PaymentSource.Should().Be("Trading212");
+                expense.PaymentSourceBank!.Name.Should().Be("Trading212");
                 expense.Date.Should().Be(today);
             }
 
@@ -219,7 +220,7 @@ public class CardStatementServiceTests
         {
             result.IsPaid.Should().BeFalse();
             cutoffCharge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
-            cutoffCharge.PaymentSource.Should().BeNull();
+            cutoffCharge.PaymentSourceBank.Should().BeNull();
             cutoffCharge.Date.Should().Be(cutoffCharge.ChargeDate);
         }
     }
@@ -281,7 +282,7 @@ public class CardStatementServiceTests
             await act.Should().ThrowAsync<InvalidOperationException>();
             statement.IsPaid.Should().BeFalse();
             charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
-            charge.PaymentSource.Should().BeNull();
+            charge.PaymentSourceBank.Should().BeNull();
             charge.Date.Should().Be(charge.ChargeDate);
         }
     }
@@ -316,7 +317,7 @@ public class CardStatementServiceTests
             foreach (var expense in new[] { first, second })
             {
                 expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
-                expense.PaymentSource.Should().BeNull();
+                expense.PaymentSourceBank.Should().BeNull();
                 expense.Date.Should().Be(expense.ChargeDate);
             }
         }
@@ -371,7 +372,7 @@ public class CardStatementServiceTests
             await act.Should().ThrowAsync<InvalidOperationException>();
             statement.IsPaid.Should().BeTrue();
             charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
-            charge.PaymentSource.Should().Be("Trading212");
+            charge.PaymentSourceBank!.Name.Should().Be("Trading212");
             charge.Date.Should().Be(paymentDate);
         }
     }

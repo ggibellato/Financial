@@ -87,54 +87,50 @@ public class InvestmentAccountMigratorTests
     }
 
     [Fact]
-    public void Migrate_SnapshotWithMatchingAccountName_CountsAsResolvedAndLeavesValueUntouched()
+    public void Migrate_SnapshotWithMatchingAccountReference_CountsAsResolvedAndLeavesValueUntouched()
     {
+        // A snapshot's Account is a real reference (F01), so "matching" now means the snapshot was
+        // built against an account that's already present in data.InvestmentAccounts (e.g.
+        // deserialized from a prior migration run) - not a freshly constructed same-named instance.
         var data = CashFlowData.Create();
-        var snapshot = InvestmentSnapshot.Create("ChaseSave", 2026, 7, 500m);
+        var chaseSave = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+        data.AddInvestmentAccount(chaseSave);
+        var snapshot = InvestmentSnapshot.Create(chaseSave, 2026, 7, 500m);
         data.AddInvestmentSnapshot(snapshot);
 
         var summary = InvestmentAccountMigrator.Migrate(data);
 
         summary.SnapshotsResolvedCount.Should().Be(1);
         summary.UnresolvedSnapshots.Should().BeEmpty();
-        snapshot.Account.Should().Be("ChaseSave");
+        snapshot.Account.Should().Be(chaseSave);
         snapshot.Value.Should().Be(500m);
     }
 
     [Fact]
-    public void Migrate_SnapshotWithUnresolvableAccountName_IsFlaggedForManualReviewAndLeftUntouched()
+    public void Migrate_SnapshotWithUnresolvableAccountReference_IsFlaggedForManualReviewAndLeftUntouched()
     {
         var data = CashFlowData.Create();
-        var snapshot = InvestmentSnapshot.Create("SomeUnknownAccount", 2020, 7, 250m);
+        var unknownAccount = InvestmentAccount.Create("SomeUnknownAccount", isActive: true, isLiability: false);
+        var snapshot = InvestmentSnapshot.Create(unknownAccount, 2020, 7, 250m);
         data.AddInvestmentSnapshot(snapshot);
 
         var summary = InvestmentAccountMigrator.Migrate(data);
 
         summary.UnresolvedSnapshots.Should().ContainSingle().Which.Id.Should().Be(snapshot.Id);
         summary.SnapshotsResolvedCount.Should().Be(0);
-        snapshot.Account.Should().Be("SomeUnknownAccount");
+        snapshot.Account.Should().Be(unknownAccount);
         snapshot.Value.Should().Be(250m);
-    }
-
-    [Fact]
-    public void Migrate_SnapshotWithHistoricalAccountName_NowCountsAsResolved()
-    {
-        var data = CashFlowData.Create();
-        var snapshot = InvestmentSnapshot.Create("EverydaySaver", 2020, 7, 250m);
-        data.AddInvestmentSnapshot(snapshot);
-
-        var summary = InvestmentAccountMigrator.Migrate(data);
-
-        summary.SnapshotsResolvedCount.Should().Be(1);
-        summary.UnresolvedSnapshots.Should().BeEmpty();
     }
 
     [Fact]
     public void Migrate_SecondRunOverFirstRunsOutput_ChangesNothing()
     {
         var data = CashFlowData.Create();
-        var resolved = InvestmentSnapshot.Create("ChaseSave", 2026, 7, 500m);
-        var unresolved = InvestmentSnapshot.Create("SomeUnknownAccount", 2020, 7, 250m);
+        var chaseSave = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+        data.AddInvestmentAccount(chaseSave);
+        var unknownAccount = InvestmentAccount.Create("SomeUnknownAccount", isActive: true, isLiability: false);
+        var resolved = InvestmentSnapshot.Create(chaseSave, 2026, 7, 500m);
+        var unresolved = InvestmentSnapshot.Create(unknownAccount, 2020, 7, 250m);
         data.AddInvestmentSnapshot(resolved);
         data.AddInvestmentSnapshot(unresolved);
 

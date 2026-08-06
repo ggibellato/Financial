@@ -54,28 +54,33 @@ public class IncomeSourceMigratorTests
     public void Migrate_IncomeWithMatchingSourceName_CountsAsResolvedAndLeavesValueUntouched()
     {
         var data = CashFlowData.Create();
-        var income = Income.Create(new DateOnly(2026, 7, 1), "Gleison", 3200m, 2450m, "Barclays");
+        var gleison = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+        data.AddIncomeSource(gleison);
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var income = Income.Create(new DateOnly(2026, 7, 1), gleison, 3200m, 2450m, bank);
         data.AddIncome(income);
 
         var summary = IncomeSourceMigrator.Migrate(data);
 
         summary.IncomesResolvedCount.Should().Be(1);
         summary.UnresolvedIncomes.Should().BeEmpty();
-        income.IncomeSource.Should().Be("Gleison");
+        income.IncomeSource.Should().Be(gleison);
     }
 
     [Fact]
     public void Migrate_IncomeWithUnresolvableSourceName_IsFlaggedForManualReviewAndLeftUntouched()
     {
         var data = CashFlowData.Create();
-        var income = Income.Create(new DateOnly(2026, 7, 1), "NotASource", null, 10m, "Chase");
+        var notASource = IncomeSource.Create("NotASource", IncomeGroup.NonReportable);
+        var bank = Bank.Create("Chase", roundUpEnabled: true);
+        var income = Income.Create(new DateOnly(2026, 7, 1), notASource, null, 10m, bank);
         data.AddIncome(income);
 
         var summary = IncomeSourceMigrator.Migrate(data);
 
         summary.UnresolvedIncomes.Should().ContainSingle().Which.Id.Should().Be(income.Id);
         summary.IncomesResolvedCount.Should().Be(0);
-        income.IncomeSource.Should().Be("NotASource");
+        income.IncomeSource.Should().Be(notASource);
     }
 
     [Fact]

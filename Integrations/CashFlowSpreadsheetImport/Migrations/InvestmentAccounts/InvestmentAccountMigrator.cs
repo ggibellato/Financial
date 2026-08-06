@@ -75,8 +75,7 @@ public static class InvestmentAccountMigrator
     {
         foreach (var snapshot in data.InvestmentSnapshots)
         {
-            var resolves = data.InvestmentAccounts.Any(a =>
-                string.Equals(a.Name, snapshot.Account, StringComparison.OrdinalIgnoreCase));
+            var resolves = data.InvestmentAccounts.Any(a => a.Id == snapshot.Account.Id);
 
             if (resolves)
             {

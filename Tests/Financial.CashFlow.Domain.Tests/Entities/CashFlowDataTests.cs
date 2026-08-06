@@ -6,6 +6,13 @@ namespace Financial.CashFlow.Domain.Tests;
 
 public class CashFlowDataTests
 {
+    private static readonly Bank Chase = Bank.Create("Chase", roundUpEnabled: true);
+    private static readonly Bank Barclays = Bank.Create("Barclays", roundUpEnabled: false);
+    private static readonly Bank Trading212 = Bank.Create("Trading212", roundUpEnabled: true);
+    private static readonly IncomeSource Lottery = IncomeSource.Create("Lottery", IncomeGroup.NonReportable);
+    private static readonly InvestmentAccount ChaseSaveAccount =
+        InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+
     [Fact]
     public void Create_StartsWithAllCollectionsEmpty()
     {
@@ -84,7 +91,7 @@ public class CashFlowDataTests
     }
 
     private static Expense CreateExpense() =>
-        Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, "Chase", null);
+        Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, Chase, null);
 
     [Fact]
     public void AddReserveMovement_AddsOnlyToReserveMovementsCollection()
@@ -219,7 +226,7 @@ public class CashFlowDataTests
     {
         var data = CashFlowData.Create();
 
-        data.AddInvestmentSnapshot(InvestmentSnapshot.Create("ChaseSave", 2026, 7, 100m));
+        data.AddInvestmentSnapshot(InvestmentSnapshot.Create(ChaseSaveAccount, 2026, 7, 100m));
 
         data.InvestmentSnapshots.Should().ContainSingle();
         data.Expenses.Should().BeEmpty();
@@ -273,7 +280,7 @@ public class CashFlowDataTests
     }
 
     private static Income CreateIncome() =>
-        Income.Create(new DateOnly(2026, 7, 1), "Lottery", null, 10m, "Chase");
+        Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, Chase);
 
     [Fact]
     public void AddTransfer_AddsOnlyToTransfersCollection()
@@ -292,7 +299,7 @@ public class CashFlowDataTests
         var data = CashFlowData.Create();
         var transfer = CreateTransfer();
         data.AddTransfer(transfer);
-        transfer.UpdateDetails(new DateOnly(2026, 8, 1), "Chase", "Trading212", 250m, "Updated");
+        transfer.UpdateDetails(new DateOnly(2026, 8, 1), Chase, Trading212, 250m, "Updated");
 
         data.UpdateTransfer(transfer);
 
@@ -337,7 +344,7 @@ public class CashFlowDataTests
     }
 
     private static Transfer CreateTransfer() =>
-        Transfer.Create(new DateOnly(2026, 7, 1), "Barclays", "Trading212", 500m, "Test transfer");
+        Transfer.Create(new DateOnly(2026, 7, 1), Barclays, Trading212, 500m, "Test transfer");
 
     [Fact]
     public void AddBalanceAdjustment_AddsOnlyToBalanceAdjustmentsCollection()
@@ -401,5 +408,5 @@ public class CashFlowDataTests
     }
 
     private static BalanceAdjustment CreateBalanceAdjustment() =>
-        BalanceAdjustment.Create(new DateOnly(2026, 7, 1), "Barclays", 100m, 0m, "Test adjustment");
+        BalanceAdjustment.Create(new DateOnly(2026, 7, 1), Barclays, 100m, 0m, "Test adjustment");
 }

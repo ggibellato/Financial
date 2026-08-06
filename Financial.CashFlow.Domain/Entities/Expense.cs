@@ -14,7 +14,7 @@ public class Expense
     public string Description { get; private set; } = string.Empty;
     public decimal Value { get; private set; }
     public Category Category { get; private set; }
-    public string? PaymentSource { get; private set; }
+    public Bank? PaymentSourceBank { get; private set; }
     public CreditCard? CardTag { get; private set; }
     public DateOnly? ChargeDate { get; private set; }
     public DateOnly? InvoiceDate { get; private set; }
@@ -22,7 +22,7 @@ public class Expense
 
     public ExpensePaymentStatus PaymentStatus =>
         CardTag is null ? ExpensePaymentStatus.ImmediatePayment
-        : PaymentSource is null ? ExpensePaymentStatus.CreditCardCharge
+        : PaymentSourceBank is null ? ExpensePaymentStatus.CreditCardCharge
         : ExpensePaymentStatus.CreditCardSettled;
 
     public decimal RoundUpSuggestion => Value <= 0 ? 0m : Math.Ceiling(Value) - Value;
@@ -36,11 +36,11 @@ public class Expense
         string description,
         decimal value,
         Category category,
-        string? paymentSource,
+        Bank? paymentSourceBank,
         CreditCard? cardTag,
         DateOnly? invoiceDate = null)
     {
-        ValidatePaymentShape(paymentSource, cardTag);
+        ValidatePaymentShape(paymentSourceBank, cardTag);
 
         return new()
         {
@@ -49,7 +49,7 @@ public class Expense
             Description = description,
             Value = value,
             Category = category,
-            PaymentSource = paymentSource,
+            PaymentSourceBank = paymentSourceBank,
             CardTag = cardTag,
             ChargeDate = cardTag is not null ? date : null,
             InvoiceDate = cardTag is not null ? FirstOfMonth(invoiceDate ?? date) : null
@@ -61,12 +61,12 @@ public class Expense
         string description,
         decimal value,
         Category category,
-        string? paymentSource,
+        Bank? paymentSourceBank,
         CreditCard? cardTag)
     {
         if (PaymentStatus == ExpensePaymentStatus.CreditCardSettled)
         {
-            if (paymentSource != PaymentSource || cardTag != CardTag)
+            if (paymentSourceBank?.Id != PaymentSourceBank?.Id || cardTag != CardTag)
             {
                 throw new ArgumentException(
                     "A settled expense's payment fields cannot be changed; unmark its card statement paid first.");
@@ -74,8 +74,8 @@ public class Expense
         }
         else
         {
-            ValidatePaymentShape(paymentSource, cardTag);
-            PaymentSource = paymentSource;
+            ValidatePaymentShape(paymentSourceBank, cardTag);
+            PaymentSourceBank = paymentSourceBank;
             CardTag = cardTag;
         }
 
@@ -85,14 +85,14 @@ public class Expense
         Category = category;
     }
 
-    public void Settle(string paymentSource, DateOnly paymentDate)
+    public void Settle(Bank paymentSourceBank, DateOnly paymentDate)
     {
         if (PaymentStatus != ExpensePaymentStatus.CreditCardCharge)
         {
             throw new ArgumentException("Only an unsettled credit card charge can be settled.");
         }
 
-        PaymentSource = paymentSource;
+        PaymentSourceBank = paymentSourceBank;
         Date = paymentDate;
     }
 
@@ -103,7 +103,7 @@ public class Expense
             throw new ArgumentException("Only a settled credit card expense can be unsettled.");
         }
 
-        PaymentSource = null;
+        PaymentSourceBank = null;
         Date = ChargeDate!.Value;
     }
 
@@ -179,14 +179,14 @@ public class Expense
 
     private static DateOnly FirstOfMonth(DateOnly date) => new(date.Year, date.Month, 1);
 
-    private static void ValidatePaymentShape(string? paymentSource, CreditCard? cardTag)
+    private static void ValidatePaymentShape(Bank? paymentSourceBank, CreditCard? cardTag)
     {
-        if (paymentSource is null && cardTag is null)
+        if (paymentSourceBank is null && cardTag is null)
         {
             throw new ArgumentException("An expense requires either a payment source or a card tag.");
         }
 
-        if (paymentSource is not null && cardTag is not null)
+        if (paymentSourceBank is not null && cardTag is not null)
         {
             throw new ArgumentException(
                 "An expense cannot have both a payment source and a card tag; a settled expense is only produced by marking its card statement paid.");

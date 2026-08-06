@@ -5,15 +5,18 @@ namespace Financial.CashFlow.Domain.Entities;
 public class InvestmentSnapshot
 {
     public Guid Id { get; private set; }
-    public string Account { get; private set; } = string.Empty;
+    public InvestmentAccount Account { get; private set; } = null!;
     public int Year { get; private set; }
     public int Month { get; private set; }
     public decimal Value { get; private set; }
 
     private InvestmentSnapshot() { }
 
-    public static InvestmentSnapshot Create(string account, int year, int month, decimal value) =>
-        new()
+    public static InvestmentSnapshot Create(InvestmentAccount account, int year, int month, decimal value)
+    {
+        ArgumentNullException.ThrowIfNull(account);
+
+        return new()
         {
             Id = Guid.NewGuid(),
             Account = account,
@@ -21,6 +24,7 @@ public class InvestmentSnapshot
             Month = month,
             Value = value
         };
+    }
 
     public void Update(decimal value)
     {

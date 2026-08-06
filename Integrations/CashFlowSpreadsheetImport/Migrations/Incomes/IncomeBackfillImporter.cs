@@ -1,4 +1,5 @@
 using ClosedXML.Excel;
+using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes.SpreadsheetImport;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
@@ -51,11 +52,19 @@ public static class IncomeBackfillImporter
             return false;
         }
 
-        data.AddIncome(Income.Create(date, total.Source, total.GrossValue, total.NetValue, TargetBankName));
+        if (!IncomeSourceNameResolver.TryResolve(total.Source, data.IncomeSources, out var incomeSource) ||
+            !BankNameResolver.TryResolve(TargetBankName, data.Banks, out var bank))
+        {
+            return false;
+        }
+
+        data.AddIncome(Income.Create(date, incomeSource!, total.GrossValue, total.NetValue, bank!));
         return true;
     }
 
     private static bool AlreadyImported(CashFlowData data, DateOnly date, string source) =>
         data.Incomes.Any(income =>
-            income.Date == date && income.IncomeSource == source && income.Bank == TargetBankName);
+            income.Date == date &&
+            string.Equals(income.IncomeSource.Name, source, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(income.Bank.Name, TargetBankName, StringComparison.OrdinalIgnoreCase));
 }

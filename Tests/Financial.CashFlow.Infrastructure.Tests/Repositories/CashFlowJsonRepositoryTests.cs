@@ -20,7 +20,7 @@ public class CashFlowJsonRepositoryTests
 
         try
         {
-            repository.AddExpense(Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, "Chase", null));
+            repository.AddExpense(Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, Bank.Create("Chase", roundUpEnabled: true), null));
 
             await repository.SaveChangesAsync();
 
@@ -69,7 +69,7 @@ public class CashFlowJsonRepositoryTests
         {
             var data = CashFlowData.Create();
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
-            var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, "Chase", null);
+            var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, Bank.Create("Chase", roundUpEnabled: true), null);
 
             repository.AddExpense(expense);
 
@@ -89,7 +89,7 @@ public class CashFlowJsonRepositoryTests
         {
             var data = CashFlowData.Create();
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
-            var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, "Chase", null);
+            var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, Bank.Create("Chase", roundUpEnabled: true), null);
             repository.AddExpense(expense);
 
             repository.DeleteExpense(expense.Id);

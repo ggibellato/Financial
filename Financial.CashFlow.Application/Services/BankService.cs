@@ -78,23 +78,23 @@ public sealed class BankService : IBankService
         bool InWindow(DateOnly date) => date >= bank.OpeningBalanceDate && date <= asOfDate;
 
         var incomeTotal = incomes
-            .Where(i => i.Bank == bank.Name && InWindow(i.Date))
+            .Where(i => i.Bank.Id == bank.Id && InWindow(i.Date))
             .Sum(i => i.NetValue);
 
         var expenseTotal = expenses
-            .Where(e => e.PaymentSource == bank.Name && InWindow(e.Date))
+            .Where(e => e.PaymentSourceBank?.Id == bank.Id && InWindow(e.Date))
             .Sum(e => e.Value + (e.RoundUpAmount ?? 0));
 
         var transferInTotal = transfers
-            .Where(t => t.DestinationBank == bank.Name && InWindow(t.Date))
+            .Where(t => t.DestinationBank.Id == bank.Id && InWindow(t.Date))
             .Sum(t => t.Amount);
 
         var transferOutTotal = transfers
-            .Where(t => t.SourceBank == bank.Name && InWindow(t.Date))
+            .Where(t => t.SourceBank.Id == bank.Id && InWindow(t.Date))
             .Sum(t => t.Amount);
 
         var adjustmentTotal = adjustments
-            .Where(a => a.Bank == bank.Name && InWindow(a.Date) && a.Id != excludingAdjustmentId)
+            .Where(a => a.Bank.Id == bank.Id && InWindow(a.Date) && a.Id != excludingAdjustmentId)
             .Sum(a => a.Delta);
 
         return bank.OpeningBalance + incomeTotal - expenseTotal + transferInTotal - transferOutTotal + adjustmentTotal;

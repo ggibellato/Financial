@@ -48,17 +48,18 @@ public class BankMigratorTests
     }
 
     [Fact]
-    public void Migrate_ExpenseWithMatchingBankTag_CountsAsResolvedAndLeavesValueUntouched()
+    public void Migrate_ExpenseWithBankTag_CountsAsResolvedAndLeavesValueUntouched()
     {
         var data = CashFlowData.Create();
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Groceries", 20m, Category.Mercado, "Barclays", null);
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Groceries", 20m, Category.Mercado, bank, null);
         data.AddExpense(expense);
 
         var summary = BankMigrator.Migrate(data);
 
         summary.ExpensesResolvedCount.Should().Be(1);
         summary.UnresolvedExpenses.Should().BeEmpty();
-        expense.PaymentSource.Should().Be("Barclays");
+        expense.PaymentSourceBank.Should().Be(bank);
     }
 
     [Fact]
@@ -76,35 +77,22 @@ public class BankMigratorTests
     }
 
     [Fact]
-    public void Migrate_ExpenseWithUnresolvableBankTag_IsFlaggedForManualReviewAndLeftUntouched()
-    {
-        var data = CashFlowData.Create();
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Mystery", 20m, Category.Extras, "NotABank", null);
-        data.AddExpense(expense);
-
-        var summary = BankMigrator.Migrate(data);
-
-        summary.UnresolvedExpenses.Should().ContainSingle().Which.Id.Should().Be(expense.Id);
-        summary.ExpensesResolvedCount.Should().Be(0);
-        expense.PaymentSource.Should().Be("NotABank");
-    }
-
-    [Fact]
     public void Migrate_SecondRunOverFirstRunsOutput_ChangesNothing()
     {
         var data = CashFlowData.Create();
-        var resolved = Expense.Create(new DateOnly(2026, 7, 1), "Groceries", 20m, Category.Mercado, "Chase", null);
-        var unresolved = Expense.Create(new DateOnly(2026, 7, 2), "Mystery", 5m, Category.Extras, "NotABank", null);
+        var bank = Bank.Create("Chase", roundUpEnabled: true);
+        var resolved = Expense.Create(new DateOnly(2026, 7, 1), "Groceries", 20m, Category.Mercado, bank, null);
+        var charge = Expense.Create(new DateOnly(2026, 7, 2), "Charge", 5m, Category.Extras, null, CreditCard.ChaseMaster4023);
         data.AddExpense(resolved);
-        data.AddExpense(unresolved);
+        data.AddExpense(charge);
 
         BankMigrator.Migrate(data);
         var secondSummary = BankMigrator.Migrate(data);
 
         secondSummary.BanksSeededCount.Should().Be(0);
         secondSummary.ExpensesResolvedCount.Should().Be(1);
-        secondSummary.UnresolvedExpenses.Should().ContainSingle().Which.Id.Should().Be(unresolved.Id);
-        resolved.PaymentSource.Should().Be("Chase");
-        unresolved.PaymentSource.Should().Be("NotABank");
+        secondSummary.ExpensesNotApplicableCount.Should().Be(1);
+        secondSummary.UnresolvedExpenses.Should().BeEmpty();
+        resolved.PaymentSourceBank.Should().Be(bank);
     }
 }

@@ -36,7 +36,7 @@ public sealed class IncomeSourceMigrationSummary
             builder.AppendLine("Incomes whose source name does not match any seeded income source (review manually):");
             foreach (var income in _unresolvedIncomes)
             {
-                builder.AppendLine($"  {income.Id} {income.Date:yyyy-MM-dd} [{income.IncomeSource}]");
+                builder.AppendLine($"  {income.Id} {income.Date:yyyy-MM-dd} [{income.IncomeSource.Name}]");
             }
         }
 

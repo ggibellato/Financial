@@ -6,7 +6,7 @@ public class BalanceAdjustment
 {
     public Guid Id { get; private set; }
     public DateOnly Date { get; private set; }
-    public string Bank { get; private set; } = string.Empty;
+    public Bank Bank { get; private set; } = null!;
     public decimal TargetBalance { get; private set; }
     public decimal Delta { get; private set; }
     public string? Note { get; private set; }
@@ -15,11 +15,12 @@ public class BalanceAdjustment
 
     public static BalanceAdjustment Create(
         DateOnly date,
-        string bank,
+        Bank bank,
         decimal targetBalance,
         decimal delta,
         string? note)
     {
+        ArgumentNullException.ThrowIfNull(bank);
         Validate(targetBalance);
 
         return new()

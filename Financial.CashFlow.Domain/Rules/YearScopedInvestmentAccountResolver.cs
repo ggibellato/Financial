@@ -25,11 +25,11 @@ public static class YearScopedInvestmentAccountResolver
             return accounts.Where(a => a.IsActive).ToList();
         }
 
-        var namesWithSnapshotsThatYear = snapshots
+        var idsWithSnapshotsThatYear = snapshots
             .Where(s => s.Year == year)
-            .Select(s => s.Account)
-            .ToHashSet(System.StringComparer.OrdinalIgnoreCase);
+            .Select(s => s.Account.Id)
+            .ToHashSet();
 
-        return accounts.Where(a => namesWithSnapshotsThatYear.Contains(a.Name)).ToList();
+        return accounts.Where(a => idsWithSnapshotsThatYear.Contains(a.Id)).ToList();
     }
 }

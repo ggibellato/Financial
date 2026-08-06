@@ -11,6 +11,8 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class ExpenseServiceTests
 {
+    private static readonly Bank ChaseFixture = Bank.Create("Chase", roundUpEnabled: true);
+
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
@@ -262,7 +264,7 @@ public class ExpenseServiceTests
         // Settled after the bank expense's date, with a payment date in a later month entirely -
         // under a Date-based sort this would drop the card expense out of July's view; sorting by
         // InvoiceDate keeps it anchored to the invoice period it was assigned to.
-        repository.Expenses.Single(e => e.Id == cardExpense.Id).Settle("Chase", new DateOnly(2026, 8, 25));
+        repository.Expenses.Single(e => e.Id == cardExpense.Id).Settle(ChaseFixture, new DateOnly(2026, 8, 25));
 
         var result = service.GetExpensesByMonth(2026, 7);
 
@@ -279,7 +281,7 @@ public class ExpenseServiceTests
             Description = "Card", Date = new DateOnly(2026, 8, 6), PaymentSource = null, CardTag = "BaAmex",
             InvoiceDate = new DateOnly(2026, 9, 1),
         }));
-        repository.Expenses.Single(e => e.Id == cardExpense.Id).Settle("Chase", new DateOnly(2026, 9, 20));
+        repository.Expenses.Single(e => e.Id == cardExpense.Id).Settle(ChaseFixture, new DateOnly(2026, 9, 20));
 
         var augustResult = service.GetExpensesByMonth(2026, 8);
         var septemberResult = service.GetExpensesByMonth(2026, 9);
@@ -327,7 +329,7 @@ public class ExpenseServiceTests
             ValidCreateRequest() with { Description = "Unsettled charge", PaymentSource = null, CardTag = "ChaseMaster4023" }));
         var settledCharge = await service.AddExpenseAsync(ToCreateDto(
             ValidCreateRequest() with { Description = "Settled charge", PaymentSource = null, CardTag = "BaAmex" }));
-        repository.Expenses.Single(e => e.Id == settledCharge.Id).Settle("Chase", new DateOnly(2026, 7, 20));
+        repository.Expenses.Single(e => e.Id == settledCharge.Id).Settle(ChaseFixture, new DateOnly(2026, 7, 20));
 
         var result = service.GetExpensesByMonth(2026, 7);
 
@@ -360,7 +362,7 @@ public class ExpenseServiceTests
         await service.AddExpenseAsync(ToCreateDto(ValidCreateRequest() with { Description = "Immediate" }));
         var settledCharge = await service.AddExpenseAsync(ToCreateDto(
             ValidCreateRequest() with { Description = "Settled charge", PaymentSource = null, CardTag = "BaAmex" }));
-        repository.Expenses.Single(e => e.Id == settledCharge.Id).Settle("Chase", new DateOnly(2026, 7, 20));
+        repository.Expenses.Single(e => e.Id == settledCharge.Id).Settle(ChaseFixture, new DateOnly(2026, 7, 20));
 
         var result = service.GetUnpaidCardChargesByMonth(2026, 7);
 
@@ -460,7 +462,7 @@ public class ExpenseServiceTests
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         var charge = Expense.Create(new DateOnly(2026, 7, 10), "Settled charge", 40m, Category.Mercado, null, CreditCard.BarclaysPlatinumVisa8003);
-        charge.Settle("Trading212", new DateOnly(2026, 8, 3));
+        charge.Settle(ChaseFixture, new DateOnly(2026, 8, 3));
         repository.Expenses.Add(charge);
         var service = new ExpenseService(repository);
 
@@ -482,8 +484,8 @@ public class ExpenseServiceTests
             new DateOnly(2026, 7, 29), "Unpaid cutoff", 10m, Category.Mercado, null,
             CreditCard.BarclaysPlatinumVisa8003, new DateOnly(2026, 8, 1));
         var settled = Expense.Create(new DateOnly(2026, 7, 12), "Settled", 20m, Category.Mercado, null, CreditCard.BaAmex);
-        settled.Settle("Trading212", new DateOnly(2026, 7, 20));
-        var bank = Expense.Create(new DateOnly(2026, 7, 15), "Bank", 30m, Category.Mercado, "Chase", null);
+        settled.Settle(ChaseFixture, new DateOnly(2026, 7, 20));
+        var bank = Expense.Create(new DateOnly(2026, 7, 15), "Bank", 30m, Category.Mercado, ChaseFixture, null);
         repository.Expenses.Add(unpaidCutoff);
         repository.Expenses.Add(settled);
         repository.Expenses.Add(bank);
@@ -787,7 +789,7 @@ public class ExpenseServiceTests
         var service = new ExpenseService(repository);
         var added = await service.AddExpenseAsync(ToCreateDto(
             ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
-        repository.Expenses.Single(e => e.Id == added.Id).Settle("Barclays", new DateOnly(2026, 7, 31));
+        repository.Expenses.Single(e => e.Id == added.Id).Settle(repository.Banks.First(b => b.Name == "Barclays"), new DateOnly(2026, 7, 31));
         var updateRequest = ToUpdateDto(ValidCreateRequest() with
         {
             Description = "Renamed", PaymentSource = "Barclays", CardTag = "ChaseMaster4023", InvoiceDate = added.InvoiceDate
@@ -805,7 +807,7 @@ public class ExpenseServiceTests
         var service = new ExpenseService(repository);
         var added = await service.AddExpenseAsync(ToCreateDto(
             ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
-        repository.Expenses.Single(e => e.Id == added.Id).Settle("Barclays", new DateOnly(2026, 7, 31));
+        repository.Expenses.Single(e => e.Id == added.Id).Settle(repository.Banks.First(b => b.Name == "Barclays"), new DateOnly(2026, 7, 31));
         var updateRequest = ToUpdateDto(ValidCreateRequest() with
         {
             PaymentSource = "Barclays", CardTag = "ChaseMaster4023", InvoiceDate = new DateOnly(2026, 9, 1)

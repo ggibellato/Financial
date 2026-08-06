@@ -6,21 +6,23 @@ namespace Financial.CashFlow.Domain.Tests;
 
 public class BalanceAdjustmentTests
 {
+    private static readonly Bank Barclays = Bank.Create("Barclays", roundUpEnabled: false);
+
     private static BalanceAdjustment CreateValidAdjustment() =>
-        BalanceAdjustment.Create(new DateOnly(2026, 7, 25), "Barclays", 2340.17m, -4.20m, "Matched against July statement");
+        BalanceAdjustment.Create(new DateOnly(2026, 7, 25), Barclays, 2340.17m, -4.20m, "Matched against July statement");
 
     [Fact]
     public void Create_AssignsAllFieldsAndANewId()
     {
         var date = new DateOnly(2026, 7, 25);
 
-        var adjustment = BalanceAdjustment.Create(date, "Barclays", 2340.17m, -4.20m, "Matched against July statement");
+        var adjustment = BalanceAdjustment.Create(date, Barclays, 2340.17m, -4.20m, "Matched against July statement");
 
         using (new AssertionScope())
         {
             adjustment.Id.Should().NotBeEmpty();
             adjustment.Date.Should().Be(date);
-            adjustment.Bank.Should().Be("Barclays");
+            adjustment.Bank.Should().Be(Barclays);
             adjustment.TargetBalance.Should().Be(2340.17m);
             adjustment.Delta.Should().Be(-4.20m);
             adjustment.Note.Should().Be("Matched against July statement");
@@ -30,7 +32,7 @@ public class BalanceAdjustmentTests
     [Fact]
     public void Create_WithoutNote_AllowsNullNote()
     {
-        var adjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), "Barclays", 100m, 0m, null);
+        var adjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), Barclays, 100m, 0m, null);
 
         adjustment.Note.Should().BeNull();
     }
@@ -47,7 +49,7 @@ public class BalanceAdjustmentTests
     [Fact]
     public void Create_WithZeroTargetBalance_Succeeds()
     {
-        var adjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), "Barclays", 0m, -100m, null);
+        var adjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), Barclays, 0m, -100m, null);
 
         adjustment.TargetBalance.Should().Be(0m);
     }
@@ -55,9 +57,17 @@ public class BalanceAdjustmentTests
     [Fact]
     public void Create_WithNegativeTargetBalance_Throws()
     {
-        var act = () => BalanceAdjustment.Create(new DateOnly(2026, 7, 25), "Barclays", -1m, 0m, null);
+        var act = () => BalanceAdjustment.Create(new DateOnly(2026, 7, 25), Barclays, -1m, 0m, null);
 
         act.Should().Throw<ArgumentException>().WithMessage("*cannot be negative*");
+    }
+
+    [Fact]
+    public void Create_WithoutABank_Throws()
+    {
+        var act = () => BalanceAdjustment.Create(new DateOnly(2026, 7, 25), null!, 100m, 0m, null);
+
+        act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -72,7 +82,7 @@ public class BalanceAdjustmentTests
         using (new AssertionScope())
         {
             adjustment.Id.Should().Be(originalId);
-            adjustment.Bank.Should().Be("Barclays");
+            adjustment.Bank.Should().Be(Barclays);
             adjustment.Date.Should().Be(newDate);
             adjustment.TargetBalance.Should().Be(500m);
             adjustment.Delta.Should().Be(10m);

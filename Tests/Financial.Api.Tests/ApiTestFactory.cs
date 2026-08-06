@@ -89,9 +89,9 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
     private const string SeededBanksJson = """
         {
           "Banks": [
-            { "Name": "Barclays", "RoundUpEnabled": false },
-            { "Name": "Trading212", "RoundUpEnabled": true },
-            { "Name": "Chase", "RoundUpEnabled": true }
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-100000000001", "Name": "Barclays", "RoundUpEnabled": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-100000000002", "Name": "Trading212", "RoundUpEnabled": true },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-100000000003", "Name": "Chase", "RoundUpEnabled": true }
           ],
           "IncomeSources": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000001", "Name": "Gleison", "IsActive": true, "Group": "Salary" },
@@ -100,17 +100,17 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000004", "Name": "DividendoJuros", "IsActive": true, "Group": "DividendoJuros" }
           ],
           "InvestmentAccounts": [
-            { "Name": "BlueRewardsSaver", "IsActive": true, "IsLiability": false },
-            { "Name": "PlatinumVisa8003", "IsActive": true, "IsLiability": true },
-            { "Name": "PlatinumVisa6007", "IsActive": true, "IsLiability": true },
-            { "Name": "ChaseMaster4023", "IsActive": true, "IsLiability": true },
-            { "Name": "BaAmex", "IsActive": true, "IsLiability": true },
-            { "Name": "PaypalCredit", "IsActive": true, "IsLiability": true },
-            { "Name": "ChipCashIsaGleison", "IsActive": true, "IsLiability": false },
-            { "Name": "ChaseSave", "IsActive": true, "IsLiability": false },
-            { "Name": "ChipCashIsaAriana", "IsActive": true, "IsLiability": false },
-            { "Name": "Trading212Invested", "IsActive": true, "IsLiability": false },
-            { "Name": "ReservasPessoais", "IsActive": true, "IsLiability": true }
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000001", "Name": "BlueRewardsSaver", "IsActive": true, "IsLiability": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000002", "Name": "PlatinumVisa8003", "IsActive": true, "IsLiability": true },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000003", "Name": "PlatinumVisa6007", "IsActive": true, "IsLiability": true },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000004", "Name": "ChaseMaster4023", "IsActive": true, "IsLiability": true },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000005", "Name": "BaAmex", "IsActive": true, "IsLiability": true },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000006", "Name": "PaypalCredit", "IsActive": true, "IsLiability": true },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000007", "Name": "ChipCashIsaGleison", "IsActive": true, "IsLiability": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000008", "Name": "ChaseSave", "IsActive": true, "IsLiability": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000009", "Name": "ChipCashIsaAriana", "IsActive": true, "IsLiability": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000010", "Name": "Trading212Invested", "IsActive": true, "IsLiability": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000011", "Name": "ReservasPessoais", "IsActive": true, "IsLiability": true }
           ]
         }
         """;

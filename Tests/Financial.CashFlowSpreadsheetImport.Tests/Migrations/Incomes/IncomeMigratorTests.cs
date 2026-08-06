@@ -1,5 +1,6 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes;
 using FluentAssertions;
 
@@ -7,6 +8,11 @@ namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.Incomes;
 
 public class IncomeMigratorTests
 {
+    private static readonly Bank Chase = Bank.Create("Chase", roundUpEnabled: true);
+    private static readonly Bank Barclays = Bank.Create("Barclays", roundUpEnabled: false);
+    private static readonly IncomeSource Lottery = IncomeSource.Create("Lottery", IncomeGroup.NonReportable);
+    private static readonly IncomeSource Ariana = IncomeSource.Create("Ariana", IncomeGroup.Salary);
+
     [Fact]
     public void Migrate_OnEmptyData_ReportsEmptyIncomesCollection()
     {
@@ -22,8 +28,8 @@ public class IncomeMigratorTests
     public void Migrate_WithExistingIncomes_ReportsTheCorrectCount()
     {
         var data = CashFlowData.Create();
-        data.AddIncome(Income.Create(new DateOnly(2026, 7, 1), "Lottery", null, 10m, "Chase"));
-        data.AddIncome(Income.Create(new DateOnly(2026, 7, 2), "Ariana", null, 400m, "Barclays"));
+        data.AddIncome(Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, Chase));
+        data.AddIncome(Income.Create(new DateOnly(2026, 7, 2), Ariana, null, 400m, Barclays));
 
         var summary = IncomeMigrator.Migrate(data);
 
@@ -34,7 +40,7 @@ public class IncomeMigratorTests
     public void Migrate_CalledTwice_ProducesTheSameResult()
     {
         var data = CashFlowData.Create();
-        data.AddIncome(Income.Create(new DateOnly(2026, 7, 1), "Lottery", null, 10m, "Chase"));
+        data.AddIncome(Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, Chase));
 
         var first = IncomeMigrator.Migrate(data);
         var second = IncomeMigrator.Migrate(data);
@@ -60,12 +66,14 @@ public class IncomeMigratorTests
         sheet.Cell(3, 11).Value = 2595.39;
         sheet.Cell(3, 12).Value = 1878.74;
         var data = CashFlowData.Create();
+        data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
+        data.AddIncomeSource(IncomeSource.Create("Ariana", IncomeGroup.Salary));
 
         var summary = IncomeMigrator.Migrate(data, workbook);
 
         summary.EntriesImportedCount.Should().Be(1);
         summary.IncomeCount.Should().Be(1);
-        data.Incomes.Should().ContainSingle(i => i.IncomeSource == "Ariana" && i.Bank == "Barclays");
+        data.Incomes.Should().ContainSingle(i => i.IncomeSource.Name == "Ariana" && i.Bank.Name == "Barclays");
     }
 
     [Fact]

@@ -4,6 +4,7 @@ namespace Financial.CashFlow.Domain.Entities;
 
 public class Bank
 {
+    public Guid Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public bool RoundUpEnabled { get; private set; }
     public decimal OpeningBalance { get; private set; }
@@ -20,6 +21,7 @@ public class Bank
 
         return new()
         {
+            Id = Guid.NewGuid(),
             Name = name,
             RoundUpEnabled = roundUpEnabled
         };
