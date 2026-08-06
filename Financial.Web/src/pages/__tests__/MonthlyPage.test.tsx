@@ -1040,6 +1040,16 @@ describe('MonthlyPage', () => {
     expect(screen.getByText('Barclays → Trading212')).toBeInTheDocument()
   })
 
+  it('shows the same bank balances grid on the Bank tab as on the Summary tab', async () => {
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+
+    await waitFor(() => expect(screen.getByText(/Bank Balance:/)).toBeInTheDocument())
+    const banksSection = within(screen.getByText(/Bank Balance:/).closest('section')!)
+    expect(banksSection.getByRole('columnheader', { name: 'Bank Balance' })).toBeInTheDocument()
+    expect(banksSection.getByRole('columnheader', { name: 'Round-Up' })).toBeInTheDocument()
+  })
+
   it('opens the New Transfer form with no bank pre-selected, creates a transfer, and refreshes balances and the operations list', async () => {
     createTransferMock.mockResolvedValue(TRANSFERS[0])
     render(<MonthlyPage />)

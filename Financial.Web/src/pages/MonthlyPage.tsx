@@ -350,6 +350,8 @@ export default function MonthlyPage() {
 
           {activeTab === 'bank' && !bankOperations.isLoading && !bankOperations.error && (
             <>
+              <BanksGrid bankTotals={bankTotals} bankTotalsSum={bankTotalsSum} roundUpTotalsSum={roundUpTotalsSum} />
+
               {transferForm.isOpen && (
                 <TransferForm
                   isEditing={transferForm.isEditing}
