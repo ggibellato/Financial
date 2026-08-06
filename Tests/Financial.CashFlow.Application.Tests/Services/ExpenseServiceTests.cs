@@ -169,6 +169,19 @@ public class ExpenseServiceTests
     }
 
     [Fact]
+    public async Task UpdateExpenseAsync_WithInvalidPaymentSource_ThrowsArgumentException()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new ExpenseService(repository);
+        var added = await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest()));
+        var updateRequest = ToUpdateDto(repository, ValidCreateRequest() with { PaymentSource = "NotASource" });
+
+        var act = async () => await service.UpdateExpenseAsync(added.Id, updateRequest);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Payment source*not recognized*");
+    }
+
+    [Fact]
     public async Task UpdateExpenseAsync_WithExistingId_UpdatesInPlace()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);

@@ -98,6 +98,19 @@ public class TransferServiceTests
     }
 
     [Fact]
+    public async Task UpdateTransferAsync_WithUnresolvableSourceBank_ThrowsArgumentException()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new TransferService(repository);
+        var added = await service.AddTransferAsync(ToCreateDto(repository, ValidCreateRequest()));
+        var updateRequest = ToUpdateDto(repository, ValidCreateRequest() with { SourceBank = "NotABank" });
+
+        var act = async () => await service.UpdateTransferAsync(added.Id, updateRequest);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage($"*Bank '{updateRequest.SourceBankId}' was not found*");
+    }
+
+    [Fact]
     public async Task UpdateTransferAsync_WithExistingId_UpdatesInPlace()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);

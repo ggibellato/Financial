@@ -134,6 +134,28 @@ public class BalanceAdjustmentServiceTests
     }
 
     [Fact]
+    public async Task UpdateAdjustmentAsync_WithUnresolvableBank_ThrowsArgumentException()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
+        var service = new BalanceAdjustmentService(repository, new BankService(repository));
+        var added = await service.AddAdjustmentAsync(BankIdOf(repository, "Barclays"), new BalanceAdjustmentCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            TargetBalance = 150m
+        });
+        var unknownBankId = Guid.NewGuid();
+
+        var act = async () => await service.UpdateAdjustmentAsync(unknownBankId, added.Id, new BalanceAdjustmentUpdateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            TargetBalance = 120m
+        });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage($"*Bank '{unknownBankId}' was not found*");
+    }
+
+    [Fact]
     public async Task UpdateAdjustmentAsync_WithExistingId_RecomputesAndPersistsDelta()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
