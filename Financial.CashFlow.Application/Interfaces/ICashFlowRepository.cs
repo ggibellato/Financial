@@ -31,6 +31,8 @@ public interface ICashFlowRepository
 
     IEnumerable<Bank> GetBanks();
 
+    IEnumerable<IncomeSource> GetIncomeSources();
+
     IEnumerable<Income> GetIncomes();
     void AddIncome(Income income);
     void DeleteIncome(Guid id);

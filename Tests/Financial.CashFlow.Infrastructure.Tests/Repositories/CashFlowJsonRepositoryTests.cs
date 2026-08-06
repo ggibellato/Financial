@@ -142,6 +142,24 @@ public class CashFlowJsonRepositoryTests
     }
 
     [Fact]
+    public void GetIncomeSources_ReturnsIncomeSourcesFromTheUnderlyingData()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var data = CashFlowData.Create();
+            data.AddIncomeSource(IncomeSource.Create("Gleison", IncomeGroup.Salary));
+            var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
+
+            repository.GetIncomeSources().Should().ContainSingle().Which.Name.Should().Be("Gleison");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void GetInvestmentAccounts_ReturnsInvestmentAccountsFromTheUnderlyingData()
     {
         var path = Path.GetTempFileName();

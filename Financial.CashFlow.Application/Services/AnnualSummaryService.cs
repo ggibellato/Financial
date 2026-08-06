@@ -201,21 +201,31 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     /// anything dated in the current calendar month so a partially-elapsed month never inflates an
     /// "Average" figure's numerator.
     /// </summary>
+    /// <summary>
+    /// Builds a case-insensitive name -&gt; IncomeGroup lookup from the seeded IncomeSource list.
+    /// Built once per call site (not per income record) to keep group resolution O(1) per record
+    /// instead of re-scanning the seeded list for every income. An income source name with no
+    /// matching seeded record resolves to <see cref="IncomeGroup.NonReportable"/>.
+    /// </summary>
+    private Dictionary<string, IncomeGroup> BuildIncomeGroupLookup() =>
+        _repository.GetIncomeSources().ToDictionary(s => s.Name, s => s.Group, StringComparer.OrdinalIgnoreCase);
+
     private (IncomeSeries Display, IncomeSeries ForAverage) BuildIncomeSeriesPairForYear(int year)
     {
         var yearIncomes = _repository.GetIncomes().Where(i => i.Date.Year == year).ToList();
         var now = _timeProvider.GetUtcNow();
         var currentMonthCutoff = new DateOnly(now.Year, now.Month, 1);
+        var groupLookup = BuildIncomeGroupLookup();
 
         return (
-            BuildIncomeSeries(yearIncomes),
-            BuildIncomeSeries(yearIncomes.Where(i => i.Date < currentMonthCutoff)));
+            BuildIncomeSeries(yearIncomes, groupLookup),
+            BuildIncomeSeries(yearIncomes.Where(i => i.Date < currentMonthCutoff), groupLookup));
     }
 
     private readonly record struct IncomeSeries(
         MonthlySeries Salary, MonthlySeries SalaryAfterTaxes, MonthlySeries TaxDifference, MonthlySeries DividendoJuros);
 
-    private static IncomeSeries BuildIncomeSeries(IEnumerable<Income> incomes)
+    private static IncomeSeries BuildIncomeSeries(IEnumerable<Income> incomes, IReadOnlyDictionary<string, IncomeGroup> groupLookup)
     {
         var salaryMonthly = new decimal[MonthsInYear];
         var salaryAfterTaxesMonthly = new decimal[MonthsInYear];
@@ -225,7 +235,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         {
             var monthIndex = income.Date.Month - 1;
 
-            switch (income.Group)
+            switch (groupLookup.GetValueOrDefault(income.IncomeSource, IncomeGroup.NonReportable))
             {
                 case IncomeGroup.Salary:
                     salaryMonthly[monthIndex] += income.GrossValue ?? 0m;
@@ -451,17 +461,20 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     private Dictionary<int, List<IncomeGroupValueDTO>> GetAnnualAverageIncomeByGroupIncome(int year)
     {
         var now = _timeProvider.GetUtcNow();
+        var groupLookup = BuildIncomeGroupLookup();
+        IncomeGroup Group(Income income) => groupLookup.GetValueOrDefault(income.IncomeSource, IncomeGroup.NonReportable);
+
         var incomes = _repository.GetIncomes()
             .Where(e => e.Date.Year <= year && e.Date < new DateOnly(now.Year, now.Month, 1))
             .ToList();
 
         var sumsByYearMonthGroup = incomes
-            .GroupBy(e => (e.Date.Year, e.Date.Month, e.Group))
+            .GroupBy(e => (e.Date.Year, e.Date.Month, Group: Group(e)))
             .ToDictionary(g => g.Key, g => (Gross: g.Sum(e => e.GrossValue ?? 0m), Net: g.Sum(e => e.NetValue)));
 
         var groupsByYear = incomes
             .GroupBy(e => e.Date.Year)
-            .ToDictionary(g => g.Key, g => g.Select(e => e.Group).Distinct().ToList());
+            .ToDictionary(g => g.Key, g => g.Select(Group).Distinct().ToList());
 
         return groupsByYear.ToDictionary(
             yearGroup => yearGroup.Key,

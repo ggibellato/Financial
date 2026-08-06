@@ -73,15 +73,32 @@ public class IncomeServiceTests
         await act.Should().ThrowAsync<ArgumentException>();
     }
 
+    // Rejecting a source name that isn't seeded is F02's responsibility (IncomeSourceNameResolver);
+    // this feature only changes IncomeSource's storage type and does not yet validate against the
+    // seeded list, so an unrecognized-but-non-blank name is currently accepted as-is.
     [Fact]
-    public async Task AddIncomeAsync_WithUnrecognizedIncomeSource_ThrowsArgumentException()
+    public async Task AddIncomeAsync_WithUnrecognizedIncomeSource_IsAcceptedAsIs()
     {
         var service = new IncomeService(new StubCashFlowRepository(seedDefaultBanks: true));
         var request = ToCreateDto(ValidCreateRequest() with { IncomeSource = "NotASource" });
 
+        var result = await service.AddIncomeAsync(request);
+
+        result.IncomeSource.Should().Be("NotASource");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task AddIncomeAsync_WithBlankIncomeSource_ThrowsArgumentException(string? incomeSource)
+    {
+        var service = new IncomeService(new StubCashFlowRepository(seedDefaultBanks: true));
+        var request = ToCreateDto(ValidCreateRequest() with { IncomeSource = incomeSource! });
+
         var act = async () => await service.AddIncomeAsync(request);
 
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Income source*not recognized*");
+        await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]

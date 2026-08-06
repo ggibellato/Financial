@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
 
 namespace Financial.CashFlow.Application.Tests.TestHelpers;
 
@@ -19,6 +20,7 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
     public List<InvestmentSnapshot> InvestmentSnapshots { get; } = new();
     public List<InvestmentAccount> InvestmentAccounts { get; } = new();
     public List<Bank> Banks { get; } = new();
+    public List<IncomeSource> IncomeSources { get; } = new();
     public List<Income> Incomes { get; } = new();
     public List<Transfer> Transfers { get; } = new();
     public List<BalanceAdjustment> BalanceAdjustments { get; } = new();
@@ -28,11 +30,16 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
     /// <summary>When true, the next <see cref="SaveChangesAsync"/> call throws once and resets to false.</summary>
     public bool ThrowOnNextSave { get; set; }
 
-    public StubCashFlowRepository(bool seedDefaultBanks = false)
+    public StubCashFlowRepository(bool seedDefaultBanks = false, bool seedDefaultIncomeSources = false)
     {
         if (seedDefaultBanks)
         {
             Banks.AddRange(DefaultBanks());
+        }
+
+        if (seedDefaultIncomeSources)
+        {
+            IncomeSources.AddRange(DefaultIncomeSources());
         }
     }
 
@@ -42,6 +49,15 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
         Bank.Create("Barclays", roundUpEnabled: false),
         Bank.Create("Trading212", roundUpEnabled: true),
         Bank.Create("Chase", roundUpEnabled: true)
+    ];
+
+    /// <summary>The 4 income sources seeded in a real deployment by the CashFlowSpreadsheetImport migration tool.</summary>
+    public static IEnumerable<IncomeSource> DefaultIncomeSources() =>
+    [
+        IncomeSource.Create("Gleison", IncomeGroup.Salary),
+        IncomeSource.Create("Ariana", IncomeGroup.Salary),
+        IncomeSource.Create("Lottery", IncomeGroup.NonReportable),
+        IncomeSource.Create("DividendoJuros", IncomeGroup.DividendoJuros)
     ];
 
     public void SetOpeningBalance(string bankName, decimal openingBalance, DateOnly openingBalanceDate) =>
@@ -73,6 +89,8 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
     public void AddInvestmentAccount(InvestmentAccount account) => InvestmentAccounts.Add(account);
 
     public IEnumerable<Bank> GetBanks() => Banks;
+
+    public IEnumerable<IncomeSource> GetIncomeSources() => IncomeSources;
 
     public IEnumerable<Income> GetIncomes() => Incomes;
     public void AddIncome(Income income) => Incomes.Add(income);
