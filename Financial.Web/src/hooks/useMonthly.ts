@@ -7,6 +7,7 @@ import type {
   CategoryTotalDto,
   ExpenseDto,
   IncomeDto,
+  IncomeSourceDto,
   TitheSummaryDto,
 } from '../api/types'
 import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
@@ -14,6 +15,24 @@ import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '.
 export type PaymentMode = 'bank' | 'card'
 
 export const INCOME_SOURCES_WITH_GROSS_VALUE = ['Gleison', 'Ariana']
+
+/** Matches the previous hardcoded INCOME_SOURCES array's declaration order. Names outside this
+ * list (unexpected but not invalid) sort last rather than being dropped or erroring. */
+const INCOME_SOURCE_DISPLAY_ORDER = ['Gleison', 'Ariana', 'Lottery', 'DividendoJuros']
+
+/** Active income sources, ordered to match the picklist's historical display order. */
+export function selectActiveIncomeSources(sources: IncomeSourceDto[]): IncomeSourceDto[] {
+  return sources
+    .filter((s) => s.isActive)
+    .slice()
+    .sort((a, b) => {
+      const rank = (name: string) => {
+        const index = INCOME_SOURCE_DISPLAY_ORDER.indexOf(name)
+        return index === -1 ? INCOME_SOURCE_DISPLAY_ORDER.length : index
+      }
+      return rank(a.name) - rank(b.name)
+    })
+}
 
 const SETTLED_STATUS = 'CreditCardSettled'
 const CHARGE_STATUS = 'CreditCardCharge'
@@ -88,6 +107,7 @@ interface MonthlyState {
   categoryTotals: CategoryTotalDto[]
   cardStatements: CardStatementDto[]
   banks: BankDto[]
+  incomeSources: IncomeSourceDto[]
   bankBalances: BankBalanceDto[]
   incomes: IncomeDto[]
   titheSummary: TitheSummaryDto | null
@@ -149,6 +169,7 @@ type MonthlyAction =
         categoryTotals: CategoryTotalDto[]
         cardStatements: CardStatementDto[]
         banks: BankDto[]
+        incomeSources: IncomeSourceDto[]
         bankBalances: BankBalanceDto[]
         incomes: IncomeDto[]
         titheSummary: TitheSummaryDto
@@ -197,7 +218,7 @@ const BLANK_CREATE_FORM = {
 
 const BLANK_CREATE_INCOME_FORM = {
   createIncomeDate: '',
-  createIncomeSource: 'Gleison',
+  createIncomeSource: '',
   createIncomeGrossValue: '',
   createIncomeNetValue: '',
   createIncomeBank: '',
@@ -209,6 +230,7 @@ const INITIAL_STATE_BASE: Omit<MonthlyState, 'year' | 'month'> = {
   categoryTotals: [],
   cardStatements: [],
   banks: [],
+  incomeSources: [],
   bankBalances: [],
   incomes: [],
   titheSummary: null,
@@ -263,6 +285,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
     case 'FETCH_SUCCESS': {
       const defaultBankStillUnset = state.createPaymentMode === 'bank' && state.createPaymentSource === ''
       const defaultIncomeBankStillUnset = state.createIncomeBank === ''
+      const defaultIncomeSourceStillUnset = state.createIncomeSource === ''
       return {
         ...state,
         isLoading: false,
@@ -271,6 +294,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         categoryTotals: action.payload.categoryTotals,
         cardStatements: action.payload.cardStatements,
         banks: action.payload.banks,
+        incomeSources: action.payload.incomeSources,
         bankBalances: action.payload.bankBalances,
         incomes: action.payload.incomes,
         titheSummary: action.payload.titheSummary,
@@ -280,6 +304,9 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         createIncomeBank: defaultIncomeBankStillUnset
           ? (action.payload.banks[0]?.name ?? '')
           : state.createIncomeBank,
+        createIncomeSource: defaultIncomeSourceStillUnset
+          ? (selectActiveIncomeSources(action.payload.incomeSources)[0]?.name ?? '')
+          : state.createIncomeSource,
       }
     }
     case 'FETCH_ERROR':
@@ -487,6 +514,7 @@ export interface MonthlyData {
   categoryTotalsSum: number
   cardStatements: CardStatementDto[]
   banks: BankDto[]
+  incomeSources: IncomeSourceDto[]
   adjustmentTotal: number
   bankTotals: BankTotal[]
   bankTotalsSum: number
@@ -575,12 +603,23 @@ export function useMonthly(): MonthlyData {
       apiClient.getCategoryTotalsByMonth(state.year, state.month),
       apiClient.getCardStatementsByMonth(state.year, state.month),
       apiClient.getBanks(),
+      apiClient.getIncomeSources(),
       apiClient.getIncomesByMonth(state.year, state.month),
       apiClient.getBankBalancesByMonth(state.year, state.month),
       apiClient.getTitheSummaryByMonth(state.year, state.month),
     ])
       .then(
-        ([expenses, unpaidCardCharges, categoryTotals, cardStatements, banks, incomes, bankBalances, titheSummary]) =>
+        ([
+          expenses,
+          unpaidCardCharges,
+          categoryTotals,
+          cardStatements,
+          banks,
+          incomeSources,
+          incomes,
+          bankBalances,
+          titheSummary,
+        ]) =>
           dispatch({
             type: 'FETCH_SUCCESS',
             payload: {
@@ -589,6 +628,7 @@ export function useMonthly(): MonthlyData {
               categoryTotals,
               cardStatements,
               banks,
+              incomeSources,
               incomes,
               bankBalances,
               titheSummary,
@@ -1025,6 +1065,7 @@ export function useMonthly(): MonthlyData {
     categoryTotalsSum,
     cardStatements: state.cardStatements,
     banks: state.banks,
+    incomeSources: state.incomeSources,
     adjustmentTotal,
     bankTotals,
     bankTotalsSum,

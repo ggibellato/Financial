@@ -398,6 +398,13 @@ export interface BankDto {
   roundUpEnabled: boolean
 }
 
+export interface IncomeSourceDto {
+  id: string
+  name: string
+  isActive: boolean
+  group: string
+}
+
 export interface BankBalanceDto {
   bank: string
   balance: number

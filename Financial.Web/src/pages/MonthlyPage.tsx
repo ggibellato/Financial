@@ -84,6 +84,7 @@ export default function MonthlyPage() {
     categoryTotalsSum,
     cardStatements,
     banks,
+    incomeSources,
     adjustmentTotal,
     bankTotals,
     bankTotalsSum,
@@ -321,6 +322,7 @@ export default function MonthlyPage() {
                   netValue={isIncomeEditing ? editIncomeNetValue : createIncomeNetValue}
                   bank={isIncomeEditing ? editIncomeBank : createIncomeBank}
                   banks={banks}
+                  incomeSources={incomeSources}
                   isSaving={isIncomeEditing ? isSavingIncome : isCreatingIncome}
                   saveError={isIncomeEditing ? saveIncomeError : createIncomeError}
                   onFieldChange={(field, value) =>

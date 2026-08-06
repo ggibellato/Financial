@@ -1,11 +1,18 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import IncomeForm from '../IncomeForm'
-import type { BankDto } from '../../api/types'
+import type { BankDto, IncomeSourceDto } from '../../api/types'
 
 const BANKS: BankDto[] = [
   { name: 'Barclays', roundUpEnabled: false },
   { name: 'Trading212', roundUpEnabled: true },
+]
+
+const INCOME_SOURCES: IncomeSourceDto[] = [
+  { id: '1', name: 'Gleison', isActive: true, group: 'Salary' },
+  { id: '2', name: 'Ariana', isActive: true, group: 'Salary' },
+  { id: '3', name: 'Lottery', isActive: true, group: 'NonReportable' },
+  { id: '4', name: 'DividendoJuros', isActive: true, group: 'DividendoJuros' },
 ]
 
 const baseProps = {
@@ -16,6 +23,7 @@ const baseProps = {
   netValue: '',
   bank: 'Barclays',
   banks: BANKS,
+  incomeSources: INCOME_SOURCES,
   isSaving: false,
   saveError: null,
   onFieldChange: vi.fn(),
@@ -64,5 +72,33 @@ describe('IncomeForm', () => {
 
     expect(screen.getByText('Edit Income')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+  })
+
+  it('renders the source dropdown options from the fetched, active income sources', () => {
+    render(<IncomeForm {...baseProps} />)
+
+    const select = screen.getByLabelText('Source') as HTMLSelectElement
+    const optionLabels = Array.from(select.options).map((o) => o.value)
+    expect(optionLabels).toEqual(['Gleison', 'Ariana', 'Lottery', 'DividendoJuros'])
+  })
+
+  it('excludes an inactive income source from the dropdown', () => {
+    const sources: IncomeSourceDto[] = [
+      ...INCOME_SOURCES,
+      { id: '5', name: 'RetiredSource', isActive: false, group: 'NonReportable' },
+    ]
+    render(<IncomeForm {...baseProps} incomeSources={sources} />)
+
+    const select = screen.getByLabelText('Source') as HTMLSelectElement
+    const optionLabels = Array.from(select.options).map((o) => o.value)
+    expect(optionLabels).not.toContain('RetiredSource')
+    expect(optionLabels).toHaveLength(4)
+  })
+
+  it('renders no options when the income sources list is empty', () => {
+    render(<IncomeForm {...baseProps} incomeSources={[]} />)
+
+    const select = screen.getByLabelText('Source') as HTMLSelectElement
+    expect(select.options).toHaveLength(0)
   })
 })

@@ -1,9 +1,7 @@
-import type { BankDto } from '../api/types'
-import { INCOME_SOURCES_WITH_GROSS_VALUE } from '../hooks/useMonthly'
+import type { BankDto, IncomeSourceDto } from '../api/types'
+import { INCOME_SOURCES_WITH_GROSS_VALUE, selectActiveIncomeSources } from '../hooks/useMonthly'
 
 export type IncomeFormField = 'date' | 'incomeSource' | 'grossValue' | 'netValue' | 'bank'
-
-const INCOME_SOURCES = ['Gleison', 'Ariana', 'Lottery', 'DividendoJuros']
 
 interface IncomeFormProps {
   isEditing: boolean
@@ -13,6 +11,7 @@ interface IncomeFormProps {
   netValue: string
   bank: string
   banks: BankDto[]
+  incomeSources: IncomeSourceDto[]
   isSaving: boolean
   saveError: string | null
   onFieldChange: (field: IncomeFormField, value: string) => void
@@ -28,6 +27,7 @@ export default function IncomeForm({
   netValue,
   bank,
   banks,
+  incomeSources,
   isSaving,
   saveError,
   onFieldChange,
@@ -35,6 +35,7 @@ export default function IncomeForm({
   onCancel,
 }: IncomeFormProps) {
   const showGrossValueField = INCOME_SOURCES_WITH_GROSS_VALUE.includes(incomeSource)
+  const activeIncomeSources = selectActiveIncomeSources(incomeSources)
   return (
     <div className="monthly-page__form-panel">
       <p className="monthly-page__form-title">{isEditing ? 'Edit Income' : 'New Income'}</p>
@@ -55,9 +56,9 @@ export default function IncomeForm({
             value={incomeSource}
             onChange={(e) => onFieldChange('incomeSource', e.target.value)}
           >
-            {INCOME_SOURCES.map((s) => (
-              <option key={s} value={s}>
-                {s}
+            {activeIncomeSources.map((s) => (
+              <option key={s.id} value={s.name}>
+                {s.name}
               </option>
             ))}
           </select>
