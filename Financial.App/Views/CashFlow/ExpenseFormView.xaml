@@ -51,11 +51,12 @@
 
             <TextBlock Grid.Row="5" Grid.Column="0" Text="Invoice Month:" VerticalAlignment="Center"
                        Visibility="{Binding IsCardPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}"/>
-            <components:MonthYearPicker Grid.Row="5" Grid.Column="1"
-                                         Visibility="{Binding IsCardPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}"
-                                         IsEnabled="{Binding ShowPaymentModeFields}"
-                                         SelectedYear="{Binding ExpenseFormInvoiceYear, Mode=TwoWay}"
-                                         SelectedMonth="{Binding ExpenseFormInvoiceMonth, Mode=TwoWay}"/>
+            <components:MonthYearTextBox Grid.Row="5" Grid.Column="1"
+                                          Visibility="{Binding IsCardPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}"
+                                          IsEnabled="{Binding ShowPaymentModeFields}"
+                                          HorizontalAlignment="Left"
+                                          SelectedYear="{Binding ExpenseFormInvoiceYear, Mode=TwoWay}"
+                                          SelectedMonth="{Binding ExpenseFormInvoiceMonth, Mode=TwoWay}"/>
 
             <TextBlock Grid.Row="6" Grid.Column="0" Text="Payment:" VerticalAlignment="Top"
                        Visibility="{Binding ExpenseFormIsSettled, Converter={StaticResource BoolToVisibilityConverter}}"/>

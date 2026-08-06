@@ -11,6 +11,29 @@ public static class DateFormatHelper
         return PadDayMonthTokens(pattern);
     }
 
+    public static string GetMonthYearPattern() => StripDayToken(GetPaddedShortDatePattern());
+
+    private static string StripDayToken(string pattern)
+    {
+        var dayStart = pattern.IndexOf('d');
+        if (dayStart < 0)
+        {
+            return pattern;
+        }
+
+        var dayEnd = dayStart;
+        while (dayEnd < pattern.Length && pattern[dayEnd] == 'd')
+        {
+            dayEnd++;
+        }
+
+        var before = pattern[..dayStart];
+        var after = pattern[dayEnd..];
+        return after.Length > 0
+            ? before + after.TrimStart('/', '.', '-', ' ')
+            : before.TrimEnd('/', '.', '-', ' ');
+    }
+
     private static string PadDayMonthTokens(string pattern)
     {
         var sb = new StringBuilder();
