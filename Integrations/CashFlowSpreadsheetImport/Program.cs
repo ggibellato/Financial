@@ -153,7 +153,7 @@ static void ImportMonthlyExpenseSheets(XLWorkbook workbook, CashFlowData data, I
 
     foreach (var (sheet, _, year, month) in monthlySheets)
     {
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, year, month, today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, year, month, today, report, data.Banks);
         foreach (var expense in expenses)
         {
             data.AddExpense(expense);

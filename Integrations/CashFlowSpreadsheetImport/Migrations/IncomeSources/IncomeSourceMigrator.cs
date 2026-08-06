@@ -49,8 +49,7 @@ public static class IncomeSourceMigrator
     {
         foreach (var income in data.Incomes)
         {
-            var resolves = data.IncomeSources.Any(s =>
-                string.Equals(s.Name, income.IncomeSource, StringComparison.OrdinalIgnoreCase));
+            var resolves = data.IncomeSources.Any(s => s.Id == income.IncomeSource.Id);
 
             if (resolves)
             {

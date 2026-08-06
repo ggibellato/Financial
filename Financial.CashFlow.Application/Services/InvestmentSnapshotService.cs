@@ -19,21 +19,21 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
         var accounts = _repository.GetInvestmentAccounts().ToList();
         var allSnapshots = _repository.GetInvestmentSnapshots().ToList();
         var scopedAccounts = YearScopedInvestmentAccountResolver.ResolveForYear(accounts, allSnapshots, year, DateTime.Now.Year);
-        var scopedNames = scopedAccounts.Select(a => a.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var scopedIds = scopedAccounts.Select(a => a.Id).ToHashSet();
 
         var existingSnapshots = allSnapshots
-            .Where(s => s.Year == year && s.Month == month && scopedNames.Contains(s.Account))
+            .Where(s => s.Year == year && s.Month == month && scopedIds.Contains(s.Account.Id))
             .ToList();
 
         var created = false;
         foreach (var account in scopedAccounts)
         {
-            if (existingSnapshots.Any(s => s.Account == account.Name))
+            if (existingSnapshots.Any(s => s.Account.Id == account.Id))
             {
                 continue;
             }
 
-            var snapshot = InvestmentSnapshot.Create(account.Name, year, month, 0m);
+            var snapshot = InvestmentSnapshot.Create(account, year, month, 0m);
             _repository.AddInvestmentSnapshot(snapshot);
             existingSnapshots.Add(snapshot);
             created = true;
@@ -67,12 +67,12 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
 
     private static InvestmentSnapshotDTO ToDto(InvestmentSnapshot snapshot, IReadOnlyList<InvestmentAccount> accounts)
     {
-        var account = accounts.FirstOrDefault(a => a.Name == snapshot.Account);
+        var account = accounts.FirstOrDefault(a => a.Id == snapshot.Account.Id);
 
         return new()
         {
             Id = snapshot.Id,
-            Account = snapshot.Account,
+            Account = snapshot.Account.Name,
             IsLiability = account?.IsLiability ?? false,
             Year = snapshot.Year,
             Month = snapshot.Month,

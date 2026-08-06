@@ -132,13 +132,13 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
         var valueByAccountAndMonth = allSnapshots
             .Where(s => s.Year == year)
-            .GroupBy(s => (s.Account, s.Month))
+            .GroupBy(s => (AccountId: s.Account.Id, s.Month))
             .ToDictionary(g => g.Key, g => g.First().Value);
 
         var priorYearDecemberByAccount = allSnapshots
             .Where(s => s.Year == year - 1 && s.Month == MonthsInYear)
-            .GroupBy(s => s.Account, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.First().Value, StringComparer.OrdinalIgnoreCase);
+            .GroupBy(s => s.Account.Id)
+            .ToDictionary(g => g.Key, g => g.First().Value);
 
         var hasPriorYearData = allSnapshots.Any(s => s.Year == year - 1);
 
@@ -146,11 +146,11 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             .Select(account =>
             {
                 var monthlyValues = MonthlySeries.FromMonthlyValues(Enumerable.Range(1, MonthsInYear)
-                    .Select(month => valueByAccountAndMonth.GetValueOrDefault((account.Name, month)))
+                    .Select(month => valueByAccountAndMonth.GetValueOrDefault((AccountId: account.Id, month)))
                     .ToArray());
 
                 decimal? priorClosingValue = hasPriorYearData
-                    ? priorYearDecemberByAccount.GetValueOrDefault(account.Name, 0m)
+                    ? priorYearDecemberByAccount.GetValueOrDefault(account.Id, 0m)
                     : null;
 
                 return (account, monthlyValues, diffs: (IReadOnlyList<decimal?>)monthlyValues.DiffsFrom(priorClosingValue));
@@ -163,7 +163,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
                 : a.monthlyValues));
 
         decimal? netPositionPriorClosingValue = hasPriorYearData
-            ? accountSeries.Sum(a => (a.account.IsLiability ? -1m : 1m) * priorYearDecemberByAccount.GetValueOrDefault(a.account.Name, 0m))
+            ? accountSeries.Sum(a => (a.account.IsLiability ? -1m : 1m) * priorYearDecemberByAccount.GetValueOrDefault(a.account.Id, 0m))
             : null;
 
         var netPositionDiffs = netPositionSeries.DiffsFrom(netPositionPriorClosingValue);
@@ -235,7 +235,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         {
             var monthIndex = income.Date.Month - 1;
 
-            switch (groupLookup.GetValueOrDefault(income.IncomeSource, IncomeGroup.NonReportable))
+            switch (groupLookup.GetValueOrDefault(income.IncomeSource.Name, IncomeGroup.NonReportable))
             {
                 case IncomeGroup.Salary:
                     salaryMonthly[monthIndex] += income.GrossValue ?? 0m;
@@ -462,7 +462,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     {
         var now = _timeProvider.GetUtcNow();
         var groupLookup = BuildIncomeGroupLookup();
-        IncomeGroup Group(Income income) => groupLookup.GetValueOrDefault(income.IncomeSource, IncomeGroup.NonReportable);
+        IncomeGroup Group(Income income) => groupLookup.GetValueOrDefault(income.IncomeSource.Name, IncomeGroup.NonReportable);
 
         var incomes = _repository.GetIncomes()
             .Where(e => e.Date.Year <= year && e.Date < new DateOnly(now.Year, now.Month, 1))

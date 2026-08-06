@@ -111,7 +111,7 @@ public sealed class ExpenseService : IExpenseService
         _repository.GetExpenses().FirstOrDefault(e => e.Id == id)
             ?? throw new KeyNotFoundException($"Expense '{id}' was not found.");
 
-    private (Category Category, string? PaymentSource, CreditCard? CardTag) ValidateFields(
+    private (Category Category, Bank? PaymentSourceBank, CreditCard? CardTag) ValidateFields(
         string description, decimal value, string category, string? paymentSource, string? cardTag)
     {
         if (string.IsNullOrWhiteSpace(description))
@@ -134,7 +134,7 @@ public sealed class ExpenseService : IExpenseService
             throw new ArgumentException($"Category '{category}' is not recognized.");
         }
 
-        string? parsedPaymentSource = null;
+        Bank? parsedPaymentSourceBank = null;
         if (!string.IsNullOrWhiteSpace(paymentSource))
         {
             if (!BankNameResolver.TryResolve(paymentSource, _repository.GetBanks(), out var bank))
@@ -142,7 +142,7 @@ public sealed class ExpenseService : IExpenseService
                 throw new ArgumentException($"Payment source '{paymentSource}' is not recognized.");
             }
 
-            parsedPaymentSource = bank!.Name;
+            parsedPaymentSourceBank = bank!;
         }
 
         CreditCard? parsedCardTag = null;
@@ -156,30 +156,30 @@ public sealed class ExpenseService : IExpenseService
             parsedCardTag = creditCard;
         }
 
-        return (parsedCategory, parsedPaymentSource, parsedCardTag);
+        return (parsedCategory, parsedPaymentSourceBank, parsedCardTag);
     }
 
-    private void ValidateRoundUpEligibility(decimal? roundUpAmount, string? paymentSource)
+    private static void ValidateRoundUpEligibility(decimal? roundUpAmount, Bank? paymentSourceBank)
     {
-        if (roundUpAmount is null || paymentSource is null)
+        if (roundUpAmount is null || paymentSourceBank is null)
         {
             return;
         }
 
-        if (BankNameResolver.TryResolve(paymentSource, _repository.GetBanks(), out var bank) && !bank!.RoundUpEnabled)
+        if (!paymentSourceBank.RoundUpEnabled)
         {
-            throw new ArgumentException($"Bank '{bank.Name}' does not support round-up.");
+            throw new ArgumentException($"Bank '{paymentSourceBank.Name}' does not support round-up.");
         }
     }
 
-    private ExpenseDTO ToDto(Expense expense) => new()
+    private static ExpenseDTO ToDto(Expense expense) => new()
     {
         Id = expense.Id,
         Date = expense.Date,
         Description = expense.Description,
         Value = expense.Value,
         Category = expense.Category.ToString(),
-        PaymentSource = expense.PaymentSource,
+        PaymentSource = expense.PaymentSourceBank?.Name,
         CardTag = expense.CardTag?.ToString(),
         ChargeDate = expense.ChargeDate,
         InvoiceDate = expense.InvoiceDate,
@@ -188,7 +188,7 @@ public sealed class ExpenseService : IExpenseService
         SuggestedRoundUpAmount = GetSuggestedRoundUpAmount(expense)
     };
 
-    private decimal? GetSuggestedRoundUpAmount(Expense expense)
+    private static decimal? GetSuggestedRoundUpAmount(Expense expense)
     {
         if (expense.RoundUpAmount is not null
             || expense.PaymentStatus != ExpensePaymentStatus.ImmediatePayment
@@ -197,7 +197,7 @@ public sealed class ExpenseService : IExpenseService
             return null;
         }
 
-        return BankNameResolver.TryResolve(expense.PaymentSource, _repository.GetBanks(), out var bank) && bank!.RoundUpEnabled
+        return expense.PaymentSourceBank?.RoundUpEnabled == true
             ? expense.RoundUpSuggestion
             : null;
     }

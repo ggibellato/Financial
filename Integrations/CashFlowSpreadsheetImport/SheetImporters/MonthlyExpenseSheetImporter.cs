@@ -1,4 +1,5 @@
 using ClosedXML.Excel;
+using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
@@ -45,7 +46,8 @@ public static class MonthlyExpenseSheetImporter
         (BaAmexStartRow, CreditCard.BaAmex),
     ];
 
-    public static IReadOnlyList<Expense> Import(IXLWorksheet sheet, int year, int month, DateOnly today, ImportReport report)
+    public static IReadOnlyList<Expense> Import(
+        IXLWorksheet sheet, int year, int month, DateOnly today, ImportReport report, IReadOnlyCollection<Bank> banks)
     {
         var (descriptionColumn, categoryColumn) = ResolveColumns(sheet);
         var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
@@ -93,9 +95,14 @@ public static class MonthlyExpenseSheetImporter
             var description = sheet.Cell(row, descriptionColumn).GetString();
             var rawPaymentSourceTag = sheet.Cell(row, PaymentSourceColumn).GetString();
             var cardTag = ResolveCardTag(row, year, month, today, rawPaymentSourceTag);
-            string? paymentSource = cardTag is null ? ResolvePaymentSource(rawPaymentSourceTag) : null;
+            Bank? paymentSourceBank = null;
+            if (cardTag is null)
+            {
+                var paymentSourceName = ResolvePaymentSource(rawPaymentSourceTag);
+                BankNameResolver.TryResolve(paymentSourceName, banks, out paymentSourceBank);
+            }
 
-            expenses.Add(Expense.Create(date, description, value.Value, category, paymentSource, cardTag));
+            expenses.Add(Expense.Create(date, description, value.Value, category, paymentSourceBank, cardTag));
         }
 
         return expenses;

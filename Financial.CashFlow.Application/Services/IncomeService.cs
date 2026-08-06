@@ -20,7 +20,7 @@ public sealed class IncomeService : IIncomeService
 
         var (incomeSource, bank) = ValidateFields(request.IncomeSource, request.Bank);
 
-        var income = Income.Create(request.Date, incomeSource, request.GrossValue, request.NetValue, bank.Name);
+        var income = Income.Create(request.Date, incomeSource, request.GrossValue, request.NetValue, bank);
         _repository.AddIncome(income);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
 
@@ -35,7 +35,7 @@ public sealed class IncomeService : IIncomeService
 
         var (incomeSource, bank) = ValidateFields(request.IncomeSource, request.Bank);
 
-        income.UpdateDetails(request.Date, incomeSource, request.GrossValue, request.NetValue, bank.Name);
+        income.UpdateDetails(request.Date, incomeSource, request.GrossValue, request.NetValue, bank);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
 
         return ToDto(income);
@@ -59,7 +59,7 @@ public sealed class IncomeService : IIncomeService
         _repository.GetIncomes().FirstOrDefault(i => i.Id == id)
             ?? throw new KeyNotFoundException($"Income '{id}' was not found.");
 
-    private (string IncomeSource, Bank Bank) ValidateFields(string incomeSource, string bank)
+    private (IncomeSource IncomeSource, Bank Bank) ValidateFields(string incomeSource, string bank)
     {
         if (!IncomeSourceNameResolver.TryResolve(incomeSource, _repository.GetIncomeSources(), out var resolvedIncomeSource))
         {
@@ -71,16 +71,16 @@ public sealed class IncomeService : IIncomeService
             throw new ArgumentException($"Bank '{bank}' is not recognized.");
         }
 
-        return (resolvedIncomeSource!.Name, resolvedBank!);
+        return (resolvedIncomeSource!, resolvedBank!);
     }
 
     private static IncomeDTO ToDto(Income income) => new()
     {
         Id = income.Id,
         Date = income.Date,
-        IncomeSource = income.IncomeSource,
+        IncomeSource = income.IncomeSource.Name,
         GrossValue = income.GrossValue,
         NetValue = income.NetValue,
-        Bank = income.Bank
+        Bank = income.Bank.Name
     };
 }

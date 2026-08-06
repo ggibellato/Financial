@@ -24,7 +24,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
         var currentBalance = _bankService.GetBankBalanceAsOf(bank.Name, request.Date);
         var delta = request.TargetBalance - currentBalance;
 
-        var adjustment = BalanceAdjustment.Create(request.Date, bank.Name, request.TargetBalance, delta, request.Note);
+        var adjustment = BalanceAdjustment.Create(request.Date, bank, request.TargetBalance, delta, request.Note);
         _repository.AddBalanceAdjustment(adjustment);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
 
@@ -36,7 +36,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
         ArgumentNullException.ThrowIfNull(request);
 
         var bank = ResolveBank(bankName);
-        var adjustment = FindAdjustmentOrThrow(bank.Name, id);
+        var adjustment = FindAdjustmentOrThrow(bank, id);
         var currentBalance = _bankService.GetBankBalanceAsOf(bank.Name, request.Date, excludingAdjustmentId: id);
         var delta = request.TargetBalance - currentBalance;
 
@@ -50,7 +50,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
     public async Task DeleteAdjustmentAsync(string bankName, Guid id)
     {
         var bank = ResolveBank(bankName);
-        FindAdjustmentOrThrow(bank.Name, id);
+        FindAdjustmentOrThrow(bank, id);
 
         _repository.DeleteBalanceAdjustment(id);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
@@ -64,7 +64,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
         }
 
         return _repository.GetBalanceAdjustments()
-            .Where(a => string.Equals(a.Bank, bank!.Name, StringComparison.OrdinalIgnoreCase))
+            .Where(a => a.Bank.Id == bank!.Id)
             .Select(ToDto)
             .ToList();
     }
@@ -79,16 +79,16 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
         return bank!;
     }
 
-    private BalanceAdjustment FindAdjustmentOrThrow(string bankName, Guid id) =>
+    private BalanceAdjustment FindAdjustmentOrThrow(Bank bank, Guid id) =>
         _repository.GetBalanceAdjustments()
-            .FirstOrDefault(a => a.Id == id && string.Equals(a.Bank, bankName, StringComparison.OrdinalIgnoreCase))
+            .FirstOrDefault(a => a.Id == id && a.Bank.Id == bank.Id)
         ?? throw new KeyNotFoundException($"Balance adjustment '{id}' was not found.");
 
     private static BalanceAdjustmentDTO ToDto(BalanceAdjustment adjustment) => new()
     {
         Id = adjustment.Id,
         Date = adjustment.Date,
-        Bank = adjustment.Bank,
+        Bank = adjustment.Bank.Name,
         TargetBalance = adjustment.TargetBalance,
         Delta = adjustment.Delta,
         Note = adjustment.Note

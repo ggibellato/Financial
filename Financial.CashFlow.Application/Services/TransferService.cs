@@ -55,19 +55,24 @@ public sealed class TransferService : ITransferService
             .Select(ToDto)
             .ToList();
 
-    public IReadOnlyList<TransferDTO> GetTransfersByBank(string bankName) =>
-        _repository.GetTransfers()
-            .Where(t =>
-                string.Equals(t.SourceBank, bankName, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(t.DestinationBank, bankName, StringComparison.OrdinalIgnoreCase))
+    public IReadOnlyList<TransferDTO> GetTransfersByBank(string bankName)
+    {
+        if (!BankNameResolver.TryResolve(bankName, _repository.GetBanks(), out var bank))
+        {
+            return Array.Empty<TransferDTO>();
+        }
+
+        return _repository.GetTransfers()
+            .Where(t => t.SourceBank.Id == bank!.Id || t.DestinationBank.Id == bank.Id)
             .Select(ToDto)
             .ToList();
+    }
 
     private Transfer FindTransferOrThrow(Guid id) =>
         _repository.GetTransfers().FirstOrDefault(t => t.Id == id)
             ?? throw new KeyNotFoundException($"Transfer '{id}' was not found.");
 
-    private (string SourceBank, string DestinationBank) ResolveBanks(string sourceBank, string destinationBank)
+    private (Bank SourceBank, Bank DestinationBank) ResolveBanks(string sourceBank, string destinationBank)
     {
         var banks = _repository.GetBanks();
 
@@ -81,15 +86,15 @@ public sealed class TransferService : ITransferService
             throw new ArgumentException($"Bank '{destinationBank}' was not found.");
         }
 
-        return (resolvedSource!.Name, resolvedDestination!.Name);
+        return (resolvedSource!, resolvedDestination!);
     }
 
     private static TransferDTO ToDto(Transfer transfer) => new()
     {
         Id = transfer.Id,
         Date = transfer.Date,
-        SourceBank = transfer.SourceBank,
-        DestinationBank = transfer.DestinationBank,
+        SourceBank = transfer.SourceBank.Name,
+        DestinationBank = transfer.DestinationBank.Name,
         Amount = transfer.Amount,
         Note = transfer.Note
     };

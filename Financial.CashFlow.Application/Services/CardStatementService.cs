@@ -70,7 +70,7 @@ public sealed class CardStatementService : ICardStatementService
         statement.MarkPaid();
         foreach (var charge in charges)
         {
-            charge.Settle(bank!.Name, settledAt);
+            charge.Settle(bank!, settledAt);
         }
 
         try
@@ -102,7 +102,7 @@ public sealed class CardStatementService : ICardStatementService
 
         var settledExpenses = GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardSettled);
         var settlements = settledExpenses
-            .Select(e => (Expense: e, PaymentSource: e.PaymentSource!, PaymentDate: e.Date))
+            .Select(e => (Expense: e, PaymentSourceBank: e.PaymentSourceBank!, PaymentDate: e.Date))
             .ToList();
 
         statement.MarkUnpaid();
@@ -118,9 +118,9 @@ public sealed class CardStatementService : ICardStatementService
         catch
         {
             statement.MarkPaid();
-            foreach (var (expense, paymentSource, paymentDate) in settlements)
+            foreach (var (expense, paymentSourceBank, paymentDate) in settlements)
             {
-                expense.Settle(paymentSource, paymentDate);
+                expense.Settle(paymentSourceBank, paymentDate);
             }
 
             throw;

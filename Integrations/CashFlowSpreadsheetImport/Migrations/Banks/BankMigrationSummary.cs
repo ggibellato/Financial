@@ -38,7 +38,7 @@ public sealed class BankMigrationSummary
             builder.AppendLine("Expenses whose bank tag does not match any seeded bank (review manually):");
             foreach (var expense in _unresolvedExpenses)
             {
-                builder.AppendLine($"  {expense.Id} {expense.Date:yyyy-MM-dd} '{expense.Description}' [{expense.PaymentSource}]");
+                builder.AppendLine($"  {expense.Id} {expense.Date:yyyy-MM-dd} '{expense.Description}' [{expense.PaymentSourceBank?.Name}]");
             }
         }
 

@@ -53,7 +53,7 @@ public static class ResumoValidationReader
                 if (rawValue is not null)
                 {
                     var adjustedValue = rawValue.Value * (account!.IsLiability ? -1 : 1);
-                    snapshots.Add(InvestmentSnapshot.Create(account.Name, year, month, adjustedValue));
+                    snapshots.Add(InvestmentSnapshot.Create(account, year, month, adjustedValue));
                     continue;
                 }
 
@@ -62,7 +62,7 @@ public static class ResumoValidationReader
                 // cell's own emptiness here rather than trusting TryRead's null to mean "malformed".
                 if (cell.IsEmpty() || cell.GetString().Trim().Length == 0)
                 {
-                    snapshots.Add(InvestmentSnapshot.Create(account!.Name, year, month, 0m));
+                    snapshots.Add(InvestmentSnapshot.Create(account!, year, month, 0m));
                     continue;
                 }
 
