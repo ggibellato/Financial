@@ -1,6 +1,5 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes;
 using FluentAssertions;
 
@@ -21,10 +20,10 @@ public class IncomeBackfillImporterTests
         importedCount.Should().Be(2);
         data.Incomes.Should().HaveCount(2);
         data.Incomes.Should().Contain(i =>
-            i.Date == new DateOnly(2026, 7, 1) && i.IncomeSource == IncomeSource.Ariana &&
+            i.Date == new DateOnly(2026, 7, 1) && i.IncomeSource == "Ariana" &&
             i.GrossValue == 2595.39m && i.NetValue == 1878.74m && i.Bank == "Barclays");
         data.Incomes.Should().Contain(i =>
-            i.Date == new DateOnly(2026, 7, 1) && i.IncomeSource == IncomeSource.DividendoJuros &&
+            i.Date == new DateOnly(2026, 7, 1) && i.IncomeSource == "DividendoJuros" &&
             i.GrossValue == null && i.NetValue == 361.24m && i.Bank == "Barclays");
     }
 

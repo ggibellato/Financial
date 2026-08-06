@@ -4,6 +4,7 @@ using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.M
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Banks;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.BankOpeningBalance;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.IncomeSources;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ExpenseChargeDate;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
@@ -93,6 +94,9 @@ else
 var bankSummary = BankMigrator.Migrate(data);
 var bankOpeningBalanceSummary = BankOpeningBalanceMigrator.Migrate(data, today);
 var incomeSummary = IncomeMigrator.Migrate(data, workbook);
+// Runs after IncomeMigrator so its audit of Income.IncomeSource values covers backfilled
+// entries too, not just what was already on the data file before this run.
+var incomeSourceSummary = IncomeSourceMigrator.Migrate(data);
 var expenseChargeDateSummary = ExpenseChargeDateMigrator.Migrate(data, legacyRawJson);
 // Re-run (seeding is idempotent) so the reported summary's snapshot audit reflects the
 // snapshots ImportResumoSheets just added above, not the empty pre-import state.
@@ -107,6 +111,7 @@ Console.WriteLine(report.Render());
 Console.WriteLine(bankSummary.Render());
 Console.WriteLine(bankOpeningBalanceSummary.Render());
 Console.WriteLine(incomeSummary.Render());
+Console.WriteLine(incomeSourceSummary.Render());
 Console.WriteLine(expenseChargeDateSummary.Render());
 Console.WriteLine(investmentAccountSummary.Render());
 return 0;
@@ -116,6 +121,11 @@ static void CarryOverDataTheSpreadsheetDoesNotOwn(CashFlowData existingData, Cas
     foreach (var bank in existingData.Banks)
     {
         data.AddBank(bank);
+    }
+
+    foreach (var incomeSource in existingData.IncomeSources)
+    {
+        data.AddIncomeSource(incomeSource);
     }
 
     foreach (var income in existingData.Incomes)

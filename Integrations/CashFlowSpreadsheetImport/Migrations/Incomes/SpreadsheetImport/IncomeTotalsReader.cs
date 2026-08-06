@@ -1,5 +1,4 @@
 using ClosedXML.Excel;
-using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes.SpreadsheetImport;
@@ -28,12 +27,12 @@ public static class IncomeTotalsReader
     private const int LegacyUnlabeledNetRow = 1;
     private const int LegacyUnlabeledNetColumn = FirstLabelColumn; // J1
 
-    private static readonly Dictionary<IncomeSource, string> SourceLabelKeywords = new()
+    private static readonly Dictionary<string, string> SourceLabelKeywords = new()
     {
-        [IncomeSource.Gleison] = "gleison",
-        [IncomeSource.Ariana] = "ariana",
-        [IncomeSource.Lottery] = "lot",
-        [IncomeSource.DividendoJuros] = "dividend",
+        ["Gleison"] = "gleison",
+        ["Ariana"] = "ariana",
+        ["Lottery"] = "lot",
+        ["DividendoJuros"] = "dividend",
     };
 
     public static IReadOnlyList<IncomeTotal> ReadTotals(IXLWorksheet sheet)
@@ -70,7 +69,7 @@ public static class IncomeTotalsReader
     private static IncomeTotal? ReadLegacyUnlabeledGleisonNet(IXLWorksheet sheet)
     {
         var net = NumericCellReader.TryRead(sheet.Cell(LegacyUnlabeledNetRow, LegacyUnlabeledNetColumn));
-        return net is null ? null : new IncomeTotal(IncomeSource.Gleison, null, net.Value);
+        return net is null ? null : new IncomeTotal("Gleison", null, net.Value);
     }
 
     private static (int Row, int Column)? FindLabelCell(IXLWorksheet sheet, string keyword)
@@ -90,7 +89,7 @@ public static class IncomeTotalsReader
         return null;
     }
 
-    private static IncomeTotal? ReadValuesRightOf(IXLWorksheet sheet, int row, int labelColumn, IncomeSource source)
+    private static IncomeTotal? ReadValuesRightOf(IXLWorksheet sheet, int row, int labelColumn, string source)
     {
         var first = NumericCellReader.TryRead(sheet.Cell(row, labelColumn + 1));
         if (first is null)

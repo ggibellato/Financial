@@ -1,6 +1,5 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes;
 using FluentAssertions;
 
@@ -23,8 +22,8 @@ public class IncomeMigratorTests
     public void Migrate_WithExistingIncomes_ReportsTheCorrectCount()
     {
         var data = CashFlowData.Create();
-        data.AddIncome(Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Lottery, null, 10m, "Chase"));
-        data.AddIncome(Income.Create(new DateOnly(2026, 7, 2), IncomeSource.Ariana, null, 400m, "Barclays"));
+        data.AddIncome(Income.Create(new DateOnly(2026, 7, 1), "Lottery", null, 10m, "Chase"));
+        data.AddIncome(Income.Create(new DateOnly(2026, 7, 2), "Ariana", null, 400m, "Barclays"));
 
         var summary = IncomeMigrator.Migrate(data);
 
@@ -35,7 +34,7 @@ public class IncomeMigratorTests
     public void Migrate_CalledTwice_ProducesTheSameResult()
     {
         var data = CashFlowData.Create();
-        data.AddIncome(Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Lottery, null, 10m, "Chase"));
+        data.AddIncome(Income.Create(new DateOnly(2026, 7, 1), "Lottery", null, 10m, "Chase"));
 
         var first = IncomeMigrator.Migrate(data);
         var second = IncomeMigrator.Migrate(data);
@@ -66,7 +65,7 @@ public class IncomeMigratorTests
 
         summary.EntriesImportedCount.Should().Be(1);
         summary.IncomeCount.Should().Be(1);
-        data.Incomes.Should().ContainSingle(i => i.IncomeSource == IncomeSource.Ariana && i.Bank == "Barclays");
+        data.Incomes.Should().ContainSingle(i => i.IncomeSource == "Ariana" && i.Bank == "Barclays");
     }
 
     [Fact]

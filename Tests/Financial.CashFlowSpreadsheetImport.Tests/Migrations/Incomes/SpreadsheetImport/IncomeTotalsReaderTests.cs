@@ -1,5 +1,4 @@
 using ClosedXML.Excel;
-using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes.SpreadsheetImport;
 using FluentAssertions;
 
@@ -29,9 +28,9 @@ public class IncomeTotalsReaderTests
         var totals = IncomeTotalsReader.ReadTotals(sheet);
 
         totals.Should().HaveCount(4);
-        totals.Should().Contain(t => t.Source == IncomeSource.Ariana && t.GrossValue == 2595.39m && t.NetValue == 1878.74m);
-        totals.Should().Contain(t => t.Source == IncomeSource.DividendoJuros && t.GrossValue == null && t.NetValue == 361.24m);
-        totals.Should().Contain(t => t.Source == IncomeSource.Gleison && t.NetValue == 0m);
+        totals.Should().Contain(t => t.Source == "Ariana" && t.GrossValue == 2595.39m && t.NetValue == 1878.74m);
+        totals.Should().Contain(t => t.Source == "DividendoJuros" && t.GrossValue == null && t.NetValue == 361.24m);
+        totals.Should().Contain(t => t.Source == "Gleison" && t.NetValue == 0m);
     }
 
     [Fact]
@@ -51,10 +50,10 @@ public class IncomeTotalsReaderTests
 
         var totals = IncomeTotalsReader.ReadTotals(sheet);
 
-        var gleison = totals.Should().ContainSingle(t => t.Source == IncomeSource.Gleison).Which;
+        var gleison = totals.Should().ContainSingle(t => t.Source == "Gleison").Which;
         gleison.GrossValue.Should().BeNull();
         gleison.NetValue.Should().Be(5381.25m);
-        totals.Should().ContainSingle(t => t.Source == IncomeSource.Ariana).Which.NetValue.Should().Be(1846.73m);
+        totals.Should().ContainSingle(t => t.Source == "Ariana").Which.NetValue.Should().Be(1846.73m);
     }
 
     [Fact]
@@ -67,7 +66,7 @@ public class IncomeTotalsReaderTests
         var totals = IncomeTotalsReader.ReadTotals(sheet);
 
         var gleison = totals.Should().ContainSingle().Which;
-        gleison.Source.Should().Be(IncomeSource.Gleison);
+        gleison.Source.Should().Be("Gleison");
         gleison.GrossValue.Should().BeNull();
         gleison.NetValue.Should().Be(3744.97m);
     }
@@ -94,7 +93,7 @@ public class IncomeTotalsReaderTests
 
         var totals = IncomeTotalsReader.ReadTotals(sheet);
 
-        var ariana = totals.Should().ContainSingle(t => t.Source == IncomeSource.Ariana).Which;
+        var ariana = totals.Should().ContainSingle(t => t.Source == "Ariana").Which;
         ariana.GrossValue.Should().Be(343.18m);
         ariana.NetValue.Should().Be(642.18m);
     }
@@ -109,6 +108,6 @@ public class IncomeTotalsReaderTests
 
         var totals = IncomeTotalsReader.ReadTotals(sheet);
 
-        totals.Should().ContainSingle().Which.Source.Should().Be(IncomeSource.Lottery);
+        totals.Should().ContainSingle().Which.Source.Should().Be("Lottery");
     }
 }
