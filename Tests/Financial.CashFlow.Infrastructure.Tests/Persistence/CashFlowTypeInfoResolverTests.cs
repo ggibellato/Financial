@@ -64,7 +64,7 @@ public class CashFlowTypeInfoResolverTests
     public void GetTypeInfo_RoundTripsExpenseThroughPrivateConstructor()
     {
         var options = CreateOptions();
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Weekly groceries", 54.32m, Category.Mercado, "Barclays", null);
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Weekly groceries", 54.32m, Category.Mercado, Bank.Create("Barclays", roundUpEnabled: false), null);
 
         var json = JsonSerializer.Serialize(expense, options);
         var deserialized = JsonSerializer.Deserialize<Expense>(json, options);
@@ -74,7 +74,7 @@ public class CashFlowTypeInfoResolverTests
         deserialized.Description.Should().Be("Weekly groceries");
         deserialized.Value.Should().Be(54.32m);
         deserialized.Category.Should().Be(Category.Mercado);
-        deserialized.PaymentSource.Should().Be("Barclays");
+        deserialized.PaymentSourceBank!.Name.Should().Be("Barclays");
     }
 
     [Fact]

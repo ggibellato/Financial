@@ -16,6 +16,23 @@ public class BankTests
     }
 
     [Fact]
+    public void Create_AssignsANonEmptyId()
+    {
+        var bank = Bank.Create("Chase", roundUpEnabled: true);
+
+        bank.Id.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void Create_TwoBanks_HaveDifferentIds()
+    {
+        var first = Bank.Create("Chase", roundUpEnabled: true);
+        var second = Bank.Create("Barclays", roundUpEnabled: false);
+
+        first.Id.Should().NotBe(second.Id);
+    }
+
+    [Fact]
     public void Create_DefaultsOpeningBalanceToZeroAndDateToDefault()
     {
         var bank = Bank.Create("Chase", roundUpEnabled: true);

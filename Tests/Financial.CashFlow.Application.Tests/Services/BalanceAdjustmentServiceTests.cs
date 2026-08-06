@@ -11,6 +11,11 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class BalanceAdjustmentServiceTests
 {
+    private static IncomeSource Lottery => IncomeSource.Create("Lottery", IncomeGroup.NonReportable);
+
+    private static Bank BankOf(StubCashFlowRepository repository, string name) =>
+        repository.Banks.First(b => b.Name == name);
+
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
@@ -55,8 +60,9 @@ public class BalanceAdjustmentServiceTests
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), "Lottery", null, 200m, "Barclays"));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Mercado, "Barclays", null));
+        var barclays = BankOf(repository, "Barclays");
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 200m, barclays));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Mercado, barclays, null));
         var service = new BalanceAdjustmentService(repository, new BankService(repository));
 
         var result = await service.AddAdjustmentAsync("Barclays", new BalanceAdjustmentCreateDTO
@@ -158,7 +164,7 @@ public class BalanceAdjustmentServiceTests
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), "Lottery", null, 37m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 37m, BankOf(repository, "Barclays")));
         var bankService = new BankService(repository);
         var service = new BalanceAdjustmentService(repository, bankService);
 

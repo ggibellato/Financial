@@ -25,7 +25,7 @@ public class YearScopedInvestmentAccountResolverTests
         var withSnapshot = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
         var withoutSnapshot = InvestmentAccount.Create("Trading212Invested", isActive: true, isLiability: false);
         var accounts = new[] { withSnapshot, withoutSnapshot };
-        var snapshots = new[] { InvestmentSnapshot.Create("ChaseSave", 2023, 5, 100m) };
+        var snapshots = new[] { InvestmentSnapshot.Create(withSnapshot, 2023, 5, 100m) };
 
         var result = YearScopedInvestmentAccountResolver.ResolveForYear(accounts, snapshots, year: 2023, currentYear: 2026);
 
@@ -37,7 +37,7 @@ public class YearScopedInvestmentAccountResolverTests
     {
         var disabledButPresent = InvestmentAccount.Create("EverydaySaver", isActive: false, isLiability: false);
         var accounts = new[] { disabledButPresent };
-        var snapshots = new[] { InvestmentSnapshot.Create("EverydaySaver", 2020, 3, 50m) };
+        var snapshots = new[] { InvestmentSnapshot.Create(disabledButPresent, 2020, 3, 50m) };
 
         var result = YearScopedInvestmentAccountResolver.ResolveForYear(accounts, snapshots, year: 2020, currentYear: 2026);
 
@@ -49,7 +49,7 @@ public class YearScopedInvestmentAccountResolverTests
     {
         var openedLater = InvestmentAccount.Create("Trading212Invested", isActive: true, isLiability: false);
         var accounts = new[] { openedLater };
-        var snapshots = new[] { InvestmentSnapshot.Create("Trading212Invested", 2026, 1, 100m) };
+        var snapshots = new[] { InvestmentSnapshot.Create(openedLater, 2026, 1, 100m) };
 
         var result = YearScopedInvestmentAccountResolver.ResolveForYear(accounts, snapshots, year: 2018, currentYear: 2026);
 

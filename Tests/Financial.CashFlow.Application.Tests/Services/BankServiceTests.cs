@@ -11,6 +11,8 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class BankServiceTests
 {
+    private static IncomeSource Gleison => IncomeSource.Create("Gleison", IncomeGroup.Salary);
+
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
@@ -108,8 +110,8 @@ public class BankServiceTests
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
         repository.Banks.Add(bank);
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), "Gleison", null, 500m, "Barclays"));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Mercado, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Gleison, null, 500m, bank));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Mercado, bank, null));
         var service = new BankService(repository);
 
         var result = service.GetBankBalancesByMonth(2026, 7);
@@ -124,7 +126,7 @@ public class BankServiceTests
         var bank = Bank.Create("Trading212", roundUpEnabled: true);
         bank.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
         repository.Banks.Add(bank);
-        var expense = Expense.Create(new DateOnly(2026, 7, 5), "TfL", 9.40m, Category.Extras, "Trading212", null);
+        var expense = Expense.Create(new DateOnly(2026, 7, 5), "TfL", 9.40m, Category.Extras, bank, null);
         expense.SetRoundUpAmount(0.60m);
         repository.Expenses.Add(expense);
         var service = new BankService(repository);
@@ -141,8 +143,8 @@ public class BankServiceTests
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(100m, new DateOnly(2026, 7, 1));
         repository.Banks.Add(bank);
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 6, 30), "Gleison", null, 500m, "Barclays"));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 6, 30), "Groceries", 50m, Category.Mercado, "Barclays", null));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 6, 30), Gleison, null, 500m, bank));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 6, 30), "Groceries", 50m, Category.Mercado, bank, null));
         var service = new BankService(repository);
 
         var result = service.GetBankBalancesByMonth(2026, 7);
@@ -157,7 +159,7 @@ public class BankServiceTests
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
         repository.Banks.Add(bank);
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 8, 1), "Gleison", null, 500m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 8, 1), Gleison, null, 500m, bank));
         var service = new BankService(repository);
 
         var result = service.GetBankBalancesByMonth(2026, 7);
@@ -186,8 +188,9 @@ public class BankServiceTests
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
         repository.Banks.Add(bank);
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), "Gleison", null, 500m, "Chase"));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Mercado, "Chase", null));
+        var chase = Bank.Create("Chase", roundUpEnabled: false);
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Gleison, null, 500m, chase));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Mercado, chase, null));
         var service = new BankService(repository);
 
         var result = service.GetBankBalancesByMonth(2026, 7);
@@ -205,7 +208,7 @@ public class BankServiceTests
         trading212.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
         repository.Banks.Add(barclays);
         repository.Banks.Add(trading212);
-        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), "Barclays", "Trading212", 500m, null));
+        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), barclays, trading212, 500m, null));
         var service = new BankService(repository);
 
         var result = service.GetBankBalancesByMonth(2026, 7);
@@ -223,7 +226,7 @@ public class BankServiceTests
         trading212.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
         repository.Banks.Add(barclays);
         repository.Banks.Add(trading212);
-        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), "Barclays", "Trading212", 500m, null));
+        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), barclays, trading212, 500m, null));
         var service = new BankService(repository);
 
         var result = service.GetBankBalancesByMonth(2026, 7);
@@ -242,7 +245,7 @@ public class BankServiceTests
         repository.Banks.Add(barclays);
         repository.Banks.Add(trading212);
         repository.Banks.Add(chase);
-        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), "Trading212", "Chase", 500m, null));
+        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 5), trading212, chase, 500m, null));
         var service = new BankService(repository);
 
         var result = service.GetBankBalancesByMonth(2026, 7);
@@ -257,7 +260,7 @@ public class BankServiceTests
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
         repository.Banks.Add(bank);
-        repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 7, 5), "Barclays", 150m, 50m, null));
+        repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 7, 5), bank, 150m, 50m, null));
         var service = new BankService(repository);
 
         var result = service.GetBankBalancesByMonth(2026, 7);
@@ -274,8 +277,8 @@ public class BankServiceTests
         var trading212 = Bank.Create("Trading212", roundUpEnabled: false);
         repository.Banks.Add(bank);
         repository.Banks.Add(trading212);
-        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 8, 1), "Barclays", "Trading212", 500m, null));
-        repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 8, 1), "Barclays", 999m, 899m, null));
+        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 8, 1), bank, trading212, 500m, null));
+        repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 8, 1), bank, 999m, 899m, null));
         var service = new BankService(repository);
 
         var result = service.GetBankBalancesByMonth(2026, 7);
@@ -292,8 +295,8 @@ public class BankServiceTests
         var trading212 = Bank.Create("Trading212", roundUpEnabled: false);
         repository.Banks.Add(bank);
         repository.Banks.Add(trading212);
-        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 6, 30), "Barclays", "Trading212", 500m, null));
-        repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 6, 30), "Barclays", 999m, 899m, null));
+        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 6, 30), bank, trading212, 500m, null));
+        repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 6, 30), bank, 999m, 899m, null));
         var service = new BankService(repository);
 
         var result = service.GetBankBalancesByMonth(2026, 7);
@@ -308,8 +311,8 @@ public class BankServiceTests
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
         repository.Banks.Add(bank);
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 10), "Gleison", null, 200m, "Barclays"));
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 20), "Gleison", null, 300m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 10), Gleison, null, 200m, bank));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 20), Gleison, null, 300m, bank));
         var service = new BankService(repository);
 
         var result = service.GetBankBalanceAsOf("Barclays", new DateOnly(2026, 7, 15));
@@ -324,9 +327,10 @@ public class BankServiceTests
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
         repository.Banks.Add(bank);
-        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 1), "Barclays", "Chase", 20m, null));
-        var excluded = BalanceAdjustment.Create(new DateOnly(2026, 7, 1), "Barclays", 500m, 400m, null);
-        var included = BalanceAdjustment.Create(new DateOnly(2026, 7, 2), "Barclays", 50m, -30m, null);
+        var chase = Bank.Create("Chase", roundUpEnabled: false);
+        repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 1), bank, chase, 20m, null));
+        var excluded = BalanceAdjustment.Create(new DateOnly(2026, 7, 1), bank, 500m, 400m, null);
+        var included = BalanceAdjustment.Create(new DateOnly(2026, 7, 2), bank, 50m, -30m, null);
         repository.BalanceAdjustments.Add(excluded);
         repository.BalanceAdjustments.Add(included);
         var service = new BankService(repository);

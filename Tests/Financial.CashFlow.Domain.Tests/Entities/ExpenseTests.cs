@@ -7,8 +7,12 @@ namespace Financial.CashFlow.Domain.Tests;
 
 public class ExpenseTests
 {
+    private static readonly Bank Chase = Bank.Create("Chase", roundUpEnabled: true);
+    private static readonly Bank Barclays = Bank.Create("Barclays", roundUpEnabled: false);
+    private static readonly Bank Trading212 = Bank.Create("Trading212", roundUpEnabled: true);
+
     private static Expense CreateImmediateExpense() =>
-        Expense.Create(new DateOnly(2026, 7, 1), "Immediate", 10m, Category.Casa, "Chase", null);
+        Expense.Create(new DateOnly(2026, 7, 1), "Immediate", 10m, Category.Casa, Chase, null);
 
     private static Expense CreateCardCharge() =>
         Expense.Create(new DateOnly(2026, 7, 1), "Charge", 10m, Category.Extras, null, CreditCard.ChaseMaster4023);
@@ -16,7 +20,7 @@ public class ExpenseTests
     private static Expense CreateSettledExpense()
     {
         var expense = CreateCardCharge();
-        expense.Settle("Barclays", new DateOnly(2026, 7, 31));
+        expense.Settle(Barclays, new DateOnly(2026, 7, 31));
         return expense;
     }
 
@@ -35,7 +39,7 @@ public class ExpenseTests
     {
         var date = new DateOnly(2026, 7, 15);
 
-        var expense = Expense.Create(date, "Weekly groceries", 54.32m, Category.Mercado, "Barclays", null);
+        var expense = Expense.Create(date, "Weekly groceries", 54.32m, Category.Mercado, Barclays, null);
 
         using (new AssertionScope())
         {
@@ -44,7 +48,7 @@ public class ExpenseTests
             expense.Description.Should().Be("Weekly groceries");
             expense.Value.Should().Be(54.32m);
             expense.Category.Should().Be(Category.Mercado);
-            expense.PaymentSource.Should().Be("Barclays");
+            expense.PaymentSourceBank.Should().Be(Barclays);
             expense.CardTag.Should().BeNull();
             expense.ChargeDate.Should().BeNull();
             expense.InvoiceDate.Should().BeNull();
@@ -54,8 +58,8 @@ public class ExpenseTests
     [Fact]
     public void Create_TwoExpenses_HaveDifferentIds()
     {
-        var first = Expense.Create(new DateOnly(2026, 7, 1), "A", 1m, Category.Casa, "Chase", null);
-        var second = Expense.Create(new DateOnly(2026, 7, 1), "B", 2m, Category.Casa, "Chase", null);
+        var first = Expense.Create(new DateOnly(2026, 7, 1), "A", 1m, Category.Casa, Chase, null);
+        var second = Expense.Create(new DateOnly(2026, 7, 1), "B", 2m, Category.Casa, Chase, null);
 
         first.Id.Should().NotBe(second.Id);
     }
@@ -74,7 +78,7 @@ public class ExpenseTests
         var expense = CreateCardCharge();
 
         expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
-        expense.PaymentSource.Should().BeNull();
+        expense.PaymentSourceBank.Should().BeNull();
         expense.ChargeDate.Should().Be(expense.Date);
         expense.InvoiceDate.Should().Be(new DateOnly(expense.Date.Year, expense.Date.Month, 1));
     }
@@ -137,7 +141,7 @@ public class ExpenseTests
             "Invalid",
             10m,
             Category.Extras,
-            "Barclays",
+            Barclays,
             CreditCard.BarclaysPlatinumVisa8003);
 
         act.Should().Throw<ArgumentException>().WithMessage("*marking its card statement paid*");
@@ -159,7 +163,7 @@ public class ExpenseTests
             expense.Description.Should().Be("Updated");
             expense.Value.Should().Be(20m);
             expense.Category.Should().Be(Category.Mercado);
-            expense.PaymentSource.Should().BeNull();
+            expense.PaymentSourceBank.Should().BeNull();
             expense.CardTag.Should().Be(CreditCard.ChaseMaster4023);
             expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
         }
@@ -181,7 +185,7 @@ public class ExpenseTests
         var expense = CreateImmediateExpense();
 
         var act = () => expense.UpdateDetails(
-            expense.Date, "Updated", 20m, Category.Casa, "Chase", CreditCard.BaAmex);
+            expense.Date, "Updated", 20m, Category.Casa, Chase, CreditCard.BaAmex);
 
         act.Should().Throw<ArgumentException>().WithMessage("*marking its card statement paid*");
     }
@@ -191,13 +195,13 @@ public class ExpenseTests
     {
         var expense = CreateSettledExpense();
 
-        expense.UpdateDetails(expense.Date, "Renamed", 25m, Category.Mercado, expense.PaymentSource, expense.CardTag);
+        expense.UpdateDetails(expense.Date, "Renamed", 25m, Category.Mercado, expense.PaymentSourceBank, expense.CardTag);
 
         using (new AssertionScope())
         {
             expense.Description.Should().Be("Renamed");
             expense.Value.Should().Be(25m);
-            expense.PaymentSource.Should().Be("Barclays");
+            expense.PaymentSourceBank.Should().Be(Barclays);
             expense.CardTag.Should().Be(CreditCard.ChaseMaster4023);
             expense.Date.Should().Be(new DateOnly(2026, 7, 31));
             expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
@@ -209,7 +213,7 @@ public class ExpenseTests
     {
         var expense = CreateSettledExpense();
 
-        var act = () => expense.UpdateDetails(expense.Date, "Renamed", 25m, Category.Mercado, "Chase", expense.CardTag);
+        var act = () => expense.UpdateDetails(expense.Date, "Renamed", 25m, Category.Mercado, Chase, expense.CardTag);
 
         act.Should().Throw<ArgumentException>().WithMessage("*unmark its card statement paid*");
     }
@@ -222,11 +226,11 @@ public class ExpenseTests
         var originalInvoiceDate = expense.InvoiceDate;
         var paymentDate = new DateOnly(2026, 7, 24);
 
-        expense.Settle("Trading212", paymentDate);
+        expense.Settle(Trading212, paymentDate);
 
         using (new AssertionScope())
         {
-            expense.PaymentSource.Should().Be("Trading212");
+            expense.PaymentSourceBank.Should().Be(Trading212);
             expense.Date.Should().Be(paymentDate);
             expense.ChargeDate.Should().Be(originalChargeDate);
             expense.InvoiceDate.Should().Be(originalInvoiceDate);
@@ -239,7 +243,7 @@ public class ExpenseTests
     {
         var expense = CreateImmediateExpense();
 
-        var act = () => expense.Settle("Barclays", new DateOnly(2026, 7, 24));
+        var act = () => expense.Settle(Barclays, new DateOnly(2026, 7, 24));
 
         act.Should().Throw<ArgumentException>().WithMessage("*unsettled credit card charge*");
     }
@@ -249,7 +253,7 @@ public class ExpenseTests
     {
         var expense = CreateSettledExpense();
 
-        var act = () => expense.Settle("Barclays", new DateOnly(2026, 7, 24));
+        var act = () => expense.Settle(Barclays, new DateOnly(2026, 7, 24));
 
         act.Should().Throw<ArgumentException>().WithMessage("*unsettled credit card charge*");
     }
@@ -261,7 +265,7 @@ public class ExpenseTests
 
         expense.Unsettle();
 
-        expense.PaymentSource.Should().BeNull();
+        expense.PaymentSourceBank.Should().BeNull();
         expense.Date.Should().Be(expense.ChargeDate);
         expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
     }
@@ -327,7 +331,7 @@ public class ExpenseTests
     {
         var expense = SimulateLegacyCardExpense(CreateCardCharge());
         var originalChargeDate = expense.Date;
-        typeof(Expense).GetProperty(nameof(Expense.PaymentSource))!.SetMethod!.Invoke(expense, new object?[] { "Barclays" });
+        typeof(Expense).GetProperty(nameof(Expense.PaymentSourceBank))!.SetMethod!.Invoke(expense, new object?[] { Barclays });
         var recoveredSettledAt = new DateOnly(2026, 8, 3);
 
         expense.MigrateLegacyDates(chargeDate: originalChargeDate, invoiceDate: new DateOnly(2026, 8, 1), settledDate: recoveredSettledAt);
@@ -378,7 +382,7 @@ public class ExpenseTests
     [InlineData(-10.00, 0.00)]
     public void RoundUpSuggestion_ComputesDifferenceToNextWholePound(decimal value, decimal expected)
     {
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test", value, Category.Mercado, "Chase", null);
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test", value, Category.Mercado, Chase, null);
 
         expense.RoundUpSuggestion.Should().Be(expected);
     }
@@ -420,7 +424,7 @@ public class ExpenseTests
     [Fact]
     public void SetRoundUpAmount_OnNegativeValueExpense_Throws()
     {
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Reimbursement", -10m, Category.Casa, "Chase", null);
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Reimbursement", -10m, Category.Casa, Chase, null);
 
         var act = () => expense.SetRoundUpAmount(0.50m);
 
@@ -477,7 +481,7 @@ public class ExpenseTests
         var expense = CreateImmediateExpense();
         expense.SetRoundUpAmount(0.60m);
 
-        expense.UpdateDetails(expense.Date, expense.Description, 20m, expense.Category, expense.PaymentSource, expense.CardTag);
+        expense.UpdateDetails(expense.Date, expense.Description, 20m, expense.Category, expense.PaymentSourceBank, expense.CardTag);
 
         expense.RoundUpAmount.Should().Be(0.60m);
     }
@@ -485,7 +489,7 @@ public class ExpenseTests
     [Fact]
     public void IsInvestment_InvestimentoCategory_IsTrue()
     {
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Trading212 top-up", 100m, Category.Investimento, "Chase", null);
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Trading212 top-up", 100m, Category.Investimento, Chase, null);
 
         expense.IsInvestment.Should().BeTrue();
     }
@@ -496,7 +500,7 @@ public class ExpenseTests
     [InlineData(Category.Reserva)]
     public void IsInvestment_OtherCategories_IsFalse(Category category)
     {
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Not investment", 100m, category, "Chase", null);
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Not investment", 100m, category, Chase, null);
 
         expense.IsInvestment.Should().BeFalse();
     }

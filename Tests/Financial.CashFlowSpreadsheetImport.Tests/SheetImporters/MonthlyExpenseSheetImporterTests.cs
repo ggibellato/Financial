@@ -1,4 +1,5 @@
 using ClosedXML.Excel;
+using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
@@ -9,6 +10,13 @@ namespace Financial.CashFlowSpreadsheetImport.Tests.SheetImporters;
 public class MonthlyExpenseSheetImporterTests
 {
     private static readonly DateOnly Today = new(2026, 7, 15);
+
+    private static readonly IReadOnlyCollection<Bank> Banks =
+    [
+        Bank.Create("Barclays", roundUpEnabled: false),
+        Bank.Create("Trading212", roundUpEnabled: true),
+        Bank.Create("Chase", roundUpEnabled: true)
+    ];
 
     [Fact]
     public void Import_2017ShapedSheet_QuemThenMotivo_ParsesExpensesCorrectly()
@@ -34,18 +42,18 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2017, 2, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2017, 2, Today, report, Banks);
 
         expenses.Should().HaveCount(2);
         var first = expenses.Single(e => e.Description == "Lidl UK");
         first.Category.Should().Be(Category.Mercado);
         first.Value.Should().Be(71.04m);
         first.Date.Should().Be(new DateOnly(2017, 2, 1));
-        first.PaymentSource.Should().Be("Barclays");
+        first.PaymentSourceBank!.Name.Should().Be("Barclays");
 
         var second = expenses.Single(e => e.Description == "Amazon Digital Video");
         second.Category.Should().Be(Category.Extras);
-        second.PaymentSource.Should().Be("Trading212");
+        second.PaymentSourceBank!.Name.Should().Be("Trading212");
         report.RowIssues.Should().BeEmpty();
     }
 
@@ -68,13 +76,13 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, Today, report, Banks);
 
         expenses.Should().ContainSingle();
         var expense = expenses.Single();
         expense.Description.Should().Be("Chartered Society");
         expense.Category.Should().Be(Category.Ariana);
-        expense.PaymentSource.Should().Be("Chase");
+        expense.PaymentSourceBank!.Name.Should().Be("Chase");
     }
 
     [Fact]
@@ -94,7 +102,7 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2017, 10, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2017, 10, Today, report, Banks);
 
         expenses.Should().BeEmpty();
         report.RowIssues.Should().ContainSingle(i => i.RawValue == "TotallyUnknownCategory" && i.SheetName == "Out2017");
@@ -117,7 +125,7 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2017, 10, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2017, 10, Today, report, Banks);
 
         expenses.Should().ContainSingle().Which.Category.Should().Be(Category.Casa);
         report.RowIssues.Should().BeEmpty();
@@ -142,7 +150,7 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 2, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 2, Today, report, Banks);
 
         expenses.Should().ContainSingle();
         expenses[0].Date.Should().Be(new DateOnly(2026, 2, 28));
@@ -169,7 +177,7 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2017, 3, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2017, 3, Today, report, Banks);
 
         expenses.Should().ContainSingle().Which.Value.Should().Be(17.28m);
         report.RowIssues.Should().BeEmpty();
@@ -193,17 +201,17 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, Today, report, Banks);
 
         var expense = expenses.Should().ContainSingle().Which;
         expense.CardTag.Should().Be(expectedCardTag);
         if (expectedCardTag is null)
         {
-            expense.PaymentSource.Should().Be("Barclays");
+            expense.PaymentSourceBank!.Name.Should().Be("Barclays");
         }
         else
         {
-            expense.PaymentSource.Should().BeNull();
+            expense.PaymentSourceBank.Should().BeNull();
         }
     }
 
@@ -216,7 +224,7 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 8, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 8, Today, report, Banks);
 
         var expense = expenses.Should().ContainSingle().Subject;
         expense.CardTag.Should().NotBeNull();
@@ -233,7 +241,7 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 8, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 8, Today, report, Banks);
 
         var expense = expenses.Should().ContainSingle().Subject;
         expense.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
@@ -248,7 +256,7 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 8, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 8, Today, report, Banks);
 
         var expense = expenses.Should().ContainSingle().Subject;
         expense.CardTag.Should().BeNull();
@@ -265,10 +273,10 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 8, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 8, Today, report, Banks);
 
         var expense = expenses.Should().ContainSingle().Subject;
-        expense.PaymentSource.Should().Be("Chase");
+        expense.PaymentSourceBank!.Name.Should().Be("Chase");
         expense.CardTag.Should().BeNull();
     }
 
@@ -286,10 +294,10 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, Today, report, Banks);
 
         expenses.Should().HaveCount(6);
-        expenses.Should().NotContain(e => e.PaymentSource != null && e.CardTag != null);
+        expenses.Should().NotContain(e => e.PaymentSourceBank != null && e.CardTag != null);
         expenses.Should().OnlyContain(e =>
             e.PaymentStatus == ExpensePaymentStatus.ImmediatePayment
             || e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge);
@@ -305,11 +313,11 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2017, 10, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2017, 10, Today, report, Banks);
 
         var expense = expenses.Should().ContainSingle().Which;
         expense.CardTag.Should().BeNull();
-        expense.PaymentSource.Should().Be("Barclays");
+        expense.PaymentSourceBank!.Name.Should().Be("Barclays");
     }
 
     [Fact]
@@ -321,11 +329,11 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 9, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 9, Today, report, Banks);
 
         var expense = expenses.Should().ContainSingle().Which;
         expense.CardTag.Should().Be(CreditCard.BarclaysPlatinumVisa8003);
-        expense.PaymentSource.Should().BeNull();
+        expense.PaymentSourceBank.Should().BeNull();
     }
 
     [Theory]
@@ -340,11 +348,11 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, Today, report, Banks);
 
         var expense = expenses.Should().ContainSingle().Which;
         expense.CardTag.Should().Be(CreditCard.BarclaysPlatinumVisa6007);
-        expense.PaymentSource.Should().BeNull();
+        expense.PaymentSourceBank.Should().BeNull();
         expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
         report.RowIssues.Should().BeEmpty();
     }
@@ -360,11 +368,11 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, Today, report, Banks);
 
         var expense = expenses.Should().ContainSingle().Which;
         expense.CardTag.Should().BeNull();
-        expense.PaymentSource.Should().Be("Barclays");
+        expense.PaymentSourceBank!.Name.Should().Be("Barclays");
         report.RowIssues.Should().BeEmpty();
     }
 
@@ -377,11 +385,11 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2017, 10, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2017, 10, Today, report, Banks);
 
         var expense = expenses.Should().ContainSingle().Which;
         expense.CardTag.Should().BeNull();
-        expense.PaymentSource.Should().Be("Barclays");
+        expense.PaymentSourceBank!.Name.Should().Be("Barclays");
         report.RowIssues.Should().BeEmpty();
     }
 
@@ -394,11 +402,11 @@ public class MonthlyExpenseSheetImporterTests
 
         var report = new ImportReport();
 
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 9, Today, report);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 9, Today, report, Banks);
 
         var expense = expenses.Should().ContainSingle().Which;
         expense.CardTag.Should().Be(CreditCard.BarclaysPlatinumVisa8003);
-        expense.PaymentSource.Should().BeNull();
+        expense.PaymentSourceBank.Should().BeNull();
         report.RowIssues.Should().BeEmpty();
     }
 

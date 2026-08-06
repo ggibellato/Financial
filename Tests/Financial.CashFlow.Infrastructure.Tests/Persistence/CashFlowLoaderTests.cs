@@ -55,7 +55,7 @@ public class CashFlowLoaderTests
             "Test expense",
             10m,
             Financial.CashFlow.Domain.Enums.Category.Casa,
-            "Chase",
+            Financial.CashFlow.Domain.Entities.Bank.Create("Chase", roundUpEnabled: true),
             null));
         File.WriteAllText(path, serializer.Serialize(original));
         var storage = new LocalJsonStorage(path);

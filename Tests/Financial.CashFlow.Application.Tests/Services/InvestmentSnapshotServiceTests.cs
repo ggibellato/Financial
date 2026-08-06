@@ -99,7 +99,8 @@ public class InvestmentSnapshotServiceTests
     public async Task GetSnapshotsForMonthAsync_PastYearWithSomeAccountsPresent_ReturnsOnlyThose()
     {
         var repository = CreateRepository();
-        repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create("ChaseSave", PastYear, 7, 100m));
+        var chaseSave = repository.InvestmentAccounts.First(a => a.Name == "ChaseSave");
+        repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(chaseSave, PastYear, 7, 100m));
         var service = new InvestmentSnapshotService(repository);
 
         var result = await service.GetSnapshotsForMonthAsync(PastYear, 7);
@@ -114,9 +115,9 @@ public class InvestmentSnapshotServiceTests
         var service = new InvestmentSnapshotService(repository);
         await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
         await service.GetSnapshotsForMonthAsync(CurrentYear, 8);
-        var julySnapshot = repository.InvestmentSnapshots.Single(s => s.Month == 7 && s.Account == "ChaseSave");
-        var augustSnapshot = repository.InvestmentSnapshots.Single(s => s.Month == 8 && s.Account == "ChaseSave");
-        var otherAccountSnapshot = repository.InvestmentSnapshots.Single(s => s.Month == 7 && s.Account == "PlatinumVisa8003");
+        var julySnapshot = repository.InvestmentSnapshots.Single(s => s.Month == 7 && s.Account.Name == "ChaseSave");
+        var augustSnapshot = repository.InvestmentSnapshots.Single(s => s.Month == 8 && s.Account.Name == "ChaseSave");
+        var otherAccountSnapshot = repository.InvestmentSnapshots.Single(s => s.Month == 7 && s.Account.Name == "PlatinumVisa8003");
 
         var result = await service.UpdateSnapshotValueAsync(julySnapshot.Id, new UpdateInvestmentSnapshotValueDTO { Value = 500m });
 
