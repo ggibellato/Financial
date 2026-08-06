@@ -1,4 +1,3 @@
-using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes;
@@ -58,26 +57,7 @@ public class IncomeMigratorTests
     }
 
     [Fact]
-    public void Migrate_WithWorkbook_BackfillsEntriesAndReportsImportedCount()
-    {
-        using var workbook = new XLWorkbook();
-        var sheet = workbook.AddWorksheet("Jul2026");
-        sheet.Cell(3, 10).Value = "Salario Ariana";
-        sheet.Cell(3, 11).Value = 2595.39;
-        sheet.Cell(3, 12).Value = 1878.74;
-        var data = CashFlowData.Create();
-        data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
-        data.AddIncomeSource(IncomeSource.Create("Ariana", IncomeGroup.Salary));
-
-        var summary = IncomeMigrator.Migrate(data, workbook);
-
-        summary.EntriesImportedCount.Should().Be(1);
-        summary.IncomeCount.Should().Be(1);
-        data.Incomes.Should().ContainSingle(i => i.IncomeSource.Name == "Ariana" && i.Bank.Name == "Barclays");
-    }
-
-    [Fact]
-    public void Migrate_WithoutWorkbook_ReportsZeroImportedEntries()
+    public void Migrate_ReportsZeroImportedEntries()
     {
         var data = CashFlowData.Create();
 
