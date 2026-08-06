@@ -66,17 +66,17 @@ public sealed class ExpenseService : IExpenseService
 
     public IReadOnlyList<ExpenseDTO> GetExpensesByMonth(int year, int month) =>
         _repository.GetExpenses()
-            .Where(e => OriginationDate(e).Year == year && OriginationDate(e).Month == month)
+            .Where(e => ListGroupingDate(e).Year == year && ListGroupingDate(e).Month == month)
             .Where(e => e.PaymentStatus != ExpensePaymentStatus.CreditCardCharge)
-            .OrderByDescending(OriginationDate)
+            .OrderByDescending(ListGroupingDate)
             .Select(ToDto)
             .ToList();
 
     public IReadOnlyList<ExpenseDTO> GetUnpaidCardChargesByMonth(int year, int month) =>
         _repository.GetExpenses()
-            .Where(e => OriginationDate(e).Year == year && OriginationDate(e).Month == month)
+            .Where(e => ListGroupingDate(e).Year == year && ListGroupingDate(e).Month == month)
             .Where(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge)
-            .OrderByDescending(OriginationDate)
+            .OrderByDescending(ListGroupingDate)
             .Select(ToDto)
             .ToList();
 
@@ -91,7 +91,13 @@ public sealed class ExpenseService : IExpenseService
             })
             .ToList();
 
-    private static DateOnly OriginationDate(Expense expense) => expense.ChargeDate ?? expense.Date;
+    /// <summary>
+    /// The month/year an expense is grouped and sorted under in the Expense/Card tab lists: a
+    /// credit card expense (paid or unpaid) always uses its assigned <see cref="Expense.InvoiceDate"/>,
+    /// which never changes across Settle()/Unsettle(), so an expense never moves to a different
+    /// month's view purely because it was marked paid. Bank expenses fall back to <see cref="Expense.Date"/>.
+    /// </summary>
+    private static DateOnly ListGroupingDate(Expense expense) => expense.InvoiceDate ?? expense.ChargeDate ?? expense.Date;
 
     /// <summary>
     /// The month/year an expense's value counts toward in category-total reporting: an unpaid
