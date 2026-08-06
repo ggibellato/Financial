@@ -288,12 +288,12 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Bank Identity and Domain Reference Model
-- [ ] `Bank.Create` assigns a `Guid Id`, and `Bank.Id` is never empty/default for a newly-created bank
-- [ ] `Income.Create`/`UpdateDetails` accept a `Bank` and an `IncomeSource` object and reject a null value for either
-- [ ] `Expense.Create`/`UpdateDetails` accept a nullable `Bank` reference for `PaymentSourceBank`, preserving the existing "exactly one of payment source or card tag" shape rule
-- [ ] `Transfer.Create`/`UpdateDetails` reject a `Transfer` whose `SourceBank.Id` equals its `DestinationBank.Id`
-- [ ] `BalanceAdjustment.Create` accepts a `Bank` object
-- [ ] `InvestmentSnapshot.Create` accepts an `InvestmentAccount` object
+- [x] `Bank.Create` assigns a `Guid Id`, and `Bank.Id` is never empty/default for a newly-created bank
+- [x] `Income.Create`/`UpdateDetails` accept a `Bank` and an `IncomeSource` object and reject a null value for either
+- [x] `Expense.Create`/`UpdateDetails` accept a nullable `Bank` reference for `PaymentSourceBank`, preserving the existing "exactly one of payment source or card tag" shape rule
+- [x] `Transfer.Create`/`UpdateDetails` reject a `Transfer` whose `SourceBank.Id` equals its `DestinationBank.Id`
+- [x] `BalanceAdjustment.Create` accepts a `Bank` object
+- [x] `InvestmentSnapshot.Create` accepts an `InvestmentAccount` object
 
 ### F02. Infrastructure Reference-Resolution Persistence
 - [ ] Serializing a `CashFlowData` writes only `BankId`/`IncomeSourceId`/`InvestmentAccountId` (Guid) for reference-typed fields, not a nested object
