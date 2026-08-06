@@ -61,9 +61,9 @@ public sealed class IncomeService : IIncomeService
 
     private (string IncomeSource, Bank Bank) ValidateFields(string incomeSource, string bank)
     {
-        if (string.IsNullOrWhiteSpace(incomeSource))
+        if (!IncomeSourceNameResolver.TryResolve(incomeSource, _repository.GetIncomeSources(), out var resolvedIncomeSource))
         {
-            throw new ArgumentException("Income source is required.");
+            throw new ArgumentException($"Income source '{incomeSource}' is not recognized.");
         }
 
         if (!BankNameResolver.TryResolve(bank, _repository.GetBanks(), out var resolvedBank))
@@ -71,7 +71,7 @@ public sealed class IncomeService : IIncomeService
             throw new ArgumentException($"Bank '{bank}' is not recognized.");
         }
 
-        return (incomeSource, resolvedBank!);
+        return (resolvedIncomeSource!.Name, resolvedBank!);
     }
 
     private static IncomeDTO ToDto(Income income) => new()
