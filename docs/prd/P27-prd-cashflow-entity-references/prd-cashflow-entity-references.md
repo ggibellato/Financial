@@ -302,13 +302,13 @@ graph TD
 - [x] A round-trip (serialize, then deserialize) of a `CashFlowData` with cross-references reproduces an equivalent object graph with no data loss
 
 ### F03. Live-Data Reference Migration
-- [ ] Running the migrator against a pre-migration data file assigns a unique `Guid Id` to every existing `Bank` record
-- [ ] Running the migrator resolves and rewrites every existing `Income`/`Expense`/`Transfer`/`BalanceAdjustment`/`InvestmentSnapshot` record's name field to a resolved reference, reconstructed via the entity's normal `Create` factory
-- [ ] Running the migrator a second time against an already-migrated file makes no additional changes, because there is no legacy string shape left to extract
-- [ ] A backup of the data file is created before any write occurs
-- [ ] A record whose name is unresolvable against the seeded lists is reported in the migration summary
-- [ ] `MonthlyExpenseSheetImporter`'s newly-created `Expense` records resolve `PaymentSource` against the seeded `Bank` list instead of using a hardcoded string switch
-- [ ] `IncomeBackfillImporter.cs` and its dedicated tests no longer exist in the codebase, and `IncomeMigrator.Migrate` no longer takes a workbook parameter
+- [x] Running the migrator against a pre-migration data file assigns a unique `Guid Id` to every existing `Bank` record
+- [x] Running the migrator resolves and rewrites every existing `Income`/`Expense`/`Transfer`/`BalanceAdjustment`/`InvestmentSnapshot` record's name field to a resolved reference, reconstructed via the entity's normal `Create` factory
+- [x] Running the migrator a second time against an already-migrated file makes no additional changes, because there is no legacy string shape left to extract
+- [x] A backup of the data file is created before any write occurs
+- [x] A record whose name is unresolvable against the seeded lists is reported in the migration summary
+- [x] `MonthlyExpenseSheetImporter`'s newly-created `Expense` records resolve `PaymentSource` against the seeded `Bank` list instead of using a hardcoded string switch
+- [x] `IncomeBackfillImporter.cs` and its dedicated tests no longer exist in the codebase, and `IncomeMigrator.Migrate` no longer takes a workbook parameter
 
 ### F04. Application Resolvers, Services, and DTOs
 - [ ] Creating an `Income`/`Expense`/`Transfer`/`BalanceAdjustment`/`InvestmentSnapshot` with an Id matching a seeded Bank/IncomeSource/InvestmentAccount succeeds
@@ -337,7 +337,7 @@ graph TD
 
 ### Cross-Feature Integration
 - [x] `Bank.Id` and the reference-typed entity properties from F01 are correctly read and written by the F02 JSON persistence layer, producing a real object graph on load
-- [ ] The Id-based JSON write capability from F02 and the reference model from F01 are correctly used together by the F03 migrator to produce a fully-migrated data file with no unresolved records
+- [x] The Id-based JSON write capability from F02 and the reference model from F01 are correctly used together by the F03 migrator to produce a fully-migrated data file with no unresolved records
 - [ ] The resolved object graph from F02 and the reference model from F01 are correctly consumed by the F04 resolvers/services, which reject an unresolvable Id and accept a valid one
 - [ ] The Id+Name DTOs provided by F04 are correctly exposed through the F05 API contract, including the new `/investment-accounts` endpoint and the Id-based bank-scoped routes
 - [ ] The F05 API contract is correctly consumed by both the F06 WPF forms and the F07 React forms, each submitting and displaying records via Id with a correctly-rendered denormalized name
