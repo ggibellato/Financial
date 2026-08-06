@@ -1,6 +1,4 @@
 using System;
-using Financial.CashFlow.Domain.Enums;
-using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.CashFlow.Domain.Entities;
 
@@ -8,23 +6,22 @@ public class Income
 {
     public Guid Id { get; private set; }
     public DateOnly Date { get; private set; }
-    public IncomeSource IncomeSource { get; private set; }
+    public string IncomeSource { get; private set; } = string.Empty;
     public decimal? GrossValue { get; private set; }
     public decimal NetValue { get; private set; }
     public string Bank { get; private set; } = string.Empty;
-
-    public IncomeGroup Group => IncomeClassifier.Classify(IncomeSource);
 
     private Income() { }
 
     public static Income Create(
         DateOnly date,
-        IncomeSource incomeSource,
+        string incomeSource,
         decimal? grossValue,
         decimal netValue,
         string bank)
     {
         ValidateValues(grossValue, netValue);
+        ValidateIncomeSource(incomeSource);
         ValidateBank(bank);
 
         return new()
@@ -40,12 +37,13 @@ public class Income
 
     public void UpdateDetails(
         DateOnly date,
-        IncomeSource incomeSource,
+        string incomeSource,
         decimal? grossValue,
         decimal netValue,
         string bank)
     {
         ValidateValues(grossValue, netValue);
+        ValidateIncomeSource(incomeSource);
         ValidateBank(bank);
 
         Date = date;
@@ -60,6 +58,14 @@ public class Income
         if (netValue < 0)
         {
             throw new ArgumentException("Net value cannot be negative.");
+        }
+    }
+
+    private static void ValidateIncomeSource(string incomeSource)
+    {
+        if (string.IsNullOrWhiteSpace(incomeSource))
+        {
+            throw new ArgumentException("Income source is required.");
         }
     }
 
