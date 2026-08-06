@@ -249,9 +249,9 @@ graph TD
 - [x] No `POST`, `PUT`, or `DELETE` route exists for income sources
 
 ### F05. Web Income Form Dynamic Source Picklist
-- [ ] The income entry form's source dropdown options match the set of `IncomeSource` records with `isActive = true` returned by `GET /income-sources`
-- [ ] A source with `isActive = false` does not appear in the dropdown
-- [ ] If the API call fails, the dropdown shows no options and the form's required-field validation blocks submission without a selected source
+- [x] The income entry form's source dropdown options match the set of `IncomeSource` records with `isActive = true` returned by `GET /income-sources`
+- [x] A source with `isActive = false` does not appear in the dropdown
+- [x] If the API call fails, the dropdown shows no options and the form's required-field validation blocks submission without a selected source
 
 ### F06. WPF Income Form Dynamic Source Picklist
 - [ ] The WPF income entry form's source combo box options match the set of `IncomeSource` records with `isActive = true` returned by `GET /income-sources`
