@@ -224,13 +224,13 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. IncomeSource Domain Entity and Seed Migration
-- [ ] Running the migration tool against a data file with no `IncomeSource` records creates exactly four records: Gleison/Salary, Ariana/Salary, Lottery/NonReportable, DividendoJuros/DividendoJuros, all `IsActive = true`
-- [ ] Running the migration tool a second time makes no additional changes (idempotent, verified by unchanged record count and unchanged IDs)
-- [ ] A backup of the data file is created before any write occurs
-- [ ] `IncomeClassifier` class and its dedicated unit tests no longer exist in the codebase
-- [ ] `Income.Group` property no longer exists on the `Income` entity
-- [ ] `Income.IncomeSource` is a `string` field, and existing `Income` records deserialize correctly without data loss after the migration
-- [ ] An `Income` record whose source name matches none of the four seeded names is reported in the migration's audit summary without failing the migration run
+- [x] Running the migration tool against a data file with no `IncomeSource` records creates exactly four records: Gleison/Salary, Ariana/Salary, Lottery/NonReportable, DividendoJuros/DividendoJuros, all `IsActive = true`
+- [x] Running the migration tool a second time makes no additional changes (idempotent, verified by unchanged record count and unchanged IDs)
+- [x] A backup of the data file is created before any write occurs
+- [x] `IncomeClassifier` class and its dedicated unit tests no longer exist in the codebase
+- [x] `Income.Group` property no longer exists on the `Income` entity
+- [x] `Income.IncomeSource` is a `string` field, and existing `Income` records deserialize correctly without data loss after the migration
+- [x] An `Income` record whose source name matches none of the four seeded names is reported in the migration's audit summary without failing the migration run
 
 ### F02. Income Source Validation on Create and Update
 - [ ] Creating an `Income` with a source name matching a seeded `IncomeSource` (case-insensitive) succeeds
