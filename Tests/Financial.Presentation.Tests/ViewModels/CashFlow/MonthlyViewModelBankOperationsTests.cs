@@ -26,12 +26,13 @@ public class MonthlyViewModelBankOperationsTests
                 new BankDTO { Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) },
             ],
         };
+        var incomeSources = new StubIncomeSourceService();
         var tithe = new StubTitheService();
         var transfers = new StubTransferService();
         var adjustments = new StubBalanceAdjustmentService();
         var cards = new StubCardStatementService();
 
-        var viewModel = new MonthlyViewModel(expenses, incomes, banks, tithe, transfers, adjustments, cards, confirm: _ => confirmDeletes);
+        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cards, confirm: _ => confirmDeletes);
         return (viewModel, banks, transfers, adjustments);
     }
 

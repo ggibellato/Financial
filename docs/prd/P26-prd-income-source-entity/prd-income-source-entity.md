@@ -254,12 +254,12 @@ graph TD
 - [x] If the API call fails, the dropdown shows no options and the form's required-field validation blocks submission without a selected source
 
 ### F06. WPF Income Form Dynamic Source Picklist
-- [ ] The WPF income entry form's source combo box options match the set of `IncomeSource` records with `isActive = true` returned by `GET /income-sources`
-- [ ] A source with `isActive = false` does not appear in the combo box
-- [ ] If the API call fails, the combo box shows no options and the form's required-field validation blocks submission without a selected source
+- [x] The WPF income entry form's source combo box options match the set of `IncomeSource` records with `isActive = true` returned by `GET /income-sources`
+- [x] A source with `isActive = false` does not appear in the combo box
+- [x] If the API call fails, the combo box shows no options and the form's required-field validation blocks submission without a selected source
 
 ### Cross-Feature Integration
 - [x] Seeded `IncomeSource` records from the migration (F01) are correctly retrievable through `ICashFlowRepository.GetIncomeSources()` and consumed by the validation resolver (F02) to accept/reject income source names
 - [x] Seeded `IncomeSource` records from the migration (F01) are correctly consumed by `AnnualSummaryService`'s group lookup (F03), producing unchanged Annual Summary figures
 - [x] Seeded `IncomeSource` records from the migration (F01) are correctly returned by `GET /income-sources` (F04), including `id`, `name`, `isActive`, and `group`
-- [ ] The income source list returned by `GET /income-sources` (F04) is correctly fetched, filtered to active sources, and rendered as picklist options in both the web income form (F05) and the WPF income form (F06)
+- [x] The income source list returned by `GET /income-sources` (F04) is correctly fetched, filtered to active sources, and rendered as picklist options in both the web income form (F05) and the WPF income form (F06)

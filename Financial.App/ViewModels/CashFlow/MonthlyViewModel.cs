@@ -15,6 +15,7 @@ public class MonthlyViewModel : ViewModelBase
     private readonly IExpenseService _expenseService;
     private readonly IIncomeService _incomeService;
     private readonly IBankService _bankService;
+    private readonly IIncomeSourceService _incomeSourceService;
     private readonly ITitheService _titheService;
     private readonly ITransferService _transferService;
     private readonly IBalanceAdjustmentService _balanceAdjustmentService;
@@ -83,6 +84,7 @@ public class MonthlyViewModel : ViewModelBase
     public ObservableCollection<IncomeDTO> Incomes { get; } = [];
     public ObservableCollection<CategoryTotalDTO> CategoryTotals { get; } = [];
     public ObservableCollection<BankDTO> Banks { get; } = [];
+    public ObservableCollection<IncomeSourceDTO> IncomeSources { get; } = [];
     public ObservableCollection<BankTotalRow> BankTotals { get; } = [];
     public ObservableCollection<CardStatementDTO> CardStatements { get; } = [];
     public ObservableCollection<IncomeTotalRow> IncomeTotals { get; } = [];
@@ -109,6 +111,7 @@ public class MonthlyViewModel : ViewModelBase
         IExpenseService expenseService,
         IIncomeService incomeService,
         IBankService bankService,
+        IIncomeSourceService incomeSourceService,
         ITitheService titheService,
         ITransferService transferService,
         IBalanceAdjustmentService balanceAdjustmentService,
@@ -118,6 +121,7 @@ public class MonthlyViewModel : ViewModelBase
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
         _incomeService = incomeService ?? throw new ArgumentNullException(nameof(incomeService));
         _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
+        _incomeSourceService = incomeSourceService ?? throw new ArgumentNullException(nameof(incomeSourceService));
         _titheService = titheService ?? throw new ArgumentNullException(nameof(titheService));
         _transferService = transferService ?? throw new ArgumentNullException(nameof(transferService));
         _balanceAdjustmentService = balanceAdjustmentService ?? throw new ArgumentNullException(nameof(balanceAdjustmentService));
@@ -162,6 +166,7 @@ public class MonthlyViewModel : ViewModelBase
             var incomes = await Task.Run(() => _incomeService.GetIncomesByMonth(year, month));
             var categoryTotals = await Task.Run(() => _expenseService.GetCategoryTotalsByMonth(year, month));
             var banks = await Task.Run(() => _bankService.GetBanks());
+            var incomeSources = await Task.Run(() => _incomeSourceService.GetIncomeSources());
             var bankBalances = await Task.Run(() => _bankService.GetBankBalancesByMonth(year, month));
             var titheSummary = await Task.Run(() => _titheService.GetTitheSummary(year, month));
             var transfers = await Task.Run(() => _transferService.GetTransfersByMonth(year, month));
@@ -182,6 +187,8 @@ public class MonthlyViewModel : ViewModelBase
             ReplaceAll(Incomes, incomes);
             ReplaceAll(CategoryTotals, categoryTotals);
             ReplaceAll(Banks, banks);
+            ReplaceAll(IncomeSources, incomeSources);
+            OnPropertyChanged(nameof(IncomeSourceOptions));
             TitheSummary = titheSummary;
             OnPropertyChanged(nameof(CategoryTotalsSum));
 
@@ -654,16 +661,30 @@ public class MonthlyViewModel : ViewModelBase
 
     // ----- Income CRUD -----
 
-    public static readonly IReadOnlyList<string> IncomeSources = ["Gleison", "Ariana", "Lottery", "DividendoJuros"];
     private static readonly HashSet<string> IncomeSourcesWithGrossValue = ["Gleison", "Ariana"];
 
-    /// <summary>Instance-level accessor for <see cref="IncomeSources"/> — WPF's Binding only resolves instance members, not static fields.</summary>
-    public IReadOnlyList<string> IncomeSourceOptions => IncomeSources;
+    /// <summary>Matches the picklist's historical display order. A source name outside this list
+    /// (unexpected but not invalid) sorts last rather than being dropped or erroring.</summary>
+    private static readonly string[] IncomeSourceDisplayOrder = ["Gleison", "Ariana", "Lottery", "DividendoJuros"];
+
+    /// <summary>Active income sources from <see cref="IncomeSources"/>, ordered to match the picklist's historical display order.</summary>
+    public IReadOnlyList<string> IncomeSourceOptions =>
+        IncomeSources
+            .Where(s => s.IsActive)
+            .OrderBy(s => IncomeSourceRank(s.Name))
+            .Select(s => s.Name)
+            .ToList();
+
+    private static int IncomeSourceRank(string name)
+    {
+        var index = Array.IndexOf(IncomeSourceDisplayOrder, name);
+        return index == -1 ? IncomeSourceDisplayOrder.Length : index;
+    }
 
     private bool _isIncomeFormOpen;
     private Guid? _editingIncomeId;
     private DateTime? _incomeFormDate;
-    private string _incomeFormSource = IncomeSources[0];
+    private string _incomeFormSource = string.Empty;
     private string _incomeFormGrossValue = string.Empty;
     private string _incomeFormNetValue = string.Empty;
     private string _incomeFormBank = string.Empty;
@@ -754,7 +775,7 @@ public class MonthlyViewModel : ViewModelBase
     {
         _editingIncomeId = null;
         IncomeFormDate = DateTime.Today;
-        IncomeFormSource = IncomeSources[0];
+        IncomeFormSource = IncomeSourceOptions.Count > 0 ? IncomeSourceOptions[0] : string.Empty;
         IncomeFormGrossValue = string.Empty;
         IncomeFormNetValue = string.Empty;
         IncomeFormBank = Banks.Count > 0 ? Banks[0].Name : string.Empty;

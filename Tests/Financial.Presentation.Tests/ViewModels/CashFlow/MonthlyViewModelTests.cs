@@ -6,17 +6,27 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 public class MonthlyViewModelTests
 {
-    private static (MonthlyViewModel ViewModel, StubExpenseService Expenses, StubIncomeService Incomes, StubBankService Banks, StubTitheService Tithe) CreateViewModel(bool confirmDeletes = true)
+    private static readonly List<IncomeSourceDTO> DefaultIncomeSources =
+    [
+        new() { Id = Guid.NewGuid(), Name = "Gleison", IsActive = true, Group = "Salary" },
+        new() { Id = Guid.NewGuid(), Name = "Ariana", IsActive = true, Group = "Salary" },
+        new() { Id = Guid.NewGuid(), Name = "Lottery", IsActive = true, Group = "NonReportable" },
+        new() { Id = Guid.NewGuid(), Name = "DividendoJuros", IsActive = true, Group = "DividendoJuros" },
+    ];
+
+    private static (MonthlyViewModel ViewModel, StubExpenseService Expenses, StubIncomeService Incomes, StubBankService Banks, StubTitheService Tithe) CreateViewModel(
+        bool confirmDeletes = true, StubIncomeSourceService? incomeSourceService = null)
     {
         var expenses = new StubExpenseService();
         var incomes = new StubIncomeService();
         var banks = new StubBankService { Banks = [new BankDTO { Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) }, new BankDTO { Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) }] };
+        var incomeSources = incomeSourceService ?? new StubIncomeSourceService { IncomeSources = DefaultIncomeSources };
         var tithe = new StubTitheService { Summary = new TitheSummaryDTO { CalculatedTithe = 100m, TitheBalance = 50m } };
         var transfers = new StubTransferService();
         var adjustments = new StubBalanceAdjustmentService();
         var cardStatements = new StubCardStatementService();
 
-        var viewModel = new MonthlyViewModel(expenses, incomes, banks, tithe, transfers, adjustments, cardStatements, confirm: _ => confirmDeletes);
+        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cardStatements, confirm: _ => confirmDeletes);
         return (viewModel, expenses, incomes, banks, tithe);
     }
 
@@ -310,13 +320,78 @@ public class MonthlyViewModelTests
     }
 
     [Fact]
-    public void IncomeSourceOptions_ExposesStaticListAsInstanceMember()
+    public async Task IncomeSourceOptions_MatchesActiveFetchedSourcesInDisplayOrder()
     {
-        // WPF's {Binding} only resolves instance members, never static fields — this
-        // instance-level wrapper is what the Income form's Source ComboBox actually binds to.
-        var (viewModel, _, _, _, _) = CreateViewModel();
+        var incomeSourceService = new StubIncomeSourceService
+        {
+            IncomeSources =
+            [
+                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "DividendoJuros", IsActive = true, Group = "DividendoJuros" },
+                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Lottery", IsActive = true, Group = "NonReportable" },
+                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Ariana", IsActive = true, Group = "Salary" },
+                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Gleison", IsActive = true, Group = "Salary" },
+            ],
+        };
+        var (viewModel, _, _, _, _) = CreateViewModel(incomeSourceService: incomeSourceService);
 
-        viewModel.IncomeSourceOptions.Should().BeSameAs(MonthlyViewModel.IncomeSources);
+        await viewModel.RefreshAsync();
+
+        viewModel.IncomeSourceOptions.Should().Equal("Gleison", "Ariana", "Lottery", "DividendoJuros");
+    }
+
+    [Fact]
+    public async Task IncomeSourceOptions_ExcludesInactiveSources()
+    {
+        var incomeSourceService = new StubIncomeSourceService
+        {
+            IncomeSources =
+            [
+                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Gleison", IsActive = true, Group = "Salary" },
+                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "RetiredSource", IsActive = false, Group = "NonReportable" },
+            ],
+        };
+        var (viewModel, _, _, _, _) = CreateViewModel(incomeSourceService: incomeSourceService);
+
+        await viewModel.RefreshAsync();
+
+        viewModel.IncomeSourceOptions.Should().Equal("Gleison");
+    }
+
+    [Fact]
+    public async Task ShowCreateIncomeForm_DefaultsSourceToFirstActiveOption()
+    {
+        var (viewModel, _, _, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+
+        viewModel.IncomeFormSource.Should().Be("Gleison");
+    }
+
+    [Fact]
+    public async Task ShowCreateIncomeForm_WithNoActiveSources_DefaultsToEmpty()
+    {
+        var incomeSourceService = new StubIncomeSourceService { IncomeSources = [] };
+        var (viewModel, _, _, _, _) = CreateViewModel(incomeSourceService: incomeSourceService);
+        await viewModel.RefreshAsync();
+
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+
+        viewModel.IncomeFormSource.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RefreshAsync_IncomeSourceFetchFails_LeavesOptionsEmptyAndSetsError()
+    {
+        var incomeSourceService = new StubIncomeSourceService { ThrowOnGet = new InvalidOperationException("Unavailable") };
+        var (viewModel, _, _, _, _) = CreateViewModel(incomeSourceService: incomeSourceService);
+
+        await viewModel.RefreshAsync();
+
+        viewModel.HasError.Should().BeTrue();
+        viewModel.IncomeSourceOptions.Should().BeEmpty();
+        IncomeFormValidation.BuildValidationMessage(DateTime.Today, incomeSource: string.Empty, netValue: "10", bank: "Barclays")
+            .Should().Contain("Source is required.");
     }
 
     [Fact]
