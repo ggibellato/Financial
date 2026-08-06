@@ -11,6 +11,44 @@ public static class DateFormatHelper
         return PadDayMonthTokens(pattern);
     }
 
+    public static string GetMonthYearPattern() => StripDayToken(GetPaddedShortDatePattern());
+
+    /// <summary>
+    /// Formats a year/month as a locale-derived month/year string, or an empty string if either
+    /// value is out of range (e.g. the default, uninitialized 0/0 a bound ViewModel field can hold
+    /// before it's ever set) - never throws, unlike constructing a <see cref="DateTime"/> directly.
+    /// </summary>
+    public static string FormatMonthYear(int year, int month)
+    {
+        if (year is < 1 or > 9999 || month is < 1 or > 12)
+        {
+            return string.Empty;
+        }
+
+        return new DateTime(year, month, 1).ToString(GetMonthYearPattern(), CultureInfo.CurrentCulture);
+    }
+
+    private static string StripDayToken(string pattern)
+    {
+        var dayStart = pattern.IndexOf('d');
+        if (dayStart < 0)
+        {
+            return pattern;
+        }
+
+        var dayEnd = dayStart;
+        while (dayEnd < pattern.Length && pattern[dayEnd] == 'd')
+        {
+            dayEnd++;
+        }
+
+        var before = pattern[..dayStart];
+        var after = pattern[dayEnd..];
+        return after.Length > 0
+            ? before + after.TrimStart('/', '.', '-', ' ')
+            : before.TrimEnd('/', '.', '-', ' ');
+    }
+
     private static string PadDayMonthTokens(string pattern)
     {
         var sb = new StringBuilder();

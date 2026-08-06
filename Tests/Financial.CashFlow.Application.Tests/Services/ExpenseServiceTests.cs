@@ -251,7 +251,7 @@ public class ExpenseServiceTests
     }
 
     [Fact]
-    public async Task GetExpensesByMonth_SettledCardExpense_KeepsChargeDatePositionAfterSettlement()
+    public async Task GetExpensesByMonth_SettledCardExpense_KeepsInvoiceDatePositionAfterSettlement()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         var service = new ExpenseService(repository);
@@ -259,13 +259,36 @@ public class ExpenseServiceTests
             ValidCreateRequest() with { Description = "Bank", Date = new DateOnly(2026, 7, 15) }));
         var cardExpense = await service.AddExpenseAsync(ToCreateDto(
             ValidCreateRequest() with { Description = "Card", Date = new DateOnly(2026, 7, 10), PaymentSource = null, CardTag = "BaAmex" }));
-        // Settled after the bank expense's date - under the old Date-based sort this would put
-        // the card expense first; sorting by ChargeDate keeps it in its original charge position.
-        repository.Expenses.Single(e => e.Id == cardExpense.Id).Settle("Chase", new DateOnly(2026, 7, 25));
+        // Settled after the bank expense's date, with a payment date in a later month entirely -
+        // under a Date-based sort this would drop the card expense out of July's view; sorting by
+        // InvoiceDate keeps it anchored to the invoice period it was assigned to.
+        repository.Expenses.Single(e => e.Id == cardExpense.Id).Settle("Chase", new DateOnly(2026, 8, 25));
 
         var result = service.GetExpensesByMonth(2026, 7);
 
         result.Select(e => e.Id).Should().Equal(bankExpense.Id, cardExpense.Id);
+    }
+
+    [Fact]
+    public async Task GetExpensesByMonth_SettledCardExpense_UsesInvoiceDateMonthNotChargeDateMonth()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new ExpenseService(repository);
+        var cardExpense = await service.AddExpenseAsync(ToCreateDto(ValidCreateRequest() with
+        {
+            Description = "Card", Date = new DateOnly(2026, 8, 6), PaymentSource = null, CardTag = "BaAmex",
+            InvoiceDate = new DateOnly(2026, 9, 1),
+        }));
+        repository.Expenses.Single(e => e.Id == cardExpense.Id).Settle("Chase", new DateOnly(2026, 9, 20));
+
+        var augustResult = service.GetExpensesByMonth(2026, 8);
+        var septemberResult = service.GetExpensesByMonth(2026, 9);
+
+        using (new AssertionScope())
+        {
+            augustResult.Should().BeEmpty();
+            septemberResult.Should().ContainSingle().Which.Id.Should().Be(cardExpense.Id);
+        }
     }
 
     [Fact]
@@ -357,6 +380,27 @@ public class ExpenseServiceTests
         var result = service.GetUnpaidCardChargesByMonth(2026, 7);
 
         result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetUnpaidCardChargesByMonth_InvoiceDateInDifferentMonthThanChargeDate_AppearsUnderInvoiceMonth()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new ExpenseService(repository);
+        var charge = await service.AddExpenseAsync(ToCreateDto(ValidCreateRequest() with
+        {
+            Date = new DateOnly(2026, 8, 6), PaymentSource = null, CardTag = "ChaseMaster4023",
+            InvoiceDate = new DateOnly(2026, 9, 1),
+        }));
+
+        var augustResult = service.GetUnpaidCardChargesByMonth(2026, 8);
+        var septemberResult = service.GetUnpaidCardChargesByMonth(2026, 9);
+
+        using (new AssertionScope())
+        {
+            augustResult.Should().BeEmpty();
+            septemberResult.Should().ContainSingle().Which.Id.Should().Be(charge.Id);
+        }
     }
 
     [Fact]

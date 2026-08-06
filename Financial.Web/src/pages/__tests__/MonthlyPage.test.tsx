@@ -310,7 +310,7 @@ describe('MonthlyPage', () => {
   })
 
   it("an expense's position in the Credit Card tab list is unchanged immediately before and after its invoice is marked paid", async () => {
-    // The actual ordering fix lives server-side (ExpenseService sorts by ChargeDate, not Date);
+    // The actual ordering fix lives server-side (ExpenseService sorts by InvoiceDate, not Date);
     // this test guards against the frontend introducing its own conflicting client-side sort.
     const chargedFirst = { ...UNPAID_CARD_CHARGES[0], id: 'e10', description: 'Charged First', cardTag: 'BaAmex', chargeDate: '2026-07-05', date: '2026-07-05' }
     const chargedSecond = { ...UNPAID_CARD_CHARGES[0], id: 'e11', description: 'Charged Second', cardTag: 'BaAmex', chargeDate: '2026-07-20', date: '2026-07-20' }
@@ -326,7 +326,7 @@ describe('MonthlyPage', () => {
     expect(secondIndexBefore).toBeLessThan(firstIndexBefore)
 
     // Mark the BaAmex statement paid: both charges settle and move to the general Expense
-    // tab's list. The (now-fixed) server still orders them by ChargeDate, so Second stays
+    // tab's list. The (now-fixed) server still orders them by InvoiceDate, so Second stays
     // ahead of First - exactly the relative position they held before settlement.
     getUnpaidCardChargesByMonthMock.mockResolvedValue([])
     getExpensesByMonthMock.mockResolvedValue([
