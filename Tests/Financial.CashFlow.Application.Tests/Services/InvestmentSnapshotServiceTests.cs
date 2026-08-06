@@ -47,9 +47,9 @@ public class InvestmentSnapshotServiceTests
         using (new AssertionScope())
         {
             result.Where(s => s.IsLiability).Should().HaveCount(6);
-            result.Should().ContainSingle(s => s.Account == "PlatinumVisa8003" && s.IsLiability);
-            result.Should().ContainSingle(s => s.Account == "ReservasPessoais" && s.IsLiability);
-            result.Should().ContainSingle(s => s.Account == "ChaseSave" && !s.IsLiability);
+            result.Should().ContainSingle(s => s.AccountName == "PlatinumVisa8003" && s.IsLiability);
+            result.Should().ContainSingle(s => s.AccountName == "ReservasPessoais" && s.IsLiability);
+            result.Should().ContainSingle(s => s.AccountName == "ChaseSave" && !s.IsLiability);
         }
     }
 
@@ -80,7 +80,7 @@ public class InvestmentSnapshotServiceTests
         var result = await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
 
         result.Should().HaveCount(11);
-        result.Should().NotContain(s => s.Account == "EverydaySaver");
+        result.Should().NotContain(s => s.AccountName == "EverydaySaver");
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public class InvestmentSnapshotServiceTests
 
         var result = await service.GetSnapshotsForMonthAsync(PastYear, 7);
 
-        result.Should().ContainSingle().Which.Account.Should().Be("ChaseSave");
+        result.Should().ContainSingle().Which.AccountName.Should().Be("ChaseSave");
     }
 
     [Fact]

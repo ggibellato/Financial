@@ -7,6 +7,9 @@ namespace Financial.Api.Tests;
 
 public class CardStatementsEndpointsTests
 {
+    private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
+    private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
+
     [Fact]
     public async Task GetStatementsForMonth_FirstCall_GeneratesFiveUnpaidStatements()
     {
@@ -32,7 +35,7 @@ public class CardStatementsEndpointsTests
             Description = "Card charge",
             Value = 45m,
             Category = "Mercado",
-            PaymentSource = null,
+            PaymentSourceBankId = null,
             CardTag = "BarclaysPlatinumVisa8003"
         });
 
@@ -53,14 +56,14 @@ public class CardStatementsEndpointsTests
             Description = "Card charge",
             Value = 45m,
             Category = "Mercado",
-            PaymentSource = null,
+            PaymentSourceBankId = null,
             CardTag = "BarclaysPlatinumVisa8003"
         });
         var target = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
 
         var response = await client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{target.Id}/mark-paid",
-            new MarkStatementPaidDTO { PaymentSource = "Trading212" });
+            new MarkStatementPaidDTO { PaymentSourceBankId = Trading212Id });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var updated = await response.Content.ReadFromJsonAsync<CardStatementDTO>();
@@ -70,7 +73,8 @@ public class CardStatementsEndpointsTests
         var expenses = await client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
         var settled = expenses!.Single(e => e.Description == "Card charge");
         settled.PaymentStatus.Should().Be("CreditCardSettled");
-        settled.PaymentSource.Should().Be("Trading212");
+        settled.PaymentSourceBankId.Should().Be(Trading212Id);
+        settled.PaymentSourceBankName.Should().Be("Trading212");
         settled.Date.Should().Be(DateOnly.FromDateTime(DateTime.Today));
     }
 
@@ -85,14 +89,14 @@ public class CardStatementsEndpointsTests
             Description = "Card charge",
             Value = 45m,
             Category = "Mercado",
-            PaymentSource = null,
+            PaymentSourceBankId = null,
             CardTag = "BarclaysPlatinumVisa8003"
         });
         var target = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
 
         var response = await client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{target.Id}/mark-paid",
-            new MarkStatementPaidDTO { PaymentSource = null });
+            new MarkStatementPaidDTO { PaymentSourceBankId = null });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var unchanged = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
@@ -106,11 +110,11 @@ public class CardStatementsEndpointsTests
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
         var target = await GetFirstStatementAsync(client);
-        await MarkPaidAsync(client, target.Id, "Barclays");
+        await MarkPaidAsync(client, target.Id, BarclaysId);
 
         var response = await client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{target.Id}/mark-paid",
-            new MarkStatementPaidDTO { PaymentSource = "Barclays" });
+            new MarkStatementPaidDTO { PaymentSourceBankId = BarclaysId });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -123,7 +127,7 @@ public class CardStatementsEndpointsTests
 
         var response = await client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{Guid.NewGuid()}/mark-paid",
-            new MarkStatementPaidDTO { PaymentSource = "Barclays" });
+            new MarkStatementPaidDTO { PaymentSourceBankId = BarclaysId });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -139,11 +143,11 @@ public class CardStatementsEndpointsTests
             Description = "Card charge",
             Value = 45m,
             Category = "Mercado",
-            PaymentSource = null,
+            PaymentSourceBankId = null,
             CardTag = "BarclaysPlatinumVisa8003"
         });
         var target = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
-        await MarkPaidAsync(client, target.Id, "Trading212");
+        await MarkPaidAsync(client, target.Id, Trading212Id);
 
         var response = await client.PostAsync($"/api/v1/financial/card-statements/{target.Id}/unmark-paid", null);
 
@@ -193,8 +197,8 @@ public class CardStatementsEndpointsTests
         return statements!.First();
     }
 
-    private static Task<HttpResponseMessage> MarkPaidAsync(HttpClient client, Guid id, string paymentSource) =>
+    private static Task<HttpResponseMessage> MarkPaidAsync(HttpClient client, Guid id, Guid paymentSourceBankId) =>
         client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{id}/mark-paid",
-            new MarkStatementPaidDTO { PaymentSource = paymentSource });
+            new MarkStatementPaidDTO { PaymentSourceBankId = paymentSourceBankId });
 }

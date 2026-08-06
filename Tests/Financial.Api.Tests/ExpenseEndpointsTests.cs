@@ -7,6 +7,10 @@ namespace Financial.Api.Tests;
 
 public class ExpenseEndpointsTests
 {
+    private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
+    private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
+    private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
+
     [Fact]
     public async Task AddExpense_ValidRequest_ReturnsOk()
     {
@@ -18,7 +22,7 @@ public class ExpenseEndpointsTests
             Description = "Weekly groceries",
             Value = 54.32m,
             Category = "Mercado",
-            PaymentSource = "Barclays",
+            PaymentSourceBankId = BarclaysId,
             CardTag = null
         };
 
@@ -43,7 +47,7 @@ public class ExpenseEndpointsTests
             Description = "Card charge",
             Value = 30m,
             Category = "Extras",
-            PaymentSource = null,
+            PaymentSourceBankId = null,
             CardTag = "ChaseMaster4023"
         };
 
@@ -51,7 +55,7 @@ public class ExpenseEndpointsTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
-        expense!.PaymentSource.Should().BeNull();
+        expense!.PaymentSourceBankId.Should().BeNull();
         expense.CardTag.Should().Be("ChaseMaster4023");
         expense.PaymentStatus.Should().Be("CreditCardCharge");
     }
@@ -67,7 +71,7 @@ public class ExpenseEndpointsTests
             Description = "Card charge",
             Value = 30m,
             Category = "Extras",
-            PaymentSource = null,
+            PaymentSourceBankId = null,
             CardTag = "ChaseMaster4023"
         };
 
@@ -89,7 +93,7 @@ public class ExpenseEndpointsTests
             Description = "Cutoff charge",
             Value = 30m,
             Category = "Extras",
-            PaymentSource = null,
+            PaymentSourceBankId = null,
             CardTag = "ChaseMaster4023",
             InvoiceDate = new DateOnly(2026, 8, 17)
         };
@@ -111,7 +115,7 @@ public class ExpenseEndpointsTests
             Description = "No payment shape",
             Value = 30m,
             Category = "Extras",
-            PaymentSource = null,
+            PaymentSourceBankId = null,
             CardTag = null
         };
 
@@ -133,7 +137,7 @@ public class ExpenseEndpointsTests
             Description = "Both payment fields",
             Value = 30m,
             Category = "Extras",
-            PaymentSource = "Barclays",
+            PaymentSourceBankId = BarclaysId,
             CardTag = "ChaseMaster4023"
         };
 
@@ -155,7 +159,7 @@ public class ExpenseEndpointsTests
             Description = "Zero value expense",
             Value = 0m,
             Category = "Mercado",
-            PaymentSource = "Barclays",
+            PaymentSourceBankId = BarclaysId,
             CardTag = null
         };
 
@@ -177,7 +181,7 @@ public class ExpenseEndpointsTests
             Description = "Bad category",
             Value = 10m,
             Category = "NotACategory",
-            PaymentSource = "Barclays",
+            PaymentSourceBankId = BarclaysId,
             CardTag = null
         };
 
@@ -199,7 +203,7 @@ public class ExpenseEndpointsTests
             Description = "Original",
             Value = 10m,
             Category = "Casa",
-            PaymentSource = "Chase",
+            PaymentSourceBankId = ChaseId,
             CardTag = null
         });
         var createdExpense = await created.Content.ReadFromJsonAsync<ExpenseDTO>();
@@ -210,7 +214,7 @@ public class ExpenseEndpointsTests
             Description = "Updated",
             Value = 20m,
             Category = "Mercado",
-            PaymentSource = "Barclays",
+            PaymentSourceBankId = BarclaysId,
             CardTag = null
         });
 
@@ -232,7 +236,7 @@ public class ExpenseEndpointsTests
             Description = "Ghost",
             Value = 10m,
             Category = "Casa",
-            PaymentSource = "Chase",
+            PaymentSourceBankId = ChaseId,
             CardTag = null
         });
 
@@ -250,7 +254,7 @@ public class ExpenseEndpointsTests
             Description = "To delete",
             Value = 10m,
             Category = "Casa",
-            PaymentSource = "Chase",
+            PaymentSourceBankId = ChaseId,
             CardTag = null
         });
         var createdExpense = await created.Content.ReadFromJsonAsync<ExpenseDTO>();
@@ -285,7 +289,7 @@ public class ExpenseEndpointsTests
             Description = "July expense",
             Value = 10m,
             Category = "Casa",
-            PaymentSource = "Chase",
+            PaymentSourceBankId = ChaseId,
             CardTag = null
         });
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
@@ -294,7 +298,7 @@ public class ExpenseEndpointsTests
             Description = "August expense",
             Value = 10m,
             Category = "Casa",
-            PaymentSource = "Chase",
+            PaymentSourceBankId = ChaseId,
             CardTag = null
         });
 
@@ -316,7 +320,7 @@ public class ExpenseEndpointsTests
             Description = "Card charge",
             Value = 45m,
             Category = "Mercado",
-            PaymentSource = null,
+            PaymentSourceBankId = null,
             CardTag = "BarclaysPlatinumVisa8003"
         });
 
@@ -338,7 +342,7 @@ public class ExpenseEndpointsTests
             Description = "Bank expense",
             Value = 20m,
             Category = "Casa",
-            PaymentSource = "Chase",
+            PaymentSourceBankId = ChaseId,
             CardTag = null
         });
 
@@ -359,7 +363,7 @@ public class ExpenseEndpointsTests
             Description = "Card charge",
             Value = 45m,
             Category = "Mercado",
-            PaymentSource = null,
+            PaymentSourceBankId = null,
             CardTag = "BarclaysPlatinumVisa8003"
         });
         var createdExpense = await created.Content.ReadFromJsonAsync<ExpenseDTO>();
@@ -367,7 +371,7 @@ public class ExpenseEndpointsTests
 
         await client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
-            new MarkStatementPaidDTO { PaymentSource = "Trading212" });
+            new MarkStatementPaidDTO { PaymentSourceBankId = Trading212Id });
         var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");
 
         var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
@@ -385,13 +389,13 @@ public class ExpenseEndpointsTests
             Description = "Card charge",
             Value = 45m,
             Category = "Mercado",
-            PaymentSource = null,
+            PaymentSourceBankId = null,
             CardTag = "BarclaysPlatinumVisa8003"
         });
         var statement = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
         await client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
-            new MarkStatementPaidDTO { PaymentSource = "Trading212" });
+            new MarkStatementPaidDTO { PaymentSourceBankId = Trading212Id });
 
         await client.PostAsync($"/api/v1/financial/card-statements/{statement.Id}/unmark-paid", null);
         var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");
@@ -411,7 +415,7 @@ public class ExpenseEndpointsTests
             Description = "Bank expense",
             Value = 20m,
             Category = "Casa",
-            PaymentSource = "Chase",
+            PaymentSourceBankId = ChaseId,
             CardTag = null
         });
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
@@ -420,7 +424,7 @@ public class ExpenseEndpointsTests
             Description = "Card charge",
             Value = 45m,
             Category = "Mercado",
-            PaymentSource = null,
+            PaymentSourceBankId = null,
             CardTag = "BarclaysPlatinumVisa8003"
         });
 
@@ -445,13 +449,13 @@ public class ExpenseEndpointsTests
             Description = "Card charge",
             Value = 45m,
             Category = "Mercado",
-            PaymentSource = null,
+            PaymentSourceBankId = null,
             CardTag = "BarclaysPlatinumVisa8003"
         });
         var statement = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
         await client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
-            new MarkStatementPaidDTO { PaymentSource = "Trading212" });
+            new MarkStatementPaidDTO { PaymentSourceBankId = Trading212Id });
 
         var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7/unpaid-card-charges");
 
@@ -476,7 +480,7 @@ public class ExpenseEndpointsTests
             Description = "Groceries 1",
             Value = 10m,
             Category = "Mercado",
-            PaymentSource = "Barclays",
+            PaymentSourceBankId = BarclaysId,
             CardTag = null
         });
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
@@ -485,7 +489,7 @@ public class ExpenseEndpointsTests
             Description = "Groceries 2",
             Value = 5m,
             Category = "Mercado",
-            PaymentSource = "Barclays",
+            PaymentSourceBankId = BarclaysId,
             CardTag = null
         });
 
@@ -507,7 +511,7 @@ public class ExpenseEndpointsTests
             Description = "TfL",
             Value = 9.40m,
             Category = "Extras",
-            PaymentSource = "Trading212",
+            PaymentSourceBankId = Trading212Id,
             CardTag = null,
             RoundUpAmount = 0.60m
         };
@@ -531,7 +535,7 @@ public class ExpenseEndpointsTests
             Description = "Groceries",
             Value = 9.40m,
             Category = "Mercado",
-            PaymentSource = "Barclays",
+            PaymentSourceBankId = BarclaysId,
             CardTag = null,
             RoundUpAmount = 0.60m
         };
@@ -554,7 +558,7 @@ public class ExpenseEndpointsTests
             Description = "Card charge",
             Value = 9.40m,
             Category = "Extras",
-            PaymentSource = null,
+            PaymentSourceBankId = null,
             CardTag = "ChaseMaster4023",
             RoundUpAmount = 0.60m
         };
@@ -577,7 +581,7 @@ public class ExpenseEndpointsTests
             Description = "TfL",
             Value = 9.40m,
             Category = "Extras",
-            PaymentSource = "Trading212",
+            PaymentSourceBankId = Trading212Id,
             CardTag = null
         });
 

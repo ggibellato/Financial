@@ -6,6 +6,9 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 public class MonthlyViewModelTests
 {
+    private static readonly Guid BarclaysId = Guid.NewGuid();
+    private static readonly Guid ChaseId = Guid.NewGuid();
+
     private static readonly List<IncomeSourceDTO> DefaultIncomeSources =
     [
         new() { Id = Guid.NewGuid(), Name = "Gleison", IsActive = true, Group = "Salary" },
@@ -19,7 +22,7 @@ public class MonthlyViewModelTests
     {
         var expenses = new StubExpenseService();
         var incomes = new StubIncomeService();
-        var banks = new StubBankService { Banks = [new BankDTO { Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) }, new BankDTO { Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) }] };
+        var banks = new StubBankService { Banks = [new BankDTO { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) }, new BankDTO { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) }] };
         var incomeSources = incomeSourceService ?? new StubIncomeSourceService { IncomeSources = DefaultIncomeSources };
         var tithe = new StubTitheService { Summary = new TitheSummaryDTO { CalculatedTithe = 100m, TitheBalance = 50m } };
         var transfers = new StubTransferService();
@@ -34,9 +37,9 @@ public class MonthlyViewModelTests
     public async Task LoadsExpensesIncomesCategoryTotalsAndTitheForCurrentMonth()
     {
         var (viewModel, expenses, incomes, _, tithe) = CreateViewModel();
-        expenses.Expenses = [new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Test", Value = 10m, Category = "Mercado", PaymentSource = "Barclays", PaymentStatus = "ImmediatePayment" }];
+        expenses.Expenses = [new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Test", Value = 10m, Category = "Mercado", PaymentSourceBankId = BarclaysId, PaymentSourceBankName = "Barclays", PaymentStatus = "ImmediatePayment" }];
         expenses.CategoryTotals = [new CategoryTotalDTO { Category = "Mercado", TotalValue = 10m }];
-        incomes.Incomes = [new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSource = "Gleison", NetValue = 100m, Bank = "Barclays" }];
+        incomes.Incomes = [new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Gleison", NetValue = 100m, BankId = BarclaysId, BankName = "Barclays" }];
 
         await viewModel.RefreshAsync();
 
@@ -53,9 +56,9 @@ public class MonthlyViewModelTests
         var (viewModel, _, incomes, _, _) = CreateViewModel();
         incomes.Incomes =
         [
-            new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSource = "Gleison", GrossValue = 120m, NetValue = 100m, Bank = "Barclays" },
-            new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSource = "Gleison", GrossValue = 60m, NetValue = 50m, Bank = "Barclays" },
-            new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSource = "Ariana", NetValue = 30m, Bank = "Chase" },
+            new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Gleison", GrossValue = 120m, NetValue = 100m, BankId = BarclaysId, BankName = "Barclays" },
+            new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Gleison", GrossValue = 60m, NetValue = 50m, BankId = BarclaysId, BankName = "Barclays" },
+            new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Ariana", NetValue = 30m, BankId = ChaseId, BankName = "Chase" },
         ];
 
         await viewModel.RefreshAsync();
@@ -150,7 +153,7 @@ public class MonthlyViewModelTests
         await viewModel.SaveExpenseAsync();
 
         expenses.LastCreateRequest.Should().NotBeNull();
-        expenses.LastCreateRequest!.PaymentSource.Should().Be("Chase");
+        expenses.LastCreateRequest!.PaymentSourceBankId.Should().Be(ChaseId);
         expenses.LastCreateRequest.CardTag.Should().BeNull();
         viewModel.IsExpenseFormOpen.Should().BeFalse();
     }
@@ -171,7 +174,7 @@ public class MonthlyViewModelTests
 
         expenses.LastCreateRequest.Should().NotBeNull();
         expenses.LastCreateRequest!.CardTag.Should().Be(MonthlyViewModel.Cards[0]);
-        expenses.LastCreateRequest.PaymentSource.Should().BeNull();
+        expenses.LastCreateRequest.PaymentSourceBankId.Should().BeNull();
     }
 
     [Fact]
@@ -442,7 +445,7 @@ public class MonthlyViewModelTests
         var expense = new ExpenseDTO
         {
             Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Old",
-            Value = 10m, Category = "Mercado", PaymentSource = banks.Banks[1].Name, PaymentStatus = "ImmediatePayment",
+            Value = 10m, Category = "Mercado", PaymentSourceBankId = ChaseId, PaymentSourceBankName = banks.Banks[1].Name, PaymentStatus = "ImmediatePayment",
         };
         await viewModel.RefreshAsync();
 
@@ -465,8 +468,8 @@ public class MonthlyViewModelTests
         var (viewModel, _, incomes, banks, _) = CreateViewModel();
         var income = new IncomeDTO
         {
-            Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSource = "Lottery",
-            NetValue = 50m, Bank = banks.Banks[0].Name,
+            Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery",
+            NetValue = 50m, BankId = BarclaysId, BankName = banks.Banks[0].Name,
         };
         await viewModel.RefreshAsync();
 
@@ -485,7 +488,7 @@ public class MonthlyViewModelTests
     public async Task DeleteIncome_CallsServiceAndRefreshes()
     {
         var (viewModel, _, incomes, _, _) = CreateViewModel();
-        var income = new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSource = "Lottery", NetValue = 10m, Bank = "Barclays" };
+        var income = new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery", NetValue = 10m, BankId = BarclaysId, BankName = "Barclays" };
 
         await viewModel.DeleteIncomeAsync(income);
 
@@ -496,7 +499,7 @@ public class MonthlyViewModelTests
     public async Task DeleteIncome_ConfirmationDeclined_DoesNotCallService()
     {
         var (viewModel, _, incomes, _, _) = CreateViewModel(confirmDeletes: false);
-        var income = new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSource = "Lottery", NetValue = 10m, Bank = "Barclays" };
+        var income = new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery", NetValue = 10m, BankId = BarclaysId, BankName = "Barclays" };
 
         await viewModel.DeleteIncomeAsync(income);
 

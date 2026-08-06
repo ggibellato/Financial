@@ -20,14 +20,14 @@ internal sealed class StubExpenseService : IExpenseService
     {
         LastCreateRequest = request;
         return Task.FromResult(ToDto(Guid.NewGuid(), request.Date, request.Description, request.Value,
-            request.Category, request.PaymentSource, request.CardTag, request.RoundUpAmount));
+            request.Category, request.PaymentSourceBankId, request.CardTag, request.RoundUpAmount));
     }
 
     public Task<ExpenseDTO> UpdateExpenseAsync(Guid id, ExpenseUpdateDTO request)
     {
         LastUpdateRequest = (id, request);
         return Task.FromResult(ToDto(id, request.Date, request.Description, request.Value,
-            request.Category, request.PaymentSource, request.CardTag, request.RoundUpAmount));
+            request.Category, request.PaymentSourceBankId, request.CardTag, request.RoundUpAmount));
     }
 
     public Task DeleteExpenseAsync(Guid id)
@@ -52,14 +52,14 @@ internal sealed class StubExpenseService : IExpenseService
 
     private static ExpenseDTO ToDto(
         Guid id, DateOnly date, string description, decimal value, string category,
-        string? paymentSource, string? cardTag, decimal? roundUpAmount) => new()
+        Guid? paymentSourceBankId, string? cardTag, decimal? roundUpAmount) => new()
     {
         Id = id,
         Date = date,
         Description = description,
         Value = value,
         Category = category,
-        PaymentSource = paymentSource,
+        PaymentSourceBankId = paymentSourceBankId,
         CardTag = cardTag,
         PaymentStatus = "ImmediatePayment",
         RoundUpAmount = roundUpAmount,
@@ -80,10 +80,12 @@ internal sealed class StubIncomeService : IIncomeService
         {
             Id = Guid.NewGuid(),
             Date = request.Date,
-            IncomeSource = request.IncomeSource,
+            IncomeSourceId = request.IncomeSourceId,
+            IncomeSourceName = request.IncomeSourceId.ToString(),
             GrossValue = request.GrossValue,
             NetValue = request.NetValue,
-            Bank = request.Bank,
+            BankId = request.BankId,
+            BankName = request.BankId.ToString(),
         });
     }
 
@@ -94,10 +96,12 @@ internal sealed class StubIncomeService : IIncomeService
         {
             Id = id,
             Date = request.Date,
-            IncomeSource = request.IncomeSource,
+            IncomeSourceId = request.IncomeSourceId,
+            IncomeSourceName = request.IncomeSourceId.ToString(),
             GrossValue = request.GrossValue,
             NetValue = request.NetValue,
-            Bank = request.Bank,
+            BankId = request.BankId,
+            BankName = request.BankId.ToString(),
         });
     }
 
@@ -117,12 +121,12 @@ internal sealed class StubBankService : IBankService
 
     public IReadOnlyList<BankDTO> GetBanks() => Banks;
 
-    public Task<BankDTO> UpdateOpeningBalanceAsync(string name, BankOpeningBalanceUpdateDTO request) =>
+    public Task<BankDTO> UpdateOpeningBalanceAsync(Guid id, BankOpeningBalanceUpdateDTO request) =>
         throw new NotSupportedException();
 
     public IReadOnlyList<BankBalanceDTO> GetBankBalancesByMonth(int year, int month) => BankBalances;
 
-    public decimal GetBankBalanceAsOf(string bankName, DateOnly asOfDate, Guid? excludingAdjustmentId = null) => 0m;
+    public decimal GetBankBalanceAsOf(Guid bankId, DateOnly asOfDate, Guid? excludingAdjustmentId = null) => 0m;
 }
 
 internal sealed class StubIncomeSourceService : IIncomeSourceService
@@ -167,8 +171,8 @@ internal sealed class StubTransferService : ITransferService
         LastCreateRequest = request;
         return Task.FromResult(new TransferDTO
         {
-            Id = Guid.NewGuid(), Date = request.Date, SourceBank = request.SourceBank,
-            DestinationBank = request.DestinationBank, Amount = request.Amount, Note = request.Note,
+            Id = Guid.NewGuid(), Date = request.Date, SourceBankId = request.SourceBankId, SourceBankName = request.SourceBankId.ToString(),
+            DestinationBankId = request.DestinationBankId, DestinationBankName = request.DestinationBankId.ToString(), Amount = request.Amount, Note = request.Note,
         });
     }
 
@@ -177,8 +181,8 @@ internal sealed class StubTransferService : ITransferService
         LastUpdateRequest = (id, request);
         return Task.FromResult(new TransferDTO
         {
-            Id = id, Date = request.Date, SourceBank = request.SourceBank,
-            DestinationBank = request.DestinationBank, Amount = request.Amount, Note = request.Note,
+            Id = id, Date = request.Date, SourceBankId = request.SourceBankId, SourceBankName = request.SourceBankId.ToString(),
+            DestinationBankId = request.DestinationBankId, DestinationBankName = request.DestinationBankId.ToString(), Amount = request.Amount, Note = request.Note,
         });
     }
 
@@ -194,48 +198,48 @@ internal sealed class StubTransferService : ITransferService
         return Transfers;
     }
 
-    public IReadOnlyList<TransferDTO> GetTransfersByBank(string bankName) =>
-        Transfers.Where(t => t.SourceBank == bankName || t.DestinationBank == bankName).ToList();
+    public IReadOnlyList<TransferDTO> GetTransfersByBank(Guid bankId) =>
+        Transfers.Where(t => t.SourceBankId == bankId || t.DestinationBankId == bankId).ToList();
 }
 
 internal sealed class StubBalanceAdjustmentService : IBalanceAdjustmentService
 {
-    public Dictionary<string, List<BalanceAdjustmentDTO>> AdjustmentsByBank { get; set; } = [];
-    public (string Bank, BalanceAdjustmentCreateDTO Request)? LastCreateRequest { get; private set; }
-    public (string Bank, Guid Id, BalanceAdjustmentUpdateDTO Request)? LastUpdateRequest { get; private set; }
-    public (string Bank, Guid Id)? LastDeleted { get; private set; }
+    public Dictionary<Guid, List<BalanceAdjustmentDTO>> AdjustmentsByBank { get; set; } = [];
+    public (Guid BankId, BalanceAdjustmentCreateDTO Request)? LastCreateRequest { get; private set; }
+    public (Guid BankId, Guid Id, BalanceAdjustmentUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public (Guid BankId, Guid Id)? LastDeleted { get; private set; }
     public int GetAdjustmentsByBankCallCount { get; private set; }
 
-    public Task<BalanceAdjustmentDTO> AddAdjustmentAsync(string bankName, BalanceAdjustmentCreateDTO request)
+    public Task<BalanceAdjustmentDTO> AddAdjustmentAsync(Guid bankId, BalanceAdjustmentCreateDTO request)
     {
-        LastCreateRequest = (bankName, request);
+        LastCreateRequest = (bankId, request);
         return Task.FromResult(new BalanceAdjustmentDTO
         {
-            Id = Guid.NewGuid(), Date = request.Date, Bank = bankName,
+            Id = Guid.NewGuid(), Date = request.Date, BankId = bankId, BankName = bankId.ToString(),
             TargetBalance = request.TargetBalance, Delta = 0m, Note = request.Note,
         });
     }
 
-    public Task<BalanceAdjustmentDTO> UpdateAdjustmentAsync(string bankName, Guid id, BalanceAdjustmentUpdateDTO request)
+    public Task<BalanceAdjustmentDTO> UpdateAdjustmentAsync(Guid bankId, Guid id, BalanceAdjustmentUpdateDTO request)
     {
-        LastUpdateRequest = (bankName, id, request);
+        LastUpdateRequest = (bankId, id, request);
         return Task.FromResult(new BalanceAdjustmentDTO
         {
-            Id = id, Date = request.Date, Bank = bankName,
+            Id = id, Date = request.Date, BankId = bankId, BankName = bankId.ToString(),
             TargetBalance = request.TargetBalance, Delta = 0m, Note = request.Note,
         });
     }
 
-    public Task DeleteAdjustmentAsync(string bankName, Guid id)
+    public Task DeleteAdjustmentAsync(Guid bankId, Guid id)
     {
-        LastDeleted = (bankName, id);
+        LastDeleted = (bankId, id);
         return Task.CompletedTask;
     }
 
-    public IReadOnlyList<BalanceAdjustmentDTO> GetAdjustmentsByBank(string bankName)
+    public IReadOnlyList<BalanceAdjustmentDTO> GetAdjustmentsByBank(Guid bankId)
     {
         GetAdjustmentsByBankCallCount++;
-        return AdjustmentsByBank.GetValueOrDefault(bankName, []);
+        return AdjustmentsByBank.GetValueOrDefault(bankId, []);
     }
 }
 
@@ -474,7 +478,7 @@ internal sealed class StubInvestmentSnapshotService : IInvestmentSnapshotService
         var existing = Snapshots.First(s => s.Id == id);
         var updated = new InvestmentSnapshotDTO
         {
-            Id = id, Account = existing.Account, IsLiability = existing.IsLiability,
+            Id = id, AccountId = existing.AccountId, AccountName = existing.AccountName, IsLiability = existing.IsLiability,
             Year = existing.Year, Month = existing.Month, Value = request.Value,
         };
         Snapshots[Snapshots.IndexOf(existing)] = updated;

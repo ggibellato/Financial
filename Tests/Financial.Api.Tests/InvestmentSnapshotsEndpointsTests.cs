@@ -42,7 +42,7 @@ public class InvestmentSnapshotsEndpointsTests
         using var client = factory.CreateClient();
         var monthResponse = await client.GetAsync("/api/v1/financial/investment-snapshots/2026/7");
         var snapshots = await monthResponse.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
-        var target = snapshots!.First(s => s.Account == "ChaseSave");
+        var target = snapshots!.First(s => s.AccountName == "ChaseSave");
 
         var response = await client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{target.Id}", new UpdateInvestmentSnapshotValueDTO
         {
@@ -55,7 +55,7 @@ public class InvestmentSnapshotsEndpointsTests
 
         var refetch = await client.GetAsync("/api/v1/financial/investment-snapshots/2026/7");
         var refetched = await refetch.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
-        refetched!.Where(s => s.Account != "ChaseSave").Should().OnlyContain(s => s.Value == 0m);
+        refetched!.Where(s => s.AccountName != "ChaseSave").Should().OnlyContain(s => s.Value == 0m);
     }
 
     [Fact]

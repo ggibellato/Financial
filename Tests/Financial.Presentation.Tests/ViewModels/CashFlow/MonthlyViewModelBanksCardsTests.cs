@@ -6,6 +6,9 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 public class MonthlyViewModelBanksCardsTests
 {
+    private static readonly Guid BarclaysId = Guid.NewGuid();
+    private static readonly Guid ChaseId = Guid.NewGuid();
+
     private static (
         MonthlyViewModel ViewModel,
         StubExpenseService Expenses,
@@ -20,8 +23,8 @@ public class MonthlyViewModelBanksCardsTests
         {
             Banks =
             [
-                new BankDTO { Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) },
-                new BankDTO { Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) },
+                new BankDTO { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) },
+                new BankDTO { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) },
             ],
         };
         var incomeSources = new StubIncomeSourceService();
@@ -41,8 +44,8 @@ public class MonthlyViewModelBanksCardsTests
         banks.BankBalances = [new BankBalanceDTO { Bank = "Barclays", Balance = 250m }, new BankBalanceDTO { Bank = "Chase", Balance = 10m }];
         expenses.Expenses =
         [
-            new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "A", Value = 20m, Category = "Mercado", PaymentSource = "Barclays", PaymentStatus = "ImmediatePayment", RoundUpAmount = 0.30m },
-            new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "B", Value = 15m, Category = "Mercado", PaymentSource = "Barclays", PaymentStatus = "ImmediatePayment", RoundUpAmount = 0.20m },
+            new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "A", Value = 20m, Category = "Mercado", PaymentSourceBankId = BarclaysId, PaymentSourceBankName = "Barclays", PaymentStatus = "ImmediatePayment", RoundUpAmount = 0.30m },
+            new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "B", Value = 15m, Category = "Mercado", PaymentSourceBankId = BarclaysId, PaymentSourceBankName = "Barclays", PaymentStatus = "ImmediatePayment", RoundUpAmount = 0.20m },
         ];
 
         await viewModel.RefreshAsync();
@@ -68,8 +71,8 @@ public class MonthlyViewModelBanksCardsTests
         await viewModel.SaveTransferAsync();
 
         transfers.LastCreateRequest.Should().NotBeNull();
-        transfers.LastCreateRequest!.SourceBank.Should().Be("Barclays");
-        transfers.LastCreateRequest.DestinationBank.Should().Be("Chase");
+        transfers.LastCreateRequest!.SourceBankId.Should().Be(BarclaysId);
+        transfers.LastCreateRequest.DestinationBankId.Should().Be(ChaseId);
         transfers.LastCreateRequest.Amount.Should().Be(75m);
         viewModel.IsTransferFormOpen.Should().BeFalse();
     }
@@ -119,7 +122,7 @@ public class MonthlyViewModelBanksCardsTests
     public async Task EditTransfer_ValidForm_CallsUpdateServiceWithCorrectId()
     {
         var (viewModel, _, _, transfers, _, _) = CreateViewModel();
-        var transfer = new TransferDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), SourceBank = "Barclays", DestinationBank = "Chase", Amount = 50m };
+        var transfer = new TransferDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 50m };
 
         viewModel.EditTransferCommand.Execute(transfer);
         viewModel.TransferFormAmount = "60";
@@ -137,7 +140,7 @@ public class MonthlyViewModelBanksCardsTests
     public async Task DeleteTransfer_ConfirmedAndDeclined_CallsOrSkipsService(bool confirmed)
     {
         var (viewModel, _, _, transfers, _, _) = CreateViewModel(confirmDeletes: confirmed);
-        var transfer = new TransferDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), SourceBank = "Barclays", DestinationBank = "Chase", Amount = 50m };
+        var transfer = new TransferDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 50m };
         var row = BankOperationRow.FromTransfer(transfer);
 
         await viewModel.DeleteBankOperationAsync(row);
@@ -168,7 +171,7 @@ public class MonthlyViewModelBanksCardsTests
         await viewModel.SaveAdjustmentAsync();
 
         adjustments.LastCreateRequest.Should().NotBeNull();
-        adjustments.LastCreateRequest!.Value.Bank.Should().Be("Barclays");
+        adjustments.LastCreateRequest!.Value.BankId.Should().Be(BarclaysId);
         adjustments.LastCreateRequest.Value.Request.TargetBalance.Should().Be(50m);
         viewModel.AdjustmentSavedDelta.Should().NotBeNull();
     }
@@ -177,7 +180,7 @@ public class MonthlyViewModelBanksCardsTests
     public async Task EditAdjustment_ValidForm_CallsUpdateServiceWithCorrectBankAndId()
     {
         var (viewModel, _, _, _, adjustments, _) = CreateViewModel();
-        var adjustment = new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Bank = "Barclays", TargetBalance = 100m, Delta = 5m };
+        var adjustment = new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), BankId = BarclaysId, BankName = "Barclays", TargetBalance = 100m, Delta = 5m };
 
         viewModel.EditAdjustmentCommand.Execute(adjustment);
         viewModel.AdjustmentFormTargetBalance = "120";
@@ -185,7 +188,7 @@ public class MonthlyViewModelBanksCardsTests
         await viewModel.SaveAdjustmentAsync();
 
         adjustments.LastUpdateRequest.Should().NotBeNull();
-        adjustments.LastUpdateRequest!.Value.Bank.Should().Be("Barclays");
+        adjustments.LastUpdateRequest!.Value.BankId.Should().Be(BarclaysId);
         adjustments.LastUpdateRequest.Value.Id.Should().Be(adjustment.Id);
         adjustments.LastUpdateRequest.Value.Request.TargetBalance.Should().Be(120m);
     }
@@ -194,12 +197,12 @@ public class MonthlyViewModelBanksCardsTests
     public async Task DeleteAdjustment_Confirmed_CallsServiceWithBankAndId()
     {
         var (viewModel, _, _, _, adjustments, _) = CreateViewModel();
-        var adjustment = new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Bank = "Barclays", TargetBalance = 100m, Delta = 5m };
+        var adjustment = new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), BankId = BarclaysId, BankName = "Barclays", TargetBalance = 100m, Delta = 5m };
         var row = BankOperationRow.FromAdjustment(adjustment);
 
         await viewModel.DeleteBankOperationAsync(row);
 
-        adjustments.LastDeleted.Should().Be(("Barclays", adjustment.Id));
+        adjustments.LastDeleted.Should().Be((adjustment.BankId, adjustment.Id));
     }
 
     [Fact]
@@ -234,7 +237,7 @@ public class MonthlyViewModelBanksCardsTests
 
         cards.LastMarkPaidRequest.Should().NotBeNull();
         cards.LastMarkPaidRequest!.Value.Id.Should().Be(statement.Id);
-        cards.LastMarkPaidRequest.Value.Request.PaymentSource.Should().Be("Barclays");
+        cards.LastMarkPaidRequest.Value.Request.PaymentSourceBankId.Should().Be(BarclaysId);
     }
 
     [Fact]

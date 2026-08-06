@@ -10,6 +10,9 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 /// </summary>
 public class MonthlyViewModelBankOperationsTests
 {
+    private static readonly Guid BarclaysId = Guid.NewGuid();
+    private static readonly Guid ChaseId = Guid.NewGuid();
+
     private static (
         MonthlyViewModel ViewModel,
         StubBankService Banks,
@@ -22,8 +25,8 @@ public class MonthlyViewModelBankOperationsTests
         {
             Banks =
             [
-                new BankDTO { Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) },
-                new BankDTO { Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) },
+                new BankDTO { Id = BarclaysId, Name = "Barclays", RoundUpEnabled = true, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) },
+                new BankDTO { Id = ChaseId, Name = "Chase", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = DateOnly.FromDateTime(DateTime.Today) },
             ],
         };
         var incomeSources = new StubIncomeSourceService();
@@ -42,8 +45,8 @@ public class MonthlyViewModelBankOperationsTests
     public async Task BuildBankOperations_CombinesTransfersAndAdjustments_SortedNewestFirst()
     {
         var (viewModel, _, transfers, adjustments) = CreateViewModel();
-        transfers.Transfers = [new TransferDTO { Id = Guid.NewGuid(), Date = Today.AddDays(-1), SourceBank = "Barclays", DestinationBank = "Chase", Amount = 50m }];
-        adjustments.AdjustmentsByBank["Barclays"] = [new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, Bank = "Barclays", TargetBalance = 100m, Delta = 5m }];
+        transfers.Transfers = [new TransferDTO { Id = Guid.NewGuid(), Date = Today.AddDays(-1), SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 50m }];
+        adjustments.AdjustmentsByBank[BarclaysId] = [new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, BankId = BarclaysId, BankName = "Barclays", TargetBalance = 100m, Delta = 5m }];
 
         await viewModel.RefreshAsync();
 
@@ -56,7 +59,7 @@ public class MonthlyViewModelBankOperationsTests
     public async Task BuildBankOperations_TransferRow_ShowsSourceArrowDestinationLabel()
     {
         var (viewModel, _, transfers, _) = CreateViewModel();
-        transfers.Transfers = [new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBank = "Barclays", DestinationBank = "Chase", Amount = 50m }];
+        transfers.Transfers = [new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 50m }];
 
         await viewModel.RefreshAsync();
 
@@ -70,7 +73,7 @@ public class MonthlyViewModelBankOperationsTests
     public async Task BuildBankOperations_AdjustmentRow_ShowsSingleBankLabelAndSignedDelta()
     {
         var (viewModel, _, _, adjustments) = CreateViewModel();
-        adjustments.AdjustmentsByBank["Barclays"] = [new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, Bank = "Barclays", TargetBalance = 100m, Delta = -12.5m }];
+        adjustments.AdjustmentsByBank[BarclaysId] = [new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, BankId = BarclaysId, BankName = "Barclays", TargetBalance = 100m, Delta = -12.5m }];
 
         await viewModel.RefreshAsync();
 
@@ -84,7 +87,7 @@ public class MonthlyViewModelBankOperationsTests
     public async Task BuildBankOperations_AdjustmentOutsideSelectedMonth_Excluded()
     {
         var (viewModel, _, _, adjustments) = CreateViewModel();
-        adjustments.AdjustmentsByBank["Barclays"] = [new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today.AddMonths(-2), Bank = "Barclays", TargetBalance = 100m, Delta = 5m }];
+        adjustments.AdjustmentsByBank[BarclaysId] = [new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today.AddMonths(-2), BankId = BarclaysId, BankName = "Barclays", TargetBalance = 100m, Delta = 5m }];
 
         await viewModel.RefreshAsync();
 
@@ -95,8 +98,8 @@ public class MonthlyViewModelBankOperationsTests
     public async Task BankFilter_DefaultsToAllBanks_ShowsEveryRow()
     {
         var (viewModel, _, transfers, adjustments) = CreateViewModel();
-        transfers.Transfers = [new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBank = "Barclays", DestinationBank = "Chase", Amount = 50m }];
-        adjustments.AdjustmentsByBank["Chase"] = [new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, Bank = "Chase", TargetBalance = 100m, Delta = 5m }];
+        transfers.Transfers = [new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 50m }];
+        adjustments.AdjustmentsByBank[ChaseId] = [new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, BankId = ChaseId, BankName = "Chase", TargetBalance = 100m, Delta = 5m }];
 
         await viewModel.RefreshAsync();
 
@@ -110,8 +113,8 @@ public class MonthlyViewModelBankOperationsTests
         var (viewModel, _, transfers, _) = CreateViewModel();
         transfers.Transfers =
         [
-            new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBank = "Barclays", DestinationBank = "Chase", Amount = 10m },
-            new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBank = "Chase", DestinationBank = "Barclays", Amount = 20m },
+            new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 10m },
+            new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBankId = ChaseId, SourceBankName = "Chase", DestinationBankId = BarclaysId, DestinationBankName = "Barclays", Amount = 20m },
         ];
         await viewModel.RefreshAsync();
 
@@ -125,8 +128,8 @@ public class MonthlyViewModelBankOperationsTests
     public async Task BankFilter_SelectingBank_MatchesAdjustmentExactBankOnly()
     {
         var (viewModel, _, _, adjustments) = CreateViewModel();
-        adjustments.AdjustmentsByBank["Barclays"] = [new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, Bank = "Barclays", TargetBalance = 100m, Delta = 5m }];
-        adjustments.AdjustmentsByBank["Chase"] = [new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, Bank = "Chase", TargetBalance = 50m, Delta = -1m }];
+        adjustments.AdjustmentsByBank[BarclaysId] = [new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, BankId = BarclaysId, BankName = "Barclays", TargetBalance = 100m, Delta = 5m }];
+        adjustments.AdjustmentsByBank[ChaseId] = [new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, BankId = ChaseId, BankName = "Chase", TargetBalance = 50m, Delta = -1m }];
         await viewModel.RefreshAsync();
 
         viewModel.SelectedBankFilter = "Barclays";
@@ -141,7 +144,7 @@ public class MonthlyViewModelBankOperationsTests
         var (viewModel, _, transfers, _) = CreateViewModel();
         transfers.Transfers =
         [
-            new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBank = "Barclays", DestinationBank = "Chase", Amount = 10m },
+            new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 10m },
         ];
         await viewModel.RefreshAsync();
 
@@ -157,7 +160,7 @@ public class MonthlyViewModelBankOperationsTests
     public async Task BankFilter_ChangingSelection_DoesNotRefetchData()
     {
         var (viewModel, _, transfers, adjustments) = CreateViewModel();
-        transfers.Transfers = [new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBank = "Barclays", DestinationBank = "Chase", Amount = 10m }];
+        transfers.Transfers = [new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 10m }];
         await viewModel.RefreshAsync();
 
         var transferCallsBefore = transfers.GetTransfersByMonthCallCount;
@@ -218,7 +221,7 @@ public class MonthlyViewModelBankOperationsTests
     {
         var (viewModel, _, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
-        var adjustment = new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, Bank = "Barclays", TargetBalance = 100m, Delta = 5m };
+        var adjustment = new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, BankId = BarclaysId, BankName = "Barclays", TargetBalance = 100m, Delta = 5m };
 
         viewModel.EditAdjustmentCommand.Execute(adjustment);
 
@@ -230,7 +233,7 @@ public class MonthlyViewModelBankOperationsTests
     public async Task EditBankOperation_Transfer_OpensTransferFormPrefilled()
     {
         var (viewModel, _, transfers, _) = CreateViewModel();
-        transfers.Transfers = [new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBank = "Barclays", DestinationBank = "Chase", Amount = 33m }];
+        transfers.Transfers = [new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 33m }];
         await viewModel.RefreshAsync();
         var row = viewModel.BankOperations.Single();
 
@@ -245,7 +248,7 @@ public class MonthlyViewModelBankOperationsTests
     public async Task DeleteBankOperation_Transfer_ConfirmedCallsTransferDelete()
     {
         var (viewModel, _, transfers, _) = CreateViewModel();
-        var transfer = new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBank = "Barclays", DestinationBank = "Chase", Amount = 33m };
+        var transfer = new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 33m };
         transfers.Transfers = [transfer];
         await viewModel.RefreshAsync();
         var row = viewModel.BankOperations.Single();
@@ -259,21 +262,21 @@ public class MonthlyViewModelBankOperationsTests
     public async Task DeleteBankOperation_Adjustment_ConfirmedCallsAdjustmentDelete()
     {
         var (viewModel, _, _, adjustments) = CreateViewModel();
-        var adjustment = new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, Bank = "Barclays", TargetBalance = 100m, Delta = 5m };
-        adjustments.AdjustmentsByBank["Barclays"] = [adjustment];
+        var adjustment = new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, BankId = BarclaysId, BankName = "Barclays", TargetBalance = 100m, Delta = 5m };
+        adjustments.AdjustmentsByBank[BarclaysId] = [adjustment];
         await viewModel.RefreshAsync();
         var row = viewModel.BankOperations.Single();
 
         await viewModel.DeleteBankOperationAsync(row);
 
-        adjustments.LastDeleted.Should().Be(("Barclays", adjustment.Id));
+        adjustments.LastDeleted.Should().Be((adjustment.BankId, adjustment.Id));
     }
 
     [Fact]
     public async Task DeleteBankOperation_Declined_SkipsService()
     {
         var (viewModel, _, transfers, adjustments) = CreateViewModel(confirmDeletes: false);
-        var transfer = new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBank = "Barclays", DestinationBank = "Chase", Amount = 33m };
+        var transfer = new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = ChaseId, DestinationBankName = "Chase", Amount = 33m };
         transfers.Transfers = [transfer];
         await viewModel.RefreshAsync();
         var row = viewModel.BankOperations.Single();
@@ -299,7 +302,7 @@ public class MonthlyViewModelBankOperationsTests
     public async Task BankOperationsEmptyMessage_Filtered_IncludesSelectedBankName()
     {
         var (viewModel, _, transfers, _) = CreateViewModel();
-        transfers.Transfers = [new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBank = "Barclays", DestinationBank = "Barclays", Amount = 10m }];
+        transfers.Transfers = [new TransferDTO { Id = Guid.NewGuid(), Date = Today, SourceBankId = BarclaysId, SourceBankName = "Barclays", DestinationBankId = BarclaysId, DestinationBankName = "Barclays", Amount = 10m }];
         await viewModel.RefreshAsync();
 
         viewModel.SelectedBankFilter = "Chase";

@@ -7,6 +7,10 @@ namespace Financial.Api.Tests;
 
 public class TransfersEndpointsTests
 {
+    private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
+    private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
+    private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
+
     [Fact]
     public async Task AddTransfer_ValidRequest_ReturnsOk()
     {
@@ -15,8 +19,8 @@ public class TransfersEndpointsTests
         var request = new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
-            SourceBank = "Barclays",
-            DestinationBank = "Trading212",
+            SourceBankId = BarclaysId,
+            DestinationBankId = Trading212Id,
             Amount = 500.00m,
             Note = "Round-up top-up"
         };
@@ -26,8 +30,10 @@ public class TransfersEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var transfer = await response.Content.ReadFromJsonAsync<TransferDTO>();
         transfer.Should().NotBeNull();
-        transfer!.SourceBank.Should().Be("Barclays");
-        transfer.DestinationBank.Should().Be("Trading212");
+        transfer!.SourceBankId.Should().Be(BarclaysId);
+        transfer.SourceBankName.Should().Be("Barclays");
+        transfer.DestinationBankId.Should().Be(Trading212Id);
+        transfer.DestinationBankName.Should().Be("Trading212");
         transfer.Amount.Should().Be(500.00m);
         transfer.Note.Should().Be("Round-up top-up");
     }
@@ -40,8 +46,8 @@ public class TransfersEndpointsTests
         var request = new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
-            SourceBank = "Barclays",
-            DestinationBank = "Barclays",
+            SourceBankId = BarclaysId,
+            DestinationBankId = BarclaysId,
             Amount = 100m
         };
 
@@ -58,8 +64,8 @@ public class TransfersEndpointsTests
         var request = new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
-            SourceBank = "Barclays",
-            DestinationBank = "Trading212",
+            SourceBankId = BarclaysId,
+            DestinationBankId = Trading212Id,
             Amount = 0m
         };
 
@@ -76,8 +82,8 @@ public class TransfersEndpointsTests
         var request = new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
-            SourceBank = "NotABank",
-            DestinationBank = "Trading212",
+            SourceBankId = Guid.NewGuid(),
+            DestinationBankId = Trading212Id,
             Amount = 100m
         };
 
@@ -94,8 +100,8 @@ public class TransfersEndpointsTests
         var created = await client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            SourceBank = "Barclays",
-            DestinationBank = "Trading212",
+            SourceBankId = BarclaysId,
+            DestinationBankId = Trading212Id,
             Amount = 100m
         });
         var createdTransfer = await created.Content.ReadFromJsonAsync<TransferDTO>();
@@ -103,15 +109,16 @@ public class TransfersEndpointsTests
         var response = await client.PutAsJsonAsync($"/api/v1/financial/transfers/{createdTransfer!.Id}", new TransferUpdateDTO
         {
             Date = new DateOnly(2026, 7, 2),
-            SourceBank = "Chase",
-            DestinationBank = "Trading212",
+            SourceBankId = ChaseId,
+            DestinationBankId = Trading212Id,
             Amount = 250m,
             Note = "Updated"
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var updated = await response.Content.ReadFromJsonAsync<TransferDTO>();
-        updated!.SourceBank.Should().Be("Chase");
+        updated!.SourceBankId.Should().Be(ChaseId);
+        updated.SourceBankName.Should().Be("Chase");
         updated.Amount.Should().Be(250m);
         updated.Note.Should().Be("Updated");
     }
@@ -125,8 +132,8 @@ public class TransfersEndpointsTests
         var response = await client.PutAsJsonAsync($"/api/v1/financial/transfers/{Guid.NewGuid()}", new TransferUpdateDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            SourceBank = "Barclays",
-            DestinationBank = "Trading212",
+            SourceBankId = BarclaysId,
+            DestinationBankId = Trading212Id,
             Amount = 100m
         });
 
@@ -141,8 +148,8 @@ public class TransfersEndpointsTests
         var created = await client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 5),
-            SourceBank = "Barclays",
-            DestinationBank = "Trading212",
+            SourceBankId = BarclaysId,
+            DestinationBankId = Trading212Id,
             Amount = 100m
         });
         var createdTransfer = await created.Content.ReadFromJsonAsync<TransferDTO>();
@@ -174,15 +181,15 @@ public class TransfersEndpointsTests
         await client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            SourceBank = "Barclays",
-            DestinationBank = "Trading212",
+            SourceBankId = BarclaysId,
+            DestinationBankId = Trading212Id,
             Amount = 100m
         });
         await client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
         {
             Date = new DateOnly(2026, 8, 1),
-            SourceBank = "Barclays",
-            DestinationBank = "Trading212",
+            SourceBankId = BarclaysId,
+            DestinationBankId = Trading212Id,
             Amount = 100m
         });
 
@@ -202,22 +209,22 @@ public class TransfersEndpointsTests
         await client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            SourceBank = "Barclays",
-            DestinationBank = "Trading212",
+            SourceBankId = BarclaysId,
+            DestinationBankId = Trading212Id,
             Amount = 100m
         });
         await client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 2),
-            SourceBank = "Chase",
-            DestinationBank = "Barclays",
+            SourceBankId = ChaseId,
+            DestinationBankId = BarclaysId,
             Amount = 50m
         });
         await client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 3),
-            SourceBank = "Chase",
-            DestinationBank = "Trading212",
+            SourceBankId = ChaseId,
+            DestinationBankId = Trading212Id,
             Amount = 25m
         });
 
