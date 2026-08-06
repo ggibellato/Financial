@@ -25,6 +25,7 @@ import type {
   DividendSummaryDto,
   ExpenseDto,
   IncomeDto,
+  IncomeSourceDto,
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
   InvestmentAnnualResultDto,
@@ -114,6 +115,7 @@ export interface FinancialApiClient {
   getUnpaidCardChargesByMonth: (year: number, month: number) => Promise<ExpenseDto[]>
   getCategoryTotalsByMonth: (year: number, month: number) => Promise<CategoryTotalDto[]>
   getBanks: () => Promise<BankDto[]>
+  getIncomeSources: () => Promise<IncomeSourceDto[]>
   getBankBalancesByMonth: (year: number, month: number) => Promise<BankBalanceDto[]>
   createExpense: (request: CreateExpenseDto) => Promise<ExpenseDto>
   updateExpense: (id: string, request: UpdateExpenseDto) => Promise<ExpenseDto>
@@ -358,6 +360,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getCategoryTotalsByMonth: (year, month) =>
       request<CategoryTotalDto[]>(`/expenses/month/${year}/${month}/category-totals`),
     getBanks: () => request<BankDto[]>('/banks'),
+    getIncomeSources: () => request<IncomeSourceDto[]>('/income-sources'),
     getBankBalancesByMonth: (year, month) => request<BankBalanceDto[]>(`/banks/month/${year}/${month}/balances`),
     createExpense: (requestBody) =>
       request<ExpenseDto>('/expenses', {
