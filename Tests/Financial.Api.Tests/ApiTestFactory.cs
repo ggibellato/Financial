@@ -83,14 +83,21 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         return tempPath;
     }
 
-    // Mirrors the banks and investment accounts a real deployment would have after running
-    // the CashFlowSpreadsheetImport migration tool once (see BankMigrator / InvestmentAccountMigrator).
+    // Mirrors the banks, income sources, and investment accounts a real deployment would have
+    // after running the CashFlowSpreadsheetImport migration tool once (see BankMigrator /
+    // IncomeSourceMigrator / InvestmentAccountMigrator).
     private const string SeededBanksJson = """
         {
           "Banks": [
             { "Name": "Barclays", "RoundUpEnabled": false },
             { "Name": "Trading212", "RoundUpEnabled": true },
             { "Name": "Chase", "RoundUpEnabled": true }
+          ],
+          "IncomeSources": [
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000001", "Name": "Gleison", "IsActive": true, "Group": "Salary" },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000002", "Name": "Ariana", "IsActive": true, "Group": "Salary" },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000003", "Name": "Lottery", "IsActive": true, "Group": "NonReportable" },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000004", "Name": "DividendoJuros", "IsActive": true, "Group": "DividendoJuros" }
           ],
           "InvestmentAccounts": [
             { "Name": "BlueRewardsSaver", "IsActive": true, "IsLiability": false },

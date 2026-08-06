@@ -7,7 +7,7 @@ namespace Financial.CashFlow.Domain.Tests;
 public class CashFlowDataTests
 {
     [Fact]
-    public void Create_StartsWithAllNineCollectionsEmpty()
+    public void Create_StartsWithAllCollectionsEmpty()
     {
         var data = CashFlowData.Create();
 
@@ -19,6 +19,7 @@ public class CashFlowDataTests
         data.InvestmentSnapshots.Should().BeEmpty();
         data.InvestmentAccounts.Should().BeEmpty();
         data.Banks.Should().BeEmpty();
+        data.IncomeSources.Should().BeEmpty();
         data.Incomes.Should().BeEmpty();
         data.Transfers.Should().BeEmpty();
         data.BalanceAdjustments.Should().BeEmpty();
@@ -32,6 +33,17 @@ public class CashFlowDataTests
         data.AddBank(Bank.Create("Barclays", roundUpEnabled: false));
 
         data.Banks.Should().ContainSingle();
+        data.Expenses.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AddIncomeSource_AddsOnlyToIncomeSourcesCollection()
+    {
+        var data = CashFlowData.Create();
+
+        data.AddIncomeSource(IncomeSource.Create("Gleison", IncomeGroup.Salary));
+
+        data.IncomeSources.Should().ContainSingle();
         data.Expenses.Should().BeEmpty();
     }
 
@@ -261,7 +273,7 @@ public class CashFlowDataTests
     }
 
     private static Income CreateIncome() =>
-        Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Lottery, null, 10m, "Chase");
+        Income.Create(new DateOnly(2026, 7, 1), "Lottery", null, 10m, "Chase");
 
     [Fact]
     public void AddTransfer_AddsOnlyToTransfersCollection()

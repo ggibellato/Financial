@@ -1,6 +1,5 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes.SpreadsheetImport;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 
@@ -56,7 +55,7 @@ public static class IncomeBackfillImporter
         return true;
     }
 
-    private static bool AlreadyImported(CashFlowData data, DateOnly date, IncomeSource source) =>
+    private static bool AlreadyImported(CashFlowData data, DateOnly date, string source) =>
         data.Incomes.Any(income =>
             income.Date == date && income.IncomeSource == source && income.Bank == TargetBankName);
 }

@@ -55,7 +55,7 @@ public class BalanceAdjustmentServiceTests
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Lottery, null, 200m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), "Lottery", null, 200m, "Barclays"));
         repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Mercado, "Barclays", null));
         var service = new BalanceAdjustmentService(repository, new BankService(repository));
 
@@ -158,7 +158,7 @@ public class BalanceAdjustmentServiceTests
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
-        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Lottery, null, 37m, "Barclays"));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), "Lottery", null, 37m, "Barclays"));
         var bankService = new BankService(repository);
         var service = new BalanceAdjustmentService(repository, bankService);
 

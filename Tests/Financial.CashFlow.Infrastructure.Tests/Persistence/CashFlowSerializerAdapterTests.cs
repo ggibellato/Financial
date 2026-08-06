@@ -28,7 +28,8 @@ public class CashFlowSerializerAdapterTests
         var investmentAccount = InvestmentAccount.Create("PlatinumVisa8003", isActive: true, isLiability: true);
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
-        var income = Income.Create(new DateOnly(2026, 7, 25), IncomeSource.Gleison, 3200.00m, 2450.00m, "Barclays");
+        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+        var income = Income.Create(new DateOnly(2026, 7, 25), "Gleison", 3200.00m, 2450.00m, "Barclays");
         var transfer = Transfer.Create(new DateOnly(2026, 7, 25), "Barclays", "Trading212", 500.00m, "Round-up top-up");
         var balanceAdjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), "Barclays", 2340.17m, -4.20m, "Matched against July statement");
 
@@ -40,6 +41,7 @@ public class CashFlowSerializerAdapterTests
         original.AddInvestmentSnapshot(investmentSnapshot);
         original.AddInvestmentAccount(investmentAccount);
         original.AddBank(bank);
+        original.AddIncomeSource(incomeSource);
         original.AddIncome(income);
         original.AddTransfer(transfer);
         original.AddBalanceAdjustment(balanceAdjustment);
@@ -77,6 +79,11 @@ public class CashFlowSerializerAdapterTests
         resultBank.RoundUpEnabled.Should().Be(bank.RoundUpEnabled);
         resultBank.OpeningBalance.Should().Be(bank.OpeningBalance);
         resultBank.OpeningBalanceDate.Should().Be(bank.OpeningBalanceDate);
+        var resultIncomeSource = result.IncomeSources.Should().ContainSingle().Which;
+        resultIncomeSource.Id.Should().Be(incomeSource.Id);
+        resultIncomeSource.Name.Should().Be(incomeSource.Name);
+        resultIncomeSource.IsActive.Should().Be(incomeSource.IsActive);
+        resultIncomeSource.Group.Should().Be(incomeSource.Group);
         var resultIncome = result.Incomes.Should().ContainSingle().Which;
         resultIncome.Id.Should().Be(income.Id);
         resultIncome.Date.Should().Be(income.Date);
@@ -128,6 +135,7 @@ public class CashFlowSerializerAdapterTests
         result.InvestmentSnapshots.Should().BeEmpty();
         result.InvestmentAccounts.Should().BeEmpty();
         result.Banks.Should().BeEmpty();
+        result.IncomeSources.Should().BeEmpty();
         result.Incomes.Should().BeEmpty();
         result.Transfers.Should().BeEmpty();
         result.BalanceAdjustments.Should().BeEmpty();

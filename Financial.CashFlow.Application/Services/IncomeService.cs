@@ -2,7 +2,6 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Enums;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -60,11 +59,11 @@ public sealed class IncomeService : IIncomeService
         _repository.GetIncomes().FirstOrDefault(i => i.Id == id)
             ?? throw new KeyNotFoundException($"Income '{id}' was not found.");
 
-    private (IncomeSource IncomeSource, Bank Bank) ValidateFields(string incomeSource, string bank)
+    private (string IncomeSource, Bank Bank) ValidateFields(string incomeSource, string bank)
     {
-        if (!IncomeSourceParser.TryParse(incomeSource, out var parsedIncomeSource))
+        if (string.IsNullOrWhiteSpace(incomeSource))
         {
-            throw new ArgumentException($"Income source '{incomeSource}' is not recognized.");
+            throw new ArgumentException("Income source is required.");
         }
 
         if (!BankNameResolver.TryResolve(bank, _repository.GetBanks(), out var resolvedBank))
@@ -72,14 +71,14 @@ public sealed class IncomeService : IIncomeService
             throw new ArgumentException($"Bank '{bank}' is not recognized.");
         }
 
-        return (parsedIncomeSource, resolvedBank!);
+        return (incomeSource, resolvedBank!);
     }
 
     private static IncomeDTO ToDto(Income income) => new()
     {
         Id = income.Id,
         Date = income.Date,
-        IncomeSource = income.IncomeSource.ToString(),
+        IncomeSource = income.IncomeSource,
         GrossValue = income.GrossValue,
         NetValue = income.NetValue,
         Bank = income.Bank
