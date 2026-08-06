@@ -10,6 +10,7 @@ import type {
   CategoryTotalDto,
   ExpenseDto,
   IncomeDto,
+  IncomeSourceDto,
   TitheSummaryDto,
   TransferDto,
 } from '../../api/types'
@@ -19,6 +20,7 @@ const getUnpaidCardChargesByMonthMock = vi.fn<FinancialApiClient['getUnpaidCardC
 const getCategoryTotalsByMonthMock = vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>()
 const getCardStatementsByMonthMock = vi.fn<FinancialApiClient['getCardStatementsByMonth']>()
 const getBanksMock = vi.fn<FinancialApiClient['getBanks']>()
+const getIncomeSourcesMock = vi.fn<FinancialApiClient['getIncomeSources']>()
 const createExpenseMock = vi.fn<FinancialApiClient['createExpense']>()
 const updateExpenseMock = vi.fn<FinancialApiClient['updateExpense']>()
 const deleteExpenseMock = vi.fn<FinancialApiClient['deleteExpense']>()
@@ -46,6 +48,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getCategoryTotalsByMonth: getCategoryTotalsByMonthMock,
     getCardStatementsByMonth: getCardStatementsByMonthMock,
     getBanks: getBanksMock,
+    getIncomeSources: getIncomeSourcesMock,
     createExpense: createExpenseMock,
     updateExpense: updateExpenseMock,
     deleteExpense: deleteExpenseMock,
@@ -72,6 +75,13 @@ const BANKS: BankDto[] = [
   { name: 'Barclays', roundUpEnabled: false },
   { name: 'Trading212', roundUpEnabled: true },
   { name: 'Chase', roundUpEnabled: true },
+]
+
+const INCOME_SOURCES: IncomeSourceDto[] = [
+  { id: '1', name: 'Gleison', isActive: true, group: 'Salary' },
+  { id: '2', name: 'Ariana', isActive: true, group: 'Salary' },
+  { id: '3', name: 'Lottery', isActive: true, group: 'NonReportable' },
+  { id: '4', name: 'DividendoJuros', isActive: true, group: 'DividendoJuros' },
 ]
 
 const EXPENSES: ExpenseDto[] = [
@@ -156,6 +166,7 @@ describe('MonthlyPage', () => {
     getCategoryTotalsByMonthMock.mockReset()
     getCardStatementsByMonthMock.mockReset()
     getBanksMock.mockReset()
+    getIncomeSourcesMock.mockReset()
     createExpenseMock.mockReset()
     updateExpenseMock.mockReset()
     deleteExpenseMock.mockReset()
@@ -180,6 +191,7 @@ describe('MonthlyPage', () => {
     getCategoryTotalsByMonthMock.mockResolvedValue(CATEGORY_TOTALS)
     getCardStatementsByMonthMock.mockResolvedValue(CARD_STATEMENTS)
     getBanksMock.mockResolvedValue(BANKS)
+    getIncomeSourcesMock.mockResolvedValue(INCOME_SOURCES)
     getIncomesByMonthMock.mockResolvedValue(INCOMES)
     getBankBalancesByMonthMock.mockResolvedValue(BANK_BALANCES)
     getTitheSummaryByMonthMock.mockResolvedValue(TITHE_SUMMARY)

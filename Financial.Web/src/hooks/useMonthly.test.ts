@@ -8,9 +8,10 @@ import type {
   CategoryTotalDto,
   ExpenseDto,
   IncomeDto,
+  IncomeSourceDto,
   TitheSummaryDto,
 } from '../api/types'
-import { useMonthly } from './useMonthly'
+import { selectActiveIncomeSources, useMonthly } from './useMonthly'
 
 const NOW = new Date()
 const CURRENT_YEAR = NOW.getFullYear()
@@ -25,6 +26,7 @@ const getUnpaidCardChargesByMonthMock = vi.fn<FinancialApiClient['getUnpaidCardC
 const getCategoryTotalsByMonthMock = vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>()
 const getCardStatementsByMonthMock = vi.fn<FinancialApiClient['getCardStatementsByMonth']>()
 const getBanksMock = vi.fn<FinancialApiClient['getBanks']>()
+const getIncomeSourcesMock = vi.fn<FinancialApiClient['getIncomeSources']>()
 const createExpenseMock = vi.fn<FinancialApiClient['createExpense']>()
 const updateExpenseMock = vi.fn<FinancialApiClient['updateExpense']>()
 const deleteExpenseMock = vi.fn<FinancialApiClient['deleteExpense']>()
@@ -44,6 +46,7 @@ vi.mock('../api/financialApiClient', () => ({
     getCategoryTotalsByMonth: getCategoryTotalsByMonthMock,
     getCardStatementsByMonth: getCardStatementsByMonthMock,
     getBanks: getBanksMock,
+    getIncomeSources: getIncomeSourcesMock,
     createExpense: createExpenseMock,
     updateExpense: updateExpenseMock,
     deleteExpense: deleteExpenseMock,
@@ -62,6 +65,13 @@ const BANKS: BankDto[] = [
   { name: 'Barclays', roundUpEnabled: false },
   { name: 'Trading212', roundUpEnabled: true },
   { name: 'Chase', roundUpEnabled: true },
+]
+
+const INCOME_SOURCES: IncomeSourceDto[] = [
+  { id: '1', name: 'Gleison', isActive: true, group: 'Salary' },
+  { id: '2', name: 'Ariana', isActive: true, group: 'Salary' },
+  { id: '3', name: 'Lottery', isActive: true, group: 'NonReportable' },
+  { id: '4', name: 'DividendoJuros', isActive: true, group: 'DividendoJuros' },
 ]
 
 const EXPENSES: ExpenseDto[] = [
@@ -114,6 +124,7 @@ describe('useMonthly', () => {
     getCategoryTotalsByMonthMock.mockReset()
     getCardStatementsByMonthMock.mockReset()
     getBanksMock.mockReset()
+    getIncomeSourcesMock.mockReset()
     createExpenseMock.mockReset()
     updateExpenseMock.mockReset()
     deleteExpenseMock.mockReset()
@@ -130,6 +141,7 @@ describe('useMonthly', () => {
     getCategoryTotalsByMonthMock.mockResolvedValue(CATEGORY_TOTALS)
     getCardStatementsByMonthMock.mockResolvedValue(CARD_STATEMENTS)
     getBanksMock.mockResolvedValue(BANKS)
+    getIncomeSourcesMock.mockResolvedValue(INCOME_SOURCES)
     getIncomesByMonthMock.mockResolvedValue(INCOMES)
     getBankBalancesByMonthMock.mockResolvedValue(BANK_BALANCES)
     getTitheSummaryByMonthMock.mockResolvedValue(TITHE_SUMMARY)
@@ -146,11 +158,43 @@ describe('useMonthly', () => {
     expect(getCategoryTotalsByMonthMock).toHaveBeenCalledWith(CURRENT_YEAR, CURRENT_MONTH)
     expect(getCardStatementsByMonthMock).toHaveBeenCalledWith(CURRENT_YEAR, CURRENT_MONTH)
     expect(getBanksMock).toHaveBeenCalledOnce()
+    expect(getIncomeSourcesMock).toHaveBeenCalledOnce()
     expect(result.current.monthInputValue).toBe(CURRENT_MONTH_INPUT)
     expect(result.current.expenses).toEqual(EXPENSES)
     expect(result.current.categoryTotals).toEqual(CATEGORY_TOTALS)
     expect(result.current.cardStatements).toEqual(CARD_STATEMENTS)
     expect(result.current.banks).toEqual(BANKS)
+    expect(result.current.incomeSources).toEqual(INCOME_SOURCES)
+  })
+
+  it('defaults the new-income source field to the first active income source once fetched', async () => {
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.createIncomeSource).toBe('Gleison')
+  })
+
+  it('leaves the income source list empty and default source unset when the fetch fails', async () => {
+    getIncomeSourcesMock.mockRejectedValue(new Error('Network down'))
+    const { result } = renderHook(() => useMonthly())
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.error).toBe('Network down')
+    expect(result.current.incomeSources).toEqual([])
+    expect(result.current.createIncomeSource).toBe('')
+  })
+
+  it('selectActiveIncomeSources filters out inactive sources and orders the rest', () => {
+    const mixed: IncomeSourceDto[] = [
+      { id: '4', name: 'DividendoJuros', isActive: true, group: 'DividendoJuros' },
+      { id: '3', name: 'Lottery', isActive: false, group: 'NonReportable' },
+      { id: '2', name: 'Ariana', isActive: true, group: 'Salary' },
+      { id: '1', name: 'Gleison', isActive: true, group: 'Salary' },
+    ]
+
+    const result = selectActiveIncomeSources(mixed)
+
+    expect(result.map((s) => s.name)).toEqual(['Gleison', 'Ariana', 'DividendoJuros'])
   })
 
   it('computes the combined adjustment figure as the sum of outstanding totals', async () => {
