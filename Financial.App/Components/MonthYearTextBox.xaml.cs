@@ -46,8 +46,7 @@ public partial class MonthYearTextBox : UserControl
 
     private void SyncTextFromProperties()
     {
-        var formatted = new DateTime(SelectedYear, SelectedMonth, 1)
-            .ToString(DateFormatHelper.GetMonthYearPattern(), CultureInfo.CurrentCulture);
+        var formatted = DateFormatHelper.FormatMonthYear(SelectedYear, SelectedMonth);
         if (textBox.Text != formatted)
         {
             textBox.Text = formatted;
