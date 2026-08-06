@@ -239,9 +239,9 @@ graph TD
 - [x] An income can be created/updated with a source name that resolves to an `IsActive = false` source (validation only checks name existence, not active status)
 
 ### F03. Income Group Resolution in Annual Summary
-- [ ] For a fixed set of test income records, the Annual Summary Income Summary table's Salary, SalaryAfterTaxes, TaxDifference, and DividendoJuros monthly/annual/average figures are byte-identical before and after this change
-- [ ] The Historical Averages subtab's per-group averages are byte-identical before and after this change
-- [ ] An income whose source resolves to `NonReportable` continues to be excluded from Salary and DividendoJuros totals, and does not raise an error
+- [x] For a fixed set of test income records, the Annual Summary Income Summary table's Salary, SalaryAfterTaxes, TaxDifference, and DividendoJuros monthly/annual/average figures are byte-identical before and after this change
+- [x] The Historical Averages subtab's per-group averages are byte-identical before and after this change
+- [x] An income whose source resolves to `NonReportable` continues to be excluded from Salary and DividendoJuros totals, and does not raise an error
 
 ### F04. Income Sources API Endpoint
 - [ ] `GET /income-sources` returns all four seeded records with `id`, `name`, `isActive`, and `group` populated
@@ -260,6 +260,6 @@ graph TD
 
 ### Cross-Feature Integration
 - [x] Seeded `IncomeSource` records from the migration (F01) are correctly retrievable through `ICashFlowRepository.GetIncomeSources()` and consumed by the validation resolver (F02) to accept/reject income source names
-- [ ] Seeded `IncomeSource` records from the migration (F01) are correctly consumed by `AnnualSummaryService`'s group lookup (F03), producing unchanged Annual Summary figures
+- [x] Seeded `IncomeSource` records from the migration (F01) are correctly consumed by `AnnualSummaryService`'s group lookup (F03), producing unchanged Annual Summary figures
 - [ ] Seeded `IncomeSource` records from the migration (F01) are correctly returned by `GET /income-sources` (F04), including `id`, `name`, `isActive`, and `group`
 - [ ] The income source list returned by `GET /income-sources` (F04) is correctly fetched, filtered to active sources, and rendered as picklist options in both the web income form (F05) and the WPF income form (F06)
