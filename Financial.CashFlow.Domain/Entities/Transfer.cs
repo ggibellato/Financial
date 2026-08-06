@@ -6,8 +6,8 @@ public class Transfer
 {
     public Guid Id { get; private set; }
     public DateOnly Date { get; private set; }
-    public string SourceBank { get; private set; } = string.Empty;
-    public string DestinationBank { get; private set; } = string.Empty;
+    public Bank SourceBank { get; private set; } = null!;
+    public Bank DestinationBank { get; private set; } = null!;
     public decimal Amount { get; private set; }
     public string? Note { get; private set; }
 
@@ -15,8 +15,8 @@ public class Transfer
 
     public static Transfer Create(
         DateOnly date,
-        string sourceBank,
-        string destinationBank,
+        Bank sourceBank,
+        Bank destinationBank,
         decimal amount,
         string? note)
     {
@@ -35,8 +35,8 @@ public class Transfer
 
     public void UpdateDetails(
         DateOnly date,
-        string sourceBank,
-        string destinationBank,
+        Bank sourceBank,
+        Bank destinationBank,
         decimal amount,
         string? note)
     {
@@ -49,9 +49,19 @@ public class Transfer
         Note = note;
     }
 
-    private static void Validate(string sourceBank, string destinationBank, decimal amount)
+    private static void Validate(Bank sourceBank, Bank destinationBank, decimal amount)
     {
-        if (string.Equals(sourceBank, destinationBank, StringComparison.OrdinalIgnoreCase))
+        if (sourceBank is null)
+        {
+            throw new ArgumentException("Source bank is required.");
+        }
+
+        if (destinationBank is null)
+        {
+            throw new ArgumentException("Destination bank is required.");
+        }
+
+        if (sourceBank.Id == destinationBank.Id)
         {
             throw new ArgumentException("A transfer must move money between two different banks.");
         }

@@ -6,19 +6,19 @@ public class Income
 {
     public Guid Id { get; private set; }
     public DateOnly Date { get; private set; }
-    public string IncomeSource { get; private set; } = string.Empty;
+    public IncomeSource IncomeSource { get; private set; } = null!;
     public decimal? GrossValue { get; private set; }
     public decimal NetValue { get; private set; }
-    public string Bank { get; private set; } = string.Empty;
+    public Bank Bank { get; private set; } = null!;
 
     private Income() { }
 
     public static Income Create(
         DateOnly date,
-        string incomeSource,
+        IncomeSource incomeSource,
         decimal? grossValue,
         decimal netValue,
-        string bank)
+        Bank bank)
     {
         ValidateValues(grossValue, netValue);
         ValidateIncomeSource(incomeSource);
@@ -37,10 +37,10 @@ public class Income
 
     public void UpdateDetails(
         DateOnly date,
-        string incomeSource,
+        IncomeSource incomeSource,
         decimal? grossValue,
         decimal netValue,
-        string bank)
+        Bank bank)
     {
         ValidateValues(grossValue, netValue);
         ValidateIncomeSource(incomeSource);
@@ -61,17 +61,17 @@ public class Income
         }
     }
 
-    private static void ValidateIncomeSource(string incomeSource)
+    private static void ValidateIncomeSource(IncomeSource incomeSource)
     {
-        if (string.IsNullOrWhiteSpace(incomeSource))
+        if (incomeSource is null)
         {
             throw new ArgumentException("Income source is required.");
         }
     }
 
-    private static void ValidateBank(string bank)
+    private static void ValidateBank(Bank bank)
     {
-        if (string.IsNullOrWhiteSpace(bank))
+        if (bank is null)
         {
             throw new ArgumentException("Bank is required.");
         }
