@@ -4,15 +4,15 @@ namespace Financial.CashFlow.Application.Validation;
 
 public static class IncomeSourceNameResolver
 {
-    public static bool TryResolve(string? name, IEnumerable<IncomeSource> sources, out IncomeSource? source)
+    public static bool TryResolve(Guid? id, IEnumerable<IncomeSource> sources, out IncomeSource? source)
     {
-        if (string.IsNullOrWhiteSpace(name))
+        if (id is null)
         {
             source = null;
             return false;
         }
 
-        source = sources.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase));
+        source = sources.FirstOrDefault(s => s.Id == id.Value);
         return source is not null;
     }
 }

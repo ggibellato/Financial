@@ -1,10 +1,10 @@
 namespace Financial.CashFlow.Application.DTOs;
 
 /// <summary>
-/// Request to mark a card statement paid, naming the bank account that paid it.
+/// Request to mark a card statement paid, identifying the bank account that paid it.
 /// </summary>
 public sealed class MarkStatementPaidDTO
 {
-    /// <summary>Payment source name that settled the statement.</summary>
-    public string? PaymentSource { get; init; }
+    /// <summary>Identifier of the bank account that settled the statement.</summary>
+    public Guid? PaymentSourceBankId { get; init; }
 }

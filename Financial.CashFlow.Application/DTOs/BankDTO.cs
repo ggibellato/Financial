@@ -5,6 +5,9 @@ namespace Financial.CashFlow.Application.DTOs;
 /// </summary>
 public sealed class BankDTO
 {
+    /// <summary>Bank identifier.</summary>
+    public required Guid Id { get; init; }
+
     /// <summary>Bank name.</summary>
     public required string Name { get; init; }
 

@@ -4,15 +4,15 @@ namespace Financial.CashFlow.Application.Validation;
 
 public static class BankNameResolver
 {
-    public static bool TryResolve(string? name, IEnumerable<Bank> banks, out Bank? bank)
+    public static bool TryResolve(Guid? id, IEnumerable<Bank> banks, out Bank? bank)
     {
-        if (string.IsNullOrWhiteSpace(name))
+        if (id is null)
         {
             bank = null;
             return false;
         }
 
-        bank = banks.FirstOrDefault(b => string.Equals(b.Name, name, StringComparison.OrdinalIgnoreCase));
+        bank = banks.FirstOrDefault(b => b.Id == id.Value);
         return bank is not null;
     }
 }

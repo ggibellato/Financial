@@ -20,8 +20,11 @@ public sealed class ExpenseDTO
     /// <summary>Expense category name.</summary>
     public required string Category { get; init; }
 
-    /// <summary>Payment source name. Null while the expense is an unsettled credit card charge.</summary>
-    public string? PaymentSource { get; init; }
+    /// <summary>Payment source bank identifier. Null while the expense is an unsettled credit card charge.</summary>
+    public Guid? PaymentSourceBankId { get; init; }
+
+    /// <summary>Payment source bank name. Null while the expense is an unsettled credit card charge.</summary>
+    public string? PaymentSourceBankName { get; init; }
 
     /// <summary>Optional credit-card tag name.</summary>
     public string? CardTag { get; init; }
