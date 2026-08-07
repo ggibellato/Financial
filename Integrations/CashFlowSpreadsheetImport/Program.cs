@@ -76,6 +76,13 @@ if (!mensaisOnly)
 
 InvestmentAccountMigrator.Migrate(data);
 
+// Must also run before the expense sheets are imported below: MonthlyExpenseSheetImporter
+// resolves each row's payment source against data.Banks (F03), so the 3 tracked banks need to
+// already exist even on a from-scratch run where no bank was carried over from an existing
+// file. Seeding is idempotent, so re-running it at the end (below) to audit the final
+// imported expense set is safe.
+BankMigrator.Migrate(data);
+
 using var workbook = new XLWorkbook(workbookPath);
 
 if (mensaisOnly)
