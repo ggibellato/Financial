@@ -318,12 +318,12 @@ graph TD
 - [x] `TransferService.GetTransfersByBank` and the balance-adjustment bank-scoped methods accept a `Guid bankId` and return the same results as the equivalent name-based lookup did before this change, for a fixed set of test records
 
 ### F05. Web API Id-Based Endpoints and Routes
-- [ ] `POST`/`PUT` requests for income, expense, and transfer accept a Guid Id for each reference field and reject a request carrying a name string in that field's place
-- [ ] `GET` responses for income, expense, transfer, balance-adjustment, and investment-snapshot include both the Id and denormalized name for each reference field
-- [ ] `GET /banks` response items include `Id`
-- [ ] `/banks/{id}/adjustments...` and `/transfers/bank/{id}` routes accept a Guid and return the same records the equivalent name-based route returned before this change
-- [ ] `GET /investment-accounts` returns the full seeded list with `Id` and `Name`
-- [ ] A request referencing a non-existent Id is rejected with a 400-level error naming the invalid Id
+- [x] `POST`/`PUT` requests for income, expense, and transfer accept a Guid Id for each reference field and reject a request carrying a name string in that field's place
+- [x] `GET` responses for income, expense, transfer, balance-adjustment, and investment-snapshot include both the Id and denormalized name for each reference field
+- [x] `GET /banks` response items include `Id`
+- [x] `/banks/{id}/adjustments...` and `/transfers/bank/{id}` routes accept a Guid and return the same records the equivalent name-based route returned before this change
+- [x] `GET /investment-accounts` returns the full seeded list with `Id` and `Name`
+- [x] A request referencing a non-existent Id is rejected with a 400-level error naming the invalid Id
 
 ### F06. WPF Id-Based Reference Forms
 - [ ] The Income, Expense, Transfer, and Adjustment forms' bank/source/account dropdowns display the same set of options as before this change
@@ -339,5 +339,5 @@ graph TD
 - [x] `Bank.Id` and the reference-typed entity properties from F01 are correctly read and written by the F02 JSON persistence layer, producing a real object graph on load
 - [x] The Id-based JSON write capability from F02 and the reference model from F01 are correctly used together by the F03 migrator to produce a fully-migrated data file with no unresolved records
 - [x] The resolved object graph from F02 and the reference model from F01 are correctly consumed by the F04 resolvers/services, which reject an unresolvable Id and accept a valid one
-- [ ] The Id+Name DTOs provided by F04 are correctly exposed through the F05 API contract, including the new `/investment-accounts` endpoint and the Id-based bank-scoped routes
+- [x] The Id+Name DTOs provided by F04 are correctly exposed through the F05 API contract, including the new `/investment-accounts` endpoint and the Id-based bank-scoped routes
 - [ ] The F05 API contract is correctly consumed by both the F06 WPF forms and the F07 React forms, each submitting and displaying records via Id with a correctly-rendered denormalized name
