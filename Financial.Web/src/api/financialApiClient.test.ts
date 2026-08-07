@@ -649,7 +649,7 @@ describe('financialApiClient', () => {
 
   it('calls the investment snapshots endpoint for a given year/month', async () => {
     const responseBody: InvestmentSnapshotDto[] = [
-      { id: 's1', account: 'ChaseSave', isLiability: false, year: 2026, month: 7, value: 1000 },
+      { id: 's1', accountId: 'a1', accountName: 'ChaseSave', isLiability: false, year: 2026, month: 7, value: 1000 },
     ]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
@@ -664,7 +664,8 @@ describe('financialApiClient', () => {
     const requestBody: UpdateInvestmentSnapshotValueDto = { value: 1200 }
     const responseBody: InvestmentSnapshotDto = {
       id: 's1',
-      account: 'ChaseSave',
+      accountId: 'a1',
+      accountName: 'ChaseSave',
       isLiability: false,
       year: 2026,
       month: 7,

@@ -23,8 +23,8 @@ vi.mock('../api/financialApiClient', () => ({
 }))
 
 const SNAPSHOTS: InvestmentSnapshotDto[] = [
-  { id: 's1', account: 'ChaseSave', isLiability: false, year: CURRENT_YEAR, month: CURRENT_MONTH, value: 1000 },
-  { id: 's2', account: 'PlatinumVisa8003', isLiability: true, year: CURRENT_YEAR, month: CURRENT_MONTH, value: 250 },
+  { id: 's1', accountId: 'a1', accountName: 'ChaseSave', isLiability: false, year: CURRENT_YEAR, month: CURRENT_MONTH, value: 1000 },
+  { id: 's2', accountId: 'a2', accountName: 'PlatinumVisa8003', isLiability: true, year: CURRENT_YEAR, month: CURRENT_MONTH, value: 250 },
 ]
 
 describe('useInvestmentSnapshots', () => {

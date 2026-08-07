@@ -21,7 +21,7 @@ interface SnapshotRowProps {
 }
 
 function SnapshotRow({ snapshot, onEdit }: SnapshotRowProps) {
-  const label = snapshot.isLiability ? `${snapshot.account} (liability)` : snapshot.account
+  const label = snapshot.isLiability ? `${snapshot.accountName} (liability)` : snapshot.accountName
 
   return (
     <tr>
