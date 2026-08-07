@@ -6,7 +6,6 @@ using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using ReserveBucketEnum = Financial.CashFlow.Domain.Enums.ReserveBucket;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -22,7 +21,7 @@ public class ReserveServiceTests
     [Fact]
     public async Task PostIncomeSplitAsync_WithValidRequest_PostsExactlyFourMovementsAndReturnsAmounts()
     {
-        var repository = new StubCashFlowRepository();
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
         var service = new ReserveService(repository);
 
         var result = await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
@@ -84,7 +83,7 @@ public class ReserveServiceTests
     [Fact]
     public async Task PostIncomeSplitAsync_WhenSaveFails_RollsBackAllFourMovements()
     {
-        var repository = new StubCashFlowRepository { ThrowOnNextSave = true };
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true) { ThrowOnNextSave = true };
         var service = new ReserveService(repository);
 
         var act = async () => await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
@@ -96,8 +95,8 @@ public class ReserveServiceTests
     [Fact]
     public async Task PostWithdrawalAsync_WithinBalance_PostsNegativeMovement()
     {
-        var repository = new StubCashFlowRepository();
-        repository.Seed(ReserveBucketEnum.Investimento, 100m);
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
+        repository.Seed("Investimento", 100m);
         var service = new ReserveService(repository);
 
         var result = await service.PostWithdrawalAsync(new WithdrawalRequestDTO
@@ -116,8 +115,8 @@ public class ReserveServiceTests
     [Fact]
     public async Task PostWithdrawalAsync_ExceedingBalanceUnconfirmed_ThrowsOverdraftException()
     {
-        var repository = new StubCashFlowRepository();
-        repository.Seed(ReserveBucketEnum.Ariana, 50m);
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
+        repository.Seed("Ariana", 50m);
         var service = new ReserveService(repository);
 
         var act = async () => await service.PostWithdrawalAsync(new WithdrawalRequestDTO
@@ -136,8 +135,8 @@ public class ReserveServiceTests
     [Fact]
     public async Task PostWithdrawalAsync_ExceedingBalanceConfirmed_Saves()
     {
-        var repository = new StubCashFlowRepository();
-        repository.Seed(ReserveBucketEnum.Ariana, 50m);
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
+        repository.Seed("Ariana", 50m);
         var service = new ReserveService(repository);
 
         var result = await service.PostWithdrawalAsync(new WithdrawalRequestDTO
@@ -172,7 +171,7 @@ public class ReserveServiceTests
     [Fact]
     public async Task PostWithdrawalAsync_WithUnknownBucket_ThrowsArgumentException()
     {
-        var service = new ReserveService(new StubCashFlowRepository());
+        var service = new ReserveService(new StubCashFlowRepository(seedDefaultReserveBuckets: true));
 
         var act = async () => await service.PostWithdrawalAsync(new WithdrawalRequestDTO
         {
@@ -188,7 +187,7 @@ public class ReserveServiceTests
     [Fact]
     public void GetBucketBalances_AlwaysReturnsExactlyFourBuckets()
     {
-        var repository = new StubCashFlowRepository();
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
         var service = new ReserveService(repository);
 
         var balances = service.GetBucketBalances();
@@ -200,7 +199,7 @@ public class ReserveServiceTests
     [Fact]
     public async Task GetBucketBalances_ReflectsPostedMovements()
     {
-        var repository = new StubCashFlowRepository();
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
         var service = new ReserveService(repository);
         await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
 
@@ -212,9 +211,9 @@ public class ReserveServiceTests
     [Fact]
     public void GetMovementHistory_ReturnsAllMovementsOrderedByDateDescending()
     {
-        var repository = new StubCashFlowRepository();
-        repository.Seed(ReserveBucketEnum.Investimento, 10m, new DateOnly(2026, 8, 1));
-        repository.Seed(ReserveBucketEnum.Investimento, 5m, new DateOnly(2026, 7, 1));
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
+        repository.Seed("Investimento", 10m, new DateOnly(2026, 8, 1));
+        repository.Seed("Investimento", 5m, new DateOnly(2026, 7, 1));
         var service = new ReserveService(repository);
 
         var history = service.GetMovementHistory();
@@ -226,8 +225,8 @@ public class ReserveServiceTests
     [Fact]
     public async Task UpdateMovementAsync_ExistingId_UpdatesFieldsAndSaves()
     {
-        var repository = new StubCashFlowRepository();
-        repository.Seed(ReserveBucketEnum.Investimento, 100m, new DateOnly(2026, 7, 1));
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
+        repository.Seed("Investimento", 100m, new DateOnly(2026, 7, 1));
         var movement = repository.ReserveMovements[0];
         var service = new ReserveService(repository);
 
@@ -252,7 +251,7 @@ public class ReserveServiceTests
     [Fact]
     public async Task UpdateMovementAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var service = new ReserveService(new StubCashFlowRepository());
+        var service = new ReserveService(new StubCashFlowRepository(seedDefaultReserveBuckets: true));
 
         var act = async () => await service.UpdateMovementAsync(Guid.NewGuid(), new UpdateReserveMovementDTO
         {
@@ -268,8 +267,8 @@ public class ReserveServiceTests
     [Fact]
     public async Task UpdateMovementAsync_WithUnknownBucket_ThrowsArgumentException()
     {
-        var repository = new StubCashFlowRepository();
-        repository.Seed(ReserveBucketEnum.Investimento, 100m);
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
+        repository.Seed("Investimento", 100m);
         var service = new ReserveService(repository);
 
         var act = async () => await service.UpdateMovementAsync(repository.ReserveMovements[0].Id, new UpdateReserveMovementDTO
@@ -286,10 +285,10 @@ public class ReserveServiceTests
     [Fact]
     public async Task DeleteMovementAsync_SoloMovement_DeletesOnlyThatOne()
     {
-        var repository = new StubCashFlowRepository();
-        repository.Seed(ReserveBucketEnum.Investimento, -30m, new DateOnly(2026, 7, 1));
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
+        repository.Seed("Investimento", -30m, new DateOnly(2026, 7, 1));
         var toDelete = repository.ReserveMovements[0];
-        repository.Seed(ReserveBucketEnum.Ariana, -20m, new DateOnly(2026, 7, 2));
+        repository.Seed("Ariana", -20m, new DateOnly(2026, 7, 2));
         var service = new ReserveService(repository);
 
         await service.DeleteMovementAsync(toDelete.Id);
@@ -301,7 +300,7 @@ public class ReserveServiceTests
     [Fact]
     public async Task DeleteMovementAsync_MovementFromASplit_DeletesAllFourSiblingMovements()
     {
-        var repository = new StubCashFlowRepository();
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
         var service = new ReserveService(repository);
         await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
         var oneLineOfTheSplit = repository.ReserveMovements[0];
@@ -332,6 +331,9 @@ public class ReserveServiceTests
 
 internal static class ReserveServiceTestsStubExtensions
 {
-    public static void Seed(this StubCashFlowRepository repository, ReserveBucketEnum bucket, decimal amount, DateOnly? date = null) =>
+    public static void Seed(this StubCashFlowRepository repository, string bucketName, decimal amount, DateOnly? date = null)
+    {
+        var bucket = repository.ReserveBuckets.First(b => b.Name == bucketName);
         repository.ReserveMovements.Add(ReserveMovement.Create(bucket, amount, date ?? new DateOnly(2026, 1, 1), "Seed"));
+    }
 }

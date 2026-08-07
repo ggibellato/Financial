@@ -314,14 +314,14 @@ graph TD
 - [x] Running the migration tool a second time makes no additional changes (idempotent, verified by unchanged record count and unchanged IDs)
 - [ ] A backup of the data file is created before any write occurs
 - [x] The migration audit summary reports a warning (not a failure) when active buckets' percentages sum outside 99.99%–100.01%, and reports nothing when they sum within that band
-- [ ] `Financial.CashFlow.Domain.Enums.ReserveBucket` (the enum) no longer exists in the codebase
-- [ ] A `ReserveMovement` whose bucket name matches none of the seeded names is reported in the migration's audit summary without failing the migration run
+- [x] `Financial.CashFlow.Domain.Enums.ReserveBucket` (the enum) no longer exists in the codebase
+- [x] A `ReserveMovement` whose bucket name matches none of the seeded names is reported in the migration's audit summary without failing the migration run
 
 ### F02. ReserveMovement Reference to ReserveBucket
-- [ ] `ReserveMovement.Bucket` deserializes to the same `ReserveBucket` instance as the corresponding seeded record (reference equality, not just value equality)
-- [ ] Creating a withdrawal or updating a movement with a bucket name matching a seeded `ReserveBucket` (case-insensitive) succeeds
-- [ ] Creating a withdrawal or updating a movement with a bucket name that matches no seeded `ReserveBucket` is rejected with a validation error naming the invalid bucket
-- [ ] `ReserveBucketParser` and its dedicated test file no longer exist in the codebase
+- [x] `ReserveMovement.Bucket` deserializes to the same `ReserveBucket` instance as the corresponding seeded record (reference equality, not just value equality)
+- [x] Creating a withdrawal or updating a movement with a bucket name matching a seeded `ReserveBucket` (case-insensitive) succeeds
+- [x] Creating a withdrawal or updating a movement with a bucket name that matches no seeded `ReserveBucket` is rejected with a validation error naming the invalid bucket
+- [x] `ReserveBucketParser` and its dedicated test file no longer exist in the codebase
 
 ### F03. Income Split Computation via Bucket Percentages
 - [ ] Posting an income split creates exactly one `ReserveMovement` per bucket with `IsActive = true`, each amount equal to `Math.Round(totalAmount * SplitPercentage / 100, 2, AwayFromZero)`
@@ -359,7 +359,7 @@ graph TD
 - [ ] If an expected column's bucket name isn't found in the seeded list, the importer logs it as unresolved in the audit summary and skips that column's amounts without failing the whole import
 
 ### Cross-Feature Integration
-- [ ] Seeded `ReserveBucket` records from the migration (F01) are correctly retrievable through `ICashFlowRepository.GetReserveBuckets()` and resolved by `ReserveBucketNameResolver` (F02) to accept/reject bucket names on withdrawal/update
+- [x] Seeded `ReserveBucket` records from the migration (F01) are correctly retrievable through `ICashFlowRepository.GetReserveBuckets()` and resolved by `ReserveBucketNameResolver` (F02) to accept/reject bucket names on withdrawal/update
 - [ ] Seeded `ReserveBucket` records (F01) are correctly consumed by the income-split computation (F03) to determine which buckets participate and at what percentage
 - [ ] `ReserveMovement.Bucket` entity references (F02) are correctly created by the income-split flow (F03) — one movement per active bucket, correctly referencing that bucket
 - [ ] Seeded `ReserveBucket` records (F01) and `ReserveMovement.Bucket` references (F02) are both correctly consumed by `GetBucketBalances()` (F04), producing one balance row per bucket including inactive ones

@@ -37,6 +37,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         [(typeof(Transfer), nameof(Transfer.DestinationBank))] = "DestinationBankId",
         [(typeof(BalanceAdjustment), nameof(BalanceAdjustment.Bank))] = "BankId",
         [(typeof(InvestmentSnapshot), nameof(InvestmentSnapshot.Account))] = "InvestmentAccountId",
+        [(typeof(ReserveMovement), nameof(ReserveMovement.Bucket))] = "BucketId",
     };
 
     private readonly ReferenceResolutionContext? _context;
@@ -88,6 +89,9 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
 
         if (propertyType == typeof(InvestmentAccount))
             return new InvestmentAccountReferenceConverter(_context?.InvestmentAccounts);
+
+        if (propertyType == typeof(ReserveBucket))
+            return new ReserveBucketReferenceConverter(_context?.ReserveBuckets);
 
         throw new InvalidOperationException($"No reference converter registered for type {propertyType}.");
     }

@@ -1,19 +1,18 @@
 using System;
-using ReserveBucketEnum = Financial.CashFlow.Domain.Enums.ReserveBucket;
 
 namespace Financial.CashFlow.Domain.Entities;
 
 public class ReserveMovement
 {
     public Guid Id { get; private set; }
-    public ReserveBucketEnum Bucket { get; private set; }
+    public ReserveBucket Bucket { get; private set; } = null!;
     public decimal Amount { get; private set; }
     public DateOnly Date { get; private set; }
     public string Description { get; private set; } = string.Empty;
 
     private ReserveMovement() { }
 
-    public static ReserveMovement Create(ReserveBucketEnum bucket, decimal amount, DateOnly date, string description) =>
+    public static ReserveMovement Create(ReserveBucket bucket, decimal amount, DateOnly date, string description) =>
         new()
         {
             Id = Guid.NewGuid(),
@@ -23,7 +22,7 @@ public class ReserveMovement
             Description = description
         };
 
-    public void Update(ReserveBucketEnum bucket, decimal amount, DateOnly date, string description)
+    public void Update(ReserveBucket bucket, decimal amount, DateOnly date, string description)
     {
         Bucket = bucket;
         Amount = amount;

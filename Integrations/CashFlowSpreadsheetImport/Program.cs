@@ -6,6 +6,7 @@ using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.M
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.IncomeSources;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ReserveBuckets;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ReserveBucketReferences;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.EntityReferences;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ExpenseChargeDate;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
@@ -38,6 +39,7 @@ if (!File.Exists(workbookPath))
 
 string? legacyRawJson = null;
 EntityReferenceMigrationSummary? entityReferenceSummary = null;
+ReserveBucketReferenceMigrationSummary? reserveBucketReferenceSummary = null;
 if (File.Exists(outputPath))
 {
     var backupPath = MigrationBackup.Create(outputPath);
@@ -47,9 +49,12 @@ if (File.Exists(outputPath))
     // declares that property and a normal deserialization silently drops it.
     legacyRawJson = File.ReadAllText(backupPath);
 
-    // Must run before CashFlowLoader.LoadSync below: the typed deserializer throws on a file
-    // still in the pre-F01/F02 legacy shape, so any rewrite has to happen on the raw file first.
+    // Both must run before CashFlowLoader.LoadSync below: the typed deserializer throws on a
+    // file still carrying either legacy shape, so any rewrite has to happen on the raw file
+    // first. ReserveBucketReferenceMigrator runs second since a file could in principle need
+    // both rewrites at once (an old file that predates every reference migration).
     entityReferenceSummary = EntityReferenceMigrator.Migrate(outputPath);
+    reserveBucketReferenceSummary = ReserveBucketReferenceMigrator.Migrate(outputPath);
 }
 
 var report = new ImportReport();
@@ -134,6 +139,10 @@ if (entityReferenceSummary is not null)
 {
     Console.WriteLine(entityReferenceSummary.Render());
 }
+if (reserveBucketReferenceSummary is not null)
+{
+    Console.WriteLine(reserveBucketReferenceSummary.Render());
+}
 Console.WriteLine(report.Render());
 Console.WriteLine(bankSummary.Render());
 Console.WriteLine(bankOpeningBalanceSummary.Render());
@@ -204,7 +213,7 @@ static void ImportReservasSheet(XLWorkbook workbook, CashFlowData data, ImportRe
         return;
     }
 
-    foreach (var movement in ReservasSheetImporter.Import(sheet))
+    foreach (var movement in ReservasSheetImporter.Import(sheet, data.ReserveBuckets))
     {
         data.AddReserveMovement(movement);
     }

@@ -22,11 +22,13 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         var banks = DeserializeCollection<Bank>(root, "Banks", unresolvedOptions);
         var incomeSources = DeserializeCollection<IncomeSource>(root, "IncomeSources", unresolvedOptions);
         var investmentAccounts = DeserializeCollection<InvestmentAccount>(root, "InvestmentAccounts", unresolvedOptions);
+        var reserveBuckets = DeserializeCollection<ReserveBucket>(root, "ReserveBuckets", unresolvedOptions);
 
         var context = new ReferenceResolutionContext();
         foreach (var bank in banks) context.Banks[bank.Id] = bank;
         foreach (var incomeSource in incomeSources) context.IncomeSources[incomeSource.Id] = incomeSource;
         foreach (var account in investmentAccounts) context.InvestmentAccounts[account.Id] = account;
+        foreach (var bucket in reserveBuckets) context.ReserveBuckets[bucket.Id] = bucket;
 
         var resolvedOptions = CreateElementOptions(context);
 
@@ -34,8 +36,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         foreach (var bank in banks) data.AddBank(bank);
         foreach (var incomeSource in incomeSources) data.AddIncomeSource(incomeSource);
         foreach (var account in investmentAccounts) data.AddInvestmentAccount(account);
-
-        foreach (var bucket in DeserializeCollection<ReserveBucket>(root, "ReserveBuckets", resolvedOptions)) data.AddReserveBucket(bucket);
+        foreach (var bucket in reserveBuckets) data.AddReserveBucket(bucket);
 
         foreach (var expense in DeserializeCollection<Expense>(root, "Expenses", resolvedOptions)) data.AddExpense(expense);
         foreach (var movement in DeserializeCollection<ReserveMovement>(root, "ReserveMovements", resolvedOptions)) data.AddReserveMovement(movement);
@@ -91,7 +92,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         catch (JsonException ex) when (ex.Message.Contains("required", StringComparison.OrdinalIgnoreCase))
         {
             throw new JsonException(
-                $"'{propertyName}' contains a record still in the pre-migration string shape (missing a *Id reference field). Run the F03 migration before loading this file.",
+                $"'{propertyName}' contains a record still in the pre-migration string shape (missing a *Id reference field). Run the appropriate reference migration before loading this file.",
                 ex);
         }
     }

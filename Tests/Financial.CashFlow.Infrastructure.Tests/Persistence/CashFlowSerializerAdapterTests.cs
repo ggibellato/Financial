@@ -1,7 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Persistence;
-using ReserveBucketEnum = Financial.CashFlow.Domain.Enums.ReserveBucket;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using System.Text.Json;
@@ -29,7 +28,7 @@ public class CashFlowSerializerAdapterTests
             null,
             CreditCard.BarclaysPlatinumVisa8003);
         expense.Settle(bank, new DateOnly(2026, 7, 31));
-        var reserveMovement = ReserveMovement.Create(ReserveBucketEnum.Investimento, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split");
+        var reserveMovement = ReserveMovement.Create(reserveBucket, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split");
         var cardStatement = CardStatement.Create(CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
         var recurringBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
         var maeLedgerEntry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 15), "School supplies", "Note", Currency.BRL, 350m, 51.23m);
@@ -74,7 +73,7 @@ public class CashFlowSerializerAdapterTests
             resultExpense.InvoiceDate.Should().Be(expense.InvoiceDate);
             var resultMovement = result.ReserveMovements.Should().ContainSingle().Which;
             resultMovement.Id.Should().Be(reserveMovement.Id);
-            resultMovement.Bucket.Should().Be(reserveMovement.Bucket);
+            resultMovement.Bucket.Should().BeSameAs(resultReserveBucket);
             resultMovement.Amount.Should().Be(reserveMovement.Amount);
             resultMovement.Date.Should().Be(reserveMovement.Date);
             resultMovement.Description.Should().Be(reserveMovement.Description);
@@ -136,9 +135,12 @@ public class CashFlowSerializerAdapterTests
         var original = CashFlowData.Create();
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+        var reserveBucket = Financial.CashFlow.Domain.Entities.ReserveBucket.Create("Investimento", 33.33m);
         original.AddBank(bank);
         original.AddIncomeSource(incomeSource);
+        original.AddReserveBucket(reserveBucket);
         original.AddIncome(Income.Create(new DateOnly(2026, 7, 1), incomeSource, 100m, 90m, bank));
+        original.AddReserveMovement(ReserveMovement.Create(reserveBucket, 50m, new DateOnly(2026, 7, 1), "Deposit"));
 
         var json = serializer.Serialize(original);
 
@@ -150,6 +152,11 @@ public class CashFlowSerializerAdapterTests
         income.GetProperty("IncomeSourceId").GetGuid().Should().Be(incomeSource.Id);
         income.TryGetProperty("Bank", out _).Should().BeFalse();
         income.TryGetProperty("IncomeSource", out _).Should().BeFalse();
+
+        var movement = document.RootElement.GetProperty("ReserveMovements")[0];
+        movement.GetProperty("BucketId").ValueKind.Should().Be(JsonValueKind.String);
+        movement.GetProperty("BucketId").GetGuid().Should().Be(reserveBucket.Id);
+        movement.TryGetProperty("Bucket", out _).Should().BeFalse();
     }
 
     [Fact]
@@ -200,7 +207,7 @@ public class CashFlowSerializerAdapterTests
     }
 
     [Fact]
-    public void Deserialize_LegacyRecordMissingTheIdReferenceField_FailsWithAMessagePointingAtTheF03Migration()
+    public void Deserialize_LegacyRecordMissingTheIdReferenceField_FailsWithADescriptiveMessage()
     {
         var json = """
             {
@@ -214,7 +221,25 @@ public class CashFlowSerializerAdapterTests
 
         var act = () => serializer.Deserialize(json);
 
-        act.Should().Throw<JsonException>().WithMessage("*F03*");
+        act.Should().Throw<JsonException>().WithMessage("*pre-migration string shape*reference migration*");
+    }
+
+    [Fact]
+    public void Deserialize_LegacyReserveMovementMissingBucketId_FailsWithADescriptiveMessage()
+    {
+        var json = """
+            {
+              "Expenses": [], "CardStatements": [], "RecurringBills": [],
+              "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
+              "ReserveMovements": [{ "Id": "22222222-2222-2222-2222-222222222222", "Bucket": "Investimento", "Amount": 10, "Date": "2026-07-01", "Description": "Legacy" }],
+              "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [], "Banks": [], "ReserveBuckets": []
+            }
+            """;
+        var serializer = new CashFlowSerializerAdapter();
+
+        var act = () => serializer.Deserialize(json);
+
+        act.Should().Throw<JsonException>().WithMessage("*pre-migration string shape*reference migration*");
     }
 
     [Fact]
