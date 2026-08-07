@@ -19,6 +19,9 @@ const SEED_YEAR = new Date().getFullYear() - 2
 const SEED_MONTHLY_VALUE = 100
 const EXPECTED_MERCADO_AVERAGE = '25.00' // (100 * 3) / 12 months
 
+// Barclays' Id from Tests/Financial.Api.Tests/TestData/data-cashflow.test.json
+const BARCLAYS_BANK_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000001'
+
 async function seedMercadoExpenses() {
   for (const month of ['01', '02', '03']) {
     const response = await fetch(`${API_BASE_URL}/expenses`, {
@@ -29,7 +32,7 @@ async function seedMercadoExpenses() {
         description: 'Smoke test seed',
         value: SEED_MONTHLY_VALUE,
         category: 'Mercado',
-        paymentSource: 'Barclays',
+        paymentSourceBankId: BARCLAYS_BANK_ID,
         cardTag: null,
       }),
     })
