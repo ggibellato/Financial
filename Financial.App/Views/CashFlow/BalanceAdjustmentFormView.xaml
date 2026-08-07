@@ -40,7 +40,7 @@
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Bank:" VerticalAlignment="Center"/>
                 <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
                           SelectedValue="{Binding AdjustmentFormBankName, UpdateSourceTrigger=PropertyChanged}"
-                          SelectedValuePath="Name">
+                          SelectedValuePath="Id">
                     <ComboBox.Style>
                         <Style TargetType="ComboBox">
                             <Setter Property="IsEnabled" Value="True"/>
@@ -70,7 +70,7 @@
                     <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Margin="0,4,0,8">
                         <TextBlock.Text>
                             <MultiBinding StringFormat="Current calculated balance for {0}: {1:N2}">
-                                <Binding Path="AdjustmentFormBankName"/>
+                                <Binding Path="AdjustmentFormBankDisplayName"/>
                                 <Binding Path="AdjustmentFormCurrentBalance"/>
                             </MultiBinding>
                         </TextBlock.Text>

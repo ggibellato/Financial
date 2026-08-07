@@ -183,7 +183,7 @@ public class MonthlyViewModelBankOperationsTests
         viewModel.ShowMoveMoneyFormCommand.Execute(null);
 
         viewModel.IsTransferFormOpen.Should().BeTrue();
-        viewModel.TransferFormSourceBank.Should().Be(banks.Banks[0].Name);
+        viewModel.TransferFormSourceBank.Should().Be(banks.Banks[0].Id);
     }
 
     [Fact]
@@ -194,7 +194,7 @@ public class MonthlyViewModelBankOperationsTests
 
         viewModel.ShowCorrectBalanceFormCommand.Execute(null);
 
-        viewModel.AdjustmentFormBankName.Should().BeEmpty();
+        viewModel.AdjustmentFormBankName.Should().BeNull();
         viewModel.IsAdjustmentBankSelected.Should().BeFalse();
         viewModel.SaveAdjustmentCommand.CanExecute(null).Should().BeFalse();
     }
@@ -207,7 +207,7 @@ public class MonthlyViewModelBankOperationsTests
         await viewModel.RefreshAsync();
         viewModel.ShowCorrectBalanceFormCommand.Execute(null);
 
-        viewModel.AdjustmentFormBankName = "Barclays";
+        viewModel.AdjustmentFormBankName = BarclaysId;
 
         viewModel.IsAdjustmentBankSelected.Should().BeTrue();
         viewModel.AdjustmentFormCurrentBalance.Should().Be(88m);
@@ -225,7 +225,7 @@ public class MonthlyViewModelBankOperationsTests
 
         viewModel.EditAdjustmentCommand.Execute(adjustment);
 
-        viewModel.AdjustmentFormBankName.Should().Be("Barclays");
+        viewModel.AdjustmentFormBankName.Should().Be(BarclaysId);
         viewModel.IsEditingAdjustment.Should().BeTrue();
     }
 

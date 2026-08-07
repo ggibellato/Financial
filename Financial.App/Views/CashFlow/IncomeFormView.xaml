@@ -35,8 +35,9 @@
             <DatePicker Grid.Row="1" Grid.Column="1" SelectedDate="{Binding IncomeFormDate, UpdateSourceTrigger=PropertyChanged}"/>
 
             <TextBlock Grid.Row="2" Grid.Column="0" Text="Source:" VerticalAlignment="Center"/>
-            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding IncomeSourceOptions}"
-                      SelectedItem="{Binding IncomeFormSource, UpdateSourceTrigger=PropertyChanged}"/>
+            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding IncomeSourceOptions}" DisplayMemberPath="Name"
+                      SelectedValue="{Binding IncomeFormSource, UpdateSourceTrigger=PropertyChanged}"
+                      SelectedValuePath="Id"/>
 
             <TextBlock Grid.Row="3" Grid.Column="0" Text="Gross Value:" VerticalAlignment="Center"
                        Visibility="{Binding ShowIncomeGrossValueField, Converter={StaticResource BoolToVisibilityConverter}}"/>
@@ -55,7 +56,7 @@
             <TextBlock Grid.Row="5" Grid.Column="0" Text="Bank:" VerticalAlignment="Center"/>
             <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
                       SelectedValue="{Binding IncomeFormBank, UpdateSourceTrigger=PropertyChanged}"
-                      SelectedValuePath="Name"/>
+                      SelectedValuePath="Id"/>
 
             <TextBlock Grid.Row="6" Grid.ColumnSpan="2" Foreground="Red" TextWrapping="Wrap"
                        Text="{Binding IncomeSaveError}" Margin="0,8,0,0"/>

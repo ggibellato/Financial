@@ -23,6 +23,6 @@ public partial class CardsGridView : UserControl
             return;
         }
 
-        viewModel.SetMarkPaidSource(statement.Id, bank.Name);
+        viewModel.SetMarkPaidSource(statement.Id, bank.Id);
     }
 }

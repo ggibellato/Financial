@@ -326,9 +326,9 @@ graph TD
 - [x] A request referencing a non-existent Id is rejected with a 400-level error naming the invalid Id
 
 ### F06. WPF Id-Based Reference Forms
-- [ ] The Income, Expense, Transfer, and Adjustment forms' bank/source/account dropdowns display the same set of options as before this change
-- [ ] Submitting each form sends a Guid Id (not a name string) for every affected field
-- [ ] Existing records display their correct bank/source/account name in read-only grids after this change
+- [x] The Income, Expense, Transfer, and Adjustment forms' bank/source/account dropdowns display the same set of options as before this change
+- [x] Submitting each form sends a Guid Id (not a name string) for every affected field
+- [x] Existing records display their correct bank/source/account name in read-only grids after this change
 
 ### F07. React Id-Based Reference Forms
 - [ ] The Income, Expense, Transfer, and Adjustment forms' bank/source/account dropdowns display the same set of options as before this change

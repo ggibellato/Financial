@@ -232,14 +232,6 @@ public class MonthlyViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Resolves a bank name from a name-bound form field to its identifier. Forms remain name-based until F06 introduces Id-based picklists.</summary>
-    private Guid? ResolveBankId(string? bankName) =>
-        string.IsNullOrWhiteSpace(bankName) ? null : Banks.FirstOrDefault(b => b.Name == bankName)?.Id;
-
-    /// <summary>Resolves an income source name from a name-bound form field to its identifier.</summary>
-    private Guid ResolveIncomeSourceId(string incomeSourceName) =>
-        IncomeSources.FirstOrDefault(s => s.Name == incomeSourceName)?.Id ?? Guid.Empty;
-
     /// <summary>Mirrors useMonthly.ts's bankTotals: balance from the month's running total, round-up summed client-side from that bank's expenses.</summary>
     private static List<BankTotalRow> BuildBankTotals(
         IReadOnlyList<BankDTO> banks,
@@ -252,7 +244,7 @@ public class MonthlyViewModel : ViewModelBase
                 .Where(e => e.PaymentSourceBankId == bank.Id)
                 .Sum(e => e.RoundUpAmount ?? 0m);
             var balance = bankBalances.FirstOrDefault(b => b.Bank == bank.Name)?.Balance ?? 0m;
-            return new BankTotalRow { Bank = bank.Name, Balance = balance, RoundUpTotal = roundUpTotal };
+            return new BankTotalRow { BankId = bank.Id, Bank = bank.Name, Balance = balance, RoundUpTotal = roundUpTotal };
         }).ToList();
     }
 
@@ -323,7 +315,7 @@ public class MonthlyViewModel : ViewModelBase
     private string _expenseFormCategory = Categories[0];
     private string _expenseFormValue = string.Empty;
     private bool _isCardPaymentMode;
-    private string _expenseFormPaymentSource = string.Empty;
+    private Guid? _expenseFormPaymentSource;
     private string _expenseFormCardTag = string.Empty;
     private string _expenseFormRoundUpAmount = string.Empty;
     private bool _expenseFormIsSettled;
@@ -387,7 +379,7 @@ public class MonthlyViewModel : ViewModelBase
 
     public bool IsBankPaymentMode => !IsCardPaymentMode;
 
-    public string ExpenseFormPaymentSource
+    public Guid? ExpenseFormPaymentSource
     {
         get => _expenseFormPaymentSource;
         set
@@ -417,7 +409,7 @@ public class MonthlyViewModel : ViewModelBase
 
     public bool ShowRoundUpField =>
         !IsCardPaymentMode
-        && Banks.FirstOrDefault(b => b.Name == ExpenseFormPaymentSource) is { RoundUpEnabled: true };
+        && Banks.FirstOrDefault(b => b.Id == ExpenseFormPaymentSource) is { RoundUpEnabled: true };
 
     public bool ExpenseFormIsSettled
     {
@@ -511,8 +503,8 @@ public class MonthlyViewModel : ViewModelBase
         ExpenseFormValue = string.Empty;
         IsCardPaymentMode = mode == "card";
         ExpenseFormPaymentSource = IsCardPaymentMode
-            ? string.Empty
-            : (Banks.Count > 0 ? Banks[0].Name : string.Empty);
+            ? null
+            : (Banks.Count > 0 ? Banks[0].Id : null);
         ExpenseFormCardTag = string.Empty;
         ExpenseFormRoundUpAmount = string.Empty;
         ExpenseFormIsSettled = false;
@@ -539,7 +531,7 @@ public class MonthlyViewModel : ViewModelBase
         ExpenseFormCategory = expense.Category;
         ExpenseFormValue = expense.Value.ToString("0.##");
         IsCardPaymentMode = expense.CardTag != null;
-        ExpenseFormPaymentSource = expense.PaymentSourceBankName ?? string.Empty;
+        ExpenseFormPaymentSource = expense.PaymentSourceBankId;
         ExpenseFormCardTag = expense.CardTag ?? string.Empty;
         ExpenseFormRoundUpAmount = expense.RoundUpAmount?.ToString("0.##") ?? string.Empty;
         ExpenseFormIsSettled = expense.PaymentStatus == SettledStatus;
@@ -607,7 +599,7 @@ public class MonthlyViewModel : ViewModelBase
                     Description = ExpenseFormDescription,
                     Value = value,
                     Category = ExpenseFormCategory,
-                    PaymentSourceBankId = ResolveBankId(paymentSource),
+                    PaymentSourceBankId = paymentSource,
                     CardTag = cardTag,
                     InvoiceDate = invoiceDate,
                     RoundUpAmount = roundUpAmount,
@@ -621,7 +613,7 @@ public class MonthlyViewModel : ViewModelBase
                     Description = ExpenseFormDescription,
                     Value = value,
                     Category = ExpenseFormCategory,
-                    PaymentSourceBankId = ResolveBankId(paymentSource),
+                    PaymentSourceBankId = paymentSource,
                     CardTag = cardTag,
                     InvoiceDate = invoiceDate,
                     RoundUpAmount = roundUpAmount,
@@ -676,11 +668,10 @@ public class MonthlyViewModel : ViewModelBase
     private static readonly string[] IncomeSourceDisplayOrder = ["Gleison", "Ariana", "Lottery", "DividendoJuros"];
 
     /// <summary>Active income sources from <see cref="IncomeSources"/>, ordered to match the picklist's historical display order.</summary>
-    public IReadOnlyList<string> IncomeSourceOptions =>
+    public IReadOnlyList<IncomeSourceDTO> IncomeSourceOptions =>
         IncomeSources
             .Where(s => s.IsActive)
             .OrderBy(s => IncomeSourceRank(s.Name))
-            .Select(s => s.Name)
             .ToList();
 
     private static int IncomeSourceRank(string name)
@@ -692,10 +683,10 @@ public class MonthlyViewModel : ViewModelBase
     private bool _isIncomeFormOpen;
     private Guid? _editingIncomeId;
     private DateTime? _incomeFormDate;
-    private string _incomeFormSource = string.Empty;
+    private Guid? _incomeFormSource;
     private string _incomeFormGrossValue = string.Empty;
     private string _incomeFormNetValue = string.Empty;
-    private string _incomeFormBank = string.Empty;
+    private Guid? _incomeFormBank;
     private bool _isSavingIncome;
     private string? _incomeSaveError;
     private string? _deletingIncomeError;
@@ -714,7 +705,7 @@ public class MonthlyViewModel : ViewModelBase
         set => SetProperty(ref _incomeFormDate, value);
     }
 
-    public string IncomeFormSource
+    public Guid? IncomeFormSource
     {
         get => _incomeFormSource;
         set
@@ -726,7 +717,8 @@ public class MonthlyViewModel : ViewModelBase
         }
     }
 
-    public bool ShowIncomeGrossValueField => IncomeSourcesWithGrossValue.Contains(IncomeFormSource);
+    public bool ShowIncomeGrossValueField =>
+        IncomeSourcesWithGrossValue.Contains(IncomeSources.FirstOrDefault(s => s.Id == IncomeFormSource)?.Name ?? string.Empty);
 
     public string IncomeFormGrossValue
     {
@@ -740,7 +732,7 @@ public class MonthlyViewModel : ViewModelBase
         set => SetProperty(ref _incomeFormNetValue, value);
     }
 
-    public string IncomeFormBank
+    public Guid? IncomeFormBank
     {
         get => _incomeFormBank;
         set => SetProperty(ref _incomeFormBank, value);
@@ -783,10 +775,10 @@ public class MonthlyViewModel : ViewModelBase
     {
         _editingIncomeId = null;
         IncomeFormDate = DateTime.Today;
-        IncomeFormSource = IncomeSourceOptions.Count > 0 ? IncomeSourceOptions[0] : string.Empty;
+        IncomeFormSource = IncomeSourceOptions.Count > 0 ? IncomeSourceOptions[0].Id : null;
         IncomeFormGrossValue = string.Empty;
         IncomeFormNetValue = string.Empty;
-        IncomeFormBank = Banks.Count > 0 ? Banks[0].Name : string.Empty;
+        IncomeFormBank = Banks.Count > 0 ? Banks[0].Id : null;
         IncomeSaveError = null;
         OnPropertyChanged(nameof(IsEditingIncome));
         IsIncomeFormOpen = true;
@@ -801,10 +793,10 @@ public class MonthlyViewModel : ViewModelBase
 
         _editingIncomeId = income.Id;
         IncomeFormDate = income.Date.ToDateTime(TimeOnly.MinValue);
-        IncomeFormSource = income.IncomeSourceName;
+        IncomeFormSource = income.IncomeSourceId;
         IncomeFormGrossValue = income.GrossValue?.ToString("0.##") ?? string.Empty;
         IncomeFormNetValue = income.NetValue.ToString("0.##");
-        IncomeFormBank = income.BankName;
+        IncomeFormBank = income.BankId;
         IncomeSaveError = null;
         OnPropertyChanged(nameof(IsEditingIncome));
         IsIncomeFormOpen = true;
@@ -845,10 +837,10 @@ public class MonthlyViewModel : ViewModelBase
                 await _incomeService.UpdateIncomeAsync(id, new IncomeUpdateDTO
                 {
                     Date = date,
-                    IncomeSourceId = ResolveIncomeSourceId(IncomeFormSource),
+                    IncomeSourceId = IncomeFormSource!.Value,
                     GrossValue = grossValue,
                     NetValue = netValue,
-                    BankId = ResolveBankId(IncomeFormBank) ?? Guid.Empty,
+                    BankId = IncomeFormBank!.Value,
                 });
             }
             else
@@ -856,10 +848,10 @@ public class MonthlyViewModel : ViewModelBase
                 await _incomeService.AddIncomeAsync(new IncomeCreateDTO
                 {
                     Date = date,
-                    IncomeSourceId = ResolveIncomeSourceId(IncomeFormSource),
+                    IncomeSourceId = IncomeFormSource!.Value,
                     GrossValue = grossValue,
                     NetValue = netValue,
-                    BankId = ResolveBankId(IncomeFormBank) ?? Guid.Empty,
+                    BankId = IncomeFormBank!.Value,
                 });
             }
 
@@ -1004,8 +996,8 @@ public class MonthlyViewModel : ViewModelBase
     private bool _isTransferFormOpen;
     private Guid? _editingTransferId;
     private DateTime? _transferFormDate;
-    private string _transferFormSourceBank = string.Empty;
-    private string _transferFormDestinationBank = string.Empty;
+    private Guid? _transferFormSourceBank;
+    private Guid? _transferFormDestinationBank;
     private string _transferFormAmount = string.Empty;
     private string _transferFormNote = string.Empty;
     private bool _isSavingTransfer;
@@ -1025,7 +1017,7 @@ public class MonthlyViewModel : ViewModelBase
         set => SetProperty(ref _transferFormDate, value);
     }
 
-    public string TransferFormSourceBank
+    public Guid? TransferFormSourceBank
     {
         get => _transferFormSourceBank;
         set
@@ -1039,7 +1031,7 @@ public class MonthlyViewModel : ViewModelBase
         }
     }
 
-    public string TransferFormDestinationBank
+    public Guid? TransferFormDestinationBank
     {
         get => _transferFormDestinationBank;
         set
@@ -1055,8 +1047,8 @@ public class MonthlyViewModel : ViewModelBase
 
     /// <summary>True when source and destination are both set and identical — Move Money's Confirm is disabled in this state, mirroring TransferForm.tsx's sameBankError.</summary>
     public bool IsSameBankTransfer =>
-        !string.IsNullOrEmpty(TransferFormSourceBank)
-        && !string.IsNullOrEmpty(TransferFormDestinationBank)
+        TransferFormSourceBank.HasValue
+        && TransferFormDestinationBank.HasValue
         && TransferFormSourceBank == TransferFormDestinationBank;
 
     public string SameBankTransferError => IsSameBankTransfer ? "Source and destination must be different banks." : string.Empty;
@@ -1085,25 +1077,25 @@ public class MonthlyViewModel : ViewModelBase
         private set => SetProperty(ref _transferSaveError, value);
     }
 
-    public RelayCommand<string> ShowMoveMoneyFormCommand { get; private set; } = null!;
+    public RelayCommand<Guid?> ShowMoveMoneyFormCommand { get; private set; } = null!;
     public RelayCommand CancelTransferFormCommand { get; private set; } = null!;
     public RelayCommand SaveTransferCommand { get; private set; } = null!;
     public RelayCommand<TransferDTO> EditTransferCommand { get; private set; } = null!;
 
     private void InitializeTransferCommands()
     {
-        ShowMoveMoneyFormCommand = new RelayCommand<string>(ShowCreateTransferForm);
+        ShowMoveMoneyFormCommand = new RelayCommand<Guid?>(ShowCreateTransferForm);
         CancelTransferFormCommand = new RelayCommand(CloseTransferForm);
         SaveTransferCommand = new RelayCommand(async () => await SaveTransferAsync(), () => !IsSavingTransfer && !IsSameBankTransfer);
         EditTransferCommand = new RelayCommand<TransferDTO>(ShowEditTransferForm);
     }
 
-    private void ShowCreateTransferForm(string? sourceBank)
+    private void ShowCreateTransferForm(Guid? sourceBank)
     {
         _editingTransferId = null;
         TransferFormDate = DateTime.Today;
-        TransferFormSourceBank = sourceBank ?? (Banks.Count > 0 ? Banks[0].Name : string.Empty);
-        TransferFormDestinationBank = string.Empty;
+        TransferFormSourceBank = sourceBank ?? (Banks.Count > 0 ? Banks[0].Id : null);
+        TransferFormDestinationBank = null;
         TransferFormAmount = string.Empty;
         TransferFormNote = string.Empty;
         TransferSaveError = null;
@@ -1120,8 +1112,8 @@ public class MonthlyViewModel : ViewModelBase
 
         _editingTransferId = transfer.Id;
         TransferFormDate = transfer.Date.ToDateTime(TimeOnly.MinValue);
-        TransferFormSourceBank = transfer.SourceBankName;
-        TransferFormDestinationBank = transfer.DestinationBankName;
+        TransferFormSourceBank = transfer.SourceBankId;
+        TransferFormDestinationBank = transfer.DestinationBankId;
         TransferFormAmount = transfer.Amount.ToString("0.##");
         TransferFormNote = transfer.Note ?? string.Empty;
         TransferSaveError = null;
@@ -1161,8 +1153,8 @@ public class MonthlyViewModel : ViewModelBase
             {
                 await _transferService.UpdateTransferAsync(id, new TransferUpdateDTO
                 {
-                    Date = date, SourceBankId = ResolveBankId(TransferFormSourceBank) ?? Guid.Empty,
-                    DestinationBankId = ResolveBankId(TransferFormDestinationBank) ?? Guid.Empty,
+                    Date = date, SourceBankId = TransferFormSourceBank!.Value,
+                    DestinationBankId = TransferFormDestinationBank!.Value,
                     Amount = amount, Note = note,
                 });
             }
@@ -1170,8 +1162,8 @@ public class MonthlyViewModel : ViewModelBase
             {
                 await _transferService.AddTransferAsync(new TransferCreateDTO
                 {
-                    Date = date, SourceBankId = ResolveBankId(TransferFormSourceBank) ?? Guid.Empty,
-                    DestinationBankId = ResolveBankId(TransferFormDestinationBank) ?? Guid.Empty,
+                    Date = date, SourceBankId = TransferFormSourceBank!.Value,
+                    DestinationBankId = TransferFormDestinationBank!.Value,
                     Amount = amount, Note = note,
                 });
             }
@@ -1195,7 +1187,7 @@ public class MonthlyViewModel : ViewModelBase
     private bool _isAdjustmentFormOpen;
     private Guid? _editingAdjustmentBank;
     private Guid? _editingAdjustmentId;
-    private string _adjustmentFormBankName = string.Empty;
+    private Guid? _adjustmentFormBankName;
     private decimal _adjustmentFormCurrentBalance;
     private DateTime? _adjustmentFormDate;
     private string _adjustmentFormTargetBalance = string.Empty;
@@ -1217,22 +1209,26 @@ public class MonthlyViewModel : ViewModelBase
     /// <see cref="BankTotals"/> balance (D3) — the same figure the Summary grid shows — and reveals
     /// the rest of the form via <see cref="IsAdjustmentBankSelected"/>.
     /// </summary>
-    public string AdjustmentFormBankName
+    public Guid? AdjustmentFormBankName
     {
         get => _adjustmentFormBankName;
         set
         {
             if (SetProperty(ref _adjustmentFormBankName, value))
             {
-                AdjustmentFormCurrentBalance = BankTotals.FirstOrDefault(b => b.Bank == value)?.Balance ?? 0m;
+                AdjustmentFormCurrentBalance = BankTotals.FirstOrDefault(b => b.BankId == value)?.Balance ?? 0m;
                 OnPropertyChanged(nameof(IsAdjustmentBankSelected));
+                OnPropertyChanged(nameof(AdjustmentFormBankDisplayName));
                 SaveAdjustmentCommand?.RaiseCanExecuteChanged();
             }
         }
     }
 
+    /// <summary>Display-only bank name for the selected <see cref="AdjustmentFormBankName"/> Id, used anywhere the UI shows the bank as text (e.g. the current-balance caption) rather than binding the raw Guid.</summary>
+    public string AdjustmentFormBankDisplayName => Banks.FirstOrDefault(b => b.Id == AdjustmentFormBankName)?.Name ?? string.Empty;
+
     /// <summary>Gates the rest of the Correct Balance form and its Save action until a bank has been picked.</summary>
-    public bool IsAdjustmentBankSelected => !string.IsNullOrEmpty(AdjustmentFormBankName);
+    public bool IsAdjustmentBankSelected => AdjustmentFormBankName is not null;
 
     public decimal AdjustmentFormCurrentBalance
     {
@@ -1313,7 +1309,7 @@ public class MonthlyViewModel : ViewModelBase
         AdjustmentFormNote = string.Empty;
         AdjustmentSaveError = null;
         AdjustmentSavedDelta = null;
-        AdjustmentFormBankName = string.Empty;
+        AdjustmentFormBankName = null;
         OnPropertyChanged(nameof(IsEditingAdjustment));
         IsAdjustmentFormOpen = true;
     }
@@ -1332,7 +1328,7 @@ public class MonthlyViewModel : ViewModelBase
         AdjustmentFormNote = adjustment.Note ?? string.Empty;
         AdjustmentSaveError = null;
         AdjustmentSavedDelta = null;
-        AdjustmentFormBankName = adjustment.BankName;
+        AdjustmentFormBankName = adjustment.BankId;
         OnPropertyChanged(nameof(IsEditingAdjustment));
         IsAdjustmentFormOpen = true;
     }
@@ -1376,7 +1372,7 @@ public class MonthlyViewModel : ViewModelBase
             }
             else
             {
-                result = await _balanceAdjustmentService.AddAdjustmentAsync(ResolveBankId(AdjustmentFormBankName) ?? Guid.Empty, new BalanceAdjustmentCreateDTO
+                result = await _balanceAdjustmentService.AddAdjustmentAsync(AdjustmentFormBankName!.Value, new BalanceAdjustmentCreateDTO
                 {
                     Date = date, TargetBalance = targetBalance, Note = note,
                 });
@@ -1407,7 +1403,7 @@ public class MonthlyViewModel : ViewModelBase
     }
 
     /// <summary>Pending "pay from" bank selection per unpaid card statement, keyed by statement id, mirroring useMonthly.ts's markPaidSources.</summary>
-    public Dictionary<Guid, string> MarkPaidSources { get; } = [];
+    public Dictionary<Guid, Guid> MarkPaidSources { get; } = [];
 
     public RelayCommand<CardStatementDTO> MarkStatementPaidCommand { get; private set; } = null!;
     public RelayCommand<CardStatementDTO> UnmarkStatementPaidCommand { get; private set; } = null!;
@@ -1420,9 +1416,9 @@ public class MonthlyViewModel : ViewModelBase
         UnmarkStatementPaidCommand = new RelayCommand<CardStatementDTO>(async statement => await UnmarkStatementPaidAsync(statement));
     }
 
-    public void SetMarkPaidSource(Guid statementId, string bankName)
+    public void SetMarkPaidSource(Guid statementId, Guid bankId)
     {
-        MarkPaidSources[statementId] = bankName;
+        MarkPaidSources[statementId] = bankId;
         MarkStatementPaidCommand.RaiseCanExecuteChanged();
     }
 
@@ -1437,7 +1433,7 @@ public class MonthlyViewModel : ViewModelBase
 
         try
         {
-            await _cardStatementService.MarkStatementPaidAsync(statement.Id, new MarkStatementPaidDTO { PaymentSourceBankId = ResolveBankId(paymentSource) });
+            await _cardStatementService.MarkStatementPaidAsync(statement.Id, new MarkStatementPaidDTO { PaymentSourceBankId = paymentSource });
             MarkPaidSources.Remove(statement.Id);
             await RefreshAsync();
         }

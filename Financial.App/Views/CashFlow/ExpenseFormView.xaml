@@ -88,7 +88,7 @@
                         <TextBlock Grid.Column="0" Text="Payment Source:" VerticalAlignment="Center"/>
                         <ComboBox Grid.Column="1" ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
                                   SelectedValue="{Binding ExpenseFormPaymentSource, UpdateSourceTrigger=PropertyChanged}"
-                                  SelectedValuePath="Name"/>
+                                  SelectedValuePath="Id"/>
                     </Grid>
                     <Grid Margin="0,8,0,0" Visibility="{Binding ShowRoundUpField, Converter={StaticResource BoolToVisibilityConverter}}">
                         <Grid.ColumnDefinitions>

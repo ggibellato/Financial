@@ -9,12 +9,17 @@ public class MonthlyViewModelTests
     private static readonly Guid BarclaysId = Guid.NewGuid();
     private static readonly Guid ChaseId = Guid.NewGuid();
 
+    private static readonly Guid GleisonSourceId = Guid.NewGuid();
+    private static readonly Guid ArianaSourceId = Guid.NewGuid();
+    private static readonly Guid LotterySourceId = Guid.NewGuid();
+    private static readonly Guid DividendoJurosSourceId = Guid.NewGuid();
+
     private static readonly List<IncomeSourceDTO> DefaultIncomeSources =
     [
-        new() { Id = Guid.NewGuid(), Name = "Gleison", IsActive = true, Group = "Salary" },
-        new() { Id = Guid.NewGuid(), Name = "Ariana", IsActive = true, Group = "Salary" },
-        new() { Id = Guid.NewGuid(), Name = "Lottery", IsActive = true, Group = "NonReportable" },
-        new() { Id = Guid.NewGuid(), Name = "DividendoJuros", IsActive = true, Group = "DividendoJuros" },
+        new() { Id = GleisonSourceId, Name = "Gleison", IsActive = true, Group = "Salary" },
+        new() { Id = ArianaSourceId, Name = "Ariana", IsActive = true, Group = "Salary" },
+        new() { Id = LotterySourceId, Name = "Lottery", IsActive = true, Group = "NonReportable" },
+        new() { Id = DividendoJurosSourceId, Name = "DividendoJuros", IsActive = true, Group = "DividendoJuros" },
     ];
 
     private static (MonthlyViewModel ViewModel, StubExpenseService Expenses, StubIncomeService Incomes, StubBankService Banks, StubTitheService Tithe) CreateViewModel(
@@ -148,7 +153,7 @@ public class MonthlyViewModelTests
         viewModel.ExpenseFormDescription = "Groceries";
         viewModel.ExpenseFormCategory = "Mercado";
         viewModel.ExpenseFormValue = "25.50";
-        viewModel.ExpenseFormPaymentSource = banks.Banks[1].Name; // Chase, no round-up
+        viewModel.ExpenseFormPaymentSource = banks.Banks[1].Id; // Chase, no round-up
 
         await viewModel.SaveExpenseAsync();
 
@@ -209,7 +214,7 @@ public class MonthlyViewModelTests
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
         viewModel.IsCardPaymentMode.Should().BeFalse();
-        viewModel.ExpenseFormPaymentSource.Should().Be(banks.Banks[0].Name);
+        viewModel.ExpenseFormPaymentSource.Should().Be(banks.Banks[0].Id);
         viewModel.ExpenseFormCardTag.Should().BeEmpty();
     }
 
@@ -220,7 +225,7 @@ public class MonthlyViewModelTests
 
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
 
-        viewModel.ExpenseFormPaymentSource.Should().BeEmpty();
+        viewModel.ExpenseFormPaymentSource.Should().BeNull();
         viewModel.ExpenseFormCardTag.Should().BeEmpty();
     }
 
@@ -252,7 +257,7 @@ public class MonthlyViewModelTests
         await viewModel.RefreshAsync();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
-        viewModel.ExpenseFormPaymentSource = banks.Banks[0].Name; // Barclays, round-up enabled
+        viewModel.ExpenseFormPaymentSource = banks.Banks[0].Id; // Barclays, round-up enabled
 
         viewModel.ShowRoundUpField.Should().BeTrue();
     }
@@ -264,7 +269,7 @@ public class MonthlyViewModelTests
         await viewModel.RefreshAsync();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
-        viewModel.ExpenseFormPaymentSource = banks.Banks[1].Name; // Chase, round-up disabled
+        viewModel.ExpenseFormPaymentSource = banks.Banks[1].Id; // Chase, round-up disabled
 
         viewModel.ShowRoundUpField.Should().BeFalse();
     }
@@ -277,7 +282,7 @@ public class MonthlyViewModelTests
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
         viewModel.ExpenseFormValue = "-9.40";
-        viewModel.ExpenseFormPaymentSource = banks.Banks[0].Name; // Barclays, round-up enabled
+        viewModel.ExpenseFormPaymentSource = banks.Banks[0].Id; // Barclays, round-up enabled
 
         viewModel.ExpenseFormRoundUpAmount.Should().BeEmpty();
     }
@@ -339,7 +344,7 @@ public class MonthlyViewModelTests
 
         await viewModel.RefreshAsync();
 
-        viewModel.IncomeSourceOptions.Should().Equal("Gleison", "Ariana", "Lottery", "DividendoJuros");
+        viewModel.IncomeSourceOptions.Select(s => s.Name).Should().Equal("Gleison", "Ariana", "Lottery", "DividendoJuros");
     }
 
     [Fact]
@@ -357,7 +362,7 @@ public class MonthlyViewModelTests
 
         await viewModel.RefreshAsync();
 
-        viewModel.IncomeSourceOptions.Should().Equal("Gleison");
+        viewModel.IncomeSourceOptions.Select(s => s.Name).Should().Equal("Gleison");
     }
 
     [Fact]
@@ -368,7 +373,7 @@ public class MonthlyViewModelTests
 
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
 
-        viewModel.IncomeFormSource.Should().Be("Gleison");
+        viewModel.IncomeFormSource.Should().Be(GleisonSourceId);
     }
 
     [Fact]
@@ -380,7 +385,7 @@ public class MonthlyViewModelTests
 
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
 
-        viewModel.IncomeFormSource.Should().BeEmpty();
+        viewModel.IncomeFormSource.Should().BeNull();
     }
 
     [Fact]
@@ -393,17 +398,18 @@ public class MonthlyViewModelTests
 
         viewModel.HasError.Should().BeTrue();
         viewModel.IncomeSourceOptions.Should().BeEmpty();
-        IncomeFormValidation.BuildValidationMessage(DateTime.Today, incomeSource: string.Empty, netValue: "10", bank: "Barclays")
+        IncomeFormValidation.BuildValidationMessage(DateTime.Today, incomeSource: null, netValue: "10", bank: Guid.NewGuid())
             .Should().Contain("Source is required.");
     }
 
     [Fact]
-    public void AddIncome_GleisonSource_ShowsGrossValueField()
+    public async Task AddIncome_GleisonSource_ShowsGrossValueField()
     {
         var (viewModel, _, _, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
 
-        viewModel.IncomeFormSource = "Gleison";
+        viewModel.IncomeFormSource = GleisonSourceId;
 
         viewModel.ShowIncomeGrossValueField.Should().BeTrue();
     }
@@ -414,7 +420,7 @@ public class MonthlyViewModelTests
         var (viewModel, _, _, _, _) = CreateViewModel();
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
 
-        viewModel.IncomeFormSource = "Lottery";
+        viewModel.IncomeFormSource = LotterySourceId;
 
         viewModel.ShowIncomeGrossValueField.Should().BeFalse();
     }
@@ -426,9 +432,9 @@ public class MonthlyViewModelTests
         await viewModel.RefreshAsync();
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
         viewModel.IncomeFormDate = DateTime.Today;
-        viewModel.IncomeFormSource = "Lottery";
+        viewModel.IncomeFormSource = LotterySourceId;
         viewModel.IncomeFormNetValue = "50";
-        viewModel.IncomeFormBank = banks.Banks[0].Name;
+        viewModel.IncomeFormBank = banks.Banks[0].Id;
 
         await viewModel.SaveIncomeAsync();
 
@@ -516,7 +522,7 @@ public class MonthlyViewModelTests
         viewModel.ExpenseFormDescription = "";
         viewModel.ExpenseFormCategory = "Mercado";
         viewModel.ExpenseFormValue = "10";
-        viewModel.ExpenseFormPaymentSource = banks.Banks[0].Name;
+        viewModel.ExpenseFormPaymentSource = banks.Banks[0].Id;
 
         await viewModel.SaveExpenseAsync();
 
@@ -532,9 +538,9 @@ public class MonthlyViewModelTests
         await viewModel.RefreshAsync();
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
         viewModel.IncomeFormDate = DateTime.Today;
-        viewModel.IncomeFormSource = "Lottery";
+        viewModel.IncomeFormSource = LotterySourceId;
         viewModel.IncomeFormNetValue = "50";
-        viewModel.IncomeFormBank = "";
+        viewModel.IncomeFormBank = null;
 
         await viewModel.SaveIncomeAsync();
 
@@ -655,7 +661,7 @@ public class MonthlyViewModelTests
         viewModel.ExpenseFormDescription = "Groceries";
         viewModel.ExpenseFormCategory = "Mercado";
         viewModel.ExpenseFormValue = "25.50";
-        viewModel.ExpenseFormPaymentSource = banks.Banks[1].Name;
+        viewModel.ExpenseFormPaymentSource = banks.Banks[1].Id;
 
         await viewModel.SaveExpenseAsync();
 
