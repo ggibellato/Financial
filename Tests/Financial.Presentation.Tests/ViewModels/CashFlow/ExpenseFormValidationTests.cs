@@ -13,12 +13,12 @@ public class ExpenseFormValidationTests
         string category = "Mercado",
         string value = "10",
         bool isCardMode = false,
-        string paymentSource = "Barclays",
+        Guid? paymentSource = null,
         string cardTag = "",
         bool showRoundUpField = false,
         string roundUpAmount = "") =>
         ExpenseFormValidation.BuildValidationMessage(
-            date, description, category, value, isCardMode, paymentSource, cardTag, showRoundUpField, roundUpAmount);
+            date, description, category, value, isCardMode, paymentSource ?? Guid.NewGuid(), cardTag, showRoundUpField, roundUpAmount);
 
     [Fact]
     public void ValidBankModeForm_ReturnsEmpty()
@@ -56,7 +56,9 @@ public class ExpenseFormValidationTests
     [Fact]
     public void BankMode_MissingPaymentSource_ReturnsError()
     {
-        Validate(ValidDate, paymentSource: "").Should().Contain("Payment Source is required.");
+        ExpenseFormValidation.BuildValidationMessage(
+            ValidDate, "Groceries", "Mercado", "10", isCardMode: false, paymentSource: null, "", false, "")
+            .Should().Contain("Payment Source is required.");
     }
 
     [Fact]
@@ -68,7 +70,7 @@ public class ExpenseFormValidationTests
     [Fact]
     public void CardMode_WithCardTag_DoesNotRequirePaymentSource()
     {
-        Validate(ValidDate, isCardMode: true, cardTag: "BaAmex", paymentSource: "").Should().BeEmpty();
+        Validate(ValidDate, isCardMode: true, cardTag: "BaAmex", paymentSource: null).Should().BeEmpty();
     }
 
     [Theory]

@@ -8,8 +8,8 @@ public class TransferFormValidationTests
     private static readonly DateTime ValidDate = DateTime.Today;
 
     private static string Validate(
-        DateTime? date, string sourceBank = "Barclays", string destinationBank = "Chase", string amount = "100") =>
-        TransferFormValidation.BuildValidationMessage(date, sourceBank, destinationBank, amount);
+        DateTime? date, Guid? sourceBank = null, Guid? destinationBank = null, string amount = "100") =>
+        TransferFormValidation.BuildValidationMessage(date, sourceBank ?? Guid.NewGuid(), destinationBank ?? Guid.NewGuid(), amount);
 
     [Fact]
     public void ValidForm_ReturnsEmpty()
@@ -26,19 +26,22 @@ public class TransferFormValidationTests
     [Fact]
     public void MissingSourceBank_ReturnsError()
     {
-        Validate(ValidDate, sourceBank: "").Should().Contain("Source bank is required.");
+        TransferFormValidation.BuildValidationMessage(ValidDate, null, Guid.NewGuid(), "100")
+            .Should().Contain("Source bank is required.");
     }
 
     [Fact]
     public void MissingDestinationBank_ReturnsError()
     {
-        Validate(ValidDate, destinationBank: "").Should().Contain("Destination bank is required.");
+        TransferFormValidation.BuildValidationMessage(ValidDate, Guid.NewGuid(), null, "100")
+            .Should().Contain("Destination bank is required.");
     }
 
     [Fact]
     public void SameSourceAndDestination_ReturnsError()
     {
-        Validate(ValidDate, sourceBank: "Barclays", destinationBank: "Barclays")
+        var bankId = Guid.NewGuid();
+        Validate(ValidDate, sourceBank: bankId, destinationBank: bankId)
             .Should().Contain("Source and destination must be different banks.");
     }
 

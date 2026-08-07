@@ -63,9 +63,9 @@ public class MonthlyViewModelBanksCardsTests
     {
         var (viewModel, _, banks, transfers, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
-        viewModel.ShowMoveMoneyFormCommand.Execute(banks.Banks[0].Name);
+        viewModel.ShowMoveMoneyFormCommand.Execute(banks.Banks[0].Id);
         viewModel.TransferFormDate = DateTime.Today;
-        viewModel.TransferFormDestinationBank = banks.Banks[1].Name;
+        viewModel.TransferFormDestinationBank = banks.Banks[1].Id;
         viewModel.TransferFormAmount = "75";
 
         await viewModel.SaveTransferAsync();
@@ -81,9 +81,9 @@ public class MonthlyViewModelBanksCardsTests
     public async Task AddTransfer_SameSourceAndDestination_BlocksSaveWithoutServiceCall()
     {
         var (viewModel, _, banks, transfers, _, _) = CreateViewModel();
-        viewModel.ShowMoveMoneyFormCommand.Execute(banks.Banks[0].Name);
+        viewModel.ShowMoveMoneyFormCommand.Execute(banks.Banks[0].Id);
         viewModel.TransferFormDate = DateTime.Today;
-        viewModel.TransferFormDestinationBank = banks.Banks[0].Name;
+        viewModel.TransferFormDestinationBank = banks.Banks[0].Id;
         viewModel.TransferFormAmount = "75";
 
         viewModel.SaveTransferCommand.CanExecute(null).Should().BeFalse();
@@ -94,7 +94,7 @@ public class MonthlyViewModelBanksCardsTests
         transfers.LastCreateRequest.Should().BeNull();
         viewModel.TransferSaveError.Should().NotBeNullOrEmpty();
 
-        viewModel.TransferFormDestinationBank = banks.Banks[1].Name;
+        viewModel.TransferFormDestinationBank = banks.Banks[1].Id;
         viewModel.SaveTransferCommand.CanExecute(null).Should().BeTrue();
         viewModel.SameBankTransferError.Should().BeEmpty();
     }
@@ -105,9 +105,9 @@ public class MonthlyViewModelBanksCardsTests
         var (viewModel, _, banks, transfers, _, _) = CreateViewModel();
         transfers.ThrowOnAdd = "Insufficient funds in source bank.";
         await viewModel.RefreshAsync();
-        viewModel.ShowMoveMoneyFormCommand.Execute(banks.Banks[0].Name);
+        viewModel.ShowMoveMoneyFormCommand.Execute(banks.Banks[0].Id);
         viewModel.TransferFormDate = DateTime.Today;
-        viewModel.TransferFormDestinationBank = banks.Banks[1].Name;
+        viewModel.TransferFormDestinationBank = banks.Banks[1].Id;
         viewModel.TransferFormAmount = "75";
 
         await viewModel.SaveTransferAsync();
@@ -115,7 +115,7 @@ public class MonthlyViewModelBanksCardsTests
         viewModel.IsTransferFormOpen.Should().BeTrue();
         viewModel.TransferSaveError.Should().Be("Insufficient funds in source bank.");
         viewModel.TransferFormAmount.Should().Be("75");
-        viewModel.TransferFormDestinationBank.Should().Be(banks.Banks[1].Name);
+        viewModel.TransferFormDestinationBank.Should().Be(banks.Banks[1].Id);
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public class MonthlyViewModelBanksCardsTests
         await viewModel.RefreshAsync();
 
         viewModel.ShowCorrectBalanceFormCommand.Execute(null);
-        viewModel.AdjustmentFormBankName = "Barclays";
+        viewModel.AdjustmentFormBankName = BarclaysId;
         viewModel.AdjustmentFormCurrentBalance.Should().Be(42.5m);
         viewModel.AdjustmentFormDate = DateTime.Today;
         viewModel.AdjustmentFormTargetBalance = "50";
@@ -230,7 +230,7 @@ public class MonthlyViewModelBanksCardsTests
 
         viewModel.MarkStatementPaidCommand.CanExecute(statement).Should().BeFalse();
 
-        viewModel.SetMarkPaidSource(statement.Id, banks.Banks[0].Name);
+        viewModel.SetMarkPaidSource(statement.Id, banks.Banks[0].Id);
 
         viewModel.MarkStatementPaidCommand.CanExecute(statement).Should().BeTrue();
         await viewModel.MarkStatementPaidAsync(statement);
