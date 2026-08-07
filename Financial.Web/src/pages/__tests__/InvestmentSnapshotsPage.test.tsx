@@ -16,7 +16,8 @@ vi.mock('../../api/financialApiClient', () => ({
 
 const SNAPSHOTS: InvestmentSnapshotDto[] = Array.from({ length: 11 }, (_, i) => ({
   id: `s${i}`,
-  account: `Account${i}`,
+  accountId: `a${i}`,
+  accountName: `Account${i}`,
   isLiability: i === 1,
   year: 2026,
   month: 7,

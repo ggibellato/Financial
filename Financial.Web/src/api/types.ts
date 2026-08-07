@@ -517,7 +517,8 @@ export interface CategoryTotalsAnnualDto {
 
 export interface InvestmentSnapshotDto {
   id: string
-  account: string
+  accountId: string
+  accountName: string
   isLiability: boolean
   year: number
   month: number
