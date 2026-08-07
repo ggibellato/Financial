@@ -362,7 +362,8 @@ export interface ExpenseDto {
   description: string
   value: number
   category: string
-  paymentSource: string | null
+  paymentSourceBankId: string | null
+  paymentSourceBankName: string | null
   cardTag: string | null
   chargeDate: string | null
   invoiceDate: string | null
@@ -376,7 +377,7 @@ export interface CreateExpenseDto {
   description: string
   value: number
   category: string
-  paymentSource: string | null
+  paymentSourceBankId: string | null
   cardTag: string | null
   invoiceDate: string | null
   roundUpAmount: number | null
@@ -387,13 +388,14 @@ export interface UpdateExpenseDto {
   description: string
   value: number
   category: string
-  paymentSource: string | null
+  paymentSourceBankId: string | null
   cardTag: string | null
   invoiceDate: string | null
   roundUpAmount: number | null
 }
 
 export interface BankDto {
+  id: string
   name: string
   roundUpEnabled: boolean
 }
@@ -418,26 +420,28 @@ export interface TitheSummaryDto {
 export interface IncomeDto {
   id: string
   date: string
-  incomeSource: string
+  incomeSourceId: string
+  incomeSourceName: string
   grossValue: number | null
   netValue: number
-  bank: string
+  bankId: string
+  bankName: string
 }
 
 export interface CreateIncomeDto {
   date: string
-  incomeSource: string
+  incomeSourceId: string
   grossValue: number | null
   netValue: number
-  bank: string
+  bankId: string
 }
 
 export interface UpdateIncomeDto {
   date: string
-  incomeSource: string
+  incomeSourceId: string
   grossValue: number | null
   netValue: number
-  bank: string
+  bankId: string
 }
 
 export interface CategoryTotalDto {
@@ -455,7 +459,7 @@ export interface CardStatementDto {
 }
 
 export interface MarkCardStatementPaidDto {
-  paymentSource: string
+  paymentSourceBankId: string | null
 }
 
 export interface CategoryAnnualTotalDto {
@@ -537,24 +541,26 @@ export interface CategoryAverageDto {
 export interface TransferDto {
   id: string
   date: string
-  sourceBank: string
-  destinationBank: string
+  sourceBankId: string
+  sourceBankName: string
+  destinationBankId: string
+  destinationBankName: string
   amount: number
   note: string | null
 }
 
 export interface CreateTransferDto {
   date: string
-  sourceBank: string
-  destinationBank: string
+  sourceBankId: string
+  destinationBankId: string
   amount: number
   note: string | null
 }
 
 export interface UpdateTransferDto {
   date: string
-  sourceBank: string
-  destinationBank: string
+  sourceBankId: string
+  destinationBankId: string
   amount: number
   note: string | null
 }
@@ -562,7 +568,8 @@ export interface UpdateTransferDto {
 export interface BalanceAdjustmentDto {
   id: string
   date: string
-  bank: string
+  bankId: string
+  bankName: string
   targetBalance: number
   delta: number
   note: string | null
