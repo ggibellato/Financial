@@ -1,7 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ReserveBuckets;
 using FluentAssertions;
-using ReserveBucketEnum = Financial.CashFlow.Domain.Enums.ReserveBucket;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.ReserveBuckets;
 
@@ -51,10 +50,12 @@ public class ReserveBucketMigratorTests
     }
 
     [Fact]
-    public void Migrate_MovementWithMatchingBucketName_CountsAsResolved()
+    public void Migrate_MovementReferencingASeededBucket_CountsAsResolved()
     {
         var data = CashFlowData.Create();
-        var movement = ReserveMovement.Create(ReserveBucketEnum.Investimento, 100m, new DateOnly(2026, 7, 1), "Split");
+        var bucket = ReserveBucket.Create("Investimento", 33.33m);
+        data.AddReserveBucket(bucket);
+        var movement = ReserveMovement.Create(bucket, 100m, new DateOnly(2026, 7, 1), "Split");
         data.AddReserveMovement(movement);
 
         var summary = ReserveBucketMigrator.Migrate(data);
@@ -63,11 +64,19 @@ public class ReserveBucketMigratorTests
         summary.UnresolvedMovements.Should().BeEmpty();
     }
 
-    // No test exercises the unresolved-movement audit path directly: ReserveMovement.Bucket is
-    // still the pre-F02 enum, which has exactly the same 4 fixed values the migrator always
-    // (idempotently) seeds, so a movement can never fail to resolve through any call reachable
-    // via the public API today. The audit logic is kept for forward compatibility - it becomes
-    // reachable once F02 turns Bucket into a real, possibly-orphaned entity reference.
+    [Fact]
+    public void Migrate_MovementReferencingAnUnseededBucketInstance_IsFlaggedUnresolved()
+    {
+        var data = CashFlowData.Create();
+        var orphanBucket = ReserveBucket.Create("RetiredBucket", 10m);
+        var movement = ReserveMovement.Create(orphanBucket, 100m, new DateOnly(2026, 7, 1), "Orphaned");
+        data.AddReserveMovement(movement);
+
+        var summary = ReserveBucketMigrator.Migrate(data);
+
+        summary.UnresolvedMovements.Should().ContainSingle().Which.Id.Should().Be(movement.Id);
+        summary.MovementsResolvedCount.Should().Be(0);
+    }
 
     [Fact]
     public void Migrate_WithDefaultSeed_ActiveSplitPercentagesSumToOneHundred()

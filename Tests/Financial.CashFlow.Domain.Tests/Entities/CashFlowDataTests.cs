@@ -1,7 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
-using ReserveBucketEnum = Financial.CashFlow.Domain.Enums.ReserveBucket;
+using ReserveBucketEntity = Financial.CashFlow.Domain.Entities.ReserveBucket;
 
 namespace Financial.CashFlow.Domain.Tests;
 
@@ -61,7 +61,7 @@ public class CashFlowDataTests
     {
         var data = CashFlowData.Create();
 
-        data.AddReserveBucket(Financial.CashFlow.Domain.Entities.ReserveBucket.Create("Investimento", 33.33m));
+        data.AddReserveBucket(ReserveBucketEntity.Create("Investimento", 33.33m));
 
         data.ReserveBuckets.Should().ContainSingle();
         data.Expenses.Should().BeEmpty();
@@ -142,8 +142,10 @@ public class CashFlowDataTests
         data.ReserveMovements.Should().ContainSingle();
     }
 
+    private static readonly ReserveBucketEntity TestBucket = ReserveBucketEntity.Create("Investimento", 33.33m);
+
     private static ReserveMovement CreateReserveMovement() =>
-        ReserveMovement.Create(ReserveBucketEnum.Investimento, 10m, new DateOnly(2026, 7, 1), "Test movement");
+        ReserveMovement.Create(TestBucket, 10m, new DateOnly(2026, 7, 1), "Test movement");
 
     [Fact]
     public void AddCardStatement_AddsOnlyToCardStatementsCollection()

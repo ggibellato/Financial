@@ -32,7 +32,8 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
     /// <summary>When true, the next <see cref="SaveChangesAsync"/> call throws once and resets to false.</summary>
     public bool ThrowOnNextSave { get; set; }
 
-    public StubCashFlowRepository(bool seedDefaultBanks = false, bool seedDefaultIncomeSources = false)
+    public StubCashFlowRepository(
+        bool seedDefaultBanks = false, bool seedDefaultIncomeSources = false, bool seedDefaultReserveBuckets = false)
     {
         if (seedDefaultBanks)
         {
@@ -42,6 +43,11 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
         if (seedDefaultIncomeSources)
         {
             IncomeSources.AddRange(DefaultIncomeSources());
+        }
+
+        if (seedDefaultReserveBuckets)
+        {
+            ReserveBuckets.AddRange(DefaultReserveBuckets());
         }
     }
 
@@ -60,6 +66,15 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
         IncomeSource.Create("Ariana", IncomeGroup.Salary),
         IncomeSource.Create("Lottery", IncomeGroup.NonReportable),
         IncomeSource.Create("DividendoJuros", IncomeGroup.DividendoJuros)
+    ];
+
+    /// <summary>The 4 reserve buckets seeded in a real deployment by the CashFlowSpreadsheetImport migration tool.</summary>
+    public static IEnumerable<ReserveBucketEntity> DefaultReserveBuckets() =>
+    [
+        ReserveBucketEntity.Create("Investimento", 33.33m),
+        ReserveBucketEntity.Create("HouseTreats", 33.33m),
+        ReserveBucketEntity.Create("Ariana", 16.67m),
+        ReserveBucketEntity.Create("Gleison", 16.67m)
     ];
 
     public void SetOpeningBalance(string bankName, decimal openingBalance, DateOnly openingBalanceDate) =>

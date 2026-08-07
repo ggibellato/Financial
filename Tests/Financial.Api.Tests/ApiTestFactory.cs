@@ -83,9 +83,9 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         return tempPath;
     }
 
-    // Mirrors the banks, income sources, and investment accounts a real deployment would have
-    // after running the CashFlowSpreadsheetImport migration tool once (see BankMigrator /
-    // IncomeSourceMigrator / InvestmentAccountMigrator).
+    // Mirrors the banks, income sources, reserve buckets, and investment accounts a real
+    // deployment would have after running the CashFlowSpreadsheetImport migration tool once
+    // (see BankMigrator / IncomeSourceMigrator / ReserveBucketMigrator / InvestmentAccountMigrator).
     private const string SeededBanksJson = """
         {
           "Banks": [
@@ -98,6 +98,12 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000002", "Name": "Ariana", "IsActive": true, "Group": "Salary" },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000003", "Name": "Lottery", "IsActive": true, "Group": "NonReportable" },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000004", "Name": "DividendoJuros", "IsActive": true, "Group": "DividendoJuros" }
+          ],
+          "ReserveBuckets": [
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000001", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000002", "Name": "HouseTreats", "IsActive": true, "SplitPercentage": 33.33 },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000003", "Name": "Ariana", "IsActive": true, "SplitPercentage": 16.67 },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000004", "Name": "Gleison", "IsActive": true, "SplitPercentage": 16.67 }
           ],
           "InvestmentAccounts": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000001", "Name": "BlueRewardsSaver", "IsActive": true, "IsLiability": false },

@@ -1,10 +1,10 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Persistence;
-using ReserveBucketEnum = Financial.CashFlow.Domain.Enums.ReserveBucket;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.Shared.Infrastructure.Persistence;
 using FluentAssertions;
+using ReserveBucketEntity = Financial.CashFlow.Domain.Entities.ReserveBucket;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Repositories;
 
@@ -113,7 +113,7 @@ public class CashFlowJsonRepositoryTests
         {
             var data = CashFlowData.Create();
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
-            var movement = ReserveMovement.Create(ReserveBucketEnum.Investimento, 10m, new DateOnly(2026, 7, 1), "Test movement");
+            var movement = ReserveMovement.Create(ReserveBucketEntity.Create("Investimento", 33.33m), 10m, new DateOnly(2026, 7, 1), "Test movement");
             repository.AddReserveMovement(movement);
 
             repository.DeleteReserveMovement(movement.Id);
@@ -169,7 +169,7 @@ public class CashFlowJsonRepositoryTests
         try
         {
             var data = CashFlowData.Create();
-            data.AddReserveBucket(Financial.CashFlow.Domain.Entities.ReserveBucket.Create("Investimento", 33.33m));
+            data.AddReserveBucket(ReserveBucketEntity.Create("Investimento", 33.33m));
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
 
             repository.GetReserveBuckets().Should().ContainSingle().Which.Name.Should().Be("Investimento");
