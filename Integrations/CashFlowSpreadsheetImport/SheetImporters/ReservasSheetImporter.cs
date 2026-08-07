@@ -1,7 +1,7 @@
 using ClosedXML.Excel;
+using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
-using ReserveBucketEnum = Financial.CashFlow.Domain.Enums.ReserveBucket;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
 
@@ -20,18 +20,19 @@ public static class ReservasSheetImporter
     private const int DescriptionColumn = 2;
     private const int FirstDataRow = 2;
 
-    private static readonly (int Column, ReserveBucketEnum Bucket)[] BucketColumns =
+    private static readonly (int Column, string BucketName)[] BucketColumns =
     [
-        (6, ReserveBucketEnum.Investimento),
-        (7, ReserveBucketEnum.HouseTreats),
-        (8, ReserveBucketEnum.Ariana),
-        (9, ReserveBucketEnum.Gleison),
+        (6, "Investimento"),
+        (7, "HouseTreats"),
+        (8, "Ariana"),
+        (9, "Gleison"),
     ];
 
-    public static IReadOnlyList<ReserveMovement> Import(IXLWorksheet sheet)
+    public static IReadOnlyList<ReserveMovement> Import(IXLWorksheet sheet, IReadOnlyCollection<ReserveBucket> buckets)
     {
         var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
         var movements = new List<ReserveMovement>();
+        var resolvedBuckets = ResolveBucketColumns(buckets);
 
         for (var row = FirstDataRow; row <= lastRow; row++)
         {
@@ -44,7 +45,7 @@ public static class ReservasSheetImporter
             var date = DateOnly.FromDateTime(dateTime);
             var description = sheet.Cell(row, DescriptionColumn).GetString();
 
-            foreach (var (column, bucket) in BucketColumns)
+            foreach (var (column, bucket) in resolvedBuckets)
             {
                 var amount = NumericCellReader.TryRead(sheet.Cell(row, column));
                 if (amount is null)
@@ -58,4 +59,17 @@ public static class ReservasSheetImporter
 
         return movements;
     }
+
+    private static (int Column, ReserveBucket Bucket)[] ResolveBucketColumns(IReadOnlyCollection<ReserveBucket> buckets) =>
+        BucketColumns
+            .Select(entry =>
+            {
+                if (!ReserveBucketNameResolver.TryResolve(entry.BucketName, buckets, out var bucket))
+                {
+                    throw new InvalidOperationException($"Reserve bucket '{entry.BucketName}' is not seeded.");
+                }
+
+                return (entry.Column, Bucket: bucket!);
+            })
+            .ToArray();
 }

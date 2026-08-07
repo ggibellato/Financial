@@ -4,9 +4,8 @@ namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImpo
 
 /// <summary>
 /// Idempotently seeds the 4 tracked reserve buckets and audits every reserve movement's bucket
-/// name against them. <see cref="ReserveMovement.Bucket"/> is still the pre-F02 enum at this
-/// point, so the audit compares by name (<c>ToString()</c>) rather than by id - F02 will simplify
-/// this to an id comparison once the movement references a real <see cref="ReserveBucket"/>.
+/// against them. <see cref="ReserveMovement.Bucket"/> is a real <see cref="ReserveBucket"/>
+/// reference (F02), so a movement resolves exactly when its bucket is one of the seeded instances.
 /// </summary>
 public static class ReserveBucketMigrator
 {
@@ -50,10 +49,7 @@ public static class ReserveBucketMigrator
     {
         foreach (var movement in data.ReserveMovements)
         {
-            var resolves = data.ReserveBuckets.Any(b =>
-                string.Equals(b.Name, movement.Bucket.ToString(), StringComparison.OrdinalIgnoreCase));
-
-            if (resolves)
+            if (data.ReserveBuckets.Contains(movement.Bucket))
             {
                 summary.CountMovementResolved();
             }
