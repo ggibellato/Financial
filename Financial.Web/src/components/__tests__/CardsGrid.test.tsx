@@ -4,8 +4,8 @@ import CardsGrid from '../CardsGrid'
 import type { BankDto, CardStatementDto } from '../../api/types'
 
 const BANKS: BankDto[] = [
-  { name: 'Barclays', roundUpEnabled: false },
-  { name: 'Trading212', roundUpEnabled: true },
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
 ]
 
 const CARD_STATEMENTS: CardStatementDto[] = [
@@ -51,8 +51,8 @@ describe('CardsGrid', () => {
     const markPaidButton = screen.getByRole('button', { name: 'Mark Paid' })
     expect(markPaidButton).toBeDisabled()
 
-    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'Trading212' } })
-    expect(setMarkPaidSource).toHaveBeenCalledWith('c1', 'Trading212')
+    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'bank-trading212' } })
+    expect(setMarkPaidSource).toHaveBeenCalledWith('c1', 'bank-trading212')
   })
 
   it('calls unmarkStatementPaid for a paid card', () => {

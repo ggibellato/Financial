@@ -62,9 +62,9 @@ vi.mock('../api/financialApiClient', () => ({
 }))
 
 const BANKS: BankDto[] = [
-  { name: 'Barclays', roundUpEnabled: false },
-  { name: 'Trading212', roundUpEnabled: true },
-  { name: 'Chase', roundUpEnabled: true },
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
+  { id: 'bank-chase', name: 'Chase', roundUpEnabled: true },
 ]
 
 const INCOME_SOURCES: IncomeSourceDto[] = [
@@ -81,7 +81,8 @@ const EXPENSES: ExpenseDto[] = [
     description: 'Lidl',
     value: 42.5,
     category: 'Mercado',
-    paymentSource: 'Barclays',
+    paymentSourceBankId: 'bank-barclays',
+    paymentSourceBankName: 'Barclays',
     cardTag: null,
     chargeDate: null,
     invoiceDate: null,
@@ -102,10 +103,12 @@ const INCOMES: IncomeDto[] = [
   {
     id: 'i1',
     date: `${CURRENT_YEAR}-${String(CURRENT_MONTH).padStart(2, '0')}-01`,
-    incomeSource: 'Gleison',
+    incomeSourceId: '1',
+    incomeSourceName: 'Gleison',
     grossValue: 3200,
     netValue: 2450,
-    bank: 'Barclays',
+    bankId: 'bank-barclays',
+    bankName: 'Barclays',
   },
 ]
 
@@ -171,7 +174,7 @@ describe('useMonthly', () => {
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    expect(result.current.createIncomeSource).toBe('Gleison')
+    expect(result.current.createIncomeSource).toBe('1')
   })
 
   it('leaves the income source list empty and default source unset when the fetch fails', async () => {
@@ -210,9 +213,9 @@ describe('useMonthly', () => {
 
     expect(result.current.categoryTotalsSum).toBe(42.5)
     expect(result.current.bankTotals).toEqual([
-      { bank: 'Barclays', balance: 42.5, roundUpTotal: 0 },
-      { bank: 'Trading212', balance: 0, roundUpTotal: 0 },
-      { bank: 'Chase', balance: 0, roundUpTotal: 0 },
+      { bankId: 'bank-barclays', bank: 'Barclays', balance: 42.5, roundUpTotal: 0 },
+      { bankId: 'bank-trading212', bank: 'Trading212', balance: 0, roundUpTotal: 0 },
+      { bankId: 'bank-chase', bank: 'Chase', balance: 0, roundUpTotal: 0 },
     ])
     expect(result.current.bankTotalsSum).toBe(42.5)
     expect(result.current.roundUpTotalsSum).toBe(0)
@@ -302,9 +305,11 @@ describe('useMonthly', () => {
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    act(() => result.current.markStatementPaid('c1', 'Trading212'))
+    act(() => result.current.markStatementPaid('c1', 'bank-trading212'))
 
-    await waitFor(() => expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSource: 'Trading212' }))
+    await waitFor(() =>
+      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212' }),
+    )
     await waitFor(() => expect(getCardStatementsByMonthMock).toHaveBeenCalledTimes(2))
   })
 
@@ -312,9 +317,9 @@ describe('useMonthly', () => {
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    act(() => result.current.setMarkPaidSource('c1', 'Chase'))
+    act(() => result.current.setMarkPaidSource('c1', 'bank-chase'))
 
-    expect(result.current.markPaidSources).toEqual({ c1: 'Chase' })
+    expect(result.current.markPaidSources).toEqual({ c1: 'bank-chase' })
   })
 
   it('unmarks a paid statement after confirmation and re-fetches', async () => {
@@ -351,7 +356,7 @@ describe('useMonthly', () => {
     expect(result.current.createPaymentMode).toBe('bank')
     await waitFor(() =>
       expect(createExpenseMock).toHaveBeenCalledWith(
-        expect.objectContaining({ paymentSource: 'Barclays', cardTag: null }),
+        expect.objectContaining({ paymentSourceBankId: 'bank-barclays', cardTag: null }),
       ),
     )
   })
@@ -370,7 +375,7 @@ describe('useMonthly', () => {
 
     await waitFor(() =>
       expect(createExpenseMock).toHaveBeenCalledWith(
-        expect.objectContaining({ paymentSource: null, cardTag: 'ChaseMaster4023' }),
+        expect.objectContaining({ paymentSourceBankId: null, cardTag: 'ChaseMaster4023' }),
       ),
     )
   })
@@ -396,7 +401,7 @@ describe('useMonthly', () => {
     act(() => result.current.showCreateForm('bank'))
 
     expect(result.current.createPaymentMode).toBe('bank')
-    expect(result.current.createPaymentSource).toBe('Barclays')
+    expect(result.current.createPaymentSource).toBe('bank-barclays')
     expect(result.current.createCardTag).toBe('')
   })
 
@@ -415,7 +420,8 @@ describe('useMonthly', () => {
     const charge: ExpenseDto = {
       ...EXPENSES[0],
       id: 'e3',
-      paymentSource: null,
+      paymentSourceBankId: null,
+      paymentSourceBankName: null,
       cardTag: 'BaAmex',
       paymentStatus: 'CreditCardCharge',
     }
@@ -432,7 +438,8 @@ describe('useMonthly', () => {
     const settled: ExpenseDto = {
       ...EXPENSES[0],
       id: 'e4',
-      paymentSource: 'Trading212',
+      paymentSourceBankId: 'bank-trading212',
+      paymentSourceBankName: 'Trading212',
       cardTag: 'BaAmex',
       chargeDate: EXPENSES[0].date,
       invoiceDate: `${EXPENSES[0].date.slice(0, 7)}-01`,
@@ -451,7 +458,7 @@ describe('useMonthly', () => {
     await waitFor(() =>
       expect(updateExpenseMock).toHaveBeenCalledWith(
         'e4',
-        expect.objectContaining({ description: 'Renamed', paymentSource: 'Trading212', cardTag: 'BaAmex' }),
+        expect.objectContaining({ description: 'Renamed', paymentSourceBankId: 'bank-trading212', cardTag: 'BaAmex' }),
       ),
     )
   })
@@ -462,15 +469,17 @@ describe('useMonthly', () => {
       { bank: 'Trading212', balance: 420.1 },
       { bank: 'Chase', balance: -50 },
     ])
-    getExpensesByMonthMock.mockResolvedValue([{ ...EXPENSES[0], value: 999999, paymentSource: 'Barclays' }])
+    getExpensesByMonthMock.mockResolvedValue([
+      { ...EXPENSES[0], value: 999999, paymentSourceBankId: 'bank-barclays', paymentSourceBankName: 'Barclays' },
+    ])
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(getBankBalancesByMonthMock).toHaveBeenCalledWith(CURRENT_YEAR, CURRENT_MONTH)
     expect(result.current.bankTotals).toEqual([
-      { bank: 'Barclays', balance: 1875.32, roundUpTotal: 0 },
-      { bank: 'Trading212', balance: 420.1, roundUpTotal: 0 },
-      { bank: 'Chase', balance: -50, roundUpTotal: 0 },
+      { bankId: 'bank-barclays', bank: 'Barclays', balance: 1875.32, roundUpTotal: 0 },
+      { bankId: 'bank-trading212', bank: 'Trading212', balance: 420.1, roundUpTotal: 0 },
+      { bankId: 'bank-chase', bank: 'Chase', balance: -50, roundUpTotal: 0 },
     ])
     expect(result.current.bankTotalsSum).toBeCloseTo(2245.42)
   })
@@ -482,17 +491,38 @@ describe('useMonthly', () => {
       { bank: 'Chase', balance: 200 },
     ])
     getExpensesByMonthMock.mockResolvedValue([
-      { ...EXPENSES[0], id: 'e7', value: 9.4, paymentSource: 'Trading212', roundUpAmount: 0.6 },
-      { ...EXPENSES[0], id: 'e8', value: 5, paymentSource: 'Trading212', roundUpAmount: null },
-      { ...EXPENSES[0], id: 'e9', value: 20, paymentSource: 'Chase', roundUpAmount: 0.1 },
+      {
+        ...EXPENSES[0],
+        id: 'e7',
+        value: 9.4,
+        paymentSourceBankId: 'bank-trading212',
+        paymentSourceBankName: 'Trading212',
+        roundUpAmount: 0.6,
+      },
+      {
+        ...EXPENSES[0],
+        id: 'e8',
+        value: 5,
+        paymentSourceBankId: 'bank-trading212',
+        paymentSourceBankName: 'Trading212',
+        roundUpAmount: null,
+      },
+      {
+        ...EXPENSES[0],
+        id: 'e9',
+        value: 20,
+        paymentSourceBankId: 'bank-chase',
+        paymentSourceBankName: 'Chase',
+        roundUpAmount: 0.1,
+      },
     ])
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(result.current.bankTotals).toEqual([
-      { bank: 'Barclays', balance: 0, roundUpTotal: 0 },
-      { bank: 'Trading212', balance: 100, roundUpTotal: 0.6 },
-      { bank: 'Chase', balance: 200, roundUpTotal: 0.1 },
+      { bankId: 'bank-barclays', bank: 'Barclays', balance: 0, roundUpTotal: 0 },
+      { bankId: 'bank-trading212', bank: 'Trading212', balance: 100, roundUpTotal: 0.6 },
+      { bankId: 'bank-chase', bank: 'Chase', balance: 200, roundUpTotal: 0.1 },
     ])
     expect(result.current.roundUpTotalsSum).toBeCloseTo(0.7)
   })
@@ -502,7 +532,7 @@ describe('useMonthly', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     act(() => result.current.setCreateField('createValue', '9.40'))
-    act(() => result.current.setCreateField('createPaymentSource', 'Trading212'))
+    act(() => result.current.setCreateField('createPaymentSource', 'bank-trading212'))
 
     expect(result.current.createRoundUpAmount).toBe('0.60')
   })
@@ -513,7 +543,7 @@ describe('useMonthly', () => {
 
     act(() => result.current.setCreateField('createValue', '9.40'))
     act(() => result.current.setCreateField('createRoundUpAmount', '0.10'))
-    act(() => result.current.setCreateField('createPaymentSource', 'Chase'))
+    act(() => result.current.setCreateField('createPaymentSource', 'bank-chase'))
 
     expect(result.current.createRoundUpAmount).toBe('0.10')
   })
@@ -523,7 +553,7 @@ describe('useMonthly', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     act(() => result.current.setCreateField('createValue', '9.40'))
-    act(() => result.current.setCreateField('createPaymentSource', 'Barclays'))
+    act(() => result.current.setCreateField('createPaymentSource', 'bank-barclays'))
 
     expect(result.current.createRoundUpAmount).toBe('')
   })
@@ -533,7 +563,7 @@ describe('useMonthly', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     act(() => result.current.setCreateField('createValue', '-9.40'))
-    act(() => result.current.setCreateField('createPaymentSource', 'Trading212'))
+    act(() => result.current.setCreateField('createPaymentSource', 'bank-trading212'))
 
     expect(result.current.createRoundUpAmount).toBe('')
   })
@@ -546,7 +576,7 @@ describe('useMonthly', () => {
     act(() => result.current.setCreateField('createDate', '2026-07-16'))
     act(() => result.current.setCreateField('createDescription', 'TfL'))
     act(() => result.current.setCreateField('createValue', '9.40'))
-    act(() => result.current.setCreateField('createPaymentSource', 'Trading212'))
+    act(() => result.current.setCreateField('createPaymentSource', 'bank-trading212'))
     act(() => result.current.submitCreate())
 
     await waitFor(() =>
@@ -578,7 +608,7 @@ describe('useMonthly', () => {
     act(() => result.current.setCreateField('createDate', '2026-07-16'))
     act(() => result.current.setCreateField('createDescription', 'TfL'))
     act(() => result.current.setCreateField('createValue', '9.40'))
-    act(() => result.current.setCreateField('createPaymentSource', 'Trading212'))
+    act(() => result.current.setCreateField('createPaymentSource', 'bank-trading212'))
     act(() => result.current.setCreateField('createRoundUpAmount', '1.50'))
     act(() => result.current.submitCreate())
 
@@ -591,7 +621,8 @@ describe('useMonthly', () => {
       ...EXPENSES[0],
       id: 'e7',
       value: 9.4,
-      paymentSource: 'Trading212',
+      paymentSourceBankId: 'bank-trading212',
+      paymentSourceBankName: 'Trading212',
       roundUpAmount: 0.1,
       suggestedRoundUpAmount: null,
     }
@@ -608,7 +639,8 @@ describe('useMonthly', () => {
       ...EXPENSES[0],
       id: 'e8',
       value: 9.4,
-      paymentSource: 'Trading212',
+      paymentSourceBankId: 'bank-trading212',
+      paymentSourceBankName: 'Trading212',
       roundUpAmount: 0.1,
       suggestedRoundUpAmount: null,
     }
@@ -629,7 +661,8 @@ describe('useMonthly', () => {
     const expense: ExpenseDto = {
       ...EXPENSES[0],
       id: 'e9',
-      paymentSource: 'Trading212',
+      paymentSourceBankId: 'bank-trading212',
+      paymentSourceBankName: 'Trading212',
       roundUpAmount: 0.1,
       suggestedRoundUpAmount: null,
     }
@@ -656,9 +689,36 @@ describe('useMonthly', () => {
 
   it('groups income totals by source, summing net values and gross values only when present', async () => {
     getIncomesByMonthMock.mockResolvedValue([
-      { id: 'i1', date: `${CURRENT_YEAR}-07-01`, incomeSource: 'Ariana', grossValue: 400, netValue: 350, bank: 'Chase' },
-      { id: 'i2', date: `${CURRENT_YEAR}-07-08`, incomeSource: 'Ariana', grossValue: 420, netValue: 370, bank: 'Chase' },
-      { id: 'i3', date: `${CURRENT_YEAR}-07-10`, incomeSource: 'Lottery', grossValue: null, netValue: 50, bank: 'Chase' },
+      {
+        id: 'i1',
+        date: `${CURRENT_YEAR}-07-01`,
+        incomeSourceId: '2',
+        incomeSourceName: 'Ariana',
+        grossValue: 400,
+        netValue: 350,
+        bankId: 'bank-chase',
+        bankName: 'Chase',
+      },
+      {
+        id: 'i2',
+        date: `${CURRENT_YEAR}-07-08`,
+        incomeSourceId: '2',
+        incomeSourceName: 'Ariana',
+        grossValue: 420,
+        netValue: 370,
+        bankId: 'bank-chase',
+        bankName: 'Chase',
+      },
+      {
+        id: 'i3',
+        date: `${CURRENT_YEAR}-07-10`,
+        incomeSourceId: '3',
+        incomeSourceName: 'Lottery',
+        grossValue: null,
+        netValue: 50,
+        bankId: 'bank-chase',
+        bankName: 'Chase',
+      },
     ])
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

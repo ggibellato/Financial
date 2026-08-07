@@ -4,13 +4,14 @@ import BalanceAdjustmentForm from '../BalanceAdjustmentForm'
 import type { BankDto } from '../../api/types'
 
 const BANKS: BankDto[] = [
-  { name: 'Barclays', roundUpEnabled: false },
-  { name: 'Trading212', roundUpEnabled: true },
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
 ]
 
 const baseProps = {
   isEditing: false,
-  bankName: 'Barclays',
+  bankName: 'bank-barclays',
+  bankDisplayName: 'Barclays',
   banks: BANKS,
   currentBalance: 100,
   date: '2026-07-25',
@@ -27,7 +28,7 @@ const baseProps = {
 
 describe('BalanceAdjustmentForm', () => {
   it('renders the current calculated balance from the currentBalance prop', () => {
-    render(<BalanceAdjustmentForm {...baseProps} bankName="Barclays" currentBalance={2344.37} />)
+    render(<BalanceAdjustmentForm {...baseProps} bankName="bank-barclays" currentBalance={2344.37} />)
 
     expect(screen.getByText('Current calculated balance for Barclays: £2,344.37')).toBeInTheDocument()
   })
@@ -114,7 +115,7 @@ describe('BalanceAdjustmentForm', () => {
   })
 
   it('reveals the reference line and fields once a bank is chosen', () => {
-    render(<BalanceAdjustmentForm {...baseProps} bankName="Barclays" currentBalance={100} />)
+    render(<BalanceAdjustmentForm {...baseProps} bankName="bank-barclays" currentBalance={100} />)
 
     expect(screen.getByText('Current calculated balance for Barclays: £100.00')).toBeInTheDocument()
     expect(screen.getByLabelText('Date')).toBeInTheDocument()
@@ -132,13 +133,15 @@ describe('BalanceAdjustmentForm', () => {
     const onFieldChange = vi.fn()
     render(<BalanceAdjustmentForm {...baseProps} bankName="" currentBalance={0} onFieldChange={onFieldChange} />)
 
-    fireEvent.change(screen.getByLabelText('Bank'), { target: { value: 'Trading212' } })
+    fireEvent.change(screen.getByLabelText('Bank'), { target: { value: 'bank-trading212' } })
 
-    expect(onFieldChange).toHaveBeenCalledWith('bankName', 'Trading212')
+    expect(onFieldChange).toHaveBeenCalledWith('bankName', 'bank-trading212')
   })
 
   it('renders the bank as static text (not a dropdown) when editing', () => {
-    render(<BalanceAdjustmentForm {...baseProps} isEditing bankName="Barclays" currentBalance={100} targetBalance="150" />)
+    render(
+      <BalanceAdjustmentForm {...baseProps} isEditing bankName="bank-barclays" currentBalance={100} targetBalance="150" />,
+    )
 
     expect(screen.queryByLabelText('Bank')).not.toBeInTheDocument()
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()

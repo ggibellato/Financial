@@ -5,11 +5,11 @@ import type { BankDto } from '../../api/types'
 import { ALL_BANKS_FILTER, type BankOperationEntry } from '../../hooks/useBankOperations'
 
 const BANKS: BankDto[] = [
-  { name: 'Barclays', roundUpEnabled: false },
-  { name: 'Trading212', roundUpEnabled: true },
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
 ]
 
-const TRANSFER_ENTRY: BankOperationEntry = {
+const TRANSFER_ENTRY = {
   kind: 'transfer',
   id: 't1',
   date: '2026-07-05',
@@ -17,18 +17,36 @@ const TRANSFER_ENTRY: BankOperationEntry = {
   destinationBank: 'Trading212',
   amount: 500,
   note: 'Top-up',
-  transfer: { id: 't1', date: '2026-07-05', sourceBank: 'Barclays', destinationBank: 'Trading212', amount: 500, note: 'Top-up' },
-}
+  transfer: {
+    id: 't1',
+    date: '2026-07-05',
+    sourceBankId: 'bank-barclays',
+    sourceBankName: 'Barclays',
+    destinationBankId: 'bank-trading212',
+    destinationBankName: 'Trading212',
+    amount: 500,
+    note: 'Top-up',
+  },
+} satisfies BankOperationEntry
 
-const ADJUSTMENT_ENTRY: BankOperationEntry = {
+const ADJUSTMENT_ENTRY = {
   kind: 'adjustment',
   id: 'a1',
   date: '2026-07-10',
   bank: 'Barclays',
+  bankId: 'bank-barclays',
   delta: -4.2,
   note: 'Matched statement',
-  adjustment: { id: 'a1', date: '2026-07-10', bank: 'Barclays', targetBalance: 38.3, delta: -4.2, note: 'Matched statement' },
-}
+  adjustment: {
+    id: 'a1',
+    date: '2026-07-10',
+    bankId: 'bank-barclays',
+    bankName: 'Barclays',
+    targetBalance: 38.3,
+    delta: -4.2,
+    note: 'Matched statement',
+  },
+} satisfies BankOperationEntry
 
 const baseProps = {
   operations: [] as BankOperationEntry[],
@@ -124,7 +142,7 @@ describe('BankOperationsSection', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete balance adjustment' }))
 
     expect(onEditAdjustment).toHaveBeenCalledWith(ADJUSTMENT_ENTRY.adjustment)
-    expect(onDeleteAdjustment).toHaveBeenCalledWith('Barclays', 'a1')
+    expect(onDeleteAdjustment).toHaveBeenCalledWith('bank-barclays', 'a1')
   })
 
   it('shows the unfiltered empty state message when there are no operations and no filter', () => {

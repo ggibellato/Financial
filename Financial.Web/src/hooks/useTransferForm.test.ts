@@ -16,15 +16,17 @@ vi.mock('../api/financialApiClient', () => ({
 }))
 
 const BANKS: BankDto[] = [
-  { name: 'Barclays', roundUpEnabled: false },
-  { name: 'Trading212', roundUpEnabled: true },
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
 ]
 
 const TRANSFER: TransferDto = {
   id: 't1',
   date: '2026-07-20',
-  sourceBank: 'Barclays',
-  destinationBank: 'Trading212',
+  sourceBankId: 'bank-barclays',
+  sourceBankName: 'Barclays',
+  destinationBankId: 'bank-trading212',
+  destinationBankName: 'Trading212',
   amount: 500,
   note: 'Round-up top-up',
 }
@@ -50,16 +52,16 @@ describe('useTransferForm', () => {
     expect(result.current.isOpen).toBe(true)
     expect(result.current.isEditing).toBe(false)
     expect(result.current.date).toBe(today)
-    expect(result.current.sourceBank).toBe('Barclays')
+    expect(result.current.sourceBank).toBe('bank-barclays')
     expect(result.current.destinationBank).toBe('')
   })
 
   it('openCreateForm uses the given preselected source bank instead of the first bank', () => {
     const { result } = renderHook(() => useTransferForm(BANKS, vi.fn()))
 
-    act(() => result.current.openCreateForm('Trading212'))
+    act(() => result.current.openCreateForm('bank-trading212'))
 
-    expect(result.current.sourceBank).toBe('Trading212')
+    expect(result.current.sourceBank).toBe('bank-trading212')
   })
 
   it('openEditForm pre-fills every field from the given transfer', () => {
@@ -70,8 +72,8 @@ describe('useTransferForm', () => {
     expect(result.current.isOpen).toBe(true)
     expect(result.current.isEditing).toBe(true)
     expect(result.current.date).toBe('2026-07-20')
-    expect(result.current.sourceBank).toBe('Barclays')
-    expect(result.current.destinationBank).toBe('Trading212')
+    expect(result.current.sourceBank).toBe('bank-barclays')
+    expect(result.current.destinationBank).toBe('bank-trading212')
     expect(result.current.amount).toBe('500')
     expect(result.current.note).toBe('Round-up top-up')
   })
@@ -89,7 +91,7 @@ describe('useTransferForm', () => {
   it('submit blocks with a required-field error when the amount is missing', () => {
     const { result } = renderHook(() => useTransferForm(BANKS, vi.fn()))
     act(() => result.current.openCreateForm())
-    act(() => result.current.setField('destinationBank', 'Trading212'))
+    act(() => result.current.setField('destinationBank', 'bank-trading212'))
 
     act(() => result.current.submit())
 
@@ -101,7 +103,7 @@ describe('useTransferForm', () => {
   it('submit blocks when source and destination match, without calling the API', () => {
     const { result } = renderHook(() => useTransferForm(BANKS, vi.fn()))
     act(() => result.current.openCreateForm())
-    act(() => result.current.setField('destinationBank', 'Barclays'))
+    act(() => result.current.setField('destinationBank', 'bank-barclays'))
     act(() => result.current.setField('amount', '100'))
 
     act(() => result.current.submit())
@@ -116,7 +118,7 @@ describe('useTransferForm', () => {
     const onSaved = vi.fn()
     const { result } = renderHook(() => useTransferForm(BANKS, onSaved))
     act(() => result.current.openCreateForm())
-    act(() => result.current.setField('destinationBank', 'Trading212'))
+    act(() => result.current.setField('destinationBank', 'bank-trading212'))
     act(() => result.current.setField('amount', '500'))
 
     act(() => result.current.submit())
@@ -124,8 +126,8 @@ describe('useTransferForm', () => {
     expect(result.current.isSaving).toBe(true)
     expect(createTransferMock).toHaveBeenCalledWith({
       date: expect.any(String),
-      sourceBank: 'Barclays',
-      destinationBank: 'Trading212',
+      sourceBankId: 'bank-barclays',
+      destinationBankId: 'bank-trading212',
       amount: 500,
       note: null,
     })
@@ -153,8 +155,8 @@ describe('useTransferForm', () => {
 
     expect(updateTransferMock).toHaveBeenCalledWith('t1', {
       date: '2026-07-20',
-      sourceBank: 'Barclays',
-      destinationBank: 'Trading212',
+      sourceBankId: 'bank-barclays',
+      destinationBankId: 'bank-trading212',
       amount: 250,
       note: 'Round-up top-up',
     })
@@ -164,7 +166,7 @@ describe('useTransferForm', () => {
     createTransferMock.mockRejectedValue(new ApiError('Transfer amount must be greater than zero.', 400))
     const { result } = renderHook(() => useTransferForm(BANKS, vi.fn()))
     act(() => result.current.openCreateForm())
-    act(() => result.current.setField('destinationBank', 'Trading212'))
+    act(() => result.current.setField('destinationBank', 'bank-trading212'))
     act(() => result.current.setField('amount', '500'))
 
     await act(async () => {

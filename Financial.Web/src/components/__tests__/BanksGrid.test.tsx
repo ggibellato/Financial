@@ -4,8 +4,8 @@ import BanksGrid from '../BanksGrid'
 import type { BankTotal } from '../../hooks/useMonthly'
 
 const BANK_TOTALS: BankTotal[] = [
-  { bank: 'Barclays', balance: 42.5, roundUpTotal: 0 },
-  { bank: 'Trading212', balance: 8.8, roundUpTotal: 0.6 },
+  { bankId: 'bank-barclays', bank: 'Barclays', balance: 42.5, roundUpTotal: 0 },
+  { bankId: 'bank-trading212', bank: 'Trading212', balance: 8.8, roundUpTotal: 0.6 },
 ]
 
 describe('BanksGrid', () => {

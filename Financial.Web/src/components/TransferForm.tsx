@@ -84,7 +84,7 @@ export default function TransferForm({
           >
             <option value="">Select a bank</option>
             {destinationBanks.map((b) => (
-              <option key={b.name} value={b.name}>
+              <option key={b.id} value={b.id}>
                 {b.name}
               </option>
             ))}

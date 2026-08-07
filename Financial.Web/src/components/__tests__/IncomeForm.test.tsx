@@ -4,8 +4,8 @@ import IncomeForm from '../IncomeForm'
 import type { BankDto, IncomeSourceDto } from '../../api/types'
 
 const BANKS: BankDto[] = [
-  { name: 'Barclays', roundUpEnabled: false },
-  { name: 'Trading212', roundUpEnabled: true },
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
 ]
 
 const INCOME_SOURCES: IncomeSourceDto[] = [
@@ -18,10 +18,10 @@ const INCOME_SOURCES: IncomeSourceDto[] = [
 const baseProps = {
   isEditing: false,
   date: '',
-  incomeSource: 'Gleison',
+  incomeSource: '1',
   grossValue: '',
   netValue: '',
-  bank: 'Barclays',
+  bank: 'bank-barclays',
   banks: BANKS,
   incomeSources: INCOME_SOURCES,
   isSaving: false,
@@ -42,16 +42,16 @@ describe('IncomeForm', () => {
   })
 
   it('shows the gross value field only for sources that require it', () => {
-    const { rerender } = render(<IncomeForm {...baseProps} incomeSource="Gleison" />)
+    const { rerender } = render(<IncomeForm {...baseProps} incomeSource="1" />)
     expect(screen.getByLabelText('Gross Value')).toBeInTheDocument()
 
-    rerender(<IncomeForm {...baseProps} incomeSource="Ariana" />)
+    rerender(<IncomeForm {...baseProps} incomeSource="2" />)
     expect(screen.getByLabelText('Gross Value')).toBeInTheDocument()
 
-    rerender(<IncomeForm {...baseProps} incomeSource="Lottery" />)
+    rerender(<IncomeForm {...baseProps} incomeSource="3" />)
     expect(screen.queryByLabelText('Gross Value')).not.toBeInTheDocument()
 
-    rerender(<IncomeForm {...baseProps} incomeSource="DividendoJuros" />)
+    rerender(<IncomeForm {...baseProps} incomeSource="4" />)
     expect(screen.queryByLabelText('Gross Value')).not.toBeInTheDocument()
   })
 
@@ -78,7 +78,9 @@ describe('IncomeForm', () => {
     render(<IncomeForm {...baseProps} />)
 
     const select = screen.getByLabelText('Source') as HTMLSelectElement
-    const optionLabels = Array.from(select.options).map((o) => o.value)
+    const optionValues = Array.from(select.options).map((o) => o.value)
+    expect(optionValues).toEqual(['1', '2', '3', '4'])
+    const optionLabels = Array.from(select.options).map((o) => o.text)
     expect(optionLabels).toEqual(['Gleison', 'Ariana', 'Lottery', 'DividendoJuros'])
   })
 
@@ -90,7 +92,7 @@ describe('IncomeForm', () => {
     render(<IncomeForm {...baseProps} incomeSources={sources} />)
 
     const select = screen.getByLabelText('Source') as HTMLSelectElement
-    const optionLabels = Array.from(select.options).map((o) => o.value)
+    const optionLabels = Array.from(select.options).map((o) => o.text)
     expect(optionLabels).not.toContain('RetiredSource')
     expect(optionLabels).toHaveLength(4)
   })
