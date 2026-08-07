@@ -3,7 +3,7 @@ using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations;
 using Financial.CashFlow.Infrastructure.Persistence;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using static Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.RawJsonMigrationHelpers;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.EntityReferences;
 
@@ -310,22 +310,6 @@ public static class EntityReferenceMigrator
         }
     }
 
-    private static JsonSerializerOptions CreateElementOptions() => new()
-    {
-        Converters = { new JsonStringEnumConverter() },
-        TypeInfoResolver = new CashFlowTypeInfoResolver()
-    };
-
-    private static List<T> DeserializeCollection<T>(JsonElement root, string propertyName, JsonSerializerOptions options)
-    {
-        if (!root.TryGetProperty(propertyName, out var element) || element.ValueKind != JsonValueKind.Array)
-        {
-            return [];
-        }
-
-        return JsonSerializer.Deserialize<List<T>>(element.GetRawText(), options) ?? [];
-    }
-
     private static DateOnly ReadDate(JsonElement item, string propertyName) =>
         DateOnly.Parse(item.GetProperty(propertyName).GetString()!);
 
@@ -364,7 +348,4 @@ public static class EntityReferenceMigrator
         var raw = ReadNullableString(item, propertyName);
         return raw is null ? null : Enum.Parse<TEnum>(raw);
     }
-
-    private static void SetId(object entity, Guid id) =>
-        entity.GetType().GetProperty("Id")!.SetMethod!.Invoke(entity, [id]);
 }

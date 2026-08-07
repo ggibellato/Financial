@@ -2,7 +2,7 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations;
 using Financial.CashFlow.Infrastructure.Persistence;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using static Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.RawJsonMigrationHelpers;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ReserveBucketReferences;
 
@@ -138,22 +138,4 @@ public static class ReserveBucketReferenceMigrator
         }
     }
 
-    private static JsonSerializerOptions CreateElementOptions(ReferenceResolutionContext? context) => new()
-    {
-        Converters = { new JsonStringEnumConverter() },
-        TypeInfoResolver = new CashFlowTypeInfoResolver(context)
-    };
-
-    private static List<T> DeserializeCollection<T>(JsonElement root, string propertyName, JsonSerializerOptions options)
-    {
-        if (!root.TryGetProperty(propertyName, out var element) || element.ValueKind != JsonValueKind.Array)
-        {
-            return [];
-        }
-
-        return JsonSerializer.Deserialize<List<T>>(element.GetRawText(), options) ?? [];
-    }
-
-    private static void SetId(object entity, Guid id) =>
-        entity.GetType().GetProperty("Id")!.SetMethod!.Invoke(entity, [id]);
 }

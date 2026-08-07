@@ -124,7 +124,10 @@ public sealed class ReserveService : IReserveService
             .GroupBy(m => m.Bucket)
             .ToDictionary(g => g.Key, g => g.Sum(m => m.Amount));
 
-        return ResolveCanonicalBuckets().Values
+        var buckets = ResolveCanonicalBuckets();
+
+        return CanonicalBucketNames
+            .Select(name => buckets[name])
             .Select(bucket => new ReserveBucketBalanceDTO
             {
                 Bucket = bucket.Name,
