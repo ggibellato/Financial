@@ -24,7 +24,7 @@ public class ReserveEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<IncomeSplitResultDTO>();
         result.Should().NotBeNull();
-        result!.Investimento.Should().Be(654.33m);
+        result!.Buckets.Should().ContainSingle(b => b.Bucket == "Investimento" && b.Amount == 654.27m);
         result.Total.Should().Be(1963.00m);
     }
 
@@ -83,7 +83,7 @@ public class ReserveEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var balances = await response.Content.ReadFromJsonAsync<List<ReserveBucketBalanceDTO>>();
         balances.Should().HaveCount(4);
-        balances.Should().ContainSingle(b => b.Bucket == "Investimento" && b.Balance == 654.33m);
+        balances.Should().ContainSingle(b => b.Bucket == "Investimento" && b.Balance == 654.27m);
     }
 
     [Fact]
