@@ -228,10 +228,23 @@ public class TransfersEndpointsTests
             Amount = 25m
         });
 
-        var response = await client.GetAsync("/api/v1/financial/transfers/bank/Barclays");
+        var response = await client.GetAsync($"/api/v1/financial/transfers/bank/{BarclaysId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<TransferDTO>>();
         items.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetTransfersByBank_UnknownBankId_ReturnsEmptyList()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync($"/api/v1/financial/transfers/bank/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<List<TransferDTO>>();
+        items.Should().BeEmpty();
     }
 }
