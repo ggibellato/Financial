@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
+using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;
 
@@ -265,12 +266,4 @@ public class AnnualSummaryViewModel : ViewModelBase
         return rows;
     }
 
-    private static void ReplaceAll<T>(ObservableCollection<T> collection, IEnumerable<T> items)
-    {
-        collection.Clear();
-        foreach (var item in items)
-        {
-            collection.Add(item);
-        }
-    }
 }

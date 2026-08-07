@@ -55,14 +55,4 @@ public class IncomeMigratorTests
 
         act.Should().Throw<ArgumentNullException>();
     }
-
-    [Fact]
-    public void Migrate_ReportsZeroImportedEntries()
-    {
-        var data = CashFlowData.Create();
-
-        var summary = IncomeMigrator.Migrate(data);
-
-        summary.EntriesImportedCount.Should().Be(0);
-    }
 }

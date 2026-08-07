@@ -5,6 +5,7 @@ using Financial.Investment.Infrastructure.Interfaces;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.Investment.Infrastructure.Services;
+using Financial.Shared.Infrastructure.Configuration;
 using Financial.Shared.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,14 +54,7 @@ public static class InfrastructureServiceCollectionExtensions
 
     private static RepositorySelectionOptions BuildRepositoryOptions(RepositorySettingsOptions settings)
     {
-        var providerValue = settings.Provider ?? nameof(RepositoryProvider.LocalJson);
-
-        if (!Enum.TryParse(providerValue, ignoreCase: true, out RepositoryProvider provider))
-        {
-            throw new InvalidOperationException(
-                $"Repository provider '{providerValue}' is not supported. " +
-                $"Valid values: {string.Join(", ", Enum.GetNames<RepositoryProvider>())}.");
-        }
+        var provider = RepositoryProviderResolver.Resolve(settings.Provider, RepositoryProvider.LocalJson);
 
         return new RepositorySelectionOptions(
             provider,

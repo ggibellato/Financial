@@ -7,6 +7,15 @@ internal readonly record struct AssetTotals(decimal TotalBought, decimal TotalSo
 
 internal static class PortfolioAssetSummaryBuilder
 {
+    private const double MonthlyMaxAverageGap = 1.5;
+    private const double QuarterlyMaxAverageGap = 3.5;
+    private const double FourMonthlyMaxAverageGap = 5.0;
+
+    private const int MonthlyPaymentsPerYear = 12;
+    private const int QuarterlyPaymentsPerYear = 4;
+    private const int FourMonthlyPaymentsPerYear = 3;
+
+
     internal static IReadOnlyList<PortfolioAssetSummaryItemDTO> Build(
         IEnumerable<Asset> assets,
         DateTime today,
@@ -115,9 +124,9 @@ internal static class PortfolioAssetSummaryBuilder
 
         return averageGap switch
         {
-            <= 1.5 => 12,
-            <= 3.5 => 4,
-            <= 5.0 => 3,
+            <= MonthlyMaxAverageGap => MonthlyPaymentsPerYear,
+            <= QuarterlyMaxAverageGap => QuarterlyPaymentsPerYear,
+            <= FourMonthlyMaxAverageGap => FourMonthlyPaymentsPerYear,
             _ => null
         };
     }

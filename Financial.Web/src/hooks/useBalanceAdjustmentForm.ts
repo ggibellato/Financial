@@ -3,6 +3,7 @@ import { createFinancialApiClient } from '../api/financialApiClient'
 import type { BalanceAdjustmentDto } from '../api/types'
 import type { BankTotal } from './useMonthly'
 import { mapBalanceAdjustmentErrorToField, type BalanceAdjustmentFormField } from './mapBalanceAdjustmentErrorToField'
+import { todayIsoDate } from '../utils/formatters'
 
 interface BalanceAdjustmentFormState {
   isOpen: boolean
@@ -32,10 +33,6 @@ const BLANK_STATE: BalanceAdjustmentFormState = {
   saveError: null,
   saveErrorField: null,
   savedDelta: null,
-}
-
-function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10)
 }
 
 function resolveCurrentBalance(bankTotals: BankTotal[], bankId: string): number {

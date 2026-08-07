@@ -3,6 +3,7 @@ import { createFinancialApiClient } from '../api/financialApiClient'
 import type { DividendHistoryItemDto, DividendSummaryDto, WatchlistItemDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import TickerCombobox, { type TickerGroup } from '../components/TickerCombobox'
+import { formatN2, formatShortDateUtc } from '../utils/formatters'
 import './DividendCheckPage.css'
 
 const FIXED_EXCHANGE = 'BVMF'
@@ -32,26 +33,6 @@ export default function DividendCheckPage() {
   const [history, setHistory] = useState<DividendHistoryItemDto[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  const formatter = useMemo(
-    () =>
-      new Intl.NumberFormat(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }),
-    [],
-  )
-
-  const formatNumber = useCallback((value: number) => formatter.format(value), [formatter])
-
-  const formatDate = useCallback((value: string): string => {
-    const d = new Date(value)
-    if (Number.isNaN(d.getTime())) return value
-    const day = String(d.getUTCDate()).padStart(2, '0')
-    const month = String(d.getUTCMonth() + 1).padStart(2, '0')
-    const year = d.getUTCFullYear()
-    return `${day}/${month}/${year}`
-  }, [])
 
   const runCheck = useCallback(async () => {
     const trimmedTicker = ticker.trim().toUpperCase()
@@ -123,13 +104,13 @@ export default function DividendCheckPage() {
             <p className="summary-card__title">
               {summary.ticker} - {summary.name}
             </p>
-            <p>Current price: {formatNumber(summary.currentPrice)}</p>
+            <p>Current price: {formatN2(summary.currentPrice)}</p>
             <p className="summary-card__avg-dividend">
-              Average Dividend: {formatNumber(summary.averageDividendLastFiveYears)} (last 5 years) — Yield: {formatNumber(summary.dividendYieldPercent)}%
+              Average Dividend: {formatN2(summary.averageDividendLastFiveYears)} (last 5 years) — Yield: {formatN2(summary.dividendYieldPercent)}%
             </p>
             <p className={`summary-card__price-max ${priceMaxBuyClass}`}>
-              Price max buy: {formatNumber(summary.priceMaxBuy)}&nbsp;&nbsp;&nbsp;Discount{' '}
-              {formatNumber(summary.discountPercent)}%
+              Price max buy: {formatN2(summary.priceMaxBuy)}&nbsp;&nbsp;&nbsp;Discount{' '}
+              {formatN2(summary.discountPercent)}%
             </p>
           </section>
 
@@ -151,8 +132,8 @@ export default function DividendCheckPage() {
                     {sortedHistory.map((item) => (
                       <tr key={`${item.date}-${item.type}-${item.value}`}>
                         <td>{item.type}</td>
-                        <td>{formatDate(item.date)}</td>
-                        <td className="data-table__col--numeric">{formatNumber(item.value)}</td>
+                        <td>{formatShortDateUtc(item.date)}</td>
+                        <td className="data-table__col--numeric">{formatN2(item.value)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -175,7 +156,7 @@ export default function DividendCheckPage() {
                     {sortedYearTotals.map((total) => (
                       <tr key={total.year}>
                         <td>{total.year}</td>
-                        <td className="data-table__col--numeric">{formatNumber(total.total)}</td>
+                        <td className="data-table__col--numeric">{formatN2(total.total)}</td>
                       </tr>
                     ))}
                   </tbody>

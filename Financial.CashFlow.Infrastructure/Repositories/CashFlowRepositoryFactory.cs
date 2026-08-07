@@ -41,42 +41,11 @@ public sealed class CashFlowRepositoryFactory
                     nameof(options.Provider), options.Provider, "Unsupported repository provider.")
         };
 
-    private IJsonStorage CreateGoogleDriveStorage(CashFlowRepositorySelectionOptions options)
-    {
-        var credentialsPath = ResolveGoogleCredentialsPath(options.GoogleDriveCredentialsPath);
-
-        if (_remoteFileClientFactory is null)
-        {
-            throw new InvalidOperationException(
-                $"Repository provider '{nameof(CashFlowRepositoryProvider.GoogleDriveJson)}' requires an {nameof(IRemoteFileClientFactory)} " +
-                "to be registered (see AddGoogleDriveFileClient).");
-        }
-
-        var client = _remoteFileClientFactory.Create(credentialsPath);
-        return new GoogleDriveJsonStorage(client, options.GoogleDriveFilePath);
-    }
-
-    private static string ResolveGoogleCredentialsPath(string? credentialsPath)
-    {
-        if (string.IsNullOrWhiteSpace(credentialsPath))
-        {
-            throw new FileNotFoundException(
-                $"Google Drive credentials file path is required. Configure '{CashFlowRepositoryConfigurationKeys.GoogleDriveCredentialsPath}'.");
-        }
-
-        var resolvedPath = credentialsPath;
-        if (!Path.IsPathRooted(resolvedPath))
-        {
-            resolvedPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, resolvedPath));
-        }
-
-        if (!File.Exists(resolvedPath))
-        {
-            throw new FileNotFoundException(
-                $"Google Drive credentials file not found at '{resolvedPath}'. Configure '{CashFlowRepositoryConfigurationKeys.GoogleDriveCredentialsPath}'.",
-                resolvedPath);
-        }
-
-        return resolvedPath;
-    }
+    private IJsonStorage CreateGoogleDriveStorage(CashFlowRepositorySelectionOptions options) =>
+        GoogleDriveStorageFactory.Create(
+            options.GoogleDriveCredentialsPath,
+            options.GoogleDriveFilePath,
+            _remoteFileClientFactory,
+            CashFlowRepositoryConfigurationKeys.GoogleDriveCredentialsPath,
+            nameof(CashFlowRepositoryProvider.GoogleDriveJson));
 }

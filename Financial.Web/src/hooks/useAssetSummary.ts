@@ -29,6 +29,20 @@ type SummaryAction =
   | { type: 'XIRR_FETCH_SUCCESS'; xirr: number | null; xirrWithCredits: number | null }
   | { type: 'PORTFOLIO_WEIGHT_SUCCESS'; portfolioWeight: number | null }
 
+/** Resolves the args to fetch a live price for a ticker, or null if the asset doesn't qualify
+ * (needs an exchange, or to be a Cryptocurrency, or a Bond with a name for lookup). */
+function resolvePriceFetchArgs(
+  ticker: string | null | undefined,
+  exchange: string | null | undefined,
+  assetClass: string | undefined,
+  assetName: string | null | undefined,
+): { exchange: string; bondAssetName: string | undefined } | null {
+  if (!ticker) return null
+  const isBondWithName = assetClass === 'Bond' && !!assetName
+  if (!exchange && assetClass !== 'Cryptocurrency' && !isBondWithName) return null
+  return { exchange: exchange ?? '', bondAssetName: isBondWithName ? (assetName ?? undefined) : undefined }
+}
+
 const INITIAL_STATE: SummaryState = {
   asset: null,
   isLoadingAsset: false,
@@ -140,12 +154,9 @@ export function useAssetSummary(): AssetSummaryData {
 
     dispatch({ type: 'ASSET_FETCH_START' })
 
-    if (
-      scope === 'active' &&
-      ticker &&
-      (exchange || assetClass === 'Cryptocurrency' || (assetClass === 'Bond' && assetName))
-    ) {
-      fetchPrice(exchange ?? '', ticker, assetClass, brokerName, assetClass === 'Bond' ? assetName : undefined)
+    const priceArgs = scope === 'active' ? resolvePriceFetchArgs(ticker, exchange, assetClass, assetName) : null
+    if (priceArgs && ticker) {
+      fetchPrice(priceArgs.exchange, ticker, assetClass, brokerName, priceArgs.bondAssetName)
     }
 
     void apiClient
@@ -175,15 +186,14 @@ export function useAssetSummary(): AssetSummaryData {
 
   const refresh = useCallback(() => {
     if (!isAsset || !selectedNode?.ticker) return
-    const isBondWithName = selectedNode.assetClass === 'Bond' && !!selectedNode.assetName
-    if (!selectedNode.exchange && selectedNode.assetClass !== 'Cryptocurrency' && !isBondWithName) return
-    fetchPrice(
-      selectedNode.exchange ?? '',
+    const priceArgs = resolvePriceFetchArgs(
       selectedNode.ticker,
+      selectedNode.exchange,
       selectedNode.assetClass,
-      selectedNode.brokerName,
-      isBondWithName ? selectedNode.assetName : undefined,
+      selectedNode.assetName,
     )
+    if (!priceArgs) return
+    fetchPrice(priceArgs.exchange, selectedNode.ticker, selectedNode.assetClass, selectedNode.brokerName, priceArgs.bondAssetName)
   }, [isAsset, selectedNode, fetchPrice])
 
   useEffect(() => {

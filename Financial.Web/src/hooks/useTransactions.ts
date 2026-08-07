@@ -5,7 +5,7 @@ import { useSelectedNode } from '../context/SelectedNodeContext'
 import { buildSelectionKey } from './useCredits'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
-import { toInputDate } from '../utils/formatters'
+import { formatMonthYear, pad, toInputDate } from '../utils/formatters'
 
 export type TransactionFormField = 'formDate' | 'formType' | 'formQuantity' | 'formUnitPrice' | 'formFees'
 export type ChartDisplayMode = 'Bar' | 'Line'
@@ -36,12 +36,8 @@ function addMonths(date: Date, count: number): Date {
   return new Date(date.getFullYear(), date.getMonth() + count, 1)
 }
 
-function formatMonthLabel(date: Date): string {
-  return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
-}
-
 function monthKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}`
 }
 
 export function buildMonthlyNetInvested(
@@ -73,7 +69,7 @@ export function buildMonthlyNetInvested(
   const rangeEnd = startOfMonth(referenceDate)
   const buckets: TransactionMonthBucket[] = []
   for (let cursor = rangeStart; cursor <= rangeEnd; cursor = addMonths(cursor, 1)) {
-    buckets.push({ month: formatMonthLabel(cursor), netInvested: netByMonth.get(monthKey(cursor)) ?? 0 })
+    buckets.push({ month: formatMonthYear(cursor), netInvested: netByMonth.get(monthKey(cursor)) ?? 0 })
   }
   return buckets
 }

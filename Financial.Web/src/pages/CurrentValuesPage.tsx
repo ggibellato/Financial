@@ -3,6 +3,7 @@ import { createFinancialApiClient } from '../api/financialApiClient'
 import type { BrokerNodeDto, PortfolioReferenceDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import { formatN2 } from '../utils/formatters'
 import './CurrentValuesPage.css'
 
 interface PriceResult {
@@ -25,15 +26,6 @@ export default function CurrentValuesPage() {
   const [progressValue, setProgressValue] = useState(0)
   const [results, setResults] = useState<PriceResult[]>([])
   const [retryCount, setRetryCount] = useState(0)
-
-  const formatter = useMemo(
-    () =>
-      new Intl.NumberFormat(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }),
-    [],
-  )
 
   useEffect(() => {
     Promise.all([apiClient.getBrokers(), apiClient.getAssetPriceFetchScope()])
@@ -172,7 +164,7 @@ export default function CurrentValuesPage() {
                   <td>{result.ticker}</td>
                   <td>{result.name}</td>
                   <td className="current-values__col--price data-table__col--numeric">
-                    {result.price === null ? '—' : formatter.format(result.price)}
+                    {result.price === null ? '—' : formatN2(result.price)}
                   </td>
                 </tr>
               ))}

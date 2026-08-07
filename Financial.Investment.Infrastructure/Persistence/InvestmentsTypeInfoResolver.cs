@@ -1,5 +1,5 @@
 using Financial.Investment.Domain.Entities;
-using System.Reflection;
+using Financial.Shared.Infrastructure.Persistence;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
@@ -33,20 +33,10 @@ public class InvestmentsTypeInfoResolver : DefaultJsonTypeInfoResolver
         if (!ManagedTypes.Contains(type) || typeInfo.Kind != JsonTypeInfoKind.Object)
             return typeInfo;
 
-        EnablePrivateConstructor(type, typeInfo);
+        ReflectionJsonTypeInfoHelpers.EnablePrivateConstructor(type, typeInfo);
         ConfigureProperties(type, typeInfo);
 
         return typeInfo;
-    }
-
-    private static void EnablePrivateConstructor(Type type, JsonTypeInfo typeInfo)
-    {
-        if (typeInfo.CreateObject is not null)
-            return;
-
-        typeInfo.CreateObject = () =>
-            Activator.CreateInstance(type, nonPublic: true)
-            ?? throw new InvalidOperationException($"Failed to create instance of {type}.");
     }
 
     private static void ConfigureProperties(Type type, JsonTypeInfo typeInfo)
@@ -61,23 +51,10 @@ public class InvestmentsTypeInfoResolver : DefaultJsonTypeInfoResolver
                 continue;
             }
 
-            WirePropertySetter(type, jsonProp);
+            ReflectionJsonTypeInfoHelpers.WirePropertySetter(type, jsonProp);
         }
 
         foreach (var prop in toRemove)
             typeInfo.Properties.Remove(prop);
-    }
-
-    private static void WirePropertySetter(Type type, JsonPropertyInfo jsonProp)
-    {
-        var propInfo = type.GetProperty(
-            jsonProp.Name,
-            BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-
-        if (propInfo?.SetMethod is null)
-            return;
-
-        var setter = propInfo.SetMethod;
-        jsonProp.Set = (obj, value) => setter.Invoke(obj, [value]);
     }
 }

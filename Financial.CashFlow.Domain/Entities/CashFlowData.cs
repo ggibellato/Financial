@@ -5,101 +5,41 @@ namespace Financial.CashFlow.Domain.Entities;
 
 public class CashFlowData
 {
-    private List<Expense> _expenses = new List<Expense>();
-    public IReadOnlyCollection<Expense> Expenses { get => _expenses.AsReadOnly(); private set => SetExpenses(value); }
-    private void SetExpenses(IReadOnlyCollection<Expense> data)
-    {
-        _expenses.Clear();
-        _expenses.AddRange(data);
-    }
+    private readonly List<Expense> _expenses = new();
+    public IReadOnlyCollection<Expense> Expenses => _expenses.AsReadOnly();
 
-    private List<ReserveMovement> _reserveMovements = new List<ReserveMovement>();
-    public IReadOnlyCollection<ReserveMovement> ReserveMovements { get => _reserveMovements.AsReadOnly(); private set => SetReserveMovements(value); }
-    private void SetReserveMovements(IReadOnlyCollection<ReserveMovement> data)
-    {
-        _reserveMovements.Clear();
-        _reserveMovements.AddRange(data);
-    }
+    private readonly List<ReserveMovement> _reserveMovements = new();
+    public IReadOnlyCollection<ReserveMovement> ReserveMovements => _reserveMovements.AsReadOnly();
 
-    private List<CardStatement> _cardStatements = new List<CardStatement>();
-    public IReadOnlyCollection<CardStatement> CardStatements { get => _cardStatements.AsReadOnly(); private set => SetCardStatements(value); }
-    private void SetCardStatements(IReadOnlyCollection<CardStatement> data)
-    {
-        _cardStatements.Clear();
-        _cardStatements.AddRange(data);
-    }
+    private readonly List<CardStatement> _cardStatements = new();
+    public IReadOnlyCollection<CardStatement> CardStatements => _cardStatements.AsReadOnly();
 
-    private List<RecurringBill> _recurringBills = new List<RecurringBill>();
-    public IReadOnlyCollection<RecurringBill> RecurringBills { get => _recurringBills.AsReadOnly(); private set => SetRecurringBills(value); }
-    private void SetRecurringBills(IReadOnlyCollection<RecurringBill> data)
-    {
-        _recurringBills.Clear();
-        _recurringBills.AddRange(data);
-    }
+    private readonly List<RecurringBill> _recurringBills = new();
+    public IReadOnlyCollection<RecurringBill> RecurringBills => _recurringBills.AsReadOnly();
 
-    private List<MaeLedgerEntry> _maeLedgerEntries = new List<MaeLedgerEntry>();
-    public IReadOnlyCollection<MaeLedgerEntry> MaeLedgerEntries { get => _maeLedgerEntries.AsReadOnly(); private set => SetMaeLedgerEntries(value); }
-    private void SetMaeLedgerEntries(IReadOnlyCollection<MaeLedgerEntry> data)
-    {
-        _maeLedgerEntries.Clear();
-        _maeLedgerEntries.AddRange(data);
-    }
+    private readonly List<MaeLedgerEntry> _maeLedgerEntries = new();
+    public IReadOnlyCollection<MaeLedgerEntry> MaeLedgerEntries => _maeLedgerEntries.AsReadOnly();
 
-    private List<InvestmentSnapshot> _investmentSnapshots = new List<InvestmentSnapshot>();
-    public IReadOnlyCollection<InvestmentSnapshot> InvestmentSnapshots { get => _investmentSnapshots.AsReadOnly(); private set => SetInvestmentSnapshots(value); }
-    private void SetInvestmentSnapshots(IReadOnlyCollection<InvestmentSnapshot> data)
-    {
-        _investmentSnapshots.Clear();
-        _investmentSnapshots.AddRange(data);
-    }
+    private readonly List<InvestmentSnapshot> _investmentSnapshots = new();
+    public IReadOnlyCollection<InvestmentSnapshot> InvestmentSnapshots => _investmentSnapshots.AsReadOnly();
 
-    private List<Bank> _banks = new List<Bank>();
-    public IReadOnlyCollection<Bank> Banks { get => _banks.AsReadOnly(); private set => SetBanks(value); }
-    private void SetBanks(IReadOnlyCollection<Bank> data)
-    {
-        _banks.Clear();
-        _banks.AddRange(data);
-    }
+    private readonly List<Bank> _banks = new();
+    public IReadOnlyCollection<Bank> Banks => _banks.AsReadOnly();
 
-    private List<IncomeSource> _incomeSources = new List<IncomeSource>();
-    public IReadOnlyCollection<IncomeSource> IncomeSources { get => _incomeSources.AsReadOnly(); private set => SetIncomeSources(value); }
-    private void SetIncomeSources(IReadOnlyCollection<IncomeSource> data)
-    {
-        _incomeSources.Clear();
-        _incomeSources.AddRange(data);
-    }
+    private readonly List<IncomeSource> _incomeSources = new();
+    public IReadOnlyCollection<IncomeSource> IncomeSources => _incomeSources.AsReadOnly();
 
-    private List<InvestmentAccount> _investmentAccounts = new List<InvestmentAccount>();
-    public IReadOnlyCollection<InvestmentAccount> InvestmentAccounts { get => _investmentAccounts.AsReadOnly(); private set => SetInvestmentAccounts(value); }
-    private void SetInvestmentAccounts(IReadOnlyCollection<InvestmentAccount> data)
-    {
-        _investmentAccounts.Clear();
-        _investmentAccounts.AddRange(data);
-    }
+    private readonly List<InvestmentAccount> _investmentAccounts = new();
+    public IReadOnlyCollection<InvestmentAccount> InvestmentAccounts => _investmentAccounts.AsReadOnly();
 
-    private List<Income> _incomes = new List<Income>();
-    public IReadOnlyCollection<Income> Incomes { get => _incomes.AsReadOnly(); private set => SetIncomes(value); }
-    private void SetIncomes(IReadOnlyCollection<Income> data)
-    {
-        _incomes.Clear();
-        _incomes.AddRange(data);
-    }
+    private readonly List<Income> _incomes = new();
+    public IReadOnlyCollection<Income> Incomes => _incomes.AsReadOnly();
 
-    private List<Transfer> _transfers = new List<Transfer>();
-    public IReadOnlyCollection<Transfer> Transfers { get => _transfers.AsReadOnly(); private set => SetTransfers(value); }
-    private void SetTransfers(IReadOnlyCollection<Transfer> data)
-    {
-        _transfers.Clear();
-        _transfers.AddRange(data);
-    }
+    private readonly List<Transfer> _transfers = new();
+    public IReadOnlyCollection<Transfer> Transfers => _transfers.AsReadOnly();
 
-    private List<BalanceAdjustment> _balanceAdjustments = new List<BalanceAdjustment>();
-    public IReadOnlyCollection<BalanceAdjustment> BalanceAdjustments { get => _balanceAdjustments.AsReadOnly(); private set => SetBalanceAdjustments(value); }
-    private void SetBalanceAdjustments(IReadOnlyCollection<BalanceAdjustment> data)
-    {
-        _balanceAdjustments.Clear();
-        _balanceAdjustments.AddRange(data);
-    }
+    private readonly List<BalanceAdjustment> _balanceAdjustments = new();
+    public IReadOnlyCollection<BalanceAdjustment> BalanceAdjustments => _balanceAdjustments.AsReadOnly();
 
     private CashFlowData() { }
 

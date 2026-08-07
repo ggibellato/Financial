@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
+using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;
 
@@ -87,8 +88,7 @@ public class ControleMaeViewModel : ViewModelBase
 
         RetryCommand = new RelayCommand(async () =>
         {
-            await RefreshEntriesAsync();
-            await RefreshTotalsAsync();
+            await Task.WhenAll(RefreshEntriesAsync(), RefreshTotalsAsync());
         });
         InitializeCreateCommands();
         InitializeEditDeleteCommands();
@@ -152,15 +152,6 @@ public class ControleMaeViewModel : ViewModelBase
         catch
         {
             // Supplementary data; keep the last known totals on failure.
-        }
-    }
-
-    private static void ReplaceAll<T>(ObservableCollection<T> collection, IEnumerable<T> items)
-    {
-        collection.Clear();
-        foreach (var item in items)
-        {
-            collection.Add(item);
         }
     }
 
@@ -283,8 +274,7 @@ public class ControleMaeViewModel : ViewModelBase
             });
 
             CloseCreateForm();
-            await RefreshEntriesAsync();
-            await RefreshTotalsAsync();
+            await Task.WhenAll(RefreshEntriesAsync(), RefreshTotalsAsync());
         }
         catch (Exception ex)
         {
@@ -405,8 +395,7 @@ public class ControleMaeViewModel : ViewModelBase
             });
 
             CloseEditForm();
-            await RefreshEntriesAsync();
-            await RefreshTotalsAsync();
+            await Task.WhenAll(RefreshEntriesAsync(), RefreshTotalsAsync());
         }
         catch (Exception ex)
         {
@@ -435,8 +424,7 @@ public class ControleMaeViewModel : ViewModelBase
         try
         {
             await _controleMaeService.DeleteEntryAsync(entry.Id);
-            await RefreshEntriesAsync();
-            await RefreshTotalsAsync();
+            await Task.WhenAll(RefreshEntriesAsync(), RefreshTotalsAsync());
         }
         catch (Exception ex)
         {

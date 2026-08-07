@@ -77,6 +77,8 @@ public sealed class MonthlySeries : IEquatable<MonthlySeries>
 
     public IReadOnlyList<decimal> AsReadOnly() => _values.ToArray();
 
+    public decimal[] ToArray() => (decimal[])_values.Clone();
+
     public bool Equals(MonthlySeries? other) => other is not null && _values.SequenceEqual(other._values);
 
     public override bool Equals(object? obj) => Equals(obj as MonthlySeries);

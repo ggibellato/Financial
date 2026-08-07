@@ -2,7 +2,7 @@ import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useAssetSummary } from '../hooks/useAssetSummary'
 import { useSelectedNode } from '../context/SelectedNodeContext'
-import { formatN2, formatN8, formatPercentFraction, formatShortDate, pad } from '../utils/formatters'
+import { formatN2, formatN8, formatPercentFraction, formatShortDate, pad, signClass } from '../utils/formatters'
 import './AssetSummaryTab.css'
 
 function formatDateTime(isoString: string | null): string {
@@ -46,13 +46,10 @@ export default function AssetSummaryTab() {
     return null
   }
 
-  const resultClass =
-    resultPercent >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'
-  const resultWithCreditsClass =
-    resultWithCreditsPercent >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'
-  const xirrClass = xirr === null ? '' : xirr >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'
-  const xirrWithCreditsClass =
-    xirrWithCredits === null ? '' : xirrWithCredits >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'
+  const resultClass = signClass(resultPercent, 'asset-summary__value')
+  const resultWithCreditsClass = signClass(resultWithCreditsPercent, 'asset-summary__value')
+  const xirrClass = xirr === null ? '' : signClass(xirr, 'asset-summary__value')
+  const xirrWithCreditsClass = xirrWithCredits === null ? '' : signClass(xirrWithCredits, 'asset-summary__value')
 
   return (
     <div className="asset-summary">
@@ -117,7 +114,7 @@ export default function AssetSummaryTab() {
             <div className="asset-summary__field">
               <span className="asset-summary__label">Realized Gain/Loss</span>
               <span
-                className={`asset-summary__value ${asset.realizedGainLoss >= 0 ? 'asset-summary__value--green' : 'asset-summary__value--red'}`}
+                className={`asset-summary__value ${signClass(asset.realizedGainLoss, 'asset-summary__value')}`}
               >
                 {formatN2(asset.realizedGainLoss)}
               </span>

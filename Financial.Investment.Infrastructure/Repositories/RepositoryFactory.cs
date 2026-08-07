@@ -39,42 +39,11 @@ public sealed class RepositoryFactory
                     nameof(options.Provider), options.Provider, "Unsupported repository provider.")
         };
 
-    private IJsonStorage CreateGoogleDriveStorage(RepositorySelectionOptions options)
-    {
-        var credentialsPath = ResolveGoogleCredentialsPath(options.GoogleDriveCredentialsPath);
-
-        if (_remoteFileClientFactory is null)
-        {
-            throw new InvalidOperationException(
-                $"Repository provider '{nameof(RepositoryProvider.GoogleDriveJson)}' requires an {nameof(IRemoteFileClientFactory)} " +
-                "to be registered (see AddGoogleDriveFileClient).");
-        }
-
-        var client = _remoteFileClientFactory.Create(credentialsPath);
-        return new GoogleDriveJsonStorage(client, options.GoogleDriveFilePath);
-    }
-
-    private static string ResolveGoogleCredentialsPath(string? credentialsPath)
-    {
-        if (string.IsNullOrWhiteSpace(credentialsPath))
-        {
-            throw new FileNotFoundException(
-                $"Google Drive credentials file path is required. Configure '{RepositoryConfigurationKeys.GoogleDriveCredentialsPath}'.");
-        }
-
-        var resolvedPath = credentialsPath;
-        if (!Path.IsPathRooted(resolvedPath))
-        {
-            resolvedPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, resolvedPath));
-        }
-
-        if (!File.Exists(resolvedPath))
-        {
-            throw new FileNotFoundException(
-                $"Google Drive credentials file not found at '{resolvedPath}'. Configure '{RepositoryConfigurationKeys.GoogleDriveCredentialsPath}'.",
-                resolvedPath);
-        }
-
-        return resolvedPath;
-    }
+    private IJsonStorage CreateGoogleDriveStorage(RepositorySelectionOptions options) =>
+        GoogleDriveStorageFactory.Create(
+            options.GoogleDriveCredentialsPath,
+            options.GoogleDriveFilePath,
+            _remoteFileClientFactory,
+            RepositoryConfigurationKeys.GoogleDriveCredentialsPath,
+            nameof(RepositoryProvider.GoogleDriveJson));
 }

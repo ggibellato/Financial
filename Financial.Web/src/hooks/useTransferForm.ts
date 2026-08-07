@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { BankDto, TransferDto } from '../api/types'
 import { mapTransferErrorToField, type TransferFormField } from './mapTransferErrorToField'
+import { todayIsoDate } from '../utils/formatters'
 
 interface TransferFormState {
   isOpen: boolean
@@ -29,10 +30,6 @@ const BLANK_STATE: TransferFormState = {
   isSaving: false,
   saveError: null,
   saveErrorField: null,
-}
-
-function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10)
 }
 
 export interface UseTransferFormResult {

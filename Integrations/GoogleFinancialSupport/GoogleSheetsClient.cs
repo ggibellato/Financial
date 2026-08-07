@@ -12,6 +12,7 @@ internal sealed class GoogleSheetsClient
     private static readonly string[] SheetsScopes = { SheetsService.Scope.Spreadsheets };
 
     private readonly GoogleCredentialFactory _credentialFactory;
+    private SheetsService? _service;
 
     internal GoogleSheetsClient(GoogleCredentialFactory credentialFactory)
     {
@@ -22,7 +23,7 @@ internal sealed class GoogleSheetsClient
     {
         return await GoogleRetryPolicy.ExecuteWithRetryAsync(async () =>
         {
-            var service = CreateService();
+            var service = GetService();
             var request = service.Spreadsheets.Get(spreadSheetId);
             request.Fields = "sheets(properties/sheetId,properties/title,properties/tabColor)";
             var response = await request.ExecuteAsync();
@@ -41,13 +42,15 @@ internal sealed class GoogleSheetsClient
     {
         return await GoogleRetryPolicy.ExecuteWithRetryAsync(async () =>
         {
-            var service = CreateService();
+            var service = GetService();
             var request = service.Spreadsheets.Values.Get(spreadSheetId, range);
             request.ValueRenderOption = SpreadsheetsResource.ValuesResource.GetRequest.ValueRenderOptionEnum.UNFORMATTEDVALUE;
             var response = await request.ExecuteAsync();
             return response.Values;
         });
     }
+
+    private SheetsService GetService() => _service ??= CreateService();
 
     private SheetsService CreateService()
     {

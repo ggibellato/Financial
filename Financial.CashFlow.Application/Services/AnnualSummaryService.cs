@@ -33,16 +33,20 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     {
         var monthsElapsed = NumberOfMonthsForAverage(year);
 
-        return BuildAllCategorySeriesForYear(year)
+        return BuildCategoryTotalDtos(BuildAllCategorySeriesForYear(year), monthsElapsed);
+    }
+
+    private static List<CategoryAnnualTotalDTO> BuildCategoryTotalDtos(
+        IEnumerable<(Category Category, MonthlySeries Display, MonthlySeries ForAverage)> categorySeries, int monthsElapsed) =>
+        categorySeries
             .Select(c => new CategoryAnnualTotalDTO
             {
                 Category = c.Category.ToString(),
-                MonthlyTotals = c.Display.AsReadOnly().ToArray(),
+                MonthlyTotals = c.Display.ToArray(),
                 AnnualTotal = c.Display.Sum(),
                 Average = c.ForAverage.Average(monthsElapsed, AverageDecimalPlaces)
             })
             .ToList();
-    }
 
     /// <summary>
     /// Builds each category's monthly series twice: <c>Display</c> includes every recorded
@@ -93,7 +97,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             {
                 Account = a.Account.Name,
                 IsLiability = a.Account.IsLiability,
-                MonthlyValues = a.MonthlyValues.AsReadOnly().ToArray(),
+                MonthlyValues = a.MonthlyValues.ToArray(),
                 MonthlyDiffs = a.Diffs.ToArray()
             })
             .ToList();
@@ -105,7 +109,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
         var netPosition = new NetPositionAnnualDiffDTO
         {
-            MonthlyValues = series.NetPositionSeries.AsReadOnly().ToArray(),
+            MonthlyValues = series.NetPositionSeries.ToArray(),
             MonthlyDiffs = series.NetPositionDiffs.ToArray(),
             FullYearNetChange = series.NetPositionSeries[series.LastRelevantMonth - 1] - series.NetPositionSeries[0],
             AverageMonthResult = relevantDiffsSeries.Average(monthsElapsed, FullPrecisionDecimalPlaces),
@@ -178,22 +182,24 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         var (display, forAverage) = BuildIncomeSeriesPairForYear(year);
         var monthsElapsed = NumberOfMonthsForAverage(year);
 
-        return new IncomeAnnualSummaryDTO
-        {
-            SalaryMonthly = display.Salary.AsReadOnly().ToArray(),
-            SalaryAnnualTotal = display.Salary.Sum(),
-            SalaryAverage = forAverage.Salary.Average(monthsElapsed, AverageDecimalPlaces),
-            SalaryAfterTaxesMonthly = display.SalaryAfterTaxes.AsReadOnly().ToArray(),
-            SalaryAfterTaxesAnnualTotal = display.SalaryAfterTaxes.Sum(),
-            SalaryAfterTaxesAverage = forAverage.SalaryAfterTaxes.Average(monthsElapsed, AverageDecimalPlaces),
-            TaxDifferenceMonthly = display.TaxDifference.AsReadOnly().ToArray(),
-            TaxDifferenceAnnualTotal = display.TaxDifference.Sum(),
-            TaxDifferenceAverage = forAverage.TaxDifference.Average(monthsElapsed, AverageDecimalPlaces),
-            DividendoJurosMonthly = display.DividendoJuros.AsReadOnly().ToArray(),
-            DividendoJurosAnnualTotal = display.DividendoJuros.Sum(),
-            DividendoJurosAverage = forAverage.DividendoJuros.Average(monthsElapsed, AverageDecimalPlaces)
-        };
+        return BuildIncomeSummaryDto(display, forAverage, monthsElapsed);
     }
+
+    private static IncomeAnnualSummaryDTO BuildIncomeSummaryDto(IncomeSeries display, IncomeSeries forAverage, int monthsElapsed) => new()
+    {
+        SalaryMonthly = display.Salary.ToArray(),
+        SalaryAnnualTotal = display.Salary.Sum(),
+        SalaryAverage = forAverage.Salary.Average(monthsElapsed, AverageDecimalPlaces),
+        SalaryAfterTaxesMonthly = display.SalaryAfterTaxes.ToArray(),
+        SalaryAfterTaxesAnnualTotal = display.SalaryAfterTaxes.Sum(),
+        SalaryAfterTaxesAverage = forAverage.SalaryAfterTaxes.Average(monthsElapsed, AverageDecimalPlaces),
+        TaxDifferenceMonthly = display.TaxDifference.ToArray(),
+        TaxDifferenceAnnualTotal = display.TaxDifference.Sum(),
+        TaxDifferenceAverage = forAverage.TaxDifference.Average(monthsElapsed, AverageDecimalPlaces),
+        DividendoJurosMonthly = display.DividendoJuros.ToArray(),
+        DividendoJurosAnnualTotal = display.DividendoJuros.Sum(),
+        DividendoJurosAverage = forAverage.DividendoJuros.Average(monthsElapsed, AverageDecimalPlaces)
+    };
 
     /// <summary>
     /// Builds the income monthly series twice for the same reason as <see cref="BuildAllCategorySeriesForYear"/>:
@@ -265,32 +271,10 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         var monthsElapsed = NumberOfMonthsForAverage(year);
 
         var categorySeries = BuildAllCategorySeriesForYear(year);
-        var categoryTotals = categorySeries
-            .Select(c => new CategoryAnnualTotalDTO
-            {
-                Category = c.Category.ToString(),
-                MonthlyTotals = c.Display.AsReadOnly().ToArray(),
-                AnnualTotal = c.Display.Sum(),
-                Average = c.ForAverage.Average(monthsElapsed, AverageDecimalPlaces)
-            })
-            .ToList();
+        var categoryTotals = BuildCategoryTotalDtos(categorySeries, monthsElapsed);
 
         var (incomeDisplay, incomeForAverage) = BuildIncomeSeriesPairForYear(year);
-        var incomeSummary = new IncomeAnnualSummaryDTO
-        {
-            SalaryMonthly = incomeDisplay.Salary.AsReadOnly().ToArray(),
-            SalaryAnnualTotal = incomeDisplay.Salary.Sum(),
-            SalaryAverage = incomeForAverage.Salary.Average(monthsElapsed, AverageDecimalPlaces),
-            SalaryAfterTaxesMonthly = incomeDisplay.SalaryAfterTaxes.AsReadOnly().ToArray(),
-            SalaryAfterTaxesAnnualTotal = incomeDisplay.SalaryAfterTaxes.Sum(),
-            SalaryAfterTaxesAverage = incomeForAverage.SalaryAfterTaxes.Average(monthsElapsed, AverageDecimalPlaces),
-            TaxDifferenceMonthly = incomeDisplay.TaxDifference.AsReadOnly().ToArray(),
-            TaxDifferenceAnnualTotal = incomeDisplay.TaxDifference.Sum(),
-            TaxDifferenceAverage = incomeForAverage.TaxDifference.Average(monthsElapsed, AverageDecimalPlaces),
-            DividendoJurosMonthly = incomeDisplay.DividendoJuros.AsReadOnly().ToArray(),
-            DividendoJurosAnnualTotal = incomeDisplay.DividendoJuros.Sum(),
-            DividendoJurosAverage = incomeForAverage.DividendoJuros.Average(monthsElapsed, AverageDecimalPlaces)
-        };
+        var incomeSummary = BuildIncomeSummaryDto(incomeDisplay, incomeForAverage, monthsElapsed);
 
         var totalDespesasSeries = categorySeries.Aggregate(MonthlySeries.Zero(), (total, c) => total.Add(c.Display));
         var totalDespesasForAverageSeries = categorySeries.Aggregate(MonthlySeries.Zero(), (total, c) => total.Add(c.ForAverage));
@@ -304,10 +288,10 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         {
             CategoryTotals = categoryTotals,
             IncomeSummary = incomeSummary,
-            TotalDespesasMonthly = totalDespesasSeries.AsReadOnly().ToArray(),
+            TotalDespesasMonthly = totalDespesasSeries.ToArray(),
             TotalDespesasAnnualTotal = totalDespesasSeries.Sum(),
             TotalDespesasAverage = totalDespesasForAverageSeries.Average(monthsElapsed, AverageDecimalPlaces),
-            ResultadoMonthly = resultadoSeries.AsReadOnly().ToArray(),
+            ResultadoMonthly = resultadoSeries.ToArray(),
             ResultadoAnnualTotal = resultadoSeries.Sum(),
             ResultadoAverage = resultadoForAverageSeries.Average(monthsElapsed, AverageDecimalPlaces)
         };

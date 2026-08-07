@@ -83,7 +83,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
 
         try
         {
-            return JsonSerializer.Deserialize<List<T>>(element.GetRawText(), options) ?? [];
+            return element.Deserialize<List<T>>(options) ?? [];
         }
         catch (JsonException ex) when (ex.Message.Contains("required", StringComparison.OrdinalIgnoreCase))
         {

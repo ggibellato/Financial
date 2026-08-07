@@ -112,14 +112,20 @@ public sealed class ReserveService : IReserveService
         return ToDto(movement);
     }
 
-    public IReadOnlyList<ReserveBucketBalanceDTO> GetBucketBalances() =>
-        Enum.GetValues<ReserveBucket>()
+    public IReadOnlyList<ReserveBucketBalanceDTO> GetBucketBalances()
+    {
+        var balanceByBucket = _repository.GetReserveMovements()
+            .GroupBy(m => m.Bucket)
+            .ToDictionary(g => g.Key, g => g.Sum(m => m.Amount));
+
+        return Enum.GetValues<ReserveBucket>()
             .Select(bucket => new ReserveBucketBalanceDTO
             {
                 Bucket = bucket.ToString(),
-                Balance = GetBalance(bucket)
+                Balance = balanceByBucket.GetValueOrDefault(bucket)
             })
             .ToList();
+    }
 
     public IReadOnlyList<ReserveMovementDTO> GetMovementHistory() =>
         _repository.GetReserveMovements()

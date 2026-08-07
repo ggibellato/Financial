@@ -41,11 +41,6 @@ public sealed class LocalJsonStorage : IJsonStorage
             resolvedPath = Path.Combine(resolvedPath, defaultFileName);
         }
 
-        if (!Path.IsPathRooted(resolvedPath))
-        {
-            resolvedPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, resolvedPath));
-        }
-
-        return resolvedPath;
+        return PathResolution.ResolveRelativeToBaseDirectory(resolvedPath);
     }
 }

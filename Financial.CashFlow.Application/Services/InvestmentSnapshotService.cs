@@ -44,7 +44,7 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
         }
 
-        return existingSnapshots.Select(s => ToDto(s, accounts)).ToList();
+        return existingSnapshots.Select(ToDto).ToList();
     }
 
     public async Task<InvestmentSnapshotDTO> UpdateSnapshotValueAsync(Guid id, UpdateInvestmentSnapshotValueDTO request)
@@ -62,22 +62,17 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
         snapshot.Update(request.Value);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
 
-        return ToDto(snapshot, _repository.GetInvestmentAccounts().ToList());
+        return ToDto(snapshot);
     }
 
-    private static InvestmentSnapshotDTO ToDto(InvestmentSnapshot snapshot, IReadOnlyList<InvestmentAccount> accounts)
+    private static InvestmentSnapshotDTO ToDto(InvestmentSnapshot snapshot) => new()
     {
-        var account = accounts.FirstOrDefault(a => a.Id == snapshot.Account.Id);
-
-        return new()
-        {
-            Id = snapshot.Id,
-            AccountId = snapshot.Account.Id,
-            AccountName = snapshot.Account.Name,
-            IsLiability = account?.IsLiability ?? false,
-            Year = snapshot.Year,
-            Month = snapshot.Month,
-            Value = snapshot.Value
-        };
-    }
+        Id = snapshot.Id,
+        AccountId = snapshot.Account.Id,
+        AccountName = snapshot.Account.Name,
+        IsLiability = snapshot.Account.IsLiability,
+        Year = snapshot.Year,
+        Month = snapshot.Month,
+        Value = snapshot.Value
+    };
 }
