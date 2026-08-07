@@ -11,11 +11,17 @@ public sealed class TransferDTO
     /// <summary>Transfer date.</summary>
     public required DateOnly Date { get; init; }
 
-    /// <summary>Bank the money leaves.</summary>
-    public required string SourceBank { get; init; }
+    /// <summary>Identifier of the bank the money leaves.</summary>
+    public required Guid SourceBankId { get; init; }
 
-    /// <summary>Bank the money enters.</summary>
-    public required string DestinationBank { get; init; }
+    /// <summary>Name of the bank the money leaves.</summary>
+    public required string SourceBankName { get; init; }
+
+    /// <summary>Identifier of the bank the money enters.</summary>
+    public required Guid DestinationBankId { get; init; }
+
+    /// <summary>Name of the bank the money enters.</summary>
+    public required string DestinationBankName { get; init; }
 
     /// <summary>Amount moved in GBP.</summary>
     public required decimal Amount { get; init; }

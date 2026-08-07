@@ -72,7 +72,8 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
         return new()
         {
             Id = snapshot.Id,
-            Account = snapshot.Account.Name,
+            AccountId = snapshot.Account.Id,
+            AccountName = snapshot.Account.Name,
             IsLiability = account?.IsLiability ?? false,
             Year = snapshot.Year,
             Month = snapshot.Month,

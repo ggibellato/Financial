@@ -7,6 +7,10 @@ namespace Financial.Api.Tests;
 
 public class BanksEndpointsTests
 {
+    private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
+    private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
+    private static readonly Guid GleisonId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000001");
+
     [Fact]
     public async Task GetBanks_ReturnsTheThreeSeededBanksWithCorrectRoundUpFlags()
     {
@@ -105,10 +109,10 @@ public class BanksEndpointsTests
         await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            IncomeSource = "Gleison",
+            IncomeSourceId = GleisonId,
             GrossValue = null,
             NetValue = 500m,
-            Bank = "Barclays"
+            BankId = BarclaysId
         });
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
@@ -116,7 +120,7 @@ public class BanksEndpointsTests
             Description = "Groceries",
             Value = 50m,
             Category = "Mercado",
-            PaymentSource = "Barclays",
+            PaymentSourceBankId = BarclaysId,
             CardTag = null
         });
 
@@ -154,8 +158,8 @@ public class BanksEndpointsTests
         await client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 5),
-            SourceBank = "Barclays",
-            DestinationBank = "Trading212",
+            SourceBankId = BarclaysId,
+            DestinationBankId = Trading212Id,
             Amount = 500m
         });
 

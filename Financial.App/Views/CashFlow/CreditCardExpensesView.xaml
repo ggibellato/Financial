@@ -47,7 +47,7 @@
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                 <DataGridTextColumn Binding="{Binding Value, StringFormat=N2}" Header="Value" Width="100"
                                      ElementStyle="{StaticResource NumericColumnTextStyle}"/>
-                <DataGridTextColumn Binding="{Binding PaymentSource}" Header="Payment Source" Width="140"
+                <DataGridTextColumn Binding="{Binding PaymentSourceBankName}" Header="Payment Source" Width="140"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                 <DataGridTextColumn Binding="{Binding CardTag}" Header="Card" Width="160"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>

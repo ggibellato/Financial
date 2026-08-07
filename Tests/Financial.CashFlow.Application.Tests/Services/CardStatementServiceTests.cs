@@ -11,7 +11,8 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class CardStatementServiceTests
 {
-    private static MarkStatementPaidDTO PaidBy(string? paymentSource) => new() { PaymentSource = paymentSource };
+    private static MarkStatementPaidDTO PaidBy(StubCashFlowRepository repository, string? bankName) =>
+        new() { PaymentSourceBankId = repository.Banks.FirstOrDefault(b => b.Name == bankName)?.Id };
 
     private static Expense AddCharge(
         StubCashFlowRepository repository, DateOnly date, decimal value, CreditCard card)
@@ -112,7 +113,7 @@ public class CardStatementServiceTests
         await service.GetStatementsForMonthAsync(2026, 7);
         var statement = repository.CardStatements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003 && s.Month == 7);
 
-        var result = await service.MarkStatementPaidAsync(statement.Id, PaidBy("Trading212"));
+        var result = await service.MarkStatementPaidAsync(statement.Id, PaidBy(repository, "Trading212"));
 
         using (new AssertionScope())
         {
@@ -147,7 +148,7 @@ public class CardStatementServiceTests
         var julyStatement = repository.CardStatements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003 && s.Month == 7);
         var augustStatement = repository.CardStatements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003 && s.Month == 8);
 
-        var julyResult = await service.MarkStatementPaidAsync(julyStatement.Id, PaidBy("Trading212"));
+        var julyResult = await service.MarkStatementPaidAsync(julyStatement.Id, PaidBy(repository, "Trading212"));
 
         using (new AssertionScope())
         {
@@ -156,7 +157,7 @@ public class CardStatementServiceTests
             cutoffCharge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
         }
 
-        var augustResult = await service.MarkStatementPaidAsync(augustStatement.Id, PaidBy("Trading212"));
+        var augustResult = await service.MarkStatementPaidAsync(augustStatement.Id, PaidBy(repository, "Trading212"));
 
         using (new AssertionScope())
         {
@@ -174,7 +175,7 @@ public class CardStatementServiceTests
         await service.GetStatementsForMonthAsync(2026, 7);
         var statement = repository.CardStatements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003);
 
-        var result = await service.MarkStatementPaidAsync(statement.Id, PaidBy("Trading212"));
+        var result = await service.MarkStatementPaidAsync(statement.Id, PaidBy(repository, "Trading212"));
 
         using (new AssertionScope())
         {
@@ -194,7 +195,7 @@ public class CardStatementServiceTests
         await service.GetStatementsForMonthAsync(2026, 7);
         var statement = repository.CardStatements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003);
 
-        var result = await service.MarkStatementPaidAsync(statement.Id, PaidBy("Trading212"));
+        var result = await service.MarkStatementPaidAsync(statement.Id, PaidBy(repository, "Trading212"));
 
         result.Warning.Should().BeNull();
     }
@@ -212,7 +213,7 @@ public class CardStatementServiceTests
         var service = new CardStatementService(repository);
         await service.GetStatementsForMonthAsync(2026, 8);
         var augustStatement = repository.CardStatements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003 && s.Month == 8);
-        await service.MarkStatementPaidAsync(augustStatement.Id, PaidBy("Trading212"));
+        await service.MarkStatementPaidAsync(augustStatement.Id, PaidBy(repository, "Trading212"));
 
         var result = await service.UnmarkStatementPaidAsync(augustStatement.Id);
 
@@ -238,7 +239,7 @@ public class CardStatementServiceTests
         var statement = repository.CardStatements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003);
         var savesBefore = repository.SaveChangesCallCount;
 
-        var act = async () => await service.MarkStatementPaidAsync(statement.Id, PaidBy(paymentSource));
+        var act = async () => await service.MarkStatementPaidAsync(statement.Id, PaidBy(repository, paymentSource));
 
         using (new AssertionScope())
         {
@@ -256,10 +257,10 @@ public class CardStatementServiceTests
         var service = new CardStatementService(repository);
         await service.GetStatementsForMonthAsync(2026, 7);
         var statement = repository.CardStatements.First();
-        await service.MarkStatementPaidAsync(statement.Id, PaidBy("Barclays"));
+        await service.MarkStatementPaidAsync(statement.Id, PaidBy(repository, "Barclays"));
         var savesBefore = repository.SaveChangesCallCount;
 
-        var result = await service.MarkStatementPaidAsync(statement.Id, PaidBy("Chase"));
+        var result = await service.MarkStatementPaidAsync(statement.Id, PaidBy(repository, "Chase"));
 
         result.IsPaid.Should().BeTrue();
         repository.SaveChangesCallCount.Should().Be(savesBefore);
@@ -275,7 +276,7 @@ public class CardStatementServiceTests
         var statement = repository.CardStatements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003);
         repository.ThrowOnNextSave = true;
 
-        var act = async () => await service.MarkStatementPaidAsync(statement.Id, PaidBy("Barclays"));
+        var act = async () => await service.MarkStatementPaidAsync(statement.Id, PaidBy(repository, "Barclays"));
 
         using (new AssertionScope())
         {
@@ -290,9 +291,10 @@ public class CardStatementServiceTests
     [Fact]
     public async Task MarkStatementPaidAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var service = new CardStatementService(new StubCashFlowRepository(seedDefaultBanks: true));
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new CardStatementService(repository);
 
-        var act = async () => await service.MarkStatementPaidAsync(Guid.NewGuid(), PaidBy("Barclays"));
+        var act = async () => await service.MarkStatementPaidAsync(Guid.NewGuid(), PaidBy(repository, "Barclays"));
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
@@ -306,7 +308,7 @@ public class CardStatementServiceTests
         var service = new CardStatementService(repository);
         await service.GetStatementsForMonthAsync(2026, 7);
         var statement = repository.CardStatements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003);
-        await service.MarkStatementPaidAsync(statement.Id, PaidBy("Barclays"));
+        await service.MarkStatementPaidAsync(statement.Id, PaidBy(repository, "Barclays"));
 
         var result = await service.UnmarkStatementPaidAsync(statement.Id);
 
@@ -345,7 +347,7 @@ public class CardStatementServiceTests
         var service = new CardStatementService(repository);
         await service.GetStatementsForMonthAsync(2026, 7);
         var statement = repository.CardStatements.First();
-        await service.MarkStatementPaidAsync(statement.Id, PaidBy("Barclays"));
+        await service.MarkStatementPaidAsync(statement.Id, PaidBy(repository, "Barclays"));
 
         var result = await service.UnmarkStatementPaidAsync(statement.Id);
 
@@ -361,7 +363,7 @@ public class CardStatementServiceTests
         var service = new CardStatementService(repository);
         await service.GetStatementsForMonthAsync(2026, 7);
         var statement = repository.CardStatements.Single(s => s.Card == CreditCard.BarclaysPlatinumVisa8003);
-        await service.MarkStatementPaidAsync(statement.Id, PaidBy("Trading212"));
+        await service.MarkStatementPaidAsync(statement.Id, PaidBy(repository, "Trading212"));
         var paymentDate = charge.Date;
         repository.ThrowOnNextSave = true;
 

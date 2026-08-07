@@ -17,13 +17,13 @@ public sealed class BankService : IBankService
     public IReadOnlyList<BankDTO> GetBanks() =>
         _repository.GetBanks().Select(ToDto).ToList();
 
-    public async Task<BankDTO> UpdateOpeningBalanceAsync(string name, BankOpeningBalanceUpdateDTO request)
+    public async Task<BankDTO> UpdateOpeningBalanceAsync(Guid id, BankOpeningBalanceUpdateDTO request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        if (!BankNameResolver.TryResolve(name, _repository.GetBanks(), out var bank))
+        if (!BankNameResolver.TryResolve(id, _repository.GetBanks(), out var bank))
         {
-            throw new KeyNotFoundException($"Bank '{name}' was not found.");
+            throw new KeyNotFoundException($"Bank '{id}' was not found.");
         }
 
         bank!.SetOpeningBalance(request.OpeningBalance, request.OpeningBalanceDate);
@@ -49,11 +49,11 @@ public sealed class BankService : IBankService
             .ToList();
     }
 
-    public decimal GetBankBalanceAsOf(string bankName, DateOnly asOfDate, Guid? excludingAdjustmentId = null)
+    public decimal GetBankBalanceAsOf(Guid bankId, DateOnly asOfDate, Guid? excludingAdjustmentId = null)
     {
-        if (!BankNameResolver.TryResolve(bankName, _repository.GetBanks(), out var bank))
+        if (!BankNameResolver.TryResolve(bankId, _repository.GetBanks(), out var bank))
         {
-            throw new KeyNotFoundException($"Bank '{bankName}' was not found.");
+            throw new KeyNotFoundException($"Bank '{bankId}' was not found.");
         }
 
         return ComputeBalance(
@@ -102,6 +102,7 @@ public sealed class BankService : IBankService
 
     private static BankDTO ToDto(Bank bank) => new()
     {
+        Id = bank.Id,
         Name = bank.Name,
         RoundUpEnabled = bank.RoundUpEnabled,
         OpeningBalance = bank.OpeningBalance,

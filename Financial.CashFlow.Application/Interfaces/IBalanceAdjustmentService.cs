@@ -4,8 +4,8 @@ namespace Financial.CashFlow.Application.Interfaces;
 
 public interface IBalanceAdjustmentService
 {
-    Task<BalanceAdjustmentDTO> AddAdjustmentAsync(string bankName, BalanceAdjustmentCreateDTO request);
-    Task<BalanceAdjustmentDTO> UpdateAdjustmentAsync(string bankName, Guid id, BalanceAdjustmentUpdateDTO request);
-    Task DeleteAdjustmentAsync(string bankName, Guid id);
-    IReadOnlyList<BalanceAdjustmentDTO> GetAdjustmentsByBank(string bankName);
+    Task<BalanceAdjustmentDTO> AddAdjustmentAsync(Guid bankId, BalanceAdjustmentCreateDTO request);
+    Task<BalanceAdjustmentDTO> UpdateAdjustmentAsync(Guid bankId, Guid id, BalanceAdjustmentUpdateDTO request);
+    Task DeleteAdjustmentAsync(Guid bankId, Guid id);
+    IReadOnlyList<BalanceAdjustmentDTO> GetAdjustmentsByBank(Guid bankId);
 }

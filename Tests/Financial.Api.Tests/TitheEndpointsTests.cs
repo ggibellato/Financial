@@ -7,6 +7,9 @@ namespace Financial.Api.Tests;
 
 public class TitheEndpointsTests
 {
+    private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
+    private static readonly Guid GleisonId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000001");
+
     [Fact]
     public async Task GetTitheSummaryByMonth_WithIncomeAndDizimoExpense_ReturnsCalculatedFigures()
     {
@@ -15,10 +18,10 @@ public class TitheEndpointsTests
         await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            IncomeSource = "Gleison",
+            IncomeSourceId = GleisonId,
             GrossValue = null,
             NetValue = 3000m,
-            Bank = "Barclays"
+            BankId = BarclaysId
         });
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
@@ -26,7 +29,7 @@ public class TitheEndpointsTests
             Description = "Tithe payment",
             Value = 200m,
             Category = "Dizimo",
-            PaymentSource = "Barclays",
+            PaymentSourceBankId = BarclaysId,
             CardTag = null
         });
 

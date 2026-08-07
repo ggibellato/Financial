@@ -11,8 +11,11 @@ public sealed class BalanceAdjustmentDTO
     /// <summary>Reconciliation date.</summary>
     public required DateOnly Date { get; init; }
 
-    /// <summary>Bank this adjustment applies to.</summary>
-    public required string Bank { get; init; }
+    /// <summary>Identifier of the bank this adjustment applies to.</summary>
+    public required Guid BankId { get; init; }
+
+    /// <summary>Name of the bank this adjustment applies to.</summary>
+    public required string BankName { get; init; }
 
     /// <summary>The real balance entered, from the bank statement.</summary>
     public required decimal TargetBalance { get; init; }

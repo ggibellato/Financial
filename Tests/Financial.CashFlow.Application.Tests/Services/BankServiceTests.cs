@@ -52,11 +52,12 @@ public class BankServiceTests
     public async Task UpdateOpeningBalanceAsync_WithValidRequest_UpdatesAndSaves()
     {
         var repository = new StubCashFlowRepository();
-        repository.Banks.Add(Bank.Create("Barclays", roundUpEnabled: false));
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        repository.Banks.Add(bank);
         var service = new BankService(repository);
         var request = new BankOpeningBalanceUpdateDTO { OpeningBalance = 1250.75m, OpeningBalanceDate = new DateOnly(2026, 7, 1) };
 
-        var result = await service.UpdateOpeningBalanceAsync("Barclays", request);
+        var result = await service.UpdateOpeningBalanceAsync(bank.Id, request);
 
         using (new AssertionScope())
         {
@@ -67,25 +68,12 @@ public class BankServiceTests
     }
 
     [Fact]
-    public async Task UpdateOpeningBalanceAsync_ResolvesNameCaseInsensitively()
-    {
-        var repository = new StubCashFlowRepository();
-        repository.Banks.Add(Bank.Create("Barclays", roundUpEnabled: false));
-        var service = new BankService(repository);
-        var request = new BankOpeningBalanceUpdateDTO { OpeningBalance = 10m, OpeningBalanceDate = new DateOnly(2026, 7, 1) };
-
-        var result = await service.UpdateOpeningBalanceAsync("barclays", request);
-
-        result.Name.Should().Be("Barclays");
-    }
-
-    [Fact]
-    public async Task UpdateOpeningBalanceAsync_WithUnknownName_ThrowsKeyNotFoundException()
+    public async Task UpdateOpeningBalanceAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
         var service = new BankService(new StubCashFlowRepository());
         var request = new BankOpeningBalanceUpdateDTO { OpeningBalance = 10m, OpeningBalanceDate = new DateOnly(2026, 7, 1) };
 
-        var act = async () => await service.UpdateOpeningBalanceAsync("NotABank", request);
+        var act = async () => await service.UpdateOpeningBalanceAsync(Guid.NewGuid(), request);
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
@@ -94,11 +82,12 @@ public class BankServiceTests
     public async Task UpdateOpeningBalanceAsync_WithNegativeBalance_ThrowsArgumentException()
     {
         var repository = new StubCashFlowRepository();
-        repository.Banks.Add(Bank.Create("Barclays", roundUpEnabled: false));
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        repository.Banks.Add(bank);
         var service = new BankService(repository);
         var request = new BankOpeningBalanceUpdateDTO { OpeningBalance = -1m, OpeningBalanceDate = new DateOnly(2026, 7, 1) };
 
-        var act = async () => await service.UpdateOpeningBalanceAsync("Barclays", request);
+        var act = async () => await service.UpdateOpeningBalanceAsync(bank.Id, request);
 
         await act.Should().ThrowAsync<ArgumentException>();
     }
@@ -315,7 +304,7 @@ public class BankServiceTests
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 20), Gleison, null, 300m, bank));
         var service = new BankService(repository);
 
-        var result = service.GetBankBalanceAsOf("Barclays", new DateOnly(2026, 7, 15));
+        var result = service.GetBankBalanceAsOf(bank.Id, new DateOnly(2026, 7, 15));
 
         result.Should().Be(300m);
     }
@@ -335,7 +324,7 @@ public class BankServiceTests
         repository.BalanceAdjustments.Add(included);
         var service = new BankService(repository);
 
-        var result = service.GetBankBalanceAsOf("Barclays", new DateOnly(2026, 7, 15), excludingAdjustmentId: excluded.Id);
+        var result = service.GetBankBalanceAsOf(bank.Id, new DateOnly(2026, 7, 15), excludingAdjustmentId: excluded.Id);
 
         // 100 (opening) - 20 (transfer out) - 30 (included adjustment delta) = 50; excluded adjustment's +400 is omitted
         result.Should().Be(50m);
@@ -346,7 +335,7 @@ public class BankServiceTests
     {
         var service = new BankService(new StubCashFlowRepository());
 
-        var act = () => service.GetBankBalanceAsOf("NotABank", new DateOnly(2026, 7, 15));
+        var act = () => service.GetBankBalanceAsOf(Guid.NewGuid(), new DateOnly(2026, 7, 15));
 
         act.Should().Throw<KeyNotFoundException>();
     }

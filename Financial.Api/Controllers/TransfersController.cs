@@ -12,10 +12,12 @@ namespace Financial.Api.Controllers;
 public sealed class TransfersController : ControllerBase
 {
     private readonly ITransferService _transferService;
+    private readonly IBankService _bankService;
 
-    public TransfersController(ITransferService transferService)
+    public TransfersController(ITransferService transferService, IBankService bankService)
     {
         _transferService = transferService ?? throw new ArgumentNullException(nameof(transferService));
+        _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
     }
 
     /// <summary>Records a new transfer.</summary>
@@ -110,7 +112,13 @@ public sealed class TransfersController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<TransferDTO>), StatusCodes.Status200OK)]
     public ActionResult<IReadOnlyList<TransferDTO>> GetTransfersByBank(string name)
     {
-        var result = _transferService.GetTransfersByBank(name);
+        var bank = _bankService.GetBanks().FirstOrDefault(b => b.Name == name);
+        if (bank is null)
+        {
+            return Ok(Array.Empty<TransferDTO>());
+        }
+
+        var result = _transferService.GetTransfersByBank(bank.Id);
         return Ok(result);
     }
 }

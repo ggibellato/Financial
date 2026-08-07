@@ -8,5 +8,5 @@ public interface ITransferService
     Task<TransferDTO> UpdateTransferAsync(Guid id, TransferUpdateDTO request);
     Task DeleteTransferAsync(Guid id);
     IReadOnlyList<TransferDTO> GetTransfersByMonth(int year, int month);
-    IReadOnlyList<TransferDTO> GetTransfersByBank(string bankName);
+    IReadOnlyList<TransferDTO> GetTransfersByBank(Guid bankId);
 }

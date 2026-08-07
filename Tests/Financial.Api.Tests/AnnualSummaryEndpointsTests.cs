@@ -8,6 +8,13 @@ namespace Financial.Api.Tests;
 
 public class AnnualSummaryEndpointsTests
 {
+    private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
+    private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
+    private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
+    private static readonly Guid GleisonId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000001");
+    private static readonly Guid ArianaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000002");
+    private static readonly Guid DividendoJurosId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000004");
+
     [Fact]
     public async Task GetExpenseCategoryTotals_RouteRemoved_Returns404()
     {
@@ -57,7 +64,7 @@ public class AnnualSummaryEndpointsTests
             Description = "Past year groceries",
             Value = 120m,
             Category = "Mercado",
-            PaymentSource = "Barclays",
+            PaymentSourceBankId = BarclaysId,
             CardTag = null
         });
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
@@ -66,7 +73,7 @@ public class AnnualSummaryEndpointsTests
             Description = "January groceries",
             Value = 100m,
             Category = "Mercado",
-            PaymentSource = "Barclays",
+            PaymentSourceBankId = BarclaysId,
             CardTag = null
         });
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
@@ -75,32 +82,32 @@ public class AnnualSummaryEndpointsTests
             Description = "March groceries",
             Value = 50m,
             Category = "Mercado",
-            PaymentSource = "Barclays",
+            PaymentSourceBankId = BarclaysId,
             CardTag = null
         });
         await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(currentYear, 1, 1),
-            IncomeSource = "Gleison",
+            IncomeSourceId = GleisonId,
             GrossValue = 3200m,
             NetValue = 2450m,
-            Bank = "Barclays"
+            BankId = BarclaysId
         });
         await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(currentYear, 1, 8),
-            IncomeSource = "Ariana",
+            IncomeSourceId = ArianaId,
             GrossValue = 400m,
             NetValue = 350m,
-            Bank = "Chase"
+            BankId = ChaseId
         });
         await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(currentYear, 3, 1),
-            IncomeSource = "DividendoJuros",
+            IncomeSourceId = DividendoJurosId,
             GrossValue = null,
             NetValue = 15.50m,
-            Bank = "Trading212"
+            BankId = Trading212Id
         });
 
         var response = await client.GetAsync($"/api/v1/financial/annual-summary/{currentYear}/historic-summary-averages");
@@ -141,7 +148,7 @@ public class AnnualSummaryEndpointsTests
             Description = "January groceries",
             Value = 100m,
             Category = "Mercado",
-            PaymentSource = "Barclays",
+            PaymentSourceBankId = BarclaysId,
             CardTag = null
         });
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
@@ -150,24 +157,24 @@ public class AnnualSummaryEndpointsTests
             Description = "January investing",
             Value = 30m,
             Category = "Investimento",
-            PaymentSource = "Barclays",
+            PaymentSourceBankId = BarclaysId,
             CardTag = null
         });
         await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 1, 1),
-            IncomeSource = "Gleison",
+            IncomeSourceId = GleisonId,
             GrossValue = 1000m,
             NetValue = 800m,
-            Bank = "Barclays"
+            BankId = BarclaysId
         });
         await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 1, 1),
-            IncomeSource = "DividendoJuros",
+            IncomeSourceId = DividendoJurosId,
             GrossValue = null,
             NetValue = 20m,
-            Bank = "Trading212"
+            BankId = Trading212Id
         });
 
         var response = await client.GetAsync("/api/v1/financial/annual-summary/2026/category-totals");
@@ -205,11 +212,11 @@ public class AnnualSummaryEndpointsTests
         using var client = factory.CreateClient();
         var januarySnapshots = await client.GetAsync("/api/v1/financial/investment-snapshots/2026/1");
         var january = await januarySnapshots.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
-        var chaseSaveJan = january!.First(s => s.Account == "ChaseSave");
+        var chaseSaveJan = january!.First(s => s.AccountName == "ChaseSave");
         await client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{chaseSaveJan.Id}", new UpdateInvestmentSnapshotValueDTO { Value = 1000m });
         var februarySnapshots = await client.GetAsync("/api/v1/financial/investment-snapshots/2026/2");
         var february = await februarySnapshots.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
-        var chaseSaveFeb = february!.First(s => s.Account == "ChaseSave");
+        var chaseSaveFeb = february!.First(s => s.AccountName == "ChaseSave");
         await client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{chaseSaveFeb.Id}", new UpdateInvestmentSnapshotValueDTO { Value = 1200m });
 
         var response = await client.GetAsync("/api/v1/financial/annual-summary/2026/investment-annual-result");

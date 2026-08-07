@@ -7,6 +7,14 @@ namespace Financial.Api.Tests;
 
 public class IncomesEndpointsTests
 {
+    private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
+    private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
+    private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
+    private static readonly Guid GleisonId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000001");
+    private static readonly Guid ArianaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000002");
+    private static readonly Guid LotteryId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000003");
+    private static readonly Guid DividendoJurosId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000004");
+
     [Fact]
     public async Task AddIncome_ValidRequest_ReturnsOk()
     {
@@ -15,10 +23,10 @@ public class IncomesEndpointsTests
         var request = new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
-            IncomeSource = "Gleison",
+            IncomeSourceId = GleisonId,
             GrossValue = 3200.00m,
             NetValue = 2450.00m,
-            Bank = "Barclays"
+            BankId = BarclaysId
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/incomes", request);
@@ -26,10 +34,12 @@ public class IncomesEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var income = await response.Content.ReadFromJsonAsync<IncomeDTO>();
         income.Should().NotBeNull();
-        income!.IncomeSource.Should().Be("Gleison");
+        income!.IncomeSourceId.Should().Be(GleisonId);
+        income.IncomeSourceName.Should().Be("Gleison");
         income.GrossValue.Should().Be(3200.00m);
         income.NetValue.Should().Be(2450.00m);
-        income.Bank.Should().Be("Barclays");
+        income.BankId.Should().Be(BarclaysId);
+        income.BankName.Should().Be("Barclays");
     }
 
     [Fact]
@@ -40,10 +50,10 @@ public class IncomesEndpointsTests
         var request = new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
-            IncomeSource = "Lottery",
+            IncomeSourceId = LotteryId,
             GrossValue = null,
             NetValue = 50m,
-            Bank = ""
+            BankId = Guid.NewGuid()
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/incomes", request);
@@ -59,10 +69,10 @@ public class IncomesEndpointsTests
         var request = new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
-            IncomeSource = "Lottery",
+            IncomeSourceId = LotteryId,
             GrossValue = null,
             NetValue = -1m,
-            Bank = "Chase"
+            BankId = ChaseId
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/incomes", request);
@@ -78,27 +88,29 @@ public class IncomesEndpointsTests
         var created = await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            IncomeSource = "Lottery",
+            IncomeSourceId = LotteryId,
             GrossValue = null,
             NetValue = 10m,
-            Bank = "Chase"
+            BankId = ChaseId
         });
         var createdIncome = await created.Content.ReadFromJsonAsync<IncomeDTO>();
 
         var response = await client.PutAsJsonAsync($"/api/v1/financial/incomes/{createdIncome!.Id}", new IncomeUpdateDTO
         {
             Date = new DateOnly(2026, 7, 2),
-            IncomeSource = "DividendoJuros",
+            IncomeSourceId = DividendoJurosId,
             GrossValue = null,
             NetValue = 25m,
-            Bank = "Trading212"
+            BankId = Trading212Id
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var updated = await response.Content.ReadFromJsonAsync<IncomeDTO>();
-        updated!.IncomeSource.Should().Be("DividendoJuros");
+        updated!.IncomeSourceId.Should().Be(DividendoJurosId);
+        updated.IncomeSourceName.Should().Be("DividendoJuros");
         updated.NetValue.Should().Be(25m);
-        updated.Bank.Should().Be("Trading212");
+        updated.BankId.Should().Be(Trading212Id);
+        updated.BankName.Should().Be("Trading212");
     }
 
     [Fact]
@@ -110,10 +122,10 @@ public class IncomesEndpointsTests
         var response = await client.PutAsJsonAsync($"/api/v1/financial/incomes/{Guid.NewGuid()}", new IncomeUpdateDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            IncomeSource = "Lottery",
+            IncomeSourceId = LotteryId,
             GrossValue = null,
             NetValue = 10m,
-            Bank = "Chase"
+            BankId = ChaseId
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -127,10 +139,10 @@ public class IncomesEndpointsTests
         var created = await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 5),
-            IncomeSource = "Lottery",
+            IncomeSourceId = LotteryId,
             GrossValue = null,
             NetValue = 10m,
-            Bank = "Chase"
+            BankId = ChaseId
         });
         var createdIncome = await created.Content.ReadFromJsonAsync<IncomeDTO>();
 
@@ -161,26 +173,26 @@ public class IncomesEndpointsTests
         await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
-            IncomeSource = "Ariana",
+            IncomeSourceId = ArianaId,
             GrossValue = null,
             NetValue = 400m,
-            Bank = "Chase"
+            BankId = ChaseId
         });
         await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 8),
-            IncomeSource = "Ariana",
+            IncomeSourceId = ArianaId,
             GrossValue = null,
             NetValue = 420m,
-            Bank = "Chase"
+            BankId = ChaseId
         });
         await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 8, 1),
-            IncomeSource = "Ariana",
+            IncomeSourceId = ArianaId,
             GrossValue = null,
             NetValue = 410m,
-            Bank = "Chase"
+            BankId = ChaseId
         });
 
         var response = await client.GetAsync("/api/v1/financial/incomes/month/2026/7");

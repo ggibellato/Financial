@@ -16,9 +16,11 @@ public class IncomeSourceNameResolverTests
     ];
 
     [Fact]
-    public void TryResolve_ExactCaseName_ReturnsTrueAndTheSource()
+    public void TryResolve_KnownId_ReturnsTrueAndTheSource()
     {
-        var result = IncomeSourceNameResolver.TryResolve("Gleison", Sources, out var source);
+        var target = Sources[0];
+
+        var result = IncomeSourceNameResolver.TryResolve(target.Id, Sources, out var source);
 
         result.Should().BeTrue();
         source.Should().NotBeNull();
@@ -27,18 +29,9 @@ public class IncomeSourceNameResolverTests
     }
 
     [Fact]
-    public void TryResolve_DifferentCasing_ResolvesCaseInsensitively()
+    public void TryResolve_UnknownId_ReturnsFalse()
     {
-        var result = IncomeSourceNameResolver.TryResolve("aRIANA", Sources, out var source);
-
-        result.Should().BeTrue();
-        source!.Name.Should().Be("Ariana");
-    }
-
-    [Fact]
-    public void TryResolve_UnknownName_ReturnsFalse()
-    {
-        var result = IncomeSourceNameResolver.TryResolve("NotASource", Sources, out var source);
+        var result = IncomeSourceNameResolver.TryResolve(Guid.NewGuid(), Sources, out var source);
 
         result.Should().BeFalse();
         source.Should().BeNull();
@@ -54,18 +47,11 @@ public class IncomeSourceNameResolverTests
     }
 
     [Fact]
-    public void TryResolve_BlankValue_ReturnsFalse()
-    {
-        var result = IncomeSourceNameResolver.TryResolve("   ", Sources, out var source);
-
-        result.Should().BeFalse();
-        source.Should().BeNull();
-    }
-
-    [Fact]
     public void TryResolve_InactiveSource_StillResolves()
     {
-        var result = IncomeSourceNameResolver.TryResolve("Lottery", Sources, out var source);
+        var target = Sources[2];
+
+        var result = IncomeSourceNameResolver.TryResolve(target.Id, Sources, out var source);
 
         result.Should().BeTrue();
         source!.IsActive.Should().BeFalse();

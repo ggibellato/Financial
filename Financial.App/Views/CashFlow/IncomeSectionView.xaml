@@ -41,13 +41,13 @@
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Binding="{Binding Date, Converter={StaticResource DateFormatConverter}}" Header="Date" Width="100"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                <DataGridTextColumn Binding="{Binding IncomeSource}" Header="Source" Width="140"
+                <DataGridTextColumn Binding="{Binding IncomeSourceName}" Header="Source" Width="140"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                 <DataGridTextColumn Binding="{Binding GrossValue, StringFormat=N2, TargetNullValue='—'}" Header="Gross" Width="100"
                                      ElementStyle="{StaticResource NumericColumnTextStyle}"/>
                 <DataGridTextColumn Binding="{Binding NetValue, StringFormat=N2}" Header="Net" Width="100"
                                      ElementStyle="{StaticResource NumericColumnTextStyle}"/>
-                <DataGridTextColumn Binding="{Binding Bank}" Header="Bank" Width="*"
+                <DataGridTextColumn Binding="{Binding BankName}" Header="Bank" Width="*"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
             </DataGrid.Columns>
         </DataGrid>

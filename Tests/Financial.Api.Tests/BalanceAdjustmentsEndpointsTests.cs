@@ -7,6 +7,8 @@ namespace Financial.Api.Tests;
 
 public class BalanceAdjustmentsEndpointsTests
 {
+    private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
+
     [Fact]
     public async Task AddAdjustment_ValidRequest_ReturnsOkWithComputedDelta()
     {
@@ -24,7 +26,8 @@ public class BalanceAdjustmentsEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var adjustment = await response.Content.ReadFromJsonAsync<BalanceAdjustmentDTO>();
         adjustment.Should().NotBeNull();
-        adjustment!.Bank.Should().Be("Barclays");
+        adjustment!.BankId.Should().Be(BarclaysId);
+        adjustment.BankName.Should().Be("Barclays");
         adjustment.TargetBalance.Should().Be(150.00m);
         adjustment.Delta.Should().Be(150.00m);
         adjustment.Note.Should().Be("Matched against July statement");
@@ -155,6 +158,7 @@ public class BalanceAdjustmentsEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<BalanceAdjustmentDTO>>();
         items.Should().ContainSingle();
-        items!.Single().Bank.Should().Be("Barclays");
+        items!.Single().BankId.Should().Be(BarclaysId);
+        items.Single().BankName.Should().Be("Barclays");
     }
 }

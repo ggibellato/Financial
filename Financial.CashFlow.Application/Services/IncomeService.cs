@@ -18,7 +18,7 @@ public sealed class IncomeService : IIncomeService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var (incomeSource, bank) = ValidateFields(request.IncomeSource, request.Bank);
+        var (incomeSource, bank) = ValidateFields(request.IncomeSourceId, request.BankId);
 
         var income = Income.Create(request.Date, incomeSource, request.GrossValue, request.NetValue, bank);
         _repository.AddIncome(income);
@@ -33,7 +33,7 @@ public sealed class IncomeService : IIncomeService
 
         var income = FindIncomeOrThrow(id);
 
-        var (incomeSource, bank) = ValidateFields(request.IncomeSource, request.Bank);
+        var (incomeSource, bank) = ValidateFields(request.IncomeSourceId, request.BankId);
 
         income.UpdateDetails(request.Date, incomeSource, request.GrossValue, request.NetValue, bank);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
@@ -59,16 +59,16 @@ public sealed class IncomeService : IIncomeService
         _repository.GetIncomes().FirstOrDefault(i => i.Id == id)
             ?? throw new KeyNotFoundException($"Income '{id}' was not found.");
 
-    private (IncomeSource IncomeSource, Bank Bank) ValidateFields(string incomeSource, string bank)
+    private (IncomeSource IncomeSource, Bank Bank) ValidateFields(Guid incomeSourceId, Guid bankId)
     {
-        if (!IncomeSourceNameResolver.TryResolve(incomeSource, _repository.GetIncomeSources(), out var resolvedIncomeSource))
+        if (!IncomeSourceNameResolver.TryResolve(incomeSourceId, _repository.GetIncomeSources(), out var resolvedIncomeSource))
         {
-            throw new ArgumentException($"Income source '{incomeSource}' is not recognized.");
+            throw new ArgumentException($"Income source '{incomeSourceId}' is not recognized.");
         }
 
-        if (!BankNameResolver.TryResolve(bank, _repository.GetBanks(), out var resolvedBank))
+        if (!BankNameResolver.TryResolve(bankId, _repository.GetBanks(), out var resolvedBank))
         {
-            throw new ArgumentException($"Bank '{bank}' is not recognized.");
+            throw new ArgumentException($"Bank '{bankId}' is not recognized.");
         }
 
         return (resolvedIncomeSource!, resolvedBank!);
@@ -78,9 +78,11 @@ public sealed class IncomeService : IIncomeService
     {
         Id = income.Id,
         Date = income.Date,
-        IncomeSource = income.IncomeSource.Name,
+        IncomeSourceId = income.IncomeSource.Id,
+        IncomeSourceName = income.IncomeSource.Name,
         GrossValue = income.GrossValue,
         NetValue = income.NetValue,
-        Bank = income.Bank.Name
+        BankId = income.Bank.Id,
+        BankName = income.Bank.Name
     };
 }

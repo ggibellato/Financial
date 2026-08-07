@@ -14,9 +14,11 @@ public class BankNameResolverTests
     ];
 
     [Fact]
-    public void TryResolve_ExactCaseName_ReturnsTrueAndTheBank()
+    public void TryResolve_KnownId_ReturnsTrueAndTheBank()
     {
-        var result = BankNameResolver.TryResolve("Trading212", Banks, out var bank);
+        var target = Banks[1];
+
+        var result = BankNameResolver.TryResolve(target.Id, Banks, out var bank);
 
         result.Should().BeTrue();
         bank.Should().NotBeNull();
@@ -25,18 +27,9 @@ public class BankNameResolverTests
     }
 
     [Fact]
-    public void TryResolve_DifferentCasing_ResolvesCaseInsensitively()
+    public void TryResolve_UnknownId_ReturnsFalse()
     {
-        var result = BankNameResolver.TryResolve("bARCLAYS", Banks, out var bank);
-
-        result.Should().BeTrue();
-        bank!.Name.Should().Be("Barclays");
-    }
-
-    [Fact]
-    public void TryResolve_UnknownName_ReturnsFalse()
-    {
-        var result = BankNameResolver.TryResolve("NotABank", Banks, out var bank);
+        var result = BankNameResolver.TryResolve(Guid.NewGuid(), Banks, out var bank);
 
         result.Should().BeFalse();
         bank.Should().BeNull();
@@ -46,15 +39,6 @@ public class BankNameResolverTests
     public void TryResolve_NullValue_ReturnsFalse()
     {
         var result = BankNameResolver.TryResolve(null, Banks, out var bank);
-
-        result.Should().BeFalse();
-        bank.Should().BeNull();
-    }
-
-    [Fact]
-    public void TryResolve_BlankValue_ReturnsFalse()
-    {
-        var result = BankNameResolver.TryResolve("   ", Banks, out var bank);
 
         result.Should().BeFalse();
         bank.Should().BeNull();

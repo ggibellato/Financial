@@ -15,7 +15,7 @@ public class InvestmentSnapshotsViewModelTests
 
     private static InvestmentSnapshotDTO CreateSnapshot(int year, int month, string account, bool isLiability, decimal value) => new()
     {
-        Id = Guid.NewGuid(), Account = account, IsLiability = isLiability, Year = year, Month = month, Value = value,
+        Id = Guid.NewGuid(), AccountId = Guid.NewGuid(), AccountName = account, IsLiability = isLiability, Year = year, Month = month, Value = value,
     };
 
     [Fact]
