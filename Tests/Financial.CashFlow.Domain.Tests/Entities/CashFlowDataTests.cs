@@ -28,6 +28,7 @@ public class CashFlowDataTests
         data.InvestmentAccounts.Should().BeEmpty();
         data.Banks.Should().BeEmpty();
         data.IncomeSources.Should().BeEmpty();
+        data.ReserveBuckets.Should().BeEmpty();
         data.Incomes.Should().BeEmpty();
         data.Transfers.Should().BeEmpty();
         data.BalanceAdjustments.Should().BeEmpty();
@@ -52,6 +53,17 @@ public class CashFlowDataTests
         data.AddIncomeSource(IncomeSource.Create("Gleison", IncomeGroup.Salary));
 
         data.IncomeSources.Should().ContainSingle();
+        data.Expenses.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AddReserveBucket_AddsOnlyToReserveBucketsCollection()
+    {
+        var data = CashFlowData.Create();
+
+        data.AddReserveBucket(Financial.CashFlow.Domain.Entities.ReserveBucket.Create("Investimento", 33.33m));
+
+        data.ReserveBuckets.Should().ContainSingle();
         data.Expenses.Should().BeEmpty();
     }
 

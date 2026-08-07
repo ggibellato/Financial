@@ -11,10 +11,11 @@ namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 public class CashFlowSerializerAdapterTests
 {
     [Fact]
-    public void SerializeThenDeserialize_RoundTripsAllTwelveCollectionsAndSharesReferenceInstances()
+    public void SerializeThenDeserialize_RoundTripsAllThirteenCollectionsAndSharesReferenceInstances()
     {
         var serializer = new CashFlowSerializerAdapter();
         var original = CashFlowData.Create();
+        var reserveBucket = Financial.CashFlow.Domain.Entities.ReserveBucket.Create("Investimento", 33.33m);
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
         var destinationBank = Bank.Create("Trading212", roundUpEnabled: true);
@@ -37,6 +38,7 @@ public class CashFlowSerializerAdapterTests
         var transfer = Transfer.Create(new DateOnly(2026, 7, 25), bank, destinationBank, 500.00m, "Round-up top-up");
         var balanceAdjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), bank, 2340.17m, -4.20m, "Matched against July statement");
 
+        original.AddReserveBucket(reserveBucket);
         original.AddExpense(expense);
         original.AddReserveMovement(reserveMovement);
         original.AddCardStatement(cardStatement);
@@ -56,6 +58,11 @@ public class CashFlowSerializerAdapterTests
 
         using (new AssertionScope())
         {
+            var resultReserveBucket = result.ReserveBuckets.Should().ContainSingle().Which;
+            resultReserveBucket.Id.Should().Be(reserveBucket.Id);
+            resultReserveBucket.Name.Should().Be(reserveBucket.Name);
+            resultReserveBucket.IsActive.Should().Be(reserveBucket.IsActive);
+            resultReserveBucket.SplitPercentage.Should().Be(reserveBucket.SplitPercentage);
             var resultExpense = result.Expenses.Should().ContainSingle().Which;
             resultExpense.Id.Should().Be(expense.Id);
             resultExpense.Date.Should().Be(expense.Date);
@@ -239,6 +246,7 @@ public class CashFlowSerializerAdapterTests
         result.InvestmentAccounts.Should().BeEmpty();
         result.Banks.Should().BeEmpty();
         result.IncomeSources.Should().BeEmpty();
+        result.ReserveBuckets.Should().BeEmpty();
         result.Incomes.Should().BeEmpty();
         result.Transfers.Should().BeEmpty();
         result.BalanceAdjustments.Should().BeEmpty();

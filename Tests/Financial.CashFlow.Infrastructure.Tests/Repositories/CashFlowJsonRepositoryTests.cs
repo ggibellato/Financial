@@ -163,6 +163,24 @@ public class CashFlowJsonRepositoryTests
     }
 
     [Fact]
+    public void GetReserveBuckets_ReturnsReserveBucketsFromTheUnderlyingData()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var data = CashFlowData.Create();
+            data.AddReserveBucket(Financial.CashFlow.Domain.Entities.ReserveBucket.Create("Investimento", 33.33m));
+            var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
+
+            repository.GetReserveBuckets().Should().ContainSingle().Which.Name.Should().Be("Investimento");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void GetInvestmentAccounts_ReturnsInvestmentAccountsFromTheUnderlyingData()
     {
         var path = Path.GetTempFileName();
