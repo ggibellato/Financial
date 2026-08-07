@@ -310,10 +310,10 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. ReserveBucket Domain Entity and Seed Migration
-- [ ] Running the migration tool against a data file with no `ReserveBucket` records creates exactly four records: Investimento/33.33%, HouseTreats/33.33%, Ariana/16.67%, Gleison/16.67%, all `IsActive = true`
-- [ ] Running the migration tool a second time makes no additional changes (idempotent, verified by unchanged record count and unchanged IDs)
+- [x] Running the migration tool against a data file with no `ReserveBucket` records creates exactly four records: Investimento/33.33%, HouseTreats/33.33%, Ariana/16.67%, Gleison/16.67%, all `IsActive = true`
+- [x] Running the migration tool a second time makes no additional changes (idempotent, verified by unchanged record count and unchanged IDs)
 - [ ] A backup of the data file is created before any write occurs
-- [ ] The migration audit summary reports a warning (not a failure) when active buckets' percentages sum outside 99.99%–100.01%, and reports nothing when they sum within that band
+- [x] The migration audit summary reports a warning (not a failure) when active buckets' percentages sum outside 99.99%–100.01%, and reports nothing when they sum within that band
 - [ ] `Financial.CashFlow.Domain.Enums.ReserveBucket` (the enum) no longer exists in the codebase
 - [ ] A `ReserveMovement` whose bucket name matches none of the seeded names is reported in the migration's audit summary without failing the migration run
 
