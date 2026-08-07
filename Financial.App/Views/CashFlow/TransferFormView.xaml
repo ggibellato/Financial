@@ -37,13 +37,13 @@
             <TextBlock Grid.Row="2" Grid.Column="0" Text="From:" VerticalAlignment="Center"/>
             <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
                       SelectedValue="{Binding TransferFormSourceBank, UpdateSourceTrigger=PropertyChanged}"
-                      SelectedValuePath="Name"/>
+                      SelectedValuePath="Id"/>
 
             <TextBlock Grid.Row="3" Grid.Column="0" Text="To:" VerticalAlignment="Center"/>
             <StackPanel Grid.Row="3" Grid.Column="1">
                 <ComboBox ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
                           SelectedValue="{Binding TransferFormDestinationBank, UpdateSourceTrigger=PropertyChanged}"
-                          SelectedValuePath="Name"/>
+                          SelectedValuePath="Id"/>
                 <TextBlock Foreground="Red" TextWrapping="Wrap" Text="{Binding SameBankTransferError}"/>
             </StackPanel>
 

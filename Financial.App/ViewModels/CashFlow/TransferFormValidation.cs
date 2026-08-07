@@ -2,7 +2,7 @@ namespace Financial.Presentation.App.ViewModels.CashFlow;
 
 public static class TransferFormValidation
 {
-    public static string BuildValidationMessage(DateTime? date, string sourceBank, string destinationBank, string amount)
+    public static string BuildValidationMessage(DateTime? date, Guid? sourceBank, Guid? destinationBank, string amount)
     {
         var errors = new List<string>();
 
@@ -11,12 +11,12 @@ public static class TransferFormValidation
             errors.Add("Date is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(sourceBank))
+        if (sourceBank is null)
         {
             errors.Add("Source bank is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(destinationBank))
+        if (destinationBank is null)
         {
             errors.Add("Destination bank is required.");
         }

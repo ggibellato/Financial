@@ -4,9 +4,9 @@ public static class IncomeFormValidation
 {
     public static string BuildValidationMessage(
         DateTime? date,
-        string incomeSource,
+        Guid? incomeSource,
         string netValue,
-        string bank)
+        Guid? bank)
     {
         var errors = new List<string>();
 
@@ -15,7 +15,7 @@ public static class IncomeFormValidation
             errors.Add("Date is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(incomeSource))
+        if (incomeSource is null)
         {
             errors.Add("Source is required.");
         }
@@ -25,7 +25,7 @@ public static class IncomeFormValidation
             errors.Add("Net Value must be a number.");
         }
 
-        if (string.IsNullOrWhiteSpace(bank))
+        if (bank is null)
         {
             errors.Add("Bank is required.");
         }
