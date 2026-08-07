@@ -46,12 +46,22 @@ public static class EntityReferenceMigrator
         var incomeSourcesByName = incomeSources.ToDictionary(s => s.Name, s => s, StringComparer.OrdinalIgnoreCase);
         var investmentAccounts = DeserializeCollection<InvestmentAccount>(root, "InvestmentAccounts", elementOptions);
         var investmentAccountsByName = investmentAccounts.ToDictionary(a => a.Name, a => a, StringComparer.OrdinalIgnoreCase);
+        // ReserveBucket has no reference properties of its own, so it deserializes fine with the
+        // null-context options - but ReserveMovement.Bucket (F02) is now a reference to it, so a
+        // resolution context built from this collection is required before ReserveMovements can
+        // be read below, and the buckets themselves must be carried into `data` or they would be
+        // silently dropped from the rewritten file.
+        var reserveBuckets = DeserializeCollection<ReserveBucket>(root, "ReserveBuckets", elementOptions);
+        var referenceContext = new ReferenceResolutionContext();
+        foreach (var bucket in reserveBuckets) referenceContext.ReserveBuckets[bucket.Id] = bucket;
+        var resolvedOptions = CreateElementOptions(referenceContext);
 
         var data = CashFlowData.Create();
         foreach (var bank in banks) data.AddBank(bank);
         foreach (var incomeSource in incomeSources) data.AddIncomeSource(incomeSource);
         foreach (var account in investmentAccounts) data.AddInvestmentAccount(account);
-        foreach (var movement in DeserializeCollection<ReserveMovement>(root, "ReserveMovements", elementOptions)) data.AddReserveMovement(movement);
+        foreach (var bucket in reserveBuckets) data.AddReserveBucket(bucket);
+        foreach (var movement in DeserializeCollection<ReserveMovement>(root, "ReserveMovements", resolvedOptions)) data.AddReserveMovement(movement);
         foreach (var statement in DeserializeCollection<CardStatement>(root, "CardStatements", elementOptions)) data.AddCardStatement(statement);
         foreach (var bill in DeserializeCollection<RecurringBill>(root, "RecurringBills", elementOptions)) data.AddRecurringBill(bill);
         foreach (var entry in DeserializeCollection<MaeLedgerEntry>(root, "MaeLedgerEntries", elementOptions)) data.AddMaeLedgerEntry(entry);

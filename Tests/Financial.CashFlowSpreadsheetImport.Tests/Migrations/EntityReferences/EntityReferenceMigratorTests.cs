@@ -161,6 +161,54 @@ public class EntityReferenceMigratorTests
     }
 
     [Fact]
+    public void Migrate_LegacyBankShapeWithModernReserveBucketsAndMovements_ResolvesAndPreservesBoth()
+    {
+        var bucketId = Guid.Parse("88888888-8888-8888-8888-888888888888");
+        var movementId = Guid.Parse("99999999-9999-9999-9999-999999999999");
+        var json = $$"""
+            {
+              "Banks": [
+                { "Name": "Barclays", "RoundUpEnabled": false }
+              ],
+              "IncomeSources": [], "InvestmentAccounts": [],
+              "ReserveBuckets": [
+                { "Id": "{{bucketId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 }
+              ],
+              "ReserveMovements": [
+                { "Id": "{{movementId}}", "BucketId": "{{bucketId}}", "Amount": 50.0, "Date": "2026-07-01", "Description": "Deposit" }
+              ],
+              "CardStatements": [], "RecurringBills": [], "MaeLedgerEntries": [],
+              "Incomes": [], "Expenses": [], "Transfers": [], "BalanceAdjustments": [], "InvestmentSnapshots": []
+            }
+            """;
+        var path = CreateTempFile(json);
+
+        try
+        {
+            var act = () => EntityReferenceMigrator.Migrate(path);
+
+            act.Should().NotThrow();
+
+            var serializer = new CashFlowSerializerAdapter();
+            var rewritten = serializer.Deserialize(File.ReadAllText(path));
+
+            using (new AssertionScope())
+            {
+                var bucket = rewritten.ReserveBuckets.Should().ContainSingle().Which;
+                bucket.Id.Should().Be(bucketId);
+                var movement = rewritten.ReserveMovements.Should().ContainSingle().Which;
+                movement.Id.Should().Be(movementId);
+                movement.Bucket.Should().BeSameAs(bucket);
+            }
+        }
+        finally
+        {
+            File.Delete(path);
+            DeleteBackups(path);
+        }
+    }
+
+    [Fact]
     public void Migrate_RecordWithUnresolvableBankName_IsFlaggedAndOmittedFromTheRewrittenFile()
     {
         var path = CreateTempFile(LegacyFixtureJson(unresolvedBankName: "NotABank"));
