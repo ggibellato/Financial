@@ -6,18 +6,17 @@ import type { RowPriceState } from '../hooks/usePortfolioAssetSummary'
 import type { PortfolioAssetSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { xirr } from '../utils/xirr'
-import { formatN2, formatN8, formatPercent1, formatShortDate } from '../utils/formatters'
+import { formatMonthYear, formatN2, formatN8, formatPercent1, formatShortDate, signClass } from '../utils/formatters'
 import AggregatedSummaryTab from './AggregatedSummaryTab'
 import './PortfolioSummaryTab.css'
 
 function formatCreditMonth(yearMonth: string): string {
   const [year, month] = yearMonth.split('-').map(Number)
-  const d = new Date(year, month - 1, 1)
-  return d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+  return formatMonthYear(new Date(year, month - 1, 1))
 }
 
 function getProfitClass(value: number): string {
-  return value >= 0 ? 'portfolio-summary__profit--green' : 'portfolio-summary__profit--red'
+  return signClass(value, 'portfolio-summary__profit')
 }
 
 function renderGatedCell(
@@ -154,10 +153,7 @@ export default function PortfolioSummaryTab() {
   const isHistoric = scope === 'historic'
   const { items, rowPrices, isLoading, error, retry } = usePortfolioAssetSummary()
 
-  const creditsLabel = (() => {
-    const now = new Date()
-    return `Credits ${now.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}`
-  })()
+  const creditsLabel = `Credits ${formatMonthYear(new Date())}`
 
   const footer =
     items && items.length > 0

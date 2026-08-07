@@ -19,10 +19,8 @@ public sealed class JSONRepository : IRepository
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
     }
 
-    public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active)
-    {
-        return GetAssetsByBrokerInternal(name, scope);
-    }
+    public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) =>
+        GetPortfoliosByBroker(name, scope).SelectMany(p => p.Assets);
 
     public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active)
     {
@@ -56,7 +54,4 @@ public sealed class JSONRepository : IRepository
 
     private IEnumerable<Portfolio> GetPortfoliosByBroker(string brokerName, InvestmentScope scope) =>
         GetBrokersByName(brokerName, scope).SelectMany(b => b.Portfolios);
-
-    private IEnumerable<Asset> GetAssetsByBrokerInternal(string brokerName, InvestmentScope scope) =>
-        GetPortfoliosByBroker(brokerName, scope).SelectMany(p => p.Assets);
 }

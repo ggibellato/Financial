@@ -3,12 +3,8 @@ import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useAggregatedSummary } from '../hooks/useAggregatedSummary'
 import { useSelectedNode } from '../context/SelectedNodeContext'
-import { formatN2 } from '../utils/formatters'
+import { formatN2, signClass } from '../utils/formatters'
 import './AggregatedSummaryTab.css'
-
-function getInvestedClass(value: number): string {
-  return value >= 0 ? 'aggregated-summary__value--green' : 'aggregated-summary__value--red'
-}
 
 export default function AggregatedSummaryTab() {
   const { summary, isLoading, error, retry } = useAggregatedSummary()
@@ -50,7 +46,7 @@ export default function AggregatedSummaryTab() {
         </div>
         <div className="aggregated-summary__field">
           <span className="aggregated-summary__label">Total Invested</span>
-          <span className={`aggregated-summary__value ${getInvestedClass(summary.totalInvested)}`}>
+          <span className={`aggregated-summary__value ${signClass(summary.totalInvested, 'aggregated-summary__value')}`}>
             {formatN2(summary.totalInvested)}
           </span>
         </div>

@@ -2,33 +2,29 @@ export function pad(value: number): string {
   return String(value).padStart(2, '0')
 }
 
+const n2Formatter = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const n8Formatter = new Intl.NumberFormat(undefined, { minimumFractionDigits: 8, maximumFractionDigits: 8 })
+const percentFractionFormatter = new Intl.NumberFormat(undefined, {
+  style: 'percent',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+const percent1Formatter = new Intl.NumberFormat(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+
 export function formatN2(value: number): string {
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
+  return n2Formatter.format(value)
 }
 
 export function formatN8(value: number): string {
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 8,
-    maximumFractionDigits: 8,
-  }).format(value)
+  return n8Formatter.format(value)
 }
 
 export function formatPercentFraction(value: number): string {
-  return new Intl.NumberFormat(undefined, {
-    style: 'percent',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
+  return percentFractionFormatter.format(value)
 }
 
 export function formatPercent1(value: number): string {
-  return `${new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  }).format(value)}%`
+  return `${percent1Formatter.format(value)}%`
 }
 
 export function formatShortDate(isoString: string | null | undefined): string {
@@ -36,6 +32,14 @@ export function formatShortDate(isoString: string | null | undefined): string {
   const d = new Date(isoString)
   if (Number.isNaN(d.getTime())) return isoString
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
+}
+
+/** Like {@link formatShortDate}, but reads UTC date parts (safe for date-only strings). */
+export function formatShortDateUtc(isoString: string | null | undefined): string {
+  if (!isoString) return ''
+  const d = new Date(isoString)
+  if (Number.isNaN(d.getTime())) return isoString
+  return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`
 }
 
 export function toInputDate(isoString: string): string {
@@ -60,4 +64,17 @@ export function parseMonthInputValue(value: string): { year: number; month: numb
 
 export function previousYearJanuaryFirst(): string {
   return `${new Date().getFullYear() - 1}-01-01`
+}
+
+export function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+export function formatMonthYear(date: Date): string {
+  return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+}
+
+/** CSS modifier class for a signed value, e.g. signClass(-5, 'asset-summary__value') -> 'asset-summary__value--red'. */
+export function signClass(value: number, basePrefix: string): string {
+  return `${basePrefix}--${value >= 0 ? 'green' : 'red'}`
 }

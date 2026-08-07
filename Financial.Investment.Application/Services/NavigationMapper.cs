@@ -123,6 +123,9 @@ internal static class NavigationMapper
         };
     }
 
+    internal static PositionType PositionTypeFor(Asset asset, InvestmentScope scope) =>
+        scope == InvestmentScope.Historic ? PositionType.Flat : asset.PositionType;
+
     internal static (decimal TotalBought, decimal TotalSold, decimal TotalCredits) CalculateTotals(Asset asset)
     {
         decimal totalBought = 0, totalSold = 0;
@@ -146,11 +149,16 @@ internal static class NavigationMapper
 
     private static PortfolioNodeDTO MapPortfolio(Portfolio portfolio, InvestmentScope scope)
     {
+        var assets = portfolio.Assets
+            .OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase)
+            .Select(asset => MapAsset(asset, scope))
+            .ToList();
+
         return new PortfolioNodeDTO
         {
             Name = portfolio.Name,
-            AssetCount = portfolio.Assets.Count,
-            Assets = portfolio.Assets.OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase).Select(asset => MapAsset(asset, scope)).ToList()
+            AssetCount = assets.Count,
+            Assets = assets
         };
     }
 
@@ -167,7 +175,7 @@ internal static class NavigationMapper
             Class = asset.Class,
             Quantity = asset.Quantity,
             AveragePrice = asset.AveragePrice,
-            PositionType = scope == InvestmentScope.Historic ? PositionType.Flat : asset.PositionType,
+            PositionType = PositionTypeFor(asset, scope),
             TransactionCount = asset.Transactions.Count,
             CreditCount = asset.Credits.Count
         };

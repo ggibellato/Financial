@@ -67,12 +67,14 @@ public sealed class ControleMaeService : IControleMaeService
 
     public MaeLedgerTotalsDTO GetTotals()
     {
-        var entries = _repository.GetMaeLedgerEntries();
-        return new MaeLedgerTotalsDTO
+        decimal totalBrl = 0m, totalGbp = 0m;
+        foreach (var entry in _repository.GetMaeLedgerEntries())
         {
-            TotalBrlValue = entries.Sum(e => e.BrlValue ?? 0m),
-            TotalGbpValue = entries.Sum(e => e.GbpValue ?? 0m)
-        };
+            totalBrl += entry.BrlValue ?? 0m;
+            totalGbp += entry.GbpValue ?? 0m;
+        }
+
+        return new MaeLedgerTotalsDTO { TotalBrlValue = totalBrl, TotalGbpValue = totalGbp };
     }
 
     public async Task<MaeLedgerEntryDTO> UpdateEntryValuesAsync(Guid id, UpdateMaeLedgerEntryValuesDTO request)

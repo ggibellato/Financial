@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { InvestmentScope, SelectedNode, SelectedNodeContextValue } from '../api/types'
 
@@ -7,11 +7,8 @@ const SelectedNodeContext = createContext<SelectedNodeContextValue | null>(null)
 
 export function SelectedNodeProvider({ children, scope = 'active' }: { children: ReactNode; scope?: InvestmentScope }) {
   const [selectedNode, setSelectedNode] = useState<SelectedNode | null>(null)
-  return (
-    <SelectedNodeContext.Provider value={{ selectedNode, setSelectedNode, scope }}>
-      {children}
-    </SelectedNodeContext.Provider>
-  )
+  const value = useMemo(() => ({ selectedNode, setSelectedNode, scope }), [selectedNode, scope])
+  return <SelectedNodeContext.Provider value={value}>{children}</SelectedNodeContext.Provider>
 }
 
 export function useSelectedNode(): SelectedNodeContextValue {

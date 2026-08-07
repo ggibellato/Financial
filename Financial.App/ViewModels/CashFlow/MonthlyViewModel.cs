@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
+using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;
 
@@ -161,21 +162,35 @@ public class MonthlyViewModel : ViewModelBase
             var year = Year;
             var month = Month;
 
-            var expenses = await Task.Run(() => _expenseService.GetExpensesByMonth(year, month));
-            var unpaidCardCharges = await Task.Run(() => _expenseService.GetUnpaidCardChargesByMonth(year, month));
-            var incomes = await Task.Run(() => _incomeService.GetIncomesByMonth(year, month));
-            var categoryTotals = await Task.Run(() => _expenseService.GetCategoryTotalsByMonth(year, month));
-            var banks = await Task.Run(() => _bankService.GetBanks());
-            var incomeSources = await Task.Run(() => _incomeSourceService.GetIncomeSources());
-            var bankBalances = await Task.Run(() => _bankService.GetBankBalancesByMonth(year, month));
-            var titheSummary = await Task.Run(() => _titheService.GetTitheSummary(year, month));
-            var transfers = await Task.Run(() => _transferService.GetTransfersByMonth(year, month));
-            var adjustmentsByBank = new Dictionary<string, IReadOnlyList<BalanceAdjustmentDTO>>();
-            foreach (var bank in banks)
-            {
-                adjustmentsByBank[bank.Name] = await Task.Run(() => _balanceAdjustmentService.GetAdjustmentsByBank(bank.Id));
-            }
-            var cardStatements = await _cardStatementService.GetStatementsForMonthAsync(year, month);
+            var expensesTask = Task.Run(() => _expenseService.GetExpensesByMonth(year, month));
+            var unpaidCardChargesTask = Task.Run(() => _expenseService.GetUnpaidCardChargesByMonth(year, month));
+            var incomesTask = Task.Run(() => _incomeService.GetIncomesByMonth(year, month));
+            var categoryTotalsTask = Task.Run(() => _expenseService.GetCategoryTotalsByMonth(year, month));
+            var banksTask = Task.Run(() => _bankService.GetBanks());
+            var incomeSourcesTask = Task.Run(() => _incomeSourceService.GetIncomeSources());
+            var bankBalancesTask = Task.Run(() => _bankService.GetBankBalancesByMonth(year, month));
+            var titheSummaryTask = Task.Run(() => _titheService.GetTitheSummary(year, month));
+            var transfersTask = Task.Run(() => _transferService.GetTransfersByMonth(year, month));
+            var cardStatementsTask = _cardStatementService.GetStatementsForMonthAsync(year, month);
+
+            await Task.WhenAll(
+                expensesTask, unpaidCardChargesTask, incomesTask, categoryTotalsTask, banksTask,
+                incomeSourcesTask, bankBalancesTask, titheSummaryTask, transfersTask, cardStatementsTask);
+
+            var expenses = expensesTask.Result;
+            var unpaidCardCharges = unpaidCardChargesTask.Result;
+            var incomes = incomesTask.Result;
+            var categoryTotals = categoryTotalsTask.Result;
+            var banks = banksTask.Result;
+            var incomeSources = incomeSourcesTask.Result;
+            var bankBalances = bankBalancesTask.Result;
+            var titheSummary = titheSummaryTask.Result;
+            var transfers = transfersTask.Result;
+            var cardStatements = cardStatementsTask.Result;
+
+            var adjustmentResults = await Task.WhenAll(banks.Select(async bank =>
+                (bank.Name, Adjustments: await Task.Run(() => _balanceAdjustmentService.GetAdjustmentsByBank(bank.Id)))));
+            var adjustmentsByBank = adjustmentResults.ToDictionary(r => r.Name, r => r.Adjustments);
 
             if (requestId != _refreshRequestId)
             {
@@ -220,15 +235,6 @@ public class MonthlyViewModel : ViewModelBase
             {
                 IsLoading = false;
             }
-        }
-    }
-
-    private static void ReplaceAll<T>(ObservableCollection<T> collection, IEnumerable<T> items)
-    {
-        collection.Clear();
-        foreach (var item in items)
-        {
-            collection.Add(item);
         }
     }
 

@@ -4,6 +4,7 @@ using Financial.CashFlow.Infrastructure.Configuration;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.CashFlow.Infrastructure.Services;
+using Financial.Shared.Infrastructure.Configuration;
 using Financial.Shared.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,14 +46,7 @@ public static class CashFlowInfrastructureServiceCollectionExtensions
 
     private static CashFlowRepositorySelectionOptions BuildRepositoryOptions(CashFlowRepositorySettingsOptions settings)
     {
-        var providerValue = settings.Provider ?? nameof(CashFlowRepositoryProvider.LocalJson);
-
-        if (!Enum.TryParse(providerValue, ignoreCase: true, out CashFlowRepositoryProvider provider))
-        {
-            throw new InvalidOperationException(
-                $"Repository provider '{providerValue}' is not supported. " +
-                $"Valid values: {string.Join(", ", Enum.GetNames<CashFlowRepositoryProvider>())}.");
-        }
+        var provider = RepositoryProviderResolver.Resolve(settings.Provider, CashFlowRepositoryProvider.LocalJson);
 
         return new CashFlowRepositorySelectionOptions(
             provider,

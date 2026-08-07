@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
+using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;
 
@@ -86,8 +87,11 @@ public class ReservaViewModel : ViewModelBase
 
         try
         {
-            var balances = await Task.Run(() => _reserveService.GetBucketBalances());
-            var movements = await Task.Run(() => _reserveService.GetMovementHistory());
+            var balancesTask = Task.Run(() => _reserveService.GetBucketBalances());
+            var movementsTask = Task.Run(() => _reserveService.GetMovementHistory());
+            await Task.WhenAll(balancesTask, movementsTask);
+            var balances = balancesTask.Result;
+            var movements = movementsTask.Result;
 
             if (requestId != _refreshRequestId)
             {
@@ -112,15 +116,6 @@ public class ReservaViewModel : ViewModelBase
             {
                 IsLoading = false;
             }
-        }
-    }
-
-    private static void ReplaceAll<T>(ObservableCollection<T> collection, IEnumerable<T> items)
-    {
-        collection.Clear();
-        foreach (var item in items)
-        {
-            collection.Add(item);
         }
     }
 

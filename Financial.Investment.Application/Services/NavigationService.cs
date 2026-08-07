@@ -74,7 +74,7 @@ public sealed class NavigationService : INavigationService
             Quantity = asset.Quantity,
             AveragePrice = asset.AveragePrice,
             AverageSellPrice = asset.AverageSellPrice,
-            PositionType = scope == InvestmentScope.Historic ? PositionType.Flat : asset.PositionType,
+            PositionType = NavigationMapper.PositionTypeFor(asset, scope),
             TotalBought = totalBought,
             TotalSold = totalSold,
             TotalCredits = totalCredits,

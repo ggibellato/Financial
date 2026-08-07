@@ -17,6 +17,9 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
     private decimal? _profitPercent;
     private decimal? _profitWithCreditsPercent;
     private decimal? _xirr;
+    private readonly decimal? _historicProfitPercent;
+    private readonly decimal? _historicProfitWithCreditsPercent;
+    private readonly decimal? _historicXirr;
 
     public string AssetName { get; }
     public string Ticker { get; }
@@ -107,22 +110,13 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
 
     // Realized capital gain alone (credits excluded), matching the active-scope semantic
     // where credits are a separate "w/ Credits" column.
-    public decimal? HistoricProfitPercent =>
-        TotalBought != 0 ? (RealizedGainLoss - TotalCredits) / TotalBought * 100 : null;
+    public decimal? HistoricProfitPercent => _historicProfitPercent;
 
-    public decimal? HistoricProfitWithCreditsPercent =>
-        TotalBought != 0 ? RealizedGainLoss / TotalBought * 100 : null;
+    public decimal? HistoricProfitWithCreditsPercent => _historicProfitWithCreditsPercent;
 
     // Historic cash flows already contain every buy/sell/credit as a dated entry, so the
     // terminal value is 0 (no remaining position left to mark-to-market).
-    public decimal? HistoricXirr
-    {
-        get
-        {
-            var fraction = _xirrCalculationService.Calculate(CashFlows, 0m);
-            return fraction.HasValue ? fraction.Value * 100 : null;
-        }
-    }
+    public decimal? HistoricXirr => _historicXirr;
 
     public string DisplayHistoricProfitPercent =>
         HistoricProfitPercent.HasValue ? $"{HistoricProfitPercent.Value:F2}%" : "—";
@@ -164,6 +158,11 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
         EstimatedAnnualCredits = dto.EstimatedAnnualCredits;
         EstimatedAnnualPercent = dto.EstimatedAnnualPercent;
         CurrentMonthCredits = dto.CurrentMonthCredits;
+
+        _historicProfitPercent = _profitCalculationService.CalculateProfitPercent(RealizedGainLoss - TotalCredits + TotalBought, TotalBought);
+        _historicProfitWithCreditsPercent = _profitCalculationService.CalculateProfitPercent(RealizedGainLoss + TotalBought, TotalBought);
+        var historicXirrFraction = _xirrCalculationService.Calculate(CashFlows, 0m);
+        _historicXirr = historicXirrFraction.HasValue ? historicXirrFraction.Value * 100 : null;
     }
 
     public void ApplyPrice(decimal price)

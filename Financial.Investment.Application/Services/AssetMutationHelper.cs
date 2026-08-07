@@ -8,7 +8,7 @@ internal static class AssetMutationHelper
 {
     public delegate bool TryParseDelegate<TEnum>(string? value, out TEnum parsed);
 
-    public static bool IsInvalidContext(string? brokerName, string? portfolioName, string? assetName)
+    private static bool IsInvalidContext(string? brokerName, string? portfolioName, string? assetName)
     {
         return string.IsNullOrWhiteSpace(brokerName) ||
                string.IsNullOrWhiteSpace(portfolioName) ||

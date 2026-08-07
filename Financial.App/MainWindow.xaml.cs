@@ -62,8 +62,9 @@ namespace Financial.Presentation.App
 
             Loaded += async (s, e) =>
             {
-                await _navigationViewModel.LoadNavigationTreeAsync();
-                await _navigationViewModelHistoric.LoadNavigationTreeAsync();
+                await Task.WhenAll(
+                    _navigationViewModel.LoadNavigationTreeAsync(),
+                    _navigationViewModelHistoric.LoadNavigationTreeAsync());
             };
         }
     }
