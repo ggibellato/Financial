@@ -21,6 +21,7 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
     public List<InvestmentAccount> InvestmentAccounts { get; } = new();
     public List<Bank> Banks { get; } = new();
     public List<IncomeSource> IncomeSources { get; } = new();
+    public List<Financial.CashFlow.Domain.Entities.ReserveBucket> ReserveBuckets { get; } = new();
     public List<Income> Incomes { get; } = new();
     public List<Transfer> Transfers { get; } = new();
     public List<BalanceAdjustment> BalanceAdjustments { get; } = new();
@@ -91,6 +92,8 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
     public IEnumerable<Bank> GetBanks() => Banks;
 
     public IEnumerable<IncomeSource> GetIncomeSources() => IncomeSources;
+
+    public IEnumerable<Financial.CashFlow.Domain.Entities.ReserveBucket> GetReserveBuckets() => ReserveBuckets;
 
     public IEnumerable<Income> GetIncomes() => Incomes;
     public void AddIncome(Income income) => Incomes.Add(income);

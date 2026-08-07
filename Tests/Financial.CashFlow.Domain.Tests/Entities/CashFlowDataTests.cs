@@ -1,6 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
+using ReserveBucketEnum = Financial.CashFlow.Domain.Enums.ReserveBucket;
 
 namespace Financial.CashFlow.Domain.Tests;
 
@@ -130,7 +131,7 @@ public class CashFlowDataTests
     }
 
     private static ReserveMovement CreateReserveMovement() =>
-        ReserveMovement.Create(ReserveBucket.Investimento, 10m, new DateOnly(2026, 7, 1), "Test movement");
+        ReserveMovement.Create(ReserveBucketEnum.Investimento, 10m, new DateOnly(2026, 7, 1), "Test movement");
 
     [Fact]
     public void AddCardStatement_AddsOnlyToCardStatementsCollection()

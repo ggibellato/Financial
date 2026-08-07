@@ -1,6 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Persistence;
+using ReserveBucketEnum = Financial.CashFlow.Domain.Enums.ReserveBucket;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.Shared.Infrastructure.Persistence;
 using FluentAssertions;
@@ -112,7 +113,7 @@ public class CashFlowJsonRepositoryTests
         {
             var data = CashFlowData.Create();
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
-            var movement = ReserveMovement.Create(ReserveBucket.Investimento, 10m, new DateOnly(2026, 7, 1), "Test movement");
+            var movement = ReserveMovement.Create(ReserveBucketEnum.Investimento, 10m, new DateOnly(2026, 7, 1), "Test movement");
             repository.AddReserveMovement(movement);
 
             repository.DeleteReserveMovement(movement.Id);

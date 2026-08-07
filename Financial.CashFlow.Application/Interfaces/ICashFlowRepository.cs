@@ -33,6 +33,8 @@ public interface ICashFlowRepository
 
     IEnumerable<IncomeSource> GetIncomeSources();
 
+    IEnumerable<ReserveBucket> GetReserveBuckets();
+
     IEnumerable<Income> GetIncomes();
     void AddIncome(Income income);
     void DeleteIncome(Guid id);

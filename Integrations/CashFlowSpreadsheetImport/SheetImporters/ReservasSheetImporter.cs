@@ -1,7 +1,7 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
+using ReserveBucketEnum = Financial.CashFlow.Domain.Enums.ReserveBucket;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
 
@@ -20,12 +20,12 @@ public static class ReservasSheetImporter
     private const int DescriptionColumn = 2;
     private const int FirstDataRow = 2;
 
-    private static readonly (int Column, ReserveBucket Bucket)[] BucketColumns =
+    private static readonly (int Column, ReserveBucketEnum Bucket)[] BucketColumns =
     [
-        (6, ReserveBucket.Investimento),
-        (7, ReserveBucket.HouseTreats),
-        (8, ReserveBucket.Ariana),
-        (9, ReserveBucket.Gleison),
+        (6, ReserveBucketEnum.Investimento),
+        (7, ReserveBucketEnum.HouseTreats),
+        (8, ReserveBucketEnum.Ariana),
+        (9, ReserveBucketEnum.Gleison),
     ];
 
     public static IReadOnlyList<ReserveMovement> Import(IXLWorksheet sheet)

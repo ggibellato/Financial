@@ -1,6 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Persistence;
+using ReserveBucketEnum = Financial.CashFlow.Domain.Enums.ReserveBucket;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using System.Text.Json;
@@ -27,7 +28,7 @@ public class CashFlowSerializerAdapterTests
             null,
             CreditCard.BarclaysPlatinumVisa8003);
         expense.Settle(bank, new DateOnly(2026, 7, 31));
-        var reserveMovement = ReserveMovement.Create(ReserveBucket.Investimento, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split");
+        var reserveMovement = ReserveMovement.Create(ReserveBucketEnum.Investimento, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split");
         var cardStatement = CardStatement.Create(CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
         var recurringBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
         var maeLedgerEntry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 15), "School supplies", "Note", Currency.BRL, 350m, 51.23m);
