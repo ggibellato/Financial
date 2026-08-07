@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using FluentAssertions;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 
 namespace Financial.Api.Tests;
 
@@ -10,6 +11,21 @@ public class TransfersEndpointsTests
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
     private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
     private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
+
+    [Fact]
+    public async Task AddTransfer_NameStringInGuidField_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var body = new StringContent(
+            """{"date":"2026-07-25","sourceBankId":"Barclays","destinationBankId":"Trading212","amount":100}""",
+            Encoding.UTF8,
+            "application/json");
+
+        var response = await client.PostAsync("/api/v1/financial/transfers", body);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 
     [Fact]
     public async Task AddTransfer_ValidRequest_ReturnsOk()
