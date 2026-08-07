@@ -95,6 +95,21 @@ public class MonthlyViewModelBankOperationsTests
     }
 
     [Fact]
+    public async Task BuildBankOperations_DuplicateBankNames_DoesNotThrow()
+    {
+        var (viewModel, banks, _, adjustments) = CreateViewModel();
+        var duplicateId = Guid.NewGuid();
+        banks.Banks.Add(new BankDTO { Id = duplicateId, Name = "Barclays", RoundUpEnabled = false, OpeningBalance = 0, OpeningBalanceDate = Today });
+        adjustments.AdjustmentsByBank[BarclaysId] = [new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, BankId = BarclaysId, BankName = "Barclays", TargetBalance = 100m, Delta = 5m }];
+        adjustments.AdjustmentsByBank[duplicateId] = [new BalanceAdjustmentDTO { Id = Guid.NewGuid(), Date = Today, BankId = duplicateId, BankName = "Barclays", TargetBalance = 50m, Delta = -1m }];
+
+        await viewModel.RefreshAsync();
+
+        viewModel.Error.Should().BeNull();
+        viewModel.BankOperations.Should().HaveCount(2);
+    }
+
+    [Fact]
     public async Task BankFilter_DefaultsToAllBanks_ShowsEveryRow()
     {
         var (viewModel, _, transfers, adjustments) = CreateViewModel();
