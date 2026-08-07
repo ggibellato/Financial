@@ -18,6 +18,7 @@ public static class CashFlowApplicationServiceCollectionExtensions
         services.AddSingleton<IAnnualSummaryService, AnnualSummaryService>();
         services.AddSingleton<IBankService, BankService>();
         services.AddSingleton<IIncomeSourceService, IncomeSourceService>();
+        services.AddSingleton<IInvestmentAccountService, InvestmentAccountService>();
         services.AddSingleton<IIncomeService, IncomeService>();
         services.AddSingleton<ITitheService, TitheService>();
         services.AddSingleton<ITransferService, TransferService>();

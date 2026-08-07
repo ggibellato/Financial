@@ -9,6 +9,7 @@ public class BanksEndpointsTests
 {
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
     private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
+    private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
     private static readonly Guid GleisonId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000001");
 
     [Fact]
@@ -22,9 +23,10 @@ public class BanksEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var banks = await response.Content.ReadFromJsonAsync<List<BankDTO>>();
         banks.Should().HaveCount(3);
-        banks.Should().ContainSingle(b => b.Name == "Barclays" && !b.RoundUpEnabled);
-        banks.Should().ContainSingle(b => b.Name == "Trading212" && b.RoundUpEnabled);
-        banks.Should().ContainSingle(b => b.Name == "Chase" && b.RoundUpEnabled);
+        banks.Should().OnlyContain(b => b.Id != Guid.Empty);
+        banks.Should().ContainSingle(b => b.Id == BarclaysId && b.Name == "Barclays" && !b.RoundUpEnabled);
+        banks.Should().ContainSingle(b => b.Id == Trading212Id && b.Name == "Trading212" && b.RoundUpEnabled);
+        banks.Should().ContainSingle(b => b.Id == ChaseId && b.Name == "Chase" && b.RoundUpEnabled);
     }
 
     [Fact]
@@ -38,7 +40,7 @@ public class BanksEndpointsTests
             OpeningBalanceDate = new DateOnly(2026, 7, 1)
         };
 
-        var response = await client.PutAsJsonAsync("/api/v1/financial/banks/Barclays/opening-balance", request);
+        var response = await client.PutAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/opening-balance", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var bank = await response.Content.ReadFromJsonAsync<BankDTO>();
@@ -57,13 +59,13 @@ public class BanksEndpointsTests
             OpeningBalanceDate = new DateOnly(2026, 7, 1)
         };
 
-        var response = await client.PutAsJsonAsync("/api/v1/financial/banks/Barclays/opening-balance", request);
+        var response = await client.PutAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/opening-balance", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
-    public async Task UpdateOpeningBalance_UnknownBankName_ReturnsNotFound()
+    public async Task UpdateOpeningBalance_UnknownBankId_ReturnsNotFound()
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
@@ -73,7 +75,7 @@ public class BanksEndpointsTests
             OpeningBalanceDate = new DateOnly(2026, 7, 1)
         };
 
-        var response = await client.PutAsJsonAsync("/api/v1/financial/banks/NotABank/opening-balance", request);
+        var response = await client.PutAsJsonAsync($"/api/v1/financial/banks/{Guid.NewGuid()}/opening-balance", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -83,7 +85,7 @@ public class BanksEndpointsTests
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
-        await client.PutAsJsonAsync("/api/v1/financial/banks/Chase/opening-balance", new BankOpeningBalanceUpdateDTO
+        await client.PutAsJsonAsync($"/api/v1/financial/banks/{ChaseId}/opening-balance", new BankOpeningBalanceUpdateDTO
         {
             OpeningBalance = 500m,
             OpeningBalanceDate = new DateOnly(2026, 6, 15)
@@ -101,7 +103,7 @@ public class BanksEndpointsTests
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
-        await client.PutAsJsonAsync("/api/v1/financial/banks/Barclays/opening-balance", new BankOpeningBalanceUpdateDTO
+        await client.PutAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/opening-balance", new BankOpeningBalanceUpdateDTO
         {
             OpeningBalance = 100m,
             OpeningBalanceDate = new DateOnly(2026, 1, 1)
@@ -150,7 +152,7 @@ public class BanksEndpointsTests
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
-        await client.PutAsJsonAsync("/api/v1/financial/banks/Barclays/opening-balance", new BankOpeningBalanceUpdateDTO
+        await client.PutAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/opening-balance", new BankOpeningBalanceUpdateDTO
         {
             OpeningBalance = 1000m,
             OpeningBalanceDate = new DateOnly(2026, 1, 1)
@@ -176,12 +178,12 @@ public class BanksEndpointsTests
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
-        await client.PutAsJsonAsync("/api/v1/financial/banks/Barclays/opening-balance", new BankOpeningBalanceUpdateDTO
+        await client.PutAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/opening-balance", new BankOpeningBalanceUpdateDTO
         {
             OpeningBalance = 100m,
             OpeningBalanceDate = new DateOnly(2026, 1, 1)
         });
-        await client.PostAsJsonAsync("/api/v1/financial/banks/Barclays/adjustments", new BalanceAdjustmentCreateDTO
+        await client.PostAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments", new BalanceAdjustmentCreateDTO
         {
             Date = new DateOnly(2026, 7, 5),
             TargetBalance = 150m

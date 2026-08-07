@@ -8,6 +8,7 @@ namespace Financial.Api.Tests;
 public class BalanceAdjustmentsEndpointsTests
 {
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
+    private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
 
     [Fact]
     public async Task AddAdjustment_ValidRequest_ReturnsOkWithComputedDelta()
@@ -21,7 +22,7 @@ public class BalanceAdjustmentsEndpointsTests
             Note = "Matched against July statement"
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/banks/Barclays/adjustments", request);
+        var response = await client.PostAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var adjustment = await response.Content.ReadFromJsonAsync<BalanceAdjustmentDTO>();
@@ -34,7 +35,7 @@ public class BalanceAdjustmentsEndpointsTests
     }
 
     [Fact]
-    public async Task AddAdjustment_UnresolvableBank_ReturnsBadRequest()
+    public async Task AddAdjustment_UnresolvableBank_ReturnsNotFound()
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
@@ -44,9 +45,9 @@ public class BalanceAdjustmentsEndpointsTests
             TargetBalance = 100m
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/banks/NotABank/adjustments", request);
+        var response = await client.PostAsJsonAsync($"/api/v1/financial/banks/{Guid.NewGuid()}/adjustments", request);
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -60,7 +61,7 @@ public class BalanceAdjustmentsEndpointsTests
             TargetBalance = -1m
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/banks/Barclays/adjustments", request);
+        var response = await client.PostAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -70,14 +71,14 @@ public class BalanceAdjustmentsEndpointsTests
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/banks/Barclays/adjustments", new BalanceAdjustmentCreateDTO
+        var created = await client.PostAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments", new BalanceAdjustmentCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             TargetBalance = 100m
         });
         var createdAdjustment = await created.Content.ReadFromJsonAsync<BalanceAdjustmentDTO>();
 
-        var response = await client.PutAsJsonAsync($"/api/v1/financial/banks/Barclays/adjustments/{createdAdjustment!.Id}", new BalanceAdjustmentUpdateDTO
+        var response = await client.PutAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments/{createdAdjustment!.Id}", new BalanceAdjustmentUpdateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             TargetBalance = 80m,
@@ -97,7 +98,22 @@ public class BalanceAdjustmentsEndpointsTests
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.PutAsJsonAsync($"/api/v1/financial/banks/Barclays/adjustments/{Guid.NewGuid()}", new BalanceAdjustmentUpdateDTO
+        var response = await client.PutAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments/{Guid.NewGuid()}", new BalanceAdjustmentUpdateDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            TargetBalance = 100m
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task UpdateAdjustment_UnknownBankId_ReturnsNotFound()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync($"/api/v1/financial/banks/{Guid.NewGuid()}/adjustments/{Guid.NewGuid()}", new BalanceAdjustmentUpdateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             TargetBalance = 100m
@@ -111,18 +127,18 @@ public class BalanceAdjustmentsEndpointsTests
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/banks/Barclays/adjustments", new BalanceAdjustmentCreateDTO
+        var created = await client.PostAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments", new BalanceAdjustmentCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             TargetBalance = 100m
         });
         var createdAdjustment = await created.Content.ReadFromJsonAsync<BalanceAdjustmentDTO>();
 
-        var response = await client.DeleteAsync($"/api/v1/financial/banks/Barclays/adjustments/{createdAdjustment!.Id}");
+        var response = await client.DeleteAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments/{createdAdjustment!.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var list = await client.GetFromJsonAsync<List<BalanceAdjustmentDTO>>("/api/v1/financial/banks/Barclays/adjustments");
+        var list = await client.GetFromJsonAsync<List<BalanceAdjustmentDTO>>($"/api/v1/financial/banks/{BarclaysId}/adjustments");
         list.Should().NotContain(a => a.Id == createdAdjustment.Id);
     }
 
@@ -132,7 +148,18 @@ public class BalanceAdjustmentsEndpointsTests
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
 
-        var response = await client.DeleteAsync($"/api/v1/financial/banks/Barclays/adjustments/{Guid.NewGuid()}");
+        var response = await client.DeleteAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeleteAdjustment_UnknownBankId_ReturnsNotFound()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.DeleteAsync($"/api/v1/financial/banks/{Guid.NewGuid()}/adjustments/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -142,23 +169,36 @@ public class BalanceAdjustmentsEndpointsTests
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/v1/financial/banks/Barclays/adjustments", new BalanceAdjustmentCreateDTO
+        await client.PostAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments", new BalanceAdjustmentCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             TargetBalance = 100m
         });
-        await client.PostAsJsonAsync("/api/v1/financial/banks/Chase/adjustments", new BalanceAdjustmentCreateDTO
+        await client.PostAsJsonAsync($"/api/v1/financial/banks/{ChaseId}/adjustments", new BalanceAdjustmentCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             TargetBalance = 50m
         });
 
-        var response = await client.GetAsync("/api/v1/financial/banks/Barclays/adjustments");
+        var response = await client.GetAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<BalanceAdjustmentDTO>>();
         items.Should().ContainSingle();
         items!.Single().BankId.Should().Be(BarclaysId);
         items.Single().BankName.Should().Be("Barclays");
+    }
+
+    [Fact]
+    public async Task GetAdjustmentsByBank_UnknownBankId_ReturnsEmptyList()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync($"/api/v1/financial/banks/{Guid.NewGuid()}/adjustments");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<List<BalanceAdjustmentDTO>>();
+        items.Should().BeEmpty();
     }
 }

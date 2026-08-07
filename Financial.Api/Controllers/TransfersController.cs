@@ -12,12 +12,10 @@ namespace Financial.Api.Controllers;
 public sealed class TransfersController : ControllerBase
 {
     private readonly ITransferService _transferService;
-    private readonly IBankService _bankService;
 
-    public TransfersController(ITransferService transferService, IBankService bankService)
+    public TransfersController(ITransferService transferService)
     {
         _transferService = transferService ?? throw new ArgumentNullException(nameof(transferService));
-        _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
     }
 
     /// <summary>Records a new transfer.</summary>
@@ -106,19 +104,13 @@ public sealed class TransfersController : ControllerBase
     }
 
     /// <summary>Lists all transfers touching a given bank, either as source or destination.</summary>
-    /// <param name="name">The bank's name.</param>
-    /// <returns>200 OK with the matching transfers.</returns>
-    [HttpGet("bank/{name}")]
+    /// <param name="id">The bank's identifier.</param>
+    /// <returns>200 OK with the matching transfers (empty if the bank doesn't exist).</returns>
+    [HttpGet("bank/{id:guid}")]
     [ProducesResponseType(typeof(IReadOnlyList<TransferDTO>), StatusCodes.Status200OK)]
-    public ActionResult<IReadOnlyList<TransferDTO>> GetTransfersByBank(string name)
+    public ActionResult<IReadOnlyList<TransferDTO>> GetTransfersByBank(Guid id)
     {
-        var bank = _bankService.GetBanks().FirstOrDefault(b => b.Name == name);
-        if (bank is null)
-        {
-            return Ok(Array.Empty<TransferDTO>());
-        }
-
-        var result = _transferService.GetTransfersByBank(bank.Id);
+        var result = _transferService.GetTransfersByBank(id);
         return Ok(result);
     }
 }
