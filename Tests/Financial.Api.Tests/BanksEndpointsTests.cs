@@ -23,9 +23,10 @@ public class BanksEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var banks = await response.Content.ReadFromJsonAsync<List<BankDTO>>();
         banks.Should().HaveCount(3);
-        banks.Should().ContainSingle(b => b.Name == "Barclays" && !b.RoundUpEnabled);
-        banks.Should().ContainSingle(b => b.Name == "Trading212" && b.RoundUpEnabled);
-        banks.Should().ContainSingle(b => b.Name == "Chase" && b.RoundUpEnabled);
+        banks.Should().OnlyContain(b => b.Id != Guid.Empty);
+        banks.Should().ContainSingle(b => b.Id == BarclaysId && b.Name == "Barclays" && !b.RoundUpEnabled);
+        banks.Should().ContainSingle(b => b.Id == Trading212Id && b.Name == "Trading212" && b.RoundUpEnabled);
+        banks.Should().ContainSingle(b => b.Id == ChaseId && b.Name == "Chase" && b.RoundUpEnabled);
     }
 
     [Fact]
