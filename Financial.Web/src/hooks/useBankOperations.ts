@@ -21,6 +21,7 @@ export type BankOperationEntry =
       id: string
       date: string
       bank: string
+      bankId: string
       delta: number
       note: string | null
       adjustment: BalanceAdjustmentDto
@@ -39,8 +40,8 @@ function buildOperations(
     kind: 'transfer',
     id: transfer.id,
     date: transfer.date,
-    sourceBank: transfer.sourceBank,
-    destinationBank: transfer.destinationBank,
+    sourceBank: transfer.sourceBankName,
+    destinationBank: transfer.destinationBankName,
     amount: transfer.amount,
     note: transfer.note,
     transfer,
@@ -50,7 +51,8 @@ function buildOperations(
     kind: 'adjustment',
     id: adjustment.id,
     date: adjustment.date,
-    bank: adjustment.bank,
+    bank: adjustment.bankName,
+    bankId: adjustment.bankId,
     delta: adjustment.delta,
     note: adjustment.note,
     adjustment,
@@ -113,7 +115,7 @@ export interface UseBankOperationsResult {
   error: string | null
   retry: () => void
   deleteTransfer: (id: string) => void
-  deleteAdjustment: (bankName: string, id: string) => void
+  deleteAdjustment: (bankId: string, id: string) => void
 }
 
 /**
@@ -143,7 +145,7 @@ export function useBankOperations(
 
     Promise.all([
       apiClient.getTransfersByMonth(year, month),
-      Promise.all(banks.map((bank) => apiClient.getAdjustmentsByBank(bank.name))),
+      Promise.all(banks.map((bank) => apiClient.getAdjustmentsByBank(bank.id))),
     ])
       .then(([transfers, adjustmentsPerBank]) => {
         const adjustments = adjustmentsPerBank
@@ -177,11 +179,11 @@ export function useBankOperations(
       })
   }
 
-  const deleteAdjustment = (bankName: string, id: string) => {
+  const deleteAdjustment = (bankId: string, id: string) => {
     if (!window.confirm('Delete this balance adjustment?')) return
 
     void apiClient
-      .deleteBalanceAdjustment(bankName, id)
+      .deleteBalanceAdjustment(bankId, id)
       .then(() => {
         retry()
         onChanged()
