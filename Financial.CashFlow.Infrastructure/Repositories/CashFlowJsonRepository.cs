@@ -47,6 +47,8 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository
 
     public IEnumerable<IncomeSource> GetIncomeSources() => _data.IncomeSources;
 
+    public IEnumerable<ReserveBucket> GetReserveBuckets() => _data.ReserveBuckets;
+
     public IEnumerable<Income> GetIncomes() => _data.Incomes;
     public void AddIncome(Income income) => _data.AddIncome(income);
     public void DeleteIncome(Guid id) => _data.RemoveIncome(id);

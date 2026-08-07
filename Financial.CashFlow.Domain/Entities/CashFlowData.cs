@@ -32,6 +32,9 @@ public class CashFlowData
     private readonly List<InvestmentAccount> _investmentAccounts = new();
     public IReadOnlyCollection<InvestmentAccount> InvestmentAccounts => _investmentAccounts.AsReadOnly();
 
+    private readonly List<ReserveBucket> _reserveBuckets = new();
+    public IReadOnlyCollection<ReserveBucket> ReserveBuckets => _reserveBuckets.AsReadOnly();
+
     private readonly List<Income> _incomes = new();
     public IReadOnlyCollection<Income> Incomes => _incomes.AsReadOnly();
 
@@ -70,6 +73,8 @@ public class CashFlowData
     public void AddIncomeSource(IncomeSource incomeSource) => _incomeSources.Add(incomeSource);
 
     public void AddInvestmentAccount(InvestmentAccount account) => _investmentAccounts.Add(account);
+
+    public void AddReserveBucket(ReserveBucket bucket) => _reserveBuckets.Add(bucket);
 
     public void AddIncome(Income income) => _incomes.Add(income);
 

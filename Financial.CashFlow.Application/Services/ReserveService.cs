@@ -3,8 +3,8 @@ using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
+using ReserveBucketEnum = Financial.CashFlow.Domain.Enums.ReserveBucket;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -35,10 +35,10 @@ public sealed class ReserveService : IReserveService
 
         var movements = new[]
         {
-            ReserveMovement.Create(ReserveBucket.Investimento, split.Investimento, request.Date, request.Description),
-            ReserveMovement.Create(ReserveBucket.HouseTreats, split.HouseTreats, request.Date, request.Description),
-            ReserveMovement.Create(ReserveBucket.Ariana, split.Ariana, request.Date, request.Description),
-            ReserveMovement.Create(ReserveBucket.Gleison, split.Gleison, request.Date, request.Description)
+            ReserveMovement.Create(ReserveBucketEnum.Investimento, split.Investimento, request.Date, request.Description),
+            ReserveMovement.Create(ReserveBucketEnum.HouseTreats, split.HouseTreats, request.Date, request.Description),
+            ReserveMovement.Create(ReserveBucketEnum.Ariana, split.Ariana, request.Date, request.Description),
+            ReserveMovement.Create(ReserveBucketEnum.Gleison, split.Gleison, request.Date, request.Description)
         };
 
         foreach (var movement in movements)
@@ -118,7 +118,7 @@ public sealed class ReserveService : IReserveService
             .GroupBy(m => m.Bucket)
             .ToDictionary(g => g.Key, g => g.Sum(m => m.Amount));
 
-        return Enum.GetValues<ReserveBucket>()
+        return Enum.GetValues<ReserveBucketEnum>()
             .Select(bucket => new ReserveBucketBalanceDTO
             {
                 Bucket = bucket.ToString(),
@@ -175,7 +175,7 @@ public sealed class ReserveService : IReserveService
         await _repository.SaveChangesAsync().ConfigureAwait(false);
     }
 
-    private decimal GetBalance(ReserveBucket bucket) =>
+    private decimal GetBalance(ReserveBucketEnum bucket) =>
         _repository.GetReserveMovements().Where(m => m.Bucket == bucket).Sum(m => m.Amount);
 
     private static ReserveMovementDTO ToDto(ReserveMovement movement) => new()

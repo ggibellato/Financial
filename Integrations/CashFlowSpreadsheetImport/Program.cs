@@ -5,6 +5,7 @@ using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.M
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.BankOpeningBalance;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.IncomeSources;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ReserveBuckets;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.EntityReferences;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ExpenseChargeDate;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
@@ -83,6 +84,12 @@ InvestmentAccountMigrator.Migrate(data);
 // imported expense set is safe.
 BankMigrator.Migrate(data);
 
+// Must also run before ImportReservasSheet below: once ReserveMovement references a real
+// ReserveBucket (F02), the importer resolves each column's bucket by name against
+// data.ReserveBuckets, so the 4 tracked buckets need to already exist. Seeding is idempotent,
+// so re-running it at the end (below) to audit the final imported movement set is safe.
+ReserveBucketMigrator.Migrate(data);
+
 using var workbook = new XLWorkbook(workbookPath);
 
 if (mensaisOnly)
@@ -110,6 +117,9 @@ var incomeSummary = IncomeMigrator.Migrate(data);
 // Runs after IncomeMigrator so its audit of Income.IncomeSource values covers backfilled
 // entries too, not just what was already on the data file before this run.
 var incomeSourceSummary = IncomeSourceMigrator.Migrate(data);
+// Re-run (seeding is idempotent) so the reported summary's movement audit and split-percentage
+// warning reflect the reserve movements ImportReservasSheet just added above.
+var reserveBucketSummary = ReserveBucketMigrator.Migrate(data);
 var expenseChargeDateSummary = ExpenseChargeDateMigrator.Migrate(data, legacyRawJson);
 // Re-run (seeding is idempotent) so the reported summary's snapshot audit reflects the
 // snapshots ImportResumoSheets just added above, not the empty pre-import state.
@@ -129,6 +139,7 @@ Console.WriteLine(bankSummary.Render());
 Console.WriteLine(bankOpeningBalanceSummary.Render());
 Console.WriteLine(incomeSummary.Render());
 Console.WriteLine(incomeSourceSummary.Render());
+Console.WriteLine(reserveBucketSummary.Render());
 Console.WriteLine(expenseChargeDateSummary.Render());
 Console.WriteLine(investmentAccountSummary.Render());
 return 0;
@@ -143,6 +154,11 @@ static void CarryOverDataTheSpreadsheetDoesNotOwn(CashFlowData existingData, Cas
     foreach (var incomeSource in existingData.IncomeSources)
     {
         data.AddIncomeSource(incomeSource);
+    }
+
+    foreach (var reserveBucket in existingData.ReserveBuckets)
+    {
+        data.AddReserveBucket(reserveBucket);
     }
 
     foreach (var income in existingData.Incomes)

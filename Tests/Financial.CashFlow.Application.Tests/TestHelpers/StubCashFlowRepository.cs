@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using ReserveBucketEntity = Financial.CashFlow.Domain.Entities.ReserveBucket;
 
 namespace Financial.CashFlow.Application.Tests.TestHelpers;
 
@@ -21,6 +22,7 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
     public List<InvestmentAccount> InvestmentAccounts { get; } = new();
     public List<Bank> Banks { get; } = new();
     public List<IncomeSource> IncomeSources { get; } = new();
+    public List<ReserveBucketEntity> ReserveBuckets { get; } = new();
     public List<Income> Incomes { get; } = new();
     public List<Transfer> Transfers { get; } = new();
     public List<BalanceAdjustment> BalanceAdjustments { get; } = new();
@@ -91,6 +93,8 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
     public IEnumerable<Bank> GetBanks() => Banks;
 
     public IEnumerable<IncomeSource> GetIncomeSources() => IncomeSources;
+
+    public IEnumerable<ReserveBucketEntity> GetReserveBuckets() => ReserveBuckets;
 
     public IEnumerable<Income> GetIncomes() => Incomes;
     public void AddIncome(Income income) => Incomes.Add(income);
