@@ -63,7 +63,7 @@ export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTrans
       ...BLANK_STATE,
       isOpen: true,
       date: todayIsoDate(),
-      sourceBank: preselectedSourceBank ?? banks[0]?.name ?? '',
+      sourceBank: preselectedSourceBank ?? banks[0]?.id ?? '',
     })
   }
 
@@ -73,8 +73,8 @@ export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTrans
       isEditing: true,
       editingId: transfer.id,
       date: transfer.date,
-      sourceBank: transfer.sourceBank,
-      destinationBank: transfer.destinationBank,
+      sourceBank: transfer.sourceBankId,
+      destinationBank: transfer.destinationBankId,
       amount: String(transfer.amount),
       note: transfer.note ?? '',
       isSaving: false,
@@ -126,8 +126,8 @@ export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTrans
 
     const payload = {
       date: state.date,
-      sourceBank: state.sourceBank,
-      destinationBank: state.destinationBank,
+      sourceBankId: state.sourceBank,
+      destinationBankId: state.destinationBank,
       amount,
       note: state.note.trim() === '' ? null : state.note,
     }

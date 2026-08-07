@@ -5,6 +5,7 @@ import { formatN2 } from '../utils/formatters'
 interface BalanceAdjustmentFormProps {
   isEditing: boolean
   bankName: string
+  bankDisplayName: string
   banks: BankDto[]
   currentBalance: number
   date: string
@@ -22,6 +23,7 @@ interface BalanceAdjustmentFormProps {
 export default function BalanceAdjustmentForm({
   isEditing,
   bankName,
+  bankDisplayName,
   banks,
   currentBalance,
   date,
@@ -73,7 +75,7 @@ export default function BalanceAdjustmentForm({
           >
             <option value="">Select a bank</option>
             {banks.map((b) => (
-              <option key={b.name} value={b.name}>
+              <option key={b.id} value={b.id}>
                 {b.name}
               </option>
             ))}
@@ -84,7 +86,7 @@ export default function BalanceAdjustmentForm({
       {bankChosen && (
         <>
           <p className="monthly-page__form-reference">
-            Current calculated balance for {bankName}: £{formatN2(currentBalance)}
+            Current calculated balance for {bankDisplayName}: £{formatN2(currentBalance)}
           </p>
           <div className="monthly-page__form">
             <div className="monthly-page__form-field">

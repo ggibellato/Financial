@@ -72,9 +72,9 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const BANKS: BankDto[] = [
-  { name: 'Barclays', roundUpEnabled: false },
-  { name: 'Trading212', roundUpEnabled: true },
-  { name: 'Chase', roundUpEnabled: true },
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
+  { id: 'bank-chase', name: 'Chase', roundUpEnabled: true },
 ]
 
 const INCOME_SOURCES: IncomeSourceDto[] = [
@@ -91,7 +91,8 @@ const EXPENSES: ExpenseDto[] = [
     description: 'Lidl UK',
     value: 42.5,
     category: 'Mercado',
-    paymentSource: 'Barclays',
+    paymentSourceBankId: 'bank-barclays',
+    paymentSourceBankName: 'Barclays',
     cardTag: null,
     chargeDate: null,
     invoiceDate: null,
@@ -115,7 +116,8 @@ const UNPAID_CARD_CHARGES: ExpenseDto[] = [
     description: 'Uber',
     value: 18.4,
     category: 'Extras',
-    paymentSource: null,
+    paymentSourceBankId: null,
+    paymentSourceBankName: null,
     cardTag: 'BaAmex',
     chargeDate: '2026-07-08',
     invoiceDate: '2026-07-01',
@@ -126,7 +128,16 @@ const UNPAID_CARD_CHARGES: ExpenseDto[] = [
 ]
 
 const INCOMES: IncomeDto[] = [
-  { id: 'i1', date: '2026-07-01', incomeSource: 'Gleison', grossValue: 3200, netValue: 2450, bank: 'Barclays' },
+  {
+    id: 'i1',
+    date: '2026-07-01',
+    incomeSourceId: '1',
+    incomeSourceName: 'Gleison',
+    grossValue: 3200,
+    netValue: 2450,
+    bankId: 'bank-barclays',
+    bankName: 'Barclays',
+  },
 ]
 
 const BANK_BALANCES: BankBalanceDto[] = [
@@ -141,15 +152,25 @@ const TRANSFERS: TransferDto[] = [
   {
     id: 't1',
     date: '2026-07-10',
-    sourceBank: 'Barclays',
-    destinationBank: 'Trading212',
+    sourceBankId: 'bank-barclays',
+    sourceBankName: 'Barclays',
+    destinationBankId: 'bank-trading212',
+    destinationBankName: 'Trading212',
     amount: 100,
     note: 'Top-up',
   },
 ]
 
 const ADJUSTMENTS: BalanceAdjustmentDto[] = [
-  { id: 'a1', date: '2026-07-12', bank: 'Barclays', targetBalance: 42.5, delta: 5, note: 'Matched statement' },
+  {
+    id: 'a1',
+    date: '2026-07-12',
+    bankId: 'bank-barclays',
+    bankName: 'Barclays',
+    targetBalance: 42.5,
+    delta: 5,
+    note: 'Matched statement',
+  },
 ]
 
 describe('MonthlyPage', () => {
@@ -196,8 +217,8 @@ describe('MonthlyPage', () => {
     getBankBalancesByMonthMock.mockResolvedValue(BANK_BALANCES)
     getTitheSummaryByMonthMock.mockResolvedValue(TITHE_SUMMARY)
     getTransfersByMonthMock.mockResolvedValue(TRANSFERS)
-    getAdjustmentsByBankMock.mockImplementation((bankName: string) =>
-      Promise.resolve(bankName === 'Barclays' ? ADJUSTMENTS : []),
+    getAdjustmentsByBankMock.mockImplementation((bankId: string) =>
+      Promise.resolve(bankId === 'bank-barclays' ? ADJUSTMENTS : []),
     )
     vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
@@ -274,7 +295,16 @@ describe('MonthlyPage', () => {
     ])
     getBankBalancesByMonthMock.mockResolvedValue([{ bank: 'Barclays', balance: 300 }])
     getIncomesByMonthMock.mockResolvedValue([
-      { id: 'i2', date: '2026-08-01', incomeSource: 'Lottery', grossValue: null, netValue: 50, bank: 'Barclays' },
+      {
+        id: 'i2',
+        date: '2026-08-01',
+        incomeSourceId: '3',
+        incomeSourceName: 'Lottery',
+        grossValue: null,
+        netValue: 50,
+        bankId: 'bank-barclays',
+        bankName: 'Barclays',
+      },
     ])
 
     fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
@@ -342,13 +372,25 @@ describe('MonthlyPage', () => {
     // ahead of First - exactly the relative position they held before settlement.
     getUnpaidCardChargesByMonthMock.mockResolvedValue([])
     getExpensesByMonthMock.mockResolvedValue([
-      { ...chargedSecond, paymentSource: 'Trading212', date: '2026-08-03', paymentStatus: 'CreditCardSettled' },
-      { ...chargedFirst, paymentSource: 'Trading212', date: '2026-08-03', paymentStatus: 'CreditCardSettled' },
+      {
+        ...chargedSecond,
+        paymentSourceBankId: 'bank-trading212',
+        paymentSourceBankName: 'Trading212',
+        date: '2026-08-03',
+        paymentStatus: 'CreditCardSettled',
+      },
+      {
+        ...chargedFirst,
+        paymentSourceBankId: 'bank-trading212',
+        paymentSourceBankName: 'Trading212',
+        date: '2026-08-03',
+        paymentStatus: 'CreditCardSettled',
+      },
     ])
-    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'Trading212' } })
+    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'bank-trading212' } })
     fireEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
     await waitFor(() =>
-      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSource: 'Trading212' }),
+      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212' }),
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
@@ -443,10 +485,10 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
-    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'Trading212' } })
+    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'bank-trading212' } })
     fireEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
     await waitFor(() =>
-      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSource: 'Trading212' }),
+      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212' }),
     )
 
     getCardStatementsByMonthMock.mockResolvedValue([{ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 }, CARD_STATEMENTS[1]])
@@ -461,12 +503,12 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
 
     await waitFor(() => expect(screen.getByText('Uber')).toBeInTheDocument())
-    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'Trading212' } })
+    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'bank-trading212' } })
 
     getUnpaidCardChargesByMonthMock.mockResolvedValue([])
     fireEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
     await waitFor(() =>
-      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSource: 'Trading212' }),
+      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212' }),
     )
 
     await waitFor(() => expect(screen.queryByText('Uber')).not.toBeInTheDocument())
@@ -604,12 +646,12 @@ describe('MonthlyPage', () => {
     const markPaidButton = screen.getByRole('button', { name: 'Mark Paid' })
     expect(markPaidButton).toBeDisabled()
 
-    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'Trading212' } })
+    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'bank-trading212' } })
     expect(markPaidButton).toBeEnabled()
     fireEvent.click(markPaidButton)
 
     await waitFor(() =>
-      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSource: 'Trading212' }),
+      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212' }),
     )
   })
 
@@ -683,7 +725,7 @@ describe('MonthlyPage', () => {
 
     await waitFor(() =>
       expect(createExpenseMock).toHaveBeenCalledWith(
-        expect.objectContaining({ paymentSource: null, cardTag: 'BaAmex' }),
+        expect.objectContaining({ paymentSourceBankId: null, cardTag: 'BaAmex' }),
       ),
     )
   })
@@ -702,7 +744,7 @@ describe('MonthlyPage', () => {
 
     await waitFor(() =>
       expect(createExpenseMock).toHaveBeenCalledWith(
-        expect.objectContaining({ paymentSource: 'Barclays', cardTag: null }),
+        expect.objectContaining({ paymentSourceBankId: 'bank-barclays', cardTag: null }),
       ),
     )
   })
@@ -711,7 +753,8 @@ describe('MonthlyPage', () => {
     getExpensesByMonthMock.mockResolvedValue([
       {
         ...EXPENSES[0],
-        paymentSource: 'Trading212',
+        paymentSourceBankId: 'bank-trading212',
+        paymentSourceBankName: 'Trading212',
         cardTag: 'BaAmex',
         chargeDate: '2026-07-05',
         invoiceDate: '2026-07-01',
@@ -798,7 +841,16 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByText('Gleison')).toBeInTheDocument())
 
     getIncomesByMonthMock.mockResolvedValue([
-      { id: 'i3', date: '2026-08-01', incomeSource: 'Lottery', grossValue: null, netValue: 75, bank: 'Barclays' },
+      {
+        id: 'i3',
+        date: '2026-08-01',
+        incomeSourceId: '3',
+        incomeSourceName: 'Lottery',
+        grossValue: null,
+        netValue: 75,
+        bankId: 'bank-barclays',
+        bankName: 'Barclays',
+      },
     ])
 
     fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
@@ -822,7 +874,7 @@ describe('MonthlyPage', () => {
 
     await waitFor(() =>
       expect(createIncomeMock).toHaveBeenCalledWith(
-        expect.objectContaining({ date: '2026-07-16', incomeSource: 'Gleison', netValue: 400, bank: 'Barclays' }),
+        expect.objectContaining({ date: '2026-07-16', incomeSourceId: '1', netValue: 400, bankId: 'bank-barclays' }),
       ),
     )
   })
@@ -835,7 +887,7 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
     expect(screen.getByLabelText('Gross Value')).toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'Lottery' } })
+    fireEvent.change(screen.getByLabelText('Source'), { target: { value: '3' } })
 
     expect(screen.queryByLabelText('Gross Value')).not.toBeInTheDocument()
   })
@@ -900,23 +952,34 @@ describe('MonthlyPage', () => {
   })
 
   it('updates the Incoming card after a new income entry is added', async () => {
-    createIncomeMock.mockResolvedValue({ id: 'i2', date: '2026-07-15', incomeSource: 'Lottery', grossValue: null, netValue: 100, bank: 'Chase' })
+    createIncomeMock.mockResolvedValue({
+      id: 'i2',
+      date: '2026-07-15',
+      incomeSourceId: '3',
+      incomeSourceName: 'Lottery',
+      grossValue: null,
+      netValue: 100,
+      bankId: 'bank-chase',
+      bankName: 'Chase',
+    })
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Income' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
     fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-15' } })
-    fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'Lottery' } })
+    fireEvent.change(screen.getByLabelText('Source'), { target: { value: '3' } })
     fireEvent.change(screen.getByLabelText('Net Value'), { target: { value: '100' } })
 
     getIncomesByMonthMock.mockResolvedValue([...INCOMES, {
       id: 'i2',
       date: '2026-07-15',
-      incomeSource: 'Lottery',
+      incomeSourceId: '3',
+      incomeSourceName: 'Lottery',
       grossValue: null,
       netValue: 100,
-      bank: 'Chase',
+      bankId: 'bank-chase',
+      bankName: 'Chase',
     }])
     fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
 
@@ -959,7 +1022,7 @@ describe('MonthlyPage', () => {
 
     expect(screen.queryByLabelText('Round-Up')).not.toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'Trading212' } })
+    fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'bank-trading212' } })
 
     expect(screen.getByLabelText('Round-Up')).toHaveValue(0.6)
   })
@@ -971,10 +1034,10 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
     fireEvent.change(screen.getByLabelText('Value'), { target: { value: '9.40' } })
-    fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'Trading212' } })
+    fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'bank-trading212' } })
     expect(screen.getByLabelText('Round-Up')).toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'Barclays' } })
+    fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'bank-barclays' } })
     expect(screen.queryByLabelText('Round-Up')).not.toBeInTheDocument()
   })
 
@@ -999,7 +1062,7 @@ describe('MonthlyPage', () => {
     fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'TfL' } })
     fireEvent.change(screen.getByLabelText('Value'), { target: { value: '9.40' } })
-    fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'Trading212' } })
+    fireEvent.change(screen.getByLabelText('Payment Source'), { target: { value: 'bank-trading212' } })
     fireEvent.change(screen.getByLabelText('Round-Up'), { target: { value: '0.10' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Expense' }))
 
@@ -1010,7 +1073,13 @@ describe('MonthlyPage', () => {
 
   it('shows a bank balance reduced by its round-up total, in a separate column', async () => {
     getExpensesByMonthMock.mockResolvedValue([
-      { ...EXPENSES[0], paymentSource: 'Trading212', value: 9.4, roundUpAmount: 0.6 },
+      {
+        ...EXPENSES[0],
+        paymentSourceBankId: 'bank-trading212',
+        paymentSourceBankName: 'Trading212',
+        value: 9.4,
+        roundUpAmount: 0.6,
+      },
     ])
     getBankBalancesByMonthMock.mockResolvedValue([
       { bank: 'Barclays', balance: 0 },
@@ -1032,7 +1101,13 @@ describe('MonthlyPage', () => {
 
   it('pre-fills the edit round-up field with the saved amount', async () => {
     getExpensesByMonthMock.mockResolvedValue([
-      { ...EXPENSES[0], paymentSource: 'Trading212', roundUpAmount: 0.6, suggestedRoundUpAmount: null },
+      {
+        ...EXPENSES[0],
+        paymentSourceBankId: 'bank-trading212',
+        paymentSourceBankName: 'Trading212',
+        roundUpAmount: 0.6,
+        suggestedRoundUpAmount: null,
+      },
     ])
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
@@ -1075,7 +1150,7 @@ describe('MonthlyPage', () => {
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
     const transfersCallsBefore = getTransfersByMonthMock.mock.calls.length
 
-    fireEvent.change(screen.getByLabelText('To'), { target: { value: 'Trading212' } })
+    fireEvent.change(screen.getByLabelText('To'), { target: { value: 'bank-trading212' } })
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '50' } })
     const transferFormPanel = screen.getByLabelText('From').closest('.monthly-page__form-panel') as HTMLElement
     fireEvent.click(within(transferFormPanel).getByRole('button', { name: 'Move Money' }))
@@ -1097,7 +1172,7 @@ describe('MonthlyPage', () => {
     expect(within(correctBalanceFormPanel).getByRole('button', { name: 'Correct Balance' })).toBeDisabled()
     expect(screen.queryByLabelText('Target Balance')).not.toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText('Bank'), { target: { value: 'Barclays' } })
+    fireEvent.change(screen.getByLabelText('Bank'), { target: { value: 'bank-barclays' } })
     expect(screen.getByText(/Current calculated balance for Barclays: £42.50/)).toBeInTheDocument()
 
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
@@ -1106,7 +1181,9 @@ describe('MonthlyPage', () => {
     fireEvent.change(screen.getByLabelText('Target Balance'), { target: { value: '45' } })
     fireEvent.click(within(correctBalanceFormPanel).getByRole('button', { name: 'Correct Balance' }))
 
-    await waitFor(() => expect(createBalanceAdjustmentMock).toHaveBeenCalledWith('Barclays', expect.objectContaining({ targetBalance: 45 })))
+    await waitFor(() =>
+      expect(createBalanceAdjustmentMock).toHaveBeenCalledWith('bank-barclays', expect.objectContaining({ targetBalance: 45 })),
+    )
     expect(await screen.findByText(/Adjustment of £2.50 recorded/)).toBeInTheDocument()
     await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
     expect(getAdjustmentsByBankMock.mock.calls.length).toBeGreaterThan(adjustmentsCallsBefore)
@@ -1165,7 +1242,7 @@ describe('MonthlyPage', () => {
     fireEvent.click(within(adjustmentFormPanel).getByRole('button', { name: 'Save' }))
 
     await waitFor(() =>
-      expect(updateBalanceAdjustmentMock).toHaveBeenCalledWith('Barclays', 'a1', expect.objectContaining({ targetBalance: 50 })),
+      expect(updateBalanceAdjustmentMock).toHaveBeenCalledWith('bank-barclays', 'a1', expect.objectContaining({ targetBalance: 50 })),
     )
     await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
   })
@@ -1192,7 +1269,7 @@ describe('MonthlyPage', () => {
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
     fireEvent.click(screen.getByRole('button', { name: 'Delete balance adjustment' }))
 
-    await waitFor(() => expect(deleteBalanceAdjustmentMock).toHaveBeenCalledWith('Barclays', 'a1'))
+    await waitFor(() => expect(deleteBalanceAdjustmentMock).toHaveBeenCalledWith('bank-barclays', 'a1'))
     await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
   })
 

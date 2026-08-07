@@ -31,7 +31,7 @@ function OperationRow({ entry, onEditTransfer, onEditAdjustment, onDeleteTransfe
           className="data-table__action-btn"
           type="button"
           aria-label={isTransfer ? 'Delete transfer' : 'Delete balance adjustment'}
-          onClick={() => (isTransfer ? onDeleteTransfer(entry.id) : onDeleteAdjustment(entry.bank, entry.id))}
+          onClick={() => (isTransfer ? onDeleteTransfer(entry.id) : onDeleteAdjustment(entry.bankId, entry.id))}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M20 20H7L3 16a2 2 0 0 1 0-2.83L14.59 1.58a2 2 0 0 1 2.83 0l4 4a2 2 0 0 1 0 2.83L8 20" />

@@ -331,13 +331,13 @@ graph TD
 - [x] Existing records display their correct bank/source/account name in read-only grids after this change
 
 ### F07. React Id-Based Reference Forms
-- [ ] The Income, Expense, Transfer, and Adjustment forms' bank/source/account dropdowns display the same set of options as before this change
-- [ ] Submitting each form sends a Guid Id (not a name string) for every affected field
-- [ ] Existing records display their correct bank/source/account name in read-only grids after this change
+- [x] The Income, Expense, Transfer, and Adjustment forms' bank/source/account dropdowns display the same set of options as before this change
+- [x] Submitting each form sends a Guid Id (not a name string) for every affected field
+- [x] Existing records display their correct bank/source/account name in read-only grids after this change
 
 ### Cross-Feature Integration
 - [x] `Bank.Id` and the reference-typed entity properties from F01 are correctly read and written by the F02 JSON persistence layer, producing a real object graph on load
 - [x] The Id-based JSON write capability from F02 and the reference model from F01 are correctly used together by the F03 migrator to produce a fully-migrated data file with no unresolved records
 - [x] The resolved object graph from F02 and the reference model from F01 are correctly consumed by the F04 resolvers/services, which reject an unresolvable Id and accept a valid one
 - [x] The Id+Name DTOs provided by F04 are correctly exposed through the F05 API contract, including the new `/investment-accounts` endpoint and the Id-based bank-scoped routes
-- [ ] The F05 API contract is correctly consumed by both the F06 WPF forms and the F07 React forms, each submitting and displaying records via Id with a correctly-rendered denormalized name
+- [x] The F05 API contract is correctly consumed by both the F06 WPF forms and the F07 React forms, each submitting and displaying records via Id with a correctly-rendered denormalized name

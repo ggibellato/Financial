@@ -38,14 +38,15 @@ function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
-function resolveCurrentBalance(bankTotals: BankTotal[], bankName: string): number {
-  return bankTotals.find((b) => b.bank === bankName)?.balance ?? 0
+function resolveCurrentBalance(bankTotals: BankTotal[], bankId: string): number {
+  return bankTotals.find((b) => b.bankId === bankId)?.balance ?? 0
 }
 
 export interface UseBalanceAdjustmentFormResult {
   isOpen: boolean
   isEditing: boolean
   bankName: string
+  bankDisplayName: string
   currentBalance: number
   date: string
   targetBalance: string
@@ -86,8 +87,8 @@ export function useBalanceAdjustmentForm(
       isOpen: true,
       isEditing: true,
       editingId: adjustment.id,
-      bankName: adjustment.bank,
-      currentBalance: resolveCurrentBalance(bankTotals, adjustment.bank),
+      bankName: adjustment.bankId,
+      currentBalance: resolveCurrentBalance(bankTotals, adjustment.bankId),
       date: adjustment.date,
       targetBalance: String(adjustment.targetBalance),
       note: adjustment.note ?? '',
@@ -163,6 +164,7 @@ export function useBalanceAdjustmentForm(
     isOpen: state.isOpen,
     isEditing: state.isEditing,
     bankName: state.bankName,
+    bankDisplayName: bankTotals.find((b) => b.bankId === state.bankName)?.bank ?? '',
     currentBalance: state.currentBalance,
     date: state.date,
     targetBalance: state.targetBalance,

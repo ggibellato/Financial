@@ -375,6 +375,7 @@ export default function MonthlyPage() {
                 <BalanceAdjustmentForm
                   isEditing={adjustmentForm.isEditing}
                   bankName={adjustmentForm.bankName}
+                  bankDisplayName={adjustmentForm.bankDisplayName}
                   banks={banks}
                   currentBalance={adjustmentForm.currentBalance}
                   date={adjustmentForm.date}

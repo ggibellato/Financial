@@ -19,32 +19,52 @@ vi.mock('../api/financialApiClient', () => ({
 }))
 
 const BANKS: BankDto[] = [
-  { name: 'Barclays', roundUpEnabled: false },
-  { name: 'Trading212', roundUpEnabled: true },
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
 ]
 
 const TRANSFERS: TransferDto[] = [
   {
     id: 't1',
     date: '2026-07-10',
-    sourceBank: 'Barclays',
-    destinationBank: 'Trading212',
+    sourceBankId: 'bank-barclays',
+    sourceBankName: 'Barclays',
+    destinationBankId: 'bank-trading212',
+    destinationBankName: 'Trading212',
     amount: 500,
     note: 'Top-up',
   },
   {
     id: 't2',
     date: '2026-07-20',
-    sourceBank: 'Trading212',
-    destinationBank: 'Barclays',
+    sourceBankId: 'bank-trading212',
+    sourceBankName: 'Trading212',
+    destinationBankId: 'bank-barclays',
+    destinationBankName: 'Barclays',
     amount: 100,
     note: null,
   },
 ]
 
 const BARCLAYS_ADJUSTMENTS: BalanceAdjustmentDto[] = [
-  { id: 'a1', date: '2026-07-15', bank: 'Barclays', targetBalance: 150, delta: 50, note: 'Matched statement' },
-  { id: 'a2', date: '2026-06-01', bank: 'Barclays', targetBalance: 100, delta: 10, note: 'Old month' },
+  {
+    id: 'a1',
+    date: '2026-07-15',
+    bankId: 'bank-barclays',
+    bankName: 'Barclays',
+    targetBalance: 150,
+    delta: 50,
+    note: 'Matched statement',
+  },
+  {
+    id: 'a2',
+    date: '2026-06-01',
+    bankId: 'bank-barclays',
+    bankName: 'Barclays',
+    targetBalance: 100,
+    delta: 10,
+    note: 'Old month',
+  },
 ]
 
 describe('useBankOperations', () => {
@@ -54,8 +74,8 @@ describe('useBankOperations', () => {
     getAdjustmentsByBankMock.mockReset()
     deleteBalanceAdjustmentMock.mockReset()
     getTransfersByMonthMock.mockResolvedValue(TRANSFERS)
-    getAdjustmentsByBankMock.mockImplementation((bankName: string) =>
-      Promise.resolve(bankName === 'Barclays' ? BARCLAYS_ADJUSTMENTS : []),
+    getAdjustmentsByBankMock.mockImplementation((bankId: string) =>
+      Promise.resolve(bankId === 'bank-barclays' ? BARCLAYS_ADJUSTMENTS : []),
     )
     vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
@@ -153,8 +173,8 @@ describe('useBankOperations', () => {
     const { result } = renderHook(() => useBankOperations(2026, 7, BANKS, onChanged))
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    result.current.deleteAdjustment('Barclays', 'a1')
-    await waitFor(() => expect(deleteBalanceAdjustmentMock).toHaveBeenCalledWith('Barclays', 'a1'))
+    result.current.deleteAdjustment('bank-barclays', 'a1')
+    await waitFor(() => expect(deleteBalanceAdjustmentMock).toHaveBeenCalledWith('bank-barclays', 'a1'))
 
     expect(onChanged).toHaveBeenCalledOnce()
   })

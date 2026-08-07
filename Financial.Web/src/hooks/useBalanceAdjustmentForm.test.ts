@@ -17,14 +17,15 @@ vi.mock('../api/financialApiClient', () => ({
 }))
 
 const BANK_TOTALS: BankTotal[] = [
-  { bank: 'Barclays', balance: 100, roundUpTotal: 0 },
-  { bank: 'Trading212', balance: 8.8, roundUpTotal: 0.6 },
+  { bankId: 'bank-barclays', bank: 'Barclays', balance: 100, roundUpTotal: 0 },
+  { bankId: 'bank-trading212', bank: 'Trading212', balance: 8.8, roundUpTotal: 0.6 },
 ]
 
 const ADJUSTMENT: BalanceAdjustmentDto = {
   id: 'a1',
   date: '2026-07-20',
-  bank: 'Barclays',
+  bankId: 'bank-barclays',
+  bankName: 'Barclays',
   targetBalance: 150,
   delta: 50,
   note: 'Matched statement',
@@ -60,9 +61,9 @@ describe('useBalanceAdjustmentForm', () => {
     const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
     act(() => result.current.openCreateForm())
 
-    act(() => result.current.setField('bankName', 'Trading212'))
+    act(() => result.current.setField('bankName', 'bank-trading212'))
 
-    expect(result.current.bankName).toBe('Trading212')
+    expect(result.current.bankName).toBe('bank-trading212')
     expect(result.current.currentBalance).toBe(8.8)
   })
 
@@ -82,7 +83,7 @@ describe('useBalanceAdjustmentForm', () => {
 
     expect(result.current.isOpen).toBe(true)
     expect(result.current.isEditing).toBe(true)
-    expect(result.current.bankName).toBe('Barclays')
+    expect(result.current.bankName).toBe('bank-barclays')
     expect(result.current.currentBalance).toBe(100)
     expect(result.current.date).toBe('2026-07-20')
     expect(result.current.targetBalance).toBe('150')
@@ -112,7 +113,7 @@ describe('useBalanceAdjustmentForm', () => {
   it('submit blocks with an error when the target balance is missing', () => {
     const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
     act(() => result.current.openCreateForm())
-    act(() => result.current.setField('bankName', 'Barclays'))
+    act(() => result.current.setField('bankName', 'bank-barclays'))
 
     act(() => result.current.submit())
 
@@ -123,7 +124,7 @@ describe('useBalanceAdjustmentForm', () => {
   it('submit blocks with an error when the target balance is negative', () => {
     const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
     act(() => result.current.openCreateForm())
-    act(() => result.current.setField('bankName', 'Barclays'))
+    act(() => result.current.setField('bankName', 'bank-barclays'))
     act(() => result.current.setField('targetBalance', '-1'))
 
     act(() => result.current.submit())
@@ -138,13 +139,13 @@ describe('useBalanceAdjustmentForm', () => {
     const onSaved = vi.fn()
     const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, onSaved))
     act(() => result.current.openCreateForm())
-    act(() => result.current.setField('bankName', 'Barclays'))
+    act(() => result.current.setField('bankName', 'bank-barclays'))
     act(() => result.current.setField('targetBalance', '150'))
 
     act(() => result.current.submit())
 
     expect(result.current.isSaving).toBe(true)
-    expect(createBalanceAdjustmentMock).toHaveBeenCalledWith('Barclays', {
+    expect(createBalanceAdjustmentMock).toHaveBeenCalledWith('bank-barclays', {
       date: expect.any(String),
       targetBalance: 150,
       note: null,
@@ -172,7 +173,7 @@ describe('useBalanceAdjustmentForm', () => {
       await Promise.resolve()
     })
 
-    expect(updateBalanceAdjustmentMock).toHaveBeenCalledWith('Barclays', 'a1', {
+    expect(updateBalanceAdjustmentMock).toHaveBeenCalledWith('bank-barclays', 'a1', {
       date: '2026-07-20',
       targetBalance: 120,
       note: 'Matched statement',
@@ -183,7 +184,7 @@ describe('useBalanceAdjustmentForm', () => {
     createBalanceAdjustmentMock.mockRejectedValue(new ApiError('Balance cannot be negative.', 400))
     const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, vi.fn()))
     act(() => result.current.openCreateForm())
-    act(() => result.current.setField('bankName', 'Barclays'))
+    act(() => result.current.setField('bankName', 'bank-barclays'))
     act(() => result.current.setField('targetBalance', '150'))
 
     await act(async () => {

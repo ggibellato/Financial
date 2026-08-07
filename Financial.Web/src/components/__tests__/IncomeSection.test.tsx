@@ -7,18 +7,22 @@ const INCOMES: IncomeDto[] = [
   {
     id: 'i1',
     date: '2026-07-05',
-    incomeSource: 'Gleison',
+    incomeSourceId: '1',
+    incomeSourceName: 'Gleison',
     grossValue: 3200,
     netValue: 2450,
-    bank: 'Barclays',
+    bankId: 'bank-barclays',
+    bankName: 'Barclays',
   },
   {
     id: 'i2',
     date: '2026-07-06',
-    incomeSource: 'Lottery',
+    incomeSourceId: '3',
+    incomeSourceName: 'Lottery',
     grossValue: null,
     netValue: 50,
-    bank: 'Chase',
+    bankId: 'bank-chase',
+    bankName: 'Chase',
   },
 ]
 

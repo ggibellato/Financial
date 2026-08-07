@@ -685,12 +685,17 @@ describe('financialApiClient', () => {
   it('posts a transfer create request', async () => {
     const requestBody: CreateTransferDto = {
       date: '2026-07-25',
-      sourceBank: 'Barclays',
-      destinationBank: 'Trading212',
+      sourceBankId: 'bank-barclays',
+      destinationBankId: 'bank-trading212',
       amount: 500,
       note: 'Round-up top-up',
     }
-    const responseBody: TransferDto = { id: 't1', ...requestBody }
+    const responseBody: TransferDto = {
+      id: 't1',
+      sourceBankName: 'Barclays',
+      destinationBankName: 'Trading212',
+      ...requestBody,
+    }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
@@ -706,12 +711,17 @@ describe('financialApiClient', () => {
   it('puts a transfer update', async () => {
     const requestBody: UpdateTransferDto = {
       date: '2026-07-25',
-      sourceBank: 'Chase',
-      destinationBank: 'Trading212',
+      sourceBankId: 'bank-chase',
+      destinationBankId: 'bank-trading212',
       amount: 250,
       note: null,
     }
-    const responseBody: TransferDto = { id: 't1', ...requestBody }
+    const responseBody: TransferDto = {
+      id: 't1',
+      sourceBankName: 'Chase',
+      destinationBankName: 'Trading212',
+      ...requestBody,
+    }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
@@ -730,7 +740,13 @@ describe('financialApiClient', () => {
       targetBalance: 2340.17,
       note: 'Matched against July statement',
     }
-    const responseBody: BalanceAdjustmentDto = { id: 'a1', bank: 'Barclays', delta: -4.2, ...requestBody }
+    const responseBody: BalanceAdjustmentDto = {
+      id: 'a1',
+      bankId: 'Barclays',
+      bankName: 'Barclays',
+      delta: -4.2,
+      ...requestBody,
+    }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
@@ -749,7 +765,13 @@ describe('financialApiClient', () => {
       targetBalance: 120,
       note: 'Corrected',
     }
-    const responseBody: BalanceAdjustmentDto = { id: 'a1', bank: 'Barclays', delta: 20, ...requestBody }
+    const responseBody: BalanceAdjustmentDto = {
+      id: 'a1',
+      bankId: 'Barclays',
+      bankName: 'Barclays',
+      delta: 20,
+      ...requestBody,
+    }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
@@ -764,7 +786,16 @@ describe('financialApiClient', () => {
 
   it('calls the transfers-by-month endpoint', async () => {
     const responseBody: TransferDto[] = [
-      { id: 't1', date: '2026-07-05', sourceBank: 'Barclays', destinationBank: 'Trading212', amount: 500, note: null },
+      {
+        id: 't1',
+        date: '2026-07-05',
+        sourceBankId: 'bank-barclays',
+        sourceBankName: 'Barclays',
+        destinationBankId: 'bank-trading212',
+        destinationBankName: 'Trading212',
+        amount: 500,
+        note: null,
+      },
     ]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
@@ -789,7 +820,15 @@ describe('financialApiClient', () => {
 
   it('calls the adjustments-by-bank endpoint', async () => {
     const responseBody: BalanceAdjustmentDto[] = [
-      { id: 'a1', date: '2026-07-05', bank: 'Barclays', targetBalance: 150, delta: 50, note: null },
+      {
+        id: 'a1',
+        date: '2026-07-05',
+        bankId: 'Barclays',
+        bankName: 'Barclays',
+        targetBalance: 150,
+        delta: 50,
+        note: null,
+      },
     ]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })

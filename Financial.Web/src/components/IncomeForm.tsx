@@ -34,8 +34,10 @@ export default function IncomeForm({
   onSave,
   onCancel,
 }: IncomeFormProps) {
-  const showGrossValueField = INCOME_SOURCES_WITH_GROSS_VALUE.includes(incomeSource)
   const activeIncomeSources = selectActiveIncomeSources(incomeSources)
+  const showGrossValueField = INCOME_SOURCES_WITH_GROSS_VALUE.includes(
+    incomeSources.find((s) => s.id === incomeSource)?.name ?? '',
+  )
   return (
     <div className="monthly-page__form-panel">
       <p className="monthly-page__form-title">{isEditing ? 'Edit Income' : 'New Income'}</p>
@@ -57,7 +59,7 @@ export default function IncomeForm({
             onChange={(e) => onFieldChange('incomeSource', e.target.value)}
           >
             {activeIncomeSources.map((s) => (
-              <option key={s.id} value={s.name}>
+              <option key={s.id} value={s.id}>
                 {s.name}
               </option>
             ))}
@@ -89,7 +91,7 @@ export default function IncomeForm({
           <label htmlFor="income-bank">Bank</label>
           <select id="income-bank" value={bank} onChange={(e) => onFieldChange('bank', e.target.value)}>
             {banks.map((b) => (
-              <option key={b.name} value={b.name}>
+              <option key={b.id} value={b.id}>
                 {b.name}
               </option>
             ))}

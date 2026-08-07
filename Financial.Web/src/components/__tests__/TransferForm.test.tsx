@@ -4,16 +4,16 @@ import TransferForm from '../TransferForm'
 import type { BankDto } from '../../api/types'
 
 const BANKS: BankDto[] = [
-  { name: 'Barclays', roundUpEnabled: false },
-  { name: 'Trading212', roundUpEnabled: true },
-  { name: 'Chase', roundUpEnabled: true },
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
+  { id: 'bank-chase', name: 'Chase', roundUpEnabled: true },
 ]
 
 const baseProps = {
   isEditing: false,
   date: '2026-07-25',
-  sourceBank: 'Barclays',
-  destinationBank: 'Trading212',
+  sourceBank: 'bank-barclays',
+  destinationBank: 'bank-trading212',
   amount: '',
   note: '',
   banks: BANKS,
@@ -31,8 +31,8 @@ describe('TransferForm', () => {
 
     expect(container.querySelector('.monthly-page__form-title')).toHaveTextContent('Move Money')
     expect(screen.getByLabelText('Date')).toHaveValue('2026-07-25')
-    expect(screen.getByLabelText('From')).toHaveValue('Barclays')
-    expect(screen.getByLabelText('To')).toHaveValue('Trading212')
+    expect(screen.getByLabelText('From')).toHaveValue('bank-barclays')
+    expect(screen.getByLabelText('To')).toHaveValue('bank-trading212')
   })
 
   it('renders the edit form title', () => {
@@ -43,7 +43,7 @@ describe('TransferForm', () => {
   })
 
   it('excludes the selected source bank from the destination dropdown', () => {
-    render(<TransferForm {...baseProps} sourceBank="Barclays" destinationBank="Trading212" />)
+    render(<TransferForm {...baseProps} sourceBank="bank-barclays" destinationBank="bank-trading212" />)
 
     const destinationOptions = screen.getByLabelText('To').querySelectorAll('option')
     const optionValues = Array.from(destinationOptions).map((o) => o.textContent)
@@ -53,14 +53,14 @@ describe('TransferForm', () => {
   })
 
   it('shows an inline error and disables submit when source and destination match', () => {
-    render(<TransferForm {...baseProps} sourceBank="Barclays" destinationBank="Barclays" amount="100" />)
+    render(<TransferForm {...baseProps} sourceBank="bank-barclays" destinationBank="bank-barclays" amount="100" />)
 
     expect(screen.getByText('Source and destination must be different banks.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Move Money' })).toBeDisabled()
   })
 
   it('does not show the same-bank error when source and destination differ', () => {
-    render(<TransferForm {...baseProps} sourceBank="Barclays" destinationBank="Trading212" />)
+    render(<TransferForm {...baseProps} sourceBank="bank-barclays" destinationBank="bank-trading212" />)
 
     expect(screen.queryByText('Source and destination must be different banks.')).not.toBeInTheDocument()
   })

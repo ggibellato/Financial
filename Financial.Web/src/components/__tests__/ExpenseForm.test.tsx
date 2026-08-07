@@ -4,8 +4,8 @@ import ExpenseForm from '../ExpenseForm'
 import type { BankDto } from '../../api/types'
 
 const BANKS: BankDto[] = [
-  { name: 'Barclays', roundUpEnabled: false },
-  { name: 'Trading212', roundUpEnabled: true },
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
 ]
 
 const baseProps = {
@@ -14,7 +14,7 @@ const baseProps = {
   description: '',
   value: '',
   category: 'Mercado',
-  paymentSource: 'Barclays',
+  paymentSource: 'bank-barclays',
   cardTag: '',
   invoiceDate: '',
   roundUpAmount: '',
@@ -45,7 +45,7 @@ describe('ExpenseForm', () => {
         {...baseProps}
         isEditing
         isSettled
-        paymentSource="Trading212"
+        paymentSource="bank-trading212"
         cardTag="BaAmex"
       />,
     )
@@ -94,7 +94,7 @@ describe('ExpenseForm', () => {
         {...baseProps}
         isEditing
         isSettled
-        paymentSource="Trading212"
+        paymentSource="bank-trading212"
         cardTag="BaAmex"
         invoiceDate="2026-07"
       />,
@@ -113,13 +113,13 @@ describe('ExpenseForm', () => {
   })
 
   it('shows the round-up field only for a round-up-enabled bank in bank mode', () => {
-    const { rerender } = render(<ExpenseForm {...baseProps} paymentMode="bank" paymentSource="Barclays" />)
+    const { rerender } = render(<ExpenseForm {...baseProps} paymentMode="bank" paymentSource="bank-barclays" />)
     expect(screen.queryByLabelText('Round-Up')).not.toBeInTheDocument()
 
-    rerender(<ExpenseForm {...baseProps} paymentMode="bank" paymentSource="Trading212" />)
+    rerender(<ExpenseForm {...baseProps} paymentMode="bank" paymentSource="bank-trading212" />)
     expect(screen.getByLabelText('Round-Up')).toBeInTheDocument()
 
-    rerender(<ExpenseForm {...baseProps} paymentMode="card" paymentSource="Trading212" />)
+    rerender(<ExpenseForm {...baseProps} paymentMode="card" paymentSource="bank-trading212" />)
     expect(screen.queryByLabelText('Round-Up')).not.toBeInTheDocument()
   })
 

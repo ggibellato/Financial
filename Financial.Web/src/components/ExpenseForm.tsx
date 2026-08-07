@@ -69,7 +69,7 @@ export default function ExpenseForm({
   onSave,
   onCancel,
 }: ExpenseFormProps) {
-  const selectedBank = banks.find((b) => b.name === paymentSource)
+  const selectedBank = banks.find((b) => b.id === paymentSource)
   const showRoundUpField = paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
   const invoiceDateDisplay = invoiceDate || (date ? date.slice(0, 7) : '')
   return (
@@ -123,8 +123,8 @@ export default function ExpenseForm({
             <div className="monthly-page__form-field">
               <label>Payment</label>
               <p className="monthly-page__settled-note">
-                Paid by {paymentSource} via card {cardTag}. Settled via its card statement — unmark the
-                statement paid to change these fields.
+                Paid by {selectedBank?.name ?? paymentSource} via card {cardTag}. Settled via its card statement —
+                unmark the statement paid to change these fields.
               </p>
             </div>
             <div className="monthly-page__form-field">
@@ -144,7 +144,7 @@ export default function ExpenseForm({
                     onChange={(e) => onFieldChange('paymentSource', e.target.value)}
                   >
                     {banks.map((b) => (
-                      <option key={b.name} value={b.name}>
+                      <option key={b.id} value={b.id}>
                         {b.name}
                       </option>
                     ))}

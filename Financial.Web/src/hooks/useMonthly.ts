@@ -45,8 +45,8 @@ function computeRoundUpSuggestion(value: number): number {
 }
 
 /** Suggests a round-up amount for the given bank/value, or null if not eligible or no value yet. */
-function suggestRoundUpAmount(banks: BankDto[], bankName: string, value: string): string | null {
-  const bank = banks.find((b) => b.name === bankName)
+function suggestRoundUpAmount(banks: BankDto[], bankId: string, value: string): string | null {
+  const bank = banks.find((b) => b.id === bankId)
   if (!bank?.roundUpEnabled) return null
 
   const parsedValue = Number(value)
@@ -55,7 +55,13 @@ function suggestRoundUpAmount(banks: BankDto[], bankName: string, value: string)
   return computeRoundUpSuggestion(parsedValue).toFixed(2)
 }
 
+/** Resolves an income source Id back to its name for the gross-value-eligibility check. */
+function resolveIncomeSourceName(sources: IncomeSourceDto[], incomeSourceId: string): string {
+  return sources.find((s) => s.id === incomeSourceId)?.name ?? ''
+}
+
 export interface BankTotal {
+  bankId: string
   bank: string
   balance: number
   roundUpTotal: number
@@ -299,13 +305,13 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         incomes: action.payload.incomes,
         titheSummary: action.payload.titheSummary,
         createPaymentSource: defaultBankStillUnset
-          ? (action.payload.banks[0]?.name ?? '')
+          ? (action.payload.banks[0]?.id ?? '')
           : state.createPaymentSource,
         createIncomeBank: defaultIncomeBankStillUnset
-          ? (action.payload.banks[0]?.name ?? '')
+          ? (action.payload.banks[0]?.id ?? '')
           : state.createIncomeBank,
         createIncomeSource: defaultIncomeSourceStillUnset
-          ? (selectActiveIncomeSources(action.payload.incomeSources)[0]?.name ?? '')
+          ? (selectActiveIncomeSources(action.payload.incomeSources)[0]?.id ?? '')
           : state.createIncomeSource,
       }
     }
@@ -315,7 +321,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
       return { ...state, retryCount: state.retryCount + 1 }
     case 'SHOW_CREATE_FORM': {
       const mode = action.payload.mode
-      const nextPaymentSource = mode === 'bank' ? (state.banks[0]?.name ?? '') : ''
+      const nextPaymentSource = mode === 'bank' ? (state.banks[0]?.id ?? '') : ''
       const suggestion = mode === 'bank' ? suggestRoundUpAmount(state.banks, nextPaymentSource, state.createValue) : null
       return {
         ...state,
@@ -358,7 +364,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editDescription: action.payload.description,
         editValue: String(action.payload.value),
         editCategory: action.payload.category,
-        editPaymentSource: action.payload.paymentSource ?? '',
+        editPaymentSource: action.payload.paymentSourceBankId ?? '',
         editCardTag: action.payload.cardTag ?? '',
         editInvoiceDate: action.payload.invoiceDate ? action.payload.invoiceDate.slice(0, 7) : '',
         editRoundUpAmount: action.payload.roundUpAmount != null ? String(action.payload.roundUpAmount) : '',
@@ -435,7 +441,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
       const next = { ...state, [action.payload.field]: action.payload.value }
       if (
         action.payload.field === 'createIncomeSource' &&
-        !INCOME_SOURCES_WITH_GROSS_VALUE.includes(action.payload.value)
+        !INCOME_SOURCES_WITH_GROSS_VALUE.includes(resolveIncomeSourceName(state.incomeSources, action.payload.value))
       ) {
         next.createIncomeGrossValue = ''
       }
@@ -453,10 +459,10 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         isIncomeCreateFormOpen: false,
         editingIncomeId: action.payload.id,
         editIncomeDate: action.payload.date,
-        editIncomeSource: action.payload.incomeSource,
+        editIncomeSource: action.payload.incomeSourceId,
         editIncomeGrossValue: action.payload.grossValue != null ? String(action.payload.grossValue) : '',
         editIncomeNetValue: String(action.payload.netValue),
-        editIncomeBank: action.payload.bank,
+        editIncomeBank: action.payload.bankId,
         saveIncomeError: null,
         isCreateFormOpen: false,
         editingId: null,
@@ -477,7 +483,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
       const next = { ...state, [action.payload.field]: action.payload.value }
       if (
         action.payload.field === 'editIncomeSource' &&
-        !INCOME_SOURCES_WITH_GROSS_VALUE.includes(action.payload.value)
+        !INCOME_SOURCES_WITH_GROSS_VALUE.includes(resolveIncomeSourceName(state.incomeSources, action.payload.value))
       ) {
         next.editIncomeGrossValue = ''
       }
@@ -558,7 +564,7 @@ export interface MonthlyData {
   deleteExpense: (id: string) => void
   markPaidSources: Record<string, string>
   setMarkPaidSource: (id: string, value: string) => void
-  markStatementPaid: (id: string, paymentSource: string) => void
+  markStatementPaid: (id: string, paymentSourceBankId: string) => void
   unmarkStatementPaid: (id: string) => void
   incomes: IncomeDto[]
   incomeTotals: IncomeTotal[]
@@ -697,7 +703,7 @@ export function useMonthly(): MonthlyData {
       return
     }
 
-    const selectedBank = banks.find((b) => b.name === createPaymentSource)
+    const selectedBank = banks.find((b) => b.id === createPaymentSource)
     const roundUpEligible = createPaymentMode === 'bank' && selectedBank?.roundUpEnabled === true
 
     let roundUpAmount: number | null = null
@@ -721,7 +727,7 @@ export function useMonthly(): MonthlyData {
         description: createDescription,
         value,
         category: createCategory,
-        paymentSource: createPaymentMode === 'bank' ? createPaymentSource : null,
+        paymentSourceBankId: createPaymentMode === 'bank' ? createPaymentSource : null,
         cardTag: createPaymentMode === 'card' ? createCardTag : null,
         invoiceDate: createPaymentMode === 'card' && createInvoiceDate ? `${createInvoiceDate}-01` : null,
         roundUpAmount,
@@ -766,15 +772,15 @@ export function useMonthly(): MonthlyData {
     // statement is unmarked paid.
     const paymentFields = state.editIsSettled
       ? {
-          paymentSource: state.editPaymentSource.trim() === '' ? null : state.editPaymentSource,
+          paymentSourceBankId: state.editPaymentSource.trim() === '' ? null : state.editPaymentSource,
           cardTag: state.editCardTag.trim() === '' ? null : state.editCardTag,
         }
       : {
-          paymentSource: state.editPaymentMode === 'bank' ? state.editPaymentSource : null,
+          paymentSourceBankId: state.editPaymentMode === 'bank' ? state.editPaymentSource : null,
           cardTag: state.editPaymentMode === 'card' ? state.editCardTag : null,
         }
 
-    const selectedBank = state.banks.find((b) => b.name === state.editPaymentSource)
+    const selectedBank = state.banks.find((b) => b.id === state.editPaymentSource)
     const roundUpEligible =
       !state.editIsSettled && state.editPaymentMode === 'bank' && selectedBank?.roundUpEnabled === true
 
@@ -838,9 +844,9 @@ export function useMonthly(): MonthlyData {
   )
 
   const markStatementPaid = useCallback(
-    (id: string, paymentSource: string) => {
+    (id: string, paymentSourceBankId: string) => {
       void apiClient
-        .markCardStatementPaid(id, { paymentSource })
+        .markCardStatementPaid(id, { paymentSourceBankId })
         .then(() => dispatch({ type: 'RETRY' }))
         .catch((err: unknown) => {
           dispatch({
@@ -919,10 +925,10 @@ export function useMonthly(): MonthlyData {
     void apiClient
       .createIncome({
         date: createIncomeDate,
-        incomeSource: createIncomeSource,
+        incomeSourceId: createIncomeSource,
         grossValue,
         netValue,
-        bank: createIncomeBank,
+        bankId: createIncomeBank,
       })
       .then(() => {
         dispatch({ type: 'CREATE_INCOME_SUCCESS' })
@@ -987,10 +993,10 @@ export function useMonthly(): MonthlyData {
     void apiClient
       .updateIncome(state.editingIncomeId, {
         date: state.editIncomeDate,
-        incomeSource: state.editIncomeSource,
+        incomeSourceId: state.editIncomeSource,
         grossValue,
         netValue,
-        bank: state.editIncomeBank,
+        bankId: state.editIncomeBank,
       })
       .then(() => {
         dispatch({ type: 'SAVE_INCOME_SUCCESS' })
@@ -1026,10 +1032,10 @@ export function useMonthly(): MonthlyData {
   const categoryTotalsSum = state.categoryTotals.reduce((sum, c) => sum + c.totalValue, 0)
 
   const bankTotals: BankTotal[] = state.banks.map((bank) => {
-    const bankExpenses = state.expenses.filter((expense) => expense.paymentSource === bank.name)
+    const bankExpenses = state.expenses.filter((expense) => expense.paymentSourceBankId === bank.id)
     const roundUpTotal = bankExpenses.reduce((sum, expense) => sum + (expense.roundUpAmount ?? 0), 0)
     const balance = state.bankBalances.find((b) => b.bank === bank.name)?.balance ?? 0
-    return { bank: bank.name, balance, roundUpTotal }
+    return { bankId: bank.id, bank: bank.name, balance, roundUpTotal }
   })
   const bankTotalsSum = bankTotals.reduce((sum, b) => sum + b.balance, 0)
   const roundUpTotalsSum = bankTotals.reduce((sum, b) => sum + b.roundUpTotal, 0)
@@ -1037,13 +1043,13 @@ export function useMonthly(): MonthlyData {
   const incomeTotals: IncomeTotal[] = Array.from(
     state.incomes
       .reduce((bySource, income) => {
-        const entry = bySource.get(income.incomeSource) ?? { netValue: 0, grossValue: 0, hasGross: false }
+        const entry = bySource.get(income.incomeSourceName) ?? { netValue: 0, grossValue: 0, hasGross: false }
         entry.netValue += income.netValue
         if (income.grossValue != null) {
           entry.grossValue += income.grossValue
           entry.hasGross = true
         }
-        bySource.set(income.incomeSource, entry)
+        bySource.set(income.incomeSourceName, entry)
         return bySource
       }, new Map<string, { netValue: number; grossValue: number; hasGross: boolean }>())
       .entries(),
