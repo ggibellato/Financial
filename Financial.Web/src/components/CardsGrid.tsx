@@ -52,7 +52,7 @@ export default function CardsGrid({
                       >
                         <option value="">Bank…</option>
                         {banks.map((b) => (
-                          <option key={b.name} value={b.name}>
+                          <option key={b.id} value={b.id}>
                             {b.name}
                           </option>
                         ))}

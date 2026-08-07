@@ -35,10 +35,10 @@ function IncomeRow({ income, onEdit, onDelete }: IncomeRowProps) {
         </button>
       </td>
       <td>{formatShortDate(income.date)}</td>
-      <td>{income.incomeSource}</td>
+      <td>{income.incomeSourceName}</td>
       <td className="data-table__col--numeric">{income.grossValue != null ? formatN2(income.grossValue) : '—'}</td>
       <td className="data-table__col--numeric">{formatN2(income.netValue)}</td>
-      <td>{income.bank}</td>
+      <td>{income.bankName}</td>
     </tr>
   )
 }

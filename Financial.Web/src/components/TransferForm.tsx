@@ -37,7 +37,7 @@ export default function TransferForm({
       ? 'Source and destination must be different banks.'
       : null
 
-  const destinationBanks = banks.filter((b) => b.name !== sourceBank)
+  const destinationBanks = banks.filter((b) => b.id !== sourceBank)
 
   const fieldError = (field: TransferFormField): string | null => {
     if (field === 'destinationBank' && sameBankError) return sameBankError
@@ -68,7 +68,7 @@ export default function TransferForm({
             onChange={(e) => onFieldChange('sourceBank', e.target.value)}
           >
             {banks.map((b) => (
-              <option key={b.name} value={b.name}>
+              <option key={b.id} value={b.id}>
                 {b.name}
               </option>
             ))}
