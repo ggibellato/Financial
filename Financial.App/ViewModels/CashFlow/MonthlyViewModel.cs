@@ -188,9 +188,8 @@ public class MonthlyViewModel : ViewModelBase
             var transfers = transfersTask.Result;
             var cardStatements = cardStatementsTask.Result;
 
-            var adjustmentResults = await Task.WhenAll(banks.Select(async bank =>
-                (bank.Name, Adjustments: await Task.Run(() => _balanceAdjustmentService.GetAdjustmentsByBank(bank.Id)))));
-            var adjustmentsByBank = adjustmentResults.ToDictionary(r => r.Name, r => r.Adjustments);
+            var adjustmentsByBank = await Task.WhenAll(banks.Select(bank =>
+                Task.Run(() => _balanceAdjustmentService.GetAdjustmentsByBank(bank.Id))));
 
             if (requestId != _refreshRequestId)
             {
@@ -273,7 +272,7 @@ public class MonthlyViewModel : ViewModelBase
     /// <summary>Combines every bank's transfers and adjustments for the month into one flat, newest-first list, mirroring the Bank tab's useMonthly.ts equivalent.</summary>
     private static List<BankOperationRow> BuildBankOperations(
         IReadOnlyList<TransferDTO> transfers,
-        IReadOnlyDictionary<string, IReadOnlyList<BalanceAdjustmentDTO>> adjustmentsByBank,
+        IReadOnlyList<IReadOnlyList<BalanceAdjustmentDTO>> adjustmentsByBank,
         int year,
         int month)
     {
@@ -281,7 +280,7 @@ public class MonthlyViewModel : ViewModelBase
         // adjustments (fetched per bank via GetAdjustmentsByBank, not month-scoped) need filtering here.
         var rows = new List<BankOperationRow>(transfers.Select(BankOperationRow.FromTransfer));
 
-        rows.AddRange(adjustmentsByBank.Values
+        rows.AddRange(adjustmentsByBank
             .SelectMany(adjustments => adjustments)
             .Where(a => a.Date.Year == year && a.Date.Month == month)
             .Select(BankOperationRow.FromAdjustment));
