@@ -10,13 +10,18 @@ namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImpo
 /// </summary>
 public sealed class ReserveBucketMigrationSummary
 {
+    private const decimal ExpectedActiveSplitPercentageSum = 100m;
+    private const decimal SplitPercentageTolerance = 0.01m;
+
     private readonly List<ReserveMovement> _unresolvedMovements = new();
 
     public int BucketsSeededCount { get; private set; }
     public int BucketsAlreadyPresentCount { get; private set; }
     public int MovementsResolvedCount { get; private set; }
     public decimal ActiveSplitPercentageSum { get; private set; }
-    public bool ActiveSplitPercentageIsBalanced { get; private set; }
+
+    public bool ActiveSplitPercentageIsBalanced =>
+        Math.Abs(ActiveSplitPercentageSum - ExpectedActiveSplitPercentageSum) <= SplitPercentageTolerance;
 
     public IReadOnlyList<ReserveMovement> UnresolvedMovements => _unresolvedMovements;
 
@@ -26,11 +31,7 @@ public sealed class ReserveBucketMigrationSummary
 
     public void FlagUnresolvedMovement(ReserveMovement movement) => _unresolvedMovements.Add(movement);
 
-    public void SetActiveSplitPercentageSum(decimal sum, bool isBalanced)
-    {
-        ActiveSplitPercentageSum = sum;
-        ActiveSplitPercentageIsBalanced = isBalanced;
-    }
+    public void SetActiveSplitPercentageSum(decimal sum) => ActiveSplitPercentageSum = sum;
 
     public string Render()
     {

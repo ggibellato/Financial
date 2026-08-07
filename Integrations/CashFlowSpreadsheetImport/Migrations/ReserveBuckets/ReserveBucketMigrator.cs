@@ -18,9 +18,6 @@ public static class ReserveBucketMigrator
         ("Gleison", 16.67m)
     ];
 
-    private const decimal SplitPercentageLowerTolerance = 99.99m;
-    private const decimal SplitPercentageUpperTolerance = 100.01m;
-
     public static ReserveBucketMigrationSummary Migrate(CashFlowData data)
     {
         ArgumentNullException.ThrowIfNull(data);
@@ -70,8 +67,7 @@ public static class ReserveBucketMigrator
     private static void EvaluateActiveSplitPercentageSum(CashFlowData data, ReserveBucketMigrationSummary summary)
     {
         var activeSum = data.ReserveBuckets.Where(b => b.IsActive).Sum(b => b.SplitPercentage);
-        var isBalanced = activeSum >= SplitPercentageLowerTolerance && activeSum <= SplitPercentageUpperTolerance;
 
-        summary.SetActiveSplitPercentageSum(activeSum, isBalanced);
+        summary.SetActiveSplitPercentageSum(activeSum);
     }
 }
