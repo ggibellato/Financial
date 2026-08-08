@@ -213,7 +213,7 @@ static void ImportReservasSheet(XLWorkbook workbook, CashFlowData data, ImportRe
         return;
     }
 
-    foreach (var movement in ReservasSheetImporter.Import(sheet, data.ReserveBuckets))
+    foreach (var movement in ReservasSheetImporter.Import(sheet, data.ReserveBuckets, report))
     {
         data.AddReserveMovement(movement);
     }

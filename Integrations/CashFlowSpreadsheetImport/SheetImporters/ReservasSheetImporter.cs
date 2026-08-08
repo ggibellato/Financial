@@ -2,6 +2,7 @@ using ClosedXML.Excel;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
 
@@ -28,11 +29,11 @@ public static class ReservasSheetImporter
         (9, "Gleison"),
     ];
 
-    public static IReadOnlyList<ReserveMovement> Import(IXLWorksheet sheet, IReadOnlyCollection<ReserveBucket> buckets)
+    public static IReadOnlyList<ReserveMovement> Import(IXLWorksheet sheet, IReadOnlyCollection<ReserveBucket> buckets, ImportReport report)
     {
         var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
         var movements = new List<ReserveMovement>();
-        var resolvedBuckets = ResolveBucketColumns(buckets);
+        var resolvedBuckets = ResolveBucketColumns(sheet.Name, buckets, report);
 
         for (var row = FirstDataRow; row <= lastRow; row++)
         {
@@ -60,16 +61,24 @@ public static class ReservasSheetImporter
         return movements;
     }
 
-    private static (int Column, ReserveBucket Bucket)[] ResolveBucketColumns(IReadOnlyCollection<ReserveBucket> buckets) =>
-        BucketColumns
-            .Select(entry =>
-            {
-                if (!ReserveBucketNameResolver.TryResolve(entry.BucketName, buckets, out var bucket))
-                {
-                    throw new InvalidOperationException($"Reserve bucket '{entry.BucketName}' is not seeded.");
-                }
+    private static (int Column, ReserveBucket Bucket)[] ResolveBucketColumns(
+        string sheetName, IReadOnlyCollection<ReserveBucket> buckets, ImportReport report)
+    {
+        var resolved = new List<(int Column, ReserveBucket Bucket)>();
 
-                return (entry.Column, Bucket: bucket!);
-            })
-            .ToArray();
+        foreach (var entry in BucketColumns)
+        {
+            if (ReserveBucketNameResolver.TryResolve(entry.BucketName, buckets, out var bucket))
+            {
+                resolved.Add((entry.Column, bucket!));
+            }
+            else
+            {
+                report.ValidationWarning(
+                    $"{sheetName}: reserve bucket '{entry.BucketName}' is not seeded - column {entry.Column} skipped, no movements imported for it");
+            }
+        }
+
+        return resolved.ToArray();
+    }
 }
