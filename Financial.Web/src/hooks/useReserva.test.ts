@@ -2,11 +2,12 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../api/apiError'
 import type { FinancialApiClient } from '../api/financialApiClient'
-import type { ReserveBucketBalanceDto, ReserveMovementDto } from '../api/types'
+import type { ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../api/types'
 import { useReserva } from './useReserva'
 
 const getReserveBalancesMock = vi.fn<FinancialApiClient['getReserveBalances']>()
 const getReserveMovementsMock = vi.fn<FinancialApiClient['getReserveMovements']>()
+const getReserveBucketsMock = vi.fn<FinancialApiClient['getReserveBuckets']>()
 const postIncomeSplitMock = vi.fn<FinancialApiClient['postIncomeSplit']>()
 const postWithdrawalMock = vi.fn<FinancialApiClient['postWithdrawal']>()
 const updateReserveMovementMock = vi.fn<FinancialApiClient['updateReserveMovement']>()
@@ -16,6 +17,7 @@ vi.mock('../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getReserveBalances: getReserveBalancesMock,
     getReserveMovements: getReserveMovementsMock,
+    getReserveBuckets: getReserveBucketsMock,
     postIncomeSplit: postIncomeSplitMock,
     postWithdrawal: postWithdrawalMock,
     updateReserveMovement: updateReserveMovementMock,
@@ -37,16 +39,25 @@ const MOVEMENTS: ReserveMovementDto[] = [
   { id: 'm4', bucket: 'Gleison', amount: 327.17, date: '2026-07-17', description: 'Ramsay' },
 ]
 
+const BUCKETS: ReserveBucketDto[] = [
+  { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 33.33 },
+  { id: 'b2', name: 'HouseTreats', isActive: true, splitPercentage: 33.33 },
+  { id: 'b3', name: 'Ariana', isActive: true, splitPercentage: 16.67 },
+  { id: 'b4', name: 'Gleison', isActive: true, splitPercentage: 16.67 },
+]
+
 describe('useReserva', () => {
   beforeEach(() => {
     getReserveBalancesMock.mockReset()
     getReserveMovementsMock.mockReset()
+    getReserveBucketsMock.mockReset()
     postIncomeSplitMock.mockReset()
     postWithdrawalMock.mockReset()
     updateReserveMovementMock.mockReset()
     deleteReserveMovementMock.mockReset()
     getReserveBalancesMock.mockResolvedValue(BALANCES)
     getReserveMovementsMock.mockResolvedValue(MOVEMENTS)
+    getReserveBucketsMock.mockResolvedValue(BUCKETS)
   })
 
   it('loads balances and movements on mount', async () => {
@@ -106,13 +117,16 @@ describe('useReserva', () => {
   })
 
   it('submits an income split and re-fetches balances/movements on success', async () => {
-    postIncomeSplitMock.mockResolvedValue({
-      investimento: 654.33,
-      houseTreats: 654.33,
-      ariana: 327.17,
-      gleison: 327.17,
+    const splitResult = {
+      buckets: [
+        { bucket: 'Investimento', amount: 654.33 },
+        { bucket: 'HouseTreats', amount: 654.33 },
+        { bucket: 'Ariana', amount: 327.17 },
+        { bucket: 'Gleison', amount: 327.17 },
+      ],
       total: 1963,
-    })
+    }
+    postIncomeSplitMock.mockResolvedValue(splitResult)
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
@@ -124,13 +138,7 @@ describe('useReserva', () => {
     await waitFor(() => expect(postIncomeSplitMock).toHaveBeenCalledTimes(1))
     expect(postIncomeSplitMock).toHaveBeenCalledWith({ date: '2026-07-01', amount: 1963, description: 'Ramsay' })
     await waitFor(() => expect(getReserveBalancesMock).toHaveBeenCalledTimes(2))
-    expect(result.current.lastSplitResult).toEqual({
-      investimento: 654.33,
-      houseTreats: 654.33,
-      ariana: 327.17,
-      gleison: 327.17,
-      total: 1963,
-    })
+    expect(result.current.lastSplitResult).toEqual(splitResult)
   })
 
   it('rejects an income split with a non-positive amount before calling the API', async () => {
@@ -286,5 +294,69 @@ describe('useReserva', () => {
     act(() => result.current.deleteMovement('unknown'))
 
     await waitFor(() => expect(result.current.deleteMovementError).toBe('Reserve movement not found.'))
+  })
+
+  it('loads the reserve bucket list and defaults the withdrawal bucket to the first one', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.buckets).toEqual(BUCKETS)
+    expect(result.current.withdrawalBucket).toBe('Investimento')
+  })
+
+  it('reports no split-percentage warning when active buckets sum to 100%', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.splitPercentageWarning).toBeNull()
+  })
+
+  it('reports a split-percentage warning when active buckets do not sum to 100%', async () => {
+    getReserveBucketsMock.mockResolvedValue([
+      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 33.33 },
+      { id: 'b2', name: 'HouseTreats', isActive: true, splitPercentage: 33.33 },
+      { id: 'b3', name: 'Ariana', isActive: true, splitPercentage: 16.67 },
+      { id: 'b4', name: 'Gleison', isActive: false, splitPercentage: 16.67 },
+    ])
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.splitPercentageWarning).toBe('Active bucket percentages sum to 83.33%, not 100%')
+  })
+
+  it('degrades to an empty bucket list without a page-level error when only the buckets fetch fails', async () => {
+    getReserveBucketsMock.mockRejectedValue(new Error('Buckets unavailable'))
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.error).toBeNull()
+    expect(result.current.buckets).toEqual([])
+    expect(result.current.balances).toEqual(BALANCES)
+  })
+
+  it('rejects a withdrawal with no bucket selected before calling the API', async () => {
+    getReserveBucketsMock.mockRejectedValue(new Error('Buckets unavailable'))
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.setWithdrawalField('withdrawalAmount', '30'))
+    act(() => result.current.setWithdrawalField('withdrawalDate', '2026-07-01'))
+    act(() => result.current.setWithdrawalField('withdrawalDescription', 'Groceries top-up'))
+    act(() => result.current.submitWithdrawal())
+
+    await waitFor(() => expect(result.current.withdrawalError).toBe('Bucket is required'))
+    expect(postWithdrawalMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects a movement edit with no bucket selected before calling the API', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditMovementForm(MOVEMENTS[0]))
+    act(() => result.current.setEditMovementField('editMovementBucket', ''))
+    act(() => result.current.saveMovementEdit())
+
+    await waitFor(() => expect(result.current.saveMovementError).toBe('Bucket is required'))
+    expect(updateReserveMovementMock).not.toHaveBeenCalled()
   })
 })
