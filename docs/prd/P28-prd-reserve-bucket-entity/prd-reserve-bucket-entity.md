@@ -332,9 +332,9 @@ graph TD
 - [x] If the save fails after movements are created in memory, all movements from that split are rolled back (none persist)
 
 ### F04. Reserve Bucket Balances for All Buckets
-- [ ] `GetBucketBalances()` returns exactly one row per seeded `ReserveBucket`, regardless of `IsActive`
-- [ ] A bucket with `IsActive = false` and existing movement history shows its correct non-zero balance
-- [ ] The balance list is not hardcoded to 4 rows — adding a 5th seeded bucket (test fixture) results in 5 rows
+- [x] `GetBucketBalances()` returns exactly one row per seeded `ReserveBucket`, regardless of `IsActive`
+- [x] A bucket with `IsActive = false` and existing movement history shows its correct non-zero balance
+- [x] The balance list is not hardcoded to 4 rows — adding a 5th seeded bucket (test fixture) results in 5 rows
 
 ### F05. Reserve Buckets API Endpoint
 - [ ] `GET /reserve-buckets` returns all seeded records with `id`, `name`, `isActive`, and `splitPercentage` populated
@@ -362,7 +362,7 @@ graph TD
 - [x] Seeded `ReserveBucket` records from the migration (F01) are correctly retrievable through `ICashFlowRepository.GetReserveBuckets()` and resolved by `ReserveBucketNameResolver` (F02) to accept/reject bucket names on withdrawal/update
 - [x] Seeded `ReserveBucket` records (F01) are correctly consumed by the income-split computation (F03) to determine which buckets participate and at what percentage
 - [x] `ReserveMovement.Bucket` entity references (F02) are correctly created by the income-split flow (F03) — one movement per active bucket, correctly referencing that bucket
-- [ ] Seeded `ReserveBucket` records (F01) and `ReserveMovement.Bucket` references (F02) are both correctly consumed by `GetBucketBalances()` (F04), producing one balance row per bucket including inactive ones
+- [x] Seeded `ReserveBucket` records (F01) and `ReserveMovement.Bucket` references (F02) are both correctly consumed by `GetBucketBalances()` (F04), producing one balance row per bucket including inactive ones
 - [ ] Seeded `ReserveBucket` records (F01) are correctly returned by `GET /reserve-buckets` (F05), including `id`, `name`, `isActive`, and `splitPercentage`
 - [ ] The split-result response (F03), bucket balances (F04), and bucket list (F05) are correctly fetched and rendered in both the web Reserva page (F06) and the WPF Reserva view (F07), including the percentage-sum warning computed from F05's data
 - [ ] Seeded `ReserveBucket` records (F01) are correctly resolved by name during spreadsheet import (F08), and the resulting `ReserveMovement`s correctly reference those bucket entities (F02)

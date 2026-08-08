@@ -242,6 +242,34 @@ public class ReserveServiceTests
     }
 
     [Fact]
+    public void GetBucketBalances_IncludesInactiveBucketsWithTheirBalance()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
+        repository.ReserveBuckets.RemoveAll(b => b.Name == "Gleison");
+        var retiredGleison = ReserveBucket.Create("Gleison", 16.67m, isActive: false);
+        repository.ReserveBuckets.Add(retiredGleison);
+        repository.ReserveMovements.Add(ReserveMovement.Create(retiredGleison, 75m, new DateOnly(2026, 7, 1), "Before retirement"));
+        var service = new ReserveService(repository);
+
+        var balances = service.GetBucketBalances();
+
+        balances.Should().HaveCount(4);
+        balances.Should().ContainSingle(b => b.Bucket == "Gleison" && b.Balance == 75m);
+    }
+
+    [Fact]
+    public void GetBucketBalances_IsNotHardcodedToFourBuckets()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
+        repository.ReserveBuckets.Add(ReserveBucket.Create("Emergency", 0m, isActive: false));
+        var service = new ReserveService(repository);
+
+        var balances = service.GetBucketBalances();
+
+        balances.Should().HaveCount(5);
+    }
+
+    [Fact]
     public void GetMovementHistory_ReturnsAllMovementsOrderedByDateDescending()
     {
         var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
