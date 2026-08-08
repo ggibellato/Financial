@@ -15,9 +15,11 @@ namespace Financial.Presentation.App.ViewModels.CashFlow;
 /// </summary>
 public class ReservaViewModel : ViewModelBase
 {
-    public static readonly string[] Buckets = ["Investimento", "HouseTreats", "Ariana", "Gleison"];
+    private const decimal SplitPercentageMin = 99.99m;
+    private const decimal SplitPercentageMax = 100.01m;
 
     private readonly IReserveService _reserveService;
+    private readonly IReserveBucketService _reserveBucketService;
     private readonly Func<string, bool> _confirm;
 
     private bool _isLoading = true;
@@ -54,14 +56,40 @@ public class ReservaViewModel : ViewModelBase
 
     public ObservableCollection<ReserveBucketBalanceDTO> Balances { get; } = [];
     public ObservableCollection<ReserveMovementRow> Movements { get; } = [];
+    public ObservableCollection<ReserveBucketDTO> Buckets { get; } = [];
 
     public decimal TotalBalance => Balances.Sum(b => b.Balance);
 
+    /// <summary>Empty when active buckets' percentages sum within 99.99-100.01, a warning message otherwise.</summary>
+    public string SplitPercentageWarning
+    {
+        get
+        {
+            if (Buckets.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var activeSum = Buckets.Where(b => b.IsActive).Sum(b => b.SplitPercentage);
+            if (activeSum >= SplitPercentageMin && activeSum <= SplitPercentageMax)
+            {
+                return string.Empty;
+            }
+
+            return $"Active bucket percentages sum to {activeSum:N2}%, not 100%";
+        }
+    }
+
+    /// <summary>First active bucket's name, falling back to the first bucket overall, or empty when none loaded.</summary>
+    private string DefaultBucketName() =>
+        (Buckets.FirstOrDefault(b => b.IsActive) ?? Buckets.FirstOrDefault())?.Name ?? string.Empty;
+
     public RelayCommand RetryCommand { get; }
 
-    public ReservaViewModel(IReserveService reserveService, Func<string, bool> confirm)
+    public ReservaViewModel(IReserveService reserveService, IReserveBucketService reserveBucketService, Func<string, bool> confirm)
     {
         _reserveService = reserveService ?? throw new ArgumentNullException(nameof(reserveService));
+        _reserveBucketService = reserveBucketService ?? throw new ArgumentNullException(nameof(reserveBucketService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
 
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
@@ -89,9 +117,21 @@ public class ReservaViewModel : ViewModelBase
         {
             var balancesTask = Task.Run(() => _reserveService.GetBucketBalances());
             var movementsTask = Task.Run(() => _reserveService.GetMovementHistory());
-            await Task.WhenAll(balancesTask, movementsTask);
+            var bucketsTask = Task.Run(() =>
+            {
+                try
+                {
+                    return _reserveBucketService.GetReserveBuckets();
+                }
+                catch
+                {
+                    return (IReadOnlyList<ReserveBucketDTO>)[];
+                }
+            });
+            await Task.WhenAll(balancesTask, movementsTask, bucketsTask);
             var balances = balancesTask.Result;
             var movements = movementsTask.Result;
+            var buckets = bucketsTask.Result;
 
             if (requestId != _refreshRequestId)
             {
@@ -102,6 +142,13 @@ public class ReservaViewModel : ViewModelBase
             OnPropertyChanged(nameof(TotalBalance));
 
             ReplaceAll(Movements, ReserveMovementRow.BuildRows(movements));
+
+            ReplaceAll(Buckets, buckets);
+            OnPropertyChanged(nameof(SplitPercentageWarning));
+            if (string.IsNullOrEmpty(WithdrawalBucket))
+            {
+                WithdrawalBucket = DefaultBucketName();
+            }
         }
         catch (Exception ex)
         {
@@ -267,7 +314,7 @@ public class ReservaViewModel : ViewModelBase
     #region Withdrawal
 
     private bool _isWithdrawalFormOpen;
-    private string _withdrawalBucket = Buckets[0];
+    private string _withdrawalBucket = string.Empty;
     private string _withdrawalAmount = string.Empty;
     private DateTime? _withdrawalDate;
     private string _withdrawalDescription = string.Empty;
@@ -330,7 +377,7 @@ public class ReservaViewModel : ViewModelBase
     private void ShowWithdrawalForm()
     {
         CloseAllForms();
-        WithdrawalBucket = Buckets[0];
+        WithdrawalBucket = DefaultBucketName();
         WithdrawalAmount = string.Empty;
         WithdrawalDate = DateTime.Today;
         WithdrawalDescription = string.Empty;
@@ -411,7 +458,7 @@ public class ReservaViewModel : ViewModelBase
 
     private bool _isEditFormOpen;
     private Guid? _editingMovementId;
-    private string _editBucket = Buckets[0];
+    private string _editBucket = string.Empty;
     private string _editAmount = string.Empty;
     private DateTime? _editDate;
     private string _editDescription = string.Empty;

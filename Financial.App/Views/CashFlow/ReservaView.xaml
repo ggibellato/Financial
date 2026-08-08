@@ -23,9 +23,12 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
-                <Button Content="New Income Split" Command="{Binding ShowSplitFormCommand}"/>
-                <Button Content="New Withdrawal" Margin="8,0,0,0" Command="{Binding ShowWithdrawalFormCommand}"/>
+            <StackPanel Grid.Row="0" Orientation="Vertical" Margin="0,0,0,12">
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="New Income Split" Command="{Binding ShowSplitFormCommand}"/>
+                    <Button Content="New Withdrawal" Margin="8,0,0,0" Command="{Binding ShowWithdrawalFormCommand}"/>
+                </StackPanel>
+                <TextBlock Foreground="Red" TextWrapping="Wrap" Margin="0,4,0,0" Text="{Binding SplitPercentageWarning}"/>
             </StackPanel>
 
             <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,0,0,16">
