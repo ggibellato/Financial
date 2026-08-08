@@ -2,10 +2,11 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ReservaPage from '../ReservaPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { ReserveBucketBalanceDto, ReserveMovementDto } from '../../api/types'
+import type { ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../../api/types'
 
 const getReserveBalancesMock = vi.fn<FinancialApiClient['getReserveBalances']>()
 const getReserveMovementsMock = vi.fn<FinancialApiClient['getReserveMovements']>()
+const getReserveBucketsMock = vi.fn<FinancialApiClient['getReserveBuckets']>()
 const postIncomeSplitMock = vi.fn<FinancialApiClient['postIncomeSplit']>()
 const postWithdrawalMock = vi.fn<FinancialApiClient['postWithdrawal']>()
 const updateReserveMovementMock = vi.fn<FinancialApiClient['updateReserveMovement']>()
@@ -15,6 +16,7 @@ vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getReserveBalances: getReserveBalancesMock,
     getReserveMovements: getReserveMovementsMock,
+    getReserveBuckets: getReserveBucketsMock,
     postIncomeSplit: postIncomeSplitMock,
     postWithdrawal: postWithdrawalMock,
     updateReserveMovement: updateReserveMovementMock,
@@ -36,16 +38,25 @@ const MOVEMENTS: ReserveMovementDto[] = [
   { id: 'm4', bucket: 'Gleison', amount: 327.17, date: '2026-07-17', description: 'Ramsay' },
 ]
 
+const BUCKETS: ReserveBucketDto[] = [
+  { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 33.33 },
+  { id: 'b2', name: 'HouseTreats', isActive: true, splitPercentage: 33.33 },
+  { id: 'b3', name: 'Ariana', isActive: true, splitPercentage: 16.67 },
+  { id: 'b4', name: 'Gleison', isActive: true, splitPercentage: 16.67 },
+]
+
 describe('ReservaPage', () => {
   beforeEach(() => {
     getReserveBalancesMock.mockReset()
     getReserveMovementsMock.mockReset()
+    getReserveBucketsMock.mockReset()
     postIncomeSplitMock.mockReset()
     postWithdrawalMock.mockReset()
     updateReserveMovementMock.mockReset()
     deleteReserveMovementMock.mockReset()
     getReserveBalancesMock.mockResolvedValue(BALANCES)
     getReserveMovementsMock.mockResolvedValue(MOVEMENTS)
+    getReserveBucketsMock.mockResolvedValue(BUCKETS)
   })
 
   it('shows a loading state before data arrives', () => {
@@ -111,10 +122,12 @@ describe('ReservaPage', () => {
 
   it('shows the posted split breakdown and total after a successful submission', async () => {
     postIncomeSplitMock.mockResolvedValue({
-      investimento: 654.33,
-      houseTreats: 654.33,
-      ariana: 327.17,
-      gleison: 327.17,
+      buckets: [
+        { bucket: 'Investimento', amount: 654.33 },
+        { bucket: 'HouseTreats', amount: 654.33 },
+        { bucket: 'Ariana', amount: 327.17 },
+        { bucket: 'Gleison', amount: 327.17 },
+      ],
       total: 1963,
     })
     render(<ReservaPage />)
@@ -200,5 +213,66 @@ describe('ReservaPage', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Delete movement' })[0])
 
     expect(deleteReserveMovementMock).not.toHaveBeenCalled()
+  })
+
+  it('lists every fetched bucket in the withdrawal and edit-movement dropdowns, including inactive ones', async () => {
+    getReserveBucketsMock.mockResolvedValue([
+      ...BUCKETS,
+      { id: 'b5', name: 'Retired', isActive: false, splitPercentage: 0 },
+    ])
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Withdrawal' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Withdrawal' }))
+
+    const withdrawalOptions = within(screen.getByLabelText('Bucket')).getAllByRole('option')
+    expect(withdrawalOptions.map((o) => o.textContent)).toEqual([
+      'Investimento',
+      'HouseTreats',
+      'Ariana',
+      'Gleison',
+      'Retired',
+    ])
+  })
+
+  it('renders a split-result row for every entry returned by the income-split response', async () => {
+    postIncomeSplitMock.mockResolvedValue({
+      buckets: [
+        { bucket: 'Investimento', amount: 981.5 },
+        { bucket: 'HouseTreats', amount: 981.5 },
+      ],
+      total: 1963,
+    })
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Income Split' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Income Split' }))
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-01' } })
+    fireEvent.change(screen.getByLabelText('Amount to Split'), { target: { value: '1963' } })
+    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Ramsay' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Post Income Split' }))
+
+    await waitFor(() => expect(screen.getByText('Income Split Posted')).toBeInTheDocument())
+    const resultPanel = screen.getByText('Income Split Posted').closest('.reserva-page__form-panel') as HTMLElement
+    expect(within(resultPanel).getAllByText('981.50')).toHaveLength(2)
+    expect(within(resultPanel).queryByText('Ariana')).not.toBeInTheDocument()
+  })
+
+  it('shows a warning banner when active bucket percentages do not sum to 100%', async () => {
+    getReserveBucketsMock.mockResolvedValue([
+      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 50 },
+      { id: 'b2', name: 'HouseTreats', isActive: true, splitPercentage: 48.5 },
+    ])
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
+    expect(screen.getByText('Active bucket percentages sum to 98.50%, not 100%')).toBeInTheDocument()
+  })
+
+  it('does not show a warning banner when active bucket percentages sum to 100%', async () => {
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getAllByText('Ramsay').length).toBe(4))
+    expect(screen.queryByText(/Active bucket percentages sum to/)).not.toBeInTheDocument()
   })
 })

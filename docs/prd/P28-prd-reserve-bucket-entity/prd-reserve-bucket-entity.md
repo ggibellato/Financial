@@ -342,10 +342,10 @@ graph TD
 - [x] No `POST`, `PUT`, or `DELETE` route exists for reserve buckets
 
 ### F06. Web Dynamic Reserve Bucket UI
-- [ ] The Reserva page's withdrawal/edit bucket dropdowns list every bucket returned by `GET /reserve-buckets`, including inactive ones
-- [ ] The split-result table renders one row per entry in the income-split response, matching however many buckets are active
-- [ ] A warning banner appears when active buckets' `splitPercentage` values sum outside 99.99–100.01, and does not appear when they sum within that band
-- [ ] If the bucket-list fetch fails, dropdowns render empty and the form's required-field validation blocks submission without a selected bucket
+- [x] The Reserva page's withdrawal/edit bucket dropdowns list every bucket returned by `GET /reserve-buckets`, including inactive ones
+- [x] The split-result table renders one row per entry in the income-split response, matching however many buckets are active
+- [x] A warning banner appears when active buckets' `splitPercentage` values sum outside 99.99–100.01, and does not appear when they sum within that band
+- [x] If the bucket-list fetch fails, dropdowns render empty and the form's required-field validation blocks submission without a selected bucket
 
 ### F07. WPF Dynamic Reserve Bucket UI
 - [ ] The WPF Reserva view's withdrawal/edit bucket combo boxes list every bucket returned by `GET /reserve-buckets`, including inactive ones

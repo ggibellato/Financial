@@ -1,7 +1,7 @@
 import { Fragment } from 'react'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
-import { RESERVE_BUCKETS, useReserva } from '../hooks/useReserva'
+import { useReserva } from '../hooks/useReserva'
 import type { EditMovementField, WithdrawalFormField } from '../hooks/useReserva'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ReservaPage.css'
@@ -33,6 +33,8 @@ export default function ReservaPage() {
     balances,
     totalBalance,
     movementRows,
+    buckets,
+    splitPercentageWarning,
     isLoading,
     error,
     retry,
@@ -110,6 +112,8 @@ export default function ReservaPage() {
         </div>
       </div>
 
+      {splitPercentageWarning && <p className="reserva-page__warning" role="alert">{splitPercentageWarning}</p>}
+
       {isSplitFormOpen && (
         <div className="reserva-page__form-panel">
           <p className="reserva-page__form-title">Post Monthly Income Split</p>
@@ -162,22 +166,12 @@ export default function ReservaPage() {
           <table className="reserva-page__table reserva-page__split-result-table data-table">
             <BalanceColumns />
             <tbody>
-              <tr>
-                <td>Investimento</td>
-                <td className="data-table__col--numeric">{formatN2(lastSplitResult.investimento)}</td>
-              </tr>
-              <tr>
-                <td>HouseTreats</td>
-                <td className="data-table__col--numeric">{formatN2(lastSplitResult.houseTreats)}</td>
-              </tr>
-              <tr>
-                <td>Ariana</td>
-                <td className="data-table__col--numeric">{formatN2(lastSplitResult.ariana)}</td>
-              </tr>
-              <tr>
-                <td>Gleison</td>
-                <td className="data-table__col--numeric">{formatN2(lastSplitResult.gleison)}</td>
-              </tr>
+              {lastSplitResult.buckets.map((entry) => (
+                <tr key={entry.bucket}>
+                  <td>{entry.bucket}</td>
+                  <td className="data-table__col--numeric">{formatN2(entry.amount)}</td>
+                </tr>
+              ))}
               <tr className="reserva-page__totals-row">
                 <td>Total</td>
                 <td className="data-table__col--numeric">{formatN2(lastSplitResult.total)}</td>
@@ -203,9 +197,9 @@ export default function ReservaPage() {
                 value={withdrawalValues.withdrawalBucket}
                 onChange={(e) => setWithdrawalField('withdrawalBucket', e.target.value)}
               >
-                {RESERVE_BUCKETS.map((bucket) => (
-                  <option key={bucket} value={bucket}>
-                    {bucket}
+                {buckets.map((bucket) => (
+                  <option key={bucket.id} value={bucket.name}>
+                    {bucket.name}
                   </option>
                 ))}
               </select>
@@ -263,9 +257,9 @@ export default function ReservaPage() {
                 value={editMovementValues.editMovementBucket}
                 onChange={(e) => setEditMovementField('editMovementBucket', e.target.value)}
               >
-                {RESERVE_BUCKETS.map((bucket) => (
-                  <option key={bucket} value={bucket}>
-                    {bucket}
+                {buckets.map((bucket) => (
+                  <option key={bucket.id} value={bucket.name}>
+                    {bucket.name}
                   </option>
                 ))}
               </select>

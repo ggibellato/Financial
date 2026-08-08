@@ -39,6 +39,7 @@ import type {
   PortfolioReferenceDto,
   RecurringBillDto,
   ReserveBucketBalanceDto,
+  ReserveBucketDto,
   ReserveMovementDto,
   TitheSummaryDto,
   TransactionCreateDto,
@@ -95,6 +96,7 @@ export interface FinancialApiClient {
   calculateXirr: (cashFlows: AssetCashFlowDto[], terminalValue: number) => Promise<XirrResultDto>
   getReserveBalances: () => Promise<ReserveBucketBalanceDto[]>
   getReserveMovements: () => Promise<ReserveMovementDto[]>
+  getReserveBuckets: () => Promise<ReserveBucketDto[]>
   postIncomeSplit: (request: IncomeSplitRequestDto) => Promise<IncomeSplitResultDto>
   postWithdrawal: (request: WithdrawalRequestDto) => Promise<ReserveMovementDto>
   updateReserveMovement: (id: string, request: UpdateReserveMovementDto) => Promise<ReserveMovementDto>
@@ -304,6 +306,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     getReserveBalances: () => request<ReserveBucketBalanceDto[]>('/reserve/balances'),
     getReserveMovements: () => request<ReserveMovementDto[]>('/reserve/movements'),
+    getReserveBuckets: () => request<ReserveBucketDto[]>('/reserve-buckets'),
     postIncomeSplit: (requestBody) =>
       request<IncomeSplitResultDto>('/reserve/income-split', {
         method: 'POST',

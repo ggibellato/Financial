@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { ApiError } from '../api/apiError'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { IncomeSplitResultDto, ReserveBucketBalanceDto, ReserveMovementDto } from '../api/types'
+import type { IncomeSplitResultDto, ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../api/types'
 
-export const RESERVE_BUCKETS = ['Investimento', 'HouseTreats', 'Ariana', 'Gleison'] as const
+const SPLIT_PERCENTAGE_MIN = 99.99
+const SPLIT_PERCENTAGE_MAX = 100.01
+const BUCKET_REQUIRED_ERROR = 'Bucket is required'
 
 export type SplitFormField = 'splitDate' | 'splitAmount' | 'splitDescription'
 
@@ -25,6 +27,7 @@ export interface ReserveMovementRow extends ReserveMovementDto {
 interface ReservaState {
   balances: ReserveBucketBalanceDto[]
   movements: ReserveMovementDto[]
+  buckets: ReserveBucketDto[]
   isLoading: boolean
   error: string | null
   retryCount: number
@@ -55,7 +58,10 @@ interface ReservaState {
 
 type ReservaAction =
   | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: { balances: ReserveBucketBalanceDto[]; movements: ReserveMovementDto[] } }
+  | {
+      type: 'FETCH_SUCCESS'
+      payload: { balances: ReserveBucketBalanceDto[]; movements: ReserveMovementDto[]; buckets?: ReserveBucketDto[] }
+    }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
   | { type: 'SHOW_SPLIT_FORM' }
@@ -87,8 +93,7 @@ const BLANK_SPLIT_FORM = {
   splitDescription: '',
 } as const
 
-const BLANK_WITHDRAWAL_FORM = {
-  withdrawalBucket: RESERVE_BUCKETS[0],
+const BLANK_WITHDRAWAL_FORM_FIELDS = {
   withdrawalAmount: '',
   withdrawalDate: '',
   withdrawalDescription: '',
@@ -97,6 +102,7 @@ const BLANK_WITHDRAWAL_FORM = {
 const INITIAL_STATE: ReservaState = {
   balances: [],
   movements: [],
+  buckets: [],
   isLoading: true,
   error: null,
   retryCount: 0,
@@ -106,11 +112,12 @@ const INITIAL_STATE: ReservaState = {
   splitError: null,
   lastSplitResult: null,
   isWithdrawalFormOpen: false,
-  ...BLANK_WITHDRAWAL_FORM,
+  withdrawalBucket: '',
+  ...BLANK_WITHDRAWAL_FORM_FIELDS,
   isSubmittingWithdrawal: false,
   withdrawalError: null,
   editingMovementId: null,
-  editMovementBucket: RESERVE_BUCKETS[0],
+  editMovementBucket: '',
   editMovementAmount: '',
   editMovementDate: '',
   editMovementDescription: '',
@@ -124,8 +131,17 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
   switch (action.type) {
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null }
-    case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, balances: action.payload.balances, movements: action.payload.movements }
+    case 'FETCH_SUCCESS': {
+      const buckets = action.payload.buckets ?? state.buckets
+      return {
+        ...state,
+        isLoading: false,
+        balances: action.payload.balances,
+        movements: action.payload.movements,
+        buckets,
+        withdrawalBucket: state.withdrawalBucket || defaultBucketName(buckets),
+      }
+    }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
@@ -153,13 +169,25 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
     case 'SHOW_WITHDRAWAL_FORM':
       return { ...state, isWithdrawalFormOpen: true }
     case 'CANCEL_WITHDRAWAL_FORM':
-      return { ...state, ...BLANK_WITHDRAWAL_FORM, isWithdrawalFormOpen: false, withdrawalError: null }
+      return {
+        ...state,
+        ...BLANK_WITHDRAWAL_FORM_FIELDS,
+        withdrawalBucket: defaultBucketName(state.buckets),
+        isWithdrawalFormOpen: false,
+        withdrawalError: null,
+      }
     case 'SET_WITHDRAWAL_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'WITHDRAWAL_START':
       return { ...state, isSubmittingWithdrawal: true, withdrawalError: null }
     case 'WITHDRAWAL_SUCCESS':
-      return { ...state, ...BLANK_WITHDRAWAL_FORM, isWithdrawalFormOpen: false, isSubmittingWithdrawal: false }
+      return {
+        ...state,
+        ...BLANK_WITHDRAWAL_FORM_FIELDS,
+        withdrawalBucket: defaultBucketName(state.buckets),
+        isWithdrawalFormOpen: false,
+        isSubmittingWithdrawal: false,
+      }
     case 'WITHDRAWAL_ERROR':
       return { ...state, isSubmittingWithdrawal: false, withdrawalError: action.payload }
     case 'SHOW_EDIT_MOVEMENT_FORM':
@@ -212,6 +240,8 @@ export interface ReservaData {
   totalBalance: number
   movements: ReserveMovementDto[]
   movementRows: ReserveMovementRow[]
+  buckets: ReserveBucketDto[]
+  splitPercentageWarning: string | null
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -275,14 +305,33 @@ function buildMovementRows(movements: ReserveMovementDto[]): ReserveMovementRow[
   })
 }
 
+function computeSplitPercentageWarning(buckets: ReserveBucketDto[]): string | null {
+  if (buckets.length === 0) return null
+
+  const activeSum = buckets.reduce((sum, b) => (b.isActive ? sum + b.splitPercentage : sum), 0)
+
+  if (activeSum >= SPLIT_PERCENTAGE_MIN && activeSum <= SPLIT_PERCENTAGE_MAX) return null
+
+  return `Active bucket percentages sum to ${activeSum.toFixed(2)}%, not 100%`
+}
+
+function defaultBucketName(buckets: ReserveBucketDto[]): string {
+  return (buckets.find((b) => b.isActive) ?? buckets[0])?.name ?? ''
+}
+
 export function useReserva(): ReservaData {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
-  const fetchReservaData = useCallback(() => {
+  const fetchReservaData = useCallback((options?: { includeBuckets?: boolean }) => {
+    const includeBuckets = options?.includeBuckets ?? true
     dispatch({ type: 'FETCH_START' })
-    void Promise.all([apiClient.getReserveBalances(), apiClient.getReserveMovements()])
-      .then(([balances, movements]) => dispatch({ type: 'FETCH_SUCCESS', payload: { balances, movements } }))
+    void Promise.all([
+      apiClient.getReserveBalances(),
+      apiClient.getReserveMovements(),
+      includeBuckets ? apiClient.getReserveBuckets().catch(() => []) : Promise.resolve(undefined),
+    ])
+      .then(([balances, movements, buckets]) => dispatch({ type: 'FETCH_SUCCESS', payload: { balances, movements, buckets } }))
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: err instanceof Error ? err.message : 'Unable to load Reserva data' })
       })
@@ -298,6 +347,8 @@ export function useReserva(): ReservaData {
   )
 
   const movementRows = useMemo(() => buildMovementRows(state.movements), [state.movements])
+
+  const splitPercentageWarning = useMemo(() => computeSplitPercentageWarning(state.buckets), [state.buckets])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
@@ -358,7 +409,7 @@ export function useReserva(): ReservaData {
       .postIncomeSplit({ date: splitDate, amount, description: splitDescription })
       .then((result) => {
         dispatch({ type: 'SPLIT_SUCCESS', payload: result })
-        fetchReservaData()
+        fetchReservaData({ includeBuckets: false })
       })
       .catch((err: unknown) => {
         dispatch({
@@ -381,7 +432,7 @@ export function useReserva(): ReservaData {
       })
       .then(() => {
         dispatch({ type: 'WITHDRAWAL_SUCCESS' })
-        fetchReservaData()
+        fetchReservaData({ includeBuckets: false })
       })
       .catch((err: unknown) => {
         if (err instanceof ApiError && err.status === 409 && !confirmed) {
@@ -401,7 +452,12 @@ export function useReserva(): ReservaData {
   }
 
   function submitWithdrawal() {
-    const { withdrawalAmount, withdrawalDate, withdrawalDescription } = state
+    const { withdrawalBucket, withdrawalAmount, withdrawalDate, withdrawalDescription } = state
+
+    if (!withdrawalBucket.trim()) {
+      dispatch({ type: 'WITHDRAWAL_ERROR', payload: BUCKET_REQUIRED_ERROR })
+      return
+    }
 
     const amount = Number(withdrawalAmount)
     if (!withdrawalAmount.trim() || !isFinite(amount) || amount <= 0) {
@@ -426,6 +482,11 @@ export function useReserva(): ReservaData {
   function saveMovementEdit() {
     const { editingMovementId, editMovementBucket, editMovementAmount, editMovementDate, editMovementDescription } = state
     if (!editingMovementId) return
+
+    if (!editMovementBucket.trim()) {
+      dispatch({ type: 'SAVE_MOVEMENT_ERROR', payload: BUCKET_REQUIRED_ERROR })
+      return
+    }
 
     const amount = Number(editMovementAmount)
     if (!editMovementAmount.trim() || !isFinite(amount)) {
@@ -454,7 +515,7 @@ export function useReserva(): ReservaData {
       })
       .then(() => {
         dispatch({ type: 'SAVE_MOVEMENT_SUCCESS' })
-        fetchReservaData()
+        fetchReservaData({ includeBuckets: false })
       })
       .catch((err: unknown) => {
         dispatch({
@@ -471,7 +532,7 @@ export function useReserva(): ReservaData {
       .deleteReserveMovement(id)
       .then(() => {
         dispatch({ type: 'DELETE_MOVEMENT_SUCCESS' })
-        fetchReservaData()
+        fetchReservaData({ includeBuckets: false })
       })
       .catch((err: unknown) => {
         dispatch({
@@ -486,6 +547,8 @@ export function useReserva(): ReservaData {
     totalBalance,
     movements: state.movements,
     movementRows,
+    buckets: state.buckets,
+    splitPercentageWarning,
     isLoading: state.isLoading,
     error: state.error,
     retry,
