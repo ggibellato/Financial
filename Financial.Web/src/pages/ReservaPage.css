@@ -196,3 +196,12 @@
   color: var(--error, #c0392b);
   width: 100%;
 }
+
+.reserva-page__warning {
+  margin: 8px 0;
+  padding: 8px 12px;
+  color: var(--warning-text, #8a6d00);
+  background: var(--warning-bg, #fff8e1);
+  border: 1px solid var(--warning-border, #f0d878);
+  border-radius: 4px;
+}
