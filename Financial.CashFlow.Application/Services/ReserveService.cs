@@ -8,10 +8,9 @@ namespace Financial.CashFlow.Application.Services;
 
 public sealed class ReserveService : IReserveService
 {
-    // The 4 buckets seeded by ReserveBucketMigrator. Resolving them by name here (rather than
-    // switching to _repository.GetReserveBuckets() for iteration) keeps this feature's behavior
-    // byte-identical to before - iterating whatever buckets the repository holds is a later,
-    // separate change.
+    // Used only by GetBucketBalances, which still lists exactly these 4 buckets by name (F04's
+    // job is to switch it to iterating whatever the repository holds, active or not).
+    // PostIncomeSplitAsync no longer uses this - it iterates active repository buckets directly.
     private static readonly string[] CanonicalBucketNames = ["Investimento", "HouseTreats", "Ariana", "Gleison"];
 
     private readonly ICashFlowRepository _repository;
