@@ -15,8 +15,7 @@ namespace Financial.Presentation.App.ViewModels.CashFlow;
 /// </summary>
 public class ReservaViewModel : ViewModelBase
 {
-    private const decimal SplitPercentageMin = 99.99m;
-    private const decimal SplitPercentageMax = 100.01m;
+    private const decimal SplitPercentageTolerance = 0.01m;
 
     private readonly IReserveService _reserveService;
     private readonly IReserveBucketService _reserveBucketService;
@@ -60,6 +59,8 @@ public class ReservaViewModel : ViewModelBase
 
     public decimal TotalBalance => Balances.Sum(b => b.Balance);
 
+    private IEnumerable<ReserveBucketDTO> ActiveBuckets => Buckets.Where(b => b.IsActive);
+
     /// <summary>Empty when active buckets' percentages sum within 99.99-100.01, a warning message otherwise.</summary>
     public string SplitPercentageWarning
     {
@@ -70,8 +71,8 @@ public class ReservaViewModel : ViewModelBase
                 return string.Empty;
             }
 
-            var activeSum = Buckets.Where(b => b.IsActive).Sum(b => b.SplitPercentage);
-            if (activeSum >= SplitPercentageMin && activeSum <= SplitPercentageMax)
+            var activeSum = ActiveBuckets.Sum(b => b.SplitPercentage);
+            if (Math.Abs(activeSum - 100m) <= SplitPercentageTolerance)
             {
                 return string.Empty;
             }
@@ -82,7 +83,7 @@ public class ReservaViewModel : ViewModelBase
 
     /// <summary>First active bucket's name, falling back to the first bucket overall, or empty when none loaded.</summary>
     private string DefaultBucketName() =>
-        (Buckets.FirstOrDefault(b => b.IsActive) ?? Buckets.FirstOrDefault())?.Name ?? string.Empty;
+        (ActiveBuckets.FirstOrDefault() ?? Buckets.FirstOrDefault())?.Name ?? string.Empty;
 
     public RelayCommand RetryCommand { get; }
 
@@ -117,17 +118,7 @@ public class ReservaViewModel : ViewModelBase
         {
             var balancesTask = Task.Run(() => _reserveService.GetBucketBalances());
             var movementsTask = Task.Run(() => _reserveService.GetMovementHistory());
-            var bucketsTask = Task.Run(() =>
-            {
-                try
-                {
-                    return _reserveBucketService.GetReserveBuckets();
-                }
-                catch
-                {
-                    return (IReadOnlyList<ReserveBucketDTO>)[];
-                }
-            });
+            var bucketsTask = Task.Run(TryGetReserveBuckets);
             await Task.WhenAll(balancesTask, movementsTask, bucketsTask);
             var balances = balancesTask.Result;
             var movements = movementsTask.Result;
@@ -163,6 +154,19 @@ public class ReservaViewModel : ViewModelBase
             {
                 IsLoading = false;
             }
+        }
+    }
+
+    /// <summary>Bucket metadata is optional display data: a failure here degrades to an empty list instead of failing the whole refresh.</summary>
+    private IReadOnlyList<ReserveBucketDTO> TryGetReserveBuckets()
+    {
+        try
+        {
+            return _reserveBucketService.GetReserveBuckets();
+        }
+        catch
+        {
+            return [];
         }
     }
 

@@ -10,12 +10,7 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <TextBlock>
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="{}{0}: {1:N2}">
-                                        <Binding Path="Bucket"/>
-                                        <Binding Path="Amount"/>
-                                    </MultiBinding>
-                                </TextBlock.Text>
+                                <Run Text="{Binding Bucket, Mode=OneWay}"/><Run Text=": "/><Run Text="{Binding Amount, Mode=OneWay, StringFormat=N2}"/>
                             </TextBlock>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
