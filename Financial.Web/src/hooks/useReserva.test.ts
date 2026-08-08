@@ -304,6 +304,39 @@ describe('useReserva', () => {
     expect(result.current.withdrawalBucket).toBe('Investimento')
   })
 
+  it('defaults the withdrawal bucket to the first active bucket, skipping a leading inactive one', async () => {
+    getReserveBucketsMock.mockResolvedValue([
+      { id: 'b0', name: 'Retired', isActive: false, splitPercentage: 0 },
+      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 100 },
+    ])
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.withdrawalBucket).toBe('Investimento')
+  })
+
+  it('does not re-fetch the bucket list after a mutation-triggered refresh', async () => {
+    postWithdrawalMock.mockResolvedValue({
+      id: 'm2',
+      bucket: 'Investimento',
+      amount: -30,
+      date: '2026-07-01',
+      description: 'Groceries top-up',
+    })
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(getReserveBucketsMock).toHaveBeenCalledTimes(1)
+
+    act(() => result.current.setWithdrawalField('withdrawalAmount', '30'))
+    act(() => result.current.setWithdrawalField('withdrawalDate', '2026-07-01'))
+    act(() => result.current.setWithdrawalField('withdrawalDescription', 'Groceries top-up'))
+    act(() => result.current.submitWithdrawal())
+
+    await waitFor(() => expect(getReserveBalancesMock).toHaveBeenCalledTimes(2))
+    expect(getReserveBucketsMock).toHaveBeenCalledTimes(1)
+    expect(result.current.buckets).toEqual(BUCKETS)
+  })
+
   it('reports no split-percentage warning when active buckets sum to 100%', async () => {
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
