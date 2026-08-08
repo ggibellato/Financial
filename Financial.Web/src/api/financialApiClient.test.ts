@@ -17,6 +17,7 @@ import type {
   MaeLedgerTotalsDto,
   RecurringBillDto,
   ReserveBucketBalanceDto,
+  ReserveBucketDto,
   ReserveMovementDto,
   TransferDto,
   TreeNodeDto,
@@ -352,6 +353,19 @@ describe('financialApiClient', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/reserve/movements`)
   })
 
+  it('calls reserve buckets endpoint', async () => {
+    const responseBody: ReserveBucketDto[] = [
+      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 33.33 },
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getReserveBuckets()
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/reserve-buckets`)
+  })
+
   it('posts an income split request', async () => {
     const requestBody: IncomeSplitRequestDto = {
       date: '2026-07-01',
@@ -359,10 +373,12 @@ describe('financialApiClient', () => {
       description: 'Ramsay',
     }
     const responseBody: IncomeSplitResultDto = {
-      investimento: 654.33,
-      houseTreats: 654.33,
-      ariana: 327.17,
-      gleison: 327.17,
+      buckets: [
+        { bucket: 'Investimento', amount: 654.33 },
+        { bucket: 'HouseTreats', amount: 654.33 },
+        { bucket: 'Ariana', amount: 327.17 },
+        { bucket: 'Gleison', amount: 327.17 },
+      ],
       total: 1963,
     }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))

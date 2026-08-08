@@ -266,6 +266,13 @@ export interface ReserveBucketBalanceDto {
   balance: number
 }
 
+export interface ReserveBucketDto {
+  id: string
+  name: string
+  isActive: boolean
+  splitPercentage: number
+}
+
 export interface ReserveMovementDto {
   id: string
   bucket: string
@@ -280,11 +287,13 @@ export interface IncomeSplitRequestDto {
   description: string
 }
 
+export interface BucketSplitAmountDto {
+  bucket: string
+  amount: number
+}
+
 export interface IncomeSplitResultDto {
-  investimento: number
-  houseTreats: number
-  ariana: number
-  gleison: number
+  buckets: BucketSplitAmountDto[]
   total: number
 }
 
