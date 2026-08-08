@@ -334,6 +334,29 @@ public class ReservaViewModelTests
     }
 
     [Fact]
+    public async Task DeleteMovement_DoesNotReloadBuckets()
+    {
+        // A mutation-triggered refresh must not rebuild the Buckets collection: doing so clears it
+        // before re-adding items, which would silently reset a still-open Withdrawal/Edit form's
+        // ComboBox selection (the movement grid's row actions aren't gated behind those forms being
+        // closed). Buckets are seeded-only and never change mid-session, so skipping the reload is safe.
+        var bucketService = new StubReserveBucketService { ReserveBuckets = DefaultBuckets };
+        var (viewModel, _) = CreateViewModel(_ => true, bucketService);
+        await viewModel.RefreshAsync();
+        var callCountAfterInitialLoad = bucketService.GetReserveBucketsCallCount;
+        var row = new ReserveMovementRow
+        {
+            Id = Guid.NewGuid(), Bucket = "Investimento", Amount = 10m,
+            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Test",
+        };
+
+        await viewModel.DeleteMovementAsync(row);
+
+        bucketService.GetReserveBucketsCallCount.Should().Be(callCountAfterInitialLoad);
+        viewModel.Buckets.Should().HaveCount(4);
+    }
+
+    [Fact]
     public async Task SubmitWithdrawal_NoBucketSelected_BlocksSaveWithoutServiceCall()
     {
         var bucketService = new StubReserveBucketService { ThrowOnGet = new InvalidOperationException("Buckets unavailable") };
