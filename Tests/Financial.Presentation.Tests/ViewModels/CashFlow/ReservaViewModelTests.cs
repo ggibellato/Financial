@@ -6,13 +6,23 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 public class ReservaViewModelTests
 {
+    private static readonly List<ReserveBucketDTO> DefaultBuckets =
+    [
+        new() { Id = Guid.NewGuid(), Name = "Investimento", IsActive = true, SplitPercentage = 33.33m },
+        new() { Id = Guid.NewGuid(), Name = "HouseTreats", IsActive = true, SplitPercentage = 33.33m },
+        new() { Id = Guid.NewGuid(), Name = "Ariana", IsActive = true, SplitPercentage = 16.67m },
+        new() { Id = Guid.NewGuid(), Name = "Gleison", IsActive = true, SplitPercentage = 16.67m },
+    ];
+
     private static (ReservaViewModel ViewModel, StubReserveService Service) CreateViewModel(bool confirm = true) =>
         CreateViewModel(_ => confirm);
 
-    private static (ReservaViewModel ViewModel, StubReserveService Service) CreateViewModel(Func<string, bool> confirm)
+    private static (ReservaViewModel ViewModel, StubReserveService Service) CreateViewModel(
+        Func<string, bool> confirm, StubReserveBucketService? bucketService = null)
     {
         var service = new StubReserveService();
-        var viewModel = new ReservaViewModel(service, confirm);
+        var buckets = bucketService ?? new StubReserveBucketService { ReserveBuckets = DefaultBuckets };
+        var viewModel = new ReservaViewModel(service, buckets, confirm);
         return (viewModel, service);
     }
 
@@ -118,6 +128,7 @@ public class ReservaViewModelTests
     public async Task SubmitWithdrawal_Overdraft_ConfirmedTrue_ResubmitsWithConfirmedFlag()
     {
         var (viewModel, service) = CreateViewModel(confirm: true);
+        await viewModel.RefreshAsync();
         service.ThrowOverdraftOnUnconfirmedWithdrawal = true;
         viewModel.ShowWithdrawalFormCommand.Execute(null);
         viewModel.WithdrawalAmount = "5000";
@@ -135,6 +146,7 @@ public class ReservaViewModelTests
     public async Task SubmitWithdrawal_Overdraft_ConfirmedFalse_KeepsFormOpenWithError()
     {
         var (viewModel, service) = CreateViewModel(confirm: false);
+        await viewModel.RefreshAsync();
         service.ThrowOverdraftOnUnconfirmedWithdrawal = true;
         service.OverdraftMessage = "This withdrawal exceeds Investimento's balance of 10.00.";
         viewModel.ShowWithdrawalFormCommand.Execute(null);
@@ -153,6 +165,7 @@ public class ReservaViewModelTests
     public async Task SubmitWithdrawal_BackendRejects_KeepsFormOpenWithValuesAndShowsServerError()
     {
         var (viewModel, service) = CreateViewModel();
+        await viewModel.RefreshAsync();
         service.ThrowOnWithdrawal = new InvalidOperationException("Unrecognized bucket.");
         viewModel.ShowWithdrawalFormCommand.Execute(null);
         viewModel.WithdrawalAmount = "50";
@@ -240,5 +253,99 @@ public class ReservaViewModelTests
 
         viewModel.IsWithdrawalFormOpen.Should().BeFalse();
         viewModel.IsSplitFormOpen.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RefreshAsync_LoadsAllBucketsIncludingInactive()
+    {
+        var bucketService = new StubReserveBucketService
+        {
+            ReserveBuckets =
+            [
+                .. DefaultBuckets,
+                new ReserveBucketDTO { Id = Guid.NewGuid(), Name = "Retired", IsActive = false, SplitPercentage = 0m },
+            ],
+        };
+        var (viewModel, _) = CreateViewModel(_ => true, bucketService);
+
+        await viewModel.RefreshAsync();
+
+        viewModel.Buckets.Should().HaveCount(5);
+        viewModel.Buckets.Should().Contain(b => b.Name == "Retired" && !b.IsActive);
+    }
+
+    [Fact]
+    public async Task ShowWithdrawalForm_DefaultsBucketToFirstActive_SkippingALeadingInactiveOne()
+    {
+        var bucketService = new StubReserveBucketService
+        {
+            ReserveBuckets =
+            [
+                new ReserveBucketDTO { Id = Guid.NewGuid(), Name = "Retired", IsActive = false, SplitPercentage = 0m },
+                new ReserveBucketDTO { Id = Guid.NewGuid(), Name = "Investimento", IsActive = true, SplitPercentage = 100m },
+            ],
+        };
+        var (viewModel, _) = CreateViewModel(_ => true, bucketService);
+        await viewModel.RefreshAsync();
+
+        viewModel.ShowWithdrawalFormCommand.Execute(null);
+
+        viewModel.WithdrawalBucket.Should().Be("Investimento");
+    }
+
+    [Fact]
+    public async Task SplitPercentageWarning_EmptyWhenActiveBucketsSumTo100Percent()
+    {
+        var (viewModel, _) = CreateViewModel();
+
+        await viewModel.RefreshAsync();
+
+        viewModel.SplitPercentageWarning.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task SplitPercentageWarning_SetWhenActiveBucketsDoNotSumTo100Percent()
+    {
+        var bucketService = new StubReserveBucketService
+        {
+            ReserveBuckets =
+            [
+                new ReserveBucketDTO { Id = Guid.NewGuid(), Name = "Investimento", IsActive = true, SplitPercentage = 50m },
+                new ReserveBucketDTO { Id = Guid.NewGuid(), Name = "HouseTreats", IsActive = true, SplitPercentage = 48.5m },
+            ],
+        };
+        var (viewModel, _) = CreateViewModel(_ => true, bucketService);
+
+        await viewModel.RefreshAsync();
+
+        viewModel.SplitPercentageWarning.Should().Be("Active bucket percentages sum to 98.50%, not 100%");
+    }
+
+    [Fact]
+    public async Task RefreshAsync_BucketServiceThrows_LeavesBucketsEmptyWithoutSettingPageError()
+    {
+        var bucketService = new StubReserveBucketService { ThrowOnGet = new InvalidOperationException("Buckets unavailable") };
+        var (viewModel, _) = CreateViewModel(_ => true, bucketService);
+
+        await viewModel.RefreshAsync();
+
+        viewModel.Buckets.Should().BeEmpty();
+        viewModel.HasError.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SubmitWithdrawal_NoBucketSelected_BlocksSaveWithoutServiceCall()
+    {
+        var bucketService = new StubReserveBucketService { ThrowOnGet = new InvalidOperationException("Buckets unavailable") };
+        var (viewModel, service) = CreateViewModel(_ => true, bucketService);
+        await viewModel.RefreshAsync();
+        viewModel.ShowWithdrawalFormCommand.Execute(null);
+        viewModel.WithdrawalAmount = "30";
+        viewModel.WithdrawalDescription = "Groceries top-up";
+
+        await viewModel.SubmitWithdrawalAsync();
+
+        service.WithdrawalRequests.Should().BeEmpty();
+        viewModel.WithdrawalSaveError.Should().Be("Bucket is required.");
     }
 }
