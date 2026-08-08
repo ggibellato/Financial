@@ -337,9 +337,9 @@ graph TD
 - [x] The balance list is not hardcoded to 4 rows — adding a 5th seeded bucket (test fixture) results in 5 rows
 
 ### F05. Reserve Buckets API Endpoint
-- [ ] `GET /reserve-buckets` returns all seeded records with `id`, `name`, `isActive`, and `splitPercentage` populated
-- [ ] The endpoint requires no request parameters and returns the full, unfiltered list regardless of `isActive` value
-- [ ] No `POST`, `PUT`, or `DELETE` route exists for reserve buckets
+- [x] `GET /reserve-buckets` returns all seeded records with `id`, `name`, `isActive`, and `splitPercentage` populated
+- [x] The endpoint requires no request parameters and returns the full, unfiltered list regardless of `isActive` value
+- [x] No `POST`, `PUT`, or `DELETE` route exists for reserve buckets
 
 ### F06. Web Dynamic Reserve Bucket UI
 - [ ] The Reserva page's withdrawal/edit bucket dropdowns list every bucket returned by `GET /reserve-buckets`, including inactive ones
@@ -363,6 +363,6 @@ graph TD
 - [x] Seeded `ReserveBucket` records (F01) are correctly consumed by the income-split computation (F03) to determine which buckets participate and at what percentage
 - [x] `ReserveMovement.Bucket` entity references (F02) are correctly created by the income-split flow (F03) — one movement per active bucket, correctly referencing that bucket
 - [x] Seeded `ReserveBucket` records (F01) and `ReserveMovement.Bucket` references (F02) are both correctly consumed by `GetBucketBalances()` (F04), producing one balance row per bucket including inactive ones
-- [ ] Seeded `ReserveBucket` records (F01) are correctly returned by `GET /reserve-buckets` (F05), including `id`, `name`, `isActive`, and `splitPercentage`
+- [x] Seeded `ReserveBucket` records (F01) are correctly returned by `GET /reserve-buckets` (F05), including `id`, `name`, `isActive`, and `splitPercentage`
 - [ ] The split-result response (F03), bucket balances (F04), and bucket list (F05) are correctly fetched and rendered in both the web Reserva page (F06) and the WPF Reserva view (F07), including the percentage-sum warning computed from F05's data
 - [ ] Seeded `ReserveBucket` records (F01) are correctly resolved by name during spreadsheet import (F08), and the resulting `ReserveMovement`s correctly reference those bucket entities (F02)
