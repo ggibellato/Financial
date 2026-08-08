@@ -280,7 +280,17 @@ internal sealed class StubReserveService : IReserveService
     public List<ReserveBucketBalanceDTO> Balances { get; set; } = [];
     public List<ReserveMovementDTO> Movements { get; set; } = [];
     public IncomeSplitResultDTO SplitResult { get; set; } =
-        new() { Investimento = 10m, HouseTreats = 20m, Ariana = 5m, Gleison = 5m, Total = 40m };
+        new()
+        {
+            Buckets =
+            [
+                new() { Bucket = "Investimento", Amount = 10m },
+                new() { Bucket = "HouseTreats", Amount = 20m },
+                new() { Bucket = "Ariana", Amount = 5m },
+                new() { Bucket = "Gleison", Amount = 5m }
+            ],
+            Total = 40m
+        };
     public IncomeSplitRequestDTO? LastSplitRequest { get; private set; }
     public List<WithdrawalRequestDTO> WithdrawalRequests { get; } = [];
     public bool ThrowOverdraftOnUnconfirmedWithdrawal { get; set; }

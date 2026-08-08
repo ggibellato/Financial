@@ -19,7 +19,7 @@ public class ReserveServiceTests
     }
 
     [Fact]
-    public async Task PostIncomeSplitAsync_WithValidRequest_PostsExactlyFourMovementsAndReturnsAmounts()
+    public async Task PostIncomeSplitAsync_WithValidRequest_PostsOneMovementPerActiveBucketAndReturnsAmounts()
     {
         var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
         var service = new ReserveService(repository);
@@ -30,13 +30,46 @@ public class ReserveServiceTests
         {
             repository.ReserveMovements.Should().HaveCount(4);
             repository.ReserveMovements.Should().OnlyContain(m => m.Description == "Ramsay");
-            result.Investimento.Should().Be(654.33m);
-            result.HouseTreats.Should().Be(654.33m);
-            result.Ariana.Should().Be(327.17m);
-            result.Gleison.Should().Be(327.17m);
+            result.Buckets.Should().HaveCount(4);
+            result.Buckets.Should().ContainSingle(b => b.Bucket == "Investimento" && b.Amount == 654.27m);
+            result.Buckets.Should().ContainSingle(b => b.Bucket == "HouseTreats" && b.Amount == 654.27m);
+            result.Buckets.Should().ContainSingle(b => b.Bucket == "Ariana" && b.Amount == 327.23m);
+            result.Buckets.Should().ContainSingle(b => b.Bucket == "Gleison" && b.Amount == 327.23m);
             result.Total.Should().Be(1963.00m);
             repository.SaveChangesCallCount.Should().Be(1);
         }
+    }
+
+    [Fact]
+    public async Task PostIncomeSplitAsync_WithInactiveBucket_ExcludesItFromMovementsAndResult()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
+        repository.ReserveBuckets.RemoveAll(b => b.Name == "Gleison");
+        repository.ReserveBuckets.Add(ReserveBucket.Create("Gleison", 16.67m, isActive: false));
+        var service = new ReserveService(repository);
+
+        var result = await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
+
+        using (new AssertionScope())
+        {
+            repository.ReserveMovements.Should().HaveCount(3);
+            result.Buckets.Should().HaveCount(3);
+            result.Buckets.Should().NotContain(b => b.Bucket == "Gleison");
+        }
+    }
+
+    [Fact]
+    public async Task PostIncomeSplitAsync_WithNoActiveBuckets_ThrowsArgumentExceptionBeforeTouchingRepository()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.ReserveBuckets.Add(ReserveBucket.Create("Investimento", 33.33m, isActive: false));
+        var service = new ReserveService(repository);
+
+        var act = async () => await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        repository.ReserveMovements.Should().BeEmpty();
+        repository.SaveChangesCallCount.Should().Be(0);
     }
 
     [Theory]
@@ -205,7 +238,7 @@ public class ReserveServiceTests
 
         var balances = service.GetBucketBalances();
 
-        balances.Should().ContainSingle(b => b.Bucket == "Investimento" && b.Balance == 654.33m);
+        balances.Should().ContainSingle(b => b.Bucket == "Investimento" && b.Balance == 654.27m);
     }
 
     [Fact]

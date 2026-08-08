@@ -31,4 +31,7 @@ public class ReserveBucket
             SplitPercentage = splitPercentage
         };
     }
+
+    public decimal CalculateSplitAmount(decimal totalAmount) =>
+        Math.Round(totalAmount * SplitPercentage / 100m, 2, MidpointRounding.AwayFromZero);
 }

@@ -81,4 +81,50 @@ public class ReserveBucketTests
 
         bucket.SplitPercentage.Should().Be(splitPercentage);
     }
+
+    [Fact]
+    public void CalculateSplitAmount_AppliesPercentageAndRoundsAwayFromZero()
+    {
+        var bucket = ReserveBucket.Create("Investimento", 33.33m);
+
+        // 1963 * 33.33 / 100 = 654.2679, rounds to 654.27. Note this is 6 cents off the old
+        // ReserveSplitCalculator's exact-1/3-fraction result (654.33) for the same input - an
+        // accepted, documented rounding difference from moving off compiled-in exact fractions
+        // to a stored 2-decimal percentage (see PRD Objectives).
+        var amount = bucket.CalculateSplitAmount(1963m);
+
+        amount.Should().Be(654.27m);
+    }
+
+    [Fact]
+    public void CalculateSplitAmount_WithZeroPercentage_ReturnsZero()
+    {
+        var bucket = ReserveBucket.Create("Investimento", 0m);
+
+        var amount = bucket.CalculateSplitAmount(1963m);
+
+        amount.Should().Be(0m);
+    }
+
+    [Fact]
+    public void CalculateSplitAmount_WithHundredPercentage_ReturnsTheFullAmountRounded()
+    {
+        var bucket = ReserveBucket.Create("Investimento", 100m);
+
+        var amount = bucket.CalculateSplitAmount(1963.005m);
+
+        amount.Should().Be(1963.01m);
+    }
+
+    [Fact]
+    public void CalculateSplitAmount_OnAnExactMidpoint_RoundsAwayFromZeroNotToEven()
+    {
+        var bucket = ReserveBucket.Create("Investimento", 50m);
+
+        // 1.01 * 50 / 100 = 0.505 exactly - a true midpoint. AwayFromZero rounds to 0.51;
+        // banker's rounding (ToEven) would instead round to 0.50, since 0 is even.
+        var amount = bucket.CalculateSplitAmount(1.01m);
+
+        amount.Should().Be(0.51m);
+    }
 }

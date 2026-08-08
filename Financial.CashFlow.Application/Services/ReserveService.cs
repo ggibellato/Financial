@@ -3,16 +3,14 @@ using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.CashFlow.Application.Services;
 
 public sealed class ReserveService : IReserveService
 {
-    // The 4 buckets seeded by ReserveBucketMigrator. Resolving them by name here (rather than
-    // switching to _repository.GetReserveBuckets() for iteration) keeps this feature's behavior
-    // byte-identical to before - iterating whatever buckets the repository holds is a later,
-    // separate change.
+    // Used only by GetBucketBalances, which still lists exactly these 4 buckets by name (F04's
+    // job is to switch it to iterating whatever the repository holds, active or not).
+    // PostIncomeSplitAsync no longer uses this - it iterates active repository buckets directly.
     private static readonly string[] CanonicalBucketNames = ["Investimento", "HouseTreats", "Ariana", "Gleison"];
 
     private readonly ICashFlowRepository _repository;
@@ -36,16 +34,15 @@ public sealed class ReserveService : IReserveService
             throw new ArgumentException("Description is required.", nameof(request.Description));
         }
 
-        var split = ReserveSplitCalculator.Calculate(request.Amount);
-        var buckets = ResolveCanonicalBuckets();
-
-        var movements = new[]
+        var activeBuckets = _repository.GetReserveBuckets().Where(b => b.IsActive).ToList();
+        if (activeBuckets.Count == 0)
         {
-            ReserveMovement.Create(buckets["Investimento"], split.Investimento, request.Date, request.Description),
-            ReserveMovement.Create(buckets["HouseTreats"], split.HouseTreats, request.Date, request.Description),
-            ReserveMovement.Create(buckets["Ariana"], split.Ariana, request.Date, request.Description),
-            ReserveMovement.Create(buckets["Gleison"], split.Gleison, request.Date, request.Description)
-        };
+            throw new ArgumentException("No reserve bucket is currently active.");
+        }
+
+        var movements = activeBuckets
+            .Select(bucket => ReserveMovement.Create(bucket, bucket.CalculateSplitAmount(request.Amount), request.Date, request.Description))
+            .ToList();
 
         foreach (var movement in movements)
         {
@@ -66,13 +63,14 @@ public sealed class ReserveService : IReserveService
             throw;
         }
 
+        var splitAmounts = movements
+            .Select(movement => new BucketSplitAmountDTO { Bucket = movement.Bucket.Name, Amount = movement.Amount })
+            .ToList();
+
         return new IncomeSplitResultDTO
         {
-            Investimento = split.Investimento,
-            HouseTreats = split.HouseTreats,
-            Ariana = split.Ariana,
-            Gleison = split.Gleison,
-            Total = split.Investimento + split.HouseTreats + split.Ariana + split.Gleison
+            Buckets = splitAmounts,
+            Total = splitAmounts.Sum(b => b.Amount)
         };
     }
 
