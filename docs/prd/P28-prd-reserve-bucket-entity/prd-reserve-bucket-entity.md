@@ -348,10 +348,10 @@ graph TD
 - [x] If the bucket-list fetch fails, dropdowns render empty and the form's required-field validation blocks submission without a selected bucket
 
 ### F07. WPF Dynamic Reserve Bucket UI
-- [ ] The WPF Reserva view's withdrawal/edit bucket combo boxes list every bucket returned by `GET /reserve-buckets`, including inactive ones
-- [ ] The split-result display renders dynamically, matching however many buckets are active
-- [ ] A warning is shown when active buckets' `splitPercentage` values sum outside 99.99–100.01, and is not shown when they sum within that band
-- [ ] If the fetch fails, combo boxes are empty and the form's required-field validation blocks submission without a selected bucket
+- [x] The WPF Reserva view's withdrawal/edit bucket combo boxes list every bucket returned by `GET /reserve-buckets`, including inactive ones
+- [x] The split-result display renders dynamically, matching however many buckets are active
+- [x] A warning is shown when active buckets' `splitPercentage` values sum outside 99.99–100.01, and is not shown when they sum within that band
+- [x] If the fetch fails, combo boxes are empty and the form's required-field validation blocks submission without a selected bucket
 
 ### F08. Spreadsheet Import Update for Reserve Buckets
 - [ ] A full spreadsheet import produces `ReserveMovement` records referencing seeded `ReserveBucket` entities with the same dates, amounts, and descriptions as the prior enum-based import for unchanged source data
@@ -364,5 +364,5 @@ graph TD
 - [x] `ReserveMovement.Bucket` entity references (F02) are correctly created by the income-split flow (F03) — one movement per active bucket, correctly referencing that bucket
 - [x] Seeded `ReserveBucket` records (F01) and `ReserveMovement.Bucket` references (F02) are both correctly consumed by `GetBucketBalances()` (F04), producing one balance row per bucket including inactive ones
 - [x] Seeded `ReserveBucket` records (F01) are correctly returned by `GET /reserve-buckets` (F05), including `id`, `name`, `isActive`, and `splitPercentage`
-- [ ] The split-result response (F03), bucket balances (F04), and bucket list (F05) are correctly fetched and rendered in both the web Reserva page (F06) and the WPF Reserva view (F07), including the percentage-sum warning computed from F05's data
+- [x] The split-result response (F03), bucket balances (F04), and bucket list (F05) are correctly fetched and rendered in both the web Reserva page (F06) and the WPF Reserva view (F07), including the percentage-sum warning computed from F05's data
 - [ ] Seeded `ReserveBucket` records (F01) are correctly resolved by name during spreadsheet import (F08), and the resulting `ReserveMovement`s correctly reference those bucket entities (F02)
