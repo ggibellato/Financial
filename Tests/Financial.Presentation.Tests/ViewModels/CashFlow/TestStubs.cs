@@ -347,6 +347,24 @@ internal sealed class StubReserveService : IReserveService
     }
 }
 
+internal sealed class StubReserveBucketService : IReserveBucketService
+{
+    public List<ReserveBucketDTO> ReserveBuckets { get; set; } = [];
+    public Exception? ThrowOnGet { get; set; }
+    public int GetReserveBucketsCallCount { get; private set; }
+
+    public IReadOnlyList<ReserveBucketDTO> GetReserveBuckets()
+    {
+        GetReserveBucketsCallCount++;
+        if (ThrowOnGet is { } ex)
+        {
+            throw ex;
+        }
+
+        return ReserveBuckets;
+    }
+}
+
 internal sealed class StubMensaisService : IMensaisService
 {
     public List<RecurringBillDTO> Bills { get; set; } = [];

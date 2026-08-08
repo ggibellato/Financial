@@ -6,10 +6,15 @@
             <!-- Post-save result -->
             <StackPanel Visibility="{Binding HasSplitResult, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock FontWeight="Bold" Text="Income Split Posted" Margin="0,0,0,8"/>
-                <TextBlock Text="{Binding LastSplitResult.Investimento, StringFormat='Investimento: {0:N2}'}"/>
-                <TextBlock Text="{Binding LastSplitResult.HouseTreats, StringFormat='HouseTreats: {0:N2}'}"/>
-                <TextBlock Text="{Binding LastSplitResult.Ariana, StringFormat='Ariana: {0:N2}'}"/>
-                <TextBlock Text="{Binding LastSplitResult.Gleison, StringFormat='Gleison: {0:N2}'}"/>
+                <ItemsControl ItemsSource="{Binding LastSplitResult.Buckets}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock>
+                                <Run Text="{Binding Bucket, Mode=OneWay}"/><Run Text=": "/><Run Text="{Binding Amount, Mode=OneWay, StringFormat=N2}"/>
+                            </TextBlock>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
                 <TextBlock FontWeight="Bold" Margin="0,4,0,0" Text="{Binding LastSplitResult.Total, StringFormat='Total: {0:N2}'}"/>
                 <Button Content="Close" Width="90" HorizontalAlignment="Left" Margin="0,12,0,0"
                         Command="{Binding DismissSplitResultCommand}"/>

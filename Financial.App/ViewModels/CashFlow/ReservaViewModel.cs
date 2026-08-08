@@ -15,9 +15,10 @@ namespace Financial.Presentation.App.ViewModels.CashFlow;
 /// </summary>
 public class ReservaViewModel : ViewModelBase
 {
-    public static readonly string[] Buckets = ["Investimento", "HouseTreats", "Ariana", "Gleison"];
+    private const decimal SplitPercentageTolerance = 0.01m;
 
     private readonly IReserveService _reserveService;
+    private readonly IReserveBucketService _reserveBucketService;
     private readonly Func<string, bool> _confirm;
 
     private bool _isLoading = true;
@@ -54,14 +55,42 @@ public class ReservaViewModel : ViewModelBase
 
     public ObservableCollection<ReserveBucketBalanceDTO> Balances { get; } = [];
     public ObservableCollection<ReserveMovementRow> Movements { get; } = [];
+    public ObservableCollection<ReserveBucketDTO> Buckets { get; } = [];
 
     public decimal TotalBalance => Balances.Sum(b => b.Balance);
 
+    private IEnumerable<ReserveBucketDTO> ActiveBuckets => Buckets.Where(b => b.IsActive);
+
+    /// <summary>Empty when active buckets' percentages sum within 99.99-100.01, a warning message otherwise.</summary>
+    public string SplitPercentageWarning
+    {
+        get
+        {
+            if (Buckets.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var activeSum = ActiveBuckets.Sum(b => b.SplitPercentage);
+            if (Math.Abs(activeSum - 100m) <= SplitPercentageTolerance)
+            {
+                return string.Empty;
+            }
+
+            return $"Active bucket percentages sum to {activeSum:N2}%, not 100%";
+        }
+    }
+
+    /// <summary>First active bucket's name, falling back to the first bucket overall, or empty when none loaded.</summary>
+    private string DefaultBucketName() =>
+        (ActiveBuckets.FirstOrDefault() ?? Buckets.FirstOrDefault())?.Name ?? string.Empty;
+
     public RelayCommand RetryCommand { get; }
 
-    public ReservaViewModel(IReserveService reserveService, Func<string, bool> confirm)
+    public ReservaViewModel(IReserveService reserveService, IReserveBucketService reserveBucketService, Func<string, bool> confirm)
     {
         _reserveService = reserveService ?? throw new ArgumentNullException(nameof(reserveService));
+        _reserveBucketService = reserveBucketService ?? throw new ArgumentNullException(nameof(reserveBucketService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
 
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
@@ -79,7 +108,16 @@ public class ReservaViewModel : ViewModelBase
     /// constructor's initial load racing a manual retry) by discarding a completion whose
     /// request has been superseded.
     /// </summary>
-    internal async Task RefreshAsync()
+    /// <param name="includeBuckets">
+    /// Whether to also reload <see cref="Buckets"/>. Rebuilding that collection clears it before
+    /// re-adding items, which resets a bound ComboBox's SelectedValue — harmless on initial
+    /// load/retry (no bucket form can be open yet), but a mutation-triggered refresh can run
+    /// while the Withdrawal or Edit form is still open (their form panel isn't mutually exclusive
+    /// with the movement grid's row actions), so those callers pass false to avoid silently
+    /// clearing the user's in-progress bucket selection. Buckets are seeded-only and never change
+    /// mid-session, so skipping the reload there loses nothing.
+    /// </param>
+    internal async Task RefreshAsync(bool includeBuckets = true)
     {
         var requestId = ++_refreshRequestId;
         IsLoading = true;
@@ -89,7 +127,13 @@ public class ReservaViewModel : ViewModelBase
         {
             var balancesTask = Task.Run(() => _reserveService.GetBucketBalances());
             var movementsTask = Task.Run(() => _reserveService.GetMovementHistory());
-            await Task.WhenAll(balancesTask, movementsTask);
+            var bucketsTask = includeBuckets ? Task.Run(TryGetReserveBuckets) : null;
+            var pendingTasks = new List<Task> { balancesTask, movementsTask };
+            if (bucketsTask is not null)
+            {
+                pendingTasks.Add(bucketsTask);
+            }
+            await Task.WhenAll(pendingTasks);
             var balances = balancesTask.Result;
             var movements = movementsTask.Result;
 
@@ -102,6 +146,16 @@ public class ReservaViewModel : ViewModelBase
             OnPropertyChanged(nameof(TotalBalance));
 
             ReplaceAll(Movements, ReserveMovementRow.BuildRows(movements));
+
+            if (bucketsTask is not null)
+            {
+                ReplaceAll(Buckets, bucketsTask.Result);
+                OnPropertyChanged(nameof(SplitPercentageWarning));
+                if (string.IsNullOrEmpty(WithdrawalBucket))
+                {
+                    WithdrawalBucket = DefaultBucketName();
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -116,6 +170,19 @@ public class ReservaViewModel : ViewModelBase
             {
                 IsLoading = false;
             }
+        }
+    }
+
+    /// <summary>Bucket metadata is optional display data: a failure here degrades to an empty list instead of failing the whole refresh.</summary>
+    private IReadOnlyList<ReserveBucketDTO> TryGetReserveBuckets()
+    {
+        try
+        {
+            return _reserveBucketService.GetReserveBuckets();
+        }
+        catch
+        {
+            return [];
         }
     }
 
@@ -250,7 +317,7 @@ public class ReservaViewModel : ViewModelBase
             });
 
             LastSplitResult = result;
-            await RefreshAsync();
+            await RefreshAsync(includeBuckets: false);
         }
         catch (Exception ex)
         {
@@ -267,7 +334,7 @@ public class ReservaViewModel : ViewModelBase
     #region Withdrawal
 
     private bool _isWithdrawalFormOpen;
-    private string _withdrawalBucket = Buckets[0];
+    private string _withdrawalBucket = string.Empty;
     private string _withdrawalAmount = string.Empty;
     private DateTime? _withdrawalDate;
     private string _withdrawalDescription = string.Empty;
@@ -330,7 +397,7 @@ public class ReservaViewModel : ViewModelBase
     private void ShowWithdrawalForm()
     {
         CloseAllForms();
-        WithdrawalBucket = Buckets[0];
+        WithdrawalBucket = DefaultBucketName();
         WithdrawalAmount = string.Empty;
         WithdrawalDate = DateTime.Today;
         WithdrawalDescription = string.Empty;
@@ -361,7 +428,7 @@ public class ReservaViewModel : ViewModelBase
         {
             await PostWithdrawalWithOverdraftHandlingAsync(confirmed: false);
             CloseWithdrawalForm();
-            await RefreshAsync();
+            await RefreshAsync(includeBuckets: false);
         }
         catch (Exception ex)
         {
@@ -411,7 +478,7 @@ public class ReservaViewModel : ViewModelBase
 
     private bool _isEditFormOpen;
     private Guid? _editingMovementId;
-    private string _editBucket = Buckets[0];
+    private string _editBucket = string.Empty;
     private string _editAmount = string.Empty;
     private DateTime? _editDate;
     private string _editDescription = string.Empty;
@@ -533,7 +600,7 @@ public class ReservaViewModel : ViewModelBase
             });
 
             CloseEditForm();
-            await RefreshAsync();
+            await RefreshAsync(includeBuckets: false);
         }
         catch (Exception ex)
         {
@@ -566,7 +633,7 @@ public class ReservaViewModel : ViewModelBase
         try
         {
             await _reserveService.DeleteMovementAsync(row.Id);
-            await RefreshAsync();
+            await RefreshAsync(includeBuckets: false);
         }
         catch (Exception ex)
         {

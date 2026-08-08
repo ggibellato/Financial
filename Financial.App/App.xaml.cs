@@ -66,6 +66,7 @@ namespace Financial.Presentation.App
                     services.AddTransient<MonthlyView>();
                     services.AddTransient<ReservaViewModel>(sp => new ReservaViewModel(
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IReserveService>(),
+                        sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IReserveBucketService>(),
                         msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes));
                     services.AddTransient<ReservaView>();
                     services.AddTransient<MensaisViewModel>(sp => new MensaisViewModel(
