@@ -8,11 +8,6 @@ namespace Financial.CashFlow.Application.Services;
 
 public sealed class ReserveService : IReserveService
 {
-    // Used only by GetBucketBalances, which still lists exactly these 4 buckets by name (F04's
-    // job is to switch it to iterating whatever the repository holds, active or not).
-    // PostIncomeSplitAsync no longer uses this - it iterates active repository buckets directly.
-    private static readonly string[] CanonicalBucketNames = ["Investimento", "HouseTreats", "Ariana", "Gleison"];
-
     private readonly ICashFlowRepository _repository;
 
     public ReserveService(ICashFlowRepository repository)
@@ -122,10 +117,7 @@ public sealed class ReserveService : IReserveService
             .GroupBy(m => m.Bucket)
             .ToDictionary(g => g.Key, g => g.Sum(m => m.Amount));
 
-        var buckets = ResolveCanonicalBuckets();
-
-        return CanonicalBucketNames
-            .Select(name => buckets[name])
+        return _repository.GetReserveBuckets()
             .Select(bucket => new ReserveBucketBalanceDTO
             {
                 Bucket = bucket.Name,
@@ -184,24 +176,6 @@ public sealed class ReserveService : IReserveService
 
     private decimal GetBalance(ReserveBucket bucket) =>
         _repository.GetReserveMovements().Where(m => m.Bucket == bucket).Sum(m => m.Amount);
-
-    private Dictionary<string, ReserveBucket> ResolveCanonicalBuckets()
-    {
-        var buckets = _repository.GetReserveBuckets();
-        var resolved = new Dictionary<string, ReserveBucket>();
-
-        foreach (var name in CanonicalBucketNames)
-        {
-            if (!ReserveBucketNameResolver.TryResolve(name, buckets, out var bucket))
-            {
-                throw new InvalidOperationException($"Reserve bucket '{name}' is not seeded.");
-            }
-
-            resolved[name] = bucket!;
-        }
-
-        return resolved;
-    }
 
     private static ReserveMovementDTO ToDto(ReserveMovement movement) => new()
     {
