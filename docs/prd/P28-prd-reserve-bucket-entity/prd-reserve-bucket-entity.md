@@ -324,12 +324,12 @@ graph TD
 - [x] `ReserveBucketParser` and its dedicated test file no longer exist in the codebase
 
 ### F03. Income Split Computation via Bucket Percentages
-- [ ] Posting an income split creates exactly one `ReserveMovement` per bucket with `IsActive = true`, each amount equal to `Math.Round(totalAmount * SplitPercentage / 100, 2, AwayFromZero)`
-- [ ] No movement is created for any bucket with `IsActive = false`
-- [ ] Posting an income split when zero buckets are active is rejected with a clear error and creates no movements
-- [ ] `ReserveSplitCalculator` and `ReserveSplitResult` no longer exist in the codebase
-- [ ] `IncomeSplitResultDTO` returns a per-bucket list (name, amount) plus a total, sized to the number of active buckets rather than a fixed 4 fields
-- [ ] If the save fails after movements are created in memory, all movements from that split are rolled back (none persist)
+- [x] Posting an income split creates exactly one `ReserveMovement` per bucket with `IsActive = true`, each amount equal to `Math.Round(totalAmount * SplitPercentage / 100, 2, AwayFromZero)`
+- [x] No movement is created for any bucket with `IsActive = false`
+- [x] Posting an income split when zero buckets are active is rejected with a clear error and creates no movements
+- [x] `ReserveSplitCalculator` and `ReserveSplitResult` no longer exist in the codebase
+- [x] `IncomeSplitResultDTO` returns a per-bucket list (name, amount) plus a total, sized to the number of active buckets rather than a fixed 4 fields
+- [x] If the save fails after movements are created in memory, all movements from that split are rolled back (none persist)
 
 ### F04. Reserve Bucket Balances for All Buckets
 - [ ] `GetBucketBalances()` returns exactly one row per seeded `ReserveBucket`, regardless of `IsActive`
@@ -360,8 +360,8 @@ graph TD
 
 ### Cross-Feature Integration
 - [x] Seeded `ReserveBucket` records from the migration (F01) are correctly retrievable through `ICashFlowRepository.GetReserveBuckets()` and resolved by `ReserveBucketNameResolver` (F02) to accept/reject bucket names on withdrawal/update
-- [ ] Seeded `ReserveBucket` records (F01) are correctly consumed by the income-split computation (F03) to determine which buckets participate and at what percentage
-- [ ] `ReserveMovement.Bucket` entity references (F02) are correctly created by the income-split flow (F03) — one movement per active bucket, correctly referencing that bucket
+- [x] Seeded `ReserveBucket` records (F01) are correctly consumed by the income-split computation (F03) to determine which buckets participate and at what percentage
+- [x] `ReserveMovement.Bucket` entity references (F02) are correctly created by the income-split flow (F03) — one movement per active bucket, correctly referencing that bucket
 - [ ] Seeded `ReserveBucket` records (F01) and `ReserveMovement.Bucket` references (F02) are both correctly consumed by `GetBucketBalances()` (F04), producing one balance row per bucket including inactive ones
 - [ ] Seeded `ReserveBucket` records (F01) are correctly returned by `GET /reserve-buckets` (F05), including `id`, `name`, `isActive`, and `splitPercentage`
 - [ ] The split-result response (F03), bucket balances (F04), and bucket list (F05) are correctly fetched and rendered in both the web Reserva page (F06) and the WPF Reserva view (F07), including the percentage-sum warning computed from F05's data
