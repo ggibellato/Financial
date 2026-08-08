@@ -137,7 +137,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         balances: action.payload.balances,
         movements: action.payload.movements,
         buckets: action.payload.buckets,
-        withdrawalBucket: state.withdrawalBucket || action.payload.buckets[0]?.name || '',
+        withdrawalBucket: state.withdrawalBucket || defaultBucketName(action.payload.buckets),
       }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
@@ -169,7 +169,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
       return {
         ...state,
         ...BLANK_WITHDRAWAL_FORM_FIELDS,
-        withdrawalBucket: state.buckets[0]?.name ?? '',
+        withdrawalBucket: defaultBucketName(state.buckets),
         isWithdrawalFormOpen: false,
         withdrawalError: null,
       }
@@ -181,7 +181,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
       return {
         ...state,
         ...BLANK_WITHDRAWAL_FORM_FIELDS,
-        withdrawalBucket: state.buckets[0]?.name ?? '',
+        withdrawalBucket: defaultBucketName(state.buckets),
         isWithdrawalFormOpen: false,
         isSubmittingWithdrawal: false,
       }
@@ -305,13 +305,15 @@ function buildMovementRows(movements: ReserveMovementDto[]): ReserveMovementRow[
 function computeSplitPercentageWarning(buckets: ReserveBucketDto[]): string | null {
   if (buckets.length === 0) return null
 
-  const activeSum = buckets
-    .filter((b) => b.isActive)
-    .reduce((sum, b) => sum + b.splitPercentage, 0)
+  const activeSum = buckets.reduce((sum, b) => (b.isActive ? sum + b.splitPercentage : sum), 0)
 
   if (activeSum >= SPLIT_PERCENTAGE_MIN && activeSum <= SPLIT_PERCENTAGE_MAX) return null
 
   return `Active bucket percentages sum to ${activeSum.toFixed(2)}%, not 100%`
+}
+
+function defaultBucketName(buckets: ReserveBucketDto[]): string {
+  return buckets[0]?.name ?? ''
 }
 
 export function useReserva(): ReservaData {
@@ -320,29 +322,15 @@ export function useReserva(): ReservaData {
 
   const fetchReservaData = useCallback(() => {
     dispatch({ type: 'FETCH_START' })
-    void Promise.allSettled([
+    void Promise.all([
       apiClient.getReserveBalances(),
       apiClient.getReserveMovements(),
-      apiClient.getReserveBuckets(),
-    ]).then(([balancesResult, movementsResult, bucketsResult]) => {
-      if (balancesResult.status === 'rejected' || movementsResult.status === 'rejected') {
-        const failure = balancesResult.status === 'rejected' ? balancesResult.reason : movementsResult.status === 'rejected' ? movementsResult.reason : undefined
-        dispatch({
-          type: 'FETCH_ERROR',
-          payload: failure instanceof Error ? failure.message : 'Unable to load Reserva data',
-        })
-        return
-      }
-
-      dispatch({
-        type: 'FETCH_SUCCESS',
-        payload: {
-          balances: balancesResult.value,
-          movements: movementsResult.value,
-          buckets: bucketsResult.status === 'fulfilled' ? bucketsResult.value : [],
-        },
+      apiClient.getReserveBuckets().catch(() => []),
+    ])
+      .then(([balances, movements, buckets]) => dispatch({ type: 'FETCH_SUCCESS', payload: { balances, movements, buckets } }))
+      .catch((err: unknown) => {
+        dispatch({ type: 'FETCH_ERROR', payload: err instanceof Error ? err.message : 'Unable to load Reserva data' })
       })
-    })
   }, [apiClient])
 
   useEffect(() => {
