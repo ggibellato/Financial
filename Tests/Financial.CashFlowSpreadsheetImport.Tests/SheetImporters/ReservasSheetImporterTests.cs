@@ -1,5 +1,6 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
 using FluentAssertions;
 
@@ -30,7 +31,7 @@ public class ReservasSheetImporterTests
         sheet.Cell(2, 8).Value = 20.0;
         sheet.Cell(2, 9).Value = 20.0;
 
-        var movements = ReservasSheetImporter.Import(sheet, FourBuckets);
+        var movements = ReservasSheetImporter.Import(sheet, FourBuckets, new ImportReport());
 
         movements.Should().HaveCount(4);
         movements.Should().Contain(m => m.Bucket == Investimento && m.Amount == 100.0m);
@@ -50,7 +51,7 @@ public class ReservasSheetImporterTests
         sheet.Cell(2, 1).Value = new DateTime(2021, 1, 1);
         sheet.Cell(2, 4).Value = 50.0;
 
-        var movements = ReservasSheetImporter.Import(sheet, FourBuckets);
+        var movements = ReservasSheetImporter.Import(sheet, FourBuckets, new ImportReport());
 
         movements.Should().BeEmpty();
     }
@@ -67,7 +68,7 @@ public class ReservasSheetImporterTests
         sheet.Cell(2, 2).Value = "Saque casa";
         sheet.Cell(2, 8).Value = 75.5;
 
-        var movements = ReservasSheetImporter.Import(sheet, FourBuckets);
+        var movements = ReservasSheetImporter.Import(sheet, FourBuckets, new ImportReport());
 
         movements.Should().ContainSingle();
         movements[0].Bucket.Should().Be(Ariana);
@@ -84,7 +85,7 @@ public class ReservasSheetImporterTests
         sheet.Cell(2, 1).Value = new DateTime(2021, 1, 1);
         sheet.Cell(2, 5).Value = 999.0;
 
-        var movements = ReservasSheetImporter.Import(sheet, FourBuckets);
+        var movements = ReservasSheetImporter.Import(sheet, FourBuckets, new ImportReport());
 
         movements.Should().BeEmpty();
     }
@@ -99,24 +100,31 @@ public class ReservasSheetImporterTests
         sheet.Cell(2, 2).Value = "Nota sem data";
         sheet.Cell(2, 4).Value = 10.0;
 
-        var movements = ReservasSheetImporter.Import(sheet, FourBuckets);
+        var movements = ReservasSheetImporter.Import(sheet, FourBuckets, new ImportReport());
 
         movements.Should().BeEmpty();
     }
 
     [Fact]
-    public void Import_WithACanonicalBucketNameNotSeeded_ThrowsInvalidOperationException()
+    public void Import_WithACanonicalBucketNameNotSeeded_SkipsThatColumnAndLogsAWarning()
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Reservas");
         sheet.Cell(1, 1).Value = "Data";
+        sheet.Cell(1, 2).Value = "Descricao";
         sheet.Cell(2, 1).Value = new DateTime(2021, 6, 1);
+        sheet.Cell(2, 2).Value = "Ramsay";
         sheet.Cell(2, 6).Value = 100.0;
+        sheet.Cell(2, 7).Value = 30.0;
 
         var incompleteBuckets = new[] { HouseTreats, Ariana, Gleison };
+        var report = new ImportReport();
 
-        var act = () => ReservasSheetImporter.Import(sheet, incompleteBuckets);
+        var movements = ReservasSheetImporter.Import(sheet, incompleteBuckets, report);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("*Investimento*");
+        movements.Should().ContainSingle();
+        movements[0].Bucket.Should().Be(HouseTreats);
+        movements[0].Amount.Should().Be(30.0m);
+        report.ValidationWarnings.Should().ContainSingle(w => w.Contains("Investimento") && w.Contains("not seeded"));
     }
 }
