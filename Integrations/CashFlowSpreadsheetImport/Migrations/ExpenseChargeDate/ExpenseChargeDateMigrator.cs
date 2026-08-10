@@ -31,7 +31,7 @@ public static class ExpenseChargeDateMigrator
     private static void MigrateExpense(
         Expense expense,
         IReadOnlyDictionary<Guid, DateOnly> legacySettledAtById,
-        IReadOnlyDictionary<(CreditCard, int, int), CardStatement> paidStatements,
+        IReadOnlyDictionary<(CashFlow.Domain.Enums.CreditCard, int, int), CardStatement> paidStatements,
         ExpenseChargeDateMigrationSummary summary)
     {
         if (expense.CardTag is null)

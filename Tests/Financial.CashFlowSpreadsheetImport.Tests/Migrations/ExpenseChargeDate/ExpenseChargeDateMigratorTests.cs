@@ -11,7 +11,7 @@ public class ExpenseChargeDateMigratorTests
     // Legacy records carry both CardTag and PaymentSource with ChargeDate/InvoiceDate absent -
     // a shape that can no longer be produced through Expense.Create, so build it the way
     // deserialization of pre-F01 data would (only public API + reflection to null the new fields).
-    private static Expense LegacyUnpaidCharge(CashFlowData data, DateOnly date, CreditCard card, decimal value = 30m)
+    private static Expense LegacyUnpaidCharge(CashFlowData data, DateOnly date,CashFlow.Domain.Enums.CreditCard card, decimal value = 30m)
     {
         var expense = Expense.Create(date, "Charge", value, Category.Mercado, null, card);
         NullOutMigratedFields(expense);
@@ -19,7 +19,7 @@ public class ExpenseChargeDateMigratorTests
         return expense;
     }
 
-    private static Expense LegacySettledCharge(CashFlowData data, DateOnly date, CreditCard card, Bank paymentSource, decimal value = 30m)
+    private static Expense LegacySettledCharge(CashFlowData data, DateOnly date,CashFlow.Domain.Enums.CreditCard card, Bank paymentSource, decimal value = 30m)
     {
         var expense = Expense.Create(date, "Charge", value, Category.Mercado, null, card);
         typeof(Expense).GetProperty(nameof(Expense.PaymentSourceBank))!.SetMethod!.Invoke(expense, new object?[] { paymentSource });
@@ -44,7 +44,7 @@ public class ExpenseChargeDateMigratorTests
     public void Migrate_UnpaidCardCharge_SetsChargeDateEqualToDateAndDefaultsInvoiceDate()
     {
         var data = CashFlowData.Create();
-        var expense = LegacyUnpaidCharge(data, new DateOnly(2026, 7, 10), CreditCard.BarclaysPlatinumVisa8003);
+        var expense = LegacyUnpaidCharge(data, new DateOnly(2026, 7, 10),CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
 
         var summary = ExpenseChargeDateMigrator.Migrate(data, legacyRawJson: null);
 
@@ -61,10 +61,10 @@ public class ExpenseChargeDateMigratorTests
     public void Migrate_SettledChargeWithMatchingStatementAndRecoverableSettledAt_MigratesAllThreeFields()
     {
         var data = CashFlowData.Create();
-        var statement = CardStatement.Create(CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
+        var statement = CardStatement.Create(CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
         statement.MarkPaid();
         data.AddCardStatement(statement);
-        var expense = LegacySettledCharge(data, new DateOnly(2026, 7, 10), CreditCard.BarclaysPlatinumVisa8003, Bank.Create("Barclays", roundUpEnabled: false));
+        var expense = LegacySettledCharge(data, new DateOnly(2026, 7, 10),CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003, Bank.Create("Barclays", roundUpEnabled: false));
         var legacyRawJson = BuildLegacyRawJson((expense.Id, new DateOnly(2026, 8, 3)));
 
         var summary = ExpenseChargeDateMigrator.Migrate(data, legacyRawJson);
@@ -82,7 +82,7 @@ public class ExpenseChargeDateMigratorTests
     public void Migrate_SettledChargeWithNoMatchingStatement_FlagsForReviewAndLeavesUntouched()
     {
         var data = CashFlowData.Create();
-        var expense = LegacySettledCharge(data, new DateOnly(2026, 7, 10), CreditCard.BarclaysPlatinumVisa8003, Bank.Create("Barclays", roundUpEnabled: false));
+        var expense = LegacySettledCharge(data, new DateOnly(2026, 7, 10),CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003, Bank.Create("Barclays", roundUpEnabled: false));
         var legacyRawJson = BuildLegacyRawJson((expense.Id, new DateOnly(2026, 8, 3)));
 
         var summary = ExpenseChargeDateMigrator.Migrate(data, legacyRawJson);
@@ -98,10 +98,10 @@ public class ExpenseChargeDateMigratorTests
     public void Migrate_SettledChargeWithNoRecoverableSettledAt_FlagsForReviewAndLeavesUntouched()
     {
         var data = CashFlowData.Create();
-        var statement = CardStatement.Create(CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
+        var statement = CardStatement.Create(CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
         statement.MarkPaid();
         data.AddCardStatement(statement);
-        var expense = LegacySettledCharge(data, new DateOnly(2026, 7, 10), CreditCard.BarclaysPlatinumVisa8003, Bank.Create("Barclays", roundUpEnabled: false));
+        var expense = LegacySettledCharge(data, new DateOnly(2026, 7, 10),CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003, Bank.Create("Barclays", roundUpEnabled: false));
 
         var summary = ExpenseChargeDateMigrator.Migrate(data, legacyRawJson: null);
 
@@ -134,11 +134,11 @@ public class ExpenseChargeDateMigratorTests
     public void Migrate_SecondRunOnAlreadyMigratedData_ChangesNothing()
     {
         var data = CashFlowData.Create();
-        var statement = CardStatement.Create(CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
+        var statement = CardStatement.Create(CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
         statement.MarkPaid();
         data.AddCardStatement(statement);
-        var unpaid = LegacyUnpaidCharge(data, new DateOnly(2026, 7, 10), CreditCard.BaAmex);
-        var settled = LegacySettledCharge(data, new DateOnly(2026, 7, 12), CreditCard.BarclaysPlatinumVisa8003, Bank.Create("Barclays", roundUpEnabled: false));
+        var unpaid = LegacyUnpaidCharge(data, new DateOnly(2026, 7, 10),CashFlow.Domain.Enums.CreditCard.BaAmex);
+        var settled = LegacySettledCharge(data, new DateOnly(2026, 7, 12),CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003, Bank.Create("Barclays", roundUpEnabled: false));
         var legacyRawJson = BuildLegacyRawJson((settled.Id, new DateOnly(2026, 8, 3)));
 
         ExpenseChargeDateMigrator.Migrate(data, legacyRawJson);

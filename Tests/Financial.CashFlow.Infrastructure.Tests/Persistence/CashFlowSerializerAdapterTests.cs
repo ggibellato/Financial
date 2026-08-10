@@ -26,10 +26,10 @@ public class CashFlowSerializerAdapterTests
             54.32m,
             Category.Mercado,
             null,
-            CreditCard.BarclaysPlatinumVisa8003);
+           CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
         expense.Settle(bank, new DateOnly(2026, 7, 31));
         var reserveMovement = ReserveMovement.Create(reserveBucket, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split");
-        var cardStatement = CardStatement.Create(CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
+        var cardStatement = CardStatement.Create(CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
         var recurringBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
         var maeLedgerEntry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 15), "School supplies", "Note", Currency.BRL, 350m, 51.23m);
         var investmentSnapshot = InvestmentSnapshot.Create(investmentAccount, 2026, 7, 1250.00m);

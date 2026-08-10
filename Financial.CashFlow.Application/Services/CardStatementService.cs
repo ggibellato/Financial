@@ -8,7 +8,7 @@ namespace Financial.CashFlow.Application.Services;
 
 public sealed class CardStatementService : ICardStatementService
 {
-    private static readonly CreditCard[] AllCards = Enum.GetValues<CreditCard>();
+    private static readonly Domain.Enums.CreditCard[] AllCards = Enum.GetValues<Domain.Enums.CreditCard>();
 
     private readonly ICashFlowRepository _repository;
 

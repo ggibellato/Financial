@@ -86,7 +86,7 @@ public class CashFlowTypeInfoResolverTests
         // PaymentStatus is never in the JSON's Set path (it's excluded implicitly by having no
         // setter) - it must be recomputed correctly on deserialize from CardTag/PaymentSource alone.
         var options = CreateOptions();
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Charge", 10m, Category.Extras, null, CreditCard.ChaseMaster4023);
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Charge", 10m, Category.Extras, null,CashFlow.Domain.Enums.CreditCard.ChaseMaster4023);
 
         var json = JsonSerializer.Serialize(expense, options);
         var deserialized = JsonSerializer.Deserialize<Expense>(json, options);

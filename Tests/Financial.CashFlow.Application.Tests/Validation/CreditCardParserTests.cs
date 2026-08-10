@@ -9,7 +9,8 @@ public class CreditCardParserTests
     [Fact]
     public void TryParse_ValidName_ReturnsTrueAndParsedValue()
     {
-        var result = CreditCardParser.TryParse("BaAmex", out var creditCard);
+        CreditCard creditCard;
+        bool result = CreditCardParser.TryParse("BaAmex", out creditCard);
 
         result.Should().BeTrue();
         creditCard.Should().Be(CreditCard.BaAmex);
@@ -18,7 +19,8 @@ public class CreditCardParserTests
     [Fact]
     public void TryParse_UnknownName_ReturnsFalse()
     {
-        var result = CreditCardParser.TryParse("NotACard", out _);
+        Financial.CashFlow.Domain.Enums.CreditCard creditCard = default(Financial.CashFlow.Domain.Enums.CreditCard);
+        var result = CreditCardParser.TryParse("NotACard", out creditCard);
 
         result.Should().BeFalse();
     }
@@ -26,7 +28,8 @@ public class CreditCardParserTests
     [Fact]
     public void TryParse_BlankValue_ReturnsFalse()
     {
-        var result = CreditCardParser.TryParse(null, out _);
+        Financial.CashFlow.Domain.Enums.CreditCard creditCard = default(Financial.CashFlow.Domain.Enums.CreditCard);
+        var result = CreditCardParser.TryParse(null, out creditCard);
 
         result.Should().BeFalse();
     }
