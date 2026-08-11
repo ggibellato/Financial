@@ -15,7 +15,7 @@ public class Expense
     public decimal Value { get; private set; }
     public Category Category { get; private set; }
     public Bank? PaymentSourceBank { get; private set; }
-    public CreditCard? CardTag { get; private set; }
+    public Enums.CreditCard? CardTag { get; private set; }
     public DateOnly? ChargeDate { get; private set; }
     public DateOnly? InvoiceDate { get; private set; }
     public decimal? RoundUpAmount { get; private set; }
@@ -37,7 +37,7 @@ public class Expense
         decimal value,
         Category category,
         Bank? paymentSourceBank,
-        CreditCard? cardTag,
+        Enums.CreditCard? cardTag,
         DateOnly? invoiceDate = null)
     {
         ValidatePaymentShape(paymentSourceBank, cardTag);
@@ -62,7 +62,7 @@ public class Expense
         decimal value,
         Category category,
         Bank? paymentSourceBank,
-        CreditCard? cardTag)
+        Enums.CreditCard? cardTag)
     {
         if (PaymentStatus == ExpensePaymentStatus.CreditCardSettled)
         {
@@ -179,7 +179,7 @@ public class Expense
 
     private static DateOnly FirstOfMonth(DateOnly date) => new(date.Year, date.Month, 1);
 
-    private static void ValidatePaymentShape(Bank? paymentSourceBank, CreditCard? cardTag)
+    private static void ValidatePaymentShape(Bank? paymentSourceBank, Enums.CreditCard? cardTag)
     {
         if (paymentSourceBank is null && cardTag is null)
         {

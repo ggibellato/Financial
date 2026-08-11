@@ -96,7 +96,7 @@ public class AnnualSummaryServiceTests
         var repository = CreateRepository();
         repository.Expenses.Add(Expense.Create(
             new DateOnly(2026, 7, 29), "Cutoff charge", 40m, Category.Mercado, null,
-            CreditCard.BarclaysPlatinumVisa8003, new DateOnly(2026, 8, 1)));
+           CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003, new DateOnly(2026, 8, 1)));
         var service = new AnnualSummaryService(repository);
 
         var result = service.GetCategoryTotalsForYear(2026);
@@ -113,7 +113,7 @@ public class AnnualSummaryServiceTests
     public void GetCategoryTotalsForYear_SettledCardCharge_CountsTowardPostSettlementDateMonth()
     {
         var repository = CreateRepository();
-        var settled = Expense.Create(new DateOnly(2026, 7, 10), "Settled charge", 40m, Category.Mercado, null, CreditCard.BarclaysPlatinumVisa8003);
+        var settled = Expense.Create(new DateOnly(2026, 7, 10), "Settled charge", 40m, Category.Mercado, null, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
         settled.Settle(Trading212, new DateOnly(2026, 8, 3));
         repository.Expenses.Add(settled);
         var service = new AnnualSummaryService(repository);
@@ -134,8 +134,8 @@ public class AnnualSummaryServiceTests
         var repository = CreateRepository();
         repository.Expenses.Add(Expense.Create(
             new DateOnly(2026, 7, 29), "Unpaid cutoff", 10m, Category.Mercado, null,
-            CreditCard.BarclaysPlatinumVisa8003, new DateOnly(2026, 8, 1)));
-        var settled = Expense.Create(new DateOnly(2026, 7, 12), "Settled", 20m, Category.Mercado, null, CreditCard.BaAmex);
+           CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003, new DateOnly(2026, 8, 1)));
+        var settled = Expense.Create(new DateOnly(2026, 7, 12), "Settled", 20m, Category.Mercado, null, CashFlow.Domain.Enums.CreditCard.BaAmex);
         settled.Settle(Trading212, new DateOnly(2026, 7, 20));
         repository.Expenses.Add(settled);
         repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 15), "Bank", 30m, Category.Mercado, Chase, null));
@@ -158,7 +158,7 @@ public class AnnualSummaryServiceTests
         var repository = CreateRepository();
         repository.Expenses.Add(Expense.Create(
             new DateOnly(2025, 12, 30), "Year-end cutoff", 40m, Category.Mercado, null,
-            CreditCard.BarclaysPlatinumVisa8003, new DateOnly(2026, 1, 1)));
+           CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003, new DateOnly(2026, 1, 1)));
         var service = new AnnualSummaryService(repository);
 
         var resultFor2025 = service.GetCategoryTotalsForYear(2025);

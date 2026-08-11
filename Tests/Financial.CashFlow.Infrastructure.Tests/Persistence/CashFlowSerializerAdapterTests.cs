@@ -10,11 +10,12 @@ namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 public class CashFlowSerializerAdapterTests
 {
     [Fact]
-    public void SerializeThenDeserialize_RoundTripsAllThirteenCollectionsAndSharesReferenceInstances()
+    public void SerializeThenDeserialize_RoundTripsAllCollectionsAndSharesReferenceInstances()
     {
         var serializer = new CashFlowSerializerAdapter();
         var original = CashFlowData.Create();
-        var reserveBucket = Financial.CashFlow.Domain.Entities.ReserveBucket.Create("Investimento", 33.33m);
+        var reserveBucket = ReserveBucket.Create("Investimento", 33.33m);
+        var creditCard = Domain.Entities.CreditCard.Create("Barclays Platinum Visa 8003", isActive: true);
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
         var destinationBank = Bank.Create("Trading212", roundUpEnabled: true);
@@ -26,10 +27,10 @@ public class CashFlowSerializerAdapterTests
             54.32m,
             Category.Mercado,
             null,
-            CreditCard.BarclaysPlatinumVisa8003);
+           Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
         expense.Settle(bank, new DateOnly(2026, 7, 31));
         var reserveMovement = ReserveMovement.Create(reserveBucket, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split");
-        var cardStatement = CardStatement.Create(CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
+        var cardStatement = CardStatement.Create(Domain.Enums.CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
         var recurringBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
         var maeLedgerEntry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 15), "School supplies", "Note", Currency.BRL, 350m, 51.23m);
         var investmentSnapshot = InvestmentSnapshot.Create(investmentAccount, 2026, 7, 1250.00m);
@@ -38,6 +39,7 @@ public class CashFlowSerializerAdapterTests
         var balanceAdjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), bank, 2340.17m, -4.20m, "Matched against July statement");
 
         original.AddReserveBucket(reserveBucket);
+        original.AddCreditCard(creditCard);
         original.AddExpense(expense);
         original.AddReserveMovement(reserveMovement);
         original.AddCardStatement(cardStatement);
@@ -115,6 +117,10 @@ public class CashFlowSerializerAdapterTests
             resultBalanceAdjustment.TargetBalance.Should().Be(balanceAdjustment.TargetBalance);
             resultBalanceAdjustment.Delta.Should().Be(balanceAdjustment.Delta);
             resultBalanceAdjustment.Note.Should().Be(balanceAdjustment.Note);
+            var resultCreditCard = result.CreditCards.Should().ContainSingle().Which;
+            resultCreditCard.Id.Should().Be(creditCard.Id);
+            resultCreditCard.Name.Should().Be(creditCard.Name);
+            resultCreditCard.IsActive.Should().Be(creditCard.IsActive);
 
             // Reference-equality: every reference-typed property must be the exact same instance
             // as the matching entry in its owning collection, not merely an equivalent copy.

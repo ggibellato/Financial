@@ -3,6 +3,7 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Banks;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.BankOpeningBalance;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.CreditCards;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.IncomeSources;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ReserveBuckets;
@@ -122,6 +123,7 @@ var incomeSummary = IncomeMigrator.Migrate(data);
 // Runs after IncomeMigrator so its audit of Income.IncomeSource values covers backfilled
 // entries too, not just what was already on the data file before this run.
 var incomeSourceSummary = IncomeSourceMigrator.Migrate(data);
+var creditCardSummary = CreditCardMigrator.Migrate(data);
 // Re-run (seeding is idempotent) so the reported summary's movement audit and split-percentage
 // warning reflect the reserve movements ImportReservasSheet just added above.
 var reserveBucketSummary = ReserveBucketMigrator.Migrate(data);
@@ -148,6 +150,7 @@ Console.WriteLine(bankSummary.Render());
 Console.WriteLine(bankOpeningBalanceSummary.Render());
 Console.WriteLine(incomeSummary.Render());
 Console.WriteLine(incomeSourceSummary.Render());
+Console.WriteLine(creditCardSummary.Render());
 Console.WriteLine(reserveBucketSummary.Render());
 Console.WriteLine(expenseChargeDateSummary.Render());
 Console.WriteLine(investmentAccountSummary.Render());
@@ -163,6 +166,11 @@ static void CarryOverDataTheSpreadsheetDoesNotOwn(CashFlowData existingData, Cas
     foreach (var incomeSource in existingData.IncomeSources)
     {
         data.AddIncomeSource(incomeSource);
+    }
+
+    foreach (var creditCard in existingData.CreditCards)
+    {
+        data.AddCreditCard(creditCard);
     }
 
     foreach (var reserveBucket in existingData.ReserveBuckets)

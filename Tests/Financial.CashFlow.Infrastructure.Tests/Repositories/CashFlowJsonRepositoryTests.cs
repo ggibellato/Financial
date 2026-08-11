@@ -4,7 +4,6 @@ using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.Shared.Infrastructure.Persistence;
 using FluentAssertions;
-using ReserveBucketEntity = Financial.CashFlow.Domain.Entities.ReserveBucket;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Repositories;
 
@@ -113,7 +112,7 @@ public class CashFlowJsonRepositoryTests
         {
             var data = CashFlowData.Create();
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
-            var movement = ReserveMovement.Create(ReserveBucketEntity.Create("Investimento", 33.33m), 10m, new DateOnly(2026, 7, 1), "Test movement");
+            var movement = ReserveMovement.Create(ReserveBucket.Create("Investimento", 33.33m), 10m, new DateOnly(2026, 7, 1), "Test movement");
             repository.AddReserveMovement(movement);
 
             repository.DeleteReserveMovement(movement.Id);
@@ -169,7 +168,7 @@ public class CashFlowJsonRepositoryTests
         try
         {
             var data = CashFlowData.Create();
-            data.AddReserveBucket(ReserveBucketEntity.Create("Investimento", 33.33m));
+            data.AddReserveBucket(ReserveBucket.Create("Investimento", 33.33m));
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
 
             repository.GetReserveBuckets().Should().ContainSingle().Which.Name.Should().Be("Investimento");
@@ -179,6 +178,25 @@ public class CashFlowJsonRepositoryTests
             File.Delete(path);
         }
     }
+
+    [Fact]
+    public void GetCreditCards_ReturnsCreditCardsFromTheUnderlyingData()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var data = CashFlowData.Create();
+            data.AddCreditCard(Domain.Entities.CreditCard.Create("Chase Freedom"));
+            var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
+
+            repository.GetCreditCards().Should().ContainSingle().Which.Name.Should().Be("Chase Freedom");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
 
     [Fact]
     public void GetInvestmentAccounts_ReturnsInvestmentAccountsFromTheUnderlyingData()

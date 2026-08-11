@@ -21,6 +21,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         typeof(Bank),
         typeof(IncomeSource),
         typeof(ReserveBucket),
+        typeof(CreditCard),
         typeof(Income),
         typeof(Transfer),
         typeof(BalanceAdjustment)

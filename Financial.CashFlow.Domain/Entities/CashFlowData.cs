@@ -44,6 +44,9 @@ public class CashFlowData
     private readonly List<BalanceAdjustment> _balanceAdjustments = new();
     public IReadOnlyCollection<BalanceAdjustment> BalanceAdjustments => _balanceAdjustments.AsReadOnly();
 
+    private readonly List<CreditCard> _creditCards = new();
+    public IReadOnlyCollection<CreditCard> CreditCards => _creditCards.AsReadOnly();
+
     private CashFlowData() { }
 
     public static CashFlowData Create() => new();
@@ -75,6 +78,8 @@ public class CashFlowData
     public void AddInvestmentAccount(InvestmentAccount account) => _investmentAccounts.Add(account);
 
     public void AddReserveBucket(ReserveBucket bucket) => _reserveBuckets.Add(bucket);
+
+    public void AddCreditCard(CreditCard card) => _creditCards.Add(card);
 
     public void AddIncome(Income income) => _incomes.Add(income);
 

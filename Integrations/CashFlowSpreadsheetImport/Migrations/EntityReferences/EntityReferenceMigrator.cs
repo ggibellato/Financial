@@ -208,7 +208,7 @@ public static class EntityReferenceMigrator
             var description = item.GetProperty("Description").GetString()!;
             var value = item.GetProperty("Value").GetDecimal();
             var category = Enum.Parse<Category>(item.GetProperty("Category").GetString()!);
-            var cardTag = ReadNullableEnum<CreditCard>(item, "CardTag");
+            var cardTag = ReadNullableEnum<CashFlow.Domain.Enums.CreditCard>(item, "CardTag");
             var invoiceDate = ReadNullableDate(item, "InvoiceDate");
 
             var expense = Expense.Create(date, description, value, category, paymentSourceBank, cardTag, invoiceDate);

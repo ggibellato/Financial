@@ -1,7 +1,6 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using ReserveBucketEntity = Financial.CashFlow.Domain.Entities.ReserveBucket;
 
 namespace Financial.CashFlow.Application.Tests.TestHelpers;
 
@@ -22,7 +21,8 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
     public List<InvestmentAccount> InvestmentAccounts { get; } = new();
     public List<Bank> Banks { get; } = new();
     public List<IncomeSource> IncomeSources { get; } = new();
-    public List<ReserveBucketEntity> ReserveBuckets { get; } = new();
+    public List<ReserveBucket> ReserveBuckets { get; } = new();
+    public List<Domain.Entities.CreditCard> CreditCards { get; } = new();
     public List<Income> Incomes { get; } = new();
     public List<Transfer> Transfers { get; } = new();
     public List<BalanceAdjustment> BalanceAdjustments { get; } = new();
@@ -69,12 +69,12 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
     ];
 
     /// <summary>The 4 reserve buckets seeded in a real deployment by the CashFlowSpreadsheetImport migration tool.</summary>
-    public static IEnumerable<ReserveBucketEntity> DefaultReserveBuckets() =>
+    public static IEnumerable<ReserveBucket> DefaultReserveBuckets() =>
     [
-        ReserveBucketEntity.Create("Investimento", 33.33m),
-        ReserveBucketEntity.Create("HouseTreats", 33.33m),
-        ReserveBucketEntity.Create("Ariana", 16.67m),
-        ReserveBucketEntity.Create("Gleison", 16.67m)
+        ReserveBucket.Create("Investimento", 33.33m),
+        ReserveBucket.Create("HouseTreats", 33.33m),
+        ReserveBucket.Create("Ariana", 16.67m),
+        ReserveBucket.Create("Gleison", 16.67m)
     ];
 
     public void SetOpeningBalance(string bankName, decimal openingBalance, DateOnly openingBalanceDate) =>
@@ -109,7 +109,9 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
 
     public IEnumerable<IncomeSource> GetIncomeSources() => IncomeSources;
 
-    public IEnumerable<ReserveBucketEntity> GetReserveBuckets() => ReserveBuckets;
+    public IEnumerable<ReserveBucket> GetReserveBuckets() => ReserveBuckets;
+
+    public IEnumerable<Domain.Entities.CreditCard> GetCreditCards() => CreditCards;
 
     public IEnumerable<Income> GetIncomes() => Incomes;
     public void AddIncome(Income income) => Incomes.Add(income);

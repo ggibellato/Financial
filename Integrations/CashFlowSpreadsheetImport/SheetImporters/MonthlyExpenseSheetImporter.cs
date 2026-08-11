@@ -37,12 +37,12 @@ public static class MonthlyExpenseSheetImporter
     private const int ChaseMaster4023StartRow = 205;
     private const int BaAmexStartRow = 226;
 
-    private static readonly (int StartRow, CreditCard Card)[] CardSectionStartRows =
+    private static readonly (int StartRow, CashFlow.Domain.Enums.CreditCard Card)[] CardSectionStartRows =
     [
-        (BarclaysPlatinumVisa8003StartRow, CreditCard.BarclaysPlatinumVisa8003),
-        (BarclaysPlatinumVisa6007StartRow, CreditCard.BarclaysPlatinumVisa6007),
-        (ChaseMaster4023StartRow, CreditCard.ChaseMaster4023),
-        (BaAmexStartRow, CreditCard.BaAmex),
+        (BarclaysPlatinumVisa8003StartRow, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003),
+        (BarclaysPlatinumVisa6007StartRow, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa6007),
+        (ChaseMaster4023StartRow, CashFlow.Domain.Enums.CreditCard.ChaseMaster4023),
+        (BaAmexStartRow, CashFlow.Domain.Enums.CreditCard.BaAmex),
     ];
 
     public static IReadOnlyList<Expense> Import(
@@ -134,7 +134,7 @@ public static class MonthlyExpenseSheetImporter
             _ => "Barclays",
         };
 
-    private static CreditCard? ResolveCardTag(int row, int year, int month, DateOnly today, string? rawPaymentSourceTag)
+    private static CashFlow.Domain.Enums.CreditCard? ResolveCardTag(int row, int year, int month, DateOnly today, string? rawPaymentSourceTag)
     {
         var isCardSectionEligible = string.IsNullOrWhiteSpace(rawPaymentSourceTag) || IsCreditCardMarker(rawPaymentSourceTag);
         if (!isCardSectionEligible)
@@ -149,7 +149,7 @@ public static class MonthlyExpenseSheetImporter
             return null;
         }
 
-        CreditCard? cardTag = null;
+        CashFlow.Domain.Enums.CreditCard? cardTag = null;
         foreach (var (startRow, card) in CardSectionStartRows)
         {
             if (row >= startRow)

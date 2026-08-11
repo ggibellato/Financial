@@ -185,15 +185,15 @@ public class MonthlyExpenseSheetImporterTests
 
     [Theory]
     [InlineData(128, null)]
-    [InlineData(129, CreditCard.BarclaysPlatinumVisa8003)]
-    [InlineData(141, CreditCard.BarclaysPlatinumVisa8003)]
-    [InlineData(142, CreditCard.BarclaysPlatinumVisa6007)]
-    [InlineData(204, CreditCard.BarclaysPlatinumVisa6007)]
-    [InlineData(205, CreditCard.ChaseMaster4023)]
-    [InlineData(225, CreditCard.ChaseMaster4023)]
-    [InlineData(226, CreditCard.BaAmex)]
-    [InlineData(300, CreditCard.BaAmex)]
-    public void Import_FixedCardSectionMonth_BlankPaymentSourceTag_SetsCardTagByRowPosition(int row, CreditCard? expectedCardTag)
+    [InlineData(129, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003)]
+    [InlineData(141, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003)]
+    [InlineData(142, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa6007)]
+    [InlineData(204, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa6007)]
+    [InlineData(205, CashFlow.Domain.Enums.CreditCard.ChaseMaster4023)]
+    [InlineData(225, CashFlow.Domain.Enums.CreditCard.ChaseMaster4023)]
+    [InlineData(226, CashFlow.Domain.Enums.CreditCard.BaAmex)]
+    [InlineData(300, CashFlow.Domain.Enums.CreditCard.BaAmex)]
+    public void Import_FixedCardSectionMonth_BlankPaymentSourceTag_SetsCardTagByRowPosition(int row, CashFlow.Domain.Enums.CreditCard? expectedCardTag)
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Jul2026");
@@ -332,7 +332,7 @@ public class MonthlyExpenseSheetImporterTests
         var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 9, Today, report, Banks);
 
         var expense = expenses.Should().ContainSingle().Which;
-        expense.CardTag.Should().Be(CreditCard.BarclaysPlatinumVisa8003);
+        expense.CardTag.Should().Be(CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
         expense.PaymentSourceBank.Should().BeNull();
     }
 
@@ -351,7 +351,7 @@ public class MonthlyExpenseSheetImporterTests
         var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, Today, report, Banks);
 
         var expense = expenses.Should().ContainSingle().Which;
-        expense.CardTag.Should().Be(CreditCard.BarclaysPlatinumVisa6007);
+        expense.CardTag.Should().Be(CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa6007);
         expense.PaymentSourceBank.Should().BeNull();
         expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
         report.RowIssues.Should().BeEmpty();
@@ -405,7 +405,7 @@ public class MonthlyExpenseSheetImporterTests
         var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 9, Today, report, Banks);
 
         var expense = expenses.Should().ContainSingle().Which;
-        expense.CardTag.Should().Be(CreditCard.BarclaysPlatinumVisa8003);
+        expense.CardTag.Should().Be(CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
         expense.PaymentSourceBank.Should().BeNull();
         report.RowIssues.Should().BeEmpty();
     }

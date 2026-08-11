@@ -15,7 +15,7 @@ public class ExpenseTests
         Expense.Create(new DateOnly(2026, 7, 1), "Immediate", 10m, Category.Casa, Chase, null);
 
     private static Expense CreateCardCharge() =>
-        Expense.Create(new DateOnly(2026, 7, 1), "Charge", 10m, Category.Extras, null, CreditCard.ChaseMaster4023);
+        Expense.Create(new DateOnly(2026, 7, 1), "Charge", 10m, Category.Extras, null, Domain.Enums.CreditCard.ChaseMaster4023);
 
     private static Expense CreateSettledExpense()
     {
@@ -88,7 +88,7 @@ public class ExpenseTests
     {
         var date = new DateOnly(2026, 7, 15);
 
-        var expense = Expense.Create(date, "Charge", 10m, Category.Extras, null, CreditCard.ChaseMaster4023);
+        var expense = Expense.Create(date, "Charge", 10m, Category.Extras, null, Domain.Enums.CreditCard.ChaseMaster4023);
 
         expense.ChargeDate.Should().Be(date);
     }
@@ -98,7 +98,7 @@ public class ExpenseTests
     {
         var date = new DateOnly(2026, 7, 15);
 
-        var expense = Expense.Create(date, "Charge", 10m, Category.Extras, null, CreditCard.ChaseMaster4023);
+        var expense = Expense.Create(date, "Charge", 10m, Category.Extras, null, Domain.Enums.CreditCard.ChaseMaster4023);
 
         expense.InvoiceDate.Should().Be(new DateOnly(2026, 7, 1));
     }
@@ -110,7 +110,7 @@ public class ExpenseTests
         var overrideInvoiceDate = new DateOnly(2026, 8, 17);
 
         var expense = Expense.Create(
-            date, "Charge near cutoff", 10m, Category.Extras, null, CreditCard.ChaseMaster4023, overrideInvoiceDate);
+            date, "Charge near cutoff", 10m, Category.Extras, null, Domain.Enums.CreditCard.ChaseMaster4023, overrideInvoiceDate);
 
         expense.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
         expense.ChargeDate.Should().Be(date);
@@ -142,7 +142,7 @@ public class ExpenseTests
             10m,
             Category.Extras,
             Barclays,
-            CreditCard.BarclaysPlatinumVisa8003);
+            Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
 
         act.Should().Throw<ArgumentException>().WithMessage("*marking its card statement paid*");
     }
@@ -154,7 +154,7 @@ public class ExpenseTests
         var originalId = expense.Id;
         var newDate = new DateOnly(2026, 8, 1);
 
-        expense.UpdateDetails(newDate, "Updated", 20m, Category.Mercado, null, CreditCard.ChaseMaster4023);
+        expense.UpdateDetails(newDate, "Updated", 20m, Category.Mercado, null, Domain.Enums.CreditCard.ChaseMaster4023);
 
         using (new AssertionScope())
         {
@@ -164,7 +164,7 @@ public class ExpenseTests
             expense.Value.Should().Be(20m);
             expense.Category.Should().Be(Category.Mercado);
             expense.PaymentSourceBank.Should().BeNull();
-            expense.CardTag.Should().Be(CreditCard.ChaseMaster4023);
+            expense.CardTag.Should().Be(Domain.Enums.CreditCard.ChaseMaster4023);
             expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
         }
     }
@@ -185,7 +185,7 @@ public class ExpenseTests
         var expense = CreateImmediateExpense();
 
         var act = () => expense.UpdateDetails(
-            expense.Date, "Updated", 20m, Category.Casa, Chase, CreditCard.BaAmex);
+            expense.Date, "Updated", 20m, Category.Casa, Chase, Domain.Enums.CreditCard.BaAmex);
 
         act.Should().Throw<ArgumentException>().WithMessage("*marking its card statement paid*");
     }
@@ -202,7 +202,7 @@ public class ExpenseTests
             expense.Description.Should().Be("Renamed");
             expense.Value.Should().Be(25m);
             expense.PaymentSourceBank.Should().Be(Barclays);
-            expense.CardTag.Should().Be(CreditCard.ChaseMaster4023);
+            expense.CardTag.Should().Be(Domain.Enums.CreditCard.ChaseMaster4023);
             expense.Date.Should().Be(new DateOnly(2026, 7, 31));
             expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
         }

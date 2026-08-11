@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using CreditCardEnum = Financial.CashFlow.Domain.Enums.CreditCard;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -111,7 +112,7 @@ public sealed class ExpenseService : IExpenseService
         _repository.GetExpenses().FirstOrDefault(e => e.Id == id)
             ?? throw new KeyNotFoundException($"Expense '{id}' was not found.");
 
-    private (Category Category, Bank? PaymentSourceBank, CreditCard? CardTag) ValidateFields(
+    private (Category Category, Bank? PaymentSourceBank, CreditCardEnum? CardTag) ValidateFields(
         string description, decimal value, string category, Guid? paymentSourceBankId, string? cardTag)
     {
         if (string.IsNullOrWhiteSpace(description))
@@ -145,7 +146,7 @@ public sealed class ExpenseService : IExpenseService
             parsedPaymentSourceBank = bank!;
         }
 
-        CreditCard? parsedCardTag = null;
+        CreditCardEnum? parsedCardTag = null;
         if (!string.IsNullOrWhiteSpace(cardTag))
         {
             if (!CreditCardParser.TryParse(cardTag, out var creditCard))
