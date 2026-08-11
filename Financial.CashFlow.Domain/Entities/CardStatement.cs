@@ -4,10 +4,8 @@ namespace Financial.CashFlow.Domain.Entities;
 
 public class CardStatement
 {
-    private Enums.CreditCard card;
-
     public Guid Id { get; private set; }
-    public Enums.CreditCard Card { get => card; private set => card = value; }
+    public Enums.CreditCard Card { get; private set; }
     public int Year { get; private set; }
     public int Month { get; private set; }
     public bool IsPaid { get; private set; }

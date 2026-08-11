@@ -112,7 +112,7 @@ public sealed class ExpenseService : IExpenseService
         _repository.GetExpenses().FirstOrDefault(e => e.Id == id)
             ?? throw new KeyNotFoundException($"Expense '{id}' was not found.");
 
-    private (Category Category, Bank? PaymentSourceBank, Domain.Enums.CreditCard? CardTag) ValidateFields(
+    private (Category Category, Bank? PaymentSourceBank, CreditCardEnum? CardTag) ValidateFields(
         string description, decimal value, string category, Guid? paymentSourceBankId, string? cardTag)
     {
         if (string.IsNullOrWhiteSpace(description))
@@ -149,8 +149,7 @@ public sealed class ExpenseService : IExpenseService
         CreditCardEnum? parsedCardTag = null;
         if (!string.IsNullOrWhiteSpace(cardTag))
         {
-            CreditCardEnum creditCard;
-            if (!Financial.CashFlow.Application.Validation.CreditCardParser.TryParse(cardTag, out creditCard))
+            if (!CreditCardParser.TryParse(cardTag, out var creditCard))
             {
                 throw new ArgumentException($"Credit card '{cardTag}' is not recognized.");
             }

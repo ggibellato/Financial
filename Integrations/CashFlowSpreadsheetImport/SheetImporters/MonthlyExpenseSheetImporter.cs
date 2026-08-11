@@ -37,12 +37,12 @@ public static class MonthlyExpenseSheetImporter
     private const int ChaseMaster4023StartRow = 205;
     private const int BaAmexStartRow = 226;
 
-    private static readonly (int StartRow,CashFlow.Domain.Enums.CreditCard Card)[] CardSectionStartRows =
+    private static readonly (int StartRow, CashFlow.Domain.Enums.CreditCard Card)[] CardSectionStartRows =
     [
-        (BarclaysPlatinumVisa8003StartRow,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003),
-        (BarclaysPlatinumVisa6007StartRow,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa6007),
-        (ChaseMaster4023StartRow,CashFlow.Domain.Enums.CreditCard.ChaseMaster4023),
-        (BaAmexStartRow,CashFlow.Domain.Enums.CreditCard.BaAmex),
+        (BarclaysPlatinumVisa8003StartRow, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003),
+        (BarclaysPlatinumVisa6007StartRow, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa6007),
+        (ChaseMaster4023StartRow, CashFlow.Domain.Enums.CreditCard.ChaseMaster4023),
+        (BaAmexStartRow, CashFlow.Domain.Enums.CreditCard.BaAmex),
     ];
 
     public static IReadOnlyList<Expense> Import(

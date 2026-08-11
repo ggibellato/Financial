@@ -113,7 +113,7 @@ public class AnnualSummaryServiceTests
     public void GetCategoryTotalsForYear_SettledCardCharge_CountsTowardPostSettlementDateMonth()
     {
         var repository = CreateRepository();
-        var settled = Expense.Create(new DateOnly(2026, 7, 10), "Settled charge", 40m, Category.Mercado, null,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+        var settled = Expense.Create(new DateOnly(2026, 7, 10), "Settled charge", 40m, Category.Mercado, null, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
         settled.Settle(Trading212, new DateOnly(2026, 8, 3));
         repository.Expenses.Add(settled);
         var service = new AnnualSummaryService(repository);
@@ -135,7 +135,7 @@ public class AnnualSummaryServiceTests
         repository.Expenses.Add(Expense.Create(
             new DateOnly(2026, 7, 29), "Unpaid cutoff", 10m, Category.Mercado, null,
            CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003, new DateOnly(2026, 8, 1)));
-        var settled = Expense.Create(new DateOnly(2026, 7, 12), "Settled", 20m, Category.Mercado, null,CashFlow.Domain.Enums.CreditCard.BaAmex);
+        var settled = Expense.Create(new DateOnly(2026, 7, 12), "Settled", 20m, Category.Mercado, null, CashFlow.Domain.Enums.CreditCard.BaAmex);
         settled.Settle(Trading212, new DateOnly(2026, 7, 20));
         repository.Expenses.Add(settled);
         repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 15), "Bank", 30m, Category.Mercado, Chase, null));

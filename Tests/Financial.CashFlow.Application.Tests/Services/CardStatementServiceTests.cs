@@ -15,7 +15,7 @@ public class CardStatementServiceTests
         new() { PaymentSourceBankId = repository.Banks.FirstOrDefault(b => b.Name == bankName)?.Id };
 
     private static Expense AddCharge(
-        StubCashFlowRepository repository, DateOnly date, decimal value,CashFlow.Domain.Enums.CreditCard card)
+        StubCashFlowRepository repository, DateOnly date, decimal value, CashFlow.Domain.Enums.CreditCard card)
     {
         var expense = Expense.Create(date, "Charge", value, Category.Mercado, null, card);
         repository.Expenses.Add(expense);
@@ -23,7 +23,7 @@ public class CardStatementServiceTests
     }
 
     private static Expense AddChargeWithInvoiceDate(
-        StubCashFlowRepository repository, DateOnly date, DateOnly invoiceDate, decimal value,CashFlow.Domain.Enums.CreditCard card)
+        StubCashFlowRepository repository, DateOnly date, DateOnly invoiceDate, decimal value, CashFlow.Domain.Enums.CreditCard card)
     {
         var expense = Expense.Create(date, "Charge near cutoff", value, Category.Mercado, null, card, invoiceDate);
         repository.Expenses.Add(expense);
@@ -74,10 +74,10 @@ public class CardStatementServiceTests
     public async Task GetStatementsForMonthAsync_OutstandingTotalSumsThatMonthsChargesForTheCard()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        AddCharge(repository, new DateOnly(2026, 7, 10), 30m,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
-        AddCharge(repository, new DateOnly(2026, 7, 15), 20m,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
-        AddCharge(repository, new DateOnly(2026, 8, 1), 100m,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
-        AddCharge(repository, new DateOnly(2026, 7, 12), 999m,CashFlow.Domain.Enums.CreditCard.BaAmex);
+        AddCharge(repository, new DateOnly(2026, 7, 10), 30m, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+        AddCharge(repository, new DateOnly(2026, 7, 15), 20m, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+        AddCharge(repository, new DateOnly(2026, 8, 1), 100m, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+        AddCharge(repository, new DateOnly(2026, 7, 12), 999m, CashFlow.Domain.Enums.CreditCard.BaAmex);
         var service = new CardStatementService(repository);
 
         var result = await service.GetStatementsForMonthAsync(2026, 7);
@@ -90,9 +90,9 @@ public class CardStatementServiceTests
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         var barclays = repository.Banks.First(b => b.Name == "Barclays");
-        var settled = AddCharge(repository, new DateOnly(2026, 7, 10), 30m,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+        var settled = AddCharge(repository, new DateOnly(2026, 7, 10), 30m, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
         settled.Settle(barclays, new DateOnly(2026, 7, 20));
-        AddCharge(repository, new DateOnly(2026, 7, 11), 20m,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+        AddCharge(repository, new DateOnly(2026, 7, 11), 20m, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
         repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 12), "Immediate", 5m, Category.Casa, barclays, null));
         var service = new CardStatementService(repository);
 
@@ -105,10 +105,10 @@ public class CardStatementServiceTests
     public async Task MarkStatementPaidAsync_SettlesEveryChargeForTheCardMonthWithBankAndToday()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var first = AddCharge(repository, new DateOnly(2026, 7, 10), 30m,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
-        var second = AddCharge(repository, new DateOnly(2026, 7, 15), 20m,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
-        var otherMonth = AddCharge(repository, new DateOnly(2026, 8, 1), 100m,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
-        var otherCard = AddCharge(repository, new DateOnly(2026, 7, 12), 999m,CashFlow.Domain.Enums.CreditCard.BaAmex);
+        var first = AddCharge(repository, new DateOnly(2026, 7, 10), 30m, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+        var second = AddCharge(repository, new DateOnly(2026, 7, 15), 20m, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+        var otherMonth = AddCharge(repository, new DateOnly(2026, 8, 1), 100m, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+        var otherCard = AddCharge(repository, new DateOnly(2026, 7, 12), 999m, CashFlow.Domain.Enums.CreditCard.BaAmex);
         var service = new CardStatementService(repository);
         await service.GetStatementsForMonthAsync(2026, 7);
         var statement = repository.CardStatements.Single(s => s.Card ==CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003 && s.Month == 7);
@@ -141,7 +141,7 @@ public class CardStatementServiceTests
             date: new DateOnly(2026, 7, 29),
             invoiceDate: new DateOnly(2026, 8, 1),
             value: 40m,
-            card:CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+            card: CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
         var service = new CardStatementService(repository);
         await service.GetStatementsForMonthAsync(2026, 7);
         await service.GetStatementsForMonthAsync(2026, 8);
@@ -190,7 +190,7 @@ public class CardStatementServiceTests
     public async Task MarkStatementPaidAsync_WithMatchingCharges_WarningIsNull()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        AddCharge(repository, new DateOnly(2026, 7, 10), 30m,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+        AddCharge(repository, new DateOnly(2026, 7, 10), 30m, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
         var service = new CardStatementService(repository);
         await service.GetStatementsForMonthAsync(2026, 7);
         var statement = repository.CardStatements.Single(s => s.Card ==CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
@@ -209,7 +209,7 @@ public class CardStatementServiceTests
             date: new DateOnly(2026, 7, 29),
             invoiceDate: new DateOnly(2026, 8, 1),
             value: 40m,
-            card:CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+            card: CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
         var service = new CardStatementService(repository);
         await service.GetStatementsForMonthAsync(2026, 8);
         var augustStatement = repository.CardStatements.Single(s => s.Card ==CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003 && s.Month == 8);
@@ -233,7 +233,7 @@ public class CardStatementServiceTests
     public async Task MarkStatementPaidAsync_WithMissingOrUnknownPaymentSource_ThrowsWithoutChangingState(string? paymentSource)
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var charge = AddCharge(repository, new DateOnly(2026, 7, 10), 30m,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+        var charge = AddCharge(repository, new DateOnly(2026, 7, 10), 30m, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
         var service = new CardStatementService(repository);
         await service.GetStatementsForMonthAsync(2026, 7);
         var statement = repository.CardStatements.Single(s => s.Card ==CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
@@ -270,7 +270,7 @@ public class CardStatementServiceTests
     public async Task MarkStatementPaidAsync_WhenSaveFails_RollsBackStatementAndCascadedExpenses()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var charge = AddCharge(repository, new DateOnly(2026, 7, 10), 30m,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+        var charge = AddCharge(repository, new DateOnly(2026, 7, 10), 30m, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
         var service = new CardStatementService(repository);
         await service.GetStatementsForMonthAsync(2026, 7);
         var statement = repository.CardStatements.Single(s => s.Card ==CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
@@ -303,8 +303,8 @@ public class CardStatementServiceTests
     public async Task UnmarkStatementPaidAsync_RevertsEverySettledExpenseForTheCardMonth()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var first = AddCharge(repository, new DateOnly(2026, 7, 10), 30m,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
-        var second = AddCharge(repository, new DateOnly(2026, 7, 15), 20m,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+        var first = AddCharge(repository, new DateOnly(2026, 7, 10), 30m, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+        var second = AddCharge(repository, new DateOnly(2026, 7, 15), 20m, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
         var service = new CardStatementService(repository);
         await service.GetStatementsForMonthAsync(2026, 7);
         var statement = repository.CardStatements.Single(s => s.Card ==CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
@@ -359,7 +359,7 @@ public class CardStatementServiceTests
     public async Task UnmarkStatementPaidAsync_WhenSaveFails_RollsBackStatementAndCascadedExpenses()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var charge = AddCharge(repository, new DateOnly(2026, 7, 10), 30m,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+        var charge = AddCharge(repository, new DateOnly(2026, 7, 10), 30m, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
         var service = new CardStatementService(repository);
         await service.GetStatementsForMonthAsync(2026, 7);
         var statement = repository.CardStatements.Single(s => s.Card ==CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);

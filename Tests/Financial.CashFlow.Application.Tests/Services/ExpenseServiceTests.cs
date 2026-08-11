@@ -484,7 +484,7 @@ public class ExpenseServiceTests
     public void GetCategoryTotalsByMonth_SettledCardCharge_CountsTowardPostSettlementDateMonth()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var charge = Expense.Create(new DateOnly(2026, 7, 10), "Settled charge", 40m, Category.Mercado, null,CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+        var charge = Expense.Create(new DateOnly(2026, 7, 10), "Settled charge", 40m, Category.Mercado, null, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
         charge.Settle(ChaseFixture, new DateOnly(2026, 8, 3));
         repository.Expenses.Add(charge);
         var service = new ExpenseService(repository);
@@ -506,7 +506,7 @@ public class ExpenseServiceTests
         var unpaidCutoff = Expense.Create(
             new DateOnly(2026, 7, 29), "Unpaid cutoff", 10m, Category.Mercado, null,
            CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003, new DateOnly(2026, 8, 1));
-        var settled = Expense.Create(new DateOnly(2026, 7, 12), "Settled", 20m, Category.Mercado, null,CashFlow.Domain.Enums.CreditCard.BaAmex);
+        var settled = Expense.Create(new DateOnly(2026, 7, 12), "Settled", 20m, Category.Mercado, null, CashFlow.Domain.Enums.CreditCard.BaAmex);
         settled.Settle(ChaseFixture, new DateOnly(2026, 7, 20));
         var bank = Expense.Create(new DateOnly(2026, 7, 15), "Bank", 30m, Category.Mercado, ChaseFixture, null);
         repository.Expenses.Add(unpaidCutoff);
