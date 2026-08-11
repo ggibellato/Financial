@@ -22,7 +22,12 @@ public class MonthlyViewModelTests
         new() { Id = DividendoJurosSourceId, Name = "DividendoJuros", IsActive = true, Group = "DividendoJuros" },
     ];
 
-    private static (MonthlyViewModel ViewModel, StubExpenseService Expenses, StubIncomeService Incomes, StubBankService Banks, StubTitheService Tithe) CreateViewModel(
+    /// <summary>Every card the WPF form's hardcoded CardOptions dropdown offers, pre-seeded so
+    /// MonthlyViewModel.SaveExpenseAsync's name-to-Guid CreditCard lookup succeeds in tests.</summary>
+    private static readonly List<CreditCardDTO> DefaultCreditCards =
+        MonthlyViewModel.Cards.Select(name => new CreditCardDTO { Id = Guid.NewGuid(), Name = name, IsActive = true }).ToList();
+
+    private static (MonthlyViewModel ViewModel, StubExpenseService Expenses, StubIncomeService Incomes, StubBankService Banks, StubTitheService Tithe, StubCreditCardService CreditCards) CreateViewModel(
         bool confirmDeletes = true, StubIncomeSourceService? incomeSourceService = null)
     {
         var expenses = new StubExpenseService();
@@ -33,15 +38,16 @@ public class MonthlyViewModelTests
         var transfers = new StubTransferService();
         var adjustments = new StubBalanceAdjustmentService();
         var cardStatements = new StubCardStatementService();
+        var creditCards = new StubCreditCardService { CreditCards = new List<CreditCardDTO>(DefaultCreditCards) };
 
-        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cardStatements, confirm: _ => confirmDeletes);
-        return (viewModel, expenses, incomes, banks, tithe);
+        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cardStatements, creditCards, confirm: _ => confirmDeletes);
+        return (viewModel, expenses, incomes, banks, tithe, creditCards);
     }
 
     [Fact]
     public async Task LoadsExpensesIncomesCategoryTotalsAndTitheForCurrentMonth()
     {
-        var (viewModel, expenses, incomes, _, tithe) = CreateViewModel();
+        var (viewModel, expenses, incomes, _, tithe, _) = CreateViewModel();
         expenses.Expenses = [new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Test", Value = 10m, Category = "Mercado", PaymentSourceBankId = BarclaysId, PaymentSourceBankName = "Barclays", PaymentStatus = "ImmediatePayment" }];
         expenses.CategoryTotals = [new CategoryTotalDTO { Category = "Mercado", TotalValue = 10m }];
         incomes.Incomes = [new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Gleison", NetValue = 100m, BankId = BarclaysId, BankName = "Barclays" }];
@@ -58,7 +64,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task RefreshAsync_GroupsIncomesBySourceAndSumsGrossOnlyWhenPresent()
     {
-        var (viewModel, _, incomes, _, _) = CreateViewModel();
+        var (viewModel, _, incomes, _, _, _) = CreateViewModel();
         incomes.Incomes =
         [
             new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Gleison", GrossValue = 120m, NetValue = 100m, BankId = BarclaysId, BankName = "Barclays" },
@@ -81,7 +87,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task ChangingYearOrMonth_RefetchesAllFour()
     {
-        var (viewModel, expenses, _, _, _) = CreateViewModel();
+        var (viewModel, expenses, _, _, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
         var callsBefore = expenses.GetExpensesByMonthCallCount;
 
@@ -94,8 +100,8 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task RefreshAsync_PopulatesUnpaidCardCharges()
     {
-        var (viewModel, expenses, _, _, _) = CreateViewModel();
-        expenses.UnpaidCardCharges = [new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, Category = "Extras", CardTag = "BaAmex", PaymentStatus = "CreditCardCharge" }];
+        var (viewModel, expenses, _, _, _, _) = CreateViewModel();
+        expenses.UnpaidCardCharges = [new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, Category = "Extras", CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", PaymentStatus = "CreditCardCharge" }];
 
         await viewModel.RefreshAsync();
 
@@ -105,7 +111,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task ChangingYearOrMonth_RefetchesUnpaidCardCharges()
     {
-        var (viewModel, expenses, _, _, _) = CreateViewModel();
+        var (viewModel, expenses, _, _, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
         var callsBefore = expenses.GetUnpaidCardChargesByMonthCallCount;
 
@@ -118,8 +124,8 @@ public class MonthlyViewModelTests
     [Fact]
     public void EditExpenseCommand_FromUnpaidCardCharges_OpensFormPrefilled()
     {
-        var (viewModel, _, _, _, _) = CreateViewModel();
-        var unpaidCharge = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, Category = "Extras", CardTag = "BaAmex", PaymentStatus = "CreditCardCharge" };
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        var unpaidCharge = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, Category = "Extras", CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", PaymentStatus = "CreditCardCharge" };
 
         viewModel.EditExpenseCommand.Execute(unpaidCharge);
 
@@ -132,8 +138,8 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task DeleteExpenseCommand_FromUnpaidCardCharges_ConfirmedCallsDeleteAndRefreshes()
     {
-        var (viewModel, expenses, _, _, _) = CreateViewModel();
-        var unpaidCharge = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, Category = "Extras", CardTag = "BaAmex", PaymentStatus = "CreditCardCharge" };
+        var (viewModel, expenses, _, _, _, _) = CreateViewModel();
+        var unpaidCharge = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, Category = "Extras", CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", PaymentStatus = "CreditCardCharge" };
         await viewModel.RefreshAsync();
         var callsBefore = expenses.GetUnpaidCardChargesByMonthCallCount;
 
@@ -146,7 +152,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task AddExpense_BankMode_CallsServiceWithPaymentSourceAndRefreshes()
     {
-        var (viewModel, expenses, _, banks, _) = CreateViewModel();
+        var (viewModel, expenses, _, banks, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
         viewModel.ExpenseFormDate = DateTime.Today;
@@ -159,14 +165,14 @@ public class MonthlyViewModelTests
 
         expenses.LastCreateRequest.Should().NotBeNull();
         expenses.LastCreateRequest!.PaymentSourceBankId.Should().Be(ChaseId);
-        expenses.LastCreateRequest.CardTag.Should().BeNull();
+        expenses.LastCreateRequest.CreditCardId.Should().BeNull();
         viewModel.IsExpenseFormOpen.Should().BeFalse();
     }
 
     [Fact]
-    public async Task AddExpense_CardMode_CallsServiceWithCardTag()
+    public async Task AddExpense_CardMode_CallsServiceWithCreditCardId()
     {
-        var (viewModel, expenses, _, _, _) = CreateViewModel();
+        var (viewModel, expenses, _, _, _, creditCards) = CreateViewModel();
         await viewModel.RefreshAsync();
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
         viewModel.ExpenseFormDate = DateTime.Today;
@@ -177,8 +183,9 @@ public class MonthlyViewModelTests
 
         await viewModel.SaveExpenseAsync();
 
+        var expectedCreditCardId = creditCards.CreditCards.Single(c => c.Name == MonthlyViewModel.Cards[0]).Id;
         expenses.LastCreateRequest.Should().NotBeNull();
-        expenses.LastCreateRequest!.CardTag.Should().Be(MonthlyViewModel.Cards[0]);
+        expenses.LastCreateRequest!.CreditCardId.Should().Be(expectedCreditCardId);
         expenses.LastCreateRequest.PaymentSourceBankId.Should().BeNull();
     }
 
@@ -187,7 +194,7 @@ public class MonthlyViewModelTests
     {
         // WPF's {Binding} only resolves instance members, never static fields — these
         // instance-level wrappers are what the Category/Card ComboBoxes actually bind to.
-        var (viewModel, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
 
         viewModel.CategoryOptions.Should().BeSameAs(MonthlyViewModel.Categories);
         viewModel.CardOptions.Should().BeSameAs(MonthlyViewModel.Cards);
@@ -196,7 +203,7 @@ public class MonthlyViewModelTests
     [Fact]
     public void ShowCreateExpenseFormCommand_CardMode_SetsIsCardPaymentModeAndExposesFiveCards()
     {
-        var (viewModel, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
 
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
 
@@ -208,7 +215,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task ShowCreateExpenseFormCommand_BankMode_DefaultsToFirstBankAndEmptyCardTag()
     {
-        var (viewModel, _, _, banks, _) = CreateViewModel();
+        var (viewModel, _, _, banks, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
 
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
@@ -221,7 +228,7 @@ public class MonthlyViewModelTests
     [Fact]
     public void ShowCreateExpenseFormCommand_CardMode_DefaultsToEmptyPaymentSourceAndCardTag()
     {
-        var (viewModel, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
 
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
 
@@ -232,7 +239,7 @@ public class MonthlyViewModelTests
     [Fact]
     public void EditExpense_SettledExpense_HidesPaymentModeFieldsAndSaveButton()
     {
-        var (viewModel, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
         var settledExpense = new ExpenseDTO
         {
             Id = Guid.NewGuid(),
@@ -240,7 +247,7 @@ public class MonthlyViewModelTests
             Description = "Settled",
             Value = 10m,
             Category = "Mercado",
-            CardTag = "BaAmex",
+            CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex",
             PaymentStatus = "CreditCardSettled",
         };
 
@@ -253,7 +260,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task SelectingRoundUpEnabledBank_ShowsRoundUpField()
     {
-        var (viewModel, _, _, banks, _) = CreateViewModel();
+        var (viewModel, _, _, banks, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
@@ -265,7 +272,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task SelectingNonRoundUpBank_HidesRoundUpField()
     {
-        var (viewModel, _, _, banks, _) = CreateViewModel();
+        var (viewModel, _, _, banks, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
@@ -277,7 +284,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task NegativeValue_SelectingRoundUpEnabledBank_DoesNotSuggestRoundUp()
     {
-        var (viewModel, _, _, banks, _) = CreateViewModel();
+        var (viewModel, _, _, banks, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
 
@@ -290,7 +297,7 @@ public class MonthlyViewModelTests
     [Fact]
     public void SettledExpense_DeleteCommandCannotExecute()
     {
-        var (viewModel, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
         var settledExpense = new ExpenseDTO
         {
             Id = Guid.NewGuid(),
@@ -298,7 +305,7 @@ public class MonthlyViewModelTests
             Description = "Settled",
             Value = 10m,
             Category = "Mercado",
-            CardTag = "BaAmex",
+            CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex",
             PaymentStatus = "CreditCardSettled",
         };
 
@@ -308,7 +315,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task DeleteExpense_CallsServiceAndRefreshes()
     {
-        var (viewModel, expenses, _, _, _) = CreateViewModel();
+        var (viewModel, expenses, _, _, _, _) = CreateViewModel();
         var expense = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "X", Value = 1m, Category = "Mercado", PaymentStatus = "ImmediatePayment" };
 
         await viewModel.DeleteExpenseAsync(expense);
@@ -319,7 +326,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task DeleteExpense_ConfirmationDeclined_DoesNotCallService()
     {
-        var (viewModel, expenses, _, _, _) = CreateViewModel(confirmDeletes: false);
+        var (viewModel, expenses, _, _, _, _) = CreateViewModel(confirmDeletes: false);
         var expense = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "X", Value = 1m, Category = "Mercado", PaymentStatus = "ImmediatePayment" };
 
         await viewModel.DeleteExpenseAsync(expense);
@@ -340,7 +347,7 @@ public class MonthlyViewModelTests
                 new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Gleison", IsActive = true, Group = "Salary" },
             ],
         };
-        var (viewModel, _, _, _, _) = CreateViewModel(incomeSourceService: incomeSourceService);
+        var (viewModel, _, _, _, _, _) = CreateViewModel(incomeSourceService: incomeSourceService);
 
         await viewModel.RefreshAsync();
 
@@ -358,7 +365,7 @@ public class MonthlyViewModelTests
                 new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "RetiredSource", IsActive = false, Group = "NonReportable" },
             ],
         };
-        var (viewModel, _, _, _, _) = CreateViewModel(incomeSourceService: incomeSourceService);
+        var (viewModel, _, _, _, _, _) = CreateViewModel(incomeSourceService: incomeSourceService);
 
         await viewModel.RefreshAsync();
 
@@ -368,7 +375,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task ShowCreateIncomeForm_DefaultsSourceToFirstActiveOption()
     {
-        var (viewModel, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
 
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
@@ -380,7 +387,7 @@ public class MonthlyViewModelTests
     public async Task ShowCreateIncomeForm_WithNoActiveSources_DefaultsToEmpty()
     {
         var incomeSourceService = new StubIncomeSourceService { IncomeSources = [] };
-        var (viewModel, _, _, _, _) = CreateViewModel(incomeSourceService: incomeSourceService);
+        var (viewModel, _, _, _, _, _) = CreateViewModel(incomeSourceService: incomeSourceService);
         await viewModel.RefreshAsync();
 
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
@@ -392,7 +399,7 @@ public class MonthlyViewModelTests
     public async Task RefreshAsync_IncomeSourceFetchFails_LeavesOptionsEmptyAndSetsError()
     {
         var incomeSourceService = new StubIncomeSourceService { ThrowOnGet = new InvalidOperationException("Unavailable") };
-        var (viewModel, _, _, _, _) = CreateViewModel(incomeSourceService: incomeSourceService);
+        var (viewModel, _, _, _, _, _) = CreateViewModel(incomeSourceService: incomeSourceService);
 
         await viewModel.RefreshAsync();
 
@@ -405,7 +412,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task AddIncome_GleisonSource_ShowsGrossValueField()
     {
-        var (viewModel, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
 
@@ -417,7 +424,7 @@ public class MonthlyViewModelTests
     [Fact]
     public void AddIncome_LotterySource_HidesGrossValueField()
     {
-        var (viewModel, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
 
         viewModel.IncomeFormSource = LotterySourceId;
@@ -428,7 +435,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task AddIncome_ValidForm_CallsServiceAndRefreshes()
     {
-        var (viewModel, _, incomes, banks, _) = CreateViewModel();
+        var (viewModel, _, incomes, banks, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
         viewModel.IncomeFormDate = DateTime.Today;
@@ -447,7 +454,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task EditExpense_ValidForm_CallsUpdateServiceAndRefreshes()
     {
-        var (viewModel, expenses, _, banks, _) = CreateViewModel();
+        var (viewModel, expenses, _, banks, _, _) = CreateViewModel();
         var expense = new ExpenseDTO
         {
             Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Old",
@@ -471,7 +478,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task EditIncome_ValidForm_CallsUpdateServiceAndRefreshes()
     {
-        var (viewModel, _, incomes, banks, _) = CreateViewModel();
+        var (viewModel, _, incomes, banks, _, _) = CreateViewModel();
         var income = new IncomeDTO
         {
             Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery",
@@ -493,7 +500,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task DeleteIncome_CallsServiceAndRefreshes()
     {
-        var (viewModel, _, incomes, _, _) = CreateViewModel();
+        var (viewModel, _, incomes, _, _, _) = CreateViewModel();
         var income = new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery", NetValue = 10m, BankId = BarclaysId, BankName = "Barclays" };
 
         await viewModel.DeleteIncomeAsync(income);
@@ -504,7 +511,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task DeleteIncome_ConfirmationDeclined_DoesNotCallService()
     {
-        var (viewModel, _, incomes, _, _) = CreateViewModel(confirmDeletes: false);
+        var (viewModel, _, incomes, _, _, _) = CreateViewModel(confirmDeletes: false);
         var income = new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery", NetValue = 10m, BankId = BarclaysId, BankName = "Barclays" };
 
         await viewModel.DeleteIncomeAsync(income);
@@ -515,7 +522,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task SaveExpense_MissingDescription_DoesNotCallServiceAndShowsError()
     {
-        var (viewModel, expenses, _, banks, _) = CreateViewModel();
+        var (viewModel, expenses, _, banks, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
         viewModel.ExpenseFormDate = DateTime.Today;
@@ -534,7 +541,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task SaveIncome_MissingBank_DoesNotCallServiceAndShowsError()
     {
-        var (viewModel, _, incomes, _, _) = CreateViewModel();
+        var (viewModel, _, incomes, _, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
         viewModel.ShowCreateIncomeFormCommand.Execute(null);
         viewModel.IncomeFormDate = DateTime.Today;
@@ -552,7 +559,7 @@ public class MonthlyViewModelTests
     [Fact]
     public void ShowCreateExpenseFormCommand_CardMode_DefaultsInvoiceDateFromExpenseFormDate()
     {
-        var (viewModel, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
 
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
 
@@ -563,7 +570,7 @@ public class MonthlyViewModelTests
     [Fact]
     public void ExpenseFormDate_ChangedBeforeInvoiceDateTouched_ResyncsInvoiceDefault()
     {
-        var (viewModel, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
 
         viewModel.ExpenseFormDate = new DateTime(2026, 3, 15);
@@ -575,7 +582,7 @@ public class MonthlyViewModelTests
     [Fact]
     public void ExpenseFormInvoiceMonth_SetByUser_StopsFurtherAutoResync()
     {
-        var (viewModel, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
 
         viewModel.ExpenseFormInvoiceYear = 2026;
@@ -589,7 +596,7 @@ public class MonthlyViewModelTests
     [Fact]
     public void EditExpenseCommand_FromUnpaidCardCharges_PrefillsInvoiceDateFromExpense()
     {
-        var (viewModel, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
         var unpaidCharge = new ExpenseDTO
         {
             Id = Guid.NewGuid(),
@@ -599,7 +606,7 @@ public class MonthlyViewModelTests
             Description = "Uber",
             Value = 18.4m,
             Category = "Extras",
-            CardTag = "BaAmex",
+            CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex",
             PaymentStatus = "CreditCardCharge",
         };
 
@@ -612,7 +619,7 @@ public class MonthlyViewModelTests
     [Fact]
     public void EditExpense_SettledExpense_InvoiceDateFieldPresentButPaymentModeFieldsGated()
     {
-        var (viewModel, _, _, _, _) = CreateViewModel();
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
         var settledExpense = new ExpenseDTO
         {
             Id = Guid.NewGuid(),
@@ -622,7 +629,7 @@ public class MonthlyViewModelTests
             Description = "Settled",
             Value = 10m,
             Category = "Mercado",
-            CardTag = "BaAmex",
+            CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex",
             PaymentStatus = "CreditCardSettled",
         };
 
@@ -636,7 +643,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task AddExpense_CardMode_CallsServiceWithInvoiceDate()
     {
-        var (viewModel, expenses, _, _, _) = CreateViewModel();
+        var (viewModel, expenses, _, _, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
         viewModel.ExpenseFormDate = new DateTime(2026, 3, 15);
@@ -654,7 +661,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task AddExpense_BankMode_CallsServiceWithNullInvoiceDate()
     {
-        var (viewModel, expenses, _, banks, _) = CreateViewModel();
+        var (viewModel, expenses, _, banks, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
         viewModel.ExpenseFormDate = DateTime.Today;
@@ -672,7 +679,7 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task SaveExpenseAsync_EditingCardExpense_CallsServiceWithInvoiceDate()
     {
-        var (viewModel, expenses, _, _, _) = CreateViewModel();
+        var (viewModel, expenses, _, _, _, _) = CreateViewModel();
         var expense = new ExpenseDTO
         {
             Id = Guid.NewGuid(),
@@ -682,7 +689,7 @@ public class MonthlyViewModelTests
             Description = "Uber",
             Value = 18.4m,
             Category = "Extras",
-            CardTag = "BaAmex",
+            CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex",
             PaymentStatus = "CreditCardCharge",
         };
         await viewModel.RefreshAsync();

@@ -9,6 +9,7 @@ public class CardStatementsEndpointsTests
 {
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
     private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
+    private static readonly Guid BarclaysPlatinumVisa8003Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000001");
 
     [Fact]
     public async Task GetStatementsForMonth_FirstCall_GeneratesFiveUnpaidStatements()
@@ -36,13 +37,13 @@ public class CardStatementsEndpointsTests
             Value = 45m,
             Category = "Mercado",
             PaymentSourceBankId = null,
-            CardTag = "BarclaysPlatinumVisa8003"
+            CreditCardId = BarclaysPlatinumVisa8003Id
         });
 
         var response = await client.GetAsync("/api/v1/financial/card-statements/2026/7");
 
         var statements = await response.Content.ReadFromJsonAsync<List<CardStatementDTO>>();
-        statements.Should().ContainSingle(s => s.Card == "BarclaysPlatinumVisa8003" && s.OutstandingTotal == 45m);
+        statements.Should().ContainSingle(s => s.CreditCardName == "BarclaysPlatinumVisa8003" && s.OutstandingTotal == 45m);
     }
 
     [Fact]
@@ -57,7 +58,7 @@ public class CardStatementsEndpointsTests
             Value = 45m,
             Category = "Mercado",
             PaymentSourceBankId = null,
-            CardTag = "BarclaysPlatinumVisa8003"
+            CreditCardId = BarclaysPlatinumVisa8003Id
         });
         var target = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
 
@@ -90,7 +91,7 @@ public class CardStatementsEndpointsTests
             Value = 45m,
             Category = "Mercado",
             PaymentSourceBankId = null,
-            CardTag = "BarclaysPlatinumVisa8003"
+            CreditCardId = BarclaysPlatinumVisa8003Id
         });
         var target = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
 
@@ -144,7 +145,7 @@ public class CardStatementsEndpointsTests
             Value = 45m,
             Category = "Mercado",
             PaymentSourceBankId = null,
-            CardTag = "BarclaysPlatinumVisa8003"
+            CreditCardId = BarclaysPlatinumVisa8003Id
         });
         var target = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
         await MarkPaidAsync(client, target.Id, Trading212Id);
@@ -188,7 +189,7 @@ public class CardStatementsEndpointsTests
     private static async Task<CardStatementDTO> GetStatementAsync(HttpClient client, string card)
     {
         var statements = await client.GetFromJsonAsync<List<CardStatementDTO>>("/api/v1/financial/card-statements/2026/7");
-        return statements!.First(s => s.Card == card);
+        return statements!.First(s => s.CreditCardName == card);
     }
 
     private static async Task<CardStatementDTO> GetFirstStatementAsync(HttpClient client)

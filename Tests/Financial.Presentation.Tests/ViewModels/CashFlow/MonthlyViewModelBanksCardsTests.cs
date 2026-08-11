@@ -32,8 +32,9 @@ public class MonthlyViewModelBanksCardsTests
         var transfers = new StubTransferService();
         var adjustments = new StubBalanceAdjustmentService();
         var cards = new StubCardStatementService();
+        var creditCards = new StubCreditCardService();
 
-        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cards, confirm: _ => confirmDeletes);
+        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cards, creditCards, confirm: _ => confirmDeletes);
         return (viewModel, expenses, banks, transfers, adjustments, cards);
     }
 
@@ -211,8 +212,8 @@ public class MonthlyViewModelBanksCardsTests
         var (viewModel, _, _, _, _, cards) = CreateViewModel();
         cards.Statements =
         [
-            new CardStatementDTO { Id = Guid.NewGuid(), Card = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 100m },
-            new CardStatementDTO { Id = Guid.NewGuid(), Card = "ChaseMaster4023", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 50m },
+            new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 100m },
+            new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "ChaseMaster4023", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 50m },
         ];
 
         await viewModel.RefreshAsync();
@@ -224,7 +225,7 @@ public class MonthlyViewModelBanksCardsTests
     public async Task MarkCardStatementPaid_RequiresBankSelected_ThenCallsService()
     {
         var (viewModel, _, banks, _, _, cards) = CreateViewModel();
-        var statement = new CardStatementDTO { Id = Guid.NewGuid(), Card = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 100m };
+        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 100m };
         cards.Statements = [statement];
         await viewModel.RefreshAsync();
 
@@ -244,7 +245,7 @@ public class MonthlyViewModelBanksCardsTests
     public async Task UnmarkCardStatementPaid_CallsService()
     {
         var (viewModel, _, _, _, _, cards) = CreateViewModel();
-        var statement = new CardStatementDTO { Id = Guid.NewGuid(), Card = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = true, OutstandingTotal = 0m };
+        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = true, OutstandingTotal = 0m };
         cards.Statements = [statement];
 
         await viewModel.UnmarkStatementPaidAsync(statement);

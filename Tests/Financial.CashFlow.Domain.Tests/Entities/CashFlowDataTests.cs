@@ -143,7 +143,7 @@ public class CashFlowDataTests
     [Fact]
     public void AddCardStatement_AddsOnlyToCardStatementsCollection()
     {
-        _sut.AddCardStatement(CardStatement.Create(Enums.CreditCard.BarclaysPlatinumVisa8003, 2026, 7));
+        _sut.AddCardStatement(CardStatement.Create(Domain.Entities.CreditCard.Create("BarclaysPlatinumVisa8003"), 2026, 7));
 
         CheckCollectionCounts(new CheckItemsQuantity(CardStatements: 1));
     }

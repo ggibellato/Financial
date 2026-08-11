@@ -34,8 +34,9 @@ public class MonthlyViewModelBankOperationsTests
         var transfers = new StubTransferService();
         var adjustments = new StubBalanceAdjustmentService();
         var cards = new StubCardStatementService();
+        var creditCards = new StubCreditCardService();
 
-        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cards, confirm: _ => confirmDeletes);
+        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cards, creditCards, confirm: _ => confirmDeletes);
         return (viewModel, banks, transfers, adjustments);
     }
 

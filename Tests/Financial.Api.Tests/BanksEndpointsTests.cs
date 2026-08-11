@@ -123,7 +123,7 @@ public class BanksEndpointsTests
             Value = 50m,
             Category = "Mercado",
             PaymentSourceBankId = BarclaysId,
-            CardTag = null
+            CreditCardId = null
         });
 
         var response = await client.GetAsync("/api/v1/financial/banks/month/2026/7/balances");
