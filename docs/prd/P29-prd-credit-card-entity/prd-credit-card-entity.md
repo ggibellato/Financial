@@ -236,10 +236,10 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. CreditCard Domain Entity & Seed Migration
-- [ ] CreditCard entity exists with Id, Name, IsActive, NextInvoiceDueDate fields
-- [ ] Migration seeds exactly 5 cards (Barclays Platinum Visa 8003, Barclays Platinum Visa 6007, Chase Master 4023, BA Amex, PayPal Credit), all active, due date null
-- [ ] Running the migration twice does not create duplicate cards
-- [ ] CreditCard is persisted via a reference converter (`CreditCardId` wire format), consistent with Bank/IncomeSource
+- [x] CreditCard entity exists with Id, Name, IsActive, NextInvoiceDueDate fields
+- [x] Migration seeds exactly 5 cards (Barclays Platinum Visa 8003, Barclays Platinum Visa 6007, Chase Master 4023, BA Amex, PayPal Credit), all active, due date null
+- [x] Running the migration twice does not create duplicate cards
+- [ ] CreditCard is persisted via a reference converter (`CreditCardId` wire format), consistent with Bank/IncomeSource — deferred to F02, which is when a property first references CreditCard by Id (mirrors ReserveBucketReferenceConverter landing in P28-F02, not P28-F01); will be checked off there
 
 ### F02. Migrate Expense & CardStatement to CreditCard References
 - [ ] `Expense.CardTag` is renamed to `Expense.CreditCard` and `CardStatement.Card` is renamed to `CardStatement.CreditCard`; both are exposed at the API boundary as `CreditCardId`, with no remaining `CardTag`/`Card` string fields on these DTOs
