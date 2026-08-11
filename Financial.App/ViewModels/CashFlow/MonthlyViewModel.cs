@@ -21,6 +21,7 @@ public class MonthlyViewModel : ViewModelBase
     private readonly ITransferService _transferService;
     private readonly IBalanceAdjustmentService _balanceAdjustmentService;
     private readonly ICardStatementService _cardStatementService;
+    private readonly ICreditCardService _creditCardService;
 
     private int _year;
     private int _month;
@@ -117,6 +118,7 @@ public class MonthlyViewModel : ViewModelBase
         ITransferService transferService,
         IBalanceAdjustmentService balanceAdjustmentService,
         ICardStatementService cardStatementService,
+        ICreditCardService creditCardService,
         Func<string, bool> confirm)
     {
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
@@ -127,6 +129,7 @@ public class MonthlyViewModel : ViewModelBase
         _transferService = transferService ?? throw new ArgumentNullException(nameof(transferService));
         _balanceAdjustmentService = balanceAdjustmentService ?? throw new ArgumentNullException(nameof(balanceAdjustmentService));
         _cardStatementService = cardStatementService ?? throw new ArgumentNullException(nameof(cardStatementService));
+        _creditCardService = creditCardService ?? throw new ArgumentNullException(nameof(creditCardService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
 
         var today = DateTime.Today;
@@ -535,9 +538,9 @@ public class MonthlyViewModel : ViewModelBase
         ExpenseFormDescription = expense.Description;
         ExpenseFormCategory = expense.Category;
         ExpenseFormValue = expense.Value.ToString("0.##");
-        IsCardPaymentMode = expense.CardTag != null;
+        IsCardPaymentMode = expense.CreditCardId != null;
         ExpenseFormPaymentSource = expense.PaymentSourceBankId;
-        ExpenseFormCardTag = expense.CardTag ?? string.Empty;
+        ExpenseFormCardTag = expense.CreditCardName ?? string.Empty;
         ExpenseFormRoundUpAmount = expense.RoundUpAmount?.ToString("0.##") ?? string.Empty;
         ExpenseFormIsSettled = expense.PaymentStatus == SettledStatus;
         _invoiceDateTouchedByUser = false;
@@ -590,7 +593,9 @@ public class MonthlyViewModel : ViewModelBase
             var date = DateOnly.FromDateTime(ExpenseFormDate!.Value);
             var value = decimal.Parse(ExpenseFormValue);
             var paymentSource = IsCardPaymentMode ? null : ExpenseFormPaymentSource;
-            var cardTag = IsCardPaymentMode ? ExpenseFormCardTag : null;
+            var creditCardId = IsCardPaymentMode
+                ? _creditCardService.GetCreditCards().FirstOrDefault(c => c.Name == ExpenseFormCardTag)?.Id
+                : null;
             DateOnly? invoiceDate = IsCardPaymentMode ? new DateOnly(ExpenseFormInvoiceYear, ExpenseFormInvoiceMonth, 1) : null;
             decimal? roundUpAmount = ShowRoundUpField && decimal.TryParse(ExpenseFormRoundUpAmount, out var parsedRoundUp)
                 ? parsedRoundUp
@@ -605,7 +610,7 @@ public class MonthlyViewModel : ViewModelBase
                     Value = value,
                     Category = ExpenseFormCategory,
                     PaymentSourceBankId = paymentSource,
-                    CardTag = cardTag,
+                    CreditCardId = creditCardId,
                     InvoiceDate = invoiceDate,
                     RoundUpAmount = roundUpAmount,
                 });
@@ -619,7 +624,7 @@ public class MonthlyViewModel : ViewModelBase
                     Value = value,
                     Category = ExpenseFormCategory,
                     PaymentSourceBankId = paymentSource,
-                    CardTag = cardTag,
+                    CreditCardId = creditCardId,
                     InvoiceDate = invoiceDate,
                     RoundUpAmount = roundUpAmount,
                 });

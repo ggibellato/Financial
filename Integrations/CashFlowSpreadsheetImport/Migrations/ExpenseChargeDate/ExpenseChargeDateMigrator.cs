@@ -18,7 +18,7 @@ public static class ExpenseChargeDateMigrator
         var legacySettledAtById = LegacySettledAtExtractor.Extract(legacyRawJson);
         var paidStatementsByKey = data.CardStatements
             .Where(s => s.IsPaid)
-            .ToDictionary(s => (s.Card, s.Year, s.Month));
+            .ToDictionary(s => (s.CreditCard.Id, s.Year, s.Month));
 
         foreach (var expense in data.Expenses)
         {
@@ -31,10 +31,10 @@ public static class ExpenseChargeDateMigrator
     private static void MigrateExpense(
         Expense expense,
         IReadOnlyDictionary<Guid, DateOnly> legacySettledAtById,
-        IReadOnlyDictionary<(CashFlow.Domain.Enums.CreditCard, int, int), CardStatement> paidStatements,
+        IReadOnlyDictionary<(Guid, int, int), CardStatement> paidStatements,
         ExpenseChargeDateMigrationSummary summary)
     {
-        if (expense.CardTag is null)
+        if (expense.CreditCard is null)
         {
             summary.CountBankExpense();
             return;
@@ -54,7 +54,7 @@ public static class ExpenseChargeDateMigrator
             return;
         }
 
-        var statementKey = (expense.CardTag.Value, expense.Date.Year, expense.Date.Month);
+        var statementKey = (expense.CreditCard.Id, expense.Date.Year, expense.Date.Month);
         if (!paidStatements.TryGetValue(statementKey, out var statement))
         {
             summary.FlagMissingStatement(expense);

@@ -3,7 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using CreditCardEnum = Financial.CashFlow.Domain.Enums.CreditCard;
+using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -22,11 +22,11 @@ public sealed class ExpenseService : IExpenseService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var (category, paymentSource, cardTag) = ValidateFields(
-            request.Description, request.Value, request.Category, request.PaymentSourceBankId, request.CardTag);
+        var (category, paymentSource, creditCard) = ValidateFields(
+            request.Description, request.Value, request.Category, request.PaymentSourceBankId, request.CreditCardId);
         ValidateRoundUpEligibility(request.RoundUpAmount, paymentSource);
 
-        var expense = Expense.Create(request.Date, request.Description, request.Value, category, paymentSource, cardTag, request.InvoiceDate);
+        var expense = Expense.Create(request.Date, request.Description, request.Value, category, paymentSource, creditCard, request.InvoiceDate);
         expense.SetRoundUpAmount(request.RoundUpAmount);
         _repository.AddExpense(expense);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
@@ -40,11 +40,11 @@ public sealed class ExpenseService : IExpenseService
 
         var expense = FindExpenseOrThrow(id);
 
-        var (category, paymentSource, cardTag) = ValidateFields(
-            request.Description, request.Value, request.Category, request.PaymentSourceBankId, request.CardTag);
+        var (category, paymentSource, creditCard) = ValidateFields(
+            request.Description, request.Value, request.Category, request.PaymentSourceBankId, request.CreditCardId);
         ValidateRoundUpEligibility(request.RoundUpAmount, paymentSource);
 
-        expense.UpdateDetails(request.Date, request.Description, request.Value, category, paymentSource, cardTag);
+        expense.UpdateDetails(request.Date, request.Description, request.Value, category, paymentSource, creditCard);
         expense.SetRoundUpAmount(request.RoundUpAmount);
 
         if (request.InvoiceDate is not null && request.InvoiceDate != expense.InvoiceDate)
@@ -112,8 +112,8 @@ public sealed class ExpenseService : IExpenseService
         _repository.GetExpenses().FirstOrDefault(e => e.Id == id)
             ?? throw new KeyNotFoundException($"Expense '{id}' was not found.");
 
-    private (Category Category, Bank? PaymentSourceBank, CreditCardEnum? CardTag) ValidateFields(
-        string description, decimal value, string category, Guid? paymentSourceBankId, string? cardTag)
+    private (Category Category, Bank? PaymentSourceBank, CreditCardEntity? CreditCard) ValidateFields(
+        string description, decimal value, string category, Guid? paymentSourceBankId, Guid? creditCardId)
     {
         if (string.IsNullOrWhiteSpace(description))
         {
@@ -146,18 +146,24 @@ public sealed class ExpenseService : IExpenseService
             parsedPaymentSourceBank = bank!;
         }
 
-        CreditCardEnum? parsedCardTag = null;
-        if (!string.IsNullOrWhiteSpace(cardTag))
+        CreditCardEntity? parsedCreditCard = null;
+        if (creditCardId is not null)
         {
-            if (!CreditCardParser.TryParse(cardTag, out var creditCard))
+            if (!CreditCardNameResolver.TryResolve(creditCardId, _repository.GetCreditCards(), out var creditCard))
             {
-                throw new ArgumentException($"Credit card '{cardTag}' is not recognized.");
+                throw new ArgumentException($"Credit card '{creditCardId}' is not recognized.");
             }
 
-            parsedCardTag = creditCard;
+            if (!creditCard!.IsActive)
+            {
+                throw new ArgumentException(
+                    $"Credit card '{creditCard.Name}' is inactive and cannot be used for new entries.");
+            }
+
+            parsedCreditCard = creditCard;
         }
 
-        return (parsedCategory, parsedPaymentSourceBank, parsedCardTag);
+        return (parsedCategory, parsedPaymentSourceBank, parsedCreditCard);
     }
 
     private static void ValidateRoundUpEligibility(decimal? roundUpAmount, Bank? paymentSourceBank)
@@ -182,7 +188,8 @@ public sealed class ExpenseService : IExpenseService
         Category = expense.Category.ToString(),
         PaymentSourceBankId = expense.PaymentSourceBank?.Id,
         PaymentSourceBankName = expense.PaymentSourceBank?.Name,
-        CardTag = expense.CardTag?.ToString(),
+        CreditCardId = expense.CreditCard?.Id,
+        CreditCardName = expense.CreditCard?.Name,
         ChargeDate = expense.ChargeDate,
         InvoiceDate = expense.InvoiceDate,
         PaymentStatus = expense.PaymentStatus.ToString(),

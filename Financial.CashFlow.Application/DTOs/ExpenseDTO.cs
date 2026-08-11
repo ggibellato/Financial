@@ -26,8 +26,11 @@ public sealed class ExpenseDTO
     /// <summary>Payment source bank name. Null while the expense is an unsettled credit card charge.</summary>
     public string? PaymentSourceBankName { get; init; }
 
-    /// <summary>Optional credit-card tag name.</summary>
-    public string? CardTag { get; init; }
+    /// <summary>Credit card identifier. Null unless this is a credit card expense.</summary>
+    public Guid? CreditCardId { get; init; }
+
+    /// <summary>Credit card display name. Null unless this is a credit card expense.</summary>
+    public string? CreditCardName { get; init; }
 
     /// <summary>Immutable original purchase day. Non-null only for a credit card expense.</summary>
     public DateOnly? ChargeDate { get; init; }

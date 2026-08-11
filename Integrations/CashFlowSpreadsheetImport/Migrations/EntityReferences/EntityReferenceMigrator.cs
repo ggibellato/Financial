@@ -4,6 +4,7 @@ using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.M
 using Financial.CashFlow.Infrastructure.Persistence;
 using System.Text.Json;
 using static Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.RawJsonMigrationHelpers;
+using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.EntityReferences;
 
@@ -52,8 +53,14 @@ public static class EntityReferenceMigrator
         // be read below, and the buckets themselves must be carried into `data` or they would be
         // silently dropped from the rewritten file.
         var reserveBuckets = DeserializeCollection<ReserveBucket>(root, "ReserveBuckets", elementOptions);
+        // A file this old also predates F01's CreditCard seed migration, so the seeded cards are
+        // bootstrapped here too (mirroring ReserveBucketReferenceMigrator's own bootstrap), rather
+        // than assuming a "CreditCards" array already exists in this legacy shape.
+        var creditCards = ResolveCreditCards(root, elementOptions);
+        var cardsByName = creditCards.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
         var referenceContext = new ReferenceResolutionContext();
         foreach (var bucket in reserveBuckets) referenceContext.ReserveBuckets[bucket.Id] = bucket;
+        foreach (var card in creditCards) referenceContext.CreditCards[card.Id] = card;
         var resolvedOptions = CreateElementOptions(referenceContext);
 
         var data = CashFlowData.Create();
@@ -61,13 +68,14 @@ public static class EntityReferenceMigrator
         foreach (var incomeSource in incomeSources) data.AddIncomeSource(incomeSource);
         foreach (var account in investmentAccounts) data.AddInvestmentAccount(account);
         foreach (var bucket in reserveBuckets) data.AddReserveBucket(bucket);
+        foreach (var card in creditCards) data.AddCreditCard(card);
         foreach (var movement in DeserializeCollection<ReserveMovement>(root, "ReserveMovements", resolvedOptions)) data.AddReserveMovement(movement);
-        foreach (var statement in DeserializeCollection<CardStatement>(root, "CardStatements", elementOptions)) data.AddCardStatement(statement);
+        foreach (var statement in DeserializeCollection<CardStatement>(root, "CardStatements", resolvedOptions)) data.AddCardStatement(statement);
         foreach (var bill in DeserializeCollection<RecurringBill>(root, "RecurringBills", elementOptions)) data.AddRecurringBill(bill);
         foreach (var entry in DeserializeCollection<MaeLedgerEntry>(root, "MaeLedgerEntries", elementOptions)) data.AddMaeLedgerEntry(entry);
 
         MigrateIncomes(root, banksByName, incomeSourcesByName, data, summary);
-        MigrateExpenses(root, banksByName, data, summary);
+        MigrateExpenses(root, banksByName, cardsByName, data, summary);
         MigrateTransfers(root, banksByName, data, summary);
         MigrateBalanceAdjustments(root, banksByName, data, summary);
         MigrateInvestmentSnapshots(root, investmentAccountsByName, data, summary);
@@ -182,9 +190,22 @@ public static class EntityReferenceMigrator
         }
     }
 
+    private static List<CreditCardEntity> ResolveCreditCards(JsonElement root, JsonSerializerOptions unresolvedOptions)
+    {
+        if (root.TryGetProperty("CreditCards", out var element) && element.ValueKind == JsonValueKind.Array)
+        {
+            return DeserializeCollection<CreditCardEntity>(root, "CreditCards", unresolvedOptions);
+        }
+
+        var bootstrapData = CashFlowData.Create();
+        Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.CreditCards.CreditCardMigrator.Migrate(bootstrapData);
+        return bootstrapData.CreditCards.ToList();
+    }
+
     private static void MigrateExpenses(
         JsonElement root,
         IReadOnlyDictionary<string, Bank> banksByName,
+        IReadOnlyDictionary<string, CreditCardEntity> cardsByName,
         CashFlowData data,
         EntityReferenceMigrationSummary summary)
     {
@@ -204,14 +225,21 @@ public static class EntityReferenceMigrator
                 continue;
             }
 
+            var legacyCardName = ReadNullableEnum<CashFlow.Domain.Enums.CreditCard>(item, "CardTag")?.ToString();
+            CreditCardEntity? creditCard = null;
+            if (legacyCardName is not null && !cardsByName.TryGetValue(legacyCardName, out creditCard))
+            {
+                summary.FlagUnresolvedExpense(id, $"CardTag='{legacyCardName}'");
+                continue;
+            }
+
             var date = ReadDate(item, "Date");
             var description = item.GetProperty("Description").GetString()!;
             var value = item.GetProperty("Value").GetDecimal();
             var category = Enum.Parse<Category>(item.GetProperty("Category").GetString()!);
-            var cardTag = ReadNullableEnum<CashFlow.Domain.Enums.CreditCard>(item, "CardTag");
             var invoiceDate = ReadNullableDate(item, "InvoiceDate");
 
-            var expense = Expense.Create(date, description, value, category, paymentSourceBank, cardTag, invoiceDate);
+            var expense = Expense.Create(date, description, value, category, paymentSourceBank, creditCard, invoiceDate);
             SetId(expense, id);
             data.AddExpense(expense);
             summary.CountExpenseMigrated();

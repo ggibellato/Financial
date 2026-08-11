@@ -44,7 +44,7 @@ public sealed class ExpenseChargeDateMigrationSummary
             builder.AppendLine("Settled expenses with no matching paid statement (skipped, review manually):");
             foreach (var expense in _missingStatementExpenses)
             {
-                builder.AppendLine($"  {expense.Id} {expense.Date:yyyy-MM-dd} '{expense.Description}' [{expense.CardTag}]");
+                builder.AppendLine($"  {expense.Id} {expense.Date:yyyy-MM-dd} '{expense.Description}' [{expense.CreditCard?.Name}]");
             }
         }
 
@@ -54,7 +54,7 @@ public sealed class ExpenseChargeDateMigrationSummary
             builder.AppendLine("Settled expenses with no recoverable legacy SettledAt (skipped, review manually):");
             foreach (var expense in _missingSettledAtExpenses)
             {
-                builder.AppendLine($"  {expense.Id} {expense.Date:yyyy-MM-dd} '{expense.Description}' [{expense.CardTag}]");
+                builder.AppendLine($"  {expense.Id} {expense.Date:yyyy-MM-dd} '{expense.Description}' [{expense.CreditCard?.Name}]");
             }
         }
 

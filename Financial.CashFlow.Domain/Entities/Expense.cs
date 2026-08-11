@@ -15,13 +15,13 @@ public class Expense
     public decimal Value { get; private set; }
     public Category Category { get; private set; }
     public Bank? PaymentSourceBank { get; private set; }
-    public Enums.CreditCard? CardTag { get; private set; }
+    public CreditCard? CreditCard { get; private set; }
     public DateOnly? ChargeDate { get; private set; }
     public DateOnly? InvoiceDate { get; private set; }
     public decimal? RoundUpAmount { get; private set; }
 
     public ExpensePaymentStatus PaymentStatus =>
-        CardTag is null ? ExpensePaymentStatus.ImmediatePayment
+        CreditCard is null ? ExpensePaymentStatus.ImmediatePayment
         : PaymentSourceBank is null ? ExpensePaymentStatus.CreditCardCharge
         : ExpensePaymentStatus.CreditCardSettled;
 
@@ -37,10 +37,10 @@ public class Expense
         decimal value,
         Category category,
         Bank? paymentSourceBank,
-        Enums.CreditCard? cardTag,
+        CreditCard? creditCard,
         DateOnly? invoiceDate = null)
     {
-        ValidatePaymentShape(paymentSourceBank, cardTag);
+        ValidatePaymentShape(paymentSourceBank, creditCard);
 
         return new()
         {
@@ -50,9 +50,9 @@ public class Expense
             Value = value,
             Category = category,
             PaymentSourceBank = paymentSourceBank,
-            CardTag = cardTag,
-            ChargeDate = cardTag is not null ? date : null,
-            InvoiceDate = cardTag is not null ? FirstOfMonth(invoiceDate ?? date) : null
+            CreditCard = creditCard,
+            ChargeDate = creditCard is not null ? date : null,
+            InvoiceDate = creditCard is not null ? FirstOfMonth(invoiceDate ?? date) : null
         };
     }
 
@@ -62,11 +62,11 @@ public class Expense
         decimal value,
         Category category,
         Bank? paymentSourceBank,
-        Enums.CreditCard? cardTag)
+        CreditCard? creditCard)
     {
         if (PaymentStatus == ExpensePaymentStatus.CreditCardSettled)
         {
-            if (paymentSourceBank?.Id != PaymentSourceBank?.Id || cardTag != CardTag)
+            if (paymentSourceBank?.Id != PaymentSourceBank?.Id || creditCard?.Id != CreditCard?.Id)
             {
                 throw new ArgumentException(
                     "A settled expense's payment fields cannot be changed; unmark its card statement paid first.");
@@ -74,9 +74,9 @@ public class Expense
         }
         else
         {
-            ValidatePaymentShape(paymentSourceBank, cardTag);
+            ValidatePaymentShape(paymentSourceBank, creditCard);
             PaymentSourceBank = paymentSourceBank;
-            CardTag = cardTag;
+            CreditCard = creditCard;
         }
 
         Date = date;
@@ -125,7 +125,7 @@ public class Expense
     /// </summary>
     public void MigrateLegacyDates(DateOnly chargeDate, DateOnly invoiceDate, DateOnly? settledDate)
     {
-        if (CardTag is null)
+        if (CreditCard is null)
         {
             throw new ArgumentException("Legacy date migration only applies to a credit card expense.");
         }
@@ -179,14 +179,14 @@ public class Expense
 
     private static DateOnly FirstOfMonth(DateOnly date) => new(date.Year, date.Month, 1);
 
-    private static void ValidatePaymentShape(Bank? paymentSourceBank, Enums.CreditCard? cardTag)
+    private static void ValidatePaymentShape(Bank? paymentSourceBank, CreditCard? creditCard)
     {
-        if (paymentSourceBank is null && cardTag is null)
+        if (paymentSourceBank is null && creditCard is null)
         {
             throw new ArgumentException("An expense requires either a payment source or a card tag.");
         }
 
-        if (paymentSourceBank is not null && cardTag is not null)
+        if (paymentSourceBank is not null && creditCard is not null)
         {
             throw new ArgumentException(
                 "An expense cannot have both a payment source and a card tag; a settled expense is only produced by marking its card statement paid.");
