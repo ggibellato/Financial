@@ -43,13 +43,13 @@
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                 <DataGridTextColumn Binding="{Binding Description}" Header="Description" Width="*"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                <DataGridTextColumn Binding="{Binding Category}" Header="Category" Width="120"
+                <DataGridTextColumn Binding="{Binding CategoryName}" Header="Category" Width="120"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                 <DataGridTextColumn Binding="{Binding Value, StringFormat=N2}" Header="Value" Width="100"
                                      ElementStyle="{StaticResource NumericColumnTextStyle}"/>
                 <DataGridTextColumn Binding="{Binding PaymentSourceBankName}" Header="Payment Source" Width="140"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                <DataGridTextColumn Binding="{Binding CardTag}" Header="Card" Width="160"
+                <DataGridTextColumn Binding="{Binding CreditCardName}" Header="Card" Width="160"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
             </DataGrid.Columns>
         </DataGrid>
