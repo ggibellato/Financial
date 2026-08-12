@@ -8,7 +8,7 @@ public static class ExpenseFormValidation
     public static string BuildValidationMessage(
         DateTime? date,
         string description,
-        string category,
+        Guid? categoryId,
         string value,
         bool isCardMode,
         Guid? paymentSource,
@@ -28,7 +28,7 @@ public static class ExpenseFormValidation
             errors.Add("Description is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(category))
+        if (categoryId is null)
         {
             errors.Add("Category is required.");
         }

@@ -35,9 +35,8 @@ public class MonthlyViewModelTests
         new() { Id = Guid.NewGuid(), Name = "PaypalCredit", IsActive = true },
     ];
 
-    /// <summary>The categories seeded in a real deployment (F01), pre-loaded so the expense form
-    /// can resolve the still-hardcoded category text to an Id (F05 replaces this with a real
-    /// dynamic picklist).</summary>
+    /// <summary>The categories seeded in a real deployment (F01), pre-loaded so the expense
+    /// form's live category picklist (F05) has something to select from in tests.</summary>
     private static readonly List<CategoryDTO> DefaultCategories =
     [
         new() { Id = Guid.NewGuid(), Name = "Mercado", Active = true, IsInvestment = false, IsTithe = false },
@@ -176,7 +175,7 @@ public class MonthlyViewModelTests
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
         viewModel.ExpenseFormDate = DateTime.Today;
         viewModel.ExpenseFormDescription = "Groceries";
-        viewModel.ExpenseFormCategory = "Mercado";
+        viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id; // Mercado
         viewModel.ExpenseFormValue = "25.50";
         viewModel.ExpenseFormPaymentSource = banks.Banks[1].Id; // Chase, no round-up
 
@@ -196,7 +195,7 @@ public class MonthlyViewModelTests
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
         viewModel.ExpenseFormDate = DateTime.Today;
         viewModel.ExpenseFormDescription = "Flight";
-        viewModel.ExpenseFormCategory = "Viagem";
+        viewModel.ExpenseFormCategoryId = DefaultCategories[2].Id; // Viagem
         viewModel.ExpenseFormValue = "300";
         viewModel.ExpenseFormCreditCardId = DefaultCreditCards[0].Id;
 
@@ -205,16 +204,6 @@ public class MonthlyViewModelTests
         expenses.LastCreateRequest.Should().NotBeNull();
         expenses.LastCreateRequest!.CreditCardId.Should().Be(DefaultCreditCards[0].Id);
         expenses.LastCreateRequest.PaymentSourceBankId.Should().BeNull();
-    }
-
-    [Fact]
-    public void CategoryOptions_ExposesStaticListAsInstanceMember()
-    {
-        // WPF's {Binding} only resolves instance members, never static fields — this
-        // instance-level wrapper is what the Category ComboBox actually binds to.
-        var (viewModel, _, _, _, _, _) = CreateViewModel();
-
-        viewModel.CategoryOptions.Should().BeSameAs(MonthlyViewModel.Categories);
     }
 
     [Fact]
@@ -543,7 +532,7 @@ public class MonthlyViewModelTests
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
         viewModel.ExpenseFormDate = DateTime.Today;
         viewModel.ExpenseFormDescription = "";
-        viewModel.ExpenseFormCategory = "Mercado";
+        viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id; // Mercado
         viewModel.ExpenseFormValue = "10";
         viewModel.ExpenseFormPaymentSource = banks.Banks[0].Id;
 
@@ -664,7 +653,7 @@ public class MonthlyViewModelTests
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
         viewModel.ExpenseFormDate = new DateTime(2026, 3, 15);
         viewModel.ExpenseFormDescription = "Flight";
-        viewModel.ExpenseFormCategory = "Viagem";
+        viewModel.ExpenseFormCategoryId = DefaultCategories[2].Id; // Viagem
         viewModel.ExpenseFormValue = "300";
         viewModel.ExpenseFormCreditCardId = DefaultCreditCards[0].Id;
 
@@ -682,7 +671,7 @@ public class MonthlyViewModelTests
         viewModel.ShowCreateExpenseFormCommand.Execute("bank");
         viewModel.ExpenseFormDate = DateTime.Today;
         viewModel.ExpenseFormDescription = "Groceries";
-        viewModel.ExpenseFormCategory = "Mercado";
+        viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id; // Mercado
         viewModel.ExpenseFormValue = "25.50";
         viewModel.ExpenseFormPaymentSource = banks.Banks[1].Id;
 

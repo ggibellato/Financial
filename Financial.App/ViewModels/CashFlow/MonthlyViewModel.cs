@@ -92,9 +92,13 @@ public class MonthlyViewModel : ViewModelBase
     public ObservableCollection<CardStatementDTO> CardStatements { get; } = [];
     public ObservableCollection<IncomeTotalRow> IncomeTotals { get; } = [];
     public ObservableCollection<CreditCardDTO> CreditCards { get; } = [];
+    public ObservableCollection<CategoryDTO> Categories { get; } = [];
 
     /// <summary>Active-only credit cards for the expense-entry picker, mirroring Financial.Web's <c>activeCreditCards</c>.</summary>
     public IEnumerable<CreditCardDTO> ActiveCreditCards => CreditCards.Where(c => c.IsActive);
+
+    /// <summary>Active-only categories for the expense-entry picker, mirroring Financial.Web's <c>activeCategories</c>.</summary>
+    public IEnumerable<CategoryDTO> ActiveCategories => Categories.Where(c => c.Active);
 
     public decimal BankTotalsSum => BankTotals.Sum(b => b.Balance);
     public decimal RoundUpTotalsSum => BankTotals.Sum(b => b.RoundUpTotal);
@@ -183,11 +187,12 @@ public class MonthlyViewModel : ViewModelBase
             var transfersTask = Task.Run(() => _transferService.GetTransfersByMonth(year, month));
             var cardStatementsTask = _cardStatementService.GetStatementsForMonthAsync(year, month);
             var creditCardsTask = Task.Run(() => _creditCardService.GetCreditCards());
+            var categoriesTask = Task.Run(() => _categoryService.GetCategories());
 
             await Task.WhenAll(
                 expensesTask, unpaidCardChargesTask, incomesTask, categoryTotalsTask, banksTask,
                 incomeSourcesTask, bankBalancesTask, titheSummaryTask, transfersTask, cardStatementsTask,
-                creditCardsTask);
+                creditCardsTask, categoriesTask);
 
             var expenses = expensesTask.Result;
             var unpaidCardCharges = unpaidCardChargesTask.Result;
@@ -200,6 +205,7 @@ public class MonthlyViewModel : ViewModelBase
             var transfers = transfersTask.Result;
             var cardStatements = cardStatementsTask.Result;
             var creditCards = creditCardsTask.Result;
+            var categories = categoriesTask.Result;
 
             var adjustmentsByBank = await Task.WhenAll(banks.Select(bank =>
                 Task.Run(() => _balanceAdjustmentService.GetAdjustmentsByBank(bank.Id))));
@@ -233,6 +239,9 @@ public class MonthlyViewModel : ViewModelBase
 
             ReplaceAll(CreditCards, creditCards);
             OnPropertyChanged(nameof(ActiveCreditCards));
+
+            ReplaceAll(Categories, categories);
+            OnPropertyChanged(nameof(ActiveCategories));
 
             ReplaceAll(IncomeTotals, BuildIncomeTotals(incomes));
             OnPropertyChanged(nameof(TotalIncoming));
@@ -312,20 +321,11 @@ public class MonthlyViewModel : ViewModelBase
 
     private const string SettledStatus = "CreditCardSettled";
 
-    public static readonly IReadOnlyList<string> Categories =
-    [
-        "Ariana", "Carro", "Casa", "Estudo", "Extras", "Familia", "Gleison",
-        "Mercado", "Samuel", "Saude", "Viagem", "Dizimo", "Investimento", "Reserva",
-    ];
-
-    /// <summary>Instance-level accessor for <see cref="Categories"/> — WPF's Binding only resolves instance members, not static fields.</summary>
-    public IReadOnlyList<string> CategoryOptions => Categories;
-
     private bool _isExpenseFormOpen;
     private Guid? _editingExpenseId;
     private DateTime? _expenseFormDate;
     private string _expenseFormDescription = string.Empty;
-    private string _expenseFormCategory = Categories[0];
+    private Guid? _expenseFormCategoryId;
     private string _expenseFormValue = string.Empty;
     private bool _isCardPaymentMode;
     private Guid? _expenseFormPaymentSource;
@@ -366,10 +366,10 @@ public class MonthlyViewModel : ViewModelBase
         set => SetProperty(ref _expenseFormDescription, value);
     }
 
-    public string ExpenseFormCategory
+    public Guid? ExpenseFormCategoryId
     {
-        get => _expenseFormCategory;
-        set => SetProperty(ref _expenseFormCategory, value);
+        get => _expenseFormCategoryId;
+        set => SetProperty(ref _expenseFormCategoryId, value);
     }
 
     public string ExpenseFormValue
@@ -520,7 +520,7 @@ public class MonthlyViewModel : ViewModelBase
         _editingExpenseId = null;
         ExpenseFormDate = DateTime.Today;
         ExpenseFormDescription = string.Empty;
-        ExpenseFormCategory = Categories[0];
+        ExpenseFormCategoryId = ActiveCategories.FirstOrDefault()?.Id;
         ExpenseFormValue = string.Empty;
         IsCardPaymentMode = mode == "card";
         ExpenseFormPaymentSource = IsCardPaymentMode
@@ -550,7 +550,7 @@ public class MonthlyViewModel : ViewModelBase
         _editingExpenseId = expense.Id;
         ExpenseFormDate = expense.Date.ToDateTime(TimeOnly.MinValue);
         ExpenseFormDescription = expense.Description;
-        ExpenseFormCategory = expense.CategoryName;
+        ExpenseFormCategoryId = expense.CategoryId;
         ExpenseFormValue = expense.Value.ToString("0.##");
         IsCardPaymentMode = expense.CreditCardId != null;
         ExpenseFormPaymentSource = expense.PaymentSourceBankId;
@@ -590,7 +590,7 @@ public class MonthlyViewModel : ViewModelBase
     internal async Task SaveExpenseAsync()
     {
         var validationMessage = ExpenseFormValidation.BuildValidationMessage(
-            ExpenseFormDate, ExpenseFormDescription, ExpenseFormCategory, ExpenseFormValue,
+            ExpenseFormDate, ExpenseFormDescription, ExpenseFormCategoryId, ExpenseFormValue,
             IsCardPaymentMode, ExpenseFormPaymentSource, ExpenseFormCreditCardId, ShowRoundUpField, ExpenseFormRoundUpAmount);
 
         if (!string.IsNullOrEmpty(validationMessage))
@@ -609,8 +609,7 @@ public class MonthlyViewModel : ViewModelBase
             var value = decimal.Parse(ExpenseFormValue);
             var paymentSource = IsCardPaymentMode ? null : ExpenseFormPaymentSource;
             var creditCardId = IsCardPaymentMode ? ExpenseFormCreditCardId : null;
-            var categoryId = _categoryService.GetCategories().FirstOrDefault(c => c.Name == ExpenseFormCategory)?.Id
-                ?? throw new InvalidOperationException($"Category '{ExpenseFormCategory}' is not recognized.");
+            var categoryId = ExpenseFormCategoryId!.Value;
             DateOnly? invoiceDate = IsCardPaymentMode ? new DateOnly(ExpenseFormInvoiceYear, ExpenseFormInvoiceMonth, 1) : null;
             decimal? roundUpAmount = ShowRoundUpField && decimal.TryParse(ExpenseFormRoundUpAmount, out var parsedRoundUp)
                 ? parsedRoundUp

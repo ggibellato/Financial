@@ -40,8 +40,9 @@
             <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ExpenseFormDescription, UpdateSourceTrigger=PropertyChanged}"/>
 
             <TextBlock Grid.Row="3" Grid.Column="0" Text="Category:" VerticalAlignment="Center"/>
-            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding CategoryOptions}"
-                      SelectedItem="{Binding ExpenseFormCategory, UpdateSourceTrigger=PropertyChanged}"/>
+            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding ActiveCategories}" DisplayMemberPath="Name"
+                      SelectedValue="{Binding ExpenseFormCategoryId, UpdateSourceTrigger=PropertyChanged}"
+                      SelectedValuePath="Id"/>
 
             <TextBlock Grid.Row="4" Grid.Column="0" Text="Value:" VerticalAlignment="Center"/>
             <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding ExpenseFormValue, UpdateSourceTrigger=LostFocus}"

@@ -254,8 +254,8 @@ graph TD
 - [x] Category totals/annual summary views continue to render correctly using name-based data, unaffected by the dropdown change
 
 ### F05. WPF: Dynamic Picklist
-- [ ] WPF expense entry category dropdown shows only active categories fetched from the API
-- [ ] Selecting a category submits its Id, not its name
+- [x] WPF expense entry category dropdown shows only active categories fetched from the API
+- [x] Selecting a category submits its Id, not its name
 
 ### F06. Spreadsheet Import Category Resolution
 - [ ] Spreadsheet import resolves each row's category label by name against seeded Category entities, including existing typo-tolerance mappings
@@ -267,5 +267,5 @@ graph TD
 - [x] Category entities seeded in F01 are correctly resolved and referenced by Expense records after F02's migration
 - [x] Category list endpoint in F03 correctly reflects the entities seeded in F01, including their Active/IsInvestment/IsTithe flags
 - [x] Web UI (F04) correctly consumes F02's Expense CategoryId contract and F03's API to build its active-only picklist
-- [ ] WPF UI (F05) correctly consumes F02's Expense CategoryId contract and F03's API to build its active-only picklist
+- [x] WPF UI (F05) correctly consumes F02's Expense CategoryId contract and F03's API to build its active-only picklist
 - [ ] Spreadsheet import (F06) correctly resolves categories using F01's seeded entities and stores references consistent with F02's entity-reference model
