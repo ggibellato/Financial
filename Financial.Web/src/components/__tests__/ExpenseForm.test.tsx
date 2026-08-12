@@ -1,11 +1,16 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import ExpenseForm from '../ExpenseForm'
-import type { BankDto, CreditCardDto } from '../../api/types'
+import type { BankDto, CategoryDto, CreditCardDto } from '../../api/types'
 
 const BANKS: BankDto[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
   { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
+]
+
+const CATEGORIES: CategoryDto[] = [
+  { id: 'category-mercado', name: 'Mercado', active: true, isInvestment: false, isTithe: false },
+  { id: 'category-casa', name: 'Casa', active: true, isInvestment: false, isTithe: false },
 ]
 
 const CREDIT_CARDS: CreditCardDto[] = [
@@ -18,7 +23,7 @@ const baseProps = {
   date: '',
   description: '',
   value: '',
-  category: 'Mercado',
+  categoryId: 'category-mercado',
   paymentSource: 'bank-barclays',
   creditCardId: '',
   creditCardName: '',
@@ -26,6 +31,7 @@ const baseProps = {
   roundUpAmount: '',
   paymentMode: 'bank' as const,
   banks: BANKS,
+  categories: CATEGORIES,
   creditCards: CREDIT_CARDS,
   isSettled: false,
   isSaving: false,
@@ -76,6 +82,24 @@ describe('ExpenseForm', () => {
     expect(screen.queryByLabelText('Payment Source')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Card')).toBeInTheDocument()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
+  })
+
+  it('lists exactly the categories passed in via the categories prop, by name', () => {
+    render(<ExpenseForm {...baseProps} />)
+
+    const categorySelect = screen.getByLabelText('Category')
+    expect(within(categorySelect).getByRole('option', { name: 'Mercado' })).toBeInTheDocument()
+    expect(within(categorySelect).getByRole('option', { name: 'Casa' })).toBeInTheDocument()
+    expect(within(categorySelect).getAllByRole('option')).toHaveLength(CATEGORIES.length)
+  })
+
+  it('submits the selected category id, not its name', () => {
+    const onFieldChange = vi.fn()
+    render(<ExpenseForm {...baseProps} onFieldChange={onFieldChange} />)
+
+    fireEvent.change(screen.getByLabelText('Category'), { target: { value: 'category-casa' } })
+
+    expect(onFieldChange).toHaveBeenCalledWith('categoryId', 'category-casa')
   })
 
   it('lists exactly the cards passed in via the creditCards prop, by name', () => {

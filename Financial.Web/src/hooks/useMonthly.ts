@@ -4,6 +4,7 @@ import type {
   BankBalanceDto,
   BankDto,
   CardStatementDto,
+  CategoryDto,
   CategoryTotalDto,
   ExpenseDto,
   IncomeDto,
@@ -77,7 +78,7 @@ export type CreateFormField =
   | 'createDate'
   | 'createDescription'
   | 'createValue'
-  | 'createCategory'
+  | 'createCategoryId'
   | 'createPaymentSource'
   | 'createCreditCardId'
   | 'createInvoiceDate'
@@ -86,7 +87,7 @@ export type EditField =
   | 'editDate'
   | 'editDescription'
   | 'editValue'
-  | 'editCategory'
+  | 'editCategoryId'
   | 'editPaymentSource'
   | 'editCreditCardId'
   | 'editInvoiceDate'
@@ -114,6 +115,7 @@ interface MonthlyState {
   cardStatements: CardStatementDto[]
   banks: BankDto[]
   incomeSources: IncomeSourceDto[]
+  categories: CategoryDto[]
   bankBalances: BankBalanceDto[]
   incomes: IncomeDto[]
   titheSummary: TitheSummaryDto | null
@@ -124,7 +126,7 @@ interface MonthlyState {
   createDate: string
   createDescription: string
   createValue: string
-  createCategory: string
+  createCategoryId: string
   createPaymentSource: string
   createCreditCardId: string
   createInvoiceDate: string
@@ -135,7 +137,7 @@ interface MonthlyState {
   editDate: string
   editDescription: string
   editValue: string
-  editCategory: string
+  editCategoryId: string
   editPaymentSource: string
   editCreditCardId: string
   editCreditCardName: string
@@ -177,6 +179,7 @@ type MonthlyAction =
         cardStatements: CardStatementDto[]
         banks: BankDto[]
         incomeSources: IncomeSourceDto[]
+        categories: CategoryDto[]
         bankBalances: BankBalanceDto[]
         incomes: IncomeDto[]
         titheSummary: TitheSummaryDto
@@ -215,7 +218,7 @@ const BLANK_CREATE_FORM = {
   createDate: '',
   createDescription: '',
   createValue: '',
-  createCategory: 'Mercado',
+  createCategoryId: '',
   createPaymentSource: '',
   createCreditCardId: '',
   createInvoiceDate: '',
@@ -238,6 +241,7 @@ const INITIAL_STATE_BASE: Omit<MonthlyState, 'year' | 'month'> = {
   cardStatements: [],
   banks: [],
   incomeSources: [],
+  categories: [],
   bankBalances: [],
   incomes: [],
   titheSummary: null,
@@ -252,7 +256,7 @@ const INITIAL_STATE_BASE: Omit<MonthlyState, 'year' | 'month'> = {
   editDate: '',
   editDescription: '',
   editValue: '',
-  editCategory: '',
+  editCategoryId: '',
   editPaymentSource: '',
   editCreditCardId: '',
   editCreditCardName: '',
@@ -294,6 +298,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
       const defaultBankStillUnset = state.createPaymentMode === 'bank' && state.createPaymentSource === ''
       const defaultIncomeBankStillUnset = state.createIncomeBank === ''
       const defaultIncomeSourceStillUnset = state.createIncomeSource === ''
+      const defaultCategoryStillUnset = state.createCategoryId === ''
       return {
         ...state,
         isLoading: false,
@@ -303,6 +308,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         cardStatements: action.payload.cardStatements,
         banks: action.payload.banks,
         incomeSources: action.payload.incomeSources,
+        categories: action.payload.categories,
         bankBalances: action.payload.bankBalances,
         incomes: action.payload.incomes,
         titheSummary: action.payload.titheSummary,
@@ -315,6 +321,9 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         createIncomeSource: defaultIncomeSourceStillUnset
           ? (selectActiveIncomeSources(action.payload.incomeSources)[0]?.id ?? '')
           : state.createIncomeSource,
+        createCategoryId: defaultCategoryStillUnset
+          ? (action.payload.categories.find((c) => c.active)?.id ?? '')
+          : state.createCategoryId,
       }
     }
     case 'FETCH_ERROR':
@@ -365,7 +374,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editDate: action.payload.date,
         editDescription: action.payload.description,
         editValue: String(action.payload.value),
-        editCategory: action.payload.category,
+        editCategoryId: action.payload.categoryId,
         editPaymentSource: action.payload.paymentSourceBankId ?? '',
         editCreditCardId: action.payload.creditCardId ?? '',
         editCreditCardName: action.payload.creditCardName ?? '',
@@ -385,7 +394,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editDate: '',
         editDescription: '',
         editValue: '',
-        editCategory: '',
+        editCategoryId: '',
         editPaymentSource: '',
         editCreditCardId: '',
         editCreditCardName: '',
@@ -415,7 +424,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editDate: '',
         editDescription: '',
         editValue: '',
-        editCategory: '',
+        editCategoryId: '',
         editPaymentSource: '',
         editCreditCardId: '',
         editCreditCardName: '',
@@ -526,6 +535,7 @@ export interface MonthlyData {
   cardStatements: CardStatementDto[]
   banks: BankDto[]
   incomeSources: IncomeSourceDto[]
+  categories: CategoryDto[]
   adjustmentTotal: number
   bankTotals: BankTotal[]
   bankTotalsSum: number
@@ -537,7 +547,7 @@ export interface MonthlyData {
   createDate: string
   createDescription: string
   createValue: string
-  createCategory: string
+  createCategoryId: string
   createPaymentSource: string
   createCreditCardId: string
   createInvoiceDate: string
@@ -553,7 +563,7 @@ export interface MonthlyData {
   editDate: string
   editDescription: string
   editValue: string
-  editCategory: string
+  editCategoryId: string
   editPaymentSource: string
   editCreditCardId: string
   editCreditCardName: string
@@ -616,6 +626,7 @@ export function useMonthly(): MonthlyData {
       apiClient.getCardStatementsByMonth(state.year, state.month),
       apiClient.getBanks(),
       apiClient.getIncomeSources(),
+      apiClient.getCategories(),
       apiClient.getIncomesByMonth(state.year, state.month),
       apiClient.getBankBalancesByMonth(state.year, state.month),
       apiClient.getTitheSummaryByMonth(state.year, state.month),
@@ -628,6 +639,7 @@ export function useMonthly(): MonthlyData {
           cardStatements,
           banks,
           incomeSources,
+          categories,
           incomes,
           bankBalances,
           titheSummary,
@@ -641,6 +653,7 @@ export function useMonthly(): MonthlyData {
               cardStatements,
               banks,
               incomeSources,
+              categories,
               incomes,
               bankBalances,
               titheSummary,
@@ -679,7 +692,7 @@ export function useMonthly(): MonthlyData {
       createDate,
       createDescription,
       createValue,
-      createCategory,
+      createCategoryId,
       createPaymentMode,
       createPaymentSource,
       createCreditCardId,
@@ -732,7 +745,7 @@ export function useMonthly(): MonthlyData {
         date: createDate,
         description: createDescription,
         value,
-        category: createCategory,
+        categoryId: createCategoryId,
         paymentSourceBankId: createPaymentMode === 'bank' ? createPaymentSource : null,
         creditCardId: createPaymentMode === 'card' ? createCreditCardId : null,
         invoiceDate: createPaymentMode === 'card' && createInvoiceDate ? `${createInvoiceDate}-01` : null,
@@ -810,7 +823,7 @@ export function useMonthly(): MonthlyData {
         date: state.editDate,
         description: state.editDescription,
         value,
-        category: state.editCategory,
+        categoryId: state.editCategoryId,
         ...paymentFields,
         invoiceDate: state.editPaymentMode === 'card' && state.editInvoiceDate ? `${state.editInvoiceDate}-01` : null,
         roundUpAmount,
@@ -1078,6 +1091,7 @@ export function useMonthly(): MonthlyData {
     cardStatements: state.cardStatements,
     banks: state.banks,
     incomeSources: state.incomeSources,
+    categories: state.categories,
     adjustmentTotal,
     bankTotals,
     bankTotalsSum,
@@ -1089,7 +1103,7 @@ export function useMonthly(): MonthlyData {
     createDate: state.createDate,
     createDescription: state.createDescription,
     createValue: state.createValue,
-    createCategory: state.createCategory,
+    createCategoryId: state.createCategoryId,
     createPaymentSource: state.createPaymentSource,
     createCreditCardId: state.createCreditCardId,
     createInvoiceDate: state.createInvoiceDate,
@@ -1105,7 +1119,7 @@ export function useMonthly(): MonthlyData {
     editDate: state.editDate,
     editDescription: state.editDescription,
     editValue: state.editValue,
-    editCategory: state.editCategory,
+    editCategoryId: state.editCategoryId,
     editPaymentSource: state.editPaymentSource,
     editCreditCardId: state.editCreditCardId,
     editCreditCardName: state.editCreditCardName,

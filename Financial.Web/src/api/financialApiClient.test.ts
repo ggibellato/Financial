@@ -6,6 +6,7 @@ import type {
   AssetDetailsDto,
   AssetPriceDto,
   BalanceAdjustmentDto,
+  CategoryDto,
   CreateBalanceAdjustmentDto,
   CreateMaeLedgerEntryDto,
   CreateRecurringBillDto,
@@ -699,6 +700,21 @@ describe('financialApiClient', () => {
     expect(url).toBe(`${API_BASE_URL}/investment-snapshots/s1`)
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('gets the category list', async () => {
+    const responseBody: CategoryDto[] = [
+      { id: 'category-mercado', name: 'Mercado', active: true, isInvestment: false, isTithe: false },
+      { id: 'category-investimento', name: 'Investimento', active: true, isInvestment: true, isTithe: false },
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getCategories()
+
+    expect(result).toEqual(responseBody)
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/categories`)
   })
 
   it('gets the credit card list', async () => {

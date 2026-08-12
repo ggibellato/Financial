@@ -249,9 +249,9 @@ graph TD
 - [x] No POST/PUT/DELETE endpoint exists for categories
 
 ### F04. Web: Dynamic Picklist
-- [ ] Expense form category dropdown shows only active categories fetched from the API
-- [ ] Selecting a category submits its Id, not its name
-- [ ] Category totals/annual summary views continue to render correctly using name-based data, unaffected by the dropdown change
+- [x] Expense form category dropdown shows only active categories fetched from the API
+- [x] Selecting a category submits its Id, not its name
+- [x] Category totals/annual summary views continue to render correctly using name-based data, unaffected by the dropdown change
 
 ### F05. WPF: Dynamic Picklist
 - [ ] WPF expense entry category dropdown shows only active categories fetched from the API
@@ -266,6 +266,6 @@ graph TD
 ### Cross-Feature Integration
 - [x] Category entities seeded in F01 are correctly resolved and referenced by Expense records after F02's migration
 - [x] Category list endpoint in F03 correctly reflects the entities seeded in F01, including their Active/IsInvestment/IsTithe flags
-- [ ] Web UI (F04) correctly consumes F02's Expense CategoryId contract and F03's API to build its active-only picklist
+- [x] Web UI (F04) correctly consumes F02's Expense CategoryId contract and F03's API to build its active-only picklist
 - [ ] WPF UI (F05) correctly consumes F02's Expense CategoryId contract and F03's API to build its active-only picklist
 - [ ] Spreadsheet import (F06) correctly resolves categories using F01's seeded entities and stores references consistent with F02's entity-reference model

@@ -40,7 +40,7 @@ const CREATE_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, CreateFormField> = {
   date: 'createDate',
   description: 'createDescription',
   value: 'createValue',
-  category: 'createCategory',
+  categoryId: 'createCategoryId',
   paymentSource: 'createPaymentSource',
   creditCardId: 'createCreditCardId',
   invoiceDate: 'createInvoiceDate',
@@ -51,7 +51,7 @@ const EDIT_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, EditField> = {
   date: 'editDate',
   description: 'editDescription',
   value: 'editValue',
-  category: 'editCategory',
+  categoryId: 'editCategoryId',
   paymentSource: 'editPaymentSource',
   creditCardId: 'editCreditCardId',
   invoiceDate: 'editInvoiceDate',
@@ -87,6 +87,7 @@ export default function MonthlyPage() {
     cardStatements,
     banks,
     incomeSources,
+    categories,
     adjustmentTotal,
     bankTotals,
     bankTotalsSum,
@@ -98,7 +99,7 @@ export default function MonthlyPage() {
     createDate,
     createDescription,
     createValue,
-    createCategory,
+    createCategoryId,
     createPaymentSource,
     createCreditCardId,
     createInvoiceDate,
@@ -114,7 +115,7 @@ export default function MonthlyPage() {
     editDate,
     editDescription,
     editValue,
-    editCategory,
+    editCategoryId,
     editPaymentSource,
     editCreditCardId,
     editCreditCardName,
@@ -167,6 +168,7 @@ export default function MonthlyPage() {
   const bankOperations = useBankOperations(year, month, banks, retry)
   const creditCardsData = useCreditCards()
   const activeCreditCards = creditCardsData.creditCards.filter((c) => c.isActive)
+  const activeCategories = categories.filter((c) => c.active)
   const transferForm = useTransferForm(banks, () => {
     retry()
     bankOperations.retry()
@@ -190,7 +192,7 @@ export default function MonthlyPage() {
       date={isEditing ? editDate : createDate}
       description={isEditing ? editDescription : createDescription}
       value={isEditing ? editValue : createValue}
-      category={isEditing ? editCategory : createCategory}
+      categoryId={isEditing ? editCategoryId : createCategoryId}
       paymentSource={isEditing ? editPaymentSource : createPaymentSource}
       creditCardId={isEditing ? editCreditCardId : createCreditCardId}
       creditCardName={isEditing ? editCreditCardName : ''}
@@ -198,6 +200,7 @@ export default function MonthlyPage() {
       roundUpAmount={isEditing ? editRoundUpAmount : createRoundUpAmount}
       paymentMode={isEditing ? editPaymentMode : createPaymentMode}
       banks={banks}
+      categories={activeCategories}
       creditCards={activeCreditCards}
       isSettled={isEditing && editIsSettled}
       isSaving={isEditing ? isSaving : isCreating}

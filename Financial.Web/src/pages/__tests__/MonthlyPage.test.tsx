@@ -7,6 +7,7 @@ import type {
   BankBalanceDto,
   BankDto,
   CardStatementDto,
+  CategoryDto,
   CategoryTotalDto,
   CreditCardDto,
   ExpenseDto,
@@ -22,6 +23,7 @@ const getCategoryTotalsByMonthMock = vi.fn<FinancialApiClient['getCategoryTotals
 const getCardStatementsByMonthMock = vi.fn<FinancialApiClient['getCardStatementsByMonth']>()
 const getBanksMock = vi.fn<FinancialApiClient['getBanks']>()
 const getIncomeSourcesMock = vi.fn<FinancialApiClient['getIncomeSources']>()
+const getCategoriesMock = vi.fn<FinancialApiClient['getCategories']>()
 const getCreditCardsMock = vi.fn<FinancialApiClient['getCreditCards']>()
 const updateCreditCardMock = vi.fn<FinancialApiClient['updateCreditCard']>()
 const createExpenseMock = vi.fn<FinancialApiClient['createExpense']>()
@@ -52,6 +54,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getCardStatementsByMonth: getCardStatementsByMonthMock,
     getBanks: getBanksMock,
     getIncomeSources: getIncomeSourcesMock,
+    getCategories: getCategoriesMock,
     getCreditCards: getCreditCardsMock,
     updateCreditCard: updateCreditCardMock,
     createExpense: createExpenseMock,
@@ -89,13 +92,20 @@ const INCOME_SOURCES: IncomeSourceDto[] = [
   { id: '4', name: 'DividendoJuros', isActive: true, group: 'DividendoJuros' },
 ]
 
+const CATEGORIES: CategoryDto[] = [
+  { id: 'category-mercado', name: 'Mercado', active: true, isInvestment: false, isTithe: false },
+  { id: 'category-extras', name: 'Extras', active: true, isInvestment: false, isTithe: false },
+  { id: 'category-reserva', name: 'Reserva', active: false, isInvestment: false, isTithe: false },
+]
+
 const EXPENSES: ExpenseDto[] = [
   {
     id: 'e1',
     date: '2026-07-05',
     description: 'Lidl UK',
     value: 42.5,
-    category: 'Mercado',
+    categoryId: 'category-mercado',
+    categoryName: 'Mercado',
     paymentSourceBankId: 'bank-barclays',
     paymentSourceBankName: 'Barclays',
     creditCardId: null,
@@ -126,7 +136,8 @@ const UNPAID_CARD_CHARGES: ExpenseDto[] = [
     date: '2026-07-08',
     description: 'Uber',
     value: 18.4,
-    category: 'Extras',
+    categoryId: 'category-extras',
+    categoryName: 'Extras',
     paymentSourceBankId: null,
     paymentSourceBankName: null,
     creditCardId: 'card-baamex',
@@ -200,6 +211,7 @@ describe('MonthlyPage', () => {
     getCardStatementsByMonthMock.mockReset()
     getBanksMock.mockReset()
     getIncomeSourcesMock.mockReset()
+    getCategoriesMock.mockReset()
     getCreditCardsMock.mockReset()
     updateCreditCardMock.mockReset()
     createExpenseMock.mockReset()
@@ -227,6 +239,7 @@ describe('MonthlyPage', () => {
     getCardStatementsByMonthMock.mockResolvedValue(CARD_STATEMENTS)
     getBanksMock.mockResolvedValue(BANKS)
     getIncomeSourcesMock.mockResolvedValue(INCOME_SOURCES)
+    getCategoriesMock.mockResolvedValue(CATEGORIES)
     getCreditCardsMock.mockResolvedValue(CREDIT_CARDS)
     getIncomesByMonthMock.mockResolvedValue(INCOMES)
     getBankBalancesByMonthMock.mockResolvedValue(BANK_BALANCES)
@@ -744,6 +757,18 @@ describe('MonthlyPage', () => {
         expect.objectContaining({ paymentSourceBankId: null, creditCardId: 'card-baamex' }),
       ),
     )
+  })
+
+  it('only lists active categories in the expense form dropdown', async () => {
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Expense' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
+
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Mercado' })).toBeInTheDocument())
+    expect(screen.getByRole('option', { name: 'Extras' })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Reserva' })).not.toBeInTheDocument()
   })
 
   it('deactivating a card via the Credit Card tab removes it from the expense form dropdown', async () => {

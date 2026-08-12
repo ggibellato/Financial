@@ -36,7 +36,7 @@ function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
       </td>
       <td>{formatShortDate(expense.date)}</td>
       <td>{expense.description}</td>
-      <td>{expense.category}</td>
+      <td>{expense.categoryName}</td>
       <td className="data-table__col--numeric">{formatN2(expense.value)}</td>
       <td>{expense.paymentSourceBankName}</td>
       <td>{expense.creditCardName ?? '—'}</td>

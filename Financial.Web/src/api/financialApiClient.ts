@@ -11,6 +11,7 @@ import type {
   CalculateXirrRequestDto,
   CardStatementDto,
   CategoryAnnualAverageDto,
+  CategoryDto,
   CategoryTotalDto,
   CategoryTotalsAnnualDto,
   CreateExpenseDto,
@@ -120,6 +121,7 @@ export interface FinancialApiClient {
   getCategoryTotalsByMonth: (year: number, month: number) => Promise<CategoryTotalDto[]>
   getBanks: () => Promise<BankDto[]>
   getIncomeSources: () => Promise<IncomeSourceDto[]>
+  getCategories: () => Promise<CategoryDto[]>
   getCreditCards: () => Promise<CreditCardDto[]>
   updateCreditCard: (id: string, request: UpdateCreditCardDto) => Promise<CreditCardDto>
   getBankBalancesByMonth: (year: number, month: number) => Promise<BankBalanceDto[]>
@@ -368,6 +370,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<CategoryTotalDto[]>(`/expenses/month/${year}/${month}/category-totals`),
     getBanks: () => request<BankDto[]>('/banks'),
     getIncomeSources: () => request<IncomeSourceDto[]>('/income-sources'),
+    getCategories: () => request<CategoryDto[]>('/categories'),
     getCreditCards: () => request<CreditCardDto[]>('/credit-cards'),
     updateCreditCard: (id, requestBody) =>
       request<CreditCardDto>(`/credit-cards/${encodeURIComponent(id)}`, {
