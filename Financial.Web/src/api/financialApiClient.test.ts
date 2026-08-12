@@ -10,6 +10,7 @@ import type {
   CreateMaeLedgerEntryDto,
   CreateRecurringBillDto,
   CreateTransferDto,
+  CreditCardDto,
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
   InvestmentSnapshotDto,
@@ -22,6 +23,7 @@ import type {
   TransferDto,
   TreeNodeDto,
   UpdateBalanceAdjustmentDto,
+  UpdateCreditCardDto,
   UpdateInvestmentSnapshotValueDto,
   UpdateMaeLedgerEntryValuesDto,
   UpdateRecurringBillDto,
@@ -695,6 +697,36 @@ describe('financialApiClient', () => {
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/investment-snapshots/s1`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('gets the credit card list', async () => {
+    const responseBody: CreditCardDto[] = [
+      { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null },
+      { id: 'card-paypal', name: 'PaypalCredit', isActive: false, nextInvoiceDueDate: '2026-09-05' },
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getCreditCards()
+
+    expect(result).toEqual(responseBody)
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/credit-cards`)
+  })
+
+  it('puts a credit card update', async () => {
+    const requestBody: UpdateCreditCardDto = { nextInvoiceDueDate: '2026-09-05', isActive: false }
+    const responseBody: CreditCardDto = { id: 'card-baamex', name: 'BaAmex', ...requestBody }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateCreditCard('card-baamex', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/credit-cards/card-baamex`)
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })

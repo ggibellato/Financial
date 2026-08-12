@@ -83,7 +83,8 @@ const EXPENSES: ExpenseDto[] = [
     category: 'Mercado',
     paymentSourceBankId: 'bank-barclays',
     paymentSourceBankName: 'Barclays',
-    cardTag: null,
+    creditCardId: null,
+    creditCardName: null,
     chargeDate: null,
     invoiceDate: null,
     paymentStatus: 'ImmediatePayment',
@@ -95,8 +96,8 @@ const EXPENSES: ExpenseDto[] = [
 const CATEGORY_TOTALS: CategoryTotalDto[] = [{ category: 'Mercado', totalValue: 42.5 }]
 
 const CARD_STATEMENTS: CardStatementDto[] = [
-  { id: 'c1', card: 'BaAmex', year: CURRENT_YEAR, month: CURRENT_MONTH, isPaid: false, outstandingTotal: 100 },
-  { id: 'c2', card: 'ChaseMaster4023', year: CURRENT_YEAR, month: CURRENT_MONTH, isPaid: true, outstandingTotal: 0 },
+  { id: 'c1', creditCardId: 'card-baamex', creditCardName: 'BaAmex', year: CURRENT_YEAR, month: CURRENT_MONTH, isPaid: false, outstandingTotal: 100 },
+  { id: 'c2', creditCardId: 'card-chase', creditCardName: 'ChaseMaster4023', year: CURRENT_YEAR, month: CURRENT_MONTH, isPaid: true, outstandingTotal: 0 },
 ]
 
 const INCOMES: IncomeDto[] = [
@@ -242,7 +243,7 @@ describe('useMonthly', () => {
 
     await waitFor(() =>
       expect(createExpenseMock).toHaveBeenCalledWith(
-        expect.objectContaining({ description: 'Waitrose', value: 15.5, cardTag: null }),
+        expect.objectContaining({ description: 'Waitrose', value: 15.5, creditCardId: null }),
       ),
     )
     await waitFor(() => expect(getExpensesByMonthMock).toHaveBeenCalledTimes(2))
@@ -356,7 +357,7 @@ describe('useMonthly', () => {
     expect(result.current.createPaymentMode).toBe('bank')
     await waitFor(() =>
       expect(createExpenseMock).toHaveBeenCalledWith(
-        expect.objectContaining({ paymentSourceBankId: 'bank-barclays', cardTag: null }),
+        expect.objectContaining({ paymentSourceBankId: 'bank-barclays', creditCardId: null }),
       ),
     )
   })
@@ -370,12 +371,12 @@ describe('useMonthly', () => {
     act(() => result.current.setCreateField('createDate', '2026-07-16'))
     act(() => result.current.setCreateField('createDescription', 'Amazon'))
     act(() => result.current.setCreateField('createValue', '9.99'))
-    act(() => result.current.setCreateField('createCardTag', 'ChaseMaster4023'))
+    act(() => result.current.setCreateField('createCreditCardId', 'card-chase'))
     act(() => result.current.submitCreate())
 
     await waitFor(() =>
       expect(createExpenseMock).toHaveBeenCalledWith(
-        expect.objectContaining({ paymentSourceBankId: null, cardTag: 'ChaseMaster4023' }),
+        expect.objectContaining({ paymentSourceBankId: null, creditCardId: 'card-chase' }),
       ),
     )
   })
@@ -402,7 +403,7 @@ describe('useMonthly', () => {
 
     expect(result.current.createPaymentMode).toBe('bank')
     expect(result.current.createPaymentSource).toBe('bank-barclays')
-    expect(result.current.createCardTag).toBe('')
+    expect(result.current.createCreditCardId).toBe('')
   })
 
   it("showCreateForm('card') defaults to an empty payment source and card tag", async () => {
@@ -413,7 +414,7 @@ describe('useMonthly', () => {
 
     expect(result.current.createPaymentMode).toBe('card')
     expect(result.current.createPaymentSource).toBe('')
-    expect(result.current.createCardTag).toBe('')
+    expect(result.current.createCreditCardId).toBe('')
   })
 
   it('opens edit in card mode for a credit card charge', async () => {
@@ -422,7 +423,8 @@ describe('useMonthly', () => {
       id: 'e3',
       paymentSourceBankId: null,
       paymentSourceBankName: null,
-      cardTag: 'BaAmex',
+      creditCardId: 'card-baamex',
+      creditCardName: 'BaAmex',
       paymentStatus: 'CreditCardCharge',
     }
     const { result } = renderHook(() => useMonthly())
@@ -440,7 +442,8 @@ describe('useMonthly', () => {
       id: 'e4',
       paymentSourceBankId: 'bank-trading212',
       paymentSourceBankName: 'Trading212',
-      cardTag: 'BaAmex',
+      creditCardId: 'card-baamex',
+      creditCardName: 'BaAmex',
       chargeDate: EXPENSES[0].date,
       invoiceDate: `${EXPENSES[0].date.slice(0, 7)}-01`,
       paymentStatus: 'CreditCardSettled',
@@ -458,7 +461,7 @@ describe('useMonthly', () => {
     await waitFor(() =>
       expect(updateExpenseMock).toHaveBeenCalledWith(
         'e4',
-        expect.objectContaining({ description: 'Renamed', paymentSourceBankId: 'bank-trading212', cardTag: 'BaAmex' }),
+        expect.objectContaining({ description: 'Renamed', paymentSourceBankId: 'bank-trading212', creditCardId: 'card-baamex' }),
       ),
     )
   })
@@ -593,7 +596,7 @@ describe('useMonthly', () => {
     act(() => result.current.setCreateField('createDate', '2026-07-16'))
     act(() => result.current.setCreateField('createDescription', 'Amazon'))
     act(() => result.current.setCreateField('createValue', '9.99'))
-    act(() => result.current.setCreateField('createCardTag', 'ChaseMaster4023'))
+    act(() => result.current.setCreateField('createCreditCardId', 'card-chase'))
     act(() => result.current.submitCreate())
 
     await waitFor(() =>
