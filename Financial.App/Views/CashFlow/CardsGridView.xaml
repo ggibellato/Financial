@@ -1,8 +1,14 @@
 <UserControl x:Class="Financial.Presentation.App.Views.CashFlow.CardsGridView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="clr-namespace:Financial.Presentation.App.Helpers">
+    <UserControl.Resources>
+        <helpers:BindingProxy x:Key="ShowCardManagementColumnsProxy"
+                               Data="{Binding ShowCardManagementColumns, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+    </UserControl.Resources>
     <Grid Margin="0,12,0,0">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -10,12 +16,28 @@
 
         <TextBlock Grid.Row="0" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding CardStatementError}"/>
 
-        <DataGrid Grid.Row="1" ItemsSource="{Binding CardStatements}" AutoGenerateColumns="False">
+        <DataGrid Grid.Row="1" ItemsSource="{Binding CreditCardManagementRows}" AutoGenerateColumns="False">
             <DataGrid.Columns>
                 <DataGridTextColumn Binding="{Binding CreditCardName}" Header="Card" Width="180"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                <DataGridTextColumn Binding="{Binding OutstandingTotal, StringFormat=N2}" Header="Outstanding" Width="110"
-                                     ElementStyle="{StaticResource NumericColumnTextStyle}"/>
+                <DataGridTemplateColumn Header="Outstanding" Width="110">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock VerticalAlignment="Center" Padding="8,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}">
+                                        <Setter Property="Text" Value="{Binding OutstandingTotal, StringFormat=N2}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasStatement}" Value="False">
+                                                <Setter Property="Text" Value="—"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Status" Width="80">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -26,6 +48,9 @@
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsPaid}" Value="True">
                                                 <Setter Property="Text" Value="Paid"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding HasStatement}" Value="False">
+                                                <Setter Property="Text" Value="—"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -38,9 +63,18 @@
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasStatement}" Value="False">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
                                 <Button Content="Unmark Paid" Padding="4,0" Visibility="Collapsed"
                                         Command="{Binding DataContext.UnmarkStatementPaidCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                        CommandParameter="{Binding}">
+                                        CommandParameter="{Binding Statement}">
                                     <Button.Style>
                                         <Style TargetType="Button">
                                             <Setter Property="Visibility" Value="Collapsed"/>
@@ -69,9 +103,28 @@
                                               SelectionChanged="OnBankComboBoxSelectionChanged"/>
                                     <Button Content="Mark Paid" Margin="4,0,0,0" Padding="4,0"
                                             Command="{Binding DataContext.MarkStatementPaidCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            CommandParameter="{Binding}"/>
+                                            CommandParameter="{Binding Statement}"/>
                                 </StackPanel>
                             </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Next Invoice Due Date" Width="160"
+                                         Visibility="{Binding Data, Source={StaticResource ShowCardManagementColumnsProxy}, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <DatePicker SelectedDate="{Binding CreditCard.NextInvoiceDueDate, Converter={StaticResource DateOnlyToDateTimeConverter}, Mode=OneWay}"
+                                        SelectedDateChanged="OnDueDateChanged"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Active" Width="60"
+                                         Visibility="{Binding Data, Source={StaticResource ShowCardManagementColumnsProxy}, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding CreditCard.IsActive, Mode=OneWay}"
+                                      HorizontalAlignment="Center"
+                                      Checked="OnActiveChanged" Unchecked="OnActiveChanged"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -80,5 +133,8 @@
 
         <TextBlock Grid.Row="2" Margin="0,8,0,0"
                    Text="{Binding AdjustmentTotal, StringFormat='Combined adjustment figure: {0:N2}'}"/>
+
+        <TextBlock Grid.Row="3" Foreground="Red" TextWrapping="Wrap" Margin="0,4,0,0" Text="{Binding CreditCardUpdateError}"
+                   Visibility="{Binding Data, Source={StaticResource ShowCardManagementColumnsProxy}, Converter={StaticResource BoolToVisibilityConverter}}"/>
     </Grid>
 </UserControl>

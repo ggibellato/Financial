@@ -7,22 +7,19 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <local:CreditCardsGridView Grid.Row="0"/>
-
-        <Button Grid.Row="1" Content="New Expense" HorizontalAlignment="Left" Margin="0,0,0,8"
+        <Button Grid.Row="0" Content="New Expense" HorizontalAlignment="Left" Margin="0,0,0,8"
                 Command="{Binding ShowCreateExpenseFormCommand}" CommandParameter="card"/>
 
-        <local:ExpenseFormView Grid.Row="2"
+        <local:ExpenseFormView Grid.Row="1"
                                 Visibility="{Binding IsExpenseFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-        <TextBlock Grid.Row="3" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,8"
+        <TextBlock Grid.Row="2" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,8"
                    Text="{Binding DeletingExpenseError}"/>
 
-        <DataGrid Grid.Row="4" ItemsSource="{Binding UnpaidCardCharges}">
+        <DataGrid Grid.Row="3" ItemsSource="{Binding UnpaidCardCharges}">
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="" Width="34">
                     <DataGridTemplateColumn.CellTemplate>

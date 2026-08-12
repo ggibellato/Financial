@@ -97,6 +97,15 @@ public class MonthlyViewModel : ViewModelBase
     /// <summary>Active-only credit cards for the expense-entry picker, mirroring Financial.Web's <c>activeCreditCards</c>.</summary>
     public IEnumerable<CreditCardDTO> ActiveCreditCards => CreditCards.Where(c => c.IsActive);
 
+    /// <summary>One row per credit card merged with its current month's statement (if any), for
+    /// the Credit Card tab's single grid - mirrors Financial.Web's <c>CardsGrid</c> merge.</summary>
+    public IEnumerable<CreditCardManagementRow> CreditCardManagementRows =>
+        CreditCards.Select(c => new CreditCardManagementRow
+        {
+            CreditCard = c,
+            Statement = CardStatements.FirstOrDefault(s => s.CreditCardId == c.Id),
+        });
+
     /// <summary>Active-only categories for the expense-entry picker, mirroring Financial.Web's <c>activeCategories</c>.</summary>
     public IEnumerable<CategoryDTO> ActiveCategories => Categories.Where(c => c.Active);
 
@@ -239,6 +248,7 @@ public class MonthlyViewModel : ViewModelBase
 
             ReplaceAll(CreditCards, creditCards);
             OnPropertyChanged(nameof(ActiveCreditCards));
+            OnPropertyChanged(nameof(CreditCardManagementRows));
 
             ReplaceAll(Categories, categories);
             OnPropertyChanged(nameof(ActiveCategories));
