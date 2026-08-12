@@ -47,6 +47,12 @@ public static class CreditCardReferenceMigrator
         var investmentAccounts = DeserializeCollection<InvestmentAccount>(root, "InvestmentAccounts", unresolvedOptions);
         var reserveBuckets = DeserializeCollection<ReserveBucket>(root, "ReserveBuckets", unresolvedOptions);
         var creditCards = ResolveCreditCards(root, unresolvedOptions, summary);
+        // Categories (F01/F02) are read as-is, not bootstrapped: this migrator only owns the
+        // CardTag/Card -> CreditCardId transition. A file old enough to still need that transition
+        // is, in this codebase's actual history, already past the Category migration (P30 landed
+        // after P29), so Expenses here always carry a resolved CategoryId already - this lookup
+        // exists purely so the full Expense/CardStatement JSON deserialize below can resolve it.
+        var categories = DeserializeCollection<Category>(root, "Categories", unresolvedOptions);
 
         var context = new ReferenceResolutionContext();
         foreach (var bank in banks) context.Banks[bank.Id] = bank;
@@ -54,6 +60,7 @@ public static class CreditCardReferenceMigrator
         foreach (var account in investmentAccounts) context.InvestmentAccounts[account.Id] = account;
         foreach (var bucket in reserveBuckets) context.ReserveBuckets[bucket.Id] = bucket;
         foreach (var card in creditCards) context.CreditCards[card.Id] = card;
+        foreach (var category in categories) context.Categories[category.Id] = category;
 
         var resolvedOptions = CreateElementOptions(context);
 
@@ -63,6 +70,7 @@ public static class CreditCardReferenceMigrator
         foreach (var account in investmentAccounts) data.AddInvestmentAccount(account);
         foreach (var bucket in reserveBuckets) data.AddReserveBucket(bucket);
         foreach (var card in creditCards) data.AddCreditCard(card);
+        foreach (var category in categories) data.AddCategory(category);
 
         foreach (var movement in DeserializeCollection<ReserveMovement>(root, "ReserveMovements", resolvedOptions)) data.AddReserveMovement(movement);
         foreach (var bill in DeserializeCollection<RecurringBill>(root, "RecurringBills", resolvedOptions)) data.AddRecurringBill(bill);

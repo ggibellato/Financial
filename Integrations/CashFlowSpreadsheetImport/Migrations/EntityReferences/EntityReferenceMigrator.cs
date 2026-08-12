@@ -1,6 +1,4 @@
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Enums;
-using Category = Financial.CashFlow.Domain.Enums.Category;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations;
 using Financial.CashFlow.Infrastructure.Persistence;
 using System.Text.Json;
@@ -59,9 +57,14 @@ public static class EntityReferenceMigrator
         // than assuming a "CreditCards" array already exists in this legacy shape.
         var creditCards = ResolveCreditCards(root, elementOptions);
         var cardsByName = creditCards.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
+        // A file this old also predates F01's Category seed migration, so the seeded categories
+        // are bootstrapped here too, mirroring the identical CreditCard bootstrap above.
+        var categories = ResolveCategories(root, elementOptions);
+        var categoriesByName = categories.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
         var referenceContext = new ReferenceResolutionContext();
         foreach (var bucket in reserveBuckets) referenceContext.ReserveBuckets[bucket.Id] = bucket;
         foreach (var card in creditCards) referenceContext.CreditCards[card.Id] = card;
+        foreach (var category in categories) referenceContext.Categories[category.Id] = category;
         var resolvedOptions = CreateElementOptions(referenceContext);
 
         var data = CashFlowData.Create();
@@ -70,13 +73,14 @@ public static class EntityReferenceMigrator
         foreach (var account in investmentAccounts) data.AddInvestmentAccount(account);
         foreach (var bucket in reserveBuckets) data.AddReserveBucket(bucket);
         foreach (var card in creditCards) data.AddCreditCard(card);
+        foreach (var category in categories) data.AddCategory(category);
         foreach (var movement in DeserializeCollection<ReserveMovement>(root, "ReserveMovements", resolvedOptions)) data.AddReserveMovement(movement);
         foreach (var statement in DeserializeCollection<CardStatement>(root, "CardStatements", resolvedOptions)) data.AddCardStatement(statement);
         foreach (var bill in DeserializeCollection<RecurringBill>(root, "RecurringBills", elementOptions)) data.AddRecurringBill(bill);
         foreach (var entry in DeserializeCollection<MaeLedgerEntry>(root, "MaeLedgerEntries", elementOptions)) data.AddMaeLedgerEntry(entry);
 
         MigrateIncomes(root, banksByName, incomeSourcesByName, data, summary);
-        MigrateExpenses(root, banksByName, cardsByName, data, summary);
+        MigrateExpenses(root, banksByName, cardsByName, categoriesByName, data, summary);
         MigrateTransfers(root, banksByName, data, summary);
         MigrateBalanceAdjustments(root, banksByName, data, summary);
         MigrateInvestmentSnapshots(root, investmentAccountsByName, data, summary);
@@ -203,10 +207,23 @@ public static class EntityReferenceMigrator
         return bootstrapData.CreditCards.ToList();
     }
 
+    private static List<Category> ResolveCategories(JsonElement root, JsonSerializerOptions unresolvedOptions)
+    {
+        if (root.TryGetProperty("Categories", out var element) && element.ValueKind == JsonValueKind.Array)
+        {
+            return DeserializeCollection<Category>(root, "Categories", unresolvedOptions);
+        }
+
+        var bootstrapData = CashFlowData.Create();
+        Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Categories.CategoryMigrator.Migrate(bootstrapData);
+        return bootstrapData.Categories.ToList();
+    }
+
     private static void MigrateExpenses(
         JsonElement root,
         IReadOnlyDictionary<string, Bank> banksByName,
         IReadOnlyDictionary<string, CreditCardEntity> cardsByName,
+        IReadOnlyDictionary<string, Category> categoriesByName,
         CashFlowData data,
         EntityReferenceMigrationSummary summary)
     {
@@ -234,10 +251,16 @@ public static class EntityReferenceMigrator
                 continue;
             }
 
+            var legacyCategoryName = item.GetProperty("Category").GetString()!;
+            if (!categoriesByName.TryGetValue(legacyCategoryName, out var category))
+            {
+                summary.FlagUnresolvedExpense(id, $"Category='{legacyCategoryName}'");
+                continue;
+            }
+
             var date = ReadDate(item, "Date");
             var description = item.GetProperty("Description").GetString()!;
             var value = item.GetProperty("Value").GetDecimal();
-            var category = Enum.Parse<Category>(item.GetProperty("Category").GetString()!);
             var invoiceDate = ReadNullableDate(item, "InvoiceDate");
 
             var expense = Expense.Create(date, description, value, category, paymentSourceBank, creditCard, invoiceDate);
