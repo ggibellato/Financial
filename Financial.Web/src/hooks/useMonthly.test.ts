@@ -5,6 +5,7 @@ import type {
   BankBalanceDto,
   BankDto,
   CardStatementDto,
+  CategoryDto,
   CategoryTotalDto,
   ExpenseDto,
   IncomeDto,
@@ -27,6 +28,7 @@ const getCategoryTotalsByMonthMock = vi.fn<FinancialApiClient['getCategoryTotals
 const getCardStatementsByMonthMock = vi.fn<FinancialApiClient['getCardStatementsByMonth']>()
 const getBanksMock = vi.fn<FinancialApiClient['getBanks']>()
 const getIncomeSourcesMock = vi.fn<FinancialApiClient['getIncomeSources']>()
+const getCategoriesMock = vi.fn<FinancialApiClient['getCategories']>()
 const createExpenseMock = vi.fn<FinancialApiClient['createExpense']>()
 const updateExpenseMock = vi.fn<FinancialApiClient['updateExpense']>()
 const deleteExpenseMock = vi.fn<FinancialApiClient['deleteExpense']>()
@@ -47,6 +49,7 @@ vi.mock('../api/financialApiClient', () => ({
     getCardStatementsByMonth: getCardStatementsByMonthMock,
     getBanks: getBanksMock,
     getIncomeSources: getIncomeSourcesMock,
+    getCategories: getCategoriesMock,
     createExpense: createExpenseMock,
     updateExpense: updateExpenseMock,
     deleteExpense: deleteExpenseMock,
@@ -74,13 +77,20 @@ const INCOME_SOURCES: IncomeSourceDto[] = [
   { id: '4', name: 'DividendoJuros', isActive: true, group: 'DividendoJuros' },
 ]
 
+const CATEGORIES: CategoryDto[] = [
+  { id: 'category-mercado', name: 'Mercado', active: true, isInvestment: false, isTithe: false },
+  { id: 'category-extras', name: 'Extras', active: true, isInvestment: false, isTithe: false },
+  { id: 'category-reserva', name: 'Reserva', active: false, isInvestment: false, isTithe: false },
+]
+
 const EXPENSES: ExpenseDto[] = [
   {
     id: 'e1',
     date: `${CURRENT_YEAR}-${String(CURRENT_MONTH).padStart(2, '0')}-05`,
     description: 'Lidl',
     value: 42.5,
-    category: 'Mercado',
+    categoryId: 'category-mercado',
+    categoryName: 'Mercado',
     paymentSourceBankId: 'bank-barclays',
     paymentSourceBankName: 'Barclays',
     creditCardId: null,
@@ -129,6 +139,7 @@ describe('useMonthly', () => {
     getCardStatementsByMonthMock.mockReset()
     getBanksMock.mockReset()
     getIncomeSourcesMock.mockReset()
+    getCategoriesMock.mockReset()
     createExpenseMock.mockReset()
     updateExpenseMock.mockReset()
     deleteExpenseMock.mockReset()
@@ -146,6 +157,7 @@ describe('useMonthly', () => {
     getCardStatementsByMonthMock.mockResolvedValue(CARD_STATEMENTS)
     getBanksMock.mockResolvedValue(BANKS)
     getIncomeSourcesMock.mockResolvedValue(INCOME_SOURCES)
+    getCategoriesMock.mockResolvedValue(CATEGORIES)
     getIncomesByMonthMock.mockResolvedValue(INCOMES)
     getBankBalancesByMonthMock.mockResolvedValue(BANK_BALANCES)
     getTitheSummaryByMonthMock.mockResolvedValue(TITHE_SUMMARY)
@@ -163,12 +175,14 @@ describe('useMonthly', () => {
     expect(getCardStatementsByMonthMock).toHaveBeenCalledWith(CURRENT_YEAR, CURRENT_MONTH)
     expect(getBanksMock).toHaveBeenCalledOnce()
     expect(getIncomeSourcesMock).toHaveBeenCalledOnce()
+    expect(getCategoriesMock).toHaveBeenCalledOnce()
     expect(result.current.monthInputValue).toBe(CURRENT_MONTH_INPUT)
     expect(result.current.expenses).toEqual(EXPENSES)
     expect(result.current.categoryTotals).toEqual(CATEGORY_TOTALS)
     expect(result.current.cardStatements).toEqual(CARD_STATEMENTS)
     expect(result.current.banks).toEqual(BANKS)
     expect(result.current.incomeSources).toEqual(INCOME_SOURCES)
+    expect(result.current.categories).toEqual(CATEGORIES)
   })
 
   it('defaults the new-income source field to the first active income source once fetched', async () => {
@@ -176,6 +190,13 @@ describe('useMonthly', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(result.current.createIncomeSource).toBe('1')
+  })
+
+  it('defaults the new-expense category field to the first active category once fetched', async () => {
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.createCategoryId).toBe('category-mercado')
   })
 
   it('leaves the income source list empty and default source unset when the fetch fails', async () => {
@@ -243,7 +264,7 @@ describe('useMonthly', () => {
 
     await waitFor(() =>
       expect(createExpenseMock).toHaveBeenCalledWith(
-        expect.objectContaining({ description: 'Waitrose', value: 15.5, creditCardId: null }),
+        expect.objectContaining({ description: 'Waitrose', value: 15.5, creditCardId: null, categoryId: 'category-mercado' }),
       ),
     )
     await waitFor(() => expect(getExpensesByMonthMock).toHaveBeenCalledTimes(2))
@@ -274,7 +295,7 @@ describe('useMonthly', () => {
     await waitFor(() =>
       expect(updateExpenseMock).toHaveBeenCalledWith(
         'e1',
-        expect.objectContaining({ description: 'Lidl', value: 50, category: 'Mercado' }),
+        expect.objectContaining({ description: 'Lidl', value: 50, categoryId: 'category-mercado' }),
       ),
     )
     await waitFor(() => expect(getExpensesByMonthMock).toHaveBeenCalledTimes(2))

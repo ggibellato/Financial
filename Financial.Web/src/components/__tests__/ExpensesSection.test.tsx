@@ -9,7 +9,8 @@ const EXPENSES: ExpenseDto[] = [
     date: '2026-07-05',
     description: 'Lidl UK',
     value: 42.5,
-    category: 'Mercado',
+    categoryId: 'category-mercado',
+    categoryName: 'Mercado',
     paymentSourceBankId: 'bank-barclays',
     paymentSourceBankName: 'Barclays',
     creditCardId: null,
@@ -25,7 +26,8 @@ const EXPENSES: ExpenseDto[] = [
     date: '2026-07-06',
     description: 'Amazon',
     value: 9.99,
-    category: 'Extras',
+    categoryId: 'category-extras',
+    categoryName: 'Extras',
     paymentSourceBankId: null,
     paymentSourceBankName: null,
     creditCardId: 'card-barclays8003',
@@ -47,6 +49,14 @@ describe('ExpensesSection', () => {
     expect(screen.getByText('BarclaysPlatinumVisa8003')).toBeInTheDocument()
     expect(screen.getByText('42.50')).toBeInTheDocument()
     expect(screen.getByText('—')).toBeInTheDocument()
+  })
+
+  it('renders the category name, not its id', () => {
+    render(<ExpensesSection expenses={EXPENSES} onEdit={vi.fn()} onDelete={vi.fn()} onNewExpense={vi.fn()} />)
+
+    expect(screen.getByText('Mercado')).toBeInTheDocument()
+    expect(screen.getByText('Extras')).toBeInTheDocument()
+    expect(screen.queryByText('category-mercado')).not.toBeInTheDocument()
   })
 
   it('calls onEdit with the clicked expense', () => {
