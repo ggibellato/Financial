@@ -40,6 +40,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         foreach (var account in investmentAccounts) data.AddInvestmentAccount(account);
         foreach (var bucket in reserveBuckets) data.AddReserveBucket(bucket);
         foreach (var card in creditCards) data.AddCreditCard(card);
+        foreach (var category in DeserializeCollection<Category>(root, "Categories", resolvedOptions)) data.AddCategory(category);
 
         foreach (var expense in DeserializeCollection<Expense>(root, "Expenses", resolvedOptions)) data.AddExpense(expense);
         foreach (var movement in DeserializeCollection<ReserveMovement>(root, "ReserveMovements", resolvedOptions)) data.AddReserveMovement(movement);
@@ -71,6 +72,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         WriteCollection(writer, "IncomeSources", value.IncomeSources, elementOptions);
         WriteCollection(writer, "Incomes", value.Incomes, elementOptions);
         WriteCollection(writer, "CreditCards", value.CreditCards, elementOptions);
+        WriteCollection(writer, "Categories", value.Categories, elementOptions);
         WriteCollection(writer, "Transfers", value.Transfers, elementOptions);
         WriteCollection(writer, "BalanceAdjustments", value.BalanceAdjustments, elementOptions);
         writer.WriteEndObject();
