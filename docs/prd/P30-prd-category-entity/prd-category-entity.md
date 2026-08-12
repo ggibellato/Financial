@@ -227,10 +227,10 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Category Domain Entity & Seed Migration
-- [ ] Category entity exists with Id, Name, Active, IsInvestment, IsTithe fields, and no update method exists for any field
-- [ ] Migration seeds exactly 14 categories (Ariana, Carro, Casa, Estudo, Extras, Familia, Gleison, Mercado, Samuel, Saude, Viagem, Dizimo, Investimento, Reserva), all Active=true
-- [ ] Only "Investimento" is seeded with IsInvestment=true; only "Dizimo" is seeded with IsTithe=true; all other categories have both flags false
-- [ ] Running the migration twice does not create duplicate categories
+- [x] Category entity exists with Id, Name, Active, IsInvestment, IsTithe fields, and no update method exists for any field
+- [x] Migration seeds exactly 14 categories (Ariana, Carro, Casa, Estudo, Extras, Familia, Gleison, Mercado, Samuel, Saude, Viagem, Dizimo, Investimento, Reserva), all Active=true
+- [x] Only "Investimento" is seeded with IsInvestment=true; only "Dizimo" is seeded with IsTithe=true; all other categories have both flags false
+- [x] Running the migration twice does not create duplicate categories
 - [ ] Category is persisted via a reference converter (`CategoryId` wire format), consistent with Bank/CreditCard — deferred to F02, which is when a property first references Category by Id (mirrors CreditCardReferenceConverter landing in P29-F02, not P29-F01); will be checked off there
 
 ### F02. Migrate Expense & Domain Logic to Category References
