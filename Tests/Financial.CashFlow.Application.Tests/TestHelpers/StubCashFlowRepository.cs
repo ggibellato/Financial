@@ -33,7 +33,8 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
     public bool ThrowOnNextSave { get; set; }
 
     public StubCashFlowRepository(
-        bool seedDefaultBanks = false, bool seedDefaultIncomeSources = false, bool seedDefaultReserveBuckets = false)
+        bool seedDefaultBanks = false, bool seedDefaultIncomeSources = false, bool seedDefaultReserveBuckets = false,
+        bool seedDefaultCreditCards = false)
     {
         if (seedDefaultBanks)
         {
@@ -48,6 +49,11 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
         if (seedDefaultReserveBuckets)
         {
             ReserveBuckets.AddRange(DefaultReserveBuckets());
+        }
+
+        if (seedDefaultCreditCards)
+        {
+            CreditCards.AddRange(DefaultCreditCards());
         }
     }
 
@@ -75,6 +81,16 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
         ReserveBucket.Create("HouseTreats", 33.33m),
         ReserveBucket.Create("Ariana", 16.67m),
         ReserveBucket.Create("Gleison", 16.67m)
+    ];
+
+    /// <summary>The 5 credit cards seeded in a real deployment by the CashFlowSpreadsheetImport migration tool, all active.</summary>
+    public static IEnumerable<Domain.Entities.CreditCard> DefaultCreditCards() =>
+    [
+        Domain.Entities.CreditCard.Create("BarclaysPlatinumVisa8003"),
+        Domain.Entities.CreditCard.Create("BarclaysPlatinumVisa6007"),
+        Domain.Entities.CreditCard.Create("ChaseMaster4023"),
+        Domain.Entities.CreditCard.Create("BaAmex"),
+        Domain.Entities.CreditCard.Create("PaypalCredit")
     ];
 
     public void SetOpeningBalance(string bankName, decimal openingBalance, DateOnly openingBalanceDate) =>

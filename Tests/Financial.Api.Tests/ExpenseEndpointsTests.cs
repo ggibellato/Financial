@@ -10,6 +10,8 @@ public class ExpenseEndpointsTests
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
     private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
     private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
+    private static readonly Guid BarclaysPlatinumVisa8003Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000001");
+    private static readonly Guid ChaseMaster4023Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000003");
 
     [Fact]
     public async Task AddExpense_ValidRequest_ReturnsOk()
@@ -23,7 +25,7 @@ public class ExpenseEndpointsTests
             Value = 54.32m,
             Category = "Mercado",
             PaymentSourceBankId = BarclaysId,
-            CardTag = null
+            CreditCardId = null
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
@@ -37,7 +39,7 @@ public class ExpenseEndpointsTests
     }
 
     [Fact]
-    public async Task AddExpense_CardTagWithoutPaymentSource_ReturnsCreditCardCharge()
+    public async Task AddExpense_CreditCardIdWithoutPaymentSource_ReturnsCreditCardCharge()
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
@@ -48,7 +50,7 @@ public class ExpenseEndpointsTests
             Value = 30m,
             Category = "Extras",
             PaymentSourceBankId = null,
-            CardTag = "ChaseMaster4023"
+            CreditCardId = ChaseMaster4023Id
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
@@ -56,7 +58,7 @@ public class ExpenseEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
         expense!.PaymentSourceBankId.Should().BeNull();
-        expense.CardTag.Should().Be("ChaseMaster4023");
+        expense.CreditCardName.Should().Be("ChaseMaster4023");
         expense.PaymentStatus.Should().Be("CreditCardCharge");
     }
 
@@ -72,7 +74,7 @@ public class ExpenseEndpointsTests
             Value = 30m,
             Category = "Extras",
             PaymentSourceBankId = null,
-            CardTag = "ChaseMaster4023"
+            CreditCardId = ChaseMaster4023Id
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
@@ -94,7 +96,7 @@ public class ExpenseEndpointsTests
             Value = 30m,
             Category = "Extras",
             PaymentSourceBankId = null,
-            CardTag = "ChaseMaster4023",
+            CreditCardId = ChaseMaster4023Id,
             InvoiceDate = new DateOnly(2026, 8, 17)
         };
 
@@ -105,7 +107,7 @@ public class ExpenseEndpointsTests
     }
 
     [Fact]
-    public async Task AddExpense_NeitherPaymentSourceNorCardTag_ReturnsBadRequest()
+    public async Task AddExpense_NeitherPaymentSourceNorCreditCardId_ReturnsBadRequest()
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
@@ -116,7 +118,7 @@ public class ExpenseEndpointsTests
             Value = 30m,
             Category = "Extras",
             PaymentSourceBankId = null,
-            CardTag = null
+            CreditCardId = null
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
@@ -127,7 +129,7 @@ public class ExpenseEndpointsTests
     }
 
     [Fact]
-    public async Task AddExpense_BothPaymentSourceAndCardTag_ReturnsBadRequest()
+    public async Task AddExpense_BothPaymentSourceAndCreditCardId_ReturnsBadRequest()
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
@@ -138,7 +140,7 @@ public class ExpenseEndpointsTests
             Value = 30m,
             Category = "Extras",
             PaymentSourceBankId = BarclaysId,
-            CardTag = "ChaseMaster4023"
+            CreditCardId = ChaseMaster4023Id
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
@@ -160,7 +162,7 @@ public class ExpenseEndpointsTests
             Value = 0m,
             Category = "Mercado",
             PaymentSourceBankId = BarclaysId,
-            CardTag = null
+            CreditCardId = null
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
@@ -182,7 +184,7 @@ public class ExpenseEndpointsTests
             Value = 10m,
             Category = "NotACategory",
             PaymentSourceBankId = BarclaysId,
-            CardTag = null
+            CreditCardId = null
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
@@ -204,7 +206,7 @@ public class ExpenseEndpointsTests
             Value = 10m,
             Category = "Casa",
             PaymentSourceBankId = ChaseId,
-            CardTag = null
+            CreditCardId = null
         });
         var createdExpense = await created.Content.ReadFromJsonAsync<ExpenseDTO>();
 
@@ -215,7 +217,7 @@ public class ExpenseEndpointsTests
             Value = 20m,
             Category = "Mercado",
             PaymentSourceBankId = BarclaysId,
-            CardTag = null
+            CreditCardId = null
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -237,7 +239,7 @@ public class ExpenseEndpointsTests
             Value = 10m,
             Category = "Casa",
             PaymentSourceBankId = ChaseId,
-            CardTag = null
+            CreditCardId = null
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -255,7 +257,7 @@ public class ExpenseEndpointsTests
             Value = 10m,
             Category = "Casa",
             PaymentSourceBankId = ChaseId,
-            CardTag = null
+            CreditCardId = null
         });
         var createdExpense = await created.Content.ReadFromJsonAsync<ExpenseDTO>();
 
@@ -290,7 +292,7 @@ public class ExpenseEndpointsTests
             Value = 10m,
             Category = "Casa",
             PaymentSourceBankId = ChaseId,
-            CardTag = null
+            CreditCardId = null
         });
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
@@ -299,7 +301,7 @@ public class ExpenseEndpointsTests
             Value = 10m,
             Category = "Casa",
             PaymentSourceBankId = ChaseId,
-            CardTag = null
+            CreditCardId = null
         });
 
         var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");
@@ -321,7 +323,7 @@ public class ExpenseEndpointsTests
             Value = 45m,
             Category = "Mercado",
             PaymentSourceBankId = null,
-            CardTag = "BarclaysPlatinumVisa8003"
+            CreditCardId = BarclaysPlatinumVisa8003Id
         });
 
         var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");
@@ -343,7 +345,7 @@ public class ExpenseEndpointsTests
             Value = 20m,
             Category = "Casa",
             PaymentSourceBankId = ChaseId,
-            CardTag = null
+            CreditCardId = null
         });
 
         var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");
@@ -364,7 +366,7 @@ public class ExpenseEndpointsTests
             Value = 45m,
             Category = "Mercado",
             PaymentSourceBankId = null,
-            CardTag = "BarclaysPlatinumVisa8003"
+            CreditCardId = BarclaysPlatinumVisa8003Id
         });
         var createdExpense = await created.Content.ReadFromJsonAsync<ExpenseDTO>();
         var statement = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
@@ -390,7 +392,7 @@ public class ExpenseEndpointsTests
             Value = 45m,
             Category = "Mercado",
             PaymentSourceBankId = null,
-            CardTag = "BarclaysPlatinumVisa8003"
+            CreditCardId = BarclaysPlatinumVisa8003Id
         });
         var statement = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
         await client.PostAsJsonAsync(
@@ -416,7 +418,7 @@ public class ExpenseEndpointsTests
             Value = 20m,
             Category = "Casa",
             PaymentSourceBankId = ChaseId,
-            CardTag = null
+            CreditCardId = null
         });
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
@@ -425,7 +427,7 @@ public class ExpenseEndpointsTests
             Value = 45m,
             Category = "Mercado",
             PaymentSourceBankId = null,
-            CardTag = "BarclaysPlatinumVisa8003"
+            CreditCardId = BarclaysPlatinumVisa8003Id
         });
 
         var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7/unpaid-card-charges");
@@ -434,7 +436,7 @@ public class ExpenseEndpointsTests
         var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
         items.Should().ContainSingle();
         items![0].Description.Should().Be("Card charge");
-        items[0].CardTag.Should().Be("BarclaysPlatinumVisa8003");
+        items[0].CreditCardName.Should().Be("BarclaysPlatinumVisa8003");
         items[0].PaymentStatus.Should().Be("CreditCardCharge");
     }
 
@@ -450,7 +452,7 @@ public class ExpenseEndpointsTests
             Value = 45m,
             Category = "Mercado",
             PaymentSourceBankId = null,
-            CardTag = "BarclaysPlatinumVisa8003"
+            CreditCardId = BarclaysPlatinumVisa8003Id
         });
         var statement = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
         await client.PostAsJsonAsync(
@@ -466,7 +468,7 @@ public class ExpenseEndpointsTests
     private static async Task<CardStatementDTO> GetStatementAsync(HttpClient client, string card)
     {
         var statements = await client.GetFromJsonAsync<List<CardStatementDTO>>("/api/v1/financial/card-statements/2026/7");
-        return statements!.First(s => s.Card == card);
+        return statements!.First(s => s.CreditCardName == card);
     }
 
     [Fact]
@@ -481,7 +483,7 @@ public class ExpenseEndpointsTests
             Value = 10m,
             Category = "Mercado",
             PaymentSourceBankId = BarclaysId,
-            CardTag = null
+            CreditCardId = null
         });
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
@@ -490,7 +492,7 @@ public class ExpenseEndpointsTests
             Value = 5m,
             Category = "Mercado",
             PaymentSourceBankId = BarclaysId,
-            CardTag = null
+            CreditCardId = null
         });
 
         var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7/category-totals");
@@ -512,7 +514,7 @@ public class ExpenseEndpointsTests
             Value = 9.40m,
             Category = "Extras",
             PaymentSourceBankId = Trading212Id,
-            CardTag = null,
+            CreditCardId = null,
             RoundUpAmount = 0.60m
         };
 
@@ -536,7 +538,7 @@ public class ExpenseEndpointsTests
             Value = 9.40m,
             Category = "Mercado",
             PaymentSourceBankId = BarclaysId,
-            CardTag = null,
+            CreditCardId = null,
             RoundUpAmount = 0.60m
         };
 
@@ -548,7 +550,7 @@ public class ExpenseEndpointsTests
     }
 
     [Fact]
-    public async Task AddExpense_RoundUpAmountWithCardTag_ReturnsBadRequest()
+    public async Task AddExpense_RoundUpAmountWithCreditCardId_ReturnsBadRequest()
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
@@ -559,7 +561,7 @@ public class ExpenseEndpointsTests
             Value = 9.40m,
             Category = "Extras",
             PaymentSourceBankId = null,
-            CardTag = "ChaseMaster4023",
+            CreditCardId = ChaseMaster4023Id,
             RoundUpAmount = 0.60m
         };
 
@@ -582,7 +584,7 @@ public class ExpenseEndpointsTests
             Value = 9.40m,
             Category = "Extras",
             PaymentSourceBankId = Trading212Id,
-            CardTag = null
+            CreditCardId = null
         });
 
         var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");

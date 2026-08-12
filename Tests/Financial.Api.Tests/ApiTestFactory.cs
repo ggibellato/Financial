@@ -83,15 +83,23 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         return tempPath;
     }
 
-    // Mirrors the banks, income sources, reserve buckets, and investment accounts a real
-    // deployment would have after running the CashFlowSpreadsheetImport migration tool once
-    // (see BankMigrator / IncomeSourceMigrator / ReserveBucketMigrator / InvestmentAccountMigrator).
+    // Mirrors the banks, credit cards, income sources, reserve buckets, and investment accounts a
+    // real deployment would have after running the CashFlowSpreadsheetImport migration tool once
+    // (see BankMigrator / CreditCardMigrator / IncomeSourceMigrator / ReserveBucketMigrator /
+    // InvestmentAccountMigrator).
     private const string SeededBanksJson = """
         {
           "Banks": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-100000000001", "Name": "Barclays", "RoundUpEnabled": false },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-100000000002", "Name": "Trading212", "RoundUpEnabled": true },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-100000000003", "Name": "Chase", "RoundUpEnabled": true }
+          ],
+          "CreditCards": [
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000001", "Name": "BarclaysPlatinumVisa8003", "IsActive": true },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000002", "Name": "BarclaysPlatinumVisa6007", "IsActive": true },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000003", "Name": "ChaseMaster4023", "IsActive": true },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000004", "Name": "BaAmex", "IsActive": true },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000005", "Name": "PaypalCredit", "IsActive": true }
           ],
           "IncomeSources": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000001", "Name": "Gleison", "IsActive": true, "Group": "Salary" },

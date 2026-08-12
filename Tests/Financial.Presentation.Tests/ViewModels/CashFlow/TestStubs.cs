@@ -20,14 +20,14 @@ internal sealed class StubExpenseService : IExpenseService
     {
         LastCreateRequest = request;
         return Task.FromResult(ToDto(Guid.NewGuid(), request.Date, request.Description, request.Value,
-            request.Category, request.PaymentSourceBankId, request.CardTag, request.RoundUpAmount));
+            request.Category, request.PaymentSourceBankId, request.CreditCardId, request.RoundUpAmount));
     }
 
     public Task<ExpenseDTO> UpdateExpenseAsync(Guid id, ExpenseUpdateDTO request)
     {
         LastUpdateRequest = (id, request);
         return Task.FromResult(ToDto(id, request.Date, request.Description, request.Value,
-            request.Category, request.PaymentSourceBankId, request.CardTag, request.RoundUpAmount));
+            request.Category, request.PaymentSourceBankId, request.CreditCardId, request.RoundUpAmount));
     }
 
     public Task DeleteExpenseAsync(Guid id)
@@ -52,7 +52,7 @@ internal sealed class StubExpenseService : IExpenseService
 
     private static ExpenseDTO ToDto(
         Guid id, DateOnly date, string description, decimal value, string category,
-        Guid? paymentSourceBankId, string? cardTag, decimal? roundUpAmount) => new()
+        Guid? paymentSourceBankId, Guid? creditCardId, decimal? roundUpAmount) => new()
     {
         Id = id,
         Date = date,
@@ -60,7 +60,7 @@ internal sealed class StubExpenseService : IExpenseService
         Value = value,
         Category = category,
         PaymentSourceBankId = paymentSourceBankId,
-        CardTag = cardTag,
+        CreditCardId = creditCardId,
         PaymentStatus = "ImmediatePayment",
         RoundUpAmount = roundUpAmount,
     };
@@ -258,7 +258,8 @@ internal sealed class StubCardStatementService : ICardStatementService
         var existing = Statements.First(s => s.Id == id);
         return Task.FromResult(new CardStatementDTO
         {
-            Id = id, Card = existing.Card, Year = existing.Year, Month = existing.Month,
+            Id = id, CreditCardId = existing.CreditCardId, CreditCardName = existing.CreditCardName,
+            Year = existing.Year, Month = existing.Month,
             IsPaid = true, OutstandingTotal = existing.OutstandingTotal,
         });
     }
@@ -269,10 +270,18 @@ internal sealed class StubCardStatementService : ICardStatementService
         var existing = Statements.First(s => s.Id == id);
         return Task.FromResult(new CardStatementDTO
         {
-            Id = id, Card = existing.Card, Year = existing.Year, Month = existing.Month,
+            Id = id, CreditCardId = existing.CreditCardId, CreditCardName = existing.CreditCardName,
+            Year = existing.Year, Month = existing.Month,
             IsPaid = false, OutstandingTotal = existing.OutstandingTotal,
         });
     }
+}
+
+internal sealed class StubCreditCardService : ICreditCardService
+{
+    public List<CreditCardDTO> CreditCards { get; set; } = [];
+
+    public IReadOnlyList<CreditCardDTO> GetCreditCards() => CreditCards;
 }
 
 internal sealed class StubReserveService : IReserveService

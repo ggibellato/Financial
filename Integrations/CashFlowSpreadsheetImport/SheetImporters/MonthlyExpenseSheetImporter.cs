@@ -3,6 +3,7 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
+using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
 
@@ -46,7 +47,8 @@ public static class MonthlyExpenseSheetImporter
     ];
 
     public static IReadOnlyList<Expense> Import(
-        IXLWorksheet sheet, int year, int month, DateOnly today, ImportReport report, IReadOnlyCollection<Bank> banks)
+        IXLWorksheet sheet, int year, int month, DateOnly today, ImportReport report,
+        IReadOnlyCollection<Bank> banks, IReadOnlyCollection<CreditCardEntity> creditCards)
     {
         var (descriptionColumn, categoryColumn) = ResolveColumns(sheet);
         var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
@@ -95,13 +97,20 @@ public static class MonthlyExpenseSheetImporter
             var rawPaymentSourceTag = sheet.Cell(row, PaymentSourceColumn).GetString();
             var cardTag = ResolveCardTag(row, year, month, today, rawPaymentSourceTag);
             Bank? paymentSourceBank = null;
+            CreditCardEntity? creditCard = null;
             if (cardTag is null)
             {
                 var paymentSourceName = ResolvePaymentSource(rawPaymentSourceTag);
                 paymentSourceBank = banks.FirstOrDefault(b => b.Name == paymentSourceName);
             }
+            else
+            {
+                // Row-position-to-card resolution still happens by legacy enum name here; F06
+                // replaces this lookup mechanism with a direct by-name entity resolution.
+                creditCard = creditCards.FirstOrDefault(c => c.Name == cardTag.ToString());
+            }
 
-            expenses.Add(Expense.Create(date, description, value.Value, category, paymentSourceBank, cardTag));
+            expenses.Add(Expense.Create(date, description, value.Value, category, paymentSourceBank, creditCard));
         }
 
         return expenses;

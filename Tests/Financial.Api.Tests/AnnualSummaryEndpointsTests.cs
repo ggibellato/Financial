@@ -65,7 +65,7 @@ public class AnnualSummaryEndpointsTests
             Value = 120m,
             Category = "Mercado",
             PaymentSourceBankId = BarclaysId,
-            CardTag = null
+            CreditCardId = null
         });
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
@@ -74,7 +74,7 @@ public class AnnualSummaryEndpointsTests
             Value = 100m,
             Category = "Mercado",
             PaymentSourceBankId = BarclaysId,
-            CardTag = null
+            CreditCardId = null
         });
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
@@ -83,7 +83,7 @@ public class AnnualSummaryEndpointsTests
             Value = 50m,
             Category = "Mercado",
             PaymentSourceBankId = BarclaysId,
-            CardTag = null
+            CreditCardId = null
         });
         await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
@@ -149,7 +149,7 @@ public class AnnualSummaryEndpointsTests
             Value = 100m,
             Category = "Mercado",
             PaymentSourceBankId = BarclaysId,
-            CardTag = null
+            CreditCardId = null
         });
         await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
@@ -158,7 +158,7 @@ public class AnnualSummaryEndpointsTests
             Value = 30m,
             Category = "Investimento",
             PaymentSourceBankId = BarclaysId,
-            CardTag = null
+            CreditCardId = null
         });
         await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {

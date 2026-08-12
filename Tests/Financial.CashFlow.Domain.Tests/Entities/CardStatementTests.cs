@@ -6,15 +6,19 @@ namespace Financial.CashFlow.Domain.Tests;
 
 public class CardStatementTests
 {
+    private static readonly CreditCard BarclaysPlatinumVisa8003 = CreditCard.Create("BarclaysPlatinumVisa8003");
+    private static readonly CreditCard ChaseMaster4023 = CreditCard.Create("ChaseMaster4023");
+    private static readonly CreditCard BaAmex = CreditCard.Create("BaAmex");
+
     [Fact]
     public void Create_AssignsAllFieldsANewIdAndDefaultsIsPaidToFalse()
     {
-        var statement = CardStatement.Create(Enums.CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
+        var statement = CardStatement.Create(BarclaysPlatinumVisa8003, 2026, 7);
 
         using (new AssertionScope())
         {
             statement.Id.Should().NotBeEmpty();
-            statement.Card.Should().Be(Enums.CreditCard.BarclaysPlatinumVisa8003);
+            statement.CreditCard.Should().Be(BarclaysPlatinumVisa8003);
             statement.Year.Should().Be(2026);
             statement.Month.Should().Be(7);
             statement.IsPaid.Should().BeFalse();
@@ -24,7 +28,7 @@ public class CardStatementTests
     [Fact]
     public void MarkPaid_SetsIsPaidToTrue()
     {
-        var statement = CardStatement.Create(Enums.CreditCard.ChaseMaster4023, 2026, 7);
+        var statement = CardStatement.Create(ChaseMaster4023, 2026, 7);
 
         statement.MarkPaid();
 
@@ -34,7 +38,7 @@ public class CardStatementTests
     [Fact]
     public void MarkPaid_CalledTwice_LeavesIsPaidTrueWithoutError()
     {
-        var statement = CardStatement.Create(Enums.CreditCard.ChaseMaster4023, 2026, 7);
+        var statement = CardStatement.Create(ChaseMaster4023, 2026, 7);
 
         statement.MarkPaid();
         statement.MarkPaid();
@@ -45,7 +49,7 @@ public class CardStatementTests
     [Fact]
     public void MarkUnpaid_AfterMarkPaid_SetsIsPaidBackToFalse()
     {
-        var statement = CardStatement.Create(Enums.CreditCard.ChaseMaster4023, 2026, 7);
+        var statement = CardStatement.Create(ChaseMaster4023, 2026, 7);
         statement.MarkPaid();
 
         statement.MarkUnpaid();
@@ -56,8 +60,8 @@ public class CardStatementTests
     [Fact]
     public void Create_TwoStatements_HaveDifferentIds()
     {
-        var first = CardStatement.Create(Enums.CreditCard.BaAmex, 2026, 7);
-        var second = CardStatement.Create(Enums.CreditCard.BaAmex, 2026, 7);
+        var first = CardStatement.Create(BaAmex, 2026, 7);
+        var second = CardStatement.Create(BaAmex, 2026, 7);
 
         first.Id.Should().NotBe(second.Id);
     }

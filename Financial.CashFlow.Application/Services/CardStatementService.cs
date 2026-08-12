@@ -3,18 +3,19 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
 
 public sealed class CardStatementService : ICardStatementService
 {
-    private static readonly Domain.Enums.CreditCard[] AllCards = Enum.GetValues<Domain.Enums.CreditCard>();
-
     private readonly ICashFlowRepository _repository;
+    private readonly ILogger<CardStatementService> _logger;
 
-    public CardStatementService(ICashFlowRepository repository)
+    public CardStatementService(ICashFlowRepository repository, ILogger<CardStatementService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<IReadOnlyList<CardStatementDTO>> GetStatementsForMonthAsync(int year, int month)
@@ -23,10 +24,16 @@ public sealed class CardStatementService : ICardStatementService
             .Where(s => s.Year == year && s.Month == month)
             .ToList();
 
-        var created = false;
-        foreach (var card in AllCards)
+        var activeCards = _repository.GetCreditCards().Where(c => c.IsActive).ToList();
+        if (activeCards.Count == 0)
         {
-            if (existingStatements.Any(s => s.Card == card))
+            _logger.LogWarning("No active credit cards found while generating statements for {Year}-{Month}.", year, month);
+        }
+
+        var created = false;
+        foreach (var card in activeCards)
+        {
+            if (existingStatements.Any(s => s.CreditCard.Id == card.Id))
             {
                 continue;
             }
@@ -135,7 +142,7 @@ public sealed class CardStatementService : ICardStatementService
 
     private List<Expense> GetStatementExpenses(CardStatement statement, ExpensePaymentStatus status) =>
         _repository.GetExpenses()
-            .Where(e => e.CardTag == statement.Card
+            .Where(e => e.CreditCard?.Id == statement.CreditCard.Id
                 && e.InvoiceDate is not null
                 && e.InvoiceDate.Value.Year == statement.Year
                 && e.InvoiceDate.Value.Month == statement.Month
@@ -145,7 +152,8 @@ public sealed class CardStatementService : ICardStatementService
     private CardStatementDTO ToDto(CardStatement statement, string? warning = null) => new()
     {
         Id = statement.Id,
-        Card = statement.Card.ToString(),
+        CreditCardId = statement.CreditCard.Id,
+        CreditCardName = statement.CreditCard.Name,
         Year = statement.Year,
         Month = statement.Month,
         IsPaid = statement.IsPaid,

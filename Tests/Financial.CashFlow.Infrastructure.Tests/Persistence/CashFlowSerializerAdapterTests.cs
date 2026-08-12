@@ -4,6 +4,7 @@ using Financial.CashFlow.Infrastructure.Persistence;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using System.Text.Json;
+using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
@@ -15,7 +16,7 @@ public class CashFlowSerializerAdapterTests
         var serializer = new CashFlowSerializerAdapter();
         var original = CashFlowData.Create();
         var reserveBucket = ReserveBucket.Create("Investimento", 33.33m);
-        var creditCard = Domain.Entities.CreditCard.Create("Barclays Platinum Visa 8003", isActive: true);
+        var creditCard = CreditCard.Create("Barclays Platinum Visa 8003", isActive: true);
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
         var destinationBank = Bank.Create("Trading212", roundUpEnabled: true);
@@ -27,10 +28,10 @@ public class CashFlowSerializerAdapterTests
             54.32m,
             Category.Mercado,
             null,
-           Domain.Enums.CreditCard.BarclaysPlatinumVisa8003);
+            creditCard);
         expense.Settle(bank, new DateOnly(2026, 7, 31));
         var reserveMovement = ReserveMovement.Create(reserveBucket, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split");
-        var cardStatement = CardStatement.Create(Domain.Enums.CreditCard.BarclaysPlatinumVisa8003, 2026, 7);
+        var cardStatement = CardStatement.Create(creditCard, 2026, 7);
         var recurringBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
         var maeLedgerEntry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 15), "School supplies", "Note", Currency.BRL, 350m, 51.23m);
         var investmentSnapshot = InvestmentSnapshot.Create(investmentAccount, 2026, 7, 1250.00m);
@@ -70,7 +71,8 @@ public class CashFlowSerializerAdapterTests
             resultExpense.Description.Should().Be(expense.Description);
             resultExpense.Value.Should().Be(expense.Value);
             resultExpense.Category.Should().Be(expense.Category);
-            resultExpense.CardTag.Should().Be(expense.CardTag);
+            resultExpense.CreditCard.Should().NotBeNull();
+            resultExpense.CreditCard!.Id.Should().Be(expense.CreditCard!.Id);
             resultExpense.ChargeDate.Should().Be(expense.ChargeDate);
             resultExpense.InvoiceDate.Should().Be(expense.InvoiceDate);
             var resultMovement = result.ReserveMovements.Should().ContainSingle().Which;
@@ -79,7 +81,8 @@ public class CashFlowSerializerAdapterTests
             resultMovement.Amount.Should().Be(reserveMovement.Amount);
             resultMovement.Date.Should().Be(reserveMovement.Date);
             resultMovement.Description.Should().Be(reserveMovement.Description);
-            result.CardStatements.Should().ContainSingle().Which.Id.Should().Be(cardStatement.Id);
+            var resultCardStatement = result.CardStatements.Should().ContainSingle().Which;
+            resultCardStatement.Id.Should().Be(cardStatement.Id);
             result.RecurringBills.Should().ContainSingle().Which.Id.Should().Be(recurringBill.Id);
             result.MaeLedgerEntries.Should().ContainSingle().Which.Id.Should().Be(maeLedgerEntry.Id);
             var resultSnapshot = result.InvestmentSnapshots.Should().ContainSingle().Which;
@@ -131,6 +134,8 @@ public class CashFlowSerializerAdapterTests
             resultTransfer.DestinationBank.Should().BeSameAs(resultDestinationBank);
             resultBalanceAdjustment.Bank.Should().BeSameAs(resultBank);
             resultSnapshot.Account.Should().BeSameAs(resultInvestmentAccount);
+            resultExpense.CreditCard.Should().BeSameAs(resultCreditCard);
+            resultCardStatement.CreditCard.Should().BeSameAs(resultCreditCard);
         }
     }
 
@@ -278,6 +283,7 @@ public class CashFlowSerializerAdapterTests
         result.Banks.Should().BeEmpty();
         result.IncomeSources.Should().BeEmpty();
         result.ReserveBuckets.Should().BeEmpty();
+        result.CreditCards.Should().BeEmpty();
         result.Incomes.Should().BeEmpty();
         result.Transfers.Should().BeEmpty();
         result.BalanceAdjustments.Should().BeEmpty();

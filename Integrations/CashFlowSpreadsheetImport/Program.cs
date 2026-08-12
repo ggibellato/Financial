@@ -8,6 +8,7 @@ using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.M
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.IncomeSources;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ReserveBuckets;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ReserveBucketReferences;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.CreditCardReferences;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.EntityReferences;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ExpenseChargeDate;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
@@ -41,6 +42,7 @@ if (!File.Exists(workbookPath))
 string? legacyRawJson = null;
 EntityReferenceMigrationSummary? entityReferenceSummary = null;
 ReserveBucketReferenceMigrationSummary? reserveBucketReferenceSummary = null;
+CreditCardReferenceMigrationSummary? creditCardReferenceSummary = null;
 if (File.Exists(outputPath))
 {
     var backupPath = MigrationBackup.Create(outputPath);
@@ -50,12 +52,13 @@ if (File.Exists(outputPath))
     // declares that property and a normal deserialization silently drops it.
     legacyRawJson = File.ReadAllText(backupPath);
 
-    // Both must run before CashFlowLoader.LoadSync below: the typed deserializer throws on a
-    // file still carrying either legacy shape, so any rewrite has to happen on the raw file
-    // first. ReserveBucketReferenceMigrator runs second since a file could in principle need
-    // both rewrites at once (an old file that predates every reference migration).
+    // All three must run before CashFlowLoader.LoadSync below: the typed deserializer throws on
+    // a file still carrying any legacy shape, so every rewrite has to happen on the raw file
+    // first. Each runs in the order its own reference transition landed, since a file could in
+    // principle need all three rewrites at once (an old file that predates every migration).
     entityReferenceSummary = EntityReferenceMigrator.Migrate(outputPath);
     reserveBucketReferenceSummary = ReserveBucketReferenceMigrator.Migrate(outputPath);
+    creditCardReferenceSummary = CreditCardReferenceMigrator.Migrate(outputPath);
 }
 
 var report = new ImportReport();
@@ -145,6 +148,10 @@ if (reserveBucketReferenceSummary is not null)
 {
     Console.WriteLine(reserveBucketReferenceSummary.Render());
 }
+if (creditCardReferenceSummary is not null)
+{
+    Console.WriteLine(creditCardReferenceSummary.Render());
+}
 Console.WriteLine(report.Render());
 Console.WriteLine(bankSummary.Render());
 Console.WriteLine(bankOpeningBalanceSummary.Render());
@@ -203,7 +210,7 @@ static void ImportMonthlyExpenseSheets(XLWorkbook workbook, CashFlowData data, I
 
     foreach (var (sheet, _, year, month) in monthlySheets)
     {
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, year, month, today, report, data.Banks);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, year, month, today, report, data.Banks, data.CreditCards);
         foreach (var expense in expenses)
         {
             data.AddExpense(expense);

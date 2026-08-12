@@ -30,7 +30,7 @@ public class TitheEndpointsTests
             Value = 200m,
             Category = "Dizimo",
             PaymentSourceBankId = BarclaysId,
-            CardTag = null
+            CreditCardId = null
         });
 
         var response = await client.GetAsync("/api/v1/financial/tithe/month/2026/7");

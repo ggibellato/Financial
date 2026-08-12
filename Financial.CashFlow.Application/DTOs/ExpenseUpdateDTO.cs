@@ -20,8 +20,8 @@ public sealed class ExpenseUpdateDTO
     /// <summary>Payment source bank identifier. Omit when charging to a credit card.</summary>
     public Guid? PaymentSourceBankId { get; init; }
 
-    /// <summary>Optional credit-card tag name.</summary>
-    public string? CardTag { get; init; }
+    /// <summary>Optional credit card identifier. Omit when paying directly from a bank.</summary>
+    public Guid? CreditCardId { get; init; }
 
     /// <summary>Invoice-period override for a credit card expense. Rejected if changed while the expense is already settled.</summary>
     public DateOnly? InvoiceDate { get; init; }
