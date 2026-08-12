@@ -280,10 +280,31 @@ internal sealed class StubCardStatementService : ICardStatementService
 internal sealed class StubCreditCardService : ICreditCardService
 {
     public List<CreditCardDTO> CreditCards { get; set; } = [];
+    public (Guid Id, CreditCardUpdateDTO Request)? LastUpdateRequest { get; private set; }
+    public string? ThrowOnUpdate { get; set; }
 
     public IReadOnlyList<CreditCardDTO> GetCreditCards() => CreditCards;
 
-    public Task<CreditCardDTO> UpdateCreditCardAsync(Guid id, CreditCardUpdateDTO request) => throw new NotImplementedException();
+    public Task<CreditCardDTO> UpdateCreditCardAsync(Guid id, CreditCardUpdateDTO request)
+    {
+        if (ThrowOnUpdate is { } message)
+        {
+            throw new InvalidOperationException(message);
+        }
+
+        LastUpdateRequest = (id, request);
+        var existing = CreditCards.First(c => c.Id == id);
+        var updated = new CreditCardDTO
+        {
+            Id = existing.Id,
+            Name = existing.Name,
+            IsActive = request.IsActive,
+            NextInvoiceDueDate = request.NextInvoiceDueDate,
+        };
+        var index = CreditCards.FindIndex(c => c.Id == id);
+        CreditCards[index] = updated;
+        return Task.FromResult(updated);
+    }
 }
 
 internal sealed class StubReserveService : IReserveService
