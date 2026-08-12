@@ -231,18 +231,18 @@ graph TD
 - [x] Migration seeds exactly 14 categories (Ariana, Carro, Casa, Estudo, Extras, Familia, Gleison, Mercado, Samuel, Saude, Viagem, Dizimo, Investimento, Reserva), all Active=true
 - [x] Only "Investimento" is seeded with IsInvestment=true; only "Dizimo" is seeded with IsTithe=true; all other categories have both flags false
 - [x] Running the migration twice does not create duplicate categories
-- [ ] Category is persisted via a reference converter (`CategoryId` wire format), consistent with Bank/CreditCard — deferred to F02, which is when a property first references Category by Id (mirrors CreditCardReferenceConverter landing in P29-F02, not P29-F01); will be checked off there
+- [x] Category is persisted via a reference converter (`CategoryId` wire format), consistent with Bank/CreditCard — deferred to F02, which is when a property first references Category by Id (mirrors CreditCardReferenceConverter landing in P29-F02, not P29-F01); will be checked off there
 
 ### F02. Migrate Expense & Domain Logic to Category References
-- [ ] `Expense.Category` changes from enum to a Category entity reference; exposed at the API boundary as `CategoryId` (Guid, required) plus a read-only `CategoryName`, with no remaining plain `Category` string field on create/update DTOs
-- [ ] Creating a new expense with an active category's Id succeeds and stores the reference correctly
-- [ ] Creating a new expense with an inactive category's Id is rejected with a clear error
-- [ ] Creating a new expense with an unknown category Id is rejected with a clear error
-- [ ] `Expense.IsInvestment` reflects `Category.IsInvestment` with no `CategoryClassifier` class remaining anywhere in the solution
-- [ ] `TitheService`'s tithe total is computed using `Category.IsTithe` with no `Category.Dizimo` enum comparison remaining
-- [ ] `AnnualSummaryService`'s category totals/averages include every seeded category (active and inactive) with no `Enum.GetValues<Category>()` call remaining
-- [ ] Existing `Expense.Category` enum values are migrated to Category Id references with no data loss
-- [ ] Historical expenses referencing a category later deactivated remain intact and correctly linked
+- [x] `Expense.Category` changes from enum to a Category entity reference; exposed at the API boundary as `CategoryId` (Guid, required) plus a read-only `CategoryName`, with no remaining plain `Category` string field on create/update DTOs
+- [x] Creating a new expense with an active category's Id succeeds and stores the reference correctly
+- [x] Creating a new expense with an inactive category's Id is rejected with a clear error
+- [x] Creating a new expense with an unknown category Id is rejected with a clear error
+- [x] `Expense.IsInvestment` reflects `Category.IsInvestment` with no `CategoryClassifier` class remaining anywhere in the solution
+- [x] `TitheService`'s tithe total is computed using `Category.IsTithe` with no `Category.Dizimo` enum comparison remaining
+- [x] `AnnualSummaryService`'s category totals/averages include every seeded category (active and inactive) with no `Enum.GetValues<Category>()` call remaining
+- [x] Existing `Expense.Category` enum values are migrated to Category Id references with no data loss
+- [x] Historical expenses referencing a category later deactivated remain intact and correctly linked
 
 ### F03. Read API Endpoint
 - [ ] `GET /categories` returns all seeded categories including inactive ones, with Id, Name, Active, IsInvestment, IsTithe
@@ -264,7 +264,7 @@ graph TD
 - [ ] The one-time `EntityReferenceMigrator` aborts with a clear error if a legacy `Expense.Category` enum value has no matching seeded Category name
 
 ### Cross-Feature Integration
-- [ ] Category entities seeded in F01 are correctly resolved and referenced by Expense records after F02's migration
+- [x] Category entities seeded in F01 are correctly resolved and referenced by Expense records after F02's migration
 - [ ] Category list endpoint in F03 correctly reflects the entities seeded in F01, including their Active/IsInvestment/IsTithe flags
 - [ ] Web UI (F04) correctly consumes F02's Expense CategoryId contract and F03's API to build its active-only picklist
 - [ ] WPF UI (F05) correctly consumes F02's Expense CategoryId contract and F03's API to build its active-only picklist
