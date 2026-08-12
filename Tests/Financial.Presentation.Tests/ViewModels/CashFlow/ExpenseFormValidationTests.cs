@@ -6,11 +6,12 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 public class ExpenseFormValidationTests
 {
     private static readonly DateTime ValidDate = DateTime.Today;
+    private static readonly Guid DefaultCategoryId = Guid.NewGuid();
 
     private static string Validate(
         DateTime? date,
         string description = "Groceries",
-        string category = "Mercado",
+        Guid? categoryId = null,
         string value = "10",
         bool isCardMode = false,
         Guid? paymentSource = null,
@@ -18,7 +19,7 @@ public class ExpenseFormValidationTests
         bool showRoundUpField = false,
         string roundUpAmount = "") =>
         ExpenseFormValidation.BuildValidationMessage(
-            date, description, category, value, isCardMode, paymentSource ?? Guid.NewGuid(), creditCardId, showRoundUpField, roundUpAmount);
+            date, description, categoryId ?? DefaultCategoryId, value, isCardMode, paymentSource ?? Guid.NewGuid(), creditCardId, showRoundUpField, roundUpAmount);
 
     [Fact]
     public void ValidBankModeForm_ReturnsEmpty()
@@ -39,9 +40,11 @@ public class ExpenseFormValidationTests
     }
 
     [Fact]
-    public void MissingCategory_ReturnsError()
+    public void MissingCategoryId_ReturnsError()
     {
-        Validate(ValidDate, category: "").Should().Contain("Category is required.");
+        ExpenseFormValidation.BuildValidationMessage(
+            ValidDate, "Groceries", categoryId: null, "10", isCardMode: false, Guid.NewGuid(), null, false, "")
+            .Should().Contain("Category is required.");
     }
 
     [Theory]
@@ -57,7 +60,7 @@ public class ExpenseFormValidationTests
     public void BankMode_MissingPaymentSource_ReturnsError()
     {
         ExpenseFormValidation.BuildValidationMessage(
-            ValidDate, "Groceries", "Mercado", "10", isCardMode: false, paymentSource: null, null, false, "")
+            ValidDate, "Groceries", DefaultCategoryId, "10", isCardMode: false, paymentSource: null, null, false, "")
             .Should().Contain("Payment Source is required.");
     }
 
