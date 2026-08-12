@@ -79,7 +79,7 @@ export type CreateFormField =
   | 'createValue'
   | 'createCategory'
   | 'createPaymentSource'
-  | 'createCardTag'
+  | 'createCreditCardId'
   | 'createInvoiceDate'
   | 'createRoundUpAmount'
 export type EditField =
@@ -88,7 +88,7 @@ export type EditField =
   | 'editValue'
   | 'editCategory'
   | 'editPaymentSource'
-  | 'editCardTag'
+  | 'editCreditCardId'
   | 'editInvoiceDate'
   | 'editRoundUpAmount'
 
@@ -126,7 +126,7 @@ interface MonthlyState {
   createValue: string
   createCategory: string
   createPaymentSource: string
-  createCardTag: string
+  createCreditCardId: string
   createInvoiceDate: string
   createRoundUpAmount: string
   isCreating: boolean
@@ -137,7 +137,8 @@ interface MonthlyState {
   editValue: string
   editCategory: string
   editPaymentSource: string
-  editCardTag: string
+  editCreditCardId: string
+  editCreditCardName: string
   editInvoiceDate: string
   editRoundUpAmount: string
   createPaymentMode: PaymentMode
@@ -216,7 +217,7 @@ const BLANK_CREATE_FORM = {
   createValue: '',
   createCategory: 'Mercado',
   createPaymentSource: '',
-  createCardTag: '',
+  createCreditCardId: '',
   createInvoiceDate: '',
   createRoundUpAmount: '',
   createPaymentMode: 'bank',
@@ -253,7 +254,8 @@ const INITIAL_STATE_BASE: Omit<MonthlyState, 'year' | 'month'> = {
   editValue: '',
   editCategory: '',
   editPaymentSource: '',
-  editCardTag: '',
+  editCreditCardId: '',
+  editCreditCardName: '',
   editInvoiceDate: '',
   editRoundUpAmount: '',
   editPaymentMode: 'bank',
@@ -333,7 +335,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         saveIncomeError: null,
         createPaymentMode: mode,
         createPaymentSource: nextPaymentSource,
-        createCardTag: '',
+        createCreditCardId: '',
         createRoundUpAmount: suggestion ?? '',
       }
     }
@@ -365,7 +367,8 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editValue: String(action.payload.value),
         editCategory: action.payload.category,
         editPaymentSource: action.payload.paymentSourceBankId ?? '',
-        editCardTag: action.payload.cardTag ?? '',
+        editCreditCardId: action.payload.creditCardId ?? '',
+        editCreditCardName: action.payload.creditCardName ?? '',
         editInvoiceDate: action.payload.invoiceDate ? action.payload.invoiceDate.slice(0, 7) : '',
         editRoundUpAmount: action.payload.roundUpAmount != null ? String(action.payload.roundUpAmount) : '',
         editPaymentMode: action.payload.paymentStatus === CHARGE_STATUS ? 'card' : 'bank',
@@ -384,7 +387,8 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editValue: '',
         editCategory: '',
         editPaymentSource: '',
-        editCardTag: '',
+        editCreditCardId: '',
+        editCreditCardName: '',
         editInvoiceDate: '',
         editRoundUpAmount: '',
         editPaymentMode: 'bank',
@@ -413,7 +417,8 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
         editValue: '',
         editCategory: '',
         editPaymentSource: '',
-        editCardTag: '',
+        editCreditCardId: '',
+        editCreditCardName: '',
         editInvoiceDate: '',
         editRoundUpAmount: '',
         editPaymentMode: 'bank',
@@ -534,7 +539,7 @@ export interface MonthlyData {
   createValue: string
   createCategory: string
   createPaymentSource: string
-  createCardTag: string
+  createCreditCardId: string
   createInvoiceDate: string
   createRoundUpAmount: string
   createPaymentMode: PaymentMode
@@ -550,7 +555,8 @@ export interface MonthlyData {
   editValue: string
   editCategory: string
   editPaymentSource: string
-  editCardTag: string
+  editCreditCardId: string
+  editCreditCardName: string
   editInvoiceDate: string
   editRoundUpAmount: string
   editPaymentMode: PaymentMode
@@ -676,7 +682,7 @@ export function useMonthly(): MonthlyData {
       createCategory,
       createPaymentMode,
       createPaymentSource,
-      createCardTag,
+      createCreditCardId,
       createInvoiceDate,
       createRoundUpAmount,
       banks,
@@ -698,7 +704,7 @@ export function useMonthly(): MonthlyData {
       return
     }
 
-    if (createPaymentMode === 'card' && createCardTag.trim() === '') {
+    if (createPaymentMode === 'card' && createCreditCardId.trim() === '') {
       dispatch({ type: 'CREATE_ERROR', payload: 'Card is required' })
       return
     }
@@ -728,7 +734,7 @@ export function useMonthly(): MonthlyData {
         value,
         category: createCategory,
         paymentSourceBankId: createPaymentMode === 'bank' ? createPaymentSource : null,
-        cardTag: createPaymentMode === 'card' ? createCardTag : null,
+        creditCardId: createPaymentMode === 'card' ? createCreditCardId : null,
         invoiceDate: createPaymentMode === 'card' && createInvoiceDate ? `${createInvoiceDate}-01` : null,
         roundUpAmount,
       })
@@ -762,7 +768,7 @@ export function useMonthly(): MonthlyData {
       return
     }
 
-    if (!state.editIsSettled && state.editPaymentMode === 'card' && state.editCardTag.trim() === '') {
+    if (!state.editIsSettled && state.editPaymentMode === 'card' && state.editCreditCardId.trim() === '') {
       dispatch({ type: 'SAVE_ERROR', payload: 'Card is required' })
       return
     }
@@ -773,11 +779,11 @@ export function useMonthly(): MonthlyData {
     const paymentFields = state.editIsSettled
       ? {
           paymentSourceBankId: state.editPaymentSource.trim() === '' ? null : state.editPaymentSource,
-          cardTag: state.editCardTag.trim() === '' ? null : state.editCardTag,
+          creditCardId: state.editCreditCardId.trim() === '' ? null : state.editCreditCardId,
         }
       : {
           paymentSourceBankId: state.editPaymentMode === 'bank' ? state.editPaymentSource : null,
-          cardTag: state.editPaymentMode === 'card' ? state.editCardTag : null,
+          creditCardId: state.editPaymentMode === 'card' ? state.editCreditCardId : null,
         }
 
     const selectedBank = state.banks.find((b) => b.id === state.editPaymentSource)
@@ -1085,7 +1091,7 @@ export function useMonthly(): MonthlyData {
     createValue: state.createValue,
     createCategory: state.createCategory,
     createPaymentSource: state.createPaymentSource,
-    createCardTag: state.createCardTag,
+    createCreditCardId: state.createCreditCardId,
     createInvoiceDate: state.createInvoiceDate,
     createRoundUpAmount: state.createRoundUpAmount,
     createPaymentMode: state.createPaymentMode,
@@ -1101,7 +1107,8 @@ export function useMonthly(): MonthlyData {
     editValue: state.editValue,
     editCategory: state.editCategory,
     editPaymentSource: state.editPaymentSource,
-    editCardTag: state.editCardTag,
+    editCreditCardId: state.editCreditCardId,
+    editCreditCardName: state.editCreditCardName,
     editInvoiceDate: state.editInvoiceDate,
     editRoundUpAmount: state.editRoundUpAmount,
     editPaymentMode: state.editPaymentMode,

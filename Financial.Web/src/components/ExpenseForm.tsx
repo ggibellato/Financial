@@ -1,4 +1,4 @@
-import type { BankDto } from '../api/types'
+import type { BankDto, CreditCardDto } from '../api/types'
 import type { PaymentMode } from '../hooks/useMonthly'
 
 export type ExpenseFormField =
@@ -7,7 +7,7 @@ export type ExpenseFormField =
   | 'value'
   | 'category'
   | 'paymentSource'
-  | 'cardTag'
+  | 'creditCardId'
   | 'invoiceDate'
   | 'roundUpAmount'
 
@@ -28,8 +28,6 @@ const CATEGORIES = [
   'Reserva',
 ]
 
-const CARDS = ['BarclaysPlatinumVisa8003', 'BarclaysPlatinumVisa6007', 'ChaseMaster4023', 'BaAmex', 'PaypalCredit']
-
 interface ExpenseFormProps {
   isEditing: boolean
   date: string
@@ -37,11 +35,13 @@ interface ExpenseFormProps {
   value: string
   category: string
   paymentSource: string
-  cardTag: string
+  creditCardId: string
+  creditCardName: string
   invoiceDate: string
   roundUpAmount: string
   paymentMode: PaymentMode
   banks: BankDto[]
+  creditCards: CreditCardDto[]
   isSettled: boolean
   isSaving: boolean
   saveError: string | null
@@ -57,11 +57,13 @@ export default function ExpenseForm({
   value,
   category,
   paymentSource,
-  cardTag,
+  creditCardId,
+  creditCardName,
   invoiceDate,
   roundUpAmount,
   paymentMode,
   banks,
+  creditCards,
   isSettled,
   isSaving,
   saveError,
@@ -123,8 +125,8 @@ export default function ExpenseForm({
             <div className="monthly-page__form-field">
               <label>Payment</label>
               <p className="monthly-page__settled-note">
-                Paid by {selectedBank?.name ?? paymentSource} via card {cardTag}. Settled via its card statement —
-                unmark the statement paid to change these fields.
+                Paid by {selectedBank?.name ?? paymentSource} via card {creditCardName || creditCardId}. Settled via its
+                card statement — unmark the statement paid to change these fields.
               </p>
             </div>
             <div className="monthly-page__form-field">
@@ -169,13 +171,13 @@ export default function ExpenseForm({
                   <label htmlFor="expense-card-tag">Card</label>
                   <select
                     id="expense-card-tag"
-                    value={cardTag}
-                    onChange={(e) => onFieldChange('cardTag', e.target.value)}
+                    value={creditCardId}
+                    onChange={(e) => onFieldChange('creditCardId', e.target.value)}
                   >
                     <option value="">Select card…</option>
-                    {CARDS.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
+                    {creditCards.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
                       </option>
                     ))}
                   </select>

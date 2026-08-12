@@ -35,7 +35,7 @@ export default function CardsGrid({
           <tbody>
             {cardStatements.map((s) => (
               <tr key={s.id}>
-                <td>{s.card}</td>
+                <td>{s.creditCardName}</td>
                 <td className="data-table__col--numeric">{formatN2(s.outstandingTotal)}</td>
                 <td>{s.isPaid ? 'Paid' : 'Unpaid'}</td>
                 <td>
@@ -46,7 +46,7 @@ export default function CardsGrid({
                   ) : (
                     <>
                       <select
-                        aria-label={`Paying bank for ${s.card}`}
+                        aria-label={`Paying bank for ${s.creditCardName}`}
                         value={markPaidSources[s.id] ?? ''}
                         onChange={(e) => setMarkPaidSource(s.id, e.target.value)}
                       >

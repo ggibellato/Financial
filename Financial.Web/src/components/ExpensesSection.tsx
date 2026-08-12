@@ -39,7 +39,7 @@ function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
       <td>{expense.category}</td>
       <td className="data-table__col--numeric">{formatN2(expense.value)}</td>
       <td>{expense.paymentSourceBankName}</td>
-      <td>{expense.cardTag ?? '—'}</td>
+      <td>{expense.creditCardName ?? '—'}</td>
     </tr>
   )
 }
