@@ -2,6 +2,7 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using ReserveBucketEntity = Financial.CashFlow.Domain.Entities.ReserveBucket;
+using Category = Financial.CashFlow.Domain.Enums.Category;
 
 namespace Financial.CashFlow.Domain.Tests;
 

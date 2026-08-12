@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Category = Financial.CashFlow.Domain.Enums.Category;
 using FluentAssertions;
 
 namespace Financial.CashFlow.Application.Tests.Services;

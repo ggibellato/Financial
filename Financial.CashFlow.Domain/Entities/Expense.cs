@@ -13,7 +13,7 @@ public class Expense
     public DateOnly Date { get; private set; }
     public string Description { get; private set; } = string.Empty;
     public decimal Value { get; private set; }
-    public Category Category { get; private set; }
+    public Enums.Category Category { get; private set; }
     public Bank? PaymentSourceBank { get; private set; }
     public CreditCard? CreditCard { get; private set; }
     public DateOnly? ChargeDate { get; private set; }
@@ -35,7 +35,7 @@ public class Expense
         DateOnly date,
         string description,
         decimal value,
-        Category category,
+        Enums.Category category,
         Bank? paymentSourceBank,
         CreditCard? creditCard,
         DateOnly? invoiceDate = null)
@@ -60,7 +60,7 @@ public class Expense
         DateOnly date,
         string description,
         decimal value,
-        Category category,
+        Enums.Category category,
         Bank? paymentSourceBank,
         CreditCard? creditCard)
     {
