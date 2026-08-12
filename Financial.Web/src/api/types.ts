@@ -370,7 +370,8 @@ export interface ExpenseDto {
   date: string
   description: string
   value: number
-  category: string
+  categoryId: string
+  categoryName: string
   paymentSourceBankId: string | null
   paymentSourceBankName: string | null
   creditCardId: string | null
@@ -386,7 +387,7 @@ export interface CreateExpenseDto {
   date: string
   description: string
   value: number
-  category: string
+  categoryId: string
   paymentSourceBankId: string | null
   creditCardId: string | null
   invoiceDate: string | null
@@ -397,7 +398,7 @@ export interface UpdateExpenseDto {
   date: string
   description: string
   value: number
-  category: string
+  categoryId: string
   paymentSourceBankId: string | null
   creditCardId: string | null
   invoiceDate: string | null
@@ -415,6 +416,14 @@ export interface IncomeSourceDto {
   name: string
   isActive: boolean
   group: string
+}
+
+export interface CategoryDto {
+  id: string
+  name: string
+  active: boolean
+  isInvestment: boolean
+  isTithe: boolean
 }
 
 export interface BankBalanceDto {
