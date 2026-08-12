@@ -245,8 +245,8 @@ graph TD
 - [x] Historical expenses referencing a category later deactivated remain intact and correctly linked
 
 ### F03. Read API Endpoint
-- [ ] `GET /categories` returns all seeded categories including inactive ones, with Id, Name, Active, IsInvestment, IsTithe
-- [ ] No POST/PUT/DELETE endpoint exists for categories
+- [x] `GET /categories` returns all seeded categories including inactive ones, with Id, Name, Active, IsInvestment, IsTithe
+- [x] No POST/PUT/DELETE endpoint exists for categories
 
 ### F04. Web: Dynamic Picklist
 - [ ] Expense form category dropdown shows only active categories fetched from the API
@@ -265,7 +265,7 @@ graph TD
 
 ### Cross-Feature Integration
 - [x] Category entities seeded in F01 are correctly resolved and referenced by Expense records after F02's migration
-- [ ] Category list endpoint in F03 correctly reflects the entities seeded in F01, including their Active/IsInvestment/IsTithe flags
+- [x] Category list endpoint in F03 correctly reflects the entities seeded in F01, including their Active/IsInvestment/IsTithe flags
 - [ ] Web UI (F04) correctly consumes F02's Expense CategoryId contract and F03's API to build its active-only picklist
 - [ ] WPF UI (F05) correctly consumes F02's Expense CategoryId contract and F03's API to build its active-only picklist
 - [ ] Spreadsheet import (F06) correctly resolves categories using F01's seeded entities and stores references consistent with F02's entity-reference model
