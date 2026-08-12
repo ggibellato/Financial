@@ -51,12 +51,14 @@ public class CashFlowLoaderTests
         var serializer = new CashFlowSerializerAdapter();
         var original = Financial.CashFlow.Domain.Entities.CashFlowData.Create();
         var bank = Financial.CashFlow.Domain.Entities.Bank.Create("Chase", roundUpEnabled: true);
+        var category = Financial.CashFlow.Domain.Entities.Category.Create("Casa");
         original.AddBank(bank);
+        original.AddCategory(category);
         original.AddExpense(Financial.CashFlow.Domain.Entities.Expense.Create(
             new DateOnly(2026, 7, 1),
             "Test expense",
             10m,
-            Financial.CashFlow.Domain.Enums.Category.Casa,
+            category,
             bank,
             null));
         File.WriteAllText(path, serializer.Serialize(original));

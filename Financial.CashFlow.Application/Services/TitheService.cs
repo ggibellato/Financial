@@ -1,6 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
-using Financial.CashFlow.Domain.Enums;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -24,7 +23,7 @@ public sealed class TitheService : ITitheService
         var calculatedTithe = titheBase * TithePercentage;
 
         var dizimoTotal = _repository.GetExpenses()
-            .Where(e => e.Date.Year == year && e.Date.Month == month && e.Category == Category.Dizimo)
+            .Where(e => e.Date.Year == year && e.Date.Month == month && e.Category.IsTithe)
             .Sum(e => e.Value);
 
         return new TitheSummaryDTO

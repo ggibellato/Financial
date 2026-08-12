@@ -14,6 +14,8 @@ public class AnnualSummaryEndpointsTests
     private static readonly Guid GleisonId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000001");
     private static readonly Guid ArianaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000002");
     private static readonly Guid DividendoJurosId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000004");
+    private static readonly Guid MercadoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000008");
+    private static readonly Guid InvestimentoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000013");
 
     [Fact]
     public async Task GetExpenseCategoryTotals_RouteRemoved_Returns404()
@@ -63,7 +65,7 @@ public class AnnualSummaryEndpointsTests
             Date = new DateOnly(pastYear, 6, 5),
             Description = "Past year groceries",
             Value = 120m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null
         });
@@ -72,7 +74,7 @@ public class AnnualSummaryEndpointsTests
             Date = new DateOnly(currentYear, 1, 5),
             Description = "January groceries",
             Value = 100m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null
         });
@@ -81,7 +83,7 @@ public class AnnualSummaryEndpointsTests
             Date = new DateOnly(currentYear, 3, 5),
             Description = "March groceries",
             Value = 50m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null
         });
@@ -147,7 +149,7 @@ public class AnnualSummaryEndpointsTests
             Date = new DateOnly(2026, 1, 5),
             Description = "January groceries",
             Value = 100m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null
         });
@@ -156,7 +158,7 @@ public class AnnualSummaryEndpointsTests
             Date = new DateOnly(2026, 1, 5),
             Description = "January investing",
             Value = 30m,
-            Category = "Investimento",
+            CategoryId = InvestimentoId,
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null
         });

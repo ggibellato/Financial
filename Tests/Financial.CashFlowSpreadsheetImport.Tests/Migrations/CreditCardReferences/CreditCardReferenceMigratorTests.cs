@@ -10,14 +10,22 @@ public class CreditCardReferenceMigratorTests
     private static readonly Guid ExpenseId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid CardStatementId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid SeededCardId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+    private static readonly Guid ViagemCategoryId = Guid.Parse("44444444-4444-4444-4444-444444444444");
 
+    // Category is already seeded and referenced by CategoryId here, not by a legacy Category
+    // string: chronologically, P30's Category migration only ever runs after P29's CreditCard
+    // migration in this codebase's history, so any file still needing this CardTag/Card rewrite
+    // has already been through Category migration.
     private static string LegacyFixtureJson(string expenseCardName = "BA Amex", string statementCardName = "Chase Master 4023") => $$"""
         {
           "Banks": [], "IncomeSources": [], "InvestmentAccounts": [], "ReserveBuckets": [],
           "ReserveMovements": [], "RecurringBills": [], "MaeLedgerEntries": [],
           "Incomes": [], "Transfers": [], "BalanceAdjustments": [], "InvestmentSnapshots": [],
+          "Categories": [
+            { "Id": "{{ViagemCategoryId}}", "Name": "Viagem", "Active": true, "IsInvestment": false, "IsTithe": false }
+          ],
           "Expenses": [
-            { "Id": "{{ExpenseId}}", "Date": "2026-07-05", "Description": "Flight", "Value": 200.0, "Category": "Viagem", "PaymentSourceBankId": null, "CardTag": "{{expenseCardName}}" }
+            { "Id": "{{ExpenseId}}", "Date": "2026-07-05", "Description": "Flight", "Value": 200.0, "CategoryId": "{{ViagemCategoryId}}", "PaymentSourceBankId": null, "CardTag": "{{expenseCardName}}" }
           ],
           "CardStatements": [
             { "Id": "{{CardStatementId}}", "Card": "{{statementCardName}}", "Year": 2026, "Month": 7, "IsPaid": false }
@@ -33,8 +41,11 @@ public class CreditCardReferenceMigratorTests
           "CreditCards": [
             { "Id": "{{SeededCardId}}", "Name": "BA Amex", "IsActive": true, "NextInvoiceDueDate": null }
           ],
+          "Categories": [
+            { "Id": "{{ViagemCategoryId}}", "Name": "Viagem", "Active": true, "IsInvestment": false, "IsTithe": false }
+          ],
           "Expenses": [
-            { "Id": "{{ExpenseId}}", "Date": "2026-07-05", "Description": "Flight", "Value": 200.0, "Category": "Viagem", "PaymentSourceBankId": null, "CardTag": "BA Amex" }
+            { "Id": "{{ExpenseId}}", "Date": "2026-07-05", "Description": "Flight", "Value": 200.0, "CategoryId": "{{ViagemCategoryId}}", "PaymentSourceBankId": null, "CardTag": "BA Amex" }
           ],
           "CardStatements": [
             { "Id": "{{CardStatementId}}", "Card": "BA Amex", "Year": 2026, "Month": 7, "IsPaid": false }

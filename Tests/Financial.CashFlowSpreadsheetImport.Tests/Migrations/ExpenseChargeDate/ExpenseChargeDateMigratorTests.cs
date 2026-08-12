@@ -1,6 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Category = Financial.CashFlow.Domain.Enums.Category;
+using Category = Financial.CashFlow.Domain.Entities.Category;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ExpenseChargeDate;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -15,7 +15,7 @@ public class ExpenseChargeDateMigratorTests
     // deserialization of pre-F01 data would (only public API + reflection to null the new fields).
     private static Expense LegacyUnpaidCharge(CashFlowData data, DateOnly date, CreditCardEntity card, decimal value = 30m)
     {
-        var expense = Expense.Create(date, "Charge", value, Category.Mercado, null, card);
+        var expense = Expense.Create(date, "Charge", value, Category.Create("Mercado"), null, card);
         NullOutMigratedFields(expense);
         data.AddExpense(expense);
         return expense;
@@ -23,7 +23,7 @@ public class ExpenseChargeDateMigratorTests
 
     private static Expense LegacySettledCharge(CashFlowData data, DateOnly date, CreditCardEntity card, Bank paymentSource, decimal value = 30m)
     {
-        var expense = Expense.Create(date, "Charge", value, Category.Mercado, null, card);
+        var expense = Expense.Create(date, "Charge", value, Category.Create("Mercado"), null, card);
         typeof(Expense).GetProperty(nameof(Expense.PaymentSourceBank))!.SetMethod!.Invoke(expense, new object?[] { paymentSource });
         NullOutMigratedFields(expense);
         data.AddExpense(expense);
@@ -122,7 +122,7 @@ public class ExpenseChargeDateMigratorTests
     public void Migrate_BankExpense_NeverModified()
     {
         var data = CashFlowData.Create();
-        var expense = Expense.Create(new DateOnly(2026, 7, 10), "Groceries", 20m, Category.Mercado, Bank.Create("Chase", roundUpEnabled: true), null);
+        var expense = Expense.Create(new DateOnly(2026, 7, 10), "Groceries", 20m, Category.Create("Mercado"), Bank.Create("Chase", roundUpEnabled: true), null);
         data.AddExpense(expense);
 
         var summary = ExpenseChargeDateMigrator.Migrate(data, legacyRawJson: null);

@@ -22,6 +22,7 @@ public class MonthlyViewModel : ViewModelBase
     private readonly IBalanceAdjustmentService _balanceAdjustmentService;
     private readonly ICardStatementService _cardStatementService;
     private readonly ICreditCardService _creditCardService;
+    private readonly ICategoryService _categoryService;
 
     private int _year;
     private int _month;
@@ -123,6 +124,7 @@ public class MonthlyViewModel : ViewModelBase
         IBalanceAdjustmentService balanceAdjustmentService,
         ICardStatementService cardStatementService,
         ICreditCardService creditCardService,
+        ICategoryService categoryService,
         Func<string, bool> confirm)
     {
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
@@ -134,6 +136,7 @@ public class MonthlyViewModel : ViewModelBase
         _balanceAdjustmentService = balanceAdjustmentService ?? throw new ArgumentNullException(nameof(balanceAdjustmentService));
         _cardStatementService = cardStatementService ?? throw new ArgumentNullException(nameof(cardStatementService));
         _creditCardService = creditCardService ?? throw new ArgumentNullException(nameof(creditCardService));
+        _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
 
         var today = DateTime.Today;
@@ -547,7 +550,7 @@ public class MonthlyViewModel : ViewModelBase
         _editingExpenseId = expense.Id;
         ExpenseFormDate = expense.Date.ToDateTime(TimeOnly.MinValue);
         ExpenseFormDescription = expense.Description;
-        ExpenseFormCategory = expense.Category;
+        ExpenseFormCategory = expense.CategoryName;
         ExpenseFormValue = expense.Value.ToString("0.##");
         IsCardPaymentMode = expense.CreditCardId != null;
         ExpenseFormPaymentSource = expense.PaymentSourceBankId;
@@ -606,6 +609,8 @@ public class MonthlyViewModel : ViewModelBase
             var value = decimal.Parse(ExpenseFormValue);
             var paymentSource = IsCardPaymentMode ? null : ExpenseFormPaymentSource;
             var creditCardId = IsCardPaymentMode ? ExpenseFormCreditCardId : null;
+            var categoryId = _categoryService.GetCategories().FirstOrDefault(c => c.Name == ExpenseFormCategory)?.Id
+                ?? throw new InvalidOperationException($"Category '{ExpenseFormCategory}' is not recognized.");
             DateOnly? invoiceDate = IsCardPaymentMode ? new DateOnly(ExpenseFormInvoiceYear, ExpenseFormInvoiceMonth, 1) : null;
             decimal? roundUpAmount = ShowRoundUpField && decimal.TryParse(ExpenseFormRoundUpAmount, out var parsedRoundUp)
                 ? parsedRoundUp
@@ -618,7 +623,7 @@ public class MonthlyViewModel : ViewModelBase
                     Date = date,
                     Description = ExpenseFormDescription,
                     Value = value,
-                    Category = ExpenseFormCategory,
+                    CategoryId = categoryId,
                     PaymentSourceBankId = paymentSource,
                     CreditCardId = creditCardId,
                     InvoiceDate = invoiceDate,
@@ -632,7 +637,7 @@ public class MonthlyViewModel : ViewModelBase
                     Date = date,
                     Description = ExpenseFormDescription,
                     Value = value,
-                    Category = ExpenseFormCategory,
+                    CategoryId = categoryId,
                     PaymentSourceBankId = paymentSource,
                     CreditCardId = creditCardId,
                     InvoiceDate = invoiceDate,

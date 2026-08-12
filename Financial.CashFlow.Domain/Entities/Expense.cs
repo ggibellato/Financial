@@ -1,6 +1,5 @@
 using System;
 using Financial.CashFlow.Domain.Enums;
-using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.CashFlow.Domain.Entities;
 
@@ -13,7 +12,7 @@ public class Expense
     public DateOnly Date { get; private set; }
     public string Description { get; private set; } = string.Empty;
     public decimal Value { get; private set; }
-    public Enums.Category Category { get; private set; }
+    public Category Category { get; private set; } = null!;
     public Bank? PaymentSourceBank { get; private set; }
     public CreditCard? CreditCard { get; private set; }
     public DateOnly? ChargeDate { get; private set; }
@@ -27,7 +26,7 @@ public class Expense
 
     public decimal RoundUpSuggestion => Value <= 0 ? 0m : Math.Ceiling(Value) - Value;
 
-    public bool IsInvestment => Category.IsInvestment();
+    public bool IsInvestment => Category.IsInvestment;
 
     private Expense() { }
 
@@ -35,7 +34,7 @@ public class Expense
         DateOnly date,
         string description,
         decimal value,
-        Enums.Category category,
+        Category category,
         Bank? paymentSourceBank,
         CreditCard? creditCard,
         DateOnly? invoiceDate = null)
@@ -60,7 +59,7 @@ public class Expense
         DateOnly date,
         string description,
         decimal value,
-        Enums.Category category,
+        Category category,
         Bank? paymentSourceBank,
         CreditCard? creditCard)
     {

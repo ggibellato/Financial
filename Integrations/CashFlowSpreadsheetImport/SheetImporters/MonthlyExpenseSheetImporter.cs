@@ -4,6 +4,7 @@ using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
 using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
+using CategoryEntity = Financial.CashFlow.Domain.Entities.Category;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
 
@@ -48,12 +49,14 @@ public static class MonthlyExpenseSheetImporter
 
     public static IReadOnlyList<Expense> Import(
         IXLWorksheet sheet, int year, int month, DateOnly today, ImportReport report,
-        IReadOnlyCollection<Bank> banks, IReadOnlyCollection<CreditCardEntity> creditCards)
+        IReadOnlyCollection<Bank> banks, IReadOnlyCollection<CreditCardEntity> creditCards,
+        IReadOnlyCollection<CategoryEntity> categories)
     {
         var (descriptionColumn, categoryColumn) = ResolveColumns(sheet);
         var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
         var expenses = new List<Expense>();
         var cardsByName = creditCards.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
+        var categoriesByName = categories.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
 
         for (var row = FirstDataRow; row <= lastRow; row++)
         {
@@ -72,7 +75,8 @@ public static class MonthlyExpenseSheetImporter
             }
 
             var rawCategory = sheet.Cell(row, categoryColumn).GetString();
-            if (!CategoryResolver.TryResolve(rawCategory, out var category))
+            if (!CategoryResolver.TryResolve(rawCategory, out var legacyCategory)
+                || !categoriesByName.TryGetValue(legacyCategory.ToString(), out var category))
             {
                 report.RowFlagged(sheet.Name, row, "Category", rawCategory, "Unrecognized category - expense not imported");
                 continue;

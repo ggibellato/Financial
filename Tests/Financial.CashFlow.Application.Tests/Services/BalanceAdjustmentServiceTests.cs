@@ -4,7 +4,7 @@ using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Category = Financial.CashFlow.Domain.Enums.Category;
+using Category = Financial.CashFlow.Domain.Entities.Category;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -66,7 +66,7 @@ public class BalanceAdjustmentServiceTests
         repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
         var barclays = BankOf(repository, "Barclays");
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 200m, barclays));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Mercado, barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Create("Mercado"), barclays, null));
         var service = new BalanceAdjustmentService(repository, new BankService(repository));
 
         var result = await service.AddAdjustmentAsync(barclays.Id, new BalanceAdjustmentCreateDTO

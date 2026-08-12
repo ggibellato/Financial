@@ -4,7 +4,7 @@ using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Category = Financial.CashFlow.Domain.Enums.Category;
+using Category = Financial.CashFlow.Domain.Entities.Category;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -26,7 +26,7 @@ public class CardStatementServiceTests
     private static Expense AddCharge(
         StubCashFlowRepository repository, DateOnly date, decimal value, CreditCard card)
     {
-        var expense = Expense.Create(date, "Charge", value, Category.Mercado, null, card);
+        var expense = Expense.Create(date, "Charge", value, Category.Create("Mercado"), null, card);
         repository.Expenses.Add(expense);
         return expense;
     }
@@ -34,7 +34,7 @@ public class CardStatementServiceTests
     private static Expense AddChargeWithInvoiceDate(
         StubCashFlowRepository repository, DateOnly date, DateOnly invoiceDate, decimal value, CreditCard card)
     {
-        var expense = Expense.Create(date, "Charge near cutoff", value, Category.Mercado, null, card, invoiceDate);
+        var expense = Expense.Create(date, "Charge near cutoff", value, Category.Create("Mercado"), null, card, invoiceDate);
         repository.Expenses.Add(expense);
         return expense;
     }
@@ -140,7 +140,7 @@ public class CardStatementServiceTests
         var settled = AddCharge(repository, new DateOnly(2026, 7, 10), 30m, Card(repository, "BarclaysPlatinumVisa8003"));
         settled.Settle(barclays, new DateOnly(2026, 7, 20));
         AddCharge(repository, new DateOnly(2026, 7, 11), 20m, Card(repository, "BarclaysPlatinumVisa8003"));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 12), "Immediate", 5m, Category.Casa, barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 12), "Immediate", 5m, Category.Create("Casa"), barclays, null));
         var service = NewService(repository);
 
         var result = await service.GetStatementsForMonthAsync(2026, 7);

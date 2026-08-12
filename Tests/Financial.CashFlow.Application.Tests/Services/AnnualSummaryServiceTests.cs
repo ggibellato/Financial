@@ -3,7 +3,7 @@ using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Category = Financial.CashFlow.Domain.Enums.Category;
+using Category = Financial.CashFlow.Domain.Entities.Category;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
@@ -26,6 +26,9 @@ public class AnnualSummaryServiceTests
     private static InvestmentAccount Account(StubCashFlowRepository repository, string name) =>
         repository.InvestmentAccounts.First(a => a.Name == name);
 
+    private static Category CategoryByName(StubCashFlowRepository repository, string name) =>
+        repository.Categories.First(c => c.Name == name);
+
     // Pinned to a fixed mid-year date so "current year" averaging tests don't have to branch on
     // (or silently no-op during) the real wall-clock month - June guarantees 5 completed months.
     private static readonly DateTimeOffset PinnedNow = new(CurrentYear, 6, 15, 0, 0, 0, TimeSpan.Zero);
@@ -47,16 +50,16 @@ public class AnnualSummaryServiceTests
 
         var result = service.GetCategoryTotalsForYear(2026);
 
-        result.Should().HaveCount(Enum.GetValues<Category>().Length);
+        result.Should().HaveCount(repository.Categories.Count);
     }
 
     [Fact]
     public void GetCategoryTotalsForYear_AnnualTotalEqualsSumOfMonthlyTotals()
     {
         var repository = CreateRepository();
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 3, 5), "Mar", 50m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 12, 5), "Dec", 25m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 3, 5), "Mar", 50m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 12, 5), "Dec", 25m, CategoryByName(repository, "Mercado"), Barclays, null));
         var service = new AnnualSummaryService(repository);
 
         var result = service.GetCategoryTotalsForYear(2026);
@@ -73,12 +76,26 @@ public class AnnualSummaryServiceTests
     public void GetCategoryTotalsForYear_ExcludesExpensesFromOtherYears()
     {
         var repository = CreateRepository();
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Last year", 999m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Last year", 999m, CategoryByName(repository, "Mercado"), Barclays, null));
         var service = new AnnualSummaryService(repository);
 
         var result = service.GetCategoryTotalsForYear(2026);
 
         result.Single(c => c.Category == "Mercado").AnnualTotal.Should().Be(0m);
+    }
+
+    [Fact]
+    public void GetCategoryTotalsForYear_DeactivatedCategory_StillIncludesItsHistoricalTotal()
+    {
+        var repository = CreateRepository();
+        var deactivatedCategory = Category.Create("RetiredCategory", isActive: false);
+        repository.Categories.Add(deactivatedCategory);
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 3, 5), "Old category spend", 75m, deactivatedCategory, Barclays, null));
+        var service = new AnnualSummaryService(repository);
+
+        var result = service.GetCategoryTotalsForYear(2026);
+
+        result.Should().ContainSingle(c => c.Category == "RetiredCategory" && c.AnnualTotal == 75m);
     }
 
     [Fact]
@@ -99,7 +116,7 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         repository.Expenses.Add(Expense.Create(
-            new DateOnly(2026, 7, 29), "Cutoff charge", 40m, Category.Mercado, null,
+            new DateOnly(2026, 7, 29), "Cutoff charge", 40m, CategoryByName(repository, "Mercado"), null,
            BarclaysPlatinumVisa8003, new DateOnly(2026, 8, 1)));
         var service = new AnnualSummaryService(repository);
 
@@ -117,7 +134,7 @@ public class AnnualSummaryServiceTests
     public void GetCategoryTotalsForYear_SettledCardCharge_CountsTowardPostSettlementDateMonth()
     {
         var repository = CreateRepository();
-        var settled = Expense.Create(new DateOnly(2026, 7, 10), "Settled charge", 40m, Category.Mercado, null, BarclaysPlatinumVisa8003);
+        var settled = Expense.Create(new DateOnly(2026, 7, 10), "Settled charge", 40m, CategoryByName(repository, "Mercado"), null, BarclaysPlatinumVisa8003);
         settled.Settle(Trading212, new DateOnly(2026, 8, 3));
         repository.Expenses.Add(settled);
         var service = new AnnualSummaryService(repository);
@@ -137,12 +154,12 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         repository.Expenses.Add(Expense.Create(
-            new DateOnly(2026, 7, 29), "Unpaid cutoff", 10m, Category.Mercado, null,
+            new DateOnly(2026, 7, 29), "Unpaid cutoff", 10m, CategoryByName(repository, "Mercado"), null,
            BarclaysPlatinumVisa8003, new DateOnly(2026, 8, 1)));
-        var settled = Expense.Create(new DateOnly(2026, 7, 12), "Settled", 20m, Category.Mercado, null, BaAmex);
+        var settled = Expense.Create(new DateOnly(2026, 7, 12), "Settled", 20m, CategoryByName(repository, "Mercado"), null, BaAmex);
         settled.Settle(Trading212, new DateOnly(2026, 7, 20));
         repository.Expenses.Add(settled);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 15), "Bank", 30m, Category.Mercado, Chase, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 15), "Bank", 30m, CategoryByName(repository, "Mercado"), Chase, null));
         var service = new AnnualSummaryService(repository);
 
         var result = service.GetCategoryTotalsForYear(2026);
@@ -161,7 +178,7 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         repository.Expenses.Add(Expense.Create(
-            new DateOnly(2025, 12, 30), "Year-end cutoff", 40m, Category.Mercado, null,
+            new DateOnly(2025, 12, 30), "Year-end cutoff", 40m, CategoryByName(repository, "Mercado"), null,
            BarclaysPlatinumVisa8003, new DateOnly(2026, 1, 1)));
         var service = new AnnualSummaryService(repository);
 
@@ -591,12 +608,34 @@ public class AnnualSummaryServiceTests
     }
 
     [Fact]
+    public void GetCategoryTotalsAnnualForYear_InvestmentTotalResolvesViaIsInvestmentFlagNotCategoryName()
+    {
+        // Uses a category named nothing like "Investimento" to prove the Resultado calculation
+        // resolves the investment series via the IsInvestment flag, not a hardcoded name lookup.
+        // Replaces (rather than adds to) the seeded "Investimento" category, since only one
+        // category is ever expected to carry the flag at a time.
+        var repository = CreateRepository();
+        repository.Categories.RemoveAll(c => c.Name == "Investimento");
+        var customInvestmentCategory = Category.Create("MinhasAcoes", isInvestment: true);
+        repository.Categories.Add(customInvestmentCategory);
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Stock purchase", 40m, customInvestmentCategory, Barclays, null));
+        var service = new AnnualSummaryService(repository);
+
+        var result = service.GetCategoryTotalsAnnualForYear(2026);
+
+        // No income, 40 in total despesas (the investment expense counts toward despesas too),
+        // 40 in the investment series itself: Resultado = 0 - 40 + 40 = 0. A name-based lookup
+        // would find no expenses under "Investimento" and yield -40 instead.
+        result.ResultadoMonthly[0].Should().Be(0m);
+    }
+
+    [Fact]
     public void GetCategoryTotalsAnnualForYear_TotalDespesasMonthlyEqualsSumOfAllCategoriesPerMonth()
     {
         var repository = CreateRepository();
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Investing", 30m, Category.Investimento, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 2, 5), "Groceries", 50m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Investing", 30m, CategoryByName(repository, "Investimento"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 2, 5), "Groceries", 50m, CategoryByName(repository, "Mercado"), Barclays, null));
         var service = new AnnualSummaryService(repository);
 
         var result = service.GetCategoryTotalsAnnualForYear(2026);
@@ -613,8 +652,8 @@ public class AnnualSummaryServiceTests
     public void GetCategoryTotalsAnnualForYear_ResultadoMonthlyExcludesDividendoJurosAndIncludesInvestimento()
     {
         var repository = CreateRepository();
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Investing", 30m, Category.Investimento, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Investing", 30m, CategoryByName(repository, "Investimento"), Barclays, null));
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), Source("Gleison"), 1000m, 800m, Barclays));
         // DividendoJuros is seeded deliberately: the corrected formula must exclude it entirely.
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), Source("DividendoJuros"), null, 20m, Barclays));
@@ -630,8 +669,8 @@ public class AnnualSummaryServiceTests
     public void GetCategoryTotalsAnnualForYear_AnnualTotalsEqualSumOfMonthlyValues()
     {
         var repository = CreateRepository();
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 6, 5), "Investing", 30m, Category.Investimento, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 6, 5), "Investing", 30m, CategoryByName(repository, "Investimento"), Barclays, null));
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 3, 5), Source("Gleison"), 1000m, 800m, Barclays));
         var service = new AnnualSummaryService(repository);
 
@@ -651,7 +690,7 @@ public class AnnualSummaryServiceTests
 
         using (new AssertionScope())
         {
-            result.CategoryTotals.Should().HaveCount(Enum.GetValues<Category>().Length)
+            result.CategoryTotals.Should().HaveCount(repository.Categories.Count)
                 .And.OnlyContain(c => c.AnnualTotal == 0m);
             result.IncomeSummary.SalaryAnnualTotal.Should().Be(0m);
             result.TotalDespesasMonthly.Should().OnlyContain(v => v == 0m);
@@ -665,7 +704,7 @@ public class AnnualSummaryServiceTests
     public void GetCategoryTotalsAnnualForYear_NestedCategoryTotalsAndIncomeSummaryMatchStandaloneMethods()
     {
         var repository = CreateRepository();
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), Source("Gleison"), 1000m, 800m, Barclays));
         var service = new AnnualSummaryService(repository);
 
@@ -680,8 +719,8 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2027, 4, 5), "Should not be there", 1000m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan", 100m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2027, 4, 5), "Should not be there", 1000m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
 
         var result = service.GetHistoricSummaryAverageFromYear(2020);
 
@@ -693,8 +732,8 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2027, 4, 5), "Should not be there", 1000m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan", 100m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2027, 4, 5), "Should not be there", 1000m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
 
         var result = service.GetHistoricSummaryAverageFromYear(2026);
 
@@ -706,12 +745,12 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 3, 5), "Mar", 50m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 12, 5), "Dec", 25m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 12, 5), "Dec", 55m, Category.Gleison, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 6, 5), "Jun", 120m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2023, 3, 5), "Mar", 52m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 3, 5), "Mar", 50m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 12, 5), "Dec", 25m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 12, 5), "Dec", 55m, CategoryByName(repository, "Gleison"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 6, 5), "Jun", 120m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2023, 3, 5), "Mar", 52m, CategoryByName(repository, "Mercado"), Barclays, null));
 
         var result = service.GetHistoricSummaryAverageFromYear(2026);
 
@@ -728,13 +767,13 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Jan first", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 20), "Jan second", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 2, 10), "Feb", 400m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Jan first", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 20), "Jan second", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 2, 10), "Feb", 400m, CategoryByName(repository, "Mercado"), Barclays, null));
 
         var result = service.GetHistoricSummaryAverageFromYear(2026);
 
-        var mercadoAverage = result[0].AnnualAverages.Single(a => a.Category == nameof(Category.Mercado)).Value;
+        var mercadoAverage = result[0].AnnualAverages.Single(a => a.Category == "Mercado").Value;
 
         mercadoAverage.Should().Be(50m);
     }
@@ -744,13 +783,13 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 5), "Jan first", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 20), "Jan second", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 2, 10), "Feb", 400m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 5), "Jan first", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 20), "Jan second", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 2, 10), "Feb", 400m, CategoryByName(repository, "Mercado"), Barclays, null));
 
         var result = service.GetHistoricSummaryAverageFromYear(2026);
 
-        var mercadoAverage = result[0].AnnualAverages.Single(a => a.Category == nameof(Category.Mercado)).Value;
+        var mercadoAverage = result[0].AnnualAverages.Single(a => a.Category == "Mercado").Value;
 
         mercadoAverage.Should().Be(54.55m);
     }
@@ -761,9 +800,9 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(DateTime.UtcNow.Year + 1, 4, 5), "Should not be there", 10m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 4, 5), "2025", 10m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2023, 4, 5), "2023", 10m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(DateTime.UtcNow.Year + 1, 4, 5), "Should not be there", 10m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 4, 5), "2025", 10m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2023, 4, 5), "2023", 10m, CategoryByName(repository, "Mercado"), Barclays, null));
         repository.Incomes.Add(Income.Create(new DateOnly(DateTime.UtcNow.Year+1, 4, 5), Source("Gleison"), 9999m, 9999m, Barclays));
         repository.Incomes.Add(Income.Create(new DateOnly(2025, 4, 5), Source("Gleison"), 1200m, 1200m, Barclays));
         repository.Incomes.Add(Income.Create(new DateOnly(2023, 4, 5), Source("Gleison"), 900m, 900m, Barclays));
@@ -846,8 +885,8 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Investing", 30m, Category.Investimento, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Investing", 30m, CategoryByName(repository, "Investimento"), Barclays, null));
         repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), Source("Gleison"), 1000m, 800m, Barclays));
         repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), Source("DividendoJuros"), null, 20m, Barclays));
 
@@ -863,8 +902,8 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Investing", 30m, Category.Investimento, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Investing", 30m, CategoryByName(repository, "Investimento"), Barclays, null));
         repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), Source("Gleison"), 1000m, 800m, Barclays));
         // DividendoJuros is seeded deliberately: unlike Category Totals' own Resultado, this sub-tab's
         // Resultado excludes Dividendo/Juros entirely, so this income must NOT affect the expected value.
@@ -881,7 +920,7 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 120m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 120m, CategoryByName(repository, "Mercado"), Barclays, null));
         repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), Source("Gleison"), 1000m, 800m, Barclays));
         repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), Source("DividendoJuros"), null, 20m, Barclays));
         repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), Source("Lottery"), null, 500m, Barclays));
@@ -901,7 +940,7 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 120m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 120m, CategoryByName(repository, "Mercado"), Barclays, null));
         repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), Source("Gleison"), 1000m, 800m, Barclays));
         repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), Source("DividendoJuros"), null, 20m, Barclays));
         repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), Source("NotASeededSource"), null, 500m, Barclays));
@@ -922,15 +961,15 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 1200m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 1200m, CategoryByName(repository, "Mercado"), Barclays, null));
 
         var result = service.GetHistoricSummaryAverageFromYear(2025);
 
-        // Every one of the 14 Category enum values must appear, even with zero recorded expenses that year.
-        foreach (var category in Enum.GetValues<Category>())
+        // Every one of the 14 seeded categories must appear, even with zero recorded expenses that year.
+        foreach (var category in repository.Categories)
         {
-            var entry = result[0].AnnualAverages.Single(a => a.Category == category.ToString());
-            entry.Value.Should().Be(category == Category.Mercado ? 100m : 0m);
+            var entry = result[0].AnnualAverages.Single(a => a.Category == category.Name);
+            entry.Value.Should().Be(category.Name == "Mercado" ? 100m : 0m);
         }
     }
 
@@ -939,14 +978,14 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Groceries", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), Source("Gleison"), 1000m, 800m, Barclays));
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 1, 5), Source("DividendoJuros"), null, 20m, Barclays));
 
         var result = service.GetHistoricSummaryAverageFromYear(2026);
 
         var expectedOrder = new List<string> { "Salary", "Salary after taxes", "Tax difference", "Dividendo/Juros" }
-            .Concat(Enum.GetValues<Category>().Select(c => c.ToString()))
+            .Concat(repository.Categories.Select(c => c.Name))
             .Concat(["Resultado (R-D-Inv)", "Total despesas"]);
 
         result[0].AnnualAverages.Select(a => a.Category).Should().Equal(expectedOrder);
@@ -957,8 +996,8 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository, new FakeTimeProvider(PinnedNow));
-        repository.Expenses.Add(Expense.Create(new DateOnly(CurrentYear, 1, 5), "Completed months", 100m * PinnedMonthsElapsed, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(PinnedToday, "In-progress month", 9999m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(CurrentYear, 1, 5), "Completed months", 100m * PinnedMonthsElapsed, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(PinnedToday, "In-progress month", 9999m, CategoryByName(repository, "Mercado"), Barclays, null));
         repository.Incomes.Add(Income.Create(new DateOnly(CurrentYear, 1, 5), Source("Gleison"), 1000m * PinnedMonthsElapsed, 800m * PinnedMonthsElapsed, Barclays));
         repository.Incomes.Add(Income.Create(PinnedToday, Source("Gleison"), 9999m * PinnedMonthsElapsed, 9999m * PinnedMonthsElapsed, Barclays));
 
@@ -980,8 +1019,8 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository, new FakeTimeProvider(PinnedNow));
-        repository.Expenses.Add(Expense.Create(PinnedToday, "In-progress month", 9999m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(CurrentYear - 1, 12, 5), "Prior year", 50m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(PinnedToday, "In-progress month", 9999m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(CurrentYear - 1, 12, 5), "Prior year", 50m, CategoryByName(repository, "Mercado"), Barclays, null));
 
         var result = service.GetHistoricSummaryAverageFromYear(CurrentYear);
 
@@ -996,9 +1035,9 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Jan first", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 20), "Jan second", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 2, 10), "Feb", 400m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Jan first", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 20), "Jan second", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 2, 10), "Feb", 400m, CategoryByName(repository, "Mercado"), Barclays, null));
 
         var result = service.GetCategoryTotalsForYear(2025);
 
@@ -1010,9 +1049,9 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 5), "Jan first", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 20), "Jan second", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 2, 10), "Feb", 400m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 5), "Jan first", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 20), "Jan second", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 2, 10), "Feb", 400m, CategoryByName(repository, "Mercado"), Barclays, null));
 
         var result = service.GetCategoryTotalsForYear(2017);
 
@@ -1024,8 +1063,8 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository, new FakeTimeProvider(PinnedNow));
-        repository.Expenses.Add(Expense.Create(new DateOnly(CurrentYear, 1, 5), "Completed months", 100m * PinnedMonthsElapsed, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(PinnedToday, "In-progress month", 9999m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(CurrentYear, 1, 5), "Completed months", 100m * PinnedMonthsElapsed, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(PinnedToday, "In-progress month", 9999m, CategoryByName(repository, "Mercado"), Barclays, null));
 
         var result = service.GetCategoryTotalsForYear(CurrentYear);
 
@@ -1081,8 +1120,8 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Investing", 30m, Category.Investimento, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Investing", 30m, CategoryByName(repository, "Investimento"), Barclays, null));
         repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), Source("Gleison"), 1000m, 800m, Barclays));
         repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), Source("DividendoJuros"), null, 20m, Barclays));
 
@@ -1100,8 +1139,8 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository);
-        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 5), "Groceries", 100m, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 5), "Investing", 30m, Category.Investimento, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 5), "Groceries", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 5), "Investing", 30m, CategoryByName(repository, "Investimento"), Barclays, null));
         repository.Incomes.Add(Income.Create(new DateOnly(2017, 1, 5), Source("Gleison"), 1000m, 800m, Barclays));
         repository.Incomes.Add(Income.Create(new DateOnly(2017, 1, 5), Source("DividendoJuros"), null, 20m, Barclays));
 
@@ -1116,8 +1155,8 @@ public class AnnualSummaryServiceTests
     {
         var repository = CreateRepository();
         var service = new AnnualSummaryService(repository, new FakeTimeProvider(PinnedNow));
-        repository.Expenses.Add(Expense.Create(new DateOnly(CurrentYear, 1, 5), "Completed months", 100m * PinnedMonthsElapsed, Category.Mercado, Barclays, null));
-        repository.Expenses.Add(Expense.Create(PinnedToday, "In-progress month", 9999m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(CurrentYear, 1, 5), "Completed months", 100m * PinnedMonthsElapsed, CategoryByName(repository, "Mercado"), Barclays, null));
+        repository.Expenses.Add(Expense.Create(PinnedToday, "In-progress month", 9999m, CategoryByName(repository, "Mercado"), Barclays, null));
         repository.Incomes.Add(Income.Create(new DateOnly(CurrentYear, 1, 5), Source("Gleison"), 1000m * PinnedMonthsElapsed, 800m * PinnedMonthsElapsed, Barclays));
         repository.Incomes.Add(Income.Create(PinnedToday, Source("Gleison"), 9999m * PinnedMonthsElapsed, 9999m * PinnedMonthsElapsed, Barclays));
 
@@ -1129,7 +1168,7 @@ public class AnnualSummaryServiceTests
 
     private static StubCashFlowRepository CreateRepository()
     {
-        var repository = new StubCashFlowRepository(seedDefaultIncomeSources: true);
+        var repository = new StubCashFlowRepository(seedDefaultIncomeSources: true, seedDefaultCategories: true);
         SeededInvestmentAccounts.SeedInto(repository);
         return repository;
     }

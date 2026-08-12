@@ -24,6 +24,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         var investmentAccounts = DeserializeCollection<InvestmentAccount>(root, "InvestmentAccounts", unresolvedOptions);
         var reserveBuckets = DeserializeCollection<ReserveBucket>(root, "ReserveBuckets", unresolvedOptions);
         var creditCards = DeserializeCollection<CreditCard>(root, "CreditCards", unresolvedOptions);
+        var categories = DeserializeCollection<Category>(root, "Categories", unresolvedOptions);
 
         var context = new ReferenceResolutionContext();
         foreach (var bank in banks) context.Banks[bank.Id] = bank;
@@ -31,6 +32,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         foreach (var account in investmentAccounts) context.InvestmentAccounts[account.Id] = account;
         foreach (var bucket in reserveBuckets) context.ReserveBuckets[bucket.Id] = bucket;
         foreach (var card in creditCards) context.CreditCards[card.Id] = card;
+        foreach (var category in categories) context.Categories[category.Id] = category;
 
         var resolvedOptions = CreateElementOptions(context);
 
@@ -40,7 +42,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         foreach (var account in investmentAccounts) data.AddInvestmentAccount(account);
         foreach (var bucket in reserveBuckets) data.AddReserveBucket(bucket);
         foreach (var card in creditCards) data.AddCreditCard(card);
-        foreach (var category in DeserializeCollection<Category>(root, "Categories", resolvedOptions)) data.AddCategory(category);
+        foreach (var category in categories) data.AddCategory(category);
 
         foreach (var expense in DeserializeCollection<Expense>(root, "Expenses", resolvedOptions)) data.AddExpense(expense);
         foreach (var movement in DeserializeCollection<ReserveMovement>(root, "ReserveMovements", resolvedOptions)) data.AddReserveMovement(movement);
