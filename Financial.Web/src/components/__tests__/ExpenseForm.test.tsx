@@ -1,11 +1,16 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import ExpenseForm from '../ExpenseForm'
-import type { BankDto } from '../../api/types'
+import type { BankDto, CreditCardDto } from '../../api/types'
 
 const BANKS: BankDto[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
   { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
+]
+
+const CREDIT_CARDS: CreditCardDto[] = [
+  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null },
+  { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null },
 ]
 
 const baseProps = {
@@ -15,11 +20,13 @@ const baseProps = {
   value: '',
   category: 'Mercado',
   paymentSource: 'bank-barclays',
-  cardTag: '',
+  creditCardId: '',
+  creditCardName: '',
   invoiceDate: '',
   roundUpAmount: '',
   paymentMode: 'bank' as const,
   banks: BANKS,
+  creditCards: CREDIT_CARDS,
   isSettled: false,
   isSaving: false,
   saveError: null,
@@ -46,7 +53,8 @@ describe('ExpenseForm', () => {
         isEditing
         isSettled
         paymentSource="bank-trading212"
-        cardTag="BaAmex"
+        creditCardId="card-baamex"
+        creditCardName="BaAmex"
       />,
     )
 
@@ -68,6 +76,24 @@ describe('ExpenseForm', () => {
     expect(screen.queryByLabelText('Payment Source')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Card')).toBeInTheDocument()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
+  })
+
+  it('lists exactly the cards passed in via the creditCards prop, by name', () => {
+    render(<ExpenseForm {...baseProps} paymentMode="card" />)
+
+    const cardSelect = screen.getByLabelText('Card')
+    expect(within(cardSelect).getByRole('option', { name: 'BaAmex' })).toBeInTheDocument()
+    expect(within(cardSelect).getByRole('option', { name: 'ChaseMaster4023' })).toBeInTheDocument()
+    expect(within(cardSelect).getAllByRole('option')).toHaveLength(CREDIT_CARDS.length + 1)
+  })
+
+  it('submits the selected card id, not its name', () => {
+    const onFieldChange = vi.fn()
+    render(<ExpenseForm {...baseProps} paymentMode="card" onFieldChange={onFieldChange} />)
+
+    fireEvent.change(screen.getByLabelText('Card'), { target: { value: 'card-chase' } })
+
+    expect(onFieldChange).toHaveBeenCalledWith('creditCardId', 'card-chase')
   })
 
   it('shows an editable invoice month field pre-filled from the date when card mode is selected', () => {
@@ -95,7 +121,8 @@ describe('ExpenseForm', () => {
         isEditing
         isSettled
         paymentSource="bank-trading212"
-        cardTag="BaAmex"
+        creditCardId="card-baamex"
+        creditCardName="BaAmex"
         invoiceDate="2026-07"
       />,
     )

@@ -4,6 +4,7 @@ import BankOperationsSection from '../components/BankOperationsSection'
 import BanksGrid from '../components/BanksGrid'
 import CardsGrid from '../components/CardsGrid'
 import CategoryTotalsGrid from '../components/CategoryTotalsGrid'
+import CreditCardsGrid from '../components/CreditCardsGrid'
 import ErrorState from '../components/ErrorState'
 import ExpenseForm, { type ExpenseFormField } from '../components/ExpenseForm'
 import ExpensesSection from '../components/ExpensesSection'
@@ -14,6 +15,7 @@ import LoadingState from '../components/LoadingState'
 import TransferForm from '../components/TransferForm'
 import { useBalanceAdjustmentForm } from '../hooks/useBalanceAdjustmentForm'
 import { useBankOperations } from '../hooks/useBankOperations'
+import { useCreditCards } from '../hooks/useCreditCards'
 import {
   useMonthly,
   type CreateFormField,
@@ -40,7 +42,7 @@ const CREATE_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, CreateFormField> = {
   value: 'createValue',
   category: 'createCategory',
   paymentSource: 'createPaymentSource',
-  cardTag: 'createCardTag',
+  creditCardId: 'createCreditCardId',
   invoiceDate: 'createInvoiceDate',
   roundUpAmount: 'createRoundUpAmount',
 }
@@ -51,7 +53,7 @@ const EDIT_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, EditField> = {
   value: 'editValue',
   category: 'editCategory',
   paymentSource: 'editPaymentSource',
-  cardTag: 'editCardTag',
+  creditCardId: 'editCreditCardId',
   invoiceDate: 'editInvoiceDate',
   roundUpAmount: 'editRoundUpAmount',
 }
@@ -98,7 +100,7 @@ export default function MonthlyPage() {
     createValue,
     createCategory,
     createPaymentSource,
-    createCardTag,
+    createCreditCardId,
     createInvoiceDate,
     createRoundUpAmount,
     createPaymentMode,
@@ -114,7 +116,8 @@ export default function MonthlyPage() {
     editValue,
     editCategory,
     editPaymentSource,
-    editCardTag,
+    editCreditCardId,
+    editCreditCardName,
     editInvoiceDate,
     editRoundUpAmount,
     editPaymentMode,
@@ -162,6 +165,8 @@ export default function MonthlyPage() {
   } = useMonthly()
 
   const bankOperations = useBankOperations(year, month, banks, retry)
+  const creditCardsData = useCreditCards()
+  const activeCreditCards = creditCardsData.creditCards.filter((c) => c.isActive)
   const transferForm = useTransferForm(banks, () => {
     retry()
     bankOperations.retry()
@@ -187,11 +192,13 @@ export default function MonthlyPage() {
       value={isEditing ? editValue : createValue}
       category={isEditing ? editCategory : createCategory}
       paymentSource={isEditing ? editPaymentSource : createPaymentSource}
-      cardTag={isEditing ? editCardTag : createCardTag}
+      creditCardId={isEditing ? editCreditCardId : createCreditCardId}
+      creditCardName={isEditing ? editCreditCardName : ''}
       invoiceDate={isEditing ? editInvoiceDate : createInvoiceDate}
       roundUpAmount={isEditing ? editRoundUpAmount : createRoundUpAmount}
       paymentMode={isEditing ? editPaymentMode : createPaymentMode}
       banks={banks}
+      creditCards={activeCreditCards}
       isSettled={isEditing && editIsSettled}
       isSaving={isEditing ? isSaving : isCreating}
       saveError={isEditing ? saveError : createError}
@@ -290,6 +297,13 @@ export default function MonthlyPage() {
 
           {activeTab === 'card' && (
             <>
+              <CreditCardsGrid
+                creditCards={creditCardsData.creditCards}
+                updatingCardId={creditCardsData.updatingCardId}
+                updateError={creditCardsData.error ?? creditCardsData.updateError}
+                onUpdate={creditCardsData.updateCreditCard}
+              />
+
               <CardsGrid
                 cardStatements={cardStatements}
                 banks={banks}

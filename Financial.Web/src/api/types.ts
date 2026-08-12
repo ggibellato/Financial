@@ -373,7 +373,8 @@ export interface ExpenseDto {
   category: string
   paymentSourceBankId: string | null
   paymentSourceBankName: string | null
-  cardTag: string | null
+  creditCardId: string | null
+  creditCardName: string | null
   chargeDate: string | null
   invoiceDate: string | null
   paymentStatus: string
@@ -387,7 +388,7 @@ export interface CreateExpenseDto {
   value: number
   category: string
   paymentSourceBankId: string | null
-  cardTag: string | null
+  creditCardId: string | null
   invoiceDate: string | null
   roundUpAmount: number | null
 }
@@ -398,7 +399,7 @@ export interface UpdateExpenseDto {
   value: number
   category: string
   paymentSourceBankId: string | null
-  cardTag: string | null
+  creditCardId: string | null
   invoiceDate: string | null
   roundUpAmount: number | null
 }
@@ -460,11 +461,25 @@ export interface CategoryTotalDto {
 
 export interface CardStatementDto {
   id: string
-  card: string
+  creditCardId: string
+  creditCardName: string
   year: number
   month: number
   isPaid: boolean
   outstandingTotal: number
+  warning?: string | null
+}
+
+export interface CreditCardDto {
+  id: string
+  name: string
+  isActive: boolean
+  nextInvoiceDueDate: string | null
+}
+
+export interface UpdateCreditCardDto {
+  nextInvoiceDueDate: string | null
+  isActive: boolean
 }
 
 export interface MarkCardStatementPaidDto {

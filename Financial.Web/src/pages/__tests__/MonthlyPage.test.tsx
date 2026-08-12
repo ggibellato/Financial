@@ -8,6 +8,7 @@ import type {
   BankDto,
   CardStatementDto,
   CategoryTotalDto,
+  CreditCardDto,
   ExpenseDto,
   IncomeDto,
   IncomeSourceDto,
@@ -21,6 +22,8 @@ const getCategoryTotalsByMonthMock = vi.fn<FinancialApiClient['getCategoryTotals
 const getCardStatementsByMonthMock = vi.fn<FinancialApiClient['getCardStatementsByMonth']>()
 const getBanksMock = vi.fn<FinancialApiClient['getBanks']>()
 const getIncomeSourcesMock = vi.fn<FinancialApiClient['getIncomeSources']>()
+const getCreditCardsMock = vi.fn<FinancialApiClient['getCreditCards']>()
+const updateCreditCardMock = vi.fn<FinancialApiClient['updateCreditCard']>()
 const createExpenseMock = vi.fn<FinancialApiClient['createExpense']>()
 const updateExpenseMock = vi.fn<FinancialApiClient['updateExpense']>()
 const deleteExpenseMock = vi.fn<FinancialApiClient['deleteExpense']>()
@@ -49,6 +52,8 @@ vi.mock('../../api/financialApiClient', () => ({
     getCardStatementsByMonth: getCardStatementsByMonthMock,
     getBanks: getBanksMock,
     getIncomeSources: getIncomeSourcesMock,
+    getCreditCards: getCreditCardsMock,
+    updateCreditCard: updateCreditCardMock,
     createExpense: createExpenseMock,
     updateExpense: updateExpenseMock,
     deleteExpense: deleteExpenseMock,
@@ -93,7 +98,8 @@ const EXPENSES: ExpenseDto[] = [
     category: 'Mercado',
     paymentSourceBankId: 'bank-barclays',
     paymentSourceBankName: 'Barclays',
-    cardTag: null,
+    creditCardId: null,
+    creditCardName: null,
     chargeDate: null,
     invoiceDate: null,
     paymentStatus: 'ImmediatePayment',
@@ -105,8 +111,13 @@ const EXPENSES: ExpenseDto[] = [
 const CATEGORY_TOTALS: CategoryTotalDto[] = [{ category: 'Mercado', totalValue: 42.5 }]
 
 const CARD_STATEMENTS: CardStatementDto[] = [
-  { id: 'c1', card: 'BaAmex', year: 2026, month: 7, isPaid: false, outstandingTotal: 100 },
-  { id: 'c2', card: 'ChaseMaster4023', year: 2026, month: 7, isPaid: true, outstandingTotal: 0 },
+  { id: 'c1', creditCardId: 'card-baamex', creditCardName: 'BaAmex', year: 2026, month: 7, isPaid: false, outstandingTotal: 100 },
+  { id: 'c2', creditCardId: 'card-chase', creditCardName: 'ChaseMaster4023', year: 2026, month: 7, isPaid: true, outstandingTotal: 0 },
+]
+
+const CREDIT_CARDS: CreditCardDto[] = [
+  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null },
+  { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null },
 ]
 
 const UNPAID_CARD_CHARGES: ExpenseDto[] = [
@@ -118,7 +129,8 @@ const UNPAID_CARD_CHARGES: ExpenseDto[] = [
     category: 'Extras',
     paymentSourceBankId: null,
     paymentSourceBankName: null,
-    cardTag: 'BaAmex',
+    creditCardId: 'card-baamex',
+    creditCardName: 'BaAmex',
     chargeDate: '2026-07-08',
     invoiceDate: '2026-07-01',
     paymentStatus: 'CreditCardCharge',
@@ -188,6 +200,8 @@ describe('MonthlyPage', () => {
     getCardStatementsByMonthMock.mockReset()
     getBanksMock.mockReset()
     getIncomeSourcesMock.mockReset()
+    getCreditCardsMock.mockReset()
+    updateCreditCardMock.mockReset()
     createExpenseMock.mockReset()
     updateExpenseMock.mockReset()
     deleteExpenseMock.mockReset()
@@ -213,6 +227,7 @@ describe('MonthlyPage', () => {
     getCardStatementsByMonthMock.mockResolvedValue(CARD_STATEMENTS)
     getBanksMock.mockResolvedValue(BANKS)
     getIncomeSourcesMock.mockResolvedValue(INCOME_SOURCES)
+    getCreditCardsMock.mockResolvedValue(CREDIT_CARDS)
     getIncomesByMonthMock.mockResolvedValue(INCOMES)
     getBankBalancesByMonthMock.mockResolvedValue(BANK_BALANCES)
     getTitheSummaryByMonthMock.mockResolvedValue(TITHE_SUMMARY)
@@ -291,7 +306,7 @@ describe('MonthlyPage', () => {
 
     getCategoryTotalsByMonthMock.mockResolvedValue([{ category: 'Viagem', totalValue: 300 }])
     getCardStatementsByMonthMock.mockResolvedValue([
-      { id: 'c3', card: 'PaypalCredit', year: 2026, month: 8, isPaid: false, outstandingTotal: 55 },
+      { id: 'c3', creditCardId: 'card-paypal', creditCardName: 'PaypalCredit', year: 2026, month: 8, isPaid: false, outstandingTotal: 55 },
     ])
     getBankBalancesByMonthMock.mockResolvedValue([{ bank: 'Barclays', balance: 300 }])
     getIncomesByMonthMock.mockResolvedValue([
@@ -335,7 +350,7 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
 
     expect(screen.getAllByRole('cell', { name: 'BaAmex' }).length).toBeGreaterThan(0)
-    expect(screen.getByRole('cell', { name: 'ChaseMaster4023' })).toBeInTheDocument()
+    expect(screen.getAllByRole('cell', { name: 'ChaseMaster4023' }).length).toBeGreaterThan(0)
     expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Credit Card' })).toHaveClass('monthly-page__tab--active')
   })
@@ -354,8 +369,8 @@ describe('MonthlyPage', () => {
   it("an expense's position in the Credit Card tab list is unchanged immediately before and after its invoice is marked paid", async () => {
     // The actual ordering fix lives server-side (ExpenseService sorts by InvoiceDate, not Date);
     // this test guards against the frontend introducing its own conflicting client-side sort.
-    const chargedFirst = { ...UNPAID_CARD_CHARGES[0], id: 'e10', description: 'Charged First', cardTag: 'BaAmex', chargeDate: '2026-07-05', date: '2026-07-05' }
-    const chargedSecond = { ...UNPAID_CARD_CHARGES[0], id: 'e11', description: 'Charged Second', cardTag: 'BaAmex', chargeDate: '2026-07-20', date: '2026-07-20' }
+    const chargedFirst = { ...UNPAID_CARD_CHARGES[0], id: 'e10', description: 'Charged First', creditCardId: 'card-baamex', creditCardName: 'BaAmex', chargeDate: '2026-07-05', date: '2026-07-05' }
+    const chargedSecond = { ...UNPAID_CARD_CHARGES[0], id: 'e11', description: 'Charged Second', creditCardId: 'card-baamex', creditCardName: 'BaAmex', chargeDate: '2026-07-20', date: '2026-07-20' }
     getUnpaidCardChargesByMonthMock.mockResolvedValue([chargedSecond, chargedFirst])
     markCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 })
     render(<MonthlyPage />)
@@ -720,14 +735,36 @@ describe('MonthlyPage', () => {
     fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Amazon' } })
     fireEvent.change(screen.getByLabelText('Value'), { target: { value: '9.99' } })
-    fireEvent.change(screen.getByLabelText('Card'), { target: { value: 'BaAmex' } })
+    await waitFor(() => expect(screen.getByRole('option', { name: 'BaAmex' })).toBeInTheDocument())
+    fireEvent.change(screen.getByLabelText('Card'), { target: { value: 'card-baamex' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Expense' }))
 
     await waitFor(() =>
       expect(createExpenseMock).toHaveBeenCalledWith(
-        expect.objectContaining({ paymentSourceBankId: null, cardTag: 'BaAmex' }),
+        expect.objectContaining({ paymentSourceBankId: null, creditCardId: 'card-baamex' }),
       ),
     )
+  })
+
+  it('deactivating a card via the Credit Card tab removes it from the expense form dropdown', async () => {
+    getCreditCardsMock.mockReset()
+    getCreditCardsMock.mockResolvedValueOnce(CREDIT_CARDS)
+    getCreditCardsMock.mockResolvedValueOnce([CREDIT_CARDS[0], { ...CREDIT_CARDS[1], isActive: false }])
+    updateCreditCardMock.mockResolvedValue({ ...CREDIT_CARDS[1], isActive: false })
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+
+    await waitFor(() => expect(screen.getByLabelText('Active for ChaseMaster4023')).toBeInTheDocument())
+    fireEvent.click(screen.getByLabelText('Active for ChaseMaster4023'))
+
+    await waitFor(() =>
+      expect(updateCreditCardMock).toHaveBeenCalledWith('card-chase', { nextInvoiceDueDate: null, isActive: false }),
+    )
+    await waitFor(() => expect(getCreditCardsMock).toHaveBeenCalledTimes(2))
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
+    await waitFor(() => expect(screen.getByRole('option', { name: 'BaAmex' })).toBeInTheDocument())
+    expect(screen.queryByRole('option', { name: 'ChaseMaster4023' })).not.toBeInTheDocument()
   })
 
   it('creates a bank expense from the Expense tab with a null card tag', async () => {
@@ -744,7 +781,7 @@ describe('MonthlyPage', () => {
 
     await waitFor(() =>
       expect(createExpenseMock).toHaveBeenCalledWith(
-        expect.objectContaining({ paymentSourceBankId: 'bank-barclays', cardTag: null }),
+        expect.objectContaining({ paymentSourceBankId: 'bank-barclays', creditCardId: null }),
       ),
     )
   })
@@ -755,7 +792,8 @@ describe('MonthlyPage', () => {
         ...EXPENSES[0],
         paymentSourceBankId: 'bank-trading212',
         paymentSourceBankName: 'Trading212',
-        cardTag: 'BaAmex',
+        creditCardId: 'card-baamex',
+        creditCardName: 'BaAmex',
         chargeDate: '2026-07-05',
         invoiceDate: '2026-07-01',
         paymentStatus: 'CreditCardSettled',

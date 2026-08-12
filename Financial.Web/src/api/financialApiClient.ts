@@ -16,6 +16,7 @@ import type {
   CreateExpenseDto,
   CreateMaeLedgerEntryDto,
   CreateRecurringBillDto,
+  CreditCardDto,
   CreditCreateDto,
   CreditDeleteDto,
   CreditDto,
@@ -48,6 +49,7 @@ import type {
   TransactionUpdateDto,
   TransferDto,
   CreateTransferDto,
+  UpdateCreditCardDto,
   UpdateTransferDto,
   BalanceAdjustmentDto,
   CreateBalanceAdjustmentDto,
@@ -118,6 +120,8 @@ export interface FinancialApiClient {
   getCategoryTotalsByMonth: (year: number, month: number) => Promise<CategoryTotalDto[]>
   getBanks: () => Promise<BankDto[]>
   getIncomeSources: () => Promise<IncomeSourceDto[]>
+  getCreditCards: () => Promise<CreditCardDto[]>
+  updateCreditCard: (id: string, request: UpdateCreditCardDto) => Promise<CreditCardDto>
   getBankBalancesByMonth: (year: number, month: number) => Promise<BankBalanceDto[]>
   createExpense: (request: CreateExpenseDto) => Promise<ExpenseDto>
   updateExpense: (id: string, request: UpdateExpenseDto) => Promise<ExpenseDto>
@@ -364,6 +368,12 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<CategoryTotalDto[]>(`/expenses/month/${year}/${month}/category-totals`),
     getBanks: () => request<BankDto[]>('/banks'),
     getIncomeSources: () => request<IncomeSourceDto[]>('/income-sources'),
+    getCreditCards: () => request<CreditCardDto[]>('/credit-cards'),
+    updateCreditCard: (id, requestBody) =>
+      request<CreditCardDto>(`/credit-cards/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
     getBankBalancesByMonth: (year, month) => request<BankBalanceDto[]>(`/banks/month/${year}/${month}/balances`),
     createExpense: (requestBody) =>
       request<ExpenseDto>('/expenses', {
