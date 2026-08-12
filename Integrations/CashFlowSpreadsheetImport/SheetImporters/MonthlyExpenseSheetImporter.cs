@@ -38,12 +38,12 @@ public static class MonthlyExpenseSheetImporter
     private const int ChaseMaster4023StartRow = 205;
     private const int BaAmexStartRow = 226;
 
-    private static readonly (int StartRow, CashFlow.Domain.Enums.CreditCard Card)[] CardSectionStartRows =
+    private static readonly (int StartRow, string CardName)[] CardSectionStartRows =
     [
-        (BarclaysPlatinumVisa8003StartRow, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa8003),
-        (BarclaysPlatinumVisa6007StartRow, CashFlow.Domain.Enums.CreditCard.BarclaysPlatinumVisa6007),
-        (ChaseMaster4023StartRow, CashFlow.Domain.Enums.CreditCard.ChaseMaster4023),
-        (BaAmexStartRow, CashFlow.Domain.Enums.CreditCard.BaAmex),
+        (BarclaysPlatinumVisa8003StartRow, "BarclaysPlatinumVisa8003"),
+        (BarclaysPlatinumVisa6007StartRow, "BarclaysPlatinumVisa6007"),
+        (ChaseMaster4023StartRow, "ChaseMaster4023"),
+        (BaAmexStartRow, "BaAmex"),
     ];
 
     public static IReadOnlyList<Expense> Import(
@@ -53,6 +53,7 @@ public static class MonthlyExpenseSheetImporter
         var (descriptionColumn, categoryColumn) = ResolveColumns(sheet);
         var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
         var expenses = new List<Expense>();
+        var cardsByName = creditCards.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
 
         for (var row = FirstDataRow; row <= lastRow; row++)
         {
@@ -95,19 +96,20 @@ public static class MonthlyExpenseSheetImporter
 
             var description = sheet.Cell(row, descriptionColumn).GetString();
             var rawPaymentSourceTag = sheet.Cell(row, PaymentSourceColumn).GetString();
-            var cardTag = ResolveCardTag(row, year, month, today, rawPaymentSourceTag);
+            var cardName = ResolveCardTag(row, year, month, today, rawPaymentSourceTag);
             Bank? paymentSourceBank = null;
             CreditCardEntity? creditCard = null;
-            if (cardTag is null)
+            if (cardName is null)
             {
                 var paymentSourceName = ResolvePaymentSource(rawPaymentSourceTag);
                 paymentSourceBank = banks.FirstOrDefault(b => b.Name == paymentSourceName);
             }
-            else
+            else if (!cardsByName.TryGetValue(cardName, out creditCard))
             {
-                // Row-position-to-card resolution still happens by legacy enum name here; F06
-                // replaces this lookup mechanism with a direct by-name entity resolution.
-                creditCard = creditCards.FirstOrDefault(c => c.Name == cardTag.ToString());
+                report.RowFlagged(
+                    sheet.Name, row, "Card", cardName,
+                    $"No seeded credit card matches inferred card name '{cardName}' - expense not imported");
+                continue;
             }
 
             expenses.Add(Expense.Create(date, description, value.Value, category, paymentSourceBank, creditCard));
@@ -143,7 +145,7 @@ public static class MonthlyExpenseSheetImporter
             _ => "Barclays",
         };
 
-    private static CashFlow.Domain.Enums.CreditCard? ResolveCardTag(int row, int year, int month, DateOnly today, string? rawPaymentSourceTag)
+    private static string? ResolveCardTag(int row, int year, int month, DateOnly today, string? rawPaymentSourceTag)
     {
         var isCardSectionEligible = string.IsNullOrWhiteSpace(rawPaymentSourceTag) || IsCreditCardMarker(rawPaymentSourceTag);
         if (!isCardSectionEligible)
@@ -158,16 +160,16 @@ public static class MonthlyExpenseSheetImporter
             return null;
         }
 
-        CashFlow.Domain.Enums.CreditCard? cardTag = null;
-        foreach (var (startRow, card) in CardSectionStartRows)
+        string? cardName = null;
+        foreach (var (startRow, name) in CardSectionStartRows)
         {
             if (row >= startRow)
             {
-                cardTag = card;
+                cardName = name;
             }
         }
 
-        return cardTag;
+        return cardName;
     }
 
     private static bool IsCreditCardMarker(string? tag) =>
