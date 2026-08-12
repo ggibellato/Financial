@@ -4,7 +4,6 @@ import BankOperationsSection from '../components/BankOperationsSection'
 import BanksGrid from '../components/BanksGrid'
 import CardsGrid from '../components/CardsGrid'
 import CategoryTotalsGrid from '../components/CategoryTotalsGrid'
-import CreditCardsGrid from '../components/CreditCardsGrid'
 import ErrorState from '../components/ErrorState'
 import ExpenseForm, { type ExpenseFormField } from '../components/ExpenseForm'
 import ExpensesSection from '../components/ExpensesSection'
@@ -300,13 +299,6 @@ export default function MonthlyPage() {
 
           {activeTab === 'card' && (
             <>
-              <CreditCardsGrid
-                creditCards={creditCardsData.creditCards}
-                updatingCardId={creditCardsData.updatingCardId}
-                updateError={creditCardsData.error ?? creditCardsData.updateError}
-                onUpdate={creditCardsData.updateCreditCard}
-              />
-
               <CardsGrid
                 cardStatements={cardStatements}
                 banks={banks}
@@ -315,6 +307,10 @@ export default function MonthlyPage() {
                 setMarkPaidSource={setMarkPaidSource}
                 markStatementPaid={markStatementPaid}
                 unmarkStatementPaid={unmarkStatementPaid}
+                creditCards={creditCardsData.creditCards}
+                updatingCardId={creditCardsData.updatingCardId}
+                updateError={creditCardsData.error ?? creditCardsData.updateError}
+                onUpdateCreditCard={creditCardsData.updateCreditCard}
               />
 
               {expenseFormElement}

@@ -1,4 +1,4 @@
-import type { BankDto, CardStatementDto } from '../api/types'
+import type { BankDto, CardStatementDto, CreditCardDto, UpdateCreditCardDto } from '../api/types'
 import { formatN2 } from '../utils/formatters'
 
 interface CardsGridProps {
@@ -9,6 +9,44 @@ interface CardsGridProps {
   setMarkPaidSource: (id: string, bank: string) => void
   markStatementPaid: (id: string, paymentSource: string) => void
   unmarkStatementPaid: (id: string) => void
+  /** When provided (Credit Card tab), adds Next Invoice Due Date/Active columns, one row per
+   * credit card (not just cards with a statement this month, so a deactivated card - which stops
+   * getting new monthly statements - stays manageable here). Omitted on the read-only Summary tab. */
+  creditCards?: CreditCardDto[]
+  updatingCardId?: string | null
+  updateError?: string | null
+  onUpdateCreditCard?: (id: string, request: UpdateCreditCardDto) => void
+}
+
+interface CardRow {
+  key: string
+  creditCardId: string
+  creditCardName: string
+  nextInvoiceDueDate: string | null
+  isActive: boolean
+  statement: CardStatementDto | null
+}
+
+function buildRows(cardStatements: CardStatementDto[], creditCards: CreditCardDto[] | undefined): CardRow[] {
+  if (!creditCards) {
+    return cardStatements.map((s) => ({
+      key: s.id,
+      creditCardId: s.creditCardId,
+      creditCardName: s.creditCardName,
+      nextInvoiceDueDate: null,
+      isActive: false,
+      statement: s,
+    }))
+  }
+
+  return creditCards.map((c) => ({
+    key: c.id,
+    creditCardId: c.id,
+    creditCardName: c.name,
+    nextInvoiceDueDate: c.nextInvoiceDueDate,
+    isActive: c.isActive,
+    statement: cardStatements.find((s) => s.creditCardId === c.id) ?? null,
+  }))
 }
 
 export default function CardsGrid({
@@ -19,7 +57,14 @@ export default function CardsGrid({
   setMarkPaidSource,
   markStatementPaid,
   unmarkStatementPaid,
+  creditCards,
+  updatingCardId,
+  updateError,
+  onUpdateCreditCard,
 }: CardsGridProps) {
+  const showCardManagementColumns = creditCards !== undefined
+  const rows = buildRows(cardStatements, creditCards)
+
   return (
     <section className="monthly-page__section monthly-page__section--grid">
       <div className="monthly-page__table-scroll">
@@ -30,43 +75,84 @@ export default function CardsGrid({
               <th className="data-table__col--numeric">Outstanding</th>
               <th>Status</th>
               <th />
+              {showCardManagementColumns && (
+                <>
+                  <th>Next Invoice Due Date</th>
+                  <th>Active</th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody>
-            {cardStatements.map((s) => (
-              <tr key={s.id}>
-                <td>{s.creditCardName}</td>
-                <td className="data-table__col--numeric">{formatN2(s.outstandingTotal)}</td>
-                <td>{s.isPaid ? 'Paid' : 'Unpaid'}</td>
-                <td>
-                  {s.isPaid ? (
-                    <button type="button" onClick={() => unmarkStatementPaid(s.id)}>
-                      Unmark Paid
-                    </button>
-                  ) : (
-                    <>
-                      <select
-                        aria-label={`Paying bank for ${s.creditCardName}`}
-                        value={markPaidSources[s.id] ?? ''}
-                        onChange={(e) => setMarkPaidSource(s.id, e.target.value)}
-                      >
-                        <option value="">Bank…</option>
-                        {banks.map((b) => (
-                          <option key={b.id} value={b.id}>
-                            {b.name}
-                          </option>
-                        ))}
-                      </select>{' '}
-                      <button
-                        type="button"
-                        disabled={!markPaidSources[s.id]}
-                        onClick={() => markStatementPaid(s.id, markPaidSources[s.id])}
-                      >
-                        Mark Paid
-                      </button>
-                    </>
-                  )}
+            {rows.map((row) => (
+              <tr key={row.key}>
+                <td>{row.creditCardName}</td>
+                <td className="data-table__col--numeric">
+                  {row.statement ? formatN2(row.statement.outstandingTotal) : '—'}
                 </td>
+                <td>{row.statement ? (row.statement.isPaid ? 'Paid' : 'Unpaid') : '—'}</td>
+                <td>
+                  {row.statement &&
+                    (row.statement.isPaid ? (
+                      <button type="button" onClick={() => unmarkStatementPaid(row.statement!.id)}>
+                        Unmark Paid
+                      </button>
+                    ) : (
+                      <>
+                        <select
+                          aria-label={`Paying bank for ${row.creditCardName}`}
+                          value={markPaidSources[row.statement.id] ?? ''}
+                          onChange={(e) => setMarkPaidSource(row.statement!.id, e.target.value)}
+                        >
+                          <option value="">Bank…</option>
+                          {banks.map((b) => (
+                            <option key={b.id} value={b.id}>
+                              {b.name}
+                            </option>
+                          ))}
+                        </select>{' '}
+                        <button
+                          type="button"
+                          disabled={!markPaidSources[row.statement.id]}
+                          onClick={() => markStatementPaid(row.statement!.id, markPaidSources[row.statement!.id])}
+                        >
+                          Mark Paid
+                        </button>
+                      </>
+                    ))}
+                </td>
+                {showCardManagementColumns && (
+                  <>
+                    <td>
+                      <input
+                        aria-label={`Next invoice due date for ${row.creditCardName}`}
+                        type="date"
+                        value={row.nextInvoiceDueDate ?? ''}
+                        disabled={updatingCardId === row.creditCardId}
+                        onChange={(e) =>
+                          onUpdateCreditCard?.(row.creditCardId, {
+                            nextInvoiceDueDate: e.target.value === '' ? null : e.target.value,
+                            isActive: row.isActive,
+                          })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <input
+                        aria-label={`Active for ${row.creditCardName}`}
+                        type="checkbox"
+                        checked={row.isActive}
+                        disabled={updatingCardId === row.creditCardId}
+                        onChange={(e) =>
+                          onUpdateCreditCard?.(row.creditCardId, {
+                            nextInvoiceDueDate: row.nextInvoiceDueDate,
+                            isActive: e.target.checked,
+                          })
+                        }
+                      />
+                    </td>
+                  </>
+                )}
               </tr>
             ))}
           </tbody>
@@ -75,6 +161,7 @@ export default function CardsGrid({
       <p className="monthly-page__section-total">
         Combined adjustment figure: <strong>{formatN2(adjustmentTotal)}</strong>
       </p>
+      {updateError && <p className="monthly-page__error">{updateError}</p>}
     </section>
   )
 }
