@@ -40,10 +40,10 @@ public static class MonthlyExpenseSheetImporter
 
     private static readonly (int StartRow, string CardName)[] CardSectionStartRows =
     [
-        (BarclaysPlatinumVisa8003StartRow, "BarclaysPlatinumVisa8003"),
-        (BarclaysPlatinumVisa6007StartRow, "BarclaysPlatinumVisa6007"),
-        (ChaseMaster4023StartRow, "ChaseMaster4023"),
-        (BaAmexStartRow, "BaAmex"),
+        (BarclaysPlatinumVisa8003StartRow, "Platinum Visa 8003"),
+        (BarclaysPlatinumVisa6007StartRow, "Platinum Visa 6007"),
+        (ChaseMaster4023StartRow, "Chase Master 4023"),
+        (BaAmexStartRow, "BA Amex"),
     ];
 
     public static IReadOnlyList<Expense> Import(

@@ -11,11 +11,11 @@ public static class CreditCardMigrator
 {
     private static readonly string[] SeededCardNames =
     [
-        "BarclaysPlatinumVisa8003",
-        "BarclaysPlatinumVisa6007",
-        "ChaseMaster4023",
-        "BaAmex",
-        "PaypalCredit",
+        "Platinum Visa 8003",
+        "Platinum Visa 6007",
+        "Chase Master 4023",
+        "BA Amex",
+        "Paypal Credit",
     ];
 
     public static CreditCardMigrationSummary Migrate(CashFlowData data)

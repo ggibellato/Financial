@@ -21,10 +21,10 @@ public class MonthlyExpenseSheetImporterTests
 
     private static readonly IReadOnlyCollection<CreditCardEntity> CreditCards =
     [
-        CreditCardEntity.Create("BarclaysPlatinumVisa8003"),
-        CreditCardEntity.Create("BarclaysPlatinumVisa6007"),
-        CreditCardEntity.Create("ChaseMaster4023"),
-        CreditCardEntity.Create("BaAmex")
+        CreditCardEntity.Create("Platinum Visa 8003"),
+        CreditCardEntity.Create("Platinum Visa 6007"),
+        CreditCardEntity.Create("Chase Master 4023"),
+        CreditCardEntity.Create("BA Amex")
     ];
 
     [Fact]
@@ -194,14 +194,14 @@ public class MonthlyExpenseSheetImporterTests
 
     [Theory]
     [InlineData(128, null)]
-    [InlineData(129, "BarclaysPlatinumVisa8003")]
-    [InlineData(141, "BarclaysPlatinumVisa8003")]
-    [InlineData(142, "BarclaysPlatinumVisa6007")]
-    [InlineData(204, "BarclaysPlatinumVisa6007")]
-    [InlineData(205, "ChaseMaster4023")]
-    [InlineData(225, "ChaseMaster4023")]
-    [InlineData(226, "BaAmex")]
-    [InlineData(300, "BaAmex")]
+    [InlineData(129, "Platinum Visa 8003")]
+    [InlineData(141, "Platinum Visa 8003")]
+    [InlineData(142, "Platinum Visa 6007")]
+    [InlineData(204, "Platinum Visa 6007")]
+    [InlineData(205, "Chase Master 4023")]
+    [InlineData(225, "Chase Master 4023")]
+    [InlineData(226, "BA Amex")]
+    [InlineData(300, "BA Amex")]
     public void Import_FixedCardSectionMonth_BlankPaymentSourceTag_SetsCardTagByRowPosition(int row, string? expectedCardName)
     {
         using var workbook = new XLWorkbook();
@@ -342,7 +342,7 @@ public class MonthlyExpenseSheetImporterTests
         var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 9, Today, report, Banks, CreditCards);
 
         var expense = expenses.Should().ContainSingle().Which;
-        expense.CreditCard!.Name.Should().Be("BarclaysPlatinumVisa8003");
+        expense.CreditCard!.Name.Should().Be("Platinum Visa 8003");
         expense.PaymentSourceBank.Should().BeNull();
     }
 
@@ -361,7 +361,7 @@ public class MonthlyExpenseSheetImporterTests
         var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, Today, report, Banks, CreditCards);
 
         var expense = expenses.Should().ContainSingle().Which;
-        expense.CreditCard!.Name.Should().Be("BarclaysPlatinumVisa6007");
+        expense.CreditCard!.Name.Should().Be("Platinum Visa 6007");
         expense.PaymentSourceBank.Should().BeNull();
         expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
         report.RowIssues.Should().BeEmpty();
@@ -415,7 +415,7 @@ public class MonthlyExpenseSheetImporterTests
         var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 9, Today, report, Banks, CreditCards);
 
         var expense = expenses.Should().ContainSingle().Which;
-        expense.CreditCard!.Name.Should().Be("BarclaysPlatinumVisa8003");
+        expense.CreditCard!.Name.Should().Be("Platinum Visa 8003");
         expense.PaymentSourceBank.Should().BeNull();
         report.RowIssues.Should().BeEmpty();
     }
@@ -423,7 +423,7 @@ public class MonthlyExpenseSheetImporterTests
     [Fact]
     public void Import_RowResolvesToACardNameWithNoMatchingSeededEntity_FlagsRowWithRowNumberAndCardNameAndSkipsExpense()
     {
-        var creditCardsMissingBaAmex = CreditCards.Where(c => c.Name != "BaAmex").ToList();
+        var creditCardsMissingBaAmex = CreditCards.Where(c => c.Name != "BA Amex").ToList();
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Jul2026");
         WriteExpenseRow(sheet, row: BaAmexStartRow, paymentSourceTag: null);
@@ -434,7 +434,7 @@ public class MonthlyExpenseSheetImporterTests
 
         expenses.Should().BeEmpty();
         report.RowIssues.Should().ContainSingle(i =>
-            i.SheetName == "Jul2026" && i.Row == BaAmexStartRow && i.RawValue == "BaAmex");
+            i.SheetName == "Jul2026" && i.Row == BaAmexStartRow && i.RawValue == "BA Amex");
     }
 
     private const int BaAmexStartRow = 226;
