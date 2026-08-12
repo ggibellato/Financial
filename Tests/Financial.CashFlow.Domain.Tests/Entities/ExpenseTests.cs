@@ -3,7 +3,6 @@ using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
-using Category = Financial.CashFlow.Domain.Entities.Category;
 
 namespace Financial.CashFlow.Domain.Tests;
 

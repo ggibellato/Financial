@@ -1,6 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Category = Financial.CashFlow.Domain.Entities.Category;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ExpenseChargeDate;
 using FluentAssertions;
 using FluentAssertions.Execution;

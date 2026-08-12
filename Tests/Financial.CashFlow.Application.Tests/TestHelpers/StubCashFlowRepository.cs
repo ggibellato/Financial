@@ -1,7 +1,6 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Category = Financial.CashFlow.Domain.Entities.Category;
 
 namespace Financial.CashFlow.Application.Tests.TestHelpers;
 

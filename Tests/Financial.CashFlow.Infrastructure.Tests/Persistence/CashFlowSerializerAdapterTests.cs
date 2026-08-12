@@ -5,7 +5,6 @@ using FluentAssertions;
 using FluentAssertions.Execution;
 using System.Text.Json;
 using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
-using CategoryEntity = Financial.CashFlow.Domain.Entities.Category;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
@@ -18,7 +17,7 @@ public class CashFlowSerializerAdapterTests
         var original = CashFlowData.Create();
         var reserveBucket = ReserveBucket.Create("Investimento", 33.33m);
         var creditCard = CreditCard.Create("Barclays Platinum Visa 8003", isActive: true);
-        var category = CategoryEntity.Create("Investimento", isInvestment: true, isTithe: false, isActive: true);
+        var category = Category.Create("Investimento", isInvestment: true, isTithe: false, isActive: true);
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
         var destinationBank = Bank.Create("Trading212", roundUpEnabled: true);

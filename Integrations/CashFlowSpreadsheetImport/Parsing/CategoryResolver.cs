@@ -1,10 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
-using CategoryEntity = Financial.CashFlow.Domain.Entities.Category;
+using Financial.CashFlow.Domain.Entities;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 
 /// <summary>
-/// Resolves a raw category label from the spreadsheet to a seeded <see cref="CategoryEntity"/> by
+/// Resolves a raw category label from the spreadsheet to a seeded <see cref="Category"/> by
 /// name, tolerating known historical typos. A label that matches neither a seeded name nor a known
 /// typo is not imported — it is reported instead, per the PRD's "flagged in the error report,
 /// rather than being silently dropped or miscategorized" requirement.
@@ -18,8 +18,8 @@ public static class CategoryResolver
 
     public static bool TryResolve(
         string? rawLabel,
-        IReadOnlyDictionary<string, CategoryEntity> categoriesByName,
-        [NotNullWhen(true)] out CategoryEntity? category)
+        IReadOnlyDictionary<string, Category> categoriesByName,
+        [NotNullWhen(true)] out Category? category)
     {
         var trimmedLabel = rawLabel?.Trim();
         if (!string.IsNullOrEmpty(trimmedLabel) && categoriesByName.TryGetValue(trimmedLabel, out category))

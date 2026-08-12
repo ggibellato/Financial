@@ -4,7 +4,6 @@ using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
-using Category = Financial.CashFlow.Domain.Entities.Category;
 
 namespace Financial.CashFlow.Application.Services;
 

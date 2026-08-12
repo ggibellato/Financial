@@ -3,7 +3,6 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
 using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
-using CategoryEntity = Financial.CashFlow.Domain.Entities.Category;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
 
@@ -49,7 +48,7 @@ public static class MonthlyExpenseSheetImporter
     public static IReadOnlyList<Expense> Import(
         IXLWorksheet sheet, int year, int month, DateOnly today, ImportReport report,
         IReadOnlyCollection<Bank> banks, IReadOnlyCollection<CreditCardEntity> creditCards,
-        IReadOnlyCollection<CategoryEntity> categories)
+        IReadOnlyCollection<Category> categories)
     {
         var cardsByName = creditCards.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
         var categoriesByName = categories.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);

@@ -195,28 +195,32 @@ public static class EntityReferenceMigrator
         }
     }
 
-    private static List<CreditCardEntity> ResolveCreditCards(JsonElement root, JsonSerializerOptions unresolvedOptions)
+    private static List<CreditCardEntity> ResolveCreditCards(JsonElement root, JsonSerializerOptions unresolvedOptions) =>
+        ResolveOrBootstrap(
+            root, "CreditCards", unresolvedOptions,
+            data => Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.CreditCards.CreditCardMigrator.Migrate(data),
+            data => data.CreditCards);
+
+    private static List<Category> ResolveCategories(JsonElement root, JsonSerializerOptions unresolvedOptions) =>
+        ResolveOrBootstrap(
+            root, "Categories", unresolvedOptions,
+            data => Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Categories.CategoryMigrator.Migrate(data),
+            data => data.Categories);
+
+    /// <summary>Reads a collection if the legacy file already has it, otherwise seeds it via the
+    /// entity's own migrator (this file predates that entity's seed migration).</summary>
+    private static List<T> ResolveOrBootstrap<T>(
+        JsonElement root, string propertyName, JsonSerializerOptions unresolvedOptions,
+        Action<CashFlowData> bootstrap, Func<CashFlowData, IEnumerable<T>> selectSeeded)
     {
-        if (root.TryGetProperty("CreditCards", out var element) && element.ValueKind == JsonValueKind.Array)
+        if (root.TryGetProperty(propertyName, out var element) && element.ValueKind == JsonValueKind.Array)
         {
-            return DeserializeCollection<CreditCardEntity>(root, "CreditCards", unresolvedOptions);
+            return DeserializeCollection<T>(root, propertyName, unresolvedOptions);
         }
 
         var bootstrapData = CashFlowData.Create();
-        Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.CreditCards.CreditCardMigrator.Migrate(bootstrapData);
-        return bootstrapData.CreditCards.ToList();
-    }
-
-    private static List<Category> ResolveCategories(JsonElement root, JsonSerializerOptions unresolvedOptions)
-    {
-        if (root.TryGetProperty("Categories", out var element) && element.ValueKind == JsonValueKind.Array)
-        {
-            return DeserializeCollection<Category>(root, "Categories", unresolvedOptions);
-        }
-
-        var bootstrapData = CashFlowData.Create();
-        Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Categories.CategoryMigrator.Migrate(bootstrapData);
-        return bootstrapData.Categories.ToList();
+        bootstrap(bootstrapData);
+        return selectSeeded(bootstrapData).ToList();
     }
 
     private static void MigrateExpenses(
