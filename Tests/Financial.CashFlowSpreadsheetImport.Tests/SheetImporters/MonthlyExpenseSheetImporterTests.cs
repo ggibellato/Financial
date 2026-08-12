@@ -420,6 +420,25 @@ public class MonthlyExpenseSheetImporterTests
         report.RowIssues.Should().BeEmpty();
     }
 
+    [Fact]
+    public void Import_RowResolvesToACardNameWithNoMatchingSeededEntity_FlagsRowWithRowNumberAndCardNameAndSkipsExpense()
+    {
+        var creditCardsMissingBaAmex = CreditCards.Where(c => c.Name != "BaAmex").ToList();
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.AddWorksheet("Jul2026");
+        WriteExpenseRow(sheet, row: BaAmexStartRow, paymentSourceTag: null);
+
+        var report = new ImportReport();
+
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, 2026, 7, Today, report, Banks, creditCardsMissingBaAmex);
+
+        expenses.Should().BeEmpty();
+        report.RowIssues.Should().ContainSingle(i =>
+            i.SheetName == "Jul2026" && i.Row == BaAmexStartRow && i.RawValue == "BaAmex");
+    }
+
+    private const int BaAmexStartRow = 226;
+
     private static void WriteExpenseRow(IXLWorksheet sheet, int row, string? paymentSourceTag)
     {
         sheet.Cell(1, 1).Value = "Dia";

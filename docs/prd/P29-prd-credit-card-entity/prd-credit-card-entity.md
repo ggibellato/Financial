@@ -239,7 +239,7 @@ graph TD
 - [x] CreditCard entity exists with Id, Name, IsActive, NextInvoiceDueDate fields
 - [x] Migration seeds exactly 5 cards (Barclays Platinum Visa 8003, Barclays Platinum Visa 6007, Chase Master 4023, BA Amex, PayPal Credit), all active, due date null
 - [x] Running the migration twice does not create duplicate cards
-- [ ] CreditCard is persisted via a reference converter (`CreditCardId` wire format), consistent with Bank/IncomeSource — deferred to F02, which is when a property first references CreditCard by Id (mirrors ReserveBucketReferenceConverter landing in P28-F02, not P28-F01); will be checked off there
+- [x] CreditCard is persisted via a reference converter (`CreditCardId` wire format), consistent with Bank/IncomeSource — deferred to F02, which is when a property first references CreditCard by Id (mirrors ReserveBucketReferenceConverter landing in P28-F02, not P28-F01); will be checked off there
 
 ### F02. Migrate Expense & CardStatement to CreditCard References
 - [x] `Expense.CardTag` is renamed to `Expense.CreditCard` and `CardStatement.Card` is renamed to `CardStatement.CreditCard`; both are exposed at the API boundary as `CreditCardId`, with no remaining `CardTag`/`Card` string fields on these DTOs
@@ -267,13 +267,13 @@ graph TD
 - [x] Deactivating a card via WPF removes it from the expense entry dropdown after refresh
 
 ### F06. Spreadsheet Import Card Resolution
-- [ ] Spreadsheet import resolves each row's card by name against seeded CreditCard entities using existing row-position logic
-- [ ] A row whose inferred card name has no matching seeded entity fails the import with a clear row-level error
-- [ ] Imported expenses store the correct CreditCard Id reference, matching the entity resolved by name
+- [x] Spreadsheet import resolves each row's card by name against seeded CreditCard entities using existing row-position logic
+- [x] A row whose inferred card name has no matching seeded entity fails the import with a clear row-level error
+- [x] Imported expenses store the correct CreditCard Id reference, matching the entity resolved by name
 
 ### Cross-Feature Integration
 - [x] CreditCard entities seeded in F01 are correctly resolved and referenced by Expense/CardStatement records after F02's migration
 - [x] CreditCard list and update endpoints in F03 correctly reflect changes made to entities from F01/F02 (e.g., an update via API is immediately visible in a subsequent GET)
 - [x] Web UI (F04) correctly consumes F02's Expense CardTag contract and F03's API to build its picklist and editing controls
 - [x] WPF UI (F05) correctly consumes F02's Expense CardTag contract and F03's API to build its picklist and editing controls
-- [ ] Spreadsheet import (F06) correctly resolves cards using F01's seeded entities and stores references consistent with F02's entity-reference model
+- [x] Spreadsheet import (F06) correctly resolves cards using F01's seeded entities and stores references consistent with F02's entity-reference model

@@ -225,7 +225,7 @@ public static class EntityReferenceMigrator
                 continue;
             }
 
-            var legacyCardName = ReadNullableEnum<CashFlow.Domain.Enums.CreditCard>(item, "CardTag")?.ToString();
+            var legacyCardName = ReadNullableString(item, "CardTag");
             CreditCardEntity? creditCard = null;
             if (legacyCardName is not null && !cardsByName.TryGetValue(legacyCardName, out creditCard))
             {
@@ -379,11 +379,5 @@ public static class EntityReferenceMigrator
         }
 
         return element.GetString();
-    }
-
-    private static TEnum? ReadNullableEnum<TEnum>(JsonElement item, string propertyName) where TEnum : struct, Enum
-    {
-        var raw = ReadNullableString(item, propertyName);
-        return raw is null ? null : Enum.Parse<TEnum>(raw);
     }
 }
