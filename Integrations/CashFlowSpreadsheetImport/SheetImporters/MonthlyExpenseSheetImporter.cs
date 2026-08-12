@@ -75,8 +75,7 @@ public static class MonthlyExpenseSheetImporter
             }
 
             var rawCategory = sheet.Cell(row, categoryColumn).GetString();
-            if (!CategoryResolver.TryResolve(rawCategory, out var legacyCategory)
-                || !categoriesByName.TryGetValue(legacyCategory.ToString(), out var category))
+            if (!CategoryResolver.TryResolve(rawCategory, categoriesByName, out var category))
             {
                 report.RowFlagged(sheet.Name, row, "Category", rawCategory, "Unrecognized category - expense not imported");
                 continue;
