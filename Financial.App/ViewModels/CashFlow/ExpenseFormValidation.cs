@@ -12,7 +12,7 @@ public static class ExpenseFormValidation
         string value,
         bool isCardMode,
         Guid? paymentSource,
-        string cardTag,
+        Guid? creditCardId,
         bool showRoundUpField,
         string roundUpAmount)
     {
@@ -40,7 +40,7 @@ public static class ExpenseFormValidation
 
         if (isCardMode)
         {
-            if (string.IsNullOrWhiteSpace(cardTag))
+            if (creditCardId is null)
             {
                 errors.Add("Card is required when charging to a card.");
             }

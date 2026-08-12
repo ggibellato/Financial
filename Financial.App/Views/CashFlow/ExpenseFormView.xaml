@@ -63,7 +63,7 @@
             <TextBlock Grid.Row="6" Grid.Column="1" TextWrapping="Wrap"
                        Visibility="{Binding ExpenseFormIsSettled, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Run Text="Paid via "/>
-                <Run Text="{Binding ExpenseFormCardTag, Mode=OneWay}"/>
+                <Run Text="{Binding ExpenseFormCreditCardName, Mode=OneWay}"/>
                 <Run Text=". Settled via its card statement — unmark the statement paid to change this expense."/>
             </TextBlock>
 
@@ -75,8 +75,9 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="Card:" VerticalAlignment="Center"/>
-                    <ComboBox Grid.Column="1" ItemsSource="{Binding CardOptions}"
-                              SelectedItem="{Binding ExpenseFormCardTag, UpdateSourceTrigger=PropertyChanged}"/>
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding ActiveCreditCards}" DisplayMemberPath="Name"
+                              SelectedValue="{Binding ExpenseFormCreditCardId, UpdateSourceTrigger=PropertyChanged}"
+                              SelectedValuePath="Id"/>
                 </Grid>
 
                 <StackPanel Visibility="{Binding IsBankPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}">

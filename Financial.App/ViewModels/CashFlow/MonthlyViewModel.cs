@@ -90,6 +90,10 @@ public class MonthlyViewModel : ViewModelBase
     public ObservableCollection<BankTotalRow> BankTotals { get; } = [];
     public ObservableCollection<CardStatementDTO> CardStatements { get; } = [];
     public ObservableCollection<IncomeTotalRow> IncomeTotals { get; } = [];
+    public ObservableCollection<CreditCardDTO> CreditCards { get; } = [];
+
+    /// <summary>Active-only credit cards for the expense-entry picker, mirroring Financial.Web's <c>activeCreditCards</c>.</summary>
+    public IEnumerable<CreditCardDTO> ActiveCreditCards => CreditCards.Where(c => c.IsActive);
 
     public decimal BankTotalsSum => BankTotals.Sum(b => b.Balance);
     public decimal RoundUpTotalsSum => BankTotals.Sum(b => b.RoundUpTotal);
@@ -175,10 +179,12 @@ public class MonthlyViewModel : ViewModelBase
             var titheSummaryTask = Task.Run(() => _titheService.GetTitheSummary(year, month));
             var transfersTask = Task.Run(() => _transferService.GetTransfersByMonth(year, month));
             var cardStatementsTask = _cardStatementService.GetStatementsForMonthAsync(year, month);
+            var creditCardsTask = Task.Run(() => _creditCardService.GetCreditCards());
 
             await Task.WhenAll(
                 expensesTask, unpaidCardChargesTask, incomesTask, categoryTotalsTask, banksTask,
-                incomeSourcesTask, bankBalancesTask, titheSummaryTask, transfersTask, cardStatementsTask);
+                incomeSourcesTask, bankBalancesTask, titheSummaryTask, transfersTask, cardStatementsTask,
+                creditCardsTask);
 
             var expenses = expensesTask.Result;
             var unpaidCardCharges = unpaidCardChargesTask.Result;
@@ -190,6 +196,7 @@ public class MonthlyViewModel : ViewModelBase
             var titheSummary = titheSummaryTask.Result;
             var transfers = transfersTask.Result;
             var cardStatements = cardStatementsTask.Result;
+            var creditCards = creditCardsTask.Result;
 
             var adjustmentsByBank = await Task.WhenAll(banks.Select(bank =>
                 Task.Run(() => _balanceAdjustmentService.GetAdjustmentsByBank(bank.Id))));
@@ -220,6 +227,9 @@ public class MonthlyViewModel : ViewModelBase
 
             ReplaceAll(CardStatements, cardStatements);
             OnPropertyChanged(nameof(AdjustmentTotal));
+
+            ReplaceAll(CreditCards, creditCards);
+            OnPropertyChanged(nameof(ActiveCreditCards));
 
             ReplaceAll(IncomeTotals, BuildIncomeTotals(incomes));
             OnPropertyChanged(nameof(TotalIncoming));
@@ -305,16 +315,8 @@ public class MonthlyViewModel : ViewModelBase
         "Mercado", "Samuel", "Saude", "Viagem", "Dizimo", "Investimento", "Reserva",
     ];
 
-    public static readonly IReadOnlyList<string> Cards =
-    [
-        "BarclaysPlatinumVisa8003", "BarclaysPlatinumVisa6007", "ChaseMaster4023", "BaAmex", "PaypalCredit",
-    ];
-
     /// <summary>Instance-level accessor for <see cref="Categories"/> — WPF's Binding only resolves instance members, not static fields.</summary>
     public IReadOnlyList<string> CategoryOptions => Categories;
-
-    /// <summary>Instance-level accessor for <see cref="Cards"/> — WPF's Binding only resolves instance members, not static fields.</summary>
-    public IReadOnlyList<string> CardOptions => Cards;
 
     private bool _isExpenseFormOpen;
     private Guid? _editingExpenseId;
@@ -324,7 +326,8 @@ public class MonthlyViewModel : ViewModelBase
     private string _expenseFormValue = string.Empty;
     private bool _isCardPaymentMode;
     private Guid? _expenseFormPaymentSource;
-    private string _expenseFormCardTag = string.Empty;
+    private Guid? _expenseFormCreditCardId;
+    private string _expenseFormCreditCardName = string.Empty;
     private string _expenseFormRoundUpAmount = string.Empty;
     private bool _expenseFormIsSettled;
     private int _expenseFormInvoiceYear;
@@ -403,10 +406,17 @@ public class MonthlyViewModel : ViewModelBase
         }
     }
 
-    public string ExpenseFormCardTag
+    public Guid? ExpenseFormCreditCardId
     {
-        get => _expenseFormCardTag;
-        set => SetProperty(ref _expenseFormCardTag, value);
+        get => _expenseFormCreditCardId;
+        set => SetProperty(ref _expenseFormCreditCardId, value);
+    }
+
+    /// <summary>Read-only display name for the settled-expense note; the dropdown itself binds by Id (<see cref="ExpenseFormCreditCardId"/>).</summary>
+    public string ExpenseFormCreditCardName
+    {
+        get => _expenseFormCreditCardName;
+        private set => SetProperty(ref _expenseFormCreditCardName, value);
     }
 
     public string ExpenseFormRoundUpAmount
@@ -513,7 +523,8 @@ public class MonthlyViewModel : ViewModelBase
         ExpenseFormPaymentSource = IsCardPaymentMode
             ? null
             : (Banks.Count > 0 ? Banks[0].Id : null);
-        ExpenseFormCardTag = string.Empty;
+        ExpenseFormCreditCardId = null;
+        ExpenseFormCreditCardName = string.Empty;
         ExpenseFormRoundUpAmount = string.Empty;
         ExpenseFormIsSettled = false;
         _invoiceDateTouchedByUser = false;
@@ -540,7 +551,8 @@ public class MonthlyViewModel : ViewModelBase
         ExpenseFormValue = expense.Value.ToString("0.##");
         IsCardPaymentMode = expense.CreditCardId != null;
         ExpenseFormPaymentSource = expense.PaymentSourceBankId;
-        ExpenseFormCardTag = expense.CreditCardName ?? string.Empty;
+        ExpenseFormCreditCardId = expense.CreditCardId;
+        ExpenseFormCreditCardName = expense.CreditCardName ?? string.Empty;
         ExpenseFormRoundUpAmount = expense.RoundUpAmount?.ToString("0.##") ?? string.Empty;
         ExpenseFormIsSettled = expense.PaymentStatus == SettledStatus;
         _invoiceDateTouchedByUser = false;
@@ -576,7 +588,7 @@ public class MonthlyViewModel : ViewModelBase
     {
         var validationMessage = ExpenseFormValidation.BuildValidationMessage(
             ExpenseFormDate, ExpenseFormDescription, ExpenseFormCategory, ExpenseFormValue,
-            IsCardPaymentMode, ExpenseFormPaymentSource, ExpenseFormCardTag, ShowRoundUpField, ExpenseFormRoundUpAmount);
+            IsCardPaymentMode, ExpenseFormPaymentSource, ExpenseFormCreditCardId, ShowRoundUpField, ExpenseFormRoundUpAmount);
 
         if (!string.IsNullOrEmpty(validationMessage))
         {
@@ -593,9 +605,7 @@ public class MonthlyViewModel : ViewModelBase
             var date = DateOnly.FromDateTime(ExpenseFormDate!.Value);
             var value = decimal.Parse(ExpenseFormValue);
             var paymentSource = IsCardPaymentMode ? null : ExpenseFormPaymentSource;
-            var creditCardId = IsCardPaymentMode
-                ? _creditCardService.GetCreditCards().FirstOrDefault(c => c.Name == ExpenseFormCardTag)?.Id
-                : null;
+            var creditCardId = IsCardPaymentMode ? ExpenseFormCreditCardId : null;
             DateOnly? invoiceDate = IsCardPaymentMode ? new DateOnly(ExpenseFormInvoiceYear, ExpenseFormInvoiceMonth, 1) : null;
             decimal? roundUpAmount = ShowRoundUpField && decimal.TryParse(ExpenseFormRoundUpAmount, out var parsedRoundUp)
                 ? parsedRoundUp
@@ -1470,6 +1480,54 @@ public class MonthlyViewModel : ViewModelBase
         catch (Exception ex)
         {
             CardStatementError = ex.Message;
+        }
+    }
+
+    // ----- Credit cards -----
+
+    private string? _creditCardUpdateError;
+    private Guid? _updatingCreditCardId;
+
+    public string? CreditCardUpdateError
+    {
+        get => _creditCardUpdateError;
+        private set => SetProperty(ref _creditCardUpdateError, value);
+    }
+
+    /// <summary>Id of the card currently being saved, if any, so its grid row can disable its controls while in flight.</summary>
+    public Guid? UpdatingCreditCardId
+    {
+        get => _updatingCreditCardId;
+        private set => SetProperty(ref _updatingCreditCardId, value);
+    }
+
+    /// <summary>Saves a card's due date and active flag (full replace, mirroring <see cref="ICreditCardService.UpdateCreditCardAsync"/>'s contract), then re-fetches so the expense picker and this grid stay in sync.</summary>
+    internal async Task UpdateCreditCardAsync(CreditCardDTO? card, DateOnly? nextInvoiceDueDate, bool isActive)
+    {
+        if (card is null)
+        {
+            return;
+        }
+
+        CreditCardUpdateError = null;
+        UpdatingCreditCardId = card.Id;
+
+        try
+        {
+            await _creditCardService.UpdateCreditCardAsync(card.Id, new CreditCardUpdateDTO
+            {
+                NextInvoiceDueDate = nextInvoiceDueDate,
+                IsActive = isActive,
+            });
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            CreditCardUpdateError = ex.Message;
+        }
+        finally
+        {
+            UpdatingCreditCardId = null;
         }
     }
 }

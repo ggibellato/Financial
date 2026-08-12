@@ -18,6 +18,7 @@
         <converters:BoolToSidebarWidthConverter x:Key="BoolToSidebarWidthConverter"/>
         <converters:CategoryHasSelectedChildConverter x:Key="CategoryHasSelectedChildConverter"/>
         <converters:EqualityToBoolConverter x:Key="EqualityToBoolConverter"/>
+        <converters:DateOnlyToDateTimeConverter x:Key="DateOnlyToDateTimeConverter"/>
 
         <DrawingImage x:Key="AppIcon">
             <DrawingImage.Drawing>

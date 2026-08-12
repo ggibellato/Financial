@@ -22,10 +22,18 @@ public class MonthlyViewModelTests
         new() { Id = DividendoJurosSourceId, Name = "DividendoJuros", IsActive = true, Group = "DividendoJuros" },
     ];
 
-    /// <summary>Every card the WPF form's hardcoded CardOptions dropdown offers, pre-seeded so
-    /// MonthlyViewModel.SaveExpenseAsync's name-to-Guid CreditCard lookup succeeds in tests.</summary>
+    private static readonly Guid BaAmexId = Guid.NewGuid();
+
+    /// <summary>The 5 cards seeded in a real deployment (F01), pre-loaded so the ComboBox-driven
+    /// expense form has something to select from in tests.</summary>
     private static readonly List<CreditCardDTO> DefaultCreditCards =
-        MonthlyViewModel.Cards.Select(name => new CreditCardDTO { Id = Guid.NewGuid(), Name = name, IsActive = true }).ToList();
+    [
+        new() { Id = Guid.NewGuid(), Name = "BarclaysPlatinumVisa8003", IsActive = true },
+        new() { Id = Guid.NewGuid(), Name = "BarclaysPlatinumVisa6007", IsActive = true },
+        new() { Id = Guid.NewGuid(), Name = "ChaseMaster4023", IsActive = true },
+        new() { Id = BaAmexId, Name = "BaAmex", IsActive = true },
+        new() { Id = Guid.NewGuid(), Name = "PaypalCredit", IsActive = true },
+    ];
 
     private static (MonthlyViewModel ViewModel, StubExpenseService Expenses, StubIncomeService Incomes, StubBankService Banks, StubTitheService Tithe, StubCreditCardService CreditCards) CreateViewModel(
         bool confirmDeletes = true, StubIncomeSourceService? incomeSourceService = null)
@@ -132,7 +140,7 @@ public class MonthlyViewModelTests
         viewModel.IsExpenseFormOpen.Should().BeTrue();
         viewModel.IsEditingExpense.Should().BeTrue();
         viewModel.ExpenseFormDescription.Should().Be("Uber");
-        viewModel.ExpenseFormCardTag.Should().Be("BaAmex");
+        viewModel.ExpenseFormCreditCardName.Should().Be("BaAmex");
     }
 
     [Fact]
@@ -172,36 +180,34 @@ public class MonthlyViewModelTests
     [Fact]
     public async Task AddExpense_CardMode_CallsServiceWithCreditCardId()
     {
-        var (viewModel, expenses, _, _, _, creditCards) = CreateViewModel();
+        var (viewModel, expenses, _, _, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
         viewModel.ExpenseFormDate = DateTime.Today;
         viewModel.ExpenseFormDescription = "Flight";
         viewModel.ExpenseFormCategory = "Viagem";
         viewModel.ExpenseFormValue = "300";
-        viewModel.ExpenseFormCardTag = MonthlyViewModel.Cards[0];
+        viewModel.ExpenseFormCreditCardId = DefaultCreditCards[0].Id;
 
         await viewModel.SaveExpenseAsync();
 
-        var expectedCreditCardId = creditCards.CreditCards.Single(c => c.Name == MonthlyViewModel.Cards[0]).Id;
         expenses.LastCreateRequest.Should().NotBeNull();
-        expenses.LastCreateRequest!.CreditCardId.Should().Be(expectedCreditCardId);
+        expenses.LastCreateRequest!.CreditCardId.Should().Be(DefaultCreditCards[0].Id);
         expenses.LastCreateRequest.PaymentSourceBankId.Should().BeNull();
     }
 
     [Fact]
-    public void CategoryAndCardOptions_ExposeStaticListsAsInstanceMembers()
+    public void CategoryOptions_ExposesStaticListAsInstanceMember()
     {
-        // WPF's {Binding} only resolves instance members, never static fields — these
-        // instance-level wrappers are what the Category/Card ComboBoxes actually bind to.
+        // WPF's {Binding} only resolves instance members, never static fields — this
+        // instance-level wrapper is what the Category ComboBox actually binds to.
         var (viewModel, _, _, _, _, _) = CreateViewModel();
 
         viewModel.CategoryOptions.Should().BeSameAs(MonthlyViewModel.Categories);
-        viewModel.CardOptions.Should().BeSameAs(MonthlyViewModel.Cards);
     }
 
     [Fact]
-    public void ShowCreateExpenseFormCommand_CardMode_SetsIsCardPaymentModeAndExposesFiveCards()
+    public void ShowCreateExpenseFormCommand_CardMode_SetsIsCardPaymentMode()
     {
         var (viewModel, _, _, _, _, _) = CreateViewModel();
 
@@ -209,11 +215,10 @@ public class MonthlyViewModelTests
 
         viewModel.IsCardPaymentMode.Should().BeTrue();
         viewModel.IsBankPaymentMode.Should().BeFalse();
-        MonthlyViewModel.Cards.Should().HaveCount(5);
     }
 
     [Fact]
-    public async Task ShowCreateExpenseFormCommand_BankMode_DefaultsToFirstBankAndEmptyCardTag()
+    public async Task ShowCreateExpenseFormCommand_BankMode_DefaultsToFirstBankAndEmptyCreditCardId()
     {
         var (viewModel, _, _, banks, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
@@ -222,18 +227,18 @@ public class MonthlyViewModelTests
 
         viewModel.IsCardPaymentMode.Should().BeFalse();
         viewModel.ExpenseFormPaymentSource.Should().Be(banks.Banks[0].Id);
-        viewModel.ExpenseFormCardTag.Should().BeEmpty();
+        viewModel.ExpenseFormCreditCardId.Should().BeNull();
     }
 
     [Fact]
-    public void ShowCreateExpenseFormCommand_CardMode_DefaultsToEmptyPaymentSourceAndCardTag()
+    public void ShowCreateExpenseFormCommand_CardMode_DefaultsToEmptyPaymentSourceAndCreditCardId()
     {
         var (viewModel, _, _, _, _, _) = CreateViewModel();
 
         viewModel.ShowCreateExpenseFormCommand.Execute("card");
 
         viewModel.ExpenseFormPaymentSource.Should().BeNull();
-        viewModel.ExpenseFormCardTag.Should().BeEmpty();
+        viewModel.ExpenseFormCreditCardId.Should().BeNull();
     }
 
     [Fact]
@@ -650,7 +655,7 @@ public class MonthlyViewModelTests
         viewModel.ExpenseFormDescription = "Flight";
         viewModel.ExpenseFormCategory = "Viagem";
         viewModel.ExpenseFormValue = "300";
-        viewModel.ExpenseFormCardTag = MonthlyViewModel.Cards[0];
+        viewModel.ExpenseFormCreditCardId = DefaultCreditCards[0].Id;
 
         await viewModel.SaveExpenseAsync();
 
