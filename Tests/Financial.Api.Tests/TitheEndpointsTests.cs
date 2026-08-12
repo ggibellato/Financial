@@ -9,6 +9,7 @@ public class TitheEndpointsTests
 {
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
     private static readonly Guid GleisonId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000001");
+    private static readonly Guid DizimoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000012");
 
     [Fact]
     public async Task GetTitheSummaryByMonth_WithIncomeAndDizimoExpense_ReturnsCalculatedFigures()
@@ -28,7 +29,7 @@ public class TitheEndpointsTests
             Date = new DateOnly(2026, 7, 10),
             Description = "Tithe payment",
             Value = 200m,
-            Category = "Dizimo",
+            CategoryId = DizimoId,
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null
         });

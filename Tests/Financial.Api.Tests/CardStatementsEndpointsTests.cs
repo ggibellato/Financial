@@ -10,6 +10,7 @@ public class CardStatementsEndpointsTests
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
     private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
     private static readonly Guid BarclaysPlatinumVisa8003Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000001");
+    private static readonly Guid MercadoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000008");
 
     [Fact]
     public async Task GetStatementsForMonth_FirstCall_GeneratesFiveUnpaidStatements()
@@ -35,7 +36,7 @@ public class CardStatementsEndpointsTests
             Date = new DateOnly(2026, 7, 10),
             Description = "Card charge",
             Value = 45m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = null,
             CreditCardId = BarclaysPlatinumVisa8003Id
         });
@@ -56,7 +57,7 @@ public class CardStatementsEndpointsTests
             Date = new DateOnly(2026, 7, 10),
             Description = "Card charge",
             Value = 45m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = null,
             CreditCardId = BarclaysPlatinumVisa8003Id
         });
@@ -89,7 +90,7 @@ public class CardStatementsEndpointsTests
             Date = new DateOnly(2026, 7, 10),
             Description = "Card charge",
             Value = 45m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = null,
             CreditCardId = BarclaysPlatinumVisa8003Id
         });
@@ -143,7 +144,7 @@ public class CardStatementsEndpointsTests
             Date = new DateOnly(2026, 7, 10),
             Description = "Card charge",
             Value = 45m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = null,
             CreditCardId = BarclaysPlatinumVisa8003Id
         });

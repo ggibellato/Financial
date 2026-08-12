@@ -126,6 +126,22 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000009", "Name": "ChipCashIsaAriana", "IsActive": true, "IsLiability": false },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000010", "Name": "Trading212Invested", "IsActive": true, "IsLiability": false },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000011", "Name": "ReservasPessoais", "IsActive": true, "IsLiability": true }
+          ],
+          "Categories": [
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000001", "Name": "Ariana", "Active": true, "IsInvestment": false, "IsTithe": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000002", "Name": "Carro", "Active": true, "IsInvestment": false, "IsTithe": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000003", "Name": "Casa", "Active": true, "IsInvestment": false, "IsTithe": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000004", "Name": "Estudo", "Active": true, "IsInvestment": false, "IsTithe": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000005", "Name": "Extras", "Active": true, "IsInvestment": false, "IsTithe": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000006", "Name": "Familia", "Active": true, "IsInvestment": false, "IsTithe": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000007", "Name": "Gleison", "Active": true, "IsInvestment": false, "IsTithe": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000008", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000009", "Name": "Samuel", "Active": true, "IsInvestment": false, "IsTithe": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000010", "Name": "Saude", "Active": true, "IsInvestment": false, "IsTithe": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000011", "Name": "Viagem", "Active": true, "IsInvestment": false, "IsTithe": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000012", "Name": "Dizimo", "Active": true, "IsInvestment": false, "IsTithe": true },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000013", "Name": "Investimento", "Active": true, "IsInvestment": true, "IsTithe": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000014", "Name": "Reserva", "Active": true, "IsInvestment": false, "IsTithe": false }
           ]
         }
         """;

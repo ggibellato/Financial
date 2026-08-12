@@ -1,6 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Category = Financial.CashFlow.Domain.Enums.Category;
 using Financial.CashFlow.Infrastructure.Persistence;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -29,7 +28,7 @@ public class CashFlowSerializerAdapterTests
             new DateOnly(2026, 7, 15),
             "Weekly groceries",
             54.32m,
-            Category.Mercado,
+            category,
             null,
             creditCard);
         expense.Settle(bank, new DateOnly(2026, 7, 31));
@@ -74,7 +73,7 @@ public class CashFlowSerializerAdapterTests
             resultExpense.Date.Should().Be(expense.Date);
             resultExpense.Description.Should().Be(expense.Description);
             resultExpense.Value.Should().Be(expense.Value);
-            resultExpense.Category.Should().Be(expense.Category);
+            resultExpense.Category.Id.Should().Be(expense.Category.Id);
             resultExpense.CreditCard.Should().NotBeNull();
             resultExpense.CreditCard!.Id.Should().Be(expense.CreditCard!.Id);
             resultExpense.ChargeDate.Should().Be(expense.ChargeDate);
@@ -146,6 +145,7 @@ public class CashFlowSerializerAdapterTests
             resultSnapshot.Account.Should().BeSameAs(resultInvestmentAccount);
             resultExpense.CreditCard.Should().BeSameAs(resultCreditCard);
             resultCardStatement.CreditCard.Should().BeSameAs(resultCreditCard);
+            resultExpense.Category.Should().BeSameAs(resultCategory);
         }
     }
 

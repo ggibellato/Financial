@@ -1,6 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Category = Financial.CashFlow.Domain.Enums.Category;
+using Category = Financial.CashFlow.Domain.Entities.Category;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.Shared.Infrastructure.Persistence;
@@ -22,8 +22,10 @@ public class CashFlowJsonRepositoryTests
         try
         {
             var bank = Bank.Create("Chase", roundUpEnabled: true);
+            var category = Category.Create("Casa");
             data.AddBank(bank);
-            repository.AddExpense(Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, bank, null));
+            data.AddCategory(category);
+            repository.AddExpense(Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, category, bank, null));
 
             await repository.SaveChangesAsync();
 
@@ -72,7 +74,7 @@ public class CashFlowJsonRepositoryTests
         {
             var data = CashFlowData.Create();
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
-            var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, Bank.Create("Chase", roundUpEnabled: true), null);
+            var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Create("Casa"), Bank.Create("Chase", roundUpEnabled: true), null);
 
             repository.AddExpense(expense);
 
@@ -92,7 +94,7 @@ public class CashFlowJsonRepositoryTests
         {
             var data = CashFlowData.Create();
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
-            var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, Bank.Create("Chase", roundUpEnabled: true), null);
+            var expense = Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Create("Casa"), Bank.Create("Chase", roundUpEnabled: true), null);
             repository.AddExpense(expense);
 
             repository.DeleteExpense(expense.Id);

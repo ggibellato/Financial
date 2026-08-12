@@ -1,6 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Category = Financial.CashFlow.Domain.Enums.Category;
+using Category = Financial.CashFlow.Domain.Entities.Category;
 using Financial.CashFlow.Infrastructure.Persistence;
 using FluentAssertions;
 using System.Text.Json;
@@ -66,10 +66,12 @@ public class CashFlowTypeInfoResolverTests
     public void GetTypeInfo_RoundTripsExpenseThroughPrivateConstructor()
     {
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        var category = Category.Create("Mercado");
         var context = new ReferenceResolutionContext();
         context.Banks[bank.Id] = bank;
+        context.Categories[category.Id] = category;
         var options = CreateOptions(context);
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Weekly groceries", 54.32m, Category.Mercado, bank, null);
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Weekly groceries", 54.32m, category, bank, null);
 
         var json = JsonSerializer.Serialize(expense, CreateOptions());
         var deserialized = JsonSerializer.Deserialize<Expense>(json, options);
@@ -78,7 +80,7 @@ public class CashFlowTypeInfoResolverTests
         deserialized!.Id.Should().Be(expense.Id);
         deserialized.Description.Should().Be("Weekly groceries");
         deserialized.Value.Should().Be(54.32m);
-        deserialized.Category.Should().Be(Category.Mercado);
+        deserialized.Category.Should().BeSameAs(category);
         deserialized.PaymentSourceBank.Should().BeSameAs(bank);
     }
 
@@ -88,10 +90,12 @@ public class CashFlowTypeInfoResolverTests
         // PaymentStatus is never in the JSON's Set path (it's excluded implicitly by having no
         // setter) - it must be recomputed correctly on deserialize from CreditCard/PaymentSource alone.
         var creditCard = CreditCard.Create("Chase Mastercard 4023");
+        var category = Category.Create("Extras");
         var context = new ReferenceResolutionContext();
         context.CreditCards[creditCard.Id] = creditCard;
+        context.Categories[category.Id] = category;
         var options = CreateOptions(context);
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Charge", 10m, Category.Extras, null, creditCard);
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Charge", 10m, category, null, creditCard);
 
         var json = JsonSerializer.Serialize(expense, CreateOptions());
         var deserialized = JsonSerializer.Deserialize<Expense>(json, options);

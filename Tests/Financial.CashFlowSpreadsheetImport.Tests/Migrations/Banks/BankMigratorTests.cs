@@ -1,6 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Category = Financial.CashFlow.Domain.Enums.Category;
+using Category = Financial.CashFlow.Domain.Entities.Category;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Banks;
 using FluentAssertions;
 using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
@@ -54,7 +54,7 @@ public class BankMigratorTests
     {
         var data = CashFlowData.Create();
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Groceries", 20m, Category.Mercado, bank, null);
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Groceries", 20m, Category.Create("Mercado"), bank, null);
         data.AddExpense(expense);
 
         var summary = BankMigrator.Migrate(data);
@@ -68,7 +68,7 @@ public class BankMigratorTests
     public void Migrate_ExpenseWithCardTagAndNoBank_CountsAsNotApplicable()
     {
         var data = CashFlowData.Create();
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Charge", 20m, Category.Extras, null, CreditCardEntity.Create("ChaseMaster4023"));
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Charge", 20m, Category.Create("Extras"), null, CreditCardEntity.Create("ChaseMaster4023"));
         data.AddExpense(expense);
 
         var summary = BankMigrator.Migrate(data);
@@ -83,8 +83,8 @@ public class BankMigratorTests
     {
         var data = CashFlowData.Create();
         var bank = Bank.Create("Chase", roundUpEnabled: true);
-        var resolved = Expense.Create(new DateOnly(2026, 7, 1), "Groceries", 20m, Category.Mercado, bank, null);
-        var charge = Expense.Create(new DateOnly(2026, 7, 2), "Charge", 5m, Category.Extras, null, CreditCardEntity.Create("ChaseMaster4023"));
+        var resolved = Expense.Create(new DateOnly(2026, 7, 1), "Groceries", 20m, Category.Create("Mercado"), bank, null);
+        var charge = Expense.Create(new DateOnly(2026, 7, 2), "Charge", 5m, Category.Create("Extras"), null, CreditCardEntity.Create("ChaseMaster4023"));
         data.AddExpense(resolved);
         data.AddExpense(charge);
 

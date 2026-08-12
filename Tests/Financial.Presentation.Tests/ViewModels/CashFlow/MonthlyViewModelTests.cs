@@ -35,6 +35,16 @@ public class MonthlyViewModelTests
         new() { Id = Guid.NewGuid(), Name = "PaypalCredit", IsActive = true },
     ];
 
+    /// <summary>The categories seeded in a real deployment (F01), pre-loaded so the expense form
+    /// can resolve the still-hardcoded category text to an Id (F05 replaces this with a real
+    /// dynamic picklist).</summary>
+    private static readonly List<CategoryDTO> DefaultCategories =
+    [
+        new() { Id = Guid.NewGuid(), Name = "Mercado", Active = true, IsInvestment = false, IsTithe = false },
+        new() { Id = Guid.NewGuid(), Name = "Extras", Active = true, IsInvestment = false, IsTithe = false },
+        new() { Id = Guid.NewGuid(), Name = "Viagem", Active = true, IsInvestment = false, IsTithe = false },
+    ];
+
     private static (MonthlyViewModel ViewModel, StubExpenseService Expenses, StubIncomeService Incomes, StubBankService Banks, StubTitheService Tithe, StubCreditCardService CreditCards) CreateViewModel(
         bool confirmDeletes = true, StubIncomeSourceService? incomeSourceService = null)
     {
@@ -47,8 +57,9 @@ public class MonthlyViewModelTests
         var adjustments = new StubBalanceAdjustmentService();
         var cardStatements = new StubCardStatementService();
         var creditCards = new StubCreditCardService { CreditCards = new List<CreditCardDTO>(DefaultCreditCards) };
+        var categories = new StubCategoryService { Categories = new List<CategoryDTO>(DefaultCategories) };
 
-        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cardStatements, creditCards, confirm: _ => confirmDeletes);
+        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cardStatements, creditCards, categories, confirm: _ => confirmDeletes);
         return (viewModel, expenses, incomes, banks, tithe, creditCards);
     }
 
@@ -56,7 +67,7 @@ public class MonthlyViewModelTests
     public async Task LoadsExpensesIncomesCategoryTotalsAndTitheForCurrentMonth()
     {
         var (viewModel, expenses, incomes, _, tithe, _) = CreateViewModel();
-        expenses.Expenses = [new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Test", Value = 10m, Category = "Mercado", PaymentSourceBankId = BarclaysId, PaymentSourceBankName = "Barclays", PaymentStatus = "ImmediatePayment" }];
+        expenses.Expenses = [new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Test", Value = 10m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentSourceBankId = BarclaysId, PaymentSourceBankName = "Barclays", PaymentStatus = "ImmediatePayment" }];
         expenses.CategoryTotals = [new CategoryTotalDTO { Category = "Mercado", TotalValue = 10m }];
         incomes.Incomes = [new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Gleison", NetValue = 100m, BankId = BarclaysId, BankName = "Barclays" }];
 
@@ -109,7 +120,7 @@ public class MonthlyViewModelTests
     public async Task RefreshAsync_PopulatesUnpaidCardCharges()
     {
         var (viewModel, expenses, _, _, _, _) = CreateViewModel();
-        expenses.UnpaidCardCharges = [new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, Category = "Extras", CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", PaymentStatus = "CreditCardCharge" }];
+        expenses.UnpaidCardCharges = [new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, CategoryId = Guid.NewGuid(), CategoryName = "Extras", CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", PaymentStatus = "CreditCardCharge" }];
 
         await viewModel.RefreshAsync();
 
@@ -133,7 +144,7 @@ public class MonthlyViewModelTests
     public void EditExpenseCommand_FromUnpaidCardCharges_OpensFormPrefilled()
     {
         var (viewModel, _, _, _, _, _) = CreateViewModel();
-        var unpaidCharge = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, Category = "Extras", CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", PaymentStatus = "CreditCardCharge" };
+        var unpaidCharge = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, CategoryId = Guid.NewGuid(), CategoryName = "Extras", CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", PaymentStatus = "CreditCardCharge" };
 
         viewModel.EditExpenseCommand.Execute(unpaidCharge);
 
@@ -147,7 +158,7 @@ public class MonthlyViewModelTests
     public async Task DeleteExpenseCommand_FromUnpaidCardCharges_ConfirmedCallsDeleteAndRefreshes()
     {
         var (viewModel, expenses, _, _, _, _) = CreateViewModel();
-        var unpaidCharge = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, Category = "Extras", CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", PaymentStatus = "CreditCardCharge" };
+        var unpaidCharge = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Uber", Value = 18.4m, CategoryId = Guid.NewGuid(), CategoryName = "Extras", CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", PaymentStatus = "CreditCardCharge" };
         await viewModel.RefreshAsync();
         var callsBefore = expenses.GetUnpaidCardChargesByMonthCallCount;
 
@@ -251,7 +262,7 @@ public class MonthlyViewModelTests
             Date = DateOnly.FromDateTime(DateTime.Today),
             Description = "Settled",
             Value = 10m,
-            Category = "Mercado",
+            CategoryId = Guid.NewGuid(), CategoryName = "Mercado",
             CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex",
             PaymentStatus = "CreditCardSettled",
         };
@@ -309,7 +320,7 @@ public class MonthlyViewModelTests
             Date = DateOnly.FromDateTime(DateTime.Today),
             Description = "Settled",
             Value = 10m,
-            Category = "Mercado",
+            CategoryId = Guid.NewGuid(), CategoryName = "Mercado",
             CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex",
             PaymentStatus = "CreditCardSettled",
         };
@@ -321,7 +332,7 @@ public class MonthlyViewModelTests
     public async Task DeleteExpense_CallsServiceAndRefreshes()
     {
         var (viewModel, expenses, _, _, _, _) = CreateViewModel();
-        var expense = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "X", Value = 1m, Category = "Mercado", PaymentStatus = "ImmediatePayment" };
+        var expense = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "X", Value = 1m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentStatus = "ImmediatePayment" };
 
         await viewModel.DeleteExpenseAsync(expense);
 
@@ -332,7 +343,7 @@ public class MonthlyViewModelTests
     public async Task DeleteExpense_ConfirmationDeclined_DoesNotCallService()
     {
         var (viewModel, expenses, _, _, _, _) = CreateViewModel(confirmDeletes: false);
-        var expense = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "X", Value = 1m, Category = "Mercado", PaymentStatus = "ImmediatePayment" };
+        var expense = new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "X", Value = 1m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentStatus = "ImmediatePayment" };
 
         await viewModel.DeleteExpenseAsync(expense);
 
@@ -463,7 +474,7 @@ public class MonthlyViewModelTests
         var expense = new ExpenseDTO
         {
             Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Old",
-            Value = 10m, Category = "Mercado", PaymentSourceBankId = ChaseId, PaymentSourceBankName = banks.Banks[1].Name, PaymentStatus = "ImmediatePayment",
+            Value = 10m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentSourceBankId = ChaseId, PaymentSourceBankName = banks.Banks[1].Name, PaymentStatus = "ImmediatePayment",
         };
         await viewModel.RefreshAsync();
 
@@ -610,7 +621,7 @@ public class MonthlyViewModelTests
             InvoiceDate = new DateOnly(2026, 2, 1),
             Description = "Uber",
             Value = 18.4m,
-            Category = "Extras",
+            CategoryId = Guid.NewGuid(), CategoryName = "Extras",
             CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex",
             PaymentStatus = "CreditCardCharge",
         };
@@ -633,7 +644,7 @@ public class MonthlyViewModelTests
             InvoiceDate = new DateOnly(2026, 2, 1),
             Description = "Settled",
             Value = 10m,
-            Category = "Mercado",
+            CategoryId = Guid.NewGuid(), CategoryName = "Mercado",
             CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex",
             PaymentStatus = "CreditCardSettled",
         };
@@ -693,7 +704,7 @@ public class MonthlyViewModelTests
             InvoiceDate = new DateOnly(2026, 2, 1),
             Description = "Uber",
             Value = 18.4m,
-            Category = "Extras",
+            CategoryId = Guid.NewGuid(), CategoryName = "Extras",
             CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex",
             PaymentStatus = "CreditCardCharge",
         };

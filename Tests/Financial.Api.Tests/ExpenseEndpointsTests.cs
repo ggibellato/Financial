@@ -12,6 +12,9 @@ public class ExpenseEndpointsTests
     private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
     private static readonly Guid BarclaysPlatinumVisa8003Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000001");
     private static readonly Guid ChaseMaster4023Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000003");
+    private static readonly Guid CasaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000003");
+    private static readonly Guid ExtrasId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000005");
+    private static readonly Guid MercadoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000008");
 
     [Fact]
     public async Task AddExpense_ValidRequest_ReturnsOk()
@@ -23,7 +26,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 15),
             Description = "Weekly groceries",
             Value = 54.32m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null
         };
@@ -34,7 +37,7 @@ public class ExpenseEndpointsTests
         var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
         expense.Should().NotBeNull();
         expense!.Description.Should().Be("Weekly groceries");
-        expense.Category.Should().Be("Mercado");
+        expense.CategoryName.Should().Be("Mercado");
         expense.PaymentStatus.Should().Be("ImmediatePayment");
     }
 
@@ -48,7 +51,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 15),
             Description = "Card charge",
             Value = 30m,
-            Category = "Extras",
+            CategoryId = ExtrasId,
             PaymentSourceBankId = null,
             CreditCardId = ChaseMaster4023Id
         };
@@ -72,7 +75,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 15),
             Description = "Card charge",
             Value = 30m,
-            Category = "Extras",
+            CategoryId = ExtrasId,
             PaymentSourceBankId = null,
             CreditCardId = ChaseMaster4023Id
         };
@@ -94,7 +97,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 29),
             Description = "Cutoff charge",
             Value = 30m,
-            Category = "Extras",
+            CategoryId = ExtrasId,
             PaymentSourceBankId = null,
             CreditCardId = ChaseMaster4023Id,
             InvoiceDate = new DateOnly(2026, 8, 17)
@@ -116,7 +119,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 15),
             Description = "No payment shape",
             Value = 30m,
-            Category = "Extras",
+            CategoryId = ExtrasId,
             PaymentSourceBankId = null,
             CreditCardId = null
         };
@@ -138,7 +141,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 15),
             Description = "Both payment fields",
             Value = 30m,
-            Category = "Extras",
+            CategoryId = ExtrasId,
             PaymentSourceBankId = BarclaysId,
             CreditCardId = ChaseMaster4023Id
         };
@@ -160,7 +163,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 15),
             Description = "Zero value expense",
             Value = 0m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null
         };
@@ -182,7 +185,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 15),
             Description = "Bad category",
             Value = 10m,
-            Category = "NotACategory",
+            CategoryId = Guid.NewGuid(),
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null
         };
@@ -204,7 +207,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 1),
             Description = "Original",
             Value = 10m,
-            Category = "Casa",
+            CategoryId = CasaId,
             PaymentSourceBankId = ChaseId,
             CreditCardId = null
         });
@@ -215,7 +218,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 8, 1),
             Description = "Updated",
             Value = 20m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null
         });
@@ -223,7 +226,7 @@ public class ExpenseEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var updated = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
         updated!.Description.Should().Be("Updated");
-        updated.Category.Should().Be("Mercado");
+        updated.CategoryName.Should().Be("Mercado");
     }
 
     [Fact]
@@ -237,7 +240,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 1),
             Description = "Ghost",
             Value = 10m,
-            Category = "Casa",
+            CategoryId = CasaId,
             PaymentSourceBankId = ChaseId,
             CreditCardId = null
         });
@@ -255,7 +258,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 5),
             Description = "To delete",
             Value = 10m,
-            Category = "Casa",
+            CategoryId = CasaId,
             PaymentSourceBankId = ChaseId,
             CreditCardId = null
         });
@@ -290,7 +293,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 10),
             Description = "July expense",
             Value = 10m,
-            Category = "Casa",
+            CategoryId = CasaId,
             PaymentSourceBankId = ChaseId,
             CreditCardId = null
         });
@@ -299,7 +302,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 8, 10),
             Description = "August expense",
             Value = 10m,
-            Category = "Casa",
+            CategoryId = CasaId,
             PaymentSourceBankId = ChaseId,
             CreditCardId = null
         });
@@ -321,7 +324,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 10),
             Description = "Card charge",
             Value = 45m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = null,
             CreditCardId = BarclaysPlatinumVisa8003Id
         });
@@ -343,7 +346,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 10),
             Description = "Bank expense",
             Value = 20m,
-            Category = "Casa",
+            CategoryId = CasaId,
             PaymentSourceBankId = ChaseId,
             CreditCardId = null
         });
@@ -364,7 +367,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 10),
             Description = "Card charge",
             Value = 45m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = null,
             CreditCardId = BarclaysPlatinumVisa8003Id
         });
@@ -390,7 +393,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 10),
             Description = "Card charge",
             Value = 45m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = null,
             CreditCardId = BarclaysPlatinumVisa8003Id
         });
@@ -416,7 +419,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 10),
             Description = "Bank expense",
             Value = 20m,
-            Category = "Casa",
+            CategoryId = CasaId,
             PaymentSourceBankId = ChaseId,
             CreditCardId = null
         });
@@ -425,7 +428,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 10),
             Description = "Card charge",
             Value = 45m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = null,
             CreditCardId = BarclaysPlatinumVisa8003Id
         });
@@ -450,7 +453,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 10),
             Description = "Card charge",
             Value = 45m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = null,
             CreditCardId = BarclaysPlatinumVisa8003Id
         });
@@ -481,7 +484,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 1),
             Description = "Groceries 1",
             Value = 10m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null
         });
@@ -490,7 +493,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 2),
             Description = "Groceries 2",
             Value = 5m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null
         });
@@ -512,7 +515,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 15),
             Description = "TfL",
             Value = 9.40m,
-            Category = "Extras",
+            CategoryId = ExtrasId,
             PaymentSourceBankId = Trading212Id,
             CreditCardId = null,
             RoundUpAmount = 0.60m
@@ -536,7 +539,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 15),
             Description = "Groceries",
             Value = 9.40m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null,
             RoundUpAmount = 0.60m
@@ -559,7 +562,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 15),
             Description = "Card charge",
             Value = 9.40m,
-            Category = "Extras",
+            CategoryId = ExtrasId,
             PaymentSourceBankId = null,
             CreditCardId = ChaseMaster4023Id,
             RoundUpAmount = 0.60m
@@ -582,7 +585,7 @@ public class ExpenseEndpointsTests
             Date = new DateOnly(2026, 7, 15),
             Description = "TfL",
             Value = 9.40m,
-            Category = "Extras",
+            CategoryId = ExtrasId,
             PaymentSourceBankId = Trading212Id,
             CreditCardId = null
         });

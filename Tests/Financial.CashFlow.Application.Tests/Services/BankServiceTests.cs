@@ -4,7 +4,7 @@ using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Category = Financial.CashFlow.Domain.Enums.Category;
+using Category = Financial.CashFlow.Domain.Entities.Category;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -101,7 +101,7 @@ public class BankServiceTests
         bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
         repository.Banks.Add(bank);
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Gleison, null, 500m, bank));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Mercado, bank, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Create("Mercado"), bank, null));
         var service = new BankService(repository);
 
         var result = service.GetBankBalancesByMonth(2026, 7);
@@ -116,7 +116,7 @@ public class BankServiceTests
         var bank = Bank.Create("Trading212", roundUpEnabled: true);
         bank.SetOpeningBalance(0m, new DateOnly(2026, 1, 1));
         repository.Banks.Add(bank);
-        var expense = Expense.Create(new DateOnly(2026, 7, 5), "TfL", 9.40m, Category.Extras, bank, null);
+        var expense = Expense.Create(new DateOnly(2026, 7, 5), "TfL", 9.40m, Category.Create("Extras"), bank, null);
         expense.SetRoundUpAmount(0.60m);
         repository.Expenses.Add(expense);
         var service = new BankService(repository);
@@ -134,7 +134,7 @@ public class BankServiceTests
         bank.SetOpeningBalance(100m, new DateOnly(2026, 7, 1));
         repository.Banks.Add(bank);
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 6, 30), Gleison, null, 500m, bank));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 6, 30), "Groceries", 50m, Category.Mercado, bank, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 6, 30), "Groceries", 50m, Category.Create("Mercado"), bank, null));
         var service = new BankService(repository);
 
         var result = service.GetBankBalancesByMonth(2026, 7);
@@ -180,7 +180,7 @@ public class BankServiceTests
         repository.Banks.Add(bank);
         var chase = Bank.Create("Chase", roundUpEnabled: false);
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Gleison, null, 500m, chase));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Mercado, chase, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Create("Mercado"), chase, null));
         var service = new BankService(repository);
 
         var result = service.GetBankBalancesByMonth(2026, 7);

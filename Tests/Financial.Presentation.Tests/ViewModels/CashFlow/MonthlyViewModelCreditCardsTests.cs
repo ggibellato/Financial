@@ -28,7 +28,9 @@ public class MonthlyViewModelCreditCardsTests
             ],
         };
 
-        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cardStatements, creditCards, confirm: _ => true);
+        var categories = new StubCategoryService();
+
+        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cardStatements, creditCards, categories, confirm: _ => true);
         return (viewModel, creditCards);
     }
 

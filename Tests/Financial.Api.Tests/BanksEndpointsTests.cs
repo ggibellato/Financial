@@ -11,6 +11,7 @@ public class BanksEndpointsTests
     private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
     private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
     private static readonly Guid GleisonId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000001");
+    private static readonly Guid MercadoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000008");
 
     [Fact]
     public async Task GetBanks_ReturnsTheThreeSeededBanksWithCorrectRoundUpFlags()
@@ -121,7 +122,7 @@ public class BanksEndpointsTests
             Date = new DateOnly(2026, 7, 5),
             Description = "Groceries",
             Value = 50m,
-            Category = "Mercado",
+            CategoryId = MercadoId,
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null
         });

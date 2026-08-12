@@ -3,7 +3,6 @@ using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using ReserveBucketEntity = Financial.CashFlow.Domain.Entities.ReserveBucket;
 using CategoryEntity = Financial.CashFlow.Domain.Entities.Category;
-using Category = Financial.CashFlow.Domain.Enums.Category;
 
 namespace Financial.CashFlow.Domain.Tests;
 
@@ -112,8 +111,10 @@ public class CashFlowDataTests
         _sut.Expenses.Should().ContainSingle();
     }
 
+    private static readonly CategoryEntity Casa = CategoryEntity.Create("Casa");
+
     private static Expense CreateExpense() =>
-        Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Casa, Chase, null);
+        Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Casa, Chase, null);
 
     [Fact]
     public void AddReserveMovement_AddsOnlyToReserveMovementsCollection()

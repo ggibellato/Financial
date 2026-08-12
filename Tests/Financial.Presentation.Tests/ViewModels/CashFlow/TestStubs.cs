@@ -20,14 +20,14 @@ internal sealed class StubExpenseService : IExpenseService
     {
         LastCreateRequest = request;
         return Task.FromResult(ToDto(Guid.NewGuid(), request.Date, request.Description, request.Value,
-            request.Category, request.PaymentSourceBankId, request.CreditCardId, request.RoundUpAmount));
+            request.CategoryId, request.PaymentSourceBankId, request.CreditCardId, request.RoundUpAmount));
     }
 
     public Task<ExpenseDTO> UpdateExpenseAsync(Guid id, ExpenseUpdateDTO request)
     {
         LastUpdateRequest = (id, request);
         return Task.FromResult(ToDto(id, request.Date, request.Description, request.Value,
-            request.Category, request.PaymentSourceBankId, request.CreditCardId, request.RoundUpAmount));
+            request.CategoryId, request.PaymentSourceBankId, request.CreditCardId, request.RoundUpAmount));
     }
 
     public Task DeleteExpenseAsync(Guid id)
@@ -51,14 +51,15 @@ internal sealed class StubExpenseService : IExpenseService
     public IReadOnlyList<CategoryTotalDTO> GetCategoryTotalsByMonth(int year, int month) => CategoryTotals;
 
     private static ExpenseDTO ToDto(
-        Guid id, DateOnly date, string description, decimal value, string category,
+        Guid id, DateOnly date, string description, decimal value, Guid categoryId,
         Guid? paymentSourceBankId, Guid? creditCardId, decimal? roundUpAmount) => new()
     {
         Id = id,
         Date = date,
         Description = description,
         Value = value,
-        Category = category,
+        CategoryId = categoryId,
+        CategoryName = categoryId.ToString(),
         PaymentSourceBankId = paymentSourceBankId,
         CreditCardId = creditCardId,
         PaymentStatus = "ImmediatePayment",
@@ -305,6 +306,13 @@ internal sealed class StubCreditCardService : ICreditCardService
         CreditCards[index] = updated;
         return Task.FromResult(updated);
     }
+}
+
+internal sealed class StubCategoryService : ICategoryService
+{
+    public List<CategoryDTO> Categories { get; set; } = [];
+
+    public IReadOnlyList<CategoryDTO> GetCategories() => Categories;
 }
 
 internal sealed class StubReserveService : IReserveService

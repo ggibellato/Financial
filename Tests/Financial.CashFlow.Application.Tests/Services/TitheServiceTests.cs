@@ -3,7 +3,7 @@ using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Category = Financial.CashFlow.Domain.Enums.Category;
+using Category = Financial.CashFlow.Domain.Entities.Category;
 using FluentAssertions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
@@ -13,6 +13,8 @@ public class TitheServiceTests
     private static readonly Bank Barclays = Bank.Create("Barclays", roundUpEnabled: false);
     private static readonly Bank Trading212 = Bank.Create("Trading212", roundUpEnabled: true);
     private static readonly Bank Chase = Bank.Create("Chase", roundUpEnabled: true);
+    private static readonly Category Dizimo = Category.Create("Dizimo", isTithe: true);
+    private static readonly Category Mercado = Category.Create("Mercado");
 
     private static IncomeSource Source(string name) => IncomeSource.Create(name, IncomeGroup.NonReportable);
 
@@ -42,7 +44,7 @@ public class TitheServiceTests
     {
         var repository = new StubCashFlowRepository();
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Source("Gleison"), null, 3000m, Barclays));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 10), "Tithe payment", 200m, Category.Dizimo, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 10), "Tithe payment", 200m, Dizimo, Barclays, null));
         var service = new TitheService(repository);
 
         var result = service.GetTitheSummary(2026, 7);
@@ -56,7 +58,7 @@ public class TitheServiceTests
     {
         var repository = new StubCashFlowRepository();
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Source("Gleison"), null, 1000m, Barclays));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 10), "Tithe payment", 200m, Category.Dizimo, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 10), "Tithe payment", 200m, Dizimo, Barclays, null));
         var service = new TitheService(repository);
 
         var result = service.GetTitheSummary(2026, 7);
@@ -70,7 +72,7 @@ public class TitheServiceTests
     {
         var repository = new StubCashFlowRepository();
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Source("Gleison"), null, 1000m, Barclays));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Mercado, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Mercado, Barclays, null));
         var service = new TitheService(repository);
 
         var result = service.GetTitheSummary(2026, 7);
@@ -84,8 +86,8 @@ public class TitheServiceTests
         var repository = new StubCashFlowRepository();
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Source("Gleison"), null, 1000m, Barclays));
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 8, 1), Source("Gleison"), null, 5000m, Barclays));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "July tithe", 50m, Category.Dizimo, Barclays, null));
-        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 8, 5), "August tithe", 500m, Category.Dizimo, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "July tithe", 50m, Dizimo, Barclays, null));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 8, 5), "August tithe", 500m, Dizimo, Barclays, null));
         var service = new TitheService(repository);
 
         var result = service.GetTitheSummary(2026, 7);
