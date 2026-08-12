@@ -1513,6 +1513,16 @@ public class MonthlyViewModel : ViewModelBase
             return;
         }
 
+        // The grid's DatePicker/CheckBox bind one-way to this row and call back here on their
+        // change events - but WPF raises those same events when ReplaceAll(CreditCards, ...)
+        // below rebinds the row to its own current value, not just on a real user edit. Without
+        // this guard, that echo would call the update service and refresh again, which rebinds
+        // the row again, forever.
+        if (card.NextInvoiceDueDate == nextInvoiceDueDate && card.IsActive == isActive)
+        {
+            return;
+        }
+
         CreditCardUpdateError = null;
         UpdatingCreditCardId = card.Id;
 

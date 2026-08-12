@@ -51,7 +51,7 @@ public class AnnualSummaryEndpointsTests
     }
 
     [Fact]
-    public async Task GetHistoricSummaryAverages_MergesIncomeIntoMatchingYearAndOmitsItFromYearsWithoutIncome()
+    public async Task GetHistoricSummaryAverages_MergesIncomeIntoMatchingYearAndZeroFillsYearsWithoutIncome()
     {
         var pinnedNow = new DateTimeOffset(2026, 7, 15, 0, 0, 0, TimeSpan.Zero);
         var currentYear = pinnedNow.Year;
@@ -132,11 +132,15 @@ public class AnnualSummaryEndpointsTests
         result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Tax difference" && a.Value == expectedSalary - expectedSalaryAfterTaxes);
         result[0].AnnualAverages.Should().ContainSingle(a => a.Category == "Dividendo/Juros" && a.Value == expectedDividendoJuros);
 
-        // Past year has expenses but no income, so no income rows should be merged in for that year.
+        // Past year has expenses but no income, so its income rows are zero-filled rather than
+        // omitted - mirroring how a category with no expenses that year still gets a zero row.
         // A full past year always divides by 12 regardless of how many months have a recorded entry:
         // 120 / 12 = 10, not 120 (the June value) as a per-active-month average would give.
         result[1].AnnualAverages.Should().ContainSingle(a => a.Category == "Mercado" && a.Value == 10m);
-        result[1].AnnualAverages.Should().NotContain(a => a.Category == "Salary");
+        result[1].AnnualAverages.Should().ContainSingle(a => a.Category == "Salary" && a.Value == 0m);
+        result[1].AnnualAverages.Should().ContainSingle(a => a.Category == "Salary after taxes" && a.Value == 0m);
+        result[1].AnnualAverages.Should().ContainSingle(a => a.Category == "Tax difference" && a.Value == 0m);
+        result[1].AnnualAverages.Should().ContainSingle(a => a.Category == "Dividendo/Juros" && a.Value == 0m);
     }
 
     [Fact]
