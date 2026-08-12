@@ -368,43 +368,53 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         }
     }
 
-    private static void AddIncomeToFinalResult(IList<IncomeAnnualAverageDTO> incomeAverages, 
+    /// <summary>
+    /// Inserts the 4 income-derived rows (Salary, Salary after taxes, Tax difference,
+    /// Dividendo/Juros) into every year already present from expense data, defaulting to 0 when
+    /// that year has no matching income average - mirroring how <see cref="AddMissingCategories"/>
+    /// zero-fills a category with no expenses that year, rather than omitting the row entirely.
+    /// A year with income but no expense/category data at all (so it isn't in
+    /// <paramref name="categoryAverages"/> yet) still gets its own row, added separately below.
+    /// </summary>
+    private static void AddIncomeToFinalResult(IList<IncomeAnnualAverageDTO> incomeAverages,
         IList<CategoryAnnualGroupValueDTO> categoryAverages)
     {
+        foreach (var yearAverage in categoryAverages)
+        {
+            var incomeAverage = incomeAverages.FirstOrDefault(i => i.Year == yearAverage.Year);
+            InsertIncomeRows(yearAverage, incomeAverage);
+        }
+
         foreach (var incomeAverage in incomeAverages)
         {
-            var yearAverage = categoryAverages.FirstOrDefault(c => c.Year == incomeAverage.Year);
-            if (yearAverage is null)
+            if (categoryAverages.Any(c => c.Year == incomeAverage.Year))
             {
-                yearAverage = new CategoryAnnualGroupValueDTO
-                {
-                    Year = incomeAverage.Year,
-                    AnnualAverages = new List<CategoryGroupValueDTO>()
-                };
-                categoryAverages.Add(yearAverage);
+                continue;
             }
 
-            yearAverage.AnnualAverages.Insert(0, new CategoryGroupValueDTO
+            var yearAverage = new CategoryAnnualGroupValueDTO
             {
-                Category = "Salary",
-                Value = incomeAverage.SalaryAverage
-            });
-            yearAverage.AnnualAverages.Insert(1, new CategoryGroupValueDTO
-            {
-                Category = "Salary after taxes",
-                Value = incomeAverage.SalaryAfterTaxesAverage
-            });
-            yearAverage.AnnualAverages.Insert(2, new CategoryGroupValueDTO
-            {
-                Category = "Tax difference",
-                Value = incomeAverage.SalaryAverage - incomeAverage.SalaryAfterTaxesAverage
-            });
-            yearAverage.AnnualAverages.Insert(3, new CategoryGroupValueDTO
-            {
-                Category = "Dividendo/Juros",
-                Value = incomeAverage.DividendoJurosAverage
-            });
+                Year = incomeAverage.Year,
+                AnnualAverages = new List<CategoryGroupValueDTO>()
+            };
+            InsertIncomeRows(yearAverage, incomeAverage);
+            categoryAverages.Add(yearAverage);
         }
+    }
+
+    private static void InsertIncomeRows(CategoryAnnualGroupValueDTO yearAverage, IncomeAnnualAverageDTO? incomeAverage)
+    {
+        var salary = incomeAverage?.SalaryAverage ?? 0m;
+        var salaryAfterTaxes = incomeAverage?.SalaryAfterTaxesAverage ?? 0m;
+
+        yearAverage.AnnualAverages.Insert(0, new CategoryGroupValueDTO { Category = "Salary", Value = salary });
+        yearAverage.AnnualAverages.Insert(1, new CategoryGroupValueDTO { Category = "Salary after taxes", Value = salaryAfterTaxes });
+        yearAverage.AnnualAverages.Insert(2, new CategoryGroupValueDTO { Category = "Tax difference", Value = salary - salaryAfterTaxes });
+        yearAverage.AnnualAverages.Insert(3, new CategoryGroupValueDTO
+        {
+            Category = "Dividendo/Juros",
+            Value = incomeAverage?.DividendoJurosAverage ?? 0m
+        });
     }
 
     private IList<IncomeAnnualAverageDTO> GetHistoricIncomeAverageFromYear(int year)

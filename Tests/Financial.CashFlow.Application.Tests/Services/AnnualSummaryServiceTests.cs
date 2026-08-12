@@ -880,6 +880,30 @@ public class AnnualSummaryServiceTests
     }
 
     [Fact]
+    public void GetHistoricSummaryAverageFromYear_ZeroFillsIncomeRowsForAYearWithExpensesButNoIncome()
+    {
+        // Regression test: a year with expense/category data but zero recorded income (e.g. the
+        // Incomes collection is empty) must still show Salary/Salary after taxes/Tax difference/
+        // Dividendo-Juros as zero-value rows, not omit them entirely - mirroring how a category
+        // with no expenses that year is zero-filled rather than dropped.
+        var repository = CreateRepository();
+        var service = new AnnualSummaryService(repository);
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 100m, CategoryByName(repository, "Mercado"), Barclays, null));
+
+        var result = service.GetHistoricSummaryAverageFromYear(2025);
+
+        using (new AssertionScope())
+        {
+            result.Should().ContainSingle(r => r.Year == 2025);
+            var yearAverage = result.Single(r => r.Year == 2025);
+            yearAverage.AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(0m);
+            yearAverage.AnnualAverages.Single(a => a.Category == "Salary after taxes").Value.Should().Be(0m);
+            yearAverage.AnnualAverages.Single(a => a.Category == "Tax difference").Value.Should().Be(0m);
+            yearAverage.AnnualAverages.Single(a => a.Category == "Dividendo/Juros").Value.Should().Be(0m);
+        }
+    }
+
+    [Fact]
     public void GetHistoricSummaryAverageFromYear_ComputesTotalDespesasAsSumOfCategoryRowsOnly()
     {
         var repository = CreateRepository();
