@@ -1,17 +1,22 @@
 using Financial.CashFlow.Domain.Entities;
-using CreditCardEnum = Financial.CashFlow.Domain.Enums.CreditCard;
 
 namespace Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.CreditCards;
 
 /// <summary>
-/// Idempotently seeds the 5 tracked credit cards, carried over by name from the legacy
-/// <see cref="CreditCardEnum"/> enum, all active with no due date. Names are derived from the
-/// enum itself rather than re-typed, so the two can never silently drift apart while the enum
-/// still exists.
+/// Idempotently seeds the 5 tracked credit cards, all active with no due date. This is the
+/// single source of truth for these names - nothing else in the app hardcodes a credit card
+/// list; every other consumer resolves against the seeded entities by name.
 /// </summary>
 public static class CreditCardMigrator
 {
-    private static readonly string[] SeededCardNames = Enum.GetNames<CreditCardEnum>();
+    private static readonly string[] SeededCardNames =
+    [
+        "Platinum Visa 8003",
+        "Platinum Visa 6007",
+        "Chase Master 4023",
+        "BA Amex",
+        "Paypal Credit",
+    ];
 
     public static CreditCardMigrationSummary Migrate(CashFlowData data)
     {

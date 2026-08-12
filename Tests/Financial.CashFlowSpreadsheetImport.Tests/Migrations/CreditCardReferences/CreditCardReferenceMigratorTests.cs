@@ -11,7 +11,7 @@ public class CreditCardReferenceMigratorTests
     private static readonly Guid CardStatementId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid SeededCardId = Guid.Parse("33333333-3333-3333-3333-333333333333");
 
-    private static string LegacyFixtureJson(string expenseCardName = "BaAmex", string statementCardName = "ChaseMaster4023") => $$"""
+    private static string LegacyFixtureJson(string expenseCardName = "BA Amex", string statementCardName = "Chase Master 4023") => $$"""
         {
           "Banks": [], "IncomeSources": [], "InvestmentAccounts": [], "ReserveBuckets": [],
           "ReserveMovements": [], "RecurringBills": [], "MaeLedgerEntries": [],
@@ -31,13 +31,13 @@ public class CreditCardReferenceMigratorTests
           "ReserveMovements": [], "RecurringBills": [], "MaeLedgerEntries": [],
           "Incomes": [], "Transfers": [], "BalanceAdjustments": [], "InvestmentSnapshots": [],
           "CreditCards": [
-            { "Id": "{{SeededCardId}}", "Name": "BaAmex", "IsActive": true, "NextInvoiceDueDate": null }
+            { "Id": "{{SeededCardId}}", "Name": "BA Amex", "IsActive": true, "NextInvoiceDueDate": null }
           ],
           "Expenses": [
-            { "Id": "{{ExpenseId}}", "Date": "2026-07-05", "Description": "Flight", "Value": 200.0, "Category": "Viagem", "PaymentSourceBankId": null, "CardTag": "BaAmex" }
+            { "Id": "{{ExpenseId}}", "Date": "2026-07-05", "Description": "Flight", "Value": 200.0, "Category": "Viagem", "PaymentSourceBankId": null, "CardTag": "BA Amex" }
           ],
           "CardStatements": [
-            { "Id": "{{CardStatementId}}", "Card": "BaAmex", "Year": 2026, "Month": 7, "IsPaid": false }
+            { "Id": "{{CardStatementId}}", "Card": "BA Amex", "Year": 2026, "Month": 7, "IsPaid": false }
           ]
         }
         """;
@@ -84,10 +84,10 @@ public class CreditCardReferenceMigratorTests
                 rewritten.CreditCards.Should().HaveCount(5);
                 var expense = rewritten.Expenses.Should().ContainSingle().Which;
                 expense.Id.Should().Be(ExpenseId);
-                expense.CreditCard!.Name.Should().Be("BaAmex");
+                expense.CreditCard!.Name.Should().Be("BA Amex");
                 var statement = rewritten.CardStatements.Should().ContainSingle().Which;
                 statement.Id.Should().Be(CardStatementId);
-                statement.CreditCard.Name.Should().Be("ChaseMaster4023");
+                statement.CreditCard.Name.Should().Be("Chase Master 4023");
             }
         }
         finally
