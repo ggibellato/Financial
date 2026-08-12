@@ -103,6 +103,16 @@ BankMigrator.Migrate(data);
 // so re-running it at the end (below) to audit the final imported movement set is safe.
 ReserveBucketMigrator.Migrate(data);
 
+// Must also run before the expense sheets are imported below, same reason as BankMigrator
+// above: MonthlyExpenseSheetImporter resolves each row's card-mode charges against
+// data.CreditCards (P29) and every row's category against data.Categories (P30) - on a
+// from-scratch run neither collection has been seeded yet at this point. Without this, every
+// row fails category resolution and the whole import silently comes back empty. Seeding is
+// idempotent, so re-running both at the end (below) to audit the final imported expense set
+// is safe.
+CreditCardMigrator.Migrate(data);
+CategoryMigrator.Migrate(data);
+
 using var workbook = new XLWorkbook(workbookPath);
 
 if (mensaisOnly)
