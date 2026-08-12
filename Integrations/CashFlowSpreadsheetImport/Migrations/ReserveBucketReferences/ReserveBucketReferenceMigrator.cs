@@ -96,20 +96,12 @@ public static class ReserveBucketReferenceMigrator
     }
 
     private static List<ReserveBucket> ResolveReserveBuckets(
-        JsonElement root, JsonSerializerOptions unresolvedOptions, ReserveBucketReferenceMigrationSummary summary)
-    {
-        if (root.TryGetProperty("ReserveBuckets", out var element) && element.ValueKind == JsonValueKind.Array)
-        {
-            return DeserializeCollection<ReserveBucket>(root, "ReserveBuckets", unresolvedOptions);
-        }
-
-        var bootstrapData = CashFlowData.Create();
-        Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ReserveBuckets.ReserveBucketMigrator.Migrate(bootstrapData);
-        var bootstrapped = bootstrapData.ReserveBuckets.ToList();
-        summary.SetBucketsBootstrappedCount(bootstrapped.Count);
-
-        return bootstrapped;
-    }
+        JsonElement root, JsonSerializerOptions unresolvedOptions, ReserveBucketReferenceMigrationSummary summary) =>
+        ResolveOrBootstrap(
+            root, "ReserveBuckets", unresolvedOptions,
+            data => Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ReserveBuckets.ReserveBucketMigrator.Migrate(data),
+            data => data.ReserveBuckets,
+            summary.SetBucketsBootstrappedCount);
 
     private static void MigrateReserveMovements(
         JsonElement root,

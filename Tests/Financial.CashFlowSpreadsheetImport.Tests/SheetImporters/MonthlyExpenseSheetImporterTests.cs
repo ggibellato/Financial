@@ -1,7 +1,6 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using CategoryEntity = Financial.CashFlow.Domain.Entities.Category;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
 using FluentAssertions;
@@ -28,12 +27,12 @@ public class MonthlyExpenseSheetImporterTests
         CreditCardEntity.Create("BA Amex")
     ];
 
-    private static readonly IReadOnlyCollection<CategoryEntity> Categories =
+    private static readonly IReadOnlyCollection<Category> Categories =
     [
-        CategoryEntity.Create("Ariana"),
-        CategoryEntity.Create("Casa"),
-        CategoryEntity.Create("Extras"),
-        CategoryEntity.Create("Mercado")
+        Category.Create("Ariana"),
+        Category.Create("Casa"),
+        Category.Create("Extras"),
+        Category.Create("Mercado")
     ];
 
     [Fact]

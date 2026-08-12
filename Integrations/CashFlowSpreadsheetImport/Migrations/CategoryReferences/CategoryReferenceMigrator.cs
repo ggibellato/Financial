@@ -99,20 +99,12 @@ public static class CategoryReferenceMigrator
     }
 
     private static List<Category> ResolveCategories(
-        JsonElement root, JsonSerializerOptions unresolvedOptions, CategoryReferenceMigrationSummary summary)
-    {
-        if (root.TryGetProperty("Categories", out var element) && element.ValueKind == JsonValueKind.Array)
-        {
-            return DeserializeCollection<Category>(root, "Categories", unresolvedOptions);
-        }
-
-        var bootstrapData = CashFlowData.Create();
-        Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Categories.CategoryMigrator.Migrate(bootstrapData);
-        var bootstrapped = bootstrapData.Categories.ToList();
-        summary.SetCategoriesBootstrappedCount(bootstrapped.Count);
-
-        return bootstrapped;
-    }
+        JsonElement root, JsonSerializerOptions unresolvedOptions, CategoryReferenceMigrationSummary summary) =>
+        ResolveOrBootstrap(
+            root, "Categories", unresolvedOptions,
+            data => Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Categories.CategoryMigrator.Migrate(data),
+            data => data.Categories,
+            summary.SetCategoriesBootstrappedCount);
 
     private static void MigrateExpenses(
         JsonElement root,

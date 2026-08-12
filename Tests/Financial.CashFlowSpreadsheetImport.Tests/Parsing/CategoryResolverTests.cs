@@ -1,15 +1,15 @@
+using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 using FluentAssertions;
-using CategoryEntity = Financial.CashFlow.Domain.Entities.Category;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Parsing;
 
 public class CategoryResolverTests
 {
-    private static readonly Dictionary<string, CategoryEntity> CategoriesByName = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, Category> CategoriesByName = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["Mercado"] = CategoryEntity.Create("Mercado"),
-        ["Casa"] = CategoryEntity.Create("Casa"),
+        ["Mercado"] = Category.Create("Mercado"),
+        ["Casa"] = Category.Create("Casa"),
     };
 
     [Fact]

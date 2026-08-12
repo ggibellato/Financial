@@ -107,20 +107,12 @@ public static class CreditCardReferenceMigrator
     }
 
     private static List<CreditCard> ResolveCreditCards(
-        JsonElement root, JsonSerializerOptions unresolvedOptions, CreditCardReferenceMigrationSummary summary)
-    {
-        if (root.TryGetProperty("CreditCards", out var element) && element.ValueKind == JsonValueKind.Array)
-        {
-            return DeserializeCollection<CreditCard>(root, "CreditCards", unresolvedOptions);
-        }
-
-        var bootstrapData = CashFlowData.Create();
-        Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.CreditCards.CreditCardMigrator.Migrate(bootstrapData);
-        var bootstrapped = bootstrapData.CreditCards.ToList();
-        summary.SetCardsBootstrappedCount(bootstrapped.Count);
-
-        return bootstrapped;
-    }
+        JsonElement root, JsonSerializerOptions unresolvedOptions, CreditCardReferenceMigrationSummary summary) =>
+        ResolveOrBootstrap(
+            root, "CreditCards", unresolvedOptions,
+            data => Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.CreditCards.CreditCardMigrator.Migrate(data),
+            data => data.CreditCards,
+            summary.SetCardsBootstrappedCount);
 
     private static void MigrateExpenses(
         JsonElement root,

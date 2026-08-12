@@ -4,7 +4,6 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.CashFlow.Domain.ValueObjects;
-using Category = Financial.CashFlow.Domain.Entities.Category;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -303,19 +302,21 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     {
         var incomeAverages = GetHistoricIncomeAverageFromYear(year);
         var categoryAverages = GetHistoricCategoriesAverageFromYear(year);
-        categoryAverages = AddMissingCategories(categoryAverages);
-        AddCategoryTotal(incomeAverages, categoryAverages);
+        var categories = _repository.GetCategories().ToList();
+        categoryAverages = AddMissingCategories(categoryAverages, categories);
+        AddCategoryTotal(incomeAverages, categoryAverages, categories);
         AddIncomeToFinalResult(incomeAverages, categoryAverages);
         return [.. categoryAverages];
     }
 
-    private IList<CategoryAnnualGroupValueDTO> AddMissingCategories(IList<CategoryAnnualGroupValueDTO> categoryAverages)
+    private static IList<CategoryAnnualGroupValueDTO> AddMissingCategories(
+        IList<CategoryAnnualGroupValueDTO> categoryAverages, IReadOnlyList<Category> categories)
     {
         var result = new List<CategoryAnnualGroupValueDTO>();
 
         // Preserves the enum's old declaration order, since CategoryMigrator seeds the 14
         // categories in that exact same order and this list reflects the seeded order as-is.
-        var orderedCategoryNames = _repository.GetCategories().Select(c => c.Name).ToList();
+        var orderedCategoryNames = categories.Select(c => c.Name).ToList();
         var orderIndex = orderedCategoryNames
             .Select((name, index) => (name, index))
             .ToDictionary(x => x.name, x => x.index, StringComparer.OrdinalIgnoreCase);
@@ -341,16 +342,15 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         return result;
     }
 
-    private void AddCategoryTotal(IList<IncomeAnnualAverageDTO> incomeAverages, IList<CategoryAnnualGroupValueDTO> categoryAverages)
+    private static void AddCategoryTotal(
+        IList<IncomeAnnualAverageDTO> incomeAverages, IList<CategoryAnnualGroupValueDTO> categoryAverages, IReadOnlyList<Category> categories)
     {
-        var investmentCategoryName = _repository.GetCategories().FirstOrDefault(c => c.IsInvestment)?.Name;
+        var investmentCategoryName = categories.FirstOrDefault(c => c.IsInvestment)?.Name;
 
         foreach (var yearAverage in categoryAverages)
         {
             var totalCategory = yearAverage.AnnualAverages.Sum(c => c.Value);
-            var investmentCategory = investmentCategoryName is null
-                ? 0m
-                : yearAverage.AnnualAverages.FirstOrDefault(c => c.Category == investmentCategoryName)?.Value ?? 0m;
+            var investmentCategory = yearAverage.AnnualAverages.FirstOrDefault(c => c.Category == investmentCategoryName)?.Value ?? 0m;
 
             var salaryAfterTaxes = incomeAverages.FirstOrDefault(i => i.Year == yearAverage.Year)?.SalaryAfterTaxesAverage ?? 0m;
 

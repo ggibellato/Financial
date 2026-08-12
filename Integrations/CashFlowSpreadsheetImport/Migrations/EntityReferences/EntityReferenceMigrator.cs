@@ -195,29 +195,17 @@ public static class EntityReferenceMigrator
         }
     }
 
-    private static List<CreditCardEntity> ResolveCreditCards(JsonElement root, JsonSerializerOptions unresolvedOptions)
-    {
-        if (root.TryGetProperty("CreditCards", out var element) && element.ValueKind == JsonValueKind.Array)
-        {
-            return DeserializeCollection<CreditCardEntity>(root, "CreditCards", unresolvedOptions);
-        }
+    private static List<CreditCardEntity> ResolveCreditCards(JsonElement root, JsonSerializerOptions unresolvedOptions) =>
+        ResolveOrBootstrap(
+            root, "CreditCards", unresolvedOptions,
+            data => Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.CreditCards.CreditCardMigrator.Migrate(data),
+            data => data.CreditCards);
 
-        var bootstrapData = CashFlowData.Create();
-        Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.CreditCards.CreditCardMigrator.Migrate(bootstrapData);
-        return bootstrapData.CreditCards.ToList();
-    }
-
-    private static List<Category> ResolveCategories(JsonElement root, JsonSerializerOptions unresolvedOptions)
-    {
-        if (root.TryGetProperty("Categories", out var element) && element.ValueKind == JsonValueKind.Array)
-        {
-            return DeserializeCollection<Category>(root, "Categories", unresolvedOptions);
-        }
-
-        var bootstrapData = CashFlowData.Create();
-        Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Categories.CategoryMigrator.Migrate(bootstrapData);
-        return bootstrapData.Categories.ToList();
-    }
+    private static List<Category> ResolveCategories(JsonElement root, JsonSerializerOptions unresolvedOptions) =>
+        ResolveOrBootstrap(
+            root, "Categories", unresolvedOptions,
+            data => Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Categories.CategoryMigrator.Migrate(data),
+            data => data.Categories);
 
     private static void MigrateExpenses(
         JsonElement root,
