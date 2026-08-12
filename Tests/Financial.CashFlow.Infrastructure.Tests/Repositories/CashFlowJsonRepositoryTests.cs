@@ -198,6 +198,24 @@ public class CashFlowJsonRepositoryTests
         }
     }
 
+    [Fact]
+    public void GetCategories_ReturnsCategoriesFromTheUnderlyingData()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var data = CashFlowData.Create();
+            data.AddCategory(Domain.Entities.Category.Create("Mercado"));
+            var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
+
+            repository.GetCategories().Should().ContainSingle().Which.Name.Should().Be("Mercado");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
 
     [Fact]
     public void GetInvestmentAccounts_ReturnsInvestmentAccountsFromTheUnderlyingData()

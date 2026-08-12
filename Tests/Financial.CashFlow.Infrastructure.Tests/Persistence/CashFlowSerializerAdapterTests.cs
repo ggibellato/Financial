@@ -6,6 +6,7 @@ using FluentAssertions;
 using FluentAssertions.Execution;
 using System.Text.Json;
 using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
+using CategoryEntity = Financial.CashFlow.Domain.Entities.Category;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
@@ -18,6 +19,7 @@ public class CashFlowSerializerAdapterTests
         var original = CashFlowData.Create();
         var reserveBucket = ReserveBucket.Create("Investimento", 33.33m);
         var creditCard = CreditCard.Create("Barclays Platinum Visa 8003", isActive: true);
+        var category = CategoryEntity.Create("Investimento", isInvestment: true, isTithe: false, isActive: true);
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
         var destinationBank = Bank.Create("Trading212", roundUpEnabled: true);
@@ -42,6 +44,7 @@ public class CashFlowSerializerAdapterTests
 
         original.AddReserveBucket(reserveBucket);
         original.AddCreditCard(creditCard);
+        original.AddCategory(category);
         original.AddExpense(expense);
         original.AddReserveMovement(reserveMovement);
         original.AddCardStatement(cardStatement);
@@ -125,6 +128,12 @@ public class CashFlowSerializerAdapterTests
             resultCreditCard.Id.Should().Be(creditCard.Id);
             resultCreditCard.Name.Should().Be(creditCard.Name);
             resultCreditCard.IsActive.Should().Be(creditCard.IsActive);
+            var resultCategory = result.Categories.Should().ContainSingle().Which;
+            resultCategory.Id.Should().Be(category.Id);
+            resultCategory.Name.Should().Be(category.Name);
+            resultCategory.Active.Should().Be(category.Active);
+            resultCategory.IsInvestment.Should().Be(category.IsInvestment);
+            resultCategory.IsTithe.Should().Be(category.IsTithe);
 
             // Reference-equality: every reference-typed property must be the exact same instance
             // as the matching entry in its owning collection, not merely an equivalent copy.
@@ -285,6 +294,7 @@ public class CashFlowSerializerAdapterTests
         result.IncomeSources.Should().BeEmpty();
         result.ReserveBuckets.Should().BeEmpty();
         result.CreditCards.Should().BeEmpty();
+        result.Categories.Should().BeEmpty();
         result.Incomes.Should().BeEmpty();
         result.Transfers.Should().BeEmpty();
         result.BalanceAdjustments.Should().BeEmpty();
