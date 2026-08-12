@@ -242,13 +242,13 @@ graph TD
 - [ ] CreditCard is persisted via a reference converter (`CreditCardId` wire format), consistent with Bank/IncomeSource — deferred to F02, which is when a property first references CreditCard by Id (mirrors ReserveBucketReferenceConverter landing in P28-F02, not P28-F01); will be checked off there
 
 ### F02. Migrate Expense & CardStatement to CreditCard References
-- [ ] `Expense.CardTag` is renamed to `Expense.CreditCard` and `CardStatement.Card` is renamed to `CardStatement.CreditCard`; both are exposed at the API boundary as `CreditCardId`, with no remaining `CardTag`/`Card` string fields on these DTOs
-- [ ] Creating a new expense with an active card's Id succeeds and stores the reference correctly
-- [ ] Creating a new expense with an inactive card's Id is rejected with a clear error
-- [ ] Creating a new expense with an unknown card Id is rejected with a clear error
-- [ ] CardStatement auto-generation creates statements only for active cards
-- [ ] Existing Expense.CardTag and CardStatement.Card values are migrated from enum to CreditCard Id references with no data loss
-- [ ] Historical expenses referencing a card later deactivated remain intact and correctly linked
+- [x] `Expense.CardTag` is renamed to `Expense.CreditCard` and `CardStatement.Card` is renamed to `CardStatement.CreditCard`; both are exposed at the API boundary as `CreditCardId`, with no remaining `CardTag`/`Card` string fields on these DTOs
+- [x] Creating a new expense with an active card's Id succeeds and stores the reference correctly
+- [x] Creating a new expense with an inactive card's Id is rejected with a clear error
+- [x] Creating a new expense with an unknown card Id is rejected with a clear error
+- [x] CardStatement auto-generation creates statements only for active cards
+- [x] Existing Expense.CardTag and CardStatement.Card values are migrated from enum to CreditCard Id references with no data loss
+- [x] Historical expenses referencing a card later deactivated remain intact and correctly linked
 
 ### F03. Read & Update API Endpoints
 - [ ] GET /credit-cards returns all seeded cards including inactive ones
@@ -272,7 +272,7 @@ graph TD
 - [ ] Imported expenses store the correct CreditCard Id reference, matching the entity resolved by name
 
 ### Cross-Feature Integration
-- [ ] CreditCard entities seeded in F01 are correctly resolved and referenced by Expense/CardStatement records after F02's migration
+- [x] CreditCard entities seeded in F01 are correctly resolved and referenced by Expense/CardStatement records after F02's migration
 - [ ] CreditCard list and update endpoints in F03 correctly reflect changes made to entities from F01/F02 (e.g., an update via API is immediately visible in a subsequent GET)
 - [ ] Web UI (F04) correctly consumes F02's Expense CardTag contract and F03's API to build its picklist and editing controls
 - [ ] WPF UI (F05) correctly consumes F02's Expense CardTag contract and F03's API to build its picklist and editing controls
