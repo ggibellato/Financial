@@ -19,8 +19,9 @@ const SEED_YEAR = new Date().getFullYear() - 2
 const SEED_MONTHLY_VALUE = 100
 const EXPECTED_MERCADO_AVERAGE = '25.00' // (100 * 3) / 12 months
 
-// Barclays' Id from Tests/Financial.Api.Tests/TestData/data-cashflow.test.json
+// Barclays' Id and Mercado category's Id from Tests/Financial.Api.Tests/TestData/data-cashflow.test.json
 const BARCLAYS_BANK_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000001'
+const MERCADO_CATEGORY_ID = '8f3b1c1a-2e3a-4b1a-9a7f-600000000008'
 
 async function seedMercadoExpenses() {
   for (const month of ['01', '02', '03']) {
@@ -31,9 +32,9 @@ async function seedMercadoExpenses() {
         date: `${SEED_YEAR}-${month}-05`,
         description: 'Smoke test seed',
         value: SEED_MONTHLY_VALUE,
-        category: 'Mercado',
+        categoryId: MERCADO_CATEGORY_ID,
         paymentSourceBankId: BARCLAYS_BANK_ID,
-        cardTag: null,
+        creditCardId: null,
       }),
     })
     if (!response.ok) {
