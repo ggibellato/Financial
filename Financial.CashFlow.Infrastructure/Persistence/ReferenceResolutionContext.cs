@@ -13,4 +13,5 @@ public sealed class ReferenceResolutionContext
     public Dictionary<Guid, InvestmentAccount> InvestmentAccounts { get; } = new();
     public Dictionary<Guid, ReserveBucket> ReserveBuckets { get; } = new();
     public Dictionary<Guid, CreditCard> CreditCards { get; } = new();
+    public Dictionary<Guid, Category> Categories { get; } = new();
 }
