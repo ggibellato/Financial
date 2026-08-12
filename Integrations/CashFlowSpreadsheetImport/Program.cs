@@ -4,6 +4,7 @@ using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.M
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Banks;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.BankOpeningBalance;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.CreditCards;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Categories;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.IncomeSources;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ReserveBuckets;
@@ -127,6 +128,7 @@ var incomeSummary = IncomeMigrator.Migrate(data);
 // entries too, not just what was already on the data file before this run.
 var incomeSourceSummary = IncomeSourceMigrator.Migrate(data);
 var creditCardSummary = CreditCardMigrator.Migrate(data);
+var categorySummary = CategoryMigrator.Migrate(data);
 // Re-run (seeding is idempotent) so the reported summary's movement audit and split-percentage
 // warning reflect the reserve movements ImportReservasSheet just added above.
 var reserveBucketSummary = ReserveBucketMigrator.Migrate(data);
@@ -158,6 +160,7 @@ Console.WriteLine(bankOpeningBalanceSummary.Render());
 Console.WriteLine(incomeSummary.Render());
 Console.WriteLine(incomeSourceSummary.Render());
 Console.WriteLine(creditCardSummary.Render());
+Console.WriteLine(categorySummary.Render());
 Console.WriteLine(reserveBucketSummary.Render());
 Console.WriteLine(expenseChargeDateSummary.Render());
 Console.WriteLine(investmentAccountSummary.Render());
