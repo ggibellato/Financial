@@ -5,6 +5,12 @@ namespace Financial.CashFlowSpreadsheetImport.Tests.Parsing;
 
 public class ColumnResolverTests
 {
+    private static readonly string[] CategoryNames =
+    [
+        "Ariana", "Carro", "Casa", "Estudo", "Extras", "Familia", "Gleison",
+        "Mercado", "Samuel", "Saude", "Viagem", "Dizimo", "Investimento", "Reserva",
+    ];
+
     [Fact]
     public void IsCategoryColumn_2017Era_DescriptionInB_CategoryInC_IdentifiesCCorrectly()
     {
@@ -12,8 +18,8 @@ public class ColumnResolverTests
         var columnB = new[] { "Lidl UK", "WY&SF LTD", "Tesco" };
         var columnC = new[] { "Mercado", "Extras", "Mercado" };
 
-        ColumnResolver.IsCategoryColumn(columnC, columnB).Should().BeTrue();
-        ColumnResolver.IsCategoryColumn(columnB, columnC).Should().BeFalse();
+        ColumnResolver.IsCategoryColumn(columnC, columnB, CategoryNames).Should().BeTrue();
+        ColumnResolver.IsCategoryColumn(columnB, columnC, CategoryNames).Should().BeFalse();
     }
 
     [Fact]
@@ -23,8 +29,8 @@ public class ColumnResolverTests
         var columnB = new[] { "ICELAND", "DZ", "GREENWICH LEISURE" };
         var columnC = new[] { "Mercado", "Dizimo", "Samuel" };
 
-        ColumnResolver.IsCategoryColumn(columnC, columnB).Should().BeTrue();
-        ColumnResolver.IsCategoryColumn(columnB, columnC).Should().BeFalse();
+        ColumnResolver.IsCategoryColumn(columnC, columnB, CategoryNames).Should().BeTrue();
+        ColumnResolver.IsCategoryColumn(columnB, columnC, CategoryNames).Should().BeFalse();
     }
 
     [Fact]
@@ -33,6 +39,6 @@ public class ColumnResolverTests
         var columnB = new[] { "Foo", "Bar" };
         var columnC = new[] { "Baz", "Qux" };
 
-        ColumnResolver.IsCategoryColumn(columnB, columnC).Should().BeTrue();
+        ColumnResolver.IsCategoryColumn(columnB, columnC, CategoryNames).Should().BeTrue();
     }
 }
