@@ -282,6 +282,8 @@ internal sealed class StubCreditCardService : ICreditCardService
     public List<CreditCardDTO> CreditCards { get; set; } = [];
 
     public IReadOnlyList<CreditCardDTO> GetCreditCards() => CreditCards;
+
+    public Task<CreditCardDTO> UpdateCreditCardAsync(Guid id, CreditCardUpdateDTO request) => throw new NotImplementedException();
 }
 
 internal sealed class StubReserveService : IReserveService
