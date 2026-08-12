@@ -99,7 +99,8 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000002", "Name": "BarclaysPlatinumVisa6007", "IsActive": true },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000003", "Name": "ChaseMaster4023", "IsActive": true },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000004", "Name": "BaAmex", "IsActive": true },
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000005", "Name": "PaypalCredit", "IsActive": true }
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000005", "Name": "PaypalCredit", "IsActive": true },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000006", "Name": "RetiredTestCard", "IsActive": false }
           ],
           "IncomeSources": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000001", "Name": "Gleison", "IsActive": true, "Group": "Salary" },
