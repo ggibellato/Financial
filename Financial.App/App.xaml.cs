@@ -63,6 +63,7 @@ namespace Financial.Presentation.App
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IBalanceAdjustmentService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ICardStatementService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ICreditCardService>(),
+                        sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ICategoryService>(),
                         msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes));
                     services.AddTransient<MonthlyView>();
                     services.AddTransient<ReservaViewModel>(sp => new ReservaViewModel(

@@ -10,6 +10,7 @@ using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.M
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ReserveBuckets;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ReserveBucketReferences;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.CreditCardReferences;
+using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.CategoryReferences;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.EntityReferences;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ExpenseChargeDate;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
@@ -44,6 +45,7 @@ string? legacyRawJson = null;
 EntityReferenceMigrationSummary? entityReferenceSummary = null;
 ReserveBucketReferenceMigrationSummary? reserveBucketReferenceSummary = null;
 CreditCardReferenceMigrationSummary? creditCardReferenceSummary = null;
+CategoryReferenceMigrationSummary? categoryReferenceSummary = null;
 if (File.Exists(outputPath))
 {
     var backupPath = MigrationBackup.Create(outputPath);
@@ -53,13 +55,14 @@ if (File.Exists(outputPath))
     // declares that property and a normal deserialization silently drops it.
     legacyRawJson = File.ReadAllText(backupPath);
 
-    // All three must run before CashFlowLoader.LoadSync below: the typed deserializer throws on
+    // All four must run before CashFlowLoader.LoadSync below: the typed deserializer throws on
     // a file still carrying any legacy shape, so every rewrite has to happen on the raw file
     // first. Each runs in the order its own reference transition landed, since a file could in
-    // principle need all three rewrites at once (an old file that predates every migration).
+    // principle need all four rewrites at once (an old file that predates every migration).
     entityReferenceSummary = EntityReferenceMigrator.Migrate(outputPath);
     reserveBucketReferenceSummary = ReserveBucketReferenceMigrator.Migrate(outputPath);
     creditCardReferenceSummary = CreditCardReferenceMigrator.Migrate(outputPath);
+    categoryReferenceSummary = CategoryReferenceMigrator.Migrate(outputPath);
 }
 
 var report = new ImportReport();
@@ -154,6 +157,10 @@ if (creditCardReferenceSummary is not null)
 {
     Console.WriteLine(creditCardReferenceSummary.Render());
 }
+if (categoryReferenceSummary is not null)
+{
+    Console.WriteLine(categoryReferenceSummary.Render());
+}
 Console.WriteLine(report.Render());
 Console.WriteLine(bankSummary.Render());
 Console.WriteLine(bankOpeningBalanceSummary.Render());
@@ -213,7 +220,7 @@ static void ImportMonthlyExpenseSheets(XLWorkbook workbook, CashFlowData data, I
 
     foreach (var (sheet, _, year, month) in monthlySheets)
     {
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, year, month, today, report, data.Banks, data.CreditCards);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, year, month, today, report, data.Banks, data.CreditCards, data.Categories);
         foreach (var expense in expenses)
         {
             data.AddExpense(expense);
