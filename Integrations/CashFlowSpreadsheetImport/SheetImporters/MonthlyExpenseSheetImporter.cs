@@ -1,6 +1,5 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
 using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
@@ -52,11 +51,11 @@ public static class MonthlyExpenseSheetImporter
         IReadOnlyCollection<Bank> banks, IReadOnlyCollection<CreditCardEntity> creditCards,
         IReadOnlyCollection<CategoryEntity> categories)
     {
-        var (descriptionColumn, categoryColumn) = ResolveColumns(sheet);
-        var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
-        var expenses = new List<Expense>();
         var cardsByName = creditCards.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
         var categoriesByName = categories.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
+        var (descriptionColumn, categoryColumn) = ResolveColumns(sheet, categoriesByName.Keys);
+        var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
+        var expenses = new List<Expense>();
 
         for (var row = FirstDataRow; row <= lastRow; row++)
         {
@@ -121,7 +120,7 @@ public static class MonthlyExpenseSheetImporter
         return expenses;
     }
 
-    private static (int DescriptionColumn, int CategoryColumn) ResolveColumns(IXLWorksheet sheet)
+    private static (int DescriptionColumn, int CategoryColumn) ResolveColumns(IXLWorksheet sheet, IReadOnlyCollection<string> categoryNames)
     {
         const int ColumnB = 2;
         const int ColumnC = 3;
@@ -135,7 +134,7 @@ public static class MonthlyExpenseSheetImporter
             columnCValues.Add(sheet.Cell(row, ColumnC).GetString());
         }
 
-        return ColumnResolver.IsCategoryColumn(columnCValues, columnBValues)
+        return ColumnResolver.IsCategoryColumn(columnCValues, columnBValues, categoryNames)
             ? (ColumnB, ColumnC)
             : (ColumnC, ColumnB);
     }
