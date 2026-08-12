@@ -54,5 +54,46 @@ namespace Financial.CashFlow.Domain.Tests.Entities
 
             act.Should().Throw<ArgumentException>();
         }
+
+        [Fact]
+        public void UpdateDetails_SetsNextInvoiceDueDateAndIsActive()
+        {
+            var card = CreditCard.Create("BaAmex", isActive: true);
+            var dueDate = new DateOnly(2026, 9, 5);
+
+            card.UpdateDetails(dueDate, isActive: false);
+
+            using (new AssertionScope())
+            {
+                card.NextInvoiceDueDate.Should().Be(dueDate);
+                card.IsActive.Should().BeFalse();
+            }
+        }
+
+        [Fact]
+        public void UpdateDetails_NullDueDate_ClearsIt()
+        {
+            var card = CreditCard.Create("BaAmex", isActive: true);
+            card.UpdateDetails(new DateOnly(2026, 9, 5), isActive: true);
+
+            card.UpdateDetails(null, isActive: true);
+
+            card.NextInvoiceDueDate.Should().BeNull();
+        }
+
+        [Fact]
+        public void UpdateDetails_DoesNotChangeIdOrName()
+        {
+            var card = CreditCard.Create("BaAmex", isActive: true);
+            var originalId = card.Id;
+
+            card.UpdateDetails(new DateOnly(2026, 9, 5), isActive: false);
+
+            using (new AssertionScope())
+            {
+                card.Id.Should().Be(originalId);
+                card.Name.Should().Be("BaAmex");
+            }
+        }
     }
 }

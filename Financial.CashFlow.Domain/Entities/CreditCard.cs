@@ -25,5 +25,11 @@ namespace Financial.CashFlow.Domain.Entities
                 IsActive = isActive
             };
         }
+
+        public void UpdateDetails(DateOnly? nextInvoiceDueDate, bool isActive)
+        {
+            NextInvoiceDueDate = nextInvoiceDueDate;
+            IsActive = isActive;
+        }
     }
 }
