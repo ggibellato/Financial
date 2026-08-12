@@ -225,6 +225,13 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
+    public void CategoriesController_NullService_Throws()
+    {
+        Action act = () => new CategoriesController(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
     public void ExpensesController_NullService_Throws()
     {
         Action act = () => new ExpensesController(null!);
