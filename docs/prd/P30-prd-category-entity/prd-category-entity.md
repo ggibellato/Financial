@@ -258,14 +258,14 @@ graph TD
 - [x] Selecting a category submits its Id, not its name
 
 ### F06. Spreadsheet Import Category Resolution
-- [ ] Spreadsheet import resolves each row's category label by name against seeded Category entities, including existing typo-tolerance mappings
-- [ ] A row whose inferred category label has no matching seeded entity is flagged and skipped, consistent with today's behavior
-- [ ] Imported expenses store the correct Category Id reference matching the entity resolved by name
-- [ ] The one-time `EntityReferenceMigrator` aborts with a clear error if a legacy `Expense.Category` enum value has no matching seeded Category name
+- [x] Spreadsheet import resolves each row's category label by name against seeded Category entities, including existing typo-tolerance mappings
+- [x] A row whose inferred category label has no matching seeded entity is flagged and skipped, consistent with today's behavior
+- [x] Imported expenses store the correct Category Id reference matching the entity resolved by name
+- [ ] The one-time `EntityReferenceMigrator` aborts with a clear error if a legacy `Expense.Category` enum value has no matching seeded Category name (verified during F06: `EntityReferenceMigrator` already flags-and-skips an unresolved legacy category name, matching its existing PaymentSource/CardTag policy, rather than aborting — a deliberate F02 decision, not a gap; left unchecked because the literal "aborts" behavior described here does not match the shipped, tested design)
 
 ### Cross-Feature Integration
 - [x] Category entities seeded in F01 are correctly resolved and referenced by Expense records after F02's migration
 - [x] Category list endpoint in F03 correctly reflects the entities seeded in F01, including their Active/IsInvestment/IsTithe flags
 - [x] Web UI (F04) correctly consumes F02's Expense CategoryId contract and F03's API to build its active-only picklist
 - [x] WPF UI (F05) correctly consumes F02's Expense CategoryId contract and F03's API to build its active-only picklist
-- [ ] Spreadsheet import (F06) correctly resolves categories using F01's seeded entities and stores references consistent with F02's entity-reference model
+- [x] Spreadsheet import (F06) correctly resolves categories using F01's seeded entities and stores references consistent with F02's entity-reference model
