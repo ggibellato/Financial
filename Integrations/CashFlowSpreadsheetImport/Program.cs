@@ -70,8 +70,10 @@ var serializer = new CashFlowSerializerAdapter();
 var storage = new LocalJsonStorage(outputPath);
 var today = DateOnly.FromDateTime(DateTime.Now);
 
-// Loaded once up front regardless of mode: this is also where Banks/Incomes/CardStatements
-// come from for a full rebuild below, since the spreadsheet never produces them itself.
+// Loaded once up front regardless of mode: this is also where Banks/CardStatements come from
+// for a full rebuild below, since the spreadsheet never produces those itself (Incomes are
+// carried over here too, but also get backfilled from the spreadsheet separately below via
+// IncomeMigrator/IncomeBackfillImporter).
 var existingData = CashFlowLoader.LoadSync(storage, serializer);
 var data = mensaisOnly ? existingData : CashFlowData.Create();
 
@@ -136,7 +138,7 @@ else
 // Always run, in both modes: every migration below is idempotent, so re-running is always safe.
 var bankSummary = BankMigrator.Migrate(data);
 var bankOpeningBalanceSummary = BankOpeningBalanceMigrator.Migrate(data, today);
-var incomeSummary = IncomeMigrator.Migrate(data);
+var incomeSummary = IncomeMigrator.Migrate(data, workbook);
 // Runs after IncomeMigrator so its audit of Income.IncomeSource values covers backfilled
 // entries too, not just what was already on the data file before this run.
 var incomeSourceSummary = IncomeSourceMigrator.Migrate(data);
