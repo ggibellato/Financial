@@ -746,6 +746,27 @@ describe('MonthlyPage', () => {
     )
   })
 
+  it('deactivating a card via the Credit Card tab removes it from the expense form dropdown', async () => {
+    getCreditCardsMock.mockReset()
+    getCreditCardsMock.mockResolvedValueOnce(CREDIT_CARDS)
+    getCreditCardsMock.mockResolvedValueOnce([CREDIT_CARDS[0], { ...CREDIT_CARDS[1], isActive: false }])
+    updateCreditCardMock.mockResolvedValue({ ...CREDIT_CARDS[1], isActive: false })
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Card' }))
+
+    await waitFor(() => expect(screen.getByLabelText('Active for ChaseMaster4023')).toBeInTheDocument())
+    fireEvent.click(screen.getByLabelText('Active for ChaseMaster4023'))
+
+    await waitFor(() =>
+      expect(updateCreditCardMock).toHaveBeenCalledWith('card-chase', { nextInvoiceDueDate: null, isActive: false }),
+    )
+    await waitFor(() => expect(getCreditCardsMock).toHaveBeenCalledTimes(2))
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Expense' }))
+    await waitFor(() => expect(screen.getByRole('option', { name: 'BaAmex' })).toBeInTheDocument())
+    expect(screen.queryByRole('option', { name: 'ChaseMaster4023' })).not.toBeInTheDocument()
+  })
+
   it('creates a bank expense from the Expense tab with a null card tag', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSES[0], id: 'e2' })
     render(<MonthlyPage />)
