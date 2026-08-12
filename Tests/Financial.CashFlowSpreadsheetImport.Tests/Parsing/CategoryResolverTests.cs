@@ -1,33 +1,39 @@
-using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
 using FluentAssertions;
+using CategoryEntity = Financial.CashFlow.Domain.Entities.Category;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Parsing;
 
 public class CategoryResolverTests
 {
+    private static readonly Dictionary<string, CategoryEntity> CategoriesByName = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Mercado"] = CategoryEntity.Create("Mercado"),
+        ["Casa"] = CategoryEntity.Create("Casa"),
+    };
+
     [Fact]
     public void TryResolve_KnownCategoryName_ReturnsTrue()
     {
-        var result = CategoryResolver.TryResolve("Mercado", out var category);
+        var result = CategoryResolver.TryResolve("Mercado", CategoriesByName, out var category);
 
         result.Should().BeTrue();
-        category.Should().Be(Category.Mercado);
+        category.Should().BeSameAs(CategoriesByName["Mercado"]);
     }
 
     [Fact]
     public void TryResolve_KnownHistoricalTypo_Casas_ResolvesToCasa()
     {
-        var result = CategoryResolver.TryResolve("Casas", out var category);
+        var result = CategoryResolver.TryResolve("Casas", CategoriesByName, out var category);
 
         result.Should().BeTrue();
-        category.Should().Be(Category.Casa);
+        category.Should().BeSameAs(CategoriesByName["Casa"]);
     }
 
     [Fact]
     public void TryResolve_UnknownLabel_ReturnsFalse()
     {
-        var result = CategoryResolver.TryResolve("NotACategory", out _);
+        var result = CategoryResolver.TryResolve("NotACategory", CategoriesByName, out _);
 
         result.Should().BeFalse();
     }
@@ -35,7 +41,7 @@ public class CategoryResolverTests
     [Fact]
     public void TryResolve_BlankLabel_ReturnsFalse()
     {
-        var result = CategoryResolver.TryResolve(null, out _);
+        var result = CategoryResolver.TryResolve(null, CategoriesByName, out _);
 
         result.Should().BeFalse();
     }
