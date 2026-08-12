@@ -87,6 +87,24 @@ public class MonthlyViewModelCreditCardsTests
     }
 
     [Fact]
+    public async Task UpdateCreditCardAsync_ValuesUnchanged_DoesNotCallServiceOrRefresh()
+    {
+        // Regression test: the grid's DatePicker/CheckBox bind one-way and call this method on
+        // their change events, but WPF also raises those same events when RefreshAsync's
+        // ReplaceAll(CreditCards, ...) rebinds a row to its own current value - not just on a
+        // real user edit. Without a guard, that echo would call the update service, which
+        // refreshes, which rebinds the row again, forever (the reported "Credit Card tab keeps
+        // reloading" bug). Calling with the card's own current values must be a no-op.
+        var (viewModel, creditCards) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        var card = viewModel.CreditCards.Single(c => c.Name == "BaAmex");
+
+        await viewModel.UpdateCreditCardAsync(card, card.NextInvoiceDueDate, card.IsActive);
+
+        creditCards.LastUpdateRequest.Should().BeNull();
+    }
+
+    [Fact]
     public async Task DeactivatingACard_RemovesItFromActiveCreditCards_OnNextRefresh()
     {
         var (viewModel, _) = CreateViewModel();
