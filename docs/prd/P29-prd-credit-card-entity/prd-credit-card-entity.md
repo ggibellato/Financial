@@ -257,9 +257,9 @@ graph TD
 - [x] PUT /credit-cards/{id} with an invalid due date format returns 400 with a field-level error
 
 ### F04. Web: Dynamic Picklist & Due-Date Editing
-- [ ] Expense form card dropdown shows only active cards fetched from the API
-- [ ] Credit Card tab allows editing due date and active flag per card
-- [ ] Deactivating a card via the UI removes it from the expense form dropdown after refresh
+- [x] Expense form card dropdown shows only active cards fetched from the API
+- [x] Credit Card tab allows editing due date and active flag per card
+- [x] Deactivating a card via the UI removes it from the expense form dropdown after refresh
 
 ### F05. WPF: Dynamic Picklist & Due-Date Editing
 - [ ] WPF expense entry card dropdown shows only active cards fetched from the API
@@ -274,6 +274,6 @@ graph TD
 ### Cross-Feature Integration
 - [x] CreditCard entities seeded in F01 are correctly resolved and referenced by Expense/CardStatement records after F02's migration
 - [x] CreditCard list and update endpoints in F03 correctly reflect changes made to entities from F01/F02 (e.g., an update via API is immediately visible in a subsequent GET)
-- [ ] Web UI (F04) correctly consumes F02's Expense CardTag contract and F03's API to build its picklist and editing controls
+- [x] Web UI (F04) correctly consumes F02's Expense CardTag contract and F03's API to build its picklist and editing controls
 - [ ] WPF UI (F05) correctly consumes F02's Expense CardTag contract and F03's API to build its picklist and editing controls
 - [ ] Spreadsheet import (F06) correctly resolves cards using F01's seeded entities and stores references consistent with F02's entity-reference model
