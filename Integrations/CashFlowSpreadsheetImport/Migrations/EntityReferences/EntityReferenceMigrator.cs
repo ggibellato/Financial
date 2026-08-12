@@ -207,22 +207,6 @@ public static class EntityReferenceMigrator
             data => Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Categories.CategoryMigrator.Migrate(data),
             data => data.Categories);
 
-    /// <summary>Reads a collection if the legacy file already has it, otherwise seeds it via the
-    /// entity's own migrator (this file predates that entity's seed migration).</summary>
-    private static List<T> ResolveOrBootstrap<T>(
-        JsonElement root, string propertyName, JsonSerializerOptions unresolvedOptions,
-        Action<CashFlowData> bootstrap, Func<CashFlowData, IEnumerable<T>> selectSeeded)
-    {
-        if (root.TryGetProperty(propertyName, out var element) && element.ValueKind == JsonValueKind.Array)
-        {
-            return DeserializeCollection<T>(root, propertyName, unresolvedOptions);
-        }
-
-        var bootstrapData = CashFlowData.Create();
-        bootstrap(bootstrapData);
-        return selectSeeded(bootstrapData).ToList();
-    }
-
     private static void MigrateExpenses(
         JsonElement root,
         IReadOnlyDictionary<string, Bank> banksByName,
