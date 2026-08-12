@@ -1,39 +1,22 @@
-import type { BankDto, CreditCardDto } from '../api/types'
+import type { BankDto, CategoryDto, CreditCardDto } from '../api/types'
 import type { PaymentMode } from '../hooks/useMonthly'
 
 export type ExpenseFormField =
   | 'date'
   | 'description'
   | 'value'
-  | 'category'
+  | 'categoryId'
   | 'paymentSource'
   | 'creditCardId'
   | 'invoiceDate'
   | 'roundUpAmount'
-
-const CATEGORIES = [
-  'Ariana',
-  'Carro',
-  'Casa',
-  'Estudo',
-  'Extras',
-  'Familia',
-  'Gleison',
-  'Mercado',
-  'Samuel',
-  'Saude',
-  'Viagem',
-  'Dizimo',
-  'Investimento',
-  'Reserva',
-]
 
 interface ExpenseFormProps {
   isEditing: boolean
   date: string
   description: string
   value: string
-  category: string
+  categoryId: string
   paymentSource: string
   creditCardId: string
   creditCardName: string
@@ -41,6 +24,7 @@ interface ExpenseFormProps {
   roundUpAmount: string
   paymentMode: PaymentMode
   banks: BankDto[]
+  categories: CategoryDto[]
   creditCards: CreditCardDto[]
   isSettled: boolean
   isSaving: boolean
@@ -55,7 +39,7 @@ export default function ExpenseForm({
   date,
   description,
   value,
-  category,
+  categoryId,
   paymentSource,
   creditCardId,
   creditCardName,
@@ -63,6 +47,7 @@ export default function ExpenseForm({
   roundUpAmount,
   paymentMode,
   banks,
+  categories,
   creditCards,
   isSettled,
   isSaving,
@@ -100,12 +85,12 @@ export default function ExpenseForm({
           <label htmlFor="expense-category">Category</label>
           <select
             id="expense-category"
-            value={category}
-            onChange={(e) => onFieldChange('category', e.target.value)}
+            value={categoryId}
+            onChange={(e) => onFieldChange('categoryId', e.target.value)}
           >
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
               </option>
             ))}
           </select>
