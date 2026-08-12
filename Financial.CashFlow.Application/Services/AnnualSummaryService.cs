@@ -4,7 +4,7 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.CashFlow.Domain.ValueObjects;
-using Category = Financial.CashFlow.Domain.Enums.Category;
+using Category = Financial.CashFlow.Domain.Entities.Category;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -42,7 +42,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         categorySeries
             .Select(c => new CategoryAnnualTotalDTO
             {
-                Category = c.Category.ToString(),
+                Category = c.Category.Name,
                 MonthlyTotals = c.Display.ToArray(),
                 AnnualTotal = c.Display.Sum(),
                 Average = c.ForAverage.Average(monthsElapsed, AverageDecimalPlaces)
@@ -55,7 +55,8 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     /// in the table), while <c>ForAverage</c> excludes anything dated in the current calendar
     /// month - mirroring <see cref="GetHistoricCategoriesAverageFromYear"/>'s query-level cutoff -
     /// so a partially-elapsed month never inflates the numerator an "Average" figure divides by
-    /// <see cref="NumberOfMonthsForAverage"/> completed months.
+    /// <see cref="NumberOfMonthsForAverage"/> completed months. Iterates every seeded category -
+    /// active and inactive - so a since-deactivated category's historical totals remain complete.
     /// </summary>
     private IReadOnlyList<(Category Category, MonthlySeries Display, MonthlySeries ForAverage)> BuildAllCategorySeriesForYear(int year)
     {
@@ -66,20 +67,20 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         var totalsByCategoryAndMonth = BuildCategoryMonthlyTotals(yearExpenses);
         var totalsForAverageByCategoryAndMonth = BuildCategoryMonthlyTotals(yearExpenses.Where(e => EffectiveDate(e) < currentMonthCutoff));
 
-        return Enum.GetValues<Category>()
+        return _repository.GetCategories()
             .Select(category => (
                 category,
                 Display: MonthlySeries.FromMonthlyValues(Enumerable.Range(1, MonthsInYear)
-                    .Select(month => totalsByCategoryAndMonth.GetValueOrDefault((category, month)))
+                    .Select(month => totalsByCategoryAndMonth.GetValueOrDefault((category.Id, month)))
                     .ToArray()),
                 ForAverage: MonthlySeries.FromMonthlyValues(Enumerable.Range(1, MonthsInYear)
-                    .Select(month => totalsForAverageByCategoryAndMonth.GetValueOrDefault((category, month)))
+                    .Select(month => totalsForAverageByCategoryAndMonth.GetValueOrDefault((category.Id, month)))
                     .ToArray())))
             .ToList();
     }
 
-    private static Dictionary<(Category, int), decimal> BuildCategoryMonthlyTotals(IEnumerable<Expense> expenses) =>
-        expenses.GroupBy(e => (e.Category, EffectiveDate(e).Month)).ToDictionary(g => g.Key, g => g.Sum(e => e.Value));
+    private static Dictionary<(Guid CategoryId, int Month), decimal> BuildCategoryMonthlyTotals(IEnumerable<Expense> expenses) =>
+        expenses.GroupBy(e => (e.Category.Id, EffectiveDate(e).Month)).ToDictionary(g => g.Key, g => g.Sum(e => e.Value));
 
     /// <summary>
     /// The month/year an expense's value counts toward in reporting: an unpaid credit card
@@ -280,7 +281,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         var totalDespesasSeries = categorySeries.Aggregate(MonthlySeries.Zero(), (total, c) => total.Add(c.Display));
         var totalDespesasForAverageSeries = categorySeries.Aggregate(MonthlySeries.Zero(), (total, c) => total.Add(c.ForAverage));
 
-        var investimento = categorySeries.First(c => c.Category == Category.Investimento);
+        var investimento = categorySeries.First(c => c.Category.IsInvestment);
 
         var resultadoSeries = AnnualResultCalculator.ComputeResultado(incomeDisplay.SalaryAfterTaxes, totalDespesasSeries, investimento.Display);
         var resultadoForAverageSeries = AnnualResultCalculator.ComputeResultado(incomeForAverage.SalaryAfterTaxes, totalDespesasForAverageSeries, investimento.ForAverage);
@@ -312,11 +313,16 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     {
         var result = new List<CategoryAnnualGroupValueDTO>();
 
-        var uniqueListOfCategories = Enum.GetValues<Category>().Select(c => c.ToString()).ToList();
+        // Preserves the enum's old declaration order, since CategoryMigrator seeds the 14
+        // categories in that exact same order and this list reflects the seeded order as-is.
+        var orderedCategoryNames = _repository.GetCategories().Select(c => c.Name).ToList();
+        var orderIndex = orderedCategoryNames
+            .Select((name, index) => (name, index))
+            .ToDictionary(x => x.name, x => x.index, StringComparer.OrdinalIgnoreCase);
 
         foreach (var yearAverage in categoryAverages)
         {
-            foreach (var category in uniqueListOfCategories)
+            foreach (var category in orderedCategoryNames)
             {
                 if (!yearAverage.AnnualAverages.Any(c => c.Category == category))
                 {
@@ -329,7 +335,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             }
             result.Add(new CategoryAnnualGroupValueDTO{
                 Year = yearAverage.Year,
-                AnnualAverages = yearAverage.AnnualAverages.OrderBy(c => Enum.Parse<Category>(c.Category)).ToList()
+                AnnualAverages = yearAverage.AnnualAverages.OrderBy(c => orderIndex.GetValueOrDefault(c.Category, int.MaxValue)).ToList()
             });
         }
         return result;
@@ -337,10 +343,14 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
     private void AddCategoryTotal(IList<IncomeAnnualAverageDTO> incomeAverages, IList<CategoryAnnualGroupValueDTO> categoryAverages)
     {
+        var investmentCategoryName = _repository.GetCategories().FirstOrDefault(c => c.IsInvestment)?.Name;
+
         foreach (var yearAverage in categoryAverages)
         {
             var totalCategory = yearAverage.AnnualAverages.Sum(c => c.Value);
-            var investmentCategory = yearAverage.AnnualAverages.FirstOrDefault(c => c.Category == nameof(Category.Investimento))?.Value ?? 0m;
+            var investmentCategory = investmentCategoryName is null
+                ? 0m
+                : yearAverage.AnnualAverages.FirstOrDefault(c => c.Category == investmentCategoryName)?.Value ?? 0m;
 
             var salaryAfterTaxes = incomeAverages.FirstOrDefault(i => i.Year == yearAverage.Year)?.SalaryAfterTaxesAverage ?? 0m;
 
@@ -505,26 +515,31 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             .ToList();
 
         var sumByYearMonthCategory = expenses
-            .GroupBy(e => (EffectiveDate(e).Year, EffectiveDate(e).Month, e.Category))
+            .GroupBy(e => (EffectiveDate(e).Year, EffectiveDate(e).Month, e.Category.Id))
             .ToDictionary(g => g.Key, g => g.Sum(e => e.Value));
+
+        var categoryNameById = expenses
+            .Select(e => e.Category)
+            .DistinctBy(c => c.Id)
+            .ToDictionary(c => c.Id, c => c.Name);
 
         var categoriesByYear = expenses
             .GroupBy(e => EffectiveDate(e).Year)
-            .ToDictionary(g => g.Key, g => g.Select(e => e.Category).Distinct().ToList());
+            .ToDictionary(g => g.Key, g => g.Select(e => e.Category.Id).Distinct().ToList());
 
         var result = categoriesByYear.Select(yearGroup =>
         {
             var monthsElapsed = NumberOfMonthsForAverage(yearGroup.Key);
 
-            var annualAverages = yearGroup.Value.Select(category =>
+            var annualAverages = yearGroup.Value.Select(categoryId =>
             {
                 var series = MonthlySeries.FromMonthlyValues(Enumerable.Range(1, MonthsInYear)
-                    .Select(month => sumByYearMonthCategory.GetValueOrDefault((yearGroup.Key, month, category)))
+                    .Select(month => sumByYearMonthCategory.GetValueOrDefault((yearGroup.Key, month, categoryId)))
                     .ToArray());
 
                 return new CategoryGroupValueDTO
                 {
-                    Category = category.ToString(),
+                    Category = categoryNameById[categoryId],
                     Value = series.Average(monthsElapsed, AverageDecimalPlaces)
                 };
             }).ToList();

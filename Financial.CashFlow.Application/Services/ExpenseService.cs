@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
+using Category = Financial.CashFlow.Domain.Entities.Category;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -23,7 +24,7 @@ public sealed class ExpenseService : IExpenseService
         ArgumentNullException.ThrowIfNull(request);
 
         var (category, paymentSource, creditCard) = ValidateFields(
-            request.Description, request.Value, request.Category, request.PaymentSourceBankId, request.CreditCardId);
+            request.Description, request.Value, request.CategoryId, request.PaymentSourceBankId, request.CreditCardId);
         ValidateRoundUpEligibility(request.RoundUpAmount, paymentSource);
 
         var expense = Expense.Create(request.Date, request.Description, request.Value, category, paymentSource, creditCard, request.InvoiceDate);
@@ -41,7 +42,7 @@ public sealed class ExpenseService : IExpenseService
         var expense = FindExpenseOrThrow(id);
 
         var (category, paymentSource, creditCard) = ValidateFields(
-            request.Description, request.Value, request.Category, request.PaymentSourceBankId, request.CreditCardId);
+            request.Description, request.Value, request.CategoryId, request.PaymentSourceBankId, request.CreditCardId);
         ValidateRoundUpEligibility(request.RoundUpAmount, paymentSource);
 
         expense.UpdateDetails(request.Date, request.Description, request.Value, category, paymentSource, creditCard);
@@ -84,10 +85,10 @@ public sealed class ExpenseService : IExpenseService
     public IReadOnlyList<CategoryTotalDTO> GetCategoryTotalsByMonth(int year, int month) =>
         _repository.GetExpenses()
             .Where(e => CategoryTotalDate(e).Year == year && CategoryTotalDate(e).Month == month)
-            .GroupBy(e => e.Category)
+            .GroupBy(e => e.Category.Name)
             .Select(g => new CategoryTotalDTO
             {
-                Category = g.Key.ToString(),
+                Category = g.Key,
                 TotalValue = g.Sum(e => e.Value)
             })
             .ToList();
@@ -112,8 +113,8 @@ public sealed class ExpenseService : IExpenseService
         _repository.GetExpenses().FirstOrDefault(e => e.Id == id)
             ?? throw new KeyNotFoundException($"Expense '{id}' was not found.");
 
-    private (Financial.CashFlow.Domain.Enums.Category Category, Bank? PaymentSourceBank, CreditCardEntity? CreditCard) ValidateFields(
-        string description, decimal value, string category, Guid? paymentSourceBankId, Guid? creditCardId)
+    private (Category Category, Bank? PaymentSourceBank, CreditCardEntity? CreditCard) ValidateFields(
+        string description, decimal value, Guid categoryId, Guid? paymentSourceBankId, Guid? creditCardId)
     {
         if (string.IsNullOrWhiteSpace(description))
         {
@@ -130,9 +131,14 @@ public sealed class ExpenseService : IExpenseService
             throw new ArgumentException("Value must not be zero.");
         }
 
-        if (!CategoryParser.TryParse(category, out var parsedCategory))
+        if (!CategoryNameResolver.TryResolve(categoryId, _repository.GetCategories(), out var category))
         {
-            throw new ArgumentException($"Category '{category}' is not recognized.");
+            throw new ArgumentException($"Category '{categoryId}' is not recognized.");
+        }
+
+        if (!category!.Active)
+        {
+            throw new ArgumentException($"Category '{category.Name}' is inactive and cannot be used for new entries.");
         }
 
         Bank? parsedPaymentSourceBank = null;
@@ -163,7 +169,7 @@ public sealed class ExpenseService : IExpenseService
             parsedCreditCard = creditCard;
         }
 
-        return (parsedCategory, parsedPaymentSourceBank, parsedCreditCard);
+        return (category, parsedPaymentSourceBank, parsedCreditCard);
     }
 
     private static void ValidateRoundUpEligibility(decimal? roundUpAmount, Bank? paymentSourceBank)
@@ -185,7 +191,8 @@ public sealed class ExpenseService : IExpenseService
         Date = expense.Date,
         Description = expense.Description,
         Value = expense.Value,
-        Category = expense.Category.ToString(),
+        CategoryId = expense.Category.Id,
+        CategoryName = expense.Category.Name,
         PaymentSourceBankId = expense.PaymentSourceBank?.Id,
         PaymentSourceBankName = expense.PaymentSourceBank?.Name,
         CreditCardId = expense.CreditCard?.Id,

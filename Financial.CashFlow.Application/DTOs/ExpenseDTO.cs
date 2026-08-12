@@ -17,8 +17,11 @@ public sealed class ExpenseDTO
     /// <summary>Amount in GBP. Negative values represent a Reserva return or transfer out.</summary>
     public required decimal Value { get; init; }
 
-    /// <summary>Expense category name.</summary>
-    public required string Category { get; init; }
+    /// <summary>Expense category identifier.</summary>
+    public required Guid CategoryId { get; init; }
+
+    /// <summary>Expense category display name.</summary>
+    public required string CategoryName { get; init; }
 
     /// <summary>Payment source bank identifier. Null while the expense is an unsettled credit card charge.</summary>
     public Guid? PaymentSourceBankId { get; init; }
