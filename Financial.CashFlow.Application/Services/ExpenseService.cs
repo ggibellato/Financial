@@ -112,7 +112,7 @@ public sealed class ExpenseService : IExpenseService
         _repository.GetExpenses().FirstOrDefault(e => e.Id == id)
             ?? throw new KeyNotFoundException($"Expense '{id}' was not found.");
 
-    private (Category Category, Bank? PaymentSourceBank, CreditCardEntity? CreditCard) ValidateFields(
+    private (Financial.CashFlow.Domain.Enums.Category Category, Bank? PaymentSourceBank, CreditCardEntity? CreditCard) ValidateFields(
         string description, decimal value, string category, Guid? paymentSourceBankId, Guid? creditCardId)
     {
         if (string.IsNullOrWhiteSpace(description))

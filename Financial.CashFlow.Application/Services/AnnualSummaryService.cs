@@ -4,6 +4,7 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.CashFlow.Domain.ValueObjects;
+using Category = Financial.CashFlow.Domain.Enums.Category;
 
 namespace Financial.CashFlow.Application.Services;
 

@@ -47,6 +47,9 @@ public class CashFlowData
     private readonly List<CreditCard> _creditCards = new();
     public IReadOnlyCollection<CreditCard> CreditCards => _creditCards.AsReadOnly();
 
+    private readonly List<Category> _categories = new();
+    public IReadOnlyCollection<Category> Categories => _categories.AsReadOnly();
+
     private CashFlowData() { }
 
     public static CashFlowData Create() => new();
@@ -80,6 +83,8 @@ public class CashFlowData
     public void AddReserveBucket(ReserveBucket bucket) => _reserveBuckets.Add(bucket);
 
     public void AddCreditCard(CreditCard card) => _creditCards.Add(card);
+
+    public void AddCategory(Category category) => _categories.Add(category);
 
     public void AddIncome(Income income) => _incomes.Add(income);
 

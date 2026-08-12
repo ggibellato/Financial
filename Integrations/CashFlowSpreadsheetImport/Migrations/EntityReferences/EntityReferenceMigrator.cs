@@ -1,5 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Category = Financial.CashFlow.Domain.Enums.Category;
 using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations;
 using Financial.CashFlow.Infrastructure.Persistence;
 using System.Text.Json;

@@ -1,5 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Category = Financial.CashFlow.Domain.Enums.Category;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.Shared.Infrastructure.Persistence;
@@ -190,6 +191,24 @@ public class CashFlowJsonRepositoryTests
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
 
             repository.GetCreditCards().Should().ContainSingle().Which.Name.Should().Be("Chase Freedom");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void GetCategories_ReturnsCategoriesFromTheUnderlyingData()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var data = CashFlowData.Create();
+            data.AddCategory(Domain.Entities.Category.Create("Mercado"));
+            var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
+
+            repository.GetCategories().Should().ContainSingle().Which.Name.Should().Be("Mercado");
         }
         finally
         {

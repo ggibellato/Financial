@@ -2,6 +2,8 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using ReserveBucketEntity = Financial.CashFlow.Domain.Entities.ReserveBucket;
+using CategoryEntity = Financial.CashFlow.Domain.Entities.Category;
+using Category = Financial.CashFlow.Domain.Enums.Category;
 
 namespace Financial.CashFlow.Domain.Tests;
 
@@ -37,6 +39,7 @@ public class CashFlowDataTests
         _sut.Transfers.Should().BeEmpty();
         _sut.BalanceAdjustments.Should().BeEmpty();
         _sut.CreditCards.Should().BeEmpty();
+        _sut.Categories.Should().BeEmpty();
     }
 
     [Fact]
@@ -68,6 +71,14 @@ public class CashFlowDataTests
         _sut.AddCreditCard(Domain.Entities.CreditCard.Create("VISA 1", isActive: true));
 
         CheckCollectionCounts(new CheckItemsQuantity(CreditCards: 1));
+    }
+
+    [Fact]
+    public void AddCategory_AddsOnlyToCategoriesCollection()
+    {
+        _sut.AddCategory(CategoryEntity.Create("Mercado"));
+
+        CheckCollectionCounts(new CheckItemsQuantity(Categories: 1));
     }
 
     [Fact]
@@ -382,7 +393,8 @@ public class CashFlowDataTests
 
     private record CheckItemsQuantity(int Expenses = 0, int ReserveMovements = 0, int CardStatements = 0,
         int RecurringBills = 0, int MaeLedgerEntries = 0, int InvestmentSnapshots = 0, int InvestmentAccounts = 0, int Banks = 0,
-        int IncomeSources = 0, int ReserveBuckets = 0, int Incomes = 0, int Transfers = 0, int BalanceAdjustments = 0, int CreditCards = 0);
+        int IncomeSources = 0, int ReserveBuckets = 0, int Incomes = 0, int Transfers = 0, int BalanceAdjustments = 0, int CreditCards = 0,
+        int Categories = 0);
 
     private void CheckCollectionCounts(CheckItemsQuantity expected)
     {
@@ -400,5 +412,6 @@ public class CashFlowDataTests
         _sut.Transfers.Count.Should().Be(expected.Transfers);
         _sut.BalanceAdjustments.Count.Should().Be(expected.BalanceAdjustments);
         _sut.CreditCards.Count.Should().Be(expected.CreditCards);
+        _sut.Categories.Count.Should().Be(expected.Categories);
     }
 }

@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Category = Financial.CashFlow.Domain.Entities.Category;
 
 namespace Financial.CashFlow.Application.Tests.TestHelpers;
 
@@ -23,6 +24,7 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
     public List<IncomeSource> IncomeSources { get; } = new();
     public List<ReserveBucket> ReserveBuckets { get; } = new();
     public List<Domain.Entities.CreditCard> CreditCards { get; } = new();
+    public List<Category> Categories { get; } = new();
     public List<Income> Incomes { get; } = new();
     public List<Transfer> Transfers { get; } = new();
     public List<BalanceAdjustment> BalanceAdjustments { get; } = new();
@@ -34,7 +36,7 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
 
     public StubCashFlowRepository(
         bool seedDefaultBanks = false, bool seedDefaultIncomeSources = false, bool seedDefaultReserveBuckets = false,
-        bool seedDefaultCreditCards = false)
+        bool seedDefaultCreditCards = false, bool seedDefaultCategories = false)
     {
         if (seedDefaultBanks)
         {
@@ -54,6 +56,11 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
         if (seedDefaultCreditCards)
         {
             CreditCards.AddRange(DefaultCreditCards());
+        }
+
+        if (seedDefaultCategories)
+        {
+            Categories.AddRange(DefaultCategories());
         }
     }
 
@@ -93,6 +100,25 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
         Domain.Entities.CreditCard.Create("PaypalCredit")
     ];
 
+    /// <summary>The 14 categories seeded in a real deployment by the CashFlowSpreadsheetImport migration tool.</summary>
+    public static IEnumerable<Category> DefaultCategories() =>
+    [
+        Category.Create("Ariana"),
+        Category.Create("Carro"),
+        Category.Create("Casa"),
+        Category.Create("Estudo"),
+        Category.Create("Extras"),
+        Category.Create("Familia"),
+        Category.Create("Gleison"),
+        Category.Create("Mercado"),
+        Category.Create("Samuel"),
+        Category.Create("Saude"),
+        Category.Create("Viagem"),
+        Category.Create("Dizimo", isTithe: true),
+        Category.Create("Investimento", isInvestment: true),
+        Category.Create("Reserva")
+    ];
+
     public void SetOpeningBalance(string bankName, decimal openingBalance, DateOnly openingBalanceDate) =>
         Banks.First(b => b.Name == bankName).SetOpeningBalance(openingBalance, openingBalanceDate);
 
@@ -128,6 +154,8 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
     public IEnumerable<ReserveBucket> GetReserveBuckets() => ReserveBuckets;
 
     public IEnumerable<Domain.Entities.CreditCard> GetCreditCards() => CreditCards;
+
+    public IEnumerable<Category> GetCategories() => Categories;
 
     public IEnumerable<Income> GetIncomes() => Incomes;
     public void AddIncome(Income income) => Incomes.Add(income);
