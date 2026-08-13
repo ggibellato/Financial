@@ -620,3 +620,14 @@ export interface UpdateBalanceAdjustmentDto {
   targetBalance: number
   note: string | null
 }
+
+export interface SyncStatusDto {
+  state: string
+  lastError: string | null
+  lastSuccessfulSaveUtc: string | null
+}
+
+export interface SyncStatusResponseDto {
+  cashFlow: SyncStatusDto
+  investment: SyncStatusDto
+}

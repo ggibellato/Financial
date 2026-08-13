@@ -21,6 +21,7 @@ import type {
   ReserveBucketBalanceDto,
   ReserveBucketDto,
   ReserveMovementDto,
+  SyncStatusResponseDto,
   TransferDto,
   TreeNodeDto,
   UpdateBalanceAdjustmentDto,
@@ -914,5 +915,24 @@ describe('financialApiClient', () => {
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/banks/Barclays/adjustments/a1`)
     expect(init?.method).toBe('DELETE')
+  })
+
+  it('calls sync-status endpoint', async () => {
+    const responseBody: SyncStatusResponseDto = {
+      cashFlow: { state: 'Idle', lastError: null, lastSuccessfulSaveUtc: null },
+      investment: {
+        state: 'Failed',
+        lastError: 'Drive request failed with a transient status (503 ServiceUnavailable).',
+        lastSuccessfulSaveUtc: '2026-08-13T09:12:04Z',
+      },
+    }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getSyncStatus()
+
+    expect(result).toEqual(responseBody)
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/sync-status`)
   })
 })
