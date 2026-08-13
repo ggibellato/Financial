@@ -1,6 +1,7 @@
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.Configuration;
+using Financial.Investment.Infrastructure.Hosting;
 using Financial.Investment.Infrastructure.Interfaces;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
@@ -9,6 +10,7 @@ using Financial.Shared.Infrastructure.Configuration;
 using Financial.Shared.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Financial.Investment.Infrastructure.DependencyInjection;
@@ -48,6 +50,7 @@ public static class InfrastructureServiceCollectionExtensions
                 sp.GetService<IRemoteFileClientFactory>()).Create(options);
         });
         services.AddSingleton<IAssetPriceService, AssetPriceService>();
+        services.AddHostedService<InvestmentShutdownFlushHostedService>();
 
         return services;
     }
