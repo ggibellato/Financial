@@ -1,0 +1,74 @@
+# Spec: F01. Sync Status Data Shape
+
+## 1. Technical Overview
+
+**What:** Introduce a small, immutable data contract representing the persistence state of a bounded context's background save mechanism: a `SyncState` enum (`Idle`, `Pending`, `Saving`, `Failed`) and a `SyncStatus` value (state, nullable last error message, nullable last successful save UTC timestamp). Both types live in `Financial.Shared.Infrastructure`.
+
+**Why:** Every later feature in this PRD — the write-behind decorator (F03), per-context wiring (F04/F05), the status API endpoint (F08), and both front ends' polling/indicator UI (F09–F12) — needs to produce or consume the same shape for "is this context's data safely persisted right now." Defining it once, first, and with zero dependencies avoids each consumer inventing its own ad hoc representation.
+
+**Scope:**
+- Included: `SyncState` enum, `SyncStatus` immutable value type, placed in `Financial.Shared.Infrastructure` with no dependency on `Financial.CashFlow.*` or `Financial.Investment.*`.
+- Excluded: any behavior that produces or mutates a `SyncStatus` (that's F03). No serialization contract is defined here beyond the type shape itself — the JSON shape used by the F08 API response is F08's concern.
+
+## 2. Architecture Impact
+
+**Affected components:**
+- `Financial.Shared.Infrastructure/Sync/SyncState.cs` (new)
+- `Financial.Shared.Infrastructure/Sync/SyncStatus.cs` (new)
+
+```mermaid
+graph TD
+    A["Financial.Shared.Infrastructure/Sync/SyncState.cs"] --> C[SyncStatus]
+    B["Financial.Shared.Infrastructure/Sync/SyncStatus.cs"] --> C
+    C --> D["F03 Write-Behind Storage Decorator (future)"]
+```
+
+## 3. Technical Decisions
+
+| Decision | Chosen Approach | Alternative Considered | Trade-off |
+|----------|----------------|----------------------|-----------|
+| Folder placement | New `Sync/` folder under `Financial.Shared.Infrastructure`, sibling to the existing `Persistence/` folder | Put it inside `Persistence/` next to `IJsonStorage` | `SyncStatus` is consumed well beyond JSON storage (API layer, WPF UI) even though it originates from a storage decorator; a dedicated folder keeps `Persistence/` scoped to storage abstractions and signals `Sync/` as the shared cross-cutting concern for this PRD |
+| Type shape | `SyncState` as a plain C# `enum`; `SyncStatus` as a `sealed record` with an init-only constructor-style factory | Class with private setters | Records give free immutability and value equality, matching the "immutable value" wording in the PRD and requiring no hand-written equality/copy code |
+| Construction | `SyncStatus` constructor takes all three fields directly (state, error, last successful save); no static factory methods (`Idle()`, `Failed()`, etc.) | Static factory helpers per state | F01 is a pure data contract per the PRD ("No behavior — pure data contract"); adding factory methods would be behavior that belongs to F03, which is the first actual producer of `SyncStatus` instances |
+
+## 4. Component Overview
+
+**Backend (Financial.Shared.Infrastructure):**
+
+| File Path | New/Modified | Purpose | Key Responsibilities |
+|-----------|--------------|---------|---------------------|
+| `Financial.Shared.Infrastructure/Sync/SyncState.cs` | New | Enumerates the possible persistence states of a write-behind instance | Defines exactly `Idle`, `Pending`, `Saving`, `Failed` |
+| `Financial.Shared.Infrastructure/Sync/SyncStatus.cs` | New | Immutable snapshot of a context's sync state | Holds `State`, nullable `LastError`, nullable `LastSuccessfulSaveUtc`; no logic beyond data holding |
+
+No API, database, or frontend changes in this feature.
+
+## 5. API Contracts
+
+Not applicable — F01 has no API surface. The HTTP contract that serializes `SyncStatus` is defined by F08.
+
+## 6. Data Model
+
+Not applicable — F01 is an in-memory type, not persisted.
+
+## 7. Testing Strategy
+
+**Test File Structure:**
+
+| Test File | Test Type | Target | Coverage Goal |
+|-----------|-----------|--------|---------------|
+| `Tests/Financial.Shared.Infrastructure.Tests/Sync/SyncStatusTests.cs` | Unit | `SyncStatus`, `SyncState` | 100% (trivial data type) |
+| `Tests/Financial.Shared.Infrastructure.Tests/Sync/SyncArchitectureTests.cs` | Architecture | `Financial.Shared.Infrastructure` assembly | Guards the no-bounded-context-dependency constraint |
+
+**Test Functions:**
+
+| Test Function | Description | Assertions |
+|---------------|-------------|------------|
+| `SyncState_Should_Have_Exactly_Four_Members` | Enumerates `SyncState` members via reflection | Exactly `Idle`, `Pending`, `Saving`, `Failed`, no others |
+| `SharedInfrastructure_Should_Not_Reference_Either_Bounded_Context` | Inspects `typeof(SyncStatus).Assembly.GetReferencedAssemblies()` | No referenced assembly name contains `CashFlow` or `Investment` — fails immediately if a future change adds a project reference to either bounded context |
+
+Three tests present in earlier drafts (`SyncStatus_Should_Expose_State_Error_And_Timestamp`, `SyncStatus_Should_Allow_Null_Error_And_Timestamp`, `SyncStatus_Should_Support_Value_Equality`) were dropped: `SyncStatus` is a positional `record`, so its constructor, property getters, nullable assignment, and equality are all compiler-generated. None of those tests could fail from a plausible future code change without the record's shape changing in a way that would already fail to compile — they were re-asserting what the compiler had already checked, not adding regression coverage.
+
+**Acceptance criteria covered (PRD Section 9, F01):**
+- `SyncState` includes exactly `Idle`, `Pending`, `Saving`, `Failed` → `SyncState_Should_Have_Exactly_Four_Members`
+- `SyncStatus` exposes state, a nullable last error message, and a nullable last successful save UTC timestamp → no dedicated test; guaranteed by the `record`'s declared shape (`SyncStatus(SyncState State, string? LastError, DateTime? LastSuccessfulSaveUtc)`), which fails to compile if the shape is wrong
+- The type compiles and is referenced from `Financial.Shared.Infrastructure` with no dependency on either bounded context → `SharedInfrastructure_Should_Not_Reference_Either_Bounded_Context`
