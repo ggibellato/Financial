@@ -2,10 +2,11 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Sync;
 
 namespace Financial.CashFlow.Infrastructure.Repositories;
 
-public sealed class CashFlowJsonRepository : ICashFlowRepository
+public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusProvider
 {
     private readonly IJsonStorage _storage;
     private readonly ICashFlowSerializer _serializer;
@@ -72,4 +73,14 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository
         var json = _serializer.Serialize(_data);
         await _storage.WriteAsync(json).ConfigureAwait(false);
     }
+
+    public SyncStatus GetStatus() =>
+        _storage is ISyncStatusProvider syncStatusProvider
+            ? syncStatusProvider.GetStatus()
+            : new SyncStatus(SyncState.Idle, null, null);
+
+    public Task FlushAsync() =>
+        _storage is ISyncStatusProvider syncStatusProvider
+            ? syncStatusProvider.FlushAsync()
+            : Task.CompletedTask;
 }
