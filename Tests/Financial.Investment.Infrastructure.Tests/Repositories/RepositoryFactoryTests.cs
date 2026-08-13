@@ -5,6 +5,7 @@ using Financial.Investment.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Sync;
+using Financial.TestUtilities;
 using FluentAssertions;
 using System.IO;
 

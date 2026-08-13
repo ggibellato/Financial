@@ -4,6 +4,7 @@ using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.ValueObjects;
 using Financial.Investment.Infrastructure.Interfaces;
 using Financial.Investment.Infrastructure.Services;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
