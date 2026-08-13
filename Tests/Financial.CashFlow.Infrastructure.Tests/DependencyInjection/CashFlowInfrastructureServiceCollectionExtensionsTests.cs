@@ -1,8 +1,10 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
+using Financial.CashFlow.Infrastructure.Hosting;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Financial.CashFlow.Infrastructure.Tests.DependencyInjection;
 
@@ -36,6 +38,20 @@ public class CashFlowInfrastructureServiceCollectionExtensionsTests
         var repository = provider.GetRequiredService<ICashFlowRepository>();
 
         repository.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void AddFinancialCashFlowInfrastructure_RegistersCashFlowShutdownFlushHostedService()
+    {
+        var missingPath = Path.Combine(Path.GetTempPath(), $"cashflow-di-{Guid.NewGuid()}.json");
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["CashFlow:DataJsonFile"] = missingPath
+        });
+
+        var hostedServices = provider.GetServices<IHostedService>();
+
+        hostedServices.Should().ContainSingle(service => service is CashFlowShutdownFlushHostedService);
     }
 
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)
