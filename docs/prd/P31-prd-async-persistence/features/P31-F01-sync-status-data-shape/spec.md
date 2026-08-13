@@ -64,12 +64,11 @@ Not applicable — F01 is an in-memory type, not persisted.
 | Test Function | Description | Assertions |
 |---------------|-------------|------------|
 | `SyncState_Should_Have_Exactly_Four_Members` | Enumerates `SyncState` members via reflection | Exactly `Idle`, `Pending`, `Saving`, `Failed`, no others |
-| `SyncStatus_Should_Expose_State_Error_And_Timestamp` | Constructs a `SyncStatus` with all fields populated | `State`, `LastError`, `LastSuccessfulSaveUtc` round-trip the constructor values |
 | `SharedInfrastructure_Should_Not_Reference_Either_Bounded_Context` | Inspects `typeof(SyncStatus).Assembly.GetReferencedAssemblies()` | No referenced assembly name contains `CashFlow` or `Investment` — fails immediately if a future change adds a project reference to either bounded context |
 
-Two constructor-focused tests present in an earlier draft (`SyncStatus_Should_Allow_Null_Error_And_Timestamp`, `SyncStatus_Should_Support_Value_Equality`) were dropped: both only re-asserted behavior the C# `record` compiler already guarantees (nullable property assignment, generated equality), so they couldn't fail from any plausible future code change and added no regression coverage.
+Three tests present in earlier drafts (`SyncStatus_Should_Expose_State_Error_And_Timestamp`, `SyncStatus_Should_Allow_Null_Error_And_Timestamp`, `SyncStatus_Should_Support_Value_Equality`) were dropped: `SyncStatus` is a positional `record`, so its constructor, property getters, nullable assignment, and equality are all compiler-generated. None of those tests could fail from a plausible future code change without the record's shape changing in a way that would already fail to compile — they were re-asserting what the compiler had already checked, not adding regression coverage.
 
 **Acceptance criteria covered (PRD Section 9, F01):**
 - `SyncState` includes exactly `Idle`, `Pending`, `Saving`, `Failed` → `SyncState_Should_Have_Exactly_Four_Members`
-- `SyncStatus` exposes state, a nullable last error message, and a nullable last successful save UTC timestamp → `SyncStatus_Should_Expose_State_Error_And_Timestamp`
+- `SyncStatus` exposes state, a nullable last error message, and a nullable last successful save UTC timestamp → no dedicated test; guaranteed by the `record`'s declared shape (`SyncStatus(SyncState State, string? LastError, DateTime? LastSuccessfulSaveUtc)`), which fails to compile if the shape is wrong
 - The type compiles and is referenced from `Financial.Shared.Infrastructure` with no dependency on either bounded context → `SharedInfrastructure_Should_Not_Reference_Either_Bounded_Context`
