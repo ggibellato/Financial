@@ -1,6 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Services;
-using Financial.CashFlow.Application.Tests.TestHelpers;
+using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
 using FluentAssertions;
 

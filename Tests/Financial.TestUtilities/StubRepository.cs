@@ -2,7 +2,7 @@ using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 
-namespace Financial.Investment.Application.Tests.TestHelpers;
+namespace Financial.TestUtilities;
 
 /// <summary>
 /// Shared in-memory <see cref="IRepository"/> test double. Two ways to configure a scenario:
@@ -11,7 +11,7 @@ namespace Financial.Investment.Application.Tests.TestHelpers;
 /// <see cref="AssetsByBroker"/>/<see cref="AssetsByBrokerPortfolio"/>/<see cref="Asset"/> fields
 /// directly for tests that don't need a full broker/portfolio/asset graph.
 /// </summary>
-internal sealed class StubRepository : IRepository
+public sealed class StubRepository : IRepository
 {
     public Broker? Broker { get; set; }
     public IEnumerable<Broker>? Brokers { get; set; }
@@ -23,6 +23,16 @@ internal sealed class StubRepository : IRepository
     public InvestmentScope? LastGetAssetsByBrokerScope { get; private set; }
     public InvestmentScope? LastGetAssetsByBrokerPortfolioScope { get; private set; }
     public InvestmentScope? LastGetBrokerListScope { get; private set; }
+
+    public StubRepository()
+    {
+    }
+
+    /// <summary>Convenience constructor for tests that only need <see cref="GetBrokerList"/> to return a fixed list.</summary>
+    public StubRepository(IEnumerable<Broker> brokers)
+    {
+        Brokers = brokers.ToList();
+    }
 
     public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active)
     {

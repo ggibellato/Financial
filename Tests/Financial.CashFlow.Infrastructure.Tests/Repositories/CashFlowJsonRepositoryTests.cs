@@ -4,6 +4,7 @@ using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Sync;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Repositories;
@@ -294,25 +295,6 @@ public class CashFlowJsonRepositoryTests
         finally
         {
             File.Delete(path);
-        }
-    }
-
-    private sealed class FakeSyncStatusStorage : IJsonStorage, ISyncStatusProvider
-    {
-        internal SyncStatus Status { get; set; } = new(SyncState.Idle, null, null);
-
-        internal int FlushAsyncCallCount { get; private set; }
-
-        public Task<string> ReadAsync() => Task.FromResult("{}");
-
-        public Task WriteAsync(string json) => Task.CompletedTask;
-
-        public SyncStatus GetStatus() => Status;
-
-        public Task FlushAsync()
-        {
-            FlushAsyncCallCount++;
-            return Task.CompletedTask;
         }
     }
 }

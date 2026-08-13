@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Sync;
-using Financial.Shared.Infrastructure.Tests.TestHelpers;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.Shared.Infrastructure.Tests.Persistence;

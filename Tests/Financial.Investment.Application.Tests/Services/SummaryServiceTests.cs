@@ -1,6 +1,6 @@
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
-using Financial.Investment.Application.Tests.TestHelpers;
+using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
 using FluentAssertions.Execution;

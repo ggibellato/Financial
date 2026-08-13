@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.TestUtilities;
 
 namespace Financial.CashFlow.Application.Tests.TestHelpers;
 

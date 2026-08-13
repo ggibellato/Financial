@@ -1,6 +1,7 @@
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
 using Financial.Investment.Infrastructure.Hosting;
+using Financial.TestUtilities;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

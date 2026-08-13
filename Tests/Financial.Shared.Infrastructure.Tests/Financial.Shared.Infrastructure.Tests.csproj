@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Financial.Shared.Infrastructure\Financial.Shared.Infrastructure.csproj" />
+    <ProjectReference Include="..\Financial.TestUtilities\Financial.TestUtilities.csproj" />
   </ItemGroup>
 
 </Project>

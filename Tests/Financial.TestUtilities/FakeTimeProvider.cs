@@ -1,6 +1,6 @@
-namespace Financial.CashFlow.Application.Tests.TestHelpers;
+namespace Financial.TestUtilities;
 
-internal sealed class FakeTimeProvider : TimeProvider
+public sealed class FakeTimeProvider : TimeProvider
 {
     private readonly DateTimeOffset _now;
 

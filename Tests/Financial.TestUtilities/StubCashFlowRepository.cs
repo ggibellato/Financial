@@ -2,7 +2,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 
-namespace Financial.CashFlow.Application.Tests.TestHelpers;
+namespace Financial.TestUtilities;
 
 /// <summary>
 /// Shared in-memory <see cref="ICashFlowRepository"/> test double. Every collection is backed by a
@@ -10,7 +10,7 @@ namespace Financial.CashFlow.Application.Tests.TestHelpers;
 /// nothing is seeded by default. Adding a new member to <see cref="ICashFlowRepository"/> only
 /// requires updating this one class instead of every service test file.
 /// </summary>
-internal sealed class StubCashFlowRepository : ICashFlowRepository
+public sealed class StubCashFlowRepository : ICashFlowRepository
 {
     public List<Expense> Expenses { get; } = new();
     public List<ReserveMovement> ReserveMovements { get; } = new();
@@ -22,7 +22,7 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
     public List<Bank> Banks { get; } = new();
     public List<IncomeSource> IncomeSources { get; } = new();
     public List<ReserveBucket> ReserveBuckets { get; } = new();
-    public List<Domain.Entities.CreditCard> CreditCards { get; } = new();
+    public List<CreditCard> CreditCards { get; } = new();
     public List<Category> Categories { get; } = new();
     public List<Income> Incomes { get; } = new();
     public List<Transfer> Transfers { get; } = new();
@@ -90,13 +90,13 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
     ];
 
     /// <summary>The 5 credit cards seeded in a real deployment by the CashFlowSpreadsheetImport migration tool, all active.</summary>
-    public static IEnumerable<Domain.Entities.CreditCard> DefaultCreditCards() =>
+    public static IEnumerable<CreditCard> DefaultCreditCards() =>
     [
-        Domain.Entities.CreditCard.Create("BarclaysPlatinumVisa8003"),
-        Domain.Entities.CreditCard.Create("BarclaysPlatinumVisa6007"),
-        Domain.Entities.CreditCard.Create("ChaseMaster4023"),
-        Domain.Entities.CreditCard.Create("BaAmex"),
-        Domain.Entities.CreditCard.Create("PaypalCredit")
+        CreditCard.Create("BarclaysPlatinumVisa8003"),
+        CreditCard.Create("BarclaysPlatinumVisa6007"),
+        CreditCard.Create("ChaseMaster4023"),
+        CreditCard.Create("BaAmex"),
+        CreditCard.Create("PaypalCredit")
     ];
 
     /// <summary>The 14 categories seeded in a real deployment by the CashFlowSpreadsheetImport migration tool.</summary>
@@ -152,7 +152,7 @@ internal sealed class StubCashFlowRepository : ICashFlowRepository
 
     public IEnumerable<ReserveBucket> GetReserveBuckets() => ReserveBuckets;
 
-    public IEnumerable<Domain.Entities.CreditCard> GetCreditCards() => CreditCards;
+    public IEnumerable<CreditCard> GetCreditCards() => CreditCards;
 
     public IEnumerable<Category> GetCategories() => Categories;
 
