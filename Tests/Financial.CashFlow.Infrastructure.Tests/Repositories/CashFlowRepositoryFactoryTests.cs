@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.Shared.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Sync;
 using FluentAssertions;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Repositories;
@@ -38,6 +40,22 @@ public class CashFlowRepositoryFactoryTests
         var result = Factory.Create(options);
 
         result.Should().BeOfType<CashFlowJsonRepository>();
+    }
+
+    [Fact]
+    public void Create_WithLocalJsonProvider_ResultReportsIdleStatus()
+    {
+        var missingPath = Path.Combine(Path.GetTempPath(), $"cashflow-factory-{Guid.NewGuid()}.json");
+        var options = new CashFlowRepositorySelectionOptions(
+            CashFlowRepositoryProvider.LocalJson,
+            missingPath,
+            null,
+            null);
+
+        var result = Factory.Create(options);
+
+        var status = ((ISyncStatusProvider)result).GetStatus();
+        status.Should().Be(new SyncStatus(SyncState.Idle, null, null));
     }
 
     [Fact]
@@ -137,6 +155,65 @@ public class CashFlowRepositoryFactoryTests
         finally
         {
             File.Delete(absolutePath);
+        }
+    }
+
+    [Fact]
+    public async Task Create_WithGoogleDriveProvider_SaveChangesAsync_ReturnsWithoutWaitingOnUpload()
+    {
+        var credentialsPath = Path.GetTempFileName();
+        try
+        {
+            var factory = new CashFlowRepositoryFactory(new CashFlowSerializerAdapter(), new StubRemoteFileClientFactory());
+            var options = new CashFlowRepositorySelectionOptions(
+                CashFlowRepositoryProvider.GoogleDriveJson,
+                null,
+                credentialsPath,
+                "Pessoais/Gleison/Financeiros");
+
+            var repository = factory.Create(options);
+            repository.AddExpense(Expense.Create(
+                new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Create("Casa"), Bank.Create("Chase", roundUpEnabled: true), null));
+
+            var stopwatch = Stopwatch.StartNew();
+            await repository.SaveChangesAsync();
+            stopwatch.Stop();
+
+            // The debounce window is a real 10 seconds in production; returning near-instantly proves
+            // the write was only queued, not actually uploaded through StubRemoteFileClient (which
+            // throws NotSupportedException on upload if ever actually invoked).
+            stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000);
+        }
+        finally
+        {
+            File.Delete(credentialsPath);
+        }
+    }
+
+    [Fact]
+    public async Task Create_WithGoogleDriveProvider_ResultImplementsISyncStatusProvider_ReportingPendingAfterAWrite()
+    {
+        var credentialsPath = Path.GetTempFileName();
+        try
+        {
+            var factory = new CashFlowRepositoryFactory(new CashFlowSerializerAdapter(), new StubRemoteFileClientFactory());
+            var options = new CashFlowRepositorySelectionOptions(
+                CashFlowRepositoryProvider.GoogleDriveJson,
+                null,
+                credentialsPath,
+                "Pessoais/Gleison/Financeiros");
+
+            var repository = factory.Create(options);
+            repository.AddExpense(Expense.Create(
+                new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Create("Casa"), Bank.Create("Chase", roundUpEnabled: true), null));
+
+            await repository.SaveChangesAsync();
+
+            ((ISyncStatusProvider)repository).GetStatus().State.Should().Be(SyncState.Pending);
+        }
+        finally
+        {
+            File.Delete(credentialsPath);
         }
     }
 

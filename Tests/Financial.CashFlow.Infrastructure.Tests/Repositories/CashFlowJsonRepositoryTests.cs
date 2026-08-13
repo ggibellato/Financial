@@ -3,6 +3,7 @@ using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.Shared.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Sync;
 using FluentAssertions;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Repositories;
@@ -48,6 +49,65 @@ public class CashFlowJsonRepositoryTests
         var act = async () => await repository.SaveChangesAsync();
 
         await act.Should().ThrowAsync<DirectoryNotFoundException>();
+    }
+
+    [Fact]
+    public void GetStatus_WhenStorageIsNotASyncStatusProvider_ReturnsIdleWithNoError()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var repository = new CashFlowJsonRepository(CashFlowData.Create(), new LocalJsonStorage(path), new CashFlowSerializerAdapter());
+
+            var status = ((ISyncStatusProvider)repository).GetStatus();
+
+            status.Should().Be(new SyncStatus(SyncState.Idle, null, null));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void GetStatus_WhenStorageIsASyncStatusProvider_DelegatesToIt()
+    {
+        var expectedStatus = new SyncStatus(SyncState.Failed, "Drive unreachable", null);
+        var storage = new FakeSyncStatusStorage { Status = expectedStatus };
+        var repository = new CashFlowJsonRepository(CashFlowData.Create(), storage, new CashFlowSerializerAdapter());
+
+        var status = ((ISyncStatusProvider)repository).GetStatus();
+
+        status.Should().Be(expectedStatus);
+    }
+
+    [Fact]
+    public async Task FlushAsync_WhenStorageIsNotASyncStatusProvider_CompletesWithoutError()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            var repository = new CashFlowJsonRepository(CashFlowData.Create(), new LocalJsonStorage(path), new CashFlowSerializerAdapter());
+
+            var act = async () => await ((ISyncStatusProvider)repository).FlushAsync();
+
+            await act.Should().NotThrowAsync();
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task FlushAsync_WhenStorageIsASyncStatusProvider_DelegatesToIt()
+    {
+        var storage = new FakeSyncStatusStorage();
+        var repository = new CashFlowJsonRepository(CashFlowData.Create(), storage, new CashFlowSerializerAdapter());
+
+        await ((ISyncStatusProvider)repository).FlushAsync();
+
+        storage.FlushAsyncCallCount.Should().Be(1);
     }
 
     [Fact]
@@ -234,6 +294,25 @@ public class CashFlowJsonRepositoryTests
         finally
         {
             File.Delete(path);
+        }
+    }
+
+    private sealed class FakeSyncStatusStorage : IJsonStorage, ISyncStatusProvider
+    {
+        internal SyncStatus Status { get; set; } = new(SyncState.Idle, null, null);
+
+        internal int FlushAsyncCallCount { get; private set; }
+
+        public Task<string> ReadAsync() => Task.FromResult("{}");
+
+        public Task WriteAsync(string json) => Task.CompletedTask;
+
+        public SyncStatus GetStatus() => Status;
+
+        public Task FlushAsync()
+        {
+            FlushAsyncCallCount++;
+            return Task.CompletedTask;
         }
     }
 }
