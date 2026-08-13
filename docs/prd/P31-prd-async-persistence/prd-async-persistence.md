@@ -1,10 +1,10 @@
-# Asynchronous Write-Behind Persistence
+# Asynchronous Debounced Persistence
 
 ## 1. Executive Summary
 
-Asynchronous Write-Behind Persistence removes Google Drive upload latency from the request path of every mutation in the Financial app. Today, adding an expense, recording a transfer, or updating an asset all block on a full serialize-and-upload of the entire JSON data file to Google Drive before the API responds — for CashFlow's ~5.45MB document this makes every write feel sluggish. This feature changes that: a mutation applies to the in-memory model and returns immediately, while a background worker marks the model dirty, waits briefly for further changes to batch together, then pushes the latest state to Drive with retries for transient failures.
+Asynchronous Debounced Persistence removes Google Drive upload latency from the request path of every mutation in the Financial app. Today, adding an expense, recording a transfer, or updating an asset all block on a full serialize-and-upload of the entire JSON data file to Google Drive before the API responds — for CashFlow's ~5.45MB document this makes every write feel sluggish. This feature changes that: a mutation applies to the in-memory model and returns immediately, while a background worker marks the model dirty, waits briefly for further changes to batch together, then pushes the latest state to Drive with retries for transient failures.
 
-The product is used by a single household administrator across two independent front ends (the React web app and the WPF desktop app) and two independent bounded contexts (CashFlow, edited near-daily, and Investment, edited fewer than 10 times a month). The core value is responsiveness: every user-facing action feels instant, while durability to Google Drive continues in the background. Each bounded context gets its own fully independent write-behind mechanism — its own dirty tracking, debounce timer, retry state, and failure status — so a persistence problem in one context (e.g. Investment) can never delay or block saves in the other (e.g. CashFlow), and vice versa. When a background save ultimately fails after retries are exhausted, both front ends surface a status banner so the failure is never silent.
+The product is used by a single household administrator across two independent front ends (the React web app and the WPF desktop app) and two independent bounded contexts (CashFlow, edited near-daily, and Investment, edited fewer than 10 times a month). The core value is responsiveness: every user-facing action feels instant, while durability to Google Drive continues in the background. Each bounded context gets its own fully independent debounced mechanism — its own dirty tracking, debounce timer, retry state, and failure status — so a persistence problem in one context (e.g. Investment) can never delay or block saves in the other (e.g. CashFlow), and vice versa. When a background save ultimately fails after retries are exhausted, both front ends surface a status banner so the failure is never silent.
 
 The mechanism is deliberately built as a sequence of small, narrowly-scoped building blocks — a status data shape, a retry helper, a storage decorator, then separate per-context wiring, separate per-context shutdown handling, and separate per-front-end status UI — so each is reviewable in isolation as a small pull request touching a handful of files, rather than one large cross-cutting change.
 
@@ -19,9 +19,9 @@ The mechanism is deliberately built as a sequence of small, narrowly-scoped buil
 
 **The Opportunity**
 
-- Decoupling the in-memory mutation from the Drive upload (write-behind) directly solves the blocking-save problem: the API responds as soon as the in-memory model is updated, not after the network round-trip.
+- Decoupling the in-memory mutation from the Drive upload (debounced write) directly solves the blocking-save problem: the API responds as soon as the in-memory model is updated, not after the network round-trip.
 - Debouncing background saves per context batches rapid successive edits (e.g. entering several expenses in a row) into a single upload, reducing both Drive API call volume and rate-limit risk.
-- Giving each bounded context its own independent write-behind instance (dirty flag, timer, retry state, status) — rather than one shared mechanism — means CashFlow's daily-driver responsiveness is never at the mercy of Investment's occasional Drive hiccups, and each context's debounce window can be tuned independently to its own usage pattern.
+- Giving each bounded context its own independent debounced instance (dirty flag, timer, retry state, status) — rather than one shared mechanism — means CashFlow's daily-driver responsiveness is never at the mercy of Investment's occasional Drive hiccups, and each context's debounce window can be tuned independently to its own usage pattern.
 - A polled sync-status signal in both front ends turns invisible background failures into an explicit, unmissable banner, closing the "did my last change actually save?" gap.
 
 ## 3. Target Audience
@@ -57,15 +57,15 @@ The mechanism is deliberately built as a sequence of small, narrowly-scoped buil
 ### F02. Transient-Failure Retry Helper
 - As the system, I want a retry helper that backs off and retries on network errors, timeouts, and Drive server errors — not just rate limits — so that a background save survives the kinds of transient failures most likely to occur outside a request's short lifetime
 
-### F03. Write-Behind Storage Decorator
+### F03. Debounced Storage Decorator
 - As the system, I want a storage wrapper that marks itself dirty on write, waits briefly for further writes, then pushes the latest state using the retry helper, so that a caller's write returns immediately while persistence happens safely in the background
 - As the system, I want to report my current status (idle, pending, saving, failed) and be flushed on demand so that a caller can check whether data is safely persisted or force an immediate save
 
-### F04. CashFlow Write-Behind Wiring
-- As the system, I want CashFlow's Google Drive storage wrapped in its own write-behind instance, independent of Investment's, so that CashFlow mutations return instantly and CashFlow's persistence state never depends on Investment's
+### F04. CashFlow Debounced Wiring
+- As the system, I want CashFlow's Google Drive storage wrapped in its own debounced instance, independent of Investment's, so that CashFlow mutations return instantly and CashFlow's persistence state never depends on Investment's
 
-### F05. Investment Write-Behind Wiring
-- As the system, I want Investment's Google Drive storage wrapped in its own write-behind instance, independent of CashFlow's, so that Investment mutations return instantly and Investment's persistence state never depends on CashFlow's
+### F05. Investment Debounced Wiring
+- As the system, I want Investment's Google Drive storage wrapped in its own debounced instance, independent of CashFlow's, so that Investment mutations return instantly and Investment's persistence state never depends on CashFlow's
 
 ### F06. CashFlow Graceful Shutdown Flush
 - As the system, I want any pending CashFlow change flushed to Google Drive before the API process or WPF app exits so that a routine restart never silently drops the last unsaved CashFlow edit
@@ -112,20 +112,20 @@ The mechanism is deliberately built as a sequence of small, narrowly-scoped buil
 **Capabilities:**
 - A new retry helper in `Financial.Shared.Infrastructure`, separate from the existing `GoogleRetryPolicy` (which stays as-is for its current callers), covering: HTTP 429 (rate limit), network/timeout exceptions, and Drive HTTP 5xx responses.
 - Exponential backoff starting at 2 seconds, doubling per attempt, capped at 5 attempts (2s, 4s, 8s, 16s, 32s) — same shape as the existing policy, generalized to more exception types.
-- Async-only (the write-behind decorator always calls it from a background task, so no synchronous variant is needed).
+- Async-only (the debounced decorator always calls it from a background task, so no synchronous variant is needed).
 - Modifying or reusing `GoogleRetryPolicy`'s existing call sites (`GoogleDriveClient`) is out of scope for this feature — it introduces a new, separate helper rather than widening the existing one's responsibility.
 
 **Experience:**
 - Not user-facing; a supporting utility consumed by F03.
 
-### F03. Write-Behind Storage Decorator
+### F03. Debounced Storage Decorator
 
 **Consumes:**
 - F01: sync status data shape (state, last error, last successful save timestamp)
 - F02: transient-failure retry executor
 
 **Provides:**
-- Write-behind storage component — implements `IJsonStorage`, wraps another `IJsonStorage`; dirty-marking, configurable debounce, background save using the retry executor, exposed status in the F01 shape, and a synchronous flush primitive (used by F04, F05)
+- Debounced storage component — implements `IJsonStorage`, wraps another `IJsonStorage`; dirty-marking, configurable debounce, background save using the retry executor, exposed status in the F01 shape, and a synchronous flush primitive (used by F04, F05)
 
 **Capabilities:**
 - Implements `IJsonStorage` as a decorator around another `IJsonStorage` instance — a drop-in replacement wherever a storage instance is registered; no change to `ICashFlowRepository`/`IRepository` or their callers.
@@ -144,13 +144,13 @@ The mechanism is deliberately built as a sequence of small, narrowly-scoped buil
 - `FlushAsync()` times out before the attempt completes: the pending change remains dirty and unflushed; the caller (a shutdown hook) proceeds with exit regardless, per the accepted risk of losing an in-flight change on forced shutdown.
 - A write arrives during an in-flight save: never dropped — captured by the re-dirty check described above.
 
-### F04. CashFlow Write-Behind Wiring
+### F04. CashFlow Debounced Wiring
 
 **Consumes:**
-- F03: write-behind storage component
+- F03: debounced storage component
 
 **Provides:**
-- CashFlow write-behind instance — sync status (state, last error, last successful save time) and synchronous flush capability (used by F06, F08, F11)
+- CashFlow debounced instance — sync status (state, last error, last successful save time) and synchronous flush capability (used by F06, F08, F11)
 
 **Capabilities:**
 - In `AddFinancialCashFlowInfrastructure`, when the CashFlow repository resolves a `GoogleDriveJsonStorage` (i.e. `CashFlow:Repository:Provider` is `GoogleDrive`), it is wrapped in a dedicated F03 instance with a 10-second debounce window, registered as a singleton scoped to the CashFlow context only.
@@ -160,13 +160,13 @@ The mechanism is deliberately built as a sequence of small, narrowly-scoped buil
 **Experience:**
 - Adding, updating, or deleting any CashFlow entity returns to the caller as soon as the in-memory model is updated; the Drive push happens in the background, invisible to the immediate flow.
 
-### F05. Investment Write-Behind Wiring
+### F05. Investment Debounced Wiring
 
 **Consumes:**
-- F03: write-behind storage component
+- F03: debounced storage component
 
 **Provides:**
-- Investment write-behind instance — sync status (state, last error, last successful save time) and synchronous flush capability (used by F07, F08, F11)
+- Investment debounced instance — sync status (state, last error, last successful save time) and synchronous flush capability (used by F07, F08, F11)
 
 **Capabilities:**
 - In Investment's infrastructure DI registration, when the Investment repository resolves a `GoogleDriveJsonStorage`, it is wrapped in a dedicated F03 instance with a 10-second debounce window, registered as a singleton scoped to the Investment context only — entirely separate from the CashFlow instance from F04.
@@ -178,10 +178,10 @@ The mechanism is deliberately built as a sequence of small, narrowly-scoped buil
 ### F06. CashFlow Graceful Shutdown Flush
 
 **Consumes:**
-- F04: CashFlow write-behind instance flush capability
+- F04: CashFlow debounced instance flush capability
 
 **Capabilities:**
-- In `Financial.Api`, hooks `IHostApplicationLifetime.ApplicationStopping` to call the CashFlow write-behind instance's `FlushAsync()` and await it (bounded by its own 8-second timeout) before shutdown completes.
+- In `Financial.Api`, hooks `IHostApplicationLifetime.ApplicationStopping` to call the CashFlow debounced instance's `FlushAsync()` and await it (bounded by its own 8-second timeout) before shutdown completes.
 - In `Financial.App`, hooks the application exit event to call the same `FlushAsync()` and await it, since `Financial.App` hosts the CashFlow infrastructure in-process.
 - Only wires the existing F04 capability into two lifecycle events — introduces no new flush logic of its own.
 
@@ -191,10 +191,10 @@ The mechanism is deliberately built as a sequence of small, narrowly-scoped buil
 ### F07. Investment Graceful Shutdown Flush
 
 **Consumes:**
-- F05: Investment write-behind instance flush capability
+- F05: Investment debounced instance flush capability
 
 **Capabilities:**
-- Same wiring as F06, applied to the Investment write-behind instance from F05, in both `Financial.Api` (`ApplicationStopping`) and `Financial.App` (exit event) — independent of the CashFlow shutdown hook in F06.
+- Same wiring as F06, applied to the Investment debounced instance from F05, in both `Financial.Api` (`ApplicationStopping`) and `Financial.App` (exit event) — independent of the CashFlow shutdown hook in F06.
 
 **Experience:**
 - Not directly visible; a routine container restart or app close no longer silently drops the last unsaved Investment edit.
@@ -202,15 +202,15 @@ The mechanism is deliberately built as a sequence of small, narrowly-scoped buil
 ### F08. Sync Status API Endpoint
 
 **Consumes:**
-- F04: CashFlow write-behind instance sync status (state, last error, last successful save time)
-- F05: Investment write-behind instance sync status (state, last error, last successful save time)
+- F04: CashFlow debounced instance sync status (state, last error, last successful save time)
+- F05: Investment debounced instance sync status (state, last error, last successful save time)
 
 **Provides:**
 - Combined sync-status API response — both contexts' status in one payload (used by F09)
 
 **Capabilities:**
 - `GET /api/v1/financial/sync-status` returns both contexts' status in one response: `state`, `lastError` (nullable), `lastSuccessfulSaveUtc` (nullable), keyed per context.
-- When a context's provider is `LocalJson` (no write-behind instance wrapping it), that context reports `state: "Idle"` with `lastSuccessfulSaveUtc` reflecting the most recent synchronous write.
+- When a context's provider is `LocalJson` (no debounced instance wrapping it), that context reports `state: "Idle"` with `lastSuccessfulSaveUtc` reflecting the most recent synchronous write.
 - Follows existing controller conventions (`[ApiController]`, registered under the shared `/api/v1/financial` route group, constructor DI of the two status sources).
 
 **Experience:**
@@ -249,14 +249,14 @@ The mechanism is deliberately built as a sequence of small, narrowly-scoped buil
 ### F11. WPF Sync Status Polling
 
 **Consumes:**
-- F04: CashFlow write-behind instance sync status
-- F05: Investment write-behind instance sync status
+- F04: CashFlow debounced instance sync status
+- F05: Investment debounced instance sync status
 
 **Provides:**
 - Polled sync status (WPF in-process) (used by F12)
 
 **Capabilities:**
-- `Financial.App` calls the CashFlow/Investment Application/Infrastructure layers in-process (it does not call the API over HTTP), so this reads each write-behind instance's status directly rather than polling an HTTP endpoint — no network call involved.
+- `Financial.App` calls the CashFlow/Investment Application/Infrastructure layers in-process (it does not call the API over HTTP), so this reads each debounced instance's status directly rather than polling an HTTP endpoint — no network call involved.
 - A `DispatcherTimer` checks both contexts' in-process status every 15 seconds, matching the web app's polling cadence for a consistent cross-front-end experience.
 
 **Experience:**
@@ -308,9 +308,9 @@ The mechanism is deliberately built as a sequence of small, narrowly-scoped buil
 |---|---------|----------|--------------|
 | F01 | Sync Status Data Shape | 1 | None |
 | F02 | Transient-Failure Retry Helper | 1 | None |
-| F03 | Write-Behind Storage Decorator | 1 | F01, F02 |
-| F04 | CashFlow Write-Behind Wiring | 1 | F03 |
-| F05 | Investment Write-Behind Wiring | 2 | F03 |
+| F03 | Debounced Storage Decorator | 1 | F01, F02 |
+| F04 | CashFlow Debounced Wiring | 1 | F03 |
+| F05 | Investment Debounced Wiring | 2 | F03 |
 | F06 | CashFlow Graceful Shutdown Flush | 1 | F04 |
 | F07 | Investment Graceful Shutdown Flush | 2 | F05 |
 | F08 | Sync Status API Endpoint | 1 | F04, F05 |
@@ -365,34 +365,34 @@ graph TD
 - [x] After 5 failed attempts, the helper surfaces the final failure to the caller instead of retrying further
 - [x] `GoogleRetryPolicy` and its existing callers are unchanged
 
-### F03. Write-Behind Storage Decorator
-- [ ] `WriteAsync(json)` returns before any Drive upload has occurred, and the instance's status becomes `Pending`
-- [ ] After the configured debounce window elapses with no further writes, the latest queued JSON is uploaded via the wrapped storage
-- [ ] A write arriving during the debounce window resets the wait; only the latest JSON is eventually uploaded
-- [ ] A write arriving while a save is in-flight causes another debounce-and-save cycle after the in-flight save finishes, without blocking the write call
-- [ ] After retries are exhausted (via F02), status becomes `Failed` with the triggering error, and `lastSuccessfulSaveUtc` retains its previous value
-- [ ] After a successful save, status becomes `Idle` (or `Pending`/`Saving` if already dirty again) and `lastSuccessfulSaveUtc` updates
-- [ ] `FlushAsync()` on a dirty instance immediately attempts a save without waiting for the debounce window, bounded by 8 seconds
-- [ ] `ReadAsync()` passes through unchanged to the wrapped storage
-- [ ] Two separate instances never share dirty/debounce/retry/status state
+### F03. Debounced Storage Decorator
+- [x] `WriteAsync(json)` returns before any Drive upload has occurred, and the instance's status becomes `Pending`
+- [x] After the configured debounce window elapses with no further writes, the latest queued JSON is uploaded via the wrapped storage
+- [x] A write arriving during the debounce window resets the wait; only the latest JSON is eventually uploaded
+- [x] A write arriving while a save is in-flight causes another debounce-and-save cycle after the in-flight save finishes, without blocking the write call
+- [x] After retries are exhausted (via F02), status becomes `Failed` with the triggering error, and `lastSuccessfulSaveUtc` retains its previous value
+- [x] After a successful save, status becomes `Idle` (or `Pending`/`Saving` if already dirty again) and `lastSuccessfulSaveUtc` updates
+- [x] `FlushAsync()` on a dirty instance immediately attempts a save without waiting for the debounce window, bounded by 8 seconds
+- [x] `ReadAsync()` passes through unchanged to the wrapped storage
+- [x] Two separate instances never share dirty/debounce/retry/status state
 
-### F04. CashFlow Write-Behind Wiring
+### F04. CashFlow Debounced Wiring
 - [ ] When `CashFlow:Repository:Provider` is `GoogleDrive`, `CashFlowJsonRepository.SaveChangesAsync()` returns without waiting on a Drive round-trip
 - [ ] When the provider is `LocalJson`, CashFlow saves remain fully synchronous with no behavior change
 - [ ] The wired instance is resolvable by other components needing its status/flush capability
 
-### F05. Investment Write-Behind Wiring
+### F05. Investment Debounced Wiring
 - [ ] When Investment's provider is `GoogleDrive`, `JSONRepository.SaveChangesAsync()` returns without waiting on a Drive round-trip
 - [ ] When the provider is `LocalJson`, Investment saves remain fully synchronous with no behavior change
 - [ ] The wired instance is independent of the CashFlow instance from F04 — forcing one to fail has no effect on the other
 
 ### F06. CashFlow Graceful Shutdown Flush
-- [ ] On API process shutdown (`ApplicationStopping`), a dirty CashFlow write-behind instance is flushed before shutdown completes
-- [ ] On WPF app close, a dirty CashFlow write-behind instance is flushed before the process exits
+- [ ] On API process shutdown (`ApplicationStopping`), a dirty CashFlow debounced instance is flushed before shutdown completes
+- [ ] On WPF app close, a dirty CashFlow debounced instance is flushed before the process exits
 
 ### F07. Investment Graceful Shutdown Flush
-- [ ] On API process shutdown, a dirty Investment write-behind instance is flushed before shutdown completes
-- [ ] On WPF app close, a dirty Investment write-behind instance is flushed before the process exits
+- [ ] On API process shutdown, a dirty Investment debounced instance is flushed before shutdown completes
+- [ ] On WPF app close, a dirty Investment debounced instance is flushed before the process exits
 - [ ] This flush occurs independently of the CashFlow flush in F06 — failure or delay in one does not block the other
 
 ### F08. Sync Status API Endpoint
@@ -425,7 +425,7 @@ graph TD
 - [ ] The indicator is visible regardless of which page/view is currently active
 
 ### Cross-Feature Integration
-- [ ] The write-behind decorator (F03) correctly uses the sync status shape from F01 and the retry executor from F02
+- [x] The debounced decorator (F03) correctly uses the sync status shape from F01 and the retry executor from F02
 - [ ] A CashFlow mutation (F04) results in F03 queuing and eventually uploading the change without the API call waiting on it
 - [ ] An Investment mutation (F05) results in F03 queuing and eventually uploading the change, independently of any CashFlow activity
 - [ ] The CashFlow shutdown flush (F06) and Investment shutdown flush (F07) each act only on their own context's instance (F04/F05) without blocking each other

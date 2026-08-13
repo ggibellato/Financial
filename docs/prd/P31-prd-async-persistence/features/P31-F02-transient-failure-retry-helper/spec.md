@@ -4,7 +4,7 @@
 
 **What:** A new async-only retry helper, `TransientRetryPolicy`, in `Financial.Shared.Infrastructure`. It retries a delegate on network/timeout exceptions and on a new provider-agnostic `TransientStorageException`, using the same exponential backoff shape as the existing `GoogleRetryPolicy` (2s, 4s, 8s, 16s, 32s — 5 attempts), then surfaces the original exception once attempts are exhausted. A small translation layer in `Integrations/GoogleFinancialSupport` (the only project in the solution that references the Google Drive SDK) recognizes Drive's HTTP 429/5xx responses and re-throws them as `TransientStorageException`, so `Financial.Shared.Infrastructure` never needs to know about Google-specific exception types.
 
-**Why:** F03 (Write-Behind Storage Decorator) runs its Drive push from a background task with no request deadline, so it can afford to — and should — survive more transient-failure categories than `GoogleRetryPolicy` currently handles (which exists to keep synchronous, in-request calls from stalling too long, and only retries HTTP 429). Rather than widen `GoogleRetryPolicy`'s responsibility and risk changing behavior for its existing callers, the PRD calls for a separate, new helper — this feature is that helper.
+**Why:** F03 (Debounced Storage Decorator) runs its Drive push from a background task with no request deadline, so it can afford to — and should — survive more transient-failure categories than `GoogleRetryPolicy` currently handles (which exists to keep synchronous, in-request calls from stalling too long, and only retries HTTP 429). Rather than widen `GoogleRetryPolicy`'s responsibility and risk changing behavior for its existing callers, the PRD calls for a separate, new helper — this feature is that helper.
 
 Just as importantly, `Financial.Shared.Infrastructure` is used by both bounded contexts and currently has zero third-party package dependencies — the only project in the solution referencing the Google Drive SDK (`Google.Apis.*`) is `Integrations/GoogleFinancialSupport`. An earlier version of this spec had `TransientRetryPolicy` catch `Google.GoogleApiException` directly, which would have added a `Google.Apis.Core` package reference to `Financial.Shared.Infrastructure` — poking a hole in a boundary the codebase has deliberately kept intact (every other project reaches Google Drive only through the provider-agnostic `IRemoteFileClient` interface). This revision keeps that boundary: the Google-aware classification (429/5xx) lives entirely inside `GoogleFinancialSupport`, translated into a shared, framework-free exception type before it ever reaches `Financial.Shared.Infrastructure`.
 
@@ -22,7 +22,7 @@ Just as importantly, `Financial.Shared.Infrastructure` is used by both bounded c
 
 ```mermaid
 graph TD
-    A["F03 Write-Behind Storage Decorator (future)"] --> B[TransientRetryPolicy.ExecuteWithRetryAsync]
+    A["F03 Debounced Storage Decorator (future)"] --> B[TransientRetryPolicy.ExecuteWithRetryAsync]
     B --> C["Wrapped IJsonStorage.WriteAsync (future, via F03)"]
     C --> D["GoogleDriveJsonStorage"]
     D --> E["GoogleService (IRemoteFileClient)"]
