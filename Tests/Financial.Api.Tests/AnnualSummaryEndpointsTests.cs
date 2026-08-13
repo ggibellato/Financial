@@ -1,5 +1,5 @@
-using Financial.Api.Tests.TestHelpers;
 using Financial.CashFlow.Application.DTOs;
+using Financial.TestUtilities;
 using FluentAssertions;
 using System.Net;
 using System.Net.Http.Json;
