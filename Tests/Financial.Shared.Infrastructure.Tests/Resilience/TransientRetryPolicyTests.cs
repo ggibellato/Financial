@@ -1,17 +1,12 @@
-using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using Financial.Shared.Infrastructure.Resilience;
 using FluentAssertions;
-using Google;
 
 namespace Financial.Shared.Infrastructure.Tests.Resilience;
 
 public class TransientRetryPolicyTests
 {
-    private static GoogleApiException GoogleApiException(HttpStatusCode statusCode) =>
-        new("drive", "Drive error") { HttpStatusCode = statusCode };
-
     [Fact]
     public async Task ExecuteWithRetryAsync_ActionSucceedsImmediately_ReturnsResultWithoutRetrying()
     {
@@ -28,7 +23,7 @@ public class TransientRetryPolicyTests
     }
 
     [Fact]
-    public async Task ExecuteWithRetryAsync_RateLimited429_RetriesAndEventuallySucceeds()
+    public async Task ExecuteWithRetryAsync_TransientStorageException_RetriesAndEventuallySucceeds()
     {
         var callCount = 0;
         var logMessages = new List<string>();
@@ -39,7 +34,7 @@ public class TransientRetryPolicyTests
                 callCount++;
                 if (callCount <= 2)
                 {
-                    throw GoogleApiException(HttpStatusCode.TooManyRequests);
+                    throw new TransientStorageException("Drive request failed with a transient status.", new InvalidOperationException());
                 }
                 return Task.FromResult(7);
             },
@@ -50,25 +45,6 @@ public class TransientRetryPolicyTests
         logMessages.Should().HaveCount(2);
         logMessages[0].Should().Contain("Retry 1/5");
         logMessages[1].Should().Contain("Retry 2/5");
-    }
-
-    [Fact]
-    public async Task ExecuteWithRetryAsync_DriveServerError5xx_RetriesAndEventuallySucceeds()
-    {
-        var callCount = 0;
-
-        var result = await TransientRetryPolicy.ExecuteWithRetryAsync(() =>
-        {
-            callCount++;
-            if (callCount == 1)
-            {
-                throw GoogleApiException(HttpStatusCode.ServiceUnavailable);
-            }
-            return Task.FromResult(7);
-        });
-
-        result.Should().Be(7);
-        callCount.Should().Be(2);
     }
 
     [Fact]
@@ -137,12 +113,11 @@ public class TransientRetryPolicyTests
             () =>
             {
                 callCount++;
-                throw GoogleApiException(HttpStatusCode.TooManyRequests);
+                throw new TransientStorageException("Drive request failed with a transient status.", new InvalidOperationException());
             },
             maxRetries: 0);
 
-        var thrown = await act.Should().ThrowAsync<GoogleApiException>();
-        thrown.Which.HttpStatusCode.Should().Be(HttpStatusCode.TooManyRequests);
+        await act.Should().ThrowAsync<TransientStorageException>();
         callCount.Should().Be(1);
     }
 
@@ -158,21 +133,6 @@ public class TransientRetryPolicyTests
         });
 
         await act.Should().ThrowAsync<InvalidOperationException>();
-        callCount.Should().Be(1);
-    }
-
-    [Fact]
-    public async Task ExecuteWithRetryAsync_NonRetryableGoogleApiException_PropagatesImmediatelyWithoutRetrying()
-    {
-        var callCount = 0;
-
-        var act = async () => await TransientRetryPolicy.ExecuteWithRetryAsync<int>(() =>
-        {
-            callCount++;
-            throw GoogleApiException(HttpStatusCode.BadRequest);
-        });
-
-        await act.Should().ThrowAsync<GoogleApiException>();
         callCount.Should().Be(1);
     }
 }
