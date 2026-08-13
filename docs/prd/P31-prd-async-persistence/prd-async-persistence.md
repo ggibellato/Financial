@@ -366,15 +366,15 @@ graph TD
 - [x] `GoogleRetryPolicy` and its existing callers are unchanged
 
 ### F03. Write-Behind Storage Decorator
-- [ ] `WriteAsync(json)` returns before any Drive upload has occurred, and the instance's status becomes `Pending`
-- [ ] After the configured debounce window elapses with no further writes, the latest queued JSON is uploaded via the wrapped storage
-- [ ] A write arriving during the debounce window resets the wait; only the latest JSON is eventually uploaded
-- [ ] A write arriving while a save is in-flight causes another debounce-and-save cycle after the in-flight save finishes, without blocking the write call
-- [ ] After retries are exhausted (via F02), status becomes `Failed` with the triggering error, and `lastSuccessfulSaveUtc` retains its previous value
-- [ ] After a successful save, status becomes `Idle` (or `Pending`/`Saving` if already dirty again) and `lastSuccessfulSaveUtc` updates
-- [ ] `FlushAsync()` on a dirty instance immediately attempts a save without waiting for the debounce window, bounded by 8 seconds
-- [ ] `ReadAsync()` passes through unchanged to the wrapped storage
-- [ ] Two separate instances never share dirty/debounce/retry/status state
+- [x] `WriteAsync(json)` returns before any Drive upload has occurred, and the instance's status becomes `Pending`
+- [x] After the configured debounce window elapses with no further writes, the latest queued JSON is uploaded via the wrapped storage
+- [x] A write arriving during the debounce window resets the wait; only the latest JSON is eventually uploaded
+- [x] A write arriving while a save is in-flight causes another debounce-and-save cycle after the in-flight save finishes, without blocking the write call
+- [x] After retries are exhausted (via F02), status becomes `Failed` with the triggering error, and `lastSuccessfulSaveUtc` retains its previous value
+- [x] After a successful save, status becomes `Idle` (or `Pending`/`Saving` if already dirty again) and `lastSuccessfulSaveUtc` updates
+- [x] `FlushAsync()` on a dirty instance immediately attempts a save without waiting for the debounce window, bounded by 8 seconds
+- [x] `ReadAsync()` passes through unchanged to the wrapped storage
+- [x] Two separate instances never share dirty/debounce/retry/status state
 
 ### F04. CashFlow Write-Behind Wiring
 - [ ] When `CashFlow:Repository:Provider` is `GoogleDrive`, `CashFlowJsonRepository.SaveChangesAsync()` returns without waiting on a Drive round-trip
@@ -425,7 +425,7 @@ graph TD
 - [ ] The indicator is visible regardless of which page/view is currently active
 
 ### Cross-Feature Integration
-- [ ] The write-behind decorator (F03) correctly uses the sync status shape from F01 and the retry executor from F02
+- [x] The write-behind decorator (F03) correctly uses the sync status shape from F01 and the retry executor from F02
 - [ ] A CashFlow mutation (F04) results in F03 queuing and eventually uploading the change without the API call waiting on it
 - [ ] An Investment mutation (F05) results in F03 queuing and eventually uploading the change, independently of any CashFlow activity
 - [ ] The CashFlow shutdown flush (F06) and Investment shutdown flush (F07) each act only on their own context's instance (F04/F05) without blocking each other
