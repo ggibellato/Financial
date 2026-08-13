@@ -359,11 +359,11 @@ graph TD
 - [x] The type compiles and is referenced from `Financial.Shared.Infrastructure` with no dependency on either bounded context
 
 ### F02. Transient-Failure Retry Helper
-- [ ] A simulated HTTP 429 is retried with the existing 5-attempt, 2/4/8/16/32s backoff shape
-- [ ] A simulated network/timeout exception is retried the same way
-- [ ] A simulated Drive HTTP 5xx response is retried the same way
-- [ ] After 5 failed attempts, the helper surfaces the final failure to the caller instead of retrying further
-- [ ] `GoogleRetryPolicy` and its existing callers are unchanged
+- [x] A simulated HTTP 429 is retried with the existing 5-attempt, 2/4/8/16/32s backoff shape
+- [x] A simulated network/timeout exception is retried the same way
+- [x] A simulated Drive HTTP 5xx response is retried the same way
+- [x] After 5 failed attempts, the helper surfaces the final failure to the caller instead of retrying further
+- [x] `GoogleRetryPolicy` and its existing callers are unchanged
 
 ### F03. Write-Behind Storage Decorator
 - [ ] `WriteAsync(json)` returns before any Drive upload has occurred, and the instance's status becomes `Pending`
