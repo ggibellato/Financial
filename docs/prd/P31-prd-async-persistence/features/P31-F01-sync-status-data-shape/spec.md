@@ -57,6 +57,7 @@ Not applicable — F01 is an in-memory type, not persisted.
 | Test File | Test Type | Target | Coverage Goal |
 |-----------|-----------|--------|---------------|
 | `Tests/Financial.Shared.Infrastructure.Tests/Sync/SyncStatusTests.cs` | Unit | `SyncStatus`, `SyncState` | 100% (trivial data type) |
+| `Tests/Financial.Shared.Infrastructure.Tests/Sync/SyncArchitectureTests.cs` | Architecture | `Financial.Shared.Infrastructure` assembly | Guards the no-bounded-context-dependency constraint |
 
 **Test Functions:**
 
@@ -64,10 +65,11 @@ Not applicable — F01 is an in-memory type, not persisted.
 |---------------|-------------|------------|
 | `SyncState_Should_Have_Exactly_Four_Members` | Enumerates `SyncState` members via reflection | Exactly `Idle`, `Pending`, `Saving`, `Failed`, no others |
 | `SyncStatus_Should_Expose_State_Error_And_Timestamp` | Constructs a `SyncStatus` with all fields populated | `State`, `LastError`, `LastSuccessfulSaveUtc` round-trip the constructor values |
-| `SyncStatus_Should_Allow_Null_Error_And_Timestamp` | Constructs a `SyncStatus` with `null` error and `null` timestamp (the `Idle`-at-startup case) | No exception; both nullable members are `null` |
-| `SyncStatus_Should_Support_Value_Equality` | Constructs two `SyncStatus` instances with identical field values | `Equals` returns `true` and `GetHashCode` matches (record semantics) |
+| `SharedInfrastructure_Should_Not_Reference_Either_Bounded_Context` | Inspects `typeof(SyncStatus).Assembly.GetReferencedAssemblies()` | No referenced assembly name contains `CashFlow` or `Investment` — fails immediately if a future change adds a project reference to either bounded context |
+
+Two constructor-focused tests present in an earlier draft (`SyncStatus_Should_Allow_Null_Error_And_Timestamp`, `SyncStatus_Should_Support_Value_Equality`) were dropped: both only re-asserted behavior the C# `record` compiler already guarantees (nullable property assignment, generated equality), so they couldn't fail from any plausible future code change and added no regression coverage.
 
 **Acceptance criteria covered (PRD Section 9, F01):**
 - `SyncState` includes exactly `Idle`, `Pending`, `Saving`, `Failed` → `SyncState_Should_Have_Exactly_Four_Members`
-- `SyncStatus` exposes state, a nullable last error message, and a nullable last successful save UTC timestamp → `SyncStatus_Should_Expose_State_Error_And_Timestamp`, `SyncStatus_Should_Allow_Null_Error_And_Timestamp`
-- The type compiles and is referenced from `Financial.Shared.Infrastructure` with no dependency on either bounded context → verified by project location and the absence of any `using Financial.CashFlow.*` / `Financial.Investment.*` in the new files
+- `SyncStatus` exposes state, a nullable last error message, and a nullable last successful save UTC timestamp → `SyncStatus_Should_Expose_State_Error_And_Timestamp`
+- The type compiles and is referenced from `Financial.Shared.Infrastructure` with no dependency on either bounded context → `SharedInfrastructure_Should_Not_Reference_Either_Bounded_Context`

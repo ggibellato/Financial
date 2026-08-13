@@ -24,24 +24,4 @@ public class SyncStatusTests
         status.LastError.Should().Be("Drive upload failed");
         status.LastSuccessfulSaveUtc.Should().Be(timestamp);
     }
-
-    [Fact]
-    public void SyncStatus_Should_Allow_Null_Error_And_Timestamp()
-    {
-        var status = new SyncStatus(SyncState.Idle, null, null);
-
-        status.LastError.Should().BeNull();
-        status.LastSuccessfulSaveUtc.Should().BeNull();
-    }
-
-    [Fact]
-    public void SyncStatus_Should_Support_Value_Equality()
-    {
-        var timestamp = new DateTime(2026, 8, 13, 10, 30, 0, DateTimeKind.Utc);
-        var first = new SyncStatus(SyncState.Idle, null, timestamp);
-        var second = new SyncStatus(SyncState.Idle, null, timestamp);
-
-        first.Should().Be(second);
-        first.GetHashCode().Should().Be(second.GetHashCode());
-    }
 }
