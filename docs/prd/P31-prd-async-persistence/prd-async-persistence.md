@@ -396,10 +396,10 @@ graph TD
 - [x] This flush occurs independently of the CashFlow flush in F06 — failure or delay in one does not block the other
 
 ### F08. Sync Status API Endpoint
-- [ ] `GET /api/v1/financial/sync-status` returns both CashFlow and Investment status in a single response
-- [ ] Each context's response includes `state`, `lastError` (nullable), and `lastSuccessfulSaveUtc` (nullable)
-- [ ] When a context's provider is `LocalJson`, that context always reports `state: "Idle"`
-- [ ] The endpoint reflects a `Failed` state for a context immediately after that context's retries are exhausted
+- [x] `GET /api/v1/financial/sync-status` returns both CashFlow and Investment status in a single response
+- [x] Each context's response includes `state`, `lastError` (nullable), and `lastSuccessfulSaveUtc` (nullable)
+- [x] When a context's provider is `LocalJson`, that context always reports `state: "Idle"`
+- [x] The endpoint reflects a `Failed` state for a context immediately after that context's retries are exhausted
 
 ### F09. Web Sync Status Polling
 - [ ] The hook calls the F08 endpoint on mount and every 15 seconds thereafter
@@ -429,6 +429,6 @@ graph TD
 - [ ] A CashFlow mutation (F04) results in F03 queuing and eventually uploading the change without the API call waiting on it
 - [ ] An Investment mutation (F05) results in F03 queuing and eventually uploading the change, independently of any CashFlow activity
 - [x] The CashFlow shutdown flush (F06) and Investment shutdown flush (F07) each act only on their own context's instance (F04/F05) without blocking each other
-- [ ] The sync-status endpoint (F08) correctly reflects both F04's and F05's status, including the case where only one has failed
+- [x] The sync-status endpoint (F08) correctly reflects both F04's and F05's status, including the case where only one has failed
 - [ ] The web polling hook (F09) correctly surfaces F08's response, and the web banner (F10) correctly reflects F09's data
 - [ ] The WPF polling (F11) correctly reflects F04's and F05's in-process status without going through F08, and the WPF indicator (F12) correctly reflects F11's data
