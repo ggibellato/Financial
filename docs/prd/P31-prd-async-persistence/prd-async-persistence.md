@@ -354,9 +354,9 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Sync Status Data Shape
-- [ ] `SyncState` includes exactly `Idle`, `Pending`, `Saving`, `Failed`
-- [ ] `SyncStatus` exposes state, a nullable last error message, and a nullable last successful save UTC timestamp
-- [ ] The type compiles and is referenced from `Financial.Shared.Infrastructure` with no dependency on either bounded context
+- [x] `SyncState` includes exactly `Idle`, `Pending`, `Saving`, `Failed`
+- [x] `SyncStatus` exposes state, a nullable last error message, and a nullable last successful save UTC timestamp
+- [x] The type compiles and is referenced from `Financial.Shared.Infrastructure` with no dependency on either bounded context
 
 ### F02. Transient-Failure Retry Helper
 - [ ] A simulated HTTP 429 is retried with the existing 5-attempt, 2/4/8/16/32s backoff shape
