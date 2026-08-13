@@ -382,9 +382,9 @@ graph TD
 - [x] The wired instance is resolvable by other components needing its status/flush capability
 
 ### F05. Investment Debounced Wiring
-- [ ] When Investment's provider is `GoogleDrive`, `JSONRepository.SaveChangesAsync()` returns without waiting on a Drive round-trip
-- [ ] When the provider is `LocalJson`, Investment saves remain fully synchronous with no behavior change
-- [ ] The wired instance is independent of the CashFlow instance from F04 — forcing one to fail has no effect on the other
+- [x] When Investment's provider is `GoogleDrive`, `JSONRepository.SaveChangesAsync()` returns without waiting on a Drive round-trip
+- [x] When the provider is `LocalJson`, Investment saves remain fully synchronous with no behavior change
+- [x] The wired instance is independent of the CashFlow instance from F04 — forcing one to fail has no effect on the other
 
 ### F06. CashFlow Graceful Shutdown Flush
 - [ ] On API process shutdown (`ApplicationStopping`), a dirty CashFlow debounced instance is flushed before shutdown completes
