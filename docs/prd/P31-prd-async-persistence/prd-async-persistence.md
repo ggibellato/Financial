@@ -387,8 +387,8 @@ graph TD
 - [x] The wired instance is independent of the CashFlow instance from F04 — forcing one to fail has no effect on the other
 
 ### F06. CashFlow Graceful Shutdown Flush
-- [ ] On API process shutdown (`ApplicationStopping`), a dirty CashFlow debounced instance is flushed before shutdown completes
-- [ ] On WPF app close, a dirty CashFlow debounced instance is flushed before the process exits
+- [x] On API process shutdown (`ApplicationStopping`), a dirty CashFlow debounced instance is flushed before shutdown completes
+- [x] On WPF app close, a dirty CashFlow debounced instance is flushed before the process exits
 
 ### F07. Investment Graceful Shutdown Flush
 - [ ] On API process shutdown, a dirty Investment debounced instance is flushed before shutdown completes
