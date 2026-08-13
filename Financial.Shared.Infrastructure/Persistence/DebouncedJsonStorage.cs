@@ -136,31 +136,47 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
                 },
                 _maxRetries).ConfigureAwait(false);
 
-            lock (_lock)
-            {
-                _isSaveInFlight = false;
-                _lastSuccessfulSaveUtc = _timeProvider.GetUtcNow().UtcDateTime;
-
-                if (_isDirty)
-                {
-                    _state = SyncState.Pending;
-                    var myGeneration = ++_generation;
-                    _currentCycleTask = Task.Run(() => RunDebounceThenSaveAsync(myGeneration));
-                }
-                else
-                {
-                    _state = SyncState.Idle;
-                }
-            }
+            HandleSaveSuccess();
         }
         catch (Exception ex)
         {
-            lock (_lock)
+            HandleSaveFailure(ex);
+        }
+    }
+
+    private void HandleSaveSuccess()
+    {
+        lock (_lock)
+        {
+            _isSaveInFlight = false;
+            _lastSuccessfulSaveUtc = _timeProvider.GetUtcNow().UtcDateTime;
+
+            if (_isDirty)
             {
-                _isSaveInFlight = false;
-                _state = SyncState.Failed;
-                _lastError = ex.Message;
+                // A write arrived while this save was in flight - start a fresh cycle for it
+                // instead of going idle.
+                _state = SyncState.Pending;
+                var myGeneration = ++_generation;
+                _currentCycleTask = Task.Run(() => RunDebounceThenSaveAsync(myGeneration));
             }
+            else
+            {
+                _state = SyncState.Idle;
+            }
+        }
+    }
+
+    private void HandleSaveFailure(Exception ex)
+    {
+        lock (_lock)
+        {
+            _isSaveInFlight = false;
+            _state = SyncState.Failed;
+            _lastError = ex.Message;
+
+            // Deliberately does not auto-start a follow-up cycle even if still dirty - only a
+            // subsequent WriteAsync or an explicit FlushAsync re-arms it, avoiding a retry storm
+            // against a persistently failing Drive.
         }
     }
 }
