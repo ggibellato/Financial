@@ -377,9 +377,9 @@ graph TD
 - [x] Two separate instances never share dirty/debounce/retry/status state
 
 ### F04. CashFlow Debounced Wiring
-- [ ] When `CashFlow:Repository:Provider` is `GoogleDrive`, `CashFlowJsonRepository.SaveChangesAsync()` returns without waiting on a Drive round-trip
-- [ ] When the provider is `LocalJson`, CashFlow saves remain fully synchronous with no behavior change
-- [ ] The wired instance is resolvable by other components needing its status/flush capability
+- [x] When `CashFlow:Repository:Provider` is `GoogleDrive`, `CashFlowJsonRepository.SaveChangesAsync()` returns without waiting on a Drive round-trip
+- [x] When the provider is `LocalJson`, CashFlow saves remain fully synchronous with no behavior change
+- [x] The wired instance is resolvable by other components needing its status/flush capability
 
 ### F05. Investment Debounced Wiring
 - [ ] When Investment's provider is `GoogleDrive`, `JSONRepository.SaveChangesAsync()` returns without waiting on a Drive round-trip
