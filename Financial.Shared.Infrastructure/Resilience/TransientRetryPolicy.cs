@@ -1,7 +1,5 @@
-using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
-using Google;
 
 namespace Financial.Shared.Infrastructure.Resilience;
 
@@ -31,15 +29,12 @@ internal static class TransientRetryPolicy
 
     private static bool IsRetryable(Exception ex) => ex switch
     {
-        GoogleApiException googleApiException => IsRetryableStatusCode(googleApiException.HttpStatusCode),
+        TransientStorageException => true,
         HttpRequestException => true,
         TaskCanceledException => true,
         SocketException => true,
         _ => false
     };
-
-    private static bool IsRetryableStatusCode(HttpStatusCode statusCode) =>
-        statusCode == HttpStatusCode.TooManyRequests || (int)statusCode >= 500;
 
     private static int CalculateWaitTimeMs(int retryCount) => InitialDelayMs * (int)Math.Pow(2, retryCount - 1);
 }

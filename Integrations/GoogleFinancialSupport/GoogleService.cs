@@ -1,5 +1,6 @@
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
 using Financial.Shared.Infrastructure.Persistence;
+using Google;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -29,9 +30,29 @@ public sealed class GoogleService : IRemoteFileClient, IGoogleSheetsDataSource
     public Task<IList<IList<object>>> GetSpreadSheetDataAsync(string spreadSheetId, string range) =>
         _sheetsClient.GetSpreadSheetDataAsync(spreadSheetId, range);
 
-    public string DownloadFileContent(string drivePath) =>
-        _driveClient.DownloadFileContent(drivePath);
+    public string DownloadFileContent(string drivePath)
+    {
+        try
+        {
+            return _driveClient.DownloadFileContent(drivePath);
+        }
+        catch (GoogleApiException ex)
+        {
+            GoogleTransientErrorTranslator.ThrowIfTransient(ex);
+            throw;
+        }
+    }
 
-    public void UploadFileContent(string drivePath, string content) =>
-        _driveClient.UploadFileContent(drivePath, content);
+    public void UploadFileContent(string drivePath, string content)
+    {
+        try
+        {
+            _driveClient.UploadFileContent(drivePath, content);
+        }
+        catch (GoogleApiException ex)
+        {
+            GoogleTransientErrorTranslator.ThrowIfTransient(ex);
+            throw;
+        }
+    }
 }
