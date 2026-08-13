@@ -4,7 +4,7 @@
 
 **What:** Introduce a small, immutable data contract representing the persistence state of a bounded context's background save mechanism: a `SyncState` enum (`Idle`, `Pending`, `Saving`, `Failed`) and a `SyncStatus` value (state, nullable last error message, nullable last successful save UTC timestamp). Both types live in `Financial.Shared.Infrastructure`.
 
-**Why:** Every later feature in this PRD — the write-behind decorator (F03), per-context wiring (F04/F05), the status API endpoint (F08), and both front ends' polling/indicator UI (F09–F12) — needs to produce or consume the same shape for "is this context's data safely persisted right now." Defining it once, first, and with zero dependencies avoids each consumer inventing its own ad hoc representation.
+**Why:** Every later feature in this PRD — the debounced decorator (F03), per-context wiring (F04/F05), the status API endpoint (F08), and both front ends' polling/indicator UI (F09–F12) — needs to produce or consume the same shape for "is this context's data safely persisted right now." Defining it once, first, and with zero dependencies avoids each consumer inventing its own ad hoc representation.
 
 **Scope:**
 - Included: `SyncState` enum, `SyncStatus` immutable value type, placed in `Financial.Shared.Infrastructure` with no dependency on `Financial.CashFlow.*` or `Financial.Investment.*`.
@@ -20,7 +20,7 @@
 graph TD
     A["Financial.Shared.Infrastructure/Sync/SyncState.cs"] --> C[SyncStatus]
     B["Financial.Shared.Infrastructure/Sync/SyncStatus.cs"] --> C
-    C --> D["F03 Write-Behind Storage Decorator (future)"]
+    C --> D["F03 Debounced Storage Decorator (future)"]
 ```
 
 ## 3. Technical Decisions
@@ -37,7 +37,7 @@ graph TD
 
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |-----------|--------------|---------|---------------------|
-| `Financial.Shared.Infrastructure/Sync/SyncState.cs` | New | Enumerates the possible persistence states of a write-behind instance | Defines exactly `Idle`, `Pending`, `Saving`, `Failed` |
+| `Financial.Shared.Infrastructure/Sync/SyncState.cs` | New | Enumerates the possible persistence states of a debounced instance | Defines exactly `Idle`, `Pending`, `Saving`, `Failed` |
 | `Financial.Shared.Infrastructure/Sync/SyncStatus.cs` | New | Immutable snapshot of a context's sync state | Holds `State`, nullable `LastError`, nullable `LastSuccessfulSaveUtc`; no logic beyond data holding |
 
 No API, database, or frontend changes in this feature.

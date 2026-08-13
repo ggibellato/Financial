@@ -3,7 +3,7 @@ using Financial.Shared.Infrastructure.Sync;
 
 namespace Financial.Shared.Infrastructure.Persistence;
 
-public sealed class WriteBehindJsonStorage : IJsonStorage, ISyncStatusProvider
+public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
 {
     private const int DefaultMaxRetries = 5;
     private static readonly TimeSpan DefaultFlushTimeout = TimeSpan.FromSeconds(8);
@@ -24,12 +24,12 @@ public sealed class WriteBehindJsonStorage : IJsonStorage, ISyncStatusProvider
     private string? _lastError;
     private DateTime? _lastSuccessfulSaveUtc;
 
-    public WriteBehindJsonStorage(IJsonStorage inner, TimeSpan debounceWindow, TimeProvider? timeProvider = null)
+    public DebouncedJsonStorage(IJsonStorage inner, TimeSpan debounceWindow, TimeProvider? timeProvider = null)
         : this(inner, debounceWindow, timeProvider, DefaultMaxRetries, DefaultFlushTimeout)
     {
     }
 
-    internal WriteBehindJsonStorage(
+    internal DebouncedJsonStorage(
         IJsonStorage inner,
         TimeSpan debounceWindow,
         TimeProvider? timeProvider,

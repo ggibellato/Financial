@@ -6,13 +6,13 @@ using FluentAssertions;
 
 namespace Financial.Shared.Infrastructure.Tests.Persistence;
 
-public class WriteBehindJsonStorageTests
+public class DebouncedJsonStorageTests
 {
     [Fact]
     public async Task WriteAsync_ReturnsImmediately_AndStatusBecomesPending()
     {
         var inner = new ControllableJsonStorage();
-        var storage = new WriteBehindJsonStorage(inner, TimeSpan.FromSeconds(10));
+        var storage = new DebouncedJsonStorage(inner, TimeSpan.FromSeconds(10));
 
         var writeTask = storage.WriteAsync("{\"a\":1}");
 
@@ -26,7 +26,7 @@ public class WriteBehindJsonStorageTests
     public async Task AfterDebounceWindowElapses_LatestJsonIsUploaded()
     {
         var inner = new ControllableJsonStorage();
-        var storage = new WriteBehindJsonStorage(inner, TimeSpan.FromMilliseconds(50));
+        var storage = new DebouncedJsonStorage(inner, TimeSpan.FromMilliseconds(50));
 
         await storage.WriteAsync("{\"a\":1}");
 
@@ -40,7 +40,7 @@ public class WriteBehindJsonStorageTests
     public async Task WriteDuringDebounceWindow_ResetsWait_OnlyLatestJsonUploaded()
     {
         var inner = new ControllableJsonStorage();
-        var storage = new WriteBehindJsonStorage(inner, TimeSpan.FromMilliseconds(150));
+        var storage = new DebouncedJsonStorage(inner, TimeSpan.FromMilliseconds(150));
 
         await storage.WriteAsync("{\"a\":1}");
         await Task.Delay(50);
@@ -57,7 +57,7 @@ public class WriteBehindJsonStorageTests
     {
         var inner = new ControllableJsonStorage();
         inner.HoldWritesUntilReleased();
-        var storage = new WriteBehindJsonStorage(inner, TimeSpan.FromMilliseconds(30));
+        var storage = new DebouncedJsonStorage(inner, TimeSpan.FromMilliseconds(30));
 
         await storage.WriteAsync("{\"a\":1}");
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Saving);
@@ -81,7 +81,7 @@ public class WriteBehindJsonStorageTests
     {
         var inner = new ControllableJsonStorage();
         var fixedTime = new FakeTimeProvider(new DateTimeOffset(2026, 8, 13, 10, 0, 0, TimeSpan.Zero));
-        var storage = new WriteBehindJsonStorage(
+        var storage = new DebouncedJsonStorage(
             inner, TimeSpan.FromMilliseconds(20), fixedTime, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8));
 
         await storage.WriteAsync("{\"a\":1}");
@@ -105,7 +105,7 @@ public class WriteBehindJsonStorageTests
         var inner = new ControllableJsonStorage();
         inner.HoldWritesUntilReleased();
         inner.FailNextWrites(1);
-        var storage = new WriteBehindJsonStorage(
+        var storage = new DebouncedJsonStorage(
             inner, TimeSpan.FromMilliseconds(20), null, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8));
 
         await storage.WriteAsync("{\"a\":1}");
@@ -127,7 +127,7 @@ public class WriteBehindJsonStorageTests
     {
         var inner = new ControllableJsonStorage();
         var fixedTime = new FakeTimeProvider(new DateTimeOffset(2026, 8, 13, 12, 0, 0, TimeSpan.Zero));
-        var storage = new WriteBehindJsonStorage(inner, TimeSpan.FromMilliseconds(20), fixedTime);
+        var storage = new DebouncedJsonStorage(inner, TimeSpan.FromMilliseconds(20), fixedTime);
 
         await storage.WriteAsync("{\"a\":1}");
 
@@ -141,7 +141,7 @@ public class WriteBehindJsonStorageTests
     {
         var inner = new ControllableJsonStorage();
         inner.HoldWritesUntilReleased();
-        var storage = new WriteBehindJsonStorage(inner, TimeSpan.FromMilliseconds(300));
+        var storage = new DebouncedJsonStorage(inner, TimeSpan.FromMilliseconds(300));
 
         await storage.WriteAsync("{\"a\":1}");
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Saving);
@@ -159,7 +159,7 @@ public class WriteBehindJsonStorageTests
     public async Task FlushAsync_OnDirtyInstance_SavesImmediatelyWithoutWaitingForDebounce()
     {
         var inner = new ControllableJsonStorage();
-        var storage = new WriteBehindJsonStorage(inner, TimeSpan.FromSeconds(30));
+        var storage = new DebouncedJsonStorage(inner, TimeSpan.FromSeconds(30));
 
         await storage.WriteAsync("{\"a\":1}");
         inner.WrittenJson.Should().BeEmpty();
@@ -175,7 +175,7 @@ public class WriteBehindJsonStorageTests
     {
         var inner = new ControllableJsonStorage();
         inner.HoldWritesUntilReleased();
-        var storage = new WriteBehindJsonStorage(
+        var storage = new DebouncedJsonStorage(
             inner, TimeSpan.FromMilliseconds(20), null, maxRetries: 5, flushTimeout: TimeSpan.FromMilliseconds(100));
 
         await storage.WriteAsync("{\"a\":1}");
@@ -192,7 +192,7 @@ public class WriteBehindJsonStorageTests
     public async Task ReadAsync_PassesThroughToWrappedStorage()
     {
         var inner = new ControllableJsonStorage { ReadResult = "{\"x\":true}" };
-        var storage = new WriteBehindJsonStorage(inner, TimeSpan.FromMilliseconds(50));
+        var storage = new DebouncedJsonStorage(inner, TimeSpan.FromMilliseconds(50));
 
         var result = await storage.ReadAsync();
 
@@ -204,11 +204,11 @@ public class WriteBehindJsonStorageTests
     {
         var failingInner = new ControllableJsonStorage();
         failingInner.FailNextWrites(1);
-        var failingStorage = new WriteBehindJsonStorage(
+        var failingStorage = new DebouncedJsonStorage(
             failingInner, TimeSpan.FromMilliseconds(20), null, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8));
 
         var healthyInner = new ControllableJsonStorage();
-        var healthyStorage = new WriteBehindJsonStorage(healthyInner, TimeSpan.FromMilliseconds(20));
+        var healthyStorage = new DebouncedJsonStorage(healthyInner, TimeSpan.FromMilliseconds(20));
 
         await failingStorage.WriteAsync("{\"a\":1}");
         await WaitForAsync(() => failingStorage.GetStatus().State == SyncState.Failed);

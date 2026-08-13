@@ -1,24 +1,24 @@
-# Spec: F03. Write-Behind Storage Decorator
+# Spec: F03. Debounced Storage Decorator
 
 ## 1. Technical Overview
 
-**What:** `WriteBehindJsonStorage`, a new `IJsonStorage` decorator in `Financial.Shared.Infrastructure`, plus a small `ISyncStatusProvider` contract it implements. Wrapping any other `IJsonStorage` instance, it makes `WriteAsync` return as soon as the latest JSON is queued in memory; a debounced background cycle uploads the latest queued JSON via F02's `TransientRetryPolicy`, tracking status through F01's `SyncStatus`/`SyncState` shape. `FlushAsync()` gives a caller (a future shutdown hook) a way to force an immediate, bounded-wait save attempt.
+**What:** `DebouncedJsonStorage`, a new `IJsonStorage` decorator in `Financial.Shared.Infrastructure`, plus a small `ISyncStatusProvider` contract it implements. Wrapping any other `IJsonStorage` instance, it makes `WriteAsync` return as soon as the latest JSON is queued in memory; a debounced background cycle uploads the latest queued JSON via F02's `TransientRetryPolicy`, tracking status through F01's `SyncStatus`/`SyncState` shape. `FlushAsync()` gives a caller (a future shutdown hook) a way to force an immediate, bounded-wait save attempt.
 
 **Why:** This is the mechanism the whole PRD is built around — decoupling a mutation's in-memory apply from its Drive upload. F01 (status shape) and F02 (retry executor) exist specifically to be consumed here. Each instance is fully self-contained (its own dirty flag, debounce cycle, and status) so F04 and F05 can each wrap their own context's storage independently, with zero shared state between them, satisfying the PRD's cross-context isolation requirement without either of those features needing any locking or coordination logic of their own.
 
 **Scope:**
-- Included: `WriteBehindJsonStorage` (implements `IJsonStorage` + `ISyncStatusProvider`); `ISyncStatusProvider` (the narrow "status + flush" contract F04–F11 will depend on instead of the concrete decorator type); debounce-then-save cycle with reset-on-write and re-dirty-during-save handling; `FlushAsync()` bounded by a fixed 8-second timeout; per-instance isolation.
+- Included: `DebouncedJsonStorage` (implements `IJsonStorage` + `ISyncStatusProvider`); `ISyncStatusProvider` (the narrow "status + flush" contract F04–F11 will depend on instead of the concrete decorator type); debounce-then-save cycle with reset-on-write and re-dirty-during-save handling; `FlushAsync()` bounded by a fixed 8-second timeout; per-instance isolation.
 - Excluded: wiring this decorator into `CashFlowRepositoryFactory`/the Investment equivalent, or into any DI registration (F04, F05). Calling `FlushAsync()` from a shutdown hook (F06, F07). Exposing status over HTTP or in either UI (F08–F12). No local-disk write-ahead log or crash durability beyond what a graceful `FlushAsync()` call provides — explicitly out of scope per the PRD.
 
 ## 2. Architecture Impact
 
 **Affected components:**
 - `Financial.Shared.Infrastructure/Sync/ISyncStatusProvider.cs` (new)
-- `Financial.Shared.Infrastructure/Persistence/WriteBehindJsonStorage.cs` (new)
+- `Financial.Shared.Infrastructure/Persistence/DebouncedJsonStorage.cs` (new)
 
 ```mermaid
 graph TD
-    A["Caller (future F04/F05 repository)"] -->|"WriteAsync(json)"| B[WriteBehindJsonStorage]
+    A["Caller (future F04/F05 repository)"] -->|"WriteAsync(json)"| B[DebouncedJsonStorage]
     B -->|returns immediately| A
     B -->|queues json, marks dirty| C["Debounce-then-save cycle"]
     C -->|"after debounce window, no newer write"| D["TransientRetryPolicy.ExecuteWithRetryAsync (F02)"]
@@ -33,7 +33,7 @@ graph TD
 
 | Decision | Chosen Approach | Alternative Considered | Trade-off |
 |----------|----------------|----------------------|-----------|
-| Status/flush exposure surface | New `ISyncStatusProvider` interface (`GetStatus()`, `FlushAsync()`) in `Financial.Shared.Infrastructure.Sync`, implemented by `WriteBehindJsonStorage` alongside `IJsonStorage` | Have later features (F06, F08, F11) depend on the concrete `WriteBehindJsonStorage` type directly | The PRD's own wording for F04 ("the wrapped instance, or its status/flush surface, is resolvable via DI... without those features needing to know about the wrapping decision") calls for an abstraction; a 2-member interface is the minimum that satisfies it without inventing anything unused |
+| Status/flush exposure surface | New `ISyncStatusProvider` interface (`GetStatus()`, `FlushAsync()`) in `Financial.Shared.Infrastructure.Sync`, implemented by `DebouncedJsonStorage` alongside `IJsonStorage` | Have later features (F06, F08, F11) depend on the concrete `DebouncedJsonStorage` type directly | The PRD's own wording for F04 ("the wrapped instance, or its status/flush surface, is resolvable via DI... without those features needing to know about the wrapping decision") calls for an abstraction; a 2-member interface is the minimum that satisfies it without inventing anything unused |
 | Debounce reset mechanism | A monotonically increasing generation counter: each `WriteAsync` bumps it and (if no save is in-flight) starts a new debounced wait tagged with that generation; when a wait elapses, it proceeds to save only if its generation is still current, otherwise a newer write already superseded it | A `CancellationTokenSource` replaced-and-cancelled on every write | The CTS approach is the more textbook debounce pattern, but its create/cancel/dispose lifecycle under concurrent writes is easy to get subtly wrong (dispose-while-referenced races). The generation counter has no disposal surface at all — a superseded wait just wakes up, checks a number, and exits. The cost (an extra harmless `Task.Delay` per superseded write during a rapid burst) is negligible for this single-user app's actual write frequency |
 | Retry integration | Wrap the inner `WriteAsync(json)` call in a `Func<Task<bool>>` (returning a dummy `true`) passed to `TransientRetryPolicy.ExecuteWithRetryAsync<T>` (F02's only overload is generic) | Add a non-generic overload to `TransientRetryPolicy` | F02 is already implemented and reviewed; adding an overload there re-opens a finished feature for a one-line convenience. The dummy-return wrapper is a two-line adaptation fully contained in this feature |
 | Failure semantics: does a `Failed` instance auto-retry if still dirty? | No — matching the PRD's exact wording ("the instance does not retry again until the next dirty-triggering write starts a fresh cycle"), the save-failure handler does **not** start a follow-up debounce cycle even if `_isDirty` is still true (e.g., because a write arrived during the failed attempt). Only a subsequent `WriteAsync` call (or an explicit `FlushAsync()`) re-arms it | Auto-retry immediately, matching the success path's "if still dirty, start a fresh cycle" behavior | The PRD deliberately asymmetric here: uncontrolled auto-retry against a down/failing Drive would degrade into a retry storm indistinguishable from the very problem F02's backoff exists to prevent. This is a subtle, easy-to-miss point — called out explicitly here and covered by a dedicated test |
@@ -49,13 +49,13 @@ graph TD
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |-----------|--------------|---------|---------------------|
 | `Financial.Shared.Infrastructure/Sync/ISyncStatusProvider.cs` | New | Narrow contract for querying sync status and forcing a flush | `SyncStatus GetStatus()`; `Task FlushAsync()` |
-| `Financial.Shared.Infrastructure/Persistence/WriteBehindJsonStorage.cs` | New | `IJsonStorage` decorator implementing write-behind persistence | Dirty-marking on `WriteAsync`; debounce-then-save cycle (reset-on-write, re-dirty-during-save, no-auto-retry-after-failure); calls F02's retry executor around the wrapped storage's `WriteAsync`; maintains F01's `SyncStatus`; `FlushAsync()` bypasses the debounce wait, bounded by an 8-second timeout; `ReadAsync()` passthrough |
+| `Financial.Shared.Infrastructure/Persistence/DebouncedJsonStorage.cs` | New | `IJsonStorage` decorator implementing debounced persistence | Dirty-marking on `WriteAsync`; debounce-then-save cycle (reset-on-write, re-dirty-during-save, no-auto-retry-after-failure); calls F02's retry executor around the wrapped storage's `WriteAsync`; maintains F01's `SyncStatus`; `FlushAsync()` bypasses the debounce wait, bounded by an 8-second timeout; `ReadAsync()` passthrough |
 
 **Tests:**
 
 | File Path | New/Modified | Purpose | Key Responsibilities |
 |-----------|--------------|---------|---------------------|
-| `Tests/Financial.Shared.Infrastructure.Tests/Persistence/WriteBehindJsonStorageTests.cs` | New | Behavioral coverage of the decorator | Covers every F03 acceptance criterion |
+| `Tests/Financial.Shared.Infrastructure.Tests/Persistence/DebouncedJsonStorageTests.cs` | New | Behavioral coverage of the decorator | Covers every F03 acceptance criterion |
 | `Tests/Financial.Shared.Infrastructure.Tests/Persistence/ControllableJsonStorage.cs` | New | Test double implementing `IJsonStorage` | Records every `WriteAsync` call's JSON; optionally gates completion on a signal (to reliably observe the `Saving` state mid-test); optionally throws a configured exception for a configured number of calls |
 
 No API, database, or frontend changes in this feature.
@@ -74,7 +74,7 @@ Not applicable — F03 holds its state entirely in memory, per-instance.
 
 | Test File | Test Type | Target | Coverage Goal |
 |-----------|-----------|--------|---------------|
-| `Tests/Financial.Shared.Infrastructure.Tests/Persistence/WriteBehindJsonStorageTests.cs` | Unit | `WriteBehindJsonStorage` | Every acceptance criterion for F03, plus the two cross-feature integration criteria this feature alone can satisfy |
+| `Tests/Financial.Shared.Infrastructure.Tests/Persistence/DebouncedJsonStorageTests.cs` | Unit | `DebouncedJsonStorage` | Every acceptance criterion for F03, plus the two cross-feature integration criteria this feature alone can satisfy |
 
 **Test Functions:**
 
@@ -91,7 +91,7 @@ Not applicable — F03 holds its state entirely in memory, per-instance.
 | `FlushAsync_OnDirtyInstance_SavesImmediatelyWithoutWaitingForDebounce` | `WriteAsync` with a long (test-configured) debounce window, then call `FlushAsync()` | Wrapped storage's `WriteAsync` is called before the debounce window would otherwise have elapsed |
 | `FlushAsync_WhenSaveExceedsTimeout_ReturnsWithoutWaitingFurther` | Using the internal flush-timeout seam set to a small value and a wrapped storage held open indefinitely | `FlushAsync()` returns at (approximately) the configured timeout, not when the held-open save eventually would complete |
 | `ReadAsync_PassesThroughToWrappedStorage` | Call `ReadAsync()` | Returns exactly what the wrapped storage's `ReadAsync()` returns, unmodified |
-| `TwoInstances_NeverShareDirtyDebounceRetryOrStatusState` | Two `WriteBehindJsonStorage` instances wrapping two independent storages; force one to fail (`maxRetries: 0`) | The failing instance's status is `Failed`; the other instance's status remains `Idle`, unaffected |
+| `TwoInstances_NeverShareDirtyDebounceRetryOrStatusState` | Two `DebouncedJsonStorage` instances wrapping two independent storages; force one to fail (`maxRetries: 0`) | The failing instance's status is `Failed`; the other instance's status remains `Idle`, unaffected |
 
 **Acceptance criteria covered (PRD Section 9, F03):**
 - `WriteAsync(json)` returns before any Drive upload has occurred, and the instance's status becomes `Pending` → `WriteAsync_ReturnsImmediately_AndStatusBecomesPending`
@@ -105,6 +105,6 @@ Not applicable — F03 holds its state entirely in memory, per-instance.
 - Two separate instances never share dirty/debounce/retry/status state → `TwoInstances_NeverShareDirtyDebounceRetryOrStatusState`
 
 **Cross-Feature Integration criteria this feature can satisfy on its own (PRD Section 9):**
-- "The write-behind decorator (F03) correctly uses the sync status shape from F01 and the retry executor from F02" → satisfied by construction (`WriteBehindJsonStorage` returns `SyncStatus`/`SyncState` from `GetStatus()` and calls `TransientRetryPolicy.ExecuteWithRetryAsync` for every save attempt) and exercised indirectly by every test above, since each one asserts on the F01 `SyncStatus` shape and depends on F02's retry behavior for the exhaustion test
+- "The debounced decorator (F03) correctly uses the sync status shape from F01 and the retry executor from F02" → satisfied by construction (`DebouncedJsonStorage` returns `SyncStatus`/`SyncState` from `GetStatus()` and calls `TransientRetryPolicy.ExecuteWithRetryAsync` for every save attempt) and exercised indirectly by every test above, since each one asserts on the F01 `SyncStatus` shape and depends on F02's retry behavior for the exhaustion test
 
 The two remaining Cross-Feature Integration criteria referencing F03 ("a CashFlow mutation results in F03 queuing..." / "an Investment mutation results in F03 queuing...") depend on F04 and F05 respectively, which are not yet implemented — out of scope for this feature's tests.
