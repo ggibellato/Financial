@@ -7,6 +7,8 @@ namespace Financial.Investment.Infrastructure.Repositories;
 
 public sealed class RepositoryFactory
 {
+    private static readonly TimeSpan DebounceWindow = TimeSpan.FromSeconds(10);
+
     private readonly IInvestmentsSerializer _serializer;
     private readonly IRemoteFileClientFactory? _remoteFileClientFactory;
 
@@ -39,11 +41,15 @@ public sealed class RepositoryFactory
                     nameof(options.Provider), options.Provider, "Unsupported repository provider.")
         };
 
-    private IJsonStorage CreateGoogleDriveStorage(RepositorySelectionOptions options) =>
-        GoogleDriveStorageFactory.Create(
+    private IJsonStorage CreateGoogleDriveStorage(RepositorySelectionOptions options)
+    {
+        var storage = GoogleDriveStorageFactory.Create(
             options.GoogleDriveCredentialsPath,
             options.GoogleDriveFilePath,
             _remoteFileClientFactory,
             RepositoryConfigurationKeys.GoogleDriveCredentialsPath,
             nameof(RepositoryProvider.GoogleDriveJson));
+
+        return new DebouncedJsonStorage(storage, DebounceWindow);
+    }
 }

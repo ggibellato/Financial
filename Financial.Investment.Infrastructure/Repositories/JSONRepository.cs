@@ -3,10 +3,11 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Sync;
 
 namespace Financial.Investment.Infrastructure.Repositories;
 
-public sealed class JSONRepository : IRepository
+public sealed class JSONRepository : IRepository, ISyncStatusProvider
 {
     private readonly IJsonStorage _storage;
     private readonly IInvestmentsSerializer _serializer;
@@ -45,6 +46,16 @@ public sealed class JSONRepository : IRepository
         var json = _serializer.Serialize(_investiments);
         await _storage.WriteAsync(json).ConfigureAwait(false);
     }
+
+    public SyncStatus GetStatus() =>
+        _storage is ISyncStatusProvider syncStatusProvider
+            ? syncStatusProvider.GetStatus()
+            : new SyncStatus(SyncState.Idle, null, null);
+
+    public Task FlushAsync() =>
+        _storage is ISyncStatusProvider syncStatusProvider
+            ? syncStatusProvider.FlushAsync()
+            : Task.CompletedTask;
 
     private IReadOnlyCollection<Broker> ResolveBrokers(InvestmentScope scope) =>
         scope == InvestmentScope.Historic ? _investiments.HistoricBrokers : _investiments.ActiveBrokers;
