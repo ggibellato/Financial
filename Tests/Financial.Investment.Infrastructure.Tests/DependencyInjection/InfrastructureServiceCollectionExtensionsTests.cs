@@ -1,8 +1,10 @@
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
+using Financial.Investment.Infrastructure.Hosting;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Financial.Investment.Infrastructure.Tests.DependencyInjection;
 
@@ -34,6 +36,19 @@ public class InfrastructureServiceCollectionExtensionsTests
         var repository = provider.GetRequiredService<IRepository>();
 
         repository.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void AddFinancialInfrastructure_RegistersInvestmentShutdownFlushHostedService()
+    {
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["Investment:DataJsonFile"] = TestDataPaths.DataJsonFile
+        });
+
+        var hostedServices = provider.GetServices<IHostedService>();
+
+        hostedServices.Should().ContainSingle(service => service is InvestmentShutdownFlushHostedService);
     }
 
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)
