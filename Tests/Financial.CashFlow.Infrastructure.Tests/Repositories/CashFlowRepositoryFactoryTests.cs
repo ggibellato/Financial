@@ -240,7 +240,11 @@ public class CashFlowRepositoryFactoryTests
             // The real production debounce window is 10 seconds (CashFlowRepositoryFactory.DebounceWindow,
             // not configurable by design). Waiting past it with margin proves the queued write actually
             // reaches the wrapped storage's upload call — not just that SaveChangesAsync() returns quickly.
-            await WaitForAsync(() => remoteFileClient.UploadCallCount > 0, TimeSpan.FromSeconds(15));
+            // Wait for Idle rather than just UploadCallCount > 0: the status only flips to Idle once
+            // HandleSaveSuccess runs after the upload, so polling on the call count alone races with that.
+            await WaitForAsync(
+                () => ((ISyncStatusProvider)repository).GetStatus().State == SyncState.Idle,
+                TimeSpan.FromSeconds(15));
 
             remoteFileClient.UploadCallCount.Should().Be(1);
             remoteFileClient.LastUploadedContent.Should().Contain("Debounced upload test expense");
