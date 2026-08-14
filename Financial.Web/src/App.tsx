@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { setStoredDomain } from './utils/domainStorage'
 import Sidebar from './components/Sidebar'
 import Breadcrumb from './components/Breadcrumb'
+import SyncStatusBanner from './components/SyncStatusBanner'
 import './App.css'
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
     <div className="app">
       <Sidebar />
       <main className="app__content">
+        <SyncStatusBanner />
         <Breadcrumb />
         <Outlet />
       </main>

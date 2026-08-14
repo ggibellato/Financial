@@ -1,0 +1,16 @@
+.sync-status-banner {
+  margin: 8px 16px 0;
+  padding: 8px 12px;
+  color: var(--error, #c0392b);
+  background: var(--error-bg, #fdecea);
+  border: 1px solid var(--error-border, #f5c6cb);
+  border-radius: 4px;
+}
+
+.sync-status-banner__message {
+  margin: 0;
+}
+
+.sync-status-banner__message + .sync-status-banner__message {
+  margin-top: 4px;
+}

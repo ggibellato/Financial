@@ -42,6 +42,14 @@ export function formatShortDateUtc(isoString: string | null | undefined): string
   return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`
 }
 
+/** Like {@link formatShortDate}, but also includes the local time as `HH:mm`. */
+export function formatDateTime(isoString: string | null | undefined): string {
+  if (!isoString) return ''
+  const d = new Date(isoString)
+  if (Number.isNaN(d.getTime())) return isoString
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 export function toInputDate(isoString: string): string {
   return isoString.split('T')[0]
 }
