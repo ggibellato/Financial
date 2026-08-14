@@ -426,8 +426,8 @@ graph TD
 
 ### Cross-Feature Integration
 - [x] The debounced decorator (F03) correctly uses the sync status shape from F01 and the retry executor from F02
-- [ ] A CashFlow mutation (F04) results in F03 queuing and eventually uploading the change without the API call waiting on it
-- [ ] An Investment mutation (F05) results in F03 queuing and eventually uploading the change, independently of any CashFlow activity
+- [x] A CashFlow mutation (F04) results in F03 queuing and eventually uploading the change without the API call waiting on it
+- [x] An Investment mutation (F05) results in F03 queuing and eventually uploading the change, independently of any CashFlow activity
 - [x] The CashFlow shutdown flush (F06) and Investment shutdown flush (F07) each act only on their own context's instance (F04/F05) without blocking each other
 - [x] The sync-status endpoint (F08) correctly reflects both F04's and F05's status, including the case where only one has failed
 - [x] The web polling hook (F09) correctly surfaces F08's response, and the web banner (F10) correctly reflects F09's data
