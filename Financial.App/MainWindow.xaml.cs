@@ -22,7 +22,8 @@ namespace Financial.Presentation.App
             InvestmentSnapshotsView investmentSnapshotsView,
             AnnualSummaryView annualSummaryView,
             MainNavigationViewModel navigationViewModel,
-            MainNavigationViewModelHistoric navigationViewModelHistoric)
+            MainNavigationViewModelHistoric navigationViewModelHistoric,
+            SyncStatusViewModel syncStatusViewModel)
         {
             ArgumentNullException.ThrowIfNull(dividendCheckView);
             ArgumentNullException.ThrowIfNull(assetPriceView);
@@ -32,6 +33,7 @@ namespace Financial.Presentation.App
             ArgumentNullException.ThrowIfNull(controleMaeView);
             ArgumentNullException.ThrowIfNull(investmentSnapshotsView);
             ArgumentNullException.ThrowIfNull(annualSummaryView);
+            ArgumentNullException.ThrowIfNull(syncStatusViewModel);
             _navigationViewModel = navigationViewModel ?? throw new ArgumentNullException(nameof(navigationViewModel));
             _navigationViewModelHistoric = navigationViewModelHistoric ?? throw new ArgumentNullException(nameof(navigationViewModelHistoric));
 
@@ -58,7 +60,8 @@ namespace Financial.Presentation.App
                     Settings.Default.IsNavigationSidebarCollapsed = collapsed;
                     Settings.Default.Save();
                 },
-                viewsByKey: viewsByKey);
+                viewsByKey: viewsByKey,
+                syncStatusViewModel: syncStatusViewModel);
 
             Loaded += async (s, e) =>
             {

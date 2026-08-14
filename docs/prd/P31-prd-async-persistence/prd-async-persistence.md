@@ -414,8 +414,8 @@ graph TD
 - [x] The banner is visible from every route in the web app
 
 ### F11. WPF Sync Status Polling
-- [ ] The timer checks both contexts' in-process status on start and every 15 seconds thereafter
-- [ ] No HTTP call is made — status is read directly from the in-process F04/F05 instances
+- [x] The timer checks both contexts' in-process status on start and every 15 seconds thereafter
+- [x] No HTTP call is made — status is read directly from the in-process F04/F05 instances
 
 ### F12. WPF Sync Status Indicator
 - [ ] No indicator is visible when both contexts report a non-`Failed` state
