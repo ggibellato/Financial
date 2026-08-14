@@ -14,13 +14,15 @@
         <local:Sidebar Grid.Column="0"/>
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="32"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Border Grid.Row="0" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="16,0">
+            <local:SyncStatusIndicator Grid.Row="0" DataContext="{Binding SyncStatus}"/>
+            <Border Grid.Row="1" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="16,0">
                 <TextBlock Text="{Binding BreadcrumbText}" VerticalAlignment="Center" Foreground="#666666"/>
             </Border>
-            <ContentControl Grid.Row="1" Content="{Binding SelectedContent}"/>
+            <ContentControl Grid.Row="2" Content="{Binding SelectedContent}"/>
         </Grid>
     </Grid>
 </Window>
