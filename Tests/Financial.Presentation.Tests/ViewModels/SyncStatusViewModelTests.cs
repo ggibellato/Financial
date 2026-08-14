@@ -85,4 +85,109 @@ public class SyncStatusViewModelTests
         vm.CashFlowStatus.State.Should().Be(SyncState.Failed);
         vm.InvestmentStatus.State.Should().Be(SyncState.Idle);
     }
+
+    [Fact]
+    public void IsIndicatorVisible_BothContextsHealthy_IsFalse()
+    {
+        var vm = new SyncStatusViewModel(new SyncStatusCashFlowRepositoryStub(), new SyncStatusRepositoryStub());
+
+        vm.IsIndicatorVisible.Should().BeFalse();
+        vm.IndicatorMessages.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void IsIndicatorVisible_CashFlowFailed_IsTrue()
+    {
+        var cashFlowRepository = new SyncStatusCashFlowRepositoryStub
+        {
+            StatusToReturn = new SyncStatus(SyncState.Failed, "Drive unreachable", null),
+        };
+
+        var vm = new SyncStatusViewModel(cashFlowRepository, new SyncStatusRepositoryStub());
+
+        vm.IsIndicatorVisible.Should().BeTrue();
+        vm.IndicatorMessages.Should().ContainSingle(message => message.StartsWith("CashFlow changes could not be saved"));
+    }
+
+    [Fact]
+    public void IsIndicatorVisible_InvestmentFailed_IsTrue()
+    {
+        var investmentRepository = new SyncStatusRepositoryStub
+        {
+            StatusToReturn = new SyncStatus(SyncState.Failed, "Drive unreachable", null),
+        };
+
+        var vm = new SyncStatusViewModel(new SyncStatusCashFlowRepositoryStub(), investmentRepository);
+
+        vm.IsIndicatorVisible.Should().BeTrue();
+        vm.IndicatorMessages.Should().ContainSingle(message => message.StartsWith("Investment changes could not be saved"));
+    }
+
+    [Fact]
+    public void IndicatorMessages_BothContextsFailed_NamesBoth()
+    {
+        var cashFlowRepository = new SyncStatusCashFlowRepositoryStub
+        {
+            StatusToReturn = new SyncStatus(SyncState.Failed, "CashFlow drive error.", null),
+        };
+        var investmentRepository = new SyncStatusRepositoryStub
+        {
+            StatusToReturn = new SyncStatus(SyncState.Failed, "Investment drive error.", null),
+        };
+
+        var vm = new SyncStatusViewModel(cashFlowRepository, investmentRepository);
+
+        vm.IndicatorMessages.Should().HaveCount(2);
+        vm.IndicatorMessages.Should().Contain(message => message.StartsWith("CashFlow changes could not be saved"));
+        vm.IndicatorMessages.Should().Contain(message => message.StartsWith("Investment changes could not be saved"));
+    }
+
+    [Fact]
+    public void IndicatorMessages_IncludesLastErrorAndFormattedSaveTime()
+    {
+        var lastSuccessfulSaveUtc = new DateTime(2026, 8, 13, 9, 12, 0, DateTimeKind.Utc);
+        var cashFlowRepository = new SyncStatusCashFlowRepositoryStub
+        {
+            StatusToReturn = new SyncStatus(
+                SyncState.Failed,
+                "Drive request failed with a transient status (503 ServiceUnavailable).",
+                lastSuccessfulSaveUtc),
+        };
+
+        var vm = new SyncStatusViewModel(cashFlowRepository, new SyncStatusRepositoryStub());
+
+        vm.IndicatorMessages.Should().ContainSingle().Which.Should().Be(
+            "CashFlow changes could not be saved to Google Drive (last error: Drive request failed with a " +
+            "transient status (503 ServiceUnavailable).). Last successful save: 13/08/2026 09:12.");
+    }
+
+    [Fact]
+    public void IndicatorMessages_NoPriorSuccessfulSave_ShowsNever()
+    {
+        var cashFlowRepository = new SyncStatusCashFlowRepositoryStub
+        {
+            StatusToReturn = new SyncStatus(SyncState.Failed, "Drive unreachable", null),
+        };
+
+        var vm = new SyncStatusViewModel(cashFlowRepository, new SyncStatusRepositoryStub());
+
+        vm.IndicatorMessages.Should().ContainSingle().Which.Should().Contain("Last successful save: Never.");
+    }
+
+    [Fact]
+    public void IsIndicatorVisible_AndIndicatorMessages_UpdateAfterRefreshStatus()
+    {
+        var cashFlowRepository = new SyncStatusCashFlowRepositoryStub
+        {
+            StatusToReturn = new SyncStatus(SyncState.Failed, "Drive unreachable", null),
+        };
+        var vm = new SyncStatusViewModel(cashFlowRepository, new SyncStatusRepositoryStub());
+        vm.IsIndicatorVisible.Should().BeTrue();
+
+        cashFlowRepository.StatusToReturn = new SyncStatus(SyncState.Idle, null, DateTime.UtcNow);
+        vm.RefreshStatus();
+
+        vm.IsIndicatorVisible.Should().BeFalse();
+        vm.IndicatorMessages.Should().BeEmpty();
+    }
 }
