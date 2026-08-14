@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { PositionType, SelectedNode, TreeNodeDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { getErrorMessage } from '../utils/formatters'
 import { POSITION_TYPE_STATUS_CLASS } from '../utils/positionType'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
@@ -240,7 +241,7 @@ export default function InvestmentTree() {
         setError(null)
       })
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : 'Unable to load investments.')
+        setError(getErrorMessage(err, 'Unable to load investments.'))
       })
       .finally(() => setIsLoading(false))
   }, [apiClient, scope, retryCount])

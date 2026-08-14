@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { CategoryAnnualAverageDto, CategoryAnnualTotalDto, IncomeAnnualSummaryDto, InvestmentAnnualResultDto } from '../api/types'
+import { getErrorMessage } from '../utils/formatters'
 
 interface AnnualSummaryState {
   year: number
@@ -136,7 +137,7 @@ export function useAnnualSummary(): AnnualSummaryData {
       .catch((err: unknown) => {
         dispatch({
           type: 'FETCH_ERROR',
-          payload: err instanceof Error ? err.message : 'Unable to load Annual Summary data',
+          payload: getErrorMessage(err, 'Unable to load Annual Summary data'),
         })
       })
   }, [apiClient, state.year, state.retryCount])

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { AssetDetailsDto, AssetPriceDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { getErrorMessage } from '../utils/formatters'
 
 interface SummaryState {
   asset: AssetDetailsDto | null
@@ -132,7 +133,7 @@ export function useAssetSummary(): AssetSummaryData {
         .catch((err: unknown) => {
           dispatch({
             type: 'PRICE_FETCH_ERROR',
-            payload: err instanceof Error ? err.message : 'Unable to fetch current price',
+            payload: getErrorMessage(err, 'Unable to fetch current price'),
           })
         })
     },
@@ -165,7 +166,7 @@ export function useAssetSummary(): AssetSummaryData {
       .catch((err: unknown) => {
         dispatch({
           type: 'ASSET_FETCH_ERROR',
-          payload: err instanceof Error ? err.message : 'Unable to load asset details',
+          payload: getErrorMessage(err, 'Unable to load asset details'),
         })
       })
 

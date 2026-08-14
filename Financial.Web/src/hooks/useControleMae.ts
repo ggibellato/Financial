@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { MaeLedgerEntryDto, MaeLedgerTotalsDto } from '../api/types'
-import { previousYearJanuaryFirst } from '../utils/formatters'
+import { getErrorMessage, previousYearJanuaryFirst } from '../utils/formatters'
 
 export type CreateFormField = 'createDate' | 'createDescription' | 'createNote' | 'createSourceCurrency' | 'createSourceValue'
 export type EditField = 'editBrlValue' | 'editGbpValue'
@@ -181,7 +181,7 @@ export function useControleMae(): ControleMaeData {
       .getMaeLedgerEntriesFromDate(state.fromDate)
       .then((entries) => dispatch({ type: 'FETCH_SUCCESS', payload: entries }))
       .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: err instanceof Error ? err.message : 'Unable to load Controle Mae data' })
+        dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Controle Mae data') })
       })
   }, [apiClient, state.fromDate, state.retryCount])
 
@@ -246,7 +246,7 @@ export function useControleMae(): ControleMaeData {
       .catch((err: unknown) => {
         dispatch({
           type: 'CREATE_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to create entry',
+          payload: getErrorMessage(err, 'Failed to create entry'),
         })
       })
   }
@@ -280,7 +280,7 @@ export function useControleMae(): ControleMaeData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to update entry',
+          payload: getErrorMessage(err, 'Failed to update entry'),
         })
       })
   }
@@ -297,7 +297,7 @@ export function useControleMae(): ControleMaeData {
       .catch((err: unknown) => {
         dispatch({
           type: 'DELETE_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to delete entry',
+          payload: getErrorMessage(err, 'Failed to delete entry'),
         })
       })
   }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { BalanceAdjustmentDto, BankDto, TransferDto } from '../api/types'
+import { getErrorMessage } from '../utils/formatters'
 
 /** Sentinel bank-filter value meaning "show every bank's operations, unfiltered". */
 export const ALL_BANKS_FILTER = 'All Banks'
@@ -156,7 +157,7 @@ export function useBankOperations(
       .catch((err: unknown) => {
         dispatch({
           type: 'FETCH_ERROR',
-          payload: err instanceof Error ? err.message : 'Unable to load bank operations',
+          payload: getErrorMessage(err, 'Unable to load bank operations'),
         })
       })
     // banks is derived every render by the caller; bankNames is a stable key for its contents.
@@ -175,7 +176,7 @@ export function useBankOperations(
         onChanged()
       })
       .catch((err: unknown) => {
-        dispatch({ type: 'ACTION_ERROR', payload: err instanceof Error ? err.message : 'Failed to delete transfer' })
+        dispatch({ type: 'ACTION_ERROR', payload: getErrorMessage(err, 'Failed to delete transfer') })
       })
   }
 
@@ -191,7 +192,7 @@ export function useBankOperations(
       .catch((err: unknown) => {
         dispatch({
           type: 'ACTION_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to delete balance adjustment',
+          payload: getErrorMessage(err, 'Failed to delete balance adjustment'),
         })
       })
   }

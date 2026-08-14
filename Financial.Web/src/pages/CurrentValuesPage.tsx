@@ -3,7 +3,7 @@ import { createFinancialApiClient } from '../api/financialApiClient'
 import type { BrokerNodeDto, PortfolioReferenceDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
-import { formatN2 } from '../utils/formatters'
+import { formatN2, getErrorMessage } from '../utils/formatters'
 import './CurrentValuesPage.css'
 
 interface PriceResult {
@@ -35,7 +35,7 @@ export default function CurrentValuesPage() {
         setError(null)
       })
       .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : 'Unable to load brokers.'
+        const message = getErrorMessage(err, 'Unable to load brokers.')
         setError(message)
       })
       .finally(() => setIsLoading(false))
@@ -94,7 +94,7 @@ export default function CurrentValuesPage() {
           },
         ])
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unable to fetch price.'
+        const message = getErrorMessage(err, 'Unable to fetch price.')
         setResults((prev) => [
           ...prev,
           {

@@ -11,7 +11,7 @@ import type {
   IncomeSourceDto,
   TitheSummaryDto,
 } from '../api/types'
-import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
+import { currentYearMonth, formatMonthInputValue, getErrorMessage, parseMonthInputValue } from '../utils/formatters'
 
 export type PaymentMode = 'bank' | 'card'
 
@@ -661,7 +661,7 @@ export function useMonthly(): MonthlyData {
           }),
       )
       .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: err instanceof Error ? err.message : 'Unable to load Monthly data' })
+        dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Monthly data') })
       })
   }, [apiClient, state.year, state.month, state.retryCount])
 
@@ -758,7 +758,7 @@ export function useMonthly(): MonthlyData {
       .catch((err: unknown) => {
         dispatch({
           type: 'CREATE_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to create expense',
+          payload: getErrorMessage(err, 'Failed to create expense'),
         })
       })
   }
@@ -835,7 +835,7 @@ export function useMonthly(): MonthlyData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to update expense',
+          payload: getErrorMessage(err, 'Failed to update expense'),
         })
       })
   }
@@ -850,7 +850,7 @@ export function useMonthly(): MonthlyData {
         .catch((err: unknown) => {
           dispatch({
             type: 'SAVE_ERROR',
-            payload: err instanceof Error ? err.message : 'Failed to delete expense',
+            payload: getErrorMessage(err, 'Failed to delete expense'),
           })
         })
     },
@@ -870,7 +870,7 @@ export function useMonthly(): MonthlyData {
         .catch((err: unknown) => {
           dispatch({
             type: 'MARK_PAID_ERROR',
-            payload: err instanceof Error ? err.message : 'Failed to mark statement paid',
+            payload: getErrorMessage(err, 'Failed to mark statement paid'),
           })
         })
     },
@@ -887,7 +887,7 @@ export function useMonthly(): MonthlyData {
         .catch((err: unknown) => {
           dispatch({
             type: 'MARK_PAID_ERROR',
-            payload: err instanceof Error ? err.message : 'Failed to unmark statement paid',
+            payload: getErrorMessage(err, 'Failed to unmark statement paid'),
           })
         })
     },
@@ -956,7 +956,7 @@ export function useMonthly(): MonthlyData {
       .catch((err: unknown) => {
         dispatch({
           type: 'CREATE_INCOME_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to create income',
+          payload: getErrorMessage(err, 'Failed to create income'),
         })
       })
   }
@@ -1024,7 +1024,7 @@ export function useMonthly(): MonthlyData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_INCOME_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to update income',
+          payload: getErrorMessage(err, 'Failed to update income'),
         })
       })
   }
@@ -1039,7 +1039,7 @@ export function useMonthly(): MonthlyData {
         .catch((err: unknown) => {
           dispatch({
             type: 'SAVE_INCOME_ERROR',
-            payload: err instanceof Error ? err.message : 'Failed to delete income',
+            payload: getErrorMessage(err, 'Failed to delete income'),
           })
         })
     },

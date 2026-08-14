@@ -1,45 +1,8 @@
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useMemo } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { AggregatedSummaryDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
-
-interface AggregatedSummaryState {
-  summary: AggregatedSummaryDto | null
-  isLoading: boolean
-  error: string | null
-  retryCount: number
-}
-
-type AggregatedSummaryAction =
-  | { type: 'RESET' }
-  | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: AggregatedSummaryDto }
-  | { type: 'FETCH_ERROR'; payload: string }
-  | { type: 'RETRY' }
-
-const INITIAL_STATE: AggregatedSummaryState = {
-  summary: null,
-  isLoading: false,
-  error: null,
-  retryCount: 0,
-}
-
-function reducer(state: AggregatedSummaryState, action: AggregatedSummaryAction): AggregatedSummaryState {
-  switch (action.type) {
-    case 'RESET':
-      return INITIAL_STATE
-    case 'FETCH_START':
-      return { ...state, isLoading: true, error: null, summary: null }
-    case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, summary: action.payload }
-    case 'FETCH_ERROR':
-      return { ...state, isLoading: false, error: action.payload }
-    case 'RETRY':
-      return { ...state, retryCount: state.retryCount + 1 }
-    default:
-      return state
-  }
-}
+import { useAsyncResource } from './useAsyncResource'
 
 export interface AggregatedSummaryData {
   summary: AggregatedSummaryDto | null
@@ -51,40 +14,21 @@ export interface AggregatedSummaryData {
 export function useAggregatedSummary(): AggregatedSummaryData {
   const { selectedNode, scope } = useSelectedNode()
   const apiClient = useMemo(() => createFinancialApiClient(), [])
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   const isBroker = selectedNode?.nodeType === 'Broker'
   const isPortfolio = selectedNode?.nodeType === 'Portfolio'
   const shouldFetch = isBroker || isPortfolio
 
-  useEffect(() => {
-    if (!shouldFetch || !selectedNode) {
-      dispatch({ type: 'RESET' })
-      return
-    }
+  const { data, isLoading, error, retry } = useAsyncResource<AggregatedSummaryDto>(
+    () => {
+      if (!shouldFetch || !selectedNode) return null
+      return isBroker
+        ? apiClient.getSummaryByBroker(selectedNode.brokerName, scope)
+        : apiClient.getSummaryByPortfolio(selectedNode.brokerName, selectedNode.portfolioName!, scope)
+    },
+    [selectedNode, shouldFetch, isBroker, apiClient, scope],
+    'Unable to load summary',
+  )
 
-    dispatch({ type: 'FETCH_START' })
-
-    const fetchPromise = isBroker
-      ? apiClient.getSummaryByBroker(selectedNode.brokerName, scope)
-      : apiClient.getSummaryByPortfolio(selectedNode.brokerName, selectedNode.portfolioName!, scope)
-
-    void fetchPromise
-      .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result }))
-      .catch((err: unknown) => {
-        dispatch({
-          type: 'FETCH_ERROR',
-          payload: err instanceof Error ? err.message : 'Unable to load summary',
-        })
-      })
-  }, [selectedNode, shouldFetch, isBroker, apiClient, scope, state.retryCount])
-
-  const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
-
-  return {
-    summary: state.summary,
-    isLoading: state.isLoading,
-    error: state.error,
-    retry,
-  }
+  return { summary: data, isLoading, error, retry }
 }

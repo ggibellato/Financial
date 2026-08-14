@@ -4,7 +4,7 @@ import type { CreditDto, SelectedNode } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
-import { pad, toInputDate } from '../utils/formatters'
+import { getErrorMessage, pad, toInputDate } from '../utils/formatters'
 
 export type ViewMode = 'Stacked' | 'Grouped'
 export type ChartType = 'Bar' | 'Line'
@@ -270,7 +270,7 @@ export function useCredits(): CreditsData {
         .catch((err: unknown) => {
           dispatch({
             type: 'FETCH_ERROR',
-            payload: err instanceof Error ? err.message : 'Unable to load credits',
+            payload: getErrorMessage(err, 'Unable to load credits'),
           })
         })
     } else if (nodeType === 'Broker') {
@@ -280,7 +280,7 @@ export function useCredits(): CreditsData {
         .catch((err: unknown) => {
           dispatch({
             type: 'FETCH_ERROR',
-            payload: err instanceof Error ? err.message : 'Unable to load credits',
+            payload: getErrorMessage(err, 'Unable to load credits'),
           })
         })
     } else if (nodeType === 'Portfolio' && portfolioName) {
@@ -290,7 +290,7 @@ export function useCredits(): CreditsData {
         .catch((err: unknown) => {
           dispatch({
             type: 'FETCH_ERROR',
-            payload: err instanceof Error ? err.message : 'Unable to load credits',
+            payload: getErrorMessage(err, 'Unable to load credits'),
           })
         })
     }
@@ -388,7 +388,7 @@ export function useCredits(): CreditsData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to save credit',
+          payload: getErrorMessage(err, 'Failed to save credit'),
         })
       })
   }, [selectedNode, state, apiClient])
@@ -409,7 +409,7 @@ export function useCredits(): CreditsData {
         .catch((err: unknown) => {
           dispatch({
             type: 'DELETE_ERROR',
-            payload: err instanceof Error ? err.message : 'Failed to delete credit',
+            payload: getErrorMessage(err, 'Failed to delete credit'),
           })
         })
     },

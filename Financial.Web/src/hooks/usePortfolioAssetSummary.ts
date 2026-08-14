@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { PortfolioAssetSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { getErrorMessage } from '../utils/formatters'
 
 export interface RowPriceState {
   isLoading: boolean
@@ -128,7 +129,7 @@ export function usePortfolioAssetSummary(): PortfolioAssetSummaryData {
       .catch((err: unknown) => {
         dispatch({
           type: 'FETCH_ERROR',
-          payload: err instanceof Error ? err.message : 'Unable to load portfolio assets',
+          payload: getErrorMessage(err, 'Unable to load portfolio assets'),
         })
       })
   }, [selectedNode, isPortfolio, apiClient, scope, state.retryCount])

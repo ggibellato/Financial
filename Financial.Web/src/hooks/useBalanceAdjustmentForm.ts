@@ -3,7 +3,7 @@ import { createFinancialApiClient } from '../api/financialApiClient'
 import type { BalanceAdjustmentDto } from '../api/types'
 import type { BankTotal } from './useMonthly'
 import { mapBalanceAdjustmentErrorToField, type BalanceAdjustmentFormField } from './mapBalanceAdjustmentErrorToField'
-import { todayIsoDate } from '../utils/formatters'
+import { getErrorMessage, todayIsoDate } from '../utils/formatters'
 
 interface BalanceAdjustmentFormState {
   isOpen: boolean
@@ -151,7 +151,7 @@ export function useBalanceAdjustmentForm(
         onSaved()
       })
       .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : 'Failed to save balance adjustment'
+        const message = getErrorMessage(err, 'Failed to save balance adjustment')
         const field = mapBalanceAdjustmentErrorToField(message)
         setState((s) => ({ ...s, isSaving: false, saveError: message, saveErrorField: field }))
       })

@@ -86,3 +86,8 @@ export function formatMonthYear(date: Date): string {
 export function signClass(value: number, basePrefix: string): string {
   return `${basePrefix}--${value >= 0 ? 'green' : 'red'}`
 }
+
+/** Extracts a caught value's message, falling back to a caller-supplied default for a non-Error throw (e.g. a rejected fetch). */
+export function getErrorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback
+}
