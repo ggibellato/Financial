@@ -14,7 +14,7 @@ public class SyncStatusViewModelTests
         {
             StatusToReturn = new SyncStatus(SyncState.Pending, null, null),
         };
-        var investmentRepository = new SyncStatusRepositoryStub
+        var investmentRepository = new SyncStatusInvestmentRepositoryStub
         {
             StatusToReturn = new SyncStatus(SyncState.Saving, null, null),
         };
@@ -28,7 +28,7 @@ public class SyncStatusViewModelTests
     [Fact]
     public void Constructor_WithNullCashFlowRepository_Throws()
     {
-        Action act = () => new SyncStatusViewModel(null!, new SyncStatusRepositoryStub());
+        Action act = () => new SyncStatusViewModel(null!, new SyncStatusInvestmentRepositoryStub());
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("cashFlowRepository");
     }
@@ -44,7 +44,7 @@ public class SyncStatusViewModelTests
     [Fact]
     public void RefreshStatus_WhenRepositoryIsNotASyncStatusProvider_ReportsIdle()
     {
-        var vm = new SyncStatusViewModel(new StubCashFlowRepository(), new StubRepository());
+        var vm = new SyncStatusViewModel(new StubCashFlowRepository(), new StubInvestmentRepository());
 
         vm.RefreshStatus();
 
@@ -59,7 +59,7 @@ public class SyncStatusViewModelTests
         {
             StatusToReturn = new SyncStatus(SyncState.Idle, null, null),
         };
-        var vm = new SyncStatusViewModel(cashFlowRepository, new SyncStatusRepositoryStub());
+        var vm = new SyncStatusViewModel(cashFlowRepository, new SyncStatusInvestmentRepositoryStub());
 
         cashFlowRepository.StatusToReturn = new SyncStatus(SyncState.Failed, "Drive unreachable", null);
         vm.RefreshStatus();
@@ -74,7 +74,7 @@ public class SyncStatusViewModelTests
         {
             StatusToReturn = new SyncStatus(SyncState.Failed, "CashFlow drive error.", null),
         };
-        var investmentRepository = new SyncStatusRepositoryStub
+        var investmentRepository = new SyncStatusInvestmentRepositoryStub
         {
             StatusToReturn = new SyncStatus(SyncState.Idle, null, null),
         };
@@ -89,7 +89,7 @@ public class SyncStatusViewModelTests
     [Fact]
     public void IsIndicatorVisible_BothContextsHealthy_IsFalse()
     {
-        var vm = new SyncStatusViewModel(new SyncStatusCashFlowRepositoryStub(), new SyncStatusRepositoryStub());
+        var vm = new SyncStatusViewModel(new SyncStatusCashFlowRepositoryStub(), new SyncStatusInvestmentRepositoryStub());
 
         vm.IsIndicatorVisible.Should().BeFalse();
         vm.IndicatorMessages.Should().BeEmpty();
@@ -103,7 +103,7 @@ public class SyncStatusViewModelTests
             StatusToReturn = new SyncStatus(SyncState.Failed, "Drive unreachable", null),
         };
 
-        var vm = new SyncStatusViewModel(cashFlowRepository, new SyncStatusRepositoryStub());
+        var vm = new SyncStatusViewModel(cashFlowRepository, new SyncStatusInvestmentRepositoryStub());
 
         vm.IsIndicatorVisible.Should().BeTrue();
         vm.IndicatorMessages.Should().ContainSingle(message => message.StartsWith("CashFlow changes could not be saved"));
@@ -112,7 +112,7 @@ public class SyncStatusViewModelTests
     [Fact]
     public void IsIndicatorVisible_InvestmentFailed_IsTrue()
     {
-        var investmentRepository = new SyncStatusRepositoryStub
+        var investmentRepository = new SyncStatusInvestmentRepositoryStub
         {
             StatusToReturn = new SyncStatus(SyncState.Failed, "Drive unreachable", null),
         };
@@ -130,7 +130,7 @@ public class SyncStatusViewModelTests
         {
             StatusToReturn = new SyncStatus(SyncState.Failed, "CashFlow drive error.", null),
         };
-        var investmentRepository = new SyncStatusRepositoryStub
+        var investmentRepository = new SyncStatusInvestmentRepositoryStub
         {
             StatusToReturn = new SyncStatus(SyncState.Failed, "Investment drive error.", null),
         };
@@ -154,7 +154,7 @@ public class SyncStatusViewModelTests
                 lastSuccessfulSaveUtc),
         };
 
-        var vm = new SyncStatusViewModel(cashFlowRepository, new SyncStatusRepositoryStub());
+        var vm = new SyncStatusViewModel(cashFlowRepository, new SyncStatusInvestmentRepositoryStub());
 
         vm.IndicatorMessages.Should().ContainSingle().Which.Should().Be(
             "CashFlow changes could not be saved to Google Drive (last error: Drive request failed with a " +
@@ -169,7 +169,7 @@ public class SyncStatusViewModelTests
             StatusToReturn = new SyncStatus(SyncState.Failed, "Drive unreachable", null),
         };
 
-        var vm = new SyncStatusViewModel(cashFlowRepository, new SyncStatusRepositoryStub());
+        var vm = new SyncStatusViewModel(cashFlowRepository, new SyncStatusInvestmentRepositoryStub());
 
         vm.IndicatorMessages.Should().ContainSingle().Which.Should().Contain("Last successful save: Never.");
     }
@@ -181,7 +181,7 @@ public class SyncStatusViewModelTests
         {
             StatusToReturn = new SyncStatus(SyncState.Failed, "Drive unreachable", null),
         };
-        var vm = new SyncStatusViewModel(cashFlowRepository, new SyncStatusRepositoryStub());
+        var vm = new SyncStatusViewModel(cashFlowRepository, new SyncStatusInvestmentRepositoryStub());
         vm.IsIndicatorVisible.Should().BeTrue();
 
         cashFlowRepository.StatusToReturn = new SyncStatus(SyncState.Idle, null, DateTime.UtcNow);

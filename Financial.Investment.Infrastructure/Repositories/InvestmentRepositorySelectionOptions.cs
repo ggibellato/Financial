@@ -1,7 +1,7 @@
 namespace Financial.Investment.Infrastructure.Repositories;
 
-public sealed record RepositorySelectionOptions(
-    RepositoryProvider Provider,
+public sealed record InvestmentRepositorySelectionOptions(
+    InvestmentRepositoryProvider Provider,
     string? LocalDataPath,
     string? GoogleDriveCredentialsPath,
     string? GoogleDriveFilePath);

@@ -9,7 +9,7 @@ public class InvestmentShutdownFlushHostedServiceTests
     [Fact]
     public async Task StopAsync_WhenRepositoryIsASyncStatusProvider_CallsFlushAsync()
     {
-        var repository = new SyncStatusRepositoryStub();
+        var repository = new SyncStatusInvestmentRepositoryStub();
         var hostedService = new InvestmentShutdownFlushHostedService(repository);
 
         await hostedService.StopAsync(CancellationToken.None);
@@ -20,7 +20,7 @@ public class InvestmentShutdownFlushHostedServiceTests
     [Fact]
     public async Task StopAsync_WhenRepositoryIsNotASyncStatusProvider_CompletesWithoutError()
     {
-        var repository = new StubRepository();
+        var repository = new StubInvestmentRepository();
         var hostedService = new InvestmentShutdownFlushHostedService(repository);
 
         var act = async () => await hostedService.StopAsync(CancellationToken.None);

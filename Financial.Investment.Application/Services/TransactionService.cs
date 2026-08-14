@@ -8,10 +8,10 @@ namespace Financial.Investment.Application.Services;
 
 public sealed class TransactionService : ITransactionService, ITransactionQueryService
 {
-    private readonly IRepository _repository;
+    private readonly IInvestmentRepository _repository;
     private readonly INavigationService _navigationService;
 
-    public TransactionService(IRepository repository, INavigationService navigationService)
+    public TransactionService(IInvestmentRepository repository, INavigationService navigationService)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));

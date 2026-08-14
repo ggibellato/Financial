@@ -12,10 +12,10 @@ namespace Financial.Api.Controllers;
 [Route("")]
 public sealed class DiagnosticsController : ControllerBase
 {
-    private readonly RepositorySettingsOptions _repositorySettings;
+    private readonly InvestmentRepositorySettingsOptions _repositorySettings;
     private readonly IHostEnvironment _environment;
 
-    public DiagnosticsController(IOptions<RepositorySettingsOptions> repositorySettings, IHostEnvironment environment)
+    public DiagnosticsController(IOptions<InvestmentRepositorySettingsOptions> repositorySettings, IHostEnvironment environment)
     {
         ArgumentNullException.ThrowIfNull(repositorySettings);
         _repositorySettings = repositorySettings.Value;

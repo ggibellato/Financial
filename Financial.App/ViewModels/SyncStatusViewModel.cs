@@ -18,13 +18,13 @@ public class SyncStatusViewModel : ViewModelBase
     private const string LastSuccessfulSaveFormat = "dd/MM/yyyy HH:mm";
 
     private readonly ICashFlowRepository _cashFlowRepository;
-    private readonly IRepository _investmentRepository;
+    private readonly IInvestmentRepository _investmentRepository;
     private readonly DispatcherTimer _timer;
 
     private SyncStatus _cashFlowStatus = new(SyncState.Idle, null, null);
     private SyncStatus _investmentStatus = new(SyncState.Idle, null, null);
 
-    public SyncStatusViewModel(ICashFlowRepository cashFlowRepository, IRepository investmentRepository)
+    public SyncStatusViewModel(ICashFlowRepository cashFlowRepository, IInvestmentRepository investmentRepository)
     {
         _cashFlowRepository = cashFlowRepository ?? throw new ArgumentNullException(nameof(cashFlowRepository));
         _investmentRepository = investmentRepository ?? throw new ArgumentNullException(nameof(investmentRepository));

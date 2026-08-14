@@ -9,7 +9,7 @@ namespace Financial.Investment.Application.Tests.Services;
 
 public class CreditServiceTests
 {
-    private readonly StubRepository _repository = new();
+    private readonly StubInvestmentRepository _repository = new();
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()

@@ -178,7 +178,7 @@ public class ControllerGuardClauseTests
     [Fact]
     public void DiagnosticsController_NullEnvironment_Throws()
     {
-        Action act = () => new DiagnosticsController(Options.Create(new RepositorySettingsOptions()), null!);
+        Action act = () => new DiagnosticsController(Options.Create(new InvestmentRepositorySettingsOptions()), null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("environment");
     }
 

@@ -60,7 +60,7 @@ public class DividendEndpointsTests
 Key points:
 - `await using var factory` — the factory owns temp data files it must delete on dispose; a plain `using` on a synchronous `Dispose` also works, but `await using` matches `ApiTestFactory`'s async-friendly shape
 - Override collaborators via `RemoveAll<T>()` + `AddSingleton<T>()` in `ConfigureTestServices`/`ConfigureServices` — same DI-swap technique the module tests use, applied at the whole-app level
-- Seed only the data the test needs; `ApiTestFactory` writes a real temp copy of `data.json` and a seeded `data-cashflow.json` so both domains resolve correctly even for tests that don't touch CashFlow
+- Seed only the data the test needs; `ApiTestFactory` writes a real temp copy of `data-investment.json` and a seeded `data-cashflow.json` so both domains resolve correctly even for tests that don't touch CashFlow
 
 ## When to skip
 

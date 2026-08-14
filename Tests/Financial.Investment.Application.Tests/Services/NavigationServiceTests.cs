@@ -13,7 +13,7 @@ namespace Financial.Investment.Application.Tests.Services;
 /// </summary>
 public class NavigationServiceTests
 {
-    private readonly StubRepository _repository = new();
+    private readonly StubInvestmentRepository _repository = new();
     private NavigationService CreateService() => new(_repository);
 
     [Theory]

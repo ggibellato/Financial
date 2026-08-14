@@ -14,9 +14,9 @@ namespace Financial.Api.Controllers;
 public sealed class SyncStatusController : ControllerBase
 {
     private readonly ICashFlowRepository _cashFlowRepository;
-    private readonly IRepository _investmentRepository;
+    private readonly IInvestmentRepository _investmentRepository;
 
-    public SyncStatusController(ICashFlowRepository cashFlowRepository, IRepository investmentRepository)
+    public SyncStatusController(ICashFlowRepository cashFlowRepository, IInvestmentRepository investmentRepository)
     {
         _cashFlowRepository = cashFlowRepository ?? throw new ArgumentNullException(nameof(cashFlowRepository));
         _investmentRepository = investmentRepository ?? throw new ArgumentNullException(nameof(investmentRepository));

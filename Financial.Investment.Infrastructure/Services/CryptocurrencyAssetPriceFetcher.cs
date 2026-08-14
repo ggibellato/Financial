@@ -9,10 +9,10 @@ namespace Financial.Investment.Infrastructure.Services;
 
 public sealed class CryptocurrencyAssetPriceFetcher : IAssetPriceFetcher
 {
-    private readonly IRepository _repository;
+    private readonly IInvestmentRepository _repository;
     private readonly IFinanceService _financeService;
 
-    public CryptocurrencyAssetPriceFetcher(IRepository repository, IFinanceService financeService)
+    public CryptocurrencyAssetPriceFetcher(IInvestmentRepository repository, IFinanceService financeService)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _financeService = financeService ?? throw new ArgumentNullException(nameof(financeService));

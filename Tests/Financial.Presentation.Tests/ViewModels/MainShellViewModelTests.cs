@@ -24,7 +24,7 @@ public class MainShellViewModelTests
         bool initialCollapsed,
         Action<bool> persistCollapsed,
         IReadOnlyDictionary<string, object> viewsByKey) =>
-        new(initialCollapsed, persistCollapsed, viewsByKey, new SyncStatusViewModel(new StubCashFlowRepository(), new StubRepository()));
+        new(initialCollapsed, persistCollapsed, viewsByKey, new SyncStatusViewModel(new StubCashFlowRepository(), new StubInvestmentRepository()));
 
     [Fact]
     public void Constructor_DefaultsToExpandedWhenInitialCollapsedIsFalse()

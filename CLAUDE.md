@@ -4,15 +4,15 @@ Personal financial management tool consolidating investment transactions (Brazil
 
 ## Solution layout
 
-The solution (`Financial.slnx`) is organized as two DDD bounded contexts plus shared/presentation layers, each split into Domain → Application → Infrastructure:
+The solution (`Financial.slnx`) is organized as two DDD bounded contexts plus shared/presentation layers, each split into Domain → Application → Infrastructure. Project folders sit flat at the repo root (no `DDD/`/`Presentation/` grouping folders):
 
 ```
-DDD/Investment/   Financial.Investment.{Domain,Application,Infrastructure}
-DDD/CashFlow/     Financial.CashFlow.{Domain,Application,Infrastructure}
-DDD/Shared/       Financial.Shared.Infrastructure   (JSON/Google Drive storage primitives shared by both contexts)
-Presentation/      Financial.Api  (ASP.NET Core, serves REST API + hosts the built SPA)
-                    Financial.App  (WPF desktop client)
-                    Financial.Web  (React + TypeScript SPA, separate from the .slnx)
+Financial.Investment.{Domain,Application,Infrastructure}   Investment bounded context
+Financial.CashFlow.{Domain,Application,Infrastructure}     CashFlow bounded context
+Financial.Shared.Infrastructure                             JSON/Google Drive storage primitives shared by both contexts
+Financial.Api                                                ASP.NET Core, serves REST API + hosts the built SPA
+Financial.App                                                WPF desktop client
+Financial.Web                                                React + TypeScript SPA, separate from the .slnx
 Integrations/       CashFlowSpreadsheetImport, GoogleFinancialSupport, ImportGoogleSpreadSheets, WebPageParser
 Tests/              One test project per Domain/Application/Infrastructure/Presentation project
 ```
@@ -23,7 +23,7 @@ Dependency direction is strict: Domain has no dependencies; Application depends 
 
 ## Persistence model
 
-Both bounded contexts read/write a single JSON document each (`data.json` for Investment, `data-cashflow.json` for CashFlow), via `Financial.Shared.Infrastructure`. Storage provider is `LocalJson` or `GoogleDrive`, selected per-context via config (`Investment:Repository:Provider` / `CashFlow:Repository:Provider`). **The JSON file is loaded once at process startup** — after any migration or manual edit to the data file, the app/API process must be restarted (not just re-queried) for changes to take effect. Real data files (`data/data.json`, `data/data-cashflow.json`) are gitignored; only `*.example.json` templates are tracked. Never run import/migration tools against the live data file — verify against a temp copy first.
+Both bounded contexts read/write a single JSON document each (`data-investment.json` for Investment, `data-cashflow.json` for CashFlow), via `Financial.Shared.Infrastructure`. Storage provider is `LocalJson` or `GoogleDrive`, selected per-context via config (`Investment:Repository:Provider` / `CashFlow:Repository:Provider`). **The JSON file is loaded once at process startup** — after any migration or manual edit to the data file, the app/API process must be restarted (not just re-queried) for changes to take effect. Real data files (`data/data-investment.json`, `data/data-cashflow.json`) are gitignored; only `*.example.json` templates are tracked. Never run import/migration tools against the live data file — verify against a temp copy first.
 
 ## Common commands
 

@@ -24,6 +24,6 @@ scripts/deploy.local.json
 
 #specific files
 .gitignore.bak
-data.json
+data-investment.json
 .env*.local
 Financial.Web/.env

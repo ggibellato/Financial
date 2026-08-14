@@ -6,9 +6,9 @@ namespace Financial.Investment.Application.Services;
 
 public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
 {
-    private readonly IRepository _repository;
+    private readonly IInvestmentRepository _repository;
 
-    public PortfolioAssetSummaryService(IRepository repository)
+    public PortfolioAssetSummaryService(IInvestmentRepository repository)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }

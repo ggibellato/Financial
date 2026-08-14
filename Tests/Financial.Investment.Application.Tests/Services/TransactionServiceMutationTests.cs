@@ -9,7 +9,7 @@ namespace Financial.Investment.Application.Tests.Services;
 
 public class TransactionServiceMutationTests
 {
-    private readonly StubRepository _repository = new();
+    private readonly StubInvestmentRepository _repository = new();
 
     [Fact]
     public void Constructor_WithNullNavigationService_Throws()

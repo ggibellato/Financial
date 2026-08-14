@@ -7,9 +7,9 @@ namespace Financial.Investment.Application.Services;
 
 public sealed class BrokerBreakdownService : IBrokerBreakdownService
 {
-    private readonly IRepository _repository;
+    private readonly IInvestmentRepository _repository;
 
-    public BrokerBreakdownService(IRepository repository)
+    public BrokerBreakdownService(IInvestmentRepository repository)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }

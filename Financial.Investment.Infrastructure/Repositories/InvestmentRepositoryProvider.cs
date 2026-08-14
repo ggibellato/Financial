@@ -1,6 +1,6 @@
 namespace Financial.Investment.Infrastructure.Repositories;
 
-public enum RepositoryProvider
+public enum InvestmentRepositoryProvider
 {
     LocalJson,
     GoogleDriveJson

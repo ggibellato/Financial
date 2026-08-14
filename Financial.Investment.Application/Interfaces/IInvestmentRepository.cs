@@ -3,7 +3,7 @@ using Financial.Investment.Domain.Entities;
 
 namespace Financial.Investment.Application.Interfaces;
 
-public interface IRepository
+public interface IInvestmentRepository
 {
     IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active);
     IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active);

@@ -6,13 +6,13 @@ using Financial.Shared.Infrastructure.Sync;
 namespace Financial.TestUtilities;
 
 /// <summary>
-/// An <see cref="IRepository"/> whose only implemented behavior is reporting/flushing sync status -
+/// An <see cref="IInvestmentRepository"/> whose only implemented behavior is reporting/flushing sync status -
 /// every CRUD member throws <see cref="NotImplementedException"/>. For tests that need a repository
 /// double implementing <see cref="ISyncStatusProvider"/> specifically (shutdown-flush wiring, the
 /// sync-status endpoint); for the "repository is NOT an ISyncStatusProvider" case, use
-/// <see cref="StubRepository"/> instead, which deliberately doesn't implement it.
+/// <see cref="StubInvestmentRepository"/> instead, which deliberately doesn't implement it.
 /// </summary>
-public sealed class SyncStatusRepositoryStub : IRepository, ISyncStatusProvider
+public sealed class SyncStatusInvestmentRepositoryStub : IInvestmentRepository, ISyncStatusProvider
 {
     public SyncStatus StatusToReturn { get; set; } = new(SyncState.Idle, null, null);
 

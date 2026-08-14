@@ -7,9 +7,9 @@ namespace Financial.Investment.Application.Services;
 
 public sealed class NavigationService : INavigationService
 {
-    private readonly IRepository _repository;
+    private readonly IInvestmentRepository _repository;
 
-    public NavigationService(IRepository repository)
+    public NavigationService(IInvestmentRepository repository)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }

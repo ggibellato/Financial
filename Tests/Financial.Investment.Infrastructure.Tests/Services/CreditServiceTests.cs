@@ -124,7 +124,7 @@ public class CreditServiceTests
 
         var storage = new LocalJsonStorage(tempFile);
         var serializer = new InvestmentsSerializerAdapter();
-        var repository = new JSONRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
+        var repository = new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
         var navigationService = new NavigationService(repository);
         var service = new CreditService(repository, navigationService);
 

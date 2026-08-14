@@ -16,7 +16,7 @@ This project touches more external systems than a typical CRUD app despite havin
 | Cleanup | `File.Delete(tempFile)` in `finally`, or the owning `IAsyncDisposable`'s `Dispose` |
 | Why not a fake? | No mocking framework in this project; file I/O is simple enough that faking it adds no benefit |
 
-Both Investment (`data.json`) and CashFlow (`data-cashflow.json`) follow this pattern independently — see `artifacts/infrastructure-persistence.md`.
+Both Investment (`data-investment.json`) and CashFlow (`data-cashflow.json`) follow this pattern independently — see `artifacts/infrastructure-persistence.md`.
 
 ## Google Drive (alternative storage backend)
 
