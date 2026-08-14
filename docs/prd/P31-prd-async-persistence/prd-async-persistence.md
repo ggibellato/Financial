@@ -402,9 +402,9 @@ graph TD
 - [x] The endpoint reflects a `Failed` state for a context immediately after that context's retries are exhausted
 
 ### F09. Web Sync Status Polling
-- [ ] The hook calls the F08 endpoint on mount and every 15 seconds thereafter
-- [ ] A failed poll does not crash the hook or stop subsequent polling attempts
-- [ ] The hook exposes the latest successfully-polled combined status to consumers
+- [x] The hook calls the F08 endpoint on mount and every 15 seconds thereafter
+- [x] A failed poll does not crash the hook or stop subsequent polling attempts
+- [x] The hook exposes the latest successfully-polled combined status to consumers
 
 ### F10. Web Sync Status Banner
 - [ ] No banner is visible when both contexts report a non-`Failed` state

@@ -43,6 +43,7 @@ import type {
   ReserveBucketBalanceDto,
   ReserveBucketDto,
   ReserveMovementDto,
+  SyncStatusResponseDto,
   TitheSummaryDto,
   TransactionCreateDto,
   TransactionDeleteDto,
@@ -151,6 +152,7 @@ export interface FinancialApiClient {
   getCategoryTotalsAnnualForYear: (year: number) => Promise<CategoryTotalsAnnualDto>
   getInvestmentAnnualResultForYear: (year: number) => Promise<InvestmentAnnualResultDto>
   getHistoricSummaryAverageFromYear: (year: number) => Promise<CategoryAnnualAverageDto[]>
+  getSyncStatus: () => Promise<SyncStatusResponseDto>
 }
 
 export interface FinancialApiClientOptions {
@@ -447,5 +449,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<InvestmentAnnualResultDto>(`/annual-summary/${year}/investment-annual-result`),
     getHistoricSummaryAverageFromYear: (year) =>
       request<CategoryAnnualAverageDto[]>(`/annual-summary/${year}/historic-summary-averages`),
+    getSyncStatus: () => request<SyncStatusResponseDto>('/sync-status'),
   }
 }
