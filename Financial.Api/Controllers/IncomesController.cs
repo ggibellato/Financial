@@ -31,15 +31,8 @@ public sealed class IncomesController : ControllerBase
             return BadRequest();
         }
 
-        try
-        {
-            var income = await _incomeService.AddIncomeAsync(request);
-            return Ok(income);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
+        var income = await _incomeService.AddIncomeAsync(request);
+        return Ok(income);
     }
 
     /// <summary>Updates an existing income.</summary>
@@ -57,19 +50,8 @@ public sealed class IncomesController : ControllerBase
             return BadRequest();
         }
 
-        try
-        {
-            var income = await _incomeService.UpdateIncomeAsync(id, request);
-            return Ok(income);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        var income = await _incomeService.UpdateIncomeAsync(id, request);
+        return Ok(income);
     }
 
     /// <summary>Deletes an income.</summary>
@@ -80,15 +62,8 @@ public sealed class IncomesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteIncome(Guid id)
     {
-        try
-        {
-            await _incomeService.DeleteIncomeAsync(id);
-            return Ok();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        await _incomeService.DeleteIncomeAsync(id);
+        return Ok();
     }
 
     /// <summary>Lists incomes recorded in a given month.</summary>

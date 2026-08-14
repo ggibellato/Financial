@@ -31,15 +31,8 @@ public sealed class ExpensesController : ControllerBase
             return BadRequest();
         }
 
-        try
-        {
-            var expense = await _expenseService.AddExpenseAsync(request);
-            return Ok(expense);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
+        var expense = await _expenseService.AddExpenseAsync(request);
+        return Ok(expense);
     }
 
     /// <summary>Updates an existing expense.</summary>
@@ -57,19 +50,8 @@ public sealed class ExpensesController : ControllerBase
             return BadRequest();
         }
 
-        try
-        {
-            var expense = await _expenseService.UpdateExpenseAsync(id, request);
-            return Ok(expense);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        var expense = await _expenseService.UpdateExpenseAsync(id, request);
+        return Ok(expense);
     }
 
     /// <summary>Deletes an expense.</summary>
@@ -80,15 +62,8 @@ public sealed class ExpensesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteExpense(Guid id)
     {
-        try
-        {
-            await _expenseService.DeleteExpenseAsync(id);
-            return Ok();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        await _expenseService.DeleteExpenseAsync(id);
+        return Ok();
     }
 
     /// <summary>Lists expenses recorded in a given month.</summary>

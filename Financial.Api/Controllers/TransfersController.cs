@@ -31,15 +31,8 @@ public sealed class TransfersController : ControllerBase
             return BadRequest();
         }
 
-        try
-        {
-            var transfer = await _transferService.AddTransferAsync(request);
-            return Ok(transfer);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
+        var transfer = await _transferService.AddTransferAsync(request);
+        return Ok(transfer);
     }
 
     /// <summary>Updates an existing transfer.</summary>
@@ -57,19 +50,8 @@ public sealed class TransfersController : ControllerBase
             return BadRequest();
         }
 
-        try
-        {
-            var transfer = await _transferService.UpdateTransferAsync(id, request);
-            return Ok(transfer);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        var transfer = await _transferService.UpdateTransferAsync(id, request);
+        return Ok(transfer);
     }
 
     /// <summary>Deletes a transfer.</summary>
@@ -80,15 +62,8 @@ public sealed class TransfersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteTransfer(Guid id)
     {
-        try
-        {
-            await _transferService.DeleteTransferAsync(id);
-            return Ok();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        await _transferService.DeleteTransferAsync(id);
+        return Ok();
     }
 
     /// <summary>Lists transfers recorded in a given month.</summary>

@@ -31,15 +31,8 @@ public sealed class MensaisController : ControllerBase
             return BadRequest();
         }
 
-        try
-        {
-            var bill = await _mensaisService.CreateBillAsync(request);
-            return Ok(bill);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
+        var bill = await _mensaisService.CreateBillAsync(request);
+        return Ok(bill);
     }
 
     /// <summary>Lists all recurring bills.</summary>
@@ -59,15 +52,8 @@ public sealed class MensaisController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteBill(Guid id)
     {
-        try
-        {
-            await _mensaisService.DeleteBillAsync(id);
-            return Ok();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        await _mensaisService.DeleteBillAsync(id);
+        return Ok();
     }
 
     /// <summary>Updates an existing recurring bill, such as marking it paid for the current period.</summary>
@@ -85,19 +71,8 @@ public sealed class MensaisController : ControllerBase
             return BadRequest();
         }
 
-        try
-        {
-            var result = await _mensaisService.UpdateBillAsync(id, request);
-            return Ok(result);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        var result = await _mensaisService.UpdateBillAsync(id, request);
+        return Ok(result);
     }
 
     /// <summary>Resets every recurring bill's paid state back to unset, typically at the start of a new month.</summary>

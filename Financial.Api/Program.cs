@@ -1,3 +1,4 @@
+using Financial.Api.Middleware;
 using Financial.CashFlow.Application.DependencyInjection;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
 using Financial.Investment.Application.Configuration;
@@ -80,6 +81,8 @@ else
 {
     app.UseExceptionHandler();
 }
+
+app.UseMiddleware<DomainExceptionMappingMiddleware>();
 
 app.UseCors();
 app.UseStaticFiles();

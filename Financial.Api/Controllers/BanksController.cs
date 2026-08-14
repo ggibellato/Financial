@@ -50,19 +50,8 @@ public sealed class BanksController : ControllerBase
             return NotFound();
         }
 
-        try
-        {
-            var bank = await _bankService.UpdateOpeningBalanceAsync(id, request);
-            return Ok(bank);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        var bank = await _bankService.UpdateOpeningBalanceAsync(id, request);
+        return Ok(bank);
     }
 
     /// <summary>Returns each bank's balance as of the end of the given month.</summary>
@@ -97,15 +86,8 @@ public sealed class BanksController : ControllerBase
             return NotFound();
         }
 
-        try
-        {
-            var adjustment = await _balanceAdjustmentService.AddAdjustmentAsync(id, request);
-            return Ok(adjustment);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
+        var adjustment = await _balanceAdjustmentService.AddAdjustmentAsync(id, request);
+        return Ok(adjustment);
     }
 
     /// <summary>Updates an existing balance adjustment.</summary>
@@ -129,19 +111,8 @@ public sealed class BanksController : ControllerBase
             return NotFound();
         }
 
-        try
-        {
-            var adjustment = await _balanceAdjustmentService.UpdateAdjustmentAsync(id, adjustmentId, request);
-            return Ok(adjustment);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        var adjustment = await _balanceAdjustmentService.UpdateAdjustmentAsync(id, adjustmentId, request);
+        return Ok(adjustment);
     }
 
     /// <summary>Deletes a balance adjustment.</summary>
@@ -158,15 +129,8 @@ public sealed class BanksController : ControllerBase
             return NotFound();
         }
 
-        try
-        {
-            await _balanceAdjustmentService.DeleteAdjustmentAsync(id, adjustmentId);
-            return Ok();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        await _balanceAdjustmentService.DeleteAdjustmentAsync(id, adjustmentId);
+        return Ok();
     }
 
     /// <summary>Lists all balance adjustments for a bank.</summary>

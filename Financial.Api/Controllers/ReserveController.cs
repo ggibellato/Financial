@@ -1,5 +1,4 @@
 using Financial.CashFlow.Application.DTOs;
-using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -32,15 +31,8 @@ public sealed class ReserveController : ControllerBase
             return BadRequest();
         }
 
-        try
-        {
-            var result = await _reserveService.PostIncomeSplitAsync(request);
-            return Ok(result);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
+        var result = await _reserveService.PostIncomeSplitAsync(request);
+        return Ok(result);
     }
 
     /// <summary>Withdraws an amount from a reserve bucket.</summary>
@@ -57,19 +49,8 @@ public sealed class ReserveController : ControllerBase
             return BadRequest();
         }
 
-        try
-        {
-            var result = await _reserveService.PostWithdrawalAsync(request);
-            return Ok(result);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
-        catch (OverdraftConfirmationRequiredException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status409Conflict);
-        }
+        var result = await _reserveService.PostWithdrawalAsync(request);
+        return Ok(result);
     }
 
     /// <summary>Lists the current balance of each reserve bucket.</summary>
@@ -105,19 +86,8 @@ public sealed class ReserveController : ControllerBase
             return BadRequest();
         }
 
-        try
-        {
-            var result = await _reserveService.UpdateMovementAsync(id, request);
-            return Ok(result);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        var result = await _reserveService.UpdateMovementAsync(id, request);
+        return Ok(result);
     }
 
     /// <summary>Deletes a reserve movement.</summary>
@@ -128,14 +98,7 @@ public sealed class ReserveController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteMovement(Guid id)
     {
-        try
-        {
-            await _reserveService.DeleteMovementAsync(id);
-            return Ok();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        await _reserveService.DeleteMovementAsync(id);
+        return Ok();
     }
 }
