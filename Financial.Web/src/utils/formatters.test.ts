@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   currentYearMonth,
+  formatDateTime,
   formatMonthInputValue,
   formatN2,
   formatN8,
@@ -62,6 +63,28 @@ describe('formatShortDate', () => {
 
   it('formatShortDate_ValidIsoString_ReturnsDdMmYyyy', () => {
     expect(formatShortDate('2026-07-05T12:00:00Z')).toBe('05/07/2026')
+  })
+})
+
+describe('formatDateTime', () => {
+  it('formatDateTime_NullValue_ReturnsEmptyString', () => {
+    expect(formatDateTime(null)).toBe('')
+  })
+
+  it('formatDateTime_UndefinedValue_ReturnsEmptyString', () => {
+    expect(formatDateTime(undefined)).toBe('')
+  })
+
+  it('formatDateTime_InvalidDateString_ReturnsOriginalString', () => {
+    expect(formatDateTime('not-a-date')).toBe('not-a-date')
+  })
+
+  it('formatDateTime_ValidIsoString_ReturnsDdMmYyyyHhMm', () => {
+    // Built from local components and round-tripped through toISOString so the
+    // expectation is independent of the test runner's timezone offset.
+    const localInstant = new Date(2026, 6, 5, 14, 30)
+
+    expect(formatDateTime(localInstant.toISOString())).toBe('05/07/2026 14:30')
   })
 })
 
