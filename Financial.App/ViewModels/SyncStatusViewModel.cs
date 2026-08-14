@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows.Threading;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.Investment.Application.Interfaces;
@@ -13,6 +14,8 @@ namespace Financial.Presentation.App.ViewModels;
 public class SyncStatusViewModel : ViewModelBase
 {
     public static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(15);
+
+    private const string LastSuccessfulSaveFormat = "dd/MM/yyyy HH:mm";
 
     private readonly ICashFlowRepository _cashFlowRepository;
     private readonly IRepository _investmentRepository;
@@ -36,13 +39,39 @@ public class SyncStatusViewModel : ViewModelBase
     public SyncStatus CashFlowStatus
     {
         get => _cashFlowStatus;
-        private set => SetProperty(ref _cashFlowStatus, value);
+        private set
+        {
+            if (SetProperty(ref _cashFlowStatus, value))
+            {
+                NotifyIndicatorPropertiesChanged();
+            }
+        }
     }
 
     public SyncStatus InvestmentStatus
     {
         get => _investmentStatus;
-        private set => SetProperty(ref _investmentStatus, value);
+        private set
+        {
+            if (SetProperty(ref _investmentStatus, value))
+            {
+                NotifyIndicatorPropertiesChanged();
+            }
+        }
+    }
+
+    public bool IsIndicatorVisible =>
+        CashFlowStatus.State == SyncState.Failed || InvestmentStatus.State == SyncState.Failed;
+
+    public IReadOnlyList<string> IndicatorMessages
+    {
+        get
+        {
+            var messages = new List<string>();
+            AppendIfFailed(messages, "CashFlow", CashFlowStatus);
+            AppendIfFailed(messages, "Investment", InvestmentStatus);
+            return messages;
+        }
     }
 
     public void RefreshStatus()
@@ -55,4 +84,26 @@ public class SyncStatusViewModel : ViewModelBase
         repository is ISyncStatusProvider syncStatusProvider
             ? syncStatusProvider.GetStatus()
             : new SyncStatus(SyncState.Idle, null, null);
+
+    private static void AppendIfFailed(List<string> messages, string contextName, SyncStatus status)
+    {
+        if (status.State != SyncState.Failed)
+        {
+            return;
+        }
+
+        var lastSuccessfulSave = status.LastSuccessfulSaveUtc is { } timestamp
+            ? timestamp.ToString(LastSuccessfulSaveFormat, CultureInfo.InvariantCulture)
+            : "Never";
+
+        messages.Add(
+            $"{contextName} changes could not be saved to Google Drive (last error: {status.LastError}). " +
+            $"Last successful save: {lastSuccessfulSave}.");
+    }
+
+    private void NotifyIndicatorPropertiesChanged()
+    {
+        OnPropertyChanged(nameof(IsIndicatorVisible));
+        OnPropertyChanged(nameof(IndicatorMessages));
+    }
 }
