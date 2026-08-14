@@ -1,4 +1,5 @@
 using Financial.Presentation.App.ViewModels;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels;
@@ -19,11 +20,17 @@ public class MainShellViewModelTests
         ["annual-summary"] = new object(),
     };
 
+    private static MainShellViewModel CreateShell(
+        bool initialCollapsed,
+        Action<bool> persistCollapsed,
+        IReadOnlyDictionary<string, object> viewsByKey) =>
+        new(initialCollapsed, persistCollapsed, viewsByKey, new SyncStatusViewModel(new StubCashFlowRepository(), new StubRepository()));
+
     [Fact]
     public void Constructor_DefaultsToExpandedWhenInitialCollapsedIsFalse()
     {
         var views = BuildViewMap();
-        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: views);
+        var vm = CreateShell(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: views);
 
         vm.IsCollapsed.Should().BeFalse();
         vm.SelectedChildId.Should().Be("active-investments");
@@ -33,7 +40,7 @@ public class MainShellViewModelTests
     [Fact]
     public void Constructor_HonorsStoredCollapsedState()
     {
-        var vm = new MainShellViewModel(initialCollapsed: true, persistCollapsed: _ => { }, viewsByKey: BuildViewMap());
+        var vm = CreateShell(initialCollapsed: true, persistCollapsed: _ => { }, viewsByKey: BuildViewMap());
 
         vm.IsCollapsed.Should().BeTrue();
     }
@@ -42,7 +49,7 @@ public class MainShellViewModelTests
     public void ToggleCollapsedCommand_FlipsStateAndInvokesPersistCallback()
     {
         var persisted = new List<bool>();
-        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: persisted.Add, viewsByKey: BuildViewMap());
+        var vm = CreateShell(initialCollapsed: false, persistCollapsed: persisted.Add, viewsByKey: BuildViewMap());
 
         vm.ToggleCollapsedCommand.Execute(null);
         vm.IsCollapsed.Should().BeTrue();
@@ -57,7 +64,7 @@ public class MainShellViewModelTests
     public void SelectItemCommand_UpdatesSelectedContentAndChildId()
     {
         var views = BuildViewMap();
-        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: views);
+        var vm = CreateShell(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: views);
 
         foreach (var (viewKey, view) in views)
         {
@@ -72,7 +79,7 @@ public class MainShellViewModelTests
     public void SelectItemCommand_UnknownViewKey_DoesNotThrowOrChangeSelection()
     {
         var views = BuildViewMap();
-        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: views);
+        var vm = CreateShell(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: views);
         var previousChildId = vm.SelectedChildId;
         var previousContent = vm.SelectedContent;
 
@@ -86,7 +93,7 @@ public class MainShellViewModelTests
     [Fact]
     public void PropertyChanged_RaisedForIsCollapsedSelectedChildIdAndSelectedContent()
     {
-        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: BuildViewMap());
+        var vm = CreateShell(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: BuildViewMap());
         var raised = new List<string>();
         vm.PropertyChanged += (_, e) => raised.Add(e.PropertyName!);
 
@@ -101,7 +108,7 @@ public class MainShellViewModelTests
     [Fact]
     public void BreadcrumbText_DefaultsToFirstCategoryAndChild()
     {
-        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: BuildViewMap());
+        var vm = CreateShell(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: BuildViewMap());
 
         vm.BreadcrumbText.Should().Be("Investments › Active Investments");
     }
@@ -110,7 +117,7 @@ public class MainShellViewModelTests
     public void BreadcrumbText_UpdatesWhenSelectedItemChanges()
     {
         var views = BuildViewMap();
-        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: views);
+        var vm = CreateShell(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: views);
 
         foreach (var category in vm.Categories)
         {
@@ -128,7 +135,7 @@ public class MainShellViewModelTests
     {
         var views = BuildViewMap();
         views["extra-key"] = new object();
-        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: views);
+        var vm = CreateShell(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: views);
 
         vm.SelectItemCommand.Execute("extra-key");
 
@@ -138,7 +145,7 @@ public class MainShellViewModelTests
     [Fact]
     public void PropertyChanged_RaisedForBreadcrumbTextOnSelectionChange()
     {
-        var vm = new MainShellViewModel(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: BuildViewMap());
+        var vm = CreateShell(initialCollapsed: false, persistCollapsed: _ => { }, viewsByKey: BuildViewMap());
         var raised = new List<string>();
         vm.PropertyChanged += (_, e) => raised.Add(e.PropertyName!);
 
