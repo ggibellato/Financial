@@ -288,6 +288,8 @@ export default function MonthlyPage() {
 
           {activeTab === 'expense' && (
             <>
+              <BanksGrid bankTotals={bankTotals} bankTotalsSum={bankTotalsSum} roundUpTotalsSum={roundUpTotalsSum} />
+
               {expenseFormElement}
 
               <ExpensesSection

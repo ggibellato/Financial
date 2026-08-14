@@ -657,6 +657,19 @@ describe('MonthlyPage', () => {
     expect(screen.getByText(/Bank Balance:/).closest('section')).toHaveClass('monthly-page__section--grid')
   })
 
+  it('shows the Banks grid on the Expense tab too, above the expense form and list', async () => {
+    render(<MonthlyPage />)
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'BaAmex' })).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+
+    await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
+    const banksSection = within(screen.getByText(/Bank Balance:/).closest('section')!)
+    expect(banksSection.getByRole('cell', { name: 'Barclays' })).toBeInTheDocument()
+    expect(banksSection.getByRole('cell', { name: 'Trading212' })).toBeInTheDocument()
+    expect(banksSection.getByRole('cell', { name: 'Chase' })).toBeInTheDocument()
+  })
+
   it('shows Mark Paid with a bank picker for unpaid cards and Unmark Paid for paid ones', async () => {
     render(<MonthlyPage />)
 
