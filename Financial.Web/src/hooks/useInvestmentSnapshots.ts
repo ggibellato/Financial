@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { InvestmentSnapshotDto } from '../api/types'
-import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
+import { currentYearMonth, formatMonthInputValue, getErrorMessage, parseMonthInputValue } from '../utils/formatters'
 
 interface InvestmentSnapshotsState {
   year: number
@@ -103,7 +103,7 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
       .catch((err: unknown) => {
         dispatch({
           type: 'FETCH_ERROR',
-          payload: err instanceof Error ? err.message : 'Unable to load investment snapshots',
+          payload: getErrorMessage(err, 'Unable to load investment snapshots'),
         })
       })
   }, [apiClient, state.year, state.month, state.retryCount])
@@ -152,7 +152,7 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to update snapshot',
+          payload: getErrorMessage(err, 'Failed to update snapshot'),
         })
       })
   }

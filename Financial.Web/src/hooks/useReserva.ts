@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { ApiError } from '../api/apiError'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { IncomeSplitResultDto, ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../api/types'
+import { getErrorMessage } from '../utils/formatters'
 
 const SPLIT_PERCENTAGE_MIN = 99.99
 const SPLIT_PERCENTAGE_MAX = 100.01
@@ -333,7 +334,7 @@ export function useReserva(): ReservaData {
     ])
       .then(([balances, movements, buckets]) => dispatch({ type: 'FETCH_SUCCESS', payload: { balances, movements, buckets } }))
       .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: err instanceof Error ? err.message : 'Unable to load Reserva data' })
+        dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Reserva data') })
       })
   }, [apiClient])
 
@@ -414,7 +415,7 @@ export function useReserva(): ReservaData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SPLIT_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to post income split',
+          payload: getErrorMessage(err, 'Failed to post income split'),
         })
       })
   }
@@ -446,7 +447,7 @@ export function useReserva(): ReservaData {
 
         dispatch({
           type: 'WITHDRAWAL_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to post withdrawal',
+          payload: getErrorMessage(err, 'Failed to post withdrawal'),
         })
       })
   }
@@ -520,7 +521,7 @@ export function useReserva(): ReservaData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_MOVEMENT_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to update movement',
+          payload: getErrorMessage(err, 'Failed to update movement'),
         })
       })
   }
@@ -537,7 +538,7 @@ export function useReserva(): ReservaData {
       .catch((err: unknown) => {
         dispatch({
           type: 'DELETE_MOVEMENT_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to delete movement',
+          payload: getErrorMessage(err, 'Failed to delete movement'),
         })
       })
   }

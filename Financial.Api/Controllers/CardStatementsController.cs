@@ -40,19 +40,8 @@ public sealed class CardStatementsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CardStatementDTO>> MarkStatementPaid(Guid id, [FromBody] MarkStatementPaidDTO request)
     {
-        try
-        {
-            var result = await _cardStatementService.MarkStatementPaidAsync(id, request);
-            return Ok(result);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        var result = await _cardStatementService.MarkStatementPaidAsync(id, request);
+        return Ok(result);
     }
 
     /// <summary>Reverts a card statement back to unpaid.</summary>
@@ -63,14 +52,7 @@ public sealed class CardStatementsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CardStatementDTO>> UnmarkStatementPaid(Guid id)
     {
-        try
-        {
-            var result = await _cardStatementService.UnmarkStatementPaidAsync(id);
-            return Ok(result);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        var result = await _cardStatementService.UnmarkStatementPaidAsync(id);
+        return Ok(result);
     }
 }

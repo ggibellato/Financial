@@ -31,15 +31,8 @@ public sealed class ControleMaeController : ControllerBase
             return BadRequest();
         }
 
-        try
-        {
-            var entry = await _controleMaeService.CreateEntryAsync(request);
-            return Ok(entry);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
+        var entry = await _controleMaeService.CreateEntryAsync(request);
+        return Ok(entry);
     }
 
     /// <summary>Lists all ledger entries recorded on or after the given date.</summary>
@@ -75,15 +68,8 @@ public sealed class ControleMaeController : ControllerBase
             return BadRequest();
         }
 
-        try
-        {
-            var result = await _controleMaeService.UpdateEntryValuesAsync(id, request);
-            return Ok(result);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        var result = await _controleMaeService.UpdateEntryValuesAsync(id, request);
+        return Ok(result);
     }
 
     /// <summary>Deletes a ledger entry.</summary>
@@ -94,14 +80,7 @@ public sealed class ControleMaeController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteEntry(Guid id)
     {
-        try
-        {
-            await _controleMaeService.DeleteEntryAsync(id);
-            return Ok();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        await _controleMaeService.DeleteEntryAsync(id);
+        return Ok();
     }
 }

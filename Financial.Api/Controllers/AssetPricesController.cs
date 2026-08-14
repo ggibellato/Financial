@@ -45,22 +45,15 @@ public sealed class AssetPricesController : ControllerBase
             ? parsed
             : GlobalAssetClass.Unknown;
 
-        try
+        var result = _assetPriceService.GetCurrentPrice(new AssetPriceRequestDTO
         {
-            var result = _assetPriceService.GetCurrentPrice(new AssetPriceRequestDTO
-            {
-                Exchange = exchange?.Trim() ?? string.Empty,
-                Ticker = ticker.Trim(),
-                AssetClass = parsedAssetClass,
-                BrokerName = brokerName?.Trim(),
-                Name = name?.Trim()
-            });
+            Exchange = exchange?.Trim() ?? string.Empty,
+            Ticker = ticker.Trim(),
+            AssetClass = parsedAssetClass,
+            BrokerName = brokerName?.Trim(),
+            Name = name?.Trim()
+        });
 
-            return Ok(result);
-        }
-        catch (ArgumentException)
-        {
-            return BadRequest();
-        }
+        return Ok(result);
     }
 }

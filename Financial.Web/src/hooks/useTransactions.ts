@@ -5,7 +5,7 @@ import { useSelectedNode } from '../context/SelectedNodeContext'
 import { buildSelectionKey } from './useCredits'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
-import { formatMonthYear, pad, toInputDate } from '../utils/formatters'
+import { formatMonthYear, getErrorMessage, pad, toInputDate } from '../utils/formatters'
 
 export type TransactionFormField = 'formDate' | 'formType' | 'formQuantity' | 'formUnitPrice' | 'formFees'
 export type ChartDisplayMode = 'Bar' | 'Line'
@@ -271,7 +271,7 @@ export function useTransactions(): TransactionsData {
         .catch((err: unknown) => {
           dispatch({
             type: 'FETCH_ERROR',
-            payload: err instanceof Error ? err.message : 'Unable to load asset details',
+            payload: getErrorMessage(err, 'Unable to load asset details'),
           })
         })
     } else if (nodeType === 'Broker') {
@@ -282,7 +282,7 @@ export function useTransactions(): TransactionsData {
         .catch((err: unknown) => {
           dispatch({
             type: 'FETCH_ERROR',
-            payload: err instanceof Error ? err.message : 'Unable to load transactions',
+            payload: getErrorMessage(err, 'Unable to load transactions'),
           })
         })
     } else if (nodeType === 'Portfolio' && portfolioName) {
@@ -293,7 +293,7 @@ export function useTransactions(): TransactionsData {
         .catch((err: unknown) => {
           dispatch({
             type: 'FETCH_ERROR',
-            payload: err instanceof Error ? err.message : 'Unable to load transactions',
+            payload: getErrorMessage(err, 'Unable to load transactions'),
           })
         })
     } else {
@@ -394,7 +394,7 @@ export function useTransactions(): TransactionsData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to save transaction',
+          payload: getErrorMessage(err, 'Failed to save transaction'),
         })
       })
   }, [selectedNode, state, apiClient])
@@ -415,7 +415,7 @@ export function useTransactions(): TransactionsData {
         .catch((err: unknown) => {
           dispatch({
             type: 'DELETE_ERROR',
-            payload: err instanceof Error ? err.message : 'Failed to delete transaction',
+            payload: getErrorMessage(err, 'Failed to delete transaction'),
           })
         })
     },

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { BankDto, TransferDto } from '../api/types'
 import { mapTransferErrorToField, type TransferFormField } from './mapTransferErrorToField'
-import { todayIsoDate } from '../utils/formatters'
+import { getErrorMessage, todayIsoDate } from '../utils/formatters'
 
 interface TransferFormState {
   isOpen: boolean
@@ -140,7 +140,7 @@ export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTrans
         onSaved()
       })
       .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : 'Failed to save transfer'
+        const message = getErrorMessage(err, 'Failed to save transfer')
         const field = mapTransferErrorToField(message, state.sourceBank, state.destinationBank)
         setState((s) => ({ ...s, isSaving: false, saveError: message, saveErrorField: field }))
       })

@@ -518,4 +518,42 @@ public class ExpenseTests
 
         expense.IsInvestment.Should().BeFalse();
     }
+
+    [Fact]
+    public void ReportingDate_ImmediatePayment_IsDate()
+    {
+        var expense = CreateImmediateExpense();
+
+        expense.ReportingDate.Should().Be(expense.Date);
+    }
+
+    [Fact]
+    public void ReportingDate_UnpaidCardCharge_IsInvoiceDate()
+    {
+        var expense = Expense.Create(new DateOnly(2026, 7, 28), "Charge near cutoff", 10m, Extras, null, ChaseMaster4023);
+
+        expense.ReportingDate.Should().Be(expense.InvoiceDate);
+        expense.ReportingDate.Should().NotBe(expense.Date);
+    }
+
+    [Fact]
+    public void ReportingDate_SettledCardCharge_IsPostSettlementDate()
+    {
+        var expense = Expense.Create(new DateOnly(2026, 7, 28), "Charge near cutoff", 10m, Extras, null, ChaseMaster4023);
+        expense.Settle(Barclays, new DateOnly(2026, 8, 5));
+
+        expense.ReportingDate.Should().Be(expense.Date);
+        expense.ReportingDate.Should().NotBe(expense.InvoiceDate);
+    }
+
+    [Fact]
+    public void ReportingDate_LegacyUnpaidChargeWithoutInvoiceDate_FallsBackToDateInsteadOfThrowing()
+    {
+        var expense = SimulateLegacyCardExpense(CreateCardCharge());
+
+        var act = () => expense.ReportingDate;
+
+        act.Should().NotThrow();
+        expense.ReportingDate.Should().Be(expense.Date);
+    }
 }

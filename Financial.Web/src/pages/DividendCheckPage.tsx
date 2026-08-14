@@ -3,7 +3,7 @@ import { createFinancialApiClient } from '../api/financialApiClient'
 import type { DividendHistoryItemDto, DividendSummaryDto, WatchlistItemDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import TickerCombobox, { type TickerGroup } from '../components/TickerCombobox'
-import { formatN2, formatShortDateUtc } from '../utils/formatters'
+import { formatN2, formatShortDateUtc, getErrorMessage } from '../utils/formatters'
 import './DividendCheckPage.css'
 
 const FIXED_EXCHANGE = 'BVMF'
@@ -51,7 +51,7 @@ export default function DividendCheckPage() {
       setSummary(summaryData)
       setHistory(historyData)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to load dividend data.'
+      const message = getErrorMessage(err, 'Unable to load dividend data.')
       setError(message)
       setSummary(null)
       setHistory([])

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { CreateRecurringBillDto, RecurringBillDto } from '../api/types'
-import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
+import { currentYearMonth, formatMonthInputValue, getErrorMessage, parseMonthInputValue } from '../utils/formatters'
 
 export type EditField = 'editStatus' | 'editValue'
 export type AddField = 'newDueDay' | 'newDescription' | 'newValue' | 'newArea' | 'newNote'
@@ -195,7 +195,7 @@ export function useMensais(): MensaisData {
       .getMensaisBills()
       .then((bills) => dispatch({ type: 'FETCH_SUCCESS', payload: bills }))
       .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: err instanceof Error ? err.message : 'Unable to load Mensais data' })
+        dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Mensais data') })
       })
   }, [apiClient, state.retryCount])
 
@@ -241,7 +241,7 @@ export function useMensais(): MensaisData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to update bill',
+          payload: getErrorMessage(err, 'Failed to update bill'),
         })
       })
   }
@@ -291,7 +291,7 @@ export function useMensais(): MensaisData {
       .catch((err: unknown) => {
         dispatch({
           type: 'ADD_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to add bill',
+          payload: getErrorMessage(err, 'Failed to add bill'),
         })
       })
   }
@@ -308,7 +308,7 @@ export function useMensais(): MensaisData {
       .catch((err: unknown) => {
         dispatch({
           type: 'DELETE_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to delete bill',
+          payload: getErrorMessage(err, 'Failed to delete bill'),
         })
       })
   }
@@ -322,7 +322,7 @@ export function useMensais(): MensaisData {
       .catch((err: unknown) => {
         dispatch({
           type: 'RESET_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to reset bills',
+          payload: getErrorMessage(err, 'Failed to reset bills'),
         })
       })
   }

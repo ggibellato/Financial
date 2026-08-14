@@ -11,55 +11,7 @@ import type {
   IncomeSourceDto,
   TitheSummaryDto,
 } from '../api/types'
-import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
-
-export type PaymentMode = 'bank' | 'card'
-
-export const INCOME_SOURCES_WITH_GROSS_VALUE = ['Gleison', 'Ariana']
-
-/** Matches the previous hardcoded INCOME_SOURCES array's declaration order. Names outside this
- * list (unexpected but not invalid) sort last rather than being dropped or erroring. */
-const INCOME_SOURCE_DISPLAY_ORDER = ['Gleison', 'Ariana', 'Lottery', 'DividendoJuros']
-
-/** Active income sources, ordered to match the picklist's historical display order. */
-export function selectActiveIncomeSources(sources: IncomeSourceDto[]): IncomeSourceDto[] {
-  return sources
-    .filter((s) => s.isActive)
-    .slice()
-    .sort((a, b) => {
-      const rank = (name: string) => {
-        const index = INCOME_SOURCE_DISPLAY_ORDER.indexOf(name)
-        return index === -1 ? INCOME_SOURCE_DISPLAY_ORDER.length : index
-      }
-      return rank(a.name) - rank(b.name)
-    })
-}
-
-const SETTLED_STATUS = 'CreditCardSettled'
-const CHARGE_STATUS = 'CreditCardCharge'
-
-const MIN_ROUND_UP_AMOUNT = 0
-const MAX_ROUND_UP_AMOUNT = 0.99
-
-function computeRoundUpSuggestion(value: number): number {
-  return Math.round((Math.ceil(value) - value) * 100) / 100
-}
-
-/** Suggests a round-up amount for the given bank/value, or null if not eligible or no value yet. */
-function suggestRoundUpAmount(banks: BankDto[], bankId: string, value: string): string | null {
-  const bank = banks.find((b) => b.id === bankId)
-  if (!bank?.roundUpEnabled) return null
-
-  const parsedValue = Number(value)
-  if (!value.trim() || !isFinite(parsedValue) || parsedValue <= 0) return null
-
-  return computeRoundUpSuggestion(parsedValue).toFixed(2)
-}
-
-/** Resolves an income source Id back to its name for the gross-value-eligibility check. */
-function resolveIncomeSourceName(sources: IncomeSourceDto[], incomeSourceId: string): string {
-  return sources.find((s) => s.id === incomeSourceId)?.name ?? ''
-}
+import { currentYearMonth, formatMonthInputValue, getErrorMessage, parseMonthInputValue } from '../utils/formatters'
 
 export interface BankTotal {
   bankId: string
@@ -73,38 +25,6 @@ export interface IncomeTotal {
   netValue: number
   grossValue: number | null
 }
-
-export type CreateFormField =
-  | 'createDate'
-  | 'createDescription'
-  | 'createValue'
-  | 'createCategoryId'
-  | 'createPaymentSource'
-  | 'createCreditCardId'
-  | 'createInvoiceDate'
-  | 'createRoundUpAmount'
-export type EditField =
-  | 'editDate'
-  | 'editDescription'
-  | 'editValue'
-  | 'editCategoryId'
-  | 'editPaymentSource'
-  | 'editCreditCardId'
-  | 'editInvoiceDate'
-  | 'editRoundUpAmount'
-
-export type CreateIncomeField =
-  | 'createIncomeDate'
-  | 'createIncomeSource'
-  | 'createIncomeGrossValue'
-  | 'createIncomeNetValue'
-  | 'createIncomeBank'
-export type EditIncomeField =
-  | 'editIncomeDate'
-  | 'editIncomeSource'
-  | 'editIncomeGrossValue'
-  | 'editIncomeNetValue'
-  | 'editIncomeBank'
 
 interface MonthlyState {
   year: number
@@ -122,49 +42,8 @@ interface MonthlyState {
   isLoading: boolean
   error: string | null
   retryCount: number
-  isCreateFormOpen: boolean
-  createDate: string
-  createDescription: string
-  createValue: string
-  createCategoryId: string
-  createPaymentSource: string
-  createCreditCardId: string
-  createInvoiceDate: string
-  createRoundUpAmount: string
-  isCreating: boolean
-  createError: string | null
-  editingId: string | null
-  editDate: string
-  editDescription: string
-  editValue: string
-  editCategoryId: string
-  editPaymentSource: string
-  editCreditCardId: string
-  editCreditCardName: string
-  editInvoiceDate: string
-  editRoundUpAmount: string
-  createPaymentMode: PaymentMode
-  editPaymentMode: PaymentMode
-  editIsSettled: boolean
-  isSaving: boolean
-  saveError: string | null
   markPaidSources: Record<string, string>
-  isIncomeCreateFormOpen: boolean
-  createIncomeDate: string
-  createIncomeSource: string
-  createIncomeGrossValue: string
-  createIncomeNetValue: string
-  createIncomeBank: string
-  isCreatingIncome: boolean
-  createIncomeError: string | null
-  editingIncomeId: string | null
-  editIncomeDate: string
-  editIncomeSource: string
-  editIncomeGrossValue: string
-  editIncomeNetValue: string
-  editIncomeBank: string
-  isSavingIncome: boolean
-  saveIncomeError: string | null
+  listActionError: string | null
 }
 
 type MonthlyAction =
@@ -187,52 +66,8 @@ type MonthlyAction =
     }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
-  | { type: 'SHOW_CREATE_FORM'; payload: { mode: PaymentMode } }
-  | { type: 'CANCEL_CREATE_FORM' }
-  | { type: 'SET_CREATE_FIELD'; payload: { field: CreateFormField; value: string } }
-  | { type: 'CREATE_START' }
-  | { type: 'CREATE_SUCCESS' }
-  | { type: 'CREATE_ERROR'; payload: string }
-  | { type: 'SHOW_EDIT_FORM'; payload: ExpenseDto }
-  | { type: 'CANCEL_EDIT' }
-  | { type: 'SET_EDIT_FIELD'; payload: { field: EditField; value: string } }
-  | { type: 'SAVE_START' }
-  | { type: 'SAVE_SUCCESS' }
-  | { type: 'SAVE_ERROR'; payload: string }
-  | { type: 'MARK_PAID_ERROR'; payload: string }
   | { type: 'SET_MARK_PAID_SOURCE'; payload: { id: string; value: string } }
-  | { type: 'SHOW_CREATE_INCOME_FORM' }
-  | { type: 'CANCEL_CREATE_INCOME_FORM' }
-  | { type: 'SET_CREATE_INCOME_FIELD'; payload: { field: CreateIncomeField; value: string } }
-  | { type: 'CREATE_INCOME_START' }
-  | { type: 'CREATE_INCOME_SUCCESS' }
-  | { type: 'CREATE_INCOME_ERROR'; payload: string }
-  | { type: 'SHOW_EDIT_INCOME_FORM'; payload: IncomeDto }
-  | { type: 'CANCEL_EDIT_INCOME' }
-  | { type: 'SET_EDIT_INCOME_FIELD'; payload: { field: EditIncomeField; value: string } }
-  | { type: 'SAVE_INCOME_START' }
-  | { type: 'SAVE_INCOME_SUCCESS' }
-  | { type: 'SAVE_INCOME_ERROR'; payload: string }
-
-const BLANK_CREATE_FORM = {
-  createDate: '',
-  createDescription: '',
-  createValue: '',
-  createCategoryId: '',
-  createPaymentSource: '',
-  createCreditCardId: '',
-  createInvoiceDate: '',
-  createRoundUpAmount: '',
-  createPaymentMode: 'bank',
-} as const
-
-const BLANK_CREATE_INCOME_FORM = {
-  createIncomeDate: '',
-  createIncomeSource: '',
-  createIncomeGrossValue: '',
-  createIncomeNetValue: '',
-  createIncomeBank: '',
-} as const
+  | { type: 'LIST_ACTION_ERROR'; payload: string }
 
 const INITIAL_STATE_BASE: Omit<MonthlyState, 'year' | 'month'> = {
   expenses: [],
@@ -248,37 +83,8 @@ const INITIAL_STATE_BASE: Omit<MonthlyState, 'year' | 'month'> = {
   isLoading: true,
   error: null,
   retryCount: 0,
-  isCreateFormOpen: false,
-  ...BLANK_CREATE_FORM,
-  isCreating: false,
-  createError: null,
-  editingId: null,
-  editDate: '',
-  editDescription: '',
-  editValue: '',
-  editCategoryId: '',
-  editPaymentSource: '',
-  editCreditCardId: '',
-  editCreditCardName: '',
-  editInvoiceDate: '',
-  editRoundUpAmount: '',
-  editPaymentMode: 'bank',
-  editIsSettled: false,
-  isSaving: false,
-  saveError: null,
   markPaidSources: {},
-  isIncomeCreateFormOpen: false,
-  ...BLANK_CREATE_INCOME_FORM,
-  isCreatingIncome: false,
-  createIncomeError: null,
-  editingIncomeId: null,
-  editIncomeDate: '',
-  editIncomeSource: '',
-  editIncomeGrossValue: '',
-  editIncomeNetValue: '',
-  editIncomeBank: '',
-  isSavingIncome: false,
-  saveIncomeError: null,
+  listActionError: null,
 }
 
 /** Reads the current year/month fresh at hook-mount time rather than at module-load time, so the
@@ -294,230 +100,16 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
       return { ...state, year: action.payload.year, month: action.payload.month }
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null }
-    case 'FETCH_SUCCESS': {
-      const defaultBankStillUnset = state.createPaymentMode === 'bank' && state.createPaymentSource === ''
-      const defaultIncomeBankStillUnset = state.createIncomeBank === ''
-      const defaultIncomeSourceStillUnset = state.createIncomeSource === ''
-      const defaultCategoryStillUnset = state.createCategoryId === ''
-      return {
-        ...state,
-        isLoading: false,
-        expenses: action.payload.expenses,
-        unpaidCardCharges: action.payload.unpaidCardCharges,
-        categoryTotals: action.payload.categoryTotals,
-        cardStatements: action.payload.cardStatements,
-        banks: action.payload.banks,
-        incomeSources: action.payload.incomeSources,
-        categories: action.payload.categories,
-        bankBalances: action.payload.bankBalances,
-        incomes: action.payload.incomes,
-        titheSummary: action.payload.titheSummary,
-        createPaymentSource: defaultBankStillUnset
-          ? (action.payload.banks[0]?.id ?? '')
-          : state.createPaymentSource,
-        createIncomeBank: defaultIncomeBankStillUnset
-          ? (action.payload.banks[0]?.id ?? '')
-          : state.createIncomeBank,
-        createIncomeSource: defaultIncomeSourceStillUnset
-          ? (selectActiveIncomeSources(action.payload.incomeSources)[0]?.id ?? '')
-          : state.createIncomeSource,
-        createCategoryId: defaultCategoryStillUnset
-          ? (action.payload.categories.find((c) => c.active)?.id ?? '')
-          : state.createCategoryId,
-      }
-    }
+    case 'FETCH_SUCCESS':
+      return { ...state, isLoading: false, ...action.payload }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
       return { ...state, retryCount: state.retryCount + 1 }
-    case 'SHOW_CREATE_FORM': {
-      const mode = action.payload.mode
-      const nextPaymentSource = mode === 'bank' ? (state.banks[0]?.id ?? '') : ''
-      const suggestion = mode === 'bank' ? suggestRoundUpAmount(state.banks, nextPaymentSource, state.createValue) : null
-      return {
-        ...state,
-        isCreateFormOpen: true,
-        editingId: null,
-        saveError: null,
-        isIncomeCreateFormOpen: false,
-        editingIncomeId: null,
-        saveIncomeError: null,
-        createPaymentMode: mode,
-        createPaymentSource: nextPaymentSource,
-        createCreditCardId: '',
-        createRoundUpAmount: suggestion ?? '',
-      }
-    }
-    case 'CANCEL_CREATE_FORM':
-      return { ...state, ...BLANK_CREATE_FORM, isCreateFormOpen: false, createError: null }
-    case 'SET_CREATE_FIELD': {
-      const next = { ...state, [action.payload.field]: action.payload.value }
-      if (action.payload.field === 'createPaymentSource' && state.createRoundUpAmount.trim() === '') {
-        const suggestion = suggestRoundUpAmount(state.banks, action.payload.value, state.createValue)
-        if (suggestion !== null) {
-          next.createRoundUpAmount = suggestion
-        }
-      }
-      return next
-    }
-    case 'CREATE_START':
-      return { ...state, isCreating: true, createError: null }
-    case 'CREATE_SUCCESS':
-      return { ...state, ...BLANK_CREATE_FORM, isCreateFormOpen: false, isCreating: false }
-    case 'CREATE_ERROR':
-      return { ...state, isCreating: false, createError: action.payload }
-    case 'SHOW_EDIT_FORM':
-      return {
-        ...state,
-        isCreateFormOpen: false,
-        editingId: action.payload.id,
-        editDate: action.payload.date,
-        editDescription: action.payload.description,
-        editValue: String(action.payload.value),
-        editCategoryId: action.payload.categoryId,
-        editPaymentSource: action.payload.paymentSourceBankId ?? '',
-        editCreditCardId: action.payload.creditCardId ?? '',
-        editCreditCardName: action.payload.creditCardName ?? '',
-        editInvoiceDate: action.payload.invoiceDate ? action.payload.invoiceDate.slice(0, 7) : '',
-        editRoundUpAmount: action.payload.roundUpAmount != null ? String(action.payload.roundUpAmount) : '',
-        editPaymentMode: action.payload.paymentStatus === CHARGE_STATUS ? 'card' : 'bank',
-        editIsSettled: action.payload.paymentStatus === SETTLED_STATUS,
-        saveError: null,
-        isIncomeCreateFormOpen: false,
-        editingIncomeId: null,
-        saveIncomeError: null,
-      }
-    case 'CANCEL_EDIT':
-      return {
-        ...state,
-        editingId: null,
-        editDate: '',
-        editDescription: '',
-        editValue: '',
-        editCategoryId: '',
-        editPaymentSource: '',
-        editCreditCardId: '',
-        editCreditCardName: '',
-        editInvoiceDate: '',
-        editRoundUpAmount: '',
-        editPaymentMode: 'bank',
-        editIsSettled: false,
-        saveError: null,
-      }
-    case 'SET_EDIT_FIELD': {
-      const next = { ...state, [action.payload.field]: action.payload.value }
-      if (action.payload.field === 'editPaymentSource' && state.editRoundUpAmount.trim() === '') {
-        const suggestion = suggestRoundUpAmount(state.banks, action.payload.value, state.editValue)
-        if (suggestion !== null) {
-          next.editRoundUpAmount = suggestion
-        }
-      }
-      return next
-    }
-    case 'SAVE_START':
-      return { ...state, isSaving: true, saveError: null }
-    case 'SAVE_SUCCESS':
-      return {
-        ...state,
-        isSaving: false,
-        editingId: null,
-        editDate: '',
-        editDescription: '',
-        editValue: '',
-        editCategoryId: '',
-        editPaymentSource: '',
-        editCreditCardId: '',
-        editCreditCardName: '',
-        editInvoiceDate: '',
-        editRoundUpAmount: '',
-        editPaymentMode: 'bank',
-        editIsSettled: false,
-      }
-    case 'SAVE_ERROR':
-      return { ...state, isSaving: false, saveError: action.payload }
-    case 'MARK_PAID_ERROR':
-      return { ...state, saveError: action.payload }
     case 'SET_MARK_PAID_SOURCE':
       return { ...state, markPaidSources: { ...state.markPaidSources, [action.payload.id]: action.payload.value } }
-    case 'SHOW_CREATE_INCOME_FORM':
-      return {
-        ...state,
-        isIncomeCreateFormOpen: true,
-        editingIncomeId: null,
-        saveIncomeError: null,
-        isCreateFormOpen: false,
-        editingId: null,
-        saveError: null,
-      }
-    case 'CANCEL_CREATE_INCOME_FORM':
-      return { ...state, ...BLANK_CREATE_INCOME_FORM, isIncomeCreateFormOpen: false, createIncomeError: null }
-    case 'SET_CREATE_INCOME_FIELD': {
-      const next = { ...state, [action.payload.field]: action.payload.value }
-      if (
-        action.payload.field === 'createIncomeSource' &&
-        !INCOME_SOURCES_WITH_GROSS_VALUE.includes(resolveIncomeSourceName(state.incomeSources, action.payload.value))
-      ) {
-        next.createIncomeGrossValue = ''
-      }
-      return next
-    }
-    case 'CREATE_INCOME_START':
-      return { ...state, isCreatingIncome: true, createIncomeError: null }
-    case 'CREATE_INCOME_SUCCESS':
-      return { ...state, ...BLANK_CREATE_INCOME_FORM, isIncomeCreateFormOpen: false, isCreatingIncome: false }
-    case 'CREATE_INCOME_ERROR':
-      return { ...state, isCreatingIncome: false, createIncomeError: action.payload }
-    case 'SHOW_EDIT_INCOME_FORM':
-      return {
-        ...state,
-        isIncomeCreateFormOpen: false,
-        editingIncomeId: action.payload.id,
-        editIncomeDate: action.payload.date,
-        editIncomeSource: action.payload.incomeSourceId,
-        editIncomeGrossValue: action.payload.grossValue != null ? String(action.payload.grossValue) : '',
-        editIncomeNetValue: String(action.payload.netValue),
-        editIncomeBank: action.payload.bankId,
-        saveIncomeError: null,
-        isCreateFormOpen: false,
-        editingId: null,
-        saveError: null,
-      }
-    case 'CANCEL_EDIT_INCOME':
-      return {
-        ...state,
-        editingIncomeId: null,
-        editIncomeDate: '',
-        editIncomeSource: '',
-        editIncomeGrossValue: '',
-        editIncomeNetValue: '',
-        editIncomeBank: '',
-        saveIncomeError: null,
-      }
-    case 'SET_EDIT_INCOME_FIELD': {
-      const next = { ...state, [action.payload.field]: action.payload.value }
-      if (
-        action.payload.field === 'editIncomeSource' &&
-        !INCOME_SOURCES_WITH_GROSS_VALUE.includes(resolveIncomeSourceName(state.incomeSources, action.payload.value))
-      ) {
-        next.editIncomeGrossValue = ''
-      }
-      return next
-    }
-    case 'SAVE_INCOME_START':
-      return { ...state, isSavingIncome: true, saveIncomeError: null }
-    case 'SAVE_INCOME_SUCCESS':
-      return {
-        ...state,
-        isSavingIncome: false,
-        editingIncomeId: null,
-        editIncomeDate: '',
-        editIncomeSource: '',
-        editIncomeGrossValue: '',
-        editIncomeNetValue: '',
-        editIncomeBank: '',
-      }
-    case 'SAVE_INCOME_ERROR':
-      return { ...state, isSavingIncome: false, saveIncomeError: action.payload }
+    case 'LIST_ACTION_ERROR':
+      return { ...state, listActionError: action.payload }
     default:
       return state
   }
@@ -543,40 +135,6 @@ export interface MonthlyData {
   isLoading: boolean
   error: string | null
   retry: () => void
-  isCreateFormOpen: boolean
-  createDate: string
-  createDescription: string
-  createValue: string
-  createCategoryId: string
-  createPaymentSource: string
-  createCreditCardId: string
-  createInvoiceDate: string
-  createRoundUpAmount: string
-  createPaymentMode: PaymentMode
-  isCreating: boolean
-  createError: string | null
-  showCreateForm: (mode: PaymentMode) => void
-  cancelCreateForm: () => void
-  setCreateField: (field: CreateFormField, value: string) => void
-  submitCreate: () => void
-  editingId: string | null
-  editDate: string
-  editDescription: string
-  editValue: string
-  editCategoryId: string
-  editPaymentSource: string
-  editCreditCardId: string
-  editCreditCardName: string
-  editInvoiceDate: string
-  editRoundUpAmount: string
-  editPaymentMode: PaymentMode
-  editIsSettled: boolean
-  isSaving: boolean
-  saveError: string | null
-  setEditField: (field: EditField, value: string) => void
-  showEditForm: (expense: ExpenseDto) => void
-  cancelEdit: () => void
-  saveEdit: () => void
   deleteExpense: (id: string) => void
   markPaidSources: Record<string, string>
   setMarkPaidSource: (id: string, value: string) => void
@@ -586,33 +144,12 @@ export interface MonthlyData {
   incomeTotals: IncomeTotal[]
   totalIncoming: number
   titheSummary: TitheSummaryDto | null
-  isIncomeCreateFormOpen: boolean
-  createIncomeDate: string
-  createIncomeSource: string
-  createIncomeGrossValue: string
-  createIncomeNetValue: string
-  createIncomeBank: string
-  isCreatingIncome: boolean
-  createIncomeError: string | null
-  showCreateIncomeForm: () => void
-  cancelCreateIncomeForm: () => void
-  setCreateIncomeField: (field: CreateIncomeField, value: string) => void
-  submitCreateIncome: () => void
-  editingIncomeId: string | null
-  editIncomeDate: string
-  editIncomeSource: string
-  editIncomeGrossValue: string
-  editIncomeNetValue: string
-  editIncomeBank: string
-  isSavingIncome: boolean
-  saveIncomeError: string | null
-  setEditIncomeField: (field: EditIncomeField, value: string) => void
-  showEditIncomeForm: (income: IncomeDto) => void
-  cancelEditIncome: () => void
-  saveEditIncome: () => void
   deleteIncome: (id: string) => void
+  listActionError: string | null
 }
 
+/** Fetches a month's cash-flow data and owns list-level mutations (delete, mark paid/unpaid).
+ * Create/edit form state lives in {@link useExpenseForm} and {@link useIncomeForm}. */
 export function useMonthly(): MonthlyData {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, undefined, buildInitialState)
@@ -661,7 +198,7 @@ export function useMonthly(): MonthlyData {
           }),
       )
       .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: err instanceof Error ? err.message : 'Unable to load Monthly data' })
+        dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Monthly data') })
       })
   }, [apiClient, state.year, state.month, state.retryCount])
 
@@ -675,171 +212,6 @@ export function useMonthly(): MonthlyData {
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
-  const showCreateForm = useCallback(
-    (mode: PaymentMode) => dispatch({ type: 'SHOW_CREATE_FORM', payload: { mode } }),
-    [],
-  )
-
-  const cancelCreateForm = useCallback(() => dispatch({ type: 'CANCEL_CREATE_FORM' }), [])
-
-  const setCreateField = useCallback(
-    (field: CreateFormField, value: string) => dispatch({ type: 'SET_CREATE_FIELD', payload: { field, value } }),
-    [],
-  )
-
-  function submitCreate() {
-    const {
-      createDate,
-      createDescription,
-      createValue,
-      createCategoryId,
-      createPaymentMode,
-      createPaymentSource,
-      createCreditCardId,
-      createInvoiceDate,
-      createRoundUpAmount,
-      banks,
-    } = state
-
-    if (!createDate.trim()) {
-      dispatch({ type: 'CREATE_ERROR', payload: 'Date is required' })
-      return
-    }
-
-    if (!createDescription.trim()) {
-      dispatch({ type: 'CREATE_ERROR', payload: 'Description is required' })
-      return
-    }
-
-    const value = Number(createValue)
-    if (!createValue.trim() || !isFinite(value) || value === 0) {
-      dispatch({ type: 'CREATE_ERROR', payload: 'Value must be a non-zero number' })
-      return
-    }
-
-    if (createPaymentMode === 'card' && createCreditCardId.trim() === '') {
-      dispatch({ type: 'CREATE_ERROR', payload: 'Card is required' })
-      return
-    }
-
-    const selectedBank = banks.find((b) => b.id === createPaymentSource)
-    const roundUpEligible = createPaymentMode === 'bank' && selectedBank?.roundUpEnabled === true
-
-    let roundUpAmount: number | null = null
-    if (roundUpEligible && createRoundUpAmount.trim() !== '') {
-      const parsedRoundUp = Number(createRoundUpAmount)
-      if (!isFinite(parsedRoundUp) || parsedRoundUp < MIN_ROUND_UP_AMOUNT || parsedRoundUp > MAX_ROUND_UP_AMOUNT) {
-        dispatch({
-          type: 'CREATE_ERROR',
-          payload: `Round-up amount must be between £${MIN_ROUND_UP_AMOUNT.toFixed(2)} and £${MAX_ROUND_UP_AMOUNT.toFixed(2)}`,
-        })
-        return
-      }
-      roundUpAmount = parsedRoundUp
-    }
-
-    dispatch({ type: 'CREATE_START' })
-
-    void apiClient
-      .createExpense({
-        date: createDate,
-        description: createDescription,
-        value,
-        categoryId: createCategoryId,
-        paymentSourceBankId: createPaymentMode === 'bank' ? createPaymentSource : null,
-        creditCardId: createPaymentMode === 'card' ? createCreditCardId : null,
-        invoiceDate: createPaymentMode === 'card' && createInvoiceDate ? `${createInvoiceDate}-01` : null,
-        roundUpAmount,
-      })
-      .then(() => {
-        dispatch({ type: 'CREATE_SUCCESS' })
-        dispatch({ type: 'RETRY' })
-      })
-      .catch((err: unknown) => {
-        dispatch({
-          type: 'CREATE_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to create expense',
-        })
-      })
-  }
-
-  const setEditField = useCallback(
-    (field: EditField, value: string) => dispatch({ type: 'SET_EDIT_FIELD', payload: { field, value } }),
-    [],
-  )
-
-  const showEditForm = useCallback((expense: ExpenseDto) => dispatch({ type: 'SHOW_EDIT_FORM', payload: expense }), [])
-
-  const cancelEdit = useCallback(() => dispatch({ type: 'CANCEL_EDIT' }), [])
-
-  function saveEdit() {
-    if (!state.editingId) return
-
-    const value = Number(state.editValue)
-    if (!state.editValue.trim() || !isFinite(value) || value === 0) {
-      dispatch({ type: 'SAVE_ERROR', payload: 'Value must be a non-zero number' })
-      return
-    }
-
-    if (!state.editIsSettled && state.editPaymentMode === 'card' && state.editCreditCardId.trim() === '') {
-      dispatch({ type: 'SAVE_ERROR', payload: 'Card is required' })
-      return
-    }
-
-    // A settled expense's payment fields are frozen: send them back unchanged so only
-    // the editable fields move; the server rejects any payment-field change until the
-    // statement is unmarked paid.
-    const paymentFields = state.editIsSettled
-      ? {
-          paymentSourceBankId: state.editPaymentSource.trim() === '' ? null : state.editPaymentSource,
-          creditCardId: state.editCreditCardId.trim() === '' ? null : state.editCreditCardId,
-        }
-      : {
-          paymentSourceBankId: state.editPaymentMode === 'bank' ? state.editPaymentSource : null,
-          creditCardId: state.editPaymentMode === 'card' ? state.editCreditCardId : null,
-        }
-
-    const selectedBank = state.banks.find((b) => b.id === state.editPaymentSource)
-    const roundUpEligible =
-      !state.editIsSettled && state.editPaymentMode === 'bank' && selectedBank?.roundUpEnabled === true
-
-    let roundUpAmount: number | null = null
-    if (roundUpEligible && state.editRoundUpAmount.trim() !== '') {
-      const parsedRoundUp = Number(state.editRoundUpAmount)
-      if (!isFinite(parsedRoundUp) || parsedRoundUp < MIN_ROUND_UP_AMOUNT || parsedRoundUp > MAX_ROUND_UP_AMOUNT) {
-        dispatch({
-          type: 'SAVE_ERROR',
-          payload: `Round-up amount must be between £${MIN_ROUND_UP_AMOUNT.toFixed(2)} and £${MAX_ROUND_UP_AMOUNT.toFixed(2)}`,
-        })
-        return
-      }
-      roundUpAmount = parsedRoundUp
-    }
-
-    dispatch({ type: 'SAVE_START' })
-
-    void apiClient
-      .updateExpense(state.editingId, {
-        date: state.editDate,
-        description: state.editDescription,
-        value,
-        categoryId: state.editCategoryId,
-        ...paymentFields,
-        invoiceDate: state.editPaymentMode === 'card' && state.editInvoiceDate ? `${state.editInvoiceDate}-01` : null,
-        roundUpAmount,
-      })
-      .then(() => {
-        dispatch({ type: 'SAVE_SUCCESS' })
-        dispatch({ type: 'RETRY' })
-      })
-      .catch((err: unknown) => {
-        dispatch({
-          type: 'SAVE_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to update expense',
-        })
-      })
-  }
-
   const deleteExpense = useCallback(
     (id: string) => {
       if (!window.confirm('Delete this expense?')) return
@@ -848,10 +220,7 @@ export function useMonthly(): MonthlyData {
         .deleteExpense(id)
         .then(() => dispatch({ type: 'RETRY' }))
         .catch((err: unknown) => {
-          dispatch({
-            type: 'SAVE_ERROR',
-            payload: err instanceof Error ? err.message : 'Failed to delete expense',
-          })
+          dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to delete expense') })
         })
     },
     [apiClient],
@@ -868,10 +237,7 @@ export function useMonthly(): MonthlyData {
         .markCardStatementPaid(id, { paymentSourceBankId })
         .then(() => dispatch({ type: 'RETRY' }))
         .catch((err: unknown) => {
-          dispatch({
-            type: 'MARK_PAID_ERROR',
-            payload: err instanceof Error ? err.message : 'Failed to mark statement paid',
-          })
+          dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to mark statement paid') })
         })
     },
     [apiClient],
@@ -885,149 +251,11 @@ export function useMonthly(): MonthlyData {
         .unmarkCardStatementPaid(id)
         .then(() => dispatch({ type: 'RETRY' }))
         .catch((err: unknown) => {
-          dispatch({
-            type: 'MARK_PAID_ERROR',
-            payload: err instanceof Error ? err.message : 'Failed to unmark statement paid',
-          })
+          dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to unmark statement paid') })
         })
     },
     [apiClient],
   )
-
-  const showCreateIncomeForm = useCallback(() => dispatch({ type: 'SHOW_CREATE_INCOME_FORM' }), [])
-
-  const cancelCreateIncomeForm = useCallback(() => dispatch({ type: 'CANCEL_CREATE_INCOME_FORM' }), [])
-
-  const setCreateIncomeField = useCallback(
-    (field: CreateIncomeField, value: string) =>
-      dispatch({ type: 'SET_CREATE_INCOME_FIELD', payload: { field, value } }),
-    [],
-  )
-
-  function submitCreateIncome() {
-    const { createIncomeDate, createIncomeSource, createIncomeGrossValue, createIncomeNetValue, createIncomeBank } =
-      state
-
-    if (!createIncomeDate.trim()) {
-      dispatch({ type: 'CREATE_INCOME_ERROR', payload: 'Date is required' })
-      return
-    }
-
-    if (!createIncomeSource.trim()) {
-      dispatch({ type: 'CREATE_INCOME_ERROR', payload: 'Income source is required' })
-      return
-    }
-
-    if (!createIncomeBank.trim()) {
-      dispatch({ type: 'CREATE_INCOME_ERROR', payload: 'Bank is required' })
-      return
-    }
-
-    const netValue = Number(createIncomeNetValue)
-    if (!createIncomeNetValue.trim() || !isFinite(netValue) || netValue < 0) {
-      dispatch({ type: 'CREATE_INCOME_ERROR', payload: 'Net value must be a non-negative number' })
-      return
-    }
-
-    let grossValue: number | null = null
-    if (createIncomeGrossValue.trim() !== '') {
-      const parsedGrossValue = Number(createIncomeGrossValue)
-      if (!isFinite(parsedGrossValue) || parsedGrossValue < netValue) {
-        dispatch({ type: 'CREATE_INCOME_ERROR', payload: 'Gross value must be at least the net value' })
-        return
-      }
-      grossValue = parsedGrossValue
-    }
-
-    dispatch({ type: 'CREATE_INCOME_START' })
-
-    void apiClient
-      .createIncome({
-        date: createIncomeDate,
-        incomeSourceId: createIncomeSource,
-        grossValue,
-        netValue,
-        bankId: createIncomeBank,
-      })
-      .then(() => {
-        dispatch({ type: 'CREATE_INCOME_SUCCESS' })
-        dispatch({ type: 'RETRY' })
-      })
-      .catch((err: unknown) => {
-        dispatch({
-          type: 'CREATE_INCOME_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to create income',
-        })
-      })
-  }
-
-  const setEditIncomeField = useCallback(
-    (field: EditIncomeField, value: string) => dispatch({ type: 'SET_EDIT_INCOME_FIELD', payload: { field, value } }),
-    [],
-  )
-
-  const showEditIncomeForm = useCallback(
-    (income: IncomeDto) => dispatch({ type: 'SHOW_EDIT_INCOME_FORM', payload: income }),
-    [],
-  )
-
-  const cancelEditIncome = useCallback(() => dispatch({ type: 'CANCEL_EDIT_INCOME' }), [])
-
-  function saveEditIncome() {
-    if (!state.editingIncomeId) return
-
-    if (!state.editIncomeDate.trim()) {
-      dispatch({ type: 'SAVE_INCOME_ERROR', payload: 'Date is required' })
-      return
-    }
-
-    if (!state.editIncomeSource.trim()) {
-      dispatch({ type: 'SAVE_INCOME_ERROR', payload: 'Income source is required' })
-      return
-    }
-
-    if (!state.editIncomeBank.trim()) {
-      dispatch({ type: 'SAVE_INCOME_ERROR', payload: 'Bank is required' })
-      return
-    }
-
-    const netValue = Number(state.editIncomeNetValue)
-    if (!state.editIncomeNetValue.trim() || !isFinite(netValue) || netValue < 0) {
-      dispatch({ type: 'SAVE_INCOME_ERROR', payload: 'Net value must be a non-negative number' })
-      return
-    }
-
-    let grossValue: number | null = null
-    if (state.editIncomeGrossValue.trim() !== '') {
-      const parsedGrossValue = Number(state.editIncomeGrossValue)
-      if (!isFinite(parsedGrossValue) || parsedGrossValue < netValue) {
-        dispatch({ type: 'SAVE_INCOME_ERROR', payload: 'Gross value must be at least the net value' })
-        return
-      }
-      grossValue = parsedGrossValue
-    }
-
-    dispatch({ type: 'SAVE_INCOME_START' })
-
-    void apiClient
-      .updateIncome(state.editingIncomeId, {
-        date: state.editIncomeDate,
-        incomeSourceId: state.editIncomeSource,
-        grossValue,
-        netValue,
-        bankId: state.editIncomeBank,
-      })
-      .then(() => {
-        dispatch({ type: 'SAVE_INCOME_SUCCESS' })
-        dispatch({ type: 'RETRY' })
-      })
-      .catch((err: unknown) => {
-        dispatch({
-          type: 'SAVE_INCOME_ERROR',
-          payload: err instanceof Error ? err.message : 'Failed to update income',
-        })
-      })
-  }
 
   const deleteIncome = useCallback(
     (id: string) => {
@@ -1037,10 +265,7 @@ export function useMonthly(): MonthlyData {
         .deleteIncome(id)
         .then(() => dispatch({ type: 'RETRY' }))
         .catch((err: unknown) => {
-          dispatch({
-            type: 'SAVE_INCOME_ERROR',
-            payload: err instanceof Error ? err.message : 'Failed to delete income',
-          })
+          dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to delete income') })
         })
     },
     [apiClient],
@@ -1099,40 +324,6 @@ export function useMonthly(): MonthlyData {
     isLoading: state.isLoading,
     error: state.error,
     retry,
-    isCreateFormOpen: state.isCreateFormOpen,
-    createDate: state.createDate,
-    createDescription: state.createDescription,
-    createValue: state.createValue,
-    createCategoryId: state.createCategoryId,
-    createPaymentSource: state.createPaymentSource,
-    createCreditCardId: state.createCreditCardId,
-    createInvoiceDate: state.createInvoiceDate,
-    createRoundUpAmount: state.createRoundUpAmount,
-    createPaymentMode: state.createPaymentMode,
-    isCreating: state.isCreating,
-    createError: state.createError,
-    showCreateForm,
-    cancelCreateForm,
-    setCreateField,
-    submitCreate,
-    editingId: state.editingId,
-    editDate: state.editDate,
-    editDescription: state.editDescription,
-    editValue: state.editValue,
-    editCategoryId: state.editCategoryId,
-    editPaymentSource: state.editPaymentSource,
-    editCreditCardId: state.editCreditCardId,
-    editCreditCardName: state.editCreditCardName,
-    editInvoiceDate: state.editInvoiceDate,
-    editRoundUpAmount: state.editRoundUpAmount,
-    editPaymentMode: state.editPaymentMode,
-    editIsSettled: state.editIsSettled,
-    isSaving: state.isSaving,
-    saveError: state.saveError,
-    setEditField,
-    showEditForm,
-    cancelEdit,
-    saveEdit,
     deleteExpense,
     markPaidSources: state.markPaidSources,
     setMarkPaidSource,
@@ -1142,30 +333,7 @@ export function useMonthly(): MonthlyData {
     incomeTotals,
     totalIncoming,
     titheSummary: state.titheSummary,
-    isIncomeCreateFormOpen: state.isIncomeCreateFormOpen,
-    createIncomeDate: state.createIncomeDate,
-    createIncomeSource: state.createIncomeSource,
-    createIncomeGrossValue: state.createIncomeGrossValue,
-    createIncomeNetValue: state.createIncomeNetValue,
-    createIncomeBank: state.createIncomeBank,
-    isCreatingIncome: state.isCreatingIncome,
-    createIncomeError: state.createIncomeError,
-    showCreateIncomeForm,
-    cancelCreateIncomeForm,
-    setCreateIncomeField,
-    submitCreateIncome,
-    editingIncomeId: state.editingIncomeId,
-    editIncomeDate: state.editIncomeDate,
-    editIncomeSource: state.editIncomeSource,
-    editIncomeGrossValue: state.editIncomeGrossValue,
-    editIncomeNetValue: state.editIncomeNetValue,
-    editIncomeBank: state.editIncomeBank,
-    isSavingIncome: state.isSavingIncome,
-    saveIncomeError: state.saveIncomeError,
-    setEditIncomeField,
-    showEditIncomeForm,
-    cancelEditIncome,
-    saveEditIncome,
     deleteIncome,
+    listActionError: state.listActionError,
   }
 }

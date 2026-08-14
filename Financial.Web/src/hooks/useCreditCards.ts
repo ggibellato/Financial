@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { CreditCardDto, UpdateCreditCardDto } from '../api/types'
+import { getErrorMessage } from '../utils/formatters'
 
 interface CreditCardsState {
   creditCards: CreditCardDto[]
@@ -70,7 +71,7 @@ export function useCreditCards(): CreditCardsData {
       .getCreditCards()
       .then((creditCards) => dispatch({ type: 'FETCH_SUCCESS', payload: creditCards }))
       .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: err instanceof Error ? err.message : 'Unable to load credit cards' })
+        dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load credit cards') })
       })
   }, [apiClient, state.retryCount])
 
@@ -89,7 +90,7 @@ export function useCreditCards(): CreditCardsData {
         .catch((err: unknown) => {
           dispatch({
             type: 'UPDATE_ERROR',
-            payload: err instanceof Error ? err.message : 'Failed to update credit card',
+            payload: getErrorMessage(err, 'Failed to update credit card'),
           })
         })
     },

@@ -15,13 +15,9 @@ import TransferForm from '../components/TransferForm'
 import { useBalanceAdjustmentForm } from '../hooks/useBalanceAdjustmentForm'
 import { useBankOperations } from '../hooks/useBankOperations'
 import { useCreditCards } from '../hooks/useCreditCards'
-import {
-  useMonthly,
-  type CreateFormField,
-  type CreateIncomeField,
-  type EditField,
-  type EditIncomeField,
-} from '../hooks/useMonthly'
+import { useExpenseForm, type CreateFormField, type EditField } from '../hooks/useExpenseForm'
+import { useIncomeForm, type CreateIncomeField, type EditIncomeField } from '../hooks/useIncomeForm'
+import { useMonthly } from '../hooks/useMonthly'
 import { useTransferForm } from '../hooks/useTransferForm'
 import './MonthlyPage.css'
 
@@ -94,6 +90,19 @@ export default function MonthlyPage() {
     isLoading,
     error,
     retry,
+    deleteExpense,
+    markPaidSources,
+    setMarkPaidSource,
+    markStatementPaid,
+    unmarkStatementPaid,
+    incomes,
+    incomeTotals,
+    totalIncoming,
+    titheSummary,
+    deleteIncome,
+  } = useMonthly()
+
+  const {
     isCreateFormOpen,
     createDate,
     createDescription,
@@ -128,12 +137,9 @@ export default function MonthlyPage() {
     showEditForm,
     cancelEdit,
     saveEdit,
-    deleteExpense,
-    markPaidSources,
-    setMarkPaidSource,
-    markStatementPaid,
-    unmarkStatementPaid,
-    incomes,
+  } = useExpenseForm(banks, categories, retry)
+
+  const {
     isIncomeCreateFormOpen,
     createIncomeDate,
     createIncomeSource,
@@ -158,11 +164,7 @@ export default function MonthlyPage() {
     showEditIncomeForm,
     cancelEditIncome,
     saveEditIncome,
-    deleteIncome,
-    incomeTotals,
-    totalIncoming,
-    titheSummary,
-  } = useMonthly()
+  } = useIncomeForm(banks, incomeSources, retry)
 
   const bankOperations = useBankOperations(year, month, banks, retry)
   const creditCardsData = useCreditCards()

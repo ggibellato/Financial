@@ -1,5 +1,5 @@
 import type { BankDto, CategoryDto, CreditCardDto } from '../api/types'
-import type { PaymentMode } from '../hooks/useMonthly'
+import type { PaymentMode } from '../hooks/useExpenseForm'
 
 export type ExpenseFormField =
   | 'date'

@@ -45,18 +45,7 @@ public sealed class InvestmentSnapshotsController : ControllerBase
             return BadRequest();
         }
 
-        try
-        {
-            var result = await _investmentSnapshotService.UpdateSnapshotValueAsync(id, request);
-            return Ok(result);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        var result = await _investmentSnapshotService.UpdateSnapshotValueAsync(id, request);
+        return Ok(result);
     }
 }

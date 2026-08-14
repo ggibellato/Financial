@@ -1,5 +1,5 @@
 import type { BankDto, IncomeSourceDto } from '../api/types'
-import { INCOME_SOURCES_WITH_GROSS_VALUE, selectActiveIncomeSources } from '../hooks/useMonthly'
+import { INCOME_SOURCES_WITH_GROSS_VALUE, selectActiveIncomeSources } from '../hooks/useIncomeForm'
 
 export type IncomeFormField = 'date' | 'incomeSource' | 'grossValue' | 'netValue' | 'bank'
 

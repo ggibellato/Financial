@@ -43,14 +43,7 @@ public sealed class CreditCardsController : ControllerBase
             return BadRequest();
         }
 
-        try
-        {
-            var creditCard = await _creditCardService.UpdateCreditCardAsync(id, request);
-            return Ok(creditCard);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
-        }
+        var creditCard = await _creditCardService.UpdateCreditCardAsync(id, request);
+        return Ok(creditCard);
     }
 }
