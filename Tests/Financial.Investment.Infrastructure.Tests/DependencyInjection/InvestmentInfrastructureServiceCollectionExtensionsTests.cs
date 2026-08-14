@@ -9,7 +9,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Financial.Investment.Infrastructure.Tests.DependencyInjection;
 
-public class InfrastructureServiceCollectionExtensionsTests
+public class InvestmentInfrastructureServiceCollectionExtensionsTests
 {
     [Fact]
     public void AddFinancialInfrastructure_UnsupportedProvider_ThrowsOnRepositoryResolution()
@@ -20,7 +20,7 @@ public class InfrastructureServiceCollectionExtensionsTests
             ["Investment:DataJsonFile"] = TestDataPaths.DataJsonFile
         });
 
-        Action act = () => provider.GetRequiredService<IRepository>();
+        Action act = () => provider.GetRequiredService<IInvestmentRepository>();
 
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*NotARealProvider*is not supported*");
@@ -34,7 +34,7 @@ public class InfrastructureServiceCollectionExtensionsTests
             ["Investment:DataJsonFile"] = TestDataPaths.DataJsonFile
         });
 
-        var repository = provider.GetRequiredService<IRepository>();
+        var repository = provider.GetRequiredService<IInvestmentRepository>();
 
         repository.Should().NotBeNull();
     }

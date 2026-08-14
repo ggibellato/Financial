@@ -9,15 +9,15 @@ using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Repositories;
 
-public class JsonRepositoryTests
+public class InvestmentJsonRepositoryTests
 {
-    private readonly JSONRepository _sut = CreateRepository(TestDataPaths.DataJsonFile);
+    private readonly InvestmentJsonRepository _sut = CreateRepository(TestDataPaths.DataJsonFile);
 
-    private static JSONRepository CreateRepository(string dataFile)
+    private static InvestmentJsonRepository CreateRepository(string dataFile)
     {
         var storage = new LocalJsonStorage(dataFile);
         var serializer = new InvestmentsSerializerAdapter();
-        return new JSONRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
+        return new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
     }
 
     [Fact]
@@ -26,7 +26,7 @@ public class JsonRepositoryTests
         var storage = new LocalJsonStorage(TestDataPaths.DataJsonFile);
         var serializer = new InvestmentsSerializerAdapter();
 
-        Action act = () => new JSONRepository(null!, storage, serializer);
+        Action act = () => new InvestmentJsonRepository(null!, storage, serializer);
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("investments");
     }
@@ -36,7 +36,7 @@ public class JsonRepositoryTests
     {
         var investments = InvestmentsLoader.LoadSync(new LocalJsonStorage(TestDataPaths.DataJsonFile), new InvestmentsSerializerAdapter());
 
-        Action act = () => new JSONRepository(investments, null!, new InvestmentsSerializerAdapter());
+        Action act = () => new InvestmentJsonRepository(investments, null!, new InvestmentsSerializerAdapter());
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("storage");
     }
@@ -47,7 +47,7 @@ public class JsonRepositoryTests
         var storage = new LocalJsonStorage(TestDataPaths.DataJsonFile);
         var investments = InvestmentsLoader.LoadSync(storage, new InvestmentsSerializerAdapter());
 
-        Action act = () => new JSONRepository(investments, storage, null!);
+        Action act = () => new InvestmentJsonRepository(investments, storage, null!);
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("serializer");
     }
@@ -65,7 +65,7 @@ public class JsonRepositoryTests
     {
         var expectedStatus = new SyncStatus(SyncState.Failed, "Drive unreachable", null);
         var storage = new FakeSyncStatusStorage { Status = expectedStatus };
-        var repository = new JSONRepository(Investments.Create(), storage, new InvestmentsSerializerAdapter());
+        var repository = new InvestmentJsonRepository(Investments.Create(), storage, new InvestmentsSerializerAdapter());
 
         var status = ((ISyncStatusProvider)repository).GetStatus();
 
@@ -84,7 +84,7 @@ public class JsonRepositoryTests
     public async Task FlushAsync_WhenStorageIsASyncStatusProvider_DelegatesToIt()
     {
         var storage = new FakeSyncStatusStorage();
-        var repository = new JSONRepository(Investments.Create(), storage, new InvestmentsSerializerAdapter());
+        var repository = new InvestmentJsonRepository(Investments.Create(), storage, new InvestmentsSerializerAdapter());
 
         await ((ISyncStatusProvider)repository).FlushAsync();
 
@@ -134,7 +134,7 @@ public class JsonRepositoryTests
         historicResult.Should().ContainSingle().Which.Should().BeSameAs(historicBroker);
     }
 
-    private static JSONRepository CreateRepositoryWithBothScopes(out Broker activeBroker, out Broker historicBroker)
+    private static InvestmentJsonRepository CreateRepositoryWithBothScopes(out Broker activeBroker, out Broker historicBroker)
     {
         var investments = Investments.Create();
 
@@ -148,6 +148,6 @@ public class JsonRepositoryTests
 
         var storage = new LocalJsonStorage(TestDataPaths.DataJsonFile);
         var serializer = new InvestmentsSerializerAdapter();
-        return new JSONRepository(investments, storage, serializer);
+        return new InvestmentJsonRepository(investments, storage, serializer);
     }
 }

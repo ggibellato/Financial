@@ -11,15 +11,15 @@ using System.IO;
 
 namespace Financial.Investment.Infrastructure.Tests.Repositories;
 
-public class RepositoryFactoryTests
+public class InvestmentRepositoryFactoryTests
 {
-    private static readonly RepositoryFactory Factory =
+    private static readonly InvestmentRepositoryFactory Factory =
         new(new InvestmentsSerializerAdapter(), new GoogleFileClientFactory());
 
     [Fact]
     public void Constructor_WithNullSerializer_Throws()
     {
-        Action act = () => new RepositoryFactory(null!);
+        Action act = () => new InvestmentRepositoryFactory(null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("serializer");
     }
 
@@ -33,8 +33,8 @@ public class RepositoryFactoryTests
     [Fact]
     public void Create_WithGoogleDriveProvider_CredentialsPathDoesNotExist_ThrowsFileNotFoundExceptionWithResolvedPath()
     {
-        var options = new RepositorySelectionOptions(
-            RepositoryProvider.GoogleDriveJson,
+        var options = new InvestmentRepositorySelectionOptions(
+            InvestmentRepositoryProvider.GoogleDriveJson,
             null,
             "nonexistent/credentials.json",
             "Pessoais/Gleison/Financeiros");
@@ -51,8 +51,8 @@ public class RepositoryFactoryTests
         // The credentials file exists but isn't a valid Google service-account JSON, so this
         // exercises the successful path-resolution branch; the eventual credential-parsing
         // failure happens later and purely locally, no network call is made.
-        var options = new RepositorySelectionOptions(
-            RepositoryProvider.GoogleDriveJson,
+        var options = new InvestmentRepositorySelectionOptions(
+            InvestmentRepositoryProvider.GoogleDriveJson,
             null,
             TestDataPaths.DataJsonFile,
             "Pessoais/Gleison/Financeiros");
@@ -66,22 +66,22 @@ public class RepositoryFactoryTests
     [Fact]
     public void Create_WithLocalJsonProvider_ReturnsJsonRepository()
     {
-        var options = new RepositorySelectionOptions(
-            RepositoryProvider.LocalJson,
+        var options = new InvestmentRepositorySelectionOptions(
+            InvestmentRepositoryProvider.LocalJson,
             TestDataPaths.DataJsonFile,
             null,
             null);
 
         var result = Factory.Create(options);
 
-        result.Should().BeOfType<JSONRepository>();
+        result.Should().BeOfType<InvestmentJsonRepository>();
     }
 
     [Fact]
     public void Create_WithGoogleDriveProvider_WithoutCredentials_ThrowsFileNotFoundException()
     {
-        var options = new RepositorySelectionOptions(
-            RepositoryProvider.GoogleDriveJson,
+        var options = new InvestmentRepositorySelectionOptions(
+            InvestmentRepositoryProvider.GoogleDriveJson,
             null,
             null,
             "Pessoais/Gleison/Financeiros");
@@ -95,8 +95,8 @@ public class RepositoryFactoryTests
     [Fact]
     public void Create_WithUnsupportedProvider_ThrowsArgumentOutOfRangeException()
     {
-        var options = new RepositorySelectionOptions(
-            (RepositoryProvider)999,
+        var options = new InvestmentRepositorySelectionOptions(
+            (InvestmentRepositoryProvider)999,
             null,
             null,
             null);
@@ -110,9 +110,9 @@ public class RepositoryFactoryTests
     [Fact]
     public void Create_WithGoogleDriveProvider_NoRemoteFileClientFactoryRegistered_ThrowsInvalidOperationException()
     {
-        var factoryWithoutRemoteFileClient = new RepositoryFactory(new InvestmentsSerializerAdapter());
-        var options = new RepositorySelectionOptions(
-            RepositoryProvider.GoogleDriveJson,
+        var factoryWithoutRemoteFileClient = new InvestmentRepositoryFactory(new InvestmentsSerializerAdapter());
+        var options = new InvestmentRepositorySelectionOptions(
+            InvestmentRepositoryProvider.GoogleDriveJson,
             null,
             TestDataPaths.DataJsonFile,
             "Pessoais/Gleison/Financeiros");
@@ -126,9 +126,9 @@ public class RepositoryFactoryTests
     [Fact]
     public async Task Create_WithGoogleDriveProvider_SaveChangesAsync_ReturnsWithoutWaitingOnUpload()
     {
-        var factory = new RepositoryFactory(new InvestmentsSerializerAdapter(), new StubRemoteFileClientFactory());
-        var options = new RepositorySelectionOptions(
-            RepositoryProvider.GoogleDriveJson,
+        var factory = new InvestmentRepositoryFactory(new InvestmentsSerializerAdapter(), new StubRemoteFileClientFactory());
+        var options = new InvestmentRepositorySelectionOptions(
+            InvestmentRepositoryProvider.GoogleDriveJson,
             null,
             TestDataPaths.DataJsonFile,
             "Pessoais/Gleison/Financeiros");
@@ -148,9 +148,9 @@ public class RepositoryFactoryTests
     [Fact]
     public async Task Create_WithGoogleDriveProvider_ResultImplementsISyncStatusProvider_ReportingPendingAfterAWrite()
     {
-        var factory = new RepositoryFactory(new InvestmentsSerializerAdapter(), new StubRemoteFileClientFactory());
-        var options = new RepositorySelectionOptions(
-            RepositoryProvider.GoogleDriveJson,
+        var factory = new InvestmentRepositoryFactory(new InvestmentsSerializerAdapter(), new StubRemoteFileClientFactory());
+        var options = new InvestmentRepositorySelectionOptions(
+            InvestmentRepositoryProvider.GoogleDriveJson,
             null,
             TestDataPaths.DataJsonFile,
             "Pessoais/Gleison/Financeiros");
@@ -165,8 +165,8 @@ public class RepositoryFactoryTests
     [Fact]
     public void Create_WithLocalJsonProvider_ResultReportsIdleStatus()
     {
-        var options = new RepositorySelectionOptions(
-            RepositoryProvider.LocalJson,
+        var options = new InvestmentRepositorySelectionOptions(
+            InvestmentRepositoryProvider.LocalJson,
             TestDataPaths.DataJsonFile,
             null,
             null);
@@ -181,9 +181,9 @@ public class RepositoryFactoryTests
     public async Task Create_WithGoogleDriveProvider_MutationEventuallyUploadsQueuedChangeViaDebouncedStorage()
     {
         var remoteFileClient = new RecordingRemoteFileClient();
-        var factory = new RepositoryFactory(new InvestmentsSerializerAdapter(), new RecordingRemoteFileClientFactory(remoteFileClient));
-        var options = new RepositorySelectionOptions(
-            RepositoryProvider.GoogleDriveJson,
+        var factory = new InvestmentRepositoryFactory(new InvestmentsSerializerAdapter(), new RecordingRemoteFileClientFactory(remoteFileClient));
+        var options = new InvestmentRepositorySelectionOptions(
+            InvestmentRepositoryProvider.GoogleDriveJson,
             null,
             TestDataPaths.DataJsonFile,
             "Pessoais/Gleison/Financeiros");
@@ -192,13 +192,13 @@ public class RepositoryFactoryTests
 
         await repository.SaveChangesAsync();
 
-        // The real production debounce window is 10 seconds (RepositoryFactory.DebounceWindow, not
+        // The real production debounce window is 10 seconds (InvestmentRepositoryFactory.DebounceWindow, not
         // configurable by design). Waiting past it with margin proves the queued write actually
         // reaches the wrapped storage's upload call — not just that SaveChangesAsync() returns quickly.
         // Independence from any CashFlow activity is already established structurally: this instance's
         // DebouncedJsonStorage is entirely separate from CashFlow's (see
         // Create_WithGoogleDriveProvider_TwoInstancesFromSeparateCreateCalls_NeverShareStatus below, and
-        // CashFlowRepositoryFactoryTests' own equivalent eventual-upload test), so nothing CashFlow does
+        // CashFlowInvestmentRepositoryFactoryTests' own equivalent eventual-upload test), so nothing CashFlow does
         // could affect this repository's timer, retry state, or upload call.
         await WaitForAsync(() => remoteFileClient.UploadCallCount > 0, TimeSpan.FromSeconds(15));
 
@@ -210,9 +210,9 @@ public class RepositoryFactoryTests
     [Fact]
     public async Task Create_WithGoogleDriveProvider_TwoInstancesFromSeparateCreateCalls_NeverShareStatus()
     {
-        var factory = new RepositoryFactory(new InvestmentsSerializerAdapter(), new StubRemoteFileClientFactory());
-        var options = new RepositorySelectionOptions(
-            RepositoryProvider.GoogleDriveJson,
+        var factory = new InvestmentRepositoryFactory(new InvestmentsSerializerAdapter(), new StubRemoteFileClientFactory());
+        var options = new InvestmentRepositorySelectionOptions(
+            InvestmentRepositoryProvider.GoogleDriveJson,
             null,
             TestDataPaths.DataJsonFile,
             "Pessoais/Gleison/Financeiros");

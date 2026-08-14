@@ -7,9 +7,9 @@ namespace Financial.Investment.Application.Services;
 
 public sealed class SummaryService : ISummaryService
 {
-    private readonly IRepository _repository;
+    private readonly IInvestmentRepository _repository;
 
-    public SummaryService(IRepository repository)
+    public SummaryService(IInvestmentRepository repository)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }

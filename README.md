@@ -11,12 +11,12 @@ Personal financial management tool for consolidating investment transactions acr
 
 The Investment and CashFlow domains each load their data from their own JSON file. Both example files are tracked under `data/` — copy them locally before first run (the real data files themselves are git-ignored):
 
-- Investment: copy `data/data.example.json` to `data/data.json`.
+- Investment: copy `data/data-investment.example.json` to `data/data-investment.json`.
 - CashFlow: copy `data/data-cashflow.example.json` to `data/data-cashflow.json`.
 
 Configure the paths via environment variable or `appsettings.json`. Each domain's storage settings live under their own JSON element — `Investment` and `CashFlow` — never at the config root:
 
-- Investment: `Investment:DataJsonFile` (env: `Investment__DataJsonFile`). Defaults to `data.json` in the application directory if unset.
+- Investment: `Investment:DataJsonFile` (env: `Investment__DataJsonFile`). Defaults to `data-investment.json` in the application directory if unset.
 - CashFlow: `CashFlow:DataJsonFile` (env: `CashFlow__DataJsonFile`). Defaults to `data-cashflow.json` in the application directory if unset.
 
 Each domain has its own distinct default filename, so leaving either one unset no longer risks the two domains sharing a file.
@@ -70,7 +70,7 @@ Listens on `http://localhost:5173`. Copy `Financial.Web/.env.example` to `Financ
 dotnet run --project Financial.App
 ```
 
-`dotnet run` and Visual Studio set `DOTNET_ENVIRONMENT=Development` automatically via `launchSettings.json`, which loads `Financial.App/appsettings.Development.json` with a relative path to the shared `data/data.json`. Running the compiled `.exe` directly requires setting `DOTNET_ENVIRONMENT=Development` in your system environment variables.
+`dotnet run` and Visual Studio set `DOTNET_ENVIRONMENT=Development` automatically via `launchSettings.json`, which loads `Financial.App/appsettings.Development.json` with a relative path to the shared `data/data-investment.json`. Running the compiled `.exe` directly requires setting `DOTNET_ENVIRONMENT=Development` in your system environment variables.
 
 ## Docker
 
@@ -87,7 +87,7 @@ docker build -t financial .
 ```bash
 docker run -p 8080:8080 \
   -v ./data:/app/data \
-  -e Investment__DataJsonFile=/app/data/data.json \
+  -e Investment__DataJsonFile=/app/data/data-investment.json \
   -e Investment__Repository__Provider=LocalJson \
   -e CashFlow__DataJsonFile=/app/data/data-cashflow.json \
   -e CashFlow__Repository__Provider=LocalJson \
@@ -148,7 +148,7 @@ Defaults to reading `Despesas.xlsx` from the Downloads folder and writing to `da
 
 ### ImportGoogleSpreadSheets
 
-Legacy WPF desktop utility for a one-time import of Investment portfolio data from Google Sheets into `data.json`. Not runnable headless — open and run it from Visual Studio.
+Legacy WPF desktop utility for a one-time import of Investment portfolio data from Google Sheets into `data-investment.json`. Not runnable headless — open and run it from Visual Studio.
 
 ## Local deploy tooling
 

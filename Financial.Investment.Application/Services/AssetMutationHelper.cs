@@ -16,7 +16,7 @@ internal static class AssetMutationHelper
     }
 
     public static async Task<AssetDetailsDTO?> ExecuteParsedMutationAsync<TEnum>(
-        IRepository repository,
+        IInvestmentRepository repository,
         INavigationService navigationService,
         string? brokerName,
         string? portfolioName,
@@ -40,7 +40,7 @@ internal static class AssetMutationHelper
     }
 
     public static async Task<AssetDetailsDTO?> ExecuteAssetMutationAsync(
-        IRepository repository,
+        IInvestmentRepository repository,
         INavigationService navigationService,
         string? brokerName,
         string? portfolioName,

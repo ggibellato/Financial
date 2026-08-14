@@ -8,10 +8,10 @@ namespace Financial.Investment.Application.Services;
 
 public sealed class CreditService : ICreditService, ICreditQueryService
 {
-    private readonly IRepository _repository;
+    private readonly IInvestmentRepository _repository;
     private readonly INavigationService _navigationService;
 
-    public CreditService(IRepository repository, INavigationService navigationService)
+    public CreditService(IInvestmentRepository repository, INavigationService navigationService)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));

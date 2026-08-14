@@ -83,7 +83,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
             var files = await _service.GetFilesNameAsync();
             var filtered = files
-                .Where(f => !string.Equals(f.Name, "data.json", StringComparison.OrdinalIgnoreCase))
+                .Where(f => !string.Equals(f.Name, "data-investment.json", StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             Files.Clear();

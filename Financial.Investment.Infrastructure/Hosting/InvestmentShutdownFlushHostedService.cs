@@ -6,9 +6,9 @@ namespace Financial.Investment.Infrastructure.Hosting;
 
 public sealed class InvestmentShutdownFlushHostedService : IHostedService
 {
-    private readonly IRepository _repository;
+    private readonly IInvestmentRepository _repository;
 
-    public InvestmentShutdownFlushHostedService(IRepository repository)
+    public InvestmentShutdownFlushHostedService(IInvestmentRepository repository)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }

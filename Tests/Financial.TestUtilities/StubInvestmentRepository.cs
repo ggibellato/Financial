@@ -5,13 +5,13 @@ using Financial.Investment.Domain.Entities;
 namespace Financial.TestUtilities;
 
 /// <summary>
-/// Shared in-memory <see cref="IRepository"/> test double. Two ways to configure a scenario:
+/// Shared in-memory <see cref="IInvestmentRepository"/> test double. Two ways to configure a scenario:
 /// set <see cref="Broker"/> (and/or <see cref="Brokers"/>) to have every query method derive its
 /// answer from that real domain object graph, or leave them null and set the flat
 /// <see cref="AssetsByBroker"/>/<see cref="AssetsByBrokerPortfolio"/>/<see cref="Asset"/> fields
 /// directly for tests that don't need a full broker/portfolio/asset graph.
 /// </summary>
-public sealed class StubRepository : IRepository
+public sealed class StubInvestmentRepository : IInvestmentRepository
 {
     public Broker? Broker { get; set; }
     public IEnumerable<Broker>? Brokers { get; set; }
@@ -24,12 +24,12 @@ public sealed class StubRepository : IRepository
     public InvestmentScope? LastGetAssetsByBrokerPortfolioScope { get; private set; }
     public InvestmentScope? LastGetBrokerListScope { get; private set; }
 
-    public StubRepository()
+    public StubInvestmentRepository()
     {
     }
 
     /// <summary>Convenience constructor for tests that only need <see cref="GetBrokerList"/> to return a fixed list.</summary>
-    public StubRepository(IEnumerable<Broker> brokers)
+    public StubInvestmentRepository(IEnumerable<Broker> brokers)
     {
         Brokers = brokers.ToList();
     }

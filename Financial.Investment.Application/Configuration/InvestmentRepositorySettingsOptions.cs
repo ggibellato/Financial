@@ -1,6 +1,6 @@
 namespace Financial.Investment.Application.Configuration;
 
-public sealed class RepositorySettingsOptions
+public sealed class InvestmentRepositorySettingsOptions
 {
     public string? Provider { get; set; }
     public string? DataJsonFile { get; set; }

@@ -14,7 +14,7 @@ The Investment domain must allow users to:
 * Record asset purchase transactions.
 * Record asset sale transactions.
 * Register dividends and other forms of investment income.
-* Manage brokers, portfolios, and assets (currently done by editing `data.json` directly; no API endpoints exist for adding or removing brokers, portfolios, or assets).
+* Manage brokers, portfolios, and assets (currently done by editing `data-investment.json` directly; no API endpoints exist for adding or removing brokers, portfolios, or assets).
 
 The CashFlow domain must allow users to:
 
@@ -95,7 +95,7 @@ Persistence uses JSON files. Two storage backends are implemented and selectable
 
 **The Investment and CashFlow domains each select their storage backend independently**, with their own nested configuration element and their own JSON file — never floating at the config root:
 
-* Investment: `Investment:Repository:Provider` (`RepositoryConfigurationKeys` in `Financial.Investment.Infrastructure`) → `data.json`.
+* Investment: `Investment:Repository:Provider` (`InvestmentRepositoryConfigurationKeys` in `Financial.Investment.Infrastructure`) → `data-investment.json`.
 * CashFlow: `CashFlow:Repository:Provider` (`CashFlowRepositoryConfigurationKeys`) → `data-cashflow.json`.
 
 The persistence layer is abstracted behind a repository interface per domain so that storage implementations can be replaced with minimal impact on the rest of the application.

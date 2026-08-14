@@ -7,13 +7,13 @@ using Financial.Shared.Infrastructure.Sync;
 
 namespace Financial.Investment.Infrastructure.Repositories;
 
-public sealed class JSONRepository : IRepository, ISyncStatusProvider
+public sealed class InvestmentJsonRepository : IInvestmentRepository, ISyncStatusProvider
 {
     private readonly IJsonStorage _storage;
     private readonly IInvestmentsSerializer _serializer;
     private readonly Investments _investiments;
 
-    public JSONRepository(Investments investments, IJsonStorage storage, IInvestmentsSerializer serializer)
+    public InvestmentJsonRepository(Investments investments, IJsonStorage storage, IInvestmentsSerializer serializer)
     {
         _investiments = investments ?? throw new ArgumentNullException(nameof(investments));
         _storage = storage ?? throw new ArgumentNullException(nameof(storage));

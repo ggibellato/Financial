@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Investment.Application.DependencyInjection;
 
-public static class ApplicationServiceCollectionExtensions
+public static class InvestmentApplicationServiceCollectionExtensions
 {
     public static IServiceCollection AddFinancialApplication(this IServiceCollection services)
     {
