@@ -418,11 +418,11 @@ graph TD
 - [x] No HTTP call is made — status is read directly from the in-process F04/F05 instances
 
 ### F12. WPF Sync Status Indicator
-- [ ] No indicator is visible when both contexts report a non-`Failed` state
-- [ ] An indicator appears within one check cycle (≤15s) after either context's status becomes `Failed`
-- [ ] The indicator correctly names which context(s) failed when both fail simultaneously
-- [ ] The indicator disappears automatically within one check cycle after the affected context's status moves off `Failed`
-- [ ] The indicator is visible regardless of which page/view is currently active
+- [x] No indicator is visible when both contexts report a non-`Failed` state
+- [x] An indicator appears within one check cycle (≤15s) after either context's status becomes `Failed`
+- [x] The indicator correctly names which context(s) failed when both fail simultaneously
+- [x] The indicator disappears automatically within one check cycle after the affected context's status moves off `Failed`
+- [x] The indicator is visible regardless of which page/view is currently active
 
 ### Cross-Feature Integration
 - [x] The debounced decorator (F03) correctly uses the sync status shape from F01 and the retry executor from F02
@@ -431,4 +431,4 @@ graph TD
 - [x] The CashFlow shutdown flush (F06) and Investment shutdown flush (F07) each act only on their own context's instance (F04/F05) without blocking each other
 - [x] The sync-status endpoint (F08) correctly reflects both F04's and F05's status, including the case where only one has failed
 - [x] The web polling hook (F09) correctly surfaces F08's response, and the web banner (F10) correctly reflects F09's data
-- [ ] The WPF polling (F11) correctly reflects F04's and F05's in-process status without going through F08, and the WPF indicator (F12) correctly reflects F11's data
+- [x] The WPF polling (F11) correctly reflects F04's and F05's in-process status without going through F08, and the WPF indicator (F12) correctly reflects F11's data
