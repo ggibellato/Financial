@@ -178,6 +178,36 @@ public class RepositoryFactoryTests
     }
 
     [Fact]
+    public async Task Create_WithGoogleDriveProvider_MutationEventuallyUploadsQueuedChangeViaDebouncedStorage()
+    {
+        var remoteFileClient = new RecordingRemoteFileClient();
+        var factory = new RepositoryFactory(new InvestmentsSerializerAdapter(), new RecordingRemoteFileClientFactory(remoteFileClient));
+        var options = new RepositorySelectionOptions(
+            RepositoryProvider.GoogleDriveJson,
+            null,
+            TestDataPaths.DataJsonFile,
+            "Pessoais/Gleison/Financeiros");
+
+        var repository = factory.Create(options);
+
+        await repository.SaveChangesAsync();
+
+        // The real production debounce window is 10 seconds (RepositoryFactory.DebounceWindow, not
+        // configurable by design). Waiting past it with margin proves the queued write actually
+        // reaches the wrapped storage's upload call — not just that SaveChangesAsync() returns quickly.
+        // Independence from any CashFlow activity is already established structurally: this instance's
+        // DebouncedJsonStorage is entirely separate from CashFlow's (see
+        // Create_WithGoogleDriveProvider_TwoInstancesFromSeparateCreateCalls_NeverShareStatus below, and
+        // CashFlowRepositoryFactoryTests' own equivalent eventual-upload test), so nothing CashFlow does
+        // could affect this repository's timer, retry state, or upload call.
+        await WaitForAsync(() => remoteFileClient.UploadCallCount > 0, TimeSpan.FromSeconds(15));
+
+        remoteFileClient.UploadCallCount.Should().Be(1);
+        ((ISyncStatusProvider)repository).GetStatus().State.Should().Be(SyncState.Idle);
+        ((ISyncStatusProvider)repository).GetStatus().LastSuccessfulSaveUtc.Should().NotBeNull();
+    }
+
+    [Fact]
     public async Task Create_WithGoogleDriveProvider_TwoInstancesFromSeparateCreateCalls_NeverShareStatus()
     {
         var factory = new RepositoryFactory(new InvestmentsSerializerAdapter(), new StubRemoteFileClientFactory());
@@ -198,6 +228,21 @@ public class RepositoryFactoryTests
         ((ISyncStatusProvider)repositoryB).GetStatus().State.Should().Be(SyncState.Idle);
     }
 
+    private static async Task WaitForAsync(Func<bool> condition, TimeSpan timeout)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+
+        while (!condition())
+        {
+            if (DateTime.UtcNow >= deadline)
+            {
+                throw new TimeoutException($"Condition not met within {timeout}.");
+            }
+
+            await Task.Delay(50);
+        }
+    }
+
     private sealed class StubRemoteFileClientFactory : IRemoteFileClientFactory
     {
         public IRemoteFileClient Create(string credentialsPath) => new StubRemoteFileClient();
@@ -209,5 +254,24 @@ public class RepositoryFactoryTests
             new InvestmentsSerializerAdapter().Serialize(Investments.Create());
 
         public void UploadFileContent(string path, string content) => throw new NotSupportedException();
+    }
+
+    private sealed class RecordingRemoteFileClientFactory : IRemoteFileClientFactory
+    {
+        private readonly IRemoteFileClient _client;
+
+        public RecordingRemoteFileClientFactory(IRemoteFileClient client) => _client = client;
+
+        public IRemoteFileClient Create(string credentialsPath) => _client;
+    }
+
+    private sealed class RecordingRemoteFileClient : IRemoteFileClient
+    {
+        public int UploadCallCount { get; private set; }
+
+        public string DownloadFileContent(string path) =>
+            new InvestmentsSerializerAdapter().Serialize(Investments.Create());
+
+        public void UploadFileContent(string path, string content) => UploadCallCount++;
     }
 }

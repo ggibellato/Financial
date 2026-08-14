@@ -218,6 +218,42 @@ public class CashFlowRepositoryFactoryTests
     }
 
     [Fact]
+    public async Task Create_WithGoogleDriveProvider_MutationEventuallyUploadsQueuedChangeViaDebouncedStorage()
+    {
+        var credentialsPath = Path.GetTempFileName();
+        try
+        {
+            var remoteFileClient = new RecordingRemoteFileClient();
+            var factory = new CashFlowRepositoryFactory(new CashFlowSerializerAdapter(), new RecordingRemoteFileClientFactory(remoteFileClient));
+            var options = new CashFlowRepositorySelectionOptions(
+                CashFlowRepositoryProvider.GoogleDriveJson,
+                null,
+                credentialsPath,
+                "Pessoais/Gleison/Financeiros");
+
+            var repository = factory.Create(options);
+            repository.AddExpense(Expense.Create(
+                new DateOnly(2026, 7, 1), "Debounced upload test expense", 10m, Category.Create("Casa"), Bank.Create("Chase", roundUpEnabled: true), null));
+
+            await repository.SaveChangesAsync();
+
+            // The real production debounce window is 10 seconds (CashFlowRepositoryFactory.DebounceWindow,
+            // not configurable by design). Waiting past it with margin proves the queued write actually
+            // reaches the wrapped storage's upload call — not just that SaveChangesAsync() returns quickly.
+            await WaitForAsync(() => remoteFileClient.UploadCallCount > 0, TimeSpan.FromSeconds(15));
+
+            remoteFileClient.UploadCallCount.Should().Be(1);
+            remoteFileClient.LastUploadedContent.Should().Contain("Debounced upload test expense");
+            ((ISyncStatusProvider)repository).GetStatus().State.Should().Be(SyncState.Idle);
+            ((ISyncStatusProvider)repository).GetStatus().LastSuccessfulSaveUtc.Should().NotBeNull();
+        }
+        finally
+        {
+            File.Delete(credentialsPath);
+        }
+    }
+
+    [Fact]
     public void Create_WithGoogleDriveProvider_CredentialsFileDoesNotExist_ThrowsFileNotFoundException()
     {
         var missingCredentialsPath = Path.Combine(Path.GetTempPath(), $"cashflow-credentials-{Guid.NewGuid()}.json");
@@ -233,6 +269,21 @@ public class CashFlowRepositoryFactoryTests
             .WithMessage("*Google Drive credentials file not found*");
     }
 
+    private static async Task WaitForAsync(Func<bool> condition, TimeSpan timeout)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+
+        while (!condition())
+        {
+            if (DateTime.UtcNow >= deadline)
+            {
+                throw new TimeoutException($"Condition not met within {timeout}.");
+            }
+
+            await Task.Delay(50);
+        }
+    }
+
     private sealed class StubRemoteFileClientFactory : IRemoteFileClientFactory
     {
         public IRemoteFileClient Create(string credentialsPath) => new StubRemoteFileClient();
@@ -244,5 +295,30 @@ public class CashFlowRepositoryFactoryTests
             new CashFlowSerializerAdapter().Serialize(CashFlowData.Create());
 
         public void UploadFileContent(string path, string content) => throw new NotSupportedException();
+    }
+
+    private sealed class RecordingRemoteFileClientFactory : IRemoteFileClientFactory
+    {
+        private readonly IRemoteFileClient _client;
+
+        public RecordingRemoteFileClientFactory(IRemoteFileClient client) => _client = client;
+
+        public IRemoteFileClient Create(string credentialsPath) => _client;
+    }
+
+    private sealed class RecordingRemoteFileClient : IRemoteFileClient
+    {
+        public int UploadCallCount { get; private set; }
+
+        public string? LastUploadedContent { get; private set; }
+
+        public string DownloadFileContent(string path) =>
+            new CashFlowSerializerAdapter().Serialize(CashFlowData.Create());
+
+        public void UploadFileContent(string path, string content)
+        {
+            UploadCallCount++;
+            LastUploadedContent = content;
+        }
     }
 }
