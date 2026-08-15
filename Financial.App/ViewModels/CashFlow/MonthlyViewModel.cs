@@ -163,16 +163,15 @@ public class MonthlyViewModel : ViewModelBase
         InitializeTransferCommands();
         InitializeAdjustmentCommands();
         InitializeCardCommands();
-
-        _ = RefreshAsync();
     }
 
     private int _refreshRequestId;
 
     /// <summary>
-    /// Reloads expenses/incomes/category totals/banks/tithe for the selected period. Guards
-    /// against overlapping calls (e.g. the constructor's initial load racing a rapid year/month
-    /// change or a manual retry) by discarding a completion whose request has been superseded.
+    /// Reloads expenses/incomes/category totals/banks/tithe for the selected period. The caller
+    /// is responsible for triggering the initial load (e.g. the hosting view's Loaded event).
+    /// Guards against overlapping calls (e.g. a rapid year/month change racing a manual retry)
+    /// by discarding a completion whose request has been superseded.
     /// </summary>
     internal async Task RefreshAsync()
     {
