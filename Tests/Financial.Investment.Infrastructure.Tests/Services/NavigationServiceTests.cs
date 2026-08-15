@@ -264,6 +264,40 @@ public class NavigationServiceTests
     }
 
     [Fact]
+    public void GetAssetDetails_ShouldIncludePriceHistory()
+    {
+        // Arrange
+        const string brokerName = "XPI";
+        const string portfolioName = "Default";
+        const string assetName = "BCIA11";
+        var date = new DateOnly(2026, 8, 15);
+        _repository.GetAsset(brokerName, portfolioName, assetName)!.SetPrice(date, 123.45m, isManual: true);
+
+        // Act
+        var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.PriceHistory.Should().ContainSingle(p => p.Date == date && p.Price == 123.45m && p.IsManual);
+    }
+
+    [Fact]
+    public void GetAssetDetails_WithNoPriceHistory_ReturnsEmptyList()
+    {
+        // Arrange
+        const string brokerName = "XPI";
+        const string portfolioName = "Default";
+        const string assetName = "BCIA11";
+
+        // Act
+        var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.PriceHistory.Should().BeEmpty();
+    }
+
+    [Fact]
     public void GetAssetDetails_ShouldCalculateTotalsCorrectly()
     {
         // Arrange

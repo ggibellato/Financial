@@ -16,3 +16,10 @@ public class DeleteAssetPriceDTO
     public required string AssetName { get; set; }
     public DateOnly Date { get; set; }
 }
+
+public class AssetPriceSnapshotDTO
+{
+    public DateOnly Date { get; set; }
+    public decimal Price { get; set; }
+    public bool IsManual { get; set; }
+}

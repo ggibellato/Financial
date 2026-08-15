@@ -108,6 +108,11 @@ public class AssetDetailsDTO
     public List<CreditDTO> Credits { get; set; } = new();
 
     /// <summary>
+    /// Recorded price history, newest first (manual and automatically-fetched entries)
+    /// </summary>
+    public List<AssetPriceSnapshotDTO> PriceHistory { get; set; } = new();
+
+    /// <summary>
     /// Cash flows (transactions + credits) used to compute XIRR with credits
     /// </summary>
     public IReadOnlyList<AssetCashFlowDTO> CashFlowsWithCredits { get; set; } = [];

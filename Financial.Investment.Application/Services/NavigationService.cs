@@ -58,6 +58,11 @@ public sealed class NavigationService : INavigationService
             .OrderByDescending(c => c.Date)
             .ToList();
 
+        var priceHistory = asset.PriceHistory
+            .Select(NavigationMapper.MapPriceEntry)
+            .OrderByDescending(p => p.Date)
+            .ToList();
+
         var (totalBought, totalSold, totalCredits) = NavigationMapper.CalculateTotals(asset);
 
         return new AssetDetailsDTO
@@ -81,6 +86,7 @@ public sealed class NavigationService : INavigationService
             RealizedGainLoss = asset.RealizedGainLoss,
             Transactions = transactions,
             Credits = credits,
+            PriceHistory = priceHistory,
             CashFlowsWithCredits = AssetCashFlowBuilder.BuildWithCredits(asset),
             CashFlowsWithoutCredits = AssetCashFlowBuilder.BuildWithoutCredits(asset)
         };
