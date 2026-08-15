@@ -54,6 +54,17 @@ public class Asset
         }
     }
 
+    private List<AssetPriceSnapshot> _priceHistory = new List<AssetPriceSnapshot>();
+    public IReadOnlyCollection<AssetPriceSnapshot> PriceHistory { get => _priceHistory.AsReadOnly(); private set => SetPriceHistory(value); }
+    private void SetPriceHistory(IReadOnlyCollection<AssetPriceSnapshot> data)
+    {
+        _priceHistory.Clear();
+        foreach (var entry in data)
+        {
+            UpsertPriceEntry(entry);
+        }
+    }
+
     private Asset() { }
 
     private Asset(string name, string isin, string exchange, string ticker, CountryCode country, string localTypeCode, GlobalAssetClass assetClass) : this()
@@ -145,6 +156,40 @@ public class Asset
         foreach (var credit in credits)
         {
             AddCredit(credit);
+        }
+    }
+
+    public void SetPrice(DateOnly date, decimal price, bool isManual)
+    {
+        var entry = AssetPriceSnapshot.Create(date, price, isManual);
+        UpsertPriceEntry(entry);
+    }
+
+    public AssetPriceSnapshot? GetPriceForDate(DateOnly date) =>
+        _priceHistory.FirstOrDefault(entry => entry.Date == date);
+
+    public bool RemovePrice(DateOnly date)
+    {
+        var index = _priceHistory.FindIndex(entry => entry.Date == date);
+        if (index < 0 || !_priceHistory[index].IsManual)
+        {
+            return false;
+        }
+
+        _priceHistory.RemoveAt(index);
+        return true;
+    }
+
+    private void UpsertPriceEntry(AssetPriceSnapshot entry)
+    {
+        var index = _priceHistory.FindIndex(existing => existing.Date == entry.Date);
+        if (index >= 0)
+        {
+            _priceHistory[index] = entry;
+        }
+        else
+        {
+            _priceHistory.Add(entry);
         }
     }
 
