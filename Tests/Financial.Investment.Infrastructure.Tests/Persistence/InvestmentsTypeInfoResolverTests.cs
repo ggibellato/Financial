@@ -108,4 +108,59 @@ public class InvestmentsTypeInfoResolverTests
         deserialized.AverageSellPrice.Should().Be(110m);
         deserialized.RealizedGainLoss.Should().Be(62m);
     }
+
+    [Fact]
+    public void GetTypeInfo_ForAssetPriceSnapshot_EnablesPrivateConstructor()
+    {
+        var options = CreateOptions();
+
+        var typeInfo = options.TypeInfoResolver!.GetTypeInfo(typeof(AssetPriceSnapshot), options);
+
+        typeInfo!.CreateObject.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void GetTypeInfo_RoundTripsAssetWithPriceHistory_PreservesEntries()
+    {
+        var options = CreateOptions();
+        var asset = Asset.Create("Test", "ISIN", "BVMF", "TST");
+        asset.SetPrice(new DateOnly(2026, 8, 14), 100m, isManual: false);
+        asset.SetPrice(new DateOnly(2026, 8, 15), 105m, isManual: true);
+
+        var json = JsonSerializer.Serialize(asset, options);
+        var deserialized = JsonSerializer.Deserialize<Asset>(json, options);
+
+        deserialized.Should().NotBeNull();
+        deserialized!.PriceHistory.Should().HaveCount(2);
+        var manualEntry = deserialized.GetPriceForDate(new DateOnly(2026, 8, 15));
+        manualEntry.Should().NotBeNull();
+        manualEntry!.Price.Should().Be(105m);
+        manualEntry.IsManual.Should().BeTrue();
+    }
+
+    [Fact]
+    public void GetTypeInfo_DeserializesAssetJsonWithoutPriceHistoryProperty_LoadsAsEmptyCollection()
+    {
+        // Simulates a data file written before this feature existed: no "PriceHistory"
+        // property at all, not even an empty array.
+        var options = CreateOptions();
+        const string legacyJson = """
+            {
+                "Name": "Test",
+                "ISIN": "ISIN",
+                "Exchange": "BVMF",
+                "Ticker": "TST",
+                "Country": 0,
+                "LocalTypeCode": "",
+                "Class": 0,
+                "Transactions": [],
+                "Credits": []
+            }
+            """;
+
+        var deserialized = JsonSerializer.Deserialize<Asset>(legacyJson, options);
+
+        deserialized.Should().NotBeNull();
+        deserialized!.PriceHistory.Should().BeEmpty();
+    }
 }
