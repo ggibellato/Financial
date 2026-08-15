@@ -172,15 +172,15 @@ graph TD
 - [x] Price history for an asset persists across app restarts (survives the JSON reload-on-startup cycle).
 
 ### F02. Price History Tab & Chart
-- [ ] The asset details view shows a Price History tab alongside Credits and Transactions.
-- [ ] The tab lists all recorded entries for the asset, newest first, each showing date, price, and a Manual/Auto badge.
-- [ ] The chart plots price over time and defaults to the Last 12 Months filter; switching filters (Last 3 Months / Last 12 Months / All Time) updates both chart and list.
-- [ ] Manual and automatic points are visually distinguishable on the chart.
-- [ ] "Add Price" opens a dialog defaulting to today's date; a valid submission appears immediately in the list and chart.
-- [ ] Only manual entries show Edit/Delete actions in the list; automatic entries show neither.
-- [ ] Editing a manual entry pre-fills the dialog with its existing date and price.
-- [ ] Deleting a manual entry requires confirmation before it's removed.
-- [ ] An invalid dialog submission (bad price/date) shows the validation message inline without closing the dialog.
+- [x] The asset details view shows a Price History tab alongside Credits and Transactions.
+- [x] The tab lists all recorded entries for the asset, newest first, each showing date, price, and a Manual/Auto badge.
+- [x] The chart plots price over time and defaults to the Last 12 Months filter; switching filters (Last 3 Months / Last 12 Months / All Time) updates both chart and list.
+- [x] Manual and automatic points are visually distinguishable on the chart.
+- [x] "Add Price" opens a dialog defaulting to today's date; a valid submission appears immediately in the list and chart.
+- [x] Only manual entries show Edit/Delete actions in the list; automatic entries show neither.
+- [x] Editing a manual entry pre-fills the dialog with its existing date and price.
+- [x] Deleting a manual entry requires confirmation before it's removed.
+- [x] An invalid dialog submission (bad price/date) shows the validation message inline without closing the dialog.
 
 ### F03. Current-Value/XIRR Fallback via Price History
 - [ ] An asset with no automated price source and a manual entry for today shows a real current value, profit, and XIRR instead of "—".
@@ -190,5 +190,5 @@ graph TD
 - [ ] Portfolio-level totals (e.g. total current value) include manually-priced assets on days they have a today-dated entry.
 
 ### Cross-Feature Integration
-- [ ] Price entries recorded by F01 (both manual, via F02's dialog, and automatic, via the existing fetch pipeline) appear correctly in F02's list and chart for the correct asset.
+- [x] Price entries recorded by F01 (both manual, via F02's dialog, and automatic, via the existing fetch pipeline) appear correctly in F02's list and chart for the correct asset.
 - [ ] F03's current-value/XIRR calculation for an asset correctly retrieves and uses F01's today-dated entry when present, and correctly shows "—" when absent — for both manually-entered and automatically-fetched sources.
