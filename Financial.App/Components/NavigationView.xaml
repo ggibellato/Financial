@@ -1766,6 +1766,141 @@
                         </ContentControl.Style>
                     </ContentControl>
                 </TabItem>
+                <TabItem Header="Price History">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="2*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
+                            <Button Command="{Binding AssetDetails.AddPriceCommand}" ToolTip="New price">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE710;" Margin="0,0,6,0"/>
+                                    <TextBlock Text="New"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding AssetDetails.PriceHistory}"
+                                  SelectedItem="{Binding AssetDetails.SelectedPriceEntry, Mode=TwoWay}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True">
+                            <DataGrid.InputBindings>
+                                <MouseBinding MouseAction="LeftDoubleClick"
+                                              Command="{Binding AssetDetails.UpdatePriceCommand}"/>
+                            </DataGrid.InputBindings>
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="" Width="Auto">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Command="{Binding DataContext.AssetDetails.UpdatePriceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Update"
+                                                        Padding="2"
+                                                        Margin="0,0,4,0"
+                                                        Visibility="{Binding IsManual, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE70F;"/>
+                                                </Button>
+                                                <Button Command="{Binding DataContext.AssetDetails.DeletePriceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Delete"
+                                                        Padding="2"
+                                                        Visibility="{Binding IsManual, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE74D;"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Date"
+                                                    Binding="{Binding Date, Converter={StaticResource DateFormatConverter}, ConverterParameter='d'}"
+                                                    Width="Auto">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}"/>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Price"
+                                                    Binding="{Binding Price, StringFormat=N2}"
+                                                    Width="Auto">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NumericColumnTextStyle}">
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                            <Setter Property="Foreground" Value="Black"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTemplateColumn Header="Source" Width="*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock>
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}">
+                                                        <Setter Property="Text" Value="Automatic"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsManual}" Value="True">
+                                                                <Setter Property="Text" Value="Manual"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <GridSplitter Grid.Row="2"
+                                      Height="6"
+                                      HorizontalAlignment="Stretch"
+                                      Background="#E0E0E0"
+                                      ResizeDirection="Rows"
+                                      ResizeBehavior="PreviousAndNext"/>
+                        <oxy:PlotView Grid.Row="3"
+                                      Background="Transparent"
+                                      Model="{Binding AssetDetails.PriceHistoryPlotModel}"/>
+                        <ItemsControl Grid.Row="4"
+                                      ItemsSource="{Binding AssetDetails.PriceHistoryFilters}"
+                                      HorizontalAlignment="Center"
+                                      Margin="0,6,0,0">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Command="{Binding DataContext.AssetDetails.SelectPriceHistoryFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Padding="4,0"
+                                            Margin="0,0,12,0">
+                                        <TextBlock Text="{Binding Label}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#007ACC"/>
+                                                    <Setter Property="TextDecorations" Value="Underline"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                            <Setter Property="Foreground" Value="Black"/>
+                                                            <Setter Property="TextDecorations" Value="{x:Null}"/>
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </TabItem>
             </TabControl>
 
             <!-- Empty State -->
