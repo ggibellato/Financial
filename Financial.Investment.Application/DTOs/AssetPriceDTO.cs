@@ -7,4 +7,5 @@ public class AssetPriceDTO
     public string Name { get; set; } = string.Empty;
     public decimal Price { get; set; }
     public DateTimeOffset? AsOf { get; set; }
+    public bool IsManual { get; set; }
 }
