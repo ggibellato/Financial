@@ -55,6 +55,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   realizedGainLoss: 0,
   transactions: [],
   credits: [],
+  priceHistory: [],
   cashFlowsWithCredits: [{ date: '2024-01-01T00:00:00', amount: -2000 }],
   cashFlowsWithoutCredits: [{ date: '2024-01-01T00:00:00', amount: -2000 }],
 }

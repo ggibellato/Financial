@@ -90,6 +90,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   realizedGainLoss: 0,
   transactions: [],
   credits: [CREDIT_A, CREDIT_B],
+  priceHistory: [],
   cashFlowsWithCredits: [],
   cashFlowsWithoutCredits: [],
 }
