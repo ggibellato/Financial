@@ -15,6 +15,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 {
     private readonly ITransactionService _transactionService;
     private readonly ICreditService _creditService;
+    private readonly IPriceService? _priceService;
     private readonly IAssetPriceService _assetPriceService;
     private readonly IBrokerBreakdownService _brokerBreakdownService;
     private readonly ITransactionQueryService _transactionQueryService;
@@ -24,6 +25,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private readonly TodayInfoTracker _todayInfo;
     private readonly TransactionActions _transactionActions;
     private readonly CreditActions _creditActions;
+    private readonly PriceActions _priceActions;
     private readonly RelayCommand _addTransactionCommand;
     private readonly RelayCommand _updateTransactionCommand;
     private readonly RelayCommand _deleteTransactionCommand;
@@ -37,6 +39,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private readonly RelayCommand _selectCreditsChartTypeCommand;
     private readonly RelayCommand _selectTransactionsFilterCommand;
     private readonly RelayCommand _selectTransactionsChartModeCommand;
+    private readonly RelayCommand _selectPriceHistoryFilterCommand;
     private string _assetName = string.Empty;
     private string _brokerName = string.Empty;
     private string _portfolioName = string.Empty;
@@ -100,6 +103,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private IReadOnlyList<TransactionMonthNet> _transactionsChartMonths = Array.Empty<TransactionMonthNet>();
     private IReadOnlyList<AssetCashFlowDTO> _cashFlowsWithCredits = Array.Empty<AssetCashFlowDTO>();
     private IReadOnlyList<AssetCashFlowDTO> _cashFlowsWithoutCredits = Array.Empty<AssetCashFlowDTO>();
+    private PlotModel? _priceHistoryPlotModel;
+    private PeriodFilter _selectedPriceHistoryFilter = PeriodFilter.Last12Months;
+    private const string DefaultPriceHistoryContextKey = "default";
+    private readonly Dictionary<string, PriceHistoryViewState> _priceHistoryViewStateByKey = new(StringComparer.OrdinalIgnoreCase);
+    private string _priceHistoryContextKey = DefaultPriceHistoryContextKey;
+    private AssetPriceSnapshotDTO? _selectedPriceEntry;
 
     public string AssetName { get => _assetName; private set => SetProperty(ref _assetName, value); }
     public string BrokerName { get => _brokerName; private set => SetProperty(ref _brokerName, value); }
@@ -292,6 +301,16 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public ObservableCollection<CreditDTO> Credits { get; } = new();
     public ObservableCollection<KeyValuePair<string, decimal>> CreditsByMonthChart { get; } = new();
     public ObservableCollection<CreditsFilterOptionViewModel> CreditsFilters { get; } = new();
+    public ObservableCollection<AssetPriceSnapshotDTO> PriceHistory { get; } = new();
+    public ObservableCollection<PriceHistoryFilterOptionViewModel> PriceHistoryFilters { get; } = new();
+
+    public PlotModel? PriceHistoryPlotModel { get => _priceHistoryPlotModel; private set => SetProperty(ref _priceHistoryPlotModel, value); }
+
+    public AssetPriceSnapshotDTO? SelectedPriceEntry
+    {
+        get => _selectedPriceEntry;
+        set => SetProperty(ref _selectedPriceEntry, value);
+    }
     public ObservableCollection<CreditsTypeModeOptionViewModel> CreditsTypeModes { get; } = new();
     public ObservableCollection<CreditsChartTypeOptionViewModel> CreditsChartTypes { get; } = new();
 
@@ -341,6 +360,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public RelayCommand RefreshTodayInfoCommand => _refreshTodayInfoCommand;
     public RelayCommand CopyAssetNameCommand => _copyAssetNameCommand;
     public RelayCommand SelectCreditsFilterCommand => _selectCreditsFilterCommand;
+    public RelayCommand SelectPriceHistoryFilterCommand => _selectPriceHistoryFilterCommand;
     public RelayCommand SelectCreditsTypeModeCommand => _selectCreditsTypeModeCommand;
     public RelayCommand SelectCreditsChartTypeCommand => _selectCreditsChartTypeCommand;
     public RelayCommand SelectTransactionsFilterCommand => _selectTransactionsFilterCommand;
@@ -354,10 +374,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         ITransactionQueryService transactionQueryService,
         IXirrCalculationService xirrCalculationService,
         IProfitCalculationService profitCalculationService,
-        InvestmentScope scope = InvestmentScope.Active)
+        InvestmentScope scope = InvestmentScope.Active,
+        IPriceService? priceService = null)
     {
         _transactionService = transactionService ?? throw new ArgumentNullException(nameof(transactionService));
         _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
+        _priceService = priceService;
         _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
         _brokerBreakdownService = brokerBreakdownService ?? throw new ArgumentNullException(nameof(brokerBreakdownService));
         _transactionQueryService = transactionQueryService ?? throw new ArgumentNullException(nameof(transactionQueryService));
@@ -381,6 +403,14 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             () => AssetName,
             details => LoadAssetDetails(details),
             (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
+        _priceActions = new PriceActions(
+            _priceService,
+            () => HasAssetContext,
+            () => BrokerName,
+            () => PortfolioName,
+            () => AssetName,
+            details => LoadAssetDetails(details),
+            (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
         _addTransactionCommand = new RelayCommand(AddTransaction, CanEditTransactions);
         _updateTransactionCommand = new RelayCommand(UpdateTransaction, CanUpdateTransaction);
         _deleteTransactionCommand = new RelayCommand(DeleteTransaction, CanDeleteTransaction);
@@ -394,11 +424,13 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _selectCreditsChartTypeCommand = new RelayCommand(SelectCreditsChartType);
         _selectTransactionsFilterCommand = new RelayCommand(SelectTransactionsFilter);
         _selectTransactionsChartModeCommand = new RelayCommand(SelectTransactionsChartMode);
+        _selectPriceHistoryFilterCommand = new RelayCommand(SelectPriceHistoryFilter);
         InitializeCreditsFilters();
         InitializeCreditsTypeModes();
         InitializeCreditsChartTypes();
         InitializeTransactionsFilters();
         InitializeChartTypeModes();
+        InitializePriceHistoryFilters();
     }
 
     public void LoadPortfolioSummary(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits, IReadOnlyList<PortfolioAssetSummaryItemDTO> assetItems)
@@ -483,8 +515,15 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         SetTransactionsContext(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), rebuild: false);
         ApplyTransactionsFilter();
 
+        SetPriceHistoryContext(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), rebuild: false);
+        PriceHistory.Clear();
+        foreach (var entry in details.PriceHistory)
+            PriceHistory.Add(entry);
+        ApplyPriceHistoryFilter();
+
         SelectedTransaction = null;
         SelectedCredit = null;
+        SelectedPriceEntry = null;
         UpdateCommandStates();
     }
 
@@ -507,6 +546,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         Credits.Clear();
         CreditsByMonthChart.Clear();
         CreditsPlotModel = null;
+        PriceHistory.Clear();
+        PriceHistoryPlotModel = null;
+        SelectedPriceEntry = null;
         IsCreditsAggregateView = false;
         HasCreditsContext = false;
         _creditsContextKey = DefaultCreditsContextKey;
@@ -1034,6 +1076,88 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         if (!string.IsNullOrWhiteSpace(_creditsContextKey))
             _creditsViewStateByKey[_creditsContextKey] = new CreditsViewState(_selectedCreditsFilter, _selectedCreditsTypeMode, _selectedCreditsChartType);
+    }
+
+    private void InitializePriceHistoryFilters()
+    {
+        PriceHistoryFilters.Clear();
+        foreach (var (label, filter) in PeriodFilterHelper.Options)
+            PriceHistoryFilters.Add(new PriceHistoryFilterOptionViewModel(label, filter));
+        SetPriceHistoryFilter(PeriodFilter.Last12Months, rebuild: false);
+    }
+
+    private void SelectPriceHistoryFilter(object? parameter)
+    {
+        if (parameter is PriceHistoryFilterOptionViewModel option) { SetPriceHistoryFilter(option.Filter); return; }
+        if (parameter is PeriodFilter filter) SetPriceHistoryFilter(filter);
+    }
+
+    private void SetPriceHistoryFilter(PeriodFilter filter, bool rebuild = true)
+    {
+        if (_selectedPriceHistoryFilter == filter && PriceHistoryFilters.Count > 0)
+        {
+            UpdatePriceHistoryFilterSelection();
+            return;
+        }
+        _selectedPriceHistoryFilter = filter;
+        UpdatePriceHistoryFilterSelection();
+        UpdatePriceHistoryViewState();
+        if (rebuild) ApplyPriceHistoryFilter();
+    }
+
+    private void UpdatePriceHistoryFilterSelection()
+    {
+        foreach (var option in PriceHistoryFilters)
+            option.IsSelected = option.Filter == _selectedPriceHistoryFilter;
+    }
+
+    private void ApplyPriceHistoryFilter()
+    {
+        RefreshPriceHistoryChart(FilterPriceHistory(PriceHistory, _selectedPriceHistoryFilter));
+    }
+
+    private static IEnumerable<AssetPriceSnapshotDTO> FilterPriceHistory(IEnumerable<AssetPriceSnapshotDTO> entries, PeriodFilter filter)
+    {
+        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, DateTime.Today);
+        if (start is null) return entries;
+        return entries.Where(entry =>
+        {
+            var date = entry.Date.ToDateTime(TimeOnly.MinValue);
+            return date >= start && date < endExclusive;
+        });
+    }
+
+    private void RefreshPriceHistoryChart(IEnumerable<AssetPriceSnapshotDTO> entries)
+    {
+        PriceHistoryPlotModel = PriceHistoryChartBuilder.Build(entries.ToList());
+    }
+
+    private void SetPriceHistoryContext(string contextKey, bool rebuild = true)
+    {
+        _priceHistoryContextKey = string.IsNullOrWhiteSpace(contextKey) ? DefaultPriceHistoryContextKey : contextKey;
+        var state = GetPriceHistoryViewState(_priceHistoryContextKey);
+        ApplyPriceHistoryViewState(state, rebuild);
+    }
+
+    private PriceHistoryViewState GetPriceHistoryViewState(string contextKey)
+    {
+        if (_priceHistoryViewStateByKey.TryGetValue(contextKey, out var state))
+            return state;
+        state = new PriceHistoryViewState(PeriodFilter.Last12Months);
+        _priceHistoryViewStateByKey[contextKey] = state;
+        return state;
+    }
+
+    private void ApplyPriceHistoryViewState(PriceHistoryViewState state, bool rebuild)
+    {
+        SetPriceHistoryFilter(state.Filter, rebuild: false);
+        if (rebuild) ApplyPriceHistoryFilter();
+    }
+
+    private void UpdatePriceHistoryViewState()
+    {
+        if (!string.IsNullOrWhiteSpace(_priceHistoryContextKey))
+            _priceHistoryViewStateByKey[_priceHistoryContextKey] = new PriceHistoryViewState(_selectedPriceHistoryFilter);
     }
 
     private void InitializeTransactionsFilters()
