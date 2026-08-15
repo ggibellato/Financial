@@ -123,6 +123,16 @@ internal static class NavigationMapper
         };
     }
 
+    internal static AssetPriceSnapshotDTO MapPriceEntry(AssetPriceSnapshot entry)
+    {
+        return new AssetPriceSnapshotDTO
+        {
+            Date = entry.Date,
+            Price = entry.Price,
+            IsManual = entry.IsManual
+        };
+    }
+
     internal static PositionType PositionTypeFor(Asset asset, InvestmentScope scope) =>
         scope == InvestmentScope.Historic ? PositionType.Flat : asset.PositionType;
 
