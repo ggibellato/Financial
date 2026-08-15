@@ -1,23 +1,27 @@
-﻿using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Entities.Collections;
+﻿using Financial.CashFlow.Domain.Entities.Collections;
 using FluentAssertions;
 
 namespace Financial.CashFlow.Domain.Tests.Entities.Collections
 {
     public class ItemCollectionTests
     {
-        private readonly ItemCollection<BalanceAdjustment> _suv;
 
-        private readonly BalanceAdjustment _balanceAdjustment1;
-        private readonly BalanceAdjustment _balanceAdjustment2;
+        private class Item
+        {
+            public string Name { get; set; }
+        }
+
+
+        private readonly ItemCollection<Item> _suv;
+
+        private readonly Item _item1;
+        private readonly Item _item2;
 
         public ItemCollectionTests()
         {
-             _balanceAdjustment1 = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), 
-                 Bank.Create("Barclays", false), 2340.17m, -4.20m, "Matched against July statement");
-             _balanceAdjustment2 = BalanceAdjustment.Create(new DateOnly(2026, 7, 26), 
-                 Bank.Create("Chase", false), 1000.00m , -10m, "Matched against August statement");
-            _suv = [];
+             _item1 = new Item { Name = "Item 1" };
+             _item2 = new Item { Name = "Item 2" };
+            _suv = new ItemCollection<Item>();
         }
 
         [Fact]
@@ -29,20 +33,20 @@ namespace Financial.CashFlow.Domain.Tests.Entities.Collections
         [Fact]
         public void ItemCollection_Should_be_possible_add_Item()
         {
-            _suv.Add(_balanceAdjustment1);
+            _suv.Add(_item1);
 
             _suv.Should().HaveCount(1);
-            _suv.Should().Contain(_balanceAdjustment1);
+            _suv.Should().Contain(_item1);
         }
 
         [Fact]
         public void ItemCollection_Should_be_possible_more_than_one_Item()
         {
-            _suv.Add(_balanceAdjustment1);
-            _suv.Add(_balanceAdjustment2);
+            _suv.Add(_item1);
+            _suv.Add(_item2);
 
             _suv.Should().HaveCount(2);
-            _suv.Should().BeEquivalentTo(new[] { _balanceAdjustment1, _balanceAdjustment2 });
+            _suv.Should().BeEquivalentTo(new[] { _item1, _item2 });
         }
     }
 }

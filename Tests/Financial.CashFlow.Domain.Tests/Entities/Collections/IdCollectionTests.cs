@@ -1,5 +1,4 @@
-﻿using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Entities.Collections;
+﻿using Financial.CashFlow.Domain.Entities.Collections;
 using FluentAssertions;
 
 
