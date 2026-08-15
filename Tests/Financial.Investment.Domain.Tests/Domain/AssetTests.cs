@@ -229,4 +229,104 @@ public class AssetTests
         result.Should().BeTrue();
         asset.Credits.Should().BeEmpty();
     }
+
+    [Fact]
+    public void SetPrice_NewDate_AddsEntry()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var date = new DateOnly(2026, 8, 15);
+
+        asset.SetPrice(date, 100m, isManual: true);
+
+        asset.PriceHistory.Should().ContainSingle();
+        asset.GetPriceForDate(date).Should().NotBeNull();
+        asset.GetPriceForDate(date)!.Price.Should().Be(100m);
+    }
+
+    [Fact]
+    public void SetPrice_ExistingDate_ReplacesEntry()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var date = new DateOnly(2026, 8, 15);
+        asset.SetPrice(date, 100m, isManual: false);
+
+        asset.SetPrice(date, 150m, isManual: true);
+
+        asset.PriceHistory.Should().ContainSingle();
+        var entry = asset.GetPriceForDate(date);
+        entry!.Price.Should().Be(150m);
+        entry.IsManual.Should().BeTrue();
+    }
+
+    [Fact]
+    public void SetPrice_AutomaticThenManualSameDate_ManualEntryWins()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var date = new DateOnly(2026, 8, 15);
+        asset.SetPrice(date, 100m, isManual: false);
+
+        asset.SetPrice(date, 105m, isManual: true);
+
+        var entry = asset.GetPriceForDate(date);
+        entry!.IsManual.Should().BeTrue();
+        entry.Price.Should().Be(105m);
+    }
+
+    [Fact]
+    public void SetPrice_DifferentDates_KeepsBothEntries()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+
+        asset.SetPrice(new DateOnly(2026, 8, 14), 100m, isManual: false);
+        asset.SetPrice(new DateOnly(2026, 8, 15), 105m, isManual: false);
+
+        asset.PriceHistory.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void GetPriceForDate_NoEntry_ReturnsNull()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.SetPrice(new DateOnly(2026, 8, 14), 100m, isManual: false);
+
+        var result = asset.GetPriceForDate(new DateOnly(2026, 8, 15));
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public void RemovePrice_ManualEntry_RemovesAndReturnsTrue()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var date = new DateOnly(2026, 8, 15);
+        asset.SetPrice(date, 100m, isManual: true);
+
+        var result = asset.RemovePrice(date);
+
+        result.Should().BeTrue();
+        asset.GetPriceForDate(date).Should().BeNull();
+    }
+
+    [Fact]
+    public void RemovePrice_AutomaticEntry_ReturnsFalseAndKeepsEntry()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var date = new DateOnly(2026, 8, 15);
+        asset.SetPrice(date, 100m, isManual: false);
+
+        var result = asset.RemovePrice(date);
+
+        result.Should().BeFalse();
+        asset.GetPriceForDate(date).Should().NotBeNull();
+    }
+
+    [Fact]
+    public void RemovePrice_NoEntryForDate_ReturnsFalse()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+
+        var result = asset.RemovePrice(new DateOnly(2026, 8, 15));
+
+        result.Should().BeFalse();
+    }
 }
