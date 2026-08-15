@@ -163,13 +163,13 @@ graph TD
 
 ### F01. Price History Recording
 - [ ] A successful automatic price fetch for an asset records/updates that asset's entry for today's date, flagged as automatic.
-- [ ] Adding a manual price for a date that already has an entry (manual or automatic) replaces it; only the latest value for that date is retained.
-- [ ] A manual entry with price ≤ 0 is rejected with a clear validation message and not recorded.
-- [ ] A manual entry with a future date is rejected with a clear validation message and not recorded.
-- [ ] Attempting to edit or delete an automatic entry is rejected.
-- [ ] Deleting an existing manual entry removes it; the date has no entry afterward.
-- [ ] Deleting a date with no entry is a no-op and does not error.
-- [ ] Price history for an asset persists across app restarts (survives the JSON reload-on-startup cycle).
+- [x] Adding a manual price for a date that already has an entry (manual or automatic) replaces it; only the latest value for that date is retained.
+- [x] A manual entry with price ≤ 0 is rejected with a clear validation message and not recorded.
+- [x] A manual entry with a future date is rejected with a clear validation message and not recorded.
+- [x] Attempting to edit or delete an automatic entry is rejected.
+- [x] Deleting an existing manual entry removes it; the date has no entry afterward.
+- [x] Deleting a date with no entry is a no-op and does not error.
+- [x] Price history for an asset persists across app restarts (survives the JSON reload-on-startup cycle).
 
 ### F02. Price History Tab & Chart
 - [ ] The asset details view shows a Price History tab alongside Credits and Transactions.
