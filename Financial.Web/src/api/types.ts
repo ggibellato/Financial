@@ -82,6 +82,12 @@ export interface CreditDto {
   value: number
 }
 
+export interface AssetPriceSnapshotDto {
+  date: string
+  price: number
+  isManual: boolean
+}
+
 export interface AssetDetailsDto {
   name: string
   brokerName: string
@@ -102,6 +108,7 @@ export interface AssetDetailsDto {
   realizedGainLoss: number
   transactions: TransactionDto[]
   credits: CreditDto[]
+  priceHistory: AssetPriceSnapshotDto[]
   cashFlowsWithCredits: AssetCashFlowDto[]
   cashFlowsWithoutCredits: AssetCashFlowDto[]
 }
@@ -160,6 +167,21 @@ export interface CreditDeleteDto {
   portfolioName: string
   assetName: string
   id: string
+}
+
+export interface SetAssetPriceDto {
+  brokerName: string
+  portfolioName: string
+  assetName: string
+  date: string
+  price: number
+}
+
+export interface DeleteAssetPriceDto {
+  brokerName: string
+  portfolioName: string
+  assetName: string
+  date: string
 }
 
 export interface DividendHistoryItemDto {

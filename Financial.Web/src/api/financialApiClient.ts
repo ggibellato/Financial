@@ -23,6 +23,7 @@ import type {
   CreditDto,
   CreditUpdateDto,
   CreateIncomeDto,
+  DeleteAssetPriceDto,
   DividendHistoryItemDto,
   DividendSummaryDto,
   ExpenseDto,
@@ -43,6 +44,7 @@ import type {
   ReserveBucketBalanceDto,
   ReserveBucketDto,
   ReserveMovementDto,
+  SetAssetPriceDto,
   SyncStatusResponseDto,
   TitheSummaryDto,
   TransactionCreateDto,
@@ -85,6 +87,8 @@ export interface FinancialApiClient {
   addCredit: (request: CreditCreateDto) => Promise<AssetDetailsDto>
   updateCredit: (request: CreditUpdateDto) => Promise<AssetDetailsDto>
   deleteCredit: (request: CreditDeleteDto) => Promise<AssetDetailsDto>
+  setAssetPrice: (request: SetAssetPriceDto) => Promise<AssetDetailsDto>
+  deleteAssetPrice: (request: DeleteAssetPriceDto) => Promise<AssetDetailsDto>
   getDividendHistory: (ticker: string, exchange?: string) => Promise<DividendHistoryItemDto[]>
   getDividendSummary: (ticker: string, exchange?: string) => Promise<DividendSummaryDto>
   getCurrentPrice: (
@@ -282,6 +286,16 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     deleteCredit: (requestBody) =>
       request<AssetDetailsDto>('/credits', {
+        method: 'DELETE',
+        body: JSON.stringify(requestBody),
+      }),
+    setAssetPrice: (requestBody) =>
+      request<AssetDetailsDto>('/prices', {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    deleteAssetPrice: (requestBody) =>
+      request<AssetDetailsDto>('/prices', {
         method: 'DELETE',
         body: JSON.stringify(requestBody),
       }),
