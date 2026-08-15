@@ -40,6 +40,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private readonly RelayCommand _selectTransactionsFilterCommand;
     private readonly RelayCommand _selectTransactionsChartModeCommand;
     private readonly RelayCommand _selectPriceHistoryFilterCommand;
+    private readonly RelayCommand _addPriceCommand;
+    private readonly RelayCommand _updatePriceCommand;
+    private readonly RelayCommand _deletePriceCommand;
     private string _assetName = string.Empty;
     private string _brokerName = string.Empty;
     private string _portfolioName = string.Empty;
@@ -309,7 +312,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public AssetPriceSnapshotDTO? SelectedPriceEntry
     {
         get => _selectedPriceEntry;
-        set => SetProperty(ref _selectedPriceEntry, value);
+        set { if (SetProperty(ref _selectedPriceEntry, value)) UpdateCommandStates(); }
     }
     public ObservableCollection<CreditsTypeModeOptionViewModel> CreditsTypeModes { get; } = new();
     public ObservableCollection<CreditsChartTypeOptionViewModel> CreditsChartTypes { get; } = new();
@@ -361,6 +364,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public RelayCommand CopyAssetNameCommand => _copyAssetNameCommand;
     public RelayCommand SelectCreditsFilterCommand => _selectCreditsFilterCommand;
     public RelayCommand SelectPriceHistoryFilterCommand => _selectPriceHistoryFilterCommand;
+    public RelayCommand AddPriceCommand => _addPriceCommand;
+    public RelayCommand UpdatePriceCommand => _updatePriceCommand;
+    public RelayCommand DeletePriceCommand => _deletePriceCommand;
     public RelayCommand SelectCreditsTypeModeCommand => _selectCreditsTypeModeCommand;
     public RelayCommand SelectCreditsChartTypeCommand => _selectCreditsChartTypeCommand;
     public RelayCommand SelectTransactionsFilterCommand => _selectTransactionsFilterCommand;
@@ -425,6 +431,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _selectTransactionsFilterCommand = new RelayCommand(SelectTransactionsFilter);
         _selectTransactionsChartModeCommand = new RelayCommand(SelectTransactionsChartMode);
         _selectPriceHistoryFilterCommand = new RelayCommand(SelectPriceHistoryFilter);
+        _addPriceCommand = new RelayCommand(AddPrice, CanAddPrice);
+        _updatePriceCommand = new RelayCommand(UpdatePrice, CanUpdatePrice);
+        _deletePriceCommand = new RelayCommand(DeletePrice, CanDeletePrice);
         InitializeCreditsFilters();
         InitializeCreditsTypeModes();
         InitializeCreditsChartTypes();
@@ -655,6 +664,15 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private bool CanEditCredits() => HasAssetContext;
     private bool CanUpdateCredit(object? parameter) => HasAssetContext && (parameter is CreditDTO || SelectedCredit != null);
     private bool CanDeleteCredit(object? parameter) => HasAssetContext && (parameter is CreditDTO || SelectedCredit != null);
+
+    // Automatic entries can't be edited/deleted here - correcting one is done by adding a
+    // manual entry for that date, which overwrites it (PriceActions.Delete enforces this too).
+    private bool CanAddPrice() => HasAssetContext;
+    private bool CanUpdatePrice(object? parameter) => HasAssetContext && ResolvePriceEntry(parameter)?.IsManual == true;
+    private bool CanDeletePrice(object? parameter) => HasAssetContext && ResolvePriceEntry(parameter)?.IsManual == true;
+
+    private AssetPriceSnapshotDTO? ResolvePriceEntry(object? parameter) =>
+        parameter as AssetPriceSnapshotDTO ?? SelectedPriceEntry;
     private bool CanRefreshTodayInfo() => _todayInfo.CanRefresh(HasAssetContext);
     private bool CanCopyAssetName() => HasAssetContext;
 
@@ -1306,6 +1324,20 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         await _creditActions.Delete(SelectedCredit, ShowDeleteCreditDialog);
     }
 
+    private async void AddPrice() => await _priceActions.Set(ShowAddPriceDialog);
+
+    private async void UpdatePrice(object? parameter)
+    {
+        if (parameter is AssetPriceSnapshotDTO entry) SelectedPriceEntry = entry;
+        await _priceActions.Set(ShowUpdatePriceDialog);
+    }
+
+    private async void DeletePrice(object? parameter)
+    {
+        if (parameter is AssetPriceSnapshotDTO entry) SelectedPriceEntry = entry;
+        await _priceActions.Delete(SelectedPriceEntry, ShowDeletePriceDialog);
+    }
+
     private void UpdateCommandStates()
     {
         _addTransactionCommand.RaiseCanExecuteChanged();
@@ -1314,6 +1346,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _addCreditCommand.RaiseCanExecuteChanged();
         _updateCreditCommand.RaiseCanExecuteChanged();
         _deleteCreditCommand.RaiseCanExecuteChanged();
+        _addPriceCommand.RaiseCanExecuteChanged();
+        _updatePriceCommand.RaiseCanExecuteChanged();
+        _deletePriceCommand.RaiseCanExecuteChanged();
         _refreshTodayInfoCommand.RaiseCanExecuteChanged();
         _copyAssetNameCommand.RaiseCanExecuteChanged();
     }
@@ -1382,5 +1417,37 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             BrokerName, PortfolioName, AssetName,
             SelectedCredit.Id, SelectedCredit.Date, SelectedCredit.Type, SelectedCredit.Value);
         return ShowCreditDialog(vm);
+    }
+
+    private bool ShowPriceDialog(PriceDialogViewModel viewModel)
+    {
+        var dialog = new PriceDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow };
+        return dialog.ShowDialog() == true;
+    }
+
+    private PriceDialogData? ShowAddPriceDialog()
+    {
+        var vm = PriceDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
+        if (!ShowPriceDialog(vm)) return null;
+        return new PriceDialogData(DateOnly.FromDateTime(vm.Date), vm.Price);
+    }
+
+    private PriceDialogData? ShowUpdatePriceDialog()
+    {
+        if (SelectedPriceEntry == null) return null;
+        var vm = PriceDialogViewModel.CreateForUpdate(
+            BrokerName, PortfolioName, AssetName,
+            SelectedPriceEntry.Date.ToDateTime(TimeOnly.MinValue), SelectedPriceEntry.Price);
+        if (!ShowPriceDialog(vm)) return null;
+        return new PriceDialogData(DateOnly.FromDateTime(vm.Date), vm.Price);
+    }
+
+    private bool ShowDeletePriceDialog()
+    {
+        if (SelectedPriceEntry == null) return false;
+        var vm = PriceDialogViewModel.CreateForDelete(
+            BrokerName, PortfolioName, AssetName,
+            SelectedPriceEntry.Date.ToDateTime(TimeOnly.MinValue), SelectedPriceEntry.Price);
+        return ShowPriceDialog(vm);
     }
 }
