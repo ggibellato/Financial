@@ -1,3 +1,4 @@
+using Financial.CashFlow.Domain.Entities.Collections;
 using System;
 using System.Collections.Generic;
 
@@ -38,11 +39,11 @@ public class CashFlowData
     private readonly List<Income> _incomes = new();
     public IReadOnlyCollection<Income> Incomes => _incomes.AsReadOnly();
 
-    private readonly List<Transfer> _transfers = new();
-    public IReadOnlyCollection<Transfer> Transfers => _transfers.AsReadOnly();
+    private readonly IdCollection<Transfer> _transfers = new(i => i.Id);
+    public IReadOnlyCollection<Transfer> Transfers => _transfers;
 
-    private readonly List<BalanceAdjustment> _balanceAdjustments = new();
-    public IReadOnlyCollection<BalanceAdjustment> BalanceAdjustments => _balanceAdjustments.AsReadOnly();
+    private readonly IdCollection<BalanceAdjustment> _balanceAdjustments = new(i => i.Id);
+    public IReadOnlyCollection<BalanceAdjustment> BalanceAdjustments => _balanceAdjustments;
 
     private readonly List<CreditCard> _creditCards = new();
     public IReadOnlyCollection<CreditCard> CreditCards => _creditCards.AsReadOnly();
@@ -92,27 +93,13 @@ public class CashFlowData
 
     public void AddTransfer(Transfer transfer) => _transfers.Add(transfer);
 
-    public void UpdateTransfer(Transfer transfer)
-    {
-        var index = _transfers.FindIndex(t => t.Id == transfer.Id);
-        if (index >= 0)
-        {
-            _transfers[index] = transfer;
-        }
-    }
+    public void UpdateTransfer(Transfer transfer) => _transfers.Update(transfer);
 
-    public void RemoveTransfer(Guid id) => _transfers.RemoveAll(t => t.Id == id);
+    public void RemoveTransfer(Guid id) => _transfers.RemoveById(id);
 
     public void AddBalanceAdjustment(BalanceAdjustment adjustment) => _balanceAdjustments.Add(adjustment);
 
-    public void UpdateBalanceAdjustment(BalanceAdjustment adjustment)
-    {
-        var index = _balanceAdjustments.FindIndex(a => a.Id == adjustment.Id);
-        if (index >= 0)
-        {
-            _balanceAdjustments[index] = adjustment;
-        }
-    }
+    public void UpdateBalanceAdjustment(BalanceAdjustment adjustment) => _balanceAdjustments.Update(adjustment);
 
-    public void RemoveBalanceAdjustment(Guid id) => _balanceAdjustments.RemoveAll(a => a.Id == id);
+    public void RemoveBalanceAdjustment(Guid id) => _balanceAdjustments.RemoveById(id);
 }
