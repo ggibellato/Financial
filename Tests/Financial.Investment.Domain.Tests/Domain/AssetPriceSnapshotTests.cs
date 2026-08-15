@@ -3,14 +3,14 @@ using FluentAssertions;
 
 namespace Financial.Investment.Domain.Tests;
 
-public class AssetPriceEntryTests
+public class AssetPriceSnapshotTests
 {
     [Fact]
     public void Create_WithPositivePrice_AssignsProperties()
     {
         var date = new DateOnly(2026, 8, 15);
 
-        var entry = AssetPriceEntry.Create(date, 1234.56m, isManual: true);
+        var entry = AssetPriceSnapshot.Create(date, 1234.56m, isManual: true);
 
         using (new FluentAssertions.Execution.AssertionScope())
         {
@@ -23,7 +23,7 @@ public class AssetPriceEntryTests
     [Fact]
     public void Create_WithZeroPrice_Throws()
     {
-        Action act = () => AssetPriceEntry.Create(DateOnly.FromDateTime(DateTime.Today), 0m, isManual: true);
+        Action act = () => AssetPriceSnapshot.Create(DateOnly.FromDateTime(DateTime.Today), 0m, isManual: true);
 
         act.Should().Throw<ArgumentException>().WithMessage("Price must be greater than zero.");
     }
@@ -31,7 +31,7 @@ public class AssetPriceEntryTests
     [Fact]
     public void Create_WithNegativePrice_Throws()
     {
-        Action act = () => AssetPriceEntry.Create(DateOnly.FromDateTime(DateTime.Today), -1m, isManual: true);
+        Action act = () => AssetPriceSnapshot.Create(DateOnly.FromDateTime(DateTime.Today), -1m, isManual: true);
 
         act.Should().Throw<ArgumentException>().WithMessage("Price must be greater than zero.");
     }
@@ -41,7 +41,7 @@ public class AssetPriceEntryTests
     {
         var futureDate = DateOnly.FromDateTime(DateTime.Today).AddDays(1);
 
-        Action act = () => AssetPriceEntry.Create(futureDate, 10m, isManual: true);
+        Action act = () => AssetPriceSnapshot.Create(futureDate, 10m, isManual: true);
 
         act.Should().Throw<ArgumentException>().WithMessage("Price date cannot be in the future.");
     }
@@ -51,7 +51,7 @@ public class AssetPriceEntryTests
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
 
-        var entry = AssetPriceEntry.Create(today, 10m, isManual: false);
+        var entry = AssetPriceSnapshot.Create(today, 10m, isManual: false);
 
         entry.Date.Should().Be(today);
     }

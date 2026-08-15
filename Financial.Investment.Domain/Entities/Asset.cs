@@ -54,9 +54,9 @@ public class Asset
         }
     }
 
-    private List<AssetPriceEntry> _priceHistory = new List<AssetPriceEntry>();
-    public IReadOnlyCollection<AssetPriceEntry> PriceHistory { get => _priceHistory.AsReadOnly(); private set => SetPriceHistory(value); }
-    private void SetPriceHistory(IReadOnlyCollection<AssetPriceEntry> data)
+    private List<AssetPriceSnapshot> _priceHistory = new List<AssetPriceSnapshot>();
+    public IReadOnlyCollection<AssetPriceSnapshot> PriceHistory { get => _priceHistory.AsReadOnly(); private set => SetPriceHistory(value); }
+    private void SetPriceHistory(IReadOnlyCollection<AssetPriceSnapshot> data)
     {
         _priceHistory.Clear();
         foreach (var entry in data)
@@ -161,11 +161,11 @@ public class Asset
 
     public void SetPrice(DateOnly date, decimal price, bool isManual)
     {
-        var entry = AssetPriceEntry.Create(date, price, isManual);
+        var entry = AssetPriceSnapshot.Create(date, price, isManual);
         UpsertPriceEntry(entry);
     }
 
-    public AssetPriceEntry? GetPriceForDate(DateOnly date) =>
+    public AssetPriceSnapshot? GetPriceForDate(DateOnly date) =>
         _priceHistory.FirstOrDefault(entry => entry.Date == date);
 
     public bool RemovePrice(DateOnly date)
@@ -180,7 +180,7 @@ public class Asset
         return true;
     }
 
-    private void UpsertPriceEntry(AssetPriceEntry entry)
+    private void UpsertPriceEntry(AssetPriceSnapshot entry)
     {
         var index = _priceHistory.FindIndex(existing => existing.Date == entry.Date);
         if (index >= 0)

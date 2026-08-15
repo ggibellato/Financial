@@ -7,7 +7,7 @@
 
 ### Stage 1: Domain
 
-**1. AssetPriceEntry Entity** - Introduce the domain type representing one day's recorded price for an asset, with its own creation validation.
+**1. AssetPriceSnapshot Entity** - Introduce the domain type representing one day's recorded price for an asset, with its own creation validation.
 
 **2. Asset Price History Collection** - Extend the `Asset` aggregate with a price-history collection supporting upsert-by-date, exact-date lookup, and manual-only removal, following the same shape as the existing Credits collection on `Asset`.
 

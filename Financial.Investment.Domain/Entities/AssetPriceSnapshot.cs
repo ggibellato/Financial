@@ -2,7 +2,7 @@ using System;
 
 namespace Financial.Investment.Domain.Entities;
 
-public class AssetPriceEntry
+public class AssetPriceSnapshot
 {
     public DateOnly Date { get; private set; }
 
@@ -10,9 +10,9 @@ public class AssetPriceEntry
 
     public bool IsManual { get; private set; }
 
-    private AssetPriceEntry() { }
+    private AssetPriceSnapshot() { }
 
-    public static AssetPriceEntry Create(DateOnly date, decimal price, bool isManual)
+    public static AssetPriceSnapshot Create(DateOnly date, decimal price, bool isManual)
     {
         ValidatePrice(price);
         ValidateDate(date);
