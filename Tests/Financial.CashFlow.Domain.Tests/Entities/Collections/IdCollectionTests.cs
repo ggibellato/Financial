@@ -1,7 +1,6 @@
 ﻿using Financial.CashFlow.Domain.Entities.Collections;
 using FluentAssertions;
 
-
 namespace Financial.CashFlow.Domain.Tests.Entities.Collections
 {
     public class IdCollectionTests
@@ -9,9 +8,8 @@ namespace Financial.CashFlow.Domain.Tests.Entities.Collections
         private class ItemWithId
         {
             public Guid Id { get; set; }
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
         }
-
 
         private readonly IdCollection<ItemWithId> _suv;
 
@@ -19,7 +17,6 @@ namespace Financial.CashFlow.Domain.Tests.Entities.Collections
         {
             _suv = new IdCollection<ItemWithId>(i => i.Id);
         }
-
 
         [Fact]
         public void IdCollection_Should_be_possible_remove_Item()
@@ -46,6 +43,5 @@ namespace Financial.CashFlow.Domain.Tests.Entities.Collections
 
             _suv.Should().Contain(updatedItem);
         }
-
     }
 }

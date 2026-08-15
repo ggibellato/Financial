@@ -16,13 +16,13 @@ namespace Financial.CashFlow.Domain.Entities.Collections
             _items.RemoveAll(i => _idSelector(i) == id);
         }
 
-        internal void Update(T item) 
-        { 
-            var idx = _items.FindIndex(i => _idSelector(i) == _idSelector(item)); 
+        internal void Update(T item)
+        {
+            var idx = _items.FindIndex(i => _idSelector(i) == _idSelector(item));
             if (idx >= 0)
             {
                 _items[idx] = item;
             }
-         }
+        }
     }
 }

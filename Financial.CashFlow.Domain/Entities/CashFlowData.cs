@@ -93,18 +93,13 @@ public class CashFlowData
 
     public void AddTransfer(Transfer transfer) => _transfers.Add(transfer);
 
-    public void UpdateTransfer(Transfer transfer) => 
-        _transfers.Update(transfer);
+    public void UpdateTransfer(Transfer transfer) => _transfers.Update(transfer);
 
-    public void RemoveTransfer(Guid id) => 
-        _transfers.RemoveById(id);
+    public void RemoveTransfer(Guid id) => _transfers.RemoveById(id);
 
-    public void AddBalanceAdjustment(BalanceAdjustment adjustment) => 
-        _balanceAdjustments.Add(adjustment);
+    public void AddBalanceAdjustment(BalanceAdjustment adjustment) => _balanceAdjustments.Add(adjustment);
 
-    public void UpdateBalanceAdjustment(BalanceAdjustment adjustment) => 
-        _balanceAdjustments.Update(adjustment);
+    public void UpdateBalanceAdjustment(BalanceAdjustment adjustment) => _balanceAdjustments.Update(adjustment);
 
-    public void RemoveBalanceAdjustment(Guid id) => 
-        _balanceAdjustments.RemoveById(id);
+    public void RemoveBalanceAdjustment(Guid id) => _balanceAdjustments.RemoveById(id);
 }

@@ -5,12 +5,10 @@ namespace Financial.CashFlow.Domain.Tests.Entities.Collections
 {
     public class ItemCollectionTests
     {
-
         private class Item
         {
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
         }
-
 
         private readonly ItemCollection<Item> _suv;
 
@@ -19,8 +17,8 @@ namespace Financial.CashFlow.Domain.Tests.Entities.Collections
 
         public ItemCollectionTests()
         {
-             _item1 = new Item { Name = "Item 1" };
-             _item2 = new Item { Name = "Item 2" };
+            _item1 = new Item { Name = "Item 1" };
+            _item2 = new Item { Name = "Item 2" };
             _suv = new ItemCollection<Item>();
         }
 
