@@ -96,6 +96,155 @@ public class AssetPriceEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    [Fact]
+    public async Task SetPrice_ReturnsOk()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var response = await client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = new DateOnly(2026, 8, 15),
+            Price = 123.45m
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var asset = await response.Content.ReadFromJsonAsync<AssetDetailsDTO>();
+        asset.Should().NotBeNull();
+        asset!.PriceHistory.Should().Contain(p => p.Date == new DateOnly(2026, 8, 15) && p.Price == 123.45m && p.IsManual);
+    }
+
+    [Fact]
+    public async Task SetPrice_ZeroPrice_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var response = await client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = new DateOnly(2026, 8, 15),
+            Price = 0m
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task SetPrice_FutureDate_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var response = await client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = DateOnly.FromDateTime(DateTime.Today).AddDays(1),
+            Price = 100m
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task SetPrice_UnknownAsset_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var response = await client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "NoSuchAsset",
+            Date = new DateOnly(2026, 8, 15),
+            Price = 100m
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task DeletePrice_ManualEntry_ReturnsOk()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var date = new DateOnly(2026, 8, 15);
+        await client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = date,
+            Price = 100m
+        });
+
+        using var request = new HttpRequestMessage(HttpMethod.Delete, "/api/v1/financial/prices")
+        {
+            Content = JsonContent.Create(new DeleteAssetPriceDTO
+            {
+                BrokerName = "XPI",
+                PortfolioName = "Default",
+                AssetName = "BCIA11",
+                Date = date
+            })
+        };
+        var response = await client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var asset = await response.Content.ReadFromJsonAsync<AssetDetailsDTO>();
+        asset.Should().NotBeNull();
+        asset!.PriceHistory.Should().NotContain(p => p.Date == date);
+    }
+
+    [Fact]
+    public async Task DeletePrice_NoEntryForDate_ReturnsOk()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+
+        using var request = new HttpRequestMessage(HttpMethod.Delete, "/api/v1/financial/prices")
+        {
+            Content = JsonContent.Create(new DeleteAssetPriceDTO
+            {
+                BrokerName = "XPI",
+                PortfolioName = "Default",
+                AssetName = "BCIA11",
+                Date = new DateOnly(2026, 8, 15)
+            })
+        };
+        var response = await client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task DeletePrice_AutomaticEntry_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var date = new DateOnly(2026, 8, 15);
+        var repository = factory.Services.GetRequiredService<IInvestmentRepository>();
+        repository.GetAsset("XPI", "Default", "BCIA11")!.SetPrice(date, 100m, isManual: false);
+
+        using var request = new HttpRequestMessage(HttpMethod.Delete, "/api/v1/financial/prices")
+        {
+            Content = JsonContent.Create(new DeleteAssetPriceDTO
+            {
+                BrokerName = "XPI",
+                PortfolioName = "Default",
+                AssetName = "BCIA11",
+                Date = date
+            })
+        };
+        var response = await client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
     private static WebApplicationFactory<Program> CreateFactory(AssetPriceServiceStub? stub = null)
     {
         return new ApiTestFactory().WithWebHostBuilder(builder =>

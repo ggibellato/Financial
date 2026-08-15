@@ -15,6 +15,7 @@ public static class InvestmentApplicationServiceCollectionExtensions
         services.AddSingleton<TransactionService>();
         services.AddSingleton<ITransactionService>(sp => sp.GetRequiredService<TransactionService>());
         services.AddSingleton<ITransactionQueryService>(sp => sp.GetRequiredService<TransactionService>());
+        services.AddSingleton<IPriceService, PriceService>();
         services.AddSingleton<IDividendService, DividendService>();
         services.AddSingleton<IBrokerBreakdownService, BrokerBreakdownService>();
         services.AddSingleton<IPortfolioAssetSummaryService, PortfolioAssetSummaryService>();

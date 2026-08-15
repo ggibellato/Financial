@@ -13,10 +13,12 @@ namespace Financial.Api.Controllers;
 public sealed class AssetPricesController : ControllerBase
 {
     private readonly IAssetPriceService _assetPriceService;
+    private readonly IPriceService _priceService;
 
-    public AssetPricesController(IAssetPriceService assetPriceService)
+    public AssetPricesController(IAssetPriceService assetPriceService, IPriceService priceService)
     {
         _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
+        _priceService = priceService ?? throw new ArgumentNullException(nameof(priceService));
     }
 
     /// <summary>Returns the current market price for an asset.</summary>
@@ -55,5 +57,49 @@ public sealed class AssetPricesController : ControllerBase
         });
 
         return Ok(result);
+    }
+
+    /// <summary>Records a manual price for an asset on a given date, replacing any existing entry for that date.</summary>
+    /// <param name="request">The asset, date, and price to record.</param>
+    /// <returns>200 OK with the updated asset details, or 400 Bad Request if the request is invalid.</returns>
+    [HttpPut]
+    [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AssetDetailsDTO>> SetPrice([FromBody] SetAssetPriceDTO request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var asset = await _priceService.SetPriceAsync(request);
+        if (asset is null)
+        {
+            return BadRequest();
+        }
+
+        return Ok(asset);
+    }
+
+    /// <summary>Deletes a manually-entered price for an asset on a given date. A missing date is a no-op; an automatic entry can't be deleted this way.</summary>
+    /// <param name="request">Identifies the asset and date to clear.</param>
+    /// <returns>200 OK with the updated asset details, or 400 Bad Request if the request is invalid.</returns>
+    [HttpDelete]
+    [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AssetDetailsDTO>> DeletePrice([FromBody] DeleteAssetPriceDTO request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var asset = await _priceService.DeletePriceAsync(request);
+        if (asset is null)
+        {
+            return BadRequest();
+        }
+
+        return Ok(asset);
     }
 }
