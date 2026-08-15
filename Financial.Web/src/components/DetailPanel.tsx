@@ -6,14 +6,16 @@ import AssetSummaryTab from './AssetSummaryTab'
 import PortfolioSummaryTab from './PortfolioSummaryTab'
 import CreditsTab from './CreditsTab'
 import TransactionsTab from './TransactionsTab'
+import PriceHistoryTab from './PriceHistoryTab'
 import './DetailPanel.css'
 
-type TabId = 'summary' | 'transactions' | 'credits'
+type TabId = 'summary' | 'transactions' | 'credits' | 'priceHistory'
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'summary', label: 'Summary' },
   { id: 'transactions', label: 'Transactions' },
   { id: 'credits', label: 'Credits' },
+  { id: 'priceHistory', label: 'Price History' },
 ]
 
 function nodeKey(n: ReturnType<typeof useSelectedNode>['selectedNode']): string {
@@ -107,6 +109,7 @@ export default function DetailPanel() {
         {activeTab === 'summary' && !isAsset && !isPortfolio && <AggregatedSummaryTab />}
         {activeTab === 'transactions' && <TransactionsTab />}
         {activeTab === 'credits' && <CreditsTab />}
+        {activeTab === 'priceHistory' && <PriceHistoryTab />}
       </div>
     </div>
   )
