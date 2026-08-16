@@ -73,7 +73,7 @@ public class IncomeMigratorTests
 
         summary.EntriesImportedCount.Should().Be(1);
         summary.IncomeCount.Should().Be(1);
-        data.Incomes.Should().ContainSingle(i => i.IncomeSource.Name == "Ariana" && i.Bank.Name == "Barclays");
+        data.Incomes.Should().ContainSingle(i => i.IncomeSource.Name == "Ariana" && i.Bank!.Name == "Barclays");
     }
 
     [Fact]

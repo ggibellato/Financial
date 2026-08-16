@@ -36,10 +36,10 @@ public class IncomeBackfillImporterTests
         data.Incomes.Should().HaveCount(2);
         data.Incomes.Should().Contain(i =>
             i.Date == new DateOnly(2026, 7, 1) && i.IncomeSource.Name == "Ariana" &&
-            i.GrossValue == 2595.39m && i.NetValue == 1878.74m && i.Bank.Name == "Barclays");
+            i.GrossValue == 2595.39m && i.NetValue == 1878.74m && i.Bank!.Name == "Barclays");
         data.Incomes.Should().Contain(i =>
             i.Date == new DateOnly(2026, 7, 1) && i.IncomeSource.Name == "DividendoJuros" &&
-            i.GrossValue == null && i.NetValue == 361.24m && i.Bank.Name == "Barclays");
+            i.GrossValue == null && i.NetValue == 361.24m && i.Bank!.Name == "Barclays");
     }
 
     [Fact]

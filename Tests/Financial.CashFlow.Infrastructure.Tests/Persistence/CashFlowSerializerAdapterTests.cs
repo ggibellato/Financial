@@ -200,7 +200,7 @@ public class CashFlowSerializerAdapterTests
 
         var result = serializer.Deserialize(json);
 
-        result.Incomes.Should().ContainSingle().Which.Bank.Id.Should().Be(bank.Id);
+        result.Incomes.Should().ContainSingle().Which.Bank!.Id.Should().Be(bank.Id);
     }
 
     private static readonly Guid IncomeSourceIdForFixture = Guid.NewGuid();
