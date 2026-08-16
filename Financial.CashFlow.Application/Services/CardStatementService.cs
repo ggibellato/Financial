@@ -63,7 +63,7 @@ public sealed class CardStatementService : ICardStatementService
             return ToDto(statement);
         }
 
-        if (!BankNameResolver.TryResolve(request.PaymentSourceBankId, _repository.GetBanks(), out var bank))
+        if (!EntityIdResolver.TryResolve(request.PaymentSourceBankId, _repository.GetBanks(), b => b.Id, out var bank))
         {
             throw new ArgumentException($"Payment source '{request.PaymentSourceBankId}' is not recognized.");
         }
@@ -137,8 +137,7 @@ public sealed class CardStatementService : ICardStatementService
     }
 
     private CardStatement FindStatementOrThrow(Guid id) =>
-        _repository.GetCardStatements().FirstOrDefault(s => s.Id == id)
-            ?? throw new KeyNotFoundException($"Card statement '{id}' was not found.");
+        _repository.GetCardStatements().FirstOrThrow(s => s.Id == id, "Card statement", id);
 
     private List<Expense> GetStatementExpenses(CardStatement statement, ExpensePaymentStatus status) =>
         _repository.GetExpenses()

@@ -4,7 +4,7 @@ using FluentAssertions;
 
 namespace Financial.CashFlow.Application.Tests.Validation;
 
-public class BankNameResolverTests
+public class EntityIdResolverTests
 {
     private static readonly Bank[] Banks =
     [
@@ -14,11 +14,11 @@ public class BankNameResolverTests
     ];
 
     [Fact]
-    public void TryResolve_KnownId_ReturnsTrueAndTheBank()
+    public void TryResolve_KnownId_ReturnsTrueAndTheEntity()
     {
         var target = Banks[1];
 
-        var result = BankNameResolver.TryResolve(target.Id, Banks, out var bank);
+        var result = EntityIdResolver.TryResolve(target.Id, Banks, b => b.Id, out var bank);
 
         result.Should().BeTrue();
         bank.Should().NotBeNull();
@@ -29,7 +29,7 @@ public class BankNameResolverTests
     [Fact]
     public void TryResolve_UnknownId_ReturnsFalse()
     {
-        var result = BankNameResolver.TryResolve(Guid.NewGuid(), Banks, out var bank);
+        var result = EntityIdResolver.TryResolve(Guid.NewGuid(), Banks, b => b.Id, out var bank);
 
         result.Should().BeFalse();
         bank.Should().BeNull();
@@ -38,7 +38,7 @@ public class BankNameResolverTests
     [Fact]
     public void TryResolve_NullValue_ReturnsFalse()
     {
-        var result = BankNameResolver.TryResolve(null, Banks, out var bank);
+        var result = EntityIdResolver.TryResolve(null, Banks, b => b.Id, out var bank);
 
         result.Should().BeFalse();
         bank.Should().BeNull();

@@ -1,6 +1,6 @@
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
-using Financial.Investment.Infrastructure.Hosting;
+using Financial.Shared.Infrastructure.Hosting;
 using Financial.TestUtilities;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
@@ -49,7 +49,7 @@ public class InvestmentInfrastructureServiceCollectionExtensionsTests
 
         var hostedServices = provider.GetServices<IHostedService>();
 
-        hostedServices.Should().ContainSingle(service => service is InvestmentShutdownFlushHostedService);
+        hostedServices.Should().ContainSingle(service => service is ShutdownFlushHostedService<IInvestmentRepository>);
     }
 
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)

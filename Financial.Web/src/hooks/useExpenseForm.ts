@@ -1,7 +1,7 @@
 import { useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { BankDto, CategoryDto, ExpenseDto } from '../api/types'
-import { getErrorMessage } from '../utils/formatters'
+import { getErrorMessage, parseValidatedNumber } from '../utils/formatters'
 
 export type PaymentMode = 'bank' | 'card'
 
@@ -291,8 +291,8 @@ export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSa
       return
     }
 
-    const value = Number(createValue)
-    if (!createValue.trim() || !isFinite(value) || value === 0) {
+    const value = parseValidatedNumber(createValue)
+    if (value === null || value === 0) {
       dispatch({ type: 'CREATE_ERROR', payload: 'Value must be a non-zero number' })
       return
     }
@@ -307,15 +307,14 @@ export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSa
 
     let roundUpAmount: number | null = null
     if (roundUpEligible && createRoundUpAmount.trim() !== '') {
-      const parsedRoundUp = Number(createRoundUpAmount)
-      if (!isFinite(parsedRoundUp) || parsedRoundUp < MIN_ROUND_UP_AMOUNT || parsedRoundUp > MAX_ROUND_UP_AMOUNT) {
+      roundUpAmount = parseValidatedNumber(createRoundUpAmount, { min: MIN_ROUND_UP_AMOUNT, max: MAX_ROUND_UP_AMOUNT })
+      if (roundUpAmount === null) {
         dispatch({
           type: 'CREATE_ERROR',
           payload: `Round-up amount must be between £${MIN_ROUND_UP_AMOUNT.toFixed(2)} and £${MAX_ROUND_UP_AMOUNT.toFixed(2)}`,
         })
         return
       }
-      roundUpAmount = parsedRoundUp
     }
 
     dispatch({ type: 'CREATE_START' })
@@ -358,8 +357,8 @@ export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSa
   function saveEdit() {
     if (!state.editingId) return
 
-    const value = Number(state.editValue)
-    if (!state.editValue.trim() || !isFinite(value) || value === 0) {
+    const value = parseValidatedNumber(state.editValue)
+    if (value === null || value === 0) {
       dispatch({ type: 'SAVE_ERROR', payload: 'Value must be a non-zero number' })
       return
     }
@@ -388,15 +387,14 @@ export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSa
 
     let roundUpAmount: number | null = null
     if (roundUpEligible && state.editRoundUpAmount.trim() !== '') {
-      const parsedRoundUp = Number(state.editRoundUpAmount)
-      if (!isFinite(parsedRoundUp) || parsedRoundUp < MIN_ROUND_UP_AMOUNT || parsedRoundUp > MAX_ROUND_UP_AMOUNT) {
+      roundUpAmount = parseValidatedNumber(state.editRoundUpAmount, { min: MIN_ROUND_UP_AMOUNT, max: MAX_ROUND_UP_AMOUNT })
+      if (roundUpAmount === null) {
         dispatch({
           type: 'SAVE_ERROR',
           payload: `Round-up amount must be between £${MIN_ROUND_UP_AMOUNT.toFixed(2)} and £${MAX_ROUND_UP_AMOUNT.toFixed(2)}`,
         })
         return
       }
-      roundUpAmount = parsedRoundUp
     }
 
     dispatch({ type: 'SAVE_START' })

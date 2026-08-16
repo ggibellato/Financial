@@ -7,8 +7,6 @@ namespace Financial.CashFlow.Application.Services;
 
 public sealed class IncomeService : IIncomeService
 {
-    private const int MaxDescriptionLength = 200;
-
     private readonly ICashFlowRepository _repository;
 
     public IncomeService(ICashFlowRepository repository)
@@ -58,25 +56,21 @@ public sealed class IncomeService : IIncomeService
             .ToList();
 
     private Income FindIncomeOrThrow(Guid id) =>
-        _repository.GetIncomes().FirstOrDefault(i => i.Id == id)
-            ?? throw new KeyNotFoundException($"Income '{id}' was not found.");
+        _repository.GetIncomes().FirstOrThrow(i => i.Id == id, "Income", id);
 
     private (IncomeSource IncomeSource, Bank? Bank) ValidateFields(Guid incomeSourceId, Guid? bankId, string? description)
     {
-        if (!IncomeSourceNameResolver.TryResolve(incomeSourceId, _repository.GetIncomeSources(), out var resolvedIncomeSource))
+        if (!EntityIdResolver.TryResolve(incomeSourceId, _repository.GetIncomeSources(), s => s.Id, out var resolvedIncomeSource))
         {
             throw new ArgumentException($"Income source '{incomeSourceId}' is not recognized.");
         }
 
-        if (description is not null && description.Length > MaxDescriptionLength)
-        {
-            throw new ArgumentException($"Description must not exceed {MaxDescriptionLength} characters.");
-        }
+        DescriptionValidator.EnsureWithinLimit(description);
 
         Bank? resolvedBank = null;
         if (bankId is not null)
         {
-            if (!BankNameResolver.TryResolve(bankId, _repository.GetBanks(), out var bank))
+            if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
             {
                 throw new ArgumentException($"Bank '{bankId}' is not recognized.");
             }

@@ -5,7 +5,7 @@ import { useSelectedNode } from '../context/SelectedNodeContext'
 import { buildSelectionKey } from './useCredits'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
-import { formatMonthYear, getErrorMessage, pad, toInputDate } from '../utils/formatters'
+import { formatMonthYear, getErrorMessage, pad, parseValidatedNumber, toInputDate } from '../utils/formatters'
 
 export type TransactionFormField = 'formDate' | 'formType' | 'formQuantity' | 'formUnitPrice' | 'formFees'
 export type ChartDisplayMode = 'Bar' | 'Line'
@@ -358,14 +358,14 @@ export function useTransactions(): TransactionsData {
       return
     }
 
-    const quantity = parseFloat(formQuantity)
-    if (!formQuantity.trim() || !isFinite(quantity) || quantity <= 0) {
+    const quantity = parseValidatedNumber(formQuantity)
+    if (quantity === null || quantity <= 0) {
       dispatch({ type: 'SAVE_ERROR', payload: 'Quantity must be a positive number' })
       return
     }
 
-    const unitPrice = parseFloat(formUnitPrice)
-    if (!formUnitPrice.trim() || !isFinite(unitPrice) || unitPrice <= 0) {
+    const unitPrice = parseValidatedNumber(formUnitPrice)
+    if (unitPrice === null || unitPrice <= 0) {
       dispatch({ type: 'SAVE_ERROR', payload: 'Unit Price must be a positive number' })
       return
     }

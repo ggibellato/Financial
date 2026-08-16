@@ -10,7 +10,7 @@ namespace Financial.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("credits")]
-public sealed class CreditsController : ControllerBase
+public sealed class CreditsController : ApiControllerBase
 {
     private readonly ICreditQueryService _creditQueryService;
     private readonly ICreditService _creditService;
@@ -35,12 +35,7 @@ public sealed class CreditsController : ControllerBase
         }
 
         var asset = await _creditService.AddCreditAsync(request);
-        if (asset is null)
-        {
-            return BadRequest();
-        }
-
-        return Ok(asset);
+        return OkOrBadRequest(asset);
     }
 
     /// <summary>Updates an existing investment credit.</summary>
@@ -57,12 +52,7 @@ public sealed class CreditsController : ControllerBase
         }
 
         var asset = await _creditService.UpdateCreditAsync(request);
-        if (asset is null)
-        {
-            return BadRequest();
-        }
-
-        return Ok(asset);
+        return OkOrBadRequest(asset);
     }
 
     /// <summary>Deletes an investment credit.</summary>
@@ -79,12 +69,7 @@ public sealed class CreditsController : ControllerBase
         }
 
         var asset = await _creditService.DeleteCreditAsync(request);
-        if (asset is null)
-        {
-            return BadRequest();
-        }
-
-        return Ok(asset);
+        return OkOrBadRequest(asset);
     }
 
     /// <summary>Lists credits for all portfolios under a broker.</summary>

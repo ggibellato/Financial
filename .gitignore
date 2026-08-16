@@ -7,6 +7,7 @@ node_modules
 dist
 docs/app-todo.md
 docs/app-workflow.md
+docs/app-comments-update.md
 
 #data directory - real data files are git-ignored, example files are tracked
 /data/*

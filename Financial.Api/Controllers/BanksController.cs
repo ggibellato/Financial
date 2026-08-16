@@ -45,11 +45,6 @@ public sealed class BanksController : ControllerBase
             return BadRequest();
         }
 
-        if (!BankExists(id))
-        {
-            return NotFound();
-        }
-
         var bank = await _bankService.UpdateOpeningBalanceAsync(id, request);
         return Ok(bank);
     }

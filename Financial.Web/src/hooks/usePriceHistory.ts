@@ -4,7 +4,7 @@ import type { AssetPriceSnapshotDto, SelectedNode } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
-import { getErrorMessage, toInputDate } from '../utils/formatters'
+import { getErrorMessage, parseValidatedNumber, toInputDate } from '../utils/formatters'
 
 export type PriceHistoryFormField = 'formDate' | 'formPrice'
 
@@ -235,8 +235,8 @@ export function usePriceHistory(): PriceHistoryData {
       return
     }
 
-    const price = parseFloat(formPrice)
-    if (!formPrice.trim() || !isFinite(price) || price <= 0) {
+    const price = parseValidatedNumber(formPrice)
+    if (price === null || price <= 0) {
       dispatch({ type: 'SAVE_ERROR', payload: 'Price must be a positive number' })
       return
     }

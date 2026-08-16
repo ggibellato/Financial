@@ -1,10 +1,9 @@
+using Financial.CashFlow.Application.Validation;
+
 namespace Financial.Presentation.App.ViewModels.CashFlow;
 
 public static class ExpenseFormValidation
 {
-    public const decimal MinRoundUpAmount = 0m;
-    public const decimal MaxRoundUpAmount = 0.99m;
-
     public static string BuildValidationMessage(
         DateTime? date,
         string description,
@@ -53,10 +52,10 @@ public static class ExpenseFormValidation
         if (showRoundUpField && !string.IsNullOrWhiteSpace(roundUpAmount))
         {
             if (!decimal.TryParse(roundUpAmount, out var parsedRoundUp)
-                || parsedRoundUp < MinRoundUpAmount
-                || parsedRoundUp > MaxRoundUpAmount)
+                || parsedRoundUp < ExpenseValidationRules.MinRoundUpAmount
+                || parsedRoundUp > ExpenseValidationRules.MaxRoundUpAmount)
             {
-                errors.Add($"Round-up amount must be between £{MinRoundUpAmount:N2} and £{MaxRoundUpAmount:N2}.");
+                errors.Add($"Round-up amount must be between £{ExpenseValidationRules.MinRoundUpAmount:N2} and £{ExpenseValidationRules.MaxRoundUpAmount:N2}.");
             }
         }
 

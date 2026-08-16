@@ -38,6 +38,44 @@ public abstract class ViewModelBase : INotifyPropertyChanged
         OnPropertyChanged(propertyName);
         return true;
     }
+
+    /// <summary>
+    /// Runs the validate/save/error-handling sequence shared by every form-save command:
+    /// validate, bail out with an error if invalid, else set the saving flag, clear the error,
+    /// run <paramref name="save"/>, and report any exception's message as the error.
+    /// </summary>
+    protected static async Task ExecuteSaveAsync(
+        Func<string?> validate,
+        Action<string?> setError,
+        Action<bool> setSaving,
+        Func<Task> save,
+        Action? notifyCommandsChanged = null)
+    {
+        var validationMessage = validate();
+        if (!string.IsNullOrEmpty(validationMessage))
+        {
+            setError(validationMessage);
+            return;
+        }
+
+        setSaving(true);
+        notifyCommandsChanged?.Invoke();
+        setError(null);
+
+        try
+        {
+            await save();
+        }
+        catch (Exception ex)
+        {
+            setError(ex.Message);
+        }
+        finally
+        {
+            setSaving(false);
+            notifyCommandsChanged?.Invoke();
+        }
+    }
 }
 
 

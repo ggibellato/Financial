@@ -1,11 +1,11 @@
 using Financial.CashFlow.Application.Configuration;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.Configuration;
-using Financial.CashFlow.Infrastructure.Hosting;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.CashFlow.Infrastructure.Services;
 using Financial.Shared.Infrastructure.Configuration;
+using Financial.Shared.Infrastructure.Hosting;
 using Financial.Shared.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -42,7 +42,7 @@ public static class CashFlowInfrastructureServiceCollectionExtensions
                 sp.GetRequiredService<ICashFlowSerializer>(),
                 sp.GetService<IRemoteFileClientFactory>()).Create(options);
         });
-        services.AddHostedService<CashFlowShutdownFlushHostedService>();
+        services.AddHostedService<ShutdownFlushHostedService<ICashFlowRepository>>();
 
         return services;
     }

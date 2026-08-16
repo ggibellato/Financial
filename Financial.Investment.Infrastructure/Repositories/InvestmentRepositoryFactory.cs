@@ -8,7 +8,6 @@ namespace Financial.Investment.Infrastructure.Repositories;
 public sealed class InvestmentRepositoryFactory
 {
     private const string DefaultDataFileName = "data-investment.json";
-    private static readonly TimeSpan DebounceWindow = TimeSpan.FromSeconds(10);
 
     private readonly IInvestmentsSerializer _serializer;
     private readonly IRemoteFileClientFactory? _remoteFileClientFactory;
@@ -35,22 +34,15 @@ public sealed class InvestmentRepositoryFactory
         options.Provider switch
         {
             InvestmentRepositoryProvider.LocalJson =>
-                new LocalJsonStorage(options.LocalDataPath, DefaultDataFileName),
+                JsonStorageFactory.CreateLocal(options.LocalDataPath, DefaultDataFileName),
             InvestmentRepositoryProvider.GoogleDriveJson =>
-                CreateGoogleDriveStorage(options),
+                JsonStorageFactory.CreateGoogleDrive(
+                    options.GoogleDriveCredentialsPath,
+                    options.GoogleDriveFilePath,
+                    _remoteFileClientFactory,
+                    InvestmentRepositoryConfigurationKeys.GoogleDriveCredentialsPath,
+                    nameof(InvestmentRepositoryProvider.GoogleDriveJson)),
             _ => throw new ArgumentOutOfRangeException(
                     nameof(options.Provider), options.Provider, "Unsupported repository provider.")
         };
-
-    private IJsonStorage CreateGoogleDriveStorage(InvestmentRepositorySelectionOptions options)
-    {
-        var storage = GoogleDriveStorageFactory.Create(
-            options.GoogleDriveCredentialsPath,
-            options.GoogleDriveFilePath,
-            _remoteFileClientFactory,
-            InvestmentRepositoryConfigurationKeys.GoogleDriveCredentialsPath,
-            nameof(InvestmentRepositoryProvider.GoogleDriveJson));
-
-        return new DebouncedJsonStorage(storage, DebounceWindow);
-    }
 }

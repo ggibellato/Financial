@@ -74,13 +74,7 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
         await _storage.WriteAsync(json).ConfigureAwait(false);
     }
 
-    public SyncStatus GetStatus() =>
-        _storage is ISyncStatusProvider syncStatusProvider
-            ? syncStatusProvider.GetStatus()
-            : new SyncStatus(SyncState.Idle, null, null);
+    public SyncStatus GetStatus() => _storage.GetStatusOrIdle();
 
-    public Task FlushAsync() =>
-        _storage is ISyncStatusProvider syncStatusProvider
-            ? syncStatusProvider.FlushAsync()
-            : Task.CompletedTask;
+    public Task FlushAsync() => _storage.FlushIfSupportedAsync();
 }

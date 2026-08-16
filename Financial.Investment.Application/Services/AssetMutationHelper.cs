@@ -1,5 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
 
 namespace Financial.Investment.Application.Services;
@@ -7,13 +8,6 @@ namespace Financial.Investment.Application.Services;
 internal static class AssetMutationHelper
 {
     public delegate bool TryParseDelegate<TEnum>(string? value, out TEnum parsed);
-
-    private static bool IsInvalidContext(string? brokerName, string? portfolioName, string? assetName)
-    {
-        return string.IsNullOrWhiteSpace(brokerName) ||
-               string.IsNullOrWhiteSpace(portfolioName) ||
-               string.IsNullOrWhiteSpace(assetName);
-    }
 
     public static async Task<AssetDetailsDTO?> ExecuteParsedMutationAsync<TEnum>(
         IInvestmentRepository repository,
@@ -47,7 +41,7 @@ internal static class AssetMutationHelper
         string? assetName,
         Func<Asset, bool> mutation)
     {
-        if (IsInvalidContext(brokerName, portfolioName, assetName))
+        if (AssetContextValidator.IsInvalid(brokerName, portfolioName, assetName))
         {
             return null;
         }

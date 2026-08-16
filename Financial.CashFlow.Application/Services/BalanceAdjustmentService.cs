@@ -58,7 +58,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
 
     public IReadOnlyList<BalanceAdjustmentDTO> GetAdjustmentsByBank(Guid bankId)
     {
-        if (!BankNameResolver.TryResolve(bankId, _repository.GetBanks(), out var bank))
+        if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
         {
             return Array.Empty<BalanceAdjustmentDTO>();
         }
@@ -71,7 +71,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
 
     private Bank ResolveBank(Guid bankId)
     {
-        if (!BankNameResolver.TryResolve(bankId, _repository.GetBanks(), out var bank))
+        if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
         {
             throw new ArgumentException($"Bank '{bankId}' was not found.");
         }
@@ -81,8 +81,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
 
     private BalanceAdjustment FindAdjustmentOrThrow(Bank bank, Guid id) =>
         _repository.GetBalanceAdjustments()
-            .FirstOrDefault(a => a.Id == id && a.Bank.Id == bank.Id)
-        ?? throw new KeyNotFoundException($"Balance adjustment '{id}' was not found.");
+            .FirstOrThrow(a => a.Id == id && a.Bank.Id == bank.Id, "Balance adjustment", id);
 
     private static BalanceAdjustmentDTO ToDto(BalanceAdjustment adjustment) => new()
     {

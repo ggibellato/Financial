@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
 
 namespace Financial.Investment.Application.Services;
@@ -34,9 +35,7 @@ public sealed class NavigationService : INavigationService
 
     public AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active)
     {
-        if (string.IsNullOrWhiteSpace(brokerName) ||
-            string.IsNullOrWhiteSpace(portfolioName) ||
-            string.IsNullOrWhiteSpace(assetName))
+        if (AssetContextValidator.IsInvalid(brokerName, portfolioName, assetName))
         {
             return null;
         }

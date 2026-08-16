@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { CreateRecurringBillDto, RecurringBillDto } from '../api/types'
-import { currentYearMonth, formatMonthInputValue, getErrorMessage, parseMonthInputValue } from '../utils/formatters'
+import {
+  currentYearMonth,
+  formatMonthInputValue,
+  getErrorMessage,
+  parseMonthInputValue,
+  parseValidatedNumber,
+} from '../utils/formatters'
 
 export type EditField = 'editStatus' | 'editValue'
 export type AddField = 'newDueDay' | 'newDescription' | 'newValue' | 'newArea' | 'newNote'
@@ -224,8 +230,8 @@ export function useMensais(): MensaisData {
   function saveEdit() {
     if (!state.editingId) return
 
-    const value = Number(state.editValue)
-    if (!state.editValue.trim() || !isFinite(value)) {
+    const value = parseValidatedNumber(state.editValue)
+    if (value === null) {
       dispatch({ type: 'SAVE_ERROR', payload: 'Value must be a number' })
       return
     }
@@ -256,18 +262,17 @@ export function useMensais(): MensaisData {
   const cancelAdd = useCallback(() => dispatch({ type: 'CANCEL_ADD' }), [])
 
   function submitAdd() {
-    const dueDay = Number(state.newDueDay)
-    const value = Number(state.newValue)
-
     if (!state.newDescription.trim()) {
       dispatch({ type: 'ADD_ERROR', payload: 'Description is required' })
       return
     }
-    if (!state.newDueDay.trim() || !isFinite(dueDay)) {
+    const dueDay = parseValidatedNumber(state.newDueDay)
+    if (dueDay === null) {
       dispatch({ type: 'ADD_ERROR', payload: 'Due day must be a number' })
       return
     }
-    if (!state.newValue.trim() || !isFinite(value)) {
+    const value = parseValidatedNumber(state.newValue)
+    if (value === null) {
       dispatch({ type: 'ADD_ERROR', payload: 'Value must be a number' })
       return
     }
