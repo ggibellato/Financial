@@ -38,7 +38,8 @@ function IncomeRow({ income, onEdit, onDelete }: IncomeRowProps) {
       <td>{income.incomeSourceName}</td>
       <td className="data-table__col--numeric">{income.grossValue != null ? formatN2(income.grossValue) : '—'}</td>
       <td className="data-table__col--numeric">{formatN2(income.netValue)}</td>
-      <td>{income.bankName}</td>
+      <td>{income.bankName ?? '—'}</td>
+      <td>{income.description ?? ''}</td>
     </tr>
   )
 }
@@ -69,6 +70,7 @@ export default function IncomeSection({ incomes, onEdit, onDelete, onNewIncome }
               <th className="data-table__col--numeric">Gross</th>
               <th className="data-table__col--numeric">Net</th>
               <th>Bank</th>
+              <th>Description</th>
             </tr>
           </thead>
           <tbody>

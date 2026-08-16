@@ -22,6 +22,7 @@ const baseProps = {
   grossValue: '',
   netValue: '',
   bank: 'bank-barclays',
+  description: '',
   banks: BANKS,
   incomeSources: INCOME_SOURCES,
   isSaving: false,
@@ -102,5 +103,23 @@ describe('IncomeForm', () => {
 
     const select = screen.getByLabelText('Source') as HTMLSelectElement
     expect(select.options).toHaveLength(0)
+  })
+
+  it('offers a "no bank" option alongside the fetched banks', () => {
+    render(<IncomeForm {...baseProps} />)
+
+    const select = screen.getByLabelText('Bank') as HTMLSelectElement
+    const optionLabels = Array.from(select.options).map((o) => o.text)
+    expect(optionLabels).toEqual(['— No bank —', 'Barclays', 'Trading212'])
+  })
+
+  it('renders the description field and reports changes', () => {
+    const onFieldChange = vi.fn()
+    render(<IncomeForm {...baseProps} description="Chip ISA dividend" onFieldChange={onFieldChange} />)
+
+    expect(screen.getByLabelText('Description')).toHaveValue('Chip ISA dividend')
+
+    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Updated note' } })
+    expect(onFieldChange).toHaveBeenCalledWith('description', 'Updated note')
   })
 })

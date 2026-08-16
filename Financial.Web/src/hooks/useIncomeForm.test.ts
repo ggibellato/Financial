@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../api/financialApiClient'
-import type { BankDto, IncomeSourceDto } from '../api/types'
+import type { IncomeSourceDto } from '../api/types'
 import { selectActiveIncomeSources, useIncomeForm } from './useIncomeForm'
 
 const createIncomeMock = vi.fn<FinancialApiClient['createIncome']>()
@@ -13,11 +13,6 @@ vi.mock('../api/financialApiClient', () => ({
     updateIncome: updateIncomeMock,
   }),
 }))
-
-const BANKS: BankDto[] = [
-  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
-  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
-]
 
 const INCOME_SOURCES: IncomeSourceDto[] = [
   { id: '1', name: 'Gleison', isActive: true, group: 'Salary' },
@@ -48,20 +43,49 @@ describe('useIncomeForm', () => {
     expect(result.map((s) => s.name)).toEqual(['Gleison', 'Ariana', 'DividendoJuros'])
   })
 
-  it('defaults the new-income source and bank fields to the first active option once the form opens', () => {
-    const { result } = renderHook(() => useIncomeForm(BANKS, INCOME_SOURCES, onSaved))
+  it('defaults the new-income source to the first active option and leaves bank unselected once the form opens', () => {
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
 
     act(() => result.current.showCreateIncomeForm())
 
     expect(result.current.createIncomeSource).toBe('1')
-    expect(result.current.createIncomeBank).toBe('bank-barclays')
+    expect(result.current.createIncomeBank).toBe('')
   })
 
   it('leaves the default source unset when there are no income sources', () => {
-    const { result } = renderHook(() => useIncomeForm(BANKS, [], onSaved))
+    const { result } = renderHook(() => useIncomeForm([], onSaved))
 
     act(() => result.current.showCreateIncomeForm())
 
     expect(result.current.createIncomeSource).toBe('')
+  })
+
+  it('submits a create request with a null bankId and null description when both are left blank', () => {
+    createIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setCreateIncomeField('createIncomeDate', '2026-07-25'))
+    act(() => result.current.setCreateIncomeField('createIncomeNetValue', '42.50'))
+
+    act(() => result.current.submitCreateIncome())
+
+    expect(createIncomeMock).toHaveBeenCalledWith(
+      expect.objectContaining({ bankId: null, description: null }),
+    )
+  })
+
+  it('submits a create request with the provided description', () => {
+    createIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setCreateIncomeField('createIncomeDate', '2026-07-25'))
+    act(() => result.current.setCreateIncomeField('createIncomeNetValue', '42.50'))
+    act(() => result.current.setCreateIncomeField('createIncomeDescription', 'Chip ISA dividend'))
+
+    act(() => result.current.submitCreateIncome())
+
+    expect(createIncomeMock).toHaveBeenCalledWith(
+      expect.objectContaining({ description: 'Chip ISA dividend' }),
+    )
   })
 })

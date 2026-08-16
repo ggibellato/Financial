@@ -1,6 +1,6 @@
 import { useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { BankDto, IncomeDto, IncomeSourceDto } from '../api/types'
+import type { IncomeDto, IncomeSourceDto } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
 
 export const INCOME_SOURCES_WITH_GROSS_VALUE = ['Gleison', 'Ariana']
@@ -34,12 +34,14 @@ export type CreateIncomeField =
   | 'createIncomeGrossValue'
   | 'createIncomeNetValue'
   | 'createIncomeBank'
+  | 'createIncomeDescription'
 export type EditIncomeField =
   | 'editIncomeDate'
   | 'editIncomeSource'
   | 'editIncomeGrossValue'
   | 'editIncomeNetValue'
   | 'editIncomeBank'
+  | 'editIncomeDescription'
 
 interface IncomeFormState {
   isIncomeCreateFormOpen: boolean
@@ -48,6 +50,7 @@ interface IncomeFormState {
   createIncomeGrossValue: string
   createIncomeNetValue: string
   createIncomeBank: string
+  createIncomeDescription: string
   isCreatingIncome: boolean
   createIncomeError: string | null
   editingIncomeId: string | null
@@ -56,12 +59,13 @@ interface IncomeFormState {
   editIncomeGrossValue: string
   editIncomeNetValue: string
   editIncomeBank: string
+  editIncomeDescription: string
   isSavingIncome: boolean
   saveIncomeError: string | null
 }
 
 type IncomeFormAction =
-  | { type: 'SHOW_CREATE_FORM'; payload: { bank: string; source: string } }
+  | { type: 'SHOW_CREATE_FORM'; payload: { source: string } }
   | { type: 'CANCEL_CREATE_FORM' }
   | { type: 'SET_CREATE_FIELD'; payload: { field: CreateIncomeField; value: string } }
   | { type: 'CREATE_START' }
@@ -80,6 +84,7 @@ const BLANK_CREATE_FORM = {
   createIncomeGrossValue: '',
   createIncomeNetValue: '',
   createIncomeBank: '',
+  createIncomeDescription: '',
 } as const
 
 const BLANK_EDIT_FORM = {
@@ -89,6 +94,7 @@ const BLANK_EDIT_FORM = {
   editIncomeGrossValue: '',
   editIncomeNetValue: '',
   editIncomeBank: '',
+  editIncomeDescription: '',
 } as const
 
 const INITIAL_STATE: IncomeFormState = {
@@ -109,7 +115,6 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         ...BLANK_EDIT_FORM,
         isIncomeCreateFormOpen: true,
         saveIncomeError: null,
-        createIncomeBank: action.payload.bank,
         createIncomeSource: action.payload.source,
       }
     case 'CANCEL_CREATE_FORM':
@@ -131,7 +136,8 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         editIncomeSource: action.payload.incomeSourceId,
         editIncomeGrossValue: action.payload.grossValue != null ? String(action.payload.grossValue) : '',
         editIncomeNetValue: String(action.payload.netValue),
-        editIncomeBank: action.payload.bankId,
+        editIncomeBank: action.payload.bankId ?? '',
+        editIncomeDescription: action.payload.description ?? '',
         saveIncomeError: null,
       }
     case 'CANCEL_EDIT':
@@ -156,6 +162,7 @@ export interface UseIncomeFormResult {
   createIncomeGrossValue: string
   createIncomeNetValue: string
   createIncomeBank: string
+  createIncomeDescription: string
   isCreatingIncome: boolean
   createIncomeError: string | null
   showCreateIncomeForm: () => void
@@ -168,6 +175,7 @@ export interface UseIncomeFormResult {
   editIncomeGrossValue: string
   editIncomeNetValue: string
   editIncomeBank: string
+  editIncomeDescription: string
   isSavingIncome: boolean
   saveIncomeError: string | null
   setEditIncomeField: (field: EditIncomeField, value: string) => void
@@ -177,14 +185,13 @@ export interface UseIncomeFormResult {
 }
 
 /** Owns an income entry's create/edit form state and orchestrates the create/update endpoints. */
-export function useIncomeForm(banks: BankDto[], incomeSources: IncomeSourceDto[], onSaved: () => void): UseIncomeFormResult {
+export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => void): UseIncomeFormResult {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   function showCreateIncomeForm() {
-    const bank = state.createIncomeBank || (banks[0]?.id ?? '')
     const source = state.createIncomeSource || (selectActiveIncomeSources(incomeSources)[0]?.id ?? '')
-    dispatch({ type: 'SHOW_CREATE_FORM', payload: { bank, source } })
+    dispatch({ type: 'SHOW_CREATE_FORM', payload: { source } })
   }
 
   const cancelCreateIncomeForm = () => dispatch({ type: 'CANCEL_CREATE_FORM' })
@@ -200,8 +207,14 @@ export function useIncomeForm(banks: BankDto[], incomeSources: IncomeSourceDto[]
   }
 
   function submitCreateIncome() {
-    const { createIncomeDate, createIncomeSource, createIncomeGrossValue, createIncomeNetValue, createIncomeBank } =
-      state
+    const {
+      createIncomeDate,
+      createIncomeSource,
+      createIncomeGrossValue,
+      createIncomeNetValue,
+      createIncomeBank,
+      createIncomeDescription,
+    } = state
 
     if (!createIncomeDate.trim()) {
       dispatch({ type: 'CREATE_ERROR', payload: 'Date is required' })
@@ -210,11 +223,6 @@ export function useIncomeForm(banks: BankDto[], incomeSources: IncomeSourceDto[]
 
     if (!createIncomeSource.trim()) {
       dispatch({ type: 'CREATE_ERROR', payload: 'Income source is required' })
-      return
-    }
-
-    if (!createIncomeBank.trim()) {
-      dispatch({ type: 'CREATE_ERROR', payload: 'Bank is required' })
       return
     }
 
@@ -242,7 +250,8 @@ export function useIncomeForm(banks: BankDto[], incomeSources: IncomeSourceDto[]
         incomeSourceId: createIncomeSource,
         grossValue,
         netValue,
-        bankId: createIncomeBank,
+        bankId: createIncomeBank || null,
+        description: createIncomeDescription || null,
       })
       .then(() => {
         dispatch({ type: 'CREATE_SUCCESS' })
@@ -280,11 +289,6 @@ export function useIncomeForm(banks: BankDto[], incomeSources: IncomeSourceDto[]
       return
     }
 
-    if (!state.editIncomeBank.trim()) {
-      dispatch({ type: 'SAVE_ERROR', payload: 'Bank is required' })
-      return
-    }
-
     const netValue = Number(state.editIncomeNetValue)
     if (!state.editIncomeNetValue.trim() || !isFinite(netValue) || netValue < 0) {
       dispatch({ type: 'SAVE_ERROR', payload: 'Net value must be a non-negative number' })
@@ -309,7 +313,8 @@ export function useIncomeForm(banks: BankDto[], incomeSources: IncomeSourceDto[]
         incomeSourceId: state.editIncomeSource,
         grossValue,
         netValue,
-        bankId: state.editIncomeBank,
+        bankId: state.editIncomeBank || null,
+        description: state.editIncomeDescription || null,
       })
       .then(() => {
         dispatch({ type: 'SAVE_SUCCESS' })
@@ -327,6 +332,7 @@ export function useIncomeForm(banks: BankDto[], incomeSources: IncomeSourceDto[]
     createIncomeGrossValue: state.createIncomeGrossValue,
     createIncomeNetValue: state.createIncomeNetValue,
     createIncomeBank: state.createIncomeBank,
+    createIncomeDescription: state.createIncomeDescription,
     isCreatingIncome: state.isCreatingIncome,
     createIncomeError: state.createIncomeError,
     showCreateIncomeForm,
@@ -339,6 +345,7 @@ export function useIncomeForm(banks: BankDto[], incomeSources: IncomeSourceDto[]
     editIncomeGrossValue: state.editIncomeGrossValue,
     editIncomeNetValue: state.editIncomeNetValue,
     editIncomeBank: state.editIncomeBank,
+    editIncomeDescription: state.editIncomeDescription,
     isSavingIncome: state.isSavingIncome,
     saveIncomeError: state.saveIncomeError,
     setEditIncomeField,

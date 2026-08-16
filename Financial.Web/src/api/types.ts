@@ -466,8 +466,9 @@ export interface IncomeDto {
   incomeSourceName: string
   grossValue: number | null
   netValue: number
-  bankId: string
-  bankName: string
+  bankId: string | null
+  bankName: string | null
+  description: string | null
 }
 
 export interface CreateIncomeDto {
@@ -475,7 +476,8 @@ export interface CreateIncomeDto {
   incomeSourceId: string
   grossValue: number | null
   netValue: number
-  bankId: string
+  bankId: string | null
+  description: string | null
 }
 
 export interface UpdateIncomeDto {
@@ -483,7 +485,8 @@ export interface UpdateIncomeDto {
   incomeSourceId: string
   grossValue: number | null
   netValue: number
-  bankId: string
+  bankId: string | null
+  description: string | null
 }
 
 export interface CategoryTotalDto {

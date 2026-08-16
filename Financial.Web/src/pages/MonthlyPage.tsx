@@ -59,6 +59,7 @@ const CREATE_INCOME_FIELD_BY_FORM_FIELD: Record<IncomeFormField, CreateIncomeFie
   grossValue: 'createIncomeGrossValue',
   netValue: 'createIncomeNetValue',
   bank: 'createIncomeBank',
+  description: 'createIncomeDescription',
 }
 
 const EDIT_INCOME_FIELD_BY_FORM_FIELD: Record<IncomeFormField, EditIncomeField> = {
@@ -67,6 +68,7 @@ const EDIT_INCOME_FIELD_BY_FORM_FIELD: Record<IncomeFormField, EditIncomeField> 
   grossValue: 'editIncomeGrossValue',
   netValue: 'editIncomeNetValue',
   bank: 'editIncomeBank',
+  description: 'editIncomeDescription',
 }
 
 export default function MonthlyPage() {
@@ -146,6 +148,7 @@ export default function MonthlyPage() {
     createIncomeGrossValue,
     createIncomeNetValue,
     createIncomeBank,
+    createIncomeDescription,
     isCreatingIncome,
     createIncomeError,
     showCreateIncomeForm,
@@ -158,13 +161,14 @@ export default function MonthlyPage() {
     editIncomeGrossValue,
     editIncomeNetValue,
     editIncomeBank,
+    editIncomeDescription,
     isSavingIncome,
     saveIncomeError,
     setEditIncomeField,
     showEditIncomeForm,
     cancelEditIncome,
     saveEditIncome,
-  } = useIncomeForm(banks, incomeSources, retry)
+  } = useIncomeForm(incomeSources, retry)
 
   const bankOperations = useBankOperations(year, month, banks, retry)
   const creditCardsData = useCreditCards()
@@ -338,6 +342,7 @@ export default function MonthlyPage() {
                   grossValue={isIncomeEditing ? editIncomeGrossValue : createIncomeGrossValue}
                   netValue={isIncomeEditing ? editIncomeNetValue : createIncomeNetValue}
                   bank={isIncomeEditing ? editIncomeBank : createIncomeBank}
+                  description={isIncomeEditing ? editIncomeDescription : createIncomeDescription}
                   banks={banks}
                   incomeSources={incomeSources}
                   isSaving={isIncomeEditing ? isSavingIncome : isCreatingIncome}
