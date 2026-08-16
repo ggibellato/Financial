@@ -348,6 +348,7 @@ public class MonthlyViewModel : ViewModelBase
     private Guid? _expenseFormCreditCardId;
     private string _expenseFormCreditCardName = string.Empty;
     private string _expenseFormRoundUpAmount = string.Empty;
+    private bool _expenseFormCountsAsTithe = true;
     private bool _expenseFormIsSettled;
     private int _expenseFormInvoiceYear;
     private int _expenseFormInvoiceMonth;
@@ -385,7 +386,22 @@ public class MonthlyViewModel : ViewModelBase
     public Guid? ExpenseFormCategoryId
     {
         get => _expenseFormCategoryId;
-        set => SetProperty(ref _expenseFormCategoryId, value);
+        set
+        {
+            if (SetProperty(ref _expenseFormCategoryId, value))
+            {
+                OnPropertyChanged(nameof(ShowCountsAsTitheField));
+            }
+        }
+    }
+
+    public bool ShowCountsAsTitheField =>
+        Categories.FirstOrDefault(c => c.Id == ExpenseFormCategoryId)?.IsTithe == true;
+
+    public bool ExpenseFormCountsAsTithe
+    {
+        get => _expenseFormCountsAsTithe;
+        set => SetProperty(ref _expenseFormCountsAsTithe, value);
     }
 
     public string ExpenseFormValue
@@ -545,6 +561,7 @@ public class MonthlyViewModel : ViewModelBase
         ExpenseFormCreditCardId = null;
         ExpenseFormCreditCardName = string.Empty;
         ExpenseFormRoundUpAmount = string.Empty;
+        ExpenseFormCountsAsTithe = true;
         ExpenseFormIsSettled = false;
         _invoiceDateTouchedByUser = false;
         if (IsCardPaymentMode)
@@ -573,6 +590,7 @@ public class MonthlyViewModel : ViewModelBase
         ExpenseFormCreditCardId = expense.CreditCardId;
         ExpenseFormCreditCardName = expense.CreditCardName ?? string.Empty;
         ExpenseFormRoundUpAmount = expense.RoundUpAmount?.ToString("0.##") ?? string.Empty;
+        ExpenseFormCountsAsTithe = expense.CountsAsTithe;
         ExpenseFormIsSettled = expense.PaymentStatus == SettledStatus;
         _invoiceDateTouchedByUser = false;
         if (IsCardPaymentMode)
@@ -643,6 +661,7 @@ public class MonthlyViewModel : ViewModelBase
                     CreditCardId = creditCardId,
                     InvoiceDate = invoiceDate,
                     RoundUpAmount = roundUpAmount,
+                    CountsAsTithe = ExpenseFormCountsAsTithe,
                 });
             }
             else
@@ -657,6 +676,7 @@ public class MonthlyViewModel : ViewModelBase
                     CreditCardId = creditCardId,
                     InvoiceDate = invoiceDate,
                     RoundUpAmount = roundUpAmount,
+                    CountsAsTithe = ExpenseFormCountsAsTithe,
                 });
             }
 
