@@ -66,6 +66,7 @@ const PRICE: AssetPriceDto = {
   name: 'Klabin',
   price: 25,
   asOf: '2026-06-26T10:00:00',
+  isManual: false,
 }
 
 describe('useAssetSummary', () => {

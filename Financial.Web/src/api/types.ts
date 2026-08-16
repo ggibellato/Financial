@@ -214,6 +214,7 @@ export interface AssetPriceDto {
   name: string
   price: number
   asOf: string | null
+  isManual: boolean
 }
 
 export interface AggregatedSummaryDto {

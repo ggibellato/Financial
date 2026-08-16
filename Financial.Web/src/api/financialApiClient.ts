@@ -97,6 +97,8 @@ export interface FinancialApiClient {
     assetClass?: string,
     brokerName?: string,
     name?: string,
+    portfolioName?: string,
+    assetName?: string,
   ) => Promise<AssetPriceDto>
   getWatchlist: () => Promise<WatchlistItemDto[]>
   getAssetPriceFetchScope: () => Promise<PortfolioReferenceDto[]>
@@ -307,12 +309,14 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<DividendSummaryDto>(
         `/dividends/${encodeURIComponent(ticker)}/summary${buildExchangeQuery(exchange)}`,
       ),
-    getCurrentPrice: (exchange, ticker, assetClass, brokerName, name) => {
+    getCurrentPrice: (exchange, ticker, assetClass, brokerName, name, portfolioName, assetName) => {
       const classQuery = assetClass ? `&assetClass=${encodeURIComponent(assetClass)}` : ''
       const brokerQuery = brokerName ? `&brokerName=${encodeURIComponent(brokerName)}` : ''
       const nameQuery = name ? `&name=${encodeURIComponent(name)}` : ''
+      const portfolioQuery = portfolioName ? `&portfolioName=${encodeURIComponent(portfolioName)}` : ''
+      const assetNameQuery = assetName ? `&assetName=${encodeURIComponent(assetName)}` : ''
       return request<AssetPriceDto>(
-        `/prices/current?exchange=${encodeURIComponent(exchange)}&ticker=${encodeURIComponent(ticker)}${classQuery}${brokerQuery}${nameQuery}`,
+        `/prices/current?exchange=${encodeURIComponent(exchange)}&ticker=${encodeURIComponent(ticker)}${classQuery}${brokerQuery}${nameQuery}${portfolioQuery}${assetNameQuery}`,
       )
     },
     getWatchlist: () => request<WatchlistItemDto[]>('/watchlist'),
