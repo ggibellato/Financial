@@ -5,8 +5,7 @@ public static class IncomeFormValidation
     public static string BuildValidationMessage(
         DateTime? date,
         Guid? incomeSource,
-        string netValue,
-        Guid? bank)
+        string netValue)
     {
         var errors = new List<string>();
 
@@ -23,11 +22,6 @@ public static class IncomeFormValidation
         if (!decimal.TryParse(netValue, out _))
         {
             errors.Add("Net Value must be a number.");
-        }
-
-        if (bank is null)
-        {
-            errors.Add("Bank is required.");
         }
 
         return string.Join(Environment.NewLine, errors);
