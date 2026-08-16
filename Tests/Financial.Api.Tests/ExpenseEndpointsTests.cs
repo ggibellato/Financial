@@ -15,6 +15,7 @@ public class ExpenseEndpointsTests
     private static readonly Guid CasaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000003");
     private static readonly Guid ExtrasId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000005");
     private static readonly Guid MercadoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000008");
+    private static readonly Guid DizimoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000012");
 
     [Fact]
     public async Task AddExpense_ValidRequest_ReturnsOk()
@@ -39,6 +40,83 @@ public class ExpenseEndpointsTests
         expense!.Description.Should().Be("Weekly groceries");
         expense.CategoryName.Should().Be("Mercado");
         expense.PaymentStatus.Should().Be("ImmediatePayment");
+    }
+
+    [Fact]
+    public async Task AddExpense_OmittingCountsAsTithe_ReturnsOkWithFlagTrue()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 15),
+            Description = "Tithe payment",
+            Value = 200m,
+            CategoryId = DizimoId,
+            PaymentSourceBankId = BarclaysId,
+            CreditCardId = null
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
+        expense!.CountsAsTithe.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AddExpense_WithCountsAsTitheFalse_ReturnsOkWithFlagFalse()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 15),
+            Description = "Charitable offer",
+            Value = 50m,
+            CategoryId = DizimoId,
+            PaymentSourceBankId = BarclaysId,
+            CreditCardId = null,
+            CountsAsTithe = false
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
+        expense!.CountsAsTithe.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task UpdateExpense_TogglingCountsAsTitheToFalse_ReturnsOkWithFlagFalse()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var created = await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 15),
+            Description = "Tithe payment",
+            Value = 200m,
+            CategoryId = DizimoId,
+            PaymentSourceBankId = BarclaysId,
+            CreditCardId = null
+        });
+        var createdExpense = await created.Content.ReadFromJsonAsync<ExpenseDTO>();
+
+        var response = await client.PutAsJsonAsync($"/api/v1/financial/expenses/{createdExpense!.Id}", new ExpenseUpdateDTO
+        {
+            Date = createdExpense.Date,
+            Description = createdExpense.Description,
+            Value = createdExpense.Value,
+            CategoryId = createdExpense.CategoryId,
+            PaymentSourceBankId = createdExpense.PaymentSourceBankId,
+            CreditCardId = createdExpense.CreditCardId,
+            CountsAsTithe = false
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
+        updated!.CountsAsTithe.Should().BeFalse();
     }
 
     [Fact]

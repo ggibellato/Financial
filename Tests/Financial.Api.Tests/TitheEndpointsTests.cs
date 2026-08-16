@@ -43,6 +43,71 @@ public class TitheEndpointsTests
     }
 
     [Fact]
+    public async Task GetTitheSummaryByMonth_WithDizimoExpenseCountsAsTitheFalse_ExcludesItFromTitheBalance()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            IncomeSourceId = GleisonId,
+            GrossValue = null,
+            NetValue = 3000m,
+            BankId = BarclaysId
+        });
+        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 10),
+            Description = "Charitable offer",
+            Value = 200m,
+            CategoryId = DizimoId,
+            PaymentSourceBankId = BarclaysId,
+            CreditCardId = null,
+            CountsAsTithe = false
+        });
+
+        var response = await client.GetAsync("/api/v1/financial/tithe/month/2026/7");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var summary = await response.Content.ReadFromJsonAsync<TitheSummaryDTO>();
+        summary!.CalculatedTithe.Should().Be(300m);
+        summary.TitheBalance.Should().Be(300m);
+    }
+
+    [Fact]
+    public async Task GetTitheSummaryByMonth_WithBankLessIncomeAndOfferExpense_ReflectsBothInSameMonth()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            IncomeSourceId = GleisonId,
+            GrossValue = null,
+            NetValue = 1000m,
+            BankId = null,
+            Description = "Chip ISA dividend"
+        });
+        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 10),
+            Description = "Charitable offer",
+            Value = 30m,
+            CategoryId = DizimoId,
+            PaymentSourceBankId = BarclaysId,
+            CreditCardId = null,
+            CountsAsTithe = false
+        });
+
+        var response = await client.GetAsync("/api/v1/financial/tithe/month/2026/7");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var summary = await response.Content.ReadFromJsonAsync<TitheSummaryDTO>();
+        summary!.CalculatedTithe.Should().Be(100m);
+        summary.TitheBalance.Should().Be(100m);
+    }
+
+    [Fact]
     public async Task GetTitheSummaryByMonth_WithNoData_ReturnsZeros()
     {
         await using var factory = new ApiTestFactory();
