@@ -28,7 +28,14 @@
                 <local:MonthlySummaryView/>
             </TabItem>
             <TabItem Header="Expense">
-                <local:ExpenseSectionView/>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <local:BanksGridView Grid.Row="0"/>
+                    <local:ExpenseSectionView Grid.Row="1"/>
+                </Grid>
             </TabItem>
             <TabItem Header="Credit Card">
                 <Grid>
