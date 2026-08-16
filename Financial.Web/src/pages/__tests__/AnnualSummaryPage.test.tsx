@@ -39,7 +39,6 @@ const CATEGORY_TOTALS_ANNUAL: CategoryTotalsAnnualDto = {
     dividendoJurosAnnualTotal: 20,
     dividendoJurosAverage: 1.67,
   },
-  // Server-computed (corrected, no-Dividendo/Juros formula): sum(salaryAfterTaxesMonthly) - totalDespesasAnnualTotal + 0 (no Investimento category) = 27,490.00
   totalDespesasMonthly: [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210],
   totalDespesasAnnualTotal: 1860,
   totalDespesasAverage: 155,

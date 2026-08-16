@@ -195,12 +195,6 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     };
 
     /// <summary>
-    /// Builds the income monthly series twice for the same reason as <see cref="BuildAllCategorySeriesForYear"/>:
-    /// <c>Display</c> includes every recorded income for the year, while <c>ForAverage</c> excludes
-    /// anything dated in the current calendar month so a partially-elapsed month never inflates an
-    /// "Average" figure's numerator.
-    /// </summary>
-    /// <summary>
     /// Builds a case-insensitive name -&gt; IncomeGroup lookup from the seeded IncomeSource list.
     /// Built once per call site (not per income record) to keep group resolution O(1) per record
     /// instead of re-scanning the seeded list for every income. An income source name with no
@@ -209,6 +203,12 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     private Dictionary<string, IncomeGroup> BuildIncomeGroupLookup() =>
         _repository.GetIncomeSources().ToDictionary(s => s.Name, s => s.Group, StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Builds the income monthly series twice for the same reason as <see cref="BuildAllCategorySeriesForYear"/>:
+    /// <c>Display</c> includes every recorded income for the year, while <c>ForAverage</c> excludes
+    /// anything dated in the current calendar month so a partially-elapsed month never inflates an
+    /// "Average" figure's numerator.
+    /// </summary>
     private (IncomeSeries Display, IncomeSeries ForAverage) BuildIncomeSeriesPairForYear(int year)
     {
         var yearIncomes = _repository.GetIncomes().Where(i => i.Date.Year == year).ToList();
