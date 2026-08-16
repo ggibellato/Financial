@@ -331,6 +331,21 @@ public class BankServiceTests
     }
 
     [Fact]
+    public void GetBankBalancesByMonth_ExcludesBankLessIncome()
+    {
+        var repository = new StubCashFlowRepository();
+        var bank = Bank.Create("Barclays", roundUpEnabled: false);
+        bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
+        repository.Banks.Add(bank);
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Gleison, null, 500m, null));
+        var service = new BankService(repository);
+
+        var result = service.GetBankBalancesByMonth(2026, 7);
+
+        result.Should().ContainSingle(b => b.Bank == "Barclays" && b.Balance == 100m);
+    }
+
+    [Fact]
     public void GetBankBalanceAsOf_WithUnresolvableBank_ThrowsKeyNotFoundException()
     {
         var service = new BankService(new StubCashFlowRepository());

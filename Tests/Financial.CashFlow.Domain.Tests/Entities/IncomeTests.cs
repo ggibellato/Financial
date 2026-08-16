@@ -69,11 +69,11 @@ public class IncomeTests
     }
 
     [Fact]
-    public void Create_WithoutABank_Throws()
+    public void Create_WithoutABank_DoesNotThrow()
     {
-        var act = () => Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, null!);
+        var income = Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, null);
 
-        act.Should().Throw<ArgumentException>();
+        income.Bank.Should().BeNull();
     }
 
     [Fact]
@@ -82,6 +82,30 @@ public class IncomeTests
         var act = () => Income.Create(new DateOnly(2026, 7, 1), null!, null, 10m, Chase);
 
         act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_WithDescription_AssignsDescription()
+    {
+        var income = Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, Chase, "Chip ISA dividend");
+
+        income.Description.Should().Be("Chip ISA dividend");
+    }
+
+    [Fact]
+    public void Create_WithoutDescription_DescriptionIsNull()
+    {
+        var income = Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, Chase);
+
+        income.Description.Should().BeNull();
+    }
+
+    [Fact]
+    public void Create_WithWhitespaceDescription_NormalizesToNull()
+    {
+        var income = Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, Chase, "   ");
+
+        income.Description.Should().BeNull();
     }
 
     [Fact]
@@ -122,5 +146,25 @@ public class IncomeTests
         var act = () => income.UpdateDetails(income.Date, income.IncomeSource, null, -5m, income.Bank);
 
         act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void UpdateDetails_RemovingBank_SetsBankNull()
+    {
+        var income = Income.Create(new DateOnly(2026, 7, 1), Gleison, 3000m, 2400m, Barclays);
+
+        income.UpdateDetails(income.Date, income.IncomeSource, income.GrossValue, income.NetValue, null);
+
+        income.Bank.Should().BeNull();
+    }
+
+    [Fact]
+    public void UpdateDetails_ReplacesDescription()
+    {
+        var income = Income.Create(new DateOnly(2026, 7, 1), Gleison, 3000m, 2400m, Barclays, "Original note");
+
+        income.UpdateDetails(income.Date, income.IncomeSource, income.GrossValue, income.NetValue, income.Bank, "Updated note");
+
+        income.Description.Should().Be("Updated note");
     }
 }

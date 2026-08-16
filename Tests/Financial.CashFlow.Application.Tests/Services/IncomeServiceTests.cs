@@ -129,6 +129,70 @@ public class IncomeServiceTests
     }
 
     [Fact]
+    public async Task AddIncomeAsync_WithoutBank_Succeeds()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
+        var service = new IncomeService(repository);
+        var request = ToCreateDto(repository, ValidCreateRequest() with { Bank = null });
+
+        var result = await service.AddIncomeAsync(request);
+
+        using (new AssertionScope())
+        {
+            result.BankId.Should().BeNull();
+            result.BankName.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public async Task AddIncomeAsync_WithDescription_SavesDescription()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
+        var service = new IncomeService(repository);
+        var request = ToCreateDto(repository, ValidCreateRequest() with { Description = "Chip ISA dividend" });
+
+        var result = await service.AddIncomeAsync(request);
+
+        result.Description.Should().Be("Chip ISA dividend");
+    }
+
+    [Fact]
+    public async Task AddIncomeAsync_WithoutDescription_DescriptionIsNull()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
+        var service = new IncomeService(repository);
+        var request = ToCreateDto(repository, ValidCreateRequest());
+
+        var result = await service.AddIncomeAsync(request);
+
+        result.Description.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AddIncomeAsync_WithDescriptionOver200Characters_ThrowsArgumentException()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
+        var service = new IncomeService(repository);
+        var request = ToCreateDto(repository, ValidCreateRequest() with { Description = new string('a', 201) });
+
+        var act = async () => await service.AddIncomeAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*200 characters*");
+    }
+
+    [Fact]
+    public async Task AddIncomeAsync_WithDescriptionExactly200Characters_Succeeds()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
+        var service = new IncomeService(repository);
+        var request = ToCreateDto(repository, ValidCreateRequest() with { Description = new string('a', 200) });
+
+        var result = await service.AddIncomeAsync(request);
+
+        result.Description.Should().HaveLength(200);
+    }
+
+    [Fact]
     public async Task UpdateIncomeAsync_WithExistingId_UpdatesInPlace()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
@@ -159,6 +223,23 @@ public class IncomeServiceTests
         var act = async () => await service.UpdateIncomeAsync(added.Id, updateRequest);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Income source*not recognized*");
+    }
+
+    [Fact]
+    public async Task UpdateIncomeAsync_RemovingBank_SetsBankNull()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
+        var service = new IncomeService(repository);
+        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidCreateRequest()));
+
+        var updateRequest = ToUpdateDto(repository, ValidCreateRequest() with { Bank = null });
+        var result = await service.UpdateIncomeAsync(added.Id, updateRequest);
+
+        using (new AssertionScope())
+        {
+            result.BankId.Should().BeNull();
+            result.BankName.Should().BeNull();
+        }
     }
 
     [Fact]
@@ -214,7 +295,8 @@ public class IncomeServiceTests
         "Gleison",
         3200.00m,
         2450.00m,
-        "Barclays");
+        "Barclays",
+        null);
 
     private static IncomeCreateDTO ToCreateDto(StubCashFlowRepository repository, IncomeCreateRequest r) => new()
     {
@@ -222,7 +304,8 @@ public class IncomeServiceTests
         IncomeSourceId = ResolveIncomeSourceId(repository, r.IncomeSource),
         GrossValue = r.GrossValue,
         NetValue = r.NetValue,
-        BankId = ResolveBankId(repository, r.Bank)
+        BankId = ResolveBankId(repository, r.Bank),
+        Description = r.Description
     };
 
     private static IncomeUpdateDTO ToUpdateDto(StubCashFlowRepository repository, IncomeCreateRequest r) => new()
@@ -231,17 +314,19 @@ public class IncomeServiceTests
         IncomeSourceId = ResolveIncomeSourceId(repository, r.IncomeSource),
         GrossValue = r.GrossValue,
         NetValue = r.NetValue,
-        BankId = ResolveBankId(repository, r.Bank)
+        BankId = ResolveBankId(repository, r.Bank),
+        Description = r.Description
     };
 
     /// <summary>An unresolvable name maps to a random, never-seeded Guid so tests exercising an unrecognized reference still hit the "not found" path.</summary>
     private static Guid ResolveIncomeSourceId(StubCashFlowRepository repository, string? incomeSourceName) =>
         repository.IncomeSources.FirstOrDefault(s => s.Name == incomeSourceName)?.Id ?? Guid.NewGuid();
 
-    private static Guid ResolveBankId(StubCashFlowRepository repository, string? bankName) =>
-        repository.Banks.FirstOrDefault(b => b.Name == bankName)?.Id ?? Guid.NewGuid();
+    /// <summary>Null bank name means "no bank supplied"; an unresolvable non-null name maps to a random, never-seeded Guid so tests exercising an unrecognized reference still hit the "not found" path.</summary>
+    private static Guid? ResolveBankId(StubCashFlowRepository repository, string? bankName) =>
+        bankName is null ? null : repository.Banks.FirstOrDefault(b => b.Name == bankName)?.Id ?? Guid.NewGuid();
 
     private sealed record IncomeCreateRequest(
-        DateOnly Date, string IncomeSource, decimal? GrossValue, decimal NetValue, string Bank);
+        DateOnly Date, string IncomeSource, decimal? GrossValue, decimal NetValue, string? Bank, string? Description);
 
 }
