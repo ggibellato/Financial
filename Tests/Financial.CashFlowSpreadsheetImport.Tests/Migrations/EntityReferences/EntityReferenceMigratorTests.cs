@@ -87,7 +87,7 @@ public class EntityReferenceMigratorTests
 
                 var income = rewritten.Incomes.Should().ContainSingle().Which;
                 income.Id.Should().Be(IncomeId);
-                income.Bank.Id.Should().Be(barclays.Id);
+                income.Bank!.Id.Should().Be(barclays.Id);
                 income.IncomeSource.Id.Should().Be(IncomeSourceId);
 
                 var expense = rewritten.Expenses.Should().ContainSingle().Which;

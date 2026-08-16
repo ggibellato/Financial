@@ -185,8 +185,9 @@ public class BalanceAdjustmentsEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<BalanceAdjustmentDTO>>();
         items.Should().ContainSingle();
-        items!.Single().BankId.Should().Be(BarclaysId);
-        items.Single().BankName.Should().Be("Barclays");
+        var item = items!.Single();
+        item.BankId.Should().Be(BarclaysId);
+        item.BankName.Should().Be("Barclays");
     }
 
     [Fact]
