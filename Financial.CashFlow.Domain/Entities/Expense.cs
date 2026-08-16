@@ -18,6 +18,7 @@ public class Expense
     public DateOnly? ChargeDate { get; private set; }
     public DateOnly? InvoiceDate { get; private set; }
     public decimal? RoundUpAmount { get; private set; }
+    public bool CountsAsTithe { get; private set; } = true;
 
     public ExpensePaymentStatus PaymentStatus =>
         CreditCard is null ? ExpensePaymentStatus.ImmediatePayment
@@ -49,7 +50,8 @@ public class Expense
         Category category,
         Bank? paymentSourceBank,
         CreditCard? creditCard,
-        DateOnly? invoiceDate = null)
+        DateOnly? invoiceDate = null,
+        bool countsAsTithe = true)
     {
         ValidatePaymentShape(paymentSourceBank, creditCard);
 
@@ -63,7 +65,8 @@ public class Expense
             PaymentSourceBank = paymentSourceBank,
             CreditCard = creditCard,
             ChargeDate = creditCard is not null ? date : null,
-            InvoiceDate = creditCard is not null ? FirstOfMonth(invoiceDate ?? date) : null
+            InvoiceDate = creditCard is not null ? FirstOfMonth(invoiceDate ?? date) : null,
+            CountsAsTithe = countsAsTithe
         };
     }
 
@@ -73,7 +76,8 @@ public class Expense
         decimal value,
         Category category,
         Bank? paymentSourceBank,
-        CreditCard? creditCard)
+        CreditCard? creditCard,
+        bool countsAsTithe = true)
     {
         if (PaymentStatus == ExpensePaymentStatus.CreditCardSettled)
         {
@@ -94,6 +98,7 @@ public class Expense
         Description = description;
         Value = value;
         Category = category;
+        CountsAsTithe = countsAsTithe;
     }
 
     public void Settle(Bank paymentSourceBank, DateOnly paymentDate)

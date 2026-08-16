@@ -19,6 +19,7 @@ public class ExpenseTests
     private static readonly Category Mercado = Category.Create("Mercado");
     private static readonly Category Reserva = Category.Create("Reserva");
     private static readonly Category Investimento = Category.Create("Investimento", isInvestment: true);
+    private static readonly Category Dizimo = Category.Create("Dizimo", isTithe: true);
 
     private static Expense CreateImmediateExpense() =>
         Expense.Create(new DateOnly(2026, 7, 1), "Immediate", 10m, Casa, Chase, null);
@@ -176,6 +177,44 @@ public class ExpenseTests
             expense.CreditCard.Should().Be(ChaseMaster4023);
             expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
         }
+    }
+
+    [Fact]
+    public void Create_WithoutCountsAsTithe_DefaultsToTrue()
+    {
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Tithe payment", 200m, Dizimo, Barclays, null);
+
+        expense.CountsAsTithe.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Create_WithCountsAsTitheFalse_AssignsFalse()
+    {
+        var expense = Expense.Create(
+            new DateOnly(2026, 7, 1), "Charitable offer", 50m, Dizimo, Barclays, null, countsAsTithe: false);
+
+        expense.CountsAsTithe.Should().BeFalse();
+    }
+
+    [Fact]
+    public void UpdateDetails_TogglingCountsAsTithe_ReplacesValue()
+    {
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Tithe payment", 200m, Dizimo, Barclays, null);
+
+        expense.UpdateDetails(expense.Date, expense.Description, expense.Value, Dizimo, Barclays, null, countsAsTithe: false);
+
+        expense.CountsAsTithe.Should().BeFalse();
+    }
+
+    [Fact]
+    public void UpdateDetails_WithoutCountsAsTithe_DefaultsToTrue()
+    {
+        var expense = Expense.Create(
+            new DateOnly(2026, 7, 1), "Charitable offer", 50m, Dizimo, Barclays, null, countsAsTithe: false);
+
+        expense.UpdateDetails(expense.Date, expense.Description, expense.Value, Dizimo, Barclays, null);
+
+        expense.CountsAsTithe.Should().BeTrue();
     }
 
     [Fact]
