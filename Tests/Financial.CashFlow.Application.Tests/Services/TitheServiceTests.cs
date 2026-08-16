@@ -96,6 +96,67 @@ public class TitheServiceTests
     }
 
     [Fact]
+    public void GetTitheSummary_DizimoExpenseWithCountsAsTitheFalse_ExcludedFromDizimoTotal()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Source("Gleison"), null, 3000m, Barclays));
+        repository.Expenses.Add(Expense.Create(
+            new DateOnly(2026, 7, 10), "Charitable offer", 200m, Dizimo, Barclays, null, countsAsTithe: false));
+        var service = new TitheService(repository);
+
+        var result = service.GetTitheSummary(2026, 7);
+
+        result.CalculatedTithe.Should().Be(300m);
+        result.TitheBalance.Should().Be(300m);
+    }
+
+    [Fact]
+    public void GetTitheSummary_DizimoExpenseWithCountsAsTitheTrue_IncludedInDizimoTotal()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Source("Gleison"), null, 3000m, Barclays));
+        repository.Expenses.Add(Expense.Create(
+            new DateOnly(2026, 7, 10), "Tithe payment", 200m, Dizimo, Barclays, null, countsAsTithe: true));
+        var service = new TitheService(repository);
+
+        var result = service.GetTitheSummary(2026, 7);
+
+        result.CalculatedTithe.Should().Be(300m);
+        result.TitheBalance.Should().Be(100m);
+    }
+
+    [Fact]
+    public void GetTitheSummary_NonTitheCategoryExpenseWithCountsAsTitheFalse_StillIgnored()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Source("Gleison"), null, 1000m, Barclays));
+        repository.Expenses.Add(Expense.Create(
+            new DateOnly(2026, 7, 5), "Groceries", 50m, Mercado, Barclays, null, countsAsTithe: false));
+        var service = new TitheService(repository);
+
+        var result = service.GetTitheSummary(2026, 7);
+
+        result.TitheBalance.Should().Be(100m);
+    }
+
+    [Fact]
+    public void GetTitheSummary_BankLessIncomeAndOfferExpenseTogether_ReflectsBothInSameMonth()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Source("Gleison"), null, 1000m, Barclays));
+        repository.Incomes.Add(Income.Create(
+            new DateOnly(2026, 7, 15), Source("DividendoJuros"), null, 420m, null, "Chip ISA dividend"));
+        repository.Expenses.Add(Expense.Create(
+            new DateOnly(2026, 7, 20), "Charitable offer", 30m, Dizimo, Barclays, null, countsAsTithe: false));
+        var service = new TitheService(repository);
+
+        var result = service.GetTitheSummary(2026, 7);
+
+        result.CalculatedTithe.Should().Be(142m);
+        result.TitheBalance.Should().Be(142m);
+    }
+
+    [Fact]
     public void GetTitheSummary_IncludesBankLessIncomeInCalculatedTithe()
     {
         var repository = new StubCashFlowRepository();

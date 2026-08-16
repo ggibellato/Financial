@@ -47,6 +47,43 @@ public class ExpenseServiceTests
     }
 
     [Fact]
+    public async Task AddExpenseAsync_WithoutCountsAsTithe_DefaultsToTrue()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
+        var service = new ExpenseService(repository);
+        var request = ToCreateDto(repository, ValidCreateRequest() with { Category = "Dizimo" });
+
+        var result = await service.AddExpenseAsync(request);
+
+        result.CountsAsTithe.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_WithCountsAsTitheFalse_SavesFalse()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
+        var service = new ExpenseService(repository);
+        var request = ToCreateDto(repository, ValidCreateRequest() with { Category = "Dizimo", CountsAsTithe = false });
+
+        var result = await service.AddExpenseAsync(request);
+
+        result.CountsAsTithe.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_TogglingCountsAsTithe_UpdatesValue()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
+        var service = new ExpenseService(repository);
+        var added = await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with { Category = "Dizimo" }));
+
+        var updateRequest = ToUpdateDto(repository, ValidCreateRequest() with { Category = "Dizimo", CountsAsTithe = false });
+        var result = await service.UpdateExpenseAsync(added.Id, updateRequest);
+
+        result.CountsAsTithe.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task AddExpenseAsync_WithCardTagAndNoPaymentSource_SavesAsCreditCardCharge()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
@@ -811,7 +848,8 @@ public class ExpenseServiceTests
         PaymentSourceBankId = ResolveBankId(repository, r.PaymentSource),
         CreditCardId = ResolveCreditCardId(repository, r.CardTag),
         InvoiceDate = r.InvoiceDate,
-        RoundUpAmount = r.RoundUpAmount
+        RoundUpAmount = r.RoundUpAmount,
+        CountsAsTithe = r.CountsAsTithe
     };
 
     private static ExpenseUpdateDTO ToUpdateDto(StubCashFlowRepository repository, ExpenseCreateRequest r) => new()
@@ -823,7 +861,8 @@ public class ExpenseServiceTests
         PaymentSourceBankId = ResolveBankId(repository, r.PaymentSource),
         CreditCardId = ResolveCreditCardId(repository, r.CardTag),
         InvoiceDate = r.InvoiceDate,
-        RoundUpAmount = r.RoundUpAmount
+        RoundUpAmount = r.RoundUpAmount,
+        CountsAsTithe = r.CountsAsTithe
     };
 
     /// <summary>An unresolvable name maps to a random, never-seeded Guid so tests exercising an unrecognized reference still hit the "not found" path rather than the "omitted" path.</summary>
@@ -840,7 +879,7 @@ public class ExpenseServiceTests
 
     private sealed record ExpenseCreateRequest(
         DateOnly Date, string Description, decimal Value, string Category, string? PaymentSource, string? CardTag,
-        decimal? RoundUpAmount = null, DateOnly? InvoiceDate = null);
+        decimal? RoundUpAmount = null, DateOnly? InvoiceDate = null, bool CountsAsTithe = true);
 
     [Fact]
     public async Task AddExpenseAsync_CreditCardExpense_ReturnsNonNullChargeDateAndInvoiceDate()

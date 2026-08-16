@@ -23,7 +23,7 @@ public sealed class TitheService : ITitheService
         var calculatedTithe = titheBase * TithePercentage;
 
         var dizimoTotal = _repository.GetExpenses()
-            .Where(e => e.Date.Year == year && e.Date.Month == month && e.Category.IsTithe)
+            .Where(e => e.Date.Year == year && e.Date.Month == month && e.Category.IsTithe && e.CountsAsTithe)
             .Sum(e => e.Value);
 
         return new TitheSummaryDTO

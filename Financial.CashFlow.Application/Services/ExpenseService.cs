@@ -26,7 +26,7 @@ public sealed class ExpenseService : IExpenseService
             request.Description, request.Value, request.CategoryId, request.PaymentSourceBankId, request.CreditCardId);
         ValidateRoundUpEligibility(request.RoundUpAmount, paymentSource);
 
-        var expense = Expense.Create(request.Date, request.Description, request.Value, category, paymentSource, creditCard, request.InvoiceDate);
+        var expense = Expense.Create(request.Date, request.Description, request.Value, category, paymentSource, creditCard, request.InvoiceDate, request.CountsAsTithe);
         expense.SetRoundUpAmount(request.RoundUpAmount);
         _repository.AddExpense(expense);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
@@ -44,7 +44,7 @@ public sealed class ExpenseService : IExpenseService
             request.Description, request.Value, request.CategoryId, request.PaymentSourceBankId, request.CreditCardId);
         ValidateRoundUpEligibility(request.RoundUpAmount, paymentSource);
 
-        expense.UpdateDetails(request.Date, request.Description, request.Value, category, paymentSource, creditCard);
+        expense.UpdateDetails(request.Date, request.Description, request.Value, category, paymentSource, creditCard, request.CountsAsTithe);
         expense.SetRoundUpAmount(request.RoundUpAmount);
 
         if (request.InvoiceDate is not null && request.InvoiceDate != expense.InvoiceDate)
@@ -192,7 +192,8 @@ public sealed class ExpenseService : IExpenseService
         InvoiceDate = expense.InvoiceDate,
         PaymentStatus = expense.PaymentStatus.ToString(),
         RoundUpAmount = expense.RoundUpAmount,
-        SuggestedRoundUpAmount = GetSuggestedRoundUpAmount(expense)
+        SuggestedRoundUpAmount = GetSuggestedRoundUpAmount(expense),
+        CountsAsTithe = expense.CountsAsTithe
     };
 
     private static decimal? GetSuggestedRoundUpAmount(Expense expense)

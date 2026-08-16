@@ -28,4 +28,7 @@ public sealed class ExpenseCreateDTO
 
     /// <summary>Round-up amount to save immediately. Omit/null to leave "not yet decided".</summary>
     public decimal? RoundUpAmount { get; init; }
+
+    /// <summary>Whether this expense counts toward the tithe-paid total. Only meaningful for a tithe-flagged category. Defaults to true.</summary>
+    public bool CountsAsTithe { get; init; } = true;
 }
