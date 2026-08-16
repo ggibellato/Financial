@@ -404,6 +404,7 @@ export interface ExpenseDto {
   paymentStatus: string
   roundUpAmount: number | null
   suggestedRoundUpAmount: number | null
+  countsAsTithe: boolean
 }
 
 export interface CreateExpenseDto {
@@ -415,6 +416,7 @@ export interface CreateExpenseDto {
   creditCardId: string | null
   invoiceDate: string | null
   roundUpAmount: number | null
+  countsAsTithe: boolean
 }
 
 export interface UpdateExpenseDto {
@@ -426,6 +428,7 @@ export interface UpdateExpenseDto {
   creditCardId: string | null
   invoiceDate: string | null
   roundUpAmount: number | null
+  countsAsTithe: boolean
 }
 
 export interface BankDto {

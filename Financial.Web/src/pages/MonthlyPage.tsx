@@ -40,6 +40,7 @@ const CREATE_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, CreateFormField> = {
   creditCardId: 'createCreditCardId',
   invoiceDate: 'createInvoiceDate',
   roundUpAmount: 'createRoundUpAmount',
+  countsAsTithe: 'createCountsAsTithe',
 }
 
 const EDIT_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, EditField> = {
@@ -51,6 +52,7 @@ const EDIT_FIELD_BY_FORM_FIELD: Record<ExpenseFormField, EditField> = {
   creditCardId: 'editCreditCardId',
   invoiceDate: 'editInvoiceDate',
   roundUpAmount: 'editRoundUpAmount',
+  countsAsTithe: 'editCountsAsTithe',
 }
 
 const CREATE_INCOME_FIELD_BY_FORM_FIELD: Record<IncomeFormField, CreateIncomeField> = {
@@ -114,6 +116,7 @@ export default function MonthlyPage() {
     createCreditCardId,
     createInvoiceDate,
     createRoundUpAmount,
+    createCountsAsTithe,
     createPaymentMode,
     isCreating,
     createError,
@@ -131,6 +134,7 @@ export default function MonthlyPage() {
     editCreditCardName,
     editInvoiceDate,
     editRoundUpAmount,
+    editCountsAsTithe,
     editPaymentMode,
     editIsSettled,
     isSaving,
@@ -203,6 +207,7 @@ export default function MonthlyPage() {
       creditCardName={isEditing ? editCreditCardName : ''}
       invoiceDate={isEditing ? editInvoiceDate : createInvoiceDate}
       roundUpAmount={isEditing ? editRoundUpAmount : createRoundUpAmount}
+      countsAsTithe={(isEditing ? editCountsAsTithe : createCountsAsTithe) === 'true'}
       paymentMode={isEditing ? editPaymentMode : createPaymentMode}
       banks={banks}
       categories={activeCategories}
