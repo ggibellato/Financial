@@ -221,8 +221,8 @@ describe('usePortfolioAssetSummary', () => {
     renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => expect(getCurrentPriceMock).toHaveBeenCalledTimes(2))
-    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'ALZR11', 'RealEstate', 'XPI', 'ALZR11')
-    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'MXRF11', 'RealEstate', 'XPI', 'MXRF11')
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'ALZR11', 'RealEstate', 'XPI', 'ALZR11', 'Acoes', 'ALZR11')
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'MXRF11', 'RealEstate', 'XPI', 'MXRF11', 'Acoes', 'MXRF11')
   })
 
   it('fires_getCurrentPrice_for_cryptocurrency_item_with_blank_exchange', async () => {
@@ -234,7 +234,7 @@ describe('usePortfolioAssetSummary', () => {
     renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(coinbaseNode)
     await waitFor(() =>
-      expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'BTC', 'Cryptocurrency', 'Coinbase', 'Bitcoin'),
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'BTC', 'Cryptocurrency', 'Coinbase', 'Bitcoin', 'Cryptocurrency', 'Bitcoin'),
     )
   })
 
@@ -253,11 +253,33 @@ describe('usePortfolioAssetSummary', () => {
     const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(reservaNode)
     await waitFor(() =>
-      expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'TESOURO IPCA+ 2029', 'Bond', 'XPI', 'TESOURO IPCA+ 2029'),
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'TESOURO IPCA+ 2029', 'Bond', 'XPI', 'TESOURO IPCA+ 2029', 'Reserva', 'TESOURO IPCA+ 2029'),
     )
     await waitFor(() => expect(result.current.rowPrices[0]?.isLoading).toBe(false))
     expect(result.current.rowPrices[0].currentPrice).toBe(3775.97)
     expect(result.current.rowPrices[0].fetchFailed).toBe(false)
+  })
+
+  it('sets_row_price_isManual_true_when_price_falls_back_to_a_manual_entry', async () => {
+    getPortfolioAssetsSummaryMock.mockResolvedValue([ITEM_1])
+    getCurrentPriceMock.mockResolvedValue({ ...PRICE_DTO, isManual: true })
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
+    setNode(PORTFOLIO_NODE)
+
+    await waitFor(() => expect(result.current.rowPrices[0]?.isLoading).toBe(false))
+    expect(result.current.rowPrices[0].isManual).toBe(true)
+  })
+
+  it('sets_row_price_isManual_false_when_price_comes_from_a_live_fetch', async () => {
+    getPortfolioAssetsSummaryMock.mockResolvedValue([ITEM_1])
+    getCurrentPriceMock.mockResolvedValue(PRICE_DTO)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
+    setNode(PORTFOLIO_NODE)
+
+    await waitFor(() => expect(result.current.rowPrices[0]?.isLoading).toBe(false))
+    expect(result.current.rowPrices[0].isManual).toBe(false)
   })
 
   it('sets_row_price_loading_true_after_items_arrive', async () => {

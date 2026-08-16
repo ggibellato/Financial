@@ -96,6 +96,15 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
       {!isHistoric && (
         <td>
           {renderGatedCell(rowPrice.isLoading, rowPrice.fetchFailed, currentValue, v => formatN2(v))}
+          {!rowPrice.isLoading && !rowPrice.fetchFailed && rowPrice.isManual && (
+            <span
+              className="portfolio-summary__manual-badge"
+              title="This value came from a manually-entered price, not a live fetch."
+            >
+              {' '}
+              (M)
+            </span>
+          )}
         </td>
       )}
       <td>{formatN2(item.totalCredits)}</td>
