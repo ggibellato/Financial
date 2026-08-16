@@ -14,6 +14,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="130"/>
@@ -50,25 +51,31 @@
                      DataObject.Pasting="OnSignedDecimalTextBoxPasting"
                      LostFocus="OnDecimalTextBoxLostFocus"/>
 
-            <TextBlock Grid.Row="5" Grid.Column="0" Text="Invoice Month:" VerticalAlignment="Center"
+            <TextBlock Grid.Row="5" Grid.Column="0" Text="Counts toward tithe:" VerticalAlignment="Center"
+                       Visibility="{Binding ShowCountsAsTitheField, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            <CheckBox Grid.Row="5" Grid.Column="1" VerticalAlignment="Center"
+                      Visibility="{Binding ShowCountsAsTitheField, Converter={StaticResource BoolToVisibilityConverter}}"
+                      IsChecked="{Binding ExpenseFormCountsAsTithe, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <TextBlock Grid.Row="6" Grid.Column="0" Text="Invoice Month:" VerticalAlignment="Center"
                        Visibility="{Binding IsCardPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}"/>
-            <components:MonthYearTextBox Grid.Row="5" Grid.Column="1"
+            <components:MonthYearTextBox Grid.Row="6" Grid.Column="1"
                                           Visibility="{Binding IsCardPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}"
                                           IsEnabled="{Binding ShowPaymentModeFields}"
                                           HorizontalAlignment="Left"
                                           SelectedYear="{Binding ExpenseFormInvoiceYear, Mode=TwoWay}"
                                           SelectedMonth="{Binding ExpenseFormInvoiceMonth, Mode=TwoWay}"/>
 
-            <TextBlock Grid.Row="6" Grid.Column="0" Text="Payment:" VerticalAlignment="Top"
+            <TextBlock Grid.Row="7" Grid.Column="0" Text="Payment:" VerticalAlignment="Top"
                        Visibility="{Binding ExpenseFormIsSettled, Converter={StaticResource BoolToVisibilityConverter}}"/>
-            <TextBlock Grid.Row="6" Grid.Column="1" TextWrapping="Wrap"
+            <TextBlock Grid.Row="7" Grid.Column="1" TextWrapping="Wrap"
                        Visibility="{Binding ExpenseFormIsSettled, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Run Text="Paid via "/>
                 <Run Text="{Binding ExpenseFormCreditCardName, Mode=OneWay}"/>
                 <Run Text=". Settled via its card statement — unmark the statement paid to change this expense."/>
             </TextBlock>
 
-            <StackPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2"
+            <StackPanel Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2"
                         Visibility="{Binding ShowPaymentModeFields, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid Margin="0,8,0,0" Visibility="{Binding IsCardPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}">
                     <Grid.ColumnDefinitions>
@@ -106,10 +113,10 @@
                 </StackPanel>
             </StackPanel>
 
-            <TextBlock Grid.Row="7" Grid.ColumnSpan="2" Foreground="Red" TextWrapping="Wrap"
+            <TextBlock Grid.Row="8" Grid.ColumnSpan="2" Foreground="Red" TextWrapping="Wrap"
                        Text="{Binding ExpenseSaveError}" Margin="0,8,0,0"/>
 
-            <StackPanel Grid.Row="8" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
+            <StackPanel Grid.Row="9" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
                 <Button Width="90" Command="{Binding SaveExpenseCommand}"
                         Visibility="{Binding ShowPaymentModeFields, Converter={StaticResource BoolToVisibilityConverter}}">
                     <Button.Style>

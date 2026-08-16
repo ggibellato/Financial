@@ -42,6 +42,7 @@ public class MonthlyViewModelTests
         new() { Id = Guid.NewGuid(), Name = "Mercado", Active = true, IsInvestment = false, IsTithe = false },
         new() { Id = Guid.NewGuid(), Name = "Extras", Active = true, IsInvestment = false, IsTithe = false },
         new() { Id = Guid.NewGuid(), Name = "Viagem", Active = true, IsInvestment = false, IsTithe = false },
+        new() { Id = Guid.NewGuid(), Name = "Dizimo", Active = true, IsInvestment = false, IsTithe = true },
     ];
 
     private static (MonthlyViewModel ViewModel, StubExpenseService Expenses, StubIncomeService Incomes, StubBankService Banks, StubTitheService Tithe, StubCreditCardService CreditCards) CreateViewModel(
@@ -204,6 +205,79 @@ public class MonthlyViewModelTests
         expenses.LastCreateRequest.Should().NotBeNull();
         expenses.LastCreateRequest!.CreditCardId.Should().Be(DefaultCreditCards[0].Id);
         expenses.LastCreateRequest.PaymentSourceBankId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ShowCreateExpenseForm_DefaultsExpenseFormCountsAsTitheToTrue()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+
+        viewModel.ExpenseFormCountsAsTithe.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ExpenseFormCategoryId_SetToTitheCategory_ShowsCountsAsTitheField()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+
+        viewModel.ExpenseFormCategoryId = DefaultCategories[3].Id; // Dizimo
+
+        viewModel.ShowCountsAsTitheField.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ExpenseFormCategoryId_SetToNonTitheCategory_HidesCountsAsTitheField()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+
+        viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id; // Mercado
+
+        viewModel.ShowCountsAsTitheField.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AddExpense_DizimoCategoryWithCountsAsTitheUnchecked_SendsFalseToService()
+    {
+        var (viewModel, expenses, _, banks, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDescription = "Charitable offer";
+        viewModel.ExpenseFormCategoryId = DefaultCategories[3].Id; // Dizimo
+        viewModel.ExpenseFormValue = "50";
+        viewModel.ExpenseFormPaymentSource = banks.Banks[1].Id;
+        viewModel.ExpenseFormCountsAsTithe = false;
+
+        await viewModel.SaveExpenseAsync();
+
+        expenses.LastCreateRequest.Should().NotBeNull();
+        expenses.LastCreateRequest!.CountsAsTithe.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task EditExpense_PopulatesExpenseFormCountsAsTitheFromExpense()
+    {
+        var (viewModel, _, _, banks, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        var expense = new ExpenseDTO
+        {
+            Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Offer",
+            Value = 50m, CategoryId = DefaultCategories[3].Id, CategoryName = "Dizimo",
+            PaymentSourceBankId = banks.Banks[0].Id, PaymentSourceBankName = banks.Banks[0].Name,
+            PaymentStatus = "ImmediatePayment", CountsAsTithe = false,
+        };
+
+        viewModel.EditExpenseCommand.Execute(expense);
+
+        viewModel.ExpenseFormCountsAsTithe.Should().BeFalse();
+        viewModel.ShowCountsAsTitheField.Should().BeTrue();
     }
 
     [Fact]
