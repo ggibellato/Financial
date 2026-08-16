@@ -11,17 +11,18 @@ namespace Financial.Presentation.Tests.ViewModels;
 
 public class AssetDetailsViewModelPortfolioSummaryTests
 {
-    private static AssetDetailsViewModel BuildViewModel(IAssetPriceService? priceService = null, InvestmentScope scope = InvestmentScope.Active)
+    private static AssetDetailsViewModel BuildViewModel(IPriceService? priceService = null, InvestmentScope scope = InvestmentScope.Active)
     {
         return new AssetDetailsViewModel(
             new StubTransactionService(),
             new StubCreditService(),
-            priceService ?? new NeverResolvingPriceService(),
+            new NotUsedAssetPriceService(),
             new StubBrokerBreakdownService(),
             new StubTransactionQueryService(),
             new XirrCalculationService(),
             new ProfitCalculationService(),
-            scope);
+            scope,
+            priceService ?? new NeverResolvingPriceService());
     }
 
     private static IReadOnlyList<PortfolioAssetSummaryItemDTO> BuildItems(int count = 2)
@@ -344,7 +345,12 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         request.Name.Should().Be("TESOURO IPCA+ 2029");
     }
 
-    private sealed class NeverResolvingPriceService : IAssetPriceService
+    private sealed class NotUsedAssetPriceService : IAssetPriceService
+    {
+        public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request) => throw new NotImplementedException();
+    }
+
+    private sealed class NeverResolvingPriceService : IPriceService
     {
         // Bounded, not infinite: every test using this leaves its background Task.Run
         // blocked on a thread-pool worker for the block's duration. Assertions that rely
@@ -355,34 +361,43 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         private readonly SemaphoreSlim _blocker = new SemaphoreSlim(0);
         private static readonly TimeSpan MaxBlockDuration = TimeSpan.FromSeconds(2);
 
-        public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request)
+        public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
+        public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
+
+        public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request)
         {
             _blocker.Wait(MaxBlockDuration);
-            return new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = 0m };
+            return Task.FromResult(new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = 0m });
         }
     }
 
-    private sealed class CountingPriceService : IAssetPriceService
+    private sealed class CountingPriceService : IPriceService
     {
         public int CallCount { get; private set; }
 
-        public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request)
+        public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
+        public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
+
+        public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request)
         {
             CallCount++;
-            return new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = 0m };
+            return Task.FromResult(new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = 0m });
         }
     }
 
-    private sealed class CapturingPriceService : IAssetPriceService
+    private sealed class CapturingPriceService : IPriceService
     {
         private readonly TaskCompletionSource<AssetPriceRequestDTO> _tcs = new();
 
         public Task<AssetPriceRequestDTO> RequestReceived => _tcs.Task;
 
-        public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request)
+        public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
+        public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
+
+        public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request)
         {
             _tcs.TrySetResult(request);
-            return new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = 1m };
+            return Task.FromResult(new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = 1m });
         }
     }
 }
