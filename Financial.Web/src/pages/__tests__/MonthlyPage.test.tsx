@@ -555,7 +555,8 @@ describe('MonthlyPage', () => {
     expect(screen.queryByText(/^Total:/)).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'New Expense' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument()
-    expect(screen.getByText('Gleison')).toBeInTheDocument()
+    const incomeSection = within(screen.getByRole('button', { name: 'New Income' }).closest('section')!)
+    expect(incomeSection.getByText('Gleison')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Income' })).toHaveClass('monthly-page__tab--active')
   })
 
@@ -918,7 +919,8 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Income' }))
 
-    await waitFor(() => expect(screen.getByText('Gleison')).toBeInTheDocument())
+    const getIncomeSection = () => within(screen.getByRole('button', { name: 'New Income' }).closest('section')!)
+    await waitFor(() => expect(getIncomeSection().getByText('Gleison')).toBeInTheDocument())
 
     getIncomesByMonthMock.mockResolvedValue([
       {
@@ -936,8 +938,8 @@ describe('MonthlyPage', () => {
 
     fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
 
-    await waitFor(() => expect(screen.getByText('Lottery')).toBeInTheDocument())
-    expect(screen.queryByText('Gleison')).not.toBeInTheDocument()
+    await waitFor(() => expect(getIncomeSection().getByText('Lottery')).toBeInTheDocument())
+    expect(getIncomeSection().queryByText('Gleison')).not.toBeInTheDocument()
   })
 
   it('shows the add-income form only after New Income is clicked, and submits a new income entry', async () => {
@@ -1086,7 +1088,8 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
 
     await waitFor(() => expect(createIncomeMock).toHaveBeenCalled())
-    await waitFor(() => expect(screen.getByText('Gleison')).toBeInTheDocument())
+    const incomeSection = within(screen.getByRole('button', { name: 'New Income' }).closest('section')!)
+    await waitFor(() => expect(incomeSection.getByText('Gleison')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
     const incomingSection = within(screen.getByText(/Total Incoming:/).closest('section')!)

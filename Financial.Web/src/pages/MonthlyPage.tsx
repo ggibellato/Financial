@@ -339,6 +339,8 @@ export default function MonthlyPage() {
 
           {activeTab === 'incoming' && (
             <>
+              <IncomingGrid incomeTotals={incomeTotals} totalIncoming={totalIncoming} titheSummary={titheSummary} />
+
               {isIncomeFormVisible && (
                 <IncomeForm
                   isEditing={isIncomeEditing}

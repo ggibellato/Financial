@@ -48,7 +48,14 @@
                 </Grid>
             </TabItem>
             <TabItem Header="Income">
-                <local:IncomeSectionView/>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <local:IncomeTotalsGridView Grid.Row="0"/>
+                    <local:IncomeSectionView Grid.Row="1"/>
+                </Grid>
             </TabItem>
             <TabItem Header="Bank">
                 <Grid>
