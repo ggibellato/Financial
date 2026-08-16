@@ -228,6 +228,7 @@ public class MonthlyViewModel : ViewModelBase
             ReplaceAll(Incomes, incomes);
             ReplaceAll(CategoryTotals, categoryTotals);
             ReplaceAll(Banks, banks);
+            IncomeBankOptions = BuildIncomeBankOptions(banks);
             ReplaceAll(IncomeSources, incomeSources);
             OnPropertyChanged(nameof(IncomeSourceOptions));
             TitheSummary = titheSummary;
@@ -325,6 +326,12 @@ public class MonthlyViewModel : ViewModelBase
     /// <summary>Options for the Bank tab's filter dropdown: "All Banks" plus each configured bank name.</summary>
     private static IReadOnlyList<string> BuildBankFilterOptions(IReadOnlyList<BankDTO> banks) =>
         new[] { AllBanksFilter }.Concat(banks.Select(b => b.Name)).ToList();
+
+    /// <summary>Options for the Income form's Bank dropdown: a "(None)" placeholder plus each configured bank.</summary>
+    private static IReadOnlyList<IncomeBankOptionViewModel> BuildIncomeBankOptions(IReadOnlyList<BankDTO> banks) =>
+        new[] { new IncomeBankOptionViewModel(null, NoBankOptionLabel) }
+            .Concat(banks.Select(b => new IncomeBankOptionViewModel(b.Id, b.Name)))
+            .ToList();
 
     // ----- Expense CRUD -----
 
@@ -713,6 +720,8 @@ public class MonthlyViewModel : ViewModelBase
         return index == -1 ? IncomeSourceDisplayOrder.Length : index;
     }
 
+    public const string NoBankOptionLabel = "(None)";
+
     private bool _isIncomeFormOpen;
     private Guid? _editingIncomeId;
     private DateTime? _incomeFormDate;
@@ -720,9 +729,11 @@ public class MonthlyViewModel : ViewModelBase
     private string _incomeFormGrossValue = string.Empty;
     private string _incomeFormNetValue = string.Empty;
     private Guid? _incomeFormBank;
+    private string _incomeFormDescription = string.Empty;
     private bool _isSavingIncome;
     private string? _incomeSaveError;
     private string? _deletingIncomeError;
+    private IReadOnlyList<IncomeBankOptionViewModel> _incomeBankOptions = BuildIncomeBankOptions([]);
 
     public bool IsIncomeFormOpen
     {
@@ -771,6 +782,18 @@ public class MonthlyViewModel : ViewModelBase
         set => SetProperty(ref _incomeFormBank, value);
     }
 
+    public string IncomeFormDescription
+    {
+        get => _incomeFormDescription;
+        set => SetProperty(ref _incomeFormDescription, value);
+    }
+
+    public IReadOnlyList<IncomeBankOptionViewModel> IncomeBankOptions
+    {
+        get => _incomeBankOptions;
+        private set => SetProperty(ref _incomeBankOptions, value);
+    }
+
     public bool IsSavingIncome
     {
         get => _isSavingIncome;
@@ -811,7 +834,8 @@ public class MonthlyViewModel : ViewModelBase
         IncomeFormSource = IncomeSourceOptions.Count > 0 ? IncomeSourceOptions[0].Id : null;
         IncomeFormGrossValue = string.Empty;
         IncomeFormNetValue = string.Empty;
-        IncomeFormBank = Banks.Count > 0 ? Banks[0].Id : null;
+        IncomeFormBank = null;
+        IncomeFormDescription = string.Empty;
         IncomeSaveError = null;
         OnPropertyChanged(nameof(IsEditingIncome));
         IsIncomeFormOpen = true;
@@ -830,6 +854,7 @@ public class MonthlyViewModel : ViewModelBase
         IncomeFormGrossValue = income.GrossValue?.ToString("0.##") ?? string.Empty;
         IncomeFormNetValue = income.NetValue.ToString("0.##");
         IncomeFormBank = income.BankId;
+        IncomeFormDescription = income.Description ?? string.Empty;
         IncomeSaveError = null;
         OnPropertyChanged(nameof(IsEditingIncome));
         IsIncomeFormOpen = true;
@@ -845,7 +870,7 @@ public class MonthlyViewModel : ViewModelBase
     internal async Task SaveIncomeAsync()
     {
         var validationMessage = IncomeFormValidation.BuildValidationMessage(
-            IncomeFormDate, IncomeFormSource, IncomeFormNetValue, IncomeFormBank);
+            IncomeFormDate, IncomeFormSource, IncomeFormNetValue);
 
         if (!string.IsNullOrEmpty(validationMessage))
         {
@@ -865,6 +890,8 @@ public class MonthlyViewModel : ViewModelBase
                 ? parsedGross
                 : null;
 
+            var description = string.IsNullOrWhiteSpace(IncomeFormDescription) ? null : IncomeFormDescription;
+
             if (_editingIncomeId is { } id)
             {
                 await _incomeService.UpdateIncomeAsync(id, new IncomeUpdateDTO
@@ -873,7 +900,8 @@ public class MonthlyViewModel : ViewModelBase
                     IncomeSourceId = IncomeFormSource!.Value,
                     GrossValue = grossValue,
                     NetValue = netValue,
-                    BankId = IncomeFormBank!.Value,
+                    BankId = IncomeFormBank,
+                    Description = description,
                 });
             }
             else
@@ -884,7 +912,8 @@ public class MonthlyViewModel : ViewModelBase
                     IncomeSourceId = IncomeFormSource!.Value,
                     GrossValue = grossValue,
                     NetValue = netValue,
-                    BankId = IncomeFormBank!.Value,
+                    BankId = IncomeFormBank,
+                    Description = description,
                 });
             }
 

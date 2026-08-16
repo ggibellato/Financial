@@ -410,7 +410,7 @@ public class MonthlyViewModelTests
 
         viewModel.HasError.Should().BeTrue();
         viewModel.IncomeSourceOptions.Should().BeEmpty();
-        IncomeFormValidation.BuildValidationMessage(DateTime.Today, incomeSource: null, netValue: "10", bank: Guid.NewGuid())
+        IncomeFormValidation.BuildValidationMessage(DateTime.Today, incomeSource: null, netValue: "10")
             .Should().Contain("Source is required.");
     }
 
@@ -454,6 +454,40 @@ public class MonthlyViewModelTests
         incomes.LastCreateRequest!.NetValue.Should().Be(50m);
         incomes.LastCreateRequest.GrossValue.Should().BeNull();
         viewModel.IsIncomeFormOpen.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AddIncome_WithDescription_SendsDescriptionToService()
+    {
+        var (viewModel, _, incomes, banks, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormSource = LotterySourceId;
+        viewModel.IncomeFormNetValue = "50";
+        viewModel.IncomeFormBank = banks.Banks[0].Id;
+        viewModel.IncomeFormDescription = "Chip ISA dividend";
+
+        await viewModel.SaveIncomeAsync();
+
+        incomes.LastCreateRequest.Should().NotBeNull();
+        incomes.LastCreateRequest!.Description.Should().Be("Chip ISA dividend");
+    }
+
+    [Fact]
+    public async Task ShowEditIncomeForm_PopulatesDescription()
+    {
+        var (viewModel, _, _, banks, _, _) = CreateViewModel();
+        var income = new IncomeDTO
+        {
+            Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery",
+            NetValue = 50m, BankId = banks.Banks[0].Id, BankName = banks.Banks[0].Name, Description = "Chip ISA dividend",
+        };
+        await viewModel.RefreshAsync();
+
+        viewModel.EditIncomeCommand.Execute(income);
+
+        viewModel.IncomeFormDescription.Should().Be("Chip ISA dividend");
     }
 
     [Fact]
@@ -544,7 +578,7 @@ public class MonthlyViewModelTests
     }
 
     [Fact]
-    public async Task SaveIncome_MissingBank_DoesNotCallServiceAndShowsError()
+    public async Task SaveIncome_WithoutBank_CallsServiceWithNullBankAndRefreshes()
     {
         var (viewModel, _, incomes, _, _, _) = CreateViewModel();
         await viewModel.RefreshAsync();
@@ -556,9 +590,34 @@ public class MonthlyViewModelTests
 
         await viewModel.SaveIncomeAsync();
 
-        incomes.LastCreateRequest.Should().BeNull();
-        viewModel.IncomeSaveError.Should().NotBeNullOrEmpty();
-        viewModel.IsIncomeFormOpen.Should().BeTrue();
+        incomes.LastCreateRequest.Should().NotBeNull();
+        incomes.LastCreateRequest!.BankId.Should().BeNull();
+        viewModel.IsIncomeFormOpen.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ShowCreateIncomeForm_DefaultsBankToNone()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+
+        viewModel.IncomeFormBank.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RefreshAsync_PopulatesIncomeBankOptionsWithANoneOptionFirst()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+
+        await viewModel.RefreshAsync();
+
+        viewModel.IncomeBankOptions.Should().HaveCount(3);
+        viewModel.IncomeBankOptions[0].Id.Should().BeNull();
+        viewModel.IncomeBankOptions[0].Name.Should().Be(MonthlyViewModel.NoBankOptionLabel);
+        viewModel.IncomeBankOptions.Should().Contain(o => o.Id == BarclaysId && o.Name == "Barclays");
+        viewModel.IncomeBankOptions.Should().Contain(o => o.Id == ChaseId && o.Name == "Chase");
     }
 
     [Fact]

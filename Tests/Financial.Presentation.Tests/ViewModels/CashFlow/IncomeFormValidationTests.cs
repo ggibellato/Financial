@@ -10,9 +10,8 @@ public class IncomeFormValidationTests
     private static string Validate(
         DateTime? date,
         Guid? incomeSource = null,
-        string netValue = "100",
-        Guid? bank = null) =>
-        IncomeFormValidation.BuildValidationMessage(date, incomeSource ?? Guid.NewGuid(), netValue, bank ?? Guid.NewGuid());
+        string netValue = "100") =>
+        IncomeFormValidation.BuildValidationMessage(date, incomeSource ?? Guid.NewGuid(), netValue);
 
     [Fact]
     public void ValidForm_ReturnsEmpty()
@@ -29,7 +28,7 @@ public class IncomeFormValidationTests
     [Fact]
     public void MissingSource_ReturnsError()
     {
-        IncomeFormValidation.BuildValidationMessage(ValidDate, null, "100", Guid.NewGuid())
+        IncomeFormValidation.BuildValidationMessage(ValidDate, null, "100")
             .Should().Contain("Source is required.");
     }
 
@@ -42,9 +41,9 @@ public class IncomeFormValidationTests
     }
 
     [Fact]
-    public void MissingBank_ReturnsError()
+    public void MissingBank_DoesNotReturnError()
     {
-        IncomeFormValidation.BuildValidationMessage(ValidDate, Guid.NewGuid(), "100", null)
-            .Should().Contain("Bank is required.");
+        IncomeFormValidation.BuildValidationMessage(ValidDate, Guid.NewGuid(), "100")
+            .Should().BeEmpty();
     }
 }
