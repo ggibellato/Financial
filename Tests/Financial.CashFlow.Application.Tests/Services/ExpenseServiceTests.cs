@@ -505,6 +505,31 @@ public class ExpenseServiceTests
     }
 
     [Fact]
+    public async Task GetUnpaidCardChargesByMonth_OrdersByChargeDateDescendingAcrossCards()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
+        var service = new ExpenseService(repository);
+        await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with
+        {
+            Description = "Chase early", Date = new DateOnly(2026, 7, 2), PaymentSource = null, CardTag = "ChaseMaster4023",
+        }));
+        await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with
+        {
+            Description = "BaAmex late", Date = new DateOnly(2026, 7, 20), PaymentSource = null, CardTag = "BaAmex",
+        }));
+        await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with
+        {
+            Description = "Chase mid", Date = new DateOnly(2026, 7, 10), PaymentSource = null, CardTag = "ChaseMaster4023",
+        }));
+
+        var result = service.GetUnpaidCardChargesByMonth(2026, 7);
+
+        // All three share the same InvoiceDate (2026-07-01), so this proves the sort uses the
+        // actual charge date rather than the (here, always-equal) invoice-period date.
+        result.Select(e => e.Description).Should().Equal("BaAmex late", "Chase mid", "Chase early");
+    }
+
+    [Fact]
     public async Task GetUnpaidCardChargesByMonth_ImmediatePaymentAndSettledCharge_AreExcluded()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
