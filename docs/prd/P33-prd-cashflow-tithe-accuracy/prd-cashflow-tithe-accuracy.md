@@ -122,13 +122,13 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Optional Bank & Description for Income
-- [ ] An income can be created with no Bank selected; the income saves successfully.
-- [ ] An income created with no Bank shows blank in the Bank column of the Incomes list.
-- [ ] A bank-less income's Net Value is included in that month's `CalculatedTithe`.
-- [ ] A bank-less income is excluded from every bank's balance calculation.
-- [ ] An income can be created/edited with a Description up to 200 characters, and it displays in the Incomes list.
-- [ ] A Description over 200 characters is rejected with a validation message and the income is not saved.
-- [ ] Existing incomes recorded before this feature (all with a Bank) continue to display and calculate correctly, unaffected by the change.
+- [x] An income can be created with no Bank selected; the income saves successfully.
+- [x] An income created with no Bank shows blank in the Bank column of the Incomes list.
+- [x] A bank-less income's Net Value is included in that month's `CalculatedTithe`.
+- [x] A bank-less income is excluded from every bank's balance calculation.
+- [x] An income can be created/edited with a Description up to 200 characters, and it displays in the Incomes list.
+- [x] A Description over 200 characters is rejected with a validation message and the income is not saved.
+- [x] Existing incomes recorded before this feature (all with a Bank) continue to display and calculate correctly, unaffected by the change.
 
 ### F02. Per-Expense Tithe Contribution Flag
 - [ ] A new expense in the Dizimo category defaults to `CountsAsTithe = true`.
