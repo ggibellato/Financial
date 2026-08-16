@@ -173,6 +173,7 @@ describe('financialApiClient', () => {
       name: 'Sample Asset',
       price: 10.5,
       asOf: '2024-02-01T00:00:00Z',
+      isManual: false,
     } satisfies AssetPriceDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({
@@ -195,6 +196,7 @@ describe('financialApiClient', () => {
       name: 'TESOURO IPCA+ 2029',
       price: 3775.97,
       asOf: '2024-02-01T00:00:00Z',
+      isManual: false,
     } satisfies AssetPriceDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({
@@ -218,6 +220,7 @@ describe('financialApiClient', () => {
       name: 'Bitcoin',
       price: 48000,
       asOf: '2024-02-01T00:00:00Z',
+      isManual: false,
     } satisfies AssetPriceDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({
@@ -232,6 +235,59 @@ describe('financialApiClient', () => {
     expect(url).toBe(
       `${API_BASE_URL}/prices/current?exchange=&ticker=BTC&assetClass=Cryptocurrency&brokerName=Coinbase`,
     )
+  })
+
+  it('calls current price endpoint with portfolioName and assetName when provided', async () => {
+    const responseBody = {
+      exchange: 'BVMF',
+      ticker: 'GUEP11',
+      name: 'Guepardo Institucional FIC FIA',
+      price: 187.42,
+      asOf: null,
+      isManual: true,
+    } satisfies AssetPriceDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({
+      baseUrl: API_BASE_URL,
+      fetch: fetchMock,
+    })
+
+    const result = await client.getCurrentPrice(
+      'BVMF',
+      'GUEP11',
+      undefined,
+      'XPI',
+      undefined,
+      'Retirement',
+      'Guepardo Institucional FIC FIA',
+    )
+
+    expect(result).toEqual(responseBody)
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(
+      `${API_BASE_URL}/prices/current?exchange=BVMF&ticker=GUEP11&brokerName=XPI&portfolioName=Retirement&assetName=Guepardo%20Institucional%20FIC%20FIA`,
+    )
+  })
+
+  it('omits portfolioName and assetName from the query when not provided', async () => {
+    const responseBody = {
+      exchange: 'BVMF',
+      ticker: 'BCIA11',
+      name: 'Sample Asset',
+      price: 10.5,
+      asOf: '2024-02-01T00:00:00Z',
+      isManual: false,
+    } satisfies AssetPriceDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({
+      baseUrl: API_BASE_URL,
+      fetch: fetchMock,
+    })
+
+    await client.getCurrentPrice('BVMF', 'BCIA11')
+
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/prices/current?exchange=BVMF&ticker=BCIA11`)
   })
 
   it('calls watchlist endpoint', async () => {
