@@ -131,12 +131,12 @@ graph TD
 - [x] Existing incomes recorded before this feature (all with a Bank) continue to display and calculate correctly, unaffected by the change.
 
 ### F02. Per-Expense Tithe Contribution Flag
-- [ ] A new expense in the Dizimo category defaults to `CountsAsTithe = true`.
-- [ ] Unchecking "Counts toward tithe" on a Dizimo expense and saving excludes its value from that month's tithe-paid total.
-- [ ] A Dizimo expense with the flag checked (the default) continues to reduce the tithe balance, matching current behavior.
-- [ ] The "Counts toward tithe" control is not shown (or is disabled) when the selected category is not the tithe category.
-- [ ] Changing an expense's category away from Dizimo does not affect the tithe calculation, regardless of the flag's stored value.
-- [ ] Toggling the flag on an existing Dizimo expense and re-saving updates that month's tithe summary on next fetch.
+- [x] A new expense in the Dizimo category defaults to `CountsAsTithe = true`.
+- [x] Unchecking "Counts toward tithe" on a Dizimo expense and saving excludes its value from that month's tithe-paid total.
+- [x] A Dizimo expense with the flag checked (the default) continues to reduce the tithe balance, matching current behavior.
+- [x] The "Counts toward tithe" control is not shown (or is disabled) when the selected category is not the tithe category.
+- [x] Changing an expense's category away from Dizimo does not affect the tithe calculation, regardless of the flag's stored value.
+- [x] Toggling the flag on an existing Dizimo expense and re-saving updates that month's tithe summary on next fetch.
 
 ### Cross-Feature Integration
-- [ ] A month's tithe balance correctly reflects both a bank-less income (F01) contributing to `CalculatedTithe` and a Dizimo expense with `CountsAsTithe` unchecked (F02) being excluded from the paid total, when both are recorded together in the same month.
+- [x] A month's tithe balance correctly reflects both a bank-less income (F01) contributing to `CalculatedTithe` and a Dizimo expense with `CountsAsTithe` unchecked (F02) being excluded from the paid total, when both are recorded together in the same month.
