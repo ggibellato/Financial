@@ -92,6 +92,7 @@ const EXPENSES: ExpenseDto[] = [
     paymentStatus: 'ImmediatePayment',
     roundUpAmount: null,
     suggestedRoundUpAmount: null,
+    countsAsTithe: true,
   },
 ]
 

@@ -10,6 +10,7 @@ export type ExpenseFormField =
   | 'creditCardId'
   | 'invoiceDate'
   | 'roundUpAmount'
+  | 'countsAsTithe'
 
 interface ExpenseFormProps {
   isEditing: boolean
@@ -22,6 +23,7 @@ interface ExpenseFormProps {
   creditCardName: string
   invoiceDate: string
   roundUpAmount: string
+  countsAsTithe: boolean
   paymentMode: PaymentMode
   banks: BankDto[]
   categories: CategoryDto[]
@@ -45,6 +47,7 @@ export default function ExpenseForm({
   creditCardName,
   invoiceDate,
   roundUpAmount,
+  countsAsTithe,
   paymentMode,
   banks,
   categories,
@@ -58,6 +61,8 @@ export default function ExpenseForm({
 }: ExpenseFormProps) {
   const selectedBank = banks.find((b) => b.id === paymentSource)
   const showRoundUpField = paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
+  const selectedCategory = categories.find((c) => c.id === categoryId)
+  const showCountsAsTitheField = selectedCategory?.isTithe === true
   const invoiceDateDisplay = invoiceDate || (date ? date.slice(0, 7) : '')
   return (
     <div className="monthly-page__form-panel">
@@ -105,6 +110,17 @@ export default function ExpenseForm({
             onChange={(e) => onFieldChange('value', e.target.value)}
           />
         </div>
+        {showCountsAsTitheField && (
+          <div className="monthly-page__form-field">
+            <label htmlFor="expense-counts-as-tithe">Counts toward tithe</label>
+            <input
+              id="expense-counts-as-tithe"
+              type="checkbox"
+              checked={countsAsTithe}
+              onChange={(e) => onFieldChange('countsAsTithe', e.target.checked ? 'true' : 'false')}
+            />
+          </div>
+        )}
         {isSettled ? (
           <>
             <div className="monthly-page__form-field">

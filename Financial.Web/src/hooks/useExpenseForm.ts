@@ -35,6 +35,7 @@ export type CreateFormField =
   | 'createCreditCardId'
   | 'createInvoiceDate'
   | 'createRoundUpAmount'
+  | 'createCountsAsTithe'
 export type EditField =
   | 'editDate'
   | 'editDescription'
@@ -44,6 +45,7 @@ export type EditField =
   | 'editCreditCardId'
   | 'editInvoiceDate'
   | 'editRoundUpAmount'
+  | 'editCountsAsTithe'
 
 interface ExpenseFormState {
   isCreateFormOpen: boolean
@@ -55,6 +57,7 @@ interface ExpenseFormState {
   createCreditCardId: string
   createInvoiceDate: string
   createRoundUpAmount: string
+  createCountsAsTithe: string
   createPaymentMode: PaymentMode
   isCreating: boolean
   createError: string | null
@@ -68,6 +71,7 @@ interface ExpenseFormState {
   editCreditCardName: string
   editInvoiceDate: string
   editRoundUpAmount: string
+  editCountsAsTithe: string
   editPaymentMode: PaymentMode
   editIsSettled: boolean
   isSaving: boolean
@@ -97,6 +101,7 @@ const BLANK_CREATE_FORM = {
   createCreditCardId: '',
   createInvoiceDate: '',
   createRoundUpAmount: '',
+  createCountsAsTithe: 'true',
   createPaymentMode: 'bank',
 } as const
 
@@ -115,6 +120,7 @@ const INITIAL_STATE: ExpenseFormState = {
   editCreditCardName: '',
   editInvoiceDate: '',
   editRoundUpAmount: '',
+  editCountsAsTithe: 'true',
   editPaymentMode: 'bank',
   editIsSettled: false,
   isSaving: false,
@@ -132,6 +138,7 @@ const BLANK_EDIT_FORM = {
   editCreditCardName: '',
   editInvoiceDate: '',
   editRoundUpAmount: '',
+  editCountsAsTithe: 'true',
   editPaymentMode: 'bank',
   editIsSettled: false,
 } as const
@@ -174,6 +181,7 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
         editCreditCardName: action.payload.creditCardName ?? '',
         editInvoiceDate: action.payload.invoiceDate ? action.payload.invoiceDate.slice(0, 7) : '',
         editRoundUpAmount: action.payload.roundUpAmount != null ? String(action.payload.roundUpAmount) : '',
+        editCountsAsTithe: String(action.payload.countsAsTithe),
         editPaymentMode: action.payload.paymentStatus === CHARGE_STATUS ? 'card' : 'bank',
         editIsSettled: action.payload.paymentStatus === SETTLED_STATUS,
         saveError: null,
@@ -203,6 +211,7 @@ export interface UseExpenseFormResult {
   createCreditCardId: string
   createInvoiceDate: string
   createRoundUpAmount: string
+  createCountsAsTithe: string
   createPaymentMode: PaymentMode
   isCreating: boolean
   createError: string | null
@@ -220,6 +229,7 @@ export interface UseExpenseFormResult {
   editCreditCardName: string
   editInvoiceDate: string
   editRoundUpAmount: string
+  editCountsAsTithe: string
   editPaymentMode: PaymentMode
   editIsSettled: boolean
   isSaving: boolean
@@ -268,6 +278,7 @@ export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSa
       createCreditCardId,
       createInvoiceDate,
       createRoundUpAmount,
+      createCountsAsTithe,
     } = state
 
     if (!createDate.trim()) {
@@ -319,6 +330,7 @@ export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSa
         creditCardId: createPaymentMode === 'card' ? createCreditCardId : null,
         invoiceDate: createPaymentMode === 'card' && createInvoiceDate ? `${createInvoiceDate}-01` : null,
         roundUpAmount,
+        countsAsTithe: createCountsAsTithe === 'true',
       })
       .then(() => {
         dispatch({ type: 'CREATE_SUCCESS' })
@@ -398,6 +410,7 @@ export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSa
         ...paymentFields,
         invoiceDate: state.editPaymentMode === 'card' && state.editInvoiceDate ? `${state.editInvoiceDate}-01` : null,
         roundUpAmount,
+        countsAsTithe: state.editCountsAsTithe === 'true',
       })
       .then(() => {
         dispatch({ type: 'SAVE_SUCCESS' })
@@ -418,6 +431,7 @@ export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSa
     createCreditCardId: state.createCreditCardId,
     createInvoiceDate: state.createInvoiceDate,
     createRoundUpAmount: state.createRoundUpAmount,
+    createCountsAsTithe: state.createCountsAsTithe,
     createPaymentMode: state.createPaymentMode,
     isCreating: state.isCreating,
     createError: state.createError,
@@ -435,6 +449,7 @@ export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSa
     editCreditCardName: state.editCreditCardName,
     editInvoiceDate: state.editInvoiceDate,
     editRoundUpAmount: state.editRoundUpAmount,
+    editCountsAsTithe: state.editCountsAsTithe,
     editPaymentMode: state.editPaymentMode,
     editIsSettled: state.editIsSettled,
     isSaving: state.isSaving,

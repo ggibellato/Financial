@@ -11,6 +11,7 @@ const BANKS: BankDto[] = [
 const CATEGORIES: CategoryDto[] = [
   { id: 'category-mercado', name: 'Mercado', active: true, isInvestment: false, isTithe: false },
   { id: 'category-casa', name: 'Casa', active: true, isInvestment: false, isTithe: false },
+  { id: 'category-dizimo', name: 'Dizimo', active: true, isInvestment: false, isTithe: true },
 ]
 
 const CREDIT_CARDS: CreditCardDto[] = [
@@ -29,6 +30,7 @@ const baseProps = {
   creditCardName: '',
   invoiceDate: '',
   roundUpAmount: '',
+  countsAsTithe: true,
   paymentMode: 'bank' as const,
   banks: BANKS,
   categories: CATEGORIES,
@@ -172,6 +174,29 @@ describe('ExpenseForm', () => {
 
     rerender(<ExpenseForm {...baseProps} paymentMode="card" paymentSource="bank-trading212" />)
     expect(screen.queryByLabelText('Round-Up')).not.toBeInTheDocument()
+  })
+
+  it('hides the counts-toward-tithe checkbox for a non-tithe category', () => {
+    render(<ExpenseForm {...baseProps} categoryId="category-mercado" />)
+
+    expect(screen.queryByLabelText('Counts toward tithe')).not.toBeInTheDocument()
+  })
+
+  it('shows the counts-toward-tithe checkbox, checked by default, for the tithe category', () => {
+    render(<ExpenseForm {...baseProps} categoryId="category-dizimo" countsAsTithe />)
+
+    expect(screen.getByLabelText('Counts toward tithe')).toBeChecked()
+  })
+
+  it('reports unchecking the counts-toward-tithe checkbox', () => {
+    const onFieldChange = vi.fn()
+    render(
+      <ExpenseForm {...baseProps} categoryId="category-dizimo" countsAsTithe onFieldChange={onFieldChange} />,
+    )
+
+    fireEvent.click(screen.getByLabelText('Counts toward tithe'))
+
+    expect(onFieldChange).toHaveBeenCalledWith('countsAsTithe', 'false')
   })
 
   it('calls onSave and onCancel', () => {

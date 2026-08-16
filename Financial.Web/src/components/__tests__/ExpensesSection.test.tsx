@@ -20,6 +20,7 @@ const EXPENSES: ExpenseDto[] = [
     paymentStatus: 'ImmediatePayment',
     roundUpAmount: null,
     suggestedRoundUpAmount: null,
+    countsAsTithe: true,
   },
   {
     id: 'e2',
@@ -37,6 +38,7 @@ const EXPENSES: ExpenseDto[] = [
     paymentStatus: 'CreditCardCharge',
     roundUpAmount: null,
     suggestedRoundUpAmount: null,
+    countsAsTithe: true,
   },
 ]
 

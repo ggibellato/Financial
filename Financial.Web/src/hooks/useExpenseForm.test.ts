@@ -24,6 +24,7 @@ const CATEGORIES: CategoryDto[] = [
   { id: 'category-mercado', name: 'Mercado', active: true, isInvestment: false, isTithe: false },
   { id: 'category-extras', name: 'Extras', active: true, isInvestment: false, isTithe: false },
   { id: 'category-reserva', name: 'Reserva', active: false, isInvestment: false, isTithe: false },
+  { id: 'category-dizimo', name: 'Dizimo', active: true, isInvestment: false, isTithe: true },
 ]
 
 const EXPENSE: ExpenseDto = {
@@ -42,6 +43,7 @@ const EXPENSE: ExpenseDto = {
   paymentStatus: 'ImmediatePayment',
   roundUpAmount: null,
   suggestedRoundUpAmount: null,
+  countsAsTithe: true,
 }
 
 describe('useExpenseForm', () => {
@@ -75,6 +77,54 @@ describe('useExpenseForm', () => {
       expect.objectContaining({ description: 'Waitrose', value: 15.5, creditCardId: null, categoryId: 'category-mercado' }),
     )
     expect(onSaved).toHaveBeenCalledOnce()
+  })
+
+  it('creates an expense with countsAsTithe defaulting to true', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
+
+    act(() => result.current.setCreateField('createDate', '2026-07-16'))
+    act(() => result.current.setCreateField('createDescription', 'Tithe payment'))
+    act(() => result.current.setCreateField('createValue', '200'))
+    act(() => result.current.setCreateField('createCategoryId', 'category-dizimo'))
+    await act(() => result.current.submitCreate())
+
+    expect(createExpenseMock).toHaveBeenCalledWith(expect.objectContaining({ countsAsTithe: true }))
+  })
+
+  it('creates an expense with countsAsTithe unchecked', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
+
+    act(() => result.current.setCreateField('createDate', '2026-07-16'))
+    act(() => result.current.setCreateField('createDescription', 'Charitable offer'))
+    act(() => result.current.setCreateField('createValue', '50'))
+    act(() => result.current.setCreateField('createCategoryId', 'category-dizimo'))
+    act(() => result.current.setCreateField('createCountsAsTithe', 'false'))
+    await act(() => result.current.submitCreate())
+
+    expect(createExpenseMock).toHaveBeenCalledWith(expect.objectContaining({ countsAsTithe: false }))
+  })
+
+  it('populates editCountsAsTithe from the edited expense', () => {
+    const offer: ExpenseDto = { ...EXPENSE, id: 'e5', categoryId: 'category-dizimo', countsAsTithe: false }
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
+
+    act(() => result.current.showEditForm(offer))
+
+    expect(result.current.editCountsAsTithe).toBe('false')
+  })
+
+  it('saves an edit toggling countsAsTithe to false', async () => {
+    const dizimoExpense: ExpenseDto = { ...EXPENSE, id: 'e6', categoryId: 'category-dizimo' }
+    updateExpenseMock.mockResolvedValue({ ...dizimoExpense, countsAsTithe: false })
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
+
+    act(() => result.current.showEditForm(dizimoExpense))
+    act(() => result.current.setEditField('editCountsAsTithe', 'false'))
+    await act(() => result.current.saveEdit())
+
+    expect(updateExpenseMock).toHaveBeenCalledWith('e6', expect.objectContaining({ countsAsTithe: false }))
   })
 
   it('surfaces a backend validation error on create failure without crashing', async () => {

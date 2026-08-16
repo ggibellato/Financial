@@ -115,6 +115,7 @@ const EXPENSES: ExpenseDto[] = [
     paymentStatus: 'ImmediatePayment',
     roundUpAmount: null,
     suggestedRoundUpAmount: null,
+    countsAsTithe: true,
   },
 ]
 
@@ -147,6 +148,7 @@ const UNPAID_CARD_CHARGES: ExpenseDto[] = [
     paymentStatus: 'CreditCardCharge',
     roundUpAmount: null,
     suggestedRoundUpAmount: null,
+    countsAsTithe: true,
   },
 ]
 
