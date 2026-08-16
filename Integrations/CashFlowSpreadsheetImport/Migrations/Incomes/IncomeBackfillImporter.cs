@@ -66,5 +66,5 @@ public static class IncomeBackfillImporter
         data.Incomes.Any(income =>
             income.Date == date &&
             string.Equals(income.IncomeSource.Name, source, StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(income.Bank.Name, TargetBankName, StringComparison.OrdinalIgnoreCase));
+            string.Equals(income.Bank?.Name, TargetBankName, StringComparison.OrdinalIgnoreCase));
 }

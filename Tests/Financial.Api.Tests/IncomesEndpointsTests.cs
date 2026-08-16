@@ -43,7 +43,7 @@ public class IncomesEndpointsTests
     }
 
     [Fact]
-    public async Task AddIncome_WithoutBank_ReturnsBadRequest()
+    public async Task AddIncome_UnrecognizedBank_ReturnsBadRequest()
     {
         await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
@@ -54,6 +54,70 @@ public class IncomesEndpointsTests
             GrossValue = null,
             NetValue = 50m,
             BankId = Guid.NewGuid()
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/incomes", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task AddIncome_WithoutBank_ReturnsOk()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new IncomeCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            IncomeSourceId = LotteryId,
+            GrossValue = null,
+            NetValue = 50m,
+            BankId = null
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/incomes", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var income = await response.Content.ReadFromJsonAsync<IncomeDTO>();
+        income!.BankId.Should().BeNull();
+        income.BankName.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AddIncome_WithDescription_ReturnsOkWithDescription()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new IncomeCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            IncomeSourceId = LotteryId,
+            GrossValue = null,
+            NetValue = 50m,
+            BankId = null,
+            Description = "Chip ISA dividend"
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/financial/incomes", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var income = await response.Content.ReadFromJsonAsync<IncomeDTO>();
+        income!.Description.Should().Be("Chip ISA dividend");
+    }
+
+    [Fact]
+    public async Task AddIncome_WithDescriptionOver200Characters_ReturnsBadRequest()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var request = new IncomeCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            IncomeSourceId = LotteryId,
+            GrossValue = null,
+            NetValue = 50m,
+            BankId = ChaseId,
+            Description = new string('a', 201)
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/incomes", request);
@@ -111,6 +175,36 @@ public class IncomesEndpointsTests
         updated.NetValue.Should().Be(25m);
         updated.BankId.Should().Be(Trading212Id);
         updated.BankName.Should().Be("Trading212");
+    }
+
+    [Fact]
+    public async Task UpdateIncome_RemovingBank_ReturnsOkWithNullBank()
+    {
+        await using var factory = new ApiTestFactory();
+        using var client = factory.CreateClient();
+        var created = await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            IncomeSourceId = LotteryId,
+            GrossValue = null,
+            NetValue = 10m,
+            BankId = ChaseId
+        });
+        var createdIncome = await created.Content.ReadFromJsonAsync<IncomeDTO>();
+
+        var response = await client.PutAsJsonAsync($"/api/v1/financial/incomes/{createdIncome!.Id}", new IncomeUpdateDTO
+        {
+            Date = createdIncome.Date,
+            IncomeSourceId = createdIncome.IncomeSourceId,
+            GrossValue = null,
+            NetValue = createdIncome.NetValue,
+            BankId = null
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<IncomeDTO>();
+        updated!.BankId.Should().BeNull();
+        updated.BankName.Should().BeNull();
     }
 
     [Fact]
