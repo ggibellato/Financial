@@ -1,6 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.IncomeSources;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.IncomeSources;
 using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.IncomeSources;

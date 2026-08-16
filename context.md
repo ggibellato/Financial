@@ -78,7 +78,7 @@ Implemented as React pages only (Monthly, Income/Expenses, Banks & Cards, Reserv
 
 Storage mirrors the Investment domain's pattern but is entirely separate: a dedicated `data-cashflow.json` file, with its own independent LocalJson/GoogleDrive repository selection and its own configuration keys.
 
-Import tooling: `Integrations/CashFlowSpreadsheetImport` (Excel via ClosedXML) reads `Despesas.xlsx` and populates `data-cashflow.json`. It consolidates what were previously five separate migration tools into one command.
+Import tooling: `Tools/CashFlowSpreadsheetImport` (Excel via ClosedXML) reads `Despesas.xlsx` and populates `data-cashflow.json`. It consolidates what were previously five separate migration tools into one command.
 
 ---
 
@@ -113,7 +113,7 @@ The following features are currently built and available in both the React web a
 * **Bulk Price Fetch** — fetches live prices for all active assets in a configured set of portfolios using the Google Finance web scraper, with a per-asset progress indicator.
 * **Watchlist** — static list of tickers defined in `appsettings.json` (`Watchlist:Items`), used by the Dividend Check page.
 * **Google Finance integration** — live asset prices and dividend history are obtained by scraping Google Finance pages (`WebPageParser` project). No API key is required, but the scraper depends on Google Finance's page structure.
-* **Google Sheets import tool** — a separate WPF utility (`Integrations/ImportGoogleSpreadSheets`) for one-time import of portfolio data from Google Sheets. Not part of the main app runtime.
+* **Google Sheets import tool** — a separate WPF utility (`Tools/ImportGoogleSpreadSheets`) for one-time import of portfolio data from Google Sheets. Not part of the main app runtime.
 
 ---
 

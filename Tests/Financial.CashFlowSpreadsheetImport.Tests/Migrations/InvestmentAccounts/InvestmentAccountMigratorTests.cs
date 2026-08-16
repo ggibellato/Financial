@@ -1,5 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
 using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.InvestmentAccounts;

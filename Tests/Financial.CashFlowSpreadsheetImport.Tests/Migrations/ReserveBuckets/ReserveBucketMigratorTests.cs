@@ -1,5 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.ReserveBuckets;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.ReserveBuckets;
 using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.ReserveBuckets;

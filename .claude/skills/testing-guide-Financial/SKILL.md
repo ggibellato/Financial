@@ -5,7 +5,7 @@ description: >
   implementing code, creating tests, or reviewing changes in Financial.
   Covers what to test, at which layer, and how to set up each test —
   organized by artifact type across the .NET backend (2 DDD domains + WPF
-  presentation), 4 Integrations projects, and the React frontend.
+  presentation), 2 Integrations projects + 2 Tools projects, and the React frontend.
   Triggers on: planning Financial features, implementing Financial features,
   writing tests for Financial, reviewing Financial code, reviewing Financial tests,
   what should I test in Financial, how to test Financial, Financial test guide.
@@ -117,7 +117,7 @@ When implementing a new feature, walk each row for every artifact you touched.
 | WPF Presentation | `*ViewModel.cs`, `*Converter.cs`, Helpers | Unit (stub deps) | `artifacts/wpf-presentation.md` |
 | Web-scraping Parsers | `GoogleFinance.cs`, `StatusInvest.cs` parsing functions | Unit (string inputs) | `artifacts/web-scraping-parsers.md` |
 | Google API Wrappers | `GoogleDriveClient`, `GoogleService`, `GoogleSheetsClient`, etc. | None (accepted gap) | `artifacts/google-api-wrappers.md` |
-| Spreadsheet Import | `Integrations/CashFlowSpreadsheetImport/**` | Unit/Integration (real `XLWorkbook`) | `artifacts/spreadsheet-import.md` |
+| Spreadsheet Import | `Tools/CashFlowSpreadsheetImport/**` | Unit/Integration (real `XLWorkbook`) | `artifacts/spreadsheet-import.md` |
 | React Pages | `*Page.tsx` in `Financial.Web/src/pages/` | Component (RTL) | `artifacts/react-pages.md` |
 | React Components | `*.tsx` in `Financial.Web/src/components/` | Component (RTL) | `artifacts/react-components.md` |
 | React Hooks | `use*.ts` in `Financial.Web/src/hooks/`, Context | Hook (`renderHook`) | `artifacts/react-hooks.md` |

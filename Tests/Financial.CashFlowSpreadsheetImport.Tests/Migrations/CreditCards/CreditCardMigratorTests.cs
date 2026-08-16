@@ -1,5 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.CreditCards;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.CreditCards;
 using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.CreditCards;

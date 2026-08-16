@@ -1,6 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Banks;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Banks;
 using FluentAssertions;
 using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
 

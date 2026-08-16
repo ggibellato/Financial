@@ -1,7 +1,7 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.Incomes;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Incomes;
 using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.Incomes;

@@ -1,4 +1,4 @@
-using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reporting;
 using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Reporting;

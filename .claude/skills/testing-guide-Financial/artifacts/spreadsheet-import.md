@@ -1,6 +1,6 @@
 > Part of the `testing-guide-Financial` skill (see `../SKILL.md`).
 
-# Spreadsheet Import (`Integrations/CashFlowSpreadsheetImport/**`)
+# Spreadsheet Import (`Tools/CashFlowSpreadsheetImport/**`)
 
 Covers `Parsing/*`, `Reporting/*`, and `SheetImporters/*` — the tool that reads `Despesas.xlsx` via ClosedXML into `data-cashflow.json`, consolidating what were previously five separate migration tools.
 

@@ -141,7 +141,7 @@ One-off console/desktop tools for migrating data from spreadsheets into the JSON
 Reads a personal expense-tracking Excel workbook and populates `data-cashflow.json`.
 
 ```bash
-dotnet run --project Integrations/CashFlowSpreadsheetImport -- <path-to-Despesas.xlsx> [output-json-path] [--mensais-only]
+dotnet run --project Tools/CashFlowSpreadsheetImport -- <path-to-Despesas.xlsx> [output-json-path] [--mensais-only]
 ```
 
 Defaults to reading `Despesas.xlsx` from the Downloads folder and writing to `data/data-cashflow.json`. If the output file already exists, it's backed up automatically (timestamped sibling file) before being overwritten.
