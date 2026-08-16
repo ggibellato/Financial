@@ -1,5 +1,8 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
+using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
+using Financial.Investment.Domain.Entities;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
@@ -245,6 +248,162 @@ public class PriceServiceTests
         }
     }
 
+    [Fact]
+    public async Task GetCurrentPriceAsync_LiveFetchSucceeds_RecordsAutomaticEntryAndReturnsIsManualFalse()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(123.45m));
+        try
+        {
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
+
+            result.Price.Should().Be(123.45m);
+            result.IsManual.Should().BeFalse();
+
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var entry = repository.GetAsset(BrokerName, PortfolioName, AssetName)!.GetPriceForDate(today);
+            entry.Should().NotBeNull();
+            entry!.Price.Should().Be(123.45m);
+            entry.IsManual.Should().BeFalse();
+            repository.SaveCount.Should().Be(1);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_LiveFetchSucceeds_SameAutomaticPriceAlreadyRecorded_SkipsSave()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(50m));
+        try
+        {
+            await service.GetCurrentPriceAsync(BuildRequest());
+            repository.SaveCount.Should().Be(1);
+
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
+
+            result.Price.Should().Be(50m);
+            repository.SaveCount.Should().Be(1);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_LiveFetchSucceeds_OverwritesStaleManualEntry()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(200m));
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(today, 100m, isManual: true);
+            await repository.SaveChangesAsync();
+
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
+
+            result.Price.Should().Be(200m);
+            result.IsManual.Should().BeFalse();
+
+            var entry = repository.GetAsset(BrokerName, PortfolioName, AssetName)!.GetPriceForDate(today);
+            entry!.Price.Should().Be(200m);
+            entry.IsManual.Should().BeFalse();
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_LiveFetchFails_ManualEntryExistsForToday_ReturnsFallbackIsManualTrue()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Failure());
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(today, 321.5m, isManual: true);
+            await repository.SaveChangesAsync();
+
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
+
+            result.Price.Should().Be(321.5m);
+            result.IsManual.Should().BeTrue();
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_LiveFetchFails_AutomaticEntryExistsForToday_ReturnsFallbackIsManualFalse()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Failure());
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(today, 88m, isManual: false);
+            await repository.SaveChangesAsync();
+
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
+
+            result.Price.Should().Be(88m);
+            result.IsManual.Should().BeFalse();
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_LiveFetchFails_NoEntryForToday_RethrowsOriginalException()
+    {
+        var (service, _, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Failure());
+        try
+        {
+            Func<Task> act = () => service.GetCurrentPriceAsync(BuildRequest());
+
+            await act.Should().ThrowAsync<InvalidOperationException>();
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_MissingPortfolioName_SkipsHistoryEntirely()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(15m));
+        try
+        {
+            var request = BuildRequest();
+            request.PortfolioName = null;
+
+            var result = await service.GetCurrentPriceAsync(request);
+
+            result.Price.Should().Be(15m);
+            repository.SaveCount.Should().Be(0);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    private static AssetPriceRequestDTO BuildRequest() => new()
+    {
+        Exchange = "BVMF",
+        Ticker = AssetName,
+        BrokerName = BrokerName,
+        PortfolioName = PortfolioName,
+        AssetName = AssetName
+    };
+
     private static (PriceService Service, string TempFile) CreateService()
     {
         var (service, _, tempFile) = CreateServiceWithRepository();
@@ -260,8 +419,74 @@ public class PriceServiceTests
         var serializer = new InvestmentsSerializerAdapter();
         var repository = new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
         var navigationService = new NavigationService(repository);
-        var service = new PriceService(repository, navigationService);
+        var service = new PriceService(repository, navigationService, StubAssetPriceService.NotUsed());
 
         return (service, repository, tempFile);
+    }
+
+    private static (PriceService Service, CountingRepository Repository, string TempFile) CreateServiceWithAssetPriceService(IAssetPriceService assetPriceService)
+    {
+        var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
+        File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
+
+        var storage = new LocalJsonStorage(tempFile);
+        var serializer = new InvestmentsSerializerAdapter();
+        var innerRepository = new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
+        var repository = new CountingRepository(innerRepository);
+        var navigationService = new NavigationService(repository);
+        var service = new PriceService(repository, navigationService, assetPriceService);
+
+        return (service, repository, tempFile);
+    }
+
+    private sealed class StubAssetPriceService : IAssetPriceService
+    {
+        private readonly Func<AssetPriceRequestDTO, AssetPriceDTO> _handler;
+
+        private StubAssetPriceService(Func<AssetPriceRequestDTO, AssetPriceDTO> handler)
+        {
+            _handler = handler;
+        }
+
+        public static StubAssetPriceService Success(decimal price) =>
+            new(request => new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = price });
+
+        public static StubAssetPriceService Failure() =>
+            new(_ => throw new InvalidOperationException("No asset price fetcher is registered."));
+
+        public static StubAssetPriceService NotUsed() =>
+            new(_ => throw new NotImplementedException("Not expected to be called in this test."));
+
+        public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request) => _handler(request);
+    }
+
+    private sealed class CountingRepository : IInvestmentRepository
+    {
+        private readonly IInvestmentRepository _inner;
+
+        public CountingRepository(IInvestmentRepository inner)
+        {
+            _inner = inner;
+        }
+
+        public int SaveCount { get; private set; }
+
+        public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) =>
+            _inner.GetAssetsByBroker(name, scope);
+
+        public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) =>
+            _inner.GetAssetsByBrokerPortfolio(broker, portfolio, scope);
+
+        public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) =>
+            _inner.GetBrokerList(scope);
+
+        public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) =>
+            _inner.GetAsset(brokerName, portfolioName, assetName, scope);
+
+        public Task SaveChangesAsync()
+        {
+            SaveCount++;
+            return _inner.SaveChangesAsync();
+        }
     }
 }
