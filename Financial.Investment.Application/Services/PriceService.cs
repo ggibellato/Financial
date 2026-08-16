@@ -1,5 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
+using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
 
 namespace Financial.Investment.Application.Services;
@@ -94,9 +95,7 @@ public sealed class PriceService : IPriceService
 
     private Asset? ResolveAsset(AssetPriceRequestDTO request)
     {
-        if (string.IsNullOrWhiteSpace(request.BrokerName) ||
-            string.IsNullOrWhiteSpace(request.PortfolioName) ||
-            string.IsNullOrWhiteSpace(request.AssetName))
+        if (AssetContextValidator.IsInvalid(request.BrokerName, request.PortfolioName, request.AssetName))
         {
             return null;
         }

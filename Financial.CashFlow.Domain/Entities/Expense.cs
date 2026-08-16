@@ -5,8 +5,8 @@ namespace Financial.CashFlow.Domain.Entities;
 
 public class Expense
 {
-    private const decimal MinRoundUpAmount = 0.00m;
-    private const decimal MaxRoundUpAmount = 0.99m;
+    public const decimal MinRoundUpAmount = 0.00m;
+    public const decimal MaxRoundUpAmount = 0.99m;
 
     public Guid Id { get; private set; }
     public DateOnly Date { get; private set; }

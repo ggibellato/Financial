@@ -250,19 +250,11 @@ public class ControleMaeViewModel : ViewModelBase
         CreateSaveError = null;
     }
 
-    internal async Task SubmitCreateAsync()
-    {
-        var validationMessage = CreateEntryFormValidation.BuildValidationMessage(CreateDate, CreateDescription, CreateValue);
-        if (!string.IsNullOrEmpty(validationMessage))
-        {
-            CreateSaveError = validationMessage;
-            return;
-        }
-
-        IsCreating = true;
-        CreateSaveError = null;
-
-        try
+    internal Task SubmitCreateAsync() => ExecuteSaveAsync(
+        () => CreateEntryFormValidation.BuildValidationMessage(CreateDate, CreateDescription, CreateValue),
+        error => CreateSaveError = error,
+        saving => IsCreating = saving,
+        async () =>
         {
             await _controleMaeService.CreateEntryAsync(new CreateMaeLedgerEntryDTO
             {
@@ -275,16 +267,7 @@ public class ControleMaeViewModel : ViewModelBase
 
             CloseCreateForm();
             await Task.WhenAll(RefreshEntriesAsync(), RefreshTotalsAsync());
-        }
-        catch (Exception ex)
-        {
-            CreateSaveError = ex.Message;
-        }
-        finally
-        {
-            IsCreating = false;
-        }
-    }
+        });
 
     #endregion
 
@@ -369,42 +352,28 @@ public class ControleMaeViewModel : ViewModelBase
         _editingEntryId = null;
     }
 
-    internal async Task SaveEditAsync()
+    internal Task SaveEditAsync()
     {
         if (_editingEntryId is not { } id)
         {
-            return;
+            return Task.CompletedTask;
         }
 
-        var validationMessage = EditEntryFormValidation.BuildValidationMessage(EditBrlValue, EditGbpValue);
-        if (!string.IsNullOrEmpty(validationMessage))
-        {
-            EditSaveError = validationMessage;
-            return;
-        }
-
-        IsSaving = true;
-        EditSaveError = null;
-
-        try
-        {
-            await _controleMaeService.UpdateEntryValuesAsync(id, new UpdateMaeLedgerEntryValuesDTO
+        return ExecuteSaveAsync(
+            () => EditEntryFormValidation.BuildValidationMessage(EditBrlValue, EditGbpValue),
+            error => EditSaveError = error,
+            saving => IsSaving = saving,
+            async () =>
             {
-                BrlValue = string.IsNullOrWhiteSpace(EditBrlValue) ? null : decimal.Parse(EditBrlValue),
-                GbpValue = string.IsNullOrWhiteSpace(EditGbpValue) ? null : decimal.Parse(EditGbpValue),
-            });
+                await _controleMaeService.UpdateEntryValuesAsync(id, new UpdateMaeLedgerEntryValuesDTO
+                {
+                    BrlValue = string.IsNullOrWhiteSpace(EditBrlValue) ? null : decimal.Parse(EditBrlValue),
+                    GbpValue = string.IsNullOrWhiteSpace(EditGbpValue) ? null : decimal.Parse(EditGbpValue),
+                });
 
-            CloseEditForm();
-            await Task.WhenAll(RefreshEntriesAsync(), RefreshTotalsAsync());
-        }
-        catch (Exception ex)
-        {
-            EditSaveError = ex.Message;
-        }
-        finally
-        {
-            IsSaving = false;
-        }
+                CloseEditForm();
+                await Task.WhenAll(RefreshEntriesAsync(), RefreshTotalsAsync());
+            });
     }
 
     internal async Task DeleteEntryAsync(MaeLedgerEntryDTO? entry)

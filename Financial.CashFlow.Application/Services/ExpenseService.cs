@@ -9,8 +9,6 @@ namespace Financial.CashFlow.Application.Services;
 
 public sealed class ExpenseService : IExpenseService
 {
-    private const int MaxDescriptionLength = 200;
-
     private readonly ICashFlowRepository _repository;
 
     public ExpenseService(ICashFlowRepository repository)
@@ -104,8 +102,7 @@ public sealed class ExpenseService : IExpenseService
     private static DateOnly ListGroupingDate(Expense expense) => expense.InvoiceDate ?? expense.ChargeDate ?? expense.Date;
 
     private Expense FindExpenseOrThrow(Guid id) =>
-        _repository.GetExpenses().FirstOrDefault(e => e.Id == id)
-            ?? throw new KeyNotFoundException($"Expense '{id}' was not found.");
+        _repository.GetExpenses().FirstOrThrow(e => e.Id == id, "Expense", id);
 
     private (Category Category, Bank? PaymentSourceBank, CreditCardEntity? CreditCard) ValidateFields(
         string description, decimal value, Guid categoryId, Guid? paymentSourceBankId, Guid? creditCardId)
@@ -115,17 +112,14 @@ public sealed class ExpenseService : IExpenseService
             throw new ArgumentException("Description is required.");
         }
 
-        if (description.Length > MaxDescriptionLength)
-        {
-            throw new ArgumentException($"Description must not exceed {MaxDescriptionLength} characters.");
-        }
+        DescriptionValidator.EnsureWithinLimit(description);
 
         if (value == 0)
         {
             throw new ArgumentException("Value must not be zero.");
         }
 
-        if (!CategoryNameResolver.TryResolve(categoryId, _repository.GetCategories(), out var category))
+        if (!EntityIdResolver.TryResolve(categoryId, _repository.GetCategories(), c => c.Id, out var category))
         {
             throw new ArgumentException($"Category '{categoryId}' is not recognized.");
         }
@@ -138,7 +132,7 @@ public sealed class ExpenseService : IExpenseService
         Bank? parsedPaymentSourceBank = null;
         if (paymentSourceBankId is not null)
         {
-            if (!BankNameResolver.TryResolve(paymentSourceBankId, _repository.GetBanks(), out var bank))
+            if (!EntityIdResolver.TryResolve(paymentSourceBankId, _repository.GetBanks(), b => b.Id, out var bank))
             {
                 throw new ArgumentException($"Payment source '{paymentSourceBankId}' is not recognized.");
             }
@@ -149,7 +143,7 @@ public sealed class ExpenseService : IExpenseService
         CreditCardEntity? parsedCreditCard = null;
         if (creditCardId is not null)
         {
-            if (!CreditCardNameResolver.TryResolve(creditCardId, _repository.GetCreditCards(), out var creditCard))
+            if (!EntityIdResolver.TryResolve(creditCardId, _repository.GetCreditCards(), c => c.Id, out var creditCard))
             {
                 throw new ArgumentException($"Credit card '{creditCardId}' is not recognized.");
             }

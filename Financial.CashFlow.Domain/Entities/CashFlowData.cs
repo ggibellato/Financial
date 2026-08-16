@@ -6,20 +6,20 @@ namespace Financial.CashFlow.Domain.Entities;
 
 public class CashFlowData
 {
-    private readonly List<Expense> _expenses = new();
-    public IReadOnlyCollection<Expense> Expenses => _expenses.AsReadOnly();
+    private readonly IdCollection<Expense> _expenses = new(i => i.Id);
+    public IReadOnlyCollection<Expense> Expenses => _expenses;
 
-    private readonly List<ReserveMovement> _reserveMovements = new();
-    public IReadOnlyCollection<ReserveMovement> ReserveMovements => _reserveMovements.AsReadOnly();
+    private readonly IdCollection<ReserveMovement> _reserveMovements = new(i => i.Id);
+    public IReadOnlyCollection<ReserveMovement> ReserveMovements => _reserveMovements;
 
     private readonly List<CardStatement> _cardStatements = new();
     public IReadOnlyCollection<CardStatement> CardStatements => _cardStatements.AsReadOnly();
 
-    private readonly List<RecurringBill> _recurringBills = new();
-    public IReadOnlyCollection<RecurringBill> RecurringBills => _recurringBills.AsReadOnly();
+    private readonly IdCollection<RecurringBill> _recurringBills = new(i => i.Id);
+    public IReadOnlyCollection<RecurringBill> RecurringBills => _recurringBills;
 
-    private readonly List<MaeLedgerEntry> _maeLedgerEntries = new();
-    public IReadOnlyCollection<MaeLedgerEntry> MaeLedgerEntries => _maeLedgerEntries.AsReadOnly();
+    private readonly IdCollection<MaeLedgerEntry> _maeLedgerEntries = new(i => i.Id);
+    public IReadOnlyCollection<MaeLedgerEntry> MaeLedgerEntries => _maeLedgerEntries;
 
     private readonly List<InvestmentSnapshot> _investmentSnapshots = new();
     public IReadOnlyCollection<InvestmentSnapshot> InvestmentSnapshots => _investmentSnapshots.AsReadOnly();
@@ -36,8 +36,8 @@ public class CashFlowData
     private readonly List<ReserveBucket> _reserveBuckets = new();
     public IReadOnlyCollection<ReserveBucket> ReserveBuckets => _reserveBuckets.AsReadOnly();
 
-    private readonly List<Income> _incomes = new();
-    public IReadOnlyCollection<Income> Incomes => _incomes.AsReadOnly();
+    private readonly IdCollection<Income> _incomes = new(i => i.Id);
+    public IReadOnlyCollection<Income> Incomes => _incomes;
 
     private readonly IdCollection<Transfer> _transfers = new(i => i.Id);
     public IReadOnlyCollection<Transfer> Transfers => _transfers;
@@ -57,21 +57,21 @@ public class CashFlowData
 
     public void AddExpense(Expense expense) => _expenses.Add(expense);
 
-    public void RemoveExpense(Guid id) => _expenses.RemoveAll(e => e.Id == id);
+    public void RemoveExpense(Guid id) => _expenses.RemoveById(id);
 
     public void AddReserveMovement(ReserveMovement movement) => _reserveMovements.Add(movement);
 
-    public void RemoveReserveMovement(Guid id) => _reserveMovements.RemoveAll(m => m.Id == id);
+    public void RemoveReserveMovement(Guid id) => _reserveMovements.RemoveById(id);
 
     public void AddCardStatement(CardStatement statement) => _cardStatements.Add(statement);
 
     public void AddRecurringBill(RecurringBill bill) => _recurringBills.Add(bill);
 
-    public void RemoveRecurringBill(Guid id) => _recurringBills.RemoveAll(b => b.Id == id);
+    public void RemoveRecurringBill(Guid id) => _recurringBills.RemoveById(id);
 
     public void AddMaeLedgerEntry(MaeLedgerEntry entry) => _maeLedgerEntries.Add(entry);
 
-    public void RemoveMaeLedgerEntry(Guid id) => _maeLedgerEntries.RemoveAll(e => e.Id == id);
+    public void RemoveMaeLedgerEntry(Guid id) => _maeLedgerEntries.RemoveById(id);
 
     public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => _investmentSnapshots.Add(snapshot);
 
@@ -89,7 +89,7 @@ public class CashFlowData
 
     public void AddIncome(Income income) => _incomes.Add(income);
 
-    public void RemoveIncome(Guid id) => _incomes.RemoveAll(i => i.Id == id);
+    public void RemoveIncome(Guid id) => _incomes.RemoveById(id);
 
     public void AddTransfer(Transfer transfer) => _transfers.Add(transfer);
 

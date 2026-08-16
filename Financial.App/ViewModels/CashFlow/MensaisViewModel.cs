@@ -223,19 +223,11 @@ public class MensaisViewModel : ViewModelBase
         AddSaveError = null;
     }
 
-    internal async Task SubmitAddAsync()
-    {
-        var validationMessage = AddBillFormValidation.BuildValidationMessage(NewDescription, NewDueDay, NewValue);
-        if (!string.IsNullOrEmpty(validationMessage))
-        {
-            AddSaveError = validationMessage;
-            return;
-        }
-
-        IsAdding = true;
-        AddSaveError = null;
-
-        try
+    internal Task SubmitAddAsync() => ExecuteSaveAsync(
+        () => AddBillFormValidation.BuildValidationMessage(NewDescription, NewDueDay, NewValue),
+        error => AddSaveError = error,
+        saving => IsAdding = saving,
+        async () =>
         {
             await _mensaisService.CreateBillAsync(new CreateRecurringBillDTO
             {
@@ -248,16 +240,7 @@ public class MensaisViewModel : ViewModelBase
 
             CloseAddForm();
             await RefreshAsync();
-        }
-        catch (Exception ex)
-        {
-            AddSaveError = ex.Message;
-        }
-        finally
-        {
-            IsAdding = false;
-        }
-    }
+        });
 
     #endregion
 
@@ -343,42 +326,28 @@ public class MensaisViewModel : ViewModelBase
         _editingBillId = null;
     }
 
-    internal async Task SaveEditAsync()
+    internal Task SaveEditAsync()
     {
         if (_editingBillId is not { } id)
         {
-            return;
+            return Task.CompletedTask;
         }
 
-        var validationMessage = EditBillFormValidation.BuildValidationMessage(EditValue, EditStatus);
-        if (!string.IsNullOrEmpty(validationMessage))
-        {
-            EditSaveError = validationMessage;
-            return;
-        }
-
-        IsSaving = true;
-        EditSaveError = null;
-
-        try
-        {
-            await _mensaisService.UpdateBillAsync(id, new UpdateRecurringBillDTO
+        return ExecuteSaveAsync(
+            () => EditBillFormValidation.BuildValidationMessage(EditValue, EditStatus),
+            error => EditSaveError = error,
+            saving => IsSaving = saving,
+            async () =>
             {
-                Status = EditStatus,
-                Value = decimal.Parse(EditValue),
-            });
+                await _mensaisService.UpdateBillAsync(id, new UpdateRecurringBillDTO
+                {
+                    Status = EditStatus,
+                    Value = decimal.Parse(EditValue),
+                });
 
-            CloseEditForm();
-            await RefreshAsync();
-        }
-        catch (Exception ex)
-        {
-            EditSaveError = ex.Message;
-        }
-        finally
-        {
-            IsSaving = false;
-        }
+                CloseEditForm();
+                await RefreshAsync();
+            });
     }
 
     internal async Task DeleteBillAsync(RecurringBillDTO? bill)

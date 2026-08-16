@@ -50,8 +50,7 @@ public sealed class MensaisService : IMensaisService
 
     public async Task DeleteBillAsync(Guid id)
     {
-        _ = _repository.GetRecurringBills().FirstOrDefault(b => b.Id == id)
-            ?? throw new KeyNotFoundException($"Recurring bill '{id}' was not found.");
+        _ = _repository.GetRecurringBills().FirstOrThrow(b => b.Id == id, "Recurring bill", id);
 
         _repository.DeleteRecurringBill(id);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
@@ -64,8 +63,7 @@ public sealed class MensaisService : IMensaisService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var bill = _repository.GetRecurringBills().FirstOrDefault(b => b.Id == id)
-            ?? throw new KeyNotFoundException($"Recurring bill '{id}' was not found.");
+        var bill = _repository.GetRecurringBills().FirstOrThrow(b => b.Id == id, "Recurring bill", id);
 
         if (!BillStatusParser.TryParse(request.Status, out var status))
         {

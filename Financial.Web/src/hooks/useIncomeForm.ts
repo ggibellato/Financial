@@ -1,7 +1,7 @@
 import { useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { IncomeDto, IncomeSourceDto } from '../api/types'
-import { getErrorMessage } from '../utils/formatters'
+import { getErrorMessage, parseValidatedNumber } from '../utils/formatters'
 
 export const INCOME_SOURCES_WITH_GROSS_VALUE = ['Gleison', 'Ariana']
 
@@ -226,20 +226,19 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
       return
     }
 
-    const netValue = Number(createIncomeNetValue)
-    if (!createIncomeNetValue.trim() || !isFinite(netValue) || netValue < 0) {
+    const netValue = parseValidatedNumber(createIncomeNetValue, { min: 0 })
+    if (netValue === null) {
       dispatch({ type: 'CREATE_ERROR', payload: 'Net value must be a non-negative number' })
       return
     }
 
     let grossValue: number | null = null
     if (createIncomeGrossValue.trim() !== '') {
-      const parsedGrossValue = Number(createIncomeGrossValue)
-      if (!isFinite(parsedGrossValue) || parsedGrossValue < netValue) {
+      grossValue = parseValidatedNumber(createIncomeGrossValue, { min: netValue })
+      if (grossValue === null) {
         dispatch({ type: 'CREATE_ERROR', payload: 'Gross value must be at least the net value' })
         return
       }
-      grossValue = parsedGrossValue
     }
 
     dispatch({ type: 'CREATE_START' })
@@ -289,20 +288,19 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
       return
     }
 
-    const netValue = Number(state.editIncomeNetValue)
-    if (!state.editIncomeNetValue.trim() || !isFinite(netValue) || netValue < 0) {
+    const netValue = parseValidatedNumber(state.editIncomeNetValue, { min: 0 })
+    if (netValue === null) {
       dispatch({ type: 'SAVE_ERROR', payload: 'Net value must be a non-negative number' })
       return
     }
 
     let grossValue: number | null = null
     if (state.editIncomeGrossValue.trim() !== '') {
-      const parsedGrossValue = Number(state.editIncomeGrossValue)
-      if (!isFinite(parsedGrossValue) || parsedGrossValue < netValue) {
+      grossValue = parseValidatedNumber(state.editIncomeGrossValue, { min: netValue })
+      if (grossValue === null) {
         dispatch({ type: 'SAVE_ERROR', payload: 'Gross value must be at least the net value' })
         return
       }
-      grossValue = parsedGrossValue
     }
 
     dispatch({ type: 'SAVE_START' })

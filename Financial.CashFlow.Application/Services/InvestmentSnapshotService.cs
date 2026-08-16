@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
+using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Rules;
 
@@ -56,8 +57,7 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
             throw new ArgumentException("Value must not be negative.");
         }
 
-        var snapshot = _repository.GetInvestmentSnapshots().FirstOrDefault(s => s.Id == id)
-            ?? throw new KeyNotFoundException($"Investment snapshot '{id}' was not found.");
+        var snapshot = _repository.GetInvestmentSnapshots().FirstOrThrow(s => s.Id == id, "Investment snapshot", id);
 
         snapshot.Update(request.Value);
         await _repository.SaveChangesAsync().ConfigureAwait(false);

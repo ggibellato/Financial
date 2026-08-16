@@ -81,8 +81,7 @@ public sealed class ControleMaeService : IControleMaeService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var entry = _repository.GetMaeLedgerEntries().FirstOrDefault(e => e.Id == id)
-            ?? throw new KeyNotFoundException($"Mae ledger entry '{id}' was not found.");
+        var entry = _repository.GetMaeLedgerEntries().FirstOrThrow(e => e.Id == id, "Mae ledger entry", id);
 
         entry.UpdateValues(request.BrlValue, request.GbpValue);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
@@ -92,8 +91,7 @@ public sealed class ControleMaeService : IControleMaeService
 
     public async Task DeleteEntryAsync(Guid id)
     {
-        _ = _repository.GetMaeLedgerEntries().FirstOrDefault(e => e.Id == id)
-            ?? throw new KeyNotFoundException($"Mae ledger entry '{id}' was not found.");
+        _ = _repository.GetMaeLedgerEntries().FirstOrThrow(e => e.Id == id, "Mae ledger entry", id);
 
         _repository.DeleteMaeLedgerEntry(id);
         await _repository.SaveChangesAsync().ConfigureAwait(false);

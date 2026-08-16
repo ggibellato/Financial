@@ -21,7 +21,7 @@ public sealed class BankService : IBankService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        if (!BankNameResolver.TryResolve(id, _repository.GetBanks(), out var bank))
+        if (!EntityIdResolver.TryResolve(id, _repository.GetBanks(), b => b.Id, out var bank))
         {
             throw new KeyNotFoundException($"Bank '{id}' was not found.");
         }
@@ -51,7 +51,7 @@ public sealed class BankService : IBankService
 
     public decimal GetBankBalanceAsOf(Guid bankId, DateOnly asOfDate, Guid? excludingAdjustmentId = null)
     {
-        if (!BankNameResolver.TryResolve(bankId, _repository.GetBanks(), out var bank))
+        if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
         {
             throw new KeyNotFoundException($"Bank '{bankId}' was not found.");
         }

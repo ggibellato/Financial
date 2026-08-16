@@ -31,4 +31,21 @@ public class TransactionTests
 
         transaction.Id.Should().NotBe(Guid.Empty);
     }
+
+    [Fact]
+    public void CreateFromTotal_DerivesFeesAsRemainderOfTotal()
+    {
+        var transaction = Transaction.CreateFromTotal(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 2m, 10m, totalAmount: 21m);
+
+        transaction.Fees.Should().Be(1m);
+        transaction.TotalPrice.Should().Be(21m);
+    }
+
+    [Fact]
+    public void CreateFromTotal_WhenDerivedFeesWouldBeNegative_FloorsAtZero()
+    {
+        var transaction = Transaction.CreateFromTotal(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 2m, 10m, totalAmount: 19m);
+
+        transaction.Fees.Should().Be(0m);
+    }
 }

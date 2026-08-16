@@ -16,7 +16,7 @@ internal sealed class GoogleSheetsAssetReader
     private const int TransactionTypeColumn = 2;
     private const int TransactionQuantityColumn = 3;
     private const int TransactionUnitPriceColumn = 5;
-    private const int TransactionFeesColumn = 6;
+    private const int TransactionTotalAmountColumn = 6;
     private const string SellTransactionCode = "V";
 
     private const int CreditDateColumn = 0;
@@ -65,14 +65,14 @@ internal sealed class GoogleSheetsAssetReader
             var type = (string)value[TransactionTypeColumn];
             var quantity = GoogleSheetValueParser.ToDecimal(value[TransactionQuantityColumn]);
             var unitPrice = GoogleSheetValueParser.ToDecimal(value[TransactionUnitPriceColumn]);
-            var fees = GoogleSheetValueParser.ToDecimal(value[TransactionFeesColumn]) - (unitPrice * quantity);
+            var totalAmount = GoogleSheetValueParser.ToDecimal(value[TransactionTotalAmountColumn]);
 
-            transactions.Add(Transaction.Create(
+            transactions.Add(Transaction.CreateFromTotal(
                 DateTime.FromOADate(date),
                 type == SellTransactionCode ? Transaction.TransactionType.Sell : Transaction.TransactionType.Buy,
                 quantity,
                 unitPrice,
-                fees < 0 ? 0 : fees));
+                totalAmount));
         }
         return transactions;
     }

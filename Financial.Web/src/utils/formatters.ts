@@ -91,3 +91,12 @@ export function signClass(value: number, basePrefix: string): string {
 export function getErrorMessage(err: unknown, fallback: string): string {
   return err instanceof Error ? err.message : fallback
 }
+
+/** Parses a form-input string to a finite number within an optional [min, max] range; returns null for blank, non-finite, or out-of-range input. */
+export function parseValidatedNumber(value: string, options: { min?: number; max?: number } = {}): number | null {
+  const parsed = Number(value)
+  if (!value.trim() || !isFinite(parsed)) return null
+  if (options.min !== undefined && parsed < options.min) return null
+  if (options.max !== undefined && parsed > options.max) return null
+  return parsed
+}

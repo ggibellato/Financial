@@ -295,19 +295,11 @@ public class ReservaViewModel : ViewModelBase
         LastSplitResult = null;
     }
 
-    internal async Task SubmitSplitAsync()
-    {
-        var validationMessage = IncomeSplitFormValidation.BuildValidationMessage(SplitDate, SplitAmount, SplitDescription);
-        if (!string.IsNullOrEmpty(validationMessage))
-        {
-            SplitSaveError = validationMessage;
-            return;
-        }
-
-        IsSubmittingSplit = true;
-        SplitSaveError = null;
-
-        try
+    internal Task SubmitSplitAsync() => ExecuteSaveAsync(
+        () => IncomeSplitFormValidation.BuildValidationMessage(SplitDate, SplitAmount, SplitDescription),
+        error => SplitSaveError = error,
+        saving => IsSubmittingSplit = saving,
+        async () =>
         {
             var result = await _reserveService.PostIncomeSplitAsync(new IncomeSplitRequestDTO
             {
@@ -318,16 +310,7 @@ public class ReservaViewModel : ViewModelBase
 
             LastSplitResult = result;
             await RefreshAsync(includeBuckets: false);
-        }
-        catch (Exception ex)
-        {
-            SplitSaveError = ex.Message;
-        }
-        finally
-        {
-            IsSubmittingSplit = false;
-        }
-    }
+        });
 
     #endregion
 
@@ -411,34 +394,16 @@ public class ReservaViewModel : ViewModelBase
         WithdrawalSaveError = null;
     }
 
-    internal async Task SubmitWithdrawalAsync()
-    {
-        var validationMessage = WithdrawalFormValidation.BuildValidationMessage(
-            WithdrawalBucket, WithdrawalAmount, WithdrawalDate, WithdrawalDescription);
-        if (!string.IsNullOrEmpty(validationMessage))
-        {
-            WithdrawalSaveError = validationMessage;
-            return;
-        }
-
-        IsSubmittingWithdrawal = true;
-        WithdrawalSaveError = null;
-
-        try
+    internal Task SubmitWithdrawalAsync() => ExecuteSaveAsync(
+        () => WithdrawalFormValidation.BuildValidationMessage(WithdrawalBucket, WithdrawalAmount, WithdrawalDate, WithdrawalDescription),
+        error => WithdrawalSaveError = error,
+        saving => IsSubmittingWithdrawal = saving,
+        async () =>
         {
             await PostWithdrawalWithOverdraftHandlingAsync(confirmed: false);
             CloseWithdrawalForm();
             await RefreshAsync(includeBuckets: false);
-        }
-        catch (Exception ex)
-        {
-            WithdrawalSaveError = ex.Message;
-        }
-        finally
-        {
-            IsSubmittingWithdrawal = false;
-        }
-    }
+        });
 
     /// <summary>
     /// Posts the withdrawal; on an overdraft conflict, asks the user to confirm and resubmits
@@ -572,44 +537,30 @@ public class ReservaViewModel : ViewModelBase
         _editingMovementId = null;
     }
 
-    internal async Task SaveMovementEditAsync()
+    internal Task SaveMovementEditAsync()
     {
         if (_editingMovementId is not { } id)
         {
-            return;
+            return Task.CompletedTask;
         }
 
-        var validationMessage = EditReserveMovementFormValidation.BuildValidationMessage(EditBucket, EditAmount, EditDate, EditDescription);
-        if (!string.IsNullOrEmpty(validationMessage))
-        {
-            EditSaveError = validationMessage;
-            return;
-        }
-
-        IsSavingMovement = true;
-        EditSaveError = null;
-
-        try
-        {
-            await _reserveService.UpdateMovementAsync(id, new UpdateReserveMovementDTO
+        return ExecuteSaveAsync(
+            () => EditReserveMovementFormValidation.BuildValidationMessage(EditBucket, EditAmount, EditDate, EditDescription),
+            error => EditSaveError = error,
+            saving => IsSavingMovement = saving,
+            async () =>
             {
-                Bucket = EditBucket,
-                Amount = decimal.Parse(EditAmount),
-                Date = DateOnly.FromDateTime(EditDate!.Value),
-                Description = EditDescription,
-            });
+                await _reserveService.UpdateMovementAsync(id, new UpdateReserveMovementDTO
+                {
+                    Bucket = EditBucket,
+                    Amount = decimal.Parse(EditAmount),
+                    Date = DateOnly.FromDateTime(EditDate!.Value),
+                    Description = EditDescription,
+                });
 
-            CloseEditForm();
-            await RefreshAsync(includeBuckets: false);
-        }
-        catch (Exception ex)
-        {
-            EditSaveError = ex.Message;
-        }
-        finally
-        {
-            IsSavingMovement = false;
-        }
+                CloseEditForm();
+                await RefreshAsync(includeBuckets: false);
+            });
     }
 
     internal async Task DeleteMovementAsync(ReserveMovementRow? row)

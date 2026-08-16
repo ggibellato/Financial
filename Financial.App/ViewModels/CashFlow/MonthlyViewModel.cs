@@ -621,23 +621,13 @@ public class MonthlyViewModel : ViewModelBase
         return suggestion.ToString("0.##");
     }
 
-    internal async Task SaveExpenseAsync()
-    {
-        var validationMessage = ExpenseFormValidation.BuildValidationMessage(
+    internal Task SaveExpenseAsync() => ExecuteSaveAsync(
+        () => ExpenseFormValidation.BuildValidationMessage(
             ExpenseFormDate, ExpenseFormDescription, ExpenseFormCategoryId, ExpenseFormValue,
-            IsCardPaymentMode, ExpenseFormPaymentSource, ExpenseFormCreditCardId, ShowRoundUpField, ExpenseFormRoundUpAmount);
-
-        if (!string.IsNullOrEmpty(validationMessage))
-        {
-            ExpenseSaveError = validationMessage;
-            return;
-        }
-
-        IsSavingExpense = true;
-        SaveExpenseCommand.RaiseCanExecuteChanged();
-        ExpenseSaveError = null;
-
-        try
+            IsCardPaymentMode, ExpenseFormPaymentSource, ExpenseFormCreditCardId, ShowRoundUpField, ExpenseFormRoundUpAmount),
+        error => ExpenseSaveError = error,
+        saving => IsSavingExpense = saving,
+        async () =>
         {
             var date = DateOnly.FromDateTime(ExpenseFormDate!.Value);
             var value = decimal.Parse(ExpenseFormValue);
@@ -682,17 +672,8 @@ public class MonthlyViewModel : ViewModelBase
 
             CloseExpenseForm();
             await RefreshAsync();
-        }
-        catch (Exception ex)
-        {
-            ExpenseSaveError = ex.Message;
-        }
-        finally
-        {
-            IsSavingExpense = false;
-            SaveExpenseCommand.RaiseCanExecuteChanged();
-        }
-    }
+        },
+        SaveExpenseCommand.RaiseCanExecuteChanged);
 
     internal async Task DeleteExpenseAsync(ExpenseDTO? expense)
     {
@@ -887,22 +868,11 @@ public class MonthlyViewModel : ViewModelBase
         IncomeSaveError = null;
     }
 
-    internal async Task SaveIncomeAsync()
-    {
-        var validationMessage = IncomeFormValidation.BuildValidationMessage(
-            IncomeFormDate, IncomeFormSource, IncomeFormNetValue);
-
-        if (!string.IsNullOrEmpty(validationMessage))
-        {
-            IncomeSaveError = validationMessage;
-            return;
-        }
-
-        IsSavingIncome = true;
-        SaveIncomeCommand.RaiseCanExecuteChanged();
-        IncomeSaveError = null;
-
-        try
+    internal Task SaveIncomeAsync() => ExecuteSaveAsync(
+        () => IncomeFormValidation.BuildValidationMessage(IncomeFormDate, IncomeFormSource, IncomeFormNetValue),
+        error => IncomeSaveError = error,
+        saving => IsSavingIncome = saving,
+        async () =>
         {
             var date = DateOnly.FromDateTime(IncomeFormDate!.Value);
             var netValue = decimal.Parse(IncomeFormNetValue);
@@ -939,17 +909,8 @@ public class MonthlyViewModel : ViewModelBase
 
             CloseIncomeForm();
             await RefreshAsync();
-        }
-        catch (Exception ex)
-        {
-            IncomeSaveError = ex.Message;
-        }
-        finally
-        {
-            IsSavingIncome = false;
-            SaveIncomeCommand.RaiseCanExecuteChanged();
-        }
-    }
+        },
+        SaveIncomeCommand.RaiseCanExecuteChanged);
 
     internal async Task DeleteIncomeAsync(IncomeDTO? income)
     {
@@ -1210,22 +1171,12 @@ public class MonthlyViewModel : ViewModelBase
         TransferSaveError = null;
     }
 
-    internal async Task SaveTransferAsync()
-    {
-        var validationMessage = TransferFormValidation.BuildValidationMessage(
-            TransferFormDate, TransferFormSourceBank, TransferFormDestinationBank, TransferFormAmount);
-
-        if (!string.IsNullOrEmpty(validationMessage))
-        {
-            TransferSaveError = validationMessage;
-            return;
-        }
-
-        IsSavingTransfer = true;
-        SaveTransferCommand.RaiseCanExecuteChanged();
-        TransferSaveError = null;
-
-        try
+    internal Task SaveTransferAsync() => ExecuteSaveAsync(
+        () => TransferFormValidation.BuildValidationMessage(
+            TransferFormDate, TransferFormSourceBank, TransferFormDestinationBank, TransferFormAmount),
+        error => TransferSaveError = error,
+        saving => IsSavingTransfer = saving,
+        async () =>
         {
             var date = DateOnly.FromDateTime(TransferFormDate!.Value);
             var amount = decimal.Parse(TransferFormAmount);
@@ -1252,17 +1203,8 @@ public class MonthlyViewModel : ViewModelBase
 
             CloseTransferForm();
             await RefreshAsync();
-        }
-        catch (Exception ex)
-        {
-            TransferSaveError = ex.Message;
-        }
-        finally
-        {
-            IsSavingTransfer = false;
-            SaveTransferCommand.RaiseCanExecuteChanged();
-        }
-    }
+        },
+        SaveTransferCommand.RaiseCanExecuteChanged);
 
     // ----- Balance Adjustment form -----
 
@@ -1424,21 +1366,11 @@ public class MonthlyViewModel : ViewModelBase
         AdjustmentSavedDelta = null;
     }
 
-    internal async Task SaveAdjustmentAsync()
-    {
-        var validationMessage = BalanceAdjustmentFormValidation.BuildValidationMessage(AdjustmentFormDate, AdjustmentFormTargetBalance);
-
-        if (!string.IsNullOrEmpty(validationMessage))
-        {
-            AdjustmentSaveError = validationMessage;
-            return;
-        }
-
-        IsSavingAdjustment = true;
-        SaveAdjustmentCommand.RaiseCanExecuteChanged();
-        AdjustmentSaveError = null;
-
-        try
+    internal Task SaveAdjustmentAsync() => ExecuteSaveAsync(
+        () => BalanceAdjustmentFormValidation.BuildValidationMessage(AdjustmentFormDate, AdjustmentFormTargetBalance),
+        error => AdjustmentSaveError = error,
+        saving => IsSavingAdjustment = saving,
+        async () =>
         {
             var date = DateOnly.FromDateTime(AdjustmentFormDate!.Value);
             var targetBalance = decimal.Parse(AdjustmentFormTargetBalance);
@@ -1462,17 +1394,8 @@ public class MonthlyViewModel : ViewModelBase
 
             await RefreshAsync();
             AdjustmentSavedDelta = result.Delta;
-        }
-        catch (Exception ex)
-        {
-            AdjustmentSaveError = ex.Message;
-        }
-        finally
-        {
-            IsSavingAdjustment = false;
-            SaveAdjustmentCommand.RaiseCanExecuteChanged();
-        }
-    }
+        },
+        SaveAdjustmentCommand.RaiseCanExecuteChanged);
 
     // ----- Cards grid -----
 

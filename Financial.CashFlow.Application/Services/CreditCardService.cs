@@ -21,7 +21,7 @@ public sealed class CreditCardService : ICreditCardService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        if (!CreditCardNameResolver.TryResolve(id, _repository.GetCreditCards(), out var creditCard))
+        if (!EntityIdResolver.TryResolve(id, _repository.GetCreditCards(), c => c.Id, out var creditCard))
         {
             throw new KeyNotFoundException($"Credit card '{id}' was not found.");
         }

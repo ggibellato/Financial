@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { InvestmentSnapshotDto } from '../api/types'
-import { currentYearMonth, formatMonthInputValue, getErrorMessage, parseMonthInputValue } from '../utils/formatters'
+import {
+  currentYearMonth,
+  formatMonthInputValue,
+  getErrorMessage,
+  parseMonthInputValue,
+  parseValidatedNumber,
+} from '../utils/formatters'
 
 interface InvestmentSnapshotsState {
   year: number
@@ -135,8 +141,8 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
   function saveEdit() {
     if (!state.editingId) return
 
-    const value = Number(state.editValue)
-    if (!state.editValue.trim() || !isFinite(value) || value < 0) {
+    const value = parseValidatedNumber(state.editValue, { min: 0 })
+    if (value === null) {
       dispatch({ type: 'SAVE_ERROR', payload: 'Value must be a non-negative number' })
       return
     }

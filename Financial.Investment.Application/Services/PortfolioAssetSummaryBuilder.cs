@@ -1,5 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 
 namespace Financial.Investment.Application.Services;
 
@@ -7,15 +8,6 @@ internal readonly record struct AssetTotals(decimal TotalBought, decimal TotalSo
 
 internal static class PortfolioAssetSummaryBuilder
 {
-    private const double MonthlyMaxAverageGap = 1.5;
-    private const double QuarterlyMaxAverageGap = 3.5;
-    private const double FourMonthlyMaxAverageGap = 5.0;
-
-    private const int MonthlyPaymentsPerYear = 12;
-    private const int QuarterlyPaymentsPerYear = 4;
-    private const int FourMonthlyPaymentsPerYear = 3;
-
-
     internal static IReadOnlyList<PortfolioAssetSummaryItemDTO> Build(
         IEnumerable<Asset> assets,
         DateTime today,
@@ -88,7 +80,7 @@ internal static class PortfolioAssetSummaryBuilder
             ? lastMonthCredits / weightBasis * 100m
             : null;
 
-        var frequencyPerYear = DetectCreditFrequency(asset.Credits);
+        var frequencyPerYear = CreditFrequencyAnalyzer.DetectFrequencyPerYear(asset.Credits);
 
         decimal? estimatedAnnualCredits = frequencyPerYear.HasValue
             ? lastMonthCredits * frequencyPerYear.Value
@@ -106,29 +98,6 @@ internal static class PortfolioAssetSummaryBuilder
             lastMonthCredits, lastMonthCreditsString, lastMonthCreditsPercent,
             frequencyPerYear, estimatedAnnualCredits, estimatedAnnualPercent,
             currentMonthCredits);
-    }
-
-    private static int? DetectCreditFrequency(IEnumerable<Credit> credits)
-    {
-        var distinctMonths = credits
-            .Select(c => c.Date.Year * 12 + (c.Date.Month - 1))
-            .Distinct()
-            .OrderBy(m => m)
-            .ToList();
-
-        if (distinctMonths.Count < 2)
-            return null;
-
-        var totalGap = distinctMonths[^1] - distinctMonths[0];
-        var averageGap = (double)totalGap / (distinctMonths.Count - 1);
-
-        return averageGap switch
-        {
-            <= MonthlyMaxAverageGap => MonthlyPaymentsPerYear,
-            <= QuarterlyMaxAverageGap => QuarterlyPaymentsPerYear,
-            <= FourMonthlyMaxAverageGap => FourMonthlyPaymentsPerYear,
-            _ => null
-        };
     }
 
     private static PortfolioAssetSummaryItemDTO ToDTO(AssetComputedData c, decimal weight) =>

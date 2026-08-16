@@ -146,8 +146,7 @@ public sealed class ReserveService : IReserveService
             throw new ArgumentException($"Bucket '{request.Bucket}' is not recognized.");
         }
 
-        var movement = _repository.GetReserveMovements().FirstOrDefault(m => m.Id == id)
-            ?? throw new KeyNotFoundException($"Reserve movement '{id}' was not found.");
+        var movement = _repository.GetReserveMovements().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
 
         movement.Update(bucket!, request.Amount, request.Date, request.Description);
         await _repository.SaveChangesAsync().ConfigureAwait(false);
@@ -157,8 +156,7 @@ public sealed class ReserveService : IReserveService
 
     public async Task DeleteMovementAsync(Guid id)
     {
-        var movement = _repository.GetReserveMovements().FirstOrDefault(m => m.Id == id)
-            ?? throw new KeyNotFoundException($"Reserve movement '{id}' was not found.");
+        var movement = _repository.GetReserveMovements().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
 
         // Movements from the same income split share Date+Description (see PostIncomeSplitAsync) -
         // deleting one deletes the whole split, not just this bucket's line.

@@ -47,9 +47,9 @@ public sealed class DividendService : IDividendService
             .DefaultIfEmpty(0m)
             .Average();
 
-        var priceMax = averageDividend > 0m ? averageDividend / DividendValuationRules.RequiredYield : 0m;
-        var discountPercent = priceMax > 0m ? (1m - (snapshot.Price / priceMax)) * 100m : 0m;
-        var dividendYieldPercent = snapshot.Price > 0m ? (averageDividend / snapshot.Price) * 100m : 0m;
+        var priceMax = DividendValuationRules.CalculatePriceMaxBuy(averageDividend);
+        var discountPercent = DividendValuationRules.CalculateDiscountPercent(snapshot.Price, priceMax);
+        var dividendYieldPercent = DividendValuationRules.CalculateDividendYieldPercent(averageDividend, snapshot.Price);
 
         return new DividendSummaryDTO
         {

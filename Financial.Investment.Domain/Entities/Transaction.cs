@@ -33,4 +33,10 @@ public class Transaction
     public static Transaction CreateWithId(Guid id, DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees) =>
         new(id, date, type, quantity, unitPrice, fees);
 
+    /// <summary>Derives Fees as the inverse of <see cref="TotalPrice"/> (totalAmount - unitPrice * quantity), floored at zero.</summary>
+    public static Transaction CreateFromTotal(DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal totalAmount)
+    {
+        var fees = totalAmount - (unitPrice * quantity);
+        return new(Guid.NewGuid(), date, type, quantity, unitPrice, fees < 0 ? 0 : fees);
+    }
 }

@@ -199,41 +199,27 @@ public class InvestmentSnapshotsViewModel : ViewModelBase
         _editingSnapshotId = null;
     }
 
-    internal async Task SaveEditAsync()
+    internal Task SaveEditAsync()
     {
         if (_editingSnapshotId is not { } id)
         {
-            return;
+            return Task.CompletedTask;
         }
 
-        var validationMessage = EditSnapshotValueFormValidation.BuildValidationMessage(EditValue);
-        if (!string.IsNullOrEmpty(validationMessage))
-        {
-            EditSaveError = validationMessage;
-            return;
-        }
-
-        IsSaving = true;
-        EditSaveError = null;
-
-        try
-        {
-            await _investmentSnapshotService.UpdateSnapshotValueAsync(id, new UpdateInvestmentSnapshotValueDTO
+        return ExecuteSaveAsync(
+            () => EditSnapshotValueFormValidation.BuildValidationMessage(EditValue),
+            error => EditSaveError = error,
+            saving => IsSaving = saving,
+            async () =>
             {
-                Value = decimal.Parse(EditValue),
-            });
+                await _investmentSnapshotService.UpdateSnapshotValueAsync(id, new UpdateInvestmentSnapshotValueDTO
+                {
+                    Value = decimal.Parse(EditValue),
+                });
 
-            CloseEditForm();
-            await RefreshAsync();
-        }
-        catch (Exception ex)
-        {
-            EditSaveError = ex.Message;
-        }
-        finally
-        {
-            IsSaving = false;
-        }
+                CloseEditForm();
+                await RefreshAsync();
+            });
     }
 
     #endregion

@@ -1,14 +1,13 @@
-using Financial.Investment.Application.Interfaces;
 using Financial.Shared.Infrastructure.Sync;
 using Microsoft.Extensions.Hosting;
 
-namespace Financial.Investment.Infrastructure.Hosting;
+namespace Financial.Shared.Infrastructure.Hosting;
 
-public sealed class InvestmentShutdownFlushHostedService : IHostedService
+public sealed class ShutdownFlushHostedService<TRepository> : IHostedService where TRepository : class
 {
-    private readonly IInvestmentRepository _repository;
+    private readonly TRepository _repository;
 
-    public InvestmentShutdownFlushHostedService(IInvestmentRepository repository)
+    public ShutdownFlushHostedService(TRepository repository)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     }

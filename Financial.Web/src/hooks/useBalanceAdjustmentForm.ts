@@ -3,7 +3,7 @@ import { createFinancialApiClient } from '../api/financialApiClient'
 import type { BalanceAdjustmentDto } from '../api/types'
 import type { BankTotal } from './useMonthly'
 import { mapBalanceAdjustmentErrorToField, type BalanceAdjustmentFormField } from './mapBalanceAdjustmentErrorToField'
-import { getErrorMessage, todayIsoDate } from '../utils/formatters'
+import { getErrorMessage, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
 
 interface BalanceAdjustmentFormState {
   isOpen: boolean
@@ -126,8 +126,8 @@ export function useBalanceAdjustmentForm(
       return
     }
 
-    const targetBalance = Number(state.targetBalance)
-    if (!state.targetBalance.trim() || !isFinite(targetBalance) || targetBalance < 0) {
+    const targetBalance = parseValidatedNumber(state.targetBalance, { min: 0 })
+    if (targetBalance === null) {
       setState((s) => ({ ...s, saveError: 'Balance cannot be negative.', saveErrorField: 'targetBalance' }))
       return
     }

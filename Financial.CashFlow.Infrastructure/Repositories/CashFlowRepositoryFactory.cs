@@ -8,7 +8,6 @@ namespace Financial.CashFlow.Infrastructure.Repositories;
 public sealed class CashFlowRepositoryFactory
 {
     private const string DefaultDataFileName = "data-cashflow.json";
-    private static readonly TimeSpan DebounceWindow = TimeSpan.FromSeconds(10);
 
     private readonly ICashFlowSerializer _serializer;
     private readonly IRemoteFileClientFactory? _remoteFileClientFactory;
@@ -35,22 +34,15 @@ public sealed class CashFlowRepositoryFactory
         options.Provider switch
         {
             CashFlowRepositoryProvider.LocalJson =>
-                new LocalJsonStorage(options.LocalDataPath, DefaultDataFileName),
+                JsonStorageFactory.CreateLocal(options.LocalDataPath, DefaultDataFileName),
             CashFlowRepositoryProvider.GoogleDriveJson =>
-                CreateGoogleDriveStorage(options),
+                JsonStorageFactory.CreateGoogleDrive(
+                    options.GoogleDriveCredentialsPath,
+                    options.GoogleDriveFilePath,
+                    _remoteFileClientFactory,
+                    CashFlowRepositoryConfigurationKeys.GoogleDriveCredentialsPath,
+                    nameof(CashFlowRepositoryProvider.GoogleDriveJson)),
             _ => throw new ArgumentOutOfRangeException(
                     nameof(options.Provider), options.Provider, "Unsupported repository provider.")
         };
-
-    private IJsonStorage CreateGoogleDriveStorage(CashFlowRepositorySelectionOptions options)
-    {
-        var storage = GoogleDriveStorageFactory.Create(
-            options.GoogleDriveCredentialsPath,
-            options.GoogleDriveFilePath,
-            _remoteFileClientFactory,
-            CashFlowRepositoryConfigurationKeys.GoogleDriveCredentialsPath,
-            nameof(CashFlowRepositoryProvider.GoogleDriveJson));
-
-        return new DebouncedJsonStorage(storage, DebounceWindow);
-    }
 }

@@ -4,7 +4,7 @@ import type { CreditDto, SelectedNode } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
-import { getErrorMessage, pad, toInputDate } from '../utils/formatters'
+import { getErrorMessage, pad, parseValidatedNumber, toInputDate } from '../utils/formatters'
 
 export type ViewMode = 'Stacked' | 'Grouped'
 export type ChartType = 'Bar' | 'Line'
@@ -362,8 +362,8 @@ export function useCredits(): CreditsData {
       return
     }
 
-    const value = parseFloat(formValue)
-    if (!formValue.trim() || !isFinite(value) || value <= 0) {
+    const value = parseValidatedNumber(formValue)
+    if (value === null || value <= 0) {
       dispatch({ type: 'SAVE_ERROR', payload: 'Value must be a positive number' })
       return
     }

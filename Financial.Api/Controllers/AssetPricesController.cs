@@ -10,7 +10,7 @@ namespace Financial.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("prices")]
-public sealed class AssetPricesController : ControllerBase
+public sealed class AssetPricesController : ApiControllerBase
 {
     private readonly IPriceService _priceService;
 
@@ -82,12 +82,7 @@ public sealed class AssetPricesController : ControllerBase
         }
 
         var asset = await _priceService.SetPriceAsync(request);
-        if (asset is null)
-        {
-            return BadRequest();
-        }
-
-        return Ok(asset);
+        return OkOrBadRequest(asset);
     }
 
     /// <summary>Deletes a manually-entered price for an asset on a given date. A missing date is a no-op; an automatic entry can't be deleted this way.</summary>
@@ -104,11 +99,6 @@ public sealed class AssetPricesController : ControllerBase
         }
 
         var asset = await _priceService.DeletePriceAsync(request);
-        if (asset is null)
-        {
-            return BadRequest();
-        }
-
-        return Ok(asset);
+        return OkOrBadRequest(asset);
     }
 }

@@ -57,7 +57,7 @@ public sealed class TransferService : ITransferService
 
     public IReadOnlyList<TransferDTO> GetTransfersByBank(Guid bankId)
     {
-        if (!BankNameResolver.TryResolve(bankId, _repository.GetBanks(), out var bank))
+        if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
         {
             return Array.Empty<TransferDTO>();
         }
@@ -69,19 +69,18 @@ public sealed class TransferService : ITransferService
     }
 
     private Transfer FindTransferOrThrow(Guid id) =>
-        _repository.GetTransfers().FirstOrDefault(t => t.Id == id)
-            ?? throw new KeyNotFoundException($"Transfer '{id}' was not found.");
+        _repository.GetTransfers().FirstOrThrow(t => t.Id == id, "Transfer", id);
 
     private (Bank SourceBank, Bank DestinationBank) ResolveBanks(Guid sourceBankId, Guid destinationBankId)
     {
         var banks = _repository.GetBanks();
 
-        if (!BankNameResolver.TryResolve(sourceBankId, banks, out var resolvedSource))
+        if (!EntityIdResolver.TryResolve(sourceBankId, banks, b => b.Id, out var resolvedSource))
         {
             throw new ArgumentException($"Bank '{sourceBankId}' was not found.");
         }
 
-        if (!BankNameResolver.TryResolve(destinationBankId, banks, out var resolvedDestination))
+        if (!EntityIdResolver.TryResolve(destinationBankId, banks, b => b.Id, out var resolvedDestination))
         {
             throw new ArgumentException($"Bank '{destinationBankId}' was not found.");
         }

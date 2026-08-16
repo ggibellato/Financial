@@ -10,7 +10,7 @@ namespace Financial.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("transactions")]
-public sealed class TransactionsController : ControllerBase
+public sealed class TransactionsController : ApiControllerBase
 {
     private readonly ITransactionService _transactionService;
     private readonly ITransactionQueryService _transactionQueryService;
@@ -35,12 +35,7 @@ public sealed class TransactionsController : ControllerBase
         }
 
         var asset = await _transactionService.AddTransactionAsync(request);
-        if (asset is null)
-        {
-            return BadRequest();
-        }
-
-        return Ok(asset);
+        return OkOrBadRequest(asset);
     }
 
     /// <summary>Updates an existing investment transaction.</summary>
@@ -57,12 +52,7 @@ public sealed class TransactionsController : ControllerBase
         }
 
         var asset = await _transactionService.UpdateTransactionAsync(request);
-        if (asset is null)
-        {
-            return BadRequest();
-        }
-
-        return Ok(asset);
+        return OkOrBadRequest(asset);
     }
 
     /// <summary>Deletes an investment transaction.</summary>
@@ -79,12 +69,7 @@ public sealed class TransactionsController : ControllerBase
         }
 
         var asset = await _transactionService.DeleteTransactionAsync(request);
-        if (asset is null)
-        {
-            return BadRequest();
-        }
-
-        return Ok(asset);
+        return OkOrBadRequest(asset);
     }
 
     /// <summary>Lists transactions for all portfolios under a broker.</summary>

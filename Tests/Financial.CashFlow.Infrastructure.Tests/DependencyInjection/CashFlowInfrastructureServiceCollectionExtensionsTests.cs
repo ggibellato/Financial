@@ -1,6 +1,6 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
-using Financial.CashFlow.Infrastructure.Hosting;
+using Financial.Shared.Infrastructure.Hosting;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,7 +51,7 @@ public class CashFlowInfrastructureServiceCollectionExtensionsTests
 
         var hostedServices = provider.GetServices<IHostedService>();
 
-        hostedServices.Should().ContainSingle(service => service is CashFlowShutdownFlushHostedService);
+        hostedServices.Should().ContainSingle(service => service is ShutdownFlushHostedService<ICashFlowRepository>);
     }
 
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)

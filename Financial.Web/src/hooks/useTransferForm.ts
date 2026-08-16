@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { BankDto, TransferDto } from '../api/types'
 import { mapTransferErrorToField, type TransferFormField } from './mapTransferErrorToField'
-import { getErrorMessage, todayIsoDate } from '../utils/formatters'
+import { getErrorMessage, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
 
 interface TransferFormState {
   isOpen: boolean
@@ -113,8 +113,8 @@ export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTrans
       return
     }
 
-    const amount = Number(state.amount)
-    if (!state.amount.trim() || !isFinite(amount) || amount <= 0) {
+    const amount = parseValidatedNumber(state.amount)
+    if (amount === null || amount <= 0) {
       setState((s) => ({ ...s, saveError: 'Amount must be greater than zero.', saveErrorField: 'amount' }))
       return
     }
