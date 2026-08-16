@@ -17,6 +17,9 @@ public sealed class IncomeCreateDTO
     /// <summary>Net value received.</summary>
     public required decimal NetValue { get; init; }
 
-    /// <summary>Destination bank identifier.</summary>
-    public required Guid BankId { get; init; }
+    /// <summary>Destination bank identifier. Omit when the income never lands in a tracked bank.</summary>
+    public Guid? BankId { get; init; }
+
+    /// <summary>Free-text description, up to 200 characters. Optional.</summary>
+    public string? Description { get; init; }
 }

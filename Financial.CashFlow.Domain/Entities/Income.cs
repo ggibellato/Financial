@@ -9,7 +9,8 @@ public class Income
     public IncomeSource IncomeSource { get; private set; } = null!;
     public decimal? GrossValue { get; private set; }
     public decimal NetValue { get; private set; }
-    public Bank Bank { get; private set; } = null!;
+    public Bank? Bank { get; private set; }
+    public string? Description { get; private set; }
 
     private Income() { }
 
@@ -18,11 +19,11 @@ public class Income
         IncomeSource incomeSource,
         decimal? grossValue,
         decimal netValue,
-        Bank bank)
+        Bank? bank,
+        string? description = null)
     {
         ValidateValues(grossValue, netValue);
         ValidateIncomeSource(incomeSource);
-        ValidateBank(bank);
 
         return new()
         {
@@ -31,7 +32,8 @@ public class Income
             IncomeSource = incomeSource,
             GrossValue = grossValue,
             NetValue = netValue,
-            Bank = bank
+            Bank = bank,
+            Description = NormalizeDescription(description)
         };
     }
 
@@ -40,17 +42,18 @@ public class Income
         IncomeSource incomeSource,
         decimal? grossValue,
         decimal netValue,
-        Bank bank)
+        Bank? bank,
+        string? description = null)
     {
         ValidateValues(grossValue, netValue);
         ValidateIncomeSource(incomeSource);
-        ValidateBank(bank);
 
         Date = date;
         IncomeSource = incomeSource;
         GrossValue = grossValue;
         NetValue = netValue;
         Bank = bank;
+        Description = NormalizeDescription(description);
     }
 
     private static void ValidateValues(decimal? grossValue, decimal netValue)
@@ -69,11 +72,6 @@ public class Income
         }
     }
 
-    private static void ValidateBank(Bank bank)
-    {
-        if (bank is null)
-        {
-            throw new ArgumentException("Bank is required.");
-        }
-    }
+    private static string? NormalizeDescription(string? description) =>
+        string.IsNullOrWhiteSpace(description) ? null : description;
 }

@@ -96,6 +96,19 @@ public class TitheServiceTests
     }
 
     [Fact]
+    public void GetTitheSummary_IncludesBankLessIncomeInCalculatedTithe()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Source("Gleison"), null, 1000m, Barclays));
+        repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 15), Source("DividendoJuros"), null, 420m, null, "Chip ISA dividend"));
+        var service = new TitheService(repository);
+
+        var result = service.GetTitheSummary(2026, 7);
+
+        result.CalculatedTithe.Should().Be(142m);
+    }
+
+    [Fact]
     public void GetTitheSummary_NoIncomeNoExpenses_ReturnsZeros()
     {
         var service = new TitheService(new StubCashFlowRepository());

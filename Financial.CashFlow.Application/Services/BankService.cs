@@ -78,7 +78,7 @@ public sealed class BankService : IBankService
         bool InWindow(DateOnly date) => date >= bank.OpeningBalanceDate && date <= asOfDate;
 
         var incomeTotal = incomes
-            .Where(i => i.Bank.Id == bank.Id && InWindow(i.Date))
+            .Where(i => i.Bank?.Id == bank.Id && InWindow(i.Date))
             .Sum(i => i.NetValue);
 
         var expenseTotal = expenses

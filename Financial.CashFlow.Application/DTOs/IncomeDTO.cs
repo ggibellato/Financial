@@ -23,9 +23,12 @@ public sealed class IncomeDTO
     /// <summary>Net value received.</summary>
     public required decimal NetValue { get; init; }
 
-    /// <summary>Destination bank identifier.</summary>
-    public required Guid BankId { get; init; }
+    /// <summary>Destination bank identifier. Null when the income never lands in a tracked bank.</summary>
+    public Guid? BankId { get; init; }
 
-    /// <summary>Destination bank name.</summary>
-    public required string BankName { get; init; }
+    /// <summary>Destination bank name. Null when the income never lands in a tracked bank.</summary>
+    public string? BankName { get; init; }
+
+    /// <summary>Free-text description. Null when omitted.</summary>
+    public string? Description { get; init; }
 }
