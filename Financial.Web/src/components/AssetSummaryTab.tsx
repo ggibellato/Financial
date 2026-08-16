@@ -160,6 +160,15 @@ export default function AssetSummaryTab() {
               <span className="asset-summary__label">Current Value</span>
               <span className="asset-summary__value">
                 {isLoadingPrice || !price ? '—' : formatN2(price.price)}
+                {!isLoadingPrice && price?.isManual && (
+                  <span
+                    className="asset-summary__manual-badge"
+                    title="This value came from a manually-entered price, not a live fetch."
+                  >
+                    {' '}
+                    (Manual)
+                  </span>
+                )}
               </span>
             </div>
             <div className="asset-summary__field">

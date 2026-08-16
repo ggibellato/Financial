@@ -125,10 +125,18 @@ export function useAssetSummary(): AssetSummaryData {
     !!selectedNode.assetName
 
   const fetchPrice = useCallback(
-    (exchange: string, ticker: string, assetClass?: string, brokerName?: string, name?: string) => {
+    (
+      exchange: string,
+      ticker: string,
+      assetClass?: string,
+      brokerName?: string,
+      name?: string,
+      portfolioName?: string,
+      assetName?: string,
+    ) => {
       dispatch({ type: 'PRICE_FETCH_START' })
       void apiClient
-        .getCurrentPrice(exchange, ticker, assetClass, brokerName, name)
+        .getCurrentPrice(exchange, ticker, assetClass, brokerName, name, portfolioName, assetName)
         .then((result) => dispatch({ type: 'PRICE_FETCH_SUCCESS', payload: result }))
         .catch((err: unknown) => {
           dispatch({
@@ -157,7 +165,7 @@ export function useAssetSummary(): AssetSummaryData {
 
     const priceArgs = scope === 'active' ? resolvePriceFetchArgs(ticker, exchange, assetClass, assetName) : null
     if (priceArgs && ticker) {
-      fetchPrice(priceArgs.exchange, ticker, assetClass, brokerName, priceArgs.bondAssetName)
+      fetchPrice(priceArgs.exchange, ticker, assetClass, brokerName, priceArgs.bondAssetName, portfolioName, assetName)
     }
 
     void apiClient
@@ -194,7 +202,15 @@ export function useAssetSummary(): AssetSummaryData {
       selectedNode.assetName,
     )
     if (!priceArgs) return
-    fetchPrice(priceArgs.exchange, selectedNode.ticker, selectedNode.assetClass, selectedNode.brokerName, priceArgs.bondAssetName)
+    fetchPrice(
+      priceArgs.exchange,
+      selectedNode.ticker,
+      selectedNode.assetClass,
+      selectedNode.brokerName,
+      priceArgs.bondAssetName,
+      selectedNode.portfolioName,
+      selectedNode.assetName,
+    )
   }, [isAsset, selectedNode, fetchPrice])
 
   useEffect(() => {

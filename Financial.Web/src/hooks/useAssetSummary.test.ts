@@ -170,7 +170,7 @@ describe('useAssetSummary', () => {
     renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => {
-      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'KLBN4', undefined, 'XPI', undefined)
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'KLBN4', undefined, 'XPI', undefined, 'Acoes', 'KLBN4')
       expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'active')
     })
   })
@@ -192,7 +192,7 @@ describe('useAssetSummary', () => {
     renderHook(() => useAssetSummary(), { wrapper })
     setNode(cryptoNode)
     await waitFor(() => {
-      expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'BTC', 'Cryptocurrency', 'Coinbase', undefined)
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'BTC', 'Cryptocurrency', 'Coinbase', undefined, 'Cryptocurrency', 'Bitcoin')
     })
   })
 
@@ -223,6 +223,8 @@ describe('useAssetSummary', () => {
         'TESOURO IPCA+ 2029',
         'Bond',
         'XPI',
+        'TESOURO IPCA+ 2029',
+        'Reserva',
         'TESOURO IPCA+ 2029',
       )
     })
