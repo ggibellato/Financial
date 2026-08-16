@@ -8,6 +8,7 @@ export interface RowPriceState {
   isLoading: boolean
   currentPrice: number | null
   fetchFailed: boolean
+  isManual: boolean
 }
 
 interface PortfolioAssetSummaryState {
@@ -24,7 +25,7 @@ type PortfolioAssetSummaryAction =
   | { type: 'FETCH_SUCCESS'; payload: PortfolioAssetSummaryItemDto[] }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
-  | { type: 'ROW_PRICE_SUCCESS'; index: number; currentPrice: number }
+  | { type: 'ROW_PRICE_SUCCESS'; index: number; currentPrice: number; isManual: boolean }
   | { type: 'ROW_PRICE_ERROR'; index: number }
 
 const INITIAL_STATE: PortfolioAssetSummaryState = {
@@ -49,6 +50,7 @@ function reducer(
         isLoading: true,
         currentPrice: null,
         fetchFailed: false,
+        isManual: false,
       }))
       return { ...state, isLoading: false, items: action.payload, rowPrices }
     }
@@ -59,14 +61,14 @@ function reducer(
     case 'ROW_PRICE_SUCCESS': {
       const rowPrices = state.rowPrices.map((row, i) =>
         i === action.index
-          ? { isLoading: false, currentPrice: action.currentPrice, fetchFailed: false }
+          ? { isLoading: false, currentPrice: action.currentPrice, fetchFailed: false, isManual: action.isManual }
           : row,
       )
       return { ...state, rowPrices }
     }
     case 'ROW_PRICE_ERROR': {
       const rowPrices = state.rowPrices.map((row, i) =>
-        i === action.index ? { isLoading: false, currentPrice: null, fetchFailed: true } : row,
+        i === action.index ? { isLoading: false, currentPrice: null, fetchFailed: true, isManual: false } : row,
       )
       return { ...state, rowPrices }
     }
@@ -117,9 +119,9 @@ export function usePortfolioAssetSummary(): PortfolioAssetSummaryData {
         }
         items.forEach((item, index) => {
           void apiClient
-            .getCurrentPrice(item.exchange, item.ticker, item.class, brokerName, item.assetName)
+            .getCurrentPrice(item.exchange, item.ticker, item.class, brokerName, item.assetName, portfolioName, item.assetName)
             .then((priceDto) => {
-              dispatch({ type: 'ROW_PRICE_SUCCESS', index, currentPrice: priceDto.price })
+              dispatch({ type: 'ROW_PRICE_SUCCESS', index, currentPrice: priceDto.price, isManual: priceDto.isManual })
             })
             .catch(() => {
               dispatch({ type: 'ROW_PRICE_ERROR', index })

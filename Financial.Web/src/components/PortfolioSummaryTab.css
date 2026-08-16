@@ -49,6 +49,12 @@
   font-style: italic;
 }
 
+.portfolio-summary__manual-badge {
+  color: #e65100;
+  font-style: italic;
+  font-size: 11px;
+}
+
 .portfolio-summary__credits-separator {
   border-left: 3px solid var(--accent, #5a7e6e);
   padding-left: 10px;
