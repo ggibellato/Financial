@@ -617,18 +617,25 @@
                                                 <DataGridTemplateColumn Header="Current Value" Width="{Binding Source={StaticResource ColWidths}, Path=CurrentValue, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
-                                                            <TextBlock TextAlignment="Right" Padding="8" VerticalAlignment="Center">
-                                                                <TextBlock.Style>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="Text" Value="{Binding DisplayCurrentValue}"/>
-                                                                        <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding IsLoadingPrice}" Value="True">
-                                                                                <Setter Property="Text" Value="..."/>
-                                                                            </DataTrigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </TextBlock.Style>
-                                                            </TextBlock>
+                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="8" VerticalAlignment="Center">
+                                                                <TextBlock TextAlignment="Right">
+                                                                    <TextBlock.Style>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="Text" Value="{Binding DisplayCurrentValue}"/>
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding IsLoadingPrice}" Value="True">
+                                                                                    <Setter Property="Text" Value="..."/>
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </TextBlock.Style>
+                                                                </TextBlock>
+                                                                <TextBlock Text=" (M)"
+                                                                           Foreground="#E65100"
+                                                                           FontStyle="Italic"
+                                                                           ToolTip="This value came from a manually-entered price, not a live fetch."
+                                                                           Visibility="{Binding CurrentValueIsManual, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                            </StackPanel>
                                                         </DataTemplate>
                                                     </DataGridTemplateColumn.CellTemplate>
                                                 </DataGridTemplateColumn>

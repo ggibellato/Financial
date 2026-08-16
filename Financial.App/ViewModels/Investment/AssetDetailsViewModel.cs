@@ -479,7 +479,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
         _rowPriceCts = new CancellationTokenSource();
         var token = _rowPriceCts.Token;
-        FetchRowPricesAsync(rows, token, brokerName);
+        FetchRowPricesAsync(rows, token, brokerName, portfolioName);
     }
 
     public void LoadAssetDetails(AssetDetailsDTO details, decimal? realizedPortfolioWeight = null)
@@ -761,26 +761,34 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         UpdateCommandStates();
     }
 
-    private void FetchRowPricesAsync(IReadOnlyList<PortfolioAssetSummaryRowViewModel> rows, CancellationToken cancellationToken, string brokerName)
+    private void FetchRowPricesAsync(IReadOnlyList<PortfolioAssetSummaryRowViewModel> rows, CancellationToken cancellationToken, string brokerName, string portfolioName)
     {
         foreach (var row in rows)
         {
             var capturedRow = row;
-            Task.Run(() =>
+            Task.Run(async () =>
             {
                 try
                 {
                     if (cancellationToken.IsCancellationRequested) return;
-                    var price = _assetPriceService.GetCurrentPrice(new AssetPriceRequestDTO
+                    if (_priceService == null)
+                    {
+                        capturedRow.MarkPriceFailed();
+                        return;
+                    }
+
+                    var price = await _priceService.GetCurrentPriceAsync(new AssetPriceRequestDTO
                     {
                         Exchange = capturedRow.Exchange,
                         Ticker = capturedRow.Ticker,
                         AssetClass = capturedRow.Class,
                         BrokerName = brokerName,
-                        Name = capturedRow.AssetName
+                        Name = capturedRow.AssetName,
+                        PortfolioName = portfolioName,
+                        AssetName = capturedRow.AssetName
                     });
                     if (cancellationToken.IsCancellationRequested) return;
-                    capturedRow.ApplyPrice(price.Price);
+                    capturedRow.ApplyPrice(price.Price, price.IsManual);
                 }
                 catch
                 {

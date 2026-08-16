@@ -12,6 +12,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
 
     private bool _isLoadingPrice = true;
     private bool _priceFetchFailed;
+    private bool _currentValueIsManual;
     private decimal? _currentPrice;
     private decimal? _currentValue;
     private decimal? _profitPercent;
@@ -44,6 +45,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
 
     public bool IsLoadingPrice => _isLoadingPrice;
     public bool PriceFetchFailed => _priceFetchFailed;
+    public bool CurrentValueIsManual => _currentValueIsManual;
     public decimal? CurrentPrice => _currentPrice;
     public decimal? CurrentValue => _currentValue;
     public decimal? ProfitPercent => _profitPercent;
@@ -165,10 +167,11 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
         _historicXirr = historicXirrFraction.HasValue ? historicXirrFraction.Value * 100 : null;
     }
 
-    public void ApplyPrice(decimal price)
+    public void ApplyPrice(decimal price, bool isManual = false)
     {
         _currentPrice = price;
         _currentValue = price * CurrentQuantity;
+        _currentValueIsManual = isManual;
 
         var costBasis = CurrentQuantity * AveragePrice;
 
@@ -180,6 +183,7 @@ public class PortfolioAssetSummaryRowViewModel : ViewModelBase
         _isLoadingPrice = false;
 
         OnPropertyChanged(nameof(IsLoadingPrice));
+        OnPropertyChanged(nameof(CurrentValueIsManual));
         OnPropertyChanged(nameof(CurrentPrice));
         OnPropertyChanged(nameof(DisplayCurrentPrice));
         OnPropertyChanged(nameof(CurrentValue));

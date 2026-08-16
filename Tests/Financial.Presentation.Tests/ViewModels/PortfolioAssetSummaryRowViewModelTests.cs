@@ -132,6 +132,37 @@ public class PortfolioAssetSummaryRowViewModelTests
     }
 
     [Fact]
+    public void CurrentValueIsManual_DefaultsToFalse()
+    {
+        var row = BuildRow();
+        row.CurrentValueIsManual.Should().BeFalse();
+    }
+
+    [Fact]
+    public void CurrentValueIsManual_AfterApplyPriceWithManualTrue_IsTrue()
+    {
+        var row = BuildRow();
+        row.ApplyPrice(10.50m, isManual: true);
+        row.CurrentValueIsManual.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CurrentValueIsManual_AfterApplyPriceWithManualFalse_IsFalse()
+    {
+        var row = BuildRow();
+        row.ApplyPrice(10.50m, isManual: false);
+        row.CurrentValueIsManual.Should().BeFalse();
+    }
+
+    [Fact]
+    public void CurrentValueIsManual_AfterMarkPriceFailed_RemainsFalse()
+    {
+        var row = BuildRow();
+        row.MarkPriceFailed();
+        row.CurrentValueIsManual.Should().BeFalse();
+    }
+
+    [Fact]
     public void DisplayCurrentPrice_WhenIsLoadingPrice_ReturnsDash()
     {
         var row = BuildRow();
