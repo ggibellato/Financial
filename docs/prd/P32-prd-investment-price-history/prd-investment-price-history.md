@@ -162,7 +162,7 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Price History Recording
-- [ ] A successful automatic price fetch for an asset records/updates that asset's entry for today's date, flagged as automatic.
+- [x] A successful automatic price fetch for an asset records/updates that asset's entry for today's date, flagged as automatic.
 - [x] Adding a manual price for a date that already has an entry (manual or automatic) replaces it; only the latest value for that date is retained.
 - [x] A manual entry with price ≤ 0 is rejected with a clear validation message and not recorded.
 - [x] A manual entry with a future date is rejected with a clear validation message and not recorded.
@@ -183,12 +183,12 @@ graph TD
 - [x] An invalid dialog submission (bad price/date) shows the validation message inline without closing the dialog.
 
 ### F03. Current-Value/XIRR Fallback via Price History
-- [ ] An asset with no automated price source and a manual entry for today shows a real current value, profit, and XIRR instead of "—".
-- [ ] The same asset, on a day with no entry for that date, shows "—" again for current value/profit/XIRR — it never uses yesterday's or any older entry.
-- [ ] An asset whose automatic fetch succeeds today uses that fetched price directly, and that price is also recorded into history as automatic.
-- [ ] A current value sourced from a manual entry is visually flagged (e.g. a "Manual" badge/tooltip) wherever current value is displayed for that asset.
-- [ ] Portfolio-level totals (e.g. total current value) include manually-priced assets on days they have a today-dated entry.
+- [x] An asset with no automated price source and a manual entry for today shows a real current value, profit, and XIRR instead of "—".
+- [x] The same asset, on a day with no entry for that date, shows "—" again for current value/profit/XIRR — it never uses yesterday's or any older entry.
+- [x] An asset whose automatic fetch succeeds today uses that fetched price directly, and that price is also recorded into history as automatic.
+- [x] A current value sourced from a manual entry is visually flagged (e.g. a "Manual" badge/tooltip) wherever current value is displayed for that asset.
+- [x] Portfolio-level totals (e.g. total current value) include manually-priced assets on days they have a today-dated entry.
 
 ### Cross-Feature Integration
 - [x] Price entries recorded by F01 (both manual, via F02's dialog, and automatic, via the existing fetch pipeline) appear correctly in F02's list and chart for the correct asset.
-- [ ] F03's current-value/XIRR calculation for an asset correctly retrieves and uses F01's today-dated entry when present, and correctly shows "—" when absent — for both manually-entered and automatically-fetched sources.
+- [x] F03's current-value/XIRR calculation for an asset correctly retrieves and uses F01's today-dated entry when present, and correctly shows "—" when absent — for both manually-entered and automatically-fetched sources.
