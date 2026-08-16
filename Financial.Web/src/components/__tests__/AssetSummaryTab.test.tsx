@@ -167,6 +167,26 @@ describe('AssetSummaryTab', () => {
     expect(screen.getByRole('button', { name: 'Refresh' })).toBeInTheDocument()
   })
 
+  it('renders_manual_badge_when_price_is_manual', () => {
+    setMock({
+      asset: ASSET,
+      price: { ...PRICE, isManual: true },
+      showCurrentSection: true,
+    })
+    renderAssetSummaryTab()
+    expect(screen.getByText('(Manual)')).toBeInTheDocument()
+  })
+
+  it('does_not_render_manual_badge_when_price_is_not_manual', () => {
+    setMock({
+      asset: ASSET,
+      price: { ...PRICE, isManual: false },
+      showCurrentSection: true,
+    })
+    renderAssetSummaryTab()
+    expect(screen.queryByText('(Manual)')).not.toBeInTheDocument()
+  })
+
   it('hides_current_section_when_quantity_is_zero', () => {
     setMock({ asset: { ...ASSET, quantity: 0 }, showCurrentSection: false })
     renderAssetSummaryTab()
