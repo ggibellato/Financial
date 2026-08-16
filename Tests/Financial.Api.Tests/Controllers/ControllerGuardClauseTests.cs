@@ -18,23 +18,16 @@ namespace Financial.Api.Tests.Controllers;
 public class ControllerGuardClauseTests
 {
     [Fact]
-    public void AssetPricesController_NullAssetPriceService_Throws()
-    {
-        Action act = () => new AssetPricesController(null!, new StubPriceService());
-        act.Should().Throw<ArgumentNullException>().WithParameterName("assetPriceService");
-    }
-
-    [Fact]
     public void AssetPricesController_NullPriceService_Throws()
     {
-        Action act = () => new AssetPricesController(new StubAssetPriceService(), null!);
+        Action act = () => new AssetPricesController(null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("priceService");
     }
 
     [Fact]
     public async Task AssetPricesController_SetPrice_NullRequest_ReturnsBadRequest()
     {
-        var controller = new AssetPricesController(new StubAssetPriceService(), new StubPriceService());
+        var controller = new AssetPricesController(new StubPriceService());
 
         var result = await controller.SetPrice(null!);
 
@@ -44,7 +37,7 @@ public class ControllerGuardClauseTests
     [Fact]
     public async Task AssetPricesController_DeletePrice_NullRequest_ReturnsBadRequest()
     {
-        var controller = new AssetPricesController(new StubAssetPriceService(), new StubPriceService());
+        var controller = new AssetPricesController(new StubPriceService());
 
         var result = await controller.DeletePrice(null!);
 
@@ -335,11 +328,6 @@ public class ControllerGuardClauseTests
         public Task<AssetDetailsDTO?> AddCreditAsync(CreditCreateDTO request) => throw new NotImplementedException();
         public Task<AssetDetailsDTO?> UpdateCreditAsync(CreditUpdateDTO request) => throw new NotImplementedException();
         public Task<AssetDetailsDTO?> DeleteCreditAsync(CreditDeleteDTO request) => throw new NotImplementedException();
-    }
-
-    private sealed class StubAssetPriceService : IAssetPriceService
-    {
-        public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request) => throw new NotImplementedException();
     }
 
     private sealed class StubPriceService : IPriceService

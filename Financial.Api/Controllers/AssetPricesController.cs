@@ -12,31 +12,38 @@ namespace Financial.Api.Controllers;
 [Route("prices")]
 public sealed class AssetPricesController : ControllerBase
 {
-    private readonly IAssetPriceService _assetPriceService;
     private readonly IPriceService _priceService;
 
-    public AssetPricesController(IAssetPriceService assetPriceService, IPriceService priceService)
+    public AssetPricesController(IPriceService priceService)
     {
-        _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
         _priceService = priceService ?? throw new ArgumentNullException(nameof(priceService));
     }
 
-    /// <summary>Returns the current market price for an asset.</summary>
+    /// <summary>
+    /// Returns the current market price for an asset. When <paramref name="portfolioName"/> and
+    /// <paramref name="assetName"/> are both supplied, a successful fetch is recorded into the
+    /// asset's Price History as an automatic entry, and a failed fetch falls back to today's
+    /// Price History entry (manual or automatic) instead of failing.
+    /// </summary>
     /// <param name="exchange">Optional exchange code.</param>
     /// <param name="ticker">The stock/ETF ticker symbol. Required.</param>
     /// <param name="assetClass">Optional asset class (e.g. "Stock", "Crypto"); defaults to "Unknown" if omitted or unrecognized.</param>
     /// <param name="brokerName">Optional broker name, used for broker-specific pricing sources.</param>
     /// <param name="name">Optional display name, used as a lookup fallback.</param>
+    /// <param name="portfolioName">Optional portfolio name; enables the Price History fallback/record path when supplied together with <paramref name="assetName"/>.</param>
+    /// <param name="assetName">Optional asset name; enables the Price History fallback/record path when supplied together with <paramref name="portfolioName"/>.</param>
     /// <returns>200 OK with the current price, or 400 Bad Request if <paramref name="ticker"/> is missing or invalid.</returns>
     [HttpGet("current")]
     [ProducesResponseType(typeof(AssetPriceDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<AssetPriceDTO> GetCurrentPrice(
+    public async Task<ActionResult<AssetPriceDTO>> GetCurrentPrice(
         [FromQuery] string? exchange,
         [FromQuery] string? ticker,
         [FromQuery] string? assetClass,
         [FromQuery] string? brokerName,
-        [FromQuery] string? name)
+        [FromQuery] string? name,
+        [FromQuery] string? portfolioName,
+        [FromQuery] string? assetName)
     {
         if (string.IsNullOrWhiteSpace(ticker))
         {
@@ -47,13 +54,15 @@ public sealed class AssetPricesController : ControllerBase
             ? parsed
             : GlobalAssetClass.Unknown;
 
-        var result = _assetPriceService.GetCurrentPrice(new AssetPriceRequestDTO
+        var result = await _priceService.GetCurrentPriceAsync(new AssetPriceRequestDTO
         {
             Exchange = exchange?.Trim() ?? string.Empty,
             Ticker = ticker.Trim(),
             AssetClass = parsedAssetClass,
             BrokerName = brokerName?.Trim(),
-            Name = name?.Trim()
+            Name = name?.Trim(),
+            PortfolioName = portfolioName?.Trim(),
+            AssetName = assetName?.Trim()
         });
 
         return Ok(result);

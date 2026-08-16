@@ -97,6 +97,61 @@ public class AssetPriceEndpointsTests
     }
 
     [Fact]
+    public async Task GetCurrentPrice_WithIdentity_LiveFetchSucceeds_RecordsAutomaticEntry()
+    {
+        var stub = new AssetPriceServiceStub();
+        await using var factory = CreateFactory(stub);
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync(
+            "/api/v1/financial/prices/current?exchange=BVMF&ticker=BCIA11&brokerName=XPI&portfolioName=Default&assetName=BCIA11");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var price = await response.Content.ReadFromJsonAsync<AssetPriceDTO>();
+        price.Should().NotBeNull();
+        price!.IsManual.Should().BeFalse();
+
+        var repository = factory.Services.GetRequiredService<IInvestmentRepository>();
+        var entry = repository.GetAsset("XPI", "Default", "BCIA11")!.GetPriceForDate(DateOnly.FromDateTime(DateTime.Today));
+        entry.Should().NotBeNull();
+        entry!.Price.Should().Be(10.5m);
+        entry.IsManual.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetCurrentPrice_WithIdentity_LiveFetchFails_FallsBackToManualEntry()
+    {
+        await using var factory = CreateFactory(new FailingAssetPriceServiceStub());
+        using var client = factory.CreateClient();
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var repository = factory.Services.GetRequiredService<IInvestmentRepository>();
+        repository.GetAsset("XPI", "Default", "BCIA11")!.SetPrice(today, 321.5m, isManual: true);
+        await repository.SaveChangesAsync();
+
+        var response = await client.GetAsync(
+            "/api/v1/financial/prices/current?exchange=BVMF&ticker=BCIA11&brokerName=XPI&portfolioName=Default&assetName=BCIA11");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var price = await response.Content.ReadFromJsonAsync<AssetPriceDTO>();
+        price.Should().NotBeNull();
+        price!.Price.Should().Be(321.5m);
+        price.IsManual.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetCurrentPrice_WithIdentity_LiveFetchFails_NoHistoryEntry_ReturnsBadRequest()
+    {
+        await using var factory = CreateFactory(new FailingAssetPriceServiceStub());
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync(
+            "/api/v1/financial/prices/current?exchange=BVMF&ticker=BCIA11&brokerName=XPI&portfolioName=Default&assetName=BCIA11");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task SetPrice_ReturnsOk()
     {
         await using var factory = new ApiTestFactory();
@@ -245,14 +300,14 @@ public class AssetPriceEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
-    private static WebApplicationFactory<Program> CreateFactory(AssetPriceServiceStub? stub = null)
+    private static WebApplicationFactory<Program> CreateFactory(IAssetPriceService? stub = null)
     {
         return new ApiTestFactory().WithWebHostBuilder(builder =>
         {
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IAssetPriceService>();
-                services.AddSingleton<IAssetPriceService>(stub ?? new AssetPriceServiceStub());
+                services.AddSingleton(stub ?? new AssetPriceServiceStub());
             });
         });
     }
@@ -296,5 +351,11 @@ public class AssetPriceEndpointsTests
                 AsOf = new DateTimeOffset(2024, 2, 1, 0, 0, 0, TimeSpan.Zero)
             };
         }
+    }
+
+    private sealed class FailingAssetPriceServiceStub : IAssetPriceService
+    {
+        public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request) =>
+            throw new ArgumentException("Simulated fetch failure.", nameof(request));
     }
 }
