@@ -77,7 +77,10 @@ public sealed class ExpenseService : IExpenseService
         _repository.GetExpenses()
             .Where(e => ListGroupingDate(e).Year == year && ListGroupingDate(e).Month == month)
             .Where(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge)
-            .OrderByDescending(ListGroupingDate)
+            // Every unpaid charge in a given month shares the same InvoiceDate (the 1st of that
+            // month), so ordering by ListGroupingDate here is a no-op tie that leaves rows in
+            // repository storage order. Order by the actual charge date instead.
+            .OrderByDescending(e => e.ChargeDate ?? e.Date)
             .Select(ToDto)
             .ToList();
 
