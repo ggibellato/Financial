@@ -160,6 +160,7 @@ const INCOMES: IncomeDto[] = [
     netValue: 2450,
     bankId: 'bank-barclays',
     bankName: 'Barclays',
+    description: null,
   },
 ]
 
@@ -332,6 +333,7 @@ describe('MonthlyPage', () => {
         netValue: 50,
         bankId: 'bank-barclays',
         bankName: 'Barclays',
+        description: null,
       },
     ])
 
@@ -926,6 +928,7 @@ describe('MonthlyPage', () => {
         netValue: 75,
         bankId: 'bank-barclays',
         bankName: 'Barclays',
+        description: null,
       },
     ])
 
@@ -950,7 +953,26 @@ describe('MonthlyPage', () => {
 
     await waitFor(() =>
       expect(createIncomeMock).toHaveBeenCalledWith(
-        expect.objectContaining({ date: '2026-07-16', incomeSourceId: '1', netValue: 400, bankId: 'bank-barclays' }),
+        expect.objectContaining({ date: '2026-07-16', incomeSourceId: '1', netValue: 400, bankId: null }),
+      ),
+    )
+  })
+
+  it('submits a new income entry with the selected bank when one is chosen', async () => {
+    createIncomeMock.mockResolvedValue({ ...INCOMES[0], id: 'i2' })
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Income' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Income' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Income' }))
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-16' } })
+    fireEvent.change(screen.getByLabelText('Net Value'), { target: { value: '400' } })
+    fireEvent.change(screen.getByLabelText('Bank'), { target: { value: 'bank-barclays' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
+
+    await waitFor(() =>
+      expect(createIncomeMock).toHaveBeenCalledWith(
+        expect.objectContaining({ bankId: 'bank-barclays' }),
       ),
     )
   })
@@ -968,8 +990,9 @@ describe('MonthlyPage', () => {
     expect(screen.queryByLabelText('Gross Value')).not.toBeInTheDocument()
   })
 
-  it('shows a validation error and does not call the API when no bank is available to select', async () => {
+  it('submits a new income entry with a null bank when no bank is available to select', async () => {
     getBanksMock.mockResolvedValue([])
+    createIncomeMock.mockResolvedValue({ ...INCOMES[0], id: 'i2', bankId: null, bankName: null })
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Income' }))
 
@@ -979,8 +1002,7 @@ describe('MonthlyPage', () => {
     fireEvent.change(screen.getByLabelText('Net Value'), { target: { value: '400' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
 
-    expect(await screen.findByText('Bank is required')).toBeInTheDocument()
-    expect(createIncomeMock).not.toHaveBeenCalled()
+    await waitFor(() => expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ bankId: null })))
   })
 
   it('edits an income entry via the toggled panel and saves, updating the displayed row', async () => {
@@ -1037,6 +1059,7 @@ describe('MonthlyPage', () => {
       netValue: 100,
       bankId: 'bank-chase',
       bankName: 'Chase',
+      description: null,
     })
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Income' }))
@@ -1056,6 +1079,7 @@ describe('MonthlyPage', () => {
       netValue: 100,
       bankId: 'bank-chase',
       bankName: 'Chase',
+      description: null,
     }])
     fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
 

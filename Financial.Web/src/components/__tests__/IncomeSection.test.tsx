@@ -13,6 +13,7 @@ const INCOMES: IncomeDto[] = [
     netValue: 2450,
     bankId: 'bank-barclays',
     bankName: 'Barclays',
+    description: 'Salary',
   },
   {
     id: 'i2',
@@ -23,6 +24,7 @@ const INCOMES: IncomeDto[] = [
     netValue: 50,
     bankId: 'bank-chase',
     bankName: 'Chase',
+    description: null,
   },
 ]
 
@@ -36,6 +38,25 @@ describe('IncomeSection', () => {
     expect(screen.getByText('2,450.00')).toBeInTheDocument()
     expect(screen.getByText('50.00')).toBeInTheDocument()
     expect(screen.getByText('—')).toBeInTheDocument()
+    expect(screen.getByText('Salary')).toBeInTheDocument()
+  })
+
+  it('renders a blank Bank cell for a bank-less income', () => {
+    const bankLessIncome: IncomeDto = {
+      id: 'i3',
+      date: '2026-07-07',
+      incomeSourceId: '4',
+      incomeSourceName: 'DividendoJuros',
+      grossValue: null,
+      netValue: 42.5,
+      bankId: null,
+      bankName: null,
+      description: null,
+    }
+    render(<IncomeSection incomes={[bankLessIncome]} onEdit={vi.fn()} onDelete={vi.fn()} onNewIncome={vi.fn()} />)
+
+    // one dash for the null gross value, one for the null bank
+    expect(screen.getAllByText('—')).toHaveLength(2)
   })
 
   it('calls onEdit with the clicked income entry', () => {
