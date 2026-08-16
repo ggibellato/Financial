@@ -62,6 +62,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private decimal _todayCurrentValue;
     private string _todayCurrentValueAsOf = string.Empty;
     private string _todayInfoMessage = string.Empty;
+    private bool _todayCurrentValueIsManual;
     private PlotModel? _creditsPlotModel;
     private PeriodFilter _selectedCreditsFilter = PeriodFilter.Last12Months;
     private CreditsTypeChartMode _selectedCreditsTypeMode = CreditsTypeChartMode.Stacked;
@@ -192,6 +193,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     public string TodayCurrentValueAsOf { get => _todayCurrentValueAsOf; private set => SetProperty(ref _todayCurrentValueAsOf, value); }
     public string TodayInfoMessage { get => _todayInfoMessage; private set => SetProperty(ref _todayInfoMessage, value); }
+    public bool TodayCurrentValueIsManual { get => _todayCurrentValueIsManual; private set => SetProperty(ref _todayCurrentValueIsManual, value); }
 
     public decimal TotalCurrentValue => TodayCurrentValue * Quantity;
     public decimal ResultPercent => _profitCalculationService.CalculateResultFraction(AveragePrice, Quantity, TotalCurrentValue);
@@ -698,9 +700,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         }
 
         return _todayInfo.RefreshAsync(
-            forceRefresh, HasAssetContext, _assetPriceService,
+            forceRefresh, HasAssetContext, _priceService,
             Class, BrokerName,
-            Exchange, Ticker, AssetName, message => TodayInfoMessage = message);
+            Exchange, Ticker, AssetName, PortfolioName, AssetName, message => TodayInfoMessage = message);
     }
 
     private void ResetTodayInfo()
@@ -708,6 +710,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TodayCurrentValue = 0;
         TodayCurrentValueAsOf = string.Empty;
         TodayInfoMessage = string.Empty;
+        TodayCurrentValueIsManual = false;
     }
 
     private void ApplyTodayInfo(TodayInfoSnapshot snapshot)
@@ -715,6 +718,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TodayCurrentValue = snapshot.Price;
         TodayCurrentValueAsOf = snapshot.AsOf;
         TodayInfoMessage = string.Empty;
+        TodayCurrentValueIsManual = snapshot.IsManual;
     }
 
     private void NotifyCurrentValueChanged()

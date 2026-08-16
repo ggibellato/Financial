@@ -58,12 +58,14 @@ public sealed class TodayInfoTracker
     public async Task RefreshAsync(
         bool forceRefresh,
         bool hasAssetContext,
-        IAssetPriceService? assetPriceService,
+        IPriceService? priceService,
         GlobalAssetClass assetClass,
         string? brokerName,
         string exchange,
         string ticker,
         string? name,
+        string? portfolioName,
+        string? assetName,
         Action<string> setMessage)
     {
         if (!hasAssetContext)
@@ -72,7 +74,7 @@ public sealed class TodayInfoTracker
             return;
         }
 
-        if (assetPriceService == null)
+        if (priceService == null)
         {
             setMessage("Current value service is not available.");
             return;
@@ -120,17 +122,19 @@ public sealed class TodayInfoTracker
                 Ticker = ticker,
                 AssetClass = assetClass,
                 BrokerName = brokerName,
-                Name = name
+                Name = name,
+                PortfolioName = portfolioName,
+                AssetName = assetName
             };
 
-            var price = await Task.Run(() => assetPriceService.GetCurrentPrice(request));
+            var price = await priceService.GetCurrentPriceAsync(request);
             if (!string.Equals(_assetKey, assetKey, StringComparison.Ordinal))
             {
                 return;
             }
 
             var asOf = price.AsOf?.ToLocalTime().ToString("g") ?? string.Empty;
-            var snapshot = new TodayInfoSnapshot(price.Price, asOf);
+            var snapshot = new TodayInfoSnapshot(price.Price, asOf, price.IsManual);
             _applySnapshot(snapshot);
             _cache[assetKey] = snapshot;
         }
@@ -152,5 +156,5 @@ public sealed class TodayInfoTracker
     }
 }
 
-public sealed record TodayInfoSnapshot(decimal Price, string AsOf);
+public sealed record TodayInfoSnapshot(decimal Price, string AsOf, bool IsManual);
 

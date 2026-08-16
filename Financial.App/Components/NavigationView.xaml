@@ -310,12 +310,20 @@
                                     <!-- Row 11: Current Value & As Of (Active scope only) -->
                                     <TextBlock Grid.Row="11" Grid.Column="0" Text="Current Value:" FontWeight="Bold" Margin="0,5"
                                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <TextBlock Grid.Row="11" Grid.Column="1"
-                                               Text="{Binding AssetDetails.TodayCurrentValue, Mode=OneWay, StringFormat=N2}"
-                                               TextAlignment="Right"
-                                               FontFamily="Consolas"
-                                               Margin="10,5"
-                                               Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <StackPanel Grid.Row="11" Grid.Column="1"
+                                                Orientation="Horizontal"
+                                                HorizontalAlignment="Right"
+                                                Margin="10,5"
+                                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <TextBlock Text="{Binding AssetDetails.TodayCurrentValue, Mode=OneWay, StringFormat=N2}"
+                                                   TextAlignment="Right"
+                                                   FontFamily="Consolas"/>
+                                        <TextBlock Text=" (Manual)"
+                                                   Foreground="#E65100"
+                                                   FontStyle="Italic"
+                                                   ToolTip="This value came from a manually-entered price, not a live fetch."
+                                                   Visibility="{Binding AssetDetails.TodayCurrentValueIsManual, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    </StackPanel>
                                     <TextBlock Grid.Row="11" Grid.Column="2" Text="As of:" FontWeight="Bold" Margin="20,5,0,5"
                                                Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                     <TextBlock Grid.Row="11" Grid.Column="3"

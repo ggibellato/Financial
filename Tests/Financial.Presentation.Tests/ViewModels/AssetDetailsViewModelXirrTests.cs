@@ -11,17 +11,18 @@ namespace Financial.Presentation.Tests.ViewModels;
 
 public class AssetDetailsViewModelXirrTests
 {
-    private static AssetDetailsViewModel BuildViewModel(IAssetPriceService? priceService = null, InvestmentScope scope = InvestmentScope.Active)
+    private static AssetDetailsViewModel BuildViewModel(IPriceService? priceService = null, InvestmentScope scope = InvestmentScope.Active)
     {
         return new AssetDetailsViewModel(
             new StubTransactionService(),
             new StubCreditService(),
-            priceService ?? new FixedPriceService(0m),
+            new NotUsedAssetPriceService(),
             new StubBrokerBreakdownService(),
             new StubTransactionQueryService(),
             new XirrCalculationService(),
             new ProfitCalculationService(),
-            scope);
+            scope,
+            priceService ?? new FixedPriceService(0m));
     }
 
     private static AssetDetailsDTO BuildAssetDetails(
@@ -266,7 +267,7 @@ public class AssetDetailsViewModelXirrTests
         vm.IsActiveScope.Should().BeTrue();
     }
 
-    private sealed class FixedPriceService : IAssetPriceService
+    private sealed class FixedPriceService : IPriceService
     {
         private readonly decimal _price;
 
@@ -277,10 +278,18 @@ public class AssetDetailsViewModelXirrTests
             _price = price;
         }
 
-        public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request)
+        public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
+        public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
+
+        public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request)
         {
             CallCount++;
-            return new() { Exchange = request.Exchange, Ticker = request.Ticker, Price = _price, AsOf = DateTimeOffset.UtcNow };
+            return Task.FromResult(new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Price = _price, AsOf = DateTimeOffset.UtcNow });
         }
+    }
+
+    private sealed class NotUsedAssetPriceService : IAssetPriceService
+    {
+        public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request) => throw new NotImplementedException();
     }
 }
