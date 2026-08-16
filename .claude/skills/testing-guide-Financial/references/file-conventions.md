@@ -16,7 +16,7 @@ Tests/
 ├── Financial.CashFlow.Domain.Tests/
 ├── Financial.CashFlow.Application.Tests/
 ├── Financial.CashFlow.Infrastructure.Tests/
-├── Financial.CashFlowSpreadsheetImport.Tests/      ← Integrations/CashFlowSpreadsheetImport
+├── Financial.CashFlowSpreadsheetImport.Tests/      ← Tools/CashFlowSpreadsheetImport
 ├── Financial.Shared.Infrastructure.Tests/          ← LocalJsonStorage, GoogleDriveJsonStorage
 ├── Financial.Presentation.Tests/                   ← WPF ViewModels/Converters/Helpers
 └── Financial.Api.Tests/                            ← Controllers (guard clauses) + E2E EndpointsTests via ApiTestFactory

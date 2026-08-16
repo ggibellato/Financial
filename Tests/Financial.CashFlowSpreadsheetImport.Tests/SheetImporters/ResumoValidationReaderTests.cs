@@ -1,8 +1,8 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
-using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
-using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reporting;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.SheetImporters;
 using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.SheetImporters;

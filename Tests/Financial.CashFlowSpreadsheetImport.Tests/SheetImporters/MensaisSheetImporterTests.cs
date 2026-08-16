@@ -1,6 +1,6 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Enums;
-using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.SheetImporters;
 using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.SheetImporters;

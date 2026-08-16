@@ -1,4 +1,4 @@
-using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Migrations.EntityReferences;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.EntityReferences;
 using Financial.CashFlow.Infrastructure.Persistence;
 using FluentAssertions;
 using FluentAssertions.Execution;

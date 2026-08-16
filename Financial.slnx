@@ -14,10 +14,12 @@
 		<Project Path="Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj" />
 	</Folder>
 	<Folder Name="/Integrations/">
-		<Project Path="Integrations/CashFlowSpreadsheetImport/CashFlowSpreadsheetImport.csproj" />
 		<Project Path="Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj" />
-		<Project Path="Integrations/ImportGoogleSpreadSheets/ImportGoogleSpreadSheets.csproj" />
 		<Project Path="Integrations/WebPageParser/WebPageParser.csproj" />
+	</Folder>
+	<Folder Name="/Tools/">
+		<Project Path="Tools/CashFlowSpreadsheetImport/CashFlowSpreadsheetImport.csproj" />
+		<Project Path="Tools/ImportGoogleSpreadSheets/ImportGoogleSpreadSheets.csproj" />
 	</Folder>
 	<Folder Name="/Tests/">
 		<Project Path="Tests/Financial.Investment.Application.Tests/Financial.Investment.Application.Tests.csproj" />

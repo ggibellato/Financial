@@ -1,8 +1,8 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Reporting;
-using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.SheetImporters;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reporting;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.SheetImporters;
 using FluentAssertions;
 using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
 

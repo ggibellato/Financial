@@ -1,4 +1,4 @@
-using Financial.CashFlow.Infrastructure.Integrations.CashFlowSpreadsheetImport.Parsing;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Parsing;
 using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Parsing;

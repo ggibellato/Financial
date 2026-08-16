@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Integrations\CashFlowSpreadsheetImport\CashFlowSpreadsheetImport.csproj" />
+    <ProjectReference Include="..\..\Tools\CashFlowSpreadsheetImport\CashFlowSpreadsheetImport.csproj" />
   </ItemGroup>
 
 </Project>

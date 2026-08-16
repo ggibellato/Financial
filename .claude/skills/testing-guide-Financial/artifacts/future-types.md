@@ -24,9 +24,9 @@ None exist yet (no `IHostedService`/`BackgroundService`). If one is added (e.g.,
 
 Not used yet — the project is on React 19.2 / Testing Library 16.3, which support it, but current data-fetching hooks use plain `useState`/`useEffect`. If adopted: `renderHook`/component tests will need to wrap renders in a `<Suspense>` boundary and assert on the fallback separately from resolved content — otherwise follow `artifacts/react-hooks.md` unchanged.
 
-## New Integrations Projects
+## New Integrations/Tools Projects
 
-If a new sibling to `WebPageParser`/`GoogleFinancialSupport`/`CashFlowSpreadsheetImport` is added, classify it up front using §1's questions in `../SKILL.md`: does it wrap a live third-party SDK needing real credentials (→ `artifacts/google-api-wrappers.md`'s accepted-gap pattern), call a plain external HTTP API (→ `artifacts/external-http-services.md`'s fake-`HttpMessageHandler` pattern), or parse a real file format in-memory (→ `artifacts/spreadsheet-import.md`'s in-memory-document pattern)?
+If a new sibling to `WebPageParser`/`GoogleFinancialSupport` (in `Integrations/`) or `CashFlowSpreadsheetImport`/`ImportGoogleSpreadSheets` (in `Tools/`) is added, classify it up front using §1's questions in `../SKILL.md`: does it wrap a live third-party SDK needing real credentials (→ `artifacts/google-api-wrappers.md`'s accepted-gap pattern), call a plain external HTTP API (→ `artifacts/external-http-services.md`'s fake-`HttpMessageHandler` pattern), or parse a real file format in-memory (→ `artifacts/spreadsheet-import.md`'s in-memory-document pattern)?
 
 ## C# Application Commands/Queries (CQRS)
 
