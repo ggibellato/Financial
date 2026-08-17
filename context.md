@@ -74,8 +74,6 @@ A second, fully independent domain that tracks household finances — income, ex
 
 Core entities: `Bank`, `Expense`, `Income`, `CardStatement`, `RecurringBill`, `ReserveMovement`, `InvestmentSnapshot`, `MaeLedgerEntry`.
 
-Implemented as React pages only (Monthly, Income/Expenses, Banks & Cards, Reserve, Recurring Bills, Investment Snapshots, Annual Summary, Controle Mãe) — **not available in the WPF app**.
-
 Storage mirrors the Investment domain's pattern but is entirely separate: a dedicated `data-cashflow.json` file, with its own independent LocalJson/GoogleDrive repository selection and its own configuration keys.
 
 Import tooling: `Tools/CashFlowSpreadsheetImport` (Excel via ClosedXML) reads `Despesas.xlsx` and populates `data-cashflow.json`. It consolidates what were previously five separate migration tools into one command.
