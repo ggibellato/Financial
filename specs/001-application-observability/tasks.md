@@ -28,13 +28,15 @@ description: "Task list for Application Observability (revision 3 — Shared.Abs
 
 **Purpose**: The interface everything else in this feature depends on, in a project with zero dependencies of its own.
 
-- [ ] T001 Create `Financial.Shared.Abstractions/Financial.Shared.Abstractions.csproj` — new class library, **zero** `PackageReference`/`ProjectReference` entries, added to `Financial.slnx`
-- [ ] T002 [P] Create `Financial.Shared.Abstractions/ITelemetryTracer.cs` — `StartSpan(string name) : ITelemetrySpan`, per [contracts/telemetry-tracer-interface-contract.md](./contracts/telemetry-tracer-interface-contract.md) — depends on T001
-- [ ] T003 [P] Create `Financial.Shared.Abstractions/ITelemetrySpan.cs` — `IDisposable` + `SetAttribute(string,string)` + `RecordException(Exception)` — depends on T001
-- [ ] T004 Create `Financial.Shared.Abstractions/TelemetryAttributeKeys.cs` — `TelemetryAttributeKeys`/`TelemetryOperationResults` constants per [contracts/telemetry-semantic-conventions.md](./contracts/telemetry-semantic-conventions.md) — depends on T001
+- [X] T001 Create `Financial.Shared.Abstractions/Financial.Shared.Abstractions.csproj` — new class library, **zero** `PackageReference`/`ProjectReference` entries, added to `Financial.slnx` (under the existing `/DDD/Shared/` folder, alongside `Financial.Shared.Infrastructure`)
+- [X] T002 [P] Create `Financial.Shared.Abstractions/ITelemetryTracer.cs` — `StartSpan(string name) : ITelemetrySpan`, per [contracts/telemetry-tracer-interface-contract.md](./contracts/telemetry-tracer-interface-contract.md) — depends on T001
+- [X] T003 [P] Create `Financial.Shared.Abstractions/ITelemetrySpan.cs` — `IDisposable` + `SetAttribute(string,string)` + `RecordException(Exception)` — depends on T001
+- [X] T004 Create `Financial.Shared.Abstractions/TelemetryAttributeKeys.cs` — `TelemetryAttributeKeys`/`TelemetryOperationResults` constants per [contracts/telemetry-semantic-conventions.md](./contracts/telemetry-semantic-conventions.md) — depends on T001
 
 **Tests (not counted toward the 4-file limit)**:
-- [ ] T005 [P] Create `Tests/Financial.Architecture.Tests/SharedAbstractionsDependencyRuleTests.cs` asserting `Financial.Shared.Abstractions`'s compiled assembly has zero referenced project assemblies (research.md Decision D9) — depends on T001
+- [X] T005 [P] Create `Tests/Financial.Architecture.Tests/SharedAbstractionsDependencyRuleTests.cs` asserting `Financial.Shared.Abstractions`'s compiled assembly has zero referenced project assemblies (research.md Decision D9) — depends on T001. Required adding a direct `ProjectReference` from `Financial.Architecture.Tests.csproj` to the new project (mirrors the existing pattern for every other project under test). 1/1 passing (8/8 in the full `Financial.Architecture.Tests` suite).
+
+**Post-review note**: architecture-reviewer approved with no corrections required. One flag for later PRs (not this one): once Application/Infrastructure start referencing this project, a new architecture test should assert Application does not reach *past* it into `Integrations/Observability` — add that when PR 4a/4b/4d first wires a real consumer.
 
 **Checkpoint**: `Financial.Shared.Abstractions` exists, is provably dependency-free, and defines the contract. Nothing references it yet.
 
