@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Financial.Shared.Abstractions\Financial.Shared.Abstractions.csproj" />
     <ProjectReference Include="..\..\Financial.Shared.Infrastructure\Financial.Shared.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Financial.CashFlow.Domain\Financial.CashFlow.Domain.csproj" />
     <ProjectReference Include="..\..\Financial.CashFlow.Application\Financial.CashFlow.Application.csproj" />

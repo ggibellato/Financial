@@ -189,6 +189,28 @@ Every new feature must include:
 
 No feature is complete without tests.
 
+## Incremental Vertical Delivery
+
+Every feature must be implemented as a sequence of small, independently reviewable increments.
+
+* Each increment must deliver a complete, working slice of the feature, or a working compatibility boundary — not scaffolding, placeholders, disconnected infrastructure, or code that can't be exercised or verified on its own.
+* Each increment must include the implementation, configuration, tests, and documentation needed for that increment to be usable and reviewable by itself.
+* Before starting implementation, identify the scope, dependencies, acceptance criteria, and review boundary of every increment.
+* This matches the existing vertical-slice-per-PR pattern already in use (Domain → Application → Infrastructure → API → WPF → Web → tests, one PR per slice) — it's a hard requirement, not a preference.
+
+## Production Deployability After Every Merge
+
+After every pull request merges into `main`, the application must remain in a deployable state. Deployable means:
+
+* It builds successfully via the standard build process (`dotnet build`, `npm run build`).
+* The required automated test suite passes.
+* It can start using the standard production configuration (`docker-compose up`), not a dev-only profile.
+* It does not require unfinished feature increments, local-only tools, dev containers, or unavailable external services to start.
+* Existing production functionality still works — no regressions.
+* No known defect introduced by the PR blocks a production deployment.
+
+Do not merge a PR that leaves the app unable to build, test, start, or provide its existing functionality. Every PR must document the commands/checks used to verify deployability (build, test, and a start-up check under production config).
+
 ## Before Writing Code
 
 Always:
@@ -207,6 +229,8 @@ Perform a self-review and verify:
 * Clean Architecture
 * Test coverage
 * No layer violations
+* This PR is a complete, working vertical slice — not scaffolding-only or disconnected infrastructure
+* The application remains deployable after this PR merges (build, test, and start-up checks under production config)
 
 If any rule is violated, stop and propose a correction.
 
@@ -224,6 +248,8 @@ A feature is NOT complete unless:
 * Integration tests added when appropriate.
 * Existing tests still pass.
 * New code is documented where necessary.
+* The change is a complete, working vertical increment (implementation + config + tests + docs), not scaffolding or disconnected infrastructure.
+* The application remains deployable after merge, and the PR documents the commands/checks used to verify that.
 
 Before marking work as complete, provide a checklist showing compliance with all Definition of Done items.
 

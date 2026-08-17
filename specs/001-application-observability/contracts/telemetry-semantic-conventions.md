@@ -1,0 +1,39 @@
+# Contract: Telemetry Semantic Conventions
+
+This is the naming/attribute contract every span MUST follow — it's what makes FR-014 (no PII/financial values in telemetry) enforceable in review rather than aspirational, and keeps the trace viewer's span names self-explanatory. Since every consumer calls `ITelemetryTracer` explicitly (no decorator generating names automatically — see research.md Decision D3), this convention is a code-review responsibility at every call site, not something structurally guaranteed by a single class.
+
+## Span naming — `{Component}.{Operation}`
+
+| Origin | Naming pattern | Example |
+|---|---|---|
+| Application use case | `{BoundedContext}.{ServiceName}.{MethodName}` | `CashFlow.ExpenseService.CreateExpense` |
+| `Financial.Shared.Infrastructure` persistence code | `{StorageComponent}.{Operation}` | `JsonStorage.Load`, `GoogleDrive.Upload` |
+| `Financial.Api` middleware | `Api.{Operation}` | `Api.DomainExceptionMapped` |
+| `Financial.App` WPF trace roots | `App.{ViewModelName}.{CommandName}` | `App.MonthlyViewModel.SaveExpense` |
+
+`Financial.Api`'s controller-level spans and any HTTP-instrumentation-equivalent spans come from `OpenTelemetry.Instrumentation.AspNetCore`/`Http` auto-instrumentation (registered inside `Integrations/Observability`) and need no naming decision from application code.
+
+## Attribute allow-list (enforces FR-014)
+
+Attributes set via `ITelemetrySpan.SetAttribute` MUST be drawn only from this allow-list:
+
+**Allowed** (see `Financial.Shared.Abstractions`'s `TelemetryAttributeKeys`/`TelemetryOperationResults` constants — use these, not inline string literals):
+- `entity.id` — an entity's `Guid`/ID, never a human-readable name
+- `entity.type` — e.g. `"Expense"`, `"Transfer"`, `"CardStatement"`
+- `bounded_context` — `"CashFlow"` or `"Investment"`
+- `operation.name` — the use case / storage operation name
+- `operation.result` — `"success"` / `"failed"` / `"rejected"` / `"canceled"`
+- `error.type` — the .NET exception type name (`exception.GetType().Name`), not its message
+- `http.route`, `http.method`, `http.status_code` — from ASP.NET Core auto-instrumentation, already safe by construction
+
+**Explicitly denied** (non-exhaustive, illustrative — the allow-list above is the actual rule):
+- Any monetary amount or balance (`Value`, `OutstandingTotal`, account balances)
+- Account/broker/bank holder names or identifiers (`CreditCardName`, bank account numbers)
+- Free-text exception messages that may embed a value (see `logging-audit.md`'s note on `CardStatementService`'s warning string, which currently embeds a statement's invoice period)
+- Langfuse `SecretKey`/`PublicKey` or any other credential
+
+Because span attributes are now set explicitly at each call site (rather than by a single generic decorator), this allow-list is what code review checks against — the architecture-reviewer agent (or a human reviewer) should reject any `SetAttribute` call using a key/value outside this list.
+
+## Metric instrumentation surface (enforces FR-015)
+
+Only OpenTelemetry's standard `AspNetCoreInstrumentation`, `HttpClientInstrumentation`, and `RuntimeInstrumentation` are registered, entirely inside `Integrations/Observability`. No custom `Meter`/`Counter`/`Histogram` — nothing outside that project could add one even if it tried, since nothing outside it references the OpenTelemetry SDK.

@@ -1,20 +1,14 @@
 <!--
 Sync Impact Report
-- Version change: N/A → 1.0.0 (initial ratification)
-- Rationale: MAJOR (1.0.0) because this is the first ratified constitution for the project —
-  no prior version to compare against for amendment-type classification.
-- Modified principles: none (no prior version)
+- Version change: 1.0.0 → 1.1.0
+- Rationale: MINOR because two new principles were added (materially expanded governance)
+  without removing or redefining any existing principle.
+- Modified principles: none
 - Added principles:
-  - I. Clean Architecture, Strictly Layered
-  - II. Bounded Context Isolation (Investment / CashFlow)
-  - III. WPF/Web Feature Parity, WPF as UX Source of Truth
-  - IV. Right-Sized Engineering for a Single-User Tool
-  - V. Test-Backed Changes
-  - VI. Evidence-Based, Spec-Driven Change
-- Added sections:
-  - Technology & Persistence Constraints
-  - Development Workflow & Definition of Done
-  - Governance
+  - VII. Incremental Vertical Delivery
+  - VIII. Production Deployability After Every Merge
+- Added sections: none (existing "Development Workflow & Definition of Done" section updated in
+  place to cross-reference the two new principles, not added as a new section)
 - Removed sections: none
 - Templates requiring updates:
   - .specify/templates/plan-template.md — ✅ verified: its "Constitution Check" section is a
@@ -23,11 +17,9 @@ Sync Impact Report
     update needed.
   - .specify/templates/spec-template.md — ✅ verified: no reference to the constitution at all.
   - .specify/templates/tasks-template.md — ✅ verified: no reference to the constitution at all.
-  - .claude/commands/*.md or equivalent agent guidance — ✅ CLAUDE.md already encodes the
-    architecture/testing rules this constitution formalizes; no contradiction found
-- Follow-up TODOs: none. Ratification date confirmed with the user as 2026-08-17 (the date this
-  document was formally adopted), not backdated to when the practices it codifies first appeared
-  in the codebase.
+  - CLAUDE.md — ✅ updated in the same change to add matching Incremental Vertical Delivery and
+    Production Deployability rules, so runtime AI guidance stays consistent with this document.
+- Follow-up TODOs: none.
 -->
 
 # Financial Constitution
@@ -161,6 +153,54 @@ principle exists to keep the gap between what's documented and what's true from 
 and to make the discovery work already done (`docs/baseline/`, `docs/discovery-*.md`) a living
 reference rather than a one-time snapshot.
 
+### VII. Incremental Vertical Delivery
+
+Every feature MUST be implemented as a sequence of small, independently reviewable increments.
+
+Each increment MUST deliver a complete, working slice of the feature, or a working compatibility
+boundary. An increment MUST NOT consist only of scaffolding, placeholder code, disconnected
+infrastructure, or code that cannot be exercised or verified — if it can't be run, tested, or
+reviewed as a working unit, it isn't an increment yet, it's still in progress.
+
+Each increment MUST include the implementation, configuration, tests, and documentation required
+for that increment to be usable and reviewable on its own. The implementation plan for a feature
+MUST identify the scope, dependencies, acceptance criteria, and review boundary of every
+increment before work on it begins.
+
+**Rationale**: this formalizes the vertical-slice-per-PR pattern already named in Principle VI
+(Domain → Application → Infrastructure → API → WPF → Web → tests, one PR per slice) as a hard
+requirement rather than a stated preference. Scaffolding-only or disconnected-infrastructure PRs
+are hard to review meaningfully and hard to verify — a reviewer can't exercise code that isn't
+wired up, so defects hide until a later PR "connects" several unverified increments at once.
+
+### VIII. Production Deployability After Every Merge
+
+After every pull request for a feature is merged into `main`, the application MUST remain in a
+deployable state. "Deployable state" means, at minimum:
+
+- The application builds successfully using the repository's standard build process.
+- The automated test suite required by CI passes.
+- The application can start using the standard production configuration (Docker/`docker-compose`,
+  not a dev-only profile or local override).
+- The application does not require unfinished feature increments, local-only tools, development
+  containers, or unavailable external services in order to start.
+- Existing production functionality remains available — a merge MUST NOT regress a capability
+  users already rely on.
+- No known implementation defect introduced by the pull request prevents a production deployment
+  of the application.
+
+A pull request MUST NOT be merged if it leaves the application unable to build, test, start, or
+provide its existing production functionality. Each pull request MUST document the commands or
+checks used to verify that the application remains deployable (e.g. the build/test commands run,
+and confirmation the app starts under `docker-compose up` or equivalent production config).
+
+**Rationale**: this project is deployed as a single long-running process per installation
+(Principle IV) with no staging environment or gradual rollout — `main` effectively *is*
+production the next time someone updates their deployment. A broken `main` isn't caught by a
+release process; it's caught by the user's own app failing to start. This principle makes
+explicit what Principle I's CI gates already imply, and requires the verification itself to be
+visible in the PR rather than assumed from "CI is green."
+
 ## Technology & Persistence Constraints
 
 - **Stack**: .NET 10 (API, WPF app, Integrations/Tools, all backend tests — xUnit +
@@ -197,6 +237,11 @@ reference rather than a one-time snapshot.
   - No feature flags or unnecessary backwards-compatibility shims.
   - New code documented only where the *why* is non-obvious — no restating what the code already
     says, no comments referencing the current task/fix/PR number.
+  - The PR is a complete, working vertical slice (or working compatibility boundary) per
+    Principle VII — not scaffolding-only or disconnected infrastructure.
+  - The application remains deployable after this PR merges, per Principle VIII, and the PR
+    description documents the commands/checks used to verify that (build, test, and a start-up
+    check under production configuration).
   - Self-review performed against this checklist before marking work complete.
 - **Commit hygiene**: never skip hooks (`--no-verify`) or force-push to `main` without explicit
   instruction. Prefer new commits over `--amend` once a commit has been pushed or a hook has run.
@@ -225,4 +270,4 @@ directly hand-editing this file outside that workflow.
 every change and MUST be treated as the automated first pass of that review, not a substitute for
 human judgment on scope (Principle IV) or spec fidelity (Principle VI).
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-17 | **Last Amended**: 2026-08-17
+**Version**: 1.1.0 | **Ratified**: 2026-08-17 | **Last Amended**: 2026-08-17

@@ -11,6 +11,7 @@
 		<Project Path="Financial.CashFlow.Infrastructure/Financial.CashFlow.Infrastructure.csproj" />
 	</Folder>
 	<Folder Name="/DDD/Shared/">
+		<Project Path="Financial.Shared.Abstractions/Financial.Shared.Abstractions.csproj" />
 		<Project Path="Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj" />
 	</Folder>
 	<Folder Name="/Integrations/">
