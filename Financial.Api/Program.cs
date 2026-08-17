@@ -5,6 +5,7 @@ using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DependencyInjection;
 using Financial.Investment.Infrastructure.DependencyInjection;
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Shared.Infrastructure.Observability;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
 using Serilog;
@@ -64,6 +65,7 @@ builder.Services.AddGoogleDriveFileClient();
 builder.Services.AddFinancialInfrastructure(configuration);
 builder.Services.AddFinancialCashFlowApplication();
 builder.Services.AddFinancialCashFlowInfrastructure(configuration);
+builder.Services.AddFinancialObservability(configuration, serviceName: "Financial.Api");
 
 var app = builder.Build();
 

@@ -7,6 +7,7 @@ using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Presentation.App.ViewModels.CashFlow;
 using Financial.Presentation.App.Views.CashFlow;
 using Financial.Presentation.App.Views.Investment;
+using Financial.Shared.Infrastructure.Observability;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -40,6 +41,7 @@ namespace Financial.Presentation.App
                     services.AddFinancialInfrastructure(context.Configuration);
                     services.AddFinancialCashFlowApplication();
                     services.AddFinancialCashFlowInfrastructure(context.Configuration);
+                    services.AddFinancialObservability(context.Configuration, serviceName: "Financial.App");
                     services.Configure<WatchlistOptions>(context.Configuration.GetSection(WatchlistOptions.SectionName));
                     services.Configure<AssetPriceFetchOptions>(context.Configuration.GetSection(AssetPriceFetchOptions.SectionName));
                     services.Configure<DividendOptions>(context.Configuration.GetSection(DividendOptions.SectionName));
