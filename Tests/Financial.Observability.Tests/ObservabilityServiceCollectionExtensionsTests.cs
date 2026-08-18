@@ -83,6 +83,72 @@ public class ObservabilityServiceCollectionExtensionsTests
         act.Should().NotThrow();
     }
 
+    [Fact]
+    public void AddObservability_WhenDisabled_RegistersNoOpTelemetryTracer()
+    {
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["Observability:Enabled"] = "false"
+        });
+
+        var tracer = provider.GetRequiredService<ITelemetryTracer>();
+
+        tracer.Should().BeOfType<NoOpTelemetryTracer>();
+    }
+
+    [Fact]
+    public void AddObservability_WhenEnabled_RegistersOpenTelemetryTracer()
+    {
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["Observability:Enabled"] = "true",
+            ["Observability:Backend"] = "Jaeger",
+            ["Observability:Endpoint"] = "http://localhost:4317"
+        });
+
+        var tracer = provider.GetRequiredService<ITelemetryTracer>();
+
+        tracer.Should().BeOfType<OpenTelemetryTracer>();
+    }
+
+    [Fact]
+    public void AddObservability_WhenEnabled_StartSpanNeverReturnsNullOrThrows_EvenWithoutAListener()
+    {
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["Observability:Enabled"] = "true",
+            ["Observability:Backend"] = "Jaeger",
+            ["Observability:Endpoint"] = "http://localhost:4317"
+        });
+        var tracer = provider.GetRequiredService<ITelemetryTracer>();
+
+        var act = () => tracer.StartSpan("Test.Operation");
+
+        act.Should().NotThrow();
+        act().Should().NotBeNull();
+    }
+
+    [Fact]
+    public void AddObservability_WhenEnabled_SpanDisposeSetAttributeAndRecordExceptionNeverThrow()
+    {
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["Observability:Enabled"] = "true",
+            ["Observability:Backend"] = "Jaeger",
+            ["Observability:Endpoint"] = "http://localhost:4317"
+        });
+        var tracer = provider.GetRequiredService<ITelemetryTracer>();
+
+        using var span = tracer.StartSpan("Test.Operation");
+        var act = () =>
+        {
+            span.SetAttribute("key", "value");
+            span.RecordException(new InvalidOperationException("boom"));
+        };
+
+        act.Should().NotThrow();
+    }
+
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)
     {
         var configuration = new ConfigurationBuilder()
