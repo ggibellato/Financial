@@ -1,4 +1,6 @@
+using Financial.Shared.Abstractions;
 using Financial.Shared.Infrastructure.Persistence;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.Shared.Infrastructure.Tests.Persistence;
@@ -50,5 +52,57 @@ public class GoogleDriveJsonStorageTests
 
         capturedPath.Should().Be("Pessoais/Gleison/Financeiros");
         capturedContent.Should().Be("{\"written\":true}");
+    }
+
+    [Fact]
+    public async Task ReadAsync_RecordsGoogleDriveDownloadSpan()
+    {
+        var tracer = new RecordingTelemetryTracer();
+        var storage = new GoogleDriveJsonStorage(
+            _ => "{\"data\":true}",
+            (_, _) => { },
+            "Pessoais/Gleison/Financeiros",
+            tracer);
+
+        await storage.ReadAsync();
+
+        var span = tracer.Spans.Should().ContainSingle().Which;
+        span.Name.Should().Be("GoogleDrive.Download");
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+    }
+
+    [Fact]
+    public async Task WriteAsync_RecordsGoogleDriveUploadSpan()
+    {
+        var tracer = new RecordingTelemetryTracer();
+        var storage = new GoogleDriveJsonStorage(
+            _ => "{\"data\":true}",
+            (_, _) => { },
+            "Pessoais/Gleison/Financeiros",
+            tracer);
+
+        await storage.WriteAsync("{\"written\":true}");
+
+        var span = tracer.Spans.Should().ContainSingle().Which;
+        span.Name.Should().Be("GoogleDrive.Upload");
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+    }
+
+    [Fact]
+    public async Task ReadAsync_WhenDownloadThrows_RecordsFailedSpanWithException()
+    {
+        var tracer = new RecordingTelemetryTracer();
+        var storage = new GoogleDriveJsonStorage(
+            _ => throw new InvalidOperationException("boom"),
+            (_, _) => { },
+            "Pessoais/Gleison/Financeiros",
+            tracer);
+
+        var act = async () => await storage.ReadAsync();
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        var span = tracer.Spans.Should().ContainSingle().Which;
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Failed);
+        span.RecordedException.Should().NotBeNull();
     }
 }

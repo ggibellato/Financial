@@ -1,3 +1,4 @@
+using Financial.Shared.Abstractions;
 using Financial.Shared.Infrastructure.Resilience;
 using Financial.Shared.Infrastructure.Sync;
 
@@ -13,6 +14,7 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
     private readonly TimeProvider _timeProvider;
     private readonly int _maxRetries;
     private readonly TimeSpan _flushTimeout;
+    private readonly ITelemetryTracer _tracer;
     private readonly object _lock = new();
 
     private string? _pendingJson;
@@ -24,8 +26,12 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
     private string? _lastError;
     private DateTime? _lastSuccessfulSaveUtc;
 
-    public DebouncedJsonStorage(IJsonStorage inner, TimeSpan debounceWindow, TimeProvider? timeProvider = null)
-        : this(inner, debounceWindow, timeProvider, DefaultMaxRetries, DefaultFlushTimeout)
+    public DebouncedJsonStorage(
+        IJsonStorage inner,
+        TimeSpan debounceWindow,
+        TimeProvider? timeProvider = null,
+        ITelemetryTracer? tracer = null)
+        : this(inner, debounceWindow, timeProvider, DefaultMaxRetries, DefaultFlushTimeout, tracer)
     {
     }
 
@@ -34,16 +40,33 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
         TimeSpan debounceWindow,
         TimeProvider? timeProvider,
         int maxRetries,
-        TimeSpan flushTimeout)
+        TimeSpan flushTimeout,
+        ITelemetryTracer? tracer = null)
     {
         _inner = inner ?? throw new ArgumentNullException(nameof(inner));
         _debounceWindow = debounceWindow;
         _timeProvider = timeProvider ?? TimeProvider.System;
         _maxRetries = maxRetries;
         _flushTimeout = flushTimeout;
+        _tracer = tracer ?? NullTelemetryTracer.Instance;
     }
 
-    public Task<string> ReadAsync() => _inner.ReadAsync();
+    public async Task<string> ReadAsync()
+    {
+        using var span = _tracer.StartSpan("JsonStorage.Load");
+        try
+        {
+            var json = await _inner.ReadAsync().ConfigureAwait(false);
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return json;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
 
     public Task WriteAsync(string json)
     {
@@ -126,6 +149,7 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
             _state = SyncState.Saving;
         }
 
+        using var span = _tracer.StartSpan("JsonStorage.Save");
         try
         {
             await TransientRetryPolicy.ExecuteWithRetryAsync(
@@ -136,10 +160,13 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
                 },
                 _maxRetries).ConfigureAwait(false);
 
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
             HandleSaveSuccess();
         }
         catch (Exception ex)
         {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
             HandleSaveFailure(ex);
         }
     }

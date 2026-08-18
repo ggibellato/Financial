@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Financial.Shared.Abstractions;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Sync;
 using Financial.TestUtilities;
@@ -214,6 +215,52 @@ public class DebouncedJsonStorageTests
         await WaitForAsync(() => failingStorage.GetStatus().State == SyncState.Failed);
 
         healthyStorage.GetStatus().State.Should().Be(SyncState.Idle);
+    }
+
+    [Fact]
+    public async Task ReadAsync_RecordsJsonStorageLoadSpan_OnSuccess()
+    {
+        var inner = new ControllableJsonStorage { ReadResult = "{\"x\":true}" };
+        var tracer = new RecordingTelemetryTracer();
+        var storage = new DebouncedJsonStorage(inner, TimeSpan.FromMilliseconds(50), tracer: tracer);
+
+        await storage.ReadAsync();
+
+        var span = tracer.Spans.Should().ContainSingle().Which;
+        span.Name.Should().Be("JsonStorage.Load");
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+        span.Disposed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AfterDebounceWindowElapses_RecordsJsonStorageSaveSpan_OnSuccess()
+    {
+        var inner = new ControllableJsonStorage();
+        var tracer = new RecordingTelemetryTracer();
+        var storage = new DebouncedJsonStorage(inner, TimeSpan.FromMilliseconds(20), tracer: tracer);
+
+        await storage.WriteAsync("{\"a\":1}");
+        await WaitForAsync(() => tracer.Spans.Any(s => s.Name == "JsonStorage.Save"));
+
+        var span = tracer.Spans.Should().ContainSingle(s => s.Name == "JsonStorage.Save").Which;
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+    }
+
+    [Fact]
+    public async Task RetriesExhausted_RecordsJsonStorageSaveSpan_OnFailure()
+    {
+        var inner = new ControllableJsonStorage();
+        inner.FailNextWrites(1);
+        var tracer = new RecordingTelemetryTracer();
+        var storage = new DebouncedJsonStorage(
+            inner, TimeSpan.FromMilliseconds(20), null, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8), tracer: tracer);
+
+        await storage.WriteAsync("{\"a\":1}");
+        await WaitForAsync(() => tracer.Spans.Any(s => s.Name == "JsonStorage.Save"));
+
+        var span = tracer.Spans.Should().ContainSingle(s => s.Name == "JsonStorage.Save").Which;
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Failed);
+        span.RecordedException.Should().NotBeNull();
     }
 
     private static async Task WaitForAsync(Func<bool> condition, TimeSpan? timeout = null)

@@ -109,9 +109,15 @@ description: "Task list for Application Observability (revision 3 — Shared.Abs
 
 ### Suggested PR 4b — Storage spans, shared by both contexts (3 files) [US1]
 
-- [ ] T024 [US1] Add `ProjectReference` to `Financial.Shared.Abstractions` in `Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj` — depends on T001
-- [ ] T025 [US1] Inject `ITelemetryTracer` into `Financial.Shared.Infrastructure/Persistence/DebouncedJsonStorage.cs` and wrap load/save with `StartSpan("JsonStorage.Load"/"JsonStorage.Save")` per [contracts/telemetry-semantic-conventions.md](./contracts/telemetry-semantic-conventions.md) — depends on T024
-- [ ] T026 [P] [US1] Same for `Financial.Shared.Infrastructure/Persistence/GoogleDriveJsonStorage.cs` (`"GoogleDrive.Upload"`/`"GoogleDrive.Download"`) — depends on T024
+- [X] T024 [US1] Add `ProjectReference` to `Financial.Shared.Abstractions` in `Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj` — depends on T001
+- [X] T025 [US1] Inject `ITelemetryTracer` into `Financial.Shared.Infrastructure/Persistence/DebouncedJsonStorage.cs` and wrap load/save with `StartSpan("JsonStorage.Load"/"JsonStorage.Save")` per [contracts/telemetry-semantic-conventions.md](./contracts/telemetry-semantic-conventions.md) — depends on T024. `ReadAsync` wraps the pass-through read; `SaveNowAsync` wraps the retried write (the actual save duration, including retries) — the fire-and-forget outer `WriteAsync` isn't spanned since it never blocks on the real write.
+- [X] T026 [P] [US1] Same for `Financial.Shared.Infrastructure/Persistence/GoogleDriveJsonStorage.cs` (`"GoogleDrive.Upload"`/`"GoogleDrive.Download"`) — depends on T024
+
+**Deviation (4th file)**: Both classes' `ITelemetryTracer` constructor parameter is optional (`= null`, falling back to a new private `NullTelemetryTracer` in the same folder — not `Integrations/Observability`'s `NoOpTelemetryTracer`, which this project must never reference per the contract). This is the same nullable-optional-dependency idiom already used here for `IRemoteFileClientFactory?`/`TimeProvider?`, and it means all ~20 existing test call sites needed zero changes. `NullTelemetryTracer.cs` is the 4th production file.
+
+**Tests (not counted)**: 6 new cases (3 in `DebouncedJsonStorageTests.cs`, 3 in `GoogleDriveJsonStorageTests.cs`) using a new `Tests/Financial.TestUtilities/RecordingTelemetryTracer.cs` fake, asserting span name, `operation.result`, and `RecordException` on both the success and failure paths. 39/39 passing in `Financial.Shared.Infrastructure.Tests` (was 33).
+
+**Important — not yet wired to a real tracer in production**: `JsonStorageFactory`/`GoogleDriveStorageFactory`/both bounded contexts' `RepositoryFactory` classes and DI extensions still construct these classes without passing a tracer, so they silently fall back to `NullTelemetryTracer` today — mirrors Phase 1/2's "capability built, nothing references it yet" pattern (see their Checkpoints). **This must be threaded through before PR 4d's Independent Test (a trace with a storage span) can pass** — tracked as a new, unplanned follow-up PR immediately after this one (not in the original file-count estimate, same as the Dockerfile fix in PR 3a).
 
 ### Suggested PR 4c — Jaeger local overlay (1 file) [US1]
 
