@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Financial.Api.Middleware;
 using Financial.CashFlow.Application.DependencyInjection;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
@@ -6,7 +7,6 @@ using Financial.Investment.Application.DependencyInjection;
 using Financial.Investment.Infrastructure.DependencyInjection;
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.OpenApi;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,18 +23,24 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
             retainedFileCountLimit: 14);
 });
 
-const string ApiRoutePrefix = "/api/v1/financial";
-
-builder.Services.AddProblemDetails();
-builder.Services.AddOpenApi(options =>
-{
-    options.AddDocumentTransformer((document, _, _) =>
+builder.Services
+    .AddProblemDetails()
+    .AddApiVersioning(options =>
     {
-        document.Servers = [new OpenApiServer { Url = ApiRoutePrefix }];
-        return Task.CompletedTask;
-    });
-});
-builder.Services.AddControllers(options => options.Filters.Add(new ProducesAttribute("application/json")));
+        options.DefaultApiVersion = new ApiVersion(1, 0);
+        options.AssumeDefaultVersionWhenUnspecified = true;
+        options.ReportApiVersions = true;
+        options.ApiVersionReader = new UrlSegmentApiVersionReader();
+    })
+    .AddApiExplorer(options =>
+     {
+         options.GroupNameFormat = "'v'VVV";
+         options.SubstituteApiVersionInUrl = true;
+     });
+
+builder.Services
+    .AddOpenApi()
+    .AddControllers(options => options.Filters.Add(new ProducesAttribute("application/json")));
 
 const string CorsOriginsConfigurationKey = "Cors:AllowedOrigins";
 
@@ -87,8 +93,7 @@ app.UseMiddleware<DomainExceptionMappingMiddleware>();
 app.UseCors();
 app.UseStaticFiles();
 
-var api = app.MapGroup(ApiRoutePrefix);
-api.MapControllers();
+app.MapControllers();
 
 app.MapFallbackToFile("index.html");
 
