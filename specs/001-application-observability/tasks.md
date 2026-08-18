@@ -46,14 +46,16 @@ description: "Task list for Application Observability (revision 3 — Shared.Abs
 
 **Purpose**: Stand up the new project and its DI registration with only the no-op path. Delivers User Story 2 once wired into the composition roots (Phase 3).
 
-- [ ] T006 Create `Integrations/Observability/Integrations.Observability.csproj` — new class library, added to `Financial.slnx`; references `Financial.Shared.Abstractions` only (no OpenTelemetry package yet) — depends on T001
-- [ ] T007 [P] Create `Integrations/Observability/ObservabilityOptions.cs` — `Enabled`/`Backend`/`Endpoint`/`Langfuse` per [contracts/observability-configuration-contract.md](./contracts/observability-configuration-contract.md) — depends on T006
-- [ ] T008 [P] Create `Integrations/Observability/ObservabilityBackend.cs` — enum `Jaeger`/`Langfuse` — depends on T006
-- [ ] T009 Create `Integrations/Observability/NoOpTelemetryTracer.cs` — `ITelemetryTracer`/`ITelemetrySpan` implementation returning a cached, allocation-free no-op span (FR-006a) — depends on T002, T003, T006
-- [ ] T010 Create `Integrations/Observability/ObservabilityServiceCollectionExtensions.cs` — `AddObservability(this IServiceCollection, IConfiguration, string serviceName)`: binds `ObservabilityOptions`, registers `NoOpTelemetryTracer` as `ITelemetryTracer` unconditionally for now — depends on T007, T008, T009
+- [X] T006 Create `Integrations/Observability/Observability.csproj` (deviation: named `Observability.csproj` to match the leaf-folder-name convention used by `Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj`, rather than `Integrations.Observability.csproj`) — new class library, added to `Financial.slnx`; references `Financial.Shared.Abstractions` only (no OpenTelemetry package yet) — depends on T001
+- [X] T007 [P] Create `Integrations/Observability/ObservabilityOptions.cs` — `Enabled`/`Backend`/`Endpoint`/`Langfuse` per [contracts/observability-configuration-contract.md](./contracts/observability-configuration-contract.md) — depends on T006
+- [X] T008 [P] Create `Integrations/Observability/ObservabilityBackend.cs` — enum `Jaeger`/`Langfuse` — depends on T006
+- [X] T009 Create `Integrations/Observability/NoOpTelemetryTracer.cs` — `ITelemetryTracer`/`ITelemetrySpan` implementation returning a cached, allocation-free no-op span (FR-006a) — depends on T002, T003, T006
+- [X] T010 Create `Integrations/Observability/ObservabilityServiceCollectionExtensions.cs` — `AddObservability(this IServiceCollection, IConfiguration, string serviceName)`: binds `ObservabilityOptions` via `services.Configure<ObservabilityOptions>(configuration.GetSection(...))`, registers `NoOpTelemetryTracer` as `ITelemetryTracer` unconditionally for now — depends on T007, T008, T009
 
 **Tests (not counted)**:
-- [ ] T011 [P] Unit tests in `Tests/Integrations.Observability.Tests/ObservabilityServiceCollectionExtensionsTests.cs`: `ITelemetryTracer` always resolves and never throws/returns null from `StartSpan`
+- [X] T011 [P] Unit tests in `Tests/Financial.Observability.Tests/ObservabilityServiceCollectionExtensionsTests.cs` (deviation: project renamed to `Financial.Observability.Tests` to match this repo's `Financial.*`-prefixed test-project convention): `ITelemetryTracer` always resolves and never throws/returns null from `StartSpan`, span methods never throw, and `ObservabilityOptions` binds correctly from configuration (both defaults and explicit values including nested `Langfuse`). 5/5 passing.
+
+**Post-review fixes** (architecture-reviewer caught one required issue before commit): T010's original implementation left `ObservabilityOptions` completely unbound — three fully-built config types with a documented contract shape but zero consumers, which is scaffolding by the letter of Constitution Principle VII. Fixed by adding the `Configure<ObservabilityOptions>` call (required a new `Microsoft.Extensions.Options.ConfigurationExtensions` package reference) plus two binding tests. Also renamed the integration project's `.csproj` and the test project/folder per the reviewer's naming-convention recommendation.
 
 **Checkpoint**: `Integrations/Observability` exists and is self-contained; nothing outside it yet references it.
 
