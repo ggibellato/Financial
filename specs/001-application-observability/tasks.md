@@ -69,9 +69,11 @@ description: "Task list for Application Observability (revision 3 — Shared.Abs
 
 ### Suggested PR 3a — Financial.Api wiring (3 files) [US2]
 
-- [ ] T012 [US2] Add `ProjectReference` to `Integrations/Observability/Integrations.Observability.csproj` in `Financial.Api/Financial.Api.csproj`
-- [ ] T013 [US2] Call `builder.Services.AddObservability(configuration, serviceName: "Financial.Api")` in `Financial.Api/Program.cs` — depends on T010, T012
-- [ ] T014 [US2] Add the `Observability` section (default `Enabled: false`) to `Financial.Api/appsettings.json`
+- [X] T012 [US2] Add `ProjectReference` to `Integrations/Observability/Observability.csproj` in `Financial.Api/Financial.Api.csproj`
+- [X] T013 [US2] Call `builder.Services.AddObservability(configuration, serviceName: "Financial.Api")` in `Financial.Api/Program.cs` — depends on T010, T012
+- [X] T014 [US2] Add the `Observability` section (default `Enabled: false`) to `Financial.Api/appsettings.json`
+
+**Deviation**: `Dockerfile` also required updating (not in the original 3-file estimate) — it didn't `COPY` `Financial.Shared.Abstractions` or `Integrations/Observability`, so `docker-compose up` failed to build once `Financial.Api` referenced them. Fixed as part of this PR since Constitution Principle VIII requires the app stay deployable after every merge.
 
 ### Suggested PR 3b — Financial.App wiring (3 files) [US2]
 
@@ -81,11 +83,11 @@ description: "Task list for Application Observability (revision 3 — Shared.Abs
 
 ### Tests (not counted)
 
-- [ ] T018 [US2] Integration test in `Tests/Financial.Api.Tests/ObservabilityDisabledTests.cs`: app starts and `GET /api/v1/financial/sync-status` succeeds with `Observability:Enabled=false` and no telemetry endpoint reachable — depends on T013
-- [ ] T019 [P] [US2] Test in `Tests/Financial.Presentation.Tests/DependencyInjection/ObservabilityServiceRegistrationTests.cs`: CashFlow services still resolve and `ITelemetryTracer` resolves to a usable no-op — depends on T016
-- [ ] T020 [US2] Run and record [quickstart.md](./quickstart.md) Scenario A as the PR's Constitution Principle VIII start-up check
+- [X] T018 [US2] Integration test in `Tests/Financial.Api.Tests/ObservabilityDisabledTests.cs`: app starts and `GET /api/v1/financial/sync-status` succeeds with `Observability:Enabled=false` and no telemetry endpoint reachable — depends on T013. Also asserts `ITelemetryTracer` resolves to a usable no-op from the real DI container. 2/2 passing.
+- [ ] T019 [P] [US2] Test in `Tests/Financial.Presentation.Tests/DependencyInjection/ObservabilityServiceRegistrationTests.cs`: CashFlow services still resolve and `ITelemetryTracer` resolves to a usable no-op — depends on T016 (Financial.App wiring, PR 3b — not yet done)
+- [X] T020 [US2] Run and record [quickstart.md](./quickstart.md) Scenario A as the PR's Constitution Principle VIII start-up check — `docker-compose up --build` succeeded (after the Dockerfile fix above), `GET /api/v1/financial/sync-status` returned 200, `logs/app-*.log` had no telemetry/collector-related errors
 
-**Checkpoint**: User Story 2 fully and independently satisfied.
+**Checkpoint (partial)**: User Story 2 satisfied for `Financial.Api`. PR 3b (`Financial.App`/WPF wiring, T015-T017/T019) remains before US2 is fully and independently satisfied.
 
 ---
 

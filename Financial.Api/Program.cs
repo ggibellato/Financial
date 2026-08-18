@@ -1,6 +1,7 @@
 using Financial.Api.Middleware;
 using Financial.CashFlow.Application.DependencyInjection;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
+using Financial.Integrations.Observability;
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DependencyInjection;
 using Financial.Investment.Infrastructure.DependencyInjection;
@@ -59,6 +60,7 @@ builder.Services.AddCors(options =>
 builder.Services.Configure<DividendOptions>(configuration.GetSection(DividendOptions.SectionName));
 builder.Services.Configure<WatchlistOptions>(configuration.GetSection(WatchlistOptions.SectionName));
 builder.Services.Configure<AssetPriceFetchOptions>(configuration.GetSection(AssetPriceFetchOptions.SectionName));
+builder.Services.AddObservability(configuration, serviceName: "Financial.Api");
 builder.Services.AddFinancialApplication();
 builder.Services.AddGoogleDriveFileClient();
 builder.Services.AddFinancialInfrastructure(configuration);

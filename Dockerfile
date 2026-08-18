@@ -20,8 +20,10 @@ COPY Financial.CashFlow.Application/Financial.CashFlow.Application.csproj Financ
 COPY Financial.CashFlow.Domain/Financial.CashFlow.Domain.csproj Financial.CashFlow.Domain/
 COPY Financial.CashFlow.Infrastructure/Financial.CashFlow.Infrastructure.csproj Financial.CashFlow.Infrastructure/
 COPY Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj Financial.Shared.Infrastructure/
+COPY Financial.Shared.Abstractions/Financial.Shared.Abstractions.csproj Financial.Shared.Abstractions/
 COPY Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj Integrations/GoogleFinancialSupport/
 COPY Integrations/WebPageParser/WebPageParser.csproj Integrations/WebPageParser/
+COPY Integrations/Observability/Observability.csproj Integrations/Observability/
 
 RUN dotnet restore Financial.Api/Financial.Api.csproj
 
@@ -33,8 +35,10 @@ COPY Financial.CashFlow.Application/ Financial.CashFlow.Application/
 COPY Financial.CashFlow.Domain/ Financial.CashFlow.Domain/
 COPY Financial.CashFlow.Infrastructure/ Financial.CashFlow.Infrastructure/
 COPY Financial.Shared.Infrastructure/ Financial.Shared.Infrastructure/
+COPY Financial.Shared.Abstractions/ Financial.Shared.Abstractions/
 COPY Integrations/GoogleFinancialSupport/ Integrations/GoogleFinancialSupport/
 COPY Integrations/WebPageParser/ Integrations/WebPageParser/
+COPY Integrations/Observability/ Integrations/Observability/
 
 RUN dotnet publish Financial.Api/Financial.Api.csproj -c Release -o /app/publish
 
