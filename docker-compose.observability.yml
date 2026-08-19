@@ -1,0 +1,27 @@
+# Optional local observability overlay (Constitution Principle VIII: never referenced by the base
+# docker-compose.yml, never required for a normal `docker-compose up`).
+#
+# Usage: docker compose -f docker-compose.yml -f docker-compose.observability.yml --profile jaeger up
+#
+# Jaeger's all-in-one image stores spans in memory only (no volume declared) — ephemeral,
+# container-lifetime data, per FR-009/plan.md. Assigning `app` the same `jaeger` profile here means
+# this overlay only ever changes app's environment when the profile is explicitly requested;
+# composing the file in without --profile jaeger starts nothing from either file.
+services:
+  app:
+    profiles: ["jaeger"]
+    environment:
+      Observability__Enabled: "true"
+      Observability__Backend: "Jaeger"
+      Observability__Endpoint: "http://jaeger:4317"
+    depends_on:
+      - jaeger
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    profiles: ["jaeger"]
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "4317:4317"   # OTLP gRPC receiver
