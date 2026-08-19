@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
+using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
@@ -16,19 +17,63 @@ public class ExpenseServiceTests
     private static readonly CreditCard BarclaysPlatinumVisa8003Fixture = CreditCard.Create("BarclaysPlatinumVisa8003");
     private static readonly CreditCard BaAmexFixture = CreditCard.Create("BaAmex");
     private static readonly Category MercadoFixture = Category.Create("Mercado");
+    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new ExpenseService(null!);
+        Action act = () => new ExpenseService(null!, Tracer);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
+    }
+
+    [Fact]
+    public void Constructor_WithNullTracer_Throws()
+    {
+        Action act = () => new ExpenseService(new StubCashFlowRepository(), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_WithValidRequest_RecordsSuccessfulSpan()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
+        var tracer = new RecordingTelemetryTracer();
+        var service = new ExpenseService(repository, tracer);
+        var request = ToCreateDto(repository, ValidCreateRequest());
+
+        var result = await service.AddExpenseAsync(request);
+
+        var span = tracer.Spans.Should().ContainSingle().Which;
+        span.Name.Should().Be("CashFlow.ExpenseService.AddExpense");
+        span.Attributes[TelemetryAttributeKeys.BoundedContext].Should().Be("CashFlow");
+        span.Attributes[TelemetryAttributeKeys.EntityType].Should().Be("Expense");
+        span.Attributes[TelemetryAttributeKeys.EntityId].Should().Be(result.Id.ToString());
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+        span.RecordedException.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_WithZeroValue_RecordsFailedSpanWithException()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
+        var tracer = new RecordingTelemetryTracer();
+        var service = new ExpenseService(repository, tracer);
+        var request = ToCreateDto(repository, ValidCreateRequest() with { Value = 0m });
+
+        var act = async () => await service.AddExpenseAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        var span = tracer.Spans.Should().ContainSingle().Which;
+        span.Name.Should().Be("CashFlow.ExpenseService.AddExpense");
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Failed);
+        span.RecordedException.Should().BeOfType<ArgumentException>();
     }
 
     [Fact]
     public async Task AddExpenseAsync_WithValidRequest_SavesAndReturnsExpense()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest());
 
         var result = await service.AddExpenseAsync(request);
@@ -50,7 +95,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithoutCountsAsTithe_DefaultsToTrue()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { Category = "Dizimo" });
 
         var result = await service.AddExpenseAsync(request);
@@ -62,7 +107,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithCountsAsTitheFalse_SavesFalse()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { Category = "Dizimo", CountsAsTithe = false });
 
         var result = await service.AddExpenseAsync(request);
@@ -74,7 +119,7 @@ public class ExpenseServiceTests
     public async Task UpdateExpenseAsync_TogglingCountsAsTithe_UpdatesValue()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var added = await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with { Category = "Dizimo" }));
 
         var updateRequest = ToUpdateDto(repository, ValidCreateRequest() with { Category = "Dizimo", CountsAsTithe = false });
@@ -87,7 +132,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithCardTagAndNoPaymentSource_SavesAsCreditCardCharge()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ValidCreateRequest() with { PaymentSource = null, CardTag = "BarclaysPlatinumVisa8003" };
 
         var result = await service.AddExpenseAsync(ToCreateDto(repository, request));
@@ -104,7 +149,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithNeitherPaymentSourceNorCardTag_ThrowsArgumentException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { PaymentSource = null, CardTag = null });
 
         var act = async () => await service.AddExpenseAsync(request);
@@ -116,7 +161,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithBothPaymentSourceAndCardTag_ThrowsArgumentException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { CardTag = "BarclaysPlatinumVisa8003" });
 
         var act = async () => await service.AddExpenseAsync(request);
@@ -128,7 +173,7 @@ public class ExpenseServiceTests
     public async Task UpdateExpenseAsync_WithBothPaymentSourceAndCardTag_ThrowsArgumentException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var added = await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest()));
         var updateRequest = ToUpdateDto(repository, ValidCreateRequest() with { CardTag = "BaAmex" });
 
@@ -141,7 +186,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithZeroValue_ThrowsArgumentException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { Value = 0m });
 
         var act = async () => await service.AddExpenseAsync(request);
@@ -153,7 +198,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithMissingCategory_ThrowsArgumentException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { Category = "NotACategory" });
 
         var act = async () => await service.AddExpenseAsync(request);
@@ -165,7 +210,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithInvalidPaymentSource_ThrowsArgumentException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { PaymentSource = "NotASource" });
 
         var act = async () => await service.AddExpenseAsync(request);
@@ -177,7 +222,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithInvalidCardTag_ThrowsArgumentException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { CardTag = "NotACard" });
 
         var act = async () => await service.AddExpenseAsync(request);
@@ -191,7 +236,7 @@ public class ExpenseServiceTests
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCategories: true);
         var inactiveCard = CreditCard.Create("RetiredCard", isActive: false);
         repository.CreditCards.Add(inactiveCard);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 15),
@@ -210,7 +255,7 @@ public class ExpenseServiceTests
     public async Task UpdateExpenseAsync_WithInactiveCard_ThrowsArgumentException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var added = await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest()));
         var inactiveCard = CreditCard.Create("RetiredCard", isActive: false);
         repository.CreditCards.Add(inactiveCard);
@@ -234,7 +279,7 @@ public class ExpenseServiceTests
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         var inactiveCategory = Category.Create("RetiredCategory", isActive: false);
         repository.Categories.Add(inactiveCategory);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 15),
@@ -253,7 +298,7 @@ public class ExpenseServiceTests
     public async Task UpdateExpenseAsync_WithInactiveCategory_ThrowsArgumentException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var added = await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest()));
         var inactiveCategory = Category.Create("RetiredCategory", isActive: false);
         repository.Categories.Add(inactiveCategory);
@@ -275,7 +320,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithBlankDescription_ThrowsArgumentException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { Description = "  " });
 
         var act = async () => await service.AddExpenseAsync(request);
@@ -287,7 +332,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithDescriptionOver200Characters_ThrowsArgumentException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { Description = new string('a', 201) });
 
         var act = async () => await service.AddExpenseAsync(request);
@@ -299,7 +344,7 @@ public class ExpenseServiceTests
     public async Task UpdateExpenseAsync_WithInvalidPaymentSource_ThrowsArgumentException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var added = await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest()));
         var updateRequest = ToUpdateDto(repository, ValidCreateRequest() with { PaymentSource = "NotASource" });
 
@@ -312,7 +357,7 @@ public class ExpenseServiceTests
     public async Task UpdateExpenseAsync_WithExistingId_UpdatesInPlace()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var added = await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest()));
 
         var updateRequest = new ExpenseUpdateDTO
@@ -340,7 +385,7 @@ public class ExpenseServiceTests
     public async Task UpdateExpenseAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var updateRequest = ToUpdateDto(repository, ValidCreateRequest());
 
         var act = async () => await service.UpdateExpenseAsync(Guid.NewGuid(), updateRequest);
@@ -352,7 +397,7 @@ public class ExpenseServiceTests
     public async Task DeleteExpenseAsync_WithExistingId_RemovesAndSaves()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var added = await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest()));
 
         await service.DeleteExpenseAsync(added.Id);
@@ -365,7 +410,7 @@ public class ExpenseServiceTests
     public async Task DeleteExpenseAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
 
         var act = async () => await service.DeleteExpenseAsync(Guid.NewGuid());
 
@@ -376,7 +421,7 @@ public class ExpenseServiceTests
     public async Task GetExpensesByMonth_ReturnsOnlyExpensesInThatMonth()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with { Date = new DateOnly(2026, 7, 10) }));
         await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with { Date = new DateOnly(2026, 8, 10) }));
 
@@ -389,7 +434,7 @@ public class ExpenseServiceTests
     public async Task GetExpensesByMonth_OrdersByDateDescending()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with { Date = new DateOnly(2026, 7, 10) }));
         await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with { Date = new DateOnly(2026, 7, 25) }));
         await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with { Date = new DateOnly(2026, 7, 1) }));
@@ -406,7 +451,7 @@ public class ExpenseServiceTests
     public async Task GetExpensesByMonth_SettledCardExpense_KeepsInvoiceDatePositionAfterSettlement()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var bankExpense = await service.AddExpenseAsync(ToCreateDto(repository, 
             ValidCreateRequest() with { Description = "Bank", Date = new DateOnly(2026, 7, 15) }));
         var cardExpense = await service.AddExpenseAsync(ToCreateDto(repository, 
@@ -425,7 +470,7 @@ public class ExpenseServiceTests
     public async Task GetExpensesByMonth_SettledCardExpense_UsesInvoiceDateMonthNotChargeDateMonth()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var cardExpense = await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with
         {
             Description = "Card", Date = new DateOnly(2026, 8, 6), PaymentSource = null, CardTag = "BaAmex",
@@ -447,7 +492,7 @@ public class ExpenseServiceTests
     public async Task GetExpensesByMonth_UnsettledCreditCardCharge_IsExcluded()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         await service.AddExpenseAsync(ToCreateDto(repository, 
             ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
 
@@ -460,7 +505,7 @@ public class ExpenseServiceTests
     public async Task GetExpensesByMonth_ImmediatePayment_IsIncluded()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest()));
 
         var result = service.GetExpensesByMonth(2026, 7);
@@ -472,7 +517,7 @@ public class ExpenseServiceTests
     public async Task GetExpensesByMonth_MixOfStatuses_OnlyExcludesUnsettledCharge()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var immediate = await service.AddExpenseAsync(
             ToCreateDto(repository, ValidCreateRequest() with { Description = "Immediate" }));
         await service.AddExpenseAsync(ToCreateDto(repository, 
@@ -495,7 +540,7 @@ public class ExpenseServiceTests
     public async Task GetUnpaidCardChargesByMonth_UnsettledCharge_IsIncluded()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         await service.AddExpenseAsync(ToCreateDto(repository, 
             ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
 
@@ -508,7 +553,7 @@ public class ExpenseServiceTests
     public async Task GetUnpaidCardChargesByMonth_OrdersByChargeDateDescendingAcrossCards()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with
         {
             Description = "Chase early", Date = new DateOnly(2026, 7, 2), PaymentSource = null, CardTag = "ChaseMaster4023",
@@ -533,7 +578,7 @@ public class ExpenseServiceTests
     public async Task GetUnpaidCardChargesByMonth_ImmediatePaymentAndSettledCharge_AreExcluded()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with { Description = "Immediate" }));
         var settledCharge = await service.AddExpenseAsync(ToCreateDto(repository, 
             ValidCreateRequest() with { Description = "Settled charge", PaymentSource = null, CardTag = "BaAmex" }));
@@ -548,7 +593,7 @@ public class ExpenseServiceTests
     public async Task GetUnpaidCardChargesByMonth_OutsideMonth_IsExcluded()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with
         {
             Date = new DateOnly(2026, 8, 10), PaymentSource = null, CardTag = "ChaseMaster4023"
@@ -563,7 +608,7 @@ public class ExpenseServiceTests
     public async Task GetUnpaidCardChargesByMonth_InvoiceDateInDifferentMonthThanChargeDate_AppearsUnderInvoiceMonth()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var charge = await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with
         {
             Date = new DateOnly(2026, 8, 6), PaymentSource = null, CardTag = "ChaseMaster4023",
@@ -584,7 +629,7 @@ public class ExpenseServiceTests
     public async Task GetCategoryTotalsByMonth_SumsValuesPerCategoryForThatMonth()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with { Category = "Mercado", Value = 10m }));
         await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with { Category = "Mercado", Value = 5m }));
         await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with { Category = "Casa", Value = 20m }));
@@ -603,7 +648,7 @@ public class ExpenseServiceTests
     public async Task GetCategoryTotalsByMonth_NegativeValue_CountsTowardTotal()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with { Category = "Reserva", Value = 100m }));
         await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest() with { Category = "Reserva", Value = -30m }));
 
@@ -620,7 +665,7 @@ public class ExpenseServiceTests
             new DateOnly(2026, 7, 29), "Cutoff charge", 40m, MercadoFixture, null,
            BarclaysPlatinumVisa8003Fixture, new DateOnly(2026, 8, 1));
         repository.Expenses.Add(charge);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
 
         var julyResult = service.GetCategoryTotalsByMonth(2026, 7);
         var augustResult = service.GetCategoryTotalsByMonth(2026, 8);
@@ -639,7 +684,7 @@ public class ExpenseServiceTests
         var charge = Expense.Create(new DateOnly(2026, 7, 10), "Settled charge", 40m, MercadoFixture, null, BarclaysPlatinumVisa8003Fixture);
         charge.Settle(ChaseFixture, new DateOnly(2026, 8, 3));
         repository.Expenses.Add(charge);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
 
         var julyResult = service.GetCategoryTotalsByMonth(2026, 7);
         var augustResult = service.GetCategoryTotalsByMonth(2026, 8);
@@ -664,7 +709,7 @@ public class ExpenseServiceTests
         repository.Expenses.Add(unpaidCutoff);
         repository.Expenses.Add(settled);
         repository.Expenses.Add(bank);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
 
         var julyTotal = service.GetCategoryTotalsByMonth(2026, 7).Sum(t => t.TotalValue);
         var augustTotal = service.GetCategoryTotalsByMonth(2026, 8).Sum(t => t.TotalValue);
@@ -681,7 +726,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithRoundUpAmountOnRoundUpEnabledBank_SavesAmount()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { PaymentSource = "Trading212", Value = 9.40m, RoundUpAmount = 0.60m });
 
         var result = await service.AddExpenseAsync(request);
@@ -693,7 +738,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithRoundUpAmountOfZero_SavesExplicitZero()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { PaymentSource = "Trading212", Value = 10.00m, RoundUpAmount = 0.00m });
 
         var result = await service.AddExpenseAsync(request);
@@ -705,7 +750,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithRoundUpAmountOnNonRoundUpBank_ThrowsNamingTheBank()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { PaymentSource = "Barclays", RoundUpAmount = 0.50m });
 
         var act = async () => await service.AddExpenseAsync(request);
@@ -717,7 +762,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithRoundUpAmountOnCreditCardTaggedExpense_Throws()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023", RoundUpAmount = 0.50m });
 
         var act = async () => await service.AddExpenseAsync(request);
@@ -731,7 +776,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithRoundUpAmountOutsideRange_Throws(decimal roundUpAmount)
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { PaymentSource = "Chase", RoundUpAmount = roundUpAmount });
 
         var act = async () => await service.AddExpenseAsync(request);
@@ -743,7 +788,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_EligibleWithNoRoundUpAmount_ReturnsSuggestedAmount()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { PaymentSource = "Trading212", Value = 9.40m });
 
         var result = await service.AddExpenseAsync(request);
@@ -756,7 +801,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_EligibleWithRoundUpAmountAlreadySaved_ReturnsNoSuggestion()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { PaymentSource = "Trading212", Value = 9.40m, RoundUpAmount = 0.60m });
 
         var result = await service.AddExpenseAsync(request);
@@ -768,7 +813,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_OnNonRoundUpBank_ReturnsNoSuggestion()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { PaymentSource = "Barclays", Value = 9.40m });
 
         var result = await service.AddExpenseAsync(request);
@@ -780,7 +825,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_CreditCardCharge_ReturnsNoSuggestion()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023", Value = 9.40m });
 
         var result = await service.AddExpenseAsync(request);
@@ -792,7 +837,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_NegativeValueOnRoundUpBank_ReturnsNoSuggestion()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { PaymentSource = "Trading212", Value = -9.40m });
 
         var result = await service.AddExpenseAsync(request);
@@ -804,7 +849,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithRoundUpAmountOnNegativeValue_Throws()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { PaymentSource = "Trading212", Value = -9.40m, RoundUpAmount = 0.60m });
 
         var act = async () => await service.AddExpenseAsync(request);
@@ -816,7 +861,7 @@ public class ExpenseServiceTests
     public async Task UpdateExpenseAsync_ChangingValueOnly_LeavesRoundUpAmountUnchanged()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var added = await service.AddExpenseAsync(ToCreateDto(repository, 
             ValidCreateRequest() with { PaymentSource = "Trading212", Value = 9.40m, RoundUpAmount = 0.60m }));
 
@@ -832,7 +877,7 @@ public class ExpenseServiceTests
     public async Task UpdateExpenseAsync_WithNewRoundUpAmount_ChangesIt()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var added = await service.AddExpenseAsync(ToCreateDto(repository, 
             ValidCreateRequest() with { PaymentSource = "Trading212", RoundUpAmount = 0.60m }));
 
@@ -846,7 +891,7 @@ public class ExpenseServiceTests
     public async Task UpdateExpenseAsync_WithNullRoundUpAmount_ClearsAPreviouslySavedAmount()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var added = await service.AddExpenseAsync(ToCreateDto(repository, 
             ValidCreateRequest() with { PaymentSource = "Trading212", RoundUpAmount = 0.60m }));
 
@@ -910,7 +955,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_CreditCardExpense_ReturnsNonNullChargeDateAndInvoiceDate()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" });
 
         var result = await service.AddExpenseAsync(request);
@@ -926,7 +971,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithInvoiceDateOverride_UsesProvidedMonth()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with
         {
             Date = new DateOnly(2026, 7, 29),
@@ -944,7 +989,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithoutInvoiceDateOverride_DefaultsToChargeMonth()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var request = ToCreateDto(repository, ValidCreateRequest() with
         {
             Date = new DateOnly(2026, 7, 15), PaymentSource = null, CardTag = "ChaseMaster4023"
@@ -959,7 +1004,7 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_BankExpense_ChargeDateAndInvoiceDateAreNull()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
 
         var result = await service.AddExpenseAsync(ToCreateDto(repository, ValidCreateRequest()));
 
@@ -974,7 +1019,7 @@ public class ExpenseServiceTests
     public async Task UpdateExpenseAsync_ChangingInvoiceDateWhileUnpaid_PersistsOverride()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var added = await service.AddExpenseAsync(ToCreateDto(repository, 
             ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
         var updateRequest = ToUpdateDto(repository, ValidCreateRequest() with
@@ -991,7 +1036,7 @@ public class ExpenseServiceTests
     public async Task UpdateExpenseAsync_EchoingUnchangedInvoiceDateOnSettledExpense_Succeeds()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var added = await service.AddExpenseAsync(ToCreateDto(repository, 
             ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
         repository.Expenses.Single(e => e.Id == added.Id).Settle(repository.Banks.First(b => b.Name == "Barclays"), new DateOnly(2026, 7, 31));
@@ -1009,7 +1054,7 @@ public class ExpenseServiceTests
     public async Task UpdateExpenseAsync_ChangingInvoiceDateOnSettledExpense_Throws()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true, seedDefaultCategories: true);
-        var service = new ExpenseService(repository);
+        var service = new ExpenseService(repository, Tracer);
         var added = await service.AddExpenseAsync(ToCreateDto(repository, 
             ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
         repository.Expenses.Single(e => e.Id == added.Id).Settle(repository.Banks.First(b => b.Name == "Barclays"), new DateOnly(2026, 7, 31));
