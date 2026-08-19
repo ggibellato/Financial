@@ -7,6 +7,7 @@ using Financial.Investment.Infrastructure.Repositories;
 using Financial.TestUtilities;
 using FluentAssertions;
 using System.IO;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
 
@@ -127,8 +128,8 @@ public class CreditServiceTests
         var serializer = new InvestmentsSerializerAdapter();
         var repository = new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
         var tracer = new RecordingTelemetryTracer();
-        var navigationService = new NavigationService(repository, tracer);
-        var service = new CreditService(repository, navigationService, tracer);
+        var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
+        var service = new CreditService(repository, navigationService, tracer, NullLogger<CreditService>.Instance);
 
         return (service, tempFile);
     }

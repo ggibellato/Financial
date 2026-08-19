@@ -3,6 +3,7 @@ using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
 
@@ -12,11 +13,13 @@ public sealed class BrokerBreakdownService : IBrokerBreakdownService
 
     private readonly IInvestmentRepository _repository;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<BrokerBreakdownService> _logger;
 
-    public BrokerBreakdownService(IInvestmentRepository repository, ITelemetryTracer tracer)
+    public BrokerBreakdownService(IInvestmentRepository repository, ITelemetryTracer tracer, ILogger<BrokerBreakdownService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public IReadOnlyList<PortfolioBreakdownItemDTO> GetBrokerBreakdown(string brokerName, InvestmentScope scope = InvestmentScope.Active)
@@ -27,6 +30,7 @@ public sealed class BrokerBreakdownService : IBrokerBreakdownService
             if (string.IsNullOrWhiteSpace(brokerName))
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "GetBrokerBreakdown");
                 return [];
             }
 
@@ -34,6 +38,7 @@ public sealed class BrokerBreakdownService : IBrokerBreakdownService
             if (broker is null)
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "GetBrokerBreakdown");
                 return [];
             }
 
@@ -42,6 +47,7 @@ public sealed class BrokerBreakdownService : IBrokerBreakdownService
                 : BrokerBreakdownBuilder.Build(broker, CalculateNetInvested);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetBrokerBreakdown");
             return result;
         }
         catch (Exception ex)
@@ -54,6 +60,7 @@ public sealed class BrokerBreakdownService : IBrokerBreakdownService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"Investment.BrokerBreakdownService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);

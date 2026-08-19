@@ -5,6 +5,7 @@ using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Application.Tests.Services;
 
@@ -17,12 +18,12 @@ public class NavigationServiceTests
     private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
 
     private readonly StubInvestmentRepository _repository = new();
-    private NavigationService CreateService() => new(_repository, Tracer);
+    private NavigationService CreateService() => new(_repository, Tracer, NullLogger<NavigationService>.Instance);
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new NavigationService(new StubInvestmentRepository(), null!);
+        Action act = () => new NavigationService(new StubInvestmentRepository(), null!, NullLogger<NavigationService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
@@ -30,7 +31,7 @@ public class NavigationServiceTests
     public void GetNavigationTree_RecordsSuccessfulSpan()
     {
         var tracer = new RecordingTelemetryTracer();
-        var service = new NavigationService(_repository, tracer);
+        var service = new NavigationService(_repository, tracer, NullLogger<NavigationService>.Instance);
 
         service.GetNavigationTree();
 
@@ -342,4 +343,12 @@ public class NavigationServiceTests
         return broker;
     }
 
+
+    [Fact]
+    public void Constructor_WithNullLogger_Throws()
+    {
+        Action act = () => new NavigationService(new StubInvestmentRepository(), Tracer, null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
 }

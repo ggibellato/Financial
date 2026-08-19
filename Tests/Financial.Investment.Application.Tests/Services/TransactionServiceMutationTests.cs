@@ -5,6 +5,7 @@ using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Application.Tests.Services;
 
@@ -17,14 +18,14 @@ public class TransactionServiceMutationTests
     [Fact]
     public void Constructor_WithNullNavigationService_Throws()
     {
-        Action act = () => new TransactionService(_repository, null!, Tracer);
+        Action act = () => new TransactionService(_repository, null!, Tracer, NullLogger<TransactionService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("navigationService");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new TransactionService(_repository, new NavigationService(_repository, Tracer), null!);
+        Action act = () => new TransactionService(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), null!, NullLogger<TransactionService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
@@ -56,7 +57,7 @@ public class TransactionServiceMutationTests
     {
         _repository.Asset = MakeAsset();
         var tracer = new RecordingTelemetryTracer();
-        var service = new TransactionService(_repository, new NavigationService(_repository, Tracer), tracer);
+        var service = new TransactionService(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), tracer, NullLogger<TransactionService>.Instance);
 
         await service.AddTransactionAsync(new TransactionCreateDTO
         {
@@ -247,9 +248,17 @@ public class TransactionServiceMutationTests
         result.Should().BeNull();
     }
 
-    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, Tracer), Tracer);
+    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<TransactionService>.Instance);
 
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);
 
+
+    [Fact]
+    public void Constructor_WithNullLogger_Throws()
+    {
+        Action act = () => new TransactionService(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
 }

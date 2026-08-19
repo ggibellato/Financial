@@ -5,6 +5,7 @@ using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Application.Tests.Services;
 
@@ -17,14 +18,14 @@ public class SummaryServiceTests
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new SummaryService(null!, Tracer);
+        Action act = () => new SummaryService(null!, Tracer, NullLogger<SummaryService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new SummaryService(new StubInvestmentRepository(), null!);
+        Action act = () => new SummaryService(new StubInvestmentRepository(), null!, NullLogger<SummaryService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
@@ -269,7 +270,7 @@ public class SummaryServiceTests
         result.TotalInvested.Should().Be(0m);
     }
 
-    private SummaryService CreateService() => new(_repository, Tracer);
+    private SummaryService CreateService() => new(_repository, Tracer, NullLogger<SummaryService>.Instance);
 
     private static Asset MakeAsset(string name = "TEST", string ticker = "TEST") =>
         Asset.Create(name, "ISIN", "BVMF", ticker);
@@ -293,4 +294,12 @@ public class SummaryServiceTests
         return broker;
     }
 
+
+    [Fact]
+    public void Constructor_WithNullLogger_Throws()
+    {
+        Action act = () => new SummaryService(new StubInvestmentRepository(), Tracer, null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
 }

@@ -5,6 +5,7 @@ using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Application.Tests.Services;
 
@@ -17,21 +18,21 @@ public class CreditServiceTests
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new CreditService(null!, new NavigationService(_repository, Tracer), Tracer);
+        Action act = () => new CreditService(null!, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<CreditService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullNavigationService_Throws()
     {
-        Action act = () => new CreditService(_repository, null!, Tracer);
+        Action act = () => new CreditService(_repository, null!, Tracer, NullLogger<CreditService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("navigationService");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new CreditService(_repository, new NavigationService(_repository, Tracer), null!);
+        Action act = () => new CreditService(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), null!, NullLogger<CreditService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
@@ -331,9 +332,17 @@ public class CreditServiceTests
         _repository.LastGetAssetsByBrokerPortfolioScope.Should().Be(InvestmentScope.Historic);
     }
 
-    private CreditService CreateService() => new(_repository, new NavigationService(_repository, Tracer), Tracer);
+    private CreditService CreateService() => new(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<CreditService>.Instance);
 
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);
 
+
+    [Fact]
+    public void Constructor_WithNullLogger_Throws()
+    {
+        Action act = () => new CreditService(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
 }

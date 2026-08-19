@@ -4,6 +4,7 @@ using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Application.Tests.Services;
 
@@ -16,7 +17,7 @@ public class TransactionServiceQueryTests
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new TransactionService(null!, new NavigationService(_repository, Tracer), Tracer);
+        Action act = () => new TransactionService(null!, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<TransactionService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
@@ -171,7 +172,7 @@ public class TransactionServiceQueryTests
         result.Should().BeEmpty();
     }
 
-    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, Tracer), Tracer);
+    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, Tracer, NullLogger<NavigationService>.Instance), Tracer, NullLogger<TransactionService>.Instance);
 
     private static Asset MakeAsset(string name = "TEST") =>
         Asset.Create(name, "ISIN", "BVMF", name);

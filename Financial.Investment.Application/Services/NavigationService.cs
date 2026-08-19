@@ -4,6 +4,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
 
@@ -13,11 +14,13 @@ public sealed class NavigationService : INavigationService
 
     private readonly IInvestmentRepository _repository;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<NavigationService> _logger;
 
-    public NavigationService(IInvestmentRepository repository, ITelemetryTracer tracer)
+    public NavigationService(IInvestmentRepository repository, ITelemetryTracer tracer, ILogger<NavigationService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public TreeNodeDTO GetNavigationTree(InvestmentScope scope = InvestmentScope.Active)
@@ -39,6 +42,7 @@ public sealed class NavigationService : INavigationService
             }
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetNavigationTree");
             return rootNode;
         }
         catch (Exception ex)
@@ -57,6 +61,7 @@ public sealed class NavigationService : INavigationService
             if (AssetContextValidator.IsInvalid(brokerName, portfolioName, assetName))
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "GetAssetDetails");
                 return null;
             }
 
@@ -65,6 +70,7 @@ public sealed class NavigationService : INavigationService
             if (asset == null)
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "GetAssetDetails");
                 return null;
             }
 
@@ -86,6 +92,7 @@ public sealed class NavigationService : INavigationService
             var (totalBought, totalSold, totalCredits) = NavigationMapper.CalculateTotals(asset);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetAssetDetails");
             return new AssetDetailsDTO
             {
                 Name = asset.Name,
@@ -129,6 +136,7 @@ public sealed class NavigationService : INavigationService
             var result = brokers.Select(broker => NavigationMapper.MapBroker(broker, scope)).ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetBrokers");
             return result;
         }
         catch (Exception ex)
@@ -149,6 +157,7 @@ public sealed class NavigationService : INavigationService
                 .ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetAssetsByBrokerPortfolio");
             return result;
         }
         catch (Exception ex)
@@ -161,6 +170,7 @@ public sealed class NavigationService : INavigationService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"Investment.NavigationService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);

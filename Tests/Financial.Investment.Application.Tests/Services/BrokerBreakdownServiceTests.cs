@@ -4,6 +4,7 @@ using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Application.Tests.Services;
 
@@ -16,14 +17,14 @@ public class BrokerBreakdownServiceTests
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new BrokerBreakdownService(null!, Tracer);
+        Action act = () => new BrokerBreakdownService(null!, Tracer, NullLogger<BrokerBreakdownService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new BrokerBreakdownService(new StubInvestmentRepository(), null!);
+        Action act = () => new BrokerBreakdownService(new StubInvestmentRepository(), null!, NullLogger<BrokerBreakdownService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
@@ -257,7 +258,7 @@ public class BrokerBreakdownServiceTests
         result.Single().Assets.Select(a => a.AssetName).Should().Equal("AAAA3", "ZZZZ3");
     }
 
-    private BrokerBreakdownService CreateService() => new(_repository, Tracer);
+    private BrokerBreakdownService CreateService() => new(_repository, Tracer, NullLogger<BrokerBreakdownService>.Instance);
 
     private static Asset MakeAsset(string name = "TEST", string ticker = "TEST") =>
         Asset.Create(name, "ISIN", "BVMF", ticker);
@@ -281,4 +282,12 @@ public class BrokerBreakdownServiceTests
         return broker;
     }
 
+
+    [Fact]
+    public void Constructor_WithNullLogger_Throws()
+    {
+        Action act = () => new BrokerBreakdownService(new StubInvestmentRepository(), Tracer, null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
 }
