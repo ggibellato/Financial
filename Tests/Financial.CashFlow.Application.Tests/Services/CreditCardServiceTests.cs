@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Services;
+using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
 using FluentAssertions;
@@ -8,13 +9,29 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class CreditCardServiceTests
 {
+    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+
+    [Fact]
+    public void Constructor_WithNullRepository_Throws()
+    {
+        Action act = () => new CreditCardService(null!, Tracer);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
+    }
+
+    [Fact]
+    public void Constructor_WithNullTracer_Throws()
+    {
+        Action act = () => new CreditCardService(new StubCashFlowRepository(), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
+    }
+
     [Fact]
     public void GetCreditCards_ReturnsAllSeededCards_IncludingInactive()
     {
         var repository = new StubCashFlowRepository();
         repository.CreditCards.Add(CreditCard.Create("BaAmex", isActive: true));
         repository.CreditCards.Add(CreditCard.Create("PaypalCredit", isActive: false));
-        var service = new CreditCardService(repository);
+        var service = new CreditCardService(repository, Tracer);
 
         var result = service.GetCreditCards();
 
@@ -28,7 +45,7 @@ public class CreditCardServiceTests
         var repository = new StubCashFlowRepository();
         var card = CreditCard.Create("BaAmex", isActive: true);
         repository.CreditCards.Add(card);
-        var service = new CreditCardService(repository);
+        var service = new CreditCardService(repository, Tracer);
         var dueDate = new DateOnly(2026, 9, 5);
 
         var result = await service.UpdateCreditCardAsync(card.Id, new CreditCardUpdateDTO
@@ -46,7 +63,7 @@ public class CreditCardServiceTests
     public async Task UpdateCreditCardAsync_UnknownId_ThrowsKeyNotFoundException()
     {
         var repository = new StubCashFlowRepository();
-        var service = new CreditCardService(repository);
+        var service = new CreditCardService(repository, Tracer);
 
         var act = async () => await service.UpdateCreditCardAsync(Guid.NewGuid(), new CreditCardUpdateDTO
         {

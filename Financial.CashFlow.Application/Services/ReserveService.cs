@@ -3,173 +3,263 @@ using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.Shared.Abstractions;
 
 namespace Financial.CashFlow.Application.Services;
 
 public sealed class ReserveService : IReserveService
 {
-    private readonly ICashFlowRepository _repository;
+    private const string EntityType = "ReserveMovement";
 
-    public ReserveService(ICashFlowRepository repository)
+    private readonly ICashFlowRepository _repository;
+    private readonly ITelemetryTracer _tracer;
+
+    public ReserveService(ICashFlowRepository repository, ITelemetryTracer tracer)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
     }
 
     public async Task<IncomeSplitResultDTO> PostIncomeSplitAsync(IncomeSplitRequestDTO request)
     {
-        ArgumentNullException.ThrowIfNull(request);
-
-        if (request.Amount <= 0)
-        {
-            throw new ArgumentException("Amount must be greater than zero.", nameof(request.Amount));
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Description))
-        {
-            throw new ArgumentException("Description is required.", nameof(request.Description));
-        }
-
-        var activeBuckets = _repository.GetReserveBuckets().Where(b => b.IsActive).ToList();
-        if (activeBuckets.Count == 0)
-        {
-            throw new ArgumentException("No reserve bucket is currently active.");
-        }
-
-        var movements = activeBuckets
-            .Select(bucket => ReserveMovement.Create(bucket, bucket.CalculateSplitAmount(request.Amount), request.Date, request.Description))
-            .ToList();
-
-        foreach (var movement in movements)
-        {
-            _repository.AddReserveMovement(movement);
-        }
-
+        using var span = StartSpan("PostIncomeSplit");
         try
         {
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
-        }
-        catch
-        {
-            foreach (var movement in movements)
+            ArgumentNullException.ThrowIfNull(request);
+
+            if (request.Amount <= 0)
             {
-                _repository.DeleteReserveMovement(movement.Id);
+                throw new ArgumentException("Amount must be greater than zero.", nameof(request.Amount));
             }
 
+            if (string.IsNullOrWhiteSpace(request.Description))
+            {
+                throw new ArgumentException("Description is required.", nameof(request.Description));
+            }
+
+            var activeBuckets = _repository.GetReserveBuckets().Where(b => b.IsActive).ToList();
+            if (activeBuckets.Count == 0)
+            {
+                throw new ArgumentException("No reserve bucket is currently active.");
+            }
+
+            var movements = activeBuckets
+                .Select(bucket => ReserveMovement.Create(bucket, bucket.CalculateSplitAmount(request.Amount), request.Date, request.Description))
+                .ToList();
+
+            foreach (var movement in movements)
+            {
+                _repository.AddReserveMovement(movement);
+            }
+
+            try
+            {
+                await _repository.SaveChangesAsync().ConfigureAwait(false);
+            }
+            catch
+            {
+                foreach (var movement in movements)
+                {
+                    _repository.DeleteReserveMovement(movement.Id);
+                }
+
+                throw;
+            }
+
+            var splitAmounts = movements
+                .Select(movement => new BucketSplitAmountDTO { Bucket = movement.Bucket.Name, Amount = movement.Amount })
+                .ToList();
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return new IncomeSplitResultDTO
+            {
+                Buckets = splitAmounts,
+                Total = splitAmounts.Sum(b => b.Amount)
+            };
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
             throw;
         }
-
-        var splitAmounts = movements
-            .Select(movement => new BucketSplitAmountDTO { Bucket = movement.Bucket.Name, Amount = movement.Amount })
-            .ToList();
-
-        return new IncomeSplitResultDTO
-        {
-            Buckets = splitAmounts,
-            Total = splitAmounts.Sum(b => b.Amount)
-        };
     }
 
     public async Task<ReserveMovementDTO> PostWithdrawalAsync(WithdrawalRequestDTO request)
     {
-        ArgumentNullException.ThrowIfNull(request);
-
-        if (string.IsNullOrWhiteSpace(request.Description))
-        {
-            throw new ArgumentException("Description is required.");
-        }
-
-        if (request.Amount <= 0)
-        {
-            throw new ArgumentException("Amount must be greater than zero.");
-        }
-
-        if (!ReserveBucketNameResolver.TryResolve(request.Bucket, _repository.GetReserveBuckets(), out var bucket))
-        {
-            throw new ArgumentException($"Bucket '{request.Bucket}' is not recognized.");
-        }
-
-        var currentBalance = GetBalance(bucket!);
-        if (request.Amount > currentBalance && !request.Confirmed)
-        {
-            throw new OverdraftConfirmationRequiredException(
-                $"This withdrawal exceeds {bucket!.Name}'s balance of {currentBalance:F2}. Set confirmed=true to proceed.");
-        }
-
-        var movement = ReserveMovement.Create(bucket!, -request.Amount, request.Date, request.Description);
-        _repository.AddReserveMovement(movement);
-
+        using var span = StartSpan("PostWithdrawal");
         try
         {
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            ArgumentNullException.ThrowIfNull(request);
+
+            if (string.IsNullOrWhiteSpace(request.Description))
+            {
+                throw new ArgumentException("Description is required.");
+            }
+
+            if (request.Amount <= 0)
+            {
+                throw new ArgumentException("Amount must be greater than zero.");
+            }
+
+            if (!ReserveBucketNameResolver.TryResolve(request.Bucket, _repository.GetReserveBuckets(), out var bucket))
+            {
+                throw new ArgumentException($"Bucket '{request.Bucket}' is not recognized.");
+            }
+
+            var currentBalance = GetBalance(bucket!);
+            if (request.Amount > currentBalance && !request.Confirmed)
+            {
+                throw new OverdraftConfirmationRequiredException(
+                    $"This withdrawal exceeds {bucket!.Name}'s balance of {currentBalance:F2}. Set confirmed=true to proceed.");
+            }
+
+            var movement = ReserveMovement.Create(bucket!, -request.Amount, request.Date, request.Description);
+            _repository.AddReserveMovement(movement);
+
+            try
+            {
+                await _repository.SaveChangesAsync().ConfigureAwait(false);
+            }
+            catch
+            {
+                _repository.DeleteReserveMovement(movement.Id);
+                throw;
+            }
+
+            span.SetAttribute(TelemetryAttributeKeys.EntityId, movement.Id.ToString());
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return ToDto(movement);
         }
-        catch
+        catch (Exception ex)
         {
-            _repository.DeleteReserveMovement(movement.Id);
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
             throw;
         }
-
-        return ToDto(movement);
     }
 
     public IReadOnlyList<ReserveBucketBalanceDTO> GetBucketBalances()
     {
-        var balanceByBucket = _repository.GetReserveMovements()
-            .GroupBy(m => m.Bucket)
-            .ToDictionary(g => g.Key, g => g.Sum(m => m.Amount));
+        using var span = StartSpan("GetBucketBalances");
+        try
+        {
+            var balanceByBucket = _repository.GetReserveMovements()
+                .GroupBy(m => m.Bucket)
+                .ToDictionary(g => g.Key, g => g.Sum(m => m.Amount));
 
-        return _repository.GetReserveBuckets()
-            .Select(bucket => new ReserveBucketBalanceDTO
-            {
-                Bucket = bucket.Name,
-                Balance = balanceByBucket.GetValueOrDefault(bucket)
-            })
-            .ToList();
+            var result = _repository.GetReserveBuckets()
+                .Select(bucket => new ReserveBucketBalanceDTO
+                {
+                    Bucket = bucket.Name,
+                    Balance = balanceByBucket.GetValueOrDefault(bucket)
+                })
+                .ToList();
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
-    public IReadOnlyList<ReserveMovementDTO> GetMovementHistory() =>
-        _repository.GetReserveMovements()
-            .OrderByDescending(m => m.Date)
-            .Select(ToDto)
-            .ToList();
+    public IReadOnlyList<ReserveMovementDTO> GetMovementHistory()
+    {
+        using var span = StartSpan("GetMovementHistory");
+        try
+        {
+            var result = _repository.GetReserveMovements()
+                .OrderByDescending(m => m.Date)
+                .Select(ToDto)
+                .ToList();
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
 
     public async Task<ReserveMovementDTO> UpdateMovementAsync(Guid id, UpdateReserveMovementDTO request)
     {
-        ArgumentNullException.ThrowIfNull(request);
-
-        if (string.IsNullOrWhiteSpace(request.Description))
+        using var span = StartSpan("UpdateMovement");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
         {
-            throw new ArgumentException("Description is required.");
-        }
+            ArgumentNullException.ThrowIfNull(request);
 
-        if (!ReserveBucketNameResolver.TryResolve(request.Bucket, _repository.GetReserveBuckets(), out var bucket))
+            if (string.IsNullOrWhiteSpace(request.Description))
+            {
+                throw new ArgumentException("Description is required.");
+            }
+
+            if (!ReserveBucketNameResolver.TryResolve(request.Bucket, _repository.GetReserveBuckets(), out var bucket))
+            {
+                throw new ArgumentException($"Bucket '{request.Bucket}' is not recognized.");
+            }
+
+            var movement = _repository.GetReserveMovements().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
+
+            movement.Update(bucket!, request.Amount, request.Date, request.Description);
+            await _repository.SaveChangesAsync().ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return ToDto(movement);
+        }
+        catch (Exception ex)
         {
-            throw new ArgumentException($"Bucket '{request.Bucket}' is not recognized.");
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
         }
-
-        var movement = _repository.GetReserveMovements().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
-
-        movement.Update(bucket!, request.Amount, request.Date, request.Description);
-        await _repository.SaveChangesAsync().ConfigureAwait(false);
-
-        return ToDto(movement);
     }
 
     public async Task DeleteMovementAsync(Guid id)
     {
-        var movement = _repository.GetReserveMovements().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
-
-        // Movements from the same income split share Date+Description (see PostIncomeSplitAsync) -
-        // deleting one deletes the whole split, not just this bucket's line.
-        var group = _repository.GetReserveMovements()
-            .Where(m => m.Date == movement.Date && m.Description == movement.Description)
-            .ToList();
-
-        foreach (var groupMovement in group)
+        using var span = StartSpan("DeleteMovement");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
         {
-            _repository.DeleteReserveMovement(groupMovement.Id);
-        }
+            var movement = _repository.GetReserveMovements().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
 
-        await _repository.SaveChangesAsync().ConfigureAwait(false);
+            // Movements from the same income split share Date+Description (see PostIncomeSplitAsync) -
+            // deleting one deletes the whole split, not just this bucket's line.
+            var group = _repository.GetReserveMovements()
+                .Where(m => m.Date == movement.Date && m.Description == movement.Description)
+                .ToList();
+
+            foreach (var groupMovement in group)
+            {
+                _repository.DeleteReserveMovement(groupMovement.Id);
+            }
+
+            await _repository.SaveChangesAsync().ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
+
+    private ITelemetrySpan StartSpan(string operationName)
+    {
+        var span = _tracer.StartSpan($"CashFlow.ReserveService.{operationName}");
+        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
+        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
+        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
+        return span;
     }
 
     private decimal GetBalance(ReserveBucket bucket) =>

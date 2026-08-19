@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
+using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
@@ -13,8 +14,10 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class CardStatementServiceTests
 {
+    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+
     private static CardStatementService NewService(StubCashFlowRepository repository) =>
-        new(repository, NullLogger<CardStatementService>.Instance);
+        new(repository, NullLogger<CardStatementService>.Instance, Tracer);
 
     private static CreditCard Card(StubCashFlowRepository repository, string name) =>
         repository.CreditCards.First(c => c.Name == name);
@@ -41,15 +44,22 @@ public class CardStatementServiceTests
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new CardStatementService(null!, NullLogger<CardStatementService>.Instance);
+        Action act = () => new CardStatementService(null!, NullLogger<CardStatementService>.Instance, Tracer);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
-        Action act = () => new CardStatementService(new StubCashFlowRepository(), null!);
+        Action act = () => new CardStatementService(new StubCashFlowRepository(), null!, Tracer);
         act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+    }
+
+    [Fact]
+    public void Constructor_WithNullTracer_Throws()
+    {
+        Action act = () => new CardStatementService(new StubCashFlowRepository(), NullLogger<CardStatementService>.Instance, null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Fact]
