@@ -4,6 +4,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
 
@@ -14,12 +15,14 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
     private readonly IInvestmentRepository _repository;
     private readonly INavigationService _navigationService;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<TransactionService> _logger;
 
-    public TransactionService(IInvestmentRepository repository, INavigationService navigationService, ITelemetryTracer tracer)
+    public TransactionService(IInvestmentRepository repository, INavigationService navigationService, ITelemetryTracer tracer, ILogger<TransactionService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<AssetDetailsDTO?> AddTransactionAsync(TransactionCreateDTO request)
@@ -43,6 +46,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 }).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "AddTransaction");
             return result;
         }
         catch (Exception ex)
@@ -62,6 +66,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
             if (request.Id == Guid.Empty)
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "UpdateTransaction");
                 return null;
             }
 
@@ -80,6 +85,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 }).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "UpdateTransaction");
             return result;
         }
         catch (Exception ex)
@@ -99,6 +105,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
             if (request.Id == Guid.Empty)
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "DeleteTransaction");
                 return null;
             }
 
@@ -111,6 +118,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 asset => asset.RemoveTransaction(request.Id)).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "DeleteTransaction");
             return result;
         }
         catch (Exception ex)
@@ -129,11 +137,13 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
             if (string.IsNullOrWhiteSpace(brokerName))
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "GetTransactionsByBroker");
                 return Array.Empty<TransactionSummaryItemDTO>();
             }
 
             var result = MapAndSort(_repository.GetAssetsByBroker(brokerName, scope));
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetTransactionsByBroker");
             return result;
         }
         catch (Exception ex)
@@ -152,11 +162,13 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
             if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "GetTransactionsByPortfolio");
                 return Array.Empty<TransactionSummaryItemDTO>();
             }
 
             var result = MapAndSort(_repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope));
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetTransactionsByPortfolio");
             return result;
         }
         catch (Exception ex)
@@ -169,6 +181,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"Investment.TransactionService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);

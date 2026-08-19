@@ -3,6 +3,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
 
@@ -14,17 +15,19 @@ public sealed class PriceService : IPriceService
     private readonly INavigationService _navigationService;
     private readonly IAssetPriceService _assetPriceService;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<PriceService> _logger;
 
     public PriceService(
         IInvestmentRepository repository,
         INavigationService navigationService,
         IAssetPriceService assetPriceService,
-        ITelemetryTracer tracer)
+        ITelemetryTracer tracer, ILogger<PriceService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request)
@@ -45,6 +48,7 @@ public sealed class PriceService : IPriceService
                 }).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "SetPrice");
             return result;
         }
         catch (Exception ex)
@@ -83,6 +87,7 @@ public sealed class PriceService : IPriceService
                 }).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "DeletePrice");
             return result;
         }
         catch (Exception ex)
@@ -103,6 +108,7 @@ public sealed class PriceService : IPriceService
             {
                 var result = _assetPriceService.GetCurrentPrice(request);
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "GetCurrentPrice");
                 return result;
             }
 
@@ -112,6 +118,7 @@ public sealed class PriceService : IPriceService
                 await RecordAutomaticPriceIfNeededAsync(asset, livePrice.Price);
                 livePrice.IsManual = false;
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "GetCurrentPrice");
                 return livePrice;
             }
             catch
@@ -123,6 +130,7 @@ public sealed class PriceService : IPriceService
                 }
 
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "GetCurrentPrice");
                 return new AssetPriceDTO
                 {
                     Exchange = request.Exchange,
@@ -144,6 +152,7 @@ public sealed class PriceService : IPriceService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"Investment.PriceService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);

@@ -5,6 +5,7 @@ using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Application.Tests.Services;
 
@@ -17,14 +18,14 @@ public class PortfolioAssetSummaryServiceTests
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new PortfolioAssetSummaryService(null!, Tracer);
+        Action act = () => new PortfolioAssetSummaryService(null!, Tracer, NullLogger<PortfolioAssetSummaryService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new PortfolioAssetSummaryService(new StubInvestmentRepository(), null!);
+        Action act = () => new PortfolioAssetSummaryService(new StubInvestmentRepository(), null!, NullLogger<PortfolioAssetSummaryService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
@@ -728,9 +729,17 @@ public class PortfolioAssetSummaryServiceTests
         result[0].LastMonthCreditsPercent.Should().Be(1m);
     }
 
-    private PortfolioAssetSummaryService CreateService() => new(_repository, Tracer);
+    private PortfolioAssetSummaryService CreateService() => new(_repository, Tracer, NullLogger<PortfolioAssetSummaryService>.Instance);
 
     private static Asset MakeAsset(string name, string ticker, string exchange) =>
         Asset.Create(name, "ISIN", exchange, ticker);
 
+
+    [Fact]
+    public void Constructor_WithNullLogger_Throws()
+    {
+        Action act = () => new PortfolioAssetSummaryService(new StubInvestmentRepository(), Tracer, null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
 }

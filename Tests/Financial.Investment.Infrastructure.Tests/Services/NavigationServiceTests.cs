@@ -8,6 +8,7 @@ using Financial.Shared.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.TestUtilities;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
 
@@ -27,15 +28,15 @@ public class NavigationServiceTests
 
     public NavigationServiceTests()
     {
-        _sut = new NavigationService(_repository, _tracer);
-        _creditSut = new CreditService(_repository, _sut, _tracer);
+        _sut = new NavigationService(_repository, _tracer, NullLogger<NavigationService>.Instance);
+        _creditSut = new CreditService(_repository, _sut, _tracer, NullLogger<CreditService>.Instance);
     }
 
     [Fact]
     public void Constructor_WithNullRepository_ThrowsArgumentNullException()
     {
         // Act
-        Action act = () => new NavigationService(null!, new RecordingTelemetryTracer());
+        Action act = () => new NavigationService(null!, new RecordingTelemetryTracer(), NullLogger<NavigationService>.Instance);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
@@ -46,7 +47,7 @@ public class NavigationServiceTests
     public void Constructor_WithNullTracer_ThrowsArgumentNullException()
     {
         // Act
-        Action act = () => new NavigationService(_repository, null!);
+        Action act = () => new NavigationService(_repository, null!, NullLogger<NavigationService>.Instance);
 
         // Assert
         act.Should().Throw<ArgumentNullException>()

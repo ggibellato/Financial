@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -12,11 +13,13 @@ public sealed class TransferService : ITransferService
 
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<TransferService> _logger;
 
-    public TransferService(ICashFlowRepository repository, ITelemetryTracer tracer)
+    public TransferService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<TransferService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<TransferDTO> AddTransferAsync(TransferCreateDTO request)
@@ -34,6 +37,7 @@ public sealed class TransferService : ITransferService
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, transfer.Id.ToString());
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "AddTransfer");
             return ToDto(transfer);
         }
         catch (Exception ex)
@@ -60,6 +64,7 @@ public sealed class TransferService : ITransferService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "UpdateTransfer");
             return ToDto(transfer);
         }
         catch (Exception ex)
@@ -82,6 +87,7 @@ public sealed class TransferService : ITransferService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "DeleteTransfer");
         }
         catch (Exception ex)
         {
@@ -102,6 +108,7 @@ public sealed class TransferService : ITransferService
                 .ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetTransfersByMonth");
             return result;
         }
         catch (Exception ex)
@@ -121,6 +128,7 @@ public sealed class TransferService : ITransferService
             if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "GetTransfersByBank");
                 return Array.Empty<TransferDTO>();
             }
 
@@ -130,6 +138,7 @@ public sealed class TransferService : ITransferService
                 .ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetTransfersByBank");
             return result;
         }
         catch (Exception ex)
@@ -142,6 +151,7 @@ public sealed class TransferService : ITransferService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"CashFlow.TransferService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);

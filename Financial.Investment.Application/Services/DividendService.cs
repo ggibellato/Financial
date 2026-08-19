@@ -3,6 +3,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Rules;
 using Financial.Investment.Domain.ValueObjects;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
 
@@ -13,12 +14,14 @@ public sealed class DividendService : IDividendService
     private readonly IDividendDataSource _dividendDataSource;
     private readonly IAssetSnapshotSource _snapshotSource;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<DividendService> _logger;
 
-    public DividendService(IDividendDataSource dividendDataSource, IAssetSnapshotSource snapshotSource, ITelemetryTracer tracer)
+    public DividendService(IDividendDataSource dividendDataSource, IAssetSnapshotSource snapshotSource, ITelemetryTracer tracer, ILogger<DividendService> logger)
     {
         _dividendDataSource = dividendDataSource ?? throw new ArgumentNullException(nameof(dividendDataSource));
         _snapshotSource = snapshotSource ?? throw new ArgumentNullException(nameof(snapshotSource));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public IReadOnlyList<DividendHistoryItemDTO> GetDividendHistory(DividendLookupRequestDTO request)
@@ -30,6 +33,7 @@ public sealed class DividendService : IDividendService
             var result = MapToHistory(values);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetDividendHistory");
             return result;
         }
         catch (Exception ex)
@@ -73,6 +77,7 @@ public sealed class DividendService : IDividendService
             var dividendYieldPercent = DividendValuationRules.CalculateDividendYieldPercent(averageDividend, snapshot.Price);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetDividendSummary");
             return new DividendSummaryDTO
             {
                 Exchange = request.Exchange,
@@ -98,6 +103,7 @@ public sealed class DividendService : IDividendService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"Investment.DividendService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);

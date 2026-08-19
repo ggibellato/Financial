@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
 
@@ -11,11 +12,13 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
 
     private readonly IInvestmentRepository _repository;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<PortfolioAssetSummaryService> _logger;
 
-    public PortfolioAssetSummaryService(IInvestmentRepository repository, ITelemetryTracer tracer)
+    public PortfolioAssetSummaryService(IInvestmentRepository repository, ITelemetryTracer tracer, ILogger<PortfolioAssetSummaryService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public IReadOnlyList<PortfolioAssetSummaryItemDTO> GetPortfolioAssetsSummary(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
@@ -26,6 +29,7 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
             if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "GetPortfolioAssetsSummary");
                 return [];
             }
 
@@ -33,6 +37,7 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
             if (assets.Count == 0)
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "GetPortfolioAssetsSummary");
                 return [];
             }
 
@@ -41,6 +46,7 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
                 : PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, CalculateNetInvested);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetPortfolioAssetsSummary");
             return result;
         }
         catch (Exception ex)
@@ -53,6 +59,7 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"Investment.PortfolioAssetSummaryService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);

@@ -7,6 +7,7 @@ using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Application.Tests.Services;
 
@@ -20,7 +21,7 @@ public class DividendServiceTests
     [Fact]
     public void Constructor_WithNullDividendDataSource_Throws()
     {
-        Action act = () => new DividendService(null!, _snapshotSource, Tracer);
+        Action act = () => new DividendService(null!, _snapshotSource, Tracer, NullLogger<DividendService>.Instance);
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("dividendDataSource");
@@ -29,7 +30,7 @@ public class DividendServiceTests
     [Fact]
     public void Constructor_WithNullSnapshotSource_Throws()
     {
-        Action act = () => new DividendService(_dataSource, null!, Tracer);
+        Action act = () => new DividendService(_dataSource, null!, Tracer, NullLogger<DividendService>.Instance);
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("snapshotSource");
@@ -38,7 +39,7 @@ public class DividendServiceTests
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new DividendService(_dataSource, _snapshotSource, null!);
+        Action act = () => new DividendService(_dataSource, _snapshotSource, null!, NullLogger<DividendService>.Instance);
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("tracer");
@@ -236,7 +237,7 @@ public class DividendServiceTests
         }
     }
 
-    private DividendService CreateService() => new(_dataSource, _snapshotSource, Tracer);
+    private DividendService CreateService() => new(_dataSource, _snapshotSource, Tracer, NullLogger<DividendService>.Instance);
 
     private static DividendLookupRequestDTO MakeRequest(string exchange = "NYSE", string ticker = "TICK") =>
         new() { Exchange = exchange, Ticker = ticker };
@@ -254,5 +255,13 @@ public class DividendServiceTests
             new AssetValueSnapshot("DEFAULT", "Default Asset", 0m, DateTimeOffset.UtcNow);
 
         public AssetValueSnapshot GetSnapshot(string exchange, string ticker) => Snapshot;
+    }
+
+    [Fact]
+    public void Constructor_WithNullLogger_Throws()
+    {
+        Action act = () => new DividendService(_dataSource, _snapshotSource, Tracer, null!);
+
+        act.Should().Throw<ArgumentNullException>();
     }
 }

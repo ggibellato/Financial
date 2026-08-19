@@ -4,6 +4,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
 
@@ -14,12 +15,14 @@ public sealed class CreditService : ICreditService, ICreditQueryService
     private readonly IInvestmentRepository _repository;
     private readonly INavigationService _navigationService;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<CreditService> _logger;
 
-    public CreditService(IInvestmentRepository repository, INavigationService navigationService, ITelemetryTracer tracer)
+    public CreditService(IInvestmentRepository repository, INavigationService navigationService, ITelemetryTracer tracer, ILogger<CreditService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<AssetDetailsDTO?> AddCreditAsync(CreditCreateDTO request)
@@ -43,6 +46,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                 }).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "AddCredit");
             return result;
         }
         catch (Exception ex)
@@ -62,6 +66,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
             if (request.Id == Guid.Empty)
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "UpdateCredit");
                 return null;
             }
 
@@ -80,6 +85,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                 }).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "UpdateCredit");
             return result;
         }
         catch (Exception ex)
@@ -99,6 +105,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
             if (request.Id == Guid.Empty)
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "DeleteCredit");
                 return null;
             }
 
@@ -111,6 +118,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                 asset => asset.RemoveCredit(request.Id)).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "DeleteCredit");
             return result;
         }
         catch (Exception ex)
@@ -129,6 +137,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
             if (string.IsNullOrWhiteSpace(brokerName))
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "GetCreditsByBroker");
                 return Array.Empty<CreditDTO>();
             }
 
@@ -139,6 +148,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                 .ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetCreditsByBroker");
             return result;
         }
         catch (Exception ex)
@@ -157,6 +167,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
             if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "GetCreditsByPortfolio");
                 return Array.Empty<CreditDTO>();
             }
 
@@ -167,6 +178,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                 .ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetCreditsByPortfolio");
             return result;
         }
         catch (Exception ex)
@@ -179,6 +191,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"Investment.CreditService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
