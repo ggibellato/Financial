@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -13,11 +14,13 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
 
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<InvestmentSnapshotService> _logger;
 
-    public InvestmentSnapshotService(ICashFlowRepository repository, ITelemetryTracer tracer)
+    public InvestmentSnapshotService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<InvestmentSnapshotService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<IReadOnlyList<InvestmentSnapshotDTO>> GetSnapshotsForMonthAsync(int year, int month)
@@ -54,6 +57,7 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
             }
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetSnapshotsForMonth");
             return existingSnapshots.Select(ToDto).ToList();
         }
         catch (Exception ex)
@@ -83,6 +87,7 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "UpdateSnapshotValue");
             return ToDto(snapshot);
         }
         catch (Exception ex)
@@ -95,6 +100,7 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"CashFlow.InvestmentSnapshotService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);

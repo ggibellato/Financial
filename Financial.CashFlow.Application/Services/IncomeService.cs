@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -12,11 +13,13 @@ public sealed class IncomeService : IIncomeService
 
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<IncomeService> _logger;
 
-    public IncomeService(ICashFlowRepository repository, ITelemetryTracer tracer)
+    public IncomeService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<IncomeService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<IncomeDTO> AddIncomeAsync(IncomeCreateDTO request)
@@ -34,6 +37,7 @@ public sealed class IncomeService : IIncomeService
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, income.Id.ToString());
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "AddIncome");
             return ToDto(income);
         }
         catch (Exception ex)
@@ -60,6 +64,7 @@ public sealed class IncomeService : IIncomeService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "UpdateIncome");
             return ToDto(income);
         }
         catch (Exception ex)
@@ -82,6 +87,7 @@ public sealed class IncomeService : IIncomeService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "DeleteIncome");
         }
         catch (Exception ex)
         {
@@ -102,6 +108,7 @@ public sealed class IncomeService : IIncomeService
                 .ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetIncomesByMonth");
             return result;
         }
         catch (Exception ex)
@@ -114,6 +121,7 @@ public sealed class IncomeService : IIncomeService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"CashFlow.IncomeService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);

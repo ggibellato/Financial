@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -13,11 +14,13 @@ public sealed class ReserveService : IReserveService
 
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<ReserveService> _logger;
 
-    public ReserveService(ICashFlowRepository repository, ITelemetryTracer tracer)
+    public ReserveService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<ReserveService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<IncomeSplitResultDTO> PostIncomeSplitAsync(IncomeSplitRequestDTO request)
@@ -71,6 +74,7 @@ public sealed class ReserveService : IReserveService
                 .ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "PostIncomeSplit");
             return new IncomeSplitResultDTO
             {
                 Buckets = splitAmounts,
@@ -129,6 +133,7 @@ public sealed class ReserveService : IReserveService
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, movement.Id.ToString());
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "PostWithdrawal");
             return ToDto(movement);
         }
         catch (Exception ex)
@@ -157,6 +162,7 @@ public sealed class ReserveService : IReserveService
                 .ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetBucketBalances");
             return result;
         }
         catch (Exception ex)
@@ -178,6 +184,7 @@ public sealed class ReserveService : IReserveService
                 .ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetMovementHistory");
             return result;
         }
         catch (Exception ex)
@@ -212,6 +219,7 @@ public sealed class ReserveService : IReserveService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "UpdateMovement");
             return ToDto(movement);
         }
         catch (Exception ex)
@@ -244,6 +252,7 @@ public sealed class ReserveService : IReserveService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "DeleteMovement");
         }
         catch (Exception ex)
         {
@@ -255,6 +264,7 @@ public sealed class ReserveService : IReserveService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"CashFlow.ReserveService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
