@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Financial.Investment.Domain\Financial.Investment.Domain.csproj" />
+    <ProjectReference Include="..\Financial.Shared.Abstractions\Financial.Shared.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

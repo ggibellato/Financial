@@ -1,5 +1,6 @@
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
+using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
@@ -8,12 +9,14 @@ namespace Financial.Investment.Application.Tests.Services;
 
 public class TransactionServiceQueryTests
 {
+    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+
     private readonly StubInvestmentRepository _repository = new();
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new TransactionService(null!, new NavigationService(_repository));
+        Action act = () => new TransactionService(null!, new NavigationService(_repository), Tracer);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
@@ -168,7 +171,7 @@ public class TransactionServiceQueryTests
         result.Should().BeEmpty();
     }
 
-    private TransactionService CreateService() => new(_repository, new NavigationService(_repository));
+    private TransactionService CreateService() => new(_repository, new NavigationService(_repository), Tracer);
 
     private static Asset MakeAsset(string name = "TEST") =>
         Asset.Create(name, "ISIN", "BVMF", name);
