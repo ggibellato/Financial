@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.Configuration;
 using Financial.CashFlow.Infrastructure.Persistence;
+using Financial.Shared.Abstractions;
 using Financial.Shared.Infrastructure.Persistence;
 
 namespace Financial.CashFlow.Infrastructure.Repositories;
@@ -11,11 +12,16 @@ public sealed class CashFlowRepositoryFactory
 
     private readonly ICashFlowSerializer _serializer;
     private readonly IRemoteFileClientFactory? _remoteFileClientFactory;
+    private readonly ITelemetryTracer? _tracer;
 
-    public CashFlowRepositoryFactory(ICashFlowSerializer serializer, IRemoteFileClientFactory? remoteFileClientFactory = null)
+    public CashFlowRepositoryFactory(
+        ICashFlowSerializer serializer,
+        IRemoteFileClientFactory? remoteFileClientFactory = null,
+        ITelemetryTracer? tracer = null)
     {
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
         _remoteFileClientFactory = remoteFileClientFactory;
+        _tracer = tracer;
     }
 
     public ICashFlowRepository Create(CashFlowRepositorySelectionOptions options)
@@ -41,7 +47,8 @@ public sealed class CashFlowRepositoryFactory
                     options.GoogleDriveFilePath,
                     _remoteFileClientFactory,
                     CashFlowRepositoryConfigurationKeys.GoogleDriveCredentialsPath,
-                    nameof(CashFlowRepositoryProvider.GoogleDriveJson)),
+                    nameof(CashFlowRepositoryProvider.GoogleDriveJson),
+                    _tracer),
             _ => throw new ArgumentOutOfRangeException(
                     nameof(options.Provider), options.Provider, "Unsupported repository provider.")
         };

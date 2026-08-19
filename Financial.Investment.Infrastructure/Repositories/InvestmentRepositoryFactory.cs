@@ -1,6 +1,7 @@
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.Configuration;
 using Financial.Investment.Infrastructure.Persistence;
+using Financial.Shared.Abstractions;
 using Financial.Shared.Infrastructure.Persistence;
 
 namespace Financial.Investment.Infrastructure.Repositories;
@@ -11,11 +12,16 @@ public sealed class InvestmentRepositoryFactory
 
     private readonly IInvestmentsSerializer _serializer;
     private readonly IRemoteFileClientFactory? _remoteFileClientFactory;
+    private readonly ITelemetryTracer? _tracer;
 
-    public InvestmentRepositoryFactory(IInvestmentsSerializer serializer, IRemoteFileClientFactory? remoteFileClientFactory = null)
+    public InvestmentRepositoryFactory(
+        IInvestmentsSerializer serializer,
+        IRemoteFileClientFactory? remoteFileClientFactory = null,
+        ITelemetryTracer? tracer = null)
     {
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
         _remoteFileClientFactory = remoteFileClientFactory;
+        _tracer = tracer;
     }
 
     public IInvestmentRepository Create(InvestmentRepositorySelectionOptions options)
@@ -41,7 +47,8 @@ public sealed class InvestmentRepositoryFactory
                     options.GoogleDriveFilePath,
                     _remoteFileClientFactory,
                     InvestmentRepositoryConfigurationKeys.GoogleDriveCredentialsPath,
-                    nameof(InvestmentRepositoryProvider.GoogleDriveJson)),
+                    nameof(InvestmentRepositoryProvider.GoogleDriveJson),
+                    _tracer),
             _ => throw new ArgumentOutOfRangeException(
                     nameof(options.Provider), options.Provider, "Unsupported repository provider.")
         };

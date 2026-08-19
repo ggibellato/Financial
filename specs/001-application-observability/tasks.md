@@ -119,6 +119,18 @@ description: "Task list for Application Observability (revision 3 — Shared.Abs
 
 **Important — not yet wired to a real tracer in production**: `JsonStorageFactory`/`GoogleDriveStorageFactory`/both bounded contexts' `RepositoryFactory` classes and DI extensions still construct these classes without passing a tracer, so they silently fall back to `NullTelemetryTracer` today — mirrors Phase 1/2's "capability built, nothing references it yet" pattern (see their Checkpoints). **This must be threaded through before PR 4d's Independent Test (a trace with a storage span) can pass** — tracked as a new, unplanned follow-up PR immediately after this one (not in the original file-count estimate, same as the Dockerfile fix in PR 3a).
 
+### Follow-up PR 4b-wiring — thread the real tracer through DI (unplanned, 6 files) [US1]
+
+Not in the original task list — required to make PR 4b's spans actually appear in production, since `JsonStorageFactory`/`GoogleDriveStorageFactory`/both `RepositoryFactory` classes/both `AddFinancial*Infrastructure` DI extensions all construct storage without passing the DI-resolved `ITelemetryTracer`.
+
+- [X] Add an optional `ITelemetryTracer? tracer = null` parameter to `GoogleDriveStorageFactory.Create` and `JsonStorageFactory.CreateGoogleDrive`, forwarded into `GoogleDriveJsonStorage`/`DebouncedJsonStorage`
+- [X] Add an optional `ITelemetryTracer? tracer = null` constructor parameter to `InvestmentRepositoryFactory` and `CashFlowRepositoryFactory`, forwarded to `JsonStorageFactory.CreateGoogleDrive`
+- [X] `InvestmentInfrastructureServiceCollectionExtensions`/`CashFlowInfrastructureServiceCollectionExtensions`: pass `sp.GetService<ITelemetryTracer>()` (nullable — matches the existing `sp.GetService<IRemoteFileClientFactory>()` optional-resolution pattern, so DI setups that never call `AddObservability`, e.g. some test compositions, keep working unchanged)
+
+**Tests (not counted)**: 2 new integration-style cases (`InvestmentRepositoryFactoryTests`/`CashFlowRepositoryFactoryTests`) using `RecordingTelemetryTracer`, proving a real tracer passed into the factory constructor produces both a `"JsonStorage.Save"` and a `"GoogleDrive.Upload"` span after the debounced write eventually flushes — confirms the wiring is genuinely live end-to-end, not just compiling.
+
+**Checkpoint**: Storage spans (`JsonStorage.*`/`GoogleDrive.*`) now appear in real traces whenever `Observability:Enabled=true` and the `GoogleDriveJson` provider is configured, for both bounded contexts. `LocalJson`-provider deployments still produce no storage spans (out of scope per T025/T026's original design — only the debounced/cloud path is wrapped).
+
 ### Suggested PR 4c — Jaeger local overlay (1 file) [US1]
 
 - [ ] T027 [US1] Create `docker-compose.observability.yml` with a `jaeger` Compose profile per [research.md](./research.md) Decision D7 — never referenced by base `docker-compose.yml`

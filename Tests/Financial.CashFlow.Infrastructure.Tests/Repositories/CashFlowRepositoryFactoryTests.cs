@@ -4,6 +4,7 @@ using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Sync;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Repositories;
@@ -250,6 +251,39 @@ public class CashFlowRepositoryFactoryTests
             remoteFileClient.LastUploadedContent.Should().Contain("Debounced upload test expense");
             ((ISyncStatusProvider)repository).GetStatus().State.Should().Be(SyncState.Idle);
             ((ISyncStatusProvider)repository).GetStatus().LastSuccessfulSaveUtc.Should().NotBeNull();
+        }
+        finally
+        {
+            File.Delete(credentialsPath);
+        }
+    }
+
+    [Fact]
+    public async Task Create_WithGoogleDriveProviderAndTracer_RecordsGoogleDriveUploadSpanOnEventualUpload()
+    {
+        var credentialsPath = Path.GetTempFileName();
+        try
+        {
+            var remoteFileClient = new RecordingRemoteFileClient();
+            var tracer = new RecordingTelemetryTracer();
+            var factory = new CashFlowRepositoryFactory(
+                new CashFlowSerializerAdapter(), new RecordingRemoteFileClientFactory(remoteFileClient), tracer);
+            var options = new CashFlowRepositorySelectionOptions(
+                CashFlowRepositoryProvider.GoogleDriveJson,
+                null,
+                credentialsPath,
+                "Pessoais/Gleison/Financeiros");
+
+            var repository = factory.Create(options);
+            repository.AddExpense(Expense.Create(
+                new DateOnly(2026, 7, 1), "Tracer test expense", 10m, Category.Create("Casa"), Bank.Create("Chase", roundUpEnabled: true), null));
+
+            await repository.SaveChangesAsync();
+
+            await WaitForAsync(() => tracer.Spans.Any(s => s.Name == "GoogleDrive.Upload"), TimeSpan.FromSeconds(15));
+
+            tracer.Spans.Should().Contain(s => s.Name == "JsonStorage.Save");
+            tracer.Spans.Should().Contain(s => s.Name == "GoogleDrive.Upload");
         }
         finally
         {

@@ -1,3 +1,5 @@
+using Financial.Shared.Abstractions;
+
 namespace Financial.Shared.Infrastructure.Persistence;
 
 /// <summary>
@@ -11,7 +13,8 @@ public static class GoogleDriveStorageFactory
         string? driveFilePath,
         IRemoteFileClientFactory? remoteFileClientFactory,
         string credentialsConfigKey,
-        string providerName)
+        string providerName,
+        ITelemetryTracer? tracer = null)
     {
         var resolvedCredentialsPath = ResolveCredentialsPath(credentialsPath, credentialsConfigKey);
 
@@ -23,7 +26,7 @@ public static class GoogleDriveStorageFactory
         }
 
         var client = remoteFileClientFactory.Create(resolvedCredentialsPath);
-        return new GoogleDriveJsonStorage(client, driveFilePath);
+        return new GoogleDriveJsonStorage(client, driveFilePath, tracer);
     }
 
     private static string ResolveCredentialsPath(string? credentialsPath, string credentialsConfigKey)

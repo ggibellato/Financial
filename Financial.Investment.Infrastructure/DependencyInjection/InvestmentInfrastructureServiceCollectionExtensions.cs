@@ -5,6 +5,7 @@ using Financial.Investment.Infrastructure.Interfaces;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.Investment.Infrastructure.Services;
+using Financial.Shared.Abstractions;
 using Financial.Shared.Infrastructure.Configuration;
 using Financial.Shared.Infrastructure.Hosting;
 using Financial.Shared.Infrastructure.Persistence;
@@ -47,7 +48,8 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
             var options = BuildRepositoryOptions(settings);
             return new InvestmentRepositoryFactory(
                 sp.GetRequiredService<IInvestmentsSerializer>(),
-                sp.GetService<IRemoteFileClientFactory>()).Create(options);
+                sp.GetService<IRemoteFileClientFactory>(),
+                sp.GetService<ITelemetryTracer>()).Create(options);
         });
         services.AddSingleton<IAssetPriceService, AssetPriceService>();
         services.AddHostedService<ShutdownFlushHostedService<IInvestmentRepository>>();
