@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
+using Financial.Shared.Abstractions;
 using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;
@@ -23,6 +24,7 @@ public class MonthlyViewModel : ViewModelBase
     private readonly ICardStatementService _cardStatementService;
     private readonly ICreditCardService _creditCardService;
     private readonly ICategoryService _categoryService;
+    private readonly ITelemetryTracer _tracer;
 
     private int _year;
     private int _month;
@@ -138,7 +140,8 @@ public class MonthlyViewModel : ViewModelBase
         ICardStatementService cardStatementService,
         ICreditCardService creditCardService,
         ICategoryService categoryService,
-        Func<string, bool> confirm)
+        Func<string, bool> confirm,
+        ITelemetryTracer tracer)
     {
         _expenseService = expenseService ?? throw new ArgumentNullException(nameof(expenseService));
         _incomeService = incomeService ?? throw new ArgumentNullException(nameof(incomeService));
@@ -151,6 +154,7 @@ public class MonthlyViewModel : ViewModelBase
         _creditCardService = creditCardService ?? throw new ArgumentNullException(nameof(creditCardService));
         _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
+        _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
 
         var today = DateTime.Today;
         _year = today.Year;
@@ -621,7 +625,28 @@ public class MonthlyViewModel : ViewModelBase
         return suggestion.ToString("0.##");
     }
 
-    internal Task SaveExpenseAsync() => ExecuteSaveAsync(
+    internal async Task SaveExpenseAsync()
+    {
+        using var span = _tracer.StartSpan("App.MonthlyViewModel.SaveExpense");
+        try
+        {
+            await SaveExpenseCoreAsync();
+
+            // ExecuteSaveAsync swallows exceptions into ExpenseSaveError rather than throwing, so
+            // the outcome is read back from that property instead of a catch clause. Never put the
+            // message itself in the span - it may echo user-entered text (FR-014).
+            var result = ExpenseSaveError is null ? TelemetryOperationResults.Success : TelemetryOperationResults.Failed;
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, result);
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
+
+    private Task SaveExpenseCoreAsync() => ExecuteSaveAsync(
         () => ExpenseFormValidation.BuildValidationMessage(
             ExpenseFormDate, ExpenseFormDescription, ExpenseFormCategoryId, ExpenseFormValue,
             IsCardPaymentMode, ExpenseFormPaymentSource, ExpenseFormCreditCardId, ShowRoundUpField, ExpenseFormRoundUpAmount),

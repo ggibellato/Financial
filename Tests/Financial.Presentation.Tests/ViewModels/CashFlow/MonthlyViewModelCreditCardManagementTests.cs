@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.Presentation.App.ViewModels.CashFlow;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
@@ -34,7 +35,7 @@ public class MonthlyViewModelCreditCardManagementTests
         };
         var categories = new StubCategoryService();
 
-        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cards, creditCards, categories, confirm: _ => true);
+        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cards, creditCards, categories, confirm: _ => true, new RecordingTelemetryTracer());
         return (viewModel, cards);
     }
 

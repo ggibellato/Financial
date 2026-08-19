@@ -1,5 +1,7 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.Presentation.App.ViewModels.CashFlow;
+using Financial.Shared.Abstractions;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
@@ -46,7 +48,7 @@ public class MonthlyViewModelTests
     ];
 
     private static (MonthlyViewModel ViewModel, StubExpenseService Expenses, StubIncomeService Incomes, StubBankService Banks, StubTitheService Tithe, StubCreditCardService CreditCards) CreateViewModel(
-        bool confirmDeletes = true, StubIncomeSourceService? incomeSourceService = null)
+        bool confirmDeletes = true, StubIncomeSourceService? incomeSourceService = null, RecordingTelemetryTracer? tracer = null)
     {
         var expenses = new StubExpenseService();
         var incomes = new StubIncomeService();
@@ -59,7 +61,7 @@ public class MonthlyViewModelTests
         var creditCards = new StubCreditCardService { CreditCards = new List<CreditCardDTO>(DefaultCreditCards) };
         var categories = new StubCategoryService { Categories = new List<CategoryDTO>(DefaultCategories) };
 
-        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cardStatements, creditCards, categories, confirm: _ => confirmDeletes);
+        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cardStatements, creditCards, categories, confirm: _ => confirmDeletes, tracer ?? new RecordingTelemetryTracer());
         return (viewModel, expenses, incomes, banks, tithe, creditCards);
     }
 
@@ -166,6 +168,26 @@ public class MonthlyViewModelTests
 
         expenses.LastDeletedId.Should().Be(unpaidCharge.Id);
         expenses.GetUnpaidCardChargesByMonthCallCount.Should().BeGreaterThan(callsBefore);
+    }
+
+    [Fact]
+    public async Task SaveExpenseAsync_WithValidRequest_RecordsSuccessfulSpan()
+    {
+        var tracer = new RecordingTelemetryTracer();
+        var (viewModel, _, _, banks, _, _) = CreateViewModel(tracer: tracer);
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateExpenseFormCommand.Execute("bank");
+        viewModel.ExpenseFormDate = DateTime.Today;
+        viewModel.ExpenseFormDescription = "Groceries";
+        viewModel.ExpenseFormCategoryId = DefaultCategories[0].Id;
+        viewModel.ExpenseFormValue = "25.50";
+        viewModel.ExpenseFormPaymentSource = banks.Banks[1].Id;
+
+        await viewModel.SaveExpenseAsync();
+
+        var span = tracer.Spans.Should().ContainSingle().Which;
+        span.Name.Should().Be("App.MonthlyViewModel.SaveExpense");
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
     }
 
     [Fact]

@@ -177,11 +177,13 @@ Not in the original task list — required to make PR 4b's spans actually appear
   - **Deliberately excluded**: `XirrCalculationService` and `ProfitCalculationService` — both are pure, stateless math-only services (no repository, no I/O, no async, just delegating to static calculators). Tracing a pure function call adds no diagnostic value (nothing to "diagnose end-to-end" — no failure mode beyond arithmetic) and would be over-engineering per the project's Constitution ("Application details" section). Every remaining Investment Application service that touches the repository or an external data source is now instrumented — **T034 is complete**.
   - **Tests (not counted)**: `Financial.Investment.Application.Tests` 269/269 passing (was 33 after PR 4f) — new `Constructor_WithNullTracer_Throws` per service (7 new), plus a span-behavior test on `NavigationService.GetNavigationTree` proving the nested-span behavior. `Financial.Investment.Infrastructure.Tests` 241/241 (was 240) — its own integration-style tests for `NavigationService`/`CreditService`/`PriceService`/`TransactionService` updated, plus 1 new `Constructor_WithNullTracer` case.
 
-### Suggested PR 4h — WPF trace root, one representative command (3 files) [US1]
+### Suggested PR 4h — WPF trace root, one representative command (3 files) [US1] — COMPLETE
 
-- [ ] T035 [US1] Add `ProjectReference` to `Financial.Shared.Abstractions` in `Financial.App/Financial.App.csproj` — depends on T001
-- [ ] T036 [US1] Add an `ITelemetryTracer` constructor dependency to `Financial.App/ViewModels/CashFlow/MonthlyViewModel.cs` and wrap its save-expense command body in `StartSpan("App.MonthlyViewModel.SaveExpense")` (FR-004a) — depends on T035
-- [ ] T037 [US1] Update the `MonthlyViewModel` registration in `Financial.App/App.xaml.cs` to pass `sp.GetRequiredService<ITelemetryTracer>()` — depends on T036
+- [X] T035 [US1] Add `ProjectReference` to `Financial.Shared.Abstractions` in `Financial.App/Financial.App.csproj` — depends on T001
+- [X] T036 [US1] Add an `ITelemetryTracer` constructor dependency to `Financial.App/ViewModels/CashFlow/MonthlyViewModel.cs` and wrap its save-expense command body in `StartSpan("App.MonthlyViewModel.SaveExpense")` (FR-004a) — depends on T035
+- [X] T037 [US1] Update the `MonthlyViewModel` registration in `Financial.App/App.xaml.cs` to pass `sp.GetRequiredService<ITelemetryTracer>()` — depends on T036
+  - **Deviation**: `ViewModelBase.ExecuteSaveAsync(...)` (the shared save-command helper used by ~8 WPF save commands) swallows exceptions into a `setError` callback rather than rethrowing, and was deliberately left unmodified (out of scope for "one representative command"). So `SaveExpenseAsync()` was split into a thin wrapper that opens the span and calls the original logic (now `SaveExpenseCoreAsync()`), then infers success/failure from `ExpenseSaveError` afterward instead of a catch clause — the error message itself is never attached to the span (FR-014, may echo user-entered text).
+  - **Tests (not counted)**: `Financial.Presentation.Tests` 713/713 (was 712) — new `SaveExpenseAsync_WithValidRequest_RecordsSuccessfulSpan` test plus the 6 `new MonthlyViewModel(...)` call sites across other test files updated to pass a `RecordingTelemetryTracer`. Verified with a live WPF smoke launch (temp copy of real data files, never the live ones) confirming clean startup with the new DI dependency wired.
 
 ### Suggested PR 4i — Log correlation (3 files) [US1]
 
