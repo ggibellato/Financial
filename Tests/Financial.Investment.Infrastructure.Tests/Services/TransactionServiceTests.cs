@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Infrastructure.Persistence;
+using Financial.Shared.Abstractions;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.TestUtilities;
@@ -137,7 +138,7 @@ public class TransactionServiceTests
         var serializer = new InvestmentsSerializerAdapter();
         var repository = new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
         var navigationService = new NavigationService(repository);
-        var service = new TransactionService(repository, navigationService);
+        var service = new TransactionService(repository, navigationService, new RecordingTelemetryTracer());
 
         return (service, tempFile);
     }

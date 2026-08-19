@@ -166,8 +166,9 @@ Not in the original task list — required to make PR 4b's spans actually appear
 
 ### Suggested PR 4f — Investment's first traced use case, parity (2 files) [US1]
 
-- [ ] T032 [US1] Add `ProjectReference` to `Financial.Shared.Abstractions` in `Financial.Investment.Application/Financial.Investment.Application.csproj` — depends on T001
-- [ ] T033 [US1] Inject `ITelemetryTracer` into one representative Investment service (e.g. `AssetPriceService.cs`) and wrap its primary method, same pattern as T029 — depends on T032
+- [X] T032 [US1] Add `ProjectReference` to `Financial.Shared.Abstractions` in `Financial.Investment.Application/Financial.Investment.Application.csproj` — depends on T001
+- [X] T033 [US1] Inject `ITelemetryTracer` into one representative Investment service and wrap its methods, same pattern as T029 — depends on T032. Deviation: the task's example `AssetPriceService.cs` is actually in `Financial.Investment.Infrastructure`, not `Financial.Investment.Application` — used `TransactionService.cs` instead (the Investment domain's closest analogue to `ExpenseService`: Add/Update/Delete + 2 query methods). `EntityType="Transaction"`, `bounded_context="Investment"`. All 5 public methods wrapped (not just the "primary" one), matching T029's actual scope for consistency across every instrumented service so far.
+  - **Tests (not counted)**: 2 new cases (`Constructor_WithNullTracer_Throws`, a span-behavior test on `AddTransactionAsync`). `Financial.Investment.Application.Tests` 33/33 passing (was 32).
 
 ### Suggested PR 4g onward — extend Investment coverage (repeatable; up to 8 files per the exception above) [US1]
 
@@ -240,7 +241,7 @@ Not in the original task list — required to make PR 4b's spans actually appear
 | 4c | T027 | 1 | US1 |
 | 4d | T028–T029 | 2 | US1 — **MVP checkpoint** |
 | 4e+ | T030, T031 | 1 csproj (already added) + services, up to 8/PR (batch-size exception) | US1 (repeatable) |
-| 4f | T032–T033 | 2 | US1 |
+| 4f | T032–T033 | 2 | US1 — **done** |
 | 4g+ | T034 | services, up to 8/PR (batch-size exception) | US1 (repeatable) |
 | 4h | T035–T037 | 3 | US1 |
 | 4i | T038–T039 | 3 | US1 |

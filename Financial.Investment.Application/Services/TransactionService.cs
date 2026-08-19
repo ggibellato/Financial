@@ -3,90 +3,177 @@ using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
+using Financial.Shared.Abstractions;
 
 namespace Financial.Investment.Application.Services;
 
 public sealed class TransactionService : ITransactionService, ITransactionQueryService
 {
+    private const string EntityType = "Transaction";
+
     private readonly IInvestmentRepository _repository;
     private readonly INavigationService _navigationService;
+    private readonly ITelemetryTracer _tracer;
 
-    public TransactionService(IInvestmentRepository repository, INavigationService navigationService)
+    public TransactionService(IInvestmentRepository repository, INavigationService navigationService, ITelemetryTracer tracer)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+        _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
     }
 
-    public Task<AssetDetailsDTO?> AddTransactionAsync(TransactionCreateDTO request)
+    public async Task<AssetDetailsDTO?> AddTransactionAsync(TransactionCreateDTO request)
     {
-        return AssetMutationHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
-            _repository,
-            _navigationService,
-            request.BrokerName,
-            request.PortfolioName,
-            request.AssetName,
-            request.Type,
-            TransactionTypeParser.TryParse,
-            (asset, transactionType) =>
-            {
-                var transaction = Transaction.Create(request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees);
-                asset.AddTransaction(transaction);
-                return true;
-            });
-    }
-
-    public Task<AssetDetailsDTO?> UpdateTransactionAsync(TransactionUpdateDTO request)
-    {
-        if (request.Id == Guid.Empty)
+        using var span = StartSpan("AddTransaction");
+        try
         {
-            return Task.FromResult<AssetDetailsDTO?>(null);
-        }
+            var result = await AssetMutationHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
+                _repository,
+                _navigationService,
+                request.BrokerName,
+                request.PortfolioName,
+                request.AssetName,
+                request.Type,
+                TransactionTypeParser.TryParse,
+                (asset, transactionType) =>
+                {
+                    var transaction = Transaction.Create(request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees);
+                    asset.AddTransaction(transaction);
+                    return true;
+                }).ConfigureAwait(false);
 
-        return AssetMutationHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
-            _repository,
-            _navigationService,
-            request.BrokerName,
-            request.PortfolioName,
-            request.AssetName,
-            request.Type,
-            TransactionTypeParser.TryParse,
-            (asset, transactionType) =>
-            {
-                var updatedTransaction = Transaction.CreateWithId(request.Id, request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees);
-                return asset.UpdateTransaction(updatedTransaction);
-            });
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
-    public Task<AssetDetailsDTO?> DeleteTransactionAsync(TransactionDeleteDTO request)
+    public async Task<AssetDetailsDTO?> UpdateTransactionAsync(TransactionUpdateDTO request)
     {
-        if (request.Id == Guid.Empty)
+        using var span = StartSpan("UpdateTransaction");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, request.Id.ToString());
+        try
         {
-            return Task.FromResult<AssetDetailsDTO?>(null);
-        }
+            if (request.Id == Guid.Empty)
+            {
+                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                return null;
+            }
 
-        return AssetMutationHelper.ExecuteAssetMutationAsync(
-            _repository,
-            _navigationService,
-            request.BrokerName,
-            request.PortfolioName,
-            request.AssetName,
-            asset => asset.RemoveTransaction(request.Id));
+            var result = await AssetMutationHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
+                _repository,
+                _navigationService,
+                request.BrokerName,
+                request.PortfolioName,
+                request.AssetName,
+                request.Type,
+                TransactionTypeParser.TryParse,
+                (asset, transactionType) =>
+                {
+                    var updatedTransaction = Transaction.CreateWithId(request.Id, request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees);
+                    return asset.UpdateTransaction(updatedTransaction);
+                }).ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
+
+    public async Task<AssetDetailsDTO?> DeleteTransactionAsync(TransactionDeleteDTO request)
+    {
+        using var span = StartSpan("DeleteTransaction");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, request.Id.ToString());
+        try
+        {
+            if (request.Id == Guid.Empty)
+            {
+                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                return null;
+            }
+
+            var result = await AssetMutationHelper.ExecuteAssetMutationAsync(
+                _repository,
+                _navigationService,
+                request.BrokerName,
+                request.PortfolioName,
+                request.AssetName,
+                asset => asset.RemoveTransaction(request.Id)).ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
     public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByBroker(string brokerName, InvestmentScope scope = InvestmentScope.Active)
     {
-        if (string.IsNullOrWhiteSpace(brokerName))
-            return Array.Empty<TransactionSummaryItemDTO>();
+        using var span = StartSpan("GetTransactionsByBroker");
+        try
+        {
+            if (string.IsNullOrWhiteSpace(brokerName))
+            {
+                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                return Array.Empty<TransactionSummaryItemDTO>();
+            }
 
-        return MapAndSort(_repository.GetAssetsByBroker(brokerName, scope));
+            var result = MapAndSort(_repository.GetAssetsByBroker(brokerName, scope));
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
     public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByPortfolio(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
     {
-        if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
-            return Array.Empty<TransactionSummaryItemDTO>();
+        using var span = StartSpan("GetTransactionsByPortfolio");
+        try
+        {
+            if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
+            {
+                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                return Array.Empty<TransactionSummaryItemDTO>();
+            }
 
-        return MapAndSort(_repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope));
+            var result = MapAndSort(_repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope));
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
+
+    private ITelemetrySpan StartSpan(string operationName)
+    {
+        var span = _tracer.StartSpan($"Investment.TransactionService.{operationName}");
+        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
+        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
+        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
+        return span;
     }
 
     private static IReadOnlyList<TransactionSummaryItemDTO> MapAndSort(IEnumerable<Asset> assets)

@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
+using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
@@ -9,13 +10,22 @@ namespace Financial.Investment.Application.Tests.Services;
 
 public class TransactionServiceMutationTests
 {
+    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+
     private readonly StubInvestmentRepository _repository = new();
 
     [Fact]
     public void Constructor_WithNullNavigationService_Throws()
     {
-        Action act = () => new TransactionService(_repository, null!);
+        Action act = () => new TransactionService(_repository, null!, Tracer);
         act.Should().Throw<ArgumentNullException>().WithParameterName("navigationService");
+    }
+
+    [Fact]
+    public void Constructor_WithNullTracer_Throws()
+    {
+        Action act = () => new TransactionService(_repository, new NavigationService(_repository), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Fact]
@@ -39,6 +49,32 @@ public class TransactionServiceMutationTests
         result.Should().NotBeNull();
         asset.Transactions.Should().ContainSingle();
         _repository.SaveChangesCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task AddTransactionAsync_ValidRequest_RecordsSuccessfulSpan()
+    {
+        _repository.Asset = MakeAsset();
+        var tracer = new RecordingTelemetryTracer();
+        var service = new TransactionService(_repository, new NavigationService(_repository), tracer);
+
+        await service.AddTransactionAsync(new TransactionCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Date = new DateTime(2024, 1, 1),
+            Type = "Buy",
+            Quantity = 10m,
+            UnitPrice = 5m,
+            Fees = 0m
+        });
+
+        var span = tracer.Spans.Should().ContainSingle().Which;
+        span.Name.Should().Be("Investment.TransactionService.AddTransaction");
+        span.Attributes[TelemetryAttributeKeys.BoundedContext].Should().Be("Investment");
+        span.Attributes[TelemetryAttributeKeys.EntityType].Should().Be("Transaction");
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
     }
 
     [Fact]
@@ -211,7 +247,7 @@ public class TransactionServiceMutationTests
         result.Should().BeNull();
     }
 
-    private TransactionService CreateService() => new(_repository, new NavigationService(_repository));
+    private TransactionService CreateService() => new(_repository, new NavigationService(_repository), Tracer);
 
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);
