@@ -83,8 +83,9 @@ public class EndToEndTraceTests
         });
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // The save is debounced onto a background task; wait for its span to be recorded.
-        var saveSpan = await WaitForSpanAsync(tracer, "JsonStorage.Save");
+        // The save is debounced onto a background task; wait for its span to complete (a span is
+        // recorded when started, but operation.result is only set just before disposal).
+        var saveSpan = await WaitForCompletedSpanAsync(tracer, "JsonStorage.Save");
 
         var serviceSpan = tracer.Spans.Should()
             .ContainSingle(s => s.Name == "CashFlow.ExpenseService.AddExpense").Which;
@@ -100,13 +101,13 @@ public class EndToEndTraceTests
             "the storage save must belong to the same trace as the service call that caused it");
     }
 
-    private static async Task<RecordingTelemetryTracer.RecordedSpan> WaitForSpanAsync(
+    private static async Task<RecordingTelemetryTracer.RecordedSpan> WaitForCompletedSpanAsync(
         RecordingTelemetryTracer tracer, string spanName)
     {
         var deadline = DateTime.UtcNow + SaveSpanTimeout;
         while (DateTime.UtcNow < deadline)
         {
-            var span = tracer.Spans.FirstOrDefault(s => s.Name == spanName);
+            var span = tracer.Spans.FirstOrDefault(s => s.Name == spanName && s.Disposed);
             if (span is not null)
             {
                 return span;
@@ -115,6 +116,6 @@ public class EndToEndTraceTests
             await Task.Delay(SaveSpanPollInterval);
         }
 
-        throw new TimeoutException($"Span '{spanName}' was not recorded within {SaveSpanTimeout.TotalSeconds}s.");
+        throw new TimeoutException($"Span '{spanName}' did not complete within {SaveSpanTimeout.TotalSeconds}s.");
     }
 }
