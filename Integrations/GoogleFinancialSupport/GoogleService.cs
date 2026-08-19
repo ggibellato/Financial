@@ -1,6 +1,7 @@
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
 using Financial.Shared.Infrastructure.Persistence;
 using Google;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -13,12 +14,12 @@ public sealed class GoogleService : IRemoteFileClient, IGoogleSheetsDataSource
 
     public string FileName { get; }
 
-    public GoogleService(string fileName)
+    public GoogleService(string fileName, ILogger? logger = null)
     {
         FileName = fileName;
         var credentialFactory = new GoogleCredentialFactory(fileName);
-        _driveClient = new GoogleDriveClient(credentialFactory);
-        _sheetsClient = new GoogleSheetsClient(credentialFactory);
+        _driveClient = new GoogleDriveClient(credentialFactory, logger);
+        _sheetsClient = new GoogleSheetsClient(credentialFactory, logger);
     }
 
     public Task<List<SpreadSheetDTO>> GetFilesNameAsync() =>

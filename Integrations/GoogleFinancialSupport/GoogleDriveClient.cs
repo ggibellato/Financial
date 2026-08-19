@@ -1,6 +1,7 @@
 #nullable enable
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
 using Google.Apis.Drive.v3;
+using Microsoft.Extensions.Logging;
 using Google.Apis.Upload;
 using System;
 using System.Collections.Generic;
@@ -19,13 +20,16 @@ internal sealed class GoogleDriveClient
 
     private readonly GoogleCredentialFactory _credentialFactory;
     private readonly Dictionary<string, string> _fileIdCache = new();
+    private readonly Action<string>? _retryLog;
 
     private DriveService? _readOnlyService;
     private DriveService? _readWriteService;
 
-    internal GoogleDriveClient(GoogleCredentialFactory credentialFactory)
+    internal GoogleDriveClient(GoogleCredentialFactory credentialFactory, ILogger? logger = null)
     {
         _credentialFactory = credentialFactory;
+        // GoogleRetryPolicy's messages carry only retry counters and wait times - safe to log verbatim.
+        _retryLog = logger is null ? null : message => logger.LogWarning("Google Drive {RetryDetail}", message);
     }
 
     internal async Task<List<SpreadSheetDTO>> GetFilesAsync()
@@ -40,7 +44,7 @@ internal sealed class GoogleDriveClient
             return response.Files
                 .Select(f => new SpreadSheetDTO { Name = f.Name, Id = f.Id })
                 .ToList();
-        });
+        }, logger: _retryLog);
     }
 
     internal string DownloadFileContent(string drivePath)
@@ -60,7 +64,7 @@ internal sealed class GoogleDriveClient
             stream.Position = 0;
             using var reader = new StreamReader(stream);
             return reader.ReadToEnd();
-        });
+        }, logger: _retryLog);
     }
 
     internal void UploadFileContent(string drivePath, string content)
@@ -87,7 +91,7 @@ internal sealed class GoogleDriveClient
             }
 
             return result;
-        });
+        }, logger: _retryLog);
     }
 
     private DriveService GetReadOnlyService() => _readOnlyService ??= CreateService(ReadOnlyScopes);
@@ -114,7 +118,7 @@ internal sealed class GoogleDriveClient
         }
 
         var segment = segments.Last();
-        var file = GoogleRetryPolicy.ExecuteWithRetry(() => FindFileByName(service, segment))
+        var file = GoogleRetryPolicy.ExecuteWithRetry(() => FindFileByName(service, segment), logger: _retryLog)
             ?? throw new FileNotFoundException($"Drive path segment '{segment}' not found in '{drivePath}'.");
 
         var fileId = ResolveShortcutTargetId(file);

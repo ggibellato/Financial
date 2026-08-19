@@ -15,11 +15,13 @@ public sealed class DividendsController : ControllerBase
 {
     private readonly IDividendService _dividendService;
     private readonly string _defaultExchange;
+    private readonly ILogger<DividendsController> _logger;
 
-    public DividendsController(IDividendService dividendService, IOptions<DividendOptions> dividendOptions)
+    public DividendsController(IDividendService dividendService, IOptions<DividendOptions> dividendOptions, ILogger<DividendsController> logger)
     {
         _dividendService = dividendService ?? throw new ArgumentNullException(nameof(dividendService));
         _defaultExchange = (dividendOptions ?? throw new ArgumentNullException(nameof(dividendOptions))).Value.DefaultExchange;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>Returns the historical dividend payments for a ticker.</summary>
@@ -45,8 +47,10 @@ public sealed class DividendsController : ControllerBase
             var history = _dividendService.GetDividendHistory(request);
             return Ok(history);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            // error.type only, plus the public ticker symbol - never the provider's message (FR-014).
+            _logger.LogWarning("Dividend history lookup for ticker {Ticker} failed with {ErrorType}; returning 404", ticker, ex.GetType().Name);
             return DividendNotFound(ticker);
         }
     }
@@ -74,8 +78,9 @@ public sealed class DividendsController : ControllerBase
             var summary = _dividendService.GetDividendSummary(request);
             return Ok(summary);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _logger.LogWarning("Dividend summary lookup for ticker {Ticker} failed with {ErrorType}; returning 404", ticker, ex.GetType().Name);
             return DividendNotFound(ticker);
         }
     }

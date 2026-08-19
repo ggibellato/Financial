@@ -7,6 +7,7 @@ using Financial.Investment.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace Financial.Api.Tests.Controllers;
@@ -177,15 +178,22 @@ public class ControllerGuardClauseTests
     [Fact]
     public void DividendsController_NullDividendService_Throws()
     {
-        Action act = () => new DividendsController(null!, Options.Create(new DividendOptions()));
+        Action act = () => new DividendsController(null!, Options.Create(new DividendOptions()), NullLogger<DividendsController>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("dividendService");
     }
 
     [Fact]
     public void DividendsController_NullDividendOptions_Throws()
     {
-        Action act = () => new DividendsController(new StubDividendService(), null!);
+        Action act = () => new DividendsController(new StubDividendService(), null!, NullLogger<DividendsController>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("dividendOptions");
+    }
+
+    [Fact]
+    public void DividendsController_NullLogger_Throws()
+    {
+        Action act = () => new DividendsController(new StubDividendService(), Options.Create(new DividendOptions()), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     [Fact]

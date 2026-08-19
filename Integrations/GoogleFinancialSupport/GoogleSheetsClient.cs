@@ -1,5 +1,7 @@
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
 using Google.Apis.Sheets.v4;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -12,10 +14,12 @@ internal sealed class GoogleSheetsClient
     private static readonly string[] SheetsScopes = { SheetsService.Scope.Spreadsheets };
 
     private readonly GoogleCredentialFactory _credentialFactory;
+    private readonly Action<string>? _retryLog;
     private SheetsService? _service;
 
-    internal GoogleSheetsClient(GoogleCredentialFactory credentialFactory)
+    internal GoogleSheetsClient(GoogleCredentialFactory credentialFactory, ILogger? logger = null)
     {
+        _retryLog = logger is null ? null : message => logger.LogWarning("Google Sheets {RetryDetail}", message);
         _credentialFactory = credentialFactory;
     }
 
@@ -35,7 +39,7 @@ internal sealed class GoogleSheetsClient
                     Color = GetTabColorName(s.Properties.TabColor)
                 })
                 .ToList();
-        });
+        }, logger: _retryLog);
     }
 
     internal async Task<IList<IList<object>>> GetSpreadSheetDataAsync(string spreadSheetId, string range)
@@ -47,7 +51,7 @@ internal sealed class GoogleSheetsClient
             request.ValueRenderOption = SpreadsheetsResource.ValuesResource.GetRequest.ValueRenderOptionEnum.UNFORMATTEDVALUE;
             var response = await request.ExecuteAsync();
             return response.Values;
-        });
+        }, logger: _retryLog);
     }
 
     private SheetsService GetService() => _service ??= CreateService();
