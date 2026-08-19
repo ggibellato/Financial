@@ -228,6 +228,29 @@ public class InvestmentRepositoryFactoryTests
         ((ISyncStatusProvider)repositoryB).GetStatus().State.Should().Be(SyncState.Idle);
     }
 
+    [Fact]
+    public async Task Create_WithGoogleDriveProviderAndTracer_RecordsGoogleDriveUploadSpanOnEventualUpload()
+    {
+        var remoteFileClient = new RecordingRemoteFileClient();
+        var tracer = new RecordingTelemetryTracer();
+        var factory = new InvestmentRepositoryFactory(
+            new InvestmentsSerializerAdapter(), new RecordingRemoteFileClientFactory(remoteFileClient), tracer);
+        var options = new InvestmentRepositorySelectionOptions(
+            InvestmentRepositoryProvider.GoogleDriveJson,
+            null,
+            TestDataPaths.DataJsonFile,
+            "Pessoais/Gleison/Financeiros");
+
+        var repository = factory.Create(options);
+
+        await repository.SaveChangesAsync();
+
+        await WaitForAsync(() => tracer.Spans.Any(s => s.Name == "GoogleDrive.Upload"), TimeSpan.FromSeconds(15));
+
+        tracer.Spans.Should().Contain(s => s.Name == "JsonStorage.Save");
+        tracer.Spans.Should().Contain(s => s.Name == "GoogleDrive.Upload");
+    }
+
     private static async Task WaitForAsync(Func<bool> condition, TimeSpan timeout)
     {
         var deadline = DateTime.UtcNow + timeout;

@@ -1,3 +1,5 @@
+using Financial.Shared.Abstractions;
+
 namespace Financial.Shared.Infrastructure.Persistence;
 
 /// <summary>
@@ -18,11 +20,12 @@ public static class JsonStorageFactory
         string? driveFilePath,
         IRemoteFileClientFactory? remoteFileClientFactory,
         string credentialsConfigKey,
-        string providerName)
+        string providerName,
+        ITelemetryTracer? tracer = null)
     {
         var storage = GoogleDriveStorageFactory.Create(
-            credentialsPath, driveFilePath, remoteFileClientFactory, credentialsConfigKey, providerName);
+            credentialsPath, driveFilePath, remoteFileClientFactory, credentialsConfigKey, providerName, tracer);
 
-        return new DebouncedJsonStorage(storage, DebounceWindow);
+        return new DebouncedJsonStorage(storage, DebounceWindow, tracer: tracer);
     }
 }

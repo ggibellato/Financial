@@ -33,6 +33,7 @@
     <ProjectReference Include="..\Financial.Investment.Application\Financial.Investment.Application.csproj" />
     <ProjectReference Include="..\Financial.Investment.Infrastructure\Financial.Investment.Infrastructure.csproj" />
     <ProjectReference Include="..\Integrations\GoogleFinancialSupport\GoogleFinancialSupport.csproj" />
+    <ProjectReference Include="..\Integrations\Observability\Observability.csproj" />
   </ItemGroup>
 
 </Project>

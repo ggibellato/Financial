@@ -46,14 +46,16 @@ description: "Task list for Application Observability (revision 3 — Shared.Abs
 
 **Purpose**: Stand up the new project and its DI registration with only the no-op path. Delivers User Story 2 once wired into the composition roots (Phase 3).
 
-- [ ] T006 Create `Integrations/Observability/Integrations.Observability.csproj` — new class library, added to `Financial.slnx`; references `Financial.Shared.Abstractions` only (no OpenTelemetry package yet) — depends on T001
-- [ ] T007 [P] Create `Integrations/Observability/ObservabilityOptions.cs` — `Enabled`/`Backend`/`Endpoint`/`Langfuse` per [contracts/observability-configuration-contract.md](./contracts/observability-configuration-contract.md) — depends on T006
-- [ ] T008 [P] Create `Integrations/Observability/ObservabilityBackend.cs` — enum `Jaeger`/`Langfuse` — depends on T006
-- [ ] T009 Create `Integrations/Observability/NoOpTelemetryTracer.cs` — `ITelemetryTracer`/`ITelemetrySpan` implementation returning a cached, allocation-free no-op span (FR-006a) — depends on T002, T003, T006
-- [ ] T010 Create `Integrations/Observability/ObservabilityServiceCollectionExtensions.cs` — `AddObservability(this IServiceCollection, IConfiguration, string serviceName)`: binds `ObservabilityOptions`, registers `NoOpTelemetryTracer` as `ITelemetryTracer` unconditionally for now — depends on T007, T008, T009
+- [X] T006 Create `Integrations/Observability/Observability.csproj` (deviation: named `Observability.csproj` to match the leaf-folder-name convention used by `Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj`, rather than `Integrations.Observability.csproj`) — new class library, added to `Financial.slnx`; references `Financial.Shared.Abstractions` only (no OpenTelemetry package yet) — depends on T001
+- [X] T007 [P] Create `Integrations/Observability/ObservabilityOptions.cs` — `Enabled`/`Backend`/`Endpoint`/`Langfuse` per [contracts/observability-configuration-contract.md](./contracts/observability-configuration-contract.md) — depends on T006
+- [X] T008 [P] Create `Integrations/Observability/ObservabilityBackend.cs` — enum `Jaeger`/`Langfuse` — depends on T006
+- [X] T009 Create `Integrations/Observability/NoOpTelemetryTracer.cs` — `ITelemetryTracer`/`ITelemetrySpan` implementation returning a cached, allocation-free no-op span (FR-006a) — depends on T002, T003, T006
+- [X] T010 Create `Integrations/Observability/ObservabilityServiceCollectionExtensions.cs` — `AddObservability(this IServiceCollection, IConfiguration, string serviceName)`: binds `ObservabilityOptions` via `services.Configure<ObservabilityOptions>(configuration.GetSection(...))`, registers `NoOpTelemetryTracer` as `ITelemetryTracer` unconditionally for now — depends on T007, T008, T009
 
 **Tests (not counted)**:
-- [ ] T011 [P] Unit tests in `Tests/Integrations.Observability.Tests/ObservabilityServiceCollectionExtensionsTests.cs`: `ITelemetryTracer` always resolves and never throws/returns null from `StartSpan`
+- [X] T011 [P] Unit tests in `Tests/Financial.Observability.Tests/ObservabilityServiceCollectionExtensionsTests.cs` (deviation: project renamed to `Financial.Observability.Tests` to match this repo's `Financial.*`-prefixed test-project convention): `ITelemetryTracer` always resolves and never throws/returns null from `StartSpan`, span methods never throw, and `ObservabilityOptions` binds correctly from configuration (both defaults and explicit values including nested `Langfuse`). 5/5 passing.
+
+**Post-review fixes** (architecture-reviewer caught one required issue before commit): T010's original implementation left `ObservabilityOptions` completely unbound — three fully-built config types with a documented contract shape but zero consumers, which is scaffolding by the letter of Constitution Principle VII. Fixed by adding the `Configure<ObservabilityOptions>` call (required a new `Microsoft.Extensions.Options.ConfigurationExtensions` package reference) plus two binding tests. Also renamed the integration project's `.csproj` and the test project/folder per the reviewer's naming-convention recommendation.
 
 **Checkpoint**: `Integrations/Observability` exists and is self-contained; nothing outside it yet references it.
 
@@ -67,23 +69,25 @@ description: "Task list for Application Observability (revision 3 — Shared.Abs
 
 ### Suggested PR 3a — Financial.Api wiring (3 files) [US2]
 
-- [ ] T012 [US2] Add `ProjectReference` to `Integrations/Observability/Integrations.Observability.csproj` in `Financial.Api/Financial.Api.csproj`
-- [ ] T013 [US2] Call `builder.Services.AddObservability(configuration, serviceName: "Financial.Api")` in `Financial.Api/Program.cs` — depends on T010, T012
-- [ ] T014 [US2] Add the `Observability` section (default `Enabled: false`) to `Financial.Api/appsettings.json`
+- [X] T012 [US2] Add `ProjectReference` to `Integrations/Observability/Observability.csproj` in `Financial.Api/Financial.Api.csproj`
+- [X] T013 [US2] Call `builder.Services.AddObservability(configuration, serviceName: "Financial.Api")` in `Financial.Api/Program.cs` — depends on T010, T012
+- [X] T014 [US2] Add the `Observability` section (default `Enabled: false`) to `Financial.Api/appsettings.json`
+
+**Deviation**: `Dockerfile` also required updating (not in the original 3-file estimate) — it didn't `COPY` `Financial.Shared.Abstractions` or `Integrations/Observability`, so `docker-compose up` failed to build once `Financial.Api` referenced them. Fixed as part of this PR since Constitution Principle VIII requires the app stay deployable after every merge.
 
 ### Suggested PR 3b — Financial.App wiring (3 files) [US2]
 
-- [ ] T015 [US2] Add `ProjectReference` to `Integrations/Observability/Integrations.Observability.csproj` in `Financial.App/Financial.App.csproj`
-- [ ] T016 [US2] Call `services.AddObservability(context.Configuration, serviceName: "Financial.App")` in `Financial.App/App.xaml.cs`'s `ConfigureServices` — depends on T010, T015
-- [ ] T017 [US2] Add the `Observability` section (default `Enabled: false`) to `Financial.App/appsettings.json`
+- [X] T015 [US2] Add `ProjectReference` to `Integrations/Observability/Observability.csproj` in `Financial.App/Financial.App.csproj`
+- [X] T016 [US2] Call `services.AddObservability(context.Configuration, serviceName: "Financial.App")` in `Financial.App/App.xaml.cs`'s `ConfigureServices` — depends on T010, T015
+- [X] T017 [US2] Add the `Observability` section (default `Enabled: false`) to `Financial.App/appsettings.json`
 
 ### Tests (not counted)
 
-- [ ] T018 [US2] Integration test in `Tests/Financial.Api.Tests/ObservabilityDisabledTests.cs`: app starts and `GET /api/v1/financial/sync-status` succeeds with `Observability:Enabled=false` and no telemetry endpoint reachable — depends on T013
-- [ ] T019 [P] [US2] Test in `Tests/Financial.Presentation.Tests/DependencyInjection/ObservabilityServiceRegistrationTests.cs`: CashFlow services still resolve and `ITelemetryTracer` resolves to a usable no-op — depends on T016
-- [ ] T020 [US2] Run and record [quickstart.md](./quickstart.md) Scenario A as the PR's Constitution Principle VIII start-up check
+- [X] T018 [US2] Integration test in `Tests/Financial.Api.Tests/ObservabilityDisabledTests.cs`: app starts and `GET /api/v1/financial/sync-status` succeeds with `Observability:Enabled=false` and no telemetry endpoint reachable — depends on T013. Also asserts `ITelemetryTracer` resolves to a usable no-op from the real DI container. 2/2 passing.
+- [X] T019 [P] [US2] Test in `Tests/Financial.Presentation.Tests/DependencyInjection/ObservabilityServiceRegistrationTests.cs`: CashFlow services still resolve and `ITelemetryTracer` resolves to a usable no-op — depends on T016. 2/2 passing.
+- [X] T020 [US2] Run and record [quickstart.md](./quickstart.md) Scenario A as the PR's Constitution Principle VIII start-up check — `docker-compose up --build` succeeded (Financial.Api), `GET /api/v1/financial/sync-status` returned 200, `logs/app-*.log` had no telemetry/collector-related errors. For `Financial.App` (WPF, PR 3b), launched the built exe directly (forcing `DOTNET_ENVIRONMENT=Development` + `LocalJson` provider against a temp copy of the data files, since the packaged exe defaults to the `Production` GoogleDrive-backed config which needs real credentials outside this environment) — window opened cleanly, no startup errors in `logs/app-*.log`.
 
-**Checkpoint**: User Story 2 fully and independently satisfied.
+**Checkpoint**: User Story 2 fully and independently satisfied — both `Financial.Api` and `Financial.App` start with observability wired in and disabled by default; `ITelemetryTracer` resolves to a no-op in both composition roots.
 
 ---
 
@@ -95,19 +99,44 @@ description: "Task list for Application Observability (revision 3 — Shared.Abs
 
 ### Suggested PR 4a — Real OpenTelemetry wiring, still produces zero spans elsewhere (3 files) [US1]
 
-- [ ] T021 [US1] Add `OpenTelemetry`, `OpenTelemetry.Extensions.Hosting`, `OpenTelemetry.Exporter.OpenTelemetryProtocol`, `OpenTelemetry.Instrumentation.AspNetCore`, `OpenTelemetry.Instrumentation.Http`, `OpenTelemetry.Instrumentation.Runtime` package references to `Integrations/Observability/Integrations.Observability.csproj` — the only project in the solution to ever get these references (FR-005/SC-008)
-- [ ] T022 [US1] Create `Integrations/Observability/OpenTelemetryTracer.cs` — `ITelemetryTracer`/`ITelemetrySpan` implementation wrapping a `System.Diagnostics.ActivitySource` internally — depends on T002, T003, T021
-- [ ] T023 [US1] Update `Integrations/Observability/ObservabilityServiceCollectionExtensions.cs`: when `Enabled=true`, register `OpenTelemetryTracer`; wire `.AddOpenTelemetry().WithTracing(...)` (AddSource, AspNetCore + HttpClient instrumentation, OTLP exporter) and `.WithMetrics(...)` — depends on T022
+- [X] T021 [US1] Add `OpenTelemetry`, `OpenTelemetry.Extensions.Hosting`, `OpenTelemetry.Exporter.OpenTelemetryProtocol`, `OpenTelemetry.Instrumentation.AspNetCore`, `OpenTelemetry.Instrumentation.Http`, `OpenTelemetry.Instrumentation.Runtime` (all v1.17.0) package references to `Integrations/Observability/Observability.csproj` — the only project in the solution to ever get these references (FR-005/SC-008, verified: `grep -rl OpenTelemetry **/*.csproj` matches only this project)
+- [X] T022 [US1] Create `Integrations/Observability/OpenTelemetryTracer.cs` — `ITelemetryTracer`/`ITelemetrySpan` implementation wrapping a `System.Diagnostics.ActivitySource` internally (source name `"Financial"`, exposed as `OpenTelemetryTracer.ActivitySourceName`) — depends on T002, T003, T021. `RecordException` only sets `error.type`/status, never the raw exception message, per the interface contract's rule 4
+- [X] T023 [US1] Update `Integrations/Observability/ObservabilityServiceCollectionExtensions.cs`: when `Enabled=true`, register `OpenTelemetryTracer`; wire `.AddOpenTelemetry().WithTracing(...)` (AddSource, AspNetCore + HttpClient instrumentation, OTLP exporter) and `.WithMetrics(...)` (AspNetCore + HttpClient + Runtime instrumentation, OTLP exporter) — depends on T022. Backend-specific auth (Langfuse) is still T043/PR 5a
+
+**Tests (not counted)**: 4 new cases added to `Tests/Financial.Observability.Tests/ObservabilityServiceCollectionExtensionsTests.cs` — `Enabled=false` still resolves `NoOpTelemetryTracer`, `Enabled=true` resolves `OpenTelemetryTracer`, and `StartSpan`/`SetAttribute`/`RecordException`/`Dispose` never throw when enabled even with no OTLP collector reachable (no `ActivityListener` attached in-process). 9/9 passing.
+
+**Manual verification**: `docker-compose up --build` (base file, `Enabled=false` default) — clean startup, no telemetry errors. `dotnet run --project Financial.Api` with `Observability__Enabled=true` and no Jaeger container running — started cleanly, `GET /api/v1/financial/sync-status` returned 200, no telemetry-related errors logged (Scenario D's silent-failure behavior, confirmed early since this PR is what makes the enabled path real).
 
 ### Suggested PR 4b — Storage spans, shared by both contexts (3 files) [US1]
 
-- [ ] T024 [US1] Add `ProjectReference` to `Financial.Shared.Abstractions` in `Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj` — depends on T001
-- [ ] T025 [US1] Inject `ITelemetryTracer` into `Financial.Shared.Infrastructure/Persistence/DebouncedJsonStorage.cs` and wrap load/save with `StartSpan("JsonStorage.Load"/"JsonStorage.Save")` per [contracts/telemetry-semantic-conventions.md](./contracts/telemetry-semantic-conventions.md) — depends on T024
-- [ ] T026 [P] [US1] Same for `Financial.Shared.Infrastructure/Persistence/GoogleDriveJsonStorage.cs` (`"GoogleDrive.Upload"`/`"GoogleDrive.Download"`) — depends on T024
+- [X] T024 [US1] Add `ProjectReference` to `Financial.Shared.Abstractions` in `Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj` — depends on T001
+- [X] T025 [US1] Inject `ITelemetryTracer` into `Financial.Shared.Infrastructure/Persistence/DebouncedJsonStorage.cs` and wrap load/save with `StartSpan("JsonStorage.Load"/"JsonStorage.Save")` per [contracts/telemetry-semantic-conventions.md](./contracts/telemetry-semantic-conventions.md) — depends on T024. `ReadAsync` wraps the pass-through read; `SaveNowAsync` wraps the retried write (the actual save duration, including retries) — the fire-and-forget outer `WriteAsync` isn't spanned since it never blocks on the real write.
+- [X] T026 [P] [US1] Same for `Financial.Shared.Infrastructure/Persistence/GoogleDriveJsonStorage.cs` (`"GoogleDrive.Upload"`/`"GoogleDrive.Download"`) — depends on T024
+
+**Deviation (4th file)**: Both classes' `ITelemetryTracer` constructor parameter is optional (`= null`, falling back to a new private `NullTelemetryTracer` in the same folder — not `Integrations/Observability`'s `NoOpTelemetryTracer`, which this project must never reference per the contract). This is the same nullable-optional-dependency idiom already used here for `IRemoteFileClientFactory?`/`TimeProvider?`, and it means all ~20 existing test call sites needed zero changes. `NullTelemetryTracer.cs` is the 4th production file.
+
+**Tests (not counted)**: 6 new cases (3 in `DebouncedJsonStorageTests.cs`, 3 in `GoogleDriveJsonStorageTests.cs`) using a new `Tests/Financial.TestUtilities/RecordingTelemetryTracer.cs` fake, asserting span name, `operation.result`, and `RecordException` on both the success and failure paths. 39/39 passing in `Financial.Shared.Infrastructure.Tests` (was 33).
+
+**Important — not yet wired to a real tracer in production**: `JsonStorageFactory`/`GoogleDriveStorageFactory`/both bounded contexts' `RepositoryFactory` classes and DI extensions still construct these classes without passing a tracer, so they silently fall back to `NullTelemetryTracer` today — mirrors Phase 1/2's "capability built, nothing references it yet" pattern (see their Checkpoints). **This must be threaded through before PR 4d's Independent Test (a trace with a storage span) can pass** — tracked as a new, unplanned follow-up PR immediately after this one (not in the original file-count estimate, same as the Dockerfile fix in PR 3a).
+
+### Follow-up PR 4b-wiring — thread the real tracer through DI (unplanned, 6 files) [US1]
+
+Not in the original task list — required to make PR 4b's spans actually appear in production, since `JsonStorageFactory`/`GoogleDriveStorageFactory`/both `RepositoryFactory` classes/both `AddFinancial*Infrastructure` DI extensions all construct storage without passing the DI-resolved `ITelemetryTracer`.
+
+- [X] Add an optional `ITelemetryTracer? tracer = null` parameter to `GoogleDriveStorageFactory.Create` and `JsonStorageFactory.CreateGoogleDrive`, forwarded into `GoogleDriveJsonStorage`/`DebouncedJsonStorage`
+- [X] Add an optional `ITelemetryTracer? tracer = null` constructor parameter to `InvestmentRepositoryFactory` and `CashFlowRepositoryFactory`, forwarded to `JsonStorageFactory.CreateGoogleDrive`
+- [X] `InvestmentInfrastructureServiceCollectionExtensions`/`CashFlowInfrastructureServiceCollectionExtensions`: pass `sp.GetService<ITelemetryTracer>()` (nullable — matches the existing `sp.GetService<IRemoteFileClientFactory>()` optional-resolution pattern, so DI setups that never call `AddObservability`, e.g. some test compositions, keep working unchanged)
+
+**Tests (not counted)**: 2 new integration-style cases (`InvestmentRepositoryFactoryTests`/`CashFlowRepositoryFactoryTests`) using `RecordingTelemetryTracer`, proving a real tracer passed into the factory constructor produces both a `"JsonStorage.Save"` and a `"GoogleDrive.Upload"` span after the debounced write eventually flushes — confirms the wiring is genuinely live end-to-end, not just compiling.
+
+**Checkpoint**: Storage spans (`JsonStorage.*`/`GoogleDrive.*`) now appear in real traces whenever `Observability:Enabled=true` and the `GoogleDriveJson` provider is configured, for both bounded contexts. `LocalJson`-provider deployments still produce no storage spans (out of scope per T025/T026's original design — only the debounced/cloud path is wrapped).
 
 ### Suggested PR 4c — Jaeger local overlay (1 file) [US1]
 
-- [ ] T027 [US1] Create `docker-compose.observability.yml` with a `jaeger` Compose profile per [research.md](./research.md) Decision D7 — never referenced by base `docker-compose.yml`
+- [X] T027 [US1] Create `docker-compose.observability.yml` with a `jaeger` Compose profile per [research.md](./research.md) Decision D7 — never referenced by base `docker-compose.yml`. `app` shares the same `["jaeger"]` profile in this file, so composing the overlay in only changes anything (both the new env vars and `app` itself starting) when `--profile jaeger` is also passed — `docker compose -f docker-compose.yml -f docker-compose.observability.yml up` (no `--profile`) starts nothing from either file, avoiding a half-applied state. Jaeger runs in-memory (no `SPAN_STORAGE_TYPE`/volume set = ephemeral default), no volume declared.
+- **Post-merge fix**: `jaegertracing/all-in-one:latest` turned out to resolve to Jaeger v1, which reached end-of-life 2025-12-31 and prints a startup deprecation warning. Switched the image to `jaegertracing/jaeger:latest` (Jaeger v2, the OTel-Collector-based single binary that replaced the three v1 images). No `COLLECTOR_OTLP_ENABLED` env var needed — v2 enables OTLP ingestion by default (that setting was v1-only). Re-verified live: no EOL warning, `Financial.Api` still appears in Jaeger with real traces.
+
+**Manual verification**: `docker compose -f docker-compose.yml -f docker-compose.observability.yml --profile jaeger up --build` — both containers started, `GET /api/v1/financial/sync-status` returned 200 a few times, then `curl http://localhost:16686/api/traces?service=Financial.Api` returned real traces with ASP.NET Core auto-instrumentation spans (`http.route`, `http.request.method`, `http.response.status_code` — no PII/financial values), the first end-to-end confirmation that PR 4a's OTel wiring actually reaches Jaeger. No errors in either container's logs. Also re-verified `docker compose -f docker-compose.yml up` alone (no overlay) still starts and behaves exactly as before (Constitution Principle VIII).
 
 ### Suggested PR 4d — CashFlow's first traced use case, MVP checkpoint (2 files) [US1]
 

@@ -16,6 +16,7 @@
 	</Folder>
 	<Folder Name="/Integrations/">
 		<Project Path="Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj" />
+		<Project Path="Integrations/Observability/Observability.csproj" />
 		<Project Path="Integrations/WebPageParser/WebPageParser.csproj" />
 	</Folder>
 	<Folder Name="/Tools/">
@@ -35,6 +36,7 @@
 		<Project Path="Tests/Financial.CashFlow.Infrastructure.Tests/Financial.CashFlow.Infrastructure.Tests.csproj" />
 		<Project Path="Tests/Financial.CashFlowSpreadsheetImport.Tests/Financial.CashFlowSpreadsheetImport.Tests.csproj" />
 		<Project Path="Tests/Financial.TestUtilities/Financial.TestUtilities.csproj" />
+		<Project Path="Tests/Financial.Observability.Tests/Financial.Observability.Tests.csproj" />
 	</Folder>
 	<Folder Name="/Presentation/">
 		<Project Path="Financial.App/Financial.App.csproj" />

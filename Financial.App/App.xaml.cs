@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.DependencyInjection;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
+using Financial.Integrations.Observability;
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DependencyInjection;
 using Financial.Investment.Infrastructure.DependencyInjection;
@@ -35,6 +36,7 @@ namespace Financial.Presentation.App
                 })
                 .ConfigureServices((context, services) =>
                 {
+                    services.AddObservability(context.Configuration, serviceName: "Financial.App");
                     services.AddFinancialApplication();
                     services.AddGoogleDriveFileClient();
                     services.AddFinancialInfrastructure(context.Configuration);

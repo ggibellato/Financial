@@ -4,6 +4,7 @@ using Financial.CashFlow.Infrastructure.Configuration;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.CashFlow.Infrastructure.Services;
+using Financial.Shared.Abstractions;
 using Financial.Shared.Infrastructure.Configuration;
 using Financial.Shared.Infrastructure.Hosting;
 using Financial.Shared.Infrastructure.Persistence;
@@ -40,7 +41,8 @@ public static class CashFlowInfrastructureServiceCollectionExtensions
             var options = BuildRepositoryOptions(settings);
             return new CashFlowRepositoryFactory(
                 sp.GetRequiredService<ICashFlowSerializer>(),
-                sp.GetService<IRemoteFileClientFactory>()).Create(options);
+                sp.GetService<IRemoteFileClientFactory>(),
+                sp.GetService<ITelemetryTracer>()).Create(options);
         });
         services.AddHostedService<ShutdownFlushHostedService<ICashFlowRepository>>();
 

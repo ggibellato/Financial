@@ -1,3 +1,5 @@
+using Financial.Shared.Abstractions;
+
 namespace Financial.Shared.Infrastructure.Persistence;
 
 public sealed class GoogleDriveJsonStorage : IJsonStorage
@@ -5,27 +7,61 @@ public sealed class GoogleDriveJsonStorage : IJsonStorage
     private readonly Func<string, string> _download;
     private readonly Action<string, string> _upload;
     private readonly string _driveFilePath;
+    private readonly ITelemetryTracer _tracer;
 
-    public GoogleDriveJsonStorage(IRemoteFileClient client, string? driveFilePath)
+    public GoogleDriveJsonStorage(IRemoteFileClient client, string? driveFilePath, ITelemetryTracer? tracer = null)
         : this(
             (client ?? throw new ArgumentNullException(nameof(client))).DownloadFileContent,
             client.UploadFileContent,
-            driveFilePath)
+            driveFilePath,
+            tracer)
     {
     }
 
-    internal GoogleDriveJsonStorage(Func<string, string> download, Action<string, string> upload, string? driveFilePath)
+    internal GoogleDriveJsonStorage(
+        Func<string, string> download,
+        Action<string, string> upload,
+        string? driveFilePath,
+        ITelemetryTracer? tracer = null)
     {
         _download = download ?? throw new ArgumentNullException(nameof(download));
         _upload = upload ?? throw new ArgumentNullException(nameof(upload));
         _driveFilePath = ResolveDriveFilePath(driveFilePath);
+        _tracer = tracer ?? NullTelemetryTracer.Instance;
     }
 
-    public Task<string> ReadAsync() =>
-        Task.Run(() => _download(_driveFilePath));
+    public Task<string> ReadAsync() => Task.Run(() =>
+    {
+        using var span = _tracer.StartSpan("GoogleDrive.Download");
+        try
+        {
+            var content = _download(_driveFilePath);
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return content;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    });
 
-    public Task WriteAsync(string json) =>
-        Task.Run(() => _upload(_driveFilePath, json));
+    public Task WriteAsync(string json) => Task.Run(() =>
+    {
+        using var span = _tracer.StartSpan("GoogleDrive.Upload");
+        try
+        {
+            _upload(_driveFilePath, json);
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    });
 
     private static string ResolveDriveFilePath(string? driveFilePath)
     {
