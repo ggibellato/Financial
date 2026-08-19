@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -12,11 +13,13 @@ public sealed class BankService : IBankService
 
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<BankService> _logger;
 
-    public BankService(ICashFlowRepository repository, ITelemetryTracer tracer)
+    public BankService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<BankService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public IReadOnlyList<BankDTO> GetBanks()
@@ -27,6 +30,7 @@ public sealed class BankService : IBankService
             var result = _repository.GetBanks().Select(ToDto).ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetBanks");
             return result;
         }
         catch (Exception ex)
@@ -54,6 +58,7 @@ public sealed class BankService : IBankService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "UpdateOpeningBalance");
             return ToDto(bank);
         }
         catch (Exception ex)
@@ -84,6 +89,7 @@ public sealed class BankService : IBankService
                 .ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetBankBalancesByMonth");
             return result;
         }
         catch (Exception ex)
@@ -115,6 +121,7 @@ public sealed class BankService : IBankService
                 excludingAdjustmentId);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetBankBalanceAsOf");
             return result;
         }
         catch (Exception ex)
@@ -127,6 +134,7 @@ public sealed class BankService : IBankService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"CashFlow.BankService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);

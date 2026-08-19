@@ -5,6 +5,7 @@ using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.CashFlow.Domain.ValueObjects;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -25,11 +26,13 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     private readonly ICashFlowRepository _repository;
     private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<AnnualSummaryService> _logger;
 
-    public AnnualSummaryService(ICashFlowRepository repository, ITelemetryTracer tracer, TimeProvider? timeProvider = null)
+    public AnnualSummaryService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<AnnualSummaryService> logger, TimeProvider? timeProvider = null)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
@@ -42,6 +45,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
             var result = BuildCategoryTotalDtos(BuildAllCategorySeriesForYear(year), monthsElapsed);
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetCategoryTotalsForYear");
             return result;
         }
         catch (Exception ex)
@@ -54,6 +58,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"CashFlow.AnnualSummaryService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
@@ -138,6 +143,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             };
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetInvestmentAnnualResultForYear");
             return new InvestmentAnnualResultDTO
             {
                 Accounts = accounts.ToArray(),
@@ -216,6 +222,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
             var result = BuildIncomeSummaryDto(display, forAverage, monthsElapsed);
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetIncomeSummaryForYear");
             return result;
         }
         catch (Exception ex)
@@ -329,6 +336,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             var resultadoForAverageSeries = AnnualResultCalculator.ComputeResultado(incomeForAverage.SalaryAfterTaxes, totalDespesasForAverageSeries, investimento.ForAverage);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetCategoryTotalsAnnualForYear");
             return new CategoryTotalsAnnualDTO
             {
                 CategoryTotals = categoryTotals,
@@ -362,6 +370,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             AddIncomeToFinalResult(incomeAverages, categoryAverages);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetHistoricSummaryAverageFromYear");
             return [.. categoryAverages];
         }
         catch (Exception ex)
