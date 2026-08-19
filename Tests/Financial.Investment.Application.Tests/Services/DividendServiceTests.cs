@@ -3,6 +3,8 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Rules;
 using Financial.Investment.Domain.ValueObjects;
+using Financial.Shared.Abstractions;
+using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -10,13 +12,15 @@ namespace Financial.Investment.Application.Tests.Services;
 
 public class DividendServiceTests
 {
+    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+
     private readonly StubDividendDataSource _dataSource = new();
     private readonly StubSnapshotSource _snapshotSource = new();
 
     [Fact]
     public void Constructor_WithNullDividendDataSource_Throws()
     {
-        Action act = () => new DividendService(null!, _snapshotSource);
+        Action act = () => new DividendService(null!, _snapshotSource, Tracer);
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("dividendDataSource");
@@ -25,10 +29,19 @@ public class DividendServiceTests
     [Fact]
     public void Constructor_WithNullSnapshotSource_Throws()
     {
-        Action act = () => new DividendService(_dataSource, null!);
+        Action act = () => new DividendService(_dataSource, null!, Tracer);
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("snapshotSource");
+    }
+
+    [Fact]
+    public void Constructor_WithNullTracer_Throws()
+    {
+        Action act = () => new DividendService(_dataSource, _snapshotSource, null!);
+
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("tracer");
     }
 
     [Fact]
@@ -223,7 +236,7 @@ public class DividendServiceTests
         }
     }
 
-    private DividendService CreateService() => new(_dataSource, _snapshotSource);
+    private DividendService CreateService() => new(_dataSource, _snapshotSource, Tracer);
 
     private static DividendLookupRequestDTO MakeRequest(string exchange = "NYSE", string ticker = "TICK") =>
         new() { Exchange = exchange, Ticker = ticker };

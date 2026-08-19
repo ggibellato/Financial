@@ -137,8 +137,9 @@ public class TransactionServiceTests
         var storage = new LocalJsonStorage(tempFile);
         var serializer = new InvestmentsSerializerAdapter();
         var repository = new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
-        var navigationService = new NavigationService(repository);
-        var service = new TransactionService(repository, navigationService, new RecordingTelemetryTracer());
+        var tracer = new RecordingTelemetryTracer();
+        var navigationService = new NavigationService(repository, tracer);
+        var service = new TransactionService(repository, navigationService, tracer);
 
         return (service, tempFile);
     }

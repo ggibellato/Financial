@@ -1,30 +1,63 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
+using Financial.Shared.Abstractions;
 
 namespace Financial.Investment.Application.Services;
 
 public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
 {
-    private readonly IInvestmentRepository _repository;
+    private const string EntityType = "PortfolioAssetSummary";
 
-    public PortfolioAssetSummaryService(IInvestmentRepository repository)
+    private readonly IInvestmentRepository _repository;
+    private readonly ITelemetryTracer _tracer;
+
+    public PortfolioAssetSummaryService(IInvestmentRepository repository, ITelemetryTracer tracer)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
     }
 
     public IReadOnlyList<PortfolioAssetSummaryItemDTO> GetPortfolioAssetsSummary(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
     {
-        if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
-            return [];
+        using var span = StartSpan("GetPortfolioAssetsSummary");
+        try
+        {
+            if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
+            {
+                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                return [];
+            }
 
-        var assets = _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope).ToList();
-        if (assets.Count == 0)
-            return [];
+            var assets = _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope).ToList();
+            if (assets.Count == 0)
+            {
+                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                return [];
+            }
 
-        return scope == InvestmentScope.Historic
-            ? PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, CalculateGrossBought)
-            : PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, CalculateNetInvested);
+            var result = scope == InvestmentScope.Historic
+                ? PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, CalculateGrossBought)
+                : PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, CalculateNetInvested);
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
+
+    private ITelemetrySpan StartSpan(string operationName)
+    {
+        var span = _tracer.StartSpan($"Investment.PortfolioAssetSummaryService.{operationName}");
+        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
+        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
+        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
+        return span;
     }
 
     private static decimal CalculateNetInvested(AssetTotals totals) => totals.TotalBought - totals.TotalSold;
