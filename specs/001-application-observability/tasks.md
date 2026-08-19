@@ -12,7 +12,7 @@ description: "Task list for Application Observability (revision 3 — Shared.Abs
 
 **Organization**: Tasks are grouped by user story, further grouped into **suggested PR slices sized to the user's ~5-source/config-file target** (excluding docs and test files). Revision note: this supersedes a design that used a `TracingDispatchProxy` decorator (fully built, tested, and reverted — see git history on this branch and research.md Decision D1/D3) in favor of a dependency-free `Financial.Shared.Abstractions` project that Application code calls directly.
 
-**Batch-size exception (added after PR #467's review, see spec.md Assumptions)**: the ~5-file target is for heterogeneous changes. Repeatable, single-pattern work — instrumenting many services with the identical `ITelemetryTracer` span-wrapping shape (T031, T034, and their analogues) — may batch more files per PR, since every file gets the same already-approved change and splitting further adds PR overhead without adding review safety.
+**Batch-size exception (added after PR #467's review, see spec.md Assumptions)**: the ~5-file target is for heterogeneous changes. Repeatable, single-pattern work — instrumenting many services with the identical `ITelemetryTracer` span-wrapping shape (T031, T034, and their analogues) — may batch up to **8** files per PR instead, since every file gets the same already-approved change and splitting further adds PR overhead without adding review safety.
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -153,7 +153,7 @@ Not in the original task list — required to make PR 4b's spans actually appear
 
 **Checkpoint after PR 4a–4d**: User Story 1's Independent Test is satisfiable end to end for "create an expense" — confirmed live via API. Full 3-level entry-point → service → storage tracing additionally requires the `GoogleDriveJson` provider (not exercised live here — no test credentials available in this environment — but the storage-layer wiring itself was already proven live in PR 4b's factory tests). This is the MVP.
 
-### Suggested PR 4e onward — extend CashFlow coverage (repeatable, ~1 csproj + services per PR; batch size relaxed per the exception above) [US1]
+### Suggested PR 4e onward — extend CashFlow coverage (repeatable, ~1 csproj + services per PR; up to 8 files per the exception above) [US1]
 
 - [X] T030 [US1] Repeat T029's pattern for `IncomeService`, `BankService`, `TransferService` in `Financial.CashFlow.Application/Services/` — depends on T028. `BankService`'s entity type is `"Bank"`; `GetBankBalanceAsOf`/`GetTransfersByBank` set `entity.id` to the bank id (never the computed balance). No `ProjectReference` needed (T028 already added it to the shared `Financial.CashFlow.Application.csproj`), so this PR is 3 files (the 3 services), no csproj change.
   - **Deviation (test-only)**: `BalanceAdjustmentServiceTests.cs` also constructs `BankService` directly (a concrete dependency of `BalanceAdjustmentService`, unrelated to this PR) — its 3 call sites needed the same mechanical `tracer` argument added.
@@ -168,9 +168,9 @@ Not in the original task list — required to make PR 4b's spans actually appear
 - [ ] T032 [US1] Add `ProjectReference` to `Financial.Shared.Abstractions` in `Financial.Investment.Application/Financial.Investment.Application.csproj` — depends on T001
 - [ ] T033 [US1] Inject `ITelemetryTracer` into one representative Investment service (e.g. `AssetPriceService.cs`) and wrap its primary method, same pattern as T029 — depends on T032
 
-### Suggested PR 4g onward — extend Investment coverage (repeatable; batch size relaxed per the exception above) [US1]
+### Suggested PR 4g onward — extend Investment coverage (repeatable; up to 8 files per the exception above) [US1]
 
-- [ ] T034 [US1] Repeat T033's pattern for the remaining Investment services — depends on T032. All same-pattern instrumentation may land together rather than split into many small PRs.
+- [ ] T034 [US1] Repeat T033's pattern for the remaining Investment services — depends on T032. Up to 8 same-pattern services may land together per PR rather than splitting into many small PRs.
 
 ### Suggested PR 4h — WPF trace root, one representative command (3 files) [US1]
 
@@ -238,9 +238,9 @@ Not in the original task list — required to make PR 4b's spans actually appear
 | 4b | T024–T026 | 3 | US1 |
 | 4c | T027 | 1 | US1 |
 | 4d | T028–T029 | 2 | US1 — **MVP checkpoint** |
-| 4e+ | T030, T031 | 1 csproj (already added) + services; remaining batch may cover all leftover services (batch-size exception) | US1 (repeatable) |
+| 4e+ | T030, T031 | 1 csproj (already added) + services, up to 8/PR (batch-size exception) | US1 (repeatable) |
 | 4f | T032–T033 | 2 | US1 |
-| 4g+ | T034 | services; batch-size exception applies | US1 (repeatable) |
+| 4g+ | T034 | services, up to 8/PR (batch-size exception) | US1 (repeatable) |
 | 4h | T035–T037 | 3 | US1 |
 | 4i | T038–T039 | 3 | US1 |
 | 4j | T040 | 1 | US1 |
@@ -280,4 +280,4 @@ Not in the original task list — required to make PR 4b's spans actually appear
 
 - Every PR keeps `Observability:Enabled=false` as the shipped default, so Constitution Principle VIII holds at every step.
 - Commit after each task or logical group — one PR per slice, per the user's explicit instruction.
-- Full service-by-service tracing coverage (4e+/4g+) is intentionally open-ended in this document — each such PR follows the exact pattern established by T029/T033, so it doesn't need its own enumerated task per service. Per the batch-size exception, these PRs are not held to the ~5-file target — batch as many same-pattern services together as makes sense.
+- Full service-by-service tracing coverage (4e+/4g+) is intentionally open-ended in this document — each such PR follows the exact pattern established by T029/T033, so it doesn't need its own enumerated task per service. Per the batch-size exception, these PRs are not held to the ~5-file target — batch up to 8 same-pattern services together per PR.
