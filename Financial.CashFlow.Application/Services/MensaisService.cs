@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -10,83 +11,158 @@ public sealed class MensaisService : IMensaisService
 {
     private const int MinDueDay = 1;
     private const int MaxDueDay = 31;
+    private const string EntityType = "RecurringBill";
 
     private readonly ICashFlowRepository _repository;
+    private readonly ITelemetryTracer _tracer;
 
-    public MensaisService(ICashFlowRepository repository)
+    public MensaisService(ICashFlowRepository repository, ITelemetryTracer tracer)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
     }
 
     public async Task<RecurringBillDTO> CreateBillAsync(CreateRecurringBillDTO request)
     {
-        ArgumentNullException.ThrowIfNull(request);
-
-        if (request.DueDay < MinDueDay || request.DueDay > MaxDueDay)
+        using var span = StartSpan("CreateBill");
+        try
         {
-            throw new ArgumentException($"Due day must be between {MinDueDay} and {MaxDueDay}.");
-        }
+            ArgumentNullException.ThrowIfNull(request);
 
-        if (string.IsNullOrWhiteSpace(request.Description))
+            if (request.DueDay < MinDueDay || request.DueDay > MaxDueDay)
+            {
+                throw new ArgumentException($"Due day must be between {MinDueDay} and {MaxDueDay}.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Description))
+            {
+                throw new ArgumentException("Description is required.");
+            }
+
+            if (!AreaParser.TryParse(request.Area, out var area))
+            {
+                throw new ArgumentException($"Area '{request.Area}' is not recognized.");
+            }
+
+            // NitNumber/MinimumWageValue are INSS-specific and only ever populated by the
+            // spreadsheet import (which builds RecurringBill directly); bills added here start without them.
+            var bill = RecurringBill.Create(
+                request.DueDay, request.Description, request.Value, area, request.Note, nitNumber: null, minimumWageValue: null);
+
+            _repository.AddRecurringBill(bill);
+            await _repository.SaveChangesAsync().ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.EntityId, bill.Id.ToString());
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return ToDto(bill);
+        }
+        catch (Exception ex)
         {
-            throw new ArgumentException("Description is required.");
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
         }
-
-        if (!AreaParser.TryParse(request.Area, out var area))
-        {
-            throw new ArgumentException($"Area '{request.Area}' is not recognized.");
-        }
-
-        // NitNumber/MinimumWageValue are INSS-specific and only ever populated by the
-        // spreadsheet import (which builds RecurringBill directly); bills added here start without them.
-        var bill = RecurringBill.Create(
-            request.DueDay, request.Description, request.Value, area, request.Note, nitNumber: null, minimumWageValue: null);
-
-        _repository.AddRecurringBill(bill);
-        await _repository.SaveChangesAsync().ConfigureAwait(false);
-
-        return ToDto(bill);
     }
 
     public async Task DeleteBillAsync(Guid id)
     {
-        _ = _repository.GetRecurringBills().FirstOrThrow(b => b.Id == id, "Recurring bill", id);
+        using var span = StartSpan("DeleteBill");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            _ = _repository.GetRecurringBills().FirstOrThrow(b => b.Id == id, "Recurring bill", id);
 
-        _repository.DeleteRecurringBill(id);
-        await _repository.SaveChangesAsync().ConfigureAwait(false);
+            _repository.DeleteRecurringBill(id);
+            await _repository.SaveChangesAsync().ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
-    public IReadOnlyList<RecurringBillDTO> GetBills() =>
-        _repository.GetRecurringBills().Select(ToDto).ToList();
+    public IReadOnlyList<RecurringBillDTO> GetBills()
+    {
+        using var span = StartSpan("GetBills");
+        try
+        {
+            var result = _repository.GetRecurringBills().Select(ToDto).ToList();
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
 
     public async Task<RecurringBillDTO> UpdateBillAsync(Guid id, UpdateRecurringBillDTO request)
     {
-        ArgumentNullException.ThrowIfNull(request);
-
-        var bill = _repository.GetRecurringBills().FirstOrThrow(b => b.Id == id, "Recurring bill", id);
-
-        if (!BillStatusParser.TryParse(request.Status, out var status))
+        using var span = StartSpan("UpdateBill");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
         {
-            throw new ArgumentException($"Status '{request.Status}' is not recognized.");
+            ArgumentNullException.ThrowIfNull(request);
+
+            var bill = _repository.GetRecurringBills().FirstOrThrow(b => b.Id == id, "Recurring bill", id);
+
+            if (!BillStatusParser.TryParse(request.Status, out var status))
+            {
+                throw new ArgumentException($"Status '{request.Status}' is not recognized.");
+            }
+
+            bill.Update(status, request.Value);
+            await _repository.SaveChangesAsync().ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return ToDto(bill);
         }
-
-        bill.Update(status, request.Value);
-        await _repository.SaveChangesAsync().ConfigureAwait(false);
-
-        return ToDto(bill);
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
     public async Task<IReadOnlyList<RecurringBillDTO>> ResetAllToUnsetAsync()
     {
-        var bills = _repository.GetRecurringBills().ToList();
-        foreach (var bill in bills)
+        using var span = StartSpan("ResetAllToUnset");
+        try
         {
-            bill.ResetToUnset();
+            var bills = _repository.GetRecurringBills().ToList();
+            foreach (var bill in bills)
+            {
+                bill.ResetToUnset();
+            }
+
+            await _repository.SaveChangesAsync().ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return bills.Select(ToDto).ToList();
         }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
 
-        await _repository.SaveChangesAsync().ConfigureAwait(false);
-
-        return bills.Select(ToDto).ToList();
+    private ITelemetrySpan StartSpan(string operationName)
+    {
+        var span = _tracer.StartSpan($"CashFlow.MensaisService.{operationName}");
+        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
+        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
+        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
+        return span;
     }
 
     private static RecurringBillDTO ToDto(RecurringBill bill) => new()

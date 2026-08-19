@@ -2,71 +2,137 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.Shared.Abstractions;
 
 namespace Financial.CashFlow.Application.Services;
 
 public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
 {
+    private const string EntityType = "BalanceAdjustment";
+
     private readonly ICashFlowRepository _repository;
     private readonly IBankService _bankService;
+    private readonly ITelemetryTracer _tracer;
 
-    public BalanceAdjustmentService(ICashFlowRepository repository, IBankService bankService)
+    public BalanceAdjustmentService(ICashFlowRepository repository, IBankService bankService, ITelemetryTracer tracer)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
+        _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
     }
 
     public async Task<BalanceAdjustmentDTO> AddAdjustmentAsync(Guid bankId, BalanceAdjustmentCreateDTO request)
     {
-        ArgumentNullException.ThrowIfNull(request);
+        using var span = StartSpan("AddAdjustment");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, bankId.ToString());
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
 
-        var bank = ResolveBank(bankId);
-        var currentBalance = _bankService.GetBankBalanceAsOf(bank.Id, request.Date);
-        var delta = request.TargetBalance - currentBalance;
+            var bank = ResolveBank(bankId);
+            var currentBalance = _bankService.GetBankBalanceAsOf(bank.Id, request.Date);
+            var delta = request.TargetBalance - currentBalance;
 
-        var adjustment = BalanceAdjustment.Create(request.Date, bank, request.TargetBalance, delta, request.Note);
-        _repository.AddBalanceAdjustment(adjustment);
-        await _repository.SaveChangesAsync().ConfigureAwait(false);
+            var adjustment = BalanceAdjustment.Create(request.Date, bank, request.TargetBalance, delta, request.Note);
+            _repository.AddBalanceAdjustment(adjustment);
+            await _repository.SaveChangesAsync().ConfigureAwait(false);
 
-        return ToDto(adjustment);
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return ToDto(adjustment);
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
     public async Task<BalanceAdjustmentDTO> UpdateAdjustmentAsync(Guid bankId, Guid id, BalanceAdjustmentUpdateDTO request)
     {
-        ArgumentNullException.ThrowIfNull(request);
+        using var span = StartSpan("UpdateAdjustment");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
 
-        var bank = ResolveBank(bankId);
-        var adjustment = FindAdjustmentOrThrow(bank, id);
-        var currentBalance = _bankService.GetBankBalanceAsOf(bank.Id, request.Date, excludingAdjustmentId: id);
-        var delta = request.TargetBalance - currentBalance;
+            var bank = ResolveBank(bankId);
+            var adjustment = FindAdjustmentOrThrow(bank, id);
+            var currentBalance = _bankService.GetBankBalanceAsOf(bank.Id, request.Date, excludingAdjustmentId: id);
+            var delta = request.TargetBalance - currentBalance;
 
-        adjustment.UpdateDetails(request.Date, request.TargetBalance, delta, request.Note);
-        _repository.UpdateBalanceAdjustment(adjustment);
-        await _repository.SaveChangesAsync().ConfigureAwait(false);
+            adjustment.UpdateDetails(request.Date, request.TargetBalance, delta, request.Note);
+            _repository.UpdateBalanceAdjustment(adjustment);
+            await _repository.SaveChangesAsync().ConfigureAwait(false);
 
-        return ToDto(adjustment);
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return ToDto(adjustment);
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
     public async Task DeleteAdjustmentAsync(Guid bankId, Guid id)
     {
-        var bank = ResolveBank(bankId);
-        FindAdjustmentOrThrow(bank, id);
+        using var span = StartSpan("DeleteAdjustment");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            var bank = ResolveBank(bankId);
+            FindAdjustmentOrThrow(bank, id);
 
-        _repository.DeleteBalanceAdjustment(id);
-        await _repository.SaveChangesAsync().ConfigureAwait(false);
+            _repository.DeleteBalanceAdjustment(id);
+            await _repository.SaveChangesAsync().ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
     public IReadOnlyList<BalanceAdjustmentDTO> GetAdjustmentsByBank(Guid bankId)
     {
-        if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
+        using var span = StartSpan("GetAdjustmentsByBank");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, bankId.ToString());
+        try
         {
-            return Array.Empty<BalanceAdjustmentDTO>();
-        }
+            if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
+            {
+                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                return Array.Empty<BalanceAdjustmentDTO>();
+            }
 
-        return _repository.GetBalanceAdjustments()
-            .Where(a => a.Bank.Id == bank!.Id)
-            .Select(ToDto)
-            .ToList();
+            var result = _repository.GetBalanceAdjustments()
+                .Where(a => a.Bank.Id == bank!.Id)
+                .Select(ToDto)
+                .ToList();
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
+
+    private ITelemetrySpan StartSpan(string operationName)
+    {
+        var span = _tracer.StartSpan($"CashFlow.BalanceAdjustmentService.{operationName}");
+        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
+        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
+        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
+        return span;
     }
 
     private Bank ResolveBank(Guid bankId)

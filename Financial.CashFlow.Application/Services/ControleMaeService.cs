@@ -3,98 +3,175 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions;
 
 namespace Financial.CashFlow.Application.Services;
 
 public sealed class ControleMaeService : IControleMaeService
 {
+    private const string EntityType = "MaeLedgerEntry";
+
     private readonly ICashFlowRepository _repository;
     private readonly IExchangeRateProvider _exchangeRateProvider;
+    private readonly ITelemetryTracer _tracer;
 
-    public ControleMaeService(ICashFlowRepository repository, IExchangeRateProvider exchangeRateProvider)
+    public ControleMaeService(ICashFlowRepository repository, IExchangeRateProvider exchangeRateProvider, ITelemetryTracer tracer)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _exchangeRateProvider = exchangeRateProvider ?? throw new ArgumentNullException(nameof(exchangeRateProvider));
+        _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
     }
 
     public async Task<MaeLedgerEntryDTO> CreateEntryAsync(CreateMaeLedgerEntryDTO request)
     {
-        ArgumentNullException.ThrowIfNull(request);
-
-        if (string.IsNullOrWhiteSpace(request.Description))
+        using var span = StartSpan("CreateEntry");
+        try
         {
-            throw new ArgumentException("Description is required.");
-        }
+            ArgumentNullException.ThrowIfNull(request);
 
-        if (request.SourceValue == 0)
+            if (string.IsNullOrWhiteSpace(request.Description))
+            {
+                throw new ArgumentException("Description is required.");
+            }
+
+            if (request.SourceValue == 0)
+            {
+                throw new ArgumentException("Source value must not be zero.");
+            }
+
+            if (!CurrencyParser.TryParse(request.SourceCurrency, out var sourceCurrency))
+            {
+                throw new ArgumentException($"Currency '{request.SourceCurrency}' is not recognized.");
+            }
+
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            if (request.Date > today)
+            {
+                throw new ArgumentException("Date must not be in the future.");
+            }
+
+            var targetCurrency = sourceCurrency == Currency.BRL ? Currency.GBP : Currency.BRL;
+            var rate = await _exchangeRateProvider.GetHistoricalRateAsync(request.Date, sourceCurrency, targetCurrency)
+                .ConfigureAwait(false);
+            var convertedValue = rate.HasValue ? request.SourceValue * rate.Value : (decimal?)null;
+
+            var (brlValue, gbpValue) = sourceCurrency == Currency.BRL
+                ? ((decimal?)request.SourceValue, convertedValue)
+                : (convertedValue, (decimal?)request.SourceValue);
+
+            var entry = MaeLedgerEntry.Create(request.Date, request.Description, request.Note, sourceCurrency, brlValue, gbpValue);
+            _repository.AddMaeLedgerEntry(entry);
+            await _repository.SaveChangesAsync().ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.EntityId, entry.Id.ToString());
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return ToDto(entry);
+        }
+        catch (Exception ex)
         {
-            throw new ArgumentException("Source value must not be zero.");
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
         }
-
-        if (!CurrencyParser.TryParse(request.SourceCurrency, out var sourceCurrency))
-        {
-            throw new ArgumentException($"Currency '{request.SourceCurrency}' is not recognized.");
-        }
-
-        var today = DateOnly.FromDateTime(DateTime.Now);
-        if (request.Date > today)
-        {
-            throw new ArgumentException("Date must not be in the future.");
-        }
-
-        var targetCurrency = sourceCurrency == Currency.BRL ? Currency.GBP : Currency.BRL;
-        var rate = await _exchangeRateProvider.GetHistoricalRateAsync(request.Date, sourceCurrency, targetCurrency)
-            .ConfigureAwait(false);
-        var convertedValue = rate.HasValue ? request.SourceValue * rate.Value : (decimal?)null;
-
-        var (brlValue, gbpValue) = sourceCurrency == Currency.BRL
-            ? ((decimal?)request.SourceValue, convertedValue)
-            : (convertedValue, (decimal?)request.SourceValue);
-
-        var entry = MaeLedgerEntry.Create(request.Date, request.Description, request.Note, sourceCurrency, brlValue, gbpValue);
-        _repository.AddMaeLedgerEntry(entry);
-        await _repository.SaveChangesAsync().ConfigureAwait(false);
-
-        return ToDto(entry);
     }
 
-    public IReadOnlyList<MaeLedgerEntryDTO> GetEntriesFromDate(DateOnly fromDate) =>
-        _repository.GetMaeLedgerEntries()
-            .Where(e => e.Date >= fromDate)
-            .OrderBy(e => e.Date)
-            .Select(ToDto)
-            .ToList();
+    public IReadOnlyList<MaeLedgerEntryDTO> GetEntriesFromDate(DateOnly fromDate)
+    {
+        using var span = StartSpan("GetEntriesFromDate");
+        try
+        {
+            var result = _repository.GetMaeLedgerEntries()
+                .Where(e => e.Date >= fromDate)
+                .OrderBy(e => e.Date)
+                .Select(ToDto)
+                .ToList();
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
 
     public MaeLedgerTotalsDTO GetTotals()
     {
-        decimal totalBrl = 0m, totalGbp = 0m;
-        foreach (var entry in _repository.GetMaeLedgerEntries())
+        using var span = StartSpan("GetTotals");
+        try
         {
-            totalBrl += entry.BrlValue ?? 0m;
-            totalGbp += entry.GbpValue ?? 0m;
-        }
+            decimal totalBrl = 0m, totalGbp = 0m;
+            foreach (var entry in _repository.GetMaeLedgerEntries())
+            {
+                totalBrl += entry.BrlValue ?? 0m;
+                totalGbp += entry.GbpValue ?? 0m;
+            }
 
-        return new MaeLedgerTotalsDTO { TotalBrlValue = totalBrl, TotalGbpValue = totalGbp };
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return new MaeLedgerTotalsDTO { TotalBrlValue = totalBrl, TotalGbpValue = totalGbp };
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
     public async Task<MaeLedgerEntryDTO> UpdateEntryValuesAsync(Guid id, UpdateMaeLedgerEntryValuesDTO request)
     {
-        ArgumentNullException.ThrowIfNull(request);
+        using var span = StartSpan("UpdateEntryValues");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
 
-        var entry = _repository.GetMaeLedgerEntries().FirstOrThrow(e => e.Id == id, "Mae ledger entry", id);
+            var entry = _repository.GetMaeLedgerEntries().FirstOrThrow(e => e.Id == id, "Mae ledger entry", id);
 
-        entry.UpdateValues(request.BrlValue, request.GbpValue);
-        await _repository.SaveChangesAsync().ConfigureAwait(false);
+            entry.UpdateValues(request.BrlValue, request.GbpValue);
+            await _repository.SaveChangesAsync().ConfigureAwait(false);
 
-        return ToDto(entry);
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return ToDto(entry);
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
     public async Task DeleteEntryAsync(Guid id)
     {
-        _ = _repository.GetMaeLedgerEntries().FirstOrThrow(e => e.Id == id, "Mae ledger entry", id);
+        using var span = StartSpan("DeleteEntry");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            _ = _repository.GetMaeLedgerEntries().FirstOrThrow(e => e.Id == id, "Mae ledger entry", id);
 
-        _repository.DeleteMaeLedgerEntry(id);
-        await _repository.SaveChangesAsync().ConfigureAwait(false);
+            _repository.DeleteMaeLedgerEntry(id);
+            await _repository.SaveChangesAsync().ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
+
+    private ITelemetrySpan StartSpan(string operationName)
+    {
+        var span = _tracer.StartSpan($"CashFlow.ControleMaeService.{operationName}");
+        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
+        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
+        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
+        return span;
     }
 
     private static MaeLedgerEntryDTO ToDto(MaeLedgerEntry entry) => new()

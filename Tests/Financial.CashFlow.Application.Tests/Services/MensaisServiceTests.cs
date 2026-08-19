@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
+using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
@@ -11,18 +12,27 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class MensaisServiceTests
 {
+    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new MensaisService(null!);
+        Action act = () => new MensaisService(null!, Tracer);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
+    }
+
+    [Fact]
+    public void Constructor_WithNullTracer_Throws()
+    {
+        Action act = () => new MensaisService(new StubCashFlowRepository(), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Fact]
     public async Task CreateBillAsync_WithValidRequest_SavesAndReturnsBill()
     {
         var repository = new StubCashFlowRepository();
-        var service = new MensaisService(repository);
+        var service = new MensaisService(repository, Tracer);
 
         var result = await service.CreateBillAsync(ValidBrasilRequest());
 
@@ -40,7 +50,7 @@ public class MensaisServiceTests
     public async Task CreateBillAsync_NeverSetsNitOrMinimumWage_ThoseAreImportOnly()
     {
         var repository = new StubCashFlowRepository();
-        var service = new MensaisService(repository);
+        var service = new MensaisService(repository, Tracer);
 
         var result = await service.CreateBillAsync(ValidBrasilRequest());
 
@@ -53,7 +63,7 @@ public class MensaisServiceTests
     [InlineData(32)]
     public async Task CreateBillAsync_WithInvalidDueDay_Throws(int dueDay)
     {
-        var service = new MensaisService(new StubCashFlowRepository());
+        var service = new MensaisService(new StubCashFlowRepository(), Tracer);
         var request = ValidBrasilRequest();
         var invalidRequest = new CreateRecurringBillDTO
         {
@@ -72,7 +82,7 @@ public class MensaisServiceTests
     [Fact]
     public async Task CreateBillAsync_WithBlankDescription_Throws()
     {
-        var service = new MensaisService(new StubCashFlowRepository());
+        var service = new MensaisService(new StubCashFlowRepository(), Tracer);
 
         var act = async () => await service.CreateBillAsync(new CreateRecurringBillDTO
         {
@@ -89,7 +99,7 @@ public class MensaisServiceTests
     [Fact]
     public async Task CreateBillAsync_WithUnrecognizedArea_Throws()
     {
-        var service = new MensaisService(new StubCashFlowRepository());
+        var service = new MensaisService(new StubCashFlowRepository(), Tracer);
 
         var act = async () => await service.CreateBillAsync(new CreateRecurringBillDTO
         {
@@ -111,7 +121,7 @@ public class MensaisServiceTests
         repository.RecurringBills.Add(bill);
         var otherBill = RecurringBill.Create(15, "Council Tax", 120m, Area.UK, string.Empty, null, null);
         repository.RecurringBills.Add(otherBill);
-        var service = new MensaisService(repository);
+        var service = new MensaisService(repository, Tracer);
 
         await service.DeleteBillAsync(bill.Id);
 
@@ -121,7 +131,7 @@ public class MensaisServiceTests
     [Fact]
     public async Task DeleteBillAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var service = new MensaisService(new StubCashFlowRepository());
+        var service = new MensaisService(new StubCashFlowRepository(), Tracer);
 
         var act = async () => await service.DeleteBillAsync(Guid.NewGuid());
 
@@ -133,7 +143,7 @@ public class MensaisServiceTests
     {
         var repository = new StubCashFlowRepository();
         repository.RecurringBills.Add(RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null));
-        var service = new MensaisService(repository);
+        var service = new MensaisService(repository, Tracer);
 
         var result = service.GetBills();
 
@@ -146,7 +156,7 @@ public class MensaisServiceTests
         var repository = new StubCashFlowRepository();
         var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
         repository.RecurringBills.Add(bill);
-        var service = new MensaisService(repository);
+        var service = new MensaisService(repository, Tracer);
 
         var result = await service.UpdateBillAsync(bill.Id, new UpdateRecurringBillDTO
         {
@@ -161,7 +171,7 @@ public class MensaisServiceTests
     [Fact]
     public async Task UpdateBillAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var service = new MensaisService(new StubCashFlowRepository());
+        var service = new MensaisService(new StubCashFlowRepository(), Tracer);
 
         var act = async () => await service.UpdateBillAsync(Guid.NewGuid(), new UpdateRecurringBillDTO
         {
@@ -178,7 +188,7 @@ public class MensaisServiceTests
         var repository = new StubCashFlowRepository();
         var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
         repository.RecurringBills.Add(bill);
-        var service = new MensaisService(repository);
+        var service = new MensaisService(repository, Tracer);
 
         var act = async () => await service.UpdateBillAsync(bill.Id, new UpdateRecurringBillDTO
         {
@@ -199,7 +209,7 @@ public class MensaisServiceTests
         scheduledBill.Update(BillStatus.Scheduled, 120m);
         repository.RecurringBills.Add(paidBill);
         repository.RecurringBills.Add(scheduledBill);
-        var service = new MensaisService(repository);
+        var service = new MensaisService(repository, Tracer);
 
         var result = await service.ResetAllToUnsetAsync();
 

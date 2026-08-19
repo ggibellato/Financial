@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Application.Tests.TestHelpers;
 using Financial.CashFlow.Domain.Entities;
+using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -13,19 +14,27 @@ public class InvestmentSnapshotServiceTests
 {
     private static readonly int CurrentYear = DateTime.Now.Year;
     private static readonly int PastYear = CurrentYear - 5;
+    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new InvestmentSnapshotService(null!);
+        Action act = () => new InvestmentSnapshotService(null!, Tracer);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
+    }
+
+    [Fact]
+    public void Constructor_WithNullTracer_Throws()
+    {
+        Action act = () => new InvestmentSnapshotService(new StubCashFlowRepository(), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Fact]
     public async Task GetSnapshotsForMonthAsync_FirstCall_GeneratesExactlyElevenSnapshotsDefaultingToZero()
     {
         var repository = CreateRepository();
-        var service = new InvestmentSnapshotService(repository);
+        var service = new InvestmentSnapshotService(repository, Tracer);
 
         var result = await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
 
@@ -41,7 +50,7 @@ public class InvestmentSnapshotServiceTests
     public async Task GetSnapshotsForMonthAsync_MarksTheSixLiabilityAccountsCorrectly()
     {
         var repository = CreateRepository();
-        var service = new InvestmentSnapshotService(repository);
+        var service = new InvestmentSnapshotService(repository, Tracer);
 
         var result = await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
 
@@ -58,7 +67,7 @@ public class InvestmentSnapshotServiceTests
     public async Task GetSnapshotsForMonthAsync_SecondCallSameMonth_DoesNotCreateDuplicates()
     {
         var repository = CreateRepository();
-        var service = new InvestmentSnapshotService(repository);
+        var service = new InvestmentSnapshotService(repository, Tracer);
 
         await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
         var result = await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
@@ -76,7 +85,7 @@ public class InvestmentSnapshotServiceTests
     {
         var repository = CreateRepository();
         repository.InvestmentAccounts.Add(InvestmentAccount.Create("EverydaySaver", isActive: false, isLiability: false));
-        var service = new InvestmentSnapshotService(repository);
+        var service = new InvestmentSnapshotService(repository, Tracer);
 
         var result = await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
 
@@ -88,7 +97,7 @@ public class InvestmentSnapshotServiceTests
     public async Task GetSnapshotsForMonthAsync_PastYearWithNoExistingData_ReturnsEmptyNotAllAccounts()
     {
         var repository = CreateRepository();
-        var service = new InvestmentSnapshotService(repository);
+        var service = new InvestmentSnapshotService(repository, Tracer);
 
         var result = await service.GetSnapshotsForMonthAsync(PastYear, 7);
 
@@ -102,7 +111,7 @@ public class InvestmentSnapshotServiceTests
         var repository = CreateRepository();
         var chaseSave = repository.InvestmentAccounts.First(a => a.Name == "ChaseSave");
         repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(chaseSave, PastYear, 7, 100m));
-        var service = new InvestmentSnapshotService(repository);
+        var service = new InvestmentSnapshotService(repository, Tracer);
 
         var result = await service.GetSnapshotsForMonthAsync(PastYear, 7);
 
@@ -113,7 +122,7 @@ public class InvestmentSnapshotServiceTests
     public async Task UpdateSnapshotValueAsync_UpdatesOnlyTheTargetedSnapshot()
     {
         var repository = CreateRepository();
-        var service = new InvestmentSnapshotService(repository);
+        var service = new InvestmentSnapshotService(repository, Tracer);
         await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
         await service.GetSnapshotsForMonthAsync(CurrentYear, 8);
         var julySnapshot = repository.InvestmentSnapshots.Single(s => s.Month == 7 && s.Account.Name == "ChaseSave");
@@ -134,7 +143,7 @@ public class InvestmentSnapshotServiceTests
     public async Task UpdateSnapshotValueAsync_WithNegativeValue_ThrowsArgumentException()
     {
         var repository = CreateRepository();
-        var service = new InvestmentSnapshotService(repository);
+        var service = new InvestmentSnapshotService(repository, Tracer);
         await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
         var snapshot = repository.InvestmentSnapshots.First();
 
@@ -146,7 +155,7 @@ public class InvestmentSnapshotServiceTests
     [Fact]
     public async Task UpdateSnapshotValueAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var service = new InvestmentSnapshotService(CreateRepository());
+        var service = new InvestmentSnapshotService(CreateRepository(), Tracer);
 
         var act = async () => await service.UpdateSnapshotValueAsync(Guid.NewGuid(), new UpdateInvestmentSnapshotValueDTO { Value = 10m });
 
