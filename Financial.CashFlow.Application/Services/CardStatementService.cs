@@ -58,6 +58,7 @@ public sealed class CardStatementService : ICardStatementService
             }
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetStatementsForMonth");
             return existingStatements.Select(s => ToDto(s)).ToList();
         }
         catch (Exception ex)
@@ -81,6 +82,7 @@ public sealed class CardStatementService : ICardStatementService
             if (statement.IsPaid)
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "MarkStatementPaid");
                 return ToDto(statement);
             }
 
@@ -119,6 +121,7 @@ public sealed class CardStatementService : ICardStatementService
             }
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "MarkStatementPaid");
             return ToDto(statement, warning);
         }
         catch (Exception ex)
@@ -140,6 +143,7 @@ public sealed class CardStatementService : ICardStatementService
             if (!statement.IsPaid)
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "UnmarkStatementPaid");
                 return ToDto(statement);
             }
 
@@ -170,6 +174,7 @@ public sealed class CardStatementService : ICardStatementService
             }
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "UnmarkStatementPaid");
             return ToDto(statement);
         }
         catch (Exception ex)
@@ -182,6 +187,7 @@ public sealed class CardStatementService : ICardStatementService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"CashFlow.CardStatementService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);

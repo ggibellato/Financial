@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -12,11 +13,13 @@ public sealed class CreditCardService : ICreditCardService
 
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<CreditCardService> _logger;
 
-    public CreditCardService(ICashFlowRepository repository, ITelemetryTracer tracer)
+    public CreditCardService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<CreditCardService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public IReadOnlyList<CreditCardDTO> GetCreditCards()
@@ -27,6 +30,7 @@ public sealed class CreditCardService : ICreditCardService
             var result = _repository.GetCreditCards().Select(ToDto).ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetCreditCards");
             return result;
         }
         catch (Exception ex)
@@ -54,6 +58,7 @@ public sealed class CreditCardService : ICreditCardService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "UpdateCreditCard");
             return ToDto(creditCard);
         }
         catch (Exception ex)
@@ -66,6 +71,7 @@ public sealed class CreditCardService : ICreditCardService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"CashFlow.CreditCardService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);

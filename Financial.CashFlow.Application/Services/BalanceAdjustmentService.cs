@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -13,12 +14,14 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
     private readonly ICashFlowRepository _repository;
     private readonly IBankService _bankService;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<BalanceAdjustmentService> _logger;
 
-    public BalanceAdjustmentService(ICashFlowRepository repository, IBankService bankService, ITelemetryTracer tracer)
+    public BalanceAdjustmentService(ICashFlowRepository repository, IBankService bankService, ITelemetryTracer tracer, ILogger<BalanceAdjustmentService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<BalanceAdjustmentDTO> AddAdjustmentAsync(Guid bankId, BalanceAdjustmentCreateDTO request)
@@ -38,6 +41,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "AddAdjustment");
             return ToDto(adjustment);
         }
         catch (Exception ex)
@@ -66,6 +70,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "UpdateAdjustment");
             return ToDto(adjustment);
         }
         catch (Exception ex)
@@ -89,6 +94,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "DeleteAdjustment");
         }
         catch (Exception ex)
         {
@@ -107,6 +113,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
             if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
             {
                 span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                _logger.LogInformation("{Operation} completed", "GetAdjustmentsByBank");
                 return Array.Empty<BalanceAdjustmentDTO>();
             }
 
@@ -116,6 +123,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
                 .ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetAdjustmentsByBank");
             return result;
         }
         catch (Exception ex)
@@ -128,6 +136,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"CashFlow.BalanceAdjustmentService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);

@@ -5,6 +5,7 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions;
 using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -14,11 +15,13 @@ public sealed class ExpenseService : IExpenseService
 
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<ExpenseService> _logger;
 
-    public ExpenseService(ICashFlowRepository repository, ITelemetryTracer tracer)
+    public ExpenseService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<ExpenseService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<ExpenseDTO> AddExpenseAsync(ExpenseCreateDTO request)
@@ -39,6 +42,7 @@ public sealed class ExpenseService : IExpenseService
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, expense.Id.ToString());
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "AddExpense");
             return ToDto(expense);
         }
         catch (Exception ex)
@@ -74,6 +78,7 @@ public sealed class ExpenseService : IExpenseService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "UpdateExpense");
             return ToDto(expense);
         }
         catch (Exception ex)
@@ -96,6 +101,7 @@ public sealed class ExpenseService : IExpenseService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "DeleteExpense");
         }
         catch (Exception ex)
         {
@@ -118,6 +124,7 @@ public sealed class ExpenseService : IExpenseService
                 .ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetExpensesByMonth");
             return result;
         }
         catch (Exception ex)
@@ -144,6 +151,7 @@ public sealed class ExpenseService : IExpenseService
                 .ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetUnpaidCardChargesByMonth");
             return result;
         }
         catch (Exception ex)
@@ -170,6 +178,7 @@ public sealed class ExpenseService : IExpenseService
                 .ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetCategoryTotalsByMonth");
             return result;
         }
         catch (Exception ex)
@@ -182,6 +191,7 @@ public sealed class ExpenseService : IExpenseService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"CashFlow.ExpenseService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);

@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -14,12 +15,14 @@ public sealed class ControleMaeService : IControleMaeService
     private readonly ICashFlowRepository _repository;
     private readonly IExchangeRateProvider _exchangeRateProvider;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<ControleMaeService> _logger;
 
-    public ControleMaeService(ICashFlowRepository repository, IExchangeRateProvider exchangeRateProvider, ITelemetryTracer tracer)
+    public ControleMaeService(ICashFlowRepository repository, IExchangeRateProvider exchangeRateProvider, ITelemetryTracer tracer, ILogger<ControleMaeService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _exchangeRateProvider = exchangeRateProvider ?? throw new ArgumentNullException(nameof(exchangeRateProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<MaeLedgerEntryDTO> CreateEntryAsync(CreateMaeLedgerEntryDTO request)
@@ -65,6 +68,7 @@ public sealed class ControleMaeService : IControleMaeService
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, entry.Id.ToString());
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "CreateEntry");
             return ToDto(entry);
         }
         catch (Exception ex)
@@ -87,6 +91,7 @@ public sealed class ControleMaeService : IControleMaeService
                 .ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetEntriesFromDate");
             return result;
         }
         catch (Exception ex)
@@ -110,6 +115,7 @@ public sealed class ControleMaeService : IControleMaeService
             }
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetTotals");
             return new MaeLedgerTotalsDTO { TotalBrlValue = totalBrl, TotalGbpValue = totalGbp };
         }
         catch (Exception ex)
@@ -134,6 +140,7 @@ public sealed class ControleMaeService : IControleMaeService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "UpdateEntryValues");
             return ToDto(entry);
         }
         catch (Exception ex)
@@ -156,6 +163,7 @@ public sealed class ControleMaeService : IControleMaeService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "DeleteEntry");
         }
         catch (Exception ex)
         {
@@ -167,6 +175,7 @@ public sealed class ControleMaeService : IControleMaeService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"CashFlow.ControleMaeService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
