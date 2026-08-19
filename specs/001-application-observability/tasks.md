@@ -202,8 +202,10 @@ Not in the original task list — required to make PR 4b's spans actually appear
 
 ### Tests (not counted toward any slice above)
 
-- [ ] T041 [US1] Integration test in `Tests/Financial.Api.Tests/` using an in-memory span-capture `ITelemetryTracer` test double (registered via `ConfigureTestServices`) asserting one correlated trace spans controller → `ExpenseService` → `JsonStorage.Save` for a sample request — depends on T029, T025
-- [ ] T042 [P] [US1] Unit tests in `Tests/Financial.CashFlow.Application.Tests/` asserting `ExpenseService` calls `StartSpan` with the expected name and only allow-listed attributes, using a hand-written `RecordingTelemetryTracer` — depends on T029
+- [X] T041 [US1] Integration test in `Tests/Financial.Api.Tests/` using an in-memory span-capture `ITelemetryTracer` test double (registered via `ConfigureTestServices`) asserting one correlated trace spans controller → `ExpenseService` → `JsonStorage.Save` for a sample request — depends on T029, T025
+  - `EndToEndTraceTests.AddExpense_ProducesOneCorrelatedTrace_ThroughServiceAndStorageSave`: the stock `ApiTestFactory` uses the `LocalJson` provider, which by T025/T026's design produces no storage spans, so the test rebuilds `ICashFlowRepository` over a `DebouncedJsonStorage` wrapping the same local temp file (the production GoogleDriveJson composition minus the Drive client, 50ms debounce). Correlation is asserted for real: `RecordingTelemetryTracer.RecordedSpan` now captures the ambient `Activity` trace id at `StartSpan` time, and the test proves the `ExpenseService` span and the background debounced `JsonStorage.Save` span both carry ASP.NET Core's per-request activity trace id (the controller root). `Financial.Api.Tests` 288/288 (was 287).
+- [X] T042 [P] [US1] Unit tests in `Tests/Financial.CashFlow.Application.Tests/` asserting `ExpenseService` calls `StartSpan` with the expected name and only allow-listed attributes, using a hand-written `RecordingTelemetryTracer` — depends on T029
+  - Already satisfied by PR 4d (`ExpenseServiceTests.AddExpenseAsync_WithValidRequest_RecordsSuccessfulSpan` + `AddExpenseAsync_WithZeroValue_RecordsFailedSpanWithException`): span name, all four allow-listed attributes, success and failure paths. Checked off retroactively — no new code needed.
 
 **Checkpoint**: User Story 1 fully functional for the instrumented services — one connected trace end to end via Jaeger, with correlated logs and the top logging-audit gap closed. Full coverage of every service (T031/T034) continues incrementally after the MVP checkpoint.
 
