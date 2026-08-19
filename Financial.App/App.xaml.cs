@@ -33,7 +33,8 @@ namespace Financial.Presentation.App
                         .WriteTo.File(
                             Path.Combine(AppContext.BaseDirectory, "logs", "app-.log"),
                             rollingInterval: RollingInterval.Day,
-                            retainedFileCountLimit: 14);
+                            retainedFileCountLimit: 14)
+                        .WriteToObservability(context.Configuration);
                 })
                 .ConfigureServices((context, services) =>
                 {
