@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
+using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
@@ -9,20 +10,29 @@ namespace Financial.Investment.Application.Tests.Services;
 
 public class CreditServiceTests
 {
+    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+
     private readonly StubInvestmentRepository _repository = new();
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new CreditService(null!, new NavigationService(_repository));
+        Action act = () => new CreditService(null!, new NavigationService(_repository, Tracer), Tracer);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullNavigationService_Throws()
     {
-        Action act = () => new CreditService(_repository, null!);
+        Action act = () => new CreditService(_repository, null!, Tracer);
         act.Should().Throw<ArgumentNullException>().WithParameterName("navigationService");
+    }
+
+    [Fact]
+    public void Constructor_WithNullTracer_Throws()
+    {
+        Action act = () => new CreditService(_repository, new NavigationService(_repository, Tracer), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Fact]
@@ -321,7 +331,7 @@ public class CreditServiceTests
         _repository.LastGetAssetsByBrokerPortfolioScope.Should().Be(InvestmentScope.Historic);
     }
 
-    private CreditService CreateService() => new(_repository, new NavigationService(_repository));
+    private CreditService CreateService() => new(_repository, new NavigationService(_repository, Tracer), Tracer);
 
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);

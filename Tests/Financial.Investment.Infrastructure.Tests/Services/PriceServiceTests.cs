@@ -4,6 +4,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Infrastructure.Persistence;
+using Financial.Shared.Abstractions;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.TestUtilities;
@@ -418,8 +419,9 @@ public class PriceServiceTests
         var storage = new LocalJsonStorage(tempFile);
         var serializer = new InvestmentsSerializerAdapter();
         var repository = new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
-        var navigationService = new NavigationService(repository);
-        var service = new PriceService(repository, navigationService, StubAssetPriceService.NotUsed());
+        var tracer = new RecordingTelemetryTracer();
+        var navigationService = new NavigationService(repository, tracer);
+        var service = new PriceService(repository, navigationService, StubAssetPriceService.NotUsed(), tracer);
 
         return (service, repository, tempFile);
     }
@@ -433,8 +435,9 @@ public class PriceServiceTests
         var serializer = new InvestmentsSerializerAdapter();
         var innerRepository = new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
         var repository = new CountingRepository(innerRepository);
-        var navigationService = new NavigationService(repository);
-        var service = new PriceService(repository, navigationService, assetPriceService);
+        var tracer = new RecordingTelemetryTracer();
+        var navigationService = new NavigationService(repository, tracer);
+        var service = new PriceService(repository, navigationService, assetPriceService, tracer);
 
         return (service, repository, tempFile);
     }

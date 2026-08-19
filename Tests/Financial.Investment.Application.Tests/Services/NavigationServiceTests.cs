@@ -1,6 +1,7 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
+using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
@@ -13,8 +14,34 @@ namespace Financial.Investment.Application.Tests.Services;
 /// </summary>
 public class NavigationServiceTests
 {
+    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+
     private readonly StubInvestmentRepository _repository = new();
-    private NavigationService CreateService() => new(_repository);
+    private NavigationService CreateService() => new(_repository, Tracer);
+
+    [Fact]
+    public void Constructor_WithNullTracer_Throws()
+    {
+        Action act = () => new NavigationService(new StubInvestmentRepository(), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
+    }
+
+    [Fact]
+    public void GetNavigationTree_RecordsSuccessfulSpan()
+    {
+        var tracer = new RecordingTelemetryTracer();
+        var service = new NavigationService(_repository, tracer);
+
+        service.GetNavigationTree();
+
+        // GetNavigationTree calls this service's own GetBrokers internally, so both spans appear,
+        // correlated under the same call - not just the outer one.
+        var span = tracer.Spans.Should().Contain(s => s.Name == "Investment.NavigationService.GetNavigationTree").Which;
+        span.Attributes[TelemetryAttributeKeys.BoundedContext].Should().Be("Investment");
+        span.Attributes[TelemetryAttributeKeys.EntityType].Should().Be("Navigation");
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+        tracer.Spans.Should().Contain(s => s.Name == "Investment.NavigationService.GetBrokers");
+    }
 
     [Theory]
     [InlineData(GlobalAssetClass.Equity)]

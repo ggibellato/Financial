@@ -1,5 +1,6 @@
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
+using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
@@ -8,13 +9,22 @@ namespace Financial.Investment.Application.Tests.Services;
 
 public class BrokerBreakdownServiceTests
 {
+    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+
     private readonly StubInvestmentRepository _repository = new();
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new BrokerBreakdownService(null!);
+        Action act = () => new BrokerBreakdownService(null!, Tracer);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
+    }
+
+    [Fact]
+    public void Constructor_WithNullTracer_Throws()
+    {
+        Action act = () => new BrokerBreakdownService(new StubInvestmentRepository(), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Theory]
@@ -247,7 +257,7 @@ public class BrokerBreakdownServiceTests
         result.Single().Assets.Select(a => a.AssetName).Should().Equal("AAAA3", "ZZZZ3");
     }
 
-    private BrokerBreakdownService CreateService() => new(_repository);
+    private BrokerBreakdownService CreateService() => new(_repository, Tracer);
 
     private static Asset MakeAsset(string name = "TEST", string ticker = "TEST") =>
         Asset.Create(name, "ISIN", "BVMF", ticker);

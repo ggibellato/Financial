@@ -3,6 +3,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Infrastructure.Persistence;
+using Financial.Shared.Abstractions;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.TestUtilities;
@@ -20,24 +21,36 @@ public class NavigationServiceTests
         var serializer = new InvestmentsSerializerAdapter();
         return new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
     }
+    private readonly ITelemetryTracer _tracer = new RecordingTelemetryTracer();
     private readonly NavigationService _sut;
     private readonly CreditService _creditSut;
 
     public NavigationServiceTests()
     {
-        _sut = new NavigationService(_repository);
-        _creditSut = new CreditService(_repository, _sut);
+        _sut = new NavigationService(_repository, _tracer);
+        _creditSut = new CreditService(_repository, _sut, _tracer);
     }
 
     [Fact]
     public void Constructor_WithNullRepository_ThrowsArgumentNullException()
     {
         // Act
-        Action act = () => new NavigationService(null!);
+        Action act = () => new NavigationService(null!, new RecordingTelemetryTracer());
 
         // Assert
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("repository");
+    }
+
+    [Fact]
+    public void Constructor_WithNullTracer_ThrowsArgumentNullException()
+    {
+        // Act
+        Action act = () => new NavigationService(_repository, null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("tracer");
     }
 
     [Fact]

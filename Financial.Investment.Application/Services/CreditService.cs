@@ -3,97 +3,186 @@ using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
+using Financial.Shared.Abstractions;
 
 namespace Financial.Investment.Application.Services;
 
 public sealed class CreditService : ICreditService, ICreditQueryService
 {
+    private const string EntityType = "Credit";
+
     private readonly IInvestmentRepository _repository;
     private readonly INavigationService _navigationService;
+    private readonly ITelemetryTracer _tracer;
 
-    public CreditService(IInvestmentRepository repository, INavigationService navigationService)
+    public CreditService(IInvestmentRepository repository, INavigationService navigationService, ITelemetryTracer tracer)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+        _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
     }
 
-    public Task<AssetDetailsDTO?> AddCreditAsync(CreditCreateDTO request)
+    public async Task<AssetDetailsDTO?> AddCreditAsync(CreditCreateDTO request)
     {
-        return AssetMutationHelper.ExecuteParsedMutationAsync<Credit.CreditType>(
-            _repository,
-            _navigationService,
-            request.BrokerName,
-            request.PortfolioName,
-            request.AssetName,
-            request.Type,
-            CreditTypeParser.TryParse,
-            (asset, creditType) =>
-            {
-                var credit = Credit.Create(request.Date, creditType, request.Value);
-                asset.AddCredit(credit);
-                return true;
-            });
-    }
-
-    public Task<AssetDetailsDTO?> UpdateCreditAsync(CreditUpdateDTO request)
-    {
-        if (request.Id == Guid.Empty)
+        using var span = StartSpan("AddCredit");
+        try
         {
-            return Task.FromResult<AssetDetailsDTO?>(null);
-        }
+            var result = await AssetMutationHelper.ExecuteParsedMutationAsync<Credit.CreditType>(
+                _repository,
+                _navigationService,
+                request.BrokerName,
+                request.PortfolioName,
+                request.AssetName,
+                request.Type,
+                CreditTypeParser.TryParse,
+                (asset, creditType) =>
+                {
+                    var credit = Credit.Create(request.Date, creditType, request.Value);
+                    asset.AddCredit(credit);
+                    return true;
+                }).ConfigureAwait(false);
 
-        return AssetMutationHelper.ExecuteParsedMutationAsync<Credit.CreditType>(
-            _repository,
-            _navigationService,
-            request.BrokerName,
-            request.PortfolioName,
-            request.AssetName,
-            request.Type,
-            CreditTypeParser.TryParse,
-            (asset, creditType) =>
-            {
-                var updatedCredit = Credit.CreateWithId(request.Id, request.Date, creditType, request.Value);
-                return asset.UpdateCredit(updatedCredit);
-            });
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
-    public Task<AssetDetailsDTO?> DeleteCreditAsync(CreditDeleteDTO request)
+    public async Task<AssetDetailsDTO?> UpdateCreditAsync(CreditUpdateDTO request)
     {
-        if (request.Id == Guid.Empty)
+        using var span = StartSpan("UpdateCredit");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, request.Id.ToString());
+        try
         {
-            return Task.FromResult<AssetDetailsDTO?>(null);
-        }
+            if (request.Id == Guid.Empty)
+            {
+                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                return null;
+            }
 
-        return AssetMutationHelper.ExecuteAssetMutationAsync(
-            _repository,
-            _navigationService,
-            request.BrokerName,
-            request.PortfolioName,
-            request.AssetName,
-            asset => asset.RemoveCredit(request.Id));
+            var result = await AssetMutationHelper.ExecuteParsedMutationAsync<Credit.CreditType>(
+                _repository,
+                _navigationService,
+                request.BrokerName,
+                request.PortfolioName,
+                request.AssetName,
+                request.Type,
+                CreditTypeParser.TryParse,
+                (asset, creditType) =>
+                {
+                    var updatedCredit = Credit.CreateWithId(request.Id, request.Date, creditType, request.Value);
+                    return asset.UpdateCredit(updatedCredit);
+                }).ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
+
+    public async Task<AssetDetailsDTO?> DeleteCreditAsync(CreditDeleteDTO request)
+    {
+        using var span = StartSpan("DeleteCredit");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, request.Id.ToString());
+        try
+        {
+            if (request.Id == Guid.Empty)
+            {
+                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                return null;
+            }
+
+            var result = await AssetMutationHelper.ExecuteAssetMutationAsync(
+                _repository,
+                _navigationService,
+                request.BrokerName,
+                request.PortfolioName,
+                request.AssetName,
+                asset => asset.RemoveCredit(request.Id)).ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
     public IReadOnlyList<CreditDTO> GetCreditsByBroker(string brokerName, InvestmentScope scope = InvestmentScope.Active)
     {
-        if (string.IsNullOrWhiteSpace(brokerName))
-            return Array.Empty<CreditDTO>();
+        using var span = StartSpan("GetCreditsByBroker");
+        try
+        {
+            if (string.IsNullOrWhiteSpace(brokerName))
+            {
+                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                return Array.Empty<CreditDTO>();
+            }
 
-        return _repository.GetAssetsByBroker(brokerName, scope)
-            .SelectMany(asset => asset.Credits)
-            .Select(NavigationMapper.MapCredit)
-            .OrderByDescending(credit => credit.Date)
-            .ToList();
+            var result = _repository.GetAssetsByBroker(brokerName, scope)
+                .SelectMany(asset => asset.Credits)
+                .Select(NavigationMapper.MapCredit)
+                .OrderByDescending(credit => credit.Date)
+                .ToList();
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
     public IReadOnlyList<CreditDTO> GetCreditsByPortfolio(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
     {
-        if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
-            return Array.Empty<CreditDTO>();
+        using var span = StartSpan("GetCreditsByPortfolio");
+        try
+        {
+            if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
+            {
+                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                return Array.Empty<CreditDTO>();
+            }
 
-        return _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope)
-            .SelectMany(asset => asset.Credits)
-            .Select(NavigationMapper.MapCredit)
-            .OrderByDescending(credit => credit.Date)
-            .ToList();
+            var result = _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope)
+                .SelectMany(asset => asset.Credits)
+                .Select(NavigationMapper.MapCredit)
+                .OrderByDescending(credit => credit.Date)
+                .ToList();
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
+
+    private ITelemetrySpan StartSpan(string operationName)
+    {
+        var span = _tracer.StartSpan($"Investment.CreditService.{operationName}");
+        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
+        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
+        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
+        return span;
     }
 }

@@ -24,7 +24,7 @@ public class TransactionServiceMutationTests
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new TransactionService(_repository, new NavigationService(_repository), null!);
+        Action act = () => new TransactionService(_repository, new NavigationService(_repository, Tracer), null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
@@ -56,7 +56,7 @@ public class TransactionServiceMutationTests
     {
         _repository.Asset = MakeAsset();
         var tracer = new RecordingTelemetryTracer();
-        var service = new TransactionService(_repository, new NavigationService(_repository), tracer);
+        var service = new TransactionService(_repository, new NavigationService(_repository, Tracer), tracer);
 
         await service.AddTransactionAsync(new TransactionCreateDTO
         {
@@ -247,7 +247,7 @@ public class TransactionServiceMutationTests
         result.Should().BeNull();
     }
 
-    private TransactionService CreateService() => new(_repository, new NavigationService(_repository), Tracer);
+    private TransactionService CreateService() => new(_repository, new NavigationService(_repository, Tracer), Tracer);
 
     private static Asset MakeAsset(string name = "AAAA") =>
         Asset.Create(name, "ISIN", "BVMF", name);

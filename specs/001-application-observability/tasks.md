@@ -172,7 +172,10 @@ Not in the original task list — required to make PR 4b's spans actually appear
 
 ### Suggested PR 4g onward — extend Investment coverage (repeatable; up to 8 files per the exception above) [US1]
 
-- [ ] T034 [US1] Repeat T033's pattern for the remaining Investment services — depends on T032. Up to 8 same-pattern services may land together per PR rather than splitting into many small PRs.
+- [X] T034 [US1] Repeat T033's pattern for the remaining Investment services — depends on T032. Up to 8 same-pattern services may land together per PR rather than splitting into many small PRs.
+  - **Batch 1 (7 services, 0 csproj — already added in PR 4f)**: `NavigationService` (`EntityType="Navigation"`; `GetNavigationTree` calls this service's own `GetBrokers` internally, so a trace shows both nested spans — confirmed via test), `CreditService` (mirrors `TransactionService` exactly, `EntityType="Credit"`), `PriceService` (`EntityType="AssetPrice"`; `GetCurrentPriceAsync`'s existing bare `catch`-and-fallback logic is preserved inside the outer span's try/catch, still records `Success` on the fallback path since it doesn't rethrow), `DividendService` (`EntityType="Dividend"`), `BrokerBreakdownService` (`EntityType="PortfolioBreakdown"`), `PortfolioAssetSummaryService` (`EntityType="PortfolioAssetSummary"`), `SummaryService` (`EntityType="AggregatedSummary"`).
+  - **Deliberately excluded**: `XirrCalculationService` and `ProfitCalculationService` — both are pure, stateless math-only services (no repository, no I/O, no async, just delegating to static calculators). Tracing a pure function call adds no diagnostic value (nothing to "diagnose end-to-end" — no failure mode beyond arithmetic) and would be over-engineering per the project's Constitution ("Application details" section). Every remaining Investment Application service that touches the repository or an external data source is now instrumented — **T034 is complete**.
+  - **Tests (not counted)**: `Financial.Investment.Application.Tests` 269/269 passing (was 33 after PR 4f) — new `Constructor_WithNullTracer_Throws` per service (7 new), plus a span-behavior test on `NavigationService.GetNavigationTree` proving the nested-span behavior. `Financial.Investment.Infrastructure.Tests` 241/241 (was 240) — its own integration-style tests for `NavigationService`/`CreditService`/`PriceService`/`TransactionService` updated, plus 1 new `Constructor_WithNullTracer` case.
 
 ### Suggested PR 4h — WPF trace root, one representative command (3 files) [US1]
 
@@ -242,7 +245,7 @@ Not in the original task list — required to make PR 4b's spans actually appear
 | 4d | T028–T029 | 2 | US1 — **MVP checkpoint** |
 | 4e+ | T030, T031 | 1 csproj (already added) + services, up to 8/PR (batch-size exception) | US1 (repeatable) |
 | 4f | T032–T033 | 2 | US1 — **done** |
-| 4g+ | T034 | services, up to 8/PR (batch-size exception) | US1 (repeatable) |
+| 4g+ | T034 | services, up to 8/PR (batch-size exception) | US1 — **done** |
 | 4h | T035–T037 | 3 | US1 |
 | 4i | T038–T039 | 3 | US1 |
 | 4j | T040 | 1 | US1 |

@@ -1,5 +1,6 @@
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
+using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
@@ -9,13 +10,22 @@ namespace Financial.Investment.Application.Tests.Services;
 
 public class PortfolioAssetSummaryServiceTests
 {
+    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+
     private readonly StubInvestmentRepository _repository = new();
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new PortfolioAssetSummaryService(null!);
+        Action act = () => new PortfolioAssetSummaryService(null!, Tracer);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
+    }
+
+    [Fact]
+    public void Constructor_WithNullTracer_Throws()
+    {
+        Action act = () => new PortfolioAssetSummaryService(new StubInvestmentRepository(), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Fact]
@@ -718,7 +728,7 @@ public class PortfolioAssetSummaryServiceTests
         result[0].LastMonthCreditsPercent.Should().Be(1m);
     }
 
-    private PortfolioAssetSummaryService CreateService() => new(_repository);
+    private PortfolioAssetSummaryService CreateService() => new(_repository, Tracer);
 
     private static Asset MakeAsset(string name, string ticker, string exchange) =>
         Asset.Create(name, "ISIN", exchange, ticker);
