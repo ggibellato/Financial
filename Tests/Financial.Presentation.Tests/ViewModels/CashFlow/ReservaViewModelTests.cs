@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.Presentation.App.ViewModels.CashFlow;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
@@ -18,11 +19,11 @@ public class ReservaViewModelTests
         CreateViewModel(_ => confirm);
 
     private static (ReservaViewModel ViewModel, StubReserveService Service) CreateViewModel(
-        Func<string, bool> confirm, StubReserveBucketService? bucketService = null)
+        Func<string, bool> confirm, StubReserveBucketService? bucketService = null, RecordingLogger<ReservaViewModel>? logger = null)
     {
         var service = new StubReserveService();
         var buckets = bucketService ?? new StubReserveBucketService { ReserveBuckets = DefaultBuckets };
-        var viewModel = new ReservaViewModel(service, buckets, confirm);
+        var viewModel = new ReservaViewModel(service, buckets, confirm, logger ?? new RecordingLogger<ReservaViewModel>());
         return (viewModel, service);
     }
 
@@ -370,5 +371,25 @@ public class ReservaViewModelTests
 
         service.WithdrawalRequests.Should().BeEmpty();
         viewModel.WithdrawalSaveError.Should().Be("Bucket is required.");
+    }
+
+    [Fact]
+    public async Task RefreshAsync_BucketLookupFails_LogsAWarningWithTheErrorTypeOnly()
+    {
+        var logger = new RecordingLogger<ReservaViewModel>();
+        var buckets = new StubReserveBucketService { ThrowOnGet = new InvalidOperationException("bucket Ariana balance 654.27") };
+        var (viewModel, _) = CreateViewModel(_ => true, buckets, logger);
+
+        await viewModel.RefreshAsync();
+
+        // The constructor's background refresh may hit the same failing lookup, so more than
+        // one identical warning can be recorded - assert on all of them.
+        var warnings = logger.Entries.Where(e => e.Level == Microsoft.Extensions.Logging.LogLevel.Warning).ToList();
+        warnings.Should().NotBeEmpty();
+        warnings.Should().AllSatisfy(w =>
+        {
+            w.Message.Should().Contain(nameof(InvalidOperationException));
+            w.Message.Should().NotContain("Ariana", "exception messages may embed bucket names/balances and must stay out of the log");
+        });
     }
 }

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
+using Microsoft.Extensions.Logging;
 using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;
@@ -20,6 +21,7 @@ public class ReservaViewModel : ViewModelBase
     private readonly IReserveService _reserveService;
     private readonly IReserveBucketService _reserveBucketService;
     private readonly Func<string, bool> _confirm;
+    private readonly ILogger<ReservaViewModel> _logger;
 
     private bool _isLoading = true;
     private string? _error;
@@ -87,11 +89,12 @@ public class ReservaViewModel : ViewModelBase
 
     public RelayCommand RetryCommand { get; }
 
-    public ReservaViewModel(IReserveService reserveService, IReserveBucketService reserveBucketService, Func<string, bool> confirm)
+    public ReservaViewModel(IReserveService reserveService, IReserveBucketService reserveBucketService, Func<string, bool> confirm, ILogger<ReservaViewModel> logger)
     {
         _reserveService = reserveService ?? throw new ArgumentNullException(nameof(reserveService));
         _reserveBucketService = reserveBucketService ?? throw new ArgumentNullException(nameof(reserveBucketService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
         InitializeSplitCommands();
@@ -159,6 +162,8 @@ public class ReservaViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            // error.type only - the message may embed bucket names/balances (FR-014).
+            _logger.LogError("Reserva refresh failed with {ErrorType}", ex.GetType().Name);
             if (requestId == _refreshRequestId)
             {
                 Error = ex.Message;
@@ -180,8 +185,10 @@ public class ReservaViewModel : ViewModelBase
         {
             return _reserveBucketService.GetReserveBuckets();
         }
-        catch
+        catch (Exception ex)
         {
+            // Optional display data - degrade to an empty list, but visibly in the log stream.
+            _logger.LogWarning("Reserve buckets lookup failed with {ErrorType}; continuing with an empty list", ex.GetType().Name);
             return [];
         }
     }
@@ -588,6 +595,7 @@ public class ReservaViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            _logger.LogError("Reserva delete movement failed with {ErrorType}", ex.GetType().Name);
             DeleteMovementError = ex.Message;
         }
     }

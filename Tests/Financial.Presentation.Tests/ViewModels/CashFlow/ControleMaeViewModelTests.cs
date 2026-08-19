@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.Presentation.App.ViewModels.CashFlow;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
@@ -9,10 +10,10 @@ public class ControleMaeViewModelTests
     private static (ControleMaeViewModel ViewModel, StubControleMaeService Service) CreateViewModel(bool confirm = true) =>
         CreateViewModel(_ => confirm);
 
-    private static (ControleMaeViewModel ViewModel, StubControleMaeService Service) CreateViewModel(Func<string, bool> confirm)
+    private static (ControleMaeViewModel ViewModel, StubControleMaeService Service) CreateViewModel(Func<string, bool> confirm, RecordingLogger<ControleMaeViewModel>? logger = null)
     {
         var service = new StubControleMaeService();
-        var viewModel = new ControleMaeViewModel(service, confirm);
+        var viewModel = new ControleMaeViewModel(service, confirm, logger ?? new RecordingLogger<ControleMaeViewModel>());
         return (viewModel, service);
     }
 
@@ -170,5 +171,25 @@ public class ControleMaeViewModelTests
         {
             service.LastDeletedId.Should().BeNull();
         }
+    }
+
+    [Fact]
+    public async Task RefreshTotalsAsync_ServiceFails_LogsAWarningAndKeepsLastKnownTotals()
+    {
+        var logger = new RecordingLogger<ControleMaeViewModel>();
+        var (viewModel, service) = CreateViewModel(_ => true, logger);
+        service.ThrowOnGetTotals = new InvalidOperationException("total BRL 9999.99");
+
+        await viewModel.RefreshTotalsAsync();
+
+        // The constructor's background totals refresh may also hit the failing service, so more
+        // than one identical warning can be recorded - assert on all of them.
+        var warnings = logger.Entries.Where(e => e.Level == Microsoft.Extensions.Logging.LogLevel.Warning).ToList();
+        warnings.Should().NotBeEmpty();
+        warnings.Should().AllSatisfy(w =>
+        {
+            w.Message.Should().Contain(nameof(InvalidOperationException));
+            w.Message.Should().NotContain("9999.99", "exception messages may embed ledger values and must stay out of the log");
+        });
     }
 }
