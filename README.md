@@ -114,6 +114,41 @@ Stop and remove containers:
 docker compose down
 ```
 
+## Observability
+
+Distributed tracing (OpenTelemetry) is built in but **off by default** — a normal `docker compose up` or `dotnet run` needs no observability backend and exports nothing. When enabled, every API request and WPF save command produces a correlated trace spanning controller → Application service → JSON storage save, with Serilog log entries carrying the same trace id. Span attributes are restricted to an allow-list (bounded context, entity type, entity GUID, operation name/result, error type) — never financial values, account names, or exception messages.
+
+Configuration (`appsettings.json` or `Observability__*` environment variables):
+
+| Key | Default | Meaning |
+|---|---|---|
+| `Observability:Enabled` | `false` | Master switch; when off, a no-op tracer is used |
+| `Observability:Backend` | `Jaeger` | `Jaeger` or `Langfuse`; anything else fails startup |
+| `Observability:Endpoint` | `http://localhost:4317` | OTLP endpoint (gRPC for Jaeger; HTTP path for Langfuse) |
+| `Observability:Langfuse:PublicKey` / `:SecretKey` | empty | Required when `Backend=Langfuse`; missing keys fail startup |
+
+### Local backends (optional overlay)
+
+`docker-compose.observability.yml` is never referenced by the base compose file; it only does anything when a profile is explicitly requested.
+
+Jaeger (UI at `http://localhost:16686`):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.observability.yml --profile jaeger up
+```
+
+Langfuse (UI at `http://localhost:3000`, login `local@financial.dev` / `financial-local`):
+
+```bash
+OBSERVABILITY_BACKEND=Langfuse \
+OBSERVABILITY_ENDPOINT=http://langfuse-web:3000/api/public/otel/v1/traces \
+docker compose -f docker-compose.yml -f docker-compose.observability.yml --profile langfuse up
+```
+
+Both stacks are ephemeral (no volumes — trace data dies with the containers) and local-only. The Langfuse profile is Langfuse's official self-hosted stack seeded headlessly with throwaway local keys (`pk-lf-local`/`sk-lf-local`). If the configured backend is unreachable, the app starts and works normally — export failures are retried silently in the background.
+
+Design docs live in `specs/001-application-observability/` (spec, plan, task log); `logging-audit.md` there records the logging-gap audit whose findings the structured-logging work addresses.
+
 ## Build and test
 
 ```bash
