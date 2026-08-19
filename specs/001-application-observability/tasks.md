@@ -190,9 +190,13 @@ Not in the original task list — required to make PR 4b's spans actually appear
 - [ ] T038 [US1] Add `Serilog.Sinks.OpenTelemetry` package reference to `Integrations/Observability/Integrations.Observability.csproj` only; add `WriteToObservability(this LoggerConfiguration, IConfiguration)` in `Integrations/Observability/SerilogObservabilityExtensions.cs` — per [research.md](./research.md) Decision D4
 - [ ] T039 [US1] Call `.WriteToObservability(context.Configuration)` from `UseSerilog(...)` in both `Financial.Api/Program.cs` and `Financial.App/App.xaml.cs` — depends on T038
 
-### Suggested PR 4j — Top logging-audit fix (1 file) [US1]
+### Suggested PR 4j — Top logging-audit fix (1 file) [US1] — COMPLETE
 
-- [ ] T040 [US1] Log the caught exception (via `ILogger`, `error.type` only, no raw message that embeds a financial value) in `Financial.Api/Middleware/DomainExceptionMappingMiddleware.cs` before translating it to a `ProblemDetails` response — logging-audit.md's top remediation priority
+- [X] T040 [US1] Log the caught exception (via `ILogger`, `error.type` only, no raw message that embeds a financial value) in `Financial.Api/Middleware/DomainExceptionMappingMiddleware.cs` before translating it to a `ProblemDetails` response — logging-audit.md's top remediation priority
+  - The three `catch` blocks now delegate to one `HandleAsync(context, exception, statusCode)` that logs a warning carrying the exception **type** plus request method/path/status, then writes the same `ProblemDetails` as before. The redaction is log-side only — the caller still receives the full message in the response body, which is what explains the rejection to them.
+  - Confirmed the constraint is real, not theoretical: `ReserveService` throws `$"This withdrawal exceeds {bucket.Name}'s balance of {currentBalance:F2}..."` — a bucket name and a balance in the message text.
+  - **Deviation**: needed `<InternalsVisibleTo Include="Financial.Api.Tests" />` in `Financial.Api.csproj` to unit-test the `internal sealed` middleware directly. A host-level `ILoggerProvider` capture was tried first and abandoned — `UseSerilog(...)` replaces the logging pipeline and doesn't write to other providers, so nothing was captured.
+  - **Tests (not counted)**: `Financial.Api.Tests` 287/287 (was 281) — 6 new middleware tests covering each mapped exception type, the "message never reaches the log" assertion, the "caller still gets the full message" counterpart, and that unmapped exceptions keep propagating unlogged. New reusable `RecordingLogger<T>` in `Tests/Financial.TestUtilities/` (will also serve T050–T052). Verified live against a temp copy of the real data files: a real 404 produced `[WRN] Request DELETE /api/v1/financial/expenses/{id} rejected with 404 by KeyNotFoundException` in the Serilog file sink.
 
 ### Tests (not counted toward any slice above)
 
