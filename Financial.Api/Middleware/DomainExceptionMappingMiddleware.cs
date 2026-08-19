@@ -10,10 +10,12 @@ namespace Financial.Api.Middleware;
 internal sealed class DomainExceptionMappingMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly ILogger<DomainExceptionMappingMiddleware> _logger;
 
-    public DomainExceptionMappingMiddleware(RequestDelegate next)
+    public DomainExceptionMappingMiddleware(RequestDelegate next, ILogger<DomainExceptionMappingMiddleware> logger)
     {
         _next = next ?? throw new ArgumentNullException(nameof(next));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -24,16 +26,32 @@ internal sealed class DomainExceptionMappingMiddleware
         }
         catch (OverdraftConfirmationRequiredException ex)
         {
-            await WriteProblemAsync(context, StatusCodes.Status409Conflict, ex.Message);
+            await HandleAsync(context, ex, StatusCodes.Status409Conflict);
         }
         catch (KeyNotFoundException ex)
         {
-            await WriteProblemAsync(context, StatusCodes.Status404NotFound, ex.Message);
+            await HandleAsync(context, ex, StatusCodes.Status404NotFound);
         }
         catch (ArgumentException ex)
         {
-            await WriteProblemAsync(context, StatusCodes.Status400BadRequest, ex.Message);
+            await HandleAsync(context, ex, StatusCodes.Status400BadRequest);
         }
+    }
+
+    private async Task HandleAsync(HttpContext context, Exception exception, int statusCode)
+    {
+        // Log the exception *type* only, never its message. Domain exception messages embed
+        // financial values and entity names (e.g. "exceeds Ariana's balance of 654.27"), which
+        // must stay out of the log stream. The caller still gets the full message in the
+        // response body - only the log is redacted.
+        _logger.LogWarning(
+            "Request {RequestMethod} {RequestPath} rejected with {StatusCode} by {ErrorType}",
+            context.Request.Method,
+            context.Request.Path,
+            statusCode,
+            exception.GetType().Name);
+
+        await WriteProblemAsync(context, statusCode, exception.Message);
     }
 
     private static async Task WriteProblemAsync(HttpContext context, int statusCode, string detail)
