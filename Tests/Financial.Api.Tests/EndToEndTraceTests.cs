@@ -85,6 +85,9 @@ public class EndToEndTraceTests
 
         // The save is debounced onto a background task; wait for its span to complete (a span is
         // recorded when started, but operation.result is only set just before disposal).
+        // Deliberately polled rather than FlushAsync'd: flushing from here could start the save
+        // on the test's execution context, destroying the request-context flow this test exists
+        // to prove. Only the debounce-initiated save carries the request's trace id.
         var saveSpan = await WaitForCompletedSpanAsync(tracer, "JsonStorage.Save");
 
         var serviceSpan = tracer.Spans.Should()

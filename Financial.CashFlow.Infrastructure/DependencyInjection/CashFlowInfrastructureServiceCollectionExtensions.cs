@@ -42,7 +42,7 @@ public static class CashFlowInfrastructureServiceCollectionExtensions
             return new CashFlowRepositoryFactory(
                 sp.GetRequiredService<ICashFlowSerializer>(),
                 sp.GetService<IRemoteFileClientFactory>(),
-                sp.GetService<ITelemetryTracer>(),
+                sp.GetRequiredService<ITelemetryTracer>(),
                 sp.GetService<Microsoft.Extensions.Logging.ILogger<DebouncedJsonStorage>>()).Create(options);
         });
         services.AddHostedService<ShutdownFlushHostedService<ICashFlowRepository>>();

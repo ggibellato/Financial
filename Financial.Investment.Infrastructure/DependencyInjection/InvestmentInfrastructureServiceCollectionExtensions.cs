@@ -50,7 +50,7 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
             return new InvestmentRepositoryFactory(
                 sp.GetRequiredService<IInvestmentsSerializer>(),
                 sp.GetService<IRemoteFileClientFactory>(),
-                sp.GetService<ITelemetryTracer>(),
+                sp.GetRequiredService<ITelemetryTracer>(),
                 sp.GetService<Microsoft.Extensions.Logging.ILogger<DebouncedJsonStorage>>()).Create(options);
         });
         services.AddSingleton<IAssetPriceService, AssetPriceService>();

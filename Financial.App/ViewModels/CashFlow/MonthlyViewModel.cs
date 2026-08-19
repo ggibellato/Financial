@@ -628,25 +628,17 @@ public class MonthlyViewModel : ViewModelBase
     internal async Task SaveExpenseAsync()
     {
         using var span = _tracer.StartSpan("App.MonthlyViewModel.SaveExpense");
-        try
-        {
-            await SaveExpenseCoreAsync();
 
-            // ExecuteSaveAsync swallows exceptions into ExpenseSaveError rather than throwing, so
-            // the outcome is read back from that property instead of a catch clause. Never put the
-            // message itself in the span - it may echo user-entered text (FR-014).
-            var result = ExpenseSaveError is null ? TelemetryOperationResults.Success : TelemetryOperationResults.Failed;
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, result);
-        }
-        catch (Exception ex)
-        {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
-            throw;
-        }
+        // ExecuteSaveAsync never throws - it reports validation rejections and save failures
+        // through its return value (and the bound error property for the UI). Only the outcome
+        // reaches the span, never the message, which may echo user-entered text (FR-014).
+        var saved = await SaveExpenseCoreAsync();
+        span.SetAttribute(
+            TelemetryAttributeKeys.OperationResult,
+            saved ? TelemetryOperationResults.Success : TelemetryOperationResults.Failed);
     }
 
-    private Task SaveExpenseCoreAsync() => ExecuteSaveAsync(
+    private Task<bool> SaveExpenseCoreAsync() => ExecuteSaveAsync(
         () => ExpenseFormValidation.BuildValidationMessage(
             ExpenseFormDate, ExpenseFormDescription, ExpenseFormCategoryId, ExpenseFormValue,
             IsCardPaymentMode, ExpenseFormPaymentSource, ExpenseFormCreditCardId, ShowRoundUpField, ExpenseFormRoundUpAmount),

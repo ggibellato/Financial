@@ -16,13 +16,12 @@ public static class ObservabilityServiceCollectionExtensions
         IConfiguration configuration,
         string serviceName)
     {
-        var options = new ObservabilityOptions();
-        configuration.GetSection(ObservabilityOptions.SectionName).Bind(options);
+        var options = ObservabilityOptions.From(configuration);
         services.Configure<ObservabilityOptions>(configuration.GetSection(ObservabilityOptions.SectionName));
 
         if (!options.Enabled)
         {
-            services.AddSingleton<ITelemetryTracer, NoOpTelemetryTracer>();
+            services.AddSingleton<ITelemetryTracer>(NoOpTelemetryTracer.Instance);
             return services;
         }
 

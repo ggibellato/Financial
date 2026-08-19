@@ -59,6 +59,10 @@ public class InvestmentInfrastructureServiceCollectionExtensionsTests
             .Build();
 
         var services = new ServiceCollection();
+        // The composition roots always register a tracer via AddObservability (research.md D5);
+        // this minimal container mirrors that invariant with the contract's null object.
+        services.AddSingleton<Financial.Shared.Abstractions.ITelemetryTracer>(
+            Financial.Shared.Abstractions.NoOpTelemetryTracer.Instance);
         services.AddFinancialInfrastructure(configuration);
         return services.BuildServiceProvider();
     }

@@ -43,8 +43,11 @@ public abstract class ViewModelBase : INotifyPropertyChanged
     /// Runs the validate/save/error-handling sequence shared by every form-save command:
     /// validate, bail out with an error if invalid, else set the saving flag, clear the error,
     /// run <paramref name="save"/>, and report any exception's message as the error.
+    /// Returns true when the save ran to completion, false when validation rejected the request
+    /// or the save failed - so callers (e.g. telemetry wrappers) get the outcome directly
+    /// instead of reading it back from the error property.
     /// </summary>
-    protected static async Task ExecuteSaveAsync(
+    protected static async Task<bool> ExecuteSaveAsync(
         Func<string?> validate,
         Action<string?> setError,
         Action<bool> setSaving,
@@ -55,7 +58,7 @@ public abstract class ViewModelBase : INotifyPropertyChanged
         if (!string.IsNullOrEmpty(validationMessage))
         {
             setError(validationMessage);
-            return;
+            return false;
         }
 
         setSaving(true);
@@ -65,10 +68,12 @@ public abstract class ViewModelBase : INotifyPropertyChanged
         try
         {
             await save();
+            return true;
         }
         catch (Exception ex)
         {
             setError(ex.Message);
+            return false;
         }
         finally
         {

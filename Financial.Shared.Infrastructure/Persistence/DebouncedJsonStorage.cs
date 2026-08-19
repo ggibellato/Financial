@@ -53,7 +53,7 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
         _timeProvider = timeProvider ?? TimeProvider.System;
         _maxRetries = maxRetries;
         _flushTimeout = flushTimeout;
-        _tracer = tracer ?? NullTelemetryTracer.Instance;
+        _tracer = tracer ?? NoOpTelemetryTracer.Instance;
         _logger = logger ?? NullLogger.Instance;
     }
 
@@ -63,13 +63,12 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
         try
         {
             var json = await _inner.ReadAsync().ConfigureAwait(false);
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             return json;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -170,13 +169,12 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
                 // a retry firing must be visible in the log stream).
                 message => _logger.LogWarning("JsonStorage.Save {RetryDetail}", message)).ConfigureAwait(false);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             HandleSaveSuccess();
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             // Exception type only - storage exception messages may embed file paths/identifiers,
             // and the document content itself must never reach the log stream.
             _logger.LogError("JsonStorage.Save failed after retries with {ErrorType}", ex.GetType().Name);
