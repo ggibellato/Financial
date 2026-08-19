@@ -2,70 +2,151 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.Shared.Abstractions;
 
 namespace Financial.CashFlow.Application.Services;
 
 public sealed class TransferService : ITransferService
 {
-    private readonly ICashFlowRepository _repository;
+    private const string EntityType = "Transfer";
 
-    public TransferService(ICashFlowRepository repository)
+    private readonly ICashFlowRepository _repository;
+    private readonly ITelemetryTracer _tracer;
+
+    public TransferService(ICashFlowRepository repository, ITelemetryTracer tracer)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
     }
 
     public async Task<TransferDTO> AddTransferAsync(TransferCreateDTO request)
     {
-        ArgumentNullException.ThrowIfNull(request);
+        using var span = StartSpan("AddTransfer");
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
 
-        var (sourceBank, destinationBank) = ResolveBanks(request.SourceBankId, request.DestinationBankId);
+            var (sourceBank, destinationBank) = ResolveBanks(request.SourceBankId, request.DestinationBankId);
 
-        var transfer = Transfer.Create(request.Date, sourceBank, destinationBank, request.Amount, request.Note);
-        _repository.AddTransfer(transfer);
-        await _repository.SaveChangesAsync().ConfigureAwait(false);
+            var transfer = Transfer.Create(request.Date, sourceBank, destinationBank, request.Amount, request.Note);
+            _repository.AddTransfer(transfer);
+            await _repository.SaveChangesAsync().ConfigureAwait(false);
 
-        return ToDto(transfer);
+            span.SetAttribute(TelemetryAttributeKeys.EntityId, transfer.Id.ToString());
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return ToDto(transfer);
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
     public async Task<TransferDTO> UpdateTransferAsync(Guid id, TransferUpdateDTO request)
     {
-        ArgumentNullException.ThrowIfNull(request);
+        using var span = StartSpan("UpdateTransfer");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
 
-        var transfer = FindTransferOrThrow(id);
-        var (sourceBank, destinationBank) = ResolveBanks(request.SourceBankId, request.DestinationBankId);
+            var transfer = FindTransferOrThrow(id);
+            var (sourceBank, destinationBank) = ResolveBanks(request.SourceBankId, request.DestinationBankId);
 
-        transfer.UpdateDetails(request.Date, sourceBank, destinationBank, request.Amount, request.Note);
-        _repository.UpdateTransfer(transfer);
-        await _repository.SaveChangesAsync().ConfigureAwait(false);
+            transfer.UpdateDetails(request.Date, sourceBank, destinationBank, request.Amount, request.Note);
+            _repository.UpdateTransfer(transfer);
+            await _repository.SaveChangesAsync().ConfigureAwait(false);
 
-        return ToDto(transfer);
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return ToDto(transfer);
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
     public async Task DeleteTransferAsync(Guid id)
     {
-        FindTransferOrThrow(id);
+        using var span = StartSpan("DeleteTransfer");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            FindTransferOrThrow(id);
 
-        _repository.DeleteTransfer(id);
-        await _repository.SaveChangesAsync().ConfigureAwait(false);
+            _repository.DeleteTransfer(id);
+            await _repository.SaveChangesAsync().ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
-    public IReadOnlyList<TransferDTO> GetTransfersByMonth(int year, int month) =>
-        _repository.GetTransfers()
-            .Where(t => t.Date.Year == year && t.Date.Month == month)
-            .Select(ToDto)
-            .ToList();
+    public IReadOnlyList<TransferDTO> GetTransfersByMonth(int year, int month)
+    {
+        using var span = StartSpan("GetTransfersByMonth");
+        try
+        {
+            var result = _repository.GetTransfers()
+                .Where(t => t.Date.Year == year && t.Date.Month == month)
+                .Select(ToDto)
+                .ToList();
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
 
     public IReadOnlyList<TransferDTO> GetTransfersByBank(Guid bankId)
     {
-        if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
+        using var span = StartSpan("GetTransfersByBank");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, bankId.ToString());
+        try
         {
-            return Array.Empty<TransferDTO>();
-        }
+            if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
+            {
+                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                return Array.Empty<TransferDTO>();
+            }
 
-        return _repository.GetTransfers()
-            .Where(t => t.SourceBank.Id == bank!.Id || t.DestinationBank.Id == bank.Id)
-            .Select(ToDto)
-            .ToList();
+            var result = _repository.GetTransfers()
+                .Where(t => t.SourceBank.Id == bank!.Id || t.DestinationBank.Id == bank.Id)
+                .Select(ToDto)
+                .ToList();
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
+
+    private ITelemetrySpan StartSpan(string operationName)
+    {
+        var span = _tracer.StartSpan($"CashFlow.TransferService.{operationName}");
+        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
+        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
+        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
+        return span;
     }
 
     private Transfer FindTransferOrThrow(Guid id) =>

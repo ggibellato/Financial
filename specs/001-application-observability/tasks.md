@@ -153,7 +153,9 @@ Not in the original task list — required to make PR 4b's spans actually appear
 
 ### Suggested PR 4e onward — extend CashFlow coverage (repeatable, ~1 csproj + 3-4 services per PR) [US1]
 
-- [ ] T030 [US1] Repeat T029's pattern for `IncomeService`, `BankService`, `TransferService` in `Financial.CashFlow.Application/Services/` — depends on T028
+- [X] T030 [US1] Repeat T029's pattern for `IncomeService`, `BankService`, `TransferService` in `Financial.CashFlow.Application/Services/` — depends on T028. `BankService`'s entity type is `"Bank"`; `GetBankBalanceAsOf`/`GetTransfersByBank` set `entity.id` to the bank id (never the computed balance). No `ProjectReference` needed (T028 already added it to the shared `Financial.CashFlow.Application.csproj`), so this PR is 3 files (the 3 services), no csproj change.
+  - **Deviation (test-only)**: `BalanceAdjustmentServiceTests.cs` also constructs `BankService` directly (a concrete dependency of `BalanceAdjustmentService`, unrelated to this PR) — its 3 call sites needed the same mechanical `tracer` argument added.
+  - **Tests (not counted)**: 2 new span-behavior cases (`IncomeService` success path, `TransferService` failure path with `RecordException`) plus 3 new `Constructor_WithNullTracer_Throws` cases. `Financial.CashFlow.Application.Tests` 349/349 passing (was 66 after PR 4d).
 - [ ] T031 [US1] Repeat for the remaining CashFlow services (`ReserveService`, `CardStatementService` — extend its existing `ILogger` usage with a span too, `CreditCardService`, `CategoryService`, `IncomeSourceService`, `ReserveBucketService`, `InvestmentAccountService`, `TitheService`, `BalanceAdjustmentService`, `ControleMaeService`, `MensaisService`, `InvestmentSnapshotService`, `AnnualSummaryService`), spread across as many small PRs as needed (~3-4 services each) — depends on T028
 
 ### Suggested PR 4f — Investment's first traced use case, parity (2 files) [US1]
