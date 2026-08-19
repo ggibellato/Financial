@@ -238,8 +238,10 @@ Not in the original task list — required to make PR 4b's spans actually appear
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T047 [P] Integration test in `Tests/Financial.Api.Tests/` for the backend-unreachable edge case — [quickstart.md](./quickstart.md) Scenario D / SC-006 — depends on T023
-- [ ] T048 [P] Add an "Observability" section to `README.md` covering local setup, backend choice, and where `logging-audit.md`'s findings live
+- [X] T047 [P] Integration test in `Tests/Financial.Api.Tests/` for the backend-unreachable edge case — [quickstart.md](./quickstart.md) Scenario D / SC-006 — depends on T023
+  - `ObservabilityBackendUnreachableTests`: with `Enabled=true` and an endpoint nothing listens on (4319, deliberately not 4317 in case a real local Jaeger is up), existing endpoints still return 200 and the **real** `OpenTelemetryTracer` (not the no-op) is registered with spans that never throw. Gotcha recorded in the test: factory `ConfigureAppConfiguration` lands too late for `AddObservability`'s inline bind under minimal hosting — `UseSetting` is required. `Financial.Api.Tests` 290/290 (was 288).
+- [X] T048 [P] Add an "Observability" section to `README.md` covering local setup, backend choice, and where `logging-audit.md`'s findings live
+  - Covers: off-by-default guarantee, what a trace spans, the attribute allow-list, the four config keys, both overlay profiles with copy-paste commands (including the Langfuse env-var indirection and seeded login), ephemerality, backend-unreachable behavior, and a pointer to `specs/001-application-observability/` + `logging-audit.md`.
 - [ ] T049 Run `dotnet build --configuration Release`, `dotnet test`, and `docker-compose up` (base file, unchanged) and record results per Constitution Principle VIII
 - [ ] T050 [P] Add `ILogger`-based use-case entry/success logging alongside the spans added in T029-T031/T033-T034 (logging-audit.md priority 2 — the two land together naturally at the same call sites)
 - [ ] T051 [P] Add retry/fallback logging in `Financial.Shared.Infrastructure/Resilience/TransientRetryPolicy.cs` and `Financial.Investment.Infrastructure/Services/FallbackFinanceService.cs` (logging-audit.md priority 3)
