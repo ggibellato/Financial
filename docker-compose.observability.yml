@@ -1,23 +1,37 @@
 # Optional local observability overlay (Constitution Principle VIII: never referenced by the base
 # docker-compose.yml, never required for a normal `docker-compose up`).
 #
-# Usage: docker compose -f docker-compose.yml -f docker-compose.observability.yml --profile jaeger up
+# Usage:
+#   Jaeger:   docker compose -f docker-compose.yml -f docker-compose.observability.yml --profile jaeger up
+#   Langfuse: OBSERVABILITY_BACKEND=Langfuse OBSERVABILITY_ENDPOINT=http://langfuse-web:3000/api/public/otel/v1/traces \
+#             docker compose -f docker-compose.yml -f docker-compose.observability.yml --profile langfuse up
 #
 # Jaeger v2 (the jaegertracing/jaeger image, not the EOL v1 jaegertracing/all-in-one) stores spans
 # in memory only by default (no volume declared) — ephemeral, container-lifetime data, per
 # FR-009/plan.md. OTLP ingestion is enabled out of the box in v2, no COLLECTOR_OTLP_ENABLED-style
-# env var needed (that was v1-only). Assigning `app` the same `jaeger` profile here means this
-# overlay only ever changes app's environment when the profile is explicitly requested; composing
-# the file in without --profile jaeger starts nothing from either file.
+# env var needed (that was v1-only). Assigning `app` the same profiles used by the backend
+# services means this overlay only ever changes app's environment when a profile is explicitly
+# requested; composing the file in without --profile starts nothing from either file.
+#
+# The Langfuse stack below is the official minimal self-hosted composition (langfuse/langfuse
+# docker-compose.yml: web + worker + postgres + clickhouse + redis + minio), trimmed for
+# local-only ephemeral use per research.md D7: optional env blocks (SMTP, LLM connections,
+# batch export, cloud object stores) removed, no named volumes (data lives and dies with the
+# containers), no host ports except the Langfuse UI, and all credentials are throwaway
+# local-only defaults. LANGFUSE_INIT_* seeds an org/project/user headlessly so the committed
+# pk-lf-local/sk-lf-local keys work immediately — log into http://localhost:3000 with
+# local@financial.dev / financial-local. Langfuse ingests OTLP traces over HTTP at
+# /api/public/otel/v1/traces (it does not ingest metrics — the metrics exporter's POSTs to the
+# same URL are rejected harmlessly in the background).
 services:
   app:
-    profiles: ["jaeger"]
+    profiles: ["jaeger", "langfuse"]
     environment:
       Observability__Enabled: "true"
-      Observability__Backend: "Jaeger"
-      Observability__Endpoint: "http://jaeger:4317"
-    depends_on:
-      - jaeger
+      Observability__Backend: ${OBSERVABILITY_BACKEND:-Jaeger}
+      Observability__Endpoint: ${OBSERVABILITY_ENDPOINT:-http://jaeger:4317}
+      Observability__Langfuse__PublicKey: ${LANGFUSE_INIT_PROJECT_PUBLIC_KEY:-pk-lf-local}
+      Observability__Langfuse__SecretKey: ${LANGFUSE_INIT_PROJECT_SECRET_KEY:-sk-lf-local}
 
   jaeger:
     image: jaegertracing/jaeger:latest
@@ -25,3 +39,121 @@ services:
     ports:
       - "16686:16686" # Jaeger UI
       - "4317:4317"   # OTLP gRPC receiver
+
+  langfuse-worker:
+    image: docker.langfuse.com/langfuse/langfuse-worker:4
+    profiles: ["langfuse"]
+    depends_on: &langfuse-depends-on
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    environment: &langfuse-worker-env
+      NEXTAUTH_URL: http://localhost:3000
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
+      SALT: financial-local-salt
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      TELEMETRY_ENABLED: "false"
+      CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: clickhouse
+      CLICKHOUSE_CLUSTER_ENABLED: "false"
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: minio
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: miniosecret
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+      LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: minio
+      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: miniosecret
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://minio:9000
+      LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_AUTH: financial-local-redis
+
+  langfuse-web:
+    image: docker.langfuse.com/langfuse/langfuse:4
+    profiles: ["langfuse"]
+    depends_on: *langfuse-depends-on
+    ports:
+      - "3000:3000" # Langfuse UI + OTLP HTTP ingestion (/api/public/otel)
+    environment:
+      <<: *langfuse-worker-env
+      NEXTAUTH_SECRET: financial-local-nextauth-secret
+      LANGFUSE_INIT_ORG_ID: financial-local
+      LANGFUSE_INIT_ORG_NAME: Financial (local)
+      LANGFUSE_INIT_PROJECT_ID: financial
+      LANGFUSE_INIT_PROJECT_NAME: Financial
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_INIT_PROJECT_PUBLIC_KEY:-pk-lf-local}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_INIT_PROJECT_SECRET_KEY:-sk-lf-local}
+      LANGFUSE_INIT_USER_EMAIL: local@financial.dev
+      LANGFUSE_INIT_USER_NAME: Local
+      LANGFUSE_INIT_USER_PASSWORD: financial-local
+
+  clickhouse:
+    image: docker.io/clickhouse/clickhouse-server:25.12
+    profiles: ["langfuse"]
+    user: "101:101"
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: clickhouse
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 1s
+
+  minio:
+    image: cgr.dev/chainguard/minio
+    profiles: ["langfuse"]
+    entrypoint: sh
+    # create the 'langfuse' bucket before starting the service
+    command: -c 'mkdir -p /data/langfuse && minio server --address ":9000" --console-address ":9001" /data'
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: miniosecret
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+      start_period: 1s
+
+  redis:
+    image: docker.io/redis:7
+    profiles: ["langfuse"]
+    command: >
+      --requirepass financial-local-redis
+      --maxmemory-policy noeviction
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 10s
+      retries: 10
+
+  postgres:
+    image: docker.io/postgres:17
+    profiles: ["langfuse"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+      TZ: UTC
+      PGTZ: UTC
