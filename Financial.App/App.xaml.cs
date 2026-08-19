@@ -8,6 +8,7 @@ using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Presentation.App.ViewModels.CashFlow;
 using Financial.Presentation.App.Views.CashFlow;
 using Financial.Presentation.App.Views.Investment;
+using Financial.Shared.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -66,7 +67,8 @@ namespace Financial.Presentation.App
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ICardStatementService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ICreditCardService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.ICategoryService>(),
-                        msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes));
+                        msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes,
+                        sp.GetRequiredService<ITelemetryTracer>()));
                     services.AddTransient<MonthlyView>();
                     services.AddTransient<ReservaViewModel>(sp => new ReservaViewModel(
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IReserveService>(),
