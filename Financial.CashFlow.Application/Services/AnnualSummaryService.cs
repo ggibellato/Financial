@@ -4,6 +4,7 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.CashFlow.Domain.ValueObjects;
+using Financial.Shared.Abstractions;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -11,6 +12,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 {
     private const int MonthsInYear = 12;
     public const int AverageDecimalPlaces = 2;
+    private const string EntityType = "AnnualSummary";
 
     /// <summary>
     /// Investment averages/sums are intentionally never rounded (unlike the 2-decimal-place
@@ -22,18 +24,41 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
     private readonly ICashFlowRepository _repository;
     private readonly TimeProvider _timeProvider;
+    private readonly ITelemetryTracer _tracer;
 
-    public AnnualSummaryService(ICashFlowRepository repository, TimeProvider? timeProvider = null)
+    public AnnualSummaryService(ICashFlowRepository repository, ITelemetryTracer tracer, TimeProvider? timeProvider = null)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public IReadOnlyList<CategoryAnnualTotalDTO> GetCategoryTotalsForYear(int year)
     {
-        var monthsElapsed = NumberOfMonthsForAverage(year);
+        using var span = StartSpan("GetCategoryTotalsForYear");
+        try
+        {
+            var monthsElapsed = NumberOfMonthsForAverage(year);
 
-        return BuildCategoryTotalDtos(BuildAllCategorySeriesForYear(year), monthsElapsed);
+            var result = BuildCategoryTotalDtos(BuildAllCategorySeriesForYear(year), monthsElapsed);
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
+    }
+
+    private ITelemetrySpan StartSpan(string operationName)
+    {
+        var span = _tracer.StartSpan($"CashFlow.AnnualSummaryService.{operationName}");
+        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
+        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
+        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
+        return span;
     }
 
     private static List<CategoryAnnualTotalDTO> BuildCategoryTotalDtos(
@@ -83,37 +108,48 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
     public InvestmentAnnualResultDTO GetInvestmentAnnualResultForYear(int year)
     {
-        var series = ComputeInvestmentSeriesForYear(year);
+        using var span = StartSpan("GetInvestmentAnnualResultForYear");
+        try
+        {
+            var series = ComputeInvestmentSeriesForYear(year);
 
-        var accounts = series.AccountSeries
-            .Select(a => new InvestmentAccountAnnualDiffDTO
+            var accounts = series.AccountSeries
+                .Select(a => new InvestmentAccountAnnualDiffDTO
+                {
+                    Account = a.Account.Name,
+                    IsLiability = a.Account.IsLiability,
+                    MonthlyValues = a.MonthlyValues.ToArray(),
+                    MonthlyDiffs = a.Diffs.ToArray()
+                })
+                .ToList();
+
+            var relevantDiffsSeries = MonthlySeries.FromMonthlyValues(Enumerable.Range(0, MonthsInYear)
+                .Select(month => month < series.LastRelevantMonth ? series.NetPositionDiffs[month] ?? 0m : 0m)
+                .ToArray());
+            var monthsElapsed = series.NetPositionDiffs.Take(series.LastRelevantMonth).Count(d => d.HasValue);
+
+            var netPosition = new NetPositionAnnualDiffDTO
             {
-                Account = a.Account.Name,
-                IsLiability = a.Account.IsLiability,
-                MonthlyValues = a.MonthlyValues.ToArray(),
-                MonthlyDiffs = a.Diffs.ToArray()
-            })
-            .ToList();
+                MonthlyValues = series.NetPositionSeries.ToArray(),
+                MonthlyDiffs = series.NetPositionDiffs.ToArray(),
+                FullYearNetChange = series.NetPositionSeries[series.LastRelevantMonth - 1] - series.NetPositionSeries[0],
+                AverageMonthResult = relevantDiffsSeries.Average(monthsElapsed, FullPrecisionDecimalPlaces),
+                SumOfMonthResults = relevantDiffsSeries.Sum()
+            };
 
-        var relevantDiffsSeries = MonthlySeries.FromMonthlyValues(Enumerable.Range(0, MonthsInYear)
-            .Select(month => month < series.LastRelevantMonth ? series.NetPositionDiffs[month] ?? 0m : 0m)
-            .ToArray());
-        var monthsElapsed = series.NetPositionDiffs.Take(series.LastRelevantMonth).Count(d => d.HasValue);
-
-        var netPosition = new NetPositionAnnualDiffDTO
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return new InvestmentAnnualResultDTO
+            {
+                Accounts = accounts.ToArray(),
+                NetPosition = netPosition
+            };
+        }
+        catch (Exception ex)
         {
-            MonthlyValues = series.NetPositionSeries.ToArray(),
-            MonthlyDiffs = series.NetPositionDiffs.ToArray(),
-            FullYearNetChange = series.NetPositionSeries[series.LastRelevantMonth - 1] - series.NetPositionSeries[0],
-            AverageMonthResult = relevantDiffsSeries.Average(monthsElapsed, FullPrecisionDecimalPlaces),
-            SumOfMonthResults = relevantDiffsSeries.Sum()
-        };
-
-        return new InvestmentAnnualResultDTO
-        {
-            Accounts = accounts.ToArray(),
-            NetPosition = netPosition
-        };
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
     private (
@@ -172,10 +208,22 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
     public IncomeAnnualSummaryDTO GetIncomeSummaryForYear(int year)
     {
-        var (display, forAverage) = BuildIncomeSeriesPairForYear(year);
-        var monthsElapsed = NumberOfMonthsForAverage(year);
+        using var span = StartSpan("GetIncomeSummaryForYear");
+        try
+        {
+            var (display, forAverage) = BuildIncomeSeriesPairForYear(year);
+            var monthsElapsed = NumberOfMonthsForAverage(year);
 
-        return BuildIncomeSummaryDto(display, forAverage, monthsElapsed);
+            var result = BuildIncomeSummaryDto(display, forAverage, monthsElapsed);
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
     private static IncomeAnnualSummaryDTO BuildIncomeSummaryDto(IncomeSeries display, IncomeSeries forAverage, int monthsElapsed) => new()
@@ -261,44 +309,67 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
 
     public CategoryTotalsAnnualDTO GetCategoryTotalsAnnualForYear(int year)
     {
-        var monthsElapsed = NumberOfMonthsForAverage(year);
-
-        var categorySeries = BuildAllCategorySeriesForYear(year);
-        var categoryTotals = BuildCategoryTotalDtos(categorySeries, monthsElapsed);
-
-        var (incomeDisplay, incomeForAverage) = BuildIncomeSeriesPairForYear(year);
-        var incomeSummary = BuildIncomeSummaryDto(incomeDisplay, incomeForAverage, monthsElapsed);
-
-        var totalDespesasSeries = categorySeries.Aggregate(MonthlySeries.Zero(), (total, c) => total.Add(c.Display));
-        var totalDespesasForAverageSeries = categorySeries.Aggregate(MonthlySeries.Zero(), (total, c) => total.Add(c.ForAverage));
-
-        var investimento = categorySeries.First(c => c.Category.IsInvestment);
-
-        var resultadoSeries = AnnualResultCalculator.ComputeResultado(incomeDisplay.SalaryAfterTaxes, totalDespesasSeries, investimento.Display);
-        var resultadoForAverageSeries = AnnualResultCalculator.ComputeResultado(incomeForAverage.SalaryAfterTaxes, totalDespesasForAverageSeries, investimento.ForAverage);
-
-        return new CategoryTotalsAnnualDTO
+        using var span = StartSpan("GetCategoryTotalsAnnualForYear");
+        try
         {
-            CategoryTotals = categoryTotals,
-            IncomeSummary = incomeSummary,
-            TotalDespesasMonthly = totalDespesasSeries.ToArray(),
-            TotalDespesasAnnualTotal = totalDespesasSeries.Sum(),
-            TotalDespesasAverage = totalDespesasForAverageSeries.Average(monthsElapsed, AverageDecimalPlaces),
-            ResultadoMonthly = resultadoSeries.ToArray(),
-            ResultadoAnnualTotal = resultadoSeries.Sum(),
-            ResultadoAverage = resultadoForAverageSeries.Average(monthsElapsed, AverageDecimalPlaces)
-        };
+            var monthsElapsed = NumberOfMonthsForAverage(year);
+
+            var categorySeries = BuildAllCategorySeriesForYear(year);
+            var categoryTotals = BuildCategoryTotalDtos(categorySeries, monthsElapsed);
+
+            var (incomeDisplay, incomeForAverage) = BuildIncomeSeriesPairForYear(year);
+            var incomeSummary = BuildIncomeSummaryDto(incomeDisplay, incomeForAverage, monthsElapsed);
+
+            var totalDespesasSeries = categorySeries.Aggregate(MonthlySeries.Zero(), (total, c) => total.Add(c.Display));
+            var totalDespesasForAverageSeries = categorySeries.Aggregate(MonthlySeries.Zero(), (total, c) => total.Add(c.ForAverage));
+
+            var investimento = categorySeries.First(c => c.Category.IsInvestment);
+
+            var resultadoSeries = AnnualResultCalculator.ComputeResultado(incomeDisplay.SalaryAfterTaxes, totalDespesasSeries, investimento.Display);
+            var resultadoForAverageSeries = AnnualResultCalculator.ComputeResultado(incomeForAverage.SalaryAfterTaxes, totalDespesasForAverageSeries, investimento.ForAverage);
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return new CategoryTotalsAnnualDTO
+            {
+                CategoryTotals = categoryTotals,
+                IncomeSummary = incomeSummary,
+                TotalDespesasMonthly = totalDespesasSeries.ToArray(),
+                TotalDespesasAnnualTotal = totalDespesasSeries.Sum(),
+                TotalDespesasAverage = totalDespesasForAverageSeries.Average(monthsElapsed, AverageDecimalPlaces),
+                ResultadoMonthly = resultadoSeries.ToArray(),
+                ResultadoAnnualTotal = resultadoSeries.Sum(),
+                ResultadoAverage = resultadoForAverageSeries.Average(monthsElapsed, AverageDecimalPlaces)
+            };
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
     public IReadOnlyList<CategoryAnnualGroupValueDTO> GetHistoricSummaryAverageFromYear(int year)
     {
-        var incomeAverages = GetHistoricIncomeAverageFromYear(year);
-        var categoryAverages = GetHistoricCategoriesAverageFromYear(year);
-        var categories = _repository.GetCategories().ToList();
-        categoryAverages = AddMissingCategories(categoryAverages, categories);
-        AddCategoryTotal(incomeAverages, categoryAverages, categories);
-        AddIncomeToFinalResult(incomeAverages, categoryAverages);
-        return [.. categoryAverages];
+        using var span = StartSpan("GetHistoricSummaryAverageFromYear");
+        try
+        {
+            var incomeAverages = GetHistoricIncomeAverageFromYear(year);
+            var categoryAverages = GetHistoricCategoriesAverageFromYear(year);
+            var categories = _repository.GetCategories().ToList();
+            categoryAverages = AddMissingCategories(categoryAverages, categories);
+            AddCategoryTotal(incomeAverages, categoryAverages, categories);
+            AddIncomeToFinalResult(incomeAverages, categoryAverages);
+
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            return [.. categoryAverages];
+        }
+        catch (Exception ex)
+        {
+            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
+            span.RecordException(ex);
+            throw;
+        }
     }
 
     private static IList<CategoryAnnualGroupValueDTO> AddMissingCategories(

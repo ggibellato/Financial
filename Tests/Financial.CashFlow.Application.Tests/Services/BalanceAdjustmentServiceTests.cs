@@ -25,15 +25,46 @@ public class BalanceAdjustmentServiceTests
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new BalanceAdjustmentService(null!, new BankService(new StubCashFlowRepository(), Tracer));
+        Action act = () => new BalanceAdjustmentService(null!, new BankService(new StubCashFlowRepository(), Tracer), Tracer);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullBankService_Throws()
     {
-        Action act = () => new BalanceAdjustmentService(new StubCashFlowRepository(), null!);
+        Action act = () => new BalanceAdjustmentService(new StubCashFlowRepository(), null!, Tracer);
         act.Should().Throw<ArgumentNullException>().WithParameterName("bankService");
+    }
+
+    [Fact]
+    public void Constructor_WithNullTracer_Throws()
+    {
+        Action act = () => new BalanceAdjustmentService(
+            new StubCashFlowRepository(), new BankService(new StubCashFlowRepository(), Tracer), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
+    }
+
+    [Fact]
+    public async Task AddAdjustmentAsync_WithValidRequest_RecordsSuccessfulSpan()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
+        var tracer = new RecordingTelemetryTracer();
+        var service = new BalanceAdjustmentService(repository, new BankService(repository, tracer), tracer);
+        var bankId = BankIdOf(repository, "Barclays");
+
+        var result = await service.AddAdjustmentAsync(bankId, new BalanceAdjustmentCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            TargetBalance = 150m,
+            Note = "Matched statement"
+        });
+
+        var span = tracer.Spans.Should().Contain(s => s.Name == "CashFlow.BalanceAdjustmentService.AddAdjustment").Which;
+        span.Attributes[TelemetryAttributeKeys.BoundedContext].Should().Be("CashFlow");
+        span.Attributes[TelemetryAttributeKeys.EntityType].Should().Be("BalanceAdjustment");
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+        result.Should().NotBeNull();
     }
 
     [Fact]
@@ -41,7 +72,7 @@ public class BalanceAdjustmentServiceTests
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
-        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer));
+        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer), Tracer);
 
         var result = await service.AddAdjustmentAsync(BankIdOf(repository, "Barclays"), new BalanceAdjustmentCreateDTO
         {
@@ -69,7 +100,7 @@ public class BalanceAdjustmentServiceTests
         var barclays = BankOf(repository, "Barclays");
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 200m, barclays));
         repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Create("Mercado"), barclays, null));
-        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer));
+        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer), Tracer);
 
         var result = await service.AddAdjustmentAsync(barclays.Id, new BalanceAdjustmentCreateDTO
         {
@@ -86,7 +117,7 @@ public class BalanceAdjustmentServiceTests
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
-        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer));
+        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer), Tracer);
         var barclaysId = BankIdOf(repository, "Barclays");
         var first = await service.AddAdjustmentAsync(barclaysId, new BalanceAdjustmentCreateDTO
         {
@@ -109,7 +140,7 @@ public class BalanceAdjustmentServiceTests
     public async Task AddAdjustmentAsync_WithUnresolvableBank_ThrowsArgumentException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer));
+        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer), Tracer);
         var unknownBankId = Guid.NewGuid();
 
         var act = async () => await service.AddAdjustmentAsync(unknownBankId, new BalanceAdjustmentCreateDTO
@@ -125,7 +156,7 @@ public class BalanceAdjustmentServiceTests
     public async Task AddAdjustmentAsync_WithNegativeTargetBalance_ThrowsArgumentException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer));
+        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer), Tracer);
 
         var act = async () => await service.AddAdjustmentAsync(BankIdOf(repository, "Barclays"), new BalanceAdjustmentCreateDTO
         {
@@ -141,7 +172,7 @@ public class BalanceAdjustmentServiceTests
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
-        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer));
+        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer), Tracer);
         var added = await service.AddAdjustmentAsync(BankIdOf(repository, "Barclays"), new BalanceAdjustmentCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
@@ -163,7 +194,7 @@ public class BalanceAdjustmentServiceTests
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
-        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer));
+        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer), Tracer);
         var barclaysId = BankIdOf(repository, "Barclays");
         var added = await service.AddAdjustmentAsync(barclaysId, new BalanceAdjustmentCreateDTO
         {
@@ -198,7 +229,7 @@ public class BalanceAdjustmentServiceTests
         var barclays = BankOf(repository, "Barclays");
         repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 37m, barclays));
         var bankService = new BankService(repository, Tracer);
-        var service = new BalanceAdjustmentService(repository, bankService);
+        var service = new BalanceAdjustmentService(repository, bankService, Tracer);
 
         await service.AddAdjustmentAsync(barclays.Id, new BalanceAdjustmentCreateDTO
         {
@@ -219,7 +250,7 @@ public class BalanceAdjustmentServiceTests
         // Excluding the adjustment by id, regardless of date, sidesteps that entirely.
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
-        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer));
+        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer), Tracer);
         var barclaysId = BankIdOf(repository, "Barclays");
         var added = await service.AddAdjustmentAsync(barclaysId, new BalanceAdjustmentCreateDTO
         {
@@ -241,7 +272,7 @@ public class BalanceAdjustmentServiceTests
     public async Task UpdateAdjustmentAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer));
+        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer), Tracer);
 
         var act = async () => await service.UpdateAdjustmentAsync(BankIdOf(repository, "Barclays"), Guid.NewGuid(), new BalanceAdjustmentUpdateDTO
         {
@@ -257,7 +288,7 @@ public class BalanceAdjustmentServiceTests
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
-        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer));
+        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer), Tracer);
         var barclaysId = BankIdOf(repository, "Barclays");
         var added = await service.AddAdjustmentAsync(barclaysId, new BalanceAdjustmentCreateDTO
         {
@@ -275,7 +306,7 @@ public class BalanceAdjustmentServiceTests
     public async Task DeleteAdjustmentAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer));
+        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer), Tracer);
 
         var act = async () => await service.DeleteAdjustmentAsync(BankIdOf(repository, "Barclays"), Guid.NewGuid());
 
@@ -288,7 +319,7 @@ public class BalanceAdjustmentServiceTests
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
         repository.SetOpeningBalance("Chase", 100m, new DateOnly(2026, 1, 1));
-        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer));
+        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer), Tracer);
         await service.AddAdjustmentAsync(BankIdOf(repository, "Barclays"), new BalanceAdjustmentCreateDTO { Date = new DateOnly(2026, 7, 1), TargetBalance = 150m });
         await service.AddAdjustmentAsync(BankIdOf(repository, "Chase"), new BalanceAdjustmentCreateDTO { Date = new DateOnly(2026, 7, 1), TargetBalance = 120m });
 
@@ -301,7 +332,7 @@ public class BalanceAdjustmentServiceTests
     public void GetAdjustmentsByBank_WithUnrecognizedBank_ReturnsEmptyList()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer));
+        var service = new BalanceAdjustmentService(repository, new BankService(repository, Tracer), Tracer);
 
         var result = service.GetAdjustmentsByBank(Guid.NewGuid());
 
