@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Financial.CashFlow.Domain\Financial.CashFlow.Domain.csproj" />
+    <ProjectReference Include="..\Financial.Shared.Abstractions\Financial.Shared.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

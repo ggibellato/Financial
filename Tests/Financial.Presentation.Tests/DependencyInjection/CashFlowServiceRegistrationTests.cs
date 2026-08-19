@@ -2,6 +2,8 @@ using System.IO;
 using Financial.CashFlow.Application.DependencyInjection;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
+using Financial.Shared.Abstractions;
+using Financial.TestUtilities;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,6 +43,7 @@ public class CashFlowServiceRegistrationTests
             .Build();
 
         var services = new ServiceCollection();
+        services.AddSingleton<ITelemetryTracer>(new RecordingTelemetryTracer());
         services.AddFinancialCashFlowApplication();
         services.AddFinancialCashFlowInfrastructure(configuration);
 
