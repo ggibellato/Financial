@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.Services;
+using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
@@ -9,11 +10,20 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class IncomeSourceServiceTests
 {
+    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new IncomeSourceService(null!);
+        Action act = () => new IncomeSourceService(null!, Tracer);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
+    }
+
+    [Fact]
+    public void Constructor_WithNullTracer_Throws()
+    {
+        Action act = () => new IncomeSourceService(new StubCashFlowRepository(), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Fact]
@@ -24,7 +34,7 @@ public class IncomeSourceServiceTests
         var lottery = IncomeSource.Create("Lottery", IncomeGroup.NonReportable, isActive: false);
         repository.IncomeSources.Add(gleison);
         repository.IncomeSources.Add(lottery);
-        var service = new IncomeSourceService(repository);
+        var service = new IncomeSourceService(repository, Tracer);
 
         var result = service.GetIncomeSources();
 
@@ -43,7 +53,7 @@ public class IncomeSourceServiceTests
     {
         var repository = new StubCashFlowRepository();
         repository.IncomeSources.Add(IncomeSource.Create("RetiredSource", IncomeGroup.NonReportable, isActive: false));
-        var service = new IncomeSourceService(repository);
+        var service = new IncomeSourceService(repository, Tracer);
 
         var result = service.GetIncomeSources();
 
@@ -53,7 +63,7 @@ public class IncomeSourceServiceTests
     [Fact]
     public void GetIncomeSources_WithNoIncomeSources_ReturnsEmptyList()
     {
-        var service = new IncomeSourceService(new StubCashFlowRepository());
+        var service = new IncomeSourceService(new StubCashFlowRepository(), Tracer);
 
         var result = service.GetIncomeSources();
 
