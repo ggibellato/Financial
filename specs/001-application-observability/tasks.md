@@ -133,7 +133,9 @@ Not in the original task list — required to make PR 4b's spans actually appear
 
 ### Suggested PR 4c — Jaeger local overlay (1 file) [US1]
 
-- [ ] T027 [US1] Create `docker-compose.observability.yml` with a `jaeger` Compose profile per [research.md](./research.md) Decision D7 — never referenced by base `docker-compose.yml`
+- [X] T027 [US1] Create `docker-compose.observability.yml` with a `jaeger` Compose profile per [research.md](./research.md) Decision D7 — never referenced by base `docker-compose.yml`. `app` shares the same `["jaeger"]` profile in this file, so composing the overlay in only changes anything (both the new env vars and `app` itself starting) when `--profile jaeger` is also passed — `docker compose -f docker-compose.yml -f docker-compose.observability.yml up` (no `--profile`) starts nothing from either file, avoiding a half-applied state. Jaeger's all-in-one image runs in-memory (`SPAN_STORAGE_TYPE` unset = ephemeral default), no volume declared.
+
+**Manual verification**: `docker compose -f docker-compose.yml -f docker-compose.observability.yml --profile jaeger up --build` — both containers started, `GET /api/v1/financial/sync-status` returned 200 a few times, then `curl http://localhost:16686/api/traces?service=Financial.Api` returned real traces with ASP.NET Core auto-instrumentation spans (`http.route`, `http.request.method`, `http.response.status_code` — no PII/financial values), the first end-to-end confirmation that PR 4a's OTel wiring actually reaches Jaeger. No errors in either container's logs. Also re-verified `docker compose -f docker-compose.yml up` alone (no overlay) still starts and behaves exactly as before (Constitution Principle VIII).
 
 ### Suggested PR 4d — CashFlow's first traced use case, MVP checkpoint (2 files) [US1]
 
