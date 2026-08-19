@@ -1,6 +1,8 @@
 using Financial.Shared.Abstractions;
 using Financial.Shared.Infrastructure.Resilience;
 using Financial.Shared.Infrastructure.Sync;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Shared.Infrastructure.Persistence;
 
@@ -15,6 +17,7 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
     private readonly int _maxRetries;
     private readonly TimeSpan _flushTimeout;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger _logger;
     private readonly object _lock = new();
 
     private string? _pendingJson;
@@ -30,8 +33,9 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
         IJsonStorage inner,
         TimeSpan debounceWindow,
         TimeProvider? timeProvider = null,
-        ITelemetryTracer? tracer = null)
-        : this(inner, debounceWindow, timeProvider, DefaultMaxRetries, DefaultFlushTimeout, tracer)
+        ITelemetryTracer? tracer = null,
+        ILogger? logger = null)
+        : this(inner, debounceWindow, timeProvider, DefaultMaxRetries, DefaultFlushTimeout, tracer, logger)
     {
     }
 
@@ -41,7 +45,8 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
         TimeProvider? timeProvider,
         int maxRetries,
         TimeSpan flushTimeout,
-        ITelemetryTracer? tracer = null)
+        ITelemetryTracer? tracer = null,
+        ILogger? logger = null)
     {
         _inner = inner ?? throw new ArgumentNullException(nameof(inner));
         _debounceWindow = debounceWindow;
@@ -49,6 +54,7 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
         _maxRetries = maxRetries;
         _flushTimeout = flushTimeout;
         _tracer = tracer ?? NullTelemetryTracer.Instance;
+        _logger = logger ?? NullLogger.Instance;
     }
 
     public async Task<string> ReadAsync()
@@ -158,7 +164,11 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
                     await _inner.WriteAsync(jsonToSave).ConfigureAwait(false);
                     return true;
                 },
-                _maxRetries).ConfigureAwait(false);
+                _maxRetries,
+                // The retry policy's message carries only the exception type and retry counters,
+                // never document content - safe to log verbatim (logging-audit.md priority 3:
+                // a retry firing must be visible in the log stream).
+                message => _logger.LogWarning("JsonStorage.Save {RetryDetail}", message)).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
             HandleSaveSuccess();
@@ -167,6 +177,9 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
         {
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
             span.RecordException(ex);
+            // Exception type only - storage exception messages may embed file paths/identifiers,
+            // and the document content itself must never reach the log stream.
+            _logger.LogError("JsonStorage.Save failed after retries with {ErrorType}", ex.GetType().Name);
             HandleSaveFailure(ex);
         }
     }

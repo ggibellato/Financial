@@ -36,7 +36,8 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
         services.AddHttpClient<YahooFinanceService>();
         services.AddSingleton<IFinanceService>(sp => new FallbackFinanceService(
             sp.GetRequiredService<GoogleFinanceService>(),
-            sp.GetRequiredService<YahooFinanceService>()));
+            sp.GetRequiredService<YahooFinanceService>(),
+            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FallbackFinanceService>>()));
         services.AddSingleton<StatusInvestFinanceService>();
         services.AddSingleton<IAssetPriceFetcher, StandardAssetPriceFetcher>();
         services.AddSingleton<IAssetPriceFetcher, CryptocurrencyAssetPriceFetcher>();
@@ -49,7 +50,8 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
             return new InvestmentRepositoryFactory(
                 sp.GetRequiredService<IInvestmentsSerializer>(),
                 sp.GetService<IRemoteFileClientFactory>(),
-                sp.GetService<ITelemetryTracer>()).Create(options);
+                sp.GetService<ITelemetryTracer>(),
+                sp.GetService<Microsoft.Extensions.Logging.ILogger<DebouncedJsonStorage>>()).Create(options);
         });
         services.AddSingleton<IAssetPriceService, AssetPriceService>();
         services.AddHostedService<ShutdownFlushHostedService<IInvestmentRepository>>();

@@ -1,4 +1,5 @@
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.Shared.Infrastructure.Persistence;
 
@@ -21,11 +22,12 @@ public static class JsonStorageFactory
         IRemoteFileClientFactory? remoteFileClientFactory,
         string credentialsConfigKey,
         string providerName,
-        ITelemetryTracer? tracer = null)
+        ITelemetryTracer? tracer = null,
+        ILogger? logger = null)
     {
         var storage = GoogleDriveStorageFactory.Create(
             credentialsPath, driveFilePath, remoteFileClientFactory, credentialsConfigKey, providerName, tracer);
 
-        return new DebouncedJsonStorage(storage, DebounceWindow, tracer: tracer);
+        return new DebouncedJsonStorage(storage, DebounceWindow, tracer: tracer, logger: logger);
     }
 }
