@@ -45,18 +45,17 @@ builder.Services
      {
          options.GroupNameFormat = "'v'VVV";
          options.SubstituteApiVersionInUrl = true;
-     });
-
-builder.Services
+     })
     .AddOpenApi(options =>
     {
-        options.AddDocumentTransformer((document, _, _) =>
+        options.Document.AddDocumentTransformer((document, _, _) =>
         {
             document.Servers = [new OpenApiServer { Url = apiRoutePrefix }];
             return Task.CompletedTask;
         });
-    })
-    .AddControllers(options => options.Filters.Add(new ProducesAttribute("application/json")));
+    });
+
+builder.Services.AddControllers(options => options.Filters.Add(new ProducesAttribute("application/json")));
 
 const string CorsOriginsConfigurationKey = "Cors:AllowedOrigins";
 
@@ -92,7 +91,7 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi().WithDocumentPerVersion();
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint($"/openapi/{apiVersionGroupName}.json", $"Financial API {apiVersionGroupName}");
