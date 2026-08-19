@@ -433,7 +433,17 @@ internal sealed class StubMensaisService : IMensaisService
         return Task.CompletedTask;
     }
 
-    public IReadOnlyList<RecurringBillDTO> GetBills() => Bills;
+    public Exception? ThrowOnGetBills { get; set; }
+
+    public IReadOnlyList<RecurringBillDTO> GetBills()
+    {
+        if (ThrowOnGetBills is { } ex)
+        {
+            throw ex;
+        }
+
+        return Bills;
+    }
 
     public Task<RecurringBillDTO> UpdateBillAsync(Guid id, UpdateRecurringBillDTO request)
     {
@@ -494,9 +504,16 @@ internal sealed class StubControleMaeService : IControleMaeService
         return Entries.Where(e => e.Date >= fromDate).ToList();
     }
 
+    public Exception? ThrowOnGetTotals { get; set; }
+
     public MaeLedgerTotalsDTO GetTotals()
     {
         GetTotalsCallCount++;
+        if (ThrowOnGetTotals is { } ex)
+        {
+            throw ex;
+        }
+
         return Totals;
     }
 

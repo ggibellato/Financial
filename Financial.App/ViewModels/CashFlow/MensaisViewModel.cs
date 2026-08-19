@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
+using Microsoft.Extensions.Logging;
 using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;
@@ -19,6 +20,7 @@ public class MensaisViewModel : ViewModelBase
 {
     private readonly IMensaisService _mensaisService;
     private readonly Func<string, bool> _confirm;
+    private readonly ILogger<MensaisViewModel> _logger;
 
     private int _displayYear;
     private int _displayMonth;
@@ -71,10 +73,11 @@ public class MensaisViewModel : ViewModelBase
 
     public RelayCommand RetryCommand { get; }
 
-    public MensaisViewModel(IMensaisService mensaisService, Func<string, bool> confirm)
+    public MensaisViewModel(IMensaisService mensaisService, Func<string, bool> confirm, ILogger<MensaisViewModel> logger)
     {
         _mensaisService = mensaisService ?? throw new ArgumentNullException(nameof(mensaisService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         var today = DateTime.Today;
         _displayYear = today.Year;
@@ -114,6 +117,8 @@ public class MensaisViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            // error.type only - the message may embed bill values (FR-014).
+            _logger.LogError("Mensais refresh failed with {ErrorType}", ex.GetType().Name);
             if (requestId == _refreshRequestId)
             {
                 Error = ex.Message;
@@ -371,6 +376,7 @@ public class MensaisViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            _logger.LogError("Mensais delete bill failed with {ErrorType}", ex.GetType().Name);
             DeleteError = ex.Message;
         }
     }
@@ -418,6 +424,7 @@ public class MensaisViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            _logger.LogError("Mensais reset-all-to-unset failed with {ErrorType}", ex.GetType().Name);
             ResetError = ex.Message;
         }
         finally

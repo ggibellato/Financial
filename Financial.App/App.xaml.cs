@@ -74,15 +74,18 @@ namespace Financial.Presentation.App
                     services.AddTransient<ReservaViewModel>(sp => new ReservaViewModel(
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IReserveService>(),
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IReserveBucketService>(),
-                        msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes));
+                        msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes,
+                        sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ReservaViewModel>>()));
                     services.AddTransient<ReservaView>();
                     services.AddTransient<MensaisViewModel>(sp => new MensaisViewModel(
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IMensaisService>(),
-                        msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes));
+                        msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes,
+                        sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<MensaisViewModel>>()));
                     services.AddTransient<MensaisView>();
                     services.AddTransient<ControleMaeViewModel>(sp => new ControleMaeViewModel(
                         sp.GetRequiredService<Financial.CashFlow.Application.Interfaces.IControleMaeService>(),
-                        msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes));
+                        msg => MessageBox.Show(msg, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes,
+                        sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ControleMaeViewModel>>()));
                     services.AddTransient<ControleMaeView>();
                     services.AddTransient<InvestmentSnapshotsViewModel>();
                     services.AddTransient<InvestmentSnapshotsView>();

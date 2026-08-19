@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
+using Microsoft.Extensions.Logging;
 using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;
@@ -22,6 +23,7 @@ public class ControleMaeViewModel : ViewModelBase
 
     private readonly IControleMaeService _controleMaeService;
     private readonly Func<string, bool> _confirm;
+    private readonly ILogger<ControleMaeViewModel> _logger;
 
     private DateTime _fromDate;
     private bool _isLoading = true;
@@ -79,10 +81,11 @@ public class ControleMaeViewModel : ViewModelBase
 
     public RelayCommand RetryCommand { get; }
 
-    public ControleMaeViewModel(IControleMaeService controleMaeService, Func<string, bool> confirm)
+    public ControleMaeViewModel(IControleMaeService controleMaeService, Func<string, bool> confirm, ILogger<ControleMaeViewModel> logger)
     {
         _controleMaeService = controleMaeService ?? throw new ArgumentNullException(nameof(controleMaeService));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         _fromDate = new DateTime(DateTime.Today.Year - 1, 1, 1);
 
@@ -124,6 +127,8 @@ public class ControleMaeViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            // error.type only - the message may embed ledger values (FR-014).
+            _logger.LogError("ControleMae entries refresh failed with {ErrorType}", ex.GetType().Name);
             if (requestId == _refreshEntriesRequestId)
             {
                 Error = ex.Message;
@@ -149,9 +154,11 @@ public class ControleMaeViewModel : ViewModelBase
         {
             Totals = await Task.Run(() => _controleMaeService.GetTotals());
         }
-        catch
+        catch (Exception ex)
         {
-            // Supplementary data; keep the last known totals on failure.
+            // Supplementary data; keep the last known totals on failure - but the degradation
+            // itself must be visible in the log stream (logging-audit.md).
+            _logger.LogWarning("ControleMae totals refresh failed with {ErrorType}; keeping last known totals", ex.GetType().Name);
         }
     }
 
@@ -397,6 +404,7 @@ public class ControleMaeViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            _logger.LogError("ControleMae delete entry failed with {ErrorType}", ex.GetType().Name);
             DeleteError = ex.Message;
         }
     }

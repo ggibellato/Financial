@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.Presentation.App.ViewModels.CashFlow;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.Presentation.Tests.ViewModels.CashFlow;
@@ -9,10 +10,10 @@ public class MensaisViewModelTests
     private static (MensaisViewModel ViewModel, StubMensaisService Service) CreateViewModel(bool confirm = true) =>
         CreateViewModel(_ => confirm);
 
-    private static (MensaisViewModel ViewModel, StubMensaisService Service) CreateViewModel(Func<string, bool> confirm)
+    private static (MensaisViewModel ViewModel, StubMensaisService Service) CreateViewModel(Func<string, bool> confirm, RecordingLogger<MensaisViewModel>? logger = null)
     {
         var service = new StubMensaisService();
-        var viewModel = new MensaisViewModel(service, confirm);
+        var viewModel = new MensaisViewModel(service, confirm, logger ?? new RecordingLogger<MensaisViewModel>());
         return (viewModel, service);
     }
 
@@ -153,5 +154,25 @@ public class MensaisViewModelTests
         await viewModel.ResetAllToUnsetAsync();
 
         service.ResetAllToUnsetCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task RefreshAsync_ServiceFails_LogsAnErrorWithTheErrorTypeOnly()
+    {
+        var logger = new RecordingLogger<MensaisViewModel>();
+        var (viewModel, service) = CreateViewModel(_ => true, logger);
+        service.ThrowOnGetBills = new InvalidOperationException("bill Rent value 1234.56");
+
+        await viewModel.RefreshAsync();
+
+        // The constructor's background refresh may also hit the failing service, so more than
+        // one identical error can be recorded - assert on all of them.
+        var errors = logger.Entries.Where(e => e.Level == Microsoft.Extensions.Logging.LogLevel.Error).ToList();
+        errors.Should().NotBeEmpty();
+        errors.Should().AllSatisfy(e =>
+        {
+            e.Message.Should().Contain(nameof(InvalidOperationException));
+            e.Message.Should().NotContain("1234.56", "exception messages may embed bill values and must stay out of the log");
+        });
     }
 }
