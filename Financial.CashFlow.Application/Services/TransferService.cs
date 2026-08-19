@@ -36,14 +36,13 @@ public sealed class TransferService : ITransferService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, transfer.Id.ToString());
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "AddTransfer");
             return ToDto(transfer);
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -63,14 +62,13 @@ public sealed class TransferService : ITransferService
             _repository.UpdateTransfer(transfer);
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateTransfer");
             return ToDto(transfer);
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -86,13 +84,12 @@ public sealed class TransferService : ITransferService
             _repository.DeleteTransfer(id);
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteTransfer");
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -107,14 +104,13 @@ public sealed class TransferService : ITransferService
                 .Select(ToDto)
                 .ToList();
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetTransfersByMonth");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -127,7 +123,7 @@ public sealed class TransferService : ITransferService
         {
             if (!EntityIdResolver.TryResolve(bankId, _repository.GetBanks(), b => b.Id, out var bank))
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetTransfersByBank");
                 return Array.Empty<TransferDTO>();
             }
@@ -137,14 +133,13 @@ public sealed class TransferService : ITransferService
                 .Select(ToDto)
                 .ToList();
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetTransfersByBank");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -152,11 +147,7 @@ public sealed class TransferService : ITransferService
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        var span = _tracer.StartSpan($"CashFlow.TransferService.{operationName}");
-        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
-        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
-        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
-        return span;
+        return _tracer.StartServiceSpan("CashFlow", nameof(TransferService), operationName, EntityType);
     }
 
     private Transfer FindTransferOrThrow(Guid id) =>

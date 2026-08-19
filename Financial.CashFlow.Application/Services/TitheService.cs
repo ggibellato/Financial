@@ -36,7 +36,7 @@ public sealed class TitheService : ITitheService
                 .Where(e => e.Date.Year == year && e.Date.Month == month && e.Category.IsTithe && e.CountsAsTithe)
                 .Sum(e => e.Value);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetTitheSummary");
             return new TitheSummaryDTO
             {
@@ -46,8 +46,7 @@ public sealed class TitheService : ITitheService
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -55,10 +54,6 @@ public sealed class TitheService : ITitheService
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        var span = _tracer.StartSpan($"CashFlow.TitheService.{operationName}");
-        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
-        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
-        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
-        return span;
+        return _tracer.StartServiceSpan("CashFlow", nameof(TitheService), operationName, EntityType);
     }
 }

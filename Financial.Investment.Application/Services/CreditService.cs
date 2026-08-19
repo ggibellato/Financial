@@ -45,14 +45,13 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                     return true;
                 }).ConfigureAwait(false);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "AddCredit");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -65,7 +64,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
         {
             if (request.Id == Guid.Empty)
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "UpdateCredit");
                 return null;
             }
@@ -84,14 +83,13 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                     return asset.UpdateCredit(updatedCredit);
                 }).ConfigureAwait(false);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateCredit");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -104,7 +102,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
         {
             if (request.Id == Guid.Empty)
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "DeleteCredit");
                 return null;
             }
@@ -117,14 +115,13 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                 request.AssetName,
                 asset => asset.RemoveCredit(request.Id)).ConfigureAwait(false);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteCredit");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -136,7 +133,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
         {
             if (string.IsNullOrWhiteSpace(brokerName))
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetCreditsByBroker");
                 return Array.Empty<CreditDTO>();
             }
@@ -147,14 +144,13 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                 .OrderByDescending(credit => credit.Date)
                 .ToList();
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetCreditsByBroker");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -166,7 +162,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
         {
             if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetCreditsByPortfolio");
                 return Array.Empty<CreditDTO>();
             }
@@ -177,14 +173,13 @@ public sealed class CreditService : ICreditService, ICreditQueryService
                 .OrderByDescending(credit => credit.Date)
                 .ToList();
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetCreditsByPortfolio");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -192,10 +187,6 @@ public sealed class CreditService : ICreditService, ICreditQueryService
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        var span = _tracer.StartSpan($"Investment.CreditService.{operationName}");
-        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
-        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
-        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
-        return span;
+        return _tracer.StartServiceSpan("Investment", nameof(CreditService), operationName, EntityType);
     }
 }

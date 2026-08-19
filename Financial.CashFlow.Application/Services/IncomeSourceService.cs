@@ -28,14 +28,13 @@ public sealed class IncomeSourceService : IIncomeSourceService
         {
             var result = _repository.GetIncomeSources().Select(ToDto).ToList();
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetIncomeSources");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -43,11 +42,7 @@ public sealed class IncomeSourceService : IIncomeSourceService
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        var span = _tracer.StartSpan($"CashFlow.IncomeSourceService.{operationName}");
-        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
-        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
-        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
-        return span;
+        return _tracer.StartServiceSpan("CashFlow", nameof(IncomeSourceService), operationName, EntityType);
     }
 
     private static IncomeSourceDTO ToDto(IncomeSource source) => new()

@@ -29,14 +29,13 @@ public sealed class BankService : IBankService
         {
             var result = _repository.GetBanks().Select(ToDto).ToList();
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBanks");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -57,14 +56,13 @@ public sealed class BankService : IBankService
             bank!.SetOpeningBalance(request.OpeningBalance, request.OpeningBalanceDate);
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateOpeningBalance");
             return ToDto(bank);
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -88,14 +86,13 @@ public sealed class BankService : IBankService
                 })
                 .ToList();
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBankBalancesByMonth");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -120,14 +117,13 @@ public sealed class BankService : IBankService
                 _repository.GetBalanceAdjustments(),
                 excludingAdjustmentId);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBankBalanceAsOf");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -135,11 +131,7 @@ public sealed class BankService : IBankService
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        var span = _tracer.StartSpan($"CashFlow.BankService.{operationName}");
-        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
-        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
-        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
-        return span;
+        return _tracer.StartServiceSpan("CashFlow", nameof(BankService), operationName, EntityType);
     }
 
     private static decimal ComputeBalance(

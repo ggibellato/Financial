@@ -57,14 +57,13 @@ public sealed class CardStatementService : ICardStatementService
                 await _repository.SaveChangesAsync().ConfigureAwait(false);
             }
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetStatementsForMonth");
             return existingStatements.Select(s => ToDto(s)).ToList();
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -81,7 +80,7 @@ public sealed class CardStatementService : ICardStatementService
 
             if (statement.IsPaid)
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "MarkStatementPaid");
                 return ToDto(statement);
             }
@@ -120,14 +119,13 @@ public sealed class CardStatementService : ICardStatementService
                 throw;
             }
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "MarkStatementPaid");
             return ToDto(statement, warning);
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -142,7 +140,7 @@ public sealed class CardStatementService : ICardStatementService
 
             if (!statement.IsPaid)
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "UnmarkStatementPaid");
                 return ToDto(statement);
             }
@@ -173,14 +171,13 @@ public sealed class CardStatementService : ICardStatementService
                 throw;
             }
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UnmarkStatementPaid");
             return ToDto(statement);
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -188,11 +185,7 @@ public sealed class CardStatementService : ICardStatementService
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        var span = _tracer.StartSpan($"CashFlow.CardStatementService.{operationName}");
-        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
-        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
-        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
-        return span;
+        return _tracer.StartServiceSpan("CashFlow", nameof(CardStatementService), operationName, EntityType);
     }
 
     private CardStatement FindStatementOrThrow(Guid id) =>

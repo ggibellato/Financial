@@ -44,14 +44,13 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             var monthsElapsed = NumberOfMonthsForAverage(year);
 
             var result = BuildCategoryTotalDtos(BuildAllCategorySeriesForYear(year), monthsElapsed);
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetCategoryTotalsForYear");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -59,11 +58,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        var span = _tracer.StartSpan($"CashFlow.AnnualSummaryService.{operationName}");
-        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
-        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
-        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
-        return span;
+        return _tracer.StartServiceSpan("CashFlow", nameof(AnnualSummaryService), operationName, EntityType);
     }
 
     private static List<CategoryAnnualTotalDTO> BuildCategoryTotalDtos(
@@ -142,7 +137,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
                 SumOfMonthResults = relevantDiffsSeries.Sum()
             };
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetInvestmentAnnualResultForYear");
             return new InvestmentAnnualResultDTO
             {
@@ -152,8 +147,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -221,14 +215,13 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             var monthsElapsed = NumberOfMonthsForAverage(year);
 
             var result = BuildIncomeSummaryDto(display, forAverage, monthsElapsed);
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetIncomeSummaryForYear");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -335,7 +328,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             var resultadoSeries = AnnualResultCalculator.ComputeResultado(incomeDisplay.SalaryAfterTaxes, totalDespesasSeries, investimento.Display);
             var resultadoForAverageSeries = AnnualResultCalculator.ComputeResultado(incomeForAverage.SalaryAfterTaxes, totalDespesasForAverageSeries, investimento.ForAverage);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetCategoryTotalsAnnualForYear");
             return new CategoryTotalsAnnualDTO
             {
@@ -351,8 +344,7 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -369,14 +361,13 @@ public sealed class AnnualSummaryService : IAnnualSummaryService
             AddCategoryTotal(incomeAverages, categoryAverages, categories);
             AddIncomeToFinalResult(incomeAverages, categoryAverages);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetHistoricSummaryAverageFromYear");
             return [.. categoryAverages];
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }

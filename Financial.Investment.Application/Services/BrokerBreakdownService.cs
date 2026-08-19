@@ -29,7 +29,7 @@ public sealed class BrokerBreakdownService : IBrokerBreakdownService
         {
             if (string.IsNullOrWhiteSpace(brokerName))
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetBrokerBreakdown");
                 return [];
             }
@@ -37,7 +37,7 @@ public sealed class BrokerBreakdownService : IBrokerBreakdownService
             var broker = _repository.GetBrokerList(scope).FirstOrDefault(b => b.Name == brokerName);
             if (broker is null)
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetBrokerBreakdown");
                 return [];
             }
@@ -46,14 +46,13 @@ public sealed class BrokerBreakdownService : IBrokerBreakdownService
                 ? BrokerBreakdownBuilder.Build(broker, CalculateGrossBought)
                 : BrokerBreakdownBuilder.Build(broker, CalculateNetInvested);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBrokerBreakdown");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -61,11 +60,7 @@ public sealed class BrokerBreakdownService : IBrokerBreakdownService
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        var span = _tracer.StartSpan($"Investment.BrokerBreakdownService.{operationName}");
-        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
-        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
-        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
-        return span;
+        return _tracer.StartServiceSpan("Investment", nameof(BrokerBreakdownService), operationName, EntityType);
     }
 
     private static decimal CalculateNetInvested(Asset asset)

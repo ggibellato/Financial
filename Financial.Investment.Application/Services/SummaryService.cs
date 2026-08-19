@@ -29,7 +29,7 @@ public sealed class SummaryService : ISummaryService
         {
             if (string.IsNullOrWhiteSpace(brokerName))
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetBrokerSummary");
                 return new AggregatedSummaryDTO();
             }
@@ -37,7 +37,7 @@ public sealed class SummaryService : ISummaryService
             var broker = _repository.GetBrokerList(scope).FirstOrDefault(b => b.Name == brokerName);
             if (broker is null)
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetBrokerSummary");
                 return new AggregatedSummaryDTO();
             }
@@ -45,14 +45,13 @@ public sealed class SummaryService : ISummaryService
             var assets = broker.Portfolios.SelectMany(p => p.Assets);
 
             var result = Aggregate(assets);
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBrokerSummary");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -64,7 +63,7 @@ public sealed class SummaryService : ISummaryService
         {
             if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetPortfolioSummary");
                 return new AggregatedSummaryDTO();
             }
@@ -72,14 +71,13 @@ public sealed class SummaryService : ISummaryService
             var assets = _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope);
             var result = Aggregate(assets);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetPortfolioSummary");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -87,11 +85,7 @@ public sealed class SummaryService : ISummaryService
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        var span = _tracer.StartSpan($"Investment.SummaryService.{operationName}");
-        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
-        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
-        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
-        return span;
+        return _tracer.StartServiceSpan("Investment", nameof(SummaryService), operationName, EntityType);
     }
 
     private static AggregatedSummaryDTO Aggregate(IEnumerable<Asset> assets)

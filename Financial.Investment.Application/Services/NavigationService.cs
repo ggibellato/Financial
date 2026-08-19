@@ -41,14 +41,13 @@ public sealed class NavigationService : INavigationService
                 rootNode.Children.Add(NavigationMapper.BuildBrokerTreeNode(broker));
             }
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetNavigationTree");
             return rootNode;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -60,7 +59,7 @@ public sealed class NavigationService : INavigationService
         {
             if (AssetContextValidator.IsInvalid(brokerName, portfolioName, assetName))
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetAssetDetails");
                 return null;
             }
@@ -69,7 +68,7 @@ public sealed class NavigationService : INavigationService
 
             if (asset == null)
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetAssetDetails");
                 return null;
             }
@@ -91,7 +90,7 @@ public sealed class NavigationService : INavigationService
 
             var (totalBought, totalSold, totalCredits) = NavigationMapper.CalculateTotals(asset);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetAssetDetails");
             return new AssetDetailsDTO
             {
@@ -121,8 +120,7 @@ public sealed class NavigationService : INavigationService
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -135,14 +133,13 @@ public sealed class NavigationService : INavigationService
             var brokers = _repository.GetBrokerList(scope).OrderBy(b => b.Name, StringComparer.CurrentCultureIgnoreCase);
             var result = brokers.Select(broker => NavigationMapper.MapBroker(broker, scope)).ToList();
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBrokers");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -156,14 +153,13 @@ public sealed class NavigationService : INavigationService
                 .Select(asset => NavigationMapper.MapAsset(asset, InvestmentScope.Active))
                 .ToList();
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetAssetsByBrokerPortfolio");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -171,10 +167,6 @@ public sealed class NavigationService : INavigationService
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        var span = _tracer.StartSpan($"Investment.NavigationService.{operationName}");
-        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
-        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
-        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
-        return span;
+        return _tracer.StartServiceSpan("Investment", nameof(NavigationService), operationName, EntityType);
     }
 }
