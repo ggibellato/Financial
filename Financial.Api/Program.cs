@@ -7,6 +7,7 @@ using Financial.Investment.Application.DependencyInjection;
 using Financial.Investment.Infrastructure.DependencyInjection;
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,15 +24,22 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
             retainedFileCountLimit: 14);
 });
 
+var defaultApiVersion = new ApiVersion(1, 0);
+const string ApiRouteSegment = "financial";
+var apiVersionGroupName = $"v{defaultApiVersion.MajorVersion}";
+var apiRoutePrefix = $"/api/{apiVersionGroupName}/{ApiRouteSegment}";
+
+builder.Services.AddProblemDetails();
+
 builder.Services
-    .AddProblemDetails()
     .AddApiVersioning(options =>
     {
-        options.DefaultApiVersion = new ApiVersion(1, 0);
+        options.DefaultApiVersion = defaultApiVersion;
         options.AssumeDefaultVersionWhenUnspecified = true;
         options.ReportApiVersions = true;
         options.ApiVersionReader = new UrlSegmentApiVersionReader();
     })
+    .AddMvc()
     .AddApiExplorer(options =>
      {
          options.GroupNameFormat = "'v'VVV";
@@ -39,7 +47,14 @@ builder.Services
      });
 
 builder.Services
-    .AddOpenApi()
+    .AddOpenApi(options =>
+    {
+        options.AddDocumentTransformer((document, _, _) =>
+        {
+            document.Servers = [new OpenApiServer { Url = apiRoutePrefix }];
+            return Task.CompletedTask;
+        });
+    })
     .AddControllers(options => options.Filters.Add(new ProducesAttribute("application/json")));
 
 const string CorsOriginsConfigurationKey = "Cors:AllowedOrigins";
@@ -78,7 +93,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/openapi/v1.json", "Financial API v1");
+        options.SwaggerEndpoint($"/openapi/{apiVersionGroupName}.json", $"Financial API {apiVersionGroupName}");
         options.RoutePrefix = "swagger";
     });
     app.UseDeveloperExceptionPage();
@@ -93,7 +108,8 @@ app.UseMiddleware<DomainExceptionMappingMiddleware>();
 app.UseCors();
 app.UseStaticFiles();
 
-app.MapControllers();
+var api = app.MapGroup($"/api/v{{version:apiVersion}}/{ApiRouteSegment}");
+api.MapControllers();
 
 app.MapFallbackToFile("index.html");
 
