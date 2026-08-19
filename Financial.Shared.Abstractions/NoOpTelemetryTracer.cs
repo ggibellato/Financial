@@ -1,14 +1,16 @@
-using Financial.Shared.Abstractions;
-
-namespace Financial.Integrations.Observability;
+namespace Financial.Shared.Abstractions;
 
 /// <summary>
-/// ITelemetryTracer implementation used when Observability:Enabled is false, so callers never
-/// need to check whether observability is on (FR-006a). Returns the same cached no-op span
-/// instance every time — no allocation, no behavior, per call.
+/// The contract's null object: an ITelemetryTracer whose spans do nothing, so callers never need
+/// to check whether observability is available before using it (FR-006a). Lives beside the
+/// interface for the same reason NullLogger lives in Microsoft.Extensions.Logging.Abstractions -
+/// "safe when absent" is part of the contract itself. Returns the same cached no-op span
+/// instance every time: no allocation, no behavior, per call.
 /// </summary>
 public sealed class NoOpTelemetryTracer : ITelemetryTracer
 {
+    public static readonly NoOpTelemetryTracer Instance = new();
+
     public ITelemetrySpan StartSpan(string name) => NoOpTelemetrySpan.Instance;
 
     private sealed class NoOpTelemetrySpan : ITelemetrySpan

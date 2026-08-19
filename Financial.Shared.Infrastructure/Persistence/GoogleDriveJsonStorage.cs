@@ -27,7 +27,7 @@ public sealed class GoogleDriveJsonStorage : IJsonStorage
         _download = download ?? throw new ArgumentNullException(nameof(download));
         _upload = upload ?? throw new ArgumentNullException(nameof(upload));
         _driveFilePath = ResolveDriveFilePath(driveFilePath);
-        _tracer = tracer ?? NullTelemetryTracer.Instance;
+        _tracer = tracer ?? NoOpTelemetryTracer.Instance;
     }
 
     public Task<string> ReadAsync() => Task.Run(() =>
@@ -36,13 +36,12 @@ public sealed class GoogleDriveJsonStorage : IJsonStorage
         try
         {
             var content = _download(_driveFilePath);
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             return content;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     });
@@ -53,12 +52,11 @@ public sealed class GoogleDriveJsonStorage : IJsonStorage
         try
         {
             _upload(_driveFilePath, json);
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     });

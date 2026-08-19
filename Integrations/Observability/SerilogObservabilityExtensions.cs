@@ -10,8 +10,7 @@ public static class SerilogObservabilityExtensions
         this LoggerConfiguration loggerConfiguration,
         IConfiguration configuration)
     {
-        var options = new ObservabilityOptions();
-        configuration.GetSection(ObservabilityOptions.SectionName).Bind(options);
+        var options = ObservabilityOptions.From(configuration);
 
         if (!options.Enabled)
         {
