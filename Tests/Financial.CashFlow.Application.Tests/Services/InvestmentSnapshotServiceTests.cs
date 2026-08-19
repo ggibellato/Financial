@@ -7,6 +7,7 @@ using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -15,18 +16,19 @@ public class InvestmentSnapshotServiceTests
     private static readonly int CurrentYear = DateTime.Now.Year;
     private static readonly int PastYear = CurrentYear - 5;
     private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+    private static readonly Microsoft.Extensions.Logging.ILogger<InvestmentSnapshotService> Logger = NullLogger<InvestmentSnapshotService>.Instance;
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new InvestmentSnapshotService(null!, Tracer);
+        Action act = () => new InvestmentSnapshotService(null!, Tracer, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new InvestmentSnapshotService(new StubCashFlowRepository(), null!);
+        Action act = () => new InvestmentSnapshotService(new StubCashFlowRepository(), null!, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
@@ -34,7 +36,7 @@ public class InvestmentSnapshotServiceTests
     public async Task GetSnapshotsForMonthAsync_FirstCall_GeneratesExactlyElevenSnapshotsDefaultingToZero()
     {
         var repository = CreateRepository();
-        var service = new InvestmentSnapshotService(repository, Tracer);
+        var service = new InvestmentSnapshotService(repository, Tracer, Logger);
 
         var result = await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
 
@@ -50,7 +52,7 @@ public class InvestmentSnapshotServiceTests
     public async Task GetSnapshotsForMonthAsync_MarksTheSixLiabilityAccountsCorrectly()
     {
         var repository = CreateRepository();
-        var service = new InvestmentSnapshotService(repository, Tracer);
+        var service = new InvestmentSnapshotService(repository, Tracer, Logger);
 
         var result = await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
 
@@ -67,7 +69,7 @@ public class InvestmentSnapshotServiceTests
     public async Task GetSnapshotsForMonthAsync_SecondCallSameMonth_DoesNotCreateDuplicates()
     {
         var repository = CreateRepository();
-        var service = new InvestmentSnapshotService(repository, Tracer);
+        var service = new InvestmentSnapshotService(repository, Tracer, Logger);
 
         await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
         var result = await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
@@ -85,7 +87,7 @@ public class InvestmentSnapshotServiceTests
     {
         var repository = CreateRepository();
         repository.InvestmentAccounts.Add(InvestmentAccount.Create("EverydaySaver", isActive: false, isLiability: false));
-        var service = new InvestmentSnapshotService(repository, Tracer);
+        var service = new InvestmentSnapshotService(repository, Tracer, Logger);
 
         var result = await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
 
@@ -97,7 +99,7 @@ public class InvestmentSnapshotServiceTests
     public async Task GetSnapshotsForMonthAsync_PastYearWithNoExistingData_ReturnsEmptyNotAllAccounts()
     {
         var repository = CreateRepository();
-        var service = new InvestmentSnapshotService(repository, Tracer);
+        var service = new InvestmentSnapshotService(repository, Tracer, Logger);
 
         var result = await service.GetSnapshotsForMonthAsync(PastYear, 7);
 
@@ -111,7 +113,7 @@ public class InvestmentSnapshotServiceTests
         var repository = CreateRepository();
         var chaseSave = repository.InvestmentAccounts.First(a => a.Name == "ChaseSave");
         repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(chaseSave, PastYear, 7, 100m));
-        var service = new InvestmentSnapshotService(repository, Tracer);
+        var service = new InvestmentSnapshotService(repository, Tracer, Logger);
 
         var result = await service.GetSnapshotsForMonthAsync(PastYear, 7);
 
@@ -122,7 +124,7 @@ public class InvestmentSnapshotServiceTests
     public async Task UpdateSnapshotValueAsync_UpdatesOnlyTheTargetedSnapshot()
     {
         var repository = CreateRepository();
-        var service = new InvestmentSnapshotService(repository, Tracer);
+        var service = new InvestmentSnapshotService(repository, Tracer, Logger);
         await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
         await service.GetSnapshotsForMonthAsync(CurrentYear, 8);
         var julySnapshot = repository.InvestmentSnapshots.Single(s => s.Month == 7 && s.Account.Name == "ChaseSave");
@@ -143,7 +145,7 @@ public class InvestmentSnapshotServiceTests
     public async Task UpdateSnapshotValueAsync_WithNegativeValue_ThrowsArgumentException()
     {
         var repository = CreateRepository();
-        var service = new InvestmentSnapshotService(repository, Tracer);
+        var service = new InvestmentSnapshotService(repository, Tracer, Logger);
         await service.GetSnapshotsForMonthAsync(CurrentYear, 7);
         var snapshot = repository.InvestmentSnapshots.First();
 
@@ -155,7 +157,7 @@ public class InvestmentSnapshotServiceTests
     [Fact]
     public async Task UpdateSnapshotValueAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var service = new InvestmentSnapshotService(CreateRepository(), Tracer);
+        var service = new InvestmentSnapshotService(CreateRepository(), Tracer, Logger);
 
         var act = async () => await service.UpdateSnapshotValueAsync(Guid.NewGuid(), new UpdateInvestmentSnapshotValueDTO { Value = 10m });
 
@@ -167,5 +169,13 @@ public class InvestmentSnapshotServiceTests
         var repository = new StubCashFlowRepository();
         SeededInvestmentAccounts.SeedInto(repository);
         return repository;
+    }
+
+    [Fact]
+    public void Constructor_WithNullLogger_Throws()
+    {
+        Action act = () => new InvestmentSnapshotService(new StubCashFlowRepository(), Tracer, null!);
+
+        act.Should().Throw<ArgumentNullException>();
     }
 }

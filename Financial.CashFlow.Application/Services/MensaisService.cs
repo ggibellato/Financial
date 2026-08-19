@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -15,11 +16,13 @@ public sealed class MensaisService : IMensaisService
 
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<MensaisService> _logger;
 
-    public MensaisService(ICashFlowRepository repository, ITelemetryTracer tracer)
+    public MensaisService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<MensaisService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<RecurringBillDTO> CreateBillAsync(CreateRecurringBillDTO request)
@@ -54,6 +57,7 @@ public sealed class MensaisService : IMensaisService
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, bill.Id.ToString());
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "CreateBill");
             return ToDto(bill);
         }
         catch (Exception ex)
@@ -76,6 +80,7 @@ public sealed class MensaisService : IMensaisService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "DeleteBill");
         }
         catch (Exception ex)
         {
@@ -93,6 +98,7 @@ public sealed class MensaisService : IMensaisService
             var result = _repository.GetRecurringBills().Select(ToDto).ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetBills");
             return result;
         }
         catch (Exception ex)
@@ -122,6 +128,7 @@ public sealed class MensaisService : IMensaisService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "UpdateBill");
             return ToDto(bill);
         }
         catch (Exception ex)
@@ -146,6 +153,7 @@ public sealed class MensaisService : IMensaisService
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "ResetAllToUnset");
             return bills.Select(ToDto).ToList();
         }
         catch (Exception ex)
@@ -158,6 +166,7 @@ public sealed class MensaisService : IMensaisService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"CashFlow.MensaisService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);

@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
 using Financial.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
 
@@ -11,11 +12,13 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
 
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
+    private readonly ILogger<InvestmentAccountService> _logger;
 
-    public InvestmentAccountService(ICashFlowRepository repository, ITelemetryTracer tracer)
+    public InvestmentAccountService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<InvestmentAccountService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public IReadOnlyList<InvestmentAccountDTO> GetInvestmentAccounts()
@@ -26,6 +29,7 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
             var result = _repository.GetInvestmentAccounts().Select(ToDto).ToList();
 
             span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            _logger.LogInformation("{Operation} completed", "GetInvestmentAccounts");
             return result;
         }
         catch (Exception ex)
@@ -38,6 +42,7 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
 
     private ITelemetrySpan StartSpan(string operationName)
     {
+        _logger.LogInformation("{Operation} started", operationName);
         var span = _tracer.StartSpan($"CashFlow.InvestmentAccountService.{operationName}");
         span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
         span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);

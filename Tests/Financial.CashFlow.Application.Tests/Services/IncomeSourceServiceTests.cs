@@ -5,24 +5,26 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
 public class IncomeSourceServiceTests
 {
     private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+    private static readonly Microsoft.Extensions.Logging.ILogger<IncomeSourceService> Logger = NullLogger<IncomeSourceService>.Instance;
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new IncomeSourceService(null!, Tracer);
+        Action act = () => new IncomeSourceService(null!, Tracer, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new IncomeSourceService(new StubCashFlowRepository(), null!);
+        Action act = () => new IncomeSourceService(new StubCashFlowRepository(), null!, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
@@ -34,7 +36,7 @@ public class IncomeSourceServiceTests
         var lottery = IncomeSource.Create("Lottery", IncomeGroup.NonReportable, isActive: false);
         repository.IncomeSources.Add(gleison);
         repository.IncomeSources.Add(lottery);
-        var service = new IncomeSourceService(repository, Tracer);
+        var service = new IncomeSourceService(repository, Tracer, Logger);
 
         var result = service.GetIncomeSources();
 
@@ -53,7 +55,7 @@ public class IncomeSourceServiceTests
     {
         var repository = new StubCashFlowRepository();
         repository.IncomeSources.Add(IncomeSource.Create("RetiredSource", IncomeGroup.NonReportable, isActive: false));
-        var service = new IncomeSourceService(repository, Tracer);
+        var service = new IncomeSourceService(repository, Tracer, Logger);
 
         var result = service.GetIncomeSources();
 
@@ -63,10 +65,18 @@ public class IncomeSourceServiceTests
     [Fact]
     public void GetIncomeSources_WithNoIncomeSources_ReturnsEmptyList()
     {
-        var service = new IncomeSourceService(new StubCashFlowRepository(), Tracer);
+        var service = new IncomeSourceService(new StubCashFlowRepository(), Tracer, Logger);
 
         var result = service.GetIncomeSources();
 
         result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Constructor_WithNullLogger_Throws()
+    {
+        Action act = () => new IncomeSourceService(new StubCashFlowRepository(), Tracer, null!);
+
+        act.Should().Throw<ArgumentNullException>();
     }
 }

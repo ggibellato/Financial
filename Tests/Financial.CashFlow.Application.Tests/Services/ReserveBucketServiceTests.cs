@@ -4,24 +4,26 @@ using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
 public class ReserveBucketServiceTests
 {
     private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+    private static readonly Microsoft.Extensions.Logging.ILogger<ReserveBucketService> Logger = NullLogger<ReserveBucketService>.Instance;
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new ReserveBucketService(null!, Tracer);
+        Action act = () => new ReserveBucketService(null!, Tracer, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new ReserveBucketService(new StubCashFlowRepository(), null!);
+        Action act = () => new ReserveBucketService(new StubCashFlowRepository(), null!, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
@@ -33,7 +35,7 @@ public class ReserveBucketServiceTests
         var ariana = ReserveBucket.Create("Ariana", 16.67m, isActive: false);
         repository.ReserveBuckets.Add(investimento);
         repository.ReserveBuckets.Add(ariana);
-        var service = new ReserveBucketService(repository, Tracer);
+        var service = new ReserveBucketService(repository, Tracer, Logger);
 
         var result = service.GetReserveBuckets();
 
@@ -52,7 +54,7 @@ public class ReserveBucketServiceTests
     {
         var repository = new StubCashFlowRepository();
         repository.ReserveBuckets.Add(ReserveBucket.Create("Retired", 0m, isActive: false));
-        var service = new ReserveBucketService(repository, Tracer);
+        var service = new ReserveBucketService(repository, Tracer, Logger);
 
         var result = service.GetReserveBuckets();
 
@@ -62,10 +64,18 @@ public class ReserveBucketServiceTests
     [Fact]
     public void GetReserveBuckets_WithNoBuckets_ReturnsEmptyList()
     {
-        var service = new ReserveBucketService(new StubCashFlowRepository(), Tracer);
+        var service = new ReserveBucketService(new StubCashFlowRepository(), Tracer, Logger);
 
         var result = service.GetReserveBuckets();
 
         result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Constructor_WithNullLogger_Throws()
+    {
+        Action act = () => new ReserveBucketService(new StubCashFlowRepository(), Tracer, null!);
+
+        act.Should().Throw<ArgumentNullException>();
     }
 }
