@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Financial.Shared.Abstractions;
 using Financial.Shared.Infrastructure.Persistence;
+using Financial.Shared.Infrastructure.Resilience;
 using Financial.Shared.Infrastructure.Sync;
 using Financial.TestUtilities;
 using FluentAssertions;
@@ -261,6 +262,43 @@ public class DebouncedJsonStorageTests
         var span = tracer.Spans.Should().ContainSingle(s => s.Name == "JsonStorage.Save").Which;
         span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Failed);
         span.RecordedException.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task TransientWriteFailure_LogsAWarningForTheRetry_ThenSucceedsWithoutAnError()
+    {
+        var inner = new ControllableJsonStorage();
+        inner.FailNextWrites(1);
+        var logger = new RecordingLogger<DebouncedJsonStorage>();
+        var storage = new DebouncedJsonStorage(
+            inner, TimeSpan.FromMilliseconds(20), null, maxRetries: 5, flushTimeout: TimeSpan.FromSeconds(8), logger: logger);
+
+        await storage.WriteAsync("{\"a\":1}");
+        // First attempt fails, the retry policy waits 2s, the second attempt succeeds.
+        await WaitForAsync(() => storage.GetStatus().State == SyncState.Idle, TimeSpan.FromSeconds(10));
+
+        var warning = logger.Entries.Should().ContainSingle(e => e.Level == Microsoft.Extensions.Logging.LogLevel.Warning).Which;
+        warning.Message.Should().Contain("Retry 1/5");
+        warning.Message.Should().Contain(nameof(TransientStorageException));
+        warning.Message.Should().NotContain("{\"a\":1}", "document content must never reach the log stream");
+        logger.Entries.Should().NotContain(e => e.Level == Microsoft.Extensions.Logging.LogLevel.Error);
+    }
+
+    [Fact]
+    public async Task RetriesExhausted_LogsAnErrorWithTheExceptionTypeOnly()
+    {
+        var inner = new ControllableJsonStorage();
+        inner.FailNextWrites(1);
+        var logger = new RecordingLogger<DebouncedJsonStorage>();
+        var storage = new DebouncedJsonStorage(
+            inner, TimeSpan.FromMilliseconds(20), null, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8), logger: logger);
+
+        await storage.WriteAsync("{\"a\":1}");
+        await WaitForAsync(() => storage.GetStatus().State == SyncState.Failed);
+
+        var error = logger.Entries.Should().ContainSingle(e => e.Level == Microsoft.Extensions.Logging.LogLevel.Error).Which;
+        error.Message.Should().Contain(nameof(TransientStorageException));
+        error.Message.Should().NotContain("{\"a\":1}", "document content must never reach the log stream");
     }
 
     private static async Task WaitForAsync(Func<bool> condition, TimeSpan? timeout = null)
