@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.Services;
+using Financial.Shared.Abstractions;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
 using FluentAssertions;
@@ -8,11 +9,20 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class ReserveBucketServiceTests
 {
+    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new ReserveBucketService(null!);
+        Action act = () => new ReserveBucketService(null!, Tracer);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
+    }
+
+    [Fact]
+    public void Constructor_WithNullTracer_Throws()
+    {
+        Action act = () => new ReserveBucketService(new StubCashFlowRepository(), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Fact]
@@ -23,7 +33,7 @@ public class ReserveBucketServiceTests
         var ariana = ReserveBucket.Create("Ariana", 16.67m, isActive: false);
         repository.ReserveBuckets.Add(investimento);
         repository.ReserveBuckets.Add(ariana);
-        var service = new ReserveBucketService(repository);
+        var service = new ReserveBucketService(repository, Tracer);
 
         var result = service.GetReserveBuckets();
 
@@ -42,7 +52,7 @@ public class ReserveBucketServiceTests
     {
         var repository = new StubCashFlowRepository();
         repository.ReserveBuckets.Add(ReserveBucket.Create("Retired", 0m, isActive: false));
-        var service = new ReserveBucketService(repository);
+        var service = new ReserveBucketService(repository, Tracer);
 
         var result = service.GetReserveBuckets();
 
@@ -52,7 +62,7 @@ public class ReserveBucketServiceTests
     [Fact]
     public void GetReserveBuckets_WithNoBuckets_ReturnsEmptyList()
     {
-        var service = new ReserveBucketService(new StubCashFlowRepository());
+        var service = new ReserveBucketService(new StubCashFlowRepository(), Tracer);
 
         var result = service.GetReserveBuckets();
 
