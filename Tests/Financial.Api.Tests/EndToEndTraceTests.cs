@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
 using Financial.CashFlow.Application.DTOs;
@@ -39,6 +40,17 @@ public class EndToEndTraceTests
     [Fact]
     public async Task AddExpense_ProducesOneCorrelatedTrace_ThroughServiceAndStorageSave()
     {
+        // ASP.NET Core only starts its per-request Activity when something is listening, which
+        // varies by environment (passed locally, was null on the CI runner). Listening to the
+        // hosting ActivitySource makes the request activity - the trace root - deterministic.
+        using var requestActivityListener = new ActivityListener
+        {
+            ShouldListenTo = source => source.Name == "Microsoft.AspNetCore",
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+            SampleUsingParentId = (ref ActivityCreationOptions<string> _) => ActivitySamplingResult.AllData
+        };
+        ActivitySource.AddActivityListener(requestActivityListener);
+
         var tracer = new RecordingTelemetryTracer();
         await using var factory = new ApiTestFactory().WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
