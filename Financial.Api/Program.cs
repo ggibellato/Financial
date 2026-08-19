@@ -22,7 +22,8 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
         .WriteTo.File(
             Path.Combine(AppContext.BaseDirectory, "logs", "app-.log"),
             rollingInterval: RollingInterval.Day,
-            retainedFileCountLimit: 14);
+            retainedFileCountLimit: 14)
+        .WriteToObservability(context.Configuration);
 });
 
 var defaultApiVersion = new ApiVersion(1, 0);

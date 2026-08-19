@@ -185,10 +185,12 @@ Not in the original task list — required to make PR 4b's spans actually appear
   - **Deviation**: `ViewModelBase.ExecuteSaveAsync(...)` (the shared save-command helper used by ~8 WPF save commands) swallows exceptions into a `setError` callback rather than rethrowing, and was deliberately left unmodified (out of scope for "one representative command"). So `SaveExpenseAsync()` was split into a thin wrapper that opens the span and calls the original logic (now `SaveExpenseCoreAsync()`), then infers success/failure from `ExpenseSaveError` afterward instead of a catch clause — the error message itself is never attached to the span (FR-014, may echo user-entered text).
   - **Tests (not counted)**: `Financial.Presentation.Tests` 713/713 (was 712) — new `SaveExpenseAsync_WithValidRequest_RecordsSuccessfulSpan` test plus the 6 `new MonthlyViewModel(...)` call sites across other test files updated to pass a `RecordingTelemetryTracer`. Verified with a live WPF smoke launch (temp copy of real data files, never the live ones) confirming clean startup with the new DI dependency wired.
 
-### Suggested PR 4i — Log correlation (3 files) [US1]
+### Suggested PR 4i — Log correlation (3 files) [US1] — COMPLETE
 
-- [ ] T038 [US1] Add `Serilog.Sinks.OpenTelemetry` package reference to `Integrations/Observability/Integrations.Observability.csproj` only; add `WriteToObservability(this LoggerConfiguration, IConfiguration)` in `Integrations/Observability/SerilogObservabilityExtensions.cs` — per [research.md](./research.md) Decision D4
-- [ ] T039 [US1] Call `.WriteToObservability(context.Configuration)` from `UseSerilog(...)` in both `Financial.Api/Program.cs` and `Financial.App/App.xaml.cs` — depends on T038
+- [X] T038 [US1] Add `Serilog.Sinks.OpenTelemetry` package reference to `Integrations/Observability/Observability.csproj` only; add `WriteToObservability(this LoggerConfiguration, IConfiguration)` in `Integrations/Observability/SerilogObservabilityExtensions.cs` — per [research.md](./research.md) Decision D4
+- [X] T039 [US1] Call `.WriteToObservability(context.Configuration)` from `UseSerilog(...)` in both `Financial.Api/Program.cs` and `Financial.App/App.xaml.cs` — depends on T038
+  - **Deviation**: task text named the csproj `Integrations.Observability.csproj`; the actual file (from prior PRs) is `Observability.csproj` in the same folder — no functional difference, just the correct on-disk name.
+  - **Tests (not counted)**: `Financial.Observability.Tests` 12/12 (was 9) — new `SerilogObservabilityExtensionsTests` covering disabled/enabled construction and that logging never throws even without a reachable OTLP collector. Verified with a live API smoke launch (temp copy of real data files) with `Observability:Enabled=true` and no Jaeger listening — confirmed clean startup ("Now listening on...", no exceptions) via the Serilog file sink.
 
 ### Suggested PR 4j — Top logging-audit fix (1 file) [US1] — COMPLETE
 
