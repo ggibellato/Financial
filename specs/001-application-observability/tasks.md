@@ -213,9 +213,11 @@ Not in the original task list — required to make PR 4b's spans actually appear
 
 ## Phase 5: User Story 3 - Toggle and choose an observability backend via configuration only (Priority: P2)
 
-### Suggested PR 5a — Backend switch + fail-fast validation (1 file) [US3]
+### Suggested PR 5a — Backend switch + fail-fast validation (1 file) [US3] — COMPLETE
 
-- [ ] T043 [US3] Update `Integrations/Observability/ObservabilityServiceCollectionExtensions.cs`: branch the OTLP exporter configuration on `Backend` (Langfuse Basic Auth header vs. plain endpoint for Jaeger); throw a clear startup exception for an unrecognized `Backend` or missing Langfuse key — depends on T023
+- [X] T043 [US3] Update `Integrations/Observability/ObservabilityServiceCollectionExtensions.cs`: branch the OTLP exporter configuration on `Backend` (Langfuse Basic Auth header vs. plain endpoint for Jaeger); throw a clear startup exception for an unrecognized `Backend` or missing Langfuse key — depends on T023
+  - `ValidateBackendConfiguration` runs inside `AddObservability` (only when `Enabled`) so a bad backend or missing Langfuse key kills startup, not the first export. Langfuse gets `OtlpExportProtocol.HttpProtobuf` + `Authorization=Basic <base64(public:secret)>` header; Jaeger stays plain OTLP/gRPC, behavior-identical to before. Credentials go only into the exporter header, never logs/attributes (FR-014). Exporter branching extracted to `internal static ConfigureOtlpExporter` (+ `InternalsVisibleTo` for the test project) so T045 tests it directly.
+  - Verified live: launching the API with `Observability__Enabled=true Observability__Backend=Langfuse` and no keys fails startup with the exact configured message.
 
 ### Suggested PR 5b — Langfuse local overlay (1 file) [US3]
 
@@ -223,7 +225,8 @@ Not in the original task list — required to make PR 4b's spans actually appear
 
 ### Tests (not counted)
 
-- [ ] T045 [P] [US3] Unit test in `Tests/Integrations.Observability.Tests/`: exporter configured with Basic Auth when `Backend=Langfuse`, without one when `Backend=Jaeger`; unrecognized `Backend` throws — depends on T043
+- [X] T045 [P] [US3] Unit test in `Tests/Integrations.Observability.Tests/`: exporter configured with Basic Auth when `Backend=Langfuse`, without one when `Backend=Jaeger`; unrecognized `Backend` throws — depends on T043
+  - `Financial.Observability.Tests/BackendConfigurationTests.cs` (project name deviation as established in T011): 9 new tests — Jaeger exporter has endpoint only (gRPC, no headers); Langfuse exporter has HttpProtobuf + the exact Basic Auth header; missing either/both Langfuse keys throws at `AddObservability` time; undefined enum value and misspelled backend name both fail startup; `Enabled=false` skips validation entirely (a disabled deployment must start even with leftover backend settings). 21/21 in the project (was 12).
 - [ ] T046 [US3] Run and record [quickstart.md](./quickstart.md) Scenario C — depends on T043, T044
 
 **Checkpoint**: Both backends usable and swappable purely via configuration.

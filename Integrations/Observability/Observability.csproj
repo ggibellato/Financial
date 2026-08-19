@@ -27,4 +27,8 @@
     <ProjectReference Include="..\..\Financial.Shared.Abstractions\Financial.Shared.Abstractions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Financial.Observability.Tests" />
+  </ItemGroup>
+
 </Project>
