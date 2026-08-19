@@ -3,10 +3,12 @@
 #
 # Usage: docker compose -f docker-compose.yml -f docker-compose.observability.yml --profile jaeger up
 #
-# Jaeger's all-in-one image stores spans in memory only (no volume declared) — ephemeral,
-# container-lifetime data, per FR-009/plan.md. Assigning `app` the same `jaeger` profile here means
-# this overlay only ever changes app's environment when the profile is explicitly requested;
-# composing the file in without --profile jaeger starts nothing from either file.
+# Jaeger v2 (the jaegertracing/jaeger image, not the EOL v1 jaegertracing/all-in-one) stores spans
+# in memory only by default (no volume declared) — ephemeral, container-lifetime data, per
+# FR-009/plan.md. OTLP ingestion is enabled out of the box in v2, no COLLECTOR_OTLP_ENABLED-style
+# env var needed (that was v1-only). Assigning `app` the same `jaeger` profile here means this
+# overlay only ever changes app's environment when the profile is explicitly requested; composing
+# the file in without --profile jaeger starts nothing from either file.
 services:
   app:
     profiles: ["jaeger"]
@@ -18,10 +20,8 @@ services:
       - jaeger
 
   jaeger:
-    image: jaegertracing/all-in-one:latest
+    image: jaegertracing/jaeger:latest
     profiles: ["jaeger"]
-    environment:
-      COLLECTOR_OTLP_ENABLED: "true"
     ports:
       - "16686:16686" # Jaeger UI
       - "4317:4317"   # OTLP gRPC receiver
