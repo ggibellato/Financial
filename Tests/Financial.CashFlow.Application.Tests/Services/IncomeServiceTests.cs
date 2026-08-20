@@ -13,33 +13,44 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class IncomeServiceTests
 {
-    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
     private static readonly Microsoft.Extensions.Logging.ILogger<IncomeService> Logger = NullLogger<IncomeService>.Instance;
+
+    private readonly StubCashFlowRepository _repository;
+    private readonly RecordingTelemetryTracer _tracer;
+    private readonly IncomeService _sut;
+
+    public IncomeServiceTests()
+    {
+        _repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
+        _tracer = new RecordingTelemetryTracer();
+        _sut = CreateService();
+    }
+
+    /// <summary>Wires the SUT exactly as the test constructor does, so a test needing a differently
+    /// seeded repository does not repeat the whole construction sequence.</summary>
+    private IncomeService CreateService(StubCashFlowRepository? repository = null) =>
+        new(repository ?? _repository, _tracer, Logger);
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new IncomeService(null!, Tracer, Logger);
+        Action act = () => new IncomeService(null!, _tracer, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new IncomeService(new StubCashFlowRepository(), null!, Logger);
+        Action act = () => new IncomeService(_repository, null!, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Fact]
     public async Task AddIncomeAsync_WithValidRequest_RecordsSuccessfulSpan()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var tracer = new RecordingTelemetryTracer();
-        var service = new IncomeService(repository, tracer, Logger);
+        var result = await _sut.AddIncomeAsync(ToCreateDto(_repository, ValidCreateRequest()));
 
-        var result = await service.AddIncomeAsync(ToCreateDto(repository, ValidCreateRequest()));
-
-        var span = tracer.Spans.Should().ContainSingle().Which;
+        var span = _tracer.Spans.Should().ContainSingle().Which;
         span.Name.Should().Be("CashFlow.IncomeService.AddIncome");
         span.Attributes[TelemetryAttributeKeys.BoundedContext].Should().Be("CashFlow");
         span.Attributes[TelemetryAttributeKeys.EntityType].Should().Be("Income");
@@ -50,10 +61,7 @@ public class IncomeServiceTests
     [Fact]
     public async Task AddIncomeAsync_WithValidRequest_SavesAndReturnsIncome()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-
-        var result = await service.AddIncomeAsync(ToCreateDto(repository, ValidCreateRequest()));
+        var result = await _sut.AddIncomeAsync(ToCreateDto(_repository, ValidCreateRequest()));
 
         using (new AssertionScope())
         {
@@ -62,19 +70,17 @@ public class IncomeServiceTests
             result.GrossValue.Should().Be(3200.00m);
             result.NetValue.Should().Be(2450.00m);
             result.BankName.Should().Be("Barclays");
-            repository.Incomes.Should().ContainSingle();
-            repository.SaveChangesCallCount.Should().Be(1);
+            _repository.Incomes.Should().ContainSingle();
+            _repository.SaveChangesCallCount.Should().Be(1);
         }
     }
 
     [Fact]
     public async Task AddIncomeAsync_WithoutGrossValue_SavesNull()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-        var request = ToCreateDto(repository, ValidCreateRequest() with { GrossValue = null });
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { GrossValue = null });
 
-        var result = await service.AddIncomeAsync(request);
+        var result = await _sut.AddIncomeAsync(request);
 
         result.GrossValue.Should().BeNull();
     }
@@ -82,25 +88,21 @@ public class IncomeServiceTests
     [Fact]
     public async Task AddIncomeAsync_MultipleEntriesForSameSourceAndMonth_AllPersist()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
         var request = ValidCreateRequest() with { IncomeSource = "Ariana", GrossValue = null };
 
-        await service.AddIncomeAsync(ToCreateDto(repository, request with { Date = new DateOnly(2026, 7, 1) }));
-        await service.AddIncomeAsync(ToCreateDto(repository, request with { Date = new DateOnly(2026, 7, 8) }));
-        await service.AddIncomeAsync(ToCreateDto(repository, request with { Date = new DateOnly(2026, 7, 15) }));
+        await _sut.AddIncomeAsync(ToCreateDto(_repository, request with { Date = new DateOnly(2026, 7, 1) }));
+        await _sut.AddIncomeAsync(ToCreateDto(_repository, request with { Date = new DateOnly(2026, 7, 8) }));
+        await _sut.AddIncomeAsync(ToCreateDto(_repository, request with { Date = new DateOnly(2026, 7, 15) }));
 
-        repository.Incomes.Should().HaveCount(3);
+        _repository.Incomes.Should().HaveCount(3);
     }
 
     [Fact]
     public async Task AddIncomeAsync_WithNegativeNetValue_ThrowsArgumentException()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-        var request = ToCreateDto(repository, ValidCreateRequest() with { GrossValue = null, NetValue = -1m });
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { GrossValue = null, NetValue = -1m });
 
-        var act = async () => await service.AddIncomeAsync(request);
+        var act = async () => await _sut.AddIncomeAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>();
     }
@@ -108,11 +110,9 @@ public class IncomeServiceTests
     [Fact]
     public async Task AddIncomeAsync_WithUnrecognizedIncomeSource_ThrowsArgumentException()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-        var request = ToCreateDto(repository, ValidCreateRequest() with { IncomeSource = "NotASource" });
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { IncomeSource = "NotASource" });
 
-        var act = async () => await service.AddIncomeAsync(request);
+        var act = async () => await _sut.AddIncomeAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Income source*not recognized*");
     }
@@ -122,7 +122,7 @@ public class IncomeServiceTests
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true);
         repository.IncomeSources.Add(IncomeSource.Create("RetiredSource", IncomeGroup.NonReportable, isActive: false));
-        var service = new IncomeService(repository, Tracer, Logger);
+        var service = CreateService(repository);
         var request = ToCreateDto(repository, ValidCreateRequest() with { IncomeSource = "RetiredSource" });
 
         var result = await service.AddIncomeAsync(request);
@@ -136,11 +136,9 @@ public class IncomeServiceTests
     [InlineData("   ")]
     public async Task AddIncomeAsync_WithBlankIncomeSource_ThrowsArgumentException(string? incomeSource)
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-        var request = ToCreateDto(repository, ValidCreateRequest() with { IncomeSource = incomeSource! });
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { IncomeSource = incomeSource! });
 
-        var act = async () => await service.AddIncomeAsync(request);
+        var act = async () => await _sut.AddIncomeAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>();
     }
@@ -148,11 +146,9 @@ public class IncomeServiceTests
     [Fact]
     public async Task AddIncomeAsync_WithUnrecognizedBank_ThrowsArgumentException()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-        var request = ToCreateDto(repository, ValidCreateRequest() with { Bank = "NotABank" });
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { Bank = "NotABank" });
 
-        var act = async () => await service.AddIncomeAsync(request);
+        var act = async () => await _sut.AddIncomeAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Bank*not recognized*");
     }
@@ -160,11 +156,9 @@ public class IncomeServiceTests
     [Fact]
     public async Task AddIncomeAsync_WithoutBank_Succeeds()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-        var request = ToCreateDto(repository, ValidCreateRequest() with { Bank = null });
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { Bank = null });
 
-        var result = await service.AddIncomeAsync(request);
+        var result = await _sut.AddIncomeAsync(request);
 
         using (new AssertionScope())
         {
@@ -176,11 +170,9 @@ public class IncomeServiceTests
     [Fact]
     public async Task AddIncomeAsync_WithDescription_SavesDescription()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-        var request = ToCreateDto(repository, ValidCreateRequest() with { Description = "Chip ISA dividend" });
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { Description = "Chip ISA dividend" });
 
-        var result = await service.AddIncomeAsync(request);
+        var result = await _sut.AddIncomeAsync(request);
 
         result.Description.Should().Be("Chip ISA dividend");
     }
@@ -188,11 +180,9 @@ public class IncomeServiceTests
     [Fact]
     public async Task AddIncomeAsync_WithoutDescription_DescriptionIsNull()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-        var request = ToCreateDto(repository, ValidCreateRequest());
+        var request = ToCreateDto(_repository, ValidCreateRequest());
 
-        var result = await service.AddIncomeAsync(request);
+        var result = await _sut.AddIncomeAsync(request);
 
         result.Description.Should().BeNull();
     }
@@ -200,11 +190,9 @@ public class IncomeServiceTests
     [Fact]
     public async Task AddIncomeAsync_WithDescriptionOver200Characters_ThrowsArgumentException()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-        var request = ToCreateDto(repository, ValidCreateRequest() with { Description = new string('a', 201) });
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { Description = new string('a', 201) });
 
-        var act = async () => await service.AddIncomeAsync(request);
+        var act = async () => await _sut.AddIncomeAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("*200 characters*");
     }
@@ -212,11 +200,9 @@ public class IncomeServiceTests
     [Fact]
     public async Task AddIncomeAsync_WithDescriptionExactly200Characters_Succeeds()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-        var request = ToCreateDto(repository, ValidCreateRequest() with { Description = new string('a', 200) });
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { Description = new string('a', 200) });
 
-        var result = await service.AddIncomeAsync(request);
+        var result = await _sut.AddIncomeAsync(request);
 
         result.Description.Should().HaveLength(200);
     }
@@ -224,32 +210,28 @@ public class IncomeServiceTests
     [Fact]
     public async Task UpdateIncomeAsync_WithExistingId_UpdatesInPlace()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidCreateRequest()));
+        var added = await _sut.AddIncomeAsync(ToCreateDto(_repository, ValidCreateRequest()));
 
-        var updateRequest = ToUpdateDto(repository, ValidCreateRequest() with { NetValue = 500m, GrossValue = null, IncomeSource = "Lottery" });
-        var result = await service.UpdateIncomeAsync(added.Id, updateRequest);
+        var updateRequest = ToUpdateDto(_repository, ValidCreateRequest() with { NetValue = 500m, GrossValue = null, IncomeSource = "Lottery" });
+        var result = await _sut.UpdateIncomeAsync(added.Id, updateRequest);
 
         using (new AssertionScope())
         {
             result.Id.Should().Be(added.Id);
             result.NetValue.Should().Be(500m);
             result.IncomeSourceName.Should().Be("Lottery");
-            repository.Incomes.Should().ContainSingle();
-            repository.SaveChangesCallCount.Should().Be(2);
+            _repository.Incomes.Should().ContainSingle();
+            _repository.SaveChangesCallCount.Should().Be(2);
         }
     }
 
     [Fact]
     public async Task UpdateIncomeAsync_WithUnrecognizedIncomeSource_ThrowsArgumentException()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidCreateRequest()));
+        var added = await _sut.AddIncomeAsync(ToCreateDto(_repository, ValidCreateRequest()));
 
-        var updateRequest = ToUpdateDto(repository, ValidCreateRequest() with { IncomeSource = "NotASource" });
-        var act = async () => await service.UpdateIncomeAsync(added.Id, updateRequest);
+        var updateRequest = ToUpdateDto(_repository, ValidCreateRequest() with { IncomeSource = "NotASource" });
+        var act = async () => await _sut.UpdateIncomeAsync(added.Id, updateRequest);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Income source*not recognized*");
     }
@@ -257,12 +239,10 @@ public class IncomeServiceTests
     [Fact]
     public async Task UpdateIncomeAsync_RemovingBank_SetsBankNull()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidCreateRequest()));
+        var added = await _sut.AddIncomeAsync(ToCreateDto(_repository, ValidCreateRequest()));
 
-        var updateRequest = ToUpdateDto(repository, ValidCreateRequest() with { Bank = null });
-        var result = await service.UpdateIncomeAsync(added.Id, updateRequest);
+        var updateRequest = ToUpdateDto(_repository, ValidCreateRequest() with { Bank = null });
+        var result = await _sut.UpdateIncomeAsync(added.Id, updateRequest);
 
         using (new AssertionScope())
         {
@@ -274,10 +254,7 @@ public class IncomeServiceTests
     [Fact]
     public async Task UpdateIncomeAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-
-        var act = async () => await service.UpdateIncomeAsync(Guid.NewGuid(), ToUpdateDto(repository, ValidCreateRequest()));
+        var act = async () => await _sut.UpdateIncomeAsync(Guid.NewGuid(), ToUpdateDto(_repository, ValidCreateRequest()));
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
@@ -285,23 +262,18 @@ public class IncomeServiceTests
     [Fact]
     public async Task DeleteIncomeAsync_WithExistingId_RemovesAndSaves()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidCreateRequest()));
+        var added = await _sut.AddIncomeAsync(ToCreateDto(_repository, ValidCreateRequest()));
 
-        await service.DeleteIncomeAsync(added.Id);
+        await _sut.DeleteIncomeAsync(added.Id);
 
-        repository.Incomes.Should().BeEmpty();
-        repository.SaveChangesCallCount.Should().Be(2);
+        _repository.Incomes.Should().BeEmpty();
+        _repository.SaveChangesCallCount.Should().Be(2);
     }
 
     [Fact]
     public async Task DeleteIncomeAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-
-        var act = async () => await service.DeleteIncomeAsync(Guid.NewGuid());
+        var act = async () => await _sut.DeleteIncomeAsync(Guid.NewGuid());
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
@@ -309,12 +281,10 @@ public class IncomeServiceTests
     [Fact]
     public async Task GetIncomesByMonth_ReturnsOnlyIncomesInThatMonth()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = new IncomeService(repository, Tracer, Logger);
-        await service.AddIncomeAsync(ToCreateDto(repository, ValidCreateRequest() with { Date = new DateOnly(2026, 7, 10) }));
-        await service.AddIncomeAsync(ToCreateDto(repository, ValidCreateRequest() with { Date = new DateOnly(2026, 8, 10) }));
+        await _sut.AddIncomeAsync(ToCreateDto(_repository, ValidCreateRequest() with { Date = new DateOnly(2026, 7, 10) }));
+        await _sut.AddIncomeAsync(ToCreateDto(_repository, ValidCreateRequest() with { Date = new DateOnly(2026, 8, 10) }));
 
-        var result = service.GetIncomesByMonth(2026, 7);
+        var result = _sut.GetIncomesByMonth(2026, 7);
 
         result.Should().ContainSingle().Which.Date.Should().Be(new DateOnly(2026, 7, 10));
     }
@@ -358,11 +328,10 @@ public class IncomeServiceTests
     private sealed record IncomeCreateRequest(
         DateOnly Date, string IncomeSource, decimal? GrossValue, decimal NetValue, string? Bank, string? Description);
 
-
     [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
-        Action act = () => new IncomeService(new StubCashFlowRepository(), Tracer, null!);
+        Action act = () => new IncomeService(_repository, _tracer, null!);
 
         act.Should().Throw<ArgumentNullException>();
     }

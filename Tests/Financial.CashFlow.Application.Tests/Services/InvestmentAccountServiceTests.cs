@@ -10,34 +10,47 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class InvestmentAccountServiceTests
 {
-    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
     private static readonly Microsoft.Extensions.Logging.ILogger<InvestmentAccountService> Logger = NullLogger<InvestmentAccountService>.Instance;
+
+    private readonly StubCashFlowRepository _repository;
+    private readonly RecordingTelemetryTracer _tracer;
+    private readonly InvestmentAccountService _sut;
+
+    public InvestmentAccountServiceTests()
+    {
+        _repository = new StubCashFlowRepository();
+        _tracer = new RecordingTelemetryTracer();
+        _sut = CreateService();
+    }
+
+    /// <summary>Wires the SUT exactly as the test constructor does, so a test needing a differently
+    /// seeded repository does not repeat the whole construction sequence.</summary>
+    private InvestmentAccountService CreateService(StubCashFlowRepository? repository = null) =>
+        new(repository ?? _repository, _tracer, Logger);
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new InvestmentAccountService(null!, Tracer, Logger);
+        Action act = () => new InvestmentAccountService(null!, _tracer, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new InvestmentAccountService(new StubCashFlowRepository(), null!, Logger);
+        Action act = () => new InvestmentAccountService(_repository, null!, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Fact]
     public void GetInvestmentAccounts_MapsEveryRepositoryAccountToADto()
     {
-        var repository = new StubCashFlowRepository();
         var chaseSave = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
         var platinumVisa = InvestmentAccount.Create("PlatinumVisa8003", isActive: true, isLiability: true);
-        repository.InvestmentAccounts.Add(chaseSave);
-        repository.InvestmentAccounts.Add(platinumVisa);
-        var service = new InvestmentAccountService(repository, Tracer, Logger);
+        _repository.InvestmentAccounts.Add(chaseSave);
+        _repository.InvestmentAccounts.Add(platinumVisa);
 
-        var result = service.GetInvestmentAccounts();
+        var result = _sut.GetInvestmentAccounts();
 
         using (new AssertionScope())
         {
@@ -54,11 +67,9 @@ public class InvestmentAccountServiceTests
     [Fact]
     public void GetInvestmentAccounts_DoesNotFilterByIsActive()
     {
-        var repository = new StubCashFlowRepository();
-        repository.InvestmentAccounts.Add(InvestmentAccount.Create("RetiredAccount", isActive: false, isLiability: false));
-        var service = new InvestmentAccountService(repository, Tracer, Logger);
+        _repository.InvestmentAccounts.Add(InvestmentAccount.Create("RetiredAccount", isActive: false, isLiability: false));
 
-        var result = service.GetInvestmentAccounts();
+        var result = _sut.GetInvestmentAccounts();
 
         result.Should().ContainSingle(a => a.Name == "RetiredAccount" && !a.IsActive);
     }
@@ -66,9 +77,7 @@ public class InvestmentAccountServiceTests
     [Fact]
     public void GetInvestmentAccounts_WithNoAccounts_ReturnsEmptyList()
     {
-        var service = new InvestmentAccountService(new StubCashFlowRepository(), Tracer, Logger);
-
-        var result = service.GetInvestmentAccounts();
+        var result = _sut.GetInvestmentAccounts();
 
         result.Should().BeEmpty();
     }
@@ -76,7 +85,7 @@ public class InvestmentAccountServiceTests
     [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
-        Action act = () => new InvestmentAccountService(new StubCashFlowRepository(), Tracer, null!);
+        Action act = () => new InvestmentAccountService(_repository, _tracer, null!);
 
         act.Should().Throw<ArgumentNullException>();
     }
