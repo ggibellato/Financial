@@ -10,6 +10,8 @@ using Financial.Investment.Infrastructure.Repositories;
 using Financial.TestUtilities;
 using FluentAssertions;
 using System.IO;
+using System.Linq;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
@@ -405,6 +407,197 @@ public class PriceServiceTests
         PortfolioName = PortfolioName,
         AssetName = AssetName
     };
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_WhenPersistenceFails_DoesNotReportSuccess()
+    {
+        var (service, tracer, _, tempFile) = CreateServiceWithFailingStorage(StubAssetPriceService.Success(123.45m));
+        try
+        {
+            await service.GetCurrentPriceAsync(BuildRequest());
+
+            var span = tracer.Spans.Single(recorded => recorded.Name.EndsWith("GetCurrentPrice", StringComparison.Ordinal));
+            span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Failed);
+            span.RecordedException.Should().NotBeNull();
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_WhenPersistenceFails_LogsAnErrorNamingTheAsset()
+    {
+        var (service, _, logger, tempFile) = CreateServiceWithFailingStorage(StubAssetPriceService.Success(123.45m));
+        try
+        {
+            await service.GetCurrentPriceAsync(BuildRequest());
+
+            var entry = logger.Entries.Should().ContainSingle(recorded => recorded.Level == LogLevel.Error).Subject;
+            entry.Message.Should().Contain(BrokerName).And.Contain(PortfolioName).And.Contain(AssetName);
+            entry.Exception.Should().NotBeNull();
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    /// <summary>
+    /// The caller still gets the live price, so a storage fault does not blank out the value on
+    /// screen - but the operation reports failed rather than claiming a record was made.
+    /// </summary>
+    [Fact]
+    public async Task GetCurrentPriceAsync_WhenPersistenceFails_StillReturnsTheFetchedPrice()
+    {
+        var (service, _, _, tempFile) = CreateServiceWithFailingStorage(StubAssetPriceService.Success(123.45m));
+        try
+        {
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
+
+            result.Price.Should().Be(123.45m);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    /// <summary>
+    /// The pre-existing record test reads back from the in-memory graph, so it passes even when
+    /// the save throws. This one goes to the file, which is what the user actually inspects.
+    /// </summary>
+    [Fact]
+    public async Task GetCurrentPriceAsync_LiveFetchSucceeds_PersistsTheEntryToTheDataFile()
+    {
+        var (service, _, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(321.5m));
+        try
+        {
+            await service.GetCurrentPriceAsync(BuildRequest());
+
+            var entry = ReloadAssetFromDisk(tempFile)!.GetPriceForDate(DateOnly.FromDateTime(DateTime.Today));
+            entry.Should().NotBeNull();
+            entry!.Price.Should().Be(321.5m);
+            entry.IsManual.Should().BeFalse();
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_WhenPersistenceFails_WritesNothingToTheDataFile()
+    {
+        var (service, _, _, tempFile) = CreateServiceWithFailingStorage(StubAssetPriceService.Success(123.45m));
+        try
+        {
+            await service.GetCurrentPriceAsync(BuildRequest());
+
+            ReloadAssetFromDisk(tempFile)!.GetPriceForDate(DateOnly.FromDateTime(DateTime.Today))
+                .Should().BeNull("the save threw, so nothing reached the file");
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_WhenAssetContextResolvesNothing_LogsAWarningNamingTheTriple()
+    {
+        var (service, _, logger, tempFile) = CreateRecordingService(StubAssetPriceService.Success(10m));
+        try
+        {
+            var request = BuildRequest();
+            request.AssetName = "NOT-A-REAL-ASSET";
+
+            await service.GetCurrentPriceAsync(request);
+
+            var entry = logger.Entries.Should().ContainSingle(recorded => recorded.Level == LogLevel.Warning).Subject;
+            entry.Message.Should().Contain(BrokerName).And.Contain(PortfolioName).And.Contain("NOT-A-REAL-ASSET");
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    /// <summary>
+    /// A blank portfolio or asset name is a deliberate lookup-only request, not a misroute, so it
+    /// must not produce a warning on every batch price check.
+    /// </summary>
+    [Fact]
+    public async Task GetCurrentPriceAsync_WithoutAssetContext_DoesNotWarn()
+    {
+        var (service, _, logger, tempFile) = CreateRecordingService(StubAssetPriceService.Success(10m));
+        try
+        {
+            var request = BuildRequest();
+            request.PortfolioName = null;
+            request.AssetName = null;
+
+            await service.GetCurrentPriceAsync(request);
+
+            logger.Entries.Should().NotContain(recorded => recorded.Level == LogLevel.Warning);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    private static Asset? ReloadAssetFromDisk(string tempFile)
+    {
+        var storage = new LocalJsonStorage(tempFile);
+        var serializer = new InvestmentsSerializerAdapter();
+        var repository = new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
+        return repository.GetAsset(BrokerName, PortfolioName, AssetName);
+    }
+
+    private static (PriceService Service, RecordingTelemetryTracer Tracer, RecordingLogger<PriceService> Logger, string TempFile)
+        CreateRecordingService(IAssetPriceService assetPriceService, bool failWrites = false)
+    {
+        var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
+        File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
+
+        IJsonStorage storage = new LocalJsonStorage(tempFile);
+        var serializer = new InvestmentsSerializerAdapter();
+        var investments = InvestmentsLoader.LoadSync(storage, serializer);
+        if (failWrites)
+        {
+            storage = new WriteFailingJsonStorage(storage);
+        }
+
+        var tracer = new RecordingTelemetryTracer();
+        var logger = new RecordingLogger<PriceService>();
+        var repository = new InvestmentJsonRepository(investments, storage, serializer);
+        var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
+
+        return (new PriceService(repository, navigationService, assetPriceService, tracer, logger), tracer, logger, tempFile);
+    }
+
+    private static (PriceService Service, RecordingTelemetryTracer Tracer, RecordingLogger<PriceService> Logger, string TempFile)
+        CreateServiceWithFailingStorage(IAssetPriceService assetPriceService) =>
+        CreateRecordingService(assetPriceService, failWrites: true);
+
+    /// <summary>Stands in for the storage faults the real providers raise - a locked file locally,
+    /// or a refused upload against Google Drive.</summary>
+    private sealed class WriteFailingJsonStorage : IJsonStorage
+    {
+        private readonly IJsonStorage _inner;
+
+        public WriteFailingJsonStorage(IJsonStorage inner)
+        {
+            _inner = inner;
+        }
+
+        public Task<string> ReadAsync() => _inner.ReadAsync();
+
+        public Task WriteAsync(string json) =>
+            throw new IOException("The process cannot access the file because it is being used by another process.");
+    }
 
     private static (PriceService Service, string TempFile) CreateService()
     {
