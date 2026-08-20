@@ -108,6 +108,16 @@ public sealed class PriceService : IPriceService
                 return CompleteSuccessfully(span, _assetPriceService.GetCurrentPrice(request));
             }
 
+            // A manual price for today is authoritative: the rest of the app refuses to edit or
+            // delete an automatic entry and tells the user to add a manual one to override, so a
+            // scrape must not overwrite it. No fetch is made at all, since its result would be
+            // discarded. Removing the manual entry restores automatic pricing.
+            var manualPriceForToday = FindManualPriceForToday(asset);
+            if (manualPriceForToday is not null)
+            {
+                return CompleteSuccessfully(span, BuildPriceFrom(manualPriceForToday, request));
+            }
+
             var (price, wasFetchedLive) = FetchWithPriceHistoryFallback(asset, request);
             if (!wasFetchedLive)
             {
@@ -162,16 +172,7 @@ public sealed class PriceService : IPriceService
                 throw;
             }
 
-            var price = new AssetPriceDTO
-            {
-                Exchange = request.Exchange,
-                Ticker = request.Ticker,
-                Name = request.Name ?? string.Empty,
-                Price = fallback.Price,
-                AsOf = null,
-                IsManual = fallback.IsManual
-            };
-            return (price, false);
+            return (BuildPriceFrom(fallback, request), false);
         }
     }
 
@@ -237,11 +238,35 @@ public sealed class PriceService : IPriceService
         return _repository.GetAsset(request.BrokerName, request.PortfolioName, request.AssetName);
     }
 
+    private static AssetPriceSnapshot? FindManualPriceForToday(Asset asset)
+    {
+        var entry = asset.GetPriceForDate(DateOnly.FromDateTime(DateTime.Today));
+        return entry?.IsManual == true ? entry : null;
+    }
+
+    /// <summary>
+    /// A stored entry carries a date but no time of day, so AsOf stays null here rather than
+    /// inventing midnight.
+    /// </summary>
+    private static AssetPriceDTO BuildPriceFrom(AssetPriceSnapshot snapshot, AssetPriceRequestDTO request) =>
+        new()
+        {
+            Exchange = request.Exchange,
+            Ticker = request.Ticker,
+            Name = request.Name ?? string.Empty,
+            Price = snapshot.Price,
+            AsOf = null,
+            IsManual = snapshot.IsManual
+        };
+
     private async Task RecordAutomaticPriceIfNeededAsync(Asset asset, decimal price)
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
         var existing = asset.GetPriceForDate(today);
-        var needsWrite = existing is null || existing.IsManual || existing.Price != price;
+
+        // A manual entry is never overwritten. GetCurrentPriceAsync returns before reaching this
+        // point when one exists, so this is the second line of defence rather than the first.
+        var needsWrite = existing is null || (!existing.IsManual && existing.Price != price);
         if (!needsWrite)
         {
             return;
