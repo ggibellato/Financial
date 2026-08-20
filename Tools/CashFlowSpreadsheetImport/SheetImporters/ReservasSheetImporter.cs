@@ -1,5 +1,4 @@
 using ClosedXML.Excel;
-using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Parsing;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reporting;
@@ -70,7 +69,7 @@ public static class ReservasSheetImporter
         {
             if (ReserveBucketNameResolver.TryResolve(entry.BucketName, buckets, out var bucket))
             {
-                resolved.Add((entry.Column, bucket!));
+                resolved.Add((entry.Column, bucket));
             }
             else
             {

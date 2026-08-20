@@ -37,7 +37,7 @@
                 <local:EditReserveMovementFormView Visibility="{Binding IsEditFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
                 <DataGrid ItemsSource="{Binding Balances}" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="180">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Binding="{Binding Bucket}" Header="Bucket" Width="180"
+                        <DataGridTextColumn Binding="{Binding BucketName}" Header="Bucket" Width="180"
                                              ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                         <DataGridTextColumn Binding="{Binding Balance, StringFormat=N2}" Header="Balance" Width="140"
                                              ElementStyle="{StaticResource NumericColumnTextStyle}"/>
@@ -70,7 +70,7 @@
                     </DataGridTemplateColumn>
                     <DataGridTextColumn Binding="{Binding Date, Converter={StaticResource DateFormatConverter}}" Header="Date" Width="100"
                                          ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                    <DataGridTextColumn Binding="{Binding Bucket}" Header="Bucket" Width="140"
+                    <DataGridTextColumn Binding="{Binding BucketName}" Header="Bucket" Width="140"
                                          ElementStyle="{StaticResource PlainColumnTextStyle}"/>
                     <DataGridTextColumn Binding="{Binding Description}" Header="Description" Width="*"
                                          ElementStyle="{StaticResource PlainColumnTextStyle}"/>

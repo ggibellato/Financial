@@ -31,6 +31,10 @@ public class ReserveServiceTests
     private ReserveService CreateService(StubCashFlowRepository? repository = null) =>
         new(repository ?? _repository, _tracer, Logger);
 
+    /// <summary>The seeded bucket's id. The stub repository generates a fresh Guid per test run,
+    /// so a test names the bucket it means and lets this resolve the id it must send.</summary>
+    private Guid BucketId(string name) => _repository.ReserveBuckets.First(b => b.Name == name).Id;
+
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
@@ -55,10 +59,10 @@ public class ReserveServiceTests
             _repository.ReserveMovements.Should().HaveCount(4);
             _repository.ReserveMovements.Should().OnlyContain(m => m.Description == "Ramsay");
             result.Buckets.Should().HaveCount(4);
-            result.Buckets.Should().ContainSingle(b => b.Bucket == "Investimento" && b.Amount == 654.27m);
-            result.Buckets.Should().ContainSingle(b => b.Bucket == "HouseTreats" && b.Amount == 654.27m);
-            result.Buckets.Should().ContainSingle(b => b.Bucket == "Ariana" && b.Amount == 327.23m);
-            result.Buckets.Should().ContainSingle(b => b.Bucket == "Gleison" && b.Amount == 327.23m);
+            result.Buckets.Should().ContainSingle(b => b.BucketName == "Investimento" && b.Amount == 654.27m);
+            result.Buckets.Should().ContainSingle(b => b.BucketName == "HouseTreats" && b.Amount == 654.27m);
+            result.Buckets.Should().ContainSingle(b => b.BucketName == "Ariana" && b.Amount == 327.23m);
+            result.Buckets.Should().ContainSingle(b => b.BucketName == "Gleison" && b.Amount == 327.23m);
             result.Total.Should().Be(1963.00m);
             _repository.SaveChangesCallCount.Should().Be(1);
         }
@@ -76,7 +80,7 @@ public class ReserveServiceTests
         {
             _repository.ReserveMovements.Should().HaveCount(3);
             result.Buckets.Should().HaveCount(3);
-            result.Buckets.Should().NotContain(b => b.Bucket == "Gleison");
+            result.Buckets.Should().NotContain(b => b.BucketName == "Gleison");
         }
     }
 
@@ -154,7 +158,7 @@ public class ReserveServiceTests
 
         var result = await _sut.PostWithdrawalAsync(new WithdrawalRequestDTO
         {
-            Bucket = "Investimento",
+            BucketId = BucketId("Investimento"),
             Amount = 30m,
             Date = new DateOnly(2026, 7, 1),
             Description = "Groceries top-up",
@@ -172,7 +176,7 @@ public class ReserveServiceTests
 
         var act = async () => await _sut.PostWithdrawalAsync(new WithdrawalRequestDTO
         {
-            Bucket = "Ariana",
+            BucketId = BucketId("Ariana"),
             Amount = 100m,
             Date = new DateOnly(2026, 7, 1),
             Description = "Big purchase",
@@ -190,7 +194,7 @@ public class ReserveServiceTests
 
         var result = await _sut.PostWithdrawalAsync(new WithdrawalRequestDTO
         {
-            Bucket = "Ariana",
+            BucketId = BucketId("Ariana"),
             Amount = 100m,
             Date = new DateOnly(2026, 7, 1),
             Description = "Big purchase",
@@ -208,7 +212,7 @@ public class ReserveServiceTests
 
         var act = async () => await service.PostWithdrawalAsync(new WithdrawalRequestDTO
         {
-            Bucket = "Investimento",
+            BucketId = Guid.NewGuid(),
             Amount = 0m,
             Date = new DateOnly(2026, 7, 1),
             Description = "Nothing"
@@ -218,11 +222,30 @@ public class ReserveServiceTests
     }
 
     [Fact]
+    public async Task PostWithdrawalAsync_TwoBucketsSharingAName_PostsAgainstTheOneWithTheGivenId()
+    {
+        var duplicate = ReserveBucket.Create("Investimento", 0m);
+        _repository.ReserveBuckets.Add(duplicate);
+
+        await _sut.PostWithdrawalAsync(new WithdrawalRequestDTO
+        {
+            BucketId = duplicate.Id,
+            Amount = 10m,
+            Date = new DateOnly(2026, 7, 1),
+            Description = "Test",
+            Confirmed = true
+        });
+
+        _repository.ReserveMovements.Should().ContainSingle()
+            .Which.Bucket.Should().BeSameAs(duplicate);
+    }
+
+    [Fact]
     public async Task PostWithdrawalAsync_WithUnknownBucket_ThrowsArgumentException()
     {
         var act = async () => await _sut.PostWithdrawalAsync(new WithdrawalRequestDTO
         {
-            Bucket = "NotABucket",
+            BucketId = Guid.NewGuid(),
             Amount = 10m,
             Date = new DateOnly(2026, 7, 1),
             Description = "Test"
@@ -247,7 +270,7 @@ public class ReserveServiceTests
 
         var balances = _sut.GetBucketBalances();
 
-        balances.Should().ContainSingle(b => b.Bucket == "Investimento" && b.Balance == 654.27m);
+        balances.Should().ContainSingle(b => b.BucketName == "Investimento" && b.Balance == 654.27m);
     }
 
     [Fact]
@@ -261,7 +284,7 @@ public class ReserveServiceTests
         var balances = _sut.GetBucketBalances();
 
         balances.Should().HaveCount(4);
-        balances.Should().ContainSingle(b => b.Bucket == "Gleison" && b.Balance == 75m);
+        balances.Should().ContainSingle(b => b.BucketName == "Gleison" && b.Balance == 75m);
     }
 
     [Fact]
@@ -294,7 +317,7 @@ public class ReserveServiceTests
 
         var result = await _sut.UpdateMovementAsync(movement.Id, new UpdateReserveMovementDTO
         {
-            Bucket = "HouseTreats",
+            BucketId = BucketId("HouseTreats"),
             Amount = 150m,
             Date = new DateOnly(2026, 7, 5),
             Description = "Corrected"
@@ -302,7 +325,8 @@ public class ReserveServiceTests
 
         using (new AssertionScope())
         {
-            result.Bucket.Should().Be("HouseTreats");
+            result.BucketId.Should().Be(BucketId("HouseTreats"));
+            result.BucketName.Should().Be("HouseTreats");
             result.Amount.Should().Be(150m);
             result.Date.Should().Be(new DateOnly(2026, 7, 5));
             result.Description.Should().Be("Corrected");
@@ -315,7 +339,7 @@ public class ReserveServiceTests
     {
         var act = async () => await _sut.UpdateMovementAsync(Guid.NewGuid(), new UpdateReserveMovementDTO
         {
-            Bucket = "Investimento",
+            BucketId = BucketId("Investimento"),
             Amount = 10m,
             Date = new DateOnly(2026, 7, 1),
             Description = "Test"
@@ -331,7 +355,7 @@ public class ReserveServiceTests
 
         var act = async () => await _sut.UpdateMovementAsync(_repository.ReserveMovements[0].Id, new UpdateReserveMovementDTO
         {
-            Bucket = "NotABucket",
+            BucketId = Guid.NewGuid(),
             Amount = 10m,
             Date = new DateOnly(2026, 7, 1),
             Description = "Test"

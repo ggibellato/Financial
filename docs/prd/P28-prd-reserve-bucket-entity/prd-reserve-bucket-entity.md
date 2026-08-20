@@ -130,7 +130,7 @@ At a high level: a one-time idempotent migration seeds four `ReserveBucket` reco
 - New `ReserveBucketReferenceConverter` (thin subclass of the existing generic `ReferenceConverter<T>`, mirroring `BankReferenceConverter`/`IncomeSourceReferenceConverter`) with wire field name `"BucketId"`, registered in `CashFlowTypeInfoResolver.ReferenceProperties` for `ReserveMovement.Bucket`.
 - New `ReserveBucketNameResolver` (Application/Validation layer, mirroring `BankNameResolver`/`IncomeSourceNameResolver`): `TryResolve(string? name, IReadOnlyCollection<ReserveBucket> buckets, out ReserveBucket? bucket)`, case-insensitive match — used wherever a movement is created or updated from a DTO-supplied bucket name (withdrawal, update-movement).
 - `ReserveBucketParser` (the old enum-string parser) and its dedicated test file are deleted.
-- API-facing DTOs (`ReserveMovementDTO.Bucket`, `WithdrawalRequestDTO.Bucket`, `UpdateReserveMovementDTO.Bucket`) remain plain strings (the bucket's name) — no client-facing contract change; only the internal domain representation moves from enum to entity reference.
+- API-facing DTOs (`ReserveMovementDTO.Bucket`, `WithdrawalRequestDTO.Bucket`, `UpdateReserveMovementDTO.Bucket`) remain plain strings (the bucket's name) — no client-facing contract change; only the internal domain representation moves from enum to entity reference. **Superseded:** this deferral was lifted in a later refactor — those DTOs now carry `BucketId` (plus `BucketName` on the read models), matching how every other referenced entity is identified.
 
 **Experience:**
 - No visible UI change on the success path — a user selecting a bucket by name (via F06/F07's dynamic picklist) always submits a valid, resolvable name.

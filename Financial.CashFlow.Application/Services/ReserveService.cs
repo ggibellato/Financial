@@ -70,7 +70,12 @@ public sealed class ReserveService : IReserveService
             }
 
             var splitAmounts = movements
-                .Select(movement => new BucketSplitAmountDTO { Bucket = movement.Bucket.Name, Amount = movement.Amount })
+                .Select(movement => new BucketSplitAmountDTO
+                {
+                    BucketId = movement.Bucket.Id,
+                    BucketName = movement.Bucket.Name,
+                    Amount = movement.Amount
+                })
                 .ToList();
 
             span.MarkSuccess();
@@ -105,9 +110,9 @@ public sealed class ReserveService : IReserveService
                 throw new ArgumentException("Amount must be greater than zero.");
             }
 
-            if (!ReserveBucketNameResolver.TryResolve(request.Bucket, _repository.GetReserveBuckets(), out var bucket))
+            if (!EntityIdResolver.TryResolve(request.BucketId, _repository.GetReserveBuckets(), b => b.Id, out var bucket))
             {
-                throw new ArgumentException($"Bucket '{request.Bucket}' is not recognized.");
+                throw new ArgumentException($"Reserve bucket '{request.BucketId}' is not recognized.");
             }
 
             var currentBalance = GetBalance(bucket!);
@@ -154,7 +159,8 @@ public sealed class ReserveService : IReserveService
             var result = _repository.GetReserveBuckets()
                 .Select(bucket => new ReserveBucketBalanceDTO
                 {
-                    Bucket = bucket.Name,
+                    BucketId = bucket.Id,
+                    BucketName = bucket.Name,
                     Balance = balanceByBucket.GetValueOrDefault(bucket)
                 })
                 .ToList();
@@ -204,9 +210,9 @@ public sealed class ReserveService : IReserveService
                 throw new ArgumentException("Description is required.");
             }
 
-            if (!ReserveBucketNameResolver.TryResolve(request.Bucket, _repository.GetReserveBuckets(), out var bucket))
+            if (!EntityIdResolver.TryResolve(request.BucketId, _repository.GetReserveBuckets(), b => b.Id, out var bucket))
             {
-                throw new ArgumentException($"Bucket '{request.Bucket}' is not recognized.");
+                throw new ArgumentException($"Reserve bucket '{request.BucketId}' is not recognized.");
             }
 
             var movement = _repository.GetReserveMovements().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
@@ -268,7 +274,8 @@ public sealed class ReserveService : IReserveService
     private static ReserveMovementDTO ToDto(ReserveMovement movement) => new()
     {
         Id = movement.Id,
-        Bucket = movement.Bucket.Name,
+        BucketId = movement.Bucket.Id,
+        BucketName = movement.Bucket.Name,
         Amount = movement.Amount,
         Date = movement.Date,
         Description = movement.Description

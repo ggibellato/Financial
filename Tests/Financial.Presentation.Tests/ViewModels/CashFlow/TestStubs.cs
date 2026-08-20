@@ -324,15 +324,19 @@ internal sealed class StubReserveService : IReserveService
         {
             Buckets =
             [
-                new() { Bucket = "Investimento", Amount = 10m },
-                new() { Bucket = "HouseTreats", Amount = 20m },
-                new() { Bucket = "Ariana", Amount = 5m },
-                new() { Bucket = "Gleison", Amount = 5m }
+                new() { BucketId = Guid.NewGuid(), BucketName = "Investimento", Amount = 10m },
+                new() { BucketId = Guid.NewGuid(), BucketName = "HouseTreats", Amount = 20m },
+                new() { BucketId = Guid.NewGuid(), BucketName = "Ariana", Amount = 5m },
+                new() { BucketId = Guid.NewGuid(), BucketName = "Gleison", Amount = 5m }
             ],
             Total = 40m
         };
     public IncomeSplitRequestDTO? LastSplitRequest { get; private set; }
     public List<WithdrawalRequestDTO> WithdrawalRequests { get; } = [];
+
+    /// <summary>Buckets this stub can name when echoing a request back as a movement DTO.
+    /// Left empty unless a test asserts on the echoed name.</summary>
+    public List<ReserveBucketDTO> KnownBuckets { get; set; } = [];
     public bool ThrowOverdraftOnUnconfirmedWithdrawal { get; set; }
     public string OverdraftMessage { get; set; } = "This withdrawal exceeds the bucket's balance.";
     public Exception? ThrowOnWithdrawal { get; set; }
@@ -361,7 +365,7 @@ internal sealed class StubReserveService : IReserveService
 
         return Task.FromResult(new ReserveMovementDTO
         {
-            Id = Guid.NewGuid(), Bucket = request.Bucket, Amount = -request.Amount,
+            Id = Guid.NewGuid(), BucketId = request.BucketId, BucketName = NameOf(request.BucketId), Amount = -request.Amount,
             Date = request.Date, Description = request.Description,
         });
     }
@@ -375,10 +379,12 @@ internal sealed class StubReserveService : IReserveService
         LastUpdateRequest = (id, request);
         return Task.FromResult(new ReserveMovementDTO
         {
-            Id = id, Bucket = request.Bucket, Amount = request.Amount,
+            Id = id, BucketId = request.BucketId, BucketName = NameOf(request.BucketId), Amount = request.Amount,
             Date = request.Date, Description = request.Description,
         });
     }
+
+    private string NameOf(Guid id) => KnownBuckets.FirstOrDefault(b => b.Id == id)?.Name ?? string.Empty;
 
     public Task DeleteMovementAsync(Guid id)
     {

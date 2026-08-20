@@ -51,7 +51,7 @@ export default function ReservaPage() {
     submitIncomeSplit,
     dismissSplitResult,
     isWithdrawalFormOpen,
-    withdrawalBucket,
+    withdrawalBucketId,
     withdrawalAmount,
     withdrawalDate,
     withdrawalDescription,
@@ -62,7 +62,7 @@ export default function ReservaPage() {
     setWithdrawalField,
     submitWithdrawal,
     editingMovementId,
-    editMovementBucket,
+    editMovementBucketId,
     editMovementAmount,
     editMovementDate,
     editMovementDescription,
@@ -86,14 +86,14 @@ export default function ReservaPage() {
   }
 
   const withdrawalValues: Record<WithdrawalFormField, string> = {
-    withdrawalBucket,
+    withdrawalBucketId,
     withdrawalAmount,
     withdrawalDate,
     withdrawalDescription,
   }
 
   const editMovementValues: Record<EditMovementField, string> = {
-    editMovementBucket,
+    editMovementBucketId,
     editMovementAmount,
     editMovementDate,
     editMovementDescription,
@@ -167,8 +167,8 @@ export default function ReservaPage() {
             <BalanceColumns />
             <tbody>
               {lastSplitResult.buckets.map((entry) => (
-                <tr key={entry.bucket}>
-                  <td>{entry.bucket}</td>
+                <tr key={entry.bucketId}>
+                  <td>{entry.bucketName}</td>
                   <td className="data-table__col--numeric">{formatN2(entry.amount)}</td>
                 </tr>
               ))}
@@ -194,11 +194,11 @@ export default function ReservaPage() {
               <label htmlFor="withdrawal-bucket">Bucket</label>
               <select
                 id="withdrawal-bucket"
-                value={withdrawalValues.withdrawalBucket}
-                onChange={(e) => setWithdrawalField('withdrawalBucket', e.target.value)}
+                value={withdrawalValues.withdrawalBucketId}
+                onChange={(e) => setWithdrawalField('withdrawalBucketId', e.target.value)}
               >
                 {buckets.map((bucket) => (
-                  <option key={bucket.id} value={bucket.name}>
+                  <option key={bucket.id} value={bucket.id}>
                     {bucket.name}
                   </option>
                 ))}
@@ -254,11 +254,11 @@ export default function ReservaPage() {
               <label htmlFor="edit-movement-bucket">Bucket</label>
               <select
                 id="edit-movement-bucket"
-                value={editMovementValues.editMovementBucket}
-                onChange={(e) => setEditMovementField('editMovementBucket', e.target.value)}
+                value={editMovementValues.editMovementBucketId}
+                onChange={(e) => setEditMovementField('editMovementBucketId', e.target.value)}
               >
                 {buckets.map((bucket) => (
-                  <option key={bucket.id} value={bucket.name}>
+                  <option key={bucket.id} value={bucket.id}>
                     {bucket.name}
                   </option>
                 ))}
@@ -321,8 +321,8 @@ export default function ReservaPage() {
                 </thead>
                 <tbody>
                   {balances.map((b) => (
-                    <tr key={b.bucket}>
-                      <td>{b.bucket}</td>
+                    <tr key={b.bucketId}>
+                      <td>{b.bucketName}</td>
                       <td className="data-table__col--numeric">{formatN2(b.balance)}</td>
                     </tr>
                   ))}
@@ -390,7 +390,7 @@ export default function ReservaPage() {
                           </button>
                         </td>
                         <td>{formatShortDate(m.date)}</td>
-                        <td>{m.bucket}</td>
+                        <td>{m.bucketName}</td>
                         <td>{m.description}</td>
                         <td className="data-table__col--numeric">{formatN2(m.amount)}</td>
                       </tr>

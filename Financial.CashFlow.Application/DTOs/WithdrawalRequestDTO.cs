@@ -5,8 +5,8 @@ namespace Financial.CashFlow.Application.DTOs;
 /// </summary>
 public sealed class WithdrawalRequestDTO
 {
-    /// <summary>Bucket name to withdraw from.</summary>
-    public required string Bucket { get; init; }
+    /// <summary>Identifier of the bucket to withdraw from.</summary>
+    public required Guid BucketId { get; init; }
 
     /// <summary>Withdrawal amount, as a positive magnitude.</summary>
     public required decimal Amount { get; init; }
