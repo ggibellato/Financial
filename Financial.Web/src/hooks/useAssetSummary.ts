@@ -229,12 +229,13 @@ export function useAssetSummary(): AssetSummaryData {
     // terminal value is 0 rather than a live price.
     const currentValue =
       scope === 'active' && state.price ? state.price.price * state.asset.quantity : 0
-    const currentValueWithCredits = scope === 'active' ? currentValue + state.asset.totalCredits : currentValue
+    // cashFlowsWithCredits already carries every credit as a dated positive flow, so both series
+    // share the same terminal value. Adding totalCredits here would count each credit twice.
     let cancelled = false
 
     void Promise.all([
       apiClient.calculateXirr(state.asset.cashFlowsWithoutCredits, currentValue),
-      apiClient.calculateXirr(state.asset.cashFlowsWithCredits, currentValueWithCredits),
+      apiClient.calculateXirr(state.asset.cashFlowsWithCredits, currentValue),
     ])
       .then(([withoutCredits, withCredits]) => {
         if (cancelled) return

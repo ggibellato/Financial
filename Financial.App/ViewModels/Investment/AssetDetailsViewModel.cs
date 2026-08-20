@@ -203,7 +203,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public bool IsActiveScope => _scope == InvestmentScope.Active;
     public bool IsHistoricScope => _scope == InvestmentScope.Historic;
     public decimal? Xirr => _xirrCalculationService.Calculate(_cashFlowsWithoutCredits, TotalCurrentValue);
-    public decimal? XirrWithCredits => _xirrCalculationService.Calculate(_cashFlowsWithCredits, TotalCurrentValueWithCredits);
+
+    // The credits-bearing series already carries every credit as a dated positive flow, so the
+    // terminal value is the market value alone. Adding TotalCurrentValueWithCredits here would
+    // count each credit a second time and flatter the result.
+    public decimal? XirrWithCredits => _xirrCalculationService.Calculate(_cashFlowsWithCredits, TotalCurrentValue);
 
     // Historic (closed) positions have no live price to mark-to-market: XIRR is derived from
     // already-realized cash flows alone, with a 0 terminal value (every buy/sell/credit is
