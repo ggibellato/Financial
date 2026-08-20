@@ -5,14 +5,12 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
-public class NavigationEndpointsTests
+public class NavigationEndpointsTests : ApiEndpointTests
 {
     [Fact]
     public async Task GetNavigationTree_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/navigation/tree");
+        var response = await Client.GetAsync("/api/v1/financial/navigation/tree");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -25,9 +23,7 @@ public class NavigationEndpointsTests
     [Fact]
     public async Task GetBrokers_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/navigation/brokers");
+        var response = await Client.GetAsync("/api/v1/financial/navigation/brokers");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -39,9 +35,7 @@ public class NavigationEndpointsTests
     [Fact]
     public async Task GetNavigationTree_ScopeOmitted_PreservesActiveOnlyBehavior()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/navigation/tree");
+        var response = await Client.GetAsync("/api/v1/financial/navigation/tree");
 
         var tree = await response.Content.ReadFromJsonAsync<TreeNodeDTO>();
 
@@ -53,9 +47,7 @@ public class NavigationEndpointsTests
     [Fact]
     public async Task GetNavigationTree_ScopeActive_AssetNode_IncludesPositionType()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/navigation/tree?scope=active");
+        var response = await Client.GetAsync("/api/v1/financial/navigation/tree?scope=active");
 
         var tree = await response.Content.ReadFromJsonAsync<TreeNodeDTO>();
 
@@ -67,9 +59,7 @@ public class NavigationEndpointsTests
     [Fact]
     public async Task GetNavigationTree_ScopeHistoric_ReturnsOnlyHistoricBroker()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/navigation/tree?scope=historic");
+        var response = await Client.GetAsync("/api/v1/financial/navigation/tree?scope=historic");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -83,9 +73,7 @@ public class NavigationEndpointsTests
     [Fact]
     public async Task GetBrokers_ScopeHistoric_ReturnsOnlyHistoricBroker()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/navigation/brokers?scope=historic");
+        var response = await Client.GetAsync("/api/v1/financial/navigation/brokers?scope=historic");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 

@@ -1,6 +1,7 @@
 using Financial.Investment.Application.Configuration;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System.Net;
@@ -11,22 +12,24 @@ namespace Financial.Api.Tests;
 
 public class WatchlistEndpointsTests
 {
+    private static readonly JsonSerializerOptions CaseInsensitiveJson = new() { PropertyNameCaseInsensitive = true };
+
+    /// <summary>Boots the API with the WatchlistOptions a test needs; the configuration callback is the only
+    /// thing that differs between these tests.</summary>
+    private static WebApplicationFactory<Program> CreateFactory(Action<WatchlistOptions> configure) =>
+        new ApiTestFactory().WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services => services.PostConfigure(configure)));
+
     [Fact]
     public async Task GetWatchlist_ReturnsOk_WithConfiguredItems()
     {
-        await using var factory = new ApiTestFactory().WithWebHostBuilder(builder =>
+        await using var factory = CreateFactory(options =>
         {
-            builder.ConfigureServices(services =>
-            {
-                services.PostConfigure<WatchlistOptions>(options =>
-                {
-                    options.Items =
-                    [
-                        new WatchlistItem { Group = "Group A", Name = "KLBN4" },
-                        new WatchlistItem { Group = "Group A", Name = "TAEE3" },
-                    ];
-                });
-            });
+            options.Items =
+            [
+                new WatchlistItem { Group = "Group A", Name = "KLBN4" },
+                new WatchlistItem { Group = "Group A", Name = "TAEE3" },
+            ];
         });
 
         using var client = factory.CreateClient();
@@ -34,8 +37,7 @@ public class WatchlistEndpointsTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var items = await response.Content.ReadFromJsonAsync<WatchlistItem[]>(
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var items = await response.Content.ReadFromJsonAsync<WatchlistItem[]>(CaseInsensitiveJson);
         items.Should().HaveCount(2);
         items![0].Group.Should().Be("Group A");
         items[0].Name.Should().Be("KLBN4");
@@ -45,36 +47,23 @@ public class WatchlistEndpointsTests
     [Fact]
     public async Task GetWatchlist_ReturnsEmptyArray_WhenNoItemsConfigured()
     {
-        await using var factory = new ApiTestFactory().WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureServices(services =>
-            {
-                services.PostConfigure<WatchlistOptions>(options => options.Items.Clear());
-            });
-        });
+        await using var factory = CreateFactory(options => options.Items.Clear());
 
         using var client = factory.CreateClient();
         var response = await client.GetAsync("/api/v1/financial/watchlist");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var items = await response.Content.ReadFromJsonAsync<WatchlistItem[]>(
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var items = await response.Content.ReadFromJsonAsync<WatchlistItem[]>(CaseInsensitiveJson);
         items.Should().BeEmpty();
     }
 
     [Fact]
     public async Task GetWatchlist_JsonUsesGroupAndNameProperties()
     {
-        await using var factory = new ApiTestFactory().WithWebHostBuilder(builder =>
+        await using var factory = CreateFactory(options =>
         {
-            builder.ConfigureServices(services =>
-            {
-                services.PostConfigure<WatchlistOptions>(options =>
-                {
-                    options.Items = [new WatchlistItem { Group = "Test", Name = "KLBN4" }];
-                });
-            });
+            options.Items = [new WatchlistItem { Group = "Test", Name = "KLBN4" }];
         });
 
         using var client = factory.CreateClient();

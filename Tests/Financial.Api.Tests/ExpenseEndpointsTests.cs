@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
-public class ExpenseEndpointsTests
+public class ExpenseEndpointsTests : ApiEndpointTests
 {
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
     private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
@@ -20,8 +20,6 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task AddExpense_ValidRequest_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 15),
@@ -32,7 +30,7 @@ public class ExpenseEndpointsTests
             CreditCardId = null
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
@@ -45,8 +43,6 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task AddExpense_OmittingCountsAsTithe_ReturnsOkWithFlagTrue()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 15),
@@ -57,7 +53,7 @@ public class ExpenseEndpointsTests
             CreditCardId = null
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
@@ -67,8 +63,6 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task AddExpense_WithCountsAsTitheFalse_ReturnsOkWithFlagFalse()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 15),
@@ -80,7 +74,7 @@ public class ExpenseEndpointsTests
             CountsAsTithe = false
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
@@ -90,9 +84,7 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task UpdateExpense_TogglingCountsAsTitheToFalse_ReturnsOkWithFlagFalse()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 15),
             Description = "Tithe payment",
@@ -103,7 +95,7 @@ public class ExpenseEndpointsTests
         });
         var createdExpense = await created.Content.ReadFromJsonAsync<ExpenseDTO>();
 
-        var response = await client.PutAsJsonAsync($"/api/v1/financial/expenses/{createdExpense!.Id}", new ExpenseUpdateDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/expenses/{createdExpense!.Id}", new ExpenseUpdateDTO
         {
             Date = createdExpense.Date,
             Description = createdExpense.Description,
@@ -122,8 +114,6 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task AddExpense_CreditCardIdWithoutPaymentSource_ReturnsCreditCardCharge()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 15),
@@ -134,7 +124,7 @@ public class ExpenseEndpointsTests
             CreditCardId = ChaseMaster4023Id
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
@@ -146,8 +136,6 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task AddExpense_CreditCardExpense_ReturnsNonNullChargeDateAndInvoiceDate()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 15),
@@ -158,7 +146,7 @@ public class ExpenseEndpointsTests
             CreditCardId = ChaseMaster4023Id
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
 
         var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
         expense!.ChargeDate.Should().Be(new DateOnly(2026, 7, 15));
@@ -168,8 +156,6 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task AddExpense_WithInvoiceDateOverride_UsesProvidedMonth()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 29),
@@ -181,7 +167,7 @@ public class ExpenseEndpointsTests
             InvoiceDate = new DateOnly(2026, 8, 17)
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
 
         var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
         expense!.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
@@ -190,8 +176,6 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task AddExpense_NeitherPaymentSourceNorCreditCardId_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 15),
@@ -202,7 +186,7 @@ public class ExpenseEndpointsTests
             CreditCardId = null
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var body = await response.Content.ReadAsStringAsync();
@@ -212,8 +196,6 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task AddExpense_BothPaymentSourceAndCreditCardId_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 15),
@@ -224,7 +206,7 @@ public class ExpenseEndpointsTests
             CreditCardId = ChaseMaster4023Id
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var body = await response.Content.ReadAsStringAsync();
@@ -234,8 +216,6 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task AddExpense_ZeroValue_ReturnsBadRequestWithMessage()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 15),
@@ -246,7 +226,7 @@ public class ExpenseEndpointsTests
             CreditCardId = null
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var body = await response.Content.ReadAsStringAsync();
@@ -256,8 +236,6 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task AddExpense_MissingCategory_ReturnsBadRequestWithMessage()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 15),
@@ -268,7 +246,7 @@ public class ExpenseEndpointsTests
             CreditCardId = null
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var body = await response.Content.ReadAsStringAsync();
@@ -278,9 +256,7 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task UpdateExpense_ExistingId_ReturnsOkAndUpdatesFields()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "Original",
@@ -291,7 +267,7 @@ public class ExpenseEndpointsTests
         });
         var createdExpense = await created.Content.ReadFromJsonAsync<ExpenseDTO>();
 
-        var response = await client.PutAsJsonAsync($"/api/v1/financial/expenses/{createdExpense!.Id}", new ExpenseUpdateDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/expenses/{createdExpense!.Id}", new ExpenseUpdateDTO
         {
             Date = new DateOnly(2026, 8, 1),
             Description = "Updated",
@@ -310,10 +286,7 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task UpdateExpense_UnknownId_ReturnsNotFound()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.PutAsJsonAsync($"/api/v1/financial/expenses/{Guid.NewGuid()}", new ExpenseUpdateDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/expenses/{Guid.NewGuid()}", new ExpenseUpdateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "Ghost",
@@ -329,9 +302,7 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task DeleteExpense_ExistingId_ReturnsOkAndRemovesExpense()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 5),
             Description = "To delete",
@@ -342,21 +313,18 @@ public class ExpenseEndpointsTests
         });
         var createdExpense = await created.Content.ReadFromJsonAsync<ExpenseDTO>();
 
-        var response = await client.DeleteAsync($"/api/v1/financial/expenses/{createdExpense!.Id}");
+        var response = await Client.DeleteAsync($"/api/v1/financial/expenses/{createdExpense!.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var list = await client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
+        var list = await Client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
         list.Should().NotContain(e => e.Id == createdExpense.Id);
     }
 
     [Fact]
     public async Task DeleteExpense_UnknownId_ReturnsNotFound()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.DeleteAsync($"/api/v1/financial/expenses/{Guid.NewGuid()}");
+        var response = await Client.DeleteAsync($"/api/v1/financial/expenses/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -364,9 +332,7 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task GetExpensesByMonth_ReturnsOnlyExpensesForThatMonth()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 10),
             Description = "July expense",
@@ -375,7 +341,7 @@ public class ExpenseEndpointsTests
             PaymentSourceBankId = ChaseId,
             CreditCardId = null
         });
-        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 8, 10),
             Description = "August expense",
@@ -385,7 +351,7 @@ public class ExpenseEndpointsTests
             CreditCardId = null
         });
 
-        var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");
+        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
@@ -395,9 +361,7 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task GetExpensesByMonth_UnpaidCardCharge_IsExcludedFromResponse()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 10),
             Description = "Card charge",
@@ -407,7 +371,7 @@ public class ExpenseEndpointsTests
             CreditCardId = BarclaysPlatinumVisa8003Id
         });
 
-        var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");
+        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
@@ -417,9 +381,7 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task GetExpensesByMonth_BankPaidExpense_StillIncludedInResponse()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 10),
             Description = "Bank expense",
@@ -429,7 +391,7 @@ public class ExpenseEndpointsTests
             CreditCardId = null
         });
 
-        var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");
+        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7");
 
         var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
         items.Should().ContainSingle(e => e.Description == "Bank expense");
@@ -438,9 +400,7 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task GetExpensesByMonth_AfterMarkStatementPaid_CardChargeReappears()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 10),
             Description = "Card charge",
@@ -450,12 +410,12 @@ public class ExpenseEndpointsTests
             CreditCardId = BarclaysPlatinumVisa8003Id
         });
         var createdExpense = await created.Content.ReadFromJsonAsync<ExpenseDTO>();
-        var statement = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
+        var statement = await GetStatementAsync(Client, "BarclaysPlatinumVisa8003");
 
-        await client.PostAsJsonAsync(
+        await Client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
             new MarkStatementPaidDTO { PaymentSourceBankId = Trading212Id });
-        var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");
+        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7");
 
         var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
         items.Should().ContainSingle(e => e.Id == createdExpense!.Id && e.PaymentStatus == "CreditCardSettled");
@@ -464,9 +424,7 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task GetExpensesByMonth_AfterUnmarkStatementPaid_CardChargeIsExcludedAgain()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 10),
             Description = "Card charge",
@@ -475,13 +433,13 @@ public class ExpenseEndpointsTests
             PaymentSourceBankId = null,
             CreditCardId = BarclaysPlatinumVisa8003Id
         });
-        var statement = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
-        await client.PostAsJsonAsync(
+        var statement = await GetStatementAsync(Client, "BarclaysPlatinumVisa8003");
+        await Client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
             new MarkStatementPaidDTO { PaymentSourceBankId = Trading212Id });
 
-        await client.PostAsync($"/api/v1/financial/card-statements/{statement.Id}/unmark-paid", null);
-        var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");
+        await Client.PostAsync($"/api/v1/financial/card-statements/{statement.Id}/unmark-paid", null);
+        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7");
 
         var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
         items.Should().NotContain(e => e.Description == "Card charge");
@@ -490,9 +448,7 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task GetUnpaidCardChargesByMonth_ReturnsOnlyUnsettledCardCharges()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 10),
             Description = "Bank expense",
@@ -501,7 +457,7 @@ public class ExpenseEndpointsTests
             PaymentSourceBankId = ChaseId,
             CreditCardId = null
         });
-        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 10),
             Description = "Card charge",
@@ -511,7 +467,7 @@ public class ExpenseEndpointsTests
             CreditCardId = BarclaysPlatinumVisa8003Id
         });
 
-        var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7/unpaid-card-charges");
+        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7/unpaid-card-charges");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
@@ -524,9 +480,7 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task GetUnpaidCardChargesByMonth_AfterMarkStatementPaid_ExcludesSettledCharge()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 10),
             Description = "Card charge",
@@ -535,12 +489,12 @@ public class ExpenseEndpointsTests
             PaymentSourceBankId = null,
             CreditCardId = BarclaysPlatinumVisa8003Id
         });
-        var statement = await GetStatementAsync(client, "BarclaysPlatinumVisa8003");
-        await client.PostAsJsonAsync(
+        var statement = await GetStatementAsync(Client, "BarclaysPlatinumVisa8003");
+        await Client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
             new MarkStatementPaidDTO { PaymentSourceBankId = Trading212Id });
 
-        var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7/unpaid-card-charges");
+        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7/unpaid-card-charges");
 
         var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
         items.Should().BeEmpty();
@@ -555,9 +509,7 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task GetCategoryTotalsByMonth_ReturnsSummedTotalsPerCategory()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "Groceries 1",
@@ -566,7 +518,7 @@ public class ExpenseEndpointsTests
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null
         });
-        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 2),
             Description = "Groceries 2",
@@ -576,7 +528,7 @@ public class ExpenseEndpointsTests
             CreditCardId = null
         });
 
-        var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7/category-totals");
+        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7/category-totals");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var totals = await response.Content.ReadFromJsonAsync<List<CategoryTotalDTO>>();
@@ -586,8 +538,6 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task AddExpense_RoundUpAmountOnRoundUpEnabledBank_ReturnsOkWithAmountSaved()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 15),
@@ -599,7 +549,7 @@ public class ExpenseEndpointsTests
             RoundUpAmount = 0.60m
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var expense = await response.Content.ReadFromJsonAsync<ExpenseDTO>();
@@ -610,8 +560,6 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task AddExpense_RoundUpAmountOnNonRoundUpBank_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 15),
@@ -623,7 +571,7 @@ public class ExpenseEndpointsTests
             RoundUpAmount = 0.60m
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var body = await response.Content.ReadAsStringAsync();
@@ -633,8 +581,6 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task AddExpense_RoundUpAmountWithCreditCardId_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 15),
@@ -646,7 +592,7 @@ public class ExpenseEndpointsTests
             RoundUpAmount = 0.60m
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/expenses", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var body = await response.Content.ReadAsStringAsync();
@@ -656,9 +602,7 @@ public class ExpenseEndpointsTests
     [Fact]
     public async Task GetExpensesByMonth_EligibleExpenseWithNoSavedRoundUp_IncludesSuggestion()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 7, 15),
             Description = "TfL",
@@ -668,7 +612,7 @@ public class ExpenseEndpointsTests
             CreditCardId = null
         });
 
-        var response = await client.GetAsync("/api/v1/financial/expenses/month/2026/7");
+        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();

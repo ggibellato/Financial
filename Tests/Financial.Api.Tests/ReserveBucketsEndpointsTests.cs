@@ -5,15 +5,12 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
-public class ReserveBucketsEndpointsTests
+public class ReserveBucketsEndpointsTests : ApiEndpointTests
 {
     [Fact]
     public async Task GetReserveBuckets_ReturnsTheFourSeededBucketsWithCorrectFields()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/reserve-buckets");
+        var response = await Client.GetAsync("/api/v1/financial/reserve-buckets");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var buckets = await response.Content.ReadFromJsonAsync<List<ReserveBucketDTO>>();
@@ -27,10 +24,7 @@ public class ReserveBucketsEndpointsTests
     [Fact]
     public async Task GetReserveBuckets_RequiresNoParameters_AndReturnsFullUnfilteredList()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/reserve-buckets");
+        var response = await Client.GetAsync("/api/v1/financial/reserve-buckets");
         var buckets = await response.Content.ReadFromJsonAsync<List<ReserveBucketDTO>>();
 
         // All 4 seeded buckets come back regardless of IsActive value - none are seeded inactive
@@ -45,11 +39,9 @@ public class ReserveBucketsEndpointsTests
     [InlineData("DELETE")]
     public async Task ReserveBuckets_UnsupportedVerbs_DoNotSucceed(string method)
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new HttpRequestMessage(new HttpMethod(method), "/api/v1/financial/reserve-buckets");
 
-        var response = await client.SendAsync(request);
+        var response = await Client.SendAsync(request);
 
         response.IsSuccessStatusCode.Should().BeFalse();
     }

@@ -6,7 +6,7 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
-public class AnnualSummaryEndpointsTests
+public class AnnualSummaryEndpointsTests : ApiEndpointTests
 {
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
     private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
@@ -20,10 +20,7 @@ public class AnnualSummaryEndpointsTests
     [Fact]
     public async Task GetExpenseCategoryTotals_RouteRemoved_Returns404()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/annual-summary/2026/expense-categories");
+        var response = await Client.GetAsync("/api/v1/financial/annual-summary/2026/expense-categories");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -31,10 +28,7 @@ public class AnnualSummaryEndpointsTests
     [Fact]
     public async Task GetIncomeSummary_RouteRemoved_Returns404()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/annual-summary/2026/income-summary");
+        var response = await Client.GetAsync("/api/v1/financial/annual-summary/2026/income-summary");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -42,10 +36,7 @@ public class AnnualSummaryEndpointsTests
     [Fact]
     public async Task GetInvestmentDiffs_RouteRemoved_Returns404()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/annual-summary/2026/investment-diffs");
+        var response = await Client.GetAsync("/api/v1/financial/annual-summary/2026/investment-diffs");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -146,9 +137,7 @@ public class AnnualSummaryEndpointsTests
     [Fact]
     public async Task GetCategoryTotals_ReturnsCombinedShapeWithComputedTotalDespesasAndResultado()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 1, 5),
             Description = "January groceries",
@@ -157,7 +146,7 @@ public class AnnualSummaryEndpointsTests
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null
         });
-        await client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
             Date = new DateOnly(2026, 1, 5),
             Description = "January investing",
@@ -166,7 +155,7 @@ public class AnnualSummaryEndpointsTests
             PaymentSourceBankId = BarclaysId,
             CreditCardId = null
         });
-        await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 1, 1),
             IncomeSourceId = GleisonId,
@@ -174,7 +163,7 @@ public class AnnualSummaryEndpointsTests
             NetValue = 800m,
             BankId = BarclaysId
         });
-        await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 1, 1),
             IncomeSourceId = DividendoJurosId,
@@ -183,7 +172,7 @@ public class AnnualSummaryEndpointsTests
             BankId = Trading212Id
         });
 
-        var response = await client.GetAsync("/api/v1/financial/annual-summary/2026/category-totals");
+        var response = await Client.GetAsync("/api/v1/financial/annual-summary/2026/category-totals");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<CategoryTotalsAnnualDTO>();
@@ -199,10 +188,7 @@ public class AnnualSummaryEndpointsTests
     [Fact]
     public async Task GetCategoryTotals_NoRecordedData_ReturnsAllZeroSeries()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/annual-summary/2026/category-totals");
+        var response = await Client.GetAsync("/api/v1/financial/annual-summary/2026/category-totals");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<CategoryTotalsAnnualDTO>();
@@ -214,18 +200,16 @@ public class AnnualSummaryEndpointsTests
     [Fact]
     public async Task GetInvestmentAnnualResult_ReturnsOkMatchingSeededSnapshots()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var januarySnapshots = await client.GetAsync("/api/v1/financial/investment-snapshots/2026/1");
+        var januarySnapshots = await Client.GetAsync("/api/v1/financial/investment-snapshots/2026/1");
         var january = await januarySnapshots.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
         var chaseSaveJan = january!.First(s => s.AccountName == "ChaseSave");
-        await client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{chaseSaveJan.Id}", new UpdateInvestmentSnapshotValueDTO { Value = 1000m });
-        var februarySnapshots = await client.GetAsync("/api/v1/financial/investment-snapshots/2026/2");
+        await Client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{chaseSaveJan.Id}", new UpdateInvestmentSnapshotValueDTO { Value = 1000m });
+        var februarySnapshots = await Client.GetAsync("/api/v1/financial/investment-snapshots/2026/2");
         var february = await februarySnapshots.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
         var chaseSaveFeb = february!.First(s => s.AccountName == "ChaseSave");
-        await client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{chaseSaveFeb.Id}", new UpdateInvestmentSnapshotValueDTO { Value = 1200m });
+        await Client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{chaseSaveFeb.Id}", new UpdateInvestmentSnapshotValueDTO { Value = 1200m });
 
-        var response = await client.GetAsync("/api/v1/financial/annual-summary/2026/investment-annual-result");
+        var response = await Client.GetAsync("/api/v1/financial/annual-summary/2026/investment-annual-result");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<InvestmentAnnualResultDTO>();
@@ -243,10 +227,8 @@ public class AnnualSummaryEndpointsTests
     public async Task GetInvestmentAnnualResult_NoData_ReturnsEmptyAccountsArray()
     {
         var pastYear = DateTime.UtcNow.Year - 5;
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
 
-        var response = await client.GetAsync($"/api/v1/financial/annual-summary/{pastYear}/investment-annual-result");
+        var response = await Client.GetAsync($"/api/v1/financial/annual-summary/{pastYear}/investment-annual-result");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<InvestmentAnnualResultDTO>();

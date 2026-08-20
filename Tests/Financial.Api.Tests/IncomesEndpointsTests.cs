@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
-public class IncomesEndpointsTests
+public class IncomesEndpointsTests : ApiEndpointTests
 {
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
     private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
@@ -18,8 +18,6 @@ public class IncomesEndpointsTests
     [Fact]
     public async Task AddIncome_ValidRequest_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
@@ -29,7 +27,7 @@ public class IncomesEndpointsTests
             BankId = BarclaysId
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/incomes", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/incomes", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var income = await response.Content.ReadFromJsonAsync<IncomeDTO>();
@@ -45,8 +43,6 @@ public class IncomesEndpointsTests
     [Fact]
     public async Task AddIncome_UnrecognizedBank_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
@@ -56,7 +52,7 @@ public class IncomesEndpointsTests
             BankId = Guid.NewGuid()
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/incomes", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/incomes", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -64,8 +60,6 @@ public class IncomesEndpointsTests
     [Fact]
     public async Task AddIncome_WithoutBank_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
@@ -75,7 +69,7 @@ public class IncomesEndpointsTests
             BankId = null
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/incomes", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/incomes", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var income = await response.Content.ReadFromJsonAsync<IncomeDTO>();
@@ -86,8 +80,6 @@ public class IncomesEndpointsTests
     [Fact]
     public async Task AddIncome_WithDescription_ReturnsOkWithDescription()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
@@ -98,7 +90,7 @@ public class IncomesEndpointsTests
             Description = "Chip ISA dividend"
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/incomes", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/incomes", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var income = await response.Content.ReadFromJsonAsync<IncomeDTO>();
@@ -108,8 +100,6 @@ public class IncomesEndpointsTests
     [Fact]
     public async Task AddIncome_WithDescriptionOver200Characters_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
@@ -120,7 +110,7 @@ public class IncomesEndpointsTests
             Description = new string('a', 201)
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/incomes", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/incomes", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -128,8 +118,6 @@ public class IncomesEndpointsTests
     [Fact]
     public async Task AddIncome_NegativeNetValue_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
@@ -139,7 +127,7 @@ public class IncomesEndpointsTests
             BankId = ChaseId
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/incomes", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/incomes", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -147,9 +135,7 @@ public class IncomesEndpointsTests
     [Fact]
     public async Task UpdateIncome_ExistingId_ReturnsOkAndUpdatesFields()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             IncomeSourceId = LotteryId,
@@ -159,7 +145,7 @@ public class IncomesEndpointsTests
         });
         var createdIncome = await created.Content.ReadFromJsonAsync<IncomeDTO>();
 
-        var response = await client.PutAsJsonAsync($"/api/v1/financial/incomes/{createdIncome!.Id}", new IncomeUpdateDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/incomes/{createdIncome!.Id}", new IncomeUpdateDTO
         {
             Date = new DateOnly(2026, 7, 2),
             IncomeSourceId = DividendoJurosId,
@@ -180,9 +166,7 @@ public class IncomesEndpointsTests
     [Fact]
     public async Task UpdateIncome_RemovingBank_ReturnsOkWithNullBank()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             IncomeSourceId = LotteryId,
@@ -192,7 +176,7 @@ public class IncomesEndpointsTests
         });
         var createdIncome = await created.Content.ReadFromJsonAsync<IncomeDTO>();
 
-        var response = await client.PutAsJsonAsync($"/api/v1/financial/incomes/{createdIncome!.Id}", new IncomeUpdateDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/incomes/{createdIncome!.Id}", new IncomeUpdateDTO
         {
             Date = createdIncome.Date,
             IncomeSourceId = createdIncome.IncomeSourceId,
@@ -210,10 +194,7 @@ public class IncomesEndpointsTests
     [Fact]
     public async Task UpdateIncome_UnknownId_ReturnsNotFound()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.PutAsJsonAsync($"/api/v1/financial/incomes/{Guid.NewGuid()}", new IncomeUpdateDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/incomes/{Guid.NewGuid()}", new IncomeUpdateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             IncomeSourceId = LotteryId,
@@ -228,9 +209,7 @@ public class IncomesEndpointsTests
     [Fact]
     public async Task DeleteIncome_ExistingId_ReturnsOkAndRemovesIncome()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 5),
             IncomeSourceId = LotteryId,
@@ -240,21 +219,18 @@ public class IncomesEndpointsTests
         });
         var createdIncome = await created.Content.ReadFromJsonAsync<IncomeDTO>();
 
-        var response = await client.DeleteAsync($"/api/v1/financial/incomes/{createdIncome!.Id}");
+        var response = await Client.DeleteAsync($"/api/v1/financial/incomes/{createdIncome!.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var list = await client.GetFromJsonAsync<List<IncomeDTO>>("/api/v1/financial/incomes/month/2026/7");
+        var list = await Client.GetFromJsonAsync<List<IncomeDTO>>("/api/v1/financial/incomes/month/2026/7");
         list.Should().NotContain(i => i.Id == createdIncome.Id);
     }
 
     [Fact]
     public async Task DeleteIncome_UnknownId_ReturnsNotFound()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.DeleteAsync($"/api/v1/financial/incomes/{Guid.NewGuid()}");
+        var response = await Client.DeleteAsync($"/api/v1/financial/incomes/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -262,9 +238,7 @@ public class IncomesEndpointsTests
     [Fact]
     public async Task GetIncomesByMonth_ReturnsOnlyIncomesForThatMonthAndAllowsMultiplePerSource()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             IncomeSourceId = ArianaId,
@@ -272,7 +246,7 @@ public class IncomesEndpointsTests
             NetValue = 400m,
             BankId = ChaseId
         });
-        await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 7, 8),
             IncomeSourceId = ArianaId,
@@ -280,7 +254,7 @@ public class IncomesEndpointsTests
             NetValue = 420m,
             BankId = ChaseId
         });
-        await client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
             Date = new DateOnly(2026, 8, 1),
             IncomeSourceId = ArianaId,
@@ -289,7 +263,7 @@ public class IncomesEndpointsTests
             BankId = ChaseId
         });
 
-        var response = await client.GetAsync("/api/v1/financial/incomes/month/2026/7");
+        var response = await Client.GetAsync("/api/v1/financial/incomes/month/2026/7");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<IncomeDTO>>();

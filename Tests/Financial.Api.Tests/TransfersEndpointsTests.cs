@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Financial.Api.Tests;
 
-public class TransfersEndpointsTests
+public class TransfersEndpointsTests : ApiEndpointTests
 {
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
     private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
@@ -15,14 +15,12 @@ public class TransfersEndpointsTests
     [Fact]
     public async Task AddTransfer_NameStringInGuidField_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var body = new StringContent(
             """{"date":"2026-07-25","sourceBankId":"Barclays","destinationBankId":"Trading212","amount":100}""",
             Encoding.UTF8,
             "application/json");
 
-        var response = await client.PostAsync("/api/v1/financial/transfers", body);
+        var response = await Client.PostAsync("/api/v1/financial/transfers", body);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -30,8 +28,6 @@ public class TransfersEndpointsTests
     [Fact]
     public async Task AddTransfer_ValidRequest_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
@@ -41,7 +37,7 @@ public class TransfersEndpointsTests
             Note = "Round-up top-up"
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/transfers", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/transfers", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var transfer = await response.Content.ReadFromJsonAsync<TransferDTO>();
@@ -57,8 +53,6 @@ public class TransfersEndpointsTests
     [Fact]
     public async Task AddTransfer_SameSourceAndDestination_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
@@ -67,7 +61,7 @@ public class TransfersEndpointsTests
             Amount = 100m
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/transfers", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/transfers", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -75,8 +69,6 @@ public class TransfersEndpointsTests
     [Fact]
     public async Task AddTransfer_NonPositiveAmount_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
@@ -85,7 +77,7 @@ public class TransfersEndpointsTests
             Amount = 0m
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/transfers", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/transfers", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -93,8 +85,6 @@ public class TransfersEndpointsTests
     [Fact]
     public async Task AddTransfer_UnresolvableBank_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
@@ -103,7 +93,7 @@ public class TransfersEndpointsTests
             Amount = 100m
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/transfers", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/transfers", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -111,9 +101,7 @@ public class TransfersEndpointsTests
     [Fact]
     public async Task UpdateTransfer_ExistingId_ReturnsOkAndUpdatesFields()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             SourceBankId = BarclaysId,
@@ -122,7 +110,7 @@ public class TransfersEndpointsTests
         });
         var createdTransfer = await created.Content.ReadFromJsonAsync<TransferDTO>();
 
-        var response = await client.PutAsJsonAsync($"/api/v1/financial/transfers/{createdTransfer!.Id}", new TransferUpdateDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/transfers/{createdTransfer!.Id}", new TransferUpdateDTO
         {
             Date = new DateOnly(2026, 7, 2),
             SourceBankId = ChaseId,
@@ -142,10 +130,7 @@ public class TransfersEndpointsTests
     [Fact]
     public async Task UpdateTransfer_UnknownId_ReturnsNotFound()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.PutAsJsonAsync($"/api/v1/financial/transfers/{Guid.NewGuid()}", new TransferUpdateDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/transfers/{Guid.NewGuid()}", new TransferUpdateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             SourceBankId = BarclaysId,
@@ -159,9 +144,7 @@ public class TransfersEndpointsTests
     [Fact]
     public async Task DeleteTransfer_ExistingId_ReturnsOkAndRemovesTransfer()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 5),
             SourceBankId = BarclaysId,
@@ -170,21 +153,18 @@ public class TransfersEndpointsTests
         });
         var createdTransfer = await created.Content.ReadFromJsonAsync<TransferDTO>();
 
-        var response = await client.DeleteAsync($"/api/v1/financial/transfers/{createdTransfer!.Id}");
+        var response = await Client.DeleteAsync($"/api/v1/financial/transfers/{createdTransfer!.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var list = await client.GetFromJsonAsync<List<TransferDTO>>("/api/v1/financial/transfers/month/2026/7");
+        var list = await Client.GetFromJsonAsync<List<TransferDTO>>("/api/v1/financial/transfers/month/2026/7");
         list.Should().NotContain(t => t.Id == createdTransfer.Id);
     }
 
     [Fact]
     public async Task DeleteTransfer_UnknownId_ReturnsNotFound()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.DeleteAsync($"/api/v1/financial/transfers/{Guid.NewGuid()}");
+        var response = await Client.DeleteAsync($"/api/v1/financial/transfers/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -192,16 +172,14 @@ public class TransfersEndpointsTests
     [Fact]
     public async Task GetTransfersByMonth_ReturnsOnlyTransfersForThatMonth()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             SourceBankId = BarclaysId,
             DestinationBankId = Trading212Id,
             Amount = 100m
         });
-        await client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
         {
             Date = new DateOnly(2026, 8, 1),
             SourceBankId = BarclaysId,
@@ -209,7 +187,7 @@ public class TransfersEndpointsTests
             Amount = 100m
         });
 
-        var response = await client.GetAsync("/api/v1/financial/transfers/month/2026/7");
+        var response = await Client.GetAsync("/api/v1/financial/transfers/month/2026/7");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<TransferDTO>>();
@@ -220,23 +198,21 @@ public class TransfersEndpointsTests
     [Fact]
     public async Task GetTransfersByBank_ReturnsTransfersWhereBankIsSourceOrDestination()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
             SourceBankId = BarclaysId,
             DestinationBankId = Trading212Id,
             Amount = 100m
         });
-        await client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 2),
             SourceBankId = ChaseId,
             DestinationBankId = BarclaysId,
             Amount = 50m
         });
-        await client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
         {
             Date = new DateOnly(2026, 7, 3),
             SourceBankId = ChaseId,
@@ -244,7 +220,7 @@ public class TransfersEndpointsTests
             Amount = 25m
         });
 
-        var response = await client.GetAsync($"/api/v1/financial/transfers/bank/{BarclaysId}");
+        var response = await Client.GetAsync($"/api/v1/financial/transfers/bank/{BarclaysId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<TransferDTO>>();
@@ -254,10 +230,7 @@ public class TransfersEndpointsTests
     [Fact]
     public async Task GetTransfersByBank_UnknownBankId_ReturnsEmptyList()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync($"/api/v1/financial/transfers/bank/{Guid.NewGuid()}");
+        var response = await Client.GetAsync($"/api/v1/financial/transfers/bank/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<TransferDTO>>();
