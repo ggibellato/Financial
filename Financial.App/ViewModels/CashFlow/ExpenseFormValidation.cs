@@ -1,4 +1,4 @@
-using Financial.CashFlow.Application.Validation;
+using Financial.CashFlow.Domain.Entities;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;
 
@@ -52,10 +52,10 @@ public static class ExpenseFormValidation
         if (showRoundUpField && !string.IsNullOrWhiteSpace(roundUpAmount))
         {
             if (!decimal.TryParse(roundUpAmount, out var parsedRoundUp)
-                || parsedRoundUp < ExpenseValidationRules.MinRoundUpAmount
-                || parsedRoundUp > ExpenseValidationRules.MaxRoundUpAmount)
+                || parsedRoundUp < Expense.MinRoundUpAmount
+                || parsedRoundUp > Expense.MaxRoundUpAmount)
             {
-                errors.Add($"Round-up amount must be between £{ExpenseValidationRules.MinRoundUpAmount:N2} and £{ExpenseValidationRules.MaxRoundUpAmount:N2}.");
+                errors.Add($"Round-up amount must be between £{Expense.MinRoundUpAmount:N2} and £{Expense.MaxRoundUpAmount:N2}.");
             }
         }
 
