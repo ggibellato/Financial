@@ -45,14 +45,13 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                     return true;
                 }).ConfigureAwait(false);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "AddTransaction");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -65,7 +64,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
         {
             if (request.Id == Guid.Empty)
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "UpdateTransaction");
                 return null;
             }
@@ -84,14 +83,13 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                     return asset.UpdateTransaction(updatedTransaction);
                 }).ConfigureAwait(false);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateTransaction");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -104,7 +102,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
         {
             if (request.Id == Guid.Empty)
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "DeleteTransaction");
                 return null;
             }
@@ -117,14 +115,13 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 request.AssetName,
                 asset => asset.RemoveTransaction(request.Id)).ConfigureAwait(false);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteTransaction");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -136,20 +133,19 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
         {
             if (string.IsNullOrWhiteSpace(brokerName))
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetTransactionsByBroker");
                 return Array.Empty<TransactionSummaryItemDTO>();
             }
 
             var result = MapAndSort(_repository.GetAssetsByBroker(brokerName, scope));
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetTransactionsByBroker");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -161,20 +157,19 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
         {
             if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetTransactionsByPortfolio");
                 return Array.Empty<TransactionSummaryItemDTO>();
             }
 
             var result = MapAndSort(_repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope));
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetTransactionsByPortfolio");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -182,11 +177,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        var span = _tracer.StartSpan($"Investment.TransactionService.{operationName}");
-        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
-        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
-        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
-        return span;
+        return _tracer.StartServiceSpan("Investment", nameof(TransactionService), operationName, EntityType);
     }
 
     private static IReadOnlyList<TransactionSummaryItemDTO> MapAndSort(IEnumerable<Asset> assets)

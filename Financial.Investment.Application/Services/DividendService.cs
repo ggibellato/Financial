@@ -32,14 +32,13 @@ public sealed class DividendService : IDividendService
             var values = LoadDividends(request);
             var result = MapToHistory(values);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetDividendHistory");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -76,7 +75,7 @@ public sealed class DividendService : IDividendService
             var discountPercent = DividendValuationRules.CalculateDiscountPercent(snapshot.Price, priceMax);
             var dividendYieldPercent = DividendValuationRules.CalculateDividendYieldPercent(averageDividend, snapshot.Price);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetDividendSummary");
             return new DividendSummaryDTO
             {
@@ -95,8 +94,7 @@ public sealed class DividendService : IDividendService
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -104,11 +102,7 @@ public sealed class DividendService : IDividendService
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        var span = _tracer.StartSpan($"Investment.DividendService.{operationName}");
-        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
-        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
-        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
-        return span;
+        return _tracer.StartServiceSpan("Investment", nameof(DividendService), operationName, EntityType);
     }
 
     private IReadOnlyList<DividendValue> LoadDividends(DividendLookupRequestDTO request)

@@ -56,14 +56,13 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
                 await _repository.SaveChangesAsync().ConfigureAwait(false);
             }
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetSnapshotsForMonth");
             return existingSnapshots.Select(ToDto).ToList();
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -86,14 +85,13 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
             snapshot.Update(request.Value);
             await _repository.SaveChangesAsync().ConfigureAwait(false);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateSnapshotValue");
             return ToDto(snapshot);
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -101,11 +99,7 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        var span = _tracer.StartSpan($"CashFlow.InvestmentSnapshotService.{operationName}");
-        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "CashFlow");
-        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
-        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
-        return span;
+        return _tracer.StartServiceSpan("CashFlow", nameof(InvestmentSnapshotService), operationName, EntityType);
     }
 
     private static InvestmentSnapshotDTO ToDto(InvestmentSnapshot snapshot) => new()

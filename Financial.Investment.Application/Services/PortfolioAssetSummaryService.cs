@@ -28,7 +28,7 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
         {
             if (string.IsNullOrWhiteSpace(brokerName) || string.IsNullOrWhiteSpace(portfolioName))
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetPortfolioAssetsSummary");
                 return [];
             }
@@ -36,7 +36,7 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
             var assets = _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope).ToList();
             if (assets.Count == 0)
             {
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetPortfolioAssetsSummary");
                 return [];
             }
@@ -45,14 +45,13 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
                 ? PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, CalculateGrossBought)
                 : PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, CalculateNetInvested);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetPortfolioAssetsSummary");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -60,11 +59,7 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        var span = _tracer.StartSpan($"Investment.PortfolioAssetSummaryService.{operationName}");
-        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
-        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
-        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
-        return span;
+        return _tracer.StartServiceSpan("Investment", nameof(PortfolioAssetSummaryService), operationName, EntityType);
     }
 
     private static decimal CalculateNetInvested(AssetTotals totals) => totals.TotalBought - totals.TotalSold;

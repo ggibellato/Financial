@@ -47,14 +47,13 @@ public sealed class PriceService : IPriceService
                     return true;
                 }).ConfigureAwait(false);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "SetPrice");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -86,14 +85,13 @@ public sealed class PriceService : IPriceService
                     return asset.RemovePrice(request.Date);
                 }).ConfigureAwait(false);
 
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+            span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeletePrice");
             return result;
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -107,7 +105,7 @@ public sealed class PriceService : IPriceService
             if (asset is null)
             {
                 var result = _assetPriceService.GetCurrentPrice(request);
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetCurrentPrice");
                 return result;
             }
@@ -117,7 +115,7 @@ public sealed class PriceService : IPriceService
                 var livePrice = _assetPriceService.GetCurrentPrice(request);
                 await RecordAutomaticPriceIfNeededAsync(asset, livePrice.Price);
                 livePrice.IsManual = false;
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetCurrentPrice");
                 return livePrice;
             }
@@ -129,7 +127,7 @@ public sealed class PriceService : IPriceService
                     throw;
                 }
 
-                span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
+                span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "GetCurrentPrice");
                 return new AssetPriceDTO
                 {
@@ -144,8 +142,7 @@ public sealed class PriceService : IPriceService
         }
         catch (Exception ex)
         {
-            span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Failed);
-            span.RecordException(ex);
+            span.MarkFailed(ex);
             throw;
         }
     }
@@ -153,11 +150,7 @@ public sealed class PriceService : IPriceService
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        var span = _tracer.StartSpan($"Investment.PriceService.{operationName}");
-        span.SetAttribute(TelemetryAttributeKeys.BoundedContext, "Investment");
-        span.SetAttribute(TelemetryAttributeKeys.EntityType, EntityType);
-        span.SetAttribute(TelemetryAttributeKeys.OperationName, operationName);
-        return span;
+        return _tracer.StartServiceSpan("Investment", nameof(PriceService), operationName, EntityType);
     }
 
     private Asset? ResolveAsset(AssetPriceRequestDTO request)
