@@ -13,6 +13,14 @@ namespace Financial.Investment.Infrastructure.Tests.Repositories;
 
 public class InvestmentRepositoryFactoryTests
 {
+    /// <summary>The same factory over a stubbed remote-file client, for the tests that must not reach Google Drive.</summary>
+    private readonly InvestmentRepositoryFactory _stubbedFactory;
+
+    public InvestmentRepositoryFactoryTests()
+    {
+        _stubbedFactory = new InvestmentRepositoryFactory(new InvestmentsSerializerAdapter(), new StubRemoteFileClientFactory());
+    }
+
     private static readonly InvestmentRepositoryFactory Factory =
         new(new InvestmentsSerializerAdapter(), new GoogleFileClientFactory());
 
@@ -126,14 +134,13 @@ public class InvestmentRepositoryFactoryTests
     [Fact]
     public async Task Create_WithGoogleDriveProvider_SaveChangesAsync_ReturnsWithoutWaitingOnUpload()
     {
-        var factory = new InvestmentRepositoryFactory(new InvestmentsSerializerAdapter(), new StubRemoteFileClientFactory());
         var options = new InvestmentRepositorySelectionOptions(
             InvestmentRepositoryProvider.GoogleDriveJson,
             null,
             TestDataPaths.DataJsonFile,
             "Pessoais/Gleison/Financeiros");
 
-        var repository = factory.Create(options);
+        var repository = _stubbedFactory.Create(options);
 
         var stopwatch = Stopwatch.StartNew();
         await repository.SaveChangesAsync();
@@ -148,14 +155,13 @@ public class InvestmentRepositoryFactoryTests
     [Fact]
     public async Task Create_WithGoogleDriveProvider_ResultImplementsISyncStatusProvider_ReportingPendingAfterAWrite()
     {
-        var factory = new InvestmentRepositoryFactory(new InvestmentsSerializerAdapter(), new StubRemoteFileClientFactory());
         var options = new InvestmentRepositorySelectionOptions(
             InvestmentRepositoryProvider.GoogleDriveJson,
             null,
             TestDataPaths.DataJsonFile,
             "Pessoais/Gleison/Financeiros");
 
-        var repository = factory.Create(options);
+        var repository = _stubbedFactory.Create(options);
 
         await repository.SaveChangesAsync();
 
@@ -210,15 +216,14 @@ public class InvestmentRepositoryFactoryTests
     [Fact]
     public async Task Create_WithGoogleDriveProvider_TwoInstancesFromSeparateCreateCalls_NeverShareStatus()
     {
-        var factory = new InvestmentRepositoryFactory(new InvestmentsSerializerAdapter(), new StubRemoteFileClientFactory());
         var options = new InvestmentRepositorySelectionOptions(
             InvestmentRepositoryProvider.GoogleDriveJson,
             null,
             TestDataPaths.DataJsonFile,
             "Pessoais/Gleison/Financeiros");
 
-        var repositoryA = factory.Create(options);
-        var repositoryB = factory.Create(options);
+        var repositoryA = _stubbedFactory.Create(options);
+        var repositoryB = _stubbedFactory.Create(options);
 
         await repositoryA.SaveChangesAsync();
 

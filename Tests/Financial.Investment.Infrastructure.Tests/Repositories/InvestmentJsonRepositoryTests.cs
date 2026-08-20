@@ -11,22 +11,24 @@ namespace Financial.Investment.Infrastructure.Tests.Repositories;
 
 public class InvestmentJsonRepositoryTests
 {
+    /// <summary>Every test round-trips through the same stateless serializer; only the backing
+    /// storage differs. Static because the repository factories below are static too.</summary>
+    private static readonly InvestmentsSerializerAdapter Serializer = new();
+
     private readonly InvestmentJsonRepository _sut = CreateRepository(TestDataPaths.DataJsonFile);
 
     private static InvestmentJsonRepository CreateRepository(string dataFile)
     {
         var storage = new LocalJsonStorage(dataFile);
-        var serializer = new InvestmentsSerializerAdapter();
-        return new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
+        return new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, Serializer), storage, Serializer);
     }
 
     [Fact]
     public void Constructor_WithNullInvestments_Throws()
     {
         var storage = new LocalJsonStorage(TestDataPaths.DataJsonFile);
-        var serializer = new InvestmentsSerializerAdapter();
 
-        Action act = () => new InvestmentJsonRepository(null!, storage, serializer);
+        Action act = () => new InvestmentJsonRepository(null!, storage, Serializer);
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("investments");
     }
@@ -147,7 +149,6 @@ public class InvestmentJsonRepositoryTests
         investments.AddHistoricBroker(historicBroker);
 
         var storage = new LocalJsonStorage(TestDataPaths.DataJsonFile);
-        var serializer = new InvestmentsSerializerAdapter();
-        return new InvestmentJsonRepository(investments, storage, serializer);
+        return new InvestmentJsonRepository(investments, storage, Serializer);
     }
 }

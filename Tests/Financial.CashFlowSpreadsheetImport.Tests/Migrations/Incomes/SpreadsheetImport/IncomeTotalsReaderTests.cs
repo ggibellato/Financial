@@ -4,13 +4,23 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.Incomes.SpreadsheetImport;
 
-public class IncomeTotalsReaderTests
+public class IncomeTotalsReaderTests : IDisposable
 {
+    /// <summary>Every test drives a fresh workbook; xUnit builds one instance per test, so they stay
+    /// isolated exactly as the per-test `using var workbook` did.</summary>
+    private readonly XLWorkbook _workbook;
+
+    public IncomeTotalsReaderTests()
+    {
+        _workbook = new XLWorkbook();
+    }
+
+    public void Dispose() => _workbook.Dispose();
+
     [Fact]
     public void ReadTotals_Era4Layout_ReadsGrossAndNetForEachSource()
     {
-        using var workbook = new XLWorkbook();
-        var sheet = workbook.AddWorksheet("Jul2026");
+        var sheet = _workbook.AddWorksheet("Jul2026");
 
         sheet.Cell(2, 10).Value = "Salario Gleison";
         sheet.Cell(2, 11).Value = 0.0;
@@ -36,8 +46,7 @@ public class IncomeTotalsReaderTests
     [Fact]
     public void ReadTotals_Era1Layout_LabelsInColumnKValuesInColumnL_NetOnly()
     {
-        using var workbook = new XLWorkbook();
-        var sheet = workbook.AddWorksheet("Jun2018");
+        var sheet = _workbook.AddWorksheet("Jun2018");
 
         sheet.Cell(4, 11).Value = "Salario Gleison";
         sheet.Cell(4, 12).Value = 5381.25;
@@ -59,8 +68,7 @@ public class IncomeTotalsReaderTests
     [Fact]
     public void ReadTotals_NoMatchingLabelsButBareValueAtJ1_ReadsItAsGleisonsNetIncome()
     {
-        using var workbook = new XLWorkbook();
-        var sheet = workbook.AddWorksheet("Fev2017");
+        var sheet = _workbook.AddWorksheet("Fev2017");
         sheet.Cell(1, 10).Value = 3744.97;
 
         var totals = IncomeTotalsReader.ReadTotals(sheet);
@@ -74,8 +82,7 @@ public class IncomeTotalsReaderTests
     [Fact]
     public void ReadTotals_NoMatchingLabelsAndNoValueAtJ1_ReturnsEmpty()
     {
-        using var workbook = new XLWorkbook();
-        var sheet = workbook.AddWorksheet("Jan2017");
+        var sheet = _workbook.AddWorksheet("Jan2017");
 
         var totals = IncomeTotalsReader.ReadTotals(sheet);
 
@@ -85,8 +92,7 @@ public class IncomeTotalsReaderTests
     [Fact]
     public void ReadTotals_NetColumnExceedsGrossColumn_ImportsGrossAsIs()
     {
-        using var workbook = new XLWorkbook();
-        var sheet = workbook.AddWorksheet("Fev2026");
+        var sheet = _workbook.AddWorksheet("Fev2026");
         sheet.Cell(3, 10).Value = "Salario Ariana";
         sheet.Cell(3, 11).Value = 343.18;
         sheet.Cell(3, 12).Value = 642.18;
@@ -101,8 +107,7 @@ public class IncomeTotalsReaderTests
     [Fact]
     public void ReadTotals_TypoedLotteryLabel_StillResolvesToLotterySource()
     {
-        using var workbook = new XLWorkbook();
-        var sheet = workbook.AddWorksheet("Out2018");
+        var sheet = _workbook.AddWorksheet("Out2018");
         sheet.Cell(4, 10).Value = "Lotery";
         sheet.Cell(4, 11).Value = 12.5;
 

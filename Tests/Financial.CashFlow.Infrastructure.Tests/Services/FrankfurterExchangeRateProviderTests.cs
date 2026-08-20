@@ -7,14 +7,18 @@ namespace Financial.CashFlow.Infrastructure.Tests.Services;
 
 public class FrankfurterExchangeRateProviderTests
 {
+    /// <summary>Builds the provider over a stubbed transport; the response each test wants back is
+    /// the only thing that differs.</summary>
+    private static FrankfurterExchangeRateProvider CreateProvider(Func<HttpRequestMessage, HttpResponseMessage> respond) =>
+        new(CreateClient(new FakeHttpMessageHandler(respond)));
+
     [Fact]
     public async Task GetHistoricalRateAsync_WithSuccessfulResponse_ParsesTheRate()
     {
-        var handler = new FakeHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-01","rates":{"GBP":0.146}}""")
         });
-        var provider = new FrankfurterExchangeRateProvider(CreateClient(handler));
 
         var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
 
@@ -24,8 +28,7 @@ public class FrankfurterExchangeRateProviderTests
     [Fact]
     public async Task GetHistoricalRateAsync_WithNonSuccessStatusCode_ReturnsNull()
     {
-        var handler = new FakeHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
-        var provider = new FrankfurterExchangeRateProvider(CreateClient(handler));
+        var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
 
         var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
 
@@ -35,11 +38,10 @@ public class FrankfurterExchangeRateProviderTests
     [Fact]
     public async Task GetHistoricalRateAsync_WithMalformedBody_ReturnsNull()
     {
-        var handler = new FakeHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent("not json")
         });
-        var provider = new FrankfurterExchangeRateProvider(CreateClient(handler));
 
         var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
 
@@ -49,8 +51,7 @@ public class FrankfurterExchangeRateProviderTests
     [Fact]
     public async Task GetHistoricalRateAsync_WhenHttpRequestThrows_ReturnsNull()
     {
-        var handler = new FakeHttpMessageHandler(_ => throw new HttpRequestException("network down"));
-        var provider = new FrankfurterExchangeRateProvider(CreateClient(handler));
+        var provider = CreateProvider(_ => throw new HttpRequestException("network down"));
 
         var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
 
@@ -60,11 +61,10 @@ public class FrankfurterExchangeRateProviderTests
     [Fact]
     public async Task GetHistoricalRateAsync_WhenResponseMissingRequestedCurrency_ReturnsNull()
     {
-        var handler = new FakeHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        var provider = CreateProvider(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent("""{"amount":1,"base":"BRL","date":"2026-07-01","rates":{"EUR":0.15}}""")
         });
-        var provider = new FrankfurterExchangeRateProvider(CreateClient(handler));
 
         var rate = await provider.GetHistoricalRateAsync(new DateOnly(2026, 7, 1), Currency.BRL, Currency.GBP);
 

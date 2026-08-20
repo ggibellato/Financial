@@ -7,6 +7,14 @@ namespace Financial.Shared.Infrastructure.Tests.Persistence;
 
 public class GoogleDriveJsonStorageTests
 {
+    /// <summary>The tracer is the same in every span test; the download/upload callbacks are what each test varies.</summary>
+    private readonly RecordingTelemetryTracer _tracer;
+
+    public GoogleDriveJsonStorageTests()
+    {
+        _tracer = new RecordingTelemetryTracer();
+    }
+
     [Fact]
     public void Constructor_WithNullClient_ThrowsArgumentNullException()
     {
@@ -57,16 +65,15 @@ public class GoogleDriveJsonStorageTests
     [Fact]
     public async Task ReadAsync_RecordsGoogleDriveDownloadSpan()
     {
-        var tracer = new RecordingTelemetryTracer();
         var storage = new GoogleDriveJsonStorage(
             _ => "{\"data\":true}",
             (_, _) => { },
             "Pessoais/Gleison/Financeiros",
-            tracer);
+            _tracer);
 
         await storage.ReadAsync();
 
-        var span = tracer.Spans.Should().ContainSingle().Which;
+        var span = _tracer.Spans.Should().ContainSingle().Which;
         span.Name.Should().Be("GoogleDrive.Download");
         span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
     }
@@ -74,16 +81,15 @@ public class GoogleDriveJsonStorageTests
     [Fact]
     public async Task WriteAsync_RecordsGoogleDriveUploadSpan()
     {
-        var tracer = new RecordingTelemetryTracer();
         var storage = new GoogleDriveJsonStorage(
             _ => "{\"data\":true}",
             (_, _) => { },
             "Pessoais/Gleison/Financeiros",
-            tracer);
+            _tracer);
 
         await storage.WriteAsync("{\"written\":true}");
 
-        var span = tracer.Spans.Should().ContainSingle().Which;
+        var span = _tracer.Spans.Should().ContainSingle().Which;
         span.Name.Should().Be("GoogleDrive.Upload");
         span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
     }
@@ -91,17 +97,16 @@ public class GoogleDriveJsonStorageTests
     [Fact]
     public async Task ReadAsync_WhenDownloadThrows_RecordsFailedSpanWithException()
     {
-        var tracer = new RecordingTelemetryTracer();
         var storage = new GoogleDriveJsonStorage(
             _ => throw new InvalidOperationException("boom"),
             (_, _) => { },
             "Pessoais/Gleison/Financeiros",
-            tracer);
+            _tracer);
 
         var act = async () => await storage.ReadAsync();
 
         await act.Should().ThrowAsync<InvalidOperationException>();
-        var span = tracer.Spans.Should().ContainSingle().Which;
+        var span = _tracer.Spans.Should().ContainSingle().Which;
         span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Failed);
         span.RecordedException.Should().NotBeNull();
     }

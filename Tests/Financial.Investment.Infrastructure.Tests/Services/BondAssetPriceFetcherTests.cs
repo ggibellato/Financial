@@ -8,6 +8,14 @@ namespace Financial.Investment.Infrastructure.Tests.Services;
 
 public class BondAssetPriceFetcherTests
 {
+    /// <summary>Every test drives the same BondAssetPriceFetcher, so it is wired once here.</summary>
+    private readonly BondAssetPriceFetcher _sut;
+
+    public BondAssetPriceFetcherTests()
+    {
+        _sut = new BondAssetPriceFetcher(new StatusInvestFinanceService(_ => throw new NotImplementedException()));
+    }
+
     [Fact]
     public void Constructor_WithNullStatusInvestFinanceService_ThrowsArgumentNullException()
     {
@@ -19,9 +27,7 @@ public class BondAssetPriceFetcherTests
     [Fact]
     public void Supports_Bond_ReturnsTrue()
     {
-        var fetcher = new BondAssetPriceFetcher(new StatusInvestFinanceService(_ => throw new NotImplementedException()));
-
-        var result = fetcher.Supports(GlobalAssetClass.Bond);
+        var result = _sut.Supports(GlobalAssetClass.Bond);
 
         result.Should().BeTrue();
     }
@@ -29,9 +35,7 @@ public class BondAssetPriceFetcherTests
     [Fact]
     public void Supports_Equity_ReturnsFalse()
     {
-        var fetcher = new BondAssetPriceFetcher(new StatusInvestFinanceService(_ => throw new NotImplementedException()));
-
-        var result = fetcher.Supports(GlobalAssetClass.Equity);
+        var result = _sut.Supports(GlobalAssetClass.Equity);
 
         result.Should().BeFalse();
     }
@@ -39,9 +43,7 @@ public class BondAssetPriceFetcherTests
     [Fact]
     public void Supports_Cryptocurrency_ReturnsFalse()
     {
-        var fetcher = new BondAssetPriceFetcher(new StatusInvestFinanceService(_ => throw new NotImplementedException()));
-
-        var result = fetcher.Supports(GlobalAssetClass.Cryptocurrency);
+        var result = _sut.Supports(GlobalAssetClass.Cryptocurrency);
 
         result.Should().BeFalse();
     }
@@ -49,10 +51,9 @@ public class BondAssetPriceFetcherTests
     [Fact]
     public void GetSnapshot_BlankName_ThrowsArgumentException()
     {
-        var fetcher = new BondAssetPriceFetcher(new StatusInvestFinanceService(_ => throw new NotImplementedException()));
         var request = new AssetPriceRequestDTO { Exchange = "", Ticker = "TESOURO IPCA+ 2029", Name = "" };
 
-        Action act = () => fetcher.GetSnapshot(request);
+        Action act = () => _sut.GetSnapshot(request);
 
         act.Should().Throw<ArgumentException>().WithMessage("Name is required for bond assets.*");
     }

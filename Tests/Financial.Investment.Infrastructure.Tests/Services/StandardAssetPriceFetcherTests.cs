@@ -9,6 +9,14 @@ namespace Financial.Investment.Infrastructure.Tests.Services;
 
 public class StandardAssetPriceFetcherTests
 {
+    /// <summary>Every test drives the same StandardAssetPriceFetcher, so it is wired once here.</summary>
+    private readonly StandardAssetPriceFetcher _sut;
+
+    public StandardAssetPriceFetcherTests()
+    {
+        _sut = new StandardAssetPriceFetcher(new StubFinanceService());
+    }
+
     [Fact]
     public void Constructor_WithNullFinanceService_ThrowsArgumentNullException()
     {
@@ -20,9 +28,7 @@ public class StandardAssetPriceFetcherTests
     [Fact]
     public void Supports_Cryptocurrency_ReturnsFalse()
     {
-        var fetcher = new StandardAssetPriceFetcher(new StubFinanceService());
-
-        var result = fetcher.Supports(GlobalAssetClass.Cryptocurrency);
+        var result = _sut.Supports(GlobalAssetClass.Cryptocurrency);
 
         result.Should().BeFalse();
     }
@@ -30,9 +36,7 @@ public class StandardAssetPriceFetcherTests
     [Fact]
     public void Supports_Equity_ReturnsTrue()
     {
-        var fetcher = new StandardAssetPriceFetcher(new StubFinanceService());
-
-        var result = fetcher.Supports(GlobalAssetClass.Equity);
+        var result = _sut.Supports(GlobalAssetClass.Equity);
 
         result.Should().BeTrue();
     }
@@ -40,9 +44,7 @@ public class StandardAssetPriceFetcherTests
     [Fact]
     public void Supports_Unknown_ReturnsTrue()
     {
-        var fetcher = new StandardAssetPriceFetcher(new StubFinanceService());
-
-        var result = fetcher.Supports(GlobalAssetClass.Unknown);
+        var result = _sut.Supports(GlobalAssetClass.Unknown);
 
         result.Should().BeTrue();
     }
@@ -50,9 +52,7 @@ public class StandardAssetPriceFetcherTests
     [Fact]
     public void Supports_Bond_ReturnsFalse()
     {
-        var fetcher = new StandardAssetPriceFetcher(new StubFinanceService());
-
-        var result = fetcher.Supports(GlobalAssetClass.Bond);
+        var result = _sut.Supports(GlobalAssetClass.Bond);
 
         result.Should().BeFalse();
     }
@@ -60,10 +60,9 @@ public class StandardAssetPriceFetcherTests
     [Fact]
     public void GetSnapshot_BlankExchange_ThrowsArgumentException()
     {
-        var fetcher = new StandardAssetPriceFetcher(new StubFinanceService());
         var request = new AssetPriceRequestDTO { Exchange = "", Ticker = "BCIA11" };
 
-        Action act = () => fetcher.GetSnapshot(request);
+        Action act = () => _sut.GetSnapshot(request);
 
         act.Should().Throw<ArgumentException>().WithMessage("Exchange is required.*");
     }
