@@ -12,7 +12,7 @@ namespace Financial.CashFlow.Infrastructure.Tests.Repositories;
 public class CashFlowJsonRepositoryTests
 {
     [Fact]
-    public async Task SaveChangesAsync_WritesSerializedDataThroughStorage()
+    public async Task ApplyAndSaveAsync_WritesSerializedDataThroughStorage()
     {
         var path = Path.Combine(Path.GetTempPath(), $"cashflow-repo-{Guid.NewGuid()}.json");
         var storage = new LocalJsonStorage(path);
@@ -28,7 +28,7 @@ public class CashFlowJsonRepositoryTests
             data.AddCategory(category);
             repository.AddExpense(Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, category, bank, null));
 
-            await repository.SaveChangesAsync();
+            await repository.ApplyAndSaveAsync(() => true);
 
             var written = await storage.ReadAsync();
             serializer.Deserialize(written).Expenses.Should().ContainSingle();
@@ -40,14 +40,14 @@ public class CashFlowJsonRepositoryTests
     }
 
     [Fact]
-    public async Task SaveChangesAsync_WhenWriteFails_PropagatesException()
+    public async Task ApplyAndSaveAsync_WhenWriteFails_PropagatesException()
     {
         var invalidPath = Path.Combine(Path.GetTempPath(), $"cashflow-missing-dir-{Guid.NewGuid()}", "data.json");
         var storage = new LocalJsonStorage(invalidPath);
         var serializer = new CashFlowSerializerAdapter();
         var repository = new CashFlowJsonRepository(CashFlowData.Create(), storage, serializer);
 
-        var act = async () => await repository.SaveChangesAsync();
+        var act = async () => await repository.ApplyAndSaveAsync(() => true);
 
         await act.Should().ThrowAsync<DirectoryNotFoundException>();
     }

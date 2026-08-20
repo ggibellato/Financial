@@ -52,8 +52,11 @@ public sealed class MensaisService : IMensaisService
             var bill = RecurringBill.Create(
                 request.DueDay, request.Description, request.Value, area, request.Note, nitNumber: null, minimumWageValue: null);
 
-            _repository.AddRecurringBill(bill);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.AddRecurringBill(bill);
+                return true;
+            }).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, bill.Id.ToString());
             span.MarkSuccess();
@@ -75,8 +78,11 @@ public sealed class MensaisService : IMensaisService
         {
             _ = _repository.GetRecurringBills().FirstOrThrow(b => b.Id == id, "Recurring bill", id);
 
-            _repository.DeleteRecurringBill(id);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.DeleteRecurringBill(id);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteBill");
@@ -121,8 +127,11 @@ public sealed class MensaisService : IMensaisService
                 throw new ArgumentException($"Status '{request.Status}' is not recognized.");
             }
 
-            bill.Update(status, request.Value);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                bill.Update(status, request.Value);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateBill");
@@ -141,12 +150,15 @@ public sealed class MensaisService : IMensaisService
         try
         {
             var bills = _repository.GetRecurringBills().ToList();
-            foreach (var bill in bills)
+            await _repository.ApplyAndSaveAsync(() =>
             {
-                bill.ResetToUnset();
-            }
+                foreach (var bill in bills)
+                {
+                    bill.ResetToUnset();
+                }
 
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "ResetAllToUnset");

@@ -37,24 +37,26 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
                 .Where(s => s.Year == year && s.Month == month && scopedIds.Contains(s.Account.Id))
                 .ToList();
 
-            var created = false;
-            foreach (var account in scopedAccounts)
+            // "Did anything change?" is exactly what the save wants to know, so the flag that used
+            // to guard the call is now the delegate's return value.
+            await _repository.ApplyAndSaveAsync(() =>
             {
-                if (existingSnapshots.Any(s => s.Account.Id == account.Id))
+                var created = false;
+                foreach (var account in scopedAccounts)
                 {
-                    continue;
+                    if (existingSnapshots.Any(s => s.Account.Id == account.Id))
+                    {
+                        continue;
+                    }
+
+                    var snapshot = InvestmentSnapshot.Create(account, year, month, 0m);
+                    _repository.AddInvestmentSnapshot(snapshot);
+                    existingSnapshots.Add(snapshot);
+                    created = true;
                 }
 
-                var snapshot = InvestmentSnapshot.Create(account, year, month, 0m);
-                _repository.AddInvestmentSnapshot(snapshot);
-                existingSnapshots.Add(snapshot);
-                created = true;
-            }
-
-            if (created)
-            {
-                await _repository.SaveChangesAsync().ConfigureAwait(false);
-            }
+                return created;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetSnapshotsForMonth");
@@ -82,8 +84,11 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
 
             var snapshot = _repository.GetInvestmentSnapshots().FirstOrThrow(s => s.Id == id, "Investment snapshot", id);
 
-            snapshot.Update(request.Value);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                snapshot.Update(request.Value);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateSnapshotValue");

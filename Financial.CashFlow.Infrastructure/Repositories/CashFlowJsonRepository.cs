@@ -84,7 +84,11 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
                 return false;
             }
 
-            await SerializeAndWriteAsync().ConfigureAwait(false);
+            // Serializing and writing stay together inside the gate. Splitting them would let a
+            // thread holding an older document reach storage after one holding a newer document,
+            // discarding the newer change with no error anywhere.
+            var json = _serializer.Serialize(_data);
+            await _storage.WriteAsync(json).ConfigureAwait(false);
             return true;
         }
         finally
@@ -94,24 +98,6 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
             _writeGate.Release();
         }
     }
-
-    public async Task SaveChangesAsync()
-    {
-        await _writeGate.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            await SerializeAndWriteAsync().ConfigureAwait(false);
-        }
-        finally
-        {
-            _writeGate.Release();
-        }
-    }
-
-    /// <summary>Serializing and writing stay together under the caller's gate. Splitting them would
-    /// let a thread holding an older document reach storage after one holding a newer document,
-    /// discarding the newer change with no error anywhere.</summary>
-    private Task SerializeAndWriteAsync() => _storage.WriteAsync(_serializer.Serialize(_data));
 
     public SyncStatus GetStatus() => _storage.GetStatusOrIdle();
 

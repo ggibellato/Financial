@@ -63,8 +63,11 @@ public sealed class ControleMaeService : IControleMaeService
                 : (convertedValue, (decimal?)request.SourceValue);
 
             var entry = MaeLedgerEntry.Create(request.Date, request.Description, request.Note, sourceCurrency, brlValue, gbpValue);
-            _repository.AddMaeLedgerEntry(entry);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.AddMaeLedgerEntry(entry);
+                return true;
+            }).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, entry.Id.ToString());
             span.MarkSuccess();
@@ -133,8 +136,11 @@ public sealed class ControleMaeService : IControleMaeService
 
             var entry = _repository.GetMaeLedgerEntries().FirstOrThrow(e => e.Id == id, "Mae ledger entry", id);
 
-            entry.UpdateValues(request.BrlValue, request.GbpValue);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                entry.UpdateValues(request.BrlValue, request.GbpValue);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateEntryValues");
@@ -155,8 +161,11 @@ public sealed class ControleMaeService : IControleMaeService
         {
             _ = _repository.GetMaeLedgerEntries().FirstOrThrow(e => e.Id == id, "Mae ledger entry", id);
 
-            _repository.DeleteMaeLedgerEntry(id);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.DeleteMaeLedgerEntry(id);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteEntry");

@@ -160,7 +160,7 @@ public class CashFlowRepositoryFactoryTests
     }
 
     [Fact]
-    public async Task Create_WithGoogleDriveProvider_SaveChangesAsync_ReturnsWithoutWaitingOnUpload()
+    public async Task Create_WithGoogleDriveProvider_ApplyAndSaveAsync_ReturnsWithoutWaitingOnUpload()
     {
         var credentialsPath = Path.GetTempFileName();
         try
@@ -177,7 +177,7 @@ public class CashFlowRepositoryFactoryTests
                 new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Create("Casa"), Bank.Create("Chase", roundUpEnabled: true), null));
 
             var stopwatch = Stopwatch.StartNew();
-            await repository.SaveChangesAsync();
+            await repository.ApplyAndSaveAsync(() => true);
             stopwatch.Stop();
 
             // The debounce window is a real 10 seconds in production; returning near-instantly proves
@@ -208,7 +208,7 @@ public class CashFlowRepositoryFactoryTests
             repository.AddExpense(Expense.Create(
                 new DateOnly(2026, 7, 1), "Test expense", 10m, Category.Create("Casa"), Bank.Create("Chase", roundUpEnabled: true), null));
 
-            await repository.SaveChangesAsync();
+            await repository.ApplyAndSaveAsync(() => true);
 
             ((ISyncStatusProvider)repository).GetStatus().State.Should().Be(SyncState.Pending);
         }
@@ -236,11 +236,11 @@ public class CashFlowRepositoryFactoryTests
             repository.AddExpense(Expense.Create(
                 new DateOnly(2026, 7, 1), "Debounced upload test expense", 10m, Category.Create("Casa"), Bank.Create("Chase", roundUpEnabled: true), null));
 
-            await repository.SaveChangesAsync();
+            await repository.ApplyAndSaveAsync(() => true);
 
             // The real production debounce window is 10 seconds (CashFlowRepositoryFactory.DebounceWindow,
             // not configurable by design). Waiting past it with margin proves the queued write actually
-            // reaches the wrapped storage's upload call — not just that SaveChangesAsync() returns quickly.
+            // reaches the wrapped storage's upload call — not just that ApplyAndSaveAsync() returns quickly.
             // Wait for Idle rather than just UploadCallCount > 0: the status only flips to Idle once
             // HandleSaveSuccess runs after the upload, so polling on the call count alone races with that.
             await WaitForAsync(
@@ -278,7 +278,7 @@ public class CashFlowRepositoryFactoryTests
             repository.AddExpense(Expense.Create(
                 new DateOnly(2026, 7, 1), "Tracer test expense", 10m, Category.Create("Casa"), Bank.Create("Chase", roundUpEnabled: true), null));
 
-            await repository.SaveChangesAsync();
+            await repository.ApplyAndSaveAsync(() => true);
 
             await WaitForAsync(() => tracer.Spans.Any(s => s.Name == "GoogleDrive.Upload"), TimeSpan.FromSeconds(15));
 

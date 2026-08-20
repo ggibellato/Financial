@@ -25,8 +25,6 @@ public sealed class SyncStatusCashFlowRepositoryStub : ICashFlowRepository, ISyn
         return Task.CompletedTask;
     }
 
-    public Task SaveChangesAsync() => throw new NotImplementedException();
-
     public Task<bool> ApplyAndSaveAsync(Func<bool> applyChanges) => throw new NotImplementedException();
     public IEnumerable<Expense> GetExpenses() => throw new NotImplementedException();
     public void AddExpense(Expense expense) => throw new NotImplementedException();
