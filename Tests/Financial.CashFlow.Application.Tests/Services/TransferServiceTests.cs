@@ -12,29 +12,40 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class TransferServiceTests
 {
-    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
+    private readonly StubCashFlowRepository _repository;
+    private readonly RecordingTelemetryTracer _tracer;
+    private readonly TransferService _sut;
+
+    public TransferServiceTests()
+    {
+        _repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        _tracer = new RecordingTelemetryTracer();
+        _sut = CreateService();
+    }
+
+    /// <summary>Wires the SUT exactly as the test constructor does, so a test needing a differently
+    /// seeded repository does not repeat the whole construction sequence.</summary>
+    private TransferService CreateService(StubCashFlowRepository? repository = null) =>
+        new(repository ?? _repository, _tracer, NullLogger<TransferService>.Instance);
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new TransferService(null!, Tracer, NullLogger<TransferService>.Instance);
+        Action act = () => new TransferService(null!, _tracer, NullLogger<TransferService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new TransferService(new StubCashFlowRepository(), null!, NullLogger<TransferService>.Instance);
+        Action act = () => new TransferService(_repository, null!, NullLogger<TransferService>.Instance);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Fact]
     public async Task AddTransferAsync_WithValidRequest_SavesAndReturnsTransfer()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new TransferService(repository, Tracer, NullLogger<TransferService>.Instance);
-
-        var result = await service.AddTransferAsync(ToCreateDto(repository, ValidCreateRequest()));
+        var result = await _sut.AddTransferAsync(ToCreateDto(_repository, ValidCreateRequest()));
 
         using (new AssertionScope())
         {
@@ -43,19 +54,17 @@ public class TransferServiceTests
             result.DestinationBankName.Should().Be("Trading212");
             result.Amount.Should().Be(500m);
             result.Note.Should().Be("Round-up top-up");
-            repository.Transfers.Should().ContainSingle();
-            repository.SaveChangesCallCount.Should().Be(1);
+            _repository.Transfers.Should().ContainSingle();
+            _repository.SaveChangesCallCount.Should().Be(1);
         }
     }
 
     [Fact]
     public async Task AddTransferAsync_WithoutNote_SavesNull()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new TransferService(repository, Tracer, NullLogger<TransferService>.Instance);
-        var request = ToCreateDto(repository, ValidCreateRequest() with { Note = null });
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { Note = null });
 
-        var result = await service.AddTransferAsync(request);
+        var result = await _sut.AddTransferAsync(request);
 
         result.Note.Should().BeNull();
     }
@@ -63,11 +72,9 @@ public class TransferServiceTests
     [Fact]
     public async Task AddTransferAsync_WithSameSourceAndDestinationBank_ThrowsArgumentException()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new TransferService(repository, Tracer, NullLogger<TransferService>.Instance);
-        var request = ToCreateDto(repository, ValidCreateRequest() with { DestinationBank = "Barclays" });
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { DestinationBank = "Barclays" });
 
-        var act = async () => await service.AddTransferAsync(request);
+        var act = async () => await _sut.AddTransferAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("*two different banks*");
     }
@@ -75,11 +82,9 @@ public class TransferServiceTests
     [Fact]
     public async Task AddTransferAsync_WithNonPositiveAmount_ThrowsArgumentException()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new TransferService(repository, Tracer, NullLogger<TransferService>.Instance);
-        var request = ToCreateDto(repository, ValidCreateRequest() with { Amount = 0m });
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { Amount = 0m });
 
-        var act = async () => await service.AddTransferAsync(request);
+        var act = async () => await _sut.AddTransferAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("*greater than zero*");
     }
@@ -87,11 +92,9 @@ public class TransferServiceTests
     [Fact]
     public async Task AddTransferAsync_WithUnresolvableSourceBank_ThrowsArgumentException()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new TransferService(repository, Tracer, NullLogger<TransferService>.Instance);
-        var request = ToCreateDto(repository, ValidCreateRequest() with { SourceBank = "NotABank" });
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { SourceBank = "NotABank" });
 
-        var act = async () => await service.AddTransferAsync(request);
+        var act = async () => await _sut.AddTransferAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage($"*Bank '{request.SourceBankId}' was not found*");
     }
@@ -99,15 +102,12 @@ public class TransferServiceTests
     [Fact]
     public async Task AddTransferAsync_WithUnresolvableSourceBank_RecordsFailedSpanWithException()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var tracer = new RecordingTelemetryTracer();
-        var service = new TransferService(repository, tracer, NullLogger<TransferService>.Instance);
-        var request = ToCreateDto(repository, ValidCreateRequest() with { SourceBank = "NotABank" });
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { SourceBank = "NotABank" });
 
-        var act = async () => await service.AddTransferAsync(request);
+        var act = async () => await _sut.AddTransferAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>();
-        var span = tracer.Spans.Should().ContainSingle().Which;
+        var span = _tracer.Spans.Should().ContainSingle().Which;
         span.Name.Should().Be("CashFlow.TransferService.AddTransfer");
         span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Failed);
         span.RecordedException.Should().BeOfType<ArgumentException>();
@@ -116,11 +116,9 @@ public class TransferServiceTests
     [Fact]
     public async Task AddTransferAsync_WithUnresolvableDestinationBank_ThrowsArgumentException()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new TransferService(repository, Tracer, NullLogger<TransferService>.Instance);
-        var request = ToCreateDto(repository, ValidCreateRequest() with { DestinationBank = "NotABank" });
+        var request = ToCreateDto(_repository, ValidCreateRequest() with { DestinationBank = "NotABank" });
 
-        var act = async () => await service.AddTransferAsync(request);
+        var act = async () => await _sut.AddTransferAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage($"*Bank '{request.DestinationBankId}' was not found*");
     }
@@ -128,12 +126,10 @@ public class TransferServiceTests
     [Fact]
     public async Task UpdateTransferAsync_WithUnresolvableSourceBank_ThrowsArgumentException()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new TransferService(repository, Tracer, NullLogger<TransferService>.Instance);
-        var added = await service.AddTransferAsync(ToCreateDto(repository, ValidCreateRequest()));
-        var updateRequest = ToUpdateDto(repository, ValidCreateRequest() with { SourceBank = "NotABank" });
+        var added = await _sut.AddTransferAsync(ToCreateDto(_repository, ValidCreateRequest()));
+        var updateRequest = ToUpdateDto(_repository, ValidCreateRequest() with { SourceBank = "NotABank" });
 
-        var act = async () => await service.UpdateTransferAsync(added.Id, updateRequest);
+        var act = async () => await _sut.UpdateTransferAsync(added.Id, updateRequest);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage($"*Bank '{updateRequest.SourceBankId}' was not found*");
     }
@@ -141,12 +137,10 @@ public class TransferServiceTests
     [Fact]
     public async Task UpdateTransferAsync_WithExistingId_UpdatesInPlace()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new TransferService(repository, Tracer, NullLogger<TransferService>.Instance);
-        var added = await service.AddTransferAsync(ToCreateDto(repository, ValidCreateRequest()));
+        var added = await _sut.AddTransferAsync(ToCreateDto(_repository, ValidCreateRequest()));
 
-        var updateRequest = ToUpdateDto(repository, ValidCreateRequest() with { Amount = 250m, SourceBank = "Chase", Note = "Updated" });
-        var result = await service.UpdateTransferAsync(added.Id, updateRequest);
+        var updateRequest = ToUpdateDto(_repository, ValidCreateRequest() with { Amount = 250m, SourceBank = "Chase", Note = "Updated" });
+        var result = await _sut.UpdateTransferAsync(added.Id, updateRequest);
 
         using (new AssertionScope())
         {
@@ -154,18 +148,15 @@ public class TransferServiceTests
             result.Amount.Should().Be(250m);
             result.SourceBankName.Should().Be("Chase");
             result.Note.Should().Be("Updated");
-            repository.Transfers.Should().ContainSingle();
-            repository.SaveChangesCallCount.Should().Be(2);
+            _repository.Transfers.Should().ContainSingle();
+            _repository.SaveChangesCallCount.Should().Be(2);
         }
     }
 
     [Fact]
     public async Task UpdateTransferAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new TransferService(repository, Tracer, NullLogger<TransferService>.Instance);
-
-        var act = async () => await service.UpdateTransferAsync(Guid.NewGuid(), ToUpdateDto(repository, ValidCreateRequest()));
+        var act = async () => await _sut.UpdateTransferAsync(Guid.NewGuid(), ToUpdateDto(_repository, ValidCreateRequest()));
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
@@ -173,23 +164,18 @@ public class TransferServiceTests
     [Fact]
     public async Task DeleteTransferAsync_WithExistingId_RemovesAndSaves()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new TransferService(repository, Tracer, NullLogger<TransferService>.Instance);
-        var added = await service.AddTransferAsync(ToCreateDto(repository, ValidCreateRequest()));
+        var added = await _sut.AddTransferAsync(ToCreateDto(_repository, ValidCreateRequest()));
 
-        await service.DeleteTransferAsync(added.Id);
+        await _sut.DeleteTransferAsync(added.Id);
 
-        repository.Transfers.Should().BeEmpty();
-        repository.SaveChangesCallCount.Should().Be(2);
+        _repository.Transfers.Should().BeEmpty();
+        _repository.SaveChangesCallCount.Should().Be(2);
     }
 
     [Fact]
     public async Task DeleteTransferAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new TransferService(repository, Tracer, NullLogger<TransferService>.Instance);
-
-        var act = async () => await service.DeleteTransferAsync(Guid.NewGuid());
+        var act = async () => await _sut.DeleteTransferAsync(Guid.NewGuid());
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
@@ -197,12 +183,10 @@ public class TransferServiceTests
     [Fact]
     public async Task GetTransfersByMonth_ReturnsOnlyTransfersInThatMonth()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new TransferService(repository, Tracer, NullLogger<TransferService>.Instance);
-        await service.AddTransferAsync(ToCreateDto(repository, ValidCreateRequest() with { Date = new DateOnly(2026, 7, 10) }));
-        await service.AddTransferAsync(ToCreateDto(repository, ValidCreateRequest() with { Date = new DateOnly(2026, 8, 10) }));
+        await _sut.AddTransferAsync(ToCreateDto(_repository, ValidCreateRequest() with { Date = new DateOnly(2026, 7, 10) }));
+        await _sut.AddTransferAsync(ToCreateDto(_repository, ValidCreateRequest() with { Date = new DateOnly(2026, 8, 10) }));
 
-        var result = service.GetTransfersByMonth(2026, 7);
+        var result = _sut.GetTransfersByMonth(2026, 7);
 
         result.Should().ContainSingle().Which.Date.Should().Be(new DateOnly(2026, 7, 10));
     }
@@ -210,13 +194,11 @@ public class TransferServiceTests
     [Fact]
     public async Task GetTransfersByBank_ReturnsTransfersWhereBankIsSourceOrDestination()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new TransferService(repository, Tracer, NullLogger<TransferService>.Instance);
-        await service.AddTransferAsync(ToCreateDto(repository, ValidCreateRequest() with { SourceBank = "Barclays", DestinationBank = "Trading212" }));
-        await service.AddTransferAsync(ToCreateDto(repository, ValidCreateRequest() with { SourceBank = "Chase", DestinationBank = "Barclays" }));
-        await service.AddTransferAsync(ToCreateDto(repository, ValidCreateRequest() with { SourceBank = "Chase", DestinationBank = "Trading212" }));
+        await _sut.AddTransferAsync(ToCreateDto(_repository, ValidCreateRequest() with { SourceBank = "Barclays", DestinationBank = "Trading212" }));
+        await _sut.AddTransferAsync(ToCreateDto(_repository, ValidCreateRequest() with { SourceBank = "Chase", DestinationBank = "Barclays" }));
+        await _sut.AddTransferAsync(ToCreateDto(_repository, ValidCreateRequest() with { SourceBank = "Chase", DestinationBank = "Trading212" }));
 
-        var result = service.GetTransfersByBank(repository.Banks.First(b => b.Name == "Barclays").Id);
+        var result = _sut.GetTransfersByBank(_repository.Banks.First(b => b.Name == "Barclays").Id);
 
         result.Should().HaveCount(2);
     }
@@ -224,10 +206,7 @@ public class TransferServiceTests
     [Fact]
     public void GetTransfersByBank_WithUnrecognizedBank_ReturnsEmptyList()
     {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new TransferService(repository, Tracer, NullLogger<TransferService>.Instance);
-
-        var result = service.GetTransfersByBank(Guid.NewGuid());
+        var result = _sut.GetTransfersByBank(Guid.NewGuid());
 
         result.Should().BeEmpty();
     }
@@ -264,11 +243,10 @@ public class TransferServiceTests
     private sealed record TransferCreateRequest(
         DateOnly Date, string SourceBank, string DestinationBank, decimal Amount, string? Note);
 
-
     [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
-        Action act = () => new TransferService(new StubCashFlowRepository(), Tracer, null!);
+        Action act = () => new TransferService(_repository, _tracer, null!);
 
         act.Should().Throw<ArgumentNullException>();
     }

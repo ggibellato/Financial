@@ -11,34 +11,47 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class IncomeSourceServiceTests
 {
-    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
     private static readonly Microsoft.Extensions.Logging.ILogger<IncomeSourceService> Logger = NullLogger<IncomeSourceService>.Instance;
+
+    private readonly StubCashFlowRepository _repository;
+    private readonly RecordingTelemetryTracer _tracer;
+    private readonly IncomeSourceService _sut;
+
+    public IncomeSourceServiceTests()
+    {
+        _repository = new StubCashFlowRepository();
+        _tracer = new RecordingTelemetryTracer();
+        _sut = CreateService();
+    }
+
+    /// <summary>Wires the SUT exactly as the test constructor does, so a test needing a differently
+    /// seeded repository does not repeat the whole construction sequence.</summary>
+    private IncomeSourceService CreateService(StubCashFlowRepository? repository = null) =>
+        new(repository ?? _repository, _tracer, Logger);
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new IncomeSourceService(null!, Tracer, Logger);
+        Action act = () => new IncomeSourceService(null!, _tracer, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new IncomeSourceService(new StubCashFlowRepository(), null!, Logger);
+        Action act = () => new IncomeSourceService(_repository, null!, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Fact]
     public void GetIncomeSources_MapsEveryRepositoryIncomeSourceToADto()
     {
-        var repository = new StubCashFlowRepository();
         var gleison = IncomeSource.Create("Gleison", IncomeGroup.Salary);
         var lottery = IncomeSource.Create("Lottery", IncomeGroup.NonReportable, isActive: false);
-        repository.IncomeSources.Add(gleison);
-        repository.IncomeSources.Add(lottery);
-        var service = new IncomeSourceService(repository, Tracer, Logger);
+        _repository.IncomeSources.Add(gleison);
+        _repository.IncomeSources.Add(lottery);
 
-        var result = service.GetIncomeSources();
+        var result = _sut.GetIncomeSources();
 
         using (new AssertionScope())
         {
@@ -53,11 +66,9 @@ public class IncomeSourceServiceTests
     [Fact]
     public void GetIncomeSources_DoesNotFilterByIsActive()
     {
-        var repository = new StubCashFlowRepository();
-        repository.IncomeSources.Add(IncomeSource.Create("RetiredSource", IncomeGroup.NonReportable, isActive: false));
-        var service = new IncomeSourceService(repository, Tracer, Logger);
+        _repository.IncomeSources.Add(IncomeSource.Create("RetiredSource", IncomeGroup.NonReportable, isActive: false));
 
-        var result = service.GetIncomeSources();
+        var result = _sut.GetIncomeSources();
 
         result.Should().ContainSingle(s => s.Name == "RetiredSource" && !s.IsActive);
     }
@@ -65,9 +76,7 @@ public class IncomeSourceServiceTests
     [Fact]
     public void GetIncomeSources_WithNoIncomeSources_ReturnsEmptyList()
     {
-        var service = new IncomeSourceService(new StubCashFlowRepository(), Tracer, Logger);
-
-        var result = service.GetIncomeSources();
+        var result = _sut.GetIncomeSources();
 
         result.Should().BeEmpty();
     }
@@ -75,7 +84,7 @@ public class IncomeSourceServiceTests
     [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
-        Action act = () => new IncomeSourceService(new StubCashFlowRepository(), Tracer, null!);
+        Action act = () => new IncomeSourceService(_repository, _tracer, null!);
 
         act.Should().Throw<ArgumentNullException>();
     }

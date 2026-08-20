@@ -13,36 +13,51 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class ControleMaeServiceTests
 {
-    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
     private static readonly Microsoft.Extensions.Logging.ILogger<ControleMaeService> Logger = NullLogger<ControleMaeService>.Instance;
+    private const decimal DefaultRate = 1.5m;
+
+    private readonly StubCashFlowRepository _repository;
+    private readonly RecordingTelemetryTracer _tracer;
+    private readonly ControleMaeService _sut;
+
+    public ControleMaeServiceTests()
+    {
+        _repository = new StubCashFlowRepository();
+        _tracer = new RecordingTelemetryTracer();
+        _sut = CreateService();
+    }
+
+    /// <summary>Wires the SUT exactly as the test constructor does, so a test needing a differently
+    /// seeded repository or dependency does not repeat the whole construction sequence.</summary>
+    private ControleMaeService CreateService(StubCashFlowRepository? repository = null, IExchangeRateProvider? exchangeRateProvider = null) =>
+        new(repository ?? _repository, exchangeRateProvider ?? new StubExchangeRateProvider(DefaultRate), _tracer, Logger);
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new ControleMaeService(null!, new StubExchangeRateProvider(1.5m), Tracer, Logger);
+        Action act = () => new ControleMaeService(null!, new StubExchangeRateProvider(DefaultRate), _tracer, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullExchangeRateProvider_Throws()
     {
-        Action act = () => new ControleMaeService(new StubCashFlowRepository(), null!, Tracer, Logger);
+        Action act = () => new ControleMaeService(_repository, null!, _tracer, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("exchangeRateProvider");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new ControleMaeService(new StubCashFlowRepository(), new StubExchangeRateProvider(1.5m), null!, Logger);
+        Action act = () => new ControleMaeService(_repository, new StubExchangeRateProvider(DefaultRate), null!, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Fact]
     public async Task CreateEntryAsync_WithSuccessfulRateLookup_PopulatesBothCurrenciesAndSaves()
     {
-        var repository = new StubCashFlowRepository();
         var provider = new StubExchangeRateProvider(0.146m);
-        var service = new ControleMaeService(repository, provider, Tracer, Logger);
+        var service = CreateService(exchangeRateProvider: provider);
 
         var result = await service.CreateEntryAsync(new CreateMaeLedgerEntryDTO
         {
@@ -57,17 +72,16 @@ public class ControleMaeServiceTests
         {
             result.BrlValue.Should().Be(350m);
             result.GbpValue.Should().Be(51.1m);
-            repository.MaeLedgerEntries.Should().ContainSingle();
-            repository.SaveChangesCallCount.Should().Be(1);
+            _repository.MaeLedgerEntries.Should().ContainSingle();
+            _repository.SaveChangesCallCount.Should().Be(1);
         }
     }
 
     [Fact]
     public async Task CreateEntryAsync_WithFailedRateLookup_StillSavesWithOnlyEnteredCurrency()
     {
-        var repository = new StubCashFlowRepository();
         var provider = new StubExchangeRateProvider(null);
-        var service = new ControleMaeService(repository, provider, Tracer, Logger);
+        var service = CreateService(exchangeRateProvider: provider);
 
         var result = await service.CreateEntryAsync(new CreateMaeLedgerEntryDTO
         {
@@ -81,16 +95,15 @@ public class ControleMaeServiceTests
         {
             result.GbpValue.Should().Be(40m);
             result.BrlValue.Should().BeNull();
-            repository.MaeLedgerEntries.Should().ContainSingle();
+            _repository.MaeLedgerEntries.Should().ContainSingle();
         }
     }
 
     [Fact]
     public async Task CreateEntryAsync_WithFutureDate_ThrowsBeforeTouchingRepositoryOrProvider()
     {
-        var repository = new StubCashFlowRepository();
-        var provider = new StubExchangeRateProvider(1.5m);
-        var service = new ControleMaeService(repository, provider, Tracer, Logger);
+        var provider = new StubExchangeRateProvider(DefaultRate);
+        var service = CreateService(exchangeRateProvider: provider);
         var futureDate = DateOnly.FromDateTime(DateTime.Now.AddDays(1));
 
         var act = async () => await service.CreateEntryAsync(new CreateMaeLedgerEntryDTO
@@ -104,7 +117,7 @@ public class ControleMaeServiceTests
         using (new AssertionScope())
         {
             await act.Should().ThrowAsync<ArgumentException>();
-            repository.MaeLedgerEntries.Should().BeEmpty();
+            _repository.MaeLedgerEntries.Should().BeEmpty();
             provider.CallCount.Should().Be(0);
         }
     }
@@ -112,9 +125,7 @@ public class ControleMaeServiceTests
     [Fact]
     public async Task CreateEntryAsync_WithBlankDescription_Throws()
     {
-        var service = new ControleMaeService(new StubCashFlowRepository(), new StubExchangeRateProvider(1.5m), Tracer, Logger);
-
-        var act = async () => await service.CreateEntryAsync(new CreateMaeLedgerEntryDTO
+        var act = async () => await _sut.CreateEntryAsync(new CreateMaeLedgerEntryDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "   ",
@@ -128,9 +139,7 @@ public class ControleMaeServiceTests
     [Fact]
     public async Task CreateEntryAsync_WithUnrecognizedCurrency_Throws()
     {
-        var service = new ControleMaeService(new StubCashFlowRepository(), new StubExchangeRateProvider(1.5m), Tracer, Logger);
-
-        var act = async () => await service.CreateEntryAsync(new CreateMaeLedgerEntryDTO
+        var act = async () => await _sut.CreateEntryAsync(new CreateMaeLedgerEntryDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "Test",
@@ -144,9 +153,7 @@ public class ControleMaeServiceTests
     [Fact]
     public async Task CreateEntryAsync_WithZeroValue_Throws()
     {
-        var service = new ControleMaeService(new StubCashFlowRepository(), new StubExchangeRateProvider(1.5m), Tracer, Logger);
-
-        var act = async () => await service.CreateEntryAsync(new CreateMaeLedgerEntryDTO
+        var act = async () => await _sut.CreateEntryAsync(new CreateMaeLedgerEntryDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "Test",
@@ -160,13 +167,11 @@ public class ControleMaeServiceTests
     [Fact]
     public void GetEntriesFromDate_ReturnsOnlyEntriesOnOrAfterDate()
     {
-        var repository = new StubCashFlowRepository();
-        repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 6, 30), "Before", string.Empty, Currency.BRL, 10m, 1m));
-        repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "OnDate", string.Empty, Currency.BRL, 10m, 1m));
-        repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 8, 10), "After", string.Empty, Currency.BRL, 10m, 1m));
-        var service = new ControleMaeService(repository, new StubExchangeRateProvider(1.5m), Tracer, Logger);
+        _repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 6, 30), "Before", string.Empty, Currency.BRL, 10m, 1m));
+        _repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "OnDate", string.Empty, Currency.BRL, 10m, 1m));
+        _repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 8, 10), "After", string.Empty, Currency.BRL, 10m, 1m));
 
-        var result = service.GetEntriesFromDate(new DateOnly(2026, 7, 1));
+        var result = _sut.GetEntriesFromDate(new DateOnly(2026, 7, 1));
 
         result.Should().HaveCount(2);
         result.Select(e => e.Description).Should().ContainInOrder("OnDate", "After");
@@ -175,12 +180,10 @@ public class ControleMaeServiceTests
     [Fact]
     public void GetTotals_SumsBrlAndGbpAcrossAllEntriesRegardlessOfDate()
     {
-        var repository = new StubCashFlowRepository();
-        repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2020, 1, 1), "Old", string.Empty, Currency.BRL, 100m, 10m));
-        repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 7, 10), "Recent", string.Empty, Currency.GBP, null, 5m));
-        var service = new ControleMaeService(repository, new StubExchangeRateProvider(1.5m), Tracer, Logger);
+        _repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2020, 1, 1), "Old", string.Empty, Currency.BRL, 100m, 10m));
+        _repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 7, 10), "Recent", string.Empty, Currency.GBP, null, 5m));
 
-        var result = service.GetTotals();
+        var result = _sut.GetTotals();
 
         result.TotalBrlValue.Should().Be(100m);
         result.TotalGbpValue.Should().Be(15m);
@@ -189,12 +192,10 @@ public class ControleMaeServiceTests
     [Fact]
     public async Task UpdateEntryValuesAsync_UpdatesOnlyCurrencyValues()
     {
-        var repository = new StubCashFlowRepository();
         var entry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "Medical appointment", "Note", Currency.GBP, null, 40m);
-        repository.MaeLedgerEntries.Add(entry);
-        var service = new ControleMaeService(repository, new StubExchangeRateProvider(1.5m), Tracer, Logger);
+        _repository.MaeLedgerEntries.Add(entry);
 
-        var result = await service.UpdateEntryValuesAsync(entry.Id, new UpdateMaeLedgerEntryValuesDTO
+        var result = await _sut.UpdateEntryValuesAsync(entry.Id, new UpdateMaeLedgerEntryValuesDTO
         {
             BrlValue = 320.50m,
             GbpValue = 40m
@@ -213,9 +214,7 @@ public class ControleMaeServiceTests
     [Fact]
     public async Task UpdateEntryValuesAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var service = new ControleMaeService(new StubCashFlowRepository(), new StubExchangeRateProvider(1.5m), Tracer, Logger);
-
-        var act = async () => await service.UpdateEntryValuesAsync(Guid.NewGuid(), new UpdateMaeLedgerEntryValuesDTO
+        var act = async () => await _sut.UpdateEntryValuesAsync(Guid.NewGuid(), new UpdateMaeLedgerEntryValuesDTO
         {
             BrlValue = 10m,
             GbpValue = 1m
@@ -227,23 +226,19 @@ public class ControleMaeServiceTests
     [Fact]
     public async Task DeleteEntryAsync_ExistingId_RemovesEntryAndSaves()
     {
-        var repository = new StubCashFlowRepository();
         var entry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "School supplies", string.Empty, Currency.BRL, 350m, 51.1m);
-        repository.MaeLedgerEntries.Add(entry);
-        var service = new ControleMaeService(repository, new StubExchangeRateProvider(1.5m), Tracer, Logger);
+        _repository.MaeLedgerEntries.Add(entry);
 
-        await service.DeleteEntryAsync(entry.Id);
+        await _sut.DeleteEntryAsync(entry.Id);
 
-        repository.MaeLedgerEntries.Should().BeEmpty();
-        repository.SaveChangesCallCount.Should().Be(1);
+        _repository.MaeLedgerEntries.Should().BeEmpty();
+        _repository.SaveChangesCallCount.Should().Be(1);
     }
 
     [Fact]
     public async Task DeleteEntryAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var service = new ControleMaeService(new StubCashFlowRepository(), new StubExchangeRateProvider(1.5m), Tracer, Logger);
-
-        var act = async () => await service.DeleteEntryAsync(Guid.NewGuid());
+        var act = async () => await _sut.DeleteEntryAsync(Guid.NewGuid());
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
@@ -266,11 +261,10 @@ public class ControleMaeServiceTests
         }
     }
 
-
     [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
-        Action act = () => new ControleMaeService(new StubCashFlowRepository(), new StubExchangeRateProvider(1.5m), Tracer, null!);
+        Action act = () => new ControleMaeService(_repository, new StubExchangeRateProvider(DefaultRate), _tracer, null!);
 
         act.Should().Throw<ArgumentNullException>();
     }
