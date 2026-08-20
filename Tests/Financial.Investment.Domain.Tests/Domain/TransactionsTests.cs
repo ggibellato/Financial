@@ -137,4 +137,36 @@ public class TransactionsTests
         _sut.Should().BeEmpty();
         _sut.Quantity.Should().Be(0m);
     }
+
+    /// <summary>
+    /// Fees reduce what a sale returns, so they reduce the realized gain. Adding them to proceeds
+    /// overstated this figure by twice the fee.
+    /// </summary>
+    [Fact]
+    public void Add_SellWithFees_DeductsFeesFromRealizedCapitalGain()
+    {
+        _sut.Add(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        _sut.Add(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 4m));
+
+        _sut.RealizedCapitalGain.Should().Be(46m, "550 received less 4 in fees against a 500 cost basis");
+    }
+
+    [Fact]
+    public void AverageSellPrice_WithFees_ReflectsNetProceedsPerUnit()
+    {
+        _sut.Add(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+
+        _sut.Add(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 5m));
+
+        _sut.AverageSellPrice.Should().Be(109m, "545 net proceeds over 5 units");
+    }
+
+    [Fact]
+    public void Add_BuyWithFees_KeepsFeesInTheCostBasis()
+    {
+        _sut.Add(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 20m));
+
+        _sut.AveragePrice.Should().Be(102m, "a purchase cost basis still includes its fees");
+    }
 }

@@ -243,6 +243,23 @@ public class PortfolioAssetSummaryServiceTests
         sellFlow.Amount.Should().Be(50m);
     }
 
+    /// <summary>
+    /// A sale's inflow is what was actually received, so its fee is deducted rather than added.
+    /// </summary>
+    [Fact]
+    public void GetPortfolioAssetsSummary_ReturnsCashFlows_SellEntriesAreNetOfFees()
+    {
+        var asset = MakeAsset("TEST", "TST", "BVMF");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 10m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 10m, 2m));
+        _repository.AssetsByBrokerPortfolio = [asset];
+
+        var result = CreateService().GetPortfolioAssetsSummary("XPI", "Default");
+
+        var sellFlow = result[0].CashFlows.First(f => f.Amount > 0 && f.Date.Year == 2022);
+        sellFlow.Amount.Should().Be(48m);
+    }
+
     [Fact]
     public void GetPortfolioAssetsSummary_ReturnsCashFlows_CreditEntriesArePositive()
     {
