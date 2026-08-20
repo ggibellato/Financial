@@ -10,32 +10,45 @@ namespace Financial.CashFlow.Application.Tests.Services;
 
 public class CreditCardServiceTests
 {
-    private static readonly ITelemetryTracer Tracer = new RecordingTelemetryTracer();
     private static readonly Microsoft.Extensions.Logging.ILogger<CreditCardService> Logger = NullLogger<CreditCardService>.Instance;
+
+    private readonly StubCashFlowRepository _repository;
+    private readonly RecordingTelemetryTracer _tracer;
+    private readonly CreditCardService _sut;
+
+    public CreditCardServiceTests()
+    {
+        _repository = new StubCashFlowRepository();
+        _tracer = new RecordingTelemetryTracer();
+        _sut = CreateService();
+    }
+
+    /// <summary>Wires the SUT exactly as the test constructor does, so a test needing a differently
+    /// seeded repository does not repeat the whole construction sequence.</summary>
+    private CreditCardService CreateService(StubCashFlowRepository? repository = null) =>
+        new(repository ?? _repository, _tracer, Logger);
 
     [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
-        Action act = () => new CreditCardService(null!, Tracer, Logger);
+        Action act = () => new CreditCardService(null!, _tracer, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
     }
 
     [Fact]
     public void Constructor_WithNullTracer_Throws()
     {
-        Action act = () => new CreditCardService(new StubCashFlowRepository(), null!, Logger);
+        Action act = () => new CreditCardService(_repository, null!, Logger);
         act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
     }
 
     [Fact]
     public void GetCreditCards_ReturnsAllSeededCards_IncludingInactive()
     {
-        var repository = new StubCashFlowRepository();
-        repository.CreditCards.Add(CreditCard.Create("BaAmex", isActive: true));
-        repository.CreditCards.Add(CreditCard.Create("PaypalCredit", isActive: false));
-        var service = new CreditCardService(repository, Tracer, Logger);
+        _repository.CreditCards.Add(CreditCard.Create("BaAmex", isActive: true));
+        _repository.CreditCards.Add(CreditCard.Create("PaypalCredit", isActive: false));
 
-        var result = service.GetCreditCards();
+        var result = _sut.GetCreditCards();
 
         result.Should().HaveCount(2);
         result.Should().Contain(c => c.Name == "PaypalCredit" && !c.IsActive);
@@ -44,13 +57,11 @@ public class CreditCardServiceTests
     [Fact]
     public async Task UpdateCreditCardAsync_ExistingId_ReturnsUpdatedDtoAndPersists()
     {
-        var repository = new StubCashFlowRepository();
         var card = CreditCard.Create("BaAmex", isActive: true);
-        repository.CreditCards.Add(card);
-        var service = new CreditCardService(repository, Tracer, Logger);
+        _repository.CreditCards.Add(card);
         var dueDate = new DateOnly(2026, 9, 5);
 
-        var result = await service.UpdateCreditCardAsync(card.Id, new CreditCardUpdateDTO
+        var result = await _sut.UpdateCreditCardAsync(card.Id, new CreditCardUpdateDTO
         {
             NextInvoiceDueDate = dueDate,
             IsActive = false
@@ -58,29 +69,26 @@ public class CreditCardServiceTests
 
         result.NextInvoiceDueDate.Should().Be(dueDate);
         result.IsActive.Should().BeFalse();
-        repository.SaveChangesCallCount.Should().Be(1);
+        _repository.SaveChangesCallCount.Should().Be(1);
     }
 
     [Fact]
     public async Task UpdateCreditCardAsync_UnknownId_ThrowsKeyNotFoundException()
     {
-        var repository = new StubCashFlowRepository();
-        var service = new CreditCardService(repository, Tracer, Logger);
-
-        var act = async () => await service.UpdateCreditCardAsync(Guid.NewGuid(), new CreditCardUpdateDTO
+        var act = async () => await _sut.UpdateCreditCardAsync(Guid.NewGuid(), new CreditCardUpdateDTO
         {
             NextInvoiceDueDate = null,
             IsActive = true
         });
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
-        repository.SaveChangesCallCount.Should().Be(0);
+        _repository.SaveChangesCallCount.Should().Be(0);
     }
 
     [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
-        Action act = () => new CreditCardService(new StubCashFlowRepository(), Tracer, null!);
+        Action act = () => new CreditCardService(_repository, _tracer, null!);
 
         act.Should().Throw<ArgumentNullException>();
     }
