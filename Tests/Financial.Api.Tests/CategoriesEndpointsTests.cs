@@ -6,7 +6,7 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
-public class CategoriesEndpointsTests
+public class CategoriesEndpointsTests : ApiEndpointTests
 {
     private static readonly Guid MercadoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000008");
     private static readonly Guid DizimoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000012");
@@ -15,10 +15,7 @@ public class CategoriesEndpointsTests
     [Fact]
     public async Task GetCategories_ReturnsAllFourteenSeededCategories()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/categories");
+        var response = await Client.GetAsync("/api/v1/financial/categories");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var categories = await response.Content.ReadFromJsonAsync<List<CategoryDTO>>();
@@ -29,10 +26,7 @@ public class CategoriesEndpointsTests
     [Fact]
     public async Task GetCategories_OnlyInvestimentoHasIsInvestmentTrueAndOnlyDizimoHasIsTitheTrue()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/categories");
+        var response = await Client.GetAsync("/api/v1/financial/categories");
 
         var categories = await response.Content.ReadFromJsonAsync<List<CategoryDTO>>();
         using (new AssertionScope())
@@ -45,10 +39,7 @@ public class CategoriesEndpointsTests
     [Fact]
     public async Task GetCategories_MercadoIsActiveWithNeitherClassificationFlag()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/categories");
+        var response = await Client.GetAsync("/api/v1/financial/categories");
 
         var categories = await response.Content.ReadFromJsonAsync<List<CategoryDTO>>();
         var mercado = categories.Should().ContainSingle(c => c.Id == MercadoId).Which;

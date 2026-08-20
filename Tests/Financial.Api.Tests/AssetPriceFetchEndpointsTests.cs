@@ -1,6 +1,7 @@
 using Financial.Investment.Application.Configuration;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Http.Json;
@@ -10,22 +11,24 @@ namespace Financial.Api.Tests;
 
 public class AssetPriceFetchEndpointsTests
 {
+    private static readonly JsonSerializerOptions CaseInsensitiveJson = new() { PropertyNameCaseInsensitive = true };
+
+    /// <summary>Boots the API with the AssetPriceFetchOptions a test needs; the configuration callback is the only
+    /// thing that differs between these tests.</summary>
+    private static WebApplicationFactory<Program> CreateFactory(Action<AssetPriceFetchOptions> configure) =>
+        new ApiTestFactory().WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services => services.PostConfigure(configure)));
+
     [Fact]
     public async Task GetAssetPriceFetch_ReturnsOk_WithConfiguredPortfolios()
     {
-        await using var factory = new ApiTestFactory().WithWebHostBuilder(builder =>
+        await using var factory = CreateFactory(options =>
         {
-            builder.ConfigureServices(services =>
-            {
-                services.PostConfigure<AssetPriceFetchOptions>(options =>
-                {
-                    options.Portfolios =
-                    [
-                        new AssetPriceFetch { BrokerName = "XPI", PortfolioName = "FII" },
-                        new AssetPriceFetch { BrokerName = "XPI", PortfolioName = "Acoes" },
-                    ];
-                });
-            });
+            options.Portfolios =
+            [
+                new AssetPriceFetch { BrokerName = "XPI", PortfolioName = "FII" },
+                new AssetPriceFetch { BrokerName = "XPI", PortfolioName = "Acoes" },
+            ];
         });
 
         using var client = factory.CreateClient();
@@ -33,8 +36,7 @@ public class AssetPriceFetchEndpointsTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var portfolios = await response.Content.ReadFromJsonAsync<AssetPriceFetch[]>(
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var portfolios = await response.Content.ReadFromJsonAsync<AssetPriceFetch[]>(CaseInsensitiveJson);
         portfolios.Should().HaveCount(2);
         portfolios![0].BrokerName.Should().Be("XPI");
         portfolios[0].PortfolioName.Should().Be("FII");
@@ -44,36 +46,23 @@ public class AssetPriceFetchEndpointsTests
     [Fact]
     public async Task GetAssetPriceFetch_ReturnsEmptyArray_WhenNoPortfoliosConfigured()
     {
-        await using var factory = new ApiTestFactory().WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureServices(services =>
-            {
-                services.PostConfigure<AssetPriceFetchOptions>(options => options.Portfolios.Clear());
-            });
-        });
+        await using var factory = CreateFactory(options => options.Portfolios.Clear());
 
         using var client = factory.CreateClient();
         var response = await client.GetAsync("/api/v1/financial/asset-price-fetch");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var portfolios = await response.Content.ReadFromJsonAsync<AssetPriceFetch[]>(
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var portfolios = await response.Content.ReadFromJsonAsync<AssetPriceFetch[]>(CaseInsensitiveJson);
         portfolios.Should().BeEmpty();
     }
 
     [Fact]
     public async Task GetAssetPriceFetch_JsonUsesBrokerNameAndPortfolioNameProperties()
     {
-        await using var factory = new ApiTestFactory().WithWebHostBuilder(builder =>
+        await using var factory = CreateFactory(options =>
         {
-            builder.ConfigureServices(services =>
-            {
-                services.PostConfigure<AssetPriceFetchOptions>(options =>
-                {
-                    options.Portfolios = [new AssetPriceFetch { BrokerName = "XPI", PortfolioName = "FII" }];
-                });
-            });
+            options.Portfolios = [new AssetPriceFetch { BrokerName = "XPI", PortfolioName = "FII" }];
         });
 
         using var client = factory.CreateClient();

@@ -5,15 +5,12 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Api.Tests;
 
-public class ObservabilityDisabledTests
+public class ObservabilityDisabledTests : ApiEndpointTests
 {
     [Fact]
     public async Task GetSyncStatus_Succeeds_WithObservabilityDisabledAndNoTelemetryEndpointReachable()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/sync-status");
+        var response = await Client.GetAsync("/api/v1/financial/sync-status");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -21,8 +18,7 @@ public class ObservabilityDisabledTests
     [Fact]
     public async Task TelemetryTracer_ResolvesToUsableNoOp_WithObservabilityDisabled()
     {
-        await using var factory = new ApiTestFactory();
-        using var scope = factory.Services.CreateScope();
+        using var scope = Services.CreateScope();
 
         var tracer = scope.ServiceProvider.GetRequiredService<ITelemetryTracer>();
         using var span = tracer.StartSpan("Test.Span");

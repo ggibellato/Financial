@@ -5,14 +5,12 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
-public class CreditEndpointsTests
+public class CreditEndpointsTests : ApiEndpointTests
 {
     [Fact]
     public async Task GetCreditsByBroker_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/credits/broker/XPI");
+        var response = await Client.GetAsync("/api/v1/financial/credits/broker/XPI");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -24,9 +22,7 @@ public class CreditEndpointsTests
     [Fact]
     public async Task GetCreditsByPortfolio_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/credits/portfolio/XPI/Default");
+        var response = await Client.GetAsync("/api/v1/financial/credits/portfolio/XPI/Default");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -38,9 +34,7 @@ public class CreditEndpointsTests
     [Fact]
     public async Task AddCredit_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.PostAsJsonAsync("/api/v1/financial/credits", new CreditCreateDTO
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/credits", new CreditCreateDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -59,9 +53,7 @@ public class CreditEndpointsTests
     [Fact]
     public async Task AddCredit_InvalidType_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.PostAsJsonAsync("/api/v1/financial/credits", new CreditCreateDTO
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/credits", new CreditCreateDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -77,10 +69,7 @@ public class CreditEndpointsTests
     [Fact]
     public async Task UpdateCredit_UnknownId_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.PutAsJsonAsync("/api/v1/financial/credits", new CreditUpdateDTO
+        var response = await Client.PutAsJsonAsync("/api/v1/financial/credits", new CreditUpdateDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -97,9 +86,6 @@ public class CreditEndpointsTests
     [Fact]
     public async Task DeleteCredit_UnknownId_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
         using var request = new HttpRequestMessage(HttpMethod.Delete, "/api/v1/financial/credits")
         {
             Content = JsonContent.Create(new CreditDeleteDTO
@@ -111,7 +97,7 @@ public class CreditEndpointsTests
             })
         };
 
-        var response = await client.SendAsync(request);
+        var response = await Client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -119,9 +105,7 @@ public class CreditEndpointsTests
     [Fact]
     public async Task UpdateCredit_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/credits", new CreditCreateDTO
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/credits", new CreditCreateDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -136,7 +120,7 @@ public class CreditEndpointsTests
         createdAsset.Should().NotBeNull();
         var creditId = createdAsset!.Credits.First(credit => credit.Date == new DateTime(2024, 2, 2)).Id;
 
-        var response = await client.PutAsJsonAsync("/api/v1/financial/credits", new CreditUpdateDTO
+        var response = await Client.PutAsJsonAsync("/api/v1/financial/credits", new CreditUpdateDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -158,9 +142,7 @@ public class CreditEndpointsTests
     [Fact]
     public async Task DeleteCredit_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/credits", new CreditCreateDTO
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/credits", new CreditCreateDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -186,7 +168,7 @@ public class CreditEndpointsTests
             })
         };
 
-        var response = await client.SendAsync(request);
+        var response = await Client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var asset = await response.Content.ReadFromJsonAsync<AssetDetailsDTO>();
@@ -197,11 +179,8 @@ public class CreditEndpointsTests
     [Fact]
     public async Task GetCreditsByBroker_ScopeHistoric_ExcludesActiveAssetCredits()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
         // CLOSEDASSET (Historic) has no credits, while the Active BCIA11 has two dividends
-        var response = await client.GetAsync("/api/v1/financial/credits/broker/XPI?scope=historic");
+        var response = await Client.GetAsync("/api/v1/financial/credits/broker/XPI?scope=historic");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var credits = await response.Content.ReadFromJsonAsync<CreditDTO[]>();
@@ -212,10 +191,7 @@ public class CreditEndpointsTests
     [Fact]
     public async Task GetCreditsByPortfolio_ScopeHistoric_ExcludesActivePortfolioCredits()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/credits/portfolio/XPI/Uncategorized?scope=historic");
+        var response = await Client.GetAsync("/api/v1/financial/credits/portfolio/XPI/Uncategorized?scope=historic");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var credits = await response.Content.ReadFromJsonAsync<CreditDTO[]>();
@@ -226,10 +202,7 @@ public class CreditEndpointsTests
     [Fact]
     public async Task GetCreditsByPortfolio_DefaultScope_DoesNotReturnHistoricOnlyPortfolio()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/credits/portfolio/XPI/Uncategorized");
+        var response = await Client.GetAsync("/api/v1/financial/credits/portfolio/XPI/Uncategorized");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var credits = await response.Content.ReadFromJsonAsync<CreditDTO[]>();

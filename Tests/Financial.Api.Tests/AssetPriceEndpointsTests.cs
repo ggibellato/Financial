@@ -10,7 +10,7 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
-public class AssetPriceEndpointsTests
+public class AssetPriceEndpointsTests : ApiEndpointTests
 {
     [Fact]
     public async Task GetCurrentPrice_ReturnsOk()
@@ -154,9 +154,7 @@ public class AssetPriceEndpointsTests
     [Fact]
     public async Task SetPrice_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
+        var response = await Client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -174,9 +172,7 @@ public class AssetPriceEndpointsTests
     [Fact]
     public async Task SetPrice_ZeroPrice_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
+        var response = await Client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -191,9 +187,7 @@ public class AssetPriceEndpointsTests
     [Fact]
     public async Task SetPrice_FutureDate_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
+        var response = await Client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -208,9 +202,7 @@ public class AssetPriceEndpointsTests
     [Fact]
     public async Task SetPrice_UnknownAsset_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
+        var response = await Client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -225,10 +217,8 @@ public class AssetPriceEndpointsTests
     [Fact]
     public async Task DeletePrice_ManualEntry_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var date = new DateOnly(2026, 8, 15);
-        await client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
+        await Client.PutAsJsonAsync("/api/v1/financial/prices", new SetAssetPriceDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -247,7 +237,7 @@ public class AssetPriceEndpointsTests
                 Date = date
             })
         };
-        var response = await client.SendAsync(request);
+        var response = await Client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var asset = await response.Content.ReadFromJsonAsync<AssetDetailsDTO>();
@@ -258,9 +248,6 @@ public class AssetPriceEndpointsTests
     [Fact]
     public async Task DeletePrice_NoEntryForDate_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
         using var request = new HttpRequestMessage(HttpMethod.Delete, "/api/v1/financial/prices")
         {
             Content = JsonContent.Create(new DeleteAssetPriceDTO
@@ -271,7 +258,7 @@ public class AssetPriceEndpointsTests
                 Date = new DateOnly(2026, 8, 15)
             })
         };
-        var response = await client.SendAsync(request);
+        var response = await Client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -279,10 +266,8 @@ public class AssetPriceEndpointsTests
     [Fact]
     public async Task DeletePrice_AutomaticEntry_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var date = new DateOnly(2026, 8, 15);
-        var repository = factory.Services.GetRequiredService<IInvestmentRepository>();
+        var repository = Services.GetRequiredService<IInvestmentRepository>();
         repository.GetAsset("XPI", "Default", "BCIA11")!.SetPrice(date, 100m, isManual: false);
 
         using var request = new HttpRequestMessage(HttpMethod.Delete, "/api/v1/financial/prices")
@@ -295,7 +280,7 @@ public class AssetPriceEndpointsTests
                 Date = date
             })
         };
-        var response = await client.SendAsync(request);
+        var response = await Client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
