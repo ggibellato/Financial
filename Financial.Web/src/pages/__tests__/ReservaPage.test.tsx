@@ -25,17 +25,17 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const BALANCES: ReserveBucketBalanceDto[] = [
-  { bucket: 'Investimento', balance: 654.33 },
-  { bucket: 'HouseTreats', balance: 654.33 },
-  { bucket: 'Ariana', balance: 327.17 },
-  { bucket: 'Gleison', balance: 327.17 },
+  { bucketId: 'b1', bucketName: 'Investimento', balance: 654.33 },
+  { bucketId: 'b2', bucketName: 'HouseTreats', balance: 654.33 },
+  { bucketId: 'b3', bucketName: 'Ariana', balance: 327.17 },
+  { bucketId: 'b4', bucketName: 'Gleison', balance: 327.17 },
 ]
 
 const MOVEMENTS: ReserveMovementDto[] = [
-  { id: 'm1', bucket: 'Investimento', amount: 654.33, date: '2026-07-17', description: 'Ramsay' },
-  { id: 'm2', bucket: 'HouseTreats', amount: 654.33, date: '2026-07-17', description: 'Ramsay' },
-  { id: 'm3', bucket: 'Ariana', amount: 327.17, date: '2026-07-17', description: 'Ramsay' },
-  { id: 'm4', bucket: 'Gleison', amount: 327.17, date: '2026-07-17', description: 'Ramsay' },
+  { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 654.33, date: '2026-07-17', description: 'Ramsay' },
+  { id: 'm2', bucketId: 'b2', bucketName: 'HouseTreats', amount: 654.33, date: '2026-07-17', description: 'Ramsay' },
+  { id: 'm3', bucketId: 'b3', bucketName: 'Ariana', amount: 327.17, date: '2026-07-17', description: 'Ramsay' },
+  { id: 'm4', bucketId: 'b4', bucketName: 'Gleison', amount: 327.17, date: '2026-07-17', description: 'Ramsay' },
 ]
 
 const BUCKETS: ReserveBucketDto[] = [
@@ -80,7 +80,7 @@ describe('ReservaPage', () => {
 
     await waitFor(() => expect(screen.getAllByText('Ramsay').length).toBe(4))
     for (const b of BALANCES) {
-      expect(screen.getAllByText(b.bucket).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(b.bucketName).length).toBeGreaterThan(0)
     }
   })
 
@@ -123,10 +123,10 @@ describe('ReservaPage', () => {
   it('shows the posted split breakdown and total after a successful submission', async () => {
     postIncomeSplitMock.mockResolvedValue({
       buckets: [
-        { bucket: 'Investimento', amount: 654.33 },
-        { bucket: 'HouseTreats', amount: 654.33 },
-        { bucket: 'Ariana', amount: 327.17 },
-        { bucket: 'Gleison', amount: 327.17 },
+        { bucketId: 'b1', bucketName: 'Investimento', amount: 654.33 },
+        { bucketId: 'b2', bucketName: 'HouseTreats', amount: 654.33 },
+        { bucketId: 'b3', bucketName: 'Ariana', amount: 327.17 },
+        { bucketId: 'b4', bucketName: 'Gleison', amount: 327.17 },
       ],
       total: 1963,
     })
@@ -178,7 +178,7 @@ describe('ReservaPage', () => {
 
     await waitFor(() =>
       expect(updateReserveMovementMock).toHaveBeenCalledWith('m1', {
-        bucket: 'Investimento',
+        bucketId: 'b1',
         amount: 700,
         date: '2026-07-17',
         description: 'Ramsay',
@@ -233,13 +233,20 @@ describe('ReservaPage', () => {
       'Gleison',
       'Retired',
     ])
+    expect(withdrawalOptions.map((o) => (o as HTMLOptionElement).value)).toEqual([
+      'b1',
+      'b2',
+      'b3',
+      'b4',
+      'b5',
+    ])
   })
 
   it('renders a split-result row for every entry returned by the income-split response', async () => {
     postIncomeSplitMock.mockResolvedValue({
       buckets: [
-        { bucket: 'Investimento', amount: 981.5 },
-        { bucket: 'HouseTreats', amount: 981.5 },
+        { bucketId: 'b1', bucketName: 'Investimento', amount: 981.5 },
+        { bucketId: 'b2', bucketName: 'HouseTreats', amount: 981.5 },
       ],
       total: 1963,
     })

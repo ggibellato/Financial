@@ -8,7 +8,7 @@ public sealed class ReserveBucketDTO
     /// <summary>Reserve bucket identifier.</summary>
     public required Guid Id { get; init; }
 
-    /// <summary>Reserve bucket name (resolution key used by ReserveMovement.Bucket).</summary>
+    /// <summary>Reserve bucket display name.</summary>
     public required string Name { get; init; }
 
     /// <summary>Whether this bucket currently participates in income splits.</summary>

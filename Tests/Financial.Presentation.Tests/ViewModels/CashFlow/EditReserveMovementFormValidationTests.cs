@@ -6,12 +6,13 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 public class EditReserveMovementFormValidationTests
 {
     private static readonly DateTime ValidDate = DateTime.Today;
+    private static readonly Guid ValidBucketId = Guid.NewGuid();
 
-    private static string Validate(string bucket, string amount, DateTime? date, string description) =>
-        EditReserveMovementFormValidation.BuildValidationMessage(bucket, amount, date, description);
+    private static string Validate(Guid? bucketId, string amount, DateTime? date, string description) =>
+        EditReserveMovementFormValidation.BuildValidationMessage(bucketId, amount, date, description);
 
-    private static string Validate(string bucket = "Investimento", string amount = "50", string description = "Groceries") =>
-        Validate(bucket, amount, ValidDate, description);
+    private static string Validate(Guid? bucketId = null, string amount = "50", string description = "Groceries") =>
+        Validate(bucketId ?? ValidBucketId, amount, ValidDate, description);
 
     [Fact]
     public void ValidForm_ReturnsEmpty()
@@ -25,10 +26,13 @@ public class EditReserveMovementFormValidationTests
         Validate(amount: "-50").Should().BeEmpty();
     }
 
+    private static string ValidateWithoutBucket() =>
+        Validate(null, "50", ValidDate, "Groceries");
+
     [Fact]
     public void MissingBucket_ReturnsError()
     {
-        Validate(bucket: "").Should().Contain("Bucket is required.");
+        ValidateWithoutBucket().Should().Contain("Bucket is required.");
     }
 
     [Theory]
@@ -42,7 +46,7 @@ public class EditReserveMovementFormValidationTests
     [Fact]
     public void MissingDate_ReturnsError()
     {
-        Validate("Investimento", "50", null, "Groceries").Should().Contain("Date is required.");
+        Validate(ValidBucketId, "50", null, "Groceries").Should().Contain("Date is required.");
     }
 
     [Fact]

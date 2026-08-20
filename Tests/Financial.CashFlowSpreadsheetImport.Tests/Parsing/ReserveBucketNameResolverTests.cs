@@ -1,8 +1,8 @@
-using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Parsing;
 using FluentAssertions;
 
-namespace Financial.CashFlow.Application.Tests.Validation;
+namespace Financial.CashFlowSpreadsheetImport.Tests.Parsing;
 
 public class ReserveBucketNameResolverTests
 {

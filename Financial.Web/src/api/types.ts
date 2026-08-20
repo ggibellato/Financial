@@ -285,7 +285,8 @@ export interface PortfolioAssetSummaryItemDto {
 }
 
 export interface ReserveBucketBalanceDto {
-  bucket: string
+  bucketId: string
+  bucketName: string
   balance: number
 }
 
@@ -298,7 +299,8 @@ export interface ReserveBucketDto {
 
 export interface ReserveMovementDto {
   id: string
-  bucket: string
+  bucketId: string
+  bucketName: string
   amount: number
   date: string
   description: string
@@ -311,7 +313,8 @@ export interface IncomeSplitRequestDto {
 }
 
 export interface BucketSplitAmountDto {
-  bucket: string
+  bucketId: string
+  bucketName: string
   amount: number
 }
 
@@ -321,7 +324,7 @@ export interface IncomeSplitResultDto {
 }
 
 export interface WithdrawalRequestDto {
-  bucket: string
+  bucketId: string
   amount: number
   date: string
   description: string
@@ -329,7 +332,7 @@ export interface WithdrawalRequestDto {
 }
 
 export interface UpdateReserveMovementDto {
-  bucket: string
+  bucketId: string
   amount: number
   date: string
   description: string

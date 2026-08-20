@@ -7,6 +7,9 @@ namespace Financial.Api.Tests;
 
 public class ReserveEndpointsTests : ApiEndpointTests
 {
+    private static readonly Guid InvestimentoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-300000000001");
+    private static readonly Guid ArianaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-300000000003");
+
     [Fact]
     public async Task PostIncomeSplit_ValidRequest_ReturnsOkWithComputedSplit()
     {
@@ -22,7 +25,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<IncomeSplitResultDTO>();
         result.Should().NotBeNull();
-        result!.Buckets.Should().ContainSingle(b => b.Bucket == "Investimento" && b.Amount == 654.27m);
+        result!.Buckets.Should().ContainSingle(b => b.BucketName == "Investimento" && b.Amount == 654.27m);
         result.Total.Should().Be(1963.00m);
     }
 
@@ -75,7 +78,8 @@ public class ReserveEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var balances = await response.Content.ReadFromJsonAsync<List<ReserveBucketBalanceDTO>>();
         balances.Should().HaveCount(4);
-        balances.Should().ContainSingle(b => b.Bucket == "Investimento" && b.Balance == 654.27m);
+        balances.Should().ContainSingle(b => b.BucketName == "Investimento" && b.Balance == 654.27m);
+        balances.Should().ContainSingle(b => b.BucketId == InvestimentoId && b.Balance == 654.27m);
     }
 
     [Fact]
@@ -90,7 +94,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
 
         var response = await Client.PostAsJsonAsync("/api/v1/financial/reserve/withdrawals", new WithdrawalRequestDTO
         {
-            Bucket = "Ariana",
+            BucketId = ArianaId,
             Amount = 99999m,
             Date = new DateOnly(2026, 7, 2),
             Description = "Too much",
@@ -114,7 +118,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
 
         var response = await Client.PostAsJsonAsync("/api/v1/financial/reserve/withdrawals", new WithdrawalRequestDTO
         {
-            Bucket = "Ariana",
+            BucketId = ArianaId,
             Amount = 99999m,
             Date = new DateOnly(2026, 7, 2),
             Description = "Too much but confirmed",
@@ -136,11 +140,11 @@ public class ReserveEndpointsTests : ApiEndpointTests
             Description = "Ramsay"
         });
         var balancesBefore = await Client.GetFromJsonAsync<List<ReserveBucketBalanceDTO>>("/api/v1/financial/reserve/balances");
-        var gleisonBefore = balancesBefore!.Single(b => b.Bucket == "Gleison").Balance;
+        var gleisonBefore = balancesBefore!.Single(b => b.BucketName == "Gleison").Balance;
 
         var response = await Client.PostAsJsonAsync("/api/v1/financial/reserve/withdrawals", new WithdrawalRequestDTO
         {
-            Bucket = "Investimento",
+            BucketId = InvestimentoId,
             Amount = 100m,
             Date = new DateOnly(2026, 7, 2),
             Description = "Small withdrawal",
@@ -149,7 +153,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var balancesAfter = await Client.GetFromJsonAsync<List<ReserveBucketBalanceDTO>>("/api/v1/financial/reserve/balances");
-        balancesAfter!.Single(b => b.Bucket == "Gleison").Balance.Should().Be(gleisonBefore);
+        balancesAfter!.Single(b => b.BucketName == "Gleison").Balance.Should().Be(gleisonBefore);
     }
 
     [Fact]
@@ -175,7 +179,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
     {
         var withdrawal = await Client.PostAsJsonAsync("/api/v1/financial/reserve/withdrawals", new WithdrawalRequestDTO
         {
-            Bucket = "Ariana",
+            BucketId = ArianaId,
             Amount = 30m,
             Date = new DateOnly(2026, 7, 2),
             Description = "Groceries",
@@ -185,7 +189,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
 
         var response = await Client.PutAsJsonAsync($"/api/v1/financial/reserve/movements/{movement!.Id}", new UpdateReserveMovementDTO
         {
-            Bucket = "Ariana",
+            BucketId = ArianaId,
             Amount = -45m,
             Date = new DateOnly(2026, 7, 3),
             Description = "Groceries (corrected)"
@@ -202,7 +206,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
     {
         var response = await Client.PutAsJsonAsync($"/api/v1/financial/reserve/movements/{Guid.NewGuid()}", new UpdateReserveMovementDTO
         {
-            Bucket = "Ariana",
+            BucketId = ArianaId,
             Amount = 10m,
             Date = new DateOnly(2026, 7, 1),
             Description = "Test"

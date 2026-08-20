@@ -26,17 +26,17 @@ vi.mock('../api/financialApiClient', () => ({
 }))
 
 const BALANCES: ReserveBucketBalanceDto[] = [
-  { bucket: 'Investimento', balance: 654.33 },
-  { bucket: 'HouseTreats', balance: 654.33 },
-  { bucket: 'Ariana', balance: 327.17 },
-  { bucket: 'Gleison', balance: 327.17 },
+  { bucketId: 'b1', bucketName: 'Investimento', balance: 654.33 },
+  { bucketId: 'b2', bucketName: 'HouseTreats', balance: 654.33 },
+  { bucketId: 'b3', bucketName: 'Ariana', balance: 327.17 },
+  { bucketId: 'b4', bucketName: 'Gleison', balance: 327.17 },
 ]
 
 const MOVEMENTS: ReserveMovementDto[] = [
-  { id: 'm1', bucket: 'Investimento', amount: 654.33, date: '2026-07-17', description: 'Ramsay' },
-  { id: 'm2', bucket: 'HouseTreats', amount: 654.33, date: '2026-07-17', description: 'Ramsay' },
-  { id: 'm3', bucket: 'Ariana', amount: 327.17, date: '2026-07-17', description: 'Ramsay' },
-  { id: 'm4', bucket: 'Gleison', amount: 327.17, date: '2026-07-17', description: 'Ramsay' },
+  { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 654.33, date: '2026-07-17', description: 'Ramsay' },
+  { id: 'm2', bucketId: 'b2', bucketName: 'HouseTreats', amount: 654.33, date: '2026-07-17', description: 'Ramsay' },
+  { id: 'm3', bucketId: 'b3', bucketName: 'Ariana', amount: 327.17, date: '2026-07-17', description: 'Ramsay' },
+  { id: 'm4', bucketId: 'b4', bucketName: 'Gleison', amount: 327.17, date: '2026-07-17', description: 'Ramsay' },
 ]
 
 const BUCKETS: ReserveBucketDto[] = [
@@ -83,7 +83,7 @@ describe('useReserva', () => {
 
   it('does not attach a group total to a lone movement', async () => {
     getReserveMovementsMock.mockResolvedValue([
-      { id: 'm5', bucket: 'Investimento', amount: -30, date: '2026-07-18', description: 'Groceries top-up' },
+      { id: 'm5', bucketId: 'b1', bucketName: 'Investimento', amount: -30, date: '2026-07-18', description: 'Groceries top-up' },
     ])
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -119,10 +119,10 @@ describe('useReserva', () => {
   it('submits an income split and re-fetches balances/movements on success', async () => {
     const splitResult = {
       buckets: [
-        { bucket: 'Investimento', amount: 654.33 },
-        { bucket: 'HouseTreats', amount: 654.33 },
-        { bucket: 'Ariana', amount: 327.17 },
-        { bucket: 'Gleison', amount: 327.17 },
+        { bucketId: 'b1', bucketName: 'Investimento', amount: 654.33 },
+        { bucketId: 'b2', bucketName: 'HouseTreats', amount: 654.33 },
+        { bucketId: 'b3', bucketName: 'Ariana', amount: 327.17 },
+        { bucketId: 'b4', bucketName: 'Gleison', amount: 327.17 },
       ],
       total: 1963,
     }
@@ -181,7 +181,7 @@ describe('useReserva', () => {
   it('submits a withdrawal and re-fetches on success', async () => {
     postWithdrawalMock.mockResolvedValue({
       id: 'm2',
-      bucket: 'Investimento',
+      bucketId: 'b1', bucketName: 'Investimento',
       amount: -30,
       date: '2026-07-01',
       description: 'Groceries top-up',
@@ -207,7 +207,7 @@ describe('useReserva', () => {
       .mockRejectedValueOnce(new ApiError('This withdrawal exceeds the balance.', 409))
       .mockResolvedValueOnce({
         id: 'm3',
-        bucket: 'Ariana',
+        bucketId: 'b3', bucketName: 'Ariana',
         amount: -100,
         date: '2026-07-01',
         description: 'Big purchase',
@@ -215,7 +215,7 @@ describe('useReserva', () => {
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    act(() => result.current.setWithdrawalField('withdrawalBucket', 'Ariana'))
+    act(() => result.current.setWithdrawalField('withdrawalBucketId', 'Ariana'))
     act(() => result.current.setWithdrawalField('withdrawalAmount', '100'))
     act(() => result.current.setWithdrawalField('withdrawalDate', '2026-07-01'))
     act(() => result.current.setWithdrawalField('withdrawalDescription', 'Big purchase'))
@@ -252,7 +252,7 @@ describe('useReserva', () => {
 
     await waitFor(() =>
       expect(updateReserveMovementMock).toHaveBeenCalledWith('m1', {
-        bucket: 'Investimento',
+        bucketId: 'b1',
         amount: 700,
         date: '2026-07-17',
         description: 'Ramsay',
@@ -301,7 +301,7 @@ describe('useReserva', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(result.current.buckets).toEqual(BUCKETS)
-    expect(result.current.withdrawalBucket).toBe('Investimento')
+    expect(result.current.withdrawalBucketId).toBe('b1')
   })
 
   it('defaults the withdrawal bucket to the first active bucket, skipping a leading inactive one', async () => {
@@ -312,13 +312,13 @@ describe('useReserva', () => {
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    expect(result.current.withdrawalBucket).toBe('Investimento')
+    expect(result.current.withdrawalBucketId).toBe('b1')
   })
 
   it('does not re-fetch the bucket list after a mutation-triggered refresh', async () => {
     postWithdrawalMock.mockResolvedValue({
       id: 'm2',
-      bucket: 'Investimento',
+      bucketId: 'b1', bucketName: 'Investimento',
       amount: -30,
       date: '2026-07-01',
       description: 'Groceries top-up',
@@ -386,7 +386,7 @@ describe('useReserva', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     act(() => result.current.showEditMovementForm(MOVEMENTS[0]))
-    act(() => result.current.setEditMovementField('editMovementBucket', ''))
+    act(() => result.current.setEditMovementField('editMovementBucketId', ''))
     act(() => result.current.saveMovementEdit())
 
     await waitFor(() => expect(result.current.saveMovementError).toBe('Bucket is required'))

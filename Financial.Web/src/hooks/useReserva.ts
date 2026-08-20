@@ -10,9 +10,9 @@ const BUCKET_REQUIRED_ERROR = 'Bucket is required'
 
 export type SplitFormField = 'splitDate' | 'splitAmount' | 'splitDescription'
 
-export type WithdrawalFormField = 'withdrawalBucket' | 'withdrawalAmount' | 'withdrawalDate' | 'withdrawalDescription'
+export type WithdrawalFormField = 'withdrawalBucketId' | 'withdrawalAmount' | 'withdrawalDate' | 'withdrawalDescription'
 
-export type EditMovementField = 'editMovementBucket' | 'editMovementAmount' | 'editMovementDate' | 'editMovementDescription'
+export type EditMovementField = 'editMovementBucketId' | 'editMovementAmount' | 'editMovementDate' | 'editMovementDescription'
 
 /**
  * A movement row for display. `groupTotal` is set only on the last movement of a same
@@ -40,14 +40,14 @@ interface ReservaState {
   splitError: string | null
   lastSplitResult: IncomeSplitResultDto | null
   isWithdrawalFormOpen: boolean
-  withdrawalBucket: string
+  withdrawalBucketId: string
   withdrawalAmount: string
   withdrawalDate: string
   withdrawalDescription: string
   isSubmittingWithdrawal: boolean
   withdrawalError: string | null
   editingMovementId: string | null
-  editMovementBucket: string
+  editMovementBucketId: string
   editMovementAmount: string
   editMovementDate: string
   editMovementDescription: string
@@ -113,12 +113,12 @@ const INITIAL_STATE: ReservaState = {
   splitError: null,
   lastSplitResult: null,
   isWithdrawalFormOpen: false,
-  withdrawalBucket: '',
+  withdrawalBucketId: '',
   ...BLANK_WITHDRAWAL_FORM_FIELDS,
   isSubmittingWithdrawal: false,
   withdrawalError: null,
   editingMovementId: null,
-  editMovementBucket: '',
+  editMovementBucketId: '',
   editMovementAmount: '',
   editMovementDate: '',
   editMovementDescription: '',
@@ -140,7 +140,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
         balances: action.payload.balances,
         movements: action.payload.movements,
         buckets,
-        withdrawalBucket: state.withdrawalBucket || defaultBucketName(buckets),
+        withdrawalBucketId: state.withdrawalBucketId || defaultBucketId(buckets),
       }
     }
     case 'FETCH_ERROR':
@@ -173,7 +173,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
       return {
         ...state,
         ...BLANK_WITHDRAWAL_FORM_FIELDS,
-        withdrawalBucket: defaultBucketName(state.buckets),
+        withdrawalBucketId: defaultBucketId(state.buckets),
         isWithdrawalFormOpen: false,
         withdrawalError: null,
       }
@@ -185,7 +185,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
       return {
         ...state,
         ...BLANK_WITHDRAWAL_FORM_FIELDS,
-        withdrawalBucket: defaultBucketName(state.buckets),
+        withdrawalBucketId: defaultBucketId(state.buckets),
         isWithdrawalFormOpen: false,
         isSubmittingWithdrawal: false,
       }
@@ -195,7 +195,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
       return {
         ...state,
         editingMovementId: action.payload.id,
-        editMovementBucket: action.payload.bucket,
+        editMovementBucketId: action.payload.bucketId,
         editMovementAmount: String(action.payload.amount),
         editMovementDate: action.payload.date,
         editMovementDescription: action.payload.description,
@@ -259,7 +259,7 @@ export interface ReservaData {
   submitIncomeSplit: () => void
   dismissSplitResult: () => void
   isWithdrawalFormOpen: boolean
-  withdrawalBucket: string
+  withdrawalBucketId: string
   withdrawalAmount: string
   withdrawalDate: string
   withdrawalDescription: string
@@ -270,7 +270,7 @@ export interface ReservaData {
   setWithdrawalField: (field: WithdrawalFormField, value: string) => void
   submitWithdrawal: () => void
   editingMovementId: string | null
-  editMovementBucket: string
+  editMovementBucketId: string
   editMovementAmount: string
   editMovementDate: string
   editMovementDescription: string
@@ -316,8 +316,8 @@ function computeSplitPercentageWarning(buckets: ReserveBucketDto[]): string | nu
   return `Active bucket percentages sum to ${activeSum.toFixed(2)}%, not 100%`
 }
 
-function defaultBucketName(buckets: ReserveBucketDto[]): string {
-  return (buckets.find((b) => b.isActive) ?? buckets[0])?.name ?? ''
+function defaultBucketId(buckets: ReserveBucketDto[]): string {
+  return (buckets.find((b) => b.isActive) ?? buckets[0])?.id ?? ''
 }
 
 export function useReserva(): ReservaData {
@@ -421,11 +421,11 @@ export function useReserva(): ReservaData {
   }
 
   function performWithdrawal(confirmed: boolean) {
-    const { withdrawalBucket, withdrawalAmount, withdrawalDate, withdrawalDescription } = state
+    const { withdrawalBucketId, withdrawalAmount, withdrawalDate, withdrawalDescription } = state
 
     void apiClient
       .postWithdrawal({
-        bucket: withdrawalBucket,
+        bucketId: withdrawalBucketId,
         amount: Number(withdrawalAmount) || 0,
         date: withdrawalDate,
         description: withdrawalDescription,
@@ -453,9 +453,9 @@ export function useReserva(): ReservaData {
   }
 
   function submitWithdrawal() {
-    const { withdrawalBucket, withdrawalAmount, withdrawalDate, withdrawalDescription } = state
+    const { withdrawalBucketId, withdrawalAmount, withdrawalDate, withdrawalDescription } = state
 
-    if (!withdrawalBucket.trim()) {
+    if (!withdrawalBucketId.trim()) {
       dispatch({ type: 'WITHDRAWAL_ERROR', payload: BUCKET_REQUIRED_ERROR })
       return
     }
@@ -481,10 +481,10 @@ export function useReserva(): ReservaData {
   }
 
   function saveMovementEdit() {
-    const { editingMovementId, editMovementBucket, editMovementAmount, editMovementDate, editMovementDescription } = state
+    const { editingMovementId, editMovementBucketId, editMovementAmount, editMovementDate, editMovementDescription } = state
     if (!editingMovementId) return
 
-    if (!editMovementBucket.trim()) {
+    if (!editMovementBucketId.trim()) {
       dispatch({ type: 'SAVE_MOVEMENT_ERROR', payload: BUCKET_REQUIRED_ERROR })
       return
     }
@@ -509,7 +509,7 @@ export function useReserva(): ReservaData {
 
     void apiClient
       .updateReserveMovement(editingMovementId, {
-        bucket: editMovementBucket,
+        bucketId: editMovementBucketId,
         amount,
         date: editMovementDate,
         description: editMovementDescription,
@@ -566,7 +566,7 @@ export function useReserva(): ReservaData {
     submitIncomeSplit,
     dismissSplitResult,
     isWithdrawalFormOpen: state.isWithdrawalFormOpen,
-    withdrawalBucket: state.withdrawalBucket,
+    withdrawalBucketId: state.withdrawalBucketId,
     withdrawalAmount: state.withdrawalAmount,
     withdrawalDate: state.withdrawalDate,
     withdrawalDescription: state.withdrawalDescription,
@@ -577,7 +577,7 @@ export function useReserva(): ReservaData {
     setWithdrawalField,
     submitWithdrawal,
     editingMovementId: state.editingMovementId,
-    editMovementBucket: state.editMovementBucket,
+    editMovementBucketId: state.editMovementBucketId,
     editMovementAmount: state.editMovementAmount,
     editMovementDate: state.editMovementDate,
     editMovementDescription: state.editMovementDescription,

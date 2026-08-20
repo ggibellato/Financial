@@ -83,9 +83,9 @@ public class ReservaViewModel : ViewModelBase
         }
     }
 
-    /// <summary>First active bucket's name, falling back to the first bucket overall, or empty when none loaded.</summary>
-    private string DefaultBucketName() =>
-        (ActiveBuckets.FirstOrDefault() ?? Buckets.FirstOrDefault())?.Name ?? string.Empty;
+    /// <summary>First active bucket's id, falling back to the first bucket overall, or null when none loaded.</summary>
+    private Guid? DefaultBucketId() =>
+        (ActiveBuckets.FirstOrDefault() ?? Buckets.FirstOrDefault())?.Id;
 
     public RelayCommand RetryCommand { get; }
 
@@ -154,9 +154,9 @@ public class ReservaViewModel : ViewModelBase
             {
                 ReplaceAll(Buckets, bucketsTask.Result);
                 OnPropertyChanged(nameof(SplitPercentageWarning));
-                if (string.IsNullOrEmpty(WithdrawalBucket))
+                if (WithdrawalBucketId is null)
                 {
-                    WithdrawalBucket = DefaultBucketName();
+                    WithdrawalBucketId = DefaultBucketId();
                 }
             }
         }
@@ -324,7 +324,7 @@ public class ReservaViewModel : ViewModelBase
     #region Withdrawal
 
     private bool _isWithdrawalFormOpen;
-    private string _withdrawalBucket = string.Empty;
+    private Guid? _withdrawalBucketId;
     private string _withdrawalAmount = string.Empty;
     private DateTime? _withdrawalDate;
     private string _withdrawalDescription = string.Empty;
@@ -337,10 +337,10 @@ public class ReservaViewModel : ViewModelBase
         private set => SetProperty(ref _isWithdrawalFormOpen, value);
     }
 
-    public string WithdrawalBucket
+    public Guid? WithdrawalBucketId
     {
-        get => _withdrawalBucket;
-        set => SetProperty(ref _withdrawalBucket, value);
+        get => _withdrawalBucketId;
+        set => SetProperty(ref _withdrawalBucketId, value);
     }
 
     public string WithdrawalAmount
@@ -387,7 +387,7 @@ public class ReservaViewModel : ViewModelBase
     private void ShowWithdrawalForm()
     {
         CloseAllForms();
-        WithdrawalBucket = DefaultBucketName();
+        WithdrawalBucketId = DefaultBucketId();
         WithdrawalAmount = string.Empty;
         WithdrawalDate = DateTime.Today;
         WithdrawalDescription = string.Empty;
@@ -402,7 +402,7 @@ public class ReservaViewModel : ViewModelBase
     }
 
     internal Task SubmitWithdrawalAsync() => ExecuteSaveAsync(
-        () => WithdrawalFormValidation.BuildValidationMessage(WithdrawalBucket, WithdrawalAmount, WithdrawalDate, WithdrawalDescription),
+        () => WithdrawalFormValidation.BuildValidationMessage(WithdrawalBucketId, WithdrawalAmount, WithdrawalDate, WithdrawalDescription),
         error => WithdrawalSaveError = error,
         saving => IsSubmittingWithdrawal = saving,
         async () =>
@@ -422,7 +422,7 @@ public class ReservaViewModel : ViewModelBase
     {
         var request = new WithdrawalRequestDTO
         {
-            Bucket = WithdrawalBucket,
+            BucketId = WithdrawalBucketId!.Value,
             Amount = decimal.Parse(WithdrawalAmount),
             Date = DateOnly.FromDateTime(WithdrawalDate!.Value),
             Description = WithdrawalDescription,
@@ -450,7 +450,7 @@ public class ReservaViewModel : ViewModelBase
 
     private bool _isEditFormOpen;
     private Guid? _editingMovementId;
-    private string _editBucket = string.Empty;
+    private Guid? _editBucketId;
     private string _editAmount = string.Empty;
     private DateTime? _editDate;
     private string _editDescription = string.Empty;
@@ -463,10 +463,10 @@ public class ReservaViewModel : ViewModelBase
         private set => SetProperty(ref _isEditFormOpen, value);
     }
 
-    public string EditBucket
+    public Guid? EditBucketId
     {
-        get => _editBucket;
-        set => SetProperty(ref _editBucket, value);
+        get => _editBucketId;
+        set => SetProperty(ref _editBucketId, value);
     }
 
     public string EditAmount
@@ -529,7 +529,7 @@ public class ReservaViewModel : ViewModelBase
 
         CloseAllForms();
         _editingMovementId = row.Id;
-        EditBucket = row.Bucket;
+        EditBucketId = row.BucketId;
         EditAmount = row.Amount.ToString();
         EditDate = row.Date.ToDateTime(TimeOnly.MinValue);
         EditDescription = row.Description;
@@ -552,14 +552,14 @@ public class ReservaViewModel : ViewModelBase
         }
 
         return ExecuteSaveAsync(
-            () => EditReserveMovementFormValidation.BuildValidationMessage(EditBucket, EditAmount, EditDate, EditDescription),
+            () => EditReserveMovementFormValidation.BuildValidationMessage(EditBucketId, EditAmount, EditDate, EditDescription),
             error => EditSaveError = error,
             saving => IsSavingMovement = saving,
             async () =>
             {
                 await _reserveService.UpdateMovementAsync(id, new UpdateReserveMovementDTO
                 {
-                    Bucket = EditBucket,
+                    BucketId = EditBucketId!.Value,
                     Amount = decimal.Parse(EditAmount),
                     Date = DateOnly.FromDateTime(EditDate!.Value),
                     Description = EditDescription,

@@ -21,8 +21,8 @@
 
             <TextBlock Grid.Row="1" Grid.Column="0" Text="Bucket:" VerticalAlignment="Center"/>
             <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Buckets}" DisplayMemberPath="Name"
-                      SelectedValue="{Binding EditBucket, UpdateSourceTrigger=PropertyChanged}"
-                      SelectedValuePath="Name"/>
+                      SelectedValue="{Binding EditBucketId, UpdateSourceTrigger=PropertyChanged}"
+                      SelectedValuePath="Id"/>
 
             <TextBlock Grid.Row="2" Grid.Column="0" Text="Amount:" VerticalAlignment="Center"/>
             <!-- Plain TextBox (not the shared decimal-masked input): unlike other CashFlow amount

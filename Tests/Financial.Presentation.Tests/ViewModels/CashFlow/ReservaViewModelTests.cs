@@ -7,12 +7,17 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 public class ReservaViewModelTests
 {
+    private static readonly Guid InvestimentoId = Guid.NewGuid();
+    private static readonly Guid HouseTreatsId = Guid.NewGuid();
+    private static readonly Guid ArianaId = Guid.NewGuid();
+    private static readonly Guid GleisonId = Guid.NewGuid();
+
     private static readonly List<ReserveBucketDTO> DefaultBuckets =
     [
-        new() { Id = Guid.NewGuid(), Name = "Investimento", IsActive = true, SplitPercentage = 33.33m },
-        new() { Id = Guid.NewGuid(), Name = "HouseTreats", IsActive = true, SplitPercentage = 33.33m },
-        new() { Id = Guid.NewGuid(), Name = "Ariana", IsActive = true, SplitPercentage = 16.67m },
-        new() { Id = Guid.NewGuid(), Name = "Gleison", IsActive = true, SplitPercentage = 16.67m },
+        new() { Id = InvestimentoId, Name = "Investimento", IsActive = true, SplitPercentage = 33.33m },
+        new() { Id = HouseTreatsId, Name = "HouseTreats", IsActive = true, SplitPercentage = 33.33m },
+        new() { Id = ArianaId, Name = "Ariana", IsActive = true, SplitPercentage = 16.67m },
+        new() { Id = GleisonId, Name = "Gleison", IsActive = true, SplitPercentage = 16.67m },
     ];
 
     private static (ReservaViewModel ViewModel, StubReserveService Service) CreateViewModel(bool confirm = true) =>
@@ -33,10 +38,10 @@ public class ReservaViewModelTests
         var (viewModel, service) = CreateViewModel();
         service.Balances =
         [
-            new ReserveBucketBalanceDTO { Bucket = "Investimento", Balance = 100m },
-            new ReserveBucketBalanceDTO { Bucket = "HouseTreats", Balance = 50m },
-            new ReserveBucketBalanceDTO { Bucket = "Ariana", Balance = 25m },
-            new ReserveBucketBalanceDTO { Bucket = "Gleison", Balance = 25m },
+            new ReserveBucketBalanceDTO { BucketId = InvestimentoId, BucketName = "Investimento", Balance = 100m },
+            new ReserveBucketBalanceDTO { BucketId = HouseTreatsId, BucketName = "HouseTreats", Balance = 50m },
+            new ReserveBucketBalanceDTO { BucketId = ArianaId, BucketName = "Ariana", Balance = 25m },
+            new ReserveBucketBalanceDTO { BucketId = GleisonId, BucketName = "Gleison", Balance = 25m },
         ];
 
         await viewModel.RefreshAsync();
@@ -52,11 +57,11 @@ public class ReservaViewModelTests
         var date = DateOnly.FromDateTime(DateTime.Today);
         service.Movements =
         [
-            new ReserveMovementDTO { Id = Guid.NewGuid(), Bucket = "Investimento", Amount = 10m, Date = date, Description = "Salary" },
-            new ReserveMovementDTO { Id = Guid.NewGuid(), Bucket = "HouseTreats", Amount = 20m, Date = date, Description = "Salary" },
-            new ReserveMovementDTO { Id = Guid.NewGuid(), Bucket = "Ariana", Amount = 5m, Date = date, Description = "Salary" },
-            new ReserveMovementDTO { Id = Guid.NewGuid(), Bucket = "Gleison", Amount = 5m, Date = date, Description = "Salary" },
-            new ReserveMovementDTO { Id = Guid.NewGuid(), Bucket = "Investimento", Amount = -15m, Date = date, Description = "Standalone" },
+            new ReserveMovementDTO { Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m, Date = date, Description = "Salary" },
+            new ReserveMovementDTO { Id = Guid.NewGuid(), BucketId = HouseTreatsId, BucketName = "HouseTreats", Amount = 20m, Date = date, Description = "Salary" },
+            new ReserveMovementDTO { Id = Guid.NewGuid(), BucketId = ArianaId, BucketName = "Ariana", Amount = 5m, Date = date, Description = "Salary" },
+            new ReserveMovementDTO { Id = Guid.NewGuid(), BucketId = GleisonId, BucketName = "Gleison", Amount = 5m, Date = date, Description = "Salary" },
+            new ReserveMovementDTO { Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = -15m, Date = date, Description = "Standalone" },
         ];
 
         await viewModel.RefreshAsync();
@@ -185,7 +190,7 @@ public class ReservaViewModelTests
         var (viewModel, service) = CreateViewModel();
         var movement = new ReserveMovementRow
         {
-            Id = Guid.NewGuid(), Bucket = "Investimento", Amount = 10m,
+            Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
             Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary",
         };
 
@@ -211,7 +216,7 @@ public class ReservaViewModelTests
         });
         var row = new ReserveMovementRow
         {
-            Id = Guid.NewGuid(), Bucket = "Investimento", Amount = 10m,
+            Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
             Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary", IsPartOfGroup = true,
         };
 
@@ -232,7 +237,7 @@ public class ReservaViewModelTests
         });
         var row = new ReserveMovementRow
         {
-            Id = Guid.NewGuid(), Bucket = "Investimento", Amount = -10m,
+            Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = -10m,
             Date = DateOnly.FromDateTime(DateTime.Today), Description = "Groceries", IsPartOfGroup = false,
         };
 
@@ -283,7 +288,7 @@ public class ReservaViewModelTests
             ReserveBuckets =
             [
                 new ReserveBucketDTO { Id = Guid.NewGuid(), Name = "Retired", IsActive = false, SplitPercentage = 0m },
-                new ReserveBucketDTO { Id = Guid.NewGuid(), Name = "Investimento", IsActive = true, SplitPercentage = 100m },
+                new ReserveBucketDTO { Id = InvestimentoId, Name = "Investimento", IsActive = true, SplitPercentage = 100m },
             ],
         };
         var (viewModel, _) = CreateViewModel(_ => true, bucketService);
@@ -291,7 +296,7 @@ public class ReservaViewModelTests
 
         viewModel.ShowWithdrawalFormCommand.Execute(null);
 
-        viewModel.WithdrawalBucket.Should().Be("Investimento");
+        viewModel.WithdrawalBucketId.Should().Be(InvestimentoId);
     }
 
     [Fact]
@@ -347,7 +352,7 @@ public class ReservaViewModelTests
         var callCountAfterInitialLoad = bucketService.GetReserveBucketsCallCount;
         var row = new ReserveMovementRow
         {
-            Id = Guid.NewGuid(), Bucket = "Investimento", Amount = 10m,
+            Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
             Date = DateOnly.FromDateTime(DateTime.Today), Description = "Test",
         };
 

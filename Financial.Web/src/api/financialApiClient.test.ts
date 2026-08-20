@@ -382,7 +382,7 @@ describe('financialApiClient', () => {
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
     const error = await client
-      .postWithdrawal({ bucket: 'Ariana', amount: 100, date: '2026-07-01', description: 'Test', confirmed: false })
+      .postWithdrawal({ bucketId: 'b3', amount: 100, date: '2026-07-01', description: 'Test', confirmed: false })
       .catch((e: unknown) => e)
 
     expect(error).toBeInstanceOf(ApiError)
@@ -390,7 +390,7 @@ describe('financialApiClient', () => {
   })
 
   it('calls reserve balances endpoint', async () => {
-    const responseBody: ReserveBucketBalanceDto[] = [{ bucket: 'Investimento', balance: 654.33 }]
+    const responseBody: ReserveBucketBalanceDto[] = [{ bucketId: 'b1', bucketName: 'Investimento', balance: 654.33 }]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
@@ -402,7 +402,7 @@ describe('financialApiClient', () => {
 
   it('calls reserve movements endpoint', async () => {
     const responseBody: ReserveMovementDto[] = [
-      { id: 'm1', bucket: 'Investimento', amount: 10, date: '2026-07-01', description: 'Test' },
+      { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 10, date: '2026-07-01', description: 'Test' },
     ]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
@@ -434,10 +434,10 @@ describe('financialApiClient', () => {
     }
     const responseBody: IncomeSplitResultDto = {
       buckets: [
-        { bucket: 'Investimento', amount: 654.33 },
-        { bucket: 'HouseTreats', amount: 654.33 },
-        { bucket: 'Ariana', amount: 327.17 },
-        { bucket: 'Gleison', amount: 327.17 },
+        { bucketId: 'b1', bucketName: 'Investimento', amount: 654.33 },
+        { bucketId: 'b2', bucketName: 'HouseTreats', amount: 654.33 },
+        { bucketId: 'b3', bucketName: 'Ariana', amount: 327.17 },
+        { bucketId: 'b4', bucketName: 'Gleison', amount: 327.17 },
       ],
       total: 1963,
     }
@@ -455,7 +455,7 @@ describe('financialApiClient', () => {
 
   it('posts a withdrawal request', async () => {
     const requestBody: WithdrawalRequestDto = {
-      bucket: 'Investimento',
+      bucketId: 'b1',
       amount: 30,
       date: '2026-07-01',
       description: 'Groceries top-up',
@@ -463,7 +463,7 @@ describe('financialApiClient', () => {
     }
     const responseBody: ReserveMovementDto = {
       id: 'm2',
-      bucket: 'Investimento',
+      bucketId: 'b1', bucketName: 'Investimento',
       amount: -30,
       date: '2026-07-01',
       description: 'Groceries top-up',
@@ -482,14 +482,14 @@ describe('financialApiClient', () => {
 
   it('puts a reserve movement update', async () => {
     const requestBody: UpdateReserveMovementDto = {
-      bucket: 'Ariana',
+      bucketId: 'b3',
       amount: -45,
       date: '2026-07-03',
       description: 'Groceries (corrected)',
     }
     const responseBody: ReserveMovementDto = {
       id: 'm2',
-      bucket: 'Ariana',
+      bucketId: 'b3', bucketName: 'Ariana',
       amount: -45,
       date: '2026-07-03',
       description: 'Groceries (corrected)',

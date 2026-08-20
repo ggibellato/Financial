@@ -12,7 +12,8 @@ namespace Financial.Presentation.App.ViewModels.CashFlow;
 public sealed class ReserveMovementRow
 {
     public required Guid Id { get; init; }
-    public required string Bucket { get; init; }
+    public required Guid BucketId { get; init; }
+    public required string BucketName { get; init; }
     public required decimal Amount { get; init; }
     public required DateOnly Date { get; init; }
     public required string Description { get; init; }
@@ -38,7 +39,8 @@ public sealed class ReserveMovementRow
                 return new ReserveMovementRow
                 {
                     Id = movement.Id,
-                    Bucket = movement.Bucket,
+                    BucketId = movement.BucketId,
+                    BucketName = movement.BucketName,
                     Amount = movement.Amount,
                     Date = movement.Date,
                     Description = movement.Description,
