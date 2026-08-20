@@ -7,12 +7,18 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
-public class ControleMaeEndpointsTests
+public class ControleMaeEndpointsTests() : ApiEndpointTests(new StubExchangeRateProvider(DefaultRate))
 {
+    private const decimal DefaultRate = 1.5m;
+
+    /// <summary>Boots the API on a rate other than the class-wide default, for the three tests that
+    /// pin one; every other test runs against the shared host.</summary>
+    private static ApiTestFactory CreateFactory(decimal? rate) => new(new StubExchangeRateProvider(rate));
+
     [Fact]
     public async Task CreateEntry_ValidRequest_ReturnsOkWithBothCurrenciesPopulated()
     {
-        await using var factory = new ApiTestFactory(new StubExchangeRateProvider(0.146m));
+        await using var factory = CreateFactory(0.146m);
         using var client = factory.CreateClient();
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
@@ -34,7 +40,7 @@ public class ControleMaeEndpointsTests
     [Fact]
     public async Task CreateEntry_WhenRateLookupFails_ReturnsOkWithOnlyEnteredCurrency()
     {
-        await using var factory = new ApiTestFactory(new StubExchangeRateProvider(null));
+        await using var factory = CreateFactory(null);
         using var client = factory.CreateClient();
 
         var response = await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
@@ -54,10 +60,7 @@ public class ControleMaeEndpointsTests
     [Fact]
     public async Task CreateEntry_UnrecognizedCurrency_ReturnsBadRequestWithMessage()
     {
-        await using var factory = new ApiTestFactory(new StubExchangeRateProvider(1.5m));
-        using var client = factory.CreateClient();
-
-        var response = await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "Test",
@@ -73,10 +76,7 @@ public class ControleMaeEndpointsTests
     [Fact]
     public async Task CreateEntry_FutureDate_ReturnsBadRequestWithMessage()
     {
-        await using var factory = new ApiTestFactory(new StubExchangeRateProvider(1.5m));
-        using var client = factory.CreateClient();
-
-        var response = await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
         {
             Date = DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
             Description = "Future",
@@ -92,16 +92,14 @@ public class ControleMaeEndpointsTests
     [Fact]
     public async Task GetEntriesFromDate_ReturnsOnlyEntriesOnOrAfterDate()
     {
-        await using var factory = new ApiTestFactory(new StubExchangeRateProvider(1.5m));
-        using var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
         {
             Date = new DateOnly(2026, 6, 10),
             Description = "June entry",
             SourceCurrency = "BRL",
             SourceValue = 10m
         });
-        await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
         {
             Date = new DateOnly(2026, 7, 10),
             Description = "July entry",
@@ -109,7 +107,7 @@ public class ControleMaeEndpointsTests
             SourceValue = 10m
         });
 
-        var response = await client.GetAsync("/api/v1/financial/controle-mae/entries/from/2026-07-01");
+        var response = await Client.GetAsync("/api/v1/financial/controle-mae/entries/from/2026-07-01");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var entries = await response.Content.ReadFromJsonAsync<List<MaeLedgerEntryDTO>>();
@@ -119,16 +117,14 @@ public class ControleMaeEndpointsTests
     [Fact]
     public async Task GetTotals_SumsBrlAndGbpAcrossAllEntries()
     {
-        await using var factory = new ApiTestFactory(new StubExchangeRateProvider(1.5m));
-        using var client = factory.CreateClient();
-        await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
         {
             Date = new DateOnly(2020, 1, 1),
             Description = "Old entry",
             SourceCurrency = "BRL",
             SourceValue = 100m
         });
-        await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
         {
             Date = new DateOnly(2026, 7, 10),
             Description = "Recent entry",
@@ -136,7 +132,7 @@ public class ControleMaeEndpointsTests
             SourceValue = 50m
         });
 
-        var response = await client.GetAsync("/api/v1/financial/controle-mae/entries/totals");
+        var response = await Client.GetAsync("/api/v1/financial/controle-mae/entries/totals");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var totals = await response.Content.ReadFromJsonAsync<MaeLedgerTotalsDTO>();
@@ -146,7 +142,7 @@ public class ControleMaeEndpointsTests
     [Fact]
     public async Task UpdateEntryValues_ExistingId_ReturnsOkAndUpdatesOnlyValues()
     {
-        await using var factory = new ApiTestFactory(new StubExchangeRateProvider(null));
+        await using var factory = CreateFactory(null);
         using var client = factory.CreateClient();
         var created = await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
         {
@@ -172,10 +168,7 @@ public class ControleMaeEndpointsTests
     [Fact]
     public async Task UpdateEntryValues_UnknownId_ReturnsNotFound()
     {
-        await using var factory = new ApiTestFactory(new StubExchangeRateProvider(1.5m));
-        using var client = factory.CreateClient();
-
-        var response = await client.PutAsJsonAsync($"/api/v1/financial/controle-mae/entries/{Guid.NewGuid()}/values", new UpdateMaeLedgerEntryValuesDTO
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/controle-mae/entries/{Guid.NewGuid()}/values", new UpdateMaeLedgerEntryValuesDTO
         {
             BrlValue = 10m,
             GbpValue = 1m
@@ -187,9 +180,7 @@ public class ControleMaeEndpointsTests
     [Fact]
     public async Task DeleteEntry_ExistingId_RemovesEntry()
     {
-        await using var factory = new ApiTestFactory(new StubExchangeRateProvider(1.5m));
-        using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new CreateMaeLedgerEntryDTO
         {
             Date = new DateOnly(2026, 7, 1),
             Description = "School supplies",
@@ -198,10 +189,10 @@ public class ControleMaeEndpointsTests
         });
         var entry = await created.Content.ReadFromJsonAsync<MaeLedgerEntryDTO>();
 
-        var response = await client.DeleteAsync($"/api/v1/financial/controle-mae/entries/{entry!.Id}");
+        var response = await Client.DeleteAsync($"/api/v1/financial/controle-mae/entries/{entry!.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var entries = await (await client.GetAsync("/api/v1/financial/controle-mae/entries/from/2020-01-01"))
+        var entries = await (await Client.GetAsync("/api/v1/financial/controle-mae/entries/from/2020-01-01"))
             .Content.ReadFromJsonAsync<List<MaeLedgerEntryDTO>>();
         entries.Should().BeEmpty();
     }
@@ -209,10 +200,7 @@ public class ControleMaeEndpointsTests
     [Fact]
     public async Task DeleteEntry_UnknownId_ReturnsNotFound()
     {
-        await using var factory = new ApiTestFactory(new StubExchangeRateProvider(1.5m));
-        using var client = factory.CreateClient();
-
-        var response = await client.DeleteAsync($"/api/v1/financial/controle-mae/entries/{Guid.NewGuid()}");
+        var response = await Client.DeleteAsync($"/api/v1/financial/controle-mae/entries/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }

@@ -5,15 +5,12 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
-public class IncomeSourcesEndpointsTests
+public class IncomeSourcesEndpointsTests : ApiEndpointTests
 {
     [Fact]
     public async Task GetIncomeSources_ReturnsTheFourSeededSourcesWithCorrectFields()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/income-sources");
+        var response = await Client.GetAsync("/api/v1/financial/income-sources");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var sources = await response.Content.ReadFromJsonAsync<List<IncomeSourceDTO>>();
@@ -27,10 +24,7 @@ public class IncomeSourcesEndpointsTests
     [Fact]
     public async Task GetIncomeSources_RequiresNoParameters_AndReturnsFullUnfilteredList()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/income-sources");
+        var response = await Client.GetAsync("/api/v1/financial/income-sources");
         var sources = await response.Content.ReadFromJsonAsync<List<IncomeSourceDTO>>();
 
         // All 4 seeded sources come back regardless of IsActive value - none are seeded inactive
@@ -45,11 +39,9 @@ public class IncomeSourcesEndpointsTests
     [InlineData("DELETE")]
     public async Task IncomeSources_UnsupportedVerbs_DoNotSucceed(string method)
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new HttpRequestMessage(new HttpMethod(method), "/api/v1/financial/income-sources");
 
-        var response = await client.SendAsync(request);
+        var response = await Client.SendAsync(request);
 
         response.IsSuccessStatusCode.Should().BeFalse();
     }

@@ -6,15 +6,12 @@ using System.Text.Json;
 
 namespace Financial.Api.Tests;
 
-public class SummaryEndpointsTests
+public class SummaryEndpointsTests : ApiEndpointTests
 {
     [Fact]
     public async Task GetPortfolioAssetsSummary_Returns200WithAllExpectedFields()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Default/assets");
+        var response = await Client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Default/assets");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -41,10 +38,7 @@ public class SummaryEndpointsTests
     [Fact]
     public async Task GetPortfolioAssetsSummary_Returns400ForWhitespaceBrokerName()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/summary/portfolio/%20/Default/assets");
+        var response = await Client.GetAsync("/api/v1/financial/summary/portfolio/%20/Default/assets");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -52,10 +46,7 @@ public class SummaryEndpointsTests
     [Fact]
     public async Task GetPortfolioAssetsSummary_Returns400ForWhitespacePortfolioName()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/summary/portfolio/XPI/%20/assets");
+        var response = await Client.GetAsync("/api/v1/financial/summary/portfolio/XPI/%20/assets");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -63,10 +54,7 @@ public class SummaryEndpointsTests
     [Fact]
     public async Task GetBrokerSummary_Returns200WithDto()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/summary/broker/XPI");
+        var response = await Client.GetAsync("/api/v1/financial/summary/broker/XPI");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -81,10 +69,7 @@ public class SummaryEndpointsTests
     [Fact]
     public async Task GetPortfolioSummary_Returns200WithDto()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Default");
+        var response = await Client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Default");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -99,10 +84,7 @@ public class SummaryEndpointsTests
     [Fact]
     public async Task GetBrokerBreakdown_Returns200WithList()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/summary/broker/XPI/breakdown");
+        var response = await Client.GetAsync("/api/v1/financial/summary/broker/XPI/breakdown");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -120,10 +102,7 @@ public class SummaryEndpointsTests
     [Fact]
     public async Task GetBrokerBreakdown_Returns400ForWhitespaceBrokerName()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/summary/broker/%20/breakdown");
+        var response = await Client.GetAsync("/api/v1/financial/summary/broker/%20/breakdown");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -131,10 +110,7 @@ public class SummaryEndpointsTests
     [Fact]
     public async Task GetBrokerSummary_ScopeHistoric_ReturnsRealizedFromHistoricBrokerOnly()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/summary/broker/XPI?scope=historic");
+        var response = await Client.GetAsync("/api/v1/financial/summary/broker/XPI?scope=historic");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -147,10 +123,7 @@ public class SummaryEndpointsTests
     [Fact]
     public async Task GetPortfolioSummary_ScopeHistoric_ReturnsHistoricOnly()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Uncategorized?scope=historic");
+        var response = await Client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Uncategorized?scope=historic");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -163,10 +136,7 @@ public class SummaryEndpointsTests
     [Fact]
     public async Task GetPortfolioAssetsSummary_ScopeHistoric_ReturnsHistoricOnly()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Uncategorized/assets?scope=historic");
+        var response = await Client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Uncategorized/assets?scope=historic");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -182,12 +152,10 @@ public class SummaryEndpointsTests
     public async Task GetPortfolioAssetsSummary_ScopeHistoric_ResponseHasNoCurrentPriceOrXirrField()
     {
         // PRD F06: "No current price fetch or XIRR field is present in the historic summary
-        // response" - price/XIRR are computed entirely client-side (Web/WPF), never returned
+        // response" - price/XIRR are computed entirely Client-side (Web/WPF), never returned
         // by this endpoint for any scope; this guards against that ever regressing.
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
 
-        var response = await client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Uncategorized/assets?scope=historic");
+        var response = await Client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Uncategorized/assets?scope=historic");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -207,10 +175,7 @@ public class SummaryEndpointsTests
     [Fact]
     public async Task GetPortfolioAssetsSummary_ScopeHistoric_PortfolioWeightsSumTo100()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Uncategorized/assets?scope=historic");
+        var response = await Client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Uncategorized/assets?scope=historic");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -222,10 +187,7 @@ public class SummaryEndpointsTests
     [Fact]
     public async Task GetPortfolioAssetsSummary_ScopeActive_PreservesNetInvestedWeightingAndComputesRealizedGainLoss()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Default/assets?scope=active");
+        var response = await Client.GetAsync("/api/v1/financial/summary/portfolio/XPI/Default/assets?scope=active");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -242,10 +204,7 @@ public class SummaryEndpointsTests
     [Fact]
     public async Task GetBrokerBreakdown_ScopeHistoric_ReturnsHistoricOnly()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/summary/broker/XPI/breakdown?scope=historic");
+        var response = await Client.GetAsync("/api/v1/financial/summary/broker/XPI/breakdown?scope=historic");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -260,10 +219,7 @@ public class SummaryEndpointsTests
     [Fact]
     public async Task GetBrokerBreakdown_ScopeActive_PreservesNetInvestedBehavior()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/summary/broker/XPI/breakdown?scope=active");
+        var response = await Client.GetAsync("/api/v1/financial/summary/broker/XPI/breakdown?scope=active");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 

@@ -11,15 +11,12 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Financial.Api.Tests;
 
-public class SyncStatusEndpointsTests
+public class SyncStatusEndpointsTests : ApiEndpointTests
 {
     [Fact]
     public async Task GetSyncStatus_ReturnsOk_WithBothContextsIdle()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/sync-status");
+        var response = await Client.GetAsync("/api/v1/financial/sync-status");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var status = await response.Content.ReadFromJsonAsync<SyncStatusResponseDTO>();
@@ -34,10 +31,7 @@ public class SyncStatusEndpointsTests
     [Fact]
     public async Task GetSyncStatus_JsonUsesCamelCasePropertyNames()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/sync-status");
+        var response = await Client.GetAsync("/api/v1/financial/sync-status");
         var json = await response.Content.ReadAsStringAsync();
 
         json.Should().Contain("\"cashFlow\"");

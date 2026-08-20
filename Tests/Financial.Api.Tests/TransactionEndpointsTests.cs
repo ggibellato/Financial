@@ -5,13 +5,11 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
-public class TransactionEndpointsTests
+public class TransactionEndpointsTests : ApiEndpointTests
 {
     [Fact]
     public async Task AddTransaction_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new TransactionCreateDTO
         {
             BrokerName = "XPI",
@@ -24,7 +22,7 @@ public class TransactionEndpointsTests
             Fees = 0
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/transactions", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/transactions", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -36,8 +34,6 @@ public class TransactionEndpointsTests
     [Fact]
     public async Task AddTransaction_InvalidType_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new TransactionCreateDTO
         {
             BrokerName = "XPI",
@@ -50,7 +46,7 @@ public class TransactionEndpointsTests
             Fees = 0
         };
 
-        var response = await client.PostAsJsonAsync("/api/v1/financial/transactions", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/transactions", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -58,10 +54,7 @@ public class TransactionEndpointsTests
     [Fact]
     public async Task UpdateTransaction_UnknownId_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.PutAsJsonAsync("/api/v1/financial/transactions", new TransactionUpdateDTO
+        var response = await Client.PutAsJsonAsync("/api/v1/financial/transactions", new TransactionUpdateDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -80,9 +73,6 @@ public class TransactionEndpointsTests
     [Fact]
     public async Task DeleteTransaction_UnknownId_ReturnsBadRequest()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
         using var request = new HttpRequestMessage(HttpMethod.Delete, "/api/v1/financial/transactions")
         {
             Content = JsonContent.Create(new TransactionDeleteDTO
@@ -94,7 +84,7 @@ public class TransactionEndpointsTests
             })
         };
 
-        var response = await client.SendAsync(request);
+        var response = await Client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -102,9 +92,7 @@ public class TransactionEndpointsTests
     [Fact]
     public async Task UpdateTransaction_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/transactions", new TransactionCreateDTO
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/transactions", new TransactionCreateDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -121,7 +109,7 @@ public class TransactionEndpointsTests
         createdAsset.Should().NotBeNull();
         var transactionId = createdAsset!.Transactions.First(t => t.Date == new DateTime(2024, 1, 2)).Id;
 
-        var response = await client.PutAsJsonAsync("/api/v1/financial/transactions", new TransactionUpdateDTO
+        var response = await Client.PutAsJsonAsync("/api/v1/financial/transactions", new TransactionUpdateDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -146,9 +134,7 @@ public class TransactionEndpointsTests
     [Fact]
     public async Task DeleteTransaction_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var created = await client.PostAsJsonAsync("/api/v1/financial/transactions", new TransactionCreateDTO
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/transactions", new TransactionCreateDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
@@ -176,7 +162,7 @@ public class TransactionEndpointsTests
             })
         };
 
-        var response = await client.SendAsync(request);
+        var response = await Client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var asset = await response.Content.ReadFromJsonAsync<AssetDetailsDTO>();
@@ -187,10 +173,7 @@ public class TransactionEndpointsTests
     [Fact]
     public async Task GetTransactionsByBroker_Returns200WithList()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/transactions/broker/XPI");
+        var response = await Client.GetAsync("/api/v1/financial/transactions/broker/XPI");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -203,10 +186,7 @@ public class TransactionEndpointsTests
     [Fact]
     public async Task GetTransactionsByBroker_Returns400ForWhitespaceBrokerName()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/transactions/broker/%20");
+        var response = await Client.GetAsync("/api/v1/financial/transactions/broker/%20");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -214,10 +194,7 @@ public class TransactionEndpointsTests
     [Fact]
     public async Task GetTransactionsByPortfolio_Returns200WithList()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/transactions/portfolio/XPI/Default");
+        var response = await Client.GetAsync("/api/v1/financial/transactions/portfolio/XPI/Default");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -229,10 +206,7 @@ public class TransactionEndpointsTests
     [Fact]
     public async Task GetTransactionsByPortfolio_Returns400ForWhitespacePortfolioName()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/transactions/portfolio/XPI/%20");
+        var response = await Client.GetAsync("/api/v1/financial/transactions/portfolio/XPI/%20");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -240,10 +214,7 @@ public class TransactionEndpointsTests
     [Fact]
     public async Task GetTransactionsByPortfolio_Returns400ForWhitespaceBrokerName()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/transactions/portfolio/%20/Default");
+        var response = await Client.GetAsync("/api/v1/financial/transactions/portfolio/%20/Default");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -251,10 +222,7 @@ public class TransactionEndpointsTests
     [Fact]
     public async Task GetTransactionsByBroker_DefaultScope_ExcludesHistoricAssetTransactions()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/transactions/broker/XPI");
+        var response = await Client.GetAsync("/api/v1/financial/transactions/broker/XPI");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<TransactionSummaryItemDTO>>();
@@ -265,10 +233,7 @@ public class TransactionEndpointsTests
     [Fact]
     public async Task GetTransactionsByBroker_ScopeHistoric_ReturnsOnlyHistoricAssetTransactions()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/transactions/broker/XPI?scope=historic");
+        var response = await Client.GetAsync("/api/v1/financial/transactions/broker/XPI?scope=historic");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<TransactionSummaryItemDTO>>();
@@ -280,10 +245,7 @@ public class TransactionEndpointsTests
     [Fact]
     public async Task GetTransactionsByPortfolio_ScopeHistoric_ReturnsOnlyHistoricPortfolioTransactions()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/transactions/portfolio/XPI/Uncategorized?scope=historic");
+        var response = await Client.GetAsync("/api/v1/financial/transactions/portfolio/XPI/Uncategorized?scope=historic");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<TransactionSummaryItemDTO>>();
@@ -295,10 +257,7 @@ public class TransactionEndpointsTests
     [Fact]
     public async Task GetTransactionsByPortfolio_DefaultScope_DoesNotReturnHistoricOnlyPortfolio()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/transactions/portfolio/XPI/Uncategorized");
+        var response = await Client.GetAsync("/api/v1/financial/transactions/portfolio/XPI/Uncategorized");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var items = await response.Content.ReadFromJsonAsync<List<TransactionSummaryItemDTO>>();

@@ -8,15 +8,12 @@ using System.Text.Json;
 
 namespace Financial.Api.Tests;
 
-public class DiagnosticsEndpointsTests
+public class DiagnosticsEndpointsTests : ApiEndpointTests
 {
     [Fact]
     public async Task GetHealth_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/health");
+        var response = await Client.GetAsync("/api/v1/financial/health");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();

@@ -5,15 +5,12 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
-public class InvestmentAccountsEndpointsTests
+public class InvestmentAccountsEndpointsTests : ApiEndpointTests
 {
     [Fact]
     public async Task GetInvestmentAccounts_ReturnsTheElevenSeededAccountsWithCorrectFields()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/investment-accounts");
+        var response = await Client.GetAsync("/api/v1/financial/investment-accounts");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var accounts = await response.Content.ReadFromJsonAsync<List<InvestmentAccountDTO>>();
@@ -25,10 +22,7 @@ public class InvestmentAccountsEndpointsTests
     [Fact]
     public async Task GetInvestmentAccounts_RequiresNoParameters_AndReturnsFullUnfilteredList()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/investment-accounts");
+        var response = await Client.GetAsync("/api/v1/financial/investment-accounts");
         var accounts = await response.Content.ReadFromJsonAsync<List<InvestmentAccountDTO>>();
 
         // All 11 seeded accounts come back regardless of IsActive/IsLiability value.
@@ -42,11 +36,9 @@ public class InvestmentAccountsEndpointsTests
     [InlineData("DELETE")]
     public async Task InvestmentAccounts_UnsupportedVerbs_DoNotSucceed(string method)
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
         var request = new HttpRequestMessage(new HttpMethod(method), "/api/v1/financial/investment-accounts");
 
-        var response = await client.SendAsync(request);
+        var response = await Client.SendAsync(request);
 
         response.IsSuccessStatusCode.Should().BeFalse();
     }

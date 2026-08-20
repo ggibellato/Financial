@@ -6,14 +6,12 @@ using System.Net.Http.Json;
 
 namespace Financial.Api.Tests;
 
-public class AssetEndpointsTests
+public class AssetEndpointsTests : ApiEndpointTests
 {
     [Fact]
     public async Task GetAssetDetails_ReturnsOk()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/assets/XPI/Default/BCIA11");
+        var response = await Client.GetAsync("/api/v1/financial/assets/XPI/Default/BCIA11");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -27,9 +25,7 @@ public class AssetEndpointsTests
     [Fact]
     public async Task GetAssetDetails_ScopeHistoric_ResolvesHistoricAsset()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/assets/XPI/Uncategorized/CLOSEDASSET?scope=historic");
+        var response = await Client.GetAsync("/api/v1/financial/assets/XPI/Uncategorized/CLOSEDASSET?scope=historic");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -42,9 +38,7 @@ public class AssetEndpointsTests
     [Fact]
     public async Task GetAssetDetails_ScopeActive_HistoricAssetNotFound()
     {
-        await using var factory = new ApiTestFactory();
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/assets/XPI/Uncategorized/CLOSEDASSET?scope=active");
+        var response = await Client.GetAsync("/api/v1/financial/assets/XPI/Uncategorized/CLOSEDASSET?scope=active");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
