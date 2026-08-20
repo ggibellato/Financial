@@ -283,6 +283,64 @@ public class AssetTests
         asset.PriceHistory.Should().HaveCount(2);
     }
 
+    /// <summary>
+    /// A price fetch records into the same list the asset page is reading. Editing it in place broke
+    /// the reader's enumeration, which is how a save surfaced "Collection was modified". No threads
+    /// needed to prove it: mutating part way through a foreach is the same violation.
+    /// </summary>
+    [Fact]
+    public void SetPrice_WhilePriceHistoryIsBeingEnumerated_DoesNotDisturbTheEnumeration()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.SetPrice(new DateOnly(2026, 8, 14), 100m, isManual: false);
+        asset.SetPrice(new DateOnly(2026, 8, 15), 105m, isManual: false);
+
+        var seen = new List<AssetPriceSnapshot>();
+        foreach (var entry in asset.PriceHistory)
+        {
+            seen.Add(entry);
+            asset.SetPrice(new DateOnly(2026, 8, 16), 110m, isManual: false);
+        }
+
+        seen.Should().HaveCount(2);
+        asset.PriceHistory.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public void RemovePrice_WhilePriceHistoryIsBeingEnumerated_DoesNotDisturbTheEnumeration()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.SetPrice(new DateOnly(2026, 8, 14), 100m, isManual: true);
+        asset.SetPrice(new DateOnly(2026, 8, 15), 105m, isManual: true);
+
+        var seen = new List<AssetPriceSnapshot>();
+        foreach (var entry in asset.PriceHistory)
+        {
+            seen.Add(entry);
+            asset.RemovePrice(new DateOnly(2026, 8, 14));
+        }
+
+        seen.Should().HaveCount(2);
+        asset.PriceHistory.Should().ContainSingle();
+    }
+
+    /// <summary>
+    /// The guarantee the readers rely on: what PriceHistory handed out stays as it was, so a caller
+    /// part way through projecting it never sees a half-applied write.
+    /// </summary>
+    [Fact]
+    public void PriceHistory_TakenBeforeAWrite_IsNotChangedByIt()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.SetPrice(new DateOnly(2026, 8, 14), 100m, isManual: false);
+        var takenEarlier = asset.PriceHistory;
+
+        asset.SetPrice(new DateOnly(2026, 8, 15), 105m, isManual: false);
+
+        takenEarlier.Should().ContainSingle();
+        asset.PriceHistory.Should().HaveCount(2);
+    }
+
     [Fact]
     public void GetPriceForDate_NoEntry_ReturnsNull()
     {

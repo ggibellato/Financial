@@ -58,11 +58,13 @@ public class Asset
     public IReadOnlyCollection<AssetPriceSnapshot> PriceHistory { get => _priceHistory.AsReadOnly(); private set => SetPriceHistory(value); }
     private void SetPriceHistory(IReadOnlyCollection<AssetPriceSnapshot> data)
     {
-        _priceHistory.Clear();
+        var replacement = new List<AssetPriceSnapshot>(data.Count);
         foreach (var entry in data)
         {
-            UpsertPriceEntry(entry);
+            UpsertInto(replacement, entry);
         }
+
+        _priceHistory = replacement;
     }
 
     private Asset() { }
@@ -170,26 +172,45 @@ public class Asset
 
     public bool RemovePrice(DateOnly date)
     {
-        var index = _priceHistory.FindIndex(entry => entry.Date == date);
-        if (index < 0 || !_priceHistory[index].IsManual)
+        var current = _priceHistory;
+        var index = current.FindIndex(entry => entry.Date == date);
+        if (index < 0 || !current[index].IsManual)
         {
             return false;
         }
 
-        _priceHistory.RemoveAt(index);
+        var updated = new List<AssetPriceSnapshot>(current);
+        updated.RemoveAt(index);
+        _priceHistory = updated;
         return true;
     }
 
+    /// <summary>
+    /// Price history is replaced wholesale rather than edited in place. Recording a fetched price
+    /// and reading the history happen concurrently — a portfolio grid prices every row at once
+    /// while the asset page loads details for one of them — and an in-place Add or index
+    /// assignment breaks an enumeration that is already running, which is what produced
+    /// "Collection was modified" during a save. A published list is never touched again, so a
+    /// reader keeps a stable view for as long as it needs one, and AssetPriceSnapshot is
+    /// immutable so the entries can be shared between the old list and the new one.
+    /// </summary>
     private void UpsertPriceEntry(AssetPriceSnapshot entry)
     {
-        var index = _priceHistory.FindIndex(existing => existing.Date == entry.Date);
+        var updated = new List<AssetPriceSnapshot>(_priceHistory);
+        UpsertInto(updated, entry);
+        _priceHistory = updated;
+    }
+
+    private static void UpsertInto(List<AssetPriceSnapshot> entries, AssetPriceSnapshot entry)
+    {
+        var index = entries.FindIndex(existing => existing.Date == entry.Date);
         if (index >= 0)
         {
-            _priceHistory[index] = entry;
+            entries[index] = entry;
         }
         else
         {
-            _priceHistory.Add(entry);
+            entries.Add(entry);
         }
     }
 
