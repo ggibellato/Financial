@@ -297,13 +297,84 @@ public class PriceServiceTests
     }
 
     [Fact]
-    public async Task GetCurrentPriceAsync_LiveFetchSucceeds_OverwritesStaleManualEntry()
+    public async Task GetCurrentPriceAsync_ManualEntryForToday_KeepsItInsteadOfOverwriting()
     {
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(200m));
         try
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(today, 100m, isManual: true);
+            await repository.SaveChangesAsync();
+
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
+
+            result.Price.Should().Be(100m, "the manual price outranks the scraped one");
+            result.IsManual.Should().BeTrue("so the (Manual) badge is shown");
+
+            var entry = repository.GetAsset(BrokerName, PortfolioName, AssetName)!.GetPriceForDate(today);
+            entry!.Price.Should().Be(100m);
+            entry.IsManual.Should().BeTrue();
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_ManualEntryForToday_WritesNothing()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(200m));
+        try
+        {
+            repository.GetAsset(BrokerName, PortfolioName, AssetName)!
+                .SetPrice(DateOnly.FromDateTime(DateTime.Today), 100m, isManual: true);
+            await repository.SaveChangesAsync();
+            var savesBefore = repository.SaveCount;
+
+            await service.GetCurrentPriceAsync(BuildRequest());
+
+            repository.SaveCount.Should().Be(savesBefore);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    /// <summary>
+    /// The fetch is skipped entirely, since its result would be discarded. Deleting the manual
+    /// entry - which the price endpoints do allow - restores automatic pricing.
+    /// </summary>
+    [Fact]
+    public async Task GetCurrentPriceAsync_ManualEntryForToday_DoesNotFetchAtAll()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.NotUsed());
+        try
+        {
+            repository.GetAsset(BrokerName, PortfolioName, AssetName)!
+                .SetPrice(DateOnly.FromDateTime(DateTime.Today), 100m, isManual: true);
+            await repository.SaveChangesAsync();
+
+            var result = await service.GetCurrentPriceAsync(BuildRequest());
+
+            result.Price.Should().Be(100m);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_ManualEntryForAnEarlierDate_StillRecordsTodayAutomatically()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(200m));
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            repository.GetAsset(BrokerName, PortfolioName, AssetName)!
+                .SetPrice(today.AddDays(-1), 100m, isManual: true);
             await repository.SaveChangesAsync();
 
             var result = await service.GetCurrentPriceAsync(BuildRequest());
