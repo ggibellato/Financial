@@ -71,6 +71,7 @@ const PRICE: AssetPriceDto = {
   name: 'Klabin',
   price: 25,
   asOf: '2026-06-26T10:00:00',
+  asOfDate: null,
   isManual: false,
 }
 
@@ -175,6 +176,48 @@ describe('AssetSummaryTab', () => {
     })
     renderAssetSummaryTab()
     expect(screen.getByText('(Manual)')).toBeInTheDocument()
+  })
+
+  it('renders_the_stored_entry_date_under_as_of_for_a_price_read_from_history', () => {
+    setMock({
+      asset: ASSET,
+      price: { ...PRICE, asOf: null, asOfDate: '2026-08-16', isManual: true },
+      showCurrentSection: true,
+    })
+    renderAssetSummaryTab()
+    expect(screen.getByText('16/08/2026')).toBeInTheDocument()
+  })
+
+  // A stored entry has no time of day, so showing 00:00 would be precision that was never
+  // measured. It is also read as UTC, so the reader's time zone cannot shift it a day back.
+  it('renders_no_time_of_day_for_a_price_read_from_history', () => {
+    setMock({
+      asset: ASSET,
+      price: { ...PRICE, asOf: null, asOfDate: '2026-08-16', isManual: true },
+      showCurrentSection: true,
+    })
+    renderAssetSummaryTab()
+    expect(screen.queryByText(/16\/08\/2026 \d{2}:\d{2}/)).not.toBeInTheDocument()
+  })
+
+  it('renders_a_dash_under_as_of_when_no_price_was_obtained', () => {
+    setMock({
+      asset: ASSET,
+      price: { ...PRICE, asOf: null, asOfDate: null, isManual: true },
+      showCurrentSection: true,
+    })
+    renderAssetSummaryTab()
+    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('still_renders_date_and_time_for_a_live_quote', () => {
+    setMock({
+      asset: ASSET,
+      price: { ...PRICE, asOf: '2026-08-17T10:51:00', asOfDate: null, isManual: false },
+      showCurrentSection: true,
+    })
+    renderAssetSummaryTab()
+    expect(screen.getByText('17/08/2026 10:51')).toBeInTheDocument()
   })
 
   it('does_not_render_manual_badge_when_price_is_not_manual', () => {

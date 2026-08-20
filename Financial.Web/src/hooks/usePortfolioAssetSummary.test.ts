@@ -100,6 +100,7 @@ const PRICE_DTO: AssetPriceDto = {
   name: 'ALZR11',
   price: 100.5,
   asOf: '2024-01-01T10:00:00',
+  asOfDate: null,
   isManual: false,
 }
 

@@ -214,6 +214,8 @@ export interface AssetPriceDto {
   name: string
   price: number
   asOf: string | null
+  /** Date-only, e.g. "2026-08-16". Set when the price came from Price History. */
+  asOfDate: string | null
   isManual: boolean
 }
 
