@@ -5,7 +5,6 @@ import { usePortfolioAssetSummary } from '../hooks/usePortfolioAssetSummary'
 import type { RowPriceState } from '../hooks/usePortfolioAssetSummary'
 import type { PortfolioAssetSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
-import { xirr } from '../utils/xirr'
 import { formatMonthYear, formatN2, formatN8, formatPercent1, formatShortDate, signClass } from '../utils/formatters'
 import AggregatedSummaryTab from './AggregatedSummaryTab'
 import './PortfolioSummaryTab.css'
@@ -28,14 +27,6 @@ function renderGatedCell(
   if (loading) return <span className="portfolio-summary__loading-cell">...</span>
   if (unavailable || value === null) return '—'
   return render(value)
-}
-
-function computeXirr(cashFlows: PortfolioAssetSummaryItemDto['cashFlows'], terminalValue: number): number | null {
-  const series = [
-    ...cashFlows.map(cf => ({ date: new Date(cf.date), amount: cf.amount })),
-    { date: new Date(), amount: terminalValue },
-  ].sort((a, b) => a.date.getTime() - b.date.getTime())
-  return xirr(series)
 }
 
 interface AssetRowProps {
@@ -69,13 +60,9 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
       ? ((currentValue + item.totalCredits - costBasis) / costBasis) * 100
       : null
 
-  // Historic cash flows already contain every buy/sell/credit as a dated entry, so the
-  // terminal value is 0 (no remaining position left to mark-to-market).
-  const xirrValue = isHistoric
-    ? computeXirr(item.cashFlows, 0)
-    : currentValue !== null
-      ? computeXirr(item.cashFlows, currentValue)
-      : null
+  // Solved server-side by POST /xirr/calculate, the same solver the asset tab uses, so a
+  // correction to it cannot reach one surface and miss the other.
+  const xirrValue = rowPrice.xirr
 
   const priceValue = isHistoric ? item.averageSellPrice : rowPrice.currentPrice
   const cellLoading = !isHistoric && rowPrice.isLoading
@@ -121,7 +108,7 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
         ))}
       </td>
       <td>
-        {renderGatedCell(cellLoading, cellUnavailable, xirrValue, v => (
+        {renderGatedCell(rowPrice.isLoadingXirr, false, xirrValue, v => (
           <span className={getProfitClass(v)}>{formatN2(v * 100)}%</span>
         ))}
       </td>
@@ -223,7 +210,16 @@ export default function PortfolioSummaryTab() {
                 <AssetRow
                   key={item.assetName}
                   item={item}
-                  rowPrice={rowPrices[index] ?? { isLoading: false, currentPrice: null, fetchFailed: false }}
+                  rowPrice={
+                    rowPrices[index] ?? {
+                      isLoading: false,
+                      currentPrice: null,
+                      fetchFailed: false,
+                      isManual: false,
+                      xirr: null,
+                      isLoadingXirr: false,
+                    }
+                  }
                   isHistoric={isHistoric}
                 />
               ))}

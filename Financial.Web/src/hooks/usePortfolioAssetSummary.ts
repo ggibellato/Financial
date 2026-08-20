@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
-import type { PortfolioAssetSummaryItemDto } from '../api/types'
+import type { AssetCashFlowDto, PortfolioAssetSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { getErrorMessage } from '../utils/formatters'
 
@@ -9,6 +9,9 @@ export interface RowPriceState {
   currentPrice: number | null
   fetchFailed: boolean
   isManual: boolean
+  /** Annualised rate as a fraction, from POST /xirr/calculate. Null once resolved with no rate. */
+  xirr: number | null
+  isLoadingXirr: boolean
 }
 
 interface PortfolioAssetSummaryState {
@@ -27,6 +30,7 @@ type PortfolioAssetSummaryAction =
   | { type: 'RETRY' }
   | { type: 'ROW_PRICE_SUCCESS'; index: number; currentPrice: number; isManual: boolean }
   | { type: 'ROW_PRICE_ERROR'; index: number }
+  | { type: 'ROW_XIRR_SETTLED'; index: number; xirr: number | null }
 
 const INITIAL_STATE: PortfolioAssetSummaryState = {
   items: null,
@@ -51,6 +55,8 @@ function reducer(
         currentPrice: null,
         fetchFailed: false,
         isManual: false,
+        xirr: null,
+        isLoadingXirr: true,
       }))
       return { ...state, isLoading: false, items: action.payload, rowPrices }
     }
@@ -61,14 +67,20 @@ function reducer(
     case 'ROW_PRICE_SUCCESS': {
       const rowPrices = state.rowPrices.map((row, i) =>
         i === action.index
-          ? { isLoading: false, currentPrice: action.currentPrice, fetchFailed: false, isManual: action.isManual }
+          ? { ...row, isLoading: false, currentPrice: action.currentPrice, fetchFailed: false, isManual: action.isManual }
           : row,
       )
       return { ...state, rowPrices }
     }
     case 'ROW_PRICE_ERROR': {
       const rowPrices = state.rowPrices.map((row, i) =>
-        i === action.index ? { isLoading: false, currentPrice: null, fetchFailed: true, isManual: false } : row,
+        i === action.index ? { ...row, isLoading: false, currentPrice: null, fetchFailed: true, isManual: false } : row,
+      )
+      return { ...state, rowPrices }
+    }
+    case 'ROW_XIRR_SETTLED': {
+      const rowPrices = state.rowPrices.map((row, i) =>
+        i === action.index ? { ...row, xirr: action.xirr, isLoadingXirr: false } : row,
       )
       return { ...state, rowPrices }
     }
@@ -106,26 +118,47 @@ export function usePortfolioAssetSummary(): PortfolioAssetSummaryData {
 
     dispatch({ type: 'FETCH_START' })
 
+    // One rate per row, from the same solver the asset tab uses. The row is not held back
+    // waiting for its neighbours: each rate is requested as soon as that row's price lands.
+    const settleXirr = (cashFlows: AssetCashFlowDto[], terminalValue: number, index: number) =>
+      Promise.resolve()
+        .then(() => apiClient.calculateXirr(cashFlows, terminalValue))
+        .then((result) => dispatch({ type: 'ROW_XIRR_SETTLED', index, xirr: result.xirr }))
+        .catch(() => dispatch({ type: 'ROW_XIRR_SETTLED', index, xirr: null }))
+
     void apiClient
       .getPortfolioAssetsSummary(brokerName, portfolioName, scope)
       .then((items) => {
         dispatch({ type: 'FETCH_SUCCESS', payload: items })
         if (scope === 'historic') {
-          // Historic positions are closed — there's no live price to fetch. Profit%/XIRR for
-          // these rows are computed from realized data (see PortfolioSummaryTab), not rowPrice.
-          // Resolve rows immediately instead of leaving them stuck in a perpetual loading state.
-          items.forEach((_, index) => dispatch({ type: 'ROW_PRICE_ERROR', index }))
+          // Historic positions are closed — there's no live price to fetch, so rows resolve
+          // immediately rather than sitting in a perpetual loading state. Every buy, sell and
+          // credit is already a dated entry, so the rate uses a terminal value of 0.
+          items.forEach((item, index) => {
+            dispatch({ type: 'ROW_PRICE_ERROR', index })
+            void settleXirr(item.cashFlows, 0, index)
+          })
           return
         }
         items.forEach((item, index) => {
           void apiClient
             .getCurrentPrice(item.exchange, item.ticker, item.class, brokerName, item.assetName, portfolioName, item.assetName)
-            .then((priceDto) => {
-              dispatch({ type: 'ROW_PRICE_SUCCESS', index, currentPrice: priceDto.price, isManual: priceDto.isManual })
-            })
-            .catch(() => {
-              dispatch({ type: 'ROW_PRICE_ERROR', index })
-            })
+            // Two-argument then, not then().catch(): the rejection handler must see only a price
+            // failure. Chaining a catch would also swallow a fault from the rate request below
+            // and blank out a price that had already arrived.
+            .then(
+              (priceDto) => {
+                dispatch({ type: 'ROW_PRICE_SUCCESS', index, currentPrice: priceDto.price, isManual: priceDto.isManual })
+                return priceDto.price * item.currentQuantity
+              },
+              () => {
+                dispatch({ type: 'ROW_PRICE_ERROR', index })
+                // No price means no terminal value, so there is no rate to ask for.
+                dispatch({ type: 'ROW_XIRR_SETTLED', index, xirr: null })
+                return null
+              },
+            )
+            .then((terminalValue) => (terminalValue === null ? undefined : settleXirr(item.cashFlows, terminalValue, index)))
         })
       })
       .catch((err: unknown) => {
