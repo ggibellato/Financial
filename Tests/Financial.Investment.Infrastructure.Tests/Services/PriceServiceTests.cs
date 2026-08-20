@@ -434,6 +434,79 @@ public class PriceServiceTests
         }
     }
 
+    /// <summary>
+    /// The fallback branch is the only one that swallows the fetch failure, so it is the only
+    /// place the failure can still be reported. A whole portfolio grid of failed scrapes was
+    /// previously invisible.
+    /// </summary>
+    [Fact]
+    public async Task GetCurrentPriceAsync_LiveFetchFails_AutomaticEntryExistsForToday_LogsTheErrorType()
+    {
+        var (service, repository, logger, tempFile) = CreateRecordingServiceOverRepository(StubAssetPriceService.Failure());
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(today, 88m, isManual: false);
+            await repository.SaveChangesAsync();
+
+            await service.GetCurrentPriceAsync(BuildRequest());
+
+            var entry = logger.Entries.Should().ContainSingle(recorded => recorded.Level == LogLevel.Warning).Subject;
+            entry.Message.Should().Contain(nameof(InvalidOperationException));
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    /// <summary>
+    /// A provider's message can quote the ticker and the price it was fetching, and neither may
+    /// reach the log stream. Only the exception type does.
+    /// </summary>
+    [Fact]
+    public async Task GetCurrentPriceAsync_LiveFetchFallsBack_LogsNeitherTheExceptionMessageNorThePrice()
+    {
+        var (service, repository, logger, tempFile) = CreateRecordingServiceOverRepository(StubAssetPriceService.Failure());
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(today, 88m, isManual: false);
+            await repository.SaveChangesAsync();
+
+            await service.GetCurrentPriceAsync(BuildRequest());
+
+            var entry = logger.Entries.Should().ContainSingle(recorded => recorded.Level == LogLevel.Warning).Subject;
+            entry.Message.Should().NotContain("No asset price fetcher is registered").And.NotContain("88");
+            entry.Exception.Should().BeNull();
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    /// <summary>
+    /// The rethrow branch hands the failure to the caller, so logging here as well would report
+    /// every such failure twice.
+    /// </summary>
+    [Fact]
+    public async Task GetCurrentPriceAsync_LiveFetchFails_NoEntryForToday_DoesNotLog()
+    {
+        var (service, _, logger, tempFile) = CreateRecordingServiceOverRepository(StubAssetPriceService.Failure());
+        try
+        {
+            Func<Task> act = () => service.GetCurrentPriceAsync(BuildRequest());
+
+            await act.Should().ThrowAsync<InvalidOperationException>();
+            logger.Entries.Should().NotContain(recorded => recorded.Level == LogLevel.Warning);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
     [Fact]
     public async Task GetCurrentPriceAsync_LiveFetchFails_NoEntryForToday_RethrowsOriginalException()
     {
@@ -687,6 +760,18 @@ public class PriceServiceTests
         var serializer = new InvestmentsSerializerAdapter();
         return (new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer),
             new RecordingTelemetryTracer(), tempFile);
+    }
+
+    /// <summary>Same private temp copy as the other helpers, but with a recording logger and the
+    /// repository exposed, for tests that seed price history before exercising the service.</summary>
+    private static (PriceService Service, InvestmentJsonRepository Repository, RecordingLogger<PriceService> Logger, string TempFile)
+        CreateRecordingServiceOverRepository(IAssetPriceService assetPriceService)
+    {
+        var (repository, tracer, tempFile) = CreateRepositoryOverTempCopy();
+        var logger = new RecordingLogger<PriceService>();
+        var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
+
+        return (new PriceService(repository, navigationService, assetPriceService, tracer, logger), repository, logger, tempFile);
     }
 
     private static (PriceService Service, InvestmentJsonRepository Repository, string TempFile) CreateServiceWithRepository()
