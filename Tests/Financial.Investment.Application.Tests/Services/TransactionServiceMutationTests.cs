@@ -49,7 +49,7 @@ public class TransactionServiceMutationTests
 
         result.Should().NotBeNull();
         asset.Transactions.Should().ContainSingle();
-        _repository.SaveChangesCallCount.Should().Be(1);
+        _repository.WriteCallCount.Should().Be(1);
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class TransactionServiceMutationTests
         });
 
         result.Should().BeNull();
-        _repository.SaveChangesCallCount.Should().Be(0);
+        _repository.WriteCallCount.Should().Be(0);
     }
 
     [Fact]
@@ -193,7 +193,7 @@ public class TransactionServiceMutationTests
         });
 
         result.Should().BeNull();
-        _repository.SaveChangesCallCount.Should().Be(0);
+        _repository.WriteCallCount.Should().Be(0);
     }
 
     [Fact]

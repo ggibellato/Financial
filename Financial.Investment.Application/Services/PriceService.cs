@@ -290,20 +290,28 @@ public sealed class PriceService : IPriceService
             IsManual = snapshot.IsManual
         };
 
-    private async Task RecordAutomaticPriceIfNeededAsync(Asset asset, decimal price)
+    /// <summary>
+    /// The check and the write are one step. The portfolio grid fetches every row at once, so two
+    /// requests for the same asset could both find no entry for today and both record one.
+    /// </summary>
+    private Task RecordAutomaticPriceIfNeededAsync(Asset asset, decimal price)
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
-        var existing = asset.GetPriceForDate(today);
 
-        // A manual entry is never overwritten. GetCurrentPriceAsync returns before reaching this
-        // point when one exists, so this is the second line of defence rather than the first.
-        var needsWrite = existing is null || (!existing.IsManual && existing.Price != price);
-        if (!needsWrite)
+        return _repository.ApplyAndSaveAsync(() =>
         {
-            return;
-        }
+            var existing = asset.GetPriceForDate(today);
 
-        asset.SetPrice(today, price, isManual: false);
-        await _repository.SaveChangesAsync();
+            // A manual entry is never overwritten. GetCurrentPriceAsync returns before reaching this
+            // point when one exists, so this is the second line of defence rather than the first.
+            var needsWrite = existing is null || (!existing.IsManual && existing.Price != price);
+            if (!needsWrite)
+            {
+                return false;
+            }
+
+            asset.SetPrice(today, price, isManual: false);
+            return true;
+        });
     }
 }

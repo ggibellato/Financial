@@ -211,7 +211,7 @@ public class PriceServiceTests
         {
             var date = new DateOnly(2026, 8, 15);
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(date, 100m, isManual: false);
-            await repository.SaveChangesAsync();
+            await repository.ApplyAndSaveAsync(() => true);
 
             Func<Task> act = () => service.DeletePriceAsync(new DeleteAssetPriceDTO
             {
@@ -304,7 +304,7 @@ public class PriceServiceTests
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(today, 100m, isManual: true);
-            await repository.SaveChangesAsync();
+            await repository.ApplyAndSaveAsync(() => true);
 
             var result = await service.GetCurrentPriceAsync(BuildRequest());
 
@@ -329,7 +329,7 @@ public class PriceServiceTests
         {
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!
                 .SetPrice(DateOnly.FromDateTime(DateTime.Today), 100m, isManual: true);
-            await repository.SaveChangesAsync();
+            await repository.ApplyAndSaveAsync(() => true);
             var savesBefore = repository.SaveCount;
 
             await service.GetCurrentPriceAsync(BuildRequest());
@@ -354,7 +354,7 @@ public class PriceServiceTests
         {
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!
                 .SetPrice(DateOnly.FromDateTime(DateTime.Today), 100m, isManual: true);
-            await repository.SaveChangesAsync();
+            await repository.ApplyAndSaveAsync(() => true);
 
             var result = await service.GetCurrentPriceAsync(BuildRequest());
 
@@ -375,7 +375,7 @@ public class PriceServiceTests
             var today = DateOnly.FromDateTime(DateTime.Today);
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!
                 .SetPrice(today.AddDays(-1), 100m, isManual: true);
-            await repository.SaveChangesAsync();
+            await repository.ApplyAndSaveAsync(() => true);
 
             var result = await service.GetCurrentPriceAsync(BuildRequest());
 
@@ -400,7 +400,7 @@ public class PriceServiceTests
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(today, 321.5m, isManual: true);
-            await repository.SaveChangesAsync();
+            await repository.ApplyAndSaveAsync(() => true);
 
             var result = await service.GetCurrentPriceAsync(BuildRequest());
 
@@ -421,7 +421,7 @@ public class PriceServiceTests
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(today, 88m, isManual: false);
-            await repository.SaveChangesAsync();
+            await repository.ApplyAndSaveAsync(() => true);
 
             var result = await service.GetCurrentPriceAsync(BuildRequest());
 
@@ -447,7 +447,7 @@ public class PriceServiceTests
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(today, 88m, isManual: false);
-            await repository.SaveChangesAsync();
+            await repository.ApplyAndSaveAsync(() => true);
 
             await service.GetCurrentPriceAsync(BuildRequest());
 
@@ -472,7 +472,7 @@ public class PriceServiceTests
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(today, 88m, isManual: false);
-            await repository.SaveChangesAsync();
+            await repository.ApplyAndSaveAsync(() => true);
 
             await service.GetCurrentPriceAsync(BuildRequest());
 
@@ -536,6 +536,32 @@ public class PriceServiceTests
 
             result.Price.Should().Be(15m);
             repository.SaveCount.Should().Be(0);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    /// <summary>
+    /// The portfolio grid fetches every row at once, and a per-asset refresh can land alongside it.
+    /// Deciding whether today already has an entry and writing it are one step, so the second call
+    /// sees the first call's entry instead of recording a duplicate.
+    /// </summary>
+    [Fact]
+    public async Task GetCurrentPriceAsync_ConcurrentCallsForTheSameAsset_RecordThePriceOnce()
+    {
+        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(10m));
+        try
+        {
+            await Task.WhenAll(
+                Task.Run(() => service.GetCurrentPriceAsync(BuildRequest())),
+                Task.Run(() => service.GetCurrentPriceAsync(BuildRequest())));
+
+            repository.SaveCount.Should().Be(1);
+            ReloadAssetFromDisk(tempFile)!.PriceHistory
+                .Count(entry => entry.Date == DateOnly.FromDateTime(DateTime.Today))
+                .Should().Be(1);
         }
         finally
         {
@@ -837,10 +863,17 @@ public class PriceServiceTests
         public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) =>
             _inner.GetAsset(brokerName, portfolioName, assetName, scope);
 
-        public Task SaveChangesAsync()
+        /// <summary>Counts persisted writes, so a call whose mutation reports no change does not
+        /// register as a save.</summary>
+        public async Task<bool> ApplyAndSaveAsync(Func<bool> applyChanges)
         {
-            SaveCount++;
-            return _inner.SaveChangesAsync();
+            var saved = await _inner.ApplyAndSaveAsync(applyChanges).ConfigureAwait(false);
+            if (saved)
+            {
+                SaveCount++;
+            }
+
+            return saved;
         }
     }
 }

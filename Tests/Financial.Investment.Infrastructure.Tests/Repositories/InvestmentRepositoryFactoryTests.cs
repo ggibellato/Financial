@@ -132,7 +132,7 @@ public class InvestmentRepositoryFactoryTests
     }
 
     [Fact]
-    public async Task Create_WithGoogleDriveProvider_SaveChangesAsync_ReturnsWithoutWaitingOnUpload()
+    public async Task Create_WithGoogleDriveProvider_ApplyAndSaveAsync_ReturnsWithoutWaitingOnUpload()
     {
         var options = new InvestmentRepositorySelectionOptions(
             InvestmentRepositoryProvider.GoogleDriveJson,
@@ -143,7 +143,7 @@ public class InvestmentRepositoryFactoryTests
         var repository = _stubbedFactory.Create(options);
 
         var stopwatch = Stopwatch.StartNew();
-        await repository.SaveChangesAsync();
+        await repository.ApplyAndSaveAsync(() => true);
         stopwatch.Stop();
 
         // The debounce window is a real 10 seconds in production; returning near-instantly proves
@@ -163,7 +163,7 @@ public class InvestmentRepositoryFactoryTests
 
         var repository = _stubbedFactory.Create(options);
 
-        await repository.SaveChangesAsync();
+        await repository.ApplyAndSaveAsync(() => true);
 
         ((ISyncStatusProvider)repository).GetStatus().State.Should().Be(SyncState.Pending);
     }
@@ -196,11 +196,11 @@ public class InvestmentRepositoryFactoryTests
 
         var repository = factory.Create(options);
 
-        await repository.SaveChangesAsync();
+        await repository.ApplyAndSaveAsync(() => true);
 
         // The real production debounce window is 10 seconds (InvestmentRepositoryFactory.DebounceWindow, not
         // configurable by design). Waiting past it with margin proves the queued write actually
-        // reaches the wrapped storage's upload call — not just that SaveChangesAsync() returns quickly.
+        // reaches the wrapped storage's upload call — not just that ApplyAndSaveAsync() returns quickly.
         // Independence from any CashFlow activity is already established structurally: this instance's
         // DebouncedJsonStorage is entirely separate from CashFlow's (see
         // Create_WithGoogleDriveProvider_TwoInstancesFromSeparateCreateCalls_NeverShareStatus below, and
@@ -225,7 +225,7 @@ public class InvestmentRepositoryFactoryTests
         var repositoryA = _stubbedFactory.Create(options);
         var repositoryB = _stubbedFactory.Create(options);
 
-        await repositoryA.SaveChangesAsync();
+        await repositoryA.ApplyAndSaveAsync(() => true);
 
         // Writing to A must never mark B as dirty/Pending - each Create() call produces a fully
         // independent DebouncedJsonStorage with no shared dirty flag, generation counter, or status.
@@ -248,7 +248,7 @@ public class InvestmentRepositoryFactoryTests
 
         var repository = factory.Create(options);
 
-        await repository.SaveChangesAsync();
+        await repository.ApplyAndSaveAsync(() => true);
 
         await WaitForAsync(() => tracer.Spans.Any(s => s.Name == "GoogleDrive.Upload"), TimeSpan.FromSeconds(15));
 

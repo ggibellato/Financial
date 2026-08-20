@@ -54,7 +54,7 @@ public class CreditServiceTests
 
         result.Should().NotBeNull();
         asset.Credits.Should().ContainSingle(c => c.Value == 10m);
-        _repository.SaveChangesCallCount.Should().Be(1);
+        _repository.WriteCallCount.Should().Be(1);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class CreditServiceTests
         });
 
         result.Should().BeNull();
-        _repository.SaveChangesCallCount.Should().Be(0);
+        _repository.WriteCallCount.Should().Be(0);
     }
 
     [Fact]
@@ -166,7 +166,7 @@ public class CreditServiceTests
         });
 
         result.Should().BeNull();
-        _repository.SaveChangesCallCount.Should().Be(0);
+        _repository.WriteCallCount.Should().Be(0);
     }
 
     [Fact]
