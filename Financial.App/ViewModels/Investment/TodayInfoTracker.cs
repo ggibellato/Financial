@@ -55,6 +55,13 @@ public sealed class TodayInfoTracker
         _resetSnapshot();
     }
 
+    /// <summary>A live quote carries a time of day; a price read from Price History carries only
+    /// a date, so it is shown as one rather than padded with a midnight that was never measured.</summary>
+    private static string FormatAsOf(AssetPriceDTO price) =>
+        price.AsOf?.ToLocalTime().ToString("g")
+        ?? price.AsOfDate?.ToString("d")
+        ?? string.Empty;
+
     public async Task RefreshAsync(
         bool forceRefresh,
         bool hasAssetContext,
@@ -133,7 +140,7 @@ public sealed class TodayInfoTracker
                 return;
             }
 
-            var asOf = price.AsOf?.ToLocalTime().ToString("g") ?? string.Empty;
+            var asOf = FormatAsOf(price);
             var snapshot = new TodayInfoSnapshot(price.Price, asOf, price.IsManual);
             _applySnapshot(snapshot);
             _cache[assetKey] = snapshot;

@@ -173,6 +173,7 @@ describe('financialApiClient', () => {
       name: 'Sample Asset',
       price: 10.5,
       asOf: '2024-02-01T00:00:00Z',
+      asOfDate: null,
       isManual: false,
     } satisfies AssetPriceDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
@@ -196,6 +197,7 @@ describe('financialApiClient', () => {
       name: 'TESOURO IPCA+ 2029',
       price: 3775.97,
       asOf: '2024-02-01T00:00:00Z',
+      asOfDate: null,
       isManual: false,
     } satisfies AssetPriceDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
@@ -220,6 +222,7 @@ describe('financialApiClient', () => {
       name: 'Bitcoin',
       price: 48000,
       asOf: '2024-02-01T00:00:00Z',
+      asOfDate: null,
       isManual: false,
     } satisfies AssetPriceDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
@@ -244,6 +247,7 @@ describe('financialApiClient', () => {
       name: 'Guepardo Institucional FIC FIA',
       price: 187.42,
       asOf: null,
+      asOfDate: null,
       isManual: true,
     } satisfies AssetPriceDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
@@ -276,6 +280,7 @@ describe('financialApiClient', () => {
       name: 'Sample Asset',
       price: 10.5,
       asOf: '2024-02-01T00:00:00Z',
+      asOfDate: null,
       isManual: false,
     } satisfies AssetPriceDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))

@@ -265,8 +265,9 @@ public sealed class PriceService : IPriceService
     }
 
     /// <summary>
-    /// A stored entry carries a date but no time of day, so AsOf stays null here rather than
-    /// inventing midnight.
+    /// A stored entry carries a date but no time of day, so it is reported through AsOfDate and
+    /// AsOf stays null. Previously neither was set, and the caller had nothing to show under
+    /// "As of" for a price it had read from history.
     /// </summary>
     private static AssetPriceDTO BuildPriceFrom(AssetPriceSnapshot snapshot, AssetPriceRequestDTO request) =>
         new()
@@ -276,6 +277,7 @@ public sealed class PriceService : IPriceService
             Name = request.Name ?? string.Empty,
             Price = snapshot.Price,
             AsOf = null,
+            AsOfDate = snapshot.Date,
             IsManual = snapshot.IsManual
         };
 

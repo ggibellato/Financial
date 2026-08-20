@@ -116,6 +116,65 @@ public class TodayInfoTrackerTests
         _messages.Should().ContainSingle().Which.Should().Be("Asset exchange or ticker is missing.");
     }
 
+    /// <summary>
+    /// A price read from Price History used to arrive with no timestamp at all, so "As of"
+    /// rendered an em dash and there was no way to tell how stale a manual value was.
+    /// </summary>
+    [Fact]
+    public async Task RefreshAsync_PriceReadFromHistory_ShowsTheStoredEntryDate()
+    {
+        var asOfDate = new DateOnly(2026, 8, 16);
+        var applied = new List<TodayInfoSnapshot>();
+        var tracker = new TodayInfoTracker(applied.Add, () => { }, () => { });
+        tracker.UpdateAssetKey("XPI|Acoes|TASA4");
+
+        await tracker.RefreshAsync(
+            forceRefresh: true, hasAssetContext: true, new StoredPriceService(asOfDate),
+            GlobalAssetClass.Equity, "XPI", "BVMF", "TASA4", "TASA4", "Acoes", "TASA4", _ => { });
+
+        applied.Should().ContainSingle();
+        applied[0].AsOf.Should().Be(asOfDate.ToString("d"));
+        applied[0].IsManual.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RefreshAsync_PriceReadFromHistory_ShowsNoTimeOfDay()
+    {
+        var applied = new List<TodayInfoSnapshot>();
+        var tracker = new TodayInfoTracker(applied.Add, () => { }, () => { });
+        tracker.UpdateAssetKey("XPI|Acoes|TASA4");
+
+        await tracker.RefreshAsync(
+            forceRefresh: true, hasAssetContext: true, new StoredPriceService(new DateOnly(2026, 8, 16)),
+            GlobalAssetClass.Equity, "XPI", "BVMF", "TASA4", "TASA4", "Acoes", "TASA4", _ => { });
+
+        applied[0].AsOf.Should().NotContain(":", "a stored entry carries no time of day");
+    }
+
+    private sealed class StoredPriceService : IPriceService
+    {
+        private readonly DateOnly _asOfDate;
+
+        public StoredPriceService(DateOnly asOfDate)
+        {
+            _asOfDate = asOfDate;
+        }
+
+        public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
+        public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
+
+        public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request) =>
+            Task.FromResult(new AssetPriceDTO
+            {
+                Exchange = request.Exchange,
+                Ticker = request.Ticker,
+                Price = 4.91m,
+                AsOf = null,
+                AsOfDate = _asOfDate,
+                IsManual = true
+            });
+    }
+
     private sealed class StubPriceService : IPriceService
     {
         private readonly bool _isManual;

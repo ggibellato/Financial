@@ -1,8 +1,9 @@
+import type { AssetPriceDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useAssetSummary } from '../hooks/useAssetSummary'
 import { useSelectedNode } from '../context/SelectedNodeContext'
-import { formatN2, formatN8, formatPercentFraction, formatShortDate, pad, signClass } from '../utils/formatters'
+import { formatN2, formatN8, formatPercentFraction, formatShortDate, formatShortDateUtc, pad, signClass } from '../utils/formatters'
 import './AssetSummaryTab.css'
 
 function formatDateTime(isoString: string | null): string {
@@ -10,6 +11,15 @@ function formatDateTime(isoString: string | null): string {
   const d = new Date(isoString)
   if (Number.isNaN(d.getTime())) return isoString
   return `${formatShortDate(isoString)} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+/** A live quote carries a time of day; a price read from Price History carries only a date, and
+ * is read as UTC so the reader's time zone cannot shift it onto the previous day. */
+function formatAsOf(price: AssetPriceDto | null): string {
+  if (!price) return '—'
+  if (price.asOf) return formatDateTime(price.asOf)
+  if (price.asOfDate) return formatShortDateUtc(price.asOfDate)
+  return '—'
 }
 
 export default function AssetSummaryTab() {
@@ -174,7 +184,7 @@ export default function AssetSummaryTab() {
             <div className="asset-summary__field">
               <span className="asset-summary__label">As of</span>
               <span className="asset-summary__value">
-                {isLoadingPrice ? '—' : formatDateTime(price?.asOf ?? null)}
+                {isLoadingPrice ? '—' : formatAsOf(price)}
               </span>
             </div>
 
