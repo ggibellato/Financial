@@ -108,6 +108,8 @@ public sealed class PriceService : IPriceService
                 return CompleteSuccessfully(span, _assetPriceService.GetCurrentPrice(request));
             }
 
+            var describedRequest = DescribeWith(asset, request);
+
             // A manual price for today is authoritative: the rest of the app refuses to edit or
             // delete an automatic entry and tells the user to add a manual one to override, so a
             // scrape must not overwrite it. No fetch is made at all, since its result would be
@@ -115,10 +117,10 @@ public sealed class PriceService : IPriceService
             var manualPriceForToday = FindManualPriceForToday(asset);
             if (manualPriceForToday is not null)
             {
-                return CompleteSuccessfully(span, BuildPriceFrom(manualPriceForToday, request));
+                return CompleteSuccessfully(span, BuildPriceFrom(manualPriceForToday, describedRequest));
             }
 
-            var (price, wasFetchedLive) = FetchWithPriceHistoryFallback(asset, request);
+            var (price, wasFetchedLive) = FetchWithPriceHistoryFallback(asset, describedRequest);
             if (!wasFetchedLive)
             {
                 return CompleteSuccessfully(span, price);
@@ -153,6 +155,24 @@ public sealed class PriceService : IPriceService
         _logger.LogInformation("{Operation} completed", "GetCurrentPrice");
         return price;
     }
+
+    /// <summary>
+    /// Once the asset is resolved, its own class and name are authoritative. The caller's values
+    /// are a copy that drifts: the portfolio grid sends the stored class while the asset page
+    /// sends a label from a front-end table, so the same asset could be priced two different ways
+    /// depending on which screen asked.
+    /// </summary>
+    private static AssetPriceRequestDTO DescribeWith(Asset asset, AssetPriceRequestDTO request) =>
+        new()
+        {
+            Exchange = request.Exchange,
+            Ticker = request.Ticker,
+            AssetClass = asset.Class,
+            BrokerName = request.BrokerName,
+            Name = string.IsNullOrWhiteSpace(request.Name) ? asset.Name : request.Name,
+            PortfolioName = request.PortfolioName,
+            AssetName = request.AssetName
+        };
 
     private (AssetPriceDTO Price, bool WasFetchedLive) FetchWithPriceHistoryFallback(
         Asset asset,
