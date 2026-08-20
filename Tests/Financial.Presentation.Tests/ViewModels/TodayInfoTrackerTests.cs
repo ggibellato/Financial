@@ -9,19 +9,27 @@ namespace Financial.Presentation.Tests.ViewModels;
 
 public class TodayInfoTrackerTests
 {
+    private readonly StubPriceService _priceService;
+    private readonly List<string> _messages;
+    private readonly TodayInfoTracker _sut;
+    private TodayInfoSnapshot? _applied;
+
+    public TodayInfoTrackerTests()
+    {
+        _priceService = new StubPriceService();
+        _messages = [];
+        _sut = new TodayInfoTracker(snapshot => _applied = snapshot, () => { }, () => { });
+    }
+
     [Fact]
     public async Task RefreshAsync_BondWithName_BuildsRequestWithNameAndAppliesSnapshot()
     {
-        var priceService = new StubPriceService();
-        TodayInfoSnapshot? applied = null;
-        var tracker = new TodayInfoTracker(snapshot => applied = snapshot, () => { }, () => { });
-        tracker.UpdateAssetKey("XPI|Reserva|TESOURO IPCA+ 2029");
-        var messages = new List<string>();
+        _sut.UpdateAssetKey("XPI|Reserva|TESOURO IPCA+ 2029");
 
-        await tracker.RefreshAsync(
+        await _sut.RefreshAsync(
             forceRefresh: true,
             hasAssetContext: true,
-            priceService: priceService,
+            priceService: _priceService,
             assetClass: GlobalAssetClass.Bond,
             brokerName: "XPI",
             exchange: "BVMF",
@@ -29,31 +37,28 @@ public class TodayInfoTrackerTests
             name: "TESOURO IPCA+ 2029",
             portfolioName: "Reserva",
             assetName: "TESOURO IPCA+ 2029",
-            setMessage: messages.Add);
+            setMessage: _messages.Add);
 
-        priceService.LastRequest.Should().NotBeNull();
-        priceService.LastRequest!.Name.Should().Be("TESOURO IPCA+ 2029");
-        priceService.LastRequest.PortfolioName.Should().Be("Reserva");
-        priceService.LastRequest.AssetName.Should().Be("TESOURO IPCA+ 2029");
-        applied.Should().NotBeNull();
-        applied!.Price.Should().Be(3775.97m);
-        applied.IsManual.Should().BeFalse();
-        messages.Should().BeEmpty();
+        _priceService.LastRequest.Should().NotBeNull();
+        _priceService.LastRequest!.Name.Should().Be("TESOURO IPCA+ 2029");
+        _priceService.LastRequest.PortfolioName.Should().Be("Reserva");
+        _priceService.LastRequest.AssetName.Should().Be("TESOURO IPCA+ 2029");
+        _applied.Should().NotBeNull();
+        _applied!.Price.Should().Be(3775.97m);
+        _applied.IsManual.Should().BeFalse();
+        _messages.Should().BeEmpty();
     }
 
     [Fact]
     public async Task RefreshAsync_LiveFetchFallsBackToManualEntry_AppliesManualSnapshot()
     {
-        var priceService = new StubPriceService(isManual: true);
-        TodayInfoSnapshot? applied = null;
-        var tracker = new TodayInfoTracker(snapshot => applied = snapshot, () => { }, () => { });
-        tracker.UpdateAssetKey("XPI|Reserva|GUEP11");
-        var messages = new List<string>();
+        var manualPriceService = new StubPriceService(isManual: true);
+        _sut.UpdateAssetKey("XPI|Reserva|GUEP11");
 
-        await tracker.RefreshAsync(
+        await _sut.RefreshAsync(
             forceRefresh: true,
             hasAssetContext: true,
-            priceService: priceService,
+            priceService: manualPriceService,
             assetClass: GlobalAssetClass.RealEstate,
             brokerName: "XPI",
             exchange: "BVMF",
@@ -61,24 +66,21 @@ public class TodayInfoTrackerTests
             name: "GUEP11",
             portfolioName: "Reserva",
             assetName: "GUEP11",
-            setMessage: messages.Add);
+            setMessage: _messages.Add);
 
-        applied.Should().NotBeNull();
-        applied!.IsManual.Should().BeTrue();
+        _applied.Should().NotBeNull();
+        _applied!.IsManual.Should().BeTrue();
     }
 
     [Fact]
     public async Task RefreshAsync_BondWithoutName_SetsValidationMessageAndDoesNotFetch()
     {
-        var priceService = new StubPriceService();
-        var tracker = new TodayInfoTracker(_ => { }, () => { }, () => { });
-        tracker.UpdateAssetKey("XPI|Reserva|TESOURO IPCA+ 2029");
-        var messages = new List<string>();
+        _sut.UpdateAssetKey("XPI|Reserva|TESOURO IPCA+ 2029");
 
-        await tracker.RefreshAsync(
+        await _sut.RefreshAsync(
             forceRefresh: true,
             hasAssetContext: true,
-            priceService: priceService,
+            priceService: _priceService,
             assetClass: GlobalAssetClass.Bond,
             brokerName: "XPI",
             exchange: "BVMF",
@@ -86,24 +88,21 @@ public class TodayInfoTrackerTests
             name: null,
             portfolioName: "Reserva",
             assetName: null,
-            setMessage: messages.Add);
+            setMessage: _messages.Add);
 
-        priceService.LastRequest.Should().BeNull();
-        messages.Should().ContainSingle().Which.Should().Be("Asset name is missing.");
+        _priceService.LastRequest.Should().BeNull();
+        _messages.Should().ContainSingle().Which.Should().Be("Asset name is missing.");
     }
 
     [Fact]
     public async Task RefreshAsync_EquityWithoutExchange_SetsValidationMessageAndDoesNotFetch()
     {
-        var priceService = new StubPriceService();
-        var tracker = new TodayInfoTracker(_ => { }, () => { }, () => { });
-        tracker.UpdateAssetKey("XPI|Acoes|KLBN4");
-        var messages = new List<string>();
+        _sut.UpdateAssetKey("XPI|Acoes|KLBN4");
 
-        await tracker.RefreshAsync(
+        await _sut.RefreshAsync(
             forceRefresh: true,
             hasAssetContext: true,
-            priceService: priceService,
+            priceService: _priceService,
             assetClass: GlobalAssetClass.Equity,
             brokerName: "XPI",
             exchange: "",
@@ -111,10 +110,10 @@ public class TodayInfoTrackerTests
             name: null,
             portfolioName: "Acoes",
             assetName: "KLBN4",
-            setMessage: messages.Add);
+            setMessage: _messages.Add);
 
-        priceService.LastRequest.Should().BeNull();
-        messages.Should().ContainSingle().Which.Should().Be("Asset exchange or ticker is missing.");
+        _priceService.LastRequest.Should().BeNull();
+        _messages.Should().ContainSingle().Which.Should().Be("Asset exchange or ticker is missing.");
     }
 
     private sealed class StubPriceService : IPriceService

@@ -11,7 +11,16 @@ namespace Financial.Presentation.Tests.ViewModels;
 
 public class AssetDetailsViewModelTransactionsChartTests
 {
-    private static AssetDetailsViewModel BuildViewModel(
+    private readonly StubTransactionQueryService _transactionQueryService;
+
+    public AssetDetailsViewModelTransactionsChartTests()
+    {
+        _transactionQueryService = new StubTransactionQueryService();
+    }
+
+    /// <summary>Builds the view model over the shared transaction-query stub; scope and the breakdown
+    /// service are the only things these tests vary.</summary>
+    private AssetDetailsViewModel BuildViewModel(
         IBrokerBreakdownService? brokerBreakdownService = null,
         ITransactionQueryService? transactionQueryService = null,
         InvestmentScope scope = InvestmentScope.Active)
@@ -21,7 +30,7 @@ public class AssetDetailsViewModelTransactionsChartTests
             new StubCreditService(),
             new StubAssetPriceService(),
             brokerBreakdownService ?? new StubBrokerBreakdownService(),
-            transactionQueryService ?? new StubTransactionQueryService(),
+            transactionQueryService ?? _transactionQueryService,
             new XirrCalculationService(),
             new ProfitCalculationService(),
             scope);
@@ -58,11 +67,8 @@ public class AssetDetailsViewModelTransactionsChartTests
     [Fact]
     public async Task LoadBrokerTransactions_PopulatesTransactionsPlotModel_OnSuccess()
     {
-        var stub = new StubTransactionQueryService
-        {
-            BrokerTransactions = [new() { AssetName = "BBAS3", Date = DateTime.Today, Type = "Buy", TotalPrice = 1000m }],
-        };
-        var vm = BuildViewModel(transactionQueryService: stub);
+        _transactionQueryService.BrokerTransactions = [new() { AssetName = "BBAS3", Date = DateTime.Today, Type = "Buy", TotalPrice = 1000m }];
+        var vm = BuildViewModel();
 
         await vm.LoadBrokerTransactions("XPI");
 
@@ -74,8 +80,8 @@ public class AssetDetailsViewModelTransactionsChartTests
     [Fact]
     public async Task LoadBrokerTransactions_SetsTransactionsError_OnFailure()
     {
-        var stub = new StubTransactionQueryService { ExceptionToThrow = new InvalidOperationException("boom") };
-        var vm = BuildViewModel(transactionQueryService: stub);
+        _transactionQueryService.ExceptionToThrow = new InvalidOperationException("boom");
+        var vm = BuildViewModel();
 
         await vm.LoadBrokerTransactions("XPI");
 
@@ -86,53 +92,48 @@ public class AssetDetailsViewModelTransactionsChartTests
     [Fact]
     public async Task LoadPortfolioTransactions_PassesCorrectBrokerAndPortfolioName()
     {
-        var stub = new StubTransactionQueryService();
-        var vm = BuildViewModel(transactionQueryService: stub);
+        var vm = BuildViewModel();
 
         await vm.LoadPortfolioTransactions("XPI", "Acoes");
 
-        stub.LastPortfolioBrokerName.Should().Be("XPI");
-        stub.LastPortfolioName.Should().Be("Acoes");
+        _transactionQueryService.LastPortfolioBrokerName.Should().Be("XPI");
+        _transactionQueryService.LastPortfolioName.Should().Be("Acoes");
     }
 
     [Fact]
     public async Task LoadBrokerTransactions_RequestsActiveScope()
     {
-        var stub = new StubTransactionQueryService();
-        var vm = BuildViewModel(transactionQueryService: stub);
+        var vm = BuildViewModel();
 
         await vm.LoadBrokerTransactions("XPI");
 
-        stub.LastBrokerScope.Should().Be(InvestmentScope.Active);
+        _transactionQueryService.LastBrokerScope.Should().Be(InvestmentScope.Active);
     }
 
     [Fact]
     public async Task LoadBrokerTransactions_HistoricScope_RequestsHistoricScope()
     {
-        var stub = new StubTransactionQueryService();
-        var vm = BuildViewModel(transactionQueryService: stub, scope: InvestmentScope.Historic);
+        var vm = BuildViewModel(scope: InvestmentScope.Historic);
 
         await vm.LoadBrokerTransactions("XPI");
 
-        stub.LastBrokerScope.Should().Be(InvestmentScope.Historic);
+        _transactionQueryService.LastBrokerScope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]
     public async Task LoadPortfolioTransactions_HistoricScope_RequestsHistoricScope()
     {
-        var stub = new StubTransactionQueryService();
-        var vm = BuildViewModel(transactionQueryService: stub, scope: InvestmentScope.Historic);
+        var vm = BuildViewModel(scope: InvestmentScope.Historic);
 
         await vm.LoadPortfolioTransactions("XPI", "Acoes");
 
-        stub.LastPortfolioScope.Should().Be(InvestmentScope.Historic);
+        _transactionQueryService.LastPortfolioScope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]
     public void LoadAssetDetails_BuildsTransactionsPlotModel_FromAlreadyLoadedTransactions_NoNewFetch()
     {
-        var stub = new StubTransactionQueryService();
-        var vm = BuildViewModel(transactionQueryService: stub);
+        var vm = BuildViewModel();
 
         vm.LoadAssetDetails(BuildAssetDetails([
             new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 100m, UnitPrice = 20m, Fees = 0m, TotalPrice = 2000m },
@@ -140,8 +141,8 @@ public class AssetDetailsViewModelTransactionsChartTests
 
         vm.TransactionsPlotModel.Should().NotBeNull();
         vm.TransactionsPlotModel!.Series.Should().HaveCount(1);
-        stub.LastBrokerName.Should().BeNull();
-        stub.LastPortfolioBrokerName.Should().BeNull();
+        _transactionQueryService.LastBrokerName.Should().BeNull();
+        _transactionQueryService.LastPortfolioBrokerName.Should().BeNull();
     }
 
     [Fact]
@@ -206,11 +207,8 @@ public class AssetDetailsViewModelTransactionsChartTests
     [Fact]
     public async Task Clear_AfterLoadBrokerTransactions_ResetsTransactionsState()
     {
-        var stub = new StubTransactionQueryService
-        {
-            BrokerTransactions = [new() { AssetName = "BBAS3", Date = DateTime.Today, Type = "Buy", TotalPrice = 500m }],
-        };
-        var vm = BuildViewModel(transactionQueryService: stub);
+        _transactionQueryService.BrokerTransactions = [new() { AssetName = "BBAS3", Date = DateTime.Today, Type = "Buy", TotalPrice = 500m }];
+        var vm = BuildViewModel();
         vm.LoadBrokerSummary("XPI", new AggregatedSummaryDTO(), []);
         await vm.LoadBrokerTransactions("XPI");
 

@@ -12,11 +12,29 @@ namespace Financial.Presentation.Tests.ViewModels;
 
 public class AssetPriceFetchViewModelTests
 {
+    private readonly StubNavigationService _navigationService;
+    private readonly StubAssetPriceService _priceService;
+
+    public AssetPriceFetchViewModelTests()
+    {
+        _navigationService = new StubNavigationService();
+        _priceService = new StubAssetPriceService();
+    }
+
+    /// <summary>Builds the view model over the shared stubs for one configured broker/portfolio pair,
+    /// which is the only thing that varies between these tests.</summary>
+    private AssetPriceFetchViewModel CreateViewModel(string brokerName, string portfolioName) =>
+        new(_navigationService, _priceService,
+            Options.Create(new AssetPriceFetchOptions
+            {
+                Portfolios = [new AssetPriceFetch { BrokerName = brokerName, PortfolioName = portfolioName }]
+            }),
+            _ => { });
+
     [Fact]
     public async Task FetchAsync_CoinbaseCryptocurrencyAsset_PassesAssetClassAndBrokerName()
     {
-        var navigationService = new StubNavigationService();
-        navigationService.AssetsByBrokerPortfolio[("Coinbase", "Cryptocurrency")] =
+        _navigationService.AssetsByBrokerPortfolio[("Coinbase", "Cryptocurrency")] =
         [
             new AssetNodeDTO
             {
@@ -26,15 +44,10 @@ public class AssetPriceFetchViewModelTests
                 Class = GlobalAssetClass.Cryptocurrency,
             }
         ];
-        var priceService = new StubAssetPriceService();
-        var options = Options.Create(new AssetPriceFetchOptions
-        {
-            Portfolios = [new AssetPriceFetch { BrokerName = "Coinbase", PortfolioName = "Cryptocurrency" }]
-        });
-        var vm = new AssetPriceFetchViewModel(navigationService, priceService, options, _ => { });
+        var vm = CreateViewModel("Coinbase", "Cryptocurrency");
 
         vm.FetchCommand.Execute(null);
-        var request = await priceService.RequestReceived.WaitAsync(TimeSpan.FromSeconds(5));
+        var request = await _priceService.RequestReceived.WaitAsync(TimeSpan.FromSeconds(5));
 
         request.Ticker.Should().Be("BTC");
         request.Exchange.Should().Be("");
@@ -45,8 +58,7 @@ public class AssetPriceFetchViewModelTests
     [Fact]
     public async Task FetchAsync_NonCryptocurrencyAsset_RequestUnaffected()
     {
-        var navigationService = new StubNavigationService();
-        navigationService.AssetsByBrokerPortfolio[("XPI", "Acoes")] =
+        _navigationService.AssetsByBrokerPortfolio[("XPI", "Acoes")] =
         [
             new AssetNodeDTO
             {
@@ -56,15 +68,10 @@ public class AssetPriceFetchViewModelTests
                 Class = GlobalAssetClass.Equity,
             }
         ];
-        var priceService = new StubAssetPriceService();
-        var options = Options.Create(new AssetPriceFetchOptions
-        {
-            Portfolios = [new AssetPriceFetch { BrokerName = "XPI", PortfolioName = "Acoes" }]
-        });
-        var vm = new AssetPriceFetchViewModel(navigationService, priceService, options, _ => { });
+        var vm = CreateViewModel("XPI", "Acoes");
 
         vm.FetchCommand.Execute(null);
-        var request = await priceService.RequestReceived.WaitAsync(TimeSpan.FromSeconds(5));
+        var request = await _priceService.RequestReceived.WaitAsync(TimeSpan.FromSeconds(5));
 
         request.Ticker.Should().Be("KLBN4");
         request.Exchange.Should().Be("BVMF");
@@ -75,8 +82,7 @@ public class AssetPriceFetchViewModelTests
     [Fact]
     public async Task FetchAsync_BondAsset_PassesName()
     {
-        var navigationService = new StubNavigationService();
-        navigationService.AssetsByBrokerPortfolio[("XPI", "Reserva")] =
+        _navigationService.AssetsByBrokerPortfolio[("XPI", "Reserva")] =
         [
             new AssetNodeDTO
             {
@@ -86,15 +92,10 @@ public class AssetPriceFetchViewModelTests
                 Class = GlobalAssetClass.Bond,
             }
         ];
-        var priceService = new StubAssetPriceService();
-        var options = Options.Create(new AssetPriceFetchOptions
-        {
-            Portfolios = [new AssetPriceFetch { BrokerName = "XPI", PortfolioName = "Reserva" }]
-        });
-        var vm = new AssetPriceFetchViewModel(navigationService, priceService, options, _ => { });
+        var vm = CreateViewModel("XPI", "Reserva");
 
         vm.FetchCommand.Execute(null);
-        var request = await priceService.RequestReceived.WaitAsync(TimeSpan.FromSeconds(5));
+        var request = await _priceService.RequestReceived.WaitAsync(TimeSpan.FromSeconds(5));
 
         request.AssetClass.Should().Be(GlobalAssetClass.Bond);
         request.Name.Should().Be("TESOURO IPCA+ 2029");
