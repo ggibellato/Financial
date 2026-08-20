@@ -85,7 +85,39 @@ public class AssetDetailsViewModelXirrTests
     }
 
     [Fact]
-    public async Task XirrWithCredits_UsesCreditsCashFlowsAndTotalWithCredits()
+    public async Task XirrWithCredits_CountsEachCreditOnceAsADatedFlow()
+    {
+        var vm = await LoadViewModelWithOneCredit();
+
+        vm.Xirr.Should().NotBeNull();
+        vm.XirrWithCredits.Should().NotBeNull();
+        vm.XirrWithCredits!.Value.Should().BeGreaterThan(vm.Xirr!.Value, "a credit received improves the rate");
+        vm.XirrWithCredits.Value.Should().BeApproximately(0.0513m, 0.003m);
+    }
+
+    /// <summary>
+    /// The credits-bearing series already carries the credit as a dated flow, so pairing it with
+    /// TotalCurrentValueWithCredits counted that credit twice. For this position the inflated
+    /// figure is roughly 10.2% against a true 5.1%.
+    /// </summary>
+    [Fact]
+    public async Task XirrWithCredits_DoesNotAddCreditsToTheTerminalValue()
+    {
+        var vm = await LoadViewModelWithOneCredit();
+
+        vm.XirrWithCredits!.Value.Should().BeLessThan(0.08m, "0.1025 would mean the credit was counted twice");
+    }
+
+    [Fact]
+    public async Task XirrWithCredits_TerminalValueMatchesTheSeriesWithoutCredits()
+    {
+        var vm = await LoadViewModelWithOneCredit();
+
+        vm.TotalCurrentValue.Should().Be(1000m);
+        vm.TotalCurrentValueWithCredits.Should().Be(1050m, "the displayed figure is unchanged by this fix");
+    }
+
+    private static async Task<AssetDetailsViewModel> LoadViewModelWithOneCredit()
     {
         var buyDate = DateTime.Today.AddYears(-1);
         var creditDate = DateTime.Today.AddMonths(-6);
@@ -99,10 +131,7 @@ public class AssetDetailsViewModelXirrTests
 
         vm.LoadAssetDetails(BuildAssetDetails(withoutCredits, withCredits, totalCredits: 50m));
         await vm.EnsureTodayInfoLoadedAsync();
-
-        vm.Xirr.Should().NotBeNull();
-        vm.XirrWithCredits.Should().NotBeNull();
-        vm.XirrWithCredits!.Value.Should().BeGreaterThan(vm.Xirr!.Value);
+        return vm;
     }
 
     [Fact]

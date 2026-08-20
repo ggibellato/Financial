@@ -319,10 +319,28 @@ describe('useAssetSummary', () => {
       ASSET_DETAILS.cashFlowsWithoutCredits,
       PRICE.price * ASSET_DETAILS.quantity,
     )
+    // The credits-bearing series already carries each credit as a dated flow, so both series
+    // share the same terminal value. Adding totalCredits here counted every credit twice.
     expect(calculateXirrMock).toHaveBeenCalledWith(
+      ASSET_DETAILS.cashFlowsWithCredits,
+      PRICE.price * ASSET_DETAILS.quantity,
+    )
+    expect(calculateXirrMock).not.toHaveBeenCalledWith(
       ASSET_DETAILS.cashFlowsWithCredits,
       PRICE.price * ASSET_DETAILS.quantity + ASSET_DETAILS.totalCredits,
     )
+  })
+
+  it('keeps_total_current_plus_credits_as_a_display_figure', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    getCurrentPriceMock.mockResolvedValue(PRICE)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useAssetSummary(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.price).not.toBeNull())
+
+    const tcv = PRICE.price * ASSET_DETAILS.quantity
+    expect(result.current.totalCurrentPlusCredits).toBeCloseTo(tcv + ASSET_DETAILS.totalCredits, 2)
   })
 
   it('resets_xirr_to_null_when_xirr_calculation_fails', async () => {
