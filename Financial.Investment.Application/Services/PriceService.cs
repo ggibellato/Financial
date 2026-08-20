@@ -104,47 +104,121 @@ public sealed class PriceService : IPriceService
             var asset = ResolveAsset(request);
             if (asset is null)
             {
-                var result = _assetPriceService.GetCurrentPrice(request);
-                span.MarkSuccess();
-                _logger.LogInformation("{Operation} completed", "GetCurrentPrice");
-                return result;
+                WarnWhenAssetContextWasSuppliedButUnresolved(request);
+                return CompleteSuccessfully(span, _assetPriceService.GetCurrentPrice(request));
             }
 
-            try
+            var (price, wasFetchedLive) = FetchWithPriceHistoryFallback(asset, request);
+            if (!wasFetchedLive)
             {
-                var livePrice = _assetPriceService.GetCurrentPrice(request);
-                await RecordAutomaticPriceIfNeededAsync(asset, livePrice.Price);
-                livePrice.IsManual = false;
-                span.MarkSuccess();
-                _logger.LogInformation("{Operation} completed", "GetCurrentPrice");
-                return livePrice;
+                return CompleteSuccessfully(span, price);
             }
-            catch
-            {
-                var fallback = asset.GetPriceForDate(DateOnly.FromDateTime(DateTime.Today));
-                if (fallback is null)
-                {
-                    throw;
-                }
 
-                span.MarkSuccess();
-                _logger.LogInformation("{Operation} completed", "GetCurrentPrice");
-                return new AssetPriceDTO
-                {
-                    Exchange = request.Exchange,
-                    Ticker = request.Ticker,
-                    Name = request.Name ?? string.Empty,
-                    Price = fallback.Price,
-                    AsOf = null,
-                    IsManual = fallback.IsManual
-                };
+            // Recording sits outside the fetch's exception handling on purpose. When it was
+            // inside, a persistence failure fell into the fallback branch, which found the entry
+            // that SetPrice had just added in memory, and so returned a successful response for a
+            // write that never happened.
+            var persistenceError = await TryRecordAutomaticPriceAsync(asset, price.Price, request);
+            if (persistenceError is null)
+            {
+                return CompleteSuccessfully(span, price);
             }
+
+            // The price is still returned so a storage fault does not block the caller from
+            // seeing a live value, but the operation is reported as failed rather than claiming
+            // a record was made.
+            span.MarkFailed(persistenceError);
+            return price;
         }
         catch (Exception ex)
         {
             span.MarkFailed(ex);
             throw;
         }
+    }
+
+    private AssetPriceDTO CompleteSuccessfully(ITelemetrySpan span, AssetPriceDTO price)
+    {
+        span.MarkSuccess();
+        _logger.LogInformation("{Operation} completed", "GetCurrentPrice");
+        return price;
+    }
+
+    private (AssetPriceDTO Price, bool WasFetchedLive) FetchWithPriceHistoryFallback(
+        Asset asset,
+        AssetPriceRequestDTO request)
+    {
+        try
+        {
+            var livePrice = _assetPriceService.GetCurrentPrice(request);
+            livePrice.IsManual = false;
+            return (livePrice, true);
+        }
+        catch
+        {
+            var fallback = asset.GetPriceForDate(DateOnly.FromDateTime(DateTime.Today));
+            if (fallback is null)
+            {
+                throw;
+            }
+
+            var price = new AssetPriceDTO
+            {
+                Exchange = request.Exchange,
+                Ticker = request.Ticker,
+                Name = request.Name ?? string.Empty,
+                Price = fallback.Price,
+                AsOf = null,
+                IsManual = fallback.IsManual
+            };
+            return (price, false);
+        }
+    }
+
+    /// <summary>
+    /// Returns the exception that prevented the price being recorded, or null when it was
+    /// recorded. A persistence failure is reported rather than thrown, so the caller still
+    /// receives the price it asked for.
+    /// </summary>
+    private async Task<Exception?> TryRecordAutomaticPriceAsync(
+        Asset asset,
+        decimal price,
+        AssetPriceRequestDTO request)
+    {
+        try
+        {
+            await RecordAutomaticPriceIfNeededAsync(asset, price);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Automatic price for {BrokerName}/{PortfolioName}/{AssetName} could not be persisted",
+                request.BrokerName,
+                request.PortfolioName,
+                request.AssetName);
+            return ex;
+        }
+    }
+
+    /// <summary>
+    /// A blank broker, portfolio, or asset name is a deliberate lookup-only request. All three
+    /// supplied but matching nothing is a misrouted request that would otherwise return a price
+    /// and record nothing, with no trace of why.
+    /// </summary>
+    private void WarnWhenAssetContextWasSuppliedButUnresolved(AssetPriceRequestDTO request)
+    {
+        if (AssetContextValidator.IsInvalid(request.BrokerName, request.PortfolioName, request.AssetName))
+        {
+            return;
+        }
+
+        _logger.LogWarning(
+            "Price returned without recording: no asset matches {BrokerName}/{PortfolioName}/{AssetName}",
+            request.BrokerName,
+            request.PortfolioName,
+            request.AssetName);
     }
 
     private ITelemetrySpan StartSpan(string operationName)
