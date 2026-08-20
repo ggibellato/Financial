@@ -184,13 +184,22 @@ public sealed class PriceService : IPriceService
             livePrice.IsManual = false;
             return (livePrice, true);
         }
-        catch
+        catch (Exception ex)
         {
             var fallback = asset.GetPriceForDate(DateOnly.FromDateTime(DateTime.Today));
             if (fallback is null)
             {
                 throw;
             }
+
+            // Only this branch swallows the failure, so only this branch logs. Without it a
+            // failed scrape leaves no trace at all, and the portfolio grid fetches a whole
+            // page of prices at once. The exception type only: a provider's message can carry
+            // the ticker and the price it was quoting.
+            _logger.LogWarning(
+                "{Operation} fell back to a stored price after {ErrorType}",
+                "GetCurrentPrice",
+                ex.GetType().Name);
 
             return (BuildPriceFrom(fallback, request), false);
         }
