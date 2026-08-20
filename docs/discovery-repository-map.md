@@ -65,7 +65,7 @@ The four orphaned test folders corresponding to the removed migration tools (`Fi
 
 ## Documentation
 
-**CONFIRMED** — `context.md` (domain/feature narrative source of truth), `README.md` (setup/config), `docs/prd/P01`–`P33` (33 sequential PRD folders, one per shipped feature — evidence of an existing informal spec-driven history predating this SDD initiative), `docs/app-comments-update.md`, `docs/app-todo.md`, `docs/app-workflow.md`, `dev-util/ai/level-web-front-end.md` (WPF-as-source-of-truth parity doc) + `wpf-screenshots`.
+**CONFIRMED** — `context.md` (domain/feature narrative source of truth), `README.md` (setup/config), `docs/prd/P01`–`P33` (33 sequential PRD folders, one per shipped feature — evidence of an existing informal spec-driven history predating this SDD initiative), `docs/rules/` (design + implementation rules), `dev-util/ai/level-web-front-end.md` (WPF-as-source-of-truth parity doc) + `wpf-screenshots`.
 
 ## SDD scaffolding already present
 
