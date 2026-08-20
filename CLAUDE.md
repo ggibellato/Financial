@@ -87,175 +87,38 @@ Detailed description if there are many files or changes"
 - Use `git commit --amend` unles explicity safe
 - Force push to main/master
 
-# Architecture Rules (Mandatory)
+# Architecture invariants
 
-These rules are mandatory and non-negotiable for all generated code.
+These bind at every stage — discovery, design, implementation, review. Everything else is in the rule files below.
 
-## Clean Code
+1. **Dependency direction.** Presentation → Application → Domain. Domain depends on nothing. Infrastructure implements interfaces declared by Domain or Application. Domain must never reference Infrastructure.
 
-* Follow Clean Code principles.
-* Functions must have a single responsibility.
-* Avoid long methods.
-* Avoid code duplication.
-* Use meaningful names.
-* No magic strings or magic numbers.
-* Keep cyclomatic complexity low.
+2. **Where code lives.**
 
-## SOLID
+   | Layer | Owns | Never contains |
+   |---|---|---|
+   | Domain | Entities, value objects, domain rules, domain events | Framework code, persistence, I/O |
+   | Application | Use cases, services, commands/queries, DTOs, validators | Persistence implementation details |
+   | Infrastructure | Repositories, storage, external APIs, file system access | Business logic |
+   | Presentation | Controllers, endpoints, API contracts, UI | Business logic |
 
-All implementations must follow SOLID principles.
+3. **Bounded contexts stay isolated.** Investment and CashFlow never reference each other; anything genuinely shared goes in `Financial.Shared.*`.
 
-* Single Responsibility Principle
-* Open Closed Principle
-* Liskov Substitution Principle
-* Interface Segregation Principle
-* Dependency Inversion Principle
+4. **Vertical slices only.** Every change ships as a complete working increment — implementation, configuration, tests and docs together. Never scaffolding, placeholders, or disconnected infrastructure.
 
-## Architecture
+5. **`main` is always deployable.** After every merge it builds, passes the required tests, and starts under `docker-compose up` with existing functionality intact.
 
-The solution follows Clean Architecture.
+6. **Right-sized, not over-engineered.** Single-user, self-hosted, one install per person. Follow the standards; don't build for scale that will never arrive.
 
-Layers:
+# Rule files
 
-* Domain
-* Application
-* Infrastructure
-* Presentation
+Mandatory, not advisory. Read the file for the stage you are in **before producing output** — do not work from memory of it.
 
-Dependency direction:
+| When you are… | Read |
+|---|---|
+| Writing a PRD, spec or plan; deciding where a feature goes or how to slice it | `docs/rules/design.md` |
+| Writing or changing any source file | `docs/rules/implementation.md` |
+| Writing or changing tests | `testing-guide-Financial` skill, then `docs/rules/implementation.md` §Tests |
+| Finishing a change | `docs/rules/implementation.md` §Definition of Done |
 
-Presentation -> Application -> Domain
-
-Infrastructure implements interfaces defined by Domain or Application.
-
-Domain must never depend on Infrastructure.
-
-## Domain Layer
-
-Contains:
-
-* Entities
-* Value Objects
-* Domain Services
-* Domain Events
-
-Must contain no framework code.
-
-Must contain no database code.
-
-## Application Layer
-
-Contains:
-
-* Use Cases
-* Commands
-* Queries
-* DTOs
-* Validators
-
-Coordinates business workflows.
-
-Must not contain persistence implementation details.
-
-## Infrastructure Layer
-
-Contains:
-
-* Database implementations
-* External APIs
-* Messaging
-* File system access
-* Repository implementations
-
-Must depend on abstractions.
-
-## Presentation Layer
-
-Contains:
-
-* Controllers
-* Endpoints
-* UI
-* API Contracts
-
-Must not contain business logic.
-
-## Testing
-
-Every new feature must include:
-
-* Unit tests
-* Integration tests where applicable
-
-No feature is complete without tests.
-
-## Incremental Vertical Delivery
-
-Every feature must be implemented as a sequence of small, independently reviewable increments.
-
-* Each increment must deliver a complete, working slice of the feature, or a working compatibility boundary — not scaffolding, placeholders, disconnected infrastructure, or code that can't be exercised or verified on its own.
-* Each increment must include the implementation, configuration, tests, and documentation needed for that increment to be usable and reviewable by itself.
-* Before starting implementation, identify the scope, dependencies, acceptance criteria, and review boundary of every increment.
-* This matches the existing vertical-slice-per-PR pattern already in use (Domain → Application → Infrastructure → API → WPF → Web → tests, one PR per slice) — it's a hard requirement, not a preference.
-
-## Production Deployability After Every Merge
-
-After every pull request merges into `main`, the application must remain in a deployable state. Deployable means:
-
-* It builds successfully via the standard build process (`dotnet build`, `npm run build`).
-* The required automated test suite passes.
-* It can start using the standard production configuration (`docker-compose up`), not a dev-only profile.
-* It does not require unfinished feature increments, local-only tools, dev containers, or unavailable external services to start.
-* Existing production functionality still works — no regressions.
-* No known defect introduced by the PR blocks a production deployment.
-
-Do not merge a PR that leaves the app unable to build, test, start, or provide its existing functionality. Every PR must document the commands/checks used to verify deployability (build, test, and a start-up check under production config).
-
-## Before Writing Code
-
-Always:
-
-1. Explain where the feature belongs.
-2. Identify impacted layers.
-3. Explain why the design follows Clean Architecture.
-4. Identify SOLID principles being applied.
-
-## Before Finishing
-
-Perform a self-review and verify:
-
-* Clean Code
-* SOLID
-* Clean Architecture
-* Test coverage
-* No layer violations
-* This PR is a complete, working vertical slice — not scaffolding-only or disconnected infrastructure
-* The application remains deployable after this PR merges (build, test, and start-up checks under production config)
-
-If any rule is violated, stop and propose a correction.
-
-## Definition of Done
-
-A feature is NOT complete unless:
-
-* Architecture reviewed.
-* Clean Architecture respected.
-* SOLID principles respected.
-* No layer violations.
-* No business logic in Presentation.
-* No infrastructure concerns in Domain.
-* Unit tests added.
-* Integration tests added when appropriate.
-* Existing tests still pass.
-* New code is documented where necessary.
-* The change is a complete, working vertical increment (implementation + config + tests + docs), not scaffolding or disconnected infrastructure.
-* The application remains deployable after merge, and the PR documents the commands/checks used to verify that.
-
-Before marking work as complete, provide a checklist showing compliance with all Definition of Done items.
-
-## Application details
-
-This is a personal project and is intended to be installed a copy for each person that will use.
-Does not require to scale or should not also have many updates or changes.
-
-It should follow all the standars above but also know that it does not OVER ENGINEERING.
+`.claude/agents/architecture-reviewer.md` reviews every change against these files.
