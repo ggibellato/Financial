@@ -30,7 +30,8 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
 
     public int SaveChangesCallCount { get; private set; }
 
-    /// <summary>When true, the next <see cref="SaveChangesAsync"/> call throws once and resets to false.</summary>
+    /// <summary>When true, the next <see cref="ApplyAndSaveAsync"/> that reaches the write throws
+    /// once and resets to false.</summary>
     public bool ThrowOnNextSave { get; set; }
 
     public StubCashFlowRepository(
@@ -184,20 +185,8 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     }
     public void DeleteBalanceAdjustment(Guid id) => BalanceAdjustments.RemoveAll(a => a.Id == id);
 
-    public Task SaveChangesAsync()
-    {
-        SaveChangesCallCount++;
-        if (ThrowOnNextSave)
-        {
-            ThrowOnNextSave = false;
-            throw new InvalidOperationException("Simulated save failure.");
-        }
-
-        return Task.CompletedTask;
-    }
-
-    /// <summary>Runs the mutation for real - the change now lives in the delegate, so a stub that
-    /// only counted would silently stop exercising it. Counts persisted writes, so a mutation that
+    /// <summary>Runs the mutation for real - the change lives in the delegate, so a stub that only
+    /// counted would silently stop exercising it. Counts persisted writes, so a mutation that
     /// reports no change does not register as a save.</summary>
     public Task<bool> ApplyAndSaveAsync(Func<bool> applyChanges)
     {
@@ -206,6 +195,13 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
             return Task.FromResult(false);
         }
 
-        return SaveChangesAsync().ContinueWith(_ => true, TaskContinuationOptions.ExecuteSynchronously);
+        SaveChangesCallCount++;
+        if (ThrowOnNextSave)
+        {
+            ThrowOnNextSave = false;
+            throw new InvalidOperationException("Simulated save failure.");
+        }
+
+        return Task.FromResult(true);
     }
 }

@@ -53,8 +53,11 @@ public sealed class BankService : IBankService
                 throw new KeyNotFoundException($"Bank '{id}' was not found.");
             }
 
-            bank!.SetOpeningBalance(request.OpeningBalance, request.OpeningBalanceDate);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                bank!.SetOpeningBalance(request.OpeningBalance, request.OpeningBalanceDate);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateOpeningBalance");

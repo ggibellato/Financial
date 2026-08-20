@@ -153,7 +153,9 @@ var expenseChargeDateSummary = ExpenseChargeDateMigrator.Migrate(data, legacyRaw
 var investmentAccountSummary = InvestmentAccountMigrator.Migrate(data);
 
 var repository = new CashFlowJsonRepository(data, storage, serializer);
-await repository.SaveChangesAsync();
+// The migrators above have already mutated `data`; this run is single-threaded, so the write is
+// just persisting what they built.
+await repository.ApplyAndSaveAsync(() => true);
 
 Console.WriteLine($"Wrote imported data to '{outputPath}'.");
 Console.WriteLine();

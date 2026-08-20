@@ -76,14 +76,4 @@ public interface ICashFlowRepository
     /// </param>
     /// <returns>What <paramref name="applyChanges"/> reported: true when the document was written.</returns>
     Task<bool> ApplyAndSaveAsync(Func<bool> applyChanges);
-
-    /// <summary>
-    /// Persists the current document without applying a change under the same exclusion.
-    /// </summary>
-    /// <remarks>
-    /// Transitional: callers that mutate first and save afterwards leave a window where the
-    /// serializer can walk a half-applied change. Each is being moved to
-    /// <see cref="ApplyAndSaveAsync"/>, after which this goes away.
-    /// </remarks>
-    Task SaveChangesAsync();
 }

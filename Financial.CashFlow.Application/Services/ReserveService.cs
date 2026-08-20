@@ -50,21 +50,31 @@ public sealed class ReserveService : IReserveService
                 .Select(bucket => ReserveMovement.Create(bucket, bucket.CalculateSplitAmount(request.Amount), request.Date, request.Description))
                 .ToList();
 
-            foreach (var movement in movements)
-            {
-                _repository.AddReserveMovement(movement);
-            }
-
             try
             {
-                await _repository.SaveChangesAsync().ConfigureAwait(false);
+                await _repository.ApplyAndSaveAsync(() =>
+                {
+                    foreach (var movement in movements)
+                    {
+                        _repository.AddReserveMovement(movement);
+                    }
+
+                    return true;
+                }).ConfigureAwait(false);
             }
             catch
             {
-                foreach (var movement in movements)
+                // The rollback edits the same graph, so it runs under the same exclusion. Reporting
+                // no change is what keeps it in memory only - the failed write must not be retried.
+                await _repository.ApplyAndSaveAsync(() =>
                 {
-                    _repository.DeleteReserveMovement(movement.Id);
-                }
+                    foreach (var movement in movements)
+                    {
+                        _repository.DeleteReserveMovement(movement.Id);
+                    }
+
+                    return false;
+                }).ConfigureAwait(false);
 
                 throw;
             }
@@ -123,15 +133,23 @@ public sealed class ReserveService : IReserveService
             }
 
             var movement = ReserveMovement.Create(bucket!, -request.Amount, request.Date, request.Description);
-            _repository.AddReserveMovement(movement);
 
             try
             {
-                await _repository.SaveChangesAsync().ConfigureAwait(false);
+                await _repository.ApplyAndSaveAsync(() =>
+                {
+                    _repository.AddReserveMovement(movement);
+                    return true;
+                }).ConfigureAwait(false);
             }
             catch
             {
-                _repository.DeleteReserveMovement(movement.Id);
+                await _repository.ApplyAndSaveAsync(() =>
+                {
+                    _repository.DeleteReserveMovement(movement.Id);
+                    return false;
+                }).ConfigureAwait(false);
+
                 throw;
             }
 
@@ -217,8 +235,11 @@ public sealed class ReserveService : IReserveService
 
             var movement = _repository.GetReserveMovements().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
 
-            movement.Update(bucket!, request.Amount, request.Date, request.Description);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                movement.Update(bucket!, request.Amount, request.Date, request.Description);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateMovement");
@@ -245,12 +266,15 @@ public sealed class ReserveService : IReserveService
                 .Where(m => m.Date == movement.Date && m.Description == movement.Description)
                 .ToList();
 
-            foreach (var groupMovement in group)
+            await _repository.ApplyAndSaveAsync(() =>
             {
-                _repository.DeleteReserveMovement(groupMovement.Id);
-            }
+                foreach (var groupMovement in group)
+                {
+                    _repository.DeleteReserveMovement(groupMovement.Id);
+                }
 
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteMovement");
