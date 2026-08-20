@@ -9,7 +9,7 @@ namespace Financial.Presentation.App.ViewModels.Investment;
 public class AssetPriceFetchViewModel : ViewModelBase
 {
     private readonly INavigationService _navigationService;
-    private readonly IAssetPriceService _assetPriceService;
+    private readonly IPriceService _priceService;
     private readonly IReadOnlyList<AssetPriceFetch> _portfolios;
     private readonly Action<string> _showError;
     private bool _isFetching;
@@ -41,12 +41,12 @@ public class AssetPriceFetchViewModel : ViewModelBase
 
     public AssetPriceFetchViewModel(
         INavigationService navigationService,
-        IAssetPriceService assetPriceService,
+        IPriceService priceService,
         IOptions<AssetPriceFetchOptions> options,
         Action<string> showError)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
-        _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
+        _priceService = priceService ?? throw new ArgumentNullException(nameof(priceService));
         _showError = showError ?? throw new ArgumentNullException(nameof(showError));
         _portfolios = (options?.Value.Portfolios ?? new List<AssetPriceFetch>()).AsReadOnly();
         FetchCommand = new RelayCommand(async () => await FetchAsync(), () => !IsFetching);
@@ -62,24 +62,30 @@ public class AssetPriceFetchViewModel : ViewModelBase
         {
             var assets = _portfolios
                 .SelectMany(p => _navigationService.GetAssetsByBrokerPortfolio(p.BrokerName, p.PortfolioName)
-                    .Select(asset => (BrokerName: p.BrokerName, Asset: asset)))
+                    .Select(asset => (BrokerName: p.BrokerName, PortfolioName: p.PortfolioName, Asset: asset)))
                 .ToList();
 
             var total = assets.Count;
             for (var i = 0; i < assets.Count; i++)
             {
-                var (brokerName, asset) = assets[i];
+                var (brokerName, portfolioName, asset) = assets[i];
                 ProgressPercent = (i + 1) * 100.0 / total;
                 ProgressMessage = $"Fetching {i + 1} of {total}: {asset.Ticker}...";
 
-                var result = await Task.Run(() => _assetPriceService.GetCurrentPrice(new AssetPriceRequestDTO
+                // Supplying the broker, portfolio and asset name is what makes the orchestration
+                // record the fetched price into Price History, the same as the per-asset Refresh
+                // button and the portfolio grid. Without them this screen took the lookup-only
+                // path and built no history at all.
+                var result = await _priceService.GetCurrentPriceAsync(new AssetPriceRequestDTO
                 {
                     Exchange = asset.Exchange,
                     Ticker = asset.Ticker,
                     AssetClass = asset.Class,
                     BrokerName = brokerName,
-                    Name = asset.Name
-                }));
+                    Name = asset.Name,
+                    PortfolioName = portfolioName,
+                    AssetName = asset.Name
+                });
                 Results.Add(result);
             }
 

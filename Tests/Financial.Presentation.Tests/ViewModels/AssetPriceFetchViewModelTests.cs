@@ -13,12 +13,12 @@ namespace Financial.Presentation.Tests.ViewModels;
 public class AssetPriceFetchViewModelTests
 {
     private readonly StubNavigationService _navigationService;
-    private readonly StubAssetPriceService _priceService;
+    private readonly StubPriceService _priceService;
 
     public AssetPriceFetchViewModelTests()
     {
         _navigationService = new StubNavigationService();
-        _priceService = new StubAssetPriceService();
+        _priceService = new StubPriceService();
     }
 
     /// <summary>Builds the view model over the shared stubs for one configured broker/portfolio pair,
@@ -101,6 +101,28 @@ public class AssetPriceFetchViewModelTests
         request.Name.Should().Be("TESOURO IPCA+ 2029");
     }
 
+    /// <summary>
+    /// Broker, portfolio and asset name together are what make the orchestration record the
+    /// fetched price into Price History. Without them this screen took the lookup-only path and
+    /// built no history at all.
+    /// </summary>
+    [Fact]
+    public async Task FetchAsync_SuppliesTheAssetIdentityThatEnablesRecording()
+    {
+        _navigationService.AssetsByBrokerPortfolio[("XPI", "Acoes")] =
+        [
+            new AssetNodeDTO { Name = "TASA4", Ticker = "TASA4", Exchange = "BVMF", Class = GlobalAssetClass.Equity }
+        ];
+        var vm = CreateViewModel("XPI", "Acoes");
+
+        vm.FetchCommand.Execute(null);
+        var request = await _priceService.RequestReceived.WaitAsync(TimeSpan.FromSeconds(5));
+
+        request.BrokerName.Should().Be("XPI");
+        request.PortfolioName.Should().Be("Acoes");
+        request.AssetName.Should().Be("TASA4");
+    }
+
     private sealed class StubNavigationService : INavigationService
     {
         public Dictionary<(string BrokerName, string PortfolioName), List<AssetNodeDTO>> AssetsByBrokerPortfolio { get; } = new();
@@ -113,16 +135,27 @@ public class AssetPriceFetchViewModelTests
             AssetsByBrokerPortfolio.TryGetValue((brokerName, portfolioName), out var assets) ? assets : [];
     }
 
-    private sealed class StubAssetPriceService : IAssetPriceService
+    private sealed class StubPriceService : IPriceService
     {
         private readonly TaskCompletionSource<AssetPriceRequestDTO> _tcs = new();
 
         public Task<AssetPriceRequestDTO> RequestReceived => _tcs.Task;
 
-        public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request)
+        public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
+
+        public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
+
+        public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request)
         {
             _tcs.TrySetResult(request);
-            return new AssetPriceDTO { Exchange = request.Exchange, Ticker = request.Ticker, Name = "Test", Price = 1m, AsOf = DateTimeOffset.UtcNow };
+            return Task.FromResult(new AssetPriceDTO
+            {
+                Exchange = request.Exchange,
+                Ticker = request.Ticker,
+                Name = "Test",
+                Price = 1m,
+                AsOf = DateTimeOffset.UtcNow
+            });
         }
     }
 }
