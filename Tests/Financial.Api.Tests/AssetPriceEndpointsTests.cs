@@ -127,7 +127,7 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
         var today = DateOnly.FromDateTime(DateTime.Today);
         var repository = factory.Services.GetRequiredService<IInvestmentRepository>();
         repository.GetAsset("XPI", "Default", "BCIA11")!.SetPrice(today, 321.5m, isManual: true);
-        await repository.SaveChangesAsync();
+        await repository.ApplyAndSaveAsync(() => true);
 
         var response = await client.GetAsync(
             "/api/v1/financial/prices/current?exchange=BVMF&ticker=BCIA11&brokerName=XPI&portfolioName=Default&assetName=BCIA11");

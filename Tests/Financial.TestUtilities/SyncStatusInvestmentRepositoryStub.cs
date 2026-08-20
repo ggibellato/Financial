@@ -26,7 +26,7 @@ public sealed class SyncStatusInvestmentRepositoryStub : IInvestmentRepository, 
         return Task.CompletedTask;
     }
 
-    public Task SaveChangesAsync() => throw new NotImplementedException();
+    public Task<bool> ApplyAndSaveAsync(Func<bool> applyChanges) => throw new NotImplementedException();
     public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
     public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
     public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();

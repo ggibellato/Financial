@@ -52,12 +52,13 @@ internal static class AssetMutationHelper
             return null;
         }
 
-        if (!mutation(asset))
+        // The mutation runs inside the save, not before it: the whole document is re-serialized
+        // on write, and a change applied outside that exclusion can be walked half-applied.
+        if (!await repository.ApplyAndSaveAsync(() => mutation(asset)).ConfigureAwait(false))
         {
             return null;
         }
 
-        await repository.SaveChangesAsync().ConfigureAwait(false);
         return navigationService.GetAssetDetails(brokerName!, portfolioName!, assetName!);
     }
 }

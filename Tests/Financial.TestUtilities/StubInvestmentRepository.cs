@@ -19,7 +19,9 @@ public sealed class StubInvestmentRepository : IInvestmentRepository
     public IEnumerable<Asset> AssetsByBrokerPortfolio { get; set; } = [];
     public Asset? Asset { get; set; }
 
-    public int SaveChangesCallCount { get; private set; }
+    /// <summary>Counts persisted writes, not calls: a mutation that reports no change
+    /// still enters <see cref="ApplyAndSaveAsync"/> but must not write.</summary>
+    public int WriteCallCount { get; private set; }
     public InvestmentScope? LastGetAssetsByBrokerScope { get; private set; }
     public InvestmentScope? LastGetAssetsByBrokerPortfolioScope { get; private set; }
     public InvestmentScope? LastGetBrokerListScope { get; private set; }
@@ -59,9 +61,16 @@ public sealed class StubInvestmentRepository : IInvestmentRepository
             ? Broker.Portfolios.FirstOrDefault(p => p.Name == portfolioName)?.Assets.FirstOrDefault(a => a.Name == assetName)
             : Asset;
 
-    public Task SaveChangesAsync()
+    /// <summary>Runs the mutation for real - the delegate is where the change now lives, so a
+    /// stub that only counted would silently stop exercising it.</summary>
+    public Task<bool> ApplyAndSaveAsync(Func<bool> applyChanges)
     {
-        SaveChangesCallCount++;
-        return Task.CompletedTask;
+        if (!applyChanges())
+        {
+            return Task.FromResult(false);
+        }
+
+        WriteCallCount++;
+        return Task.FromResult(true);
     }
 }

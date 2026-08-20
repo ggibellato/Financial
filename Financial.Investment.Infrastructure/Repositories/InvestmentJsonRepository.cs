@@ -13,6 +13,10 @@ public sealed class InvestmentJsonRepository : IInvestmentRepository, ISyncStatu
     private readonly IInvestmentsSerializer _serializer;
     private readonly Investments _investiments;
 
+    /// <summary>Serializing the document walks every collection in the graph, so one writer at a
+    /// time. A semaphore rather than a lock because the critical section awaits the storage.</summary>
+    private readonly SemaphoreSlim _writeGate = new(1, 1);
+
     public InvestmentJsonRepository(Investments investments, IJsonStorage storage, IInvestmentsSerializer serializer)
     {
         _investiments = investments ?? throw new ArgumentNullException(nameof(investments));
@@ -41,10 +45,31 @@ public sealed class InvestmentJsonRepository : IInvestmentRepository, ISyncStatu
         return ResolveBrokers(scope);
     }
 
-    public async Task SaveChangesAsync()
+    public async Task<bool> ApplyAndSaveAsync(Func<bool> applyChanges)
     {
-        var json = _serializer.Serialize(_investiments);
-        await _storage.WriteAsync(json).ConfigureAwait(false);
+        ArgumentNullException.ThrowIfNull(applyChanges);
+
+        await _writeGate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (!applyChanges())
+            {
+                return false;
+            }
+
+            // The write stays inside the gate. Serializing here but writing outside would let a
+            // thread holding an older document reach the file after one holding a newer document,
+            // silently discarding the newer change with no error anywhere.
+            var json = _serializer.Serialize(_investiments);
+            await _storage.WriteAsync(json).ConfigureAwait(false);
+            return true;
+        }
+        finally
+        {
+            // Never conditional: skipping this on a storage failure would leave the singleton
+            // repository permanently locked, hanging every later save instead of throwing.
+            _writeGate.Release();
+        }
     }
 
     public SyncStatus GetStatus() => _storage.GetStatusOrIdle();
