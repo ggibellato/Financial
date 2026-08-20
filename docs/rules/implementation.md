@@ -101,7 +101,7 @@ What to test, and at which layer, is the `testing-guide-Financial` skill's job. 
 
 Remove a comment only when **all three** are true: not used by tooling, out of date, and adding nothing beyond what the code already says clearly.
 
-Keep comments that explain business rules or constraints, non-obvious implementation choices, historical context or workarounds, and performance or security considerations. Full policy: `docs/app-comments-update.md`.
+Keep comments that explain business rules or constraints, non-obvious implementation choices, historical context or workarounds, and performance or security considerations.
 
 ## Before finishing — self-review
 

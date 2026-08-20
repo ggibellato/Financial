@@ -26,9 +26,15 @@ This is a hard requirement, not a preference.
 
 ## PR size
 
-Limit each PR to a maximum of **6 non-test code files** (`docs/app-workflow.md`). Homogeneous batches applying one repeated pattern across many files may exceed it; heterogeneous changes may not.
+Limit each PR to a maximum of **8 non-test code files**.
 
-If a slice cannot fit, it is two slices.
+**Exception — one change repeated.** A PR that applies the same mechanical change across many files may exceed 8. Review cost per file is near zero once the reviewer has read the first one, and splitting such a sweep by file count actively hides whether it is complete.
+
+T050 of the observability work is the reference case. Adding `using var span = StartSpan("GetCategoryTotalsForYear");` and its entry/success logging to every Application service was one change repeated across 25 services, and the file limit split it into three PRs — #482 (16 files), #483 (17), #484 (24). It should have been one.
+
+The exception holds only while the change really is identical everywhere. The moment some files need a judgement call the others do not, it is a heterogeneous change and the limit of 8 applies again.
+
+If a slice fits under neither, it is two slices.
 
 ## Deployability
 
