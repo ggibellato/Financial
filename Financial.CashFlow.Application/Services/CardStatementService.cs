@@ -38,24 +38,26 @@ public sealed class CardStatementService : ICardStatementService
                 _logger.LogWarning("No active credit cards found while generating statements for {Year}-{Month}.", year, month);
             }
 
-            var created = false;
-            foreach (var card in activeCards)
+            // "Did anything change?" is exactly what the save wants to know, so the flag that used
+            // to guard the call is now the delegate's return value.
+            await _repository.ApplyAndSaveAsync(() =>
             {
-                if (existingStatements.Any(s => s.CreditCard.Id == card.Id))
+                var created = false;
+                foreach (var card in activeCards)
                 {
-                    continue;
+                    if (existingStatements.Any(s => s.CreditCard.Id == card.Id))
+                    {
+                        continue;
+                    }
+
+                    var statement = CardStatement.Create(card, year, month);
+                    _repository.AddCardStatement(statement);
+                    existingStatements.Add(statement);
+                    created = true;
                 }
 
-                var statement = CardStatement.Create(card, year, month);
-                _repository.AddCardStatement(statement);
-                existingStatements.Add(statement);
-                created = true;
-            }
-
-            if (created)
-            {
-                await _repository.SaveChangesAsync().ConfigureAwait(false);
-            }
+                return created;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetStatementsForMonth");
@@ -98,23 +100,33 @@ public sealed class CardStatementService : ICardStatementService
                 ? $"No credit card charges matched this statement's invoice period ({statement.Year:D4}-{statement.Month:D2}); marked paid with 0 linked charges."
                 : null;
 
-            statement.MarkPaid();
-            foreach (var charge in charges)
-            {
-                charge.Settle(bank!, settledAt);
-            }
-
             try
             {
-                await _repository.SaveChangesAsync().ConfigureAwait(false);
+                await _repository.ApplyAndSaveAsync(() =>
+                {
+                    statement.MarkPaid();
+                    foreach (var charge in charges)
+                    {
+                        charge.Settle(bank!, settledAt);
+                    }
+
+                    return true;
+                }).ConfigureAwait(false);
             }
             catch
             {
-                statement.MarkUnpaid();
-                foreach (var charge in charges)
+                // The rollback edits the same graph, so it runs under the same exclusion. Reporting
+                // no change is what keeps it in memory only - the failed write must not be retried.
+                await _repository.ApplyAndSaveAsync(() =>
                 {
-                    charge.Unsettle();
-                }
+                    statement.MarkUnpaid();
+                    foreach (var charge in charges)
+                    {
+                        charge.Unsettle();
+                    }
+
+                    return false;
+                }).ConfigureAwait(false);
 
                 throw;
             }
@@ -150,23 +162,31 @@ public sealed class CardStatementService : ICardStatementService
                 .Select(e => (Expense: e, PaymentSourceBank: e.PaymentSourceBank!, PaymentDate: e.Date))
                 .ToList();
 
-            statement.MarkUnpaid();
-            foreach (var expense in settledExpenses)
-            {
-                expense.Unsettle();
-            }
-
             try
             {
-                await _repository.SaveChangesAsync().ConfigureAwait(false);
+                await _repository.ApplyAndSaveAsync(() =>
+                {
+                    statement.MarkUnpaid();
+                    foreach (var expense in settledExpenses)
+                    {
+                        expense.Unsettle();
+                    }
+
+                    return true;
+                }).ConfigureAwait(false);
             }
             catch
             {
-                statement.MarkPaid();
-                foreach (var (expense, paymentSourceBank, paymentDate) in settlements)
+                await _repository.ApplyAndSaveAsync(() =>
                 {
-                    expense.Settle(paymentSourceBank, paymentDate);
-                }
+                    statement.MarkPaid();
+                    foreach (var (expense, paymentSourceBank, paymentDate) in settlements)
+                    {
+                        expense.Settle(paymentSourceBank, paymentDate);
+                    }
+
+                    return false;
+                }).ConfigureAwait(false);
 
                 throw;
             }

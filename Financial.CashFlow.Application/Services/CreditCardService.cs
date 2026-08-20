@@ -53,8 +53,11 @@ public sealed class CreditCardService : ICreditCardService
                 throw new KeyNotFoundException($"Credit card '{id}' was not found.");
             }
 
-            creditCard!.UpdateDetails(request.NextInvoiceDueDate, request.IsActive);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                creditCard!.UpdateDetails(request.NextInvoiceDueDate, request.IsActive);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateCreditCard");

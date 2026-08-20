@@ -37,8 +37,11 @@ public sealed class ExpenseService : IExpenseService
 
             var expense = Expense.Create(request.Date, request.Description, request.Value, category, paymentSource, creditCard, request.InvoiceDate, request.CountsAsTithe);
             expense.SetRoundUpAmount(request.RoundUpAmount);
-            _repository.AddExpense(expense);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.AddExpense(expense);
+                return true;
+            }).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, expense.Id.ToString());
             span.MarkSuccess();
@@ -66,15 +69,18 @@ public sealed class ExpenseService : IExpenseService
                 request.Description, request.Value, request.CategoryId, request.PaymentSourceBankId, request.CreditCardId);
             ValidateRoundUpEligibility(request.RoundUpAmount, paymentSource);
 
-            expense.UpdateDetails(request.Date, request.Description, request.Value, category, paymentSource, creditCard, request.CountsAsTithe);
-            expense.SetRoundUpAmount(request.RoundUpAmount);
-
-            if (request.InvoiceDate is not null && request.InvoiceDate != expense.InvoiceDate)
+            await _repository.ApplyAndSaveAsync(() =>
             {
-                expense.SetInvoiceDate(request.InvoiceDate.Value);
-            }
+                expense.UpdateDetails(request.Date, request.Description, request.Value, category, paymentSource, creditCard, request.CountsAsTithe);
+                expense.SetRoundUpAmount(request.RoundUpAmount);
 
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+                if (request.InvoiceDate is not null && request.InvoiceDate != expense.InvoiceDate)
+                {
+                    expense.SetInvoiceDate(request.InvoiceDate.Value);
+                }
+
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateExpense");
@@ -95,8 +101,11 @@ public sealed class ExpenseService : IExpenseService
         {
             FindExpenseOrThrow(id);
 
-            _repository.DeleteExpense(id);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.DeleteExpense(id);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteExpense");

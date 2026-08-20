@@ -32,8 +32,11 @@ public sealed class IncomeService : IIncomeService
             var (incomeSource, bank) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description);
 
             var income = Income.Create(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description);
-            _repository.AddIncome(income);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.AddIncome(income);
+                return true;
+            }).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, income.Id.ToString());
             span.MarkSuccess();
@@ -59,8 +62,11 @@ public sealed class IncomeService : IIncomeService
 
             var (incomeSource, bank) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description);
 
-            income.UpdateDetails(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                income.UpdateDetails(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateIncome");
@@ -81,8 +87,11 @@ public sealed class IncomeService : IIncomeService
         {
             FindIncomeOrThrow(id);
 
-            _repository.DeleteIncome(id);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.DeleteIncome(id);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteIncome");
