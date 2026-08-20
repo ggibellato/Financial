@@ -81,10 +81,34 @@ describe('CurrentValuesPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
 
     await waitFor(() => {
-      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstateFund', 'XPI')
-      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'KLBN4', 'RealEstateFund', 'XPI')
-      expect(getCurrentPriceMock).not.toHaveBeenCalledWith('BVMF', 'XXXX3', 'RealEstateFund', 'XPI')
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstateFund', 'XPI', expect.any(String), expect.any(String), expect.any(String))
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'KLBN4', 'RealEstateFund', 'XPI', expect.any(String), expect.any(String), expect.any(String))
+      expect(getCurrentPriceMock).not.toHaveBeenCalledWith('BVMF', 'XXXX3', 'RealEstateFund', 'XPI', expect.any(String), expect.any(String), expect.any(String))
     })
+  })
+
+  // Broker, portfolio and asset name together are what make the API record the fetched price
+  // into Price History. Without them this screen took the lookup-only path and built no history.
+  it('supplies the asset identity that enables recording', async () => {
+    getBrokersMock.mockResolvedValue([
+      makeBroker([{ name: 'Acoes', assets: [{ name: 'KLBN4', ticker: 'KLBN4' }] }]),
+    ])
+    getCurrentPriceMock.mockResolvedValue(makePrice('KLBN4'))
+
+    render(<CurrentValuesPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+
+    await waitFor(() =>
+      expect(getCurrentPriceMock).toHaveBeenCalledWith(
+        'BVMF',
+        'KLBN4',
+        'RealEstateFund',
+        'XPI',
+        'KLBN4',
+        'Acoes',
+        'KLBN4',
+      ),
+    )
   })
 
   it('does not render broker or portfolio filter controls', async () => {
@@ -253,9 +277,9 @@ describe('CurrentValuesPage', () => {
     await waitFor(() => expect(screen.queryByText(/Completed!/)).toBeInTheDocument())
 
     expect(getCurrentPriceMock).toHaveBeenCalledTimes(3)
-    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstateFund', 'XPI')
-    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'FLAT11', 'RealEstateFund', 'XPI')
-    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'SHRT11', 'RealEstateFund', 'XPI')
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstateFund', 'XPI', expect.any(String), expect.any(String), expect.any(String))
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'FLAT11', 'RealEstateFund', 'XPI', expect.any(String), expect.any(String), expect.any(String))
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'SHRT11', 'RealEstateFund', 'XPI', expect.any(String), expect.any(String), expect.any(String))
   })
 
   it('excludes assets with empty ticker or exchange', async () => {
@@ -278,7 +302,7 @@ describe('CurrentValuesPage', () => {
     await waitFor(() => expect(screen.queryByText(/Completed!/)).toBeInTheDocument())
 
     expect(getCurrentPriceMock).toHaveBeenCalledTimes(1)
-    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstateFund', 'XPI')
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstateFund', 'XPI', expect.any(String), expect.any(String), expect.any(String))
   })
 
   it('fetches Bitcoin under Coinbase/Cryptocurrency scope with assetClass and brokerName', async () => {
@@ -311,7 +335,7 @@ describe('CurrentValuesPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
 
     await waitFor(() => {
-      expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'BTC', 'Cryptocurrency', 'Coinbase')
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'BTC', 'Cryptocurrency', 'Coinbase', expect.any(String), expect.any(String), expect.any(String))
     })
   })
 

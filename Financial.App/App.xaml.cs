@@ -52,7 +52,7 @@ namespace Financial.Presentation.App
                     services.AddTransient<DividendCheckViewModel>();
                     services.AddTransient<AssetPriceFetchViewModel>(sp => new AssetPriceFetchViewModel(
                         sp.GetRequiredService<Financial.Investment.Application.Interfaces.INavigationService>(),
-                        sp.GetRequiredService<Financial.Investment.Application.Interfaces.IAssetPriceService>(),
+                        sp.GetRequiredService<Financial.Investment.Application.Interfaces.IPriceService>(),
                         sp.GetRequiredService<IOptions<AssetPriceFetchOptions>>(),
                         msg => MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error)));
                     services.AddTransient<DividendCheckView>();

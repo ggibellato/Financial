@@ -59,6 +59,7 @@ export default function CurrentValuesPage() {
         assetName: asset.name,
         assetClass: asset.class,
         brokerName: broker.name,
+        portfolioName: portfolio.name,
       }))
     })
     return assets.filter(
@@ -77,11 +78,17 @@ export default function CurrentValuesPage() {
     let completed = 0
     for (const asset of assetsToCheck) {
       try {
+        // Supplying the portfolio and asset name is what makes the API record the fetched
+        // price into Price History, the same as the per-asset Refresh button and the portfolio
+        // grid. Without them this screen took the lookup-only path and built no history at all.
         const price = await apiClient.getCurrentPrice(
           asset.exchange,
           asset.ticker,
           asset.assetClass,
           asset.brokerName,
+          asset.assetName,
+          asset.portfolioName,
+          asset.assetName,
         )
         setResults((prev) => [
           ...prev,
