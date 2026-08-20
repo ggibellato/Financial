@@ -25,13 +25,16 @@ public sealed class AssetPriceService : IAssetPriceService
             throw new ArgumentException("Ticker is required.", nameof(request));
         }
 
-        var fetcher = _fetchers.FirstOrDefault(f => f.Supports(request.AssetClass))
-            ?? _fetchers.FirstOrDefault();
-
-        if (fetcher is null)
+        if (!_fetchers.Any())
         {
             throw new InvalidOperationException("No asset price fetcher is registered.");
         }
+
+        // Falling back to the first registered fetcher used to hide an unsupported class behind
+        // a lookup that was always going to fail - a private-credit holding was asked for as an
+        // equity ticker. An unsupported class is now named as such.
+        var fetcher = _fetchers.FirstOrDefault(f => f.Supports(request.AssetClass))
+            ?? throw new NotSupportedException($"No price source supports the asset class '{request.AssetClass}'.");
 
         var snapshot = fetcher.GetSnapshot(request);
 

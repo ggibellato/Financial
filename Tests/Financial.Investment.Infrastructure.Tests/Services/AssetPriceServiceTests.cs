@@ -80,18 +80,34 @@ public class AssetPriceServiceTests
     }
 
     [Fact]
-    public void GetCurrentPrice_NoFetcherSupportsAssetClass_FallsBackToFirstRegisteredFetcher()
+    public void GetCurrentPrice_NoFetcherSupportsAssetClass_ThrowsNamingTheClass()
     {
-        var firstSnapshot = new AssetValueSnapshot("XXX", "First Fetcher", 1m, DateTimeOffset.UtcNow);
-        var secondSnapshot = new AssetValueSnapshot("YYY", "Second Fetcher", 2m, DateTimeOffset.UtcNow);
-        var firstFetcher = new StubFetcher(_ => false, firstSnapshot);
-        var secondFetcher = new StubFetcher(_ => false, secondSnapshot);
-        var service = new AssetPriceService([firstFetcher, secondFetcher]);
-        var request = new AssetPriceRequestDTO { Exchange = "BVMF", Ticker = "XXX", AssetClass = GlobalAssetClass.Bond };
+        var snapshot = new AssetValueSnapshot("XXX", "First Fetcher", 1m, DateTimeOffset.UtcNow);
+        var service = new AssetPriceService([new StubFetcher(_ => false, snapshot), new StubFetcher(_ => false, snapshot)]);
+        var request = new AssetPriceRequestDTO { Exchange = "BVMF", Ticker = "XXX", AssetClass = GlobalAssetClass.PrivateCredit };
 
-        var result = service.GetCurrentPrice(request);
+        var act = () => service.GetCurrentPrice(request);
 
-        result.Name.Should().Be("First Fetcher");
+        act.Should().Throw<NotSupportedException>().WithMessage("*PrivateCredit*");
+    }
+
+    /// <summary>
+    /// Falling back to the first registered fetcher meant an unsupported class was looked up as
+    /// something it is not - a private-credit holding asked for as an equity ticker - and the
+    /// resulting provider error hid the real cause.
+    /// </summary>
+    [Fact]
+    public void GetCurrentPrice_NoFetcherSupportsAssetClass_DoesNotCallAnyFetcher()
+    {
+        var snapshot = new AssetValueSnapshot("XXX", "First Fetcher", 1m, DateTimeOffset.UtcNow);
+        var fetcher = new StubFetcher(_ => false, snapshot);
+        var service = new AssetPriceService([fetcher]);
+        var request = new AssetPriceRequestDTO { Exchange = "BVMF", Ticker = "XXX", AssetClass = GlobalAssetClass.Pension };
+
+        var act = () => service.GetCurrentPrice(request);
+
+        act.Should().Throw<NotSupportedException>();
+        fetcher.SnapshotCallCount.Should().Be(0);
     }
 
     [Fact]
@@ -143,8 +159,14 @@ public class AssetPriceServiceTests
             _snapshot = snapshot;
         }
 
+        public int SnapshotCallCount { get; private set; }
+
         public bool Supports(GlobalAssetClass assetClass) => _supports(assetClass);
 
-        public AssetValueSnapshot GetSnapshot(AssetPriceRequestDTO request) => _snapshot;
+        public AssetValueSnapshot GetSnapshot(AssetPriceRequestDTO request)
+        {
+            SnapshotCallCount++;
+            return _snapshot;
+        }
     }
 }

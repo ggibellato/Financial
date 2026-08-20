@@ -78,4 +78,28 @@ public class StandardAssetPriceFetcherTests
 
         result.Should().Be(snapshot);
     }
+
+    [Theory]
+    [InlineData(GlobalAssetClass.RealEstate)]
+    [InlineData(GlobalAssetClass.Fund)]
+    [InlineData(GlobalAssetClass.ETF)]
+    public void Supports_RemainingExchangeListedClasses_ReturnsTrue(GlobalAssetClass assetClass)
+    {
+        _sut.Supports(assetClass).Should().BeTrue();
+    }
+
+    /// <summary>
+    /// None of these is quoted on an exchange under a ticker. Supports used to be an exclusion
+    /// list, so it claimed them and then asked the finance provider for a ticker that does not
+    /// exist there - which is how a private-credit holding produced a provider error.
+    /// </summary>
+    [Theory]
+    [InlineData(GlobalAssetClass.Cash)]
+    [InlineData(GlobalAssetClass.Pension)]
+    [InlineData(GlobalAssetClass.Other)]
+    [InlineData(GlobalAssetClass.PrivateCredit)]
+    public void Supports_ClassesWithoutAnExchangeQuote_ReturnsFalse(GlobalAssetClass assetClass)
+    {
+        _sut.Supports(assetClass).Should().BeFalse();
+    }
 }
