@@ -10,10 +10,17 @@ namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
 public class CashFlowSerializerAdapterTests
 {
+    /// <summary>Every test drives the same CashFlowSerializerAdapter, so it is wired once here.</summary>
+    private readonly CashFlowSerializerAdapter _sut;
+
+    public CashFlowSerializerAdapterTests()
+    {
+        _sut = new CashFlowSerializerAdapter();
+    }
+
     [Fact]
     public void SerializeThenDeserialize_RoundTripsAllCollectionsAndSharesReferenceInstances()
     {
-        var serializer = new CashFlowSerializerAdapter();
         var original = CashFlowData.Create();
         var reserveBucket = ReserveBucket.Create("Investimento", 33.33m);
         var creditCard = CreditCard.Create("Barclays Platinum Visa 8003", isActive: true);
@@ -57,8 +64,8 @@ public class CashFlowSerializerAdapterTests
         original.AddTransfer(transfer);
         original.AddBalanceAdjustment(balanceAdjustment);
 
-        var json = serializer.Serialize(original);
-        var result = serializer.Deserialize(json);
+        var json = _sut.Serialize(original);
+        var result = _sut.Deserialize(json);
 
         using (new AssertionScope())
         {
@@ -151,7 +158,6 @@ public class CashFlowSerializerAdapterTests
     [Fact]
     public void Serialize_WritesOnlyIdsForReferenceTypedFields_NeverANestedObject()
     {
-        var serializer = new CashFlowSerializerAdapter();
         var original = CashFlowData.Create();
         var bank = Bank.Create("Barclays", roundUpEnabled: false);
         var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
@@ -162,7 +168,7 @@ public class CashFlowSerializerAdapterTests
         original.AddIncome(Income.Create(new DateOnly(2026, 7, 1), incomeSource, 100m, 90m, bank));
         original.AddReserveMovement(ReserveMovement.Create(reserveBucket, 50m, new DateOnly(2026, 7, 1), "Deposit"));
 
-        var json = serializer.Serialize(original);
+        var json = _sut.Serialize(original);
 
         using var document = JsonDocument.Parse(json);
         var income = document.RootElement.GetProperty("Incomes")[0];
@@ -196,9 +202,8 @@ public class CashFlowSerializerAdapterTests
               "Banks": [{{bankJson}}]
             }
             """;
-        var serializer = new CashFlowSerializerAdapter();
 
-        var result = serializer.Deserialize(json);
+        var result = _sut.Deserialize(json);
 
         result.Incomes.Should().ContainSingle().Which.Bank!.Id.Should().Be(bank.Id);
     }
@@ -219,9 +224,8 @@ public class CashFlowSerializerAdapterTests
               "Transfers": [], "BalanceAdjustments": [], "Banks": []
             }
             """;
-        var serializer = new CashFlowSerializerAdapter();
 
-        var act = () => serializer.Deserialize(json);
+        var act = () => _sut.Deserialize(json);
 
         act.Should().Throw<JsonException>().WithMessage($"*{missingBankId}*");
     }
@@ -237,9 +241,8 @@ public class CashFlowSerializerAdapterTests
               "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [], "Banks": []
             }
             """;
-        var serializer = new CashFlowSerializerAdapter();
 
-        var act = () => serializer.Deserialize(json);
+        var act = () => _sut.Deserialize(json);
 
         act.Should().Throw<JsonException>().WithMessage("*pre-migration string shape*reference migration*");
     }
@@ -255,9 +258,8 @@ public class CashFlowSerializerAdapterTests
               "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [], "Banks": [], "ReserveBuckets": []
             }
             """;
-        var serializer = new CashFlowSerializerAdapter();
 
-        var act = () => serializer.Deserialize(json);
+        var act = () => _sut.Deserialize(json);
 
         act.Should().Throw<JsonException>().WithMessage("*pre-migration string shape*reference migration*");
     }
@@ -265,10 +267,9 @@ public class CashFlowSerializerAdapterTests
     [Fact]
     public void Serialize_ProducesCompactJsonWithoutIndentation()
     {
-        var serializer = new CashFlowSerializerAdapter();
         var data = CashFlowData.Create();
 
-        var json = serializer.Serialize(data);
+        var json = _sut.Serialize(data);
 
         json.Should().NotContain("\n");
     }
@@ -276,11 +277,10 @@ public class CashFlowSerializerAdapterTests
     [Fact]
     public void SerializeThenDeserialize_WhenAllCollectionsEmpty_RoundTripsEmpty()
     {
-        var serializer = new CashFlowSerializerAdapter();
         var original = CashFlowData.Create();
 
-        var json = serializer.Serialize(original);
-        var result = serializer.Deserialize(json);
+        var json = _sut.Serialize(original);
+        var result = _sut.Deserialize(json);
 
         result.Expenses.Should().BeEmpty();
         result.ReserveMovements.Should().BeEmpty();

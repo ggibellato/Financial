@@ -6,8 +6,19 @@ using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.Incomes;
 
-public class IncomeBackfillImporterTests
+public class IncomeBackfillImporterTests : IDisposable
 {
+    /// <summary>Every test drives a fresh workbook; xUnit builds one instance per test, so they stay
+    /// isolated exactly as the per-test `using var workbook` did.</summary>
+    private readonly XLWorkbook _workbook;
+
+    public IncomeBackfillImporterTests()
+    {
+        _workbook = new XLWorkbook();
+    }
+
+    public void Dispose() => _workbook.Dispose();
+
     // The importer resolves each row's source/bank name against the seeded lists (F01) - in a real
     // run these are already carried over from the prior data file by the time this importer runs
     // (see Program.cs), so tests seed the same fixed set here to match that precondition.
@@ -25,12 +36,11 @@ public class IncomeBackfillImporterTests
     [Fact]
     public void Import_TwoMonthlySheets_CreatesOneEntryPerNonZeroSourcePerMonthDatedFirstOfMonth()
     {
-        using var workbook = new XLWorkbook();
-        AddMonthlySheet(workbook, "Jul2026", ("Salario Gleison", 0.0, 0.0), ("Salario Ariana", 2595.39, 1878.74), ("Lottery", 0.0, null), ("Dividendo/Juros", 361.24, null));
-        AddMonthlySheet(workbook, "Ago2026", ("Salario Gleison", 0.0, 0.0), ("Salario Ariana", 0.0, 0.0), ("Lottery", 0.0, null), ("Dividendo/Juros", 0.0, null));
+        AddMonthlySheet(_workbook, "Jul2026", ("Salario Gleison", 0.0, 0.0), ("Salario Ariana", 2595.39, 1878.74), ("Lottery", 0.0, null), ("Dividendo/Juros", 361.24, null));
+        AddMonthlySheet(_workbook, "Ago2026", ("Salario Gleison", 0.0, 0.0), ("Salario Ariana", 0.0, 0.0), ("Lottery", 0.0, null), ("Dividendo/Juros", 0.0, null));
         var data = SeededData();
 
-        var importedCount = IncomeBackfillImporter.Import(data, workbook);
+        var importedCount = IncomeBackfillImporter.Import(data, _workbook);
 
         importedCount.Should().Be(2);
         data.Incomes.Should().HaveCount(2);
@@ -45,11 +55,10 @@ public class IncomeBackfillImporterTests
     [Fact]
     public void Import_ZeroTotalForASource_CreatesNoEntryForThatSource()
     {
-        using var workbook = new XLWorkbook();
-        AddMonthlySheet(workbook, "Ago2026", ("Salario Gleison", 0.0, 0.0));
+        AddMonthlySheet(_workbook, "Ago2026", ("Salario Gleison", 0.0, 0.0));
         var data = SeededData();
 
-        IncomeBackfillImporter.Import(data, workbook);
+        IncomeBackfillImporter.Import(data, _workbook);
 
         data.Incomes.Should().BeEmpty();
     }
@@ -57,13 +66,12 @@ public class IncomeBackfillImporterTests
     [Fact]
     public void Import_SheetNameNotAMonthlyPattern_IsIgnored()
     {
-        using var workbook = new XLWorkbook();
-        var sheet = workbook.AddWorksheet("Resumo2026");
+        var sheet = _workbook.AddWorksheet("Resumo2026");
         sheet.Cell(2, 10).Value = "Salario Gleison";
         sheet.Cell(2, 11).Value = 100.0;
         var data = SeededData();
 
-        var importedCount = IncomeBackfillImporter.Import(data, workbook);
+        var importedCount = IncomeBackfillImporter.Import(data, _workbook);
 
         importedCount.Should().Be(0);
         data.Incomes.Should().BeEmpty();
@@ -72,20 +80,19 @@ public class IncomeBackfillImporterTests
     [Fact]
     public void Import_CalledTwiceOnTheSameWorkbook_DoesNotDuplicateEntries()
     {
-        using var workbook = new XLWorkbook();
-        AddMonthlySheet(workbook, "Jul2026", ("Salario Ariana", 2595.39, 1878.74));
+        AddMonthlySheet(_workbook, "Jul2026", ("Salario Ariana", 2595.39, 1878.74));
         var data = SeededData();
 
-        IncomeBackfillImporter.Import(data, workbook);
-        var secondImportedCount = IncomeBackfillImporter.Import(data, workbook);
+        IncomeBackfillImporter.Import(data, _workbook);
+        var secondImportedCount = IncomeBackfillImporter.Import(data, _workbook);
 
         secondImportedCount.Should().Be(0);
         data.Incomes.Should().HaveCount(1);
     }
 
-    private static void AddMonthlySheet(XLWorkbook workbook, string sheetName, params (string Label, double First, double? Second)[] rows)
+    private static void AddMonthlySheet(XLWorkbook _workbook, string sheetName, params (string Label, double First, double? Second)[] rows)
     {
-        var sheet = workbook.AddWorksheet(sheetName);
+        var sheet = _workbook.AddWorksheet(sheetName);
         var row = 2;
         foreach (var (label, first, second) in rows)
         {

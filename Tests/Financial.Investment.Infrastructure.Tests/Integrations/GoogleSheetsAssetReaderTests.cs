@@ -6,6 +6,16 @@ namespace Financial.Investment.Infrastructure.Tests.Integrations;
 
 public class GoogleSheetsAssetReaderTests
 {
+    /// <summary>Every test reads through the same stub data source; each one just seeds different rows.</summary>
+    private readonly StubDataSource _dataSource;
+    private readonly GoogleSheetsAssetReader _sut;
+
+    public GoogleSheetsAssetReaderTests()
+    {
+        _dataSource = new StubDataSource();
+        _sut = new GoogleSheetsAssetReader(_dataSource);
+    }
+
     private sealed class StubDataSource : IGoogleSheetsDataSource
     {
         public IList<IList<object>>? Rows { get; set; }
@@ -23,13 +33,9 @@ public class GoogleSheetsAssetReaderTests
     [Fact]
     public async Task GetAssetDataAsync_WithValidRow_ReturnsExchangeIdTickerAndIsin()
     {
-        var dataSource = new StubDataSource
-        {
-            Rows = new List<IList<object>> { new List<object> { "BVMF", "PETR4", "BRPETRACNPR6" } }
-        };
-        var reader = new GoogleSheetsAssetReader(dataSource);
+        _dataSource.Rows = new List<IList<object>> { new List<object> { "BVMF", "PETR4", "BRPETRACNPR6" } };
 
-        var result = await reader.GetAssetDataAsync("file1", "Sheet1");
+        var result = await _sut.GetAssetDataAsync("file1", "Sheet1");
 
         result.exchangeId.Should().Be("BVMF");
         result.ticker.Should().Be("PETR4");
@@ -39,10 +45,9 @@ public class GoogleSheetsAssetReaderTests
     [Fact]
     public async Task GetAssetDataAsync_NullResponse_ReturnsEmptyStrings()
     {
-        var dataSource = new StubDataSource { Rows = null };
-        var reader = new GoogleSheetsAssetReader(dataSource);
+        _dataSource.Rows = null;
 
-        var result = await reader.GetAssetDataAsync("file1", "Sheet1");
+        var result = await _sut.GetAssetDataAsync("file1", "Sheet1");
 
         result.exchangeId.Should().BeEmpty();
         result.ticker.Should().BeEmpty();
@@ -54,13 +59,9 @@ public class GoogleSheetsAssetReaderTests
     {
         // ArgumentOutOfRangeException is caught, but fields are assigned sequentially before it's
         // thrown, so exchangeId (column 0) is already set by the time ticker (column 1) fails.
-        var dataSource = new StubDataSource
-        {
-            Rows = new List<IList<object>> { new List<object> { "BVMF" } }
-        };
-        var reader = new GoogleSheetsAssetReader(dataSource);
+        _dataSource.Rows = new List<IList<object>> { new List<object> { "BVMF" } };
 
-        var result = await reader.GetAssetDataAsync("file1", "Sheet1");
+        var result = await _sut.GetAssetDataAsync("file1", "Sheet1");
 
         result.exchangeId.Should().Be("BVMF");
         result.ticker.Should().BeEmpty();
@@ -70,28 +71,23 @@ public class GoogleSheetsAssetReaderTests
     [Fact]
     public async Task GetAssetDataAsync_RequestsTheQ2S2Range()
     {
-        var dataSource = new StubDataSource { Rows = null };
-        var reader = new GoogleSheetsAssetReader(dataSource);
+        _dataSource.Rows = null;
 
-        await reader.GetAssetDataAsync("file1", "Sheet1");
+        await _sut.GetAssetDataAsync("file1", "Sheet1");
 
-        dataSource.LastSpreadSheetId.Should().Be("file1");
-        dataSource.LastRange.Should().Be("Sheet1!Q2:S2");
+        _dataSource.LastSpreadSheetId.Should().Be("file1");
+        _dataSource.LastRange.Should().Be("Sheet1!Q2:S2");
     }
 
     [Fact]
     public async Task ReadTransactionsAsync_SellCode_MapsToSellTransactionType()
     {
-        var dataSource = new StubDataSource
+        _dataSource.Rows = new List<IList<object>>
         {
-            Rows = new List<IList<object>>
-            {
-                new List<object> { 45000L, "", "V", "10", "", "100", "0" }
-            }
+            new List<object> { 45000L, "", "V", "10", "", "100", "0" }
         };
-        var reader = new GoogleSheetsAssetReader(dataSource);
 
-        var result = await reader.ReadTransactionsAsync("file1", "Sheet1");
+        var result = await _sut.ReadTransactionsAsync("file1", "Sheet1");
 
         result.Should().ContainSingle().Which.Type.Should().Be(Transaction.TransactionType.Sell);
     }
@@ -99,16 +95,12 @@ public class GoogleSheetsAssetReaderTests
     [Fact]
     public async Task ReadTransactionsAsync_NonSellCode_MapsToBuyTransactionType()
     {
-        var dataSource = new StubDataSource
+        _dataSource.Rows = new List<IList<object>>
         {
-            Rows = new List<IList<object>>
-            {
-                new List<object> { 45000L, "", "C", "10", "", "100", "0" }
-            }
+            new List<object> { 45000L, "", "C", "10", "", "100", "0" }
         };
-        var reader = new GoogleSheetsAssetReader(dataSource);
 
-        var result = await reader.ReadTransactionsAsync("file1", "Sheet1");
+        var result = await _sut.ReadTransactionsAsync("file1", "Sheet1");
 
         result.Should().ContainSingle().Which.Type.Should().Be(Transaction.TransactionType.Buy);
     }
@@ -116,17 +108,13 @@ public class GoogleSheetsAssetReaderTests
     [Fact]
     public async Task ReadTransactionsAsync_MissingDateOnSubsequentRow_ReusesPreviousDate()
     {
-        var dataSource = new StubDataSource
+        _dataSource.Rows = new List<IList<object>>
         {
-            Rows = new List<IList<object>>
-            {
-                new List<object> { 45000L, "", "C", "10", "", "100", "0" },
-                new List<object> { "", "", "C", "5", "", "100", "0" }
-            }
+            new List<object> { 45000L, "", "C", "10", "", "100", "0" },
+            new List<object> { "", "", "C", "5", "", "100", "0" }
         };
-        var reader = new GoogleSheetsAssetReader(dataSource);
 
-        var result = await reader.ReadTransactionsAsync("file1", "Sheet1");
+        var result = await _sut.ReadTransactionsAsync("file1", "Sheet1");
 
         result.Should().HaveCount(2);
         result[1].Date.Should().Be(result[0].Date);
@@ -135,17 +123,13 @@ public class GoogleSheetsAssetReaderTests
     [Fact]
     public async Task ReadTransactionsAsync_ComputesFeesAsTotalPriceMinusUnitPriceTimesQuantity()
     {
-        var dataSource = new StubDataSource
+        _dataSource.Rows = new List<IList<object>>
         {
-            Rows = new List<IList<object>>
-            {
-                // Total price cell (column 6) = 1005, unitPrice*quantity = 100*10 = 1000, so fees = 5.
-                new List<object> { 45000L, "", "C", "10", "", "100", "1005" }
-            }
+            // Total price cell (column 6) = 1005, unitPrice*quantity = 100*10 = 1000, so fees = 5.
+            new List<object> { 45000L, "", "C", "10", "", "100", "1005" }
         };
-        var reader = new GoogleSheetsAssetReader(dataSource);
 
-        var result = await reader.ReadTransactionsAsync("file1", "Sheet1");
+        var result = await _sut.ReadTransactionsAsync("file1", "Sheet1");
 
         result.Should().ContainSingle().Which.Fees.Should().Be(5m);
     }
@@ -153,17 +137,13 @@ public class GoogleSheetsAssetReaderTests
     [Fact]
     public async Task ReadTransactionsAsync_NegativeComputedFees_ClampsToZero()
     {
-        var dataSource = new StubDataSource
+        _dataSource.Rows = new List<IList<object>>
         {
-            Rows = new List<IList<object>>
-            {
-                // Total price cell (column 6) = 500, unitPrice*quantity = 100*10 = 1000, so raw fees = -500.
-                new List<object> { 45000L, "", "C", "10", "", "100", "500" }
-            }
+            // Total price cell (column 6) = 500, unitPrice*quantity = 100*10 = 1000, so raw fees = -500.
+            new List<object> { 45000L, "", "C", "10", "", "100", "500" }
         };
-        var reader = new GoogleSheetsAssetReader(dataSource);
 
-        var result = await reader.ReadTransactionsAsync("file1", "Sheet1");
+        var result = await _sut.ReadTransactionsAsync("file1", "Sheet1");
 
         result.Should().ContainSingle().Which.Fees.Should().Be(0m);
     }
@@ -171,16 +151,12 @@ public class GoogleSheetsAssetReaderTests
     [Fact]
     public async Task ReadCreditsAsync_RentType_MapsToRentCreditType()
     {
-        var dataSource = new StubDataSource
+        _dataSource.Rows = new List<IList<object>>
         {
-            Rows = new List<IList<object>>
-            {
-                new List<object> { 45000L, "100", "", "Aluguel" }
-            }
+            new List<object> { 45000L, "100", "", "Aluguel" }
         };
-        var reader = new GoogleSheetsAssetReader(dataSource);
 
-        var result = await reader.ReadCreditsAsync("file1", "Sheet1");
+        var result = await _sut.ReadCreditsAsync("file1", "Sheet1");
 
         result.Should().ContainSingle().Which.Type.Should().Be(Credit.CreditType.Rent);
     }
@@ -188,16 +164,12 @@ public class GoogleSheetsAssetReaderTests
     [Fact]
     public async Task ReadCreditsAsync_NonRentType_MapsToDividendCreditType()
     {
-        var dataSource = new StubDataSource
+        _dataSource.Rows = new List<IList<object>>
         {
-            Rows = new List<IList<object>>
-            {
-                new List<object> { 45000L, "100", "", "Dividendo" }
-            }
+            new List<object> { 45000L, "100", "", "Dividendo" }
         };
-        var reader = new GoogleSheetsAssetReader(dataSource);
 
-        var result = await reader.ReadCreditsAsync("file1", "Sheet1");
+        var result = await _sut.ReadCreditsAsync("file1", "Sheet1");
 
         result.Should().ContainSingle().Which.Type.Should().Be(Credit.CreditType.Dividend);
     }
@@ -205,16 +177,12 @@ public class GoogleSheetsAssetReaderTests
     [Fact]
     public async Task ReadCreditsAsync_RowWithBlankDate_IsSkipped()
     {
-        var dataSource = new StubDataSource
+        _dataSource.Rows = new List<IList<object>>
         {
-            Rows = new List<IList<object>>
-            {
-                new List<object> { "", "100", "", "Dividendo" }
-            }
+            new List<object> { "", "100", "", "Dividendo" }
         };
-        var reader = new GoogleSheetsAssetReader(dataSource);
 
-        var result = await reader.ReadCreditsAsync("file1", "Sheet1");
+        var result = await _sut.ReadCreditsAsync("file1", "Sheet1");
 
         result.Should().BeEmpty();
     }
@@ -222,10 +190,9 @@ public class GoogleSheetsAssetReaderTests
     [Fact]
     public async Task ReadCreditsAsync_NullResponse_ReturnsEmptyList()
     {
-        var dataSource = new StubDataSource { Rows = null };
-        var reader = new GoogleSheetsAssetReader(dataSource);
+        _dataSource.Rows = null;
 
-        var result = await reader.ReadCreditsAsync("file1", "Sheet1");
+        var result = await _sut.ReadCreditsAsync("file1", "Sheet1");
 
         result.Should().BeEmpty();
     }

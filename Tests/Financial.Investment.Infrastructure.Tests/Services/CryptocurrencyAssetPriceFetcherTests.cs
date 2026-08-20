@@ -11,6 +11,14 @@ namespace Financial.Investment.Infrastructure.Tests.Services;
 
 public class CryptocurrencyAssetPriceFetcherTests
 {
+    /// <summary>Every test drives the same CryptocurrencyAssetPriceFetcher, so it is wired once here.</summary>
+    private readonly CryptocurrencyAssetPriceFetcher _sut;
+
+    public CryptocurrencyAssetPriceFetcherTests()
+    {
+        _sut = new CryptocurrencyAssetPriceFetcher(new StubInvestmentRepository([]), new StubFinanceService());
+    }
+
     [Fact]
     public void Constructor_WithNullRepository_ThrowsArgumentNullException()
     {
@@ -30,9 +38,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void Supports_Cryptocurrency_ReturnsTrue()
     {
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubInvestmentRepository([]), new StubFinanceService());
-
-        var result = fetcher.Supports(GlobalAssetClass.Cryptocurrency);
+        var result = _sut.Supports(GlobalAssetClass.Cryptocurrency);
 
         result.Should().BeTrue();
     }
@@ -40,9 +46,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void Supports_Equity_ReturnsFalse()
     {
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubInvestmentRepository([]), new StubFinanceService());
-
-        var result = fetcher.Supports(GlobalAssetClass.Equity);
+        var result = _sut.Supports(GlobalAssetClass.Equity);
 
         result.Should().BeFalse();
     }
@@ -50,9 +54,7 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void Supports_Unknown_ReturnsFalse()
     {
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubInvestmentRepository([]), new StubFinanceService());
-
-        var result = fetcher.Supports(GlobalAssetClass.Unknown);
+        var result = _sut.Supports(GlobalAssetClass.Unknown);
 
         result.Should().BeFalse();
     }
@@ -60,10 +62,9 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void GetSnapshot_BlankBrokerName_ThrowsArgumentException()
     {
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubInvestmentRepository([]), new StubFinanceService());
         var request = new AssetPriceRequestDTO { Exchange = "", Ticker = "BTC", AssetClass = GlobalAssetClass.Cryptocurrency, BrokerName = null };
 
-        Action act = () => fetcher.GetSnapshot(request);
+        Action act = () => _sut.GetSnapshot(request);
 
         act.Should().Throw<ArgumentException>().WithMessage("BrokerName is required for cryptocurrency assets.*");
     }
@@ -71,7 +72,6 @@ public class CryptocurrencyAssetPriceFetcherTests
     [Fact]
     public void GetSnapshot_UnknownBroker_ThrowsInvalidOperationException()
     {
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubInvestmentRepository([]), new StubFinanceService());
         var request = new AssetPriceRequestDTO
         {
             Exchange = "",
@@ -80,7 +80,7 @@ public class CryptocurrencyAssetPriceFetcherTests
             BrokerName = "NotABroker"
         };
 
-        Action act = () => fetcher.GetSnapshot(request);
+        Action act = () => _sut.GetSnapshot(request);
 
         act.Should().Throw<InvalidOperationException>().WithMessage("*NotABroker*");
     }

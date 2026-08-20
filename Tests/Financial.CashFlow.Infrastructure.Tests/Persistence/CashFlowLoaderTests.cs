@@ -6,14 +6,21 @@ namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
 public class CashFlowLoaderTests
 {
+    /// <summary>Every test loads through the same serializer; only the backing file differs.</summary>
+    private readonly CashFlowSerializerAdapter _serializer;
+
+    public CashFlowLoaderTests()
+    {
+        _serializer = new CashFlowSerializerAdapter();
+    }
+
     [Fact]
     public void LoadSync_WhenFileDoesNotExist_ReturnsEmptyCashFlowData()
     {
         var missingPath = Path.Combine(Path.GetTempPath(), $"cashflow-missing-{Guid.NewGuid()}.json");
         var storage = new LocalJsonStorage(missingPath);
-        var serializer = new CashFlowSerializerAdapter();
 
-        var data = CashFlowLoader.LoadSync(storage, serializer);
+        var data = CashFlowLoader.LoadSync(storage, _serializer);
 
         data.Expenses.Should().BeEmpty();
         data.ReserveMovements.Should().BeEmpty();
@@ -30,11 +37,10 @@ public class CashFlowLoaderTests
         var path = Path.Combine(Path.GetTempPath(), $"cashflow-malformed-{Guid.NewGuid()}.json");
         File.WriteAllText(path, "{ not valid json");
         var storage = new LocalJsonStorage(path);
-        var serializer = new CashFlowSerializerAdapter();
 
         try
         {
-            var act = () => CashFlowLoader.LoadSync(storage, serializer);
+            var act = () => CashFlowLoader.LoadSync(storage, _serializer);
 
             act.Should().Throw<Exception>();
         }
@@ -48,7 +54,6 @@ public class CashFlowLoaderTests
     public void LoadSync_WhenFileIsValid_DeserializesExistingData()
     {
         var path = Path.Combine(Path.GetTempPath(), $"cashflow-valid-{Guid.NewGuid()}.json");
-        var serializer = new CashFlowSerializerAdapter();
         var original = Financial.CashFlow.Domain.Entities.CashFlowData.Create();
         var bank = Financial.CashFlow.Domain.Entities.Bank.Create("Chase", roundUpEnabled: true);
         var category = Financial.CashFlow.Domain.Entities.Category.Create("Casa");
@@ -61,12 +66,12 @@ public class CashFlowLoaderTests
             category,
             bank,
             null));
-        File.WriteAllText(path, serializer.Serialize(original));
+        File.WriteAllText(path, _serializer.Serialize(original));
         var storage = new LocalJsonStorage(path);
 
         try
         {
-            var data = CashFlowLoader.LoadSync(storage, serializer);
+            var data = CashFlowLoader.LoadSync(storage, _serializer);
 
             data.Expenses.Should().ContainSingle();
         }
