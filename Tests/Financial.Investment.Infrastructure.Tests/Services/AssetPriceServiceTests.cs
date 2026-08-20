@@ -11,12 +11,18 @@ namespace Financial.Investment.Infrastructure.Tests.Services;
 
 public class AssetPriceServiceTests
 {
+    /// <summary>The fetcher-less service the guard-clause tests exercise; the dispatch tests build their own over specific fetchers.</summary>
+    private readonly AssetPriceService _serviceWithoutFetchers;
+
+    public AssetPriceServiceTests()
+    {
+        _serviceWithoutFetchers = new AssetPriceService([]);
+    }
+
     [Fact]
     public void GetCurrentPrice_NullRequest_ThrowsArgumentNullException()
     {
-        var service = new AssetPriceService([]);
-
-        Action act = () => service.GetCurrentPrice(null!);
+        Action act = () => _serviceWithoutFetchers.GetCurrentPrice(null!);
 
         act.Should().Throw<ArgumentNullException>();
     }
@@ -24,10 +30,9 @@ public class AssetPriceServiceTests
     [Fact]
     public void GetCurrentPrice_BlankTicker_ThrowsArgumentException()
     {
-        var service = new AssetPriceService([]);
         var request = new AssetPriceRequestDTO { Exchange = "BVMF", Ticker = "" };
 
-        Action act = () => service.GetCurrentPrice(request);
+        Action act = () => _serviceWithoutFetchers.GetCurrentPrice(request);
 
         act.Should().Throw<ArgumentException>();
     }
@@ -35,10 +40,9 @@ public class AssetPriceServiceTests
     [Fact]
     public void GetCurrentPrice_NoFetchersRegistered_ThrowsInvalidOperationException()
     {
-        var service = new AssetPriceService([]);
         var request = new AssetPriceRequestDTO { Exchange = "BVMF", Ticker = "BCIA11" };
 
-        Action act = () => service.GetCurrentPrice(request);
+        Action act = () => _serviceWithoutFetchers.GetCurrentPrice(request);
 
         act.Should().Throw<InvalidOperationException>().WithMessage("*No asset price fetcher is registered*");
     }

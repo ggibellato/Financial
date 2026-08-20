@@ -15,6 +15,9 @@ public class InvestmentJsonRepositoryTests
     /// storage differs. Static because the repository factories below are static too.</summary>
     private static readonly InvestmentsSerializerAdapter Serializer = new();
 
+    /// <summary>Storage over the shared read-only test data file, which several tests open verbatim.</summary>
+    private static readonly LocalJsonStorage TestDataStorage = new(TestDataPaths.DataJsonFile);
+
     private readonly InvestmentJsonRepository _sut = CreateRepository(TestDataPaths.DataJsonFile);
 
     private static InvestmentJsonRepository CreateRepository(string dataFile)
@@ -26,9 +29,7 @@ public class InvestmentJsonRepositoryTests
     [Fact]
     public void Constructor_WithNullInvestments_Throws()
     {
-        var storage = new LocalJsonStorage(TestDataPaths.DataJsonFile);
-
-        Action act = () => new InvestmentJsonRepository(null!, storage, Serializer);
+        Action act = () => new InvestmentJsonRepository(null!, TestDataStorage, Serializer);
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("investments");
     }
@@ -36,7 +37,7 @@ public class InvestmentJsonRepositoryTests
     [Fact]
     public void Constructor_WithNullStorage_Throws()
     {
-        var investments = InvestmentsLoader.LoadSync(new LocalJsonStorage(TestDataPaths.DataJsonFile), new InvestmentsSerializerAdapter());
+        var investments = InvestmentsLoader.LoadSync(TestDataStorage, Serializer);
 
         Action act = () => new InvestmentJsonRepository(investments, null!, new InvestmentsSerializerAdapter());
 
@@ -46,10 +47,9 @@ public class InvestmentJsonRepositoryTests
     [Fact]
     public void Constructor_WithNullSerializer_Throws()
     {
-        var storage = new LocalJsonStorage(TestDataPaths.DataJsonFile);
-        var investments = InvestmentsLoader.LoadSync(storage, new InvestmentsSerializerAdapter());
+        var investments = InvestmentsLoader.LoadSync(TestDataStorage, new InvestmentsSerializerAdapter());
 
-        Action act = () => new InvestmentJsonRepository(investments, storage, null!);
+        Action act = () => new InvestmentJsonRepository(investments, TestDataStorage, null!);
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("serializer");
     }
@@ -148,7 +148,6 @@ public class InvestmentJsonRepositoryTests
         historicBroker.AddPortfolio("Uncategorized").AddAsset(Asset.Create("HISTORIC_ASSET", "ISIN2", "BVMF", "HISTORIC_ASSET"));
         investments.AddHistoricBroker(historicBroker);
 
-        var storage = new LocalJsonStorage(TestDataPaths.DataJsonFile);
-        return new InvestmentJsonRepository(investments, storage, Serializer);
+        return new InvestmentJsonRepository(investments, TestDataStorage, Serializer);
     }
 }

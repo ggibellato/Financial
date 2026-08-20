@@ -412,15 +412,22 @@ public class PriceServiceTests
         return (service, tempFile);
     }
 
-    private static (PriceService Service, InvestmentJsonRepository Repository, string TempFile) CreateServiceWithRepository()
+    /// <summary>Loads a repository over a private copy of the test data file, so a test that mutates
+    /// it cannot affect any other.</summary>
+    private static (InvestmentJsonRepository Repository, RecordingTelemetryTracer Tracer, string TempFile) CreateRepositoryOverTempCopy()
     {
         var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
         File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
 
         var storage = new LocalJsonStorage(tempFile);
         var serializer = new InvestmentsSerializerAdapter();
-        var repository = new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
-        var tracer = new RecordingTelemetryTracer();
+        return (new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer),
+            new RecordingTelemetryTracer(), tempFile);
+    }
+
+    private static (PriceService Service, InvestmentJsonRepository Repository, string TempFile) CreateServiceWithRepository()
+    {
+        var (repository, tracer, tempFile) = CreateRepositoryOverTempCopy();
         var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
         var service = new PriceService(repository, navigationService, StubAssetPriceService.NotUsed(), tracer, NullLogger<PriceService>.Instance);
 
@@ -429,14 +436,8 @@ public class PriceServiceTests
 
     private static (PriceService Service, CountingRepository Repository, string TempFile) CreateServiceWithAssetPriceService(IAssetPriceService assetPriceService)
     {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
-        File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
-
-        var storage = new LocalJsonStorage(tempFile);
-        var serializer = new InvestmentsSerializerAdapter();
-        var innerRepository = new InvestmentJsonRepository(InvestmentsLoader.LoadSync(storage, serializer), storage, serializer);
+        var (innerRepository, tracer, tempFile) = CreateRepositoryOverTempCopy();
         var repository = new CountingRepository(innerRepository);
-        var tracer = new RecordingTelemetryTracer();
         var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
         var service = new PriceService(repository, navigationService, assetPriceService, tracer, NullLogger<PriceService>.Instance);
 
