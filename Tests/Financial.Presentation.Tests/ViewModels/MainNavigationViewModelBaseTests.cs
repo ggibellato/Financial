@@ -10,14 +10,32 @@ namespace Financial.Presentation.Tests.ViewModels;
 
 public class MainNavigationViewModelBaseTests
 {
+    private readonly StubSummaryService _summaryService;
+    private readonly SpyAssetDetailsViewModel _spy;
+    private readonly StubPortfolioAssetSummaryService _assetSummaryService;
+    private readonly StubNavigationService _navigationService;
+    private readonly StubCreditQueryService _creditQueryService;
+    private readonly TestableNavigationViewModel _sut;
+
+    public MainNavigationViewModelBaseTests()
+    {
+        _summaryService = new StubSummaryService();
+        _spy = new SpyAssetDetailsViewModel();
+        _assetSummaryService = new StubPortfolioAssetSummaryService();
+        _navigationService = new StubNavigationService();
+        _creditQueryService = new StubCreditQueryService();
+        _sut = CreateViewModel();
+    }
+
+    /// <summary>Builds the view model over the shared stubs. Scope is the only thing these tests vary
+    /// at construction time; every collaborator is configured through its field instead.</summary>
+    private TestableNavigationViewModel CreateViewModel(InvestmentScope scope = InvestmentScope.Active) =>
+        new(_summaryService, _spy, _assetSummaryService, _navigationService, scope, _creditQueryService);
+
     [Fact]
     public void AssetClassFilters_IncludesCryptocurrencyWithCorrectLabel()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy);
-
-        vm.AssetClassFilters.Should().ContainSingle(f =>
+        _sut.AssetClassFilters.Should().ContainSingle(f =>
             f.Filter == GlobalAssetClass.Cryptocurrency && f.Label == "Cryptocurrency");
     }
 
@@ -25,322 +43,234 @@ public class MainNavigationViewModelBaseTests
     public void SelectingPortfolioNode_LoadsTotalSoldFromSummaryService()
     {
         var summary = new AggregatedSummaryDTO { TotalBought = 10000m, TotalSold = 4706.65m, TotalCredits = 500m };
-        var summaryService = new StubSummaryService { PortfolioSummary = summary };
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy);
+        _summaryService.PortfolioSummary = summary;
 
         var portfolioNode = BuildPortfolioNode("XPI", "FII");
-        vm.SelectedNode = portfolioNode;
+        _sut.SelectedNode = portfolioNode;
 
-        spy.LastPortfolioSummary.Should().NotBeNull();
-        spy.LastPortfolioSummary!.TotalSold.Should().Be(4706.65m);
-        spy.LastPortfolioSummary.TotalBought.Should().Be(10000m);
+        _spy.LastPortfolioSummary.Should().NotBeNull();
+        _spy.LastPortfolioSummary!.TotalSold.Should().Be(4706.65m);
+        _spy.LastPortfolioSummary.TotalBought.Should().Be(10000m);
     }
 
     [Fact]
     public void SelectingBrokerNode_LoadsTotalSoldFromSummaryService()
     {
         var summary = new AggregatedSummaryDTO { TotalBought = 20000m, TotalSold = 9000m, TotalCredits = 800m };
-        var summaryService = new StubSummaryService { BrokerSummary = summary };
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy);
+        _summaryService.BrokerSummary = summary;
 
         var brokerNode = BuildBrokerNode("XPI");
-        vm.SelectedNode = brokerNode;
+        _sut.SelectedNode = brokerNode;
 
-        spy.LastBrokerSummary.Should().NotBeNull();
-        spy.LastBrokerSummary!.TotalSold.Should().Be(9000m);
-        spy.LastBrokerSummary.TotalBought.Should().Be(20000m);
+        _spy.LastBrokerSummary.Should().NotBeNull();
+        _spy.LastBrokerSummary!.TotalSold.Should().Be(9000m);
+        _spy.LastBrokerSummary.TotalBought.Should().Be(20000m);
     }
 
     [Fact]
     public void SelectingPortfolioNode_PassesCorrectBrokerAndPortfolioNameToSummaryService()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy);
-
         var portfolioNode = BuildPortfolioNode("XPI", "FII");
-        vm.SelectedNode = portfolioNode;
+        _sut.SelectedNode = portfolioNode;
 
-        summaryService.LastBrokerNameForPortfolio.Should().Be("XPI");
-        summaryService.LastPortfolioName.Should().Be("FII");
+        _summaryService.LastBrokerNameForPortfolio.Should().Be("XPI");
+        _summaryService.LastPortfolioName.Should().Be("FII");
     }
 
     [Fact]
     public void SelectingBrokerNode_PassesCorrectBrokerNameToSummaryService()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy);
-
         var brokerNode = BuildBrokerNode("XPI");
-        vm.SelectedNode = brokerNode;
+        _sut.SelectedNode = brokerNode;
 
-        summaryService.LastBrokerNameForBroker.Should().Be("XPI");
+        _summaryService.LastBrokerNameForBroker.Should().Be("XPI");
     }
 
     [Fact]
     public void SelectingBrokerNode_CallsLoadBrokerSummaryOnDetailsViewModel()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy);
-
         var brokerNode = BuildBrokerNode("XPI");
-        vm.SelectedNode = brokerNode;
+        _sut.SelectedNode = brokerNode;
 
-        spy.WasBrokerSummaryLoaded.Should().BeTrue();
-        spy.LastBrokerSummary.Should().NotBeNull();
+        _spy.WasBrokerSummaryLoaded.Should().BeTrue();
+        _spy.LastBrokerSummary.Should().NotBeNull();
     }
 
     [Fact]
     public void SelectingBrokerNode_CallsLoadBrokerBreakdownOnDetailsViewModel()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy);
-
         var brokerNode = BuildBrokerNode("XPI");
-        vm.SelectedNode = brokerNode;
+        _sut.SelectedNode = brokerNode;
 
-        spy.WasBrokerBreakdownLoaded.Should().BeTrue();
-        spy.LastBrokerBreakdownName.Should().Be("XPI");
+        _spy.WasBrokerBreakdownLoaded.Should().BeTrue();
+        _spy.LastBrokerBreakdownName.Should().Be("XPI");
     }
 
     [Fact]
     public void SelectingBrokerNode_CallsLoadBrokerTransactionsOnDetailsViewModel()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy);
-
         var brokerNode = BuildBrokerNode("XPI");
-        vm.SelectedNode = brokerNode;
+        _sut.SelectedNode = brokerNode;
 
-        spy.WasBrokerTransactionsLoaded.Should().BeTrue();
-        spy.LastBrokerTransactionsName.Should().Be("XPI");
+        _spy.WasBrokerTransactionsLoaded.Should().BeTrue();
+        _spy.LastBrokerTransactionsName.Should().Be("XPI");
     }
 
     [Fact]
     public void SelectingPortfolioNode_CallsLoadPortfolioTransactionsOnDetailsViewModel()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy);
-
         var portfolioNode = BuildPortfolioNode("XPI", "FII");
-        vm.SelectedNode = portfolioNode;
+        _sut.SelectedNode = portfolioNode;
 
-        spy.WasPortfolioTransactionsLoaded.Should().BeTrue();
-        spy.LastPortfolioTransactionsBrokerName.Should().Be("XPI");
-        spy.LastPortfolioTransactionsPortfolioName.Should().Be("FII");
+        _spy.WasPortfolioTransactionsLoaded.Should().BeTrue();
+        _spy.LastPortfolioTransactionsBrokerName.Should().Be("XPI");
+        _spy.LastPortfolioTransactionsPortfolioName.Should().Be("FII");
     }
 
     [Fact]
     public void SelectingBrokerNode_RequestsActiveScopeForCredits()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var creditQueryService = new StubCreditQueryService();
-        var vm = new TestableNavigationViewModel(summaryService, spy, creditQueryService: creditQueryService);
-
         var brokerNode = BuildBrokerNode("XPI");
-        vm.SelectedNode = brokerNode;
+        _sut.SelectedNode = brokerNode;
 
-        creditQueryService.LastBrokerScope.Should().Be(InvestmentScope.Active);
+        _creditQueryService.LastBrokerScope.Should().Be(InvestmentScope.Active);
     }
 
     [Fact]
     public void SelectingBrokerNode_HistoricScope_RequestsHistoricScopeForCredits()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var creditQueryService = new StubCreditQueryService();
-        var vm = new TestableNavigationViewModel(summaryService, spy, scope: InvestmentScope.Historic, creditQueryService: creditQueryService);
+        var vm = CreateViewModel(InvestmentScope.Historic);
 
         var brokerNode = BuildBrokerNode("XPI");
         vm.SelectedNode = brokerNode;
 
-        creditQueryService.LastBrokerScope.Should().Be(InvestmentScope.Historic);
+        _creditQueryService.LastBrokerScope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]
     public void SelectingPortfolioNode_HistoricScope_RequestsHistoricScopeForCredits()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var creditQueryService = new StubCreditQueryService();
-        var vm = new TestableNavigationViewModel(summaryService, spy, scope: InvestmentScope.Historic, creditQueryService: creditQueryService);
+        var vm = CreateViewModel(InvestmentScope.Historic);
 
         var portfolioNode = BuildPortfolioNode("XPI", "FII");
         vm.SelectedNode = portfolioNode;
 
-        creditQueryService.LastPortfolioScope.Should().Be(InvestmentScope.Historic);
+        _creditQueryService.LastPortfolioScope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]
     public void SelectingPortfolioNode_WhenMissingMetadata_ClearsDetails()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy);
-
         var nodeWithoutMetadata = BuildNodeWithoutMetadata(TreeNodeType.Portfolio);
-        vm.SelectedNode = nodeWithoutMetadata;
+        _sut.SelectedNode = nodeWithoutMetadata;
 
-        spy.WasCleared.Should().BeTrue();
-        spy.LastPortfolioSummary.Should().BeNull();
+        _spy.WasCleared.Should().BeTrue();
+        _spy.LastPortfolioSummary.Should().BeNull();
     }
 
     [Fact]
     public void SelectingPortfolioNode_CallsLoadPortfolioSummaryOnDetailsViewModel()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy);
-
         var portfolioNode = BuildPortfolioNode("XPI", "FII");
-        vm.SelectedNode = portfolioNode;
+        _sut.SelectedNode = portfolioNode;
 
-        spy.WasPortfolioSummaryLoaded.Should().BeTrue();
-        spy.LastPortfolioSummary.Should().NotBeNull();
+        _spy.WasPortfolioSummaryLoaded.Should().BeTrue();
+        _spy.LastPortfolioSummary.Should().NotBeNull();
     }
 
     [Fact]
     public void SelectingPortfolioNode_PassesCorrectAssetItemsFromService()
     {
-        var summaryService = new StubSummaryService();
-        var assetSummaryService = new StubPortfolioAssetSummaryService
-        {
-            Items =
-            [
-                new PortfolioAssetSummaryItemDTO { AssetName = "A", Ticker = "A", Exchange = "LSE", TotalInvested = 100m },
-                new PortfolioAssetSummaryItemDTO { AssetName = "B", Ticker = "B", Exchange = "LSE", TotalInvested = 200m }
-            ]
-        };
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy, assetSummaryService);
+        _assetSummaryService.Items =
+        [
+            new PortfolioAssetSummaryItemDTO { AssetName = "A", Ticker = "A", Exchange = "LSE", TotalInvested = 100m },
+            new PortfolioAssetSummaryItemDTO { AssetName = "B", Ticker = "B", Exchange = "LSE", TotalInvested = 200m }
+        ];
 
         var portfolioNode = BuildPortfolioNode("XPI", "FII");
-        vm.SelectedNode = portfolioNode;
+        _sut.SelectedNode = portfolioNode;
 
-        spy.LastPortfolioAssetItems.Should().HaveCount(2);
+        _spy.LastPortfolioAssetItems.Should().HaveCount(2);
     }
 
     [Fact]
     public void SelectingPortfolioNode_PassesCorrectBrokerAndPortfolioNameToAssetSummaryService()
     {
-        var summaryService = new StubSummaryService();
-        var assetSummaryService = new StubPortfolioAssetSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy, assetSummaryService);
-
         var portfolioNode = BuildPortfolioNode("XPI", "FII");
-        vm.SelectedNode = portfolioNode;
+        _sut.SelectedNode = portfolioNode;
 
-        assetSummaryService.LastBrokerName.Should().Be("XPI");
-        assetSummaryService.LastPortfolioName.Should().Be("FII");
+        _assetSummaryService.LastBrokerName.Should().Be("XPI");
+        _assetSummaryService.LastPortfolioName.Should().Be("FII");
     }
 
     [Fact]
     public void SelectingAssetNode_DoesNotCallLoadBrokerOrPortfolioTransactions()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy);
-
         var assetNode = BuildAssetNode("XPI", "Acoes", "BBAS3");
-        vm.SelectedNode = assetNode;
+        _sut.SelectedNode = assetNode;
 
-        spy.WasBrokerTransactionsLoaded.Should().BeFalse();
-        spy.WasPortfolioTransactionsLoaded.Should().BeFalse();
+        _spy.WasBrokerTransactionsLoaded.Should().BeFalse();
+        _spy.WasPortfolioTransactionsLoaded.Should().BeFalse();
     }
 
     [Fact]
     public void SelectingBrokerNode_DoesNotCallLoadPortfolioSummary()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy);
-
         var brokerNode = BuildBrokerNode("XPI");
-        vm.SelectedNode = brokerNode;
+        _sut.SelectedNode = brokerNode;
 
-        spy.WasPortfolioSummaryLoaded.Should().BeFalse();
+        _spy.WasPortfolioSummaryLoaded.Should().BeFalse();
     }
 
     [Fact]
     public async Task LoadNavigationTreeAsync_RequestsActiveScope()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var navigationService = new StubNavigationService();
-        var vm = new TestableNavigationViewModel(summaryService, spy, navigationService: navigationService);
-
         // GetNavigationTree runs (and records its scope) before ApplyAssetClassFilter's
         // System.Windows.Application.Current.Dispatcher.Invoke, which throws here because no
         // WPF Application runs in this test host; only the scope pass-through is under test.
         try
         {
-            await vm.LoadNavigationTreeAsync();
+            await _sut.LoadNavigationTreeAsync();
         }
         catch (NullReferenceException)
         {
         }
 
-        navigationService.LastTreeScope.Should().Be(InvestmentScope.Active);
+        _navigationService.LastTreeScope.Should().Be(InvestmentScope.Active);
     }
 
     [Fact]
     public void SelectingAssetNode_RequestsActiveScopeAssetDetails()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var navigationService = new StubNavigationService();
-        var vm = new TestableNavigationViewModel(summaryService, spy, navigationService: navigationService);
-
         var assetNode = BuildAssetNode("XPI", "Acoes", "BBAS3");
-        vm.SelectedNode = assetNode;
+        _sut.SelectedNode = assetNode;
 
-        navigationService.LastAssetDetailsScope.Should().Be(InvestmentScope.Active);
+        _navigationService.LastAssetDetailsScope.Should().Be(InvestmentScope.Active);
     }
 
     [Fact]
     public void SelectingPortfolioNode_RequestsActiveScopeSummaryAndAssetItems()
     {
-        var summaryService = new StubSummaryService();
-        var assetSummaryService = new StubPortfolioAssetSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy, assetSummaryService);
-
         var portfolioNode = BuildPortfolioNode("XPI", "FII");
-        vm.SelectedNode = portfolioNode;
+        _sut.SelectedNode = portfolioNode;
 
-        summaryService.LastScopeForPortfolio.Should().Be(InvestmentScope.Active);
-        assetSummaryService.LastScope.Should().Be(InvestmentScope.Active);
+        _summaryService.LastScopeForPortfolio.Should().Be(InvestmentScope.Active);
+        _assetSummaryService.LastScope.Should().Be(InvestmentScope.Active);
     }
 
     [Fact]
     public void SelectingBrokerNode_RequestsActiveScopeSummary()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy);
-
         var brokerNode = BuildBrokerNode("XPI");
-        vm.SelectedNode = brokerNode;
+        _sut.SelectedNode = brokerNode;
 
-        summaryService.LastScopeForBroker.Should().Be(InvestmentScope.Active);
+        _summaryService.LastScopeForBroker.Should().Be(InvestmentScope.Active);
     }
 
     [Fact]
     public async Task LoadNavigationTreeAsync_HistoricScope_RequestsHistoricScope()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var navigationService = new StubNavigationService();
-        var vm = new TestableNavigationViewModel(summaryService, spy, navigationService: navigationService, scope: InvestmentScope.Historic);
+        var vm = CreateViewModel(InvestmentScope.Historic);
 
         try
         {
@@ -350,97 +280,74 @@ public class MainNavigationViewModelBaseTests
         {
         }
 
-        navigationService.LastTreeScope.Should().Be(InvestmentScope.Historic);
+        _navigationService.LastTreeScope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]
     public void SelectingAssetNode_HistoricScope_RequestsHistoricScopeAssetDetails()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var navigationService = new StubNavigationService();
-        var vm = new TestableNavigationViewModel(summaryService, spy, navigationService: navigationService, scope: InvestmentScope.Historic);
+        var vm = CreateViewModel(InvestmentScope.Historic);
 
         var assetNode = BuildAssetNode("XPI", "Uncategorized", "BBAS3");
         vm.SelectedNode = assetNode;
 
-        navigationService.LastAssetDetailsScope.Should().Be(InvestmentScope.Historic);
+        _navigationService.LastAssetDetailsScope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]
     public void SelectingAssetNode_HistoricScope_PassesMatchingPortfolioWeightToAssetDetails()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var navigationService = new StubNavigationService
-        {
-            AssetDetails = new AssetDetailsDTO { Name = "BBAS3", BrokerName = "XPI", PortfolioName = "Uncategorized", Ticker = "BBAS3" }
-        };
-        var assetSummaryService = new StubPortfolioAssetSummaryService
-        {
-            Items =
-            [
-                new PortfolioAssetSummaryItemDTO { AssetName = "Other Asset", PortfolioWeight = 40m },
-                new PortfolioAssetSummaryItemDTO { AssetName = "BBAS3", PortfolioWeight = 5.15m }
-            ]
-        };
-        var vm = new TestableNavigationViewModel(summaryService, spy, assetSummaryService, navigationService, InvestmentScope.Historic);
+        _navigationService.AssetDetails = new AssetDetailsDTO { Name = "BBAS3", BrokerName = "XPI", PortfolioName = "Uncategorized", Ticker = "BBAS3" };
+        _assetSummaryService.Items =
+        [
+            new PortfolioAssetSummaryItemDTO { AssetName = "Other Asset", PortfolioWeight = 40m },
+            new PortfolioAssetSummaryItemDTO { AssetName = "BBAS3", PortfolioWeight = 5.15m }
+        ];
+        var vm = CreateViewModel(InvestmentScope.Historic);
 
         var assetNode = BuildAssetNode("XPI", "Uncategorized", "BBAS3");
         vm.SelectedNode = assetNode;
 
-        spy.LastAssetDetails.Should().NotBeNull();
-        spy.LastRealizedPortfolioWeight.Should().Be(5.15m);
-        assetSummaryService.LastBrokerName.Should().Be("XPI");
-        assetSummaryService.LastPortfolioName.Should().Be("Uncategorized");
-        assetSummaryService.LastScope.Should().Be(InvestmentScope.Historic);
+        _spy.LastAssetDetails.Should().NotBeNull();
+        _spy.LastRealizedPortfolioWeight.Should().Be(5.15m);
+        _assetSummaryService.LastBrokerName.Should().Be("XPI");
+        _assetSummaryService.LastPortfolioName.Should().Be("Uncategorized");
+        _assetSummaryService.LastScope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]
     public void SelectingAssetNode_ActiveScope_DoesNotFetchPortfolioWeight()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var navigationService = new StubNavigationService
-        {
-            AssetDetails = new AssetDetailsDTO { Name = "BBAS3", BrokerName = "XPI", PortfolioName = "Acoes", Ticker = "BBAS3" }
-        };
-        var assetSummaryService = new StubPortfolioAssetSummaryService();
-        var vm = new TestableNavigationViewModel(summaryService, spy, assetSummaryService, navigationService);
+        _navigationService.AssetDetails = new AssetDetailsDTO { Name = "BBAS3", BrokerName = "XPI", PortfolioName = "Acoes", Ticker = "BBAS3" };
 
         var assetNode = BuildAssetNode("XPI", "Acoes", "BBAS3");
-        vm.SelectedNode = assetNode;
+        _sut.SelectedNode = assetNode;
 
-        assetSummaryService.LastBrokerName.Should().BeNull();
-        spy.LastRealizedPortfolioWeight.Should().BeNull();
+        _assetSummaryService.LastBrokerName.Should().BeNull();
+        _spy.LastRealizedPortfolioWeight.Should().BeNull();
     }
 
     [Fact]
     public void SelectingPortfolioNode_HistoricScope_RequestsHistoricScopeSummaryAndAssetItems()
     {
-        var summaryService = new StubSummaryService();
-        var assetSummaryService = new StubPortfolioAssetSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy, assetSummaryService, scope: InvestmentScope.Historic);
+        var vm = CreateViewModel(InvestmentScope.Historic);
 
         var portfolioNode = BuildPortfolioNode("XPI", "Uncategorized");
         vm.SelectedNode = portfolioNode;
 
-        summaryService.LastScopeForPortfolio.Should().Be(InvestmentScope.Historic);
-        assetSummaryService.LastScope.Should().Be(InvestmentScope.Historic);
+        _summaryService.LastScopeForPortfolio.Should().Be(InvestmentScope.Historic);
+        _assetSummaryService.LastScope.Should().Be(InvestmentScope.Historic);
     }
 
     [Fact]
     public void SelectingBrokerNode_HistoricScope_RequestsHistoricScopeSummary()
     {
-        var summaryService = new StubSummaryService();
-        var spy = new SpyAssetDetailsViewModel();
-        var vm = new TestableNavigationViewModel(summaryService, spy, scope: InvestmentScope.Historic);
+        var vm = CreateViewModel(InvestmentScope.Historic);
 
         var brokerNode = BuildBrokerNode("XPI");
         vm.SelectedNode = brokerNode;
 
-        summaryService.LastScopeForBroker.Should().Be(InvestmentScope.Historic);
+        _summaryService.LastScopeForBroker.Should().Be(InvestmentScope.Historic);
     }
 
     private static TreeNodeViewModel BuildPortfolioNode(string brokerName, string portfolioName)
@@ -527,23 +434,23 @@ public class MainNavigationViewModelBaseTests
             ISummaryService summaryService,
             SpyAssetDetailsViewModel spy,
             IPortfolioAssetSummaryService? portfolioAssetSummaryService = null,
-            StubNavigationService? navigationService = null,
+            StubNavigationService? _navigationService = null,
             InvestmentScope scope = InvestmentScope.Active,
-            ICreditQueryService? creditQueryService = null)
-            : this(navigationService ?? new StubNavigationService(), summaryService, spy, portfolioAssetSummaryService, scope, creditQueryService)
+            ICreditQueryService? _creditQueryService = null)
+            : this(_navigationService ?? new StubNavigationService(), summaryService, spy, portfolioAssetSummaryService, scope, _creditQueryService)
         {
         }
 
         private TestableNavigationViewModel(
-            StubNavigationService navigationService,
+            StubNavigationService _navigationService,
             ISummaryService summaryService,
             SpyAssetDetailsViewModel spy,
             IPortfolioAssetSummaryService? portfolioAssetSummaryService,
             InvestmentScope scope,
-            ICreditQueryService? creditQueryService)
-            : base(navigationService, creditQueryService ?? new StubCreditQueryService(), summaryService, portfolioAssetSummaryService ?? new StubPortfolioAssetSummaryService(), spy, scope)
+            ICreditQueryService? _creditQueryService)
+            : base(_navigationService, _creditQueryService ?? new StubCreditQueryService(), summaryService, portfolioAssetSummaryService ?? new StubPortfolioAssetSummaryService(), spy, scope)
         {
-            NavigationService = navigationService;
+            NavigationService = _navigationService;
         }
     }
 
