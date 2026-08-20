@@ -4,6 +4,11 @@ public sealed class LocalJsonStorage : IJsonStorage
 {
     public const string DefaultDataFileName = "data.json";
 
+    /// <summary>Appended to the data file's own path, so the staged copy always lands on the same
+    /// volume as its target - File.Move cannot rename across volumes, and in Docker the data
+    /// directory is a bind mount.</summary>
+    internal const string TemporaryFileSuffix = ".tmp";
+
     private readonly string _dataFilePath;
     private readonly string _defaultFileName;
 
@@ -25,9 +30,44 @@ public sealed class LocalJsonStorage : IJsonStorage
         return File.ReadAllTextAsync(_dataFilePath);
     }
 
-    public Task WriteAsync(string json)
+    /// <summary>
+    /// Staged to a sibling file and renamed into place, because a direct write truncates the
+    /// document before refilling it: a crash, a kill, or a power loss part-way through left a
+    /// half-written data file that then failed to load at startup. A rename is atomic, so the
+    /// file on disk is only ever the whole previous document or the whole new one.
+    /// </summary>
+    public async Task WriteAsync(string json)
     {
-        return File.WriteAllTextAsync(_dataFilePath, json);
+        var stagedPath = _dataFilePath + TemporaryFileSuffix;
+        try
+        {
+            await File.WriteAllTextAsync(stagedPath, json).ConfigureAwait(false);
+            File.Move(stagedPath, _dataFilePath, overwrite: true);
+        }
+        catch
+        {
+            DiscardStagedFile(stagedPath);
+            throw;
+        }
+    }
+
+    /// <summary>The write already failed, so a failure to tidy up must not replace the exception
+    /// explaining why.</summary>
+    private static void DiscardStagedFile(string stagedPath)
+    {
+        try
+        {
+            if (File.Exists(stagedPath))
+            {
+                File.Delete(stagedPath);
+            }
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
     }
 
     private static string ResolveDataFilePath(string? dataFilePath, string defaultFileName)

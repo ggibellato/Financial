@@ -54,6 +54,74 @@ public class LocalJsonStorageTests
         }
     }
 
+    /// <summary>
+    /// The classic staged-write regression: renaming a shorter document over a longer one must
+    /// replace the file, not overwrite its first bytes and leave the old tail behind.
+    /// </summary>
+    [Fact]
+    public async Task WriteAsync_WithShorterContentThanExisting_ReplacesTheFileEntirely()
+    {
+        var tempFile = CreateTempFile("{\"a\": 1, \"b\": 2, \"c\": 3, \"padding\": \"aaaaaaaaaaaaaaaaaaaa\"}");
+        try
+        {
+            var storage = new LocalJsonStorage(tempFile);
+
+            await storage.WriteAsync("{}");
+
+            var content = await File.ReadAllTextAsync(tempFile);
+            content.Should().Be("{}");
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task WriteAsync_LeavesNoStagedFileBehind()
+    {
+        var tempFile = CreateTempFile("initial");
+        try
+        {
+            var storage = new LocalJsonStorage(tempFile);
+
+            await storage.WriteAsync("{\"written\": true}");
+
+            File.Exists(tempFile + LocalJsonStorage.TemporaryFileSuffix).Should().BeFalse();
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    /// <summary>
+    /// The whole point of staging: a write that never completes must leave the previous document
+    /// readable, rather than a truncated file that fails to load at startup.
+    /// </summary>
+    [Fact]
+    public async Task WriteAsync_WhenTheStagedWriteFails_LeavesTheExistingDocumentIntact()
+    {
+        var tempFile = CreateTempFile("{\"original\": true}");
+        var blockedStagingPath = tempFile + LocalJsonStorage.TemporaryFileSuffix;
+        Directory.CreateDirectory(blockedStagingPath);
+        try
+        {
+            var storage = new LocalJsonStorage(tempFile);
+
+            Func<Task> act = () => storage.WriteAsync("{\"replacement\": true}");
+
+            await act.Should().ThrowAsync<UnauthorizedAccessException>();
+            var content = await File.ReadAllTextAsync(tempFile);
+            content.Should().Be("{\"original\": true}");
+        }
+        finally
+        {
+            Directory.Delete(blockedStagingPath, recursive: true);
+            File.Delete(tempFile);
+        }
+    }
+
     [Fact]
     public async Task Constructor_WithNullPath_UsesDefaultFileName()
     {
