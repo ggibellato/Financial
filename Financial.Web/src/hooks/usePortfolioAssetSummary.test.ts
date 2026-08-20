@@ -7,11 +7,13 @@ import { usePortfolioAssetSummary } from './usePortfolioAssetSummary'
 
 const getPortfolioAssetsSummaryMock = vi.fn<FinancialApiClient['getPortfolioAssetsSummary']>()
 const getCurrentPriceMock = vi.fn<FinancialApiClient['getCurrentPrice']>()
+const calculateXirrMock = vi.fn<FinancialApiClient['calculateXirr']>()
 
 vi.mock('../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getPortfolioAssetsSummary: getPortfolioAssetsSummaryMock,
     getCurrentPrice: getCurrentPriceMock,
+    calculateXirr: calculateXirrMock,
   }),
 }))
 
@@ -105,6 +107,8 @@ describe('usePortfolioAssetSummary', () => {
   beforeEach(() => {
     getPortfolioAssetsSummaryMock.mockReset()
     getCurrentPriceMock.mockReset()
+    calculateXirrMock.mockReset()
+    calculateXirrMock.mockResolvedValue({ xirr: null })
   })
 
   it('calls_getPortfolioAssetsSummary_on_portfolio_node_selection', async () => {
@@ -329,5 +333,54 @@ describe('usePortfolioAssetSummary', () => {
     expect(result.current.rowPrices[0].fetchFailed).toBe(true)
     expect(result.current.rowPrices[1].currentPrice).toBe(100.5)
     expect(result.current.rowPrices[1].fetchFailed).toBe(false)
+  })
+
+  it('requests_the_row_rate_against_price_times_quantity_once_the_price_lands', async () => {
+    getPortfolioAssetsSummaryMock.mockResolvedValue([ITEM_1])
+    getCurrentPriceMock.mockResolvedValue({ ...PRICE_DTO, price: 100.5 })
+    calculateXirrMock.mockResolvedValue({ xirr: 0.1234 })
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
+    setNode(PORTFOLIO_NODE)
+
+    await waitFor(() => expect(result.current.rowPrices[0].xirr).toBe(0.1234))
+    expect(calculateXirrMock).toHaveBeenCalledWith(ITEM_1.cashFlows, 100.5 * ITEM_1.currentQuantity)
+  })
+
+  it('requests_the_row_rate_with_a_zero_terminal_value_for_historic_rows', async () => {
+    getPortfolioAssetsSummaryMock.mockResolvedValue([ITEM_1])
+    calculateXirrMock.mockResolvedValue({ xirr: 0.15 })
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
+    setNode(PORTFOLIO_NODE)
+
+    await waitFor(() => expect(result.current.rowPrices[0].xirr).toBe(0.15))
+    expect(calculateXirrMock).toHaveBeenCalledWith(ITEM_1.cashFlows, 0)
+    expect(getCurrentPriceMock).not.toHaveBeenCalled()
+  })
+
+  it('settles_the_row_rate_to_null_when_the_calculation_fails', async () => {
+    getPortfolioAssetsSummaryMock.mockResolvedValue([ITEM_1])
+    getCurrentPriceMock.mockResolvedValue({ ...PRICE_DTO, price: 100.5 })
+    calculateXirrMock.mockRejectedValue(new Error('XIRR unavailable'))
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
+    setNode(PORTFOLIO_NODE)
+
+    await waitFor(() => expect(result.current.rowPrices[0].isLoadingXirr).toBe(false))
+    expect(result.current.rowPrices[0].xirr).toBeNull()
+    expect(result.current.rowPrices[0].currentPrice).toBe(100.5)
+  })
+
+  it('asks_for_no_rate_when_the_price_fetch_fails', async () => {
+    getPortfolioAssetsSummaryMock.mockResolvedValue([ITEM_1])
+    getCurrentPriceMock.mockRejectedValue(new Error('boom'))
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
+    setNode(PORTFOLIO_NODE)
+
+    await waitFor(() => expect(result.current.rowPrices[0].fetchFailed).toBe(true))
+    expect(result.current.rowPrices[0].isLoadingXirr).toBe(false)
+    expect(calculateXirrMock).not.toHaveBeenCalled()
   })
 })
