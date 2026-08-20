@@ -12,6 +12,10 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
     private readonly ICashFlowSerializer _serializer;
     private readonly CashFlowData _data;
 
+    /// <summary>Serializing the document walks every collection in the graph, so one writer at a
+    /// time. A semaphore rather than a lock because the critical section awaits the storage.</summary>
+    private readonly SemaphoreSlim _writeGate = new(1, 1);
+
     public CashFlowJsonRepository(CashFlowData data, IJsonStorage storage, ICashFlowSerializer serializer)
     {
         _data = data ?? throw new ArgumentNullException(nameof(data));
@@ -68,11 +72,46 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
     public void UpdateBalanceAdjustment(BalanceAdjustment adjustment) => _data.UpdateBalanceAdjustment(adjustment);
     public void DeleteBalanceAdjustment(Guid id) => _data.RemoveBalanceAdjustment(id);
 
+    public async Task<bool> ApplyAndSaveAsync(Func<bool> applyChanges)
+    {
+        ArgumentNullException.ThrowIfNull(applyChanges);
+
+        await _writeGate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (!applyChanges())
+            {
+                return false;
+            }
+
+            await SerializeAndWriteAsync().ConfigureAwait(false);
+            return true;
+        }
+        finally
+        {
+            // Never conditional: skipping this on a storage failure would leave the singleton
+            // repository permanently locked, hanging every later save instead of throwing.
+            _writeGate.Release();
+        }
+    }
+
     public async Task SaveChangesAsync()
     {
-        var json = _serializer.Serialize(_data);
-        await _storage.WriteAsync(json).ConfigureAwait(false);
+        await _writeGate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            await SerializeAndWriteAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            _writeGate.Release();
+        }
     }
+
+    /// <summary>Serializing and writing stay together under the caller's gate. Splitting them would
+    /// let a thread holding an older document reach storage after one holding a newer document,
+    /// discarding the newer change with no error anywhere.</summary>
+    private Task SerializeAndWriteAsync() => _storage.WriteAsync(_serializer.Serialize(_data));
 
     public SyncStatus GetStatus() => _storage.GetStatusOrIdle();
 

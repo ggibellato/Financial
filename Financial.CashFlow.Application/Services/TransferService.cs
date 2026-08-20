@@ -32,8 +32,11 @@ public sealed class TransferService : ITransferService
             var (sourceBank, destinationBank) = ResolveBanks(request.SourceBankId, request.DestinationBankId);
 
             var transfer = Transfer.Create(request.Date, sourceBank, destinationBank, request.Amount, request.Note);
-            _repository.AddTransfer(transfer);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.AddTransfer(transfer);
+                return true;
+            }).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, transfer.Id.ToString());
             span.MarkSuccess();
@@ -58,9 +61,12 @@ public sealed class TransferService : ITransferService
             var transfer = FindTransferOrThrow(id);
             var (sourceBank, destinationBank) = ResolveBanks(request.SourceBankId, request.DestinationBankId);
 
-            transfer.UpdateDetails(request.Date, sourceBank, destinationBank, request.Amount, request.Note);
-            _repository.UpdateTransfer(transfer);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                transfer.UpdateDetails(request.Date, sourceBank, destinationBank, request.Amount, request.Note);
+                _repository.UpdateTransfer(transfer);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateTransfer");
@@ -81,8 +87,11 @@ public sealed class TransferService : ITransferService
         {
             FindTransferOrThrow(id);
 
-            _repository.DeleteTransfer(id);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.DeleteTransfer(id);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteTransfer");

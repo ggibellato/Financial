@@ -195,4 +195,17 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
 
         return Task.CompletedTask;
     }
+
+    /// <summary>Runs the mutation for real - the change now lives in the delegate, so a stub that
+    /// only counted would silently stop exercising it. Counts persisted writes, so a mutation that
+    /// reports no change does not register as a save.</summary>
+    public Task<bool> ApplyAndSaveAsync(Func<bool> applyChanges)
+    {
+        if (!applyChanges())
+        {
+            return Task.FromResult(false);
+        }
+
+        return SaveChangesAsync().ContinueWith(_ => true, TaskContinuationOptions.ExecuteSynchronously);
+    }
 }

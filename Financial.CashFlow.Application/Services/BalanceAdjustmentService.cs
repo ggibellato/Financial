@@ -37,8 +37,11 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
             var delta = request.TargetBalance - currentBalance;
 
             var adjustment = BalanceAdjustment.Create(request.Date, bank, request.TargetBalance, delta, request.Note);
-            _repository.AddBalanceAdjustment(adjustment);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.AddBalanceAdjustment(adjustment);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "AddAdjustment");
@@ -64,9 +67,12 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
             var currentBalance = _bankService.GetBankBalanceAsOf(bank.Id, request.Date, excludingAdjustmentId: id);
             var delta = request.TargetBalance - currentBalance;
 
-            adjustment.UpdateDetails(request.Date, request.TargetBalance, delta, request.Note);
-            _repository.UpdateBalanceAdjustment(adjustment);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                adjustment.UpdateDetails(request.Date, request.TargetBalance, delta, request.Note);
+                _repository.UpdateBalanceAdjustment(adjustment);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateAdjustment");
@@ -88,8 +94,11 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
             var bank = ResolveBank(bankId);
             FindAdjustmentOrThrow(bank, id);
 
-            _repository.DeleteBalanceAdjustment(id);
-            await _repository.SaveChangesAsync().ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.DeleteBalanceAdjustment(id);
+                return true;
+            }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteAdjustment");
