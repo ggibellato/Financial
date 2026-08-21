@@ -21,6 +21,11 @@ terraform*
 scripts/deploy.local.json
 
 
+#test + coverage output (CI regenerates these every run)
+TestResults
+CoverageReport
+.tools
+
 #specific files
 .gitignore.bak
 data-investment.json

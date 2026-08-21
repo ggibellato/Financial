@@ -37,7 +37,18 @@ dotnet test Tests/Financial.CashFlow.Domain.Tests   # run a single test project
 dotnet test --filter "FullyQualifiedName~ExpenseTests.Should_Reject_Negative_Value"  # single test
 ```
 
-Tests use **xUnit** + **FluentAssertions**. Coverage collection excludes generated `obj/**` code (`coverlet.runsettings`).
+Tests use **xUnit** + **FluentAssertions**.
+
+Coverage is collected on every CI run and published as a summary table on the workflow run page
+(`.github/workflows/build.yml`, the `Publish coverage summary` step). `coverlet.runsettings` declares the
+`XPlat code coverage` collector and its one exclusion, generated `obj/**` code — passing `--settings` is
+what turns collection on, so there is no `--collect` argument anywhere. To reproduce it locally:
+
+```
+dotnet test --settings coverlet.runsettings --results-directory TestResults
+```
+
+No coverage threshold is enforced; a drop never fails the build.
 
 Run the API locally (serves API only, expects the SPA dev server separately):
 ```
