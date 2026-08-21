@@ -1424,6 +1424,19 @@ public class MonthlyViewModel : ViewModelBase
         private set => SetProperty(ref _cardStatementError, value);
     }
 
+    private string? _cardStatementWarning;
+
+    /// <summary>
+    /// A completed call that changed nothing - marking a statement paid that already was, say.
+    /// Separate from <see cref="CardStatementError"/> because it is not a failure, and showing it
+    /// in red would teach the user to ignore red. Mirrors useMonthly.ts's listActionWarning.
+    /// </summary>
+    public string? CardStatementWarning
+    {
+        get => _cardStatementWarning;
+        private set => SetProperty(ref _cardStatementWarning, value);
+    }
+
     /// <summary>Pending "pay from" bank selection per unpaid card statement, keyed by statement id, mirroring useMonthly.ts's markPaidSources.</summary>
     public Dictionary<Guid, Guid> MarkPaidSources { get; } = [];
 
@@ -1452,10 +1465,12 @@ public class MonthlyViewModel : ViewModelBase
         }
 
         CardStatementError = null;
+        CardStatementWarning = null;
 
         try
         {
-            await _cardStatementService.MarkStatementPaidAsync(statement.Id, new MarkStatementPaidDTO { PaymentSourceBankId = paymentSource });
+            var result = await _cardStatementService.MarkStatementPaidAsync(statement.Id, new MarkStatementPaidDTO { PaymentSourceBankId = paymentSource });
+            CardStatementWarning = result.Warning;
             MarkPaidSources.Remove(statement.Id);
             await RefreshAsync();
         }
@@ -1473,10 +1488,12 @@ public class MonthlyViewModel : ViewModelBase
         }
 
         CardStatementError = null;
+        CardStatementWarning = null;
 
         try
         {
-            await _cardStatementService.UnmarkStatementPaidAsync(statement.Id);
+            var result = await _cardStatementService.UnmarkStatementPaidAsync(statement.Id);
+            CardStatementWarning = result.Warning;
             await RefreshAsync();
         }
         catch (Exception ex)

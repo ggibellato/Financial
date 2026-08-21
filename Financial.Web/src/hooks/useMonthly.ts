@@ -44,6 +44,7 @@ interface MonthlyState {
   retryCount: number
   markPaidSources: Record<string, string>
   listActionError: string | null
+  listActionWarning: string | null
 }
 
 type MonthlyAction =
@@ -68,6 +69,7 @@ type MonthlyAction =
   | { type: 'RETRY' }
   | { type: 'SET_MARK_PAID_SOURCE'; payload: { id: string; value: string } }
   | { type: 'LIST_ACTION_ERROR'; payload: string }
+  | { type: 'LIST_ACTION_WARNING'; payload: string | null }
 
 const INITIAL_STATE_BASE: Omit<MonthlyState, 'year' | 'month'> = {
   expenses: [],
@@ -85,6 +87,7 @@ const INITIAL_STATE_BASE: Omit<MonthlyState, 'year' | 'month'> = {
   retryCount: 0,
   markPaidSources: {},
   listActionError: null,
+  listActionWarning: null,
 }
 
 /** Reads the current year/month fresh at hook-mount time rather than at module-load time, so the
@@ -109,7 +112,9 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
     case 'SET_MARK_PAID_SOURCE':
       return { ...state, markPaidSources: { ...state.markPaidSources, [action.payload.id]: action.payload.value } }
     case 'LIST_ACTION_ERROR':
-      return { ...state, listActionError: action.payload }
+      return { ...state, listActionError: action.payload, listActionWarning: null }
+    case 'LIST_ACTION_WARNING':
+      return { ...state, listActionWarning: action.payload, listActionError: null }
     default:
       return state
   }
@@ -146,6 +151,7 @@ export interface MonthlyData {
   titheSummary: TitheSummaryDto | null
   deleteIncome: (id: string) => void
   listActionError: string | null
+  listActionWarning: string | null
 }
 
 /** Fetches a month's cash-flow data and owns list-level mutations (delete, mark paid/unpaid).
@@ -235,7 +241,10 @@ export function useMonthly(): MonthlyData {
     (id: string, paymentSourceBankId: string) => {
       void apiClient
         .markCardStatementPaid(id, { paymentSourceBankId })
-        .then(() => dispatch({ type: 'RETRY' }))
+        .then((statement) => {
+          dispatch({ type: 'LIST_ACTION_WARNING', payload: statement.warning ?? null })
+          dispatch({ type: 'RETRY' })
+        })
         .catch((err: unknown) => {
           dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to mark statement paid') })
         })
@@ -249,7 +258,10 @@ export function useMonthly(): MonthlyData {
 
       void apiClient
         .unmarkCardStatementPaid(id)
-        .then(() => dispatch({ type: 'RETRY' }))
+        .then((statement) => {
+          dispatch({ type: 'LIST_ACTION_WARNING', payload: statement.warning ?? null })
+          dispatch({ type: 'RETRY' })
+        })
         .catch((err: unknown) => {
           dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to unmark statement paid') })
         })
@@ -335,5 +347,6 @@ export function useMonthly(): MonthlyData {
     titheSummary: state.titheSummary,
     deleteIncome,
     listActionError: state.listActionError,
+    listActionWarning: state.listActionWarning,
   }
 }

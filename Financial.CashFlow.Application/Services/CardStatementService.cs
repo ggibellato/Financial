@@ -82,9 +82,11 @@ public sealed class CardStatementService : ICardStatementService
 
             if (statement.IsPaid)
             {
+                // Nothing to do, but "nothing to do" and "done" looked identical to the caller: the
+                // same DTO came back either way, so a click that changed nothing read as a success.
                 span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "MarkStatementPaid");
-                return ToDto(statement);
+                return ToDto(statement, "This statement was already marked paid; nothing changed.");
             }
 
             if (!EntityIdResolver.TryResolve(request.PaymentSourceBankId, _repository.GetBanks(), b => b.Id, out var bank))
@@ -154,7 +156,7 @@ public sealed class CardStatementService : ICardStatementService
             {
                 span.MarkSuccess();
                 _logger.LogInformation("{Operation} completed", "UnmarkStatementPaid");
-                return ToDto(statement);
+                return ToDto(statement, "This statement was not marked paid; nothing changed.");
             }
 
             var settledExpenses = GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardSettled);

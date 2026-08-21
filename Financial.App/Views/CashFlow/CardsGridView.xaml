@@ -12,11 +12,13 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding CardStatementError}"/>
+        <TextBlock Grid.Row="1" Foreground="#8A6D00" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding CardStatementWarning}"/>
 
-        <DataGrid Grid.Row="1" ItemsSource="{Binding CreditCardManagementRows}" AutoGenerateColumns="False">
+        <DataGrid Grid.Row="2" ItemsSource="{Binding CreditCardManagementRows}" AutoGenerateColumns="False">
             <DataGrid.Columns>
                 <DataGridTextColumn Binding="{Binding CreditCardName}" Header="Card" Width="180"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
@@ -131,10 +133,10 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <TextBlock Grid.Row="2" Margin="0,8,0,0"
+        <TextBlock Grid.Row="3" Margin="0,8,0,0"
                    Text="{Binding AdjustmentTotal, StringFormat='Combined adjustment figure: {0:N2}'}"/>
 
-        <TextBlock Grid.Row="3" Foreground="Red" TextWrapping="Wrap" Margin="0,4,0,0" Text="{Binding CreditCardUpdateError}"
+        <TextBlock Grid.Row="4" Foreground="Red" TextWrapping="Wrap" Margin="0,4,0,0" Text="{Binding CreditCardUpdateError}"
                    Visibility="{Binding Data, Source={StaticResource ShowCardManagementColumnsProxy}, Converter={StaticResource BoolToVisibilityConverter}}"/>
     </Grid>
 </UserControl>

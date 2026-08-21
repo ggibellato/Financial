@@ -304,8 +304,45 @@ public class CardStatementServiceTests
 
         var result = await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Chase"));
 
-        result.IsPaid.Should().BeTrue();
-        _repository.SaveChangesCallCount.Should().Be(savesBefore);
+        using (new AssertionScope())
+        {
+            result.IsPaid.Should().BeTrue();
+            _repository.SaveChangesCallCount.Should().Be(savesBefore);
+            // Without this the caller cannot tell a no-op from a change: the same DTO came back for
+            // both, so a click that did nothing reported the same success as one that did.
+            result.Warning.Should().NotBeNull();
+            result.Warning.Should().Contain("already marked paid");
+        }
+    }
+
+    [Fact]
+    public async Task UnmarkStatementPaidAsync_CalledOnAStatementThatWasNotPaid_WarnsThatNothingChanged()
+    {
+        await _sut.GetStatementsForMonthAsync(2026, 7);
+        var statement = _repository.CardStatements.First();
+        var savesBefore = _repository.SaveChangesCallCount;
+
+        var result = await _sut.UnmarkStatementPaidAsync(statement.Id);
+
+        using (new AssertionScope())
+        {
+            result.IsPaid.Should().BeFalse();
+            _repository.SaveChangesCallCount.Should().Be(savesBefore);
+            result.Warning.Should().NotBeNull();
+            result.Warning.Should().Contain("not marked paid");
+        }
+    }
+
+    [Fact]
+    public async Task UnmarkStatementPaidAsync_OnAPaidStatement_ReportsNoWarning()
+    {
+        await _sut.GetStatementsForMonthAsync(2026, 7);
+        var statement = _repository.CardStatements.First();
+        await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Barclays"));
+
+        var result = await _sut.UnmarkStatementPaidAsync(statement.Id);
+
+        result.Warning.Should().BeNull("the call did what was asked, so there is nothing to report");
     }
 
     [Fact]

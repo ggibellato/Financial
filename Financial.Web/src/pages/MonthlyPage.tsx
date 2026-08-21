@@ -104,6 +104,8 @@ export default function MonthlyPage() {
     totalIncoming,
     titheSummary,
     deleteIncome,
+    listActionError,
+    listActionWarning,
   } = useMonthly()
 
   const {
@@ -282,6 +284,8 @@ export default function MonthlyPage() {
                 cardStatements={cardStatements}
                 banks={banks}
                 adjustmentTotal={adjustmentTotal}
+                statementActionError={listActionError}
+                statementActionWarning={listActionWarning}
                 markPaidSources={markPaidSources}
                 setMarkPaidSource={setMarkPaidSource}
                 markStatementPaid={markStatementPaid}

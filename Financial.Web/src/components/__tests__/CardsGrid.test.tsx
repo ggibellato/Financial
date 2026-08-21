@@ -39,6 +39,58 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
     expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
   })
 
+  it('renders a statement action warning as a status, not an alert', () => {
+    render(
+      <CardsGrid
+        cardStatements={CARD_STATEMENTS}
+        banks={BANKS}
+        adjustmentTotal={100}
+        markPaidSources={{}}
+        setMarkPaidSource={vi.fn()}
+        markStatementPaid={vi.fn()}
+        unmarkStatementPaid={vi.fn()}
+        statementActionWarning="This statement was already marked paid; nothing changed."
+      />,
+    )
+
+    expect(screen.getByRole('status')).toHaveTextContent('already marked paid')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('renders a statement action error as an alert', () => {
+    render(
+      <CardsGrid
+        cardStatements={CARD_STATEMENTS}
+        banks={BANKS}
+        adjustmentTotal={100}
+        markPaidSources={{}}
+        setMarkPaidSource={vi.fn()}
+        markStatementPaid={vi.fn()}
+        unmarkStatementPaid={vi.fn()}
+        statementActionError="Failed to mark statement paid"
+      />,
+    )
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Failed to mark statement paid')
+  })
+
+  it('renders neither banner when there is nothing to report', () => {
+    render(
+      <CardsGrid
+        cardStatements={CARD_STATEMENTS}
+        banks={BANKS}
+        adjustmentTotal={100}
+        markPaidSources={{}}
+        setMarkPaidSource={vi.fn()}
+        markStatementPaid={vi.fn()}
+        unmarkStatementPaid={vi.fn()}
+      />,
+    )
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
   it('does not render the Next Invoice Due Date/Active columns', () => {
     render(
       <CardsGrid

@@ -250,6 +250,9 @@ internal sealed class StubCardStatementService : ICardStatementService
     public (Guid Id, MarkStatementPaidDTO Request)? LastMarkPaidRequest { get; private set; }
     public Guid? LastUnmarkedId { get; private set; }
 
+    /// <summary>Server-supplied warning to hand back from the next mark/unmark call.</summary>
+    public string? NextWarning { get; set; }
+
     public Task<IReadOnlyList<CardStatementDTO>> GetStatementsForMonthAsync(int year, int month) =>
         Task.FromResult<IReadOnlyList<CardStatementDTO>>(Statements);
 
@@ -261,7 +264,7 @@ internal sealed class StubCardStatementService : ICardStatementService
         {
             Id = id, CreditCardId = existing.CreditCardId, CreditCardName = existing.CreditCardName,
             Year = existing.Year, Month = existing.Month,
-            IsPaid = true, OutstandingTotal = existing.OutstandingTotal,
+            IsPaid = true, OutstandingTotal = existing.OutstandingTotal, Warning = NextWarning,
         });
     }
 
@@ -273,7 +276,7 @@ internal sealed class StubCardStatementService : ICardStatementService
         {
             Id = id, CreditCardId = existing.CreditCardId, CreditCardName = existing.CreditCardName,
             Year = existing.Year, Month = existing.Month,
-            IsPaid = false, OutstandingTotal = existing.OutstandingTotal,
+            IsPaid = false, OutstandingTotal = existing.OutstandingTotal, Warning = NextWarning,
         });
     }
 }

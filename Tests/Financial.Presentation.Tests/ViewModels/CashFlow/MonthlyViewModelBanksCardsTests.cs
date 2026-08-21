@@ -243,6 +243,54 @@ public class MonthlyViewModelBanksCardsTests
         cards.LastMarkPaidRequest.Value.Request.PaymentSourceBankId.Should().Be(BarclaysId);
     }
 
+    /// <summary>
+    /// Web shows the same string through listActionWarning. Without it the WPF user gets the
+    /// silence the backlog item is about: the click reports nothing and nothing changed.
+    /// </summary>
+    [Fact]
+    public async Task MarkCardStatementPaid_WhenTheServerWarnsNothingChanged_SurfacesItSeparatelyFromErrors()
+    {
+        var (viewModel, _, banks, _, _, cards) = CreateViewModel();
+        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = true, OutstandingTotal = 0m };
+        cards.Statements = [statement];
+        cards.NextWarning = "This statement was already marked paid; nothing changed.";
+        await viewModel.RefreshAsync();
+        viewModel.SetMarkPaidSource(statement.Id, banks.Banks[0].Id);
+
+        await viewModel.MarkStatementPaidAsync(statement);
+
+        viewModel.CardStatementWarning.Should().Contain("already marked paid");
+        viewModel.CardStatementError.Should().BeNull("a no-op is not a failure and must not show in red");
+    }
+
+    [Fact]
+    public async Task UnmarkCardStatementPaid_WhenTheServerWarnsNothingChanged_SurfacesTheWarning()
+    {
+        var (viewModel, _, _, _, _, cards) = CreateViewModel();
+        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 0m };
+        cards.Statements = [statement];
+        cards.NextWarning = "This statement was not marked paid; nothing changed.";
+        await viewModel.RefreshAsync();
+
+        await viewModel.UnmarkStatementPaidAsync(statement);
+
+        viewModel.CardStatementWarning.Should().Contain("not marked paid");
+    }
+
+    [Fact]
+    public async Task MarkCardStatementPaid_WhenTheServerReportsNoWarning_LeavesTheWarningClear()
+    {
+        var (viewModel, _, banks, _, _, cards) = CreateViewModel();
+        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 100m };
+        cards.Statements = [statement];
+        await viewModel.RefreshAsync();
+        viewModel.SetMarkPaidSource(statement.Id, banks.Banks[0].Id);
+
+        await viewModel.MarkStatementPaidAsync(statement);
+
+        viewModel.CardStatementWarning.Should().BeNull();
+    }
+
     [Fact]
     public async Task UnmarkCardStatementPaid_CallsService()
     {
