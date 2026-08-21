@@ -59,10 +59,7 @@ public class Broker
     /// </exception>
     public void MoveAsset(string sourcePortfolioName, string assetName, string destinationPortfolioName)
     {
-        if (string.IsNullOrWhiteSpace(destinationPortfolioName))
-        {
-            throw new ArgumentException("A destination portfolio name is required.", nameof(destinationPortfolioName));
-        }
+        var destinationName = NormalizeDestinationName(destinationPortfolioName);
 
         var source = FindPortfolio(sourcePortfolioName)
             ?? throw new KeyNotFoundException($"Portfolio \"{sourcePortfolioName}\" was not found under broker \"{Name}\".");
@@ -70,11 +67,26 @@ public class Broker
         var asset = source.FindAsset(assetName)
             ?? throw new KeyNotFoundException($"Asset \"{assetName}\" was not found in portfolio \"{sourcePortfolioName}\".");
 
-        var destination = ResolveDestination(destinationPortfolioName.Trim(), sourcePortfolioName, assetName);
+        if (destinationName == sourcePortfolioName)
+        {
+            throw new InvestmentRuleViolationException(
+                $"\"{sourcePortfolioName}\" is already the portfolio holding this asset.");
+        }
+
+        var destination = ResolveDestination(destinationName, assetName);
 
         source.RemoveAsset(assetName);
         destination.AddAsset(asset);
     }
+
+    /// <summary>
+    /// Trims a destination name and rejects a blank one. Shared with <see cref="Investments"/>,
+    /// which applies the same naming rules when archiving across scopes.
+    /// </summary>
+    internal static string NormalizeDestinationName(string destinationPortfolioName) =>
+        string.IsNullOrWhiteSpace(destinationPortfolioName)
+            ? throw new ArgumentException("A destination portfolio name is required.", nameof(destinationPortfolioName))
+            : destinationPortfolioName.Trim();
 
     /// <summary>
     /// Resolves the destination, creating it when the name is new. Every refusal is raised before
@@ -85,15 +97,15 @@ public class Broker
     /// An existing portfolio is matched exactly, so selecting one behaves as it always has. Only a
     /// name that matches nothing creates a portfolio, and then a near-miss on case or padding is
     /// refused rather than silently producing two portfolios the tree renders identically.
+    /// <para>
+    /// Deliberately says nothing about where the asset is coming from. A move within one broker
+    /// also has to refuse the portfolio the asset already sits in, but archiving across scopes does
+    /// not - a Historic "ETF" is a perfectly good home for an asset leaving an Active "ETF". That
+    /// check belongs to the operation, not to resolving a name.
+    /// </para>
     /// </remarks>
-    private Portfolio ResolveDestination(string destinationPortfolioName, string sourcePortfolioName, string assetName)
+    internal Portfolio ResolveDestination(string destinationPortfolioName, string assetName)
     {
-        if (destinationPortfolioName == sourcePortfolioName)
-        {
-            throw new InvestmentRuleViolationException(
-                $"\"{sourcePortfolioName}\" is already the portfolio holding this asset.");
-        }
-
         var existing = FindPortfolio(destinationPortfolioName);
         if (existing is not null)
         {

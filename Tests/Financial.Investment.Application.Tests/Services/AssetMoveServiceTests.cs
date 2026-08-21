@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Exceptions;
@@ -115,6 +116,98 @@ public class AssetMoveServiceTests
     }
 
     [Fact]
+    public async Task ArchiveAssetAsync_MovesAClosedAssetIntoHistoricAndPersistsOnce()
+    {
+        _repository.Investments = CreateInvestmentsWithClosedAsset();
+
+        var result = await CreateService().ArchiveAssetAsync(CreateArchiveRequest());
+
+        using (new AssertionScope())
+        {
+            result.Name.Should().Be("VOD");
+            result.PortfolioName.Should().Be("Closed");
+            _repository.Investments.FindHistoricBroker("XPI")!.FindPortfolio("Closed")!.Assets.Should().ContainSingle();
+            _repository.Investments.FindActiveBroker("XPI")!.FindPortfolio("Default")!.Assets.Should().BeEmpty();
+            _repository.WriteCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task ArchiveAssetAsync_LeavesTheAssetReachableOnlyInHistoric()
+    {
+        // FR-020: gone from Active entirely, not merely also present in Historic.
+        _repository.Investments = CreateInvestmentsWithClosedAsset();
+        var navigation = CreateNavigationService();
+
+        await CreateService().ArchiveAssetAsync(CreateArchiveRequest());
+
+        using (new AssertionScope())
+        {
+            navigation.GetAssetDetails("XPI", "Closed", "VOD", InvestmentScope.Historic).Should().NotBeNull();
+            navigation.GetAssetDetails("XPI", "Default", "VOD", InvestmentScope.Active).Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public async Task ArchiveAssetAsync_WhenTheAssetStillHoldsAPosition_IsRefusedAndNothingIsWritten()
+    {
+        var investments = CreateInvestmentsWithClosedAsset();
+        investments.FindActiveBroker("XPI")!.FindPortfolio("Default")!.FindAsset("VOD")!
+            .AddTransaction(Transaction.Create(new DateTime(2024, 4, 1), Transaction.TransactionType.Buy, 3m, 5m, 0m));
+        _repository.Investments = investments;
+
+        var act = async () => await CreateService().ArchiveAssetAsync(CreateArchiveRequest());
+
+        await act.Should().ThrowAsync<InvestmentRuleViolationException>();
+        _repository.WriteCallCount.Should().Be(0, "a refused archive must never reach the file");
+    }
+
+    [Fact]
+    public async Task ArchiveAssetAsync_WhenTheBrokerIsUnknown_ThrowsNotFoundAndWritesNothing()
+    {
+        _repository.Investments = CreateInvestmentsWithClosedAsset();
+
+        var request = CreateArchiveRequest();
+        request.BrokerName = "Nope";
+        var act = async () => await CreateService().ArchiveAssetAsync(request);
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ArchiveAssetAsync_WithABlankDestination_ThrowsArgumentExceptionAndWritesNothing()
+    {
+        _repository.Investments = CreateInvestmentsWithClosedAsset();
+
+        var request = CreateArchiveRequest();
+        request.DestinationPortfolioName = "   ";
+        var act = async () => await CreateService().ArchiveAssetAsync(request);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ArchiveAssetAsync_WhenRefused_MarksTheSpanFailedWithoutLoggingTheHolding()
+    {
+        var investments = CreateInvestmentsWithClosedAsset();
+        investments.FindActiveBroker("XPI")!.FindPortfolio("Default")!.FindAsset("VOD")!
+            .AddTransaction(Transaction.Create(new DateTime(2024, 4, 1), Transaction.TransactionType.Buy, 3m, 5m, 0m));
+        _repository.Investments = investments;
+
+        var act = async () => await CreateService().ArchiveAssetAsync(CreateArchiveRequest());
+        await act.Should().ThrowAsync<InvestmentRuleViolationException>();
+
+        var span = _tracer.Spans.Should().ContainSingle(s => s.Name.EndsWith("ArchiveAsset")).Which;
+        using (new AssertionScope())
+        {
+            span.RecordedException.Should().BeOfType<InvestmentRuleViolationException>();
+            _logger.Entries.Should().NotContain(entry => entry.Message.Contains("VOD"));
+        }
+    }
+
+    [Fact]
     public void Constructor_WithNullRepository_Throws()
     {
         var act = () => new AssetMoveService(null!, CreateNavigationService(), _tracer, _logger);
@@ -147,6 +240,30 @@ public class AssetMoveServiceTests
 
     private NavigationService CreateNavigationService() =>
         new(_repository, _tracer, NullLogger<NavigationService>.Instance);
+
+    private static ArchiveAssetRequestDTO CreateArchiveRequest() => new()
+    {
+        BrokerName = "XPI",
+        SourcePortfolioName = "Default",
+        AssetName = "VOD",
+        DestinationPortfolioName = "Closed"
+    };
+
+    /// <summary>Active XPI holding "VOD", bought then fully sold, with a Historic counterpart present.</summary>
+    private static Investments CreateInvestmentsWithClosedAsset()
+    {
+        var investments = Investments.Create();
+
+        var active = Broker.Create("XPI", "BRL");
+        var asset = Asset.Create("VOD", "ISIN123", "LSE", "VOD");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 3, 1), Transaction.TransactionType.Sell, 10m, 7m, 0m));
+        active.AddPortfolio("Default").AddAsset(asset);
+
+        investments.AddActiveBroker(active);
+        investments.AddHistoricBroker(Broker.Create("XPI", "BRL"));
+        return investments;
+    }
 
     private static MoveAssetRequestDTO CreateRequest() => new()
     {

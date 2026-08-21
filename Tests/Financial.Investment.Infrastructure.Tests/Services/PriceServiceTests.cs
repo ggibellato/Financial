@@ -904,6 +904,8 @@ public class PriceServiceTests
         public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) =>
             _inner.GetBrokerList(scope);
 
+        public Investments GetInvestments() => _inner.GetInvestments();
+
         public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) =>
             _inner.GetAsset(brokerName, portfolioName, assetName, scope);
 

@@ -22,4 +22,21 @@ public interface IAssetMoveService
     /// <exception cref="ArgumentException">A required field is missing, or the scope is unrecognised.</exception>
     /// <exception cref="Domain.Exceptions.InvestmentRuleViolationException">A move rule refused it.</exception>
     Task<AssetDetailsDTO> MoveAssetAsync(MoveAssetRequestDTO request);
+
+    /// <summary>
+    /// Retires a fully closed asset from Active Investments into a Historic portfolio of the same
+    /// broker, and returns it read back from there.
+    /// </summary>
+    /// <remarks>
+    /// Its own method rather than a scope pair on <see cref="MoveAssetAsync"/>: the direction is
+    /// fixed, the precondition is different - the position must be closed - and the broker's
+    /// Historic record may have to be brought into being. Keeping it separate is also what makes
+    /// the Historic-to-Active direction unexpressible rather than merely refused.
+    /// </remarks>
+    /// <exception cref="KeyNotFoundException">The Active broker, portfolio, or asset does not exist.</exception>
+    /// <exception cref="ArgumentException">A required field is missing.</exception>
+    /// <exception cref="Domain.Exceptions.InvestmentRuleViolationException">
+    /// The asset still holds a position, or the Historic destination refuses it.
+    /// </exception>
+    Task<AssetDetailsDTO> ArchiveAssetAsync(ArchiveAssetRequestDTO request);
 }

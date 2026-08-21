@@ -266,6 +266,8 @@ public class MainNavigationViewModelMoveTests
         public Exception? Failure { get; set; }
         public Action? OnMove { get; set; }
 
+        public Task<AssetDetailsDTO> ArchiveAssetAsync(ArchiveAssetRequestDTO request) => throw new NotImplementedException();
+
         public Task<AssetDetailsDTO> MoveAssetAsync(MoveAssetRequestDTO request)
         {
             if (Failure is not null)

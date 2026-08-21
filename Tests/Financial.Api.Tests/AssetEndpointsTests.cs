@@ -170,6 +170,103 @@ public class AssetEndpointsTests : ApiEndpointTests
         moved.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
+    [Fact]
+    public async Task ArchiveAsset_WithAClosedAsset_MovesItIntoHistoric()
+    {
+        // CLOSEDASSET already lives in Historic in the seed, so close out the Active one first.
+        await CloseOutActiveAssetAsync();
+
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/assets/archive", ArchiveRequest("Closed 2024"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var archived = await response.Content.ReadFromJsonAsync<AssetDetailsDTO>();
+        archived!.PortfolioName.Should().Be("Closed 2024");
+
+        var inHistoric = await Client.GetAsync("/api/v1/financial/assets/XPI/Closed%202024/BCIA11?scope=historic");
+        inHistoric.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var goneFromActive = await Client.GetAsync("/api/v1/financial/assets/XPI/Default/BCIA11");
+        goneFromActive.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task ArchiveAsset_KeepsTheClosedPositionsRecord()
+    {
+        await CloseOutActiveAssetAsync();
+        var before = await Client.GetFromJsonAsync<AssetDetailsDTO>("/api/v1/financial/assets/XPI/Default/BCIA11");
+
+        await Client.PostAsJsonAsync("/api/v1/financial/assets/archive", ArchiveRequest("Closed 2024"));
+
+        var after = await Client.GetFromJsonAsync<AssetDetailsDTO>("/api/v1/financial/assets/XPI/Closed%202024/BCIA11?scope=historic");
+        using (new AssertionScope())
+        {
+            after!.Transactions.Should().HaveCount(before!.Transactions.Count);
+            after.Credits.Should().HaveCount(before.Credits.Count);
+            after.RealizedGainLoss.Should().Be(before.RealizedGainLoss);
+            after.Quantity.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task ArchiveAsset_WhileTheAssetStillHoldsAPosition_ReturnsConflictExplainingWhy()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/assets/archive", ArchiveRequest("Closed 2024"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        doc.RootElement.GetProperty("detail").GetString().Should().Contain("fully closed");
+    }
+
+    [Fact]
+    public async Task ArchiveAsset_WithAnUnknownAsset_ReturnsNotFound()
+    {
+        var request = ArchiveRequest("Closed 2024");
+        request.AssetName = "NOSUCHASSET";
+
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/assets/archive", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task ArchiveAsset_WithABlankDestinationName_ReturnsBadRequest()
+    {
+        await CloseOutActiveAssetAsync();
+
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/assets/archive", ArchiveRequest("   "));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>Sells the whole Active position so the asset becomes archivable.</summary>
+    private async Task CloseOutActiveAssetAsync()
+    {
+        var asset = await Client.GetFromJsonAsync<AssetDetailsDTO>("/api/v1/financial/assets/XPI/Default/BCIA11");
+
+        var sell = await Client.PostAsJsonAsync("/api/v1/financial/transactions", new TransactionCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "BCIA11",
+            Date = new DateTime(2024, 12, 1),
+            Type = "Sell",
+            Quantity = asset!.Quantity,
+            UnitPrice = 10m,
+            Fees = 0m
+        });
+        sell.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    private static ArchiveAssetRequestDTO ArchiveRequest(string destination) => new()
+    {
+        BrokerName = "XPI",
+        SourcePortfolioName = "Default",
+        AssetName = "BCIA11",
+        DestinationPortfolioName = destination
+    };
+
     private static MoveAssetRequestDTO MoveRequest(string source = "Default", string destination = "ISA") => new()
     {
         BrokerName = "XPI",

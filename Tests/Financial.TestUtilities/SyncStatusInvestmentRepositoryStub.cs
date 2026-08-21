@@ -31,4 +31,5 @@ public sealed class SyncStatusInvestmentRepositoryStub : IInvestmentRepository, 
     public IEnumerable<Asset> GetAssetsByBrokerPortfolio(string broker, string portfolio, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
     public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
     public Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
+    public Investments GetInvestments() => throw new NotImplementedException();
 }

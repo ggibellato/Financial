@@ -72,6 +72,45 @@ public sealed class AssetMoveService : IAssetMoveService
         }
     }
 
+    public async Task<AssetDetailsDTO> ArchiveAssetAsync(ArchiveAssetRequestDTO request)
+    {
+        using var span = StartSpan("ArchiveAsset");
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var brokerName = Required(request.BrokerName, nameof(request.BrokerName));
+            var sourcePortfolioName = Required(request.SourcePortfolioName, nameof(request.SourcePortfolioName));
+            var assetName = Required(request.AssetName, nameof(request.AssetName));
+            var destinationPortfolioName = Required(request.DestinationPortfolioName, nameof(request.DestinationPortfolioName));
+
+            var investments = _repository.GetInvestments();
+
+            // Inside the save for the same reason a move is: the whole document is re-serialized on
+            // write, and the domain call validates and mutates together, so a refusal writes nothing.
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                investments.ArchiveAsset(brokerName, sourcePortfolioName, assetName, destinationPortfolioName);
+                return true;
+            }).ConfigureAwait(false);
+
+            var landedIn = investments.FindHistoricBroker(brokerName)!
+                .FindPortfolio(destinationPortfolioName.Trim())!.Name;
+
+            var asset = _navigationService.GetAssetDetails(brokerName, landedIn, assetName, InvestmentScope.Historic)
+                ?? throw new KeyNotFoundException($"Asset \"{assetName}\" could not be read back from \"{landedIn}\".");
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "ArchiveAsset");
+            return asset;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
     /// <summary>
     /// Both ends of a move sit under one broker: a broker carries its own currency and its own
     /// reporting, so relocating an asset across brokers is a different operation with rules of its

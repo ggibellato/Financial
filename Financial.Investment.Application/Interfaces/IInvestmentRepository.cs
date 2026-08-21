@@ -11,6 +11,17 @@ public interface IInvestmentRepository
     Asset? GetAsset(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active);
 
     /// <summary>
+    /// The aggregate root, for operations that span both investment scopes.
+    /// </summary>
+    /// <remarks>
+    /// Archiving is the one such operation: the same real-world broker is two independent records,
+    /// and the Historic one may not exist yet, so it has to be added to a collection no scoped query
+    /// exposes for writing. Prefer the scoped queries above for everything else - they say what they
+    /// reach, and this does not.
+    /// </remarks>
+    Investments GetInvestments();
+
+    /// <summary>
     /// Runs <paramref name="applyChanges"/> with exclusive access to the in-memory graph, then
     /// persists the whole document when it reports a change.
     /// </summary>

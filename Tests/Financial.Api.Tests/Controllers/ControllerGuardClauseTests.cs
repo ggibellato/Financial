@@ -358,6 +358,7 @@ public class ControllerGuardClauseTests
     private sealed class StubAssetMoveService : IAssetMoveService
     {
         public Task<AssetDetailsDTO> MoveAssetAsync(MoveAssetRequestDTO request) => throw new NotImplementedException();
+        public Task<AssetDetailsDTO> ArchiveAssetAsync(ArchiveAssetRequestDTO request) => throw new NotImplementedException();
     }
 
     private sealed class StubNavigationService : INavigationService

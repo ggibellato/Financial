@@ -69,4 +69,31 @@ public sealed class AssetsController : ControllerBase
         // DomainExceptionMappingMiddleware turns each into its status code.
         return Ok(await _assetMoveService.MoveAssetAsync(request));
     }
+
+    /// <summary>Retires a fully closed asset from Active Investments into a Historic portfolio.</summary>
+    /// <param name="request">The asset to archive and the Historic portfolio to put it in, existing or to be created.</param>
+    /// <returns>
+    /// 200 OK with the archived asset read back from Historic Investments,
+    /// 400 Bad Request if a required field is blank,
+    /// 404 Not Found if the broker, portfolio or asset does not exist,
+    /// or 409 Conflict if the asset still holds a position or the destination refuses it.
+    /// </returns>
+    /// <remarks>
+    /// Its own endpoint rather than a scope pair on the move: the direction is fixed, so there is no
+    /// way to ask for the reverse.
+    /// </remarks>
+    [HttpPost("archive")]
+    [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<AssetDetailsDTO>> ArchiveAsset([FromBody] ArchiveAssetRequestDTO request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        return Ok(await _assetMoveService.ArchiveAssetAsync(request));
+    }
 }
