@@ -1,5 +1,6 @@
 using Financial.Api.Controllers;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
@@ -20,23 +21,59 @@ public class DiagnosticsEndpointsTests : ApiEndpointTests
         body.GetProperty("status").GetString().Should().Be("ok");
     }
 
+    /// <summary>
+    /// Reporting only Investment left a CashFlow misconfiguration invisible in the one endpoint you
+    /// would check it from.
+    /// </summary>
     [Fact]
-    public async Task GetRepositoryConfig_InDevelopment_ReturnsOk()
+    public async Task GetHealth_ReportsBothContextsProviderAndSyncState()
     {
-        await using var factory = CreateFactory("Development");
-        using var client = factory.CreateClient();
+        var response = await Client.GetAsync("/api/v1/financial/health");
 
-        var response = await client.GetAsync("/api/v1/financial/config/repository");
+        var contexts = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("contexts");
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        body.GetProperty("provider").GetString().Should().Be("LocalJson");
+        using (new AssertionScope())
+        {
+            foreach (var context in new[] { "investment", "cashFlow" })
+            {
+                var reported = contexts.GetProperty(context);
+                reported.GetProperty("provider").GetString().Should().Be("LocalJson");
+                reported.GetProperty("sync").GetString().Should().Be("Idle");
+                reported.TryGetProperty("lastSuccessfulSaveUtc", out _).Should().BeTrue();
+            }
+        }
     }
 
+    /// <summary>
+    /// The endpoint is a readiness probe - CI polls it in a boot loop, and a container healthcheck
+    /// would too. It must stay 200 for a storage fault, which a restart cannot fix and would in fact
+    /// make worse, since startup re-reads from the same failing storage.
+    /// </summary>
     [Fact]
-    public async Task GetRepositoryConfig_NotInDevelopment_ReturnsNotFound()
+    public async Task GetHealth_AnswersRepeatedProbesWithOk()
     {
-        await using var factory = CreateFactory("Production");
+        var first = await Client.GetAsync("/api/v1/financial/health");
+        var second = await Client.GetAsync("/api/v1/financial/health");
+
+        using (new AssertionScope())
+        {
+            first.StatusCode.Should().Be(HttpStatusCode.OK);
+            second.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+    }
+
+    /// <summary>
+    /// The repository-config endpoint was removed rather than gated: its only guard was
+    /// ASPNETCORE_ENVIRONMENT, which is a runtime setting that can be - and in docker-compose.yml
+    /// is - Development. This pins the route as gone in both environments, so no setting can bring
+    /// it back.
+    /// </summary>
+    [Theory]
+    [InlineData("Development")]
+    [InlineData("Production")]
+    public async Task GetRepositoryConfig_IsNoLongerServed(string environment)
+    {
+        await using var factory = CreateFactory(environment);
         using var client = factory.CreateClient();
 
         var response = await client.GetAsync("/api/v1/financial/config/repository");

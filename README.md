@@ -52,7 +52,18 @@ Personalise the following sections in `appsettings.json` (or via environment var
 dotnet run --project Financial.Api
 ```
 
-Listens on `http://localhost:5190`. Health check: `http://localhost:5190/api/v1/financial/health`.
+Listens on `http://localhost:5190`.
+
+**Diagnostics.** `GET /api/v1/financial/health` reports liveness plus, for each bounded context, the
+storage provider, sync state, last error and last successful save. It answers `200` whenever the
+process is serving - a storage fault shows in the body, not the status code, so a probe does not
+restart the container over an outage a restart cannot fix.
+
+There is deliberately **no endpoint that returns repository paths**. One existed, gated on
+`ASPNETCORE_ENVIRONMENT` - a guard one environment variable away from being off, and
+`docker-compose.yml` runs `Development`, so anyone starting the app that way published their
+data-file path on a port with no authentication in front of it. Where an install stores its data is
+answerable from its own compose file and environment; the API does not need to answer it.
 
 ### Web (Financial.Web)
 
