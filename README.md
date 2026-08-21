@@ -52,7 +52,15 @@ Personalise the following sections in `appsettings.json` (or via environment var
 dotnet run --project Financial.Api
 ```
 
-Listens on `http://localhost:5190`. Health check: `http://localhost:5190/api/v1/financial/health`.
+Listens on `http://localhost:5190`.
+
+**Diagnostics.** Both endpoints cover the Investment and CashFlow contexts, and both are available in
+every environment:
+
+| Endpoint | Reports |
+|---|---|
+| `GET /api/v1/financial/health` | Liveness, plus each context's storage provider, sync state, last error and last successful save. Always `200` while the process is serving - a storage fault shows in the body, not the status code, so a probe does not restart the container over an outage a restart cannot fix. |
+| `GET /api/v1/financial/config/repository` | Each context's provider and whether its paths are configured. The path *values* are returned only when `ASPNETCORE_ENVIRONMENT=Development`; the API has no authentication, so production withholds them and returns the `*Configured` flags alone. |
 
 ### Web (Financial.Web)
 

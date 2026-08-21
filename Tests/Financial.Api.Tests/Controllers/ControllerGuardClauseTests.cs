@@ -1,5 +1,7 @@
 using Financial.Api.Controllers;
 using Financial.CashFlow.Application.Interfaces;
+using Financial.TestUtilities;
+using Financial.CashFlow.Application.Configuration;
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
@@ -214,16 +216,62 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
-    public void DiagnosticsController_NullRepositorySettings_Throws()
+    public void DiagnosticsController_NullInvestmentSettings_Throws()
     {
-        Action act = () => new DiagnosticsController(null!, new StubHostEnvironment());
+        Action act = () => new DiagnosticsController(
+            null!,
+            Options.Create(new CashFlowRepositorySettingsOptions()),
+            new StubInvestmentRepository(),
+            new StubCashFlowRepository(),
+            new StubHostEnvironment());
         act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void DiagnosticsController_NullCashFlowSettings_Throws()
+    {
+        Action act = () => new DiagnosticsController(
+            Options.Create(new InvestmentRepositorySettingsOptions()),
+            null!,
+            new StubInvestmentRepository(),
+            new StubCashFlowRepository(),
+            new StubHostEnvironment());
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void DiagnosticsController_NullInvestmentRepository_Throws()
+    {
+        Action act = () => new DiagnosticsController(
+            Options.Create(new InvestmentRepositorySettingsOptions()),
+            Options.Create(new CashFlowRepositorySettingsOptions()),
+            null!,
+            new StubCashFlowRepository(),
+            new StubHostEnvironment());
+        act.Should().Throw<ArgumentNullException>().WithParameterName("investmentRepository");
+    }
+
+    [Fact]
+    public void DiagnosticsController_NullCashFlowRepository_Throws()
+    {
+        Action act = () => new DiagnosticsController(
+            Options.Create(new InvestmentRepositorySettingsOptions()),
+            Options.Create(new CashFlowRepositorySettingsOptions()),
+            new StubInvestmentRepository(),
+            null!,
+            new StubHostEnvironment());
+        act.Should().Throw<ArgumentNullException>().WithParameterName("cashFlowRepository");
     }
 
     [Fact]
     public void DiagnosticsController_NullEnvironment_Throws()
     {
-        Action act = () => new DiagnosticsController(Options.Create(new InvestmentRepositorySettingsOptions()), null!);
+        Action act = () => new DiagnosticsController(
+            Options.Create(new InvestmentRepositorySettingsOptions()),
+            Options.Create(new CashFlowRepositorySettingsOptions()),
+            new StubInvestmentRepository(),
+            new StubCashFlowRepository(),
+            null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("environment");
     }
 
