@@ -110,6 +110,8 @@ function PortfolioNode({ node, brokerName, filterClass }: PortfolioNodeProps) {
   const { selectedNode, setSelectedNode } = useSelectedNode()
   const [expanded, setExpanded] = useState(false)
   const portfolioName = getMetaString(node.metadata, 'PortfolioName')
+  // -1 when absent, so a portfolio whose count is unknown is never offered for deletion.
+  const assetCount = getMetaNumber(node.metadata, 'AssetCount')
 
   const visibleAssets = node.children.filter((child) => {
     if (child.nodeType !== 'Asset') return false
@@ -122,7 +124,7 @@ function PortfolioNode({ node, brokerName, filterClass }: PortfolioNodeProps) {
   const isSelected = nodeMatchesSelected(selectedNode, 'Portfolio', { brokerName, portfolioName })
 
   const handleClick = () => {
-    setSelectedNode({ nodeType: 'Portfolio', brokerName, portfolioName })
+    setSelectedNode({ nodeType: 'Portfolio', brokerName, portfolioName, assetCount })
   }
 
   return (

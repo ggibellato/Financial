@@ -44,6 +44,11 @@
   padding: 5px 6px;
 }
 
+.move-asset-dialog__prompt {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+
 .move-asset-dialog__error {
   margin: 8px 0 0;
   color: var(--danger, #c0392b);

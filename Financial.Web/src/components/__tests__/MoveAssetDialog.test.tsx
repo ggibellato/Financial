@@ -8,21 +8,40 @@ import { ApiError } from '../../api/apiError'
 const getNavigationTreeMock = vi.fn()
 const moveAssetMock = vi.fn()
 const archiveAssetMock = vi.fn()
+const deleteEmptyPortfolioMock = vi.fn()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getNavigationTree: getNavigationTreeMock,
     moveAsset: moveAssetMock,
     archiveAsset: archiveAssetMock,
+    deleteEmptyPortfolio: deleteEmptyPortfolioMock,
   }),
 }))
 
-function portfolio(name: string): TreeNodeDto {
+function portfolio(name: string, assetCount?: number): TreeNodeDto {
   return {
     nodeType: 'Portfolio',
     displayName: name,
-    metadata: { PortfolioName: name },
+    metadata: assetCount === undefined ? { PortfolioName: name } : { PortfolioName: name, AssetCount: assetCount },
     children: [],
+  }
+}
+
+/** "Default" left holding nothing by the move, which is what raises the offer. */
+function treeWithEmptiedSource(): TreeNodeDto {
+  return {
+    nodeType: 'Investments',
+    displayName: 'Root',
+    metadata: {},
+    children: [
+      {
+        nodeType: 'Broker',
+        displayName: 'XPI',
+        metadata: { BrokerName: 'XPI' },
+        children: [portfolio('Default', 0), portfolio('ISA', 1)],
+      },
+    ],
   }
 }
 
@@ -36,7 +55,8 @@ function tree(portfolioNames: string[]): TreeNodeDto {
         nodeType: 'Broker',
         displayName: 'XPI',
         metadata: { BrokerName: 'XPI' },
-        children: portfolioNames.map(portfolio),
+        // Not map(portfolio): map passes the index, which would land in assetCount.
+        children: portfolioNames.map((name) => portfolio(name)),
       },
     ],
   }
@@ -71,6 +91,8 @@ describe('MoveAssetDialog', () => {
     getNavigationTreeMock.mockReset()
     moveAssetMock.mockReset()
     archiveAssetMock.mockReset()
+    deleteEmptyPortfolioMock.mockReset()
+    deleteEmptyPortfolioMock.mockResolvedValue(undefined)
     getNavigationTreeMock.mockResolvedValue(tree(['Default', 'ISA', 'SIPP']))
     moveAssetMock.mockResolvedValue(movedAsset('ISA'))
     archiveAssetMock.mockResolvedValue(movedAsset('Closed'))
@@ -243,6 +265,85 @@ describe('MoveAssetDialog', () => {
 
     await waitFor(() => expect(onMoved).toHaveBeenCalled())
     expect(onMoved.mock.calls[0][1]).toBe(false)
+  })
+
+  it('offers to delete the source when the move empties it, instead of closing', async () => {
+    const onMoved = vi.fn()
+    getNavigationTreeMock.mockResolvedValue(treeWithEmptiedSource())
+    renderDialog({ onMoved })
+
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+
+    await waitFor(() => expect(screen.getByText(/is now empty/)).toBeInTheDocument())
+    expect(onMoved).not.toHaveBeenCalled()
+  })
+
+  it('deletes the emptied source when asked, then reports the move', async () => {
+    const onMoved = vi.fn()
+    getNavigationTreeMock.mockResolvedValue(treeWithEmptiedSource())
+    renderDialog({ onMoved })
+
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+
+    await waitFor(() => expect(onMoved).toHaveBeenCalled())
+    expect(deleteEmptyPortfolioMock).toHaveBeenCalledWith('XPI', 'Default', 'active')
+  })
+
+  it('keeps the emptied source when declined, and the move still stands', async () => {
+    const onMoved = vi.fn()
+    getNavigationTreeMock.mockResolvedValue(treeWithEmptiedSource())
+    renderDialog({ onMoved })
+
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Keep' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Keep' }))
+
+    await waitFor(() => expect(onMoved).toHaveBeenCalled())
+    expect(deleteEmptyPortfolioMock).not.toHaveBeenCalled()
+  })
+
+  it('does not offer when the source still holds assets', async () => {
+    const onMoved = vi.fn()
+    getNavigationTreeMock.mockResolvedValue({
+      nodeType: 'Investments',
+      displayName: 'Root',
+      metadata: {},
+      children: [
+        {
+          nodeType: 'Broker',
+          displayName: 'XPI',
+          metadata: { BrokerName: 'XPI' },
+          children: [portfolio('Default', 2), portfolio('ISA', 1)],
+        },
+      ],
+    } as TreeNodeDto)
+    renderDialog({ onMoved })
+
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+
+    await waitFor(() => expect(onMoved).toHaveBeenCalled())
+    expect(screen.queryByText(/is now empty/)).not.toBeInTheDocument()
+  })
+
+  it('a failed tidy-up does not undo the move', async () => {
+    const onMoved = vi.fn()
+    getNavigationTreeMock.mockResolvedValue(treeWithEmptiedSource())
+    deleteEmptyPortfolioMock.mockRejectedValue(new ApiError('Portfolio "Default" still holds 1 asset(s).', 409))
+    renderDialog({ onMoved })
+
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('still holds'))
+    expect(screen.getByRole('button', { name: 'Keep' })).toBeInTheDocument()
   })
 
   it('cancels without moving anything', async () => {

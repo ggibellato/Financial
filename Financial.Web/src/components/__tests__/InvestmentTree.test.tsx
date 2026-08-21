@@ -36,11 +36,13 @@ function makeAsset(
   }
 }
 
-function makePortfolio(name: string, assets: TreeNodeDto[]): TreeNodeDto {
+function makePortfolio(name: string, assets: TreeNodeDto[], carryCount = true): TreeNodeDto {
   return {
     nodeType: 'Portfolio',
     displayName: `${name} (${assets.length} assets)`,
-    metadata: { PortfolioName: name, AssetCount: assets.length },
+    metadata: carryCount
+      ? { PortfolioName: name, AssetCount: assets.length }
+      : { PortfolioName: name },
     children: assets,
   }
 }
@@ -77,6 +79,7 @@ function SelectedNodeDisplay() {
         {selectedNode.nodeType}:{selectedNode.brokerName}:{selectedNode.portfolioName ?? ''}:{selectedNode.assetName ?? ''}
       </div>
       <div data-testid="selected-quantity">{selectedNode.quantity ?? 'absent'}</div>
+      <div data-testid="selected-asset-count">{selectedNode.assetCount ?? 'absent'}</div>
     </>
   )
 }
@@ -234,6 +237,31 @@ describe('InvestmentTree', () => {
     await screen.findByText('XPI (BRL)')
     fireEvent.click(screen.getByText('XPI (BRL)'))
     expect(screen.getByTestId('selected').textContent).toBe('Broker:XPI::')
+  })
+
+  it('clicking a portfolio carries its asset count onto the selection', async () => {
+    // The detail panel decides from this whether the portfolio can be deleted.
+    renderTree()
+    await screen.findByText('XPI (BRL)')
+
+    fireEvent.click(screen.getByText('Acoes (2 assets)'))
+
+    expect(screen.getByTestId('selected-asset-count').textContent).toBe('2')
+  })
+
+  it('reports a missing asset count as -1 so an unknown portfolio is never offered for deletion', async () => {
+    const tree: TreeNodeDto = {
+      nodeType: 'Investments',
+      displayName: 'Investments',
+      metadata: {},
+      children: [makeBroker('XPI', 'BRL', [makePortfolio('Acoes', [], false)])],
+    }
+    renderTree(tree)
+    await screen.findByText('XPI (BRL)')
+
+    fireEvent.click(screen.getByText('Acoes (0 assets)'))
+
+    expect(screen.getByTestId('selected-asset-count').textContent).toBe('-1')
   })
 
   it('clicking portfolio node sets selectedNode in context', async () => {
