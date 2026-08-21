@@ -188,28 +188,103 @@ graph TD
 ### F01. Asset Snapshot Fetcher Contract & Standard Fetcher
 - [ ] `IAssetPriceFetcher` exists in `Financial.Application/Interfaces/` with `Supports(GlobalAssetClass)` and `GetSnapshot(AssetPriceRequestDTO)` members
 - [ ] `StandardAssetPriceFetcher.Supports` returns `true` for every `GlobalAssetClass` value except `Cryptocurrency`, and `false` for `Cryptocurrency`
-- [ ] `StandardAssetPriceFetcher.GetSnapshot` throws `ArgumentException` when `Exchange` is blank
+- [x] `StandardAssetPriceFetcher.GetSnapshot` throws `ArgumentException` when `Exchange` is blank
 - [ ] `StandardAssetPriceFetcher.GetSnapshot` calls `GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker)` and returns its result unmodified
-- [ ] `StandardAssetPriceFetcher` is registered in DI as an `IAssetPriceFetcher`
+- [x] `StandardAssetPriceFetcher` is registered in DI as an `IAssetPriceFetcher`
 
 ### F02. Cryptocurrency Asset Price Fetcher
-- [ ] `CryptocurrencyAssetPriceFetcher.Supports` returns `true` only for `GlobalAssetClass.Cryptocurrency`, `false` for every other value
-- [ ] `CryptocurrencyAssetPriceFetcher.GetSnapshot` throws `ArgumentException` when `BrokerName` is blank
-- [ ] `CryptocurrencyAssetPriceFetcher.GetSnapshot` throws `InvalidOperationException` when `BrokerName` matches no broker returned by `IRepository.GetBrokerList()`
-- [ ] `CryptocurrencyAssetPriceFetcher.GetSnapshot` resolves the matching broker's `Currency` and calls `GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot(currency, ticker)`
-- [ ] `CryptocurrencyAssetPriceFetcher` is registered in DI as an `IAssetPriceFetcher`
+- [x] `CryptocurrencyAssetPriceFetcher.Supports` returns `true` only for `GlobalAssetClass.Cryptocurrency`, `false` for every other value
+- [x] `CryptocurrencyAssetPriceFetcher.GetSnapshot` throws `ArgumentException` when `BrokerName` is blank
+- [x] `CryptocurrencyAssetPriceFetcher.GetSnapshot` throws `InvalidOperationException` when `BrokerName` matches no broker returned by `IRepository.GetBrokerList()`
+- [x] `CryptocurrencyAssetPriceFetcher.GetSnapshot` resolves the matching broker's `Currency` and calls `GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot(currency, ticker)`
+- [x] `CryptocurrencyAssetPriceFetcher` is registered in DI as an `IAssetPriceFetcher`
 
 ### F03. Strategy Dispatch in AssetPriceService
-- [ ] `AssetPriceService`'s constructor takes `IEnumerable<IAssetPriceFetcher>` and no longer takes `IRepository`
-- [ ] `GetCurrentPrice` still throws `ArgumentNullException` for a null request and `ArgumentException` for a blank `Ticker`, unchanged
-- [ ] A request with `AssetClass = Cryptocurrency` and a valid `BrokerName` dispatches to `CryptocurrencyAssetPriceFetcher` and returns its snapshot mapped into `AssetPriceDTO`
+- [x] `AssetPriceService`'s constructor takes `IEnumerable<IAssetPriceFetcher>` and no longer takes `IRepository`
+- [x] `GetCurrentPrice` still throws `ArgumentNullException` for a null request and `ArgumentException` for a blank `Ticker`, unchanged
+- [x] A request with `AssetClass = Cryptocurrency` and a valid `BrokerName` dispatches to `CryptocurrencyAssetPriceFetcher` and returns its snapshot mapped into `AssetPriceDTO`
 - [ ] A request with any non-`Cryptocurrency` `AssetClass` (including `Unknown`, `Equity`, `Bond`, `ETF`) dispatches to `StandardAssetPriceFetcher`
 - [ ] If no registered fetcher's `Supports` returns `true` for the request's `AssetClass`, dispatch falls back to `StandardAssetPriceFetcher` instead of throwing
-- [ ] `GetStandardSnapshot`, `GetCryptocurrencySnapshot`, and `ResolveBrokerCurrency` no longer exist on `AssetPriceService`
-- [ ] All pre-existing `AssetPriceServiceTests` scenarios have an equivalent passing test after the refactor, with unchanged expected outcomes
-- [ ] `AssetPriceEndpointsTests` passes unmodified, proving the public `/prices/current` contract is unaffected
+- [x] `GetStandardSnapshot`, `GetCryptocurrencySnapshot`, and `ResolveBrokerCurrency` no longer exist on `AssetPriceService`
+- [x] All pre-existing `AssetPriceServiceTests` scenarios have an equivalent passing test after the refactor, with unchanged expected outcomes
+- [x] `AssetPriceEndpointsTests` passes unmodified, proving the public `/prices/current` contract is unaffected
 
 ### Cross-Feature Integration
-- [ ] A request with `AssetClass = Cryptocurrency` and a valid `BrokerName` produces the same `AssetPriceDTO` shape as today's crypto branch, proving `AssetPriceService` (F03) correctly dispatches to the snapshot provided by `CryptocurrencyAssetPriceFetcher` (F02)
-- [ ] A request with `AssetClass = Equity` (or any other non-crypto value) produces the same `AssetPriceDTO` shape as today's standard branch, proving `AssetPriceService` (F03) correctly dispatches to the snapshot provided by `StandardAssetPriceFetcher` (F01)
-- [ ] Registering both `StandardAssetPriceFetcher` (F01) and `CryptocurrencyAssetPriceFetcher` (F02) in DI and resolving `IEnumerable<IAssetPriceFetcher>` in `AssetPriceService` (F03) yields exactly two fetchers, both reachable by the dispatcher
+- [x] A request with `AssetClass = Cryptocurrency` and a valid `BrokerName` produces the same `AssetPriceDTO` shape as today's crypto branch, proving `AssetPriceService` (F03) correctly dispatches to the snapshot provided by `CryptocurrencyAssetPriceFetcher` (F02)
+- [x] A request with `AssetClass = Equity` (or any other non-crypto value) produces the same `AssetPriceDTO` shape as today's standard branch, proving `AssetPriceService` (F03) correctly dispatches to the snapshot provided by `StandardAssetPriceFetcher` (F01)
+- [x] Registering both `StandardAssetPriceFetcher` (F01) and `CryptocurrencyAssetPriceFetcher` (F02) in DI and resolving `IEnumerable<IAssetPriceFetcher>` in `AssetPriceService` (F03) yields exactly two fetchers, both reachable by the dispatcher
+
+---
+
+#### Verification note — 2026-08-21
+
+Back-verified against `main` @ `eeea9043` during the `docs/app-known-issues-backlog.md` §3
+documentation-hygiene pass. The strategy-dispatch design this PRD introduced is fully in place;
+16 of the 21 criteria are confirmed. The other 5 describe behaviour that **later features
+deliberately replaced** — they are listed at the bottom and left unticked, because ticking them
+would assert things the codebase no longer does.
+
+**F01 — contract and standard fetcher**
+- Blank `Exchange` throws `ArgumentException`
+  (`Financial.Investment.Infrastructure/Services/StandardAssetPriceFetcher.cs:37-40`, asserted at
+  `Tests/…/Services/StandardAssetPriceFetcherTests.cs:61`).
+- Registered as `IAssetPriceFetcher` at
+  `Financial.Investment.Infrastructure/DependencyInjection/InvestmentInfrastructureServiceCollectionExtensions.cs:42`.
+
+**F02 — cryptocurrency fetcher** (`Services/CryptocurrencyAssetPriceFetcher.cs`)
+- `Supports` is `assetClass == GlobalAssetClass.Cryptocurrency` (`:21`), asserted true/false/false at
+  `CryptocurrencyAssetPriceFetcherTests.cs:39,47,55`.
+- Blank `BrokerName` → `ArgumentException` (`:25-28`, test `:63`); unknown broker →
+  `InvalidOperationException` (`:36-39`, tests `:73,118`).
+- `ResolveBrokerCurrency` reads the matching broker's `Currency` and the request goes out as
+  `AssetValueRequestDTO { Currency, Ticker }` (`:30-31`), which `GoogleFinanceService:38-41` routes to
+  `GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot`. Asserted at
+  `CryptocurrencyAssetPriceFetcherTests.cs:89`. The later `FallbackFinanceService` does **not** affect
+  this path — it retries only exchange-based lookups, by design.
+- Registered at `InvestmentInfrastructureServiceCollectionExtensions.cs:43`.
+
+**F03 — dispatch** (`Services/AssetPriceService.cs`)
+- The constructor takes only `IEnumerable<IAssetPriceFetcher>`; no `IRepository` (`:10-15`).
+- Null request → `ArgumentNullException`, blank `Ticker` → `ArgumentException` (`:19-27`, tests
+  `AssetPriceServiceTests.cs:24,32`).
+- Crypto dispatch and the `AssetPriceDTO` mapping are at `:38-48`, asserted at
+  `AssetPriceServiceTests.cs:52` (stub) and `:115` (through the real fetcher).
+- `GetStandardSnapshot`, `GetCryptocurrencySnapshot` and `ResolveBrokerCurrency` are gone from the
+  service — the file is 50 lines and contains none of them; `ResolveBrokerCurrency` now lives on
+  `CryptocurrencyAssetPriceFetcher:34`.
+- `AssetPriceServiceTests.cs` carries 9 scenarios covering every pre-refactor case, and
+  `Tests/Financial.Api.Tests/…/AssetPriceEndpointsTests.cs` still covers the `/prices/current`
+  contract (`:18,34,44,58,68`). Note the endpoint file has since been *extended* by P09 and #517
+  (bond cases at `:78,92`, the 422 case at `:301`); this pass confirmed the contract is intact, it did
+  not re-litigate whether the P08 commit itself left the file byte-identical.
+
+**Cross-feature** — `AssetPriceServiceTests.cs:115` and `:137` resolve the real
+`CryptocurrencyAssetPriceFetcher` and `StandardAssetPriceFetcher` through the same
+`IEnumerable<IAssetPriceFetcher>` the DI registrations produce, so both DTO shapes and the
+registration-plus-dispatch wiring are covered together.
+
+**Left unticked — superseded by later features**
+1. *`IAssetPriceFetcher` exists in `Financial.Application/Interfaces/`* — P09 F01 deliberately
+   relocated it to the Infrastructure layer, and the bounded-context split renamed the project. It is
+   now `Financial.Investment.Infrastructure/Interfaces/IAssetPriceFetcher.cs`, with the two members
+   this criterion names unchanged. See P09 §9 F01, already ticked.
+2. *`StandardAssetPriceFetcher.Supports` returns `true` for every class except `Cryptocurrency`* —
+   twice narrowed since. It is now an explicit allow-list,
+   `ExchangeListedClasses = { Unknown, Equity, RealEstate, Fund, ETF }`
+   (`StandardAssetPriceFetcher.cs:25-34`), because the exclusion list "quietly claimed Cash, Pension,
+   Other and PrivateCredit as well, and then asked the finance provider for a ticker that does not
+   exist there". Asserted at `StandardAssetPriceFetcherTests.cs:86,101`.
+3. *`StandardAssetPriceFetcher.GetSnapshot` calls `GoogleFinance.GetFinancialInfoSnapshot` and returns
+   its result unmodified* — it now goes through `IFinanceService`, which DI binds to
+   `FallbackFinanceService(GoogleFinanceService, YahooFinanceService)`
+   (`InvestmentInfrastructureServiceCollectionExtensions.cs:37-40`). Google is still tried first, but
+   an exchange lookup that fails is retried against Yahoo, so the returned snapshot is not necessarily
+   Google's.
+4. *Any non-`Cryptocurrency` class, **including `Bond`**, dispatches to `StandardAssetPriceFetcher`* —
+   P09 F03 introduced `BondAssetPriceFetcher` and made `Supports(Bond)` false
+   (`StandardAssetPriceFetcherTests.cs:53`).
+5. *If no fetcher supports the class, fall back to `StandardAssetPriceFetcher` instead of throwing* —
+   reversed by #517. `AssetPriceService.cs:35-40` now throws `UnsupportedAssetClassException`, and the
+   inline comment gives the reason: the fallback "used to hide an unsupported class behind a lookup
+   that was always going to fail — a private-credit holding was asked for as an equity ticker".
+   Asserted at `AssetPriceServiceTests.cs:84,101` and, as a 422, at `AssetPriceEndpointsTests.cs:301`.
