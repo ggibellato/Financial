@@ -293,25 +293,53 @@ public sealed class PriceService : IPriceService
     /// <summary>
     /// The check and the write are one step. The portfolio grid fetches every row at once, so two
     /// requests for the same asset could both find no entry for today and both record one.
+    /// <para>
+    /// A failed save is rolled back out of memory before the failure is reported. The graph is
+    /// serialized from memory, so an entry left behind by a save that never landed reads back as a
+    /// recorded one: the caller is told the price was not recorded while the value sits in history
+    /// claiming otherwise.
+    /// </para>
     /// </summary>
-    private Task RecordAutomaticPriceIfNeededAsync(Asset asset, decimal price)
+    private async Task RecordAutomaticPriceIfNeededAsync(Asset asset, decimal price)
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
+        AssetPriceSnapshot? displaced = null;
+        var wrote = false;
 
-        return _repository.ApplyAndSaveAsync(() =>
+        try
         {
-            var existing = asset.GetPriceForDate(today);
-
-            // A manual entry is never overwritten. GetCurrentPriceAsync returns before reaching this
-            // point when one exists, so this is the second line of defence rather than the first.
-            var needsWrite = existing is null || (!existing.IsManual && existing.Price != price);
-            if (!needsWrite)
+            await _repository.ApplyAndSaveAsync(() =>
             {
-                return false;
+                var existing = asset.GetPriceForDate(today);
+
+                // A manual entry is never overwritten. GetCurrentPriceAsync returns before reaching this
+                // point when one exists, so this is the second line of defence rather than the first.
+                var needsWrite = existing is null || (!existing.IsManual && existing.Price != price);
+                if (!needsWrite)
+                {
+                    return false;
+                }
+
+                displaced = existing;
+                wrote = true;
+                asset.SetPrice(today, price, isManual: false);
+                return true;
+            }).ConfigureAwait(false);
+        }
+        catch
+        {
+            if (wrote)
+            {
+                // The undo edits the same graph, so it runs under the same exclusion the write did.
+                // Reporting no change keeps it in memory only - the failed write must not be retried.
+                await _repository.ApplyAndSaveAsync(() =>
+                {
+                    asset.RestorePrice(today, displaced);
+                    return false;
+                }).ConfigureAwait(false);
             }
 
-            asset.SetPrice(today, price, isManual: false);
-            return true;
-        });
+            throw;
+        }
     }
 }

@@ -674,6 +674,29 @@ public class PriceServiceTests
         }
     }
 
+    /// <summary>
+    /// The file assertion above is only half the story: the graph is serialized from memory, so an
+    /// entry the failed save left behind would be written out by the next successful save and read
+    /// back as if it had been recorded all along.
+    /// </summary>
+    [Fact]
+    public async Task GetCurrentPriceAsync_WhenPersistenceFails_LeavesNoEntryInMemory()
+    {
+        var (service, repository, tempFile) = CreateFailingServiceWithRepository(StubAssetPriceService.Success(123.45m));
+        try
+        {
+            await service.GetCurrentPriceAsync(BuildRequest());
+
+            repository.GetAsset(BrokerName, PortfolioName, AssetName)!
+                .GetPriceForDate(DateOnly.FromDateTime(DateTime.Today))
+                .Should().BeNull("the save threw, so the in-memory write must have been reverted");
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
     [Fact]
     public async Task GetCurrentPriceAsync_WhenAssetContextResolvesNothing_LogsAWarningNamingTheTriple()
     {
@@ -716,6 +739,27 @@ public class PriceServiceTests
         {
             File.Delete(tempFile);
         }
+    }
+
+    /// <summary>As CreateRecordingService with failing writes, but hands back the repository so a
+    /// test can inspect the in-memory graph rather than only the file.</summary>
+    private static (PriceService Service, InvestmentJsonRepository Repository, string TempFile)
+        CreateFailingServiceWithRepository(IAssetPriceService assetPriceService)
+    {
+        var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
+        File.Copy(TestDataPaths.DataJsonFile, tempFile, true);
+
+        var serializer = new InvestmentsSerializerAdapter();
+        var investments = InvestmentsLoader.LoadSync(new LocalJsonStorage(tempFile), serializer);
+        var storage = new WriteFailingJsonStorage(new LocalJsonStorage(tempFile));
+
+        var tracer = new RecordingTelemetryTracer();
+        var repository = new InvestmentJsonRepository(investments, storage, serializer);
+        var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
+        var service = new PriceService(
+            repository, navigationService, assetPriceService, tracer, new RecordingLogger<PriceService>());
+
+        return (service, repository, tempFile);
     }
 
     private static Asset? ReloadAssetFromDisk(string tempFile)
