@@ -27,7 +27,17 @@ jobs:
       run: dotnet build --configuration Release --no-restore
 
     - name: Run tests
-      run: dotnet test --configuration Release --no-build --verbosity normal
+      run: dotnet test --configuration Release --no-build --verbosity normal --settings coverlet.runsettings --results-directory TestResults
+
+    # coverlet.runsettings declares the XPlat collector itself, so --settings is enough to turn
+    # collection on - no --collect argument, and so no "XPlat Code Coverage" quoting to get wrong
+    # on the PowerShell-hosted Windows runner. The file is the single source of truth for what is
+    # excluded (generated obj/** code).
+    - name: Publish coverage summary
+      run: |
+        dotnet tool install dotnet-reportgenerator-globaltool --tool-path .tools
+        ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub"
+        Get-Content CoverageReport/SummaryGithub.md | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
 
   web-build-test:
     runs-on: ubuntu-latest
