@@ -130,7 +130,12 @@ public sealed class DebouncedJsonStorage : IJsonStorage, ISyncStatusProvider
 
     private async Task RunDebounceThenSaveAsync(long generation)
     {
-        await Task.Delay(_debounceWindow).ConfigureAwait(false);
+        // The wait runs on the injected provider, which is TimeProvider.System everywhere in
+        // production. Tests substitute a controllable clock so they can step the window instead of
+        // sleeping against it - racing a real timer is what made these tests flaky in CI.
+        // FlushAsync's timeout deliberately stays on the real clock: it is the escape hatch for a
+        // save that never completes, so it must fire even when nothing advances the fake clock.
+        await Task.Delay(_debounceWindow, _timeProvider).ConfigureAwait(false);
 
         lock (_lock)
         {
