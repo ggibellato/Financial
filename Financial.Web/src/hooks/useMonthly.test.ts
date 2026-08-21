@@ -248,6 +248,60 @@ describe('useMonthly', () => {
     await waitFor(() => expect(getCardStatementsByMonthMock).toHaveBeenCalledTimes(2))
   })
 
+  it('surfaces a warning the server returned for a mark-paid that changed nothing', async () => {
+    markCardStatementPaidMock.mockResolvedValue({
+      ...CARD_STATEMENTS[0],
+      isPaid: true,
+      warning: 'This statement was already marked paid; nothing changed.',
+    })
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.markStatementPaid('c1', 'bank-trading212'))
+
+    await waitFor(() =>
+      expect(result.current.listActionWarning).toBe('This statement was already marked paid; nothing changed.'),
+    )
+  })
+
+  it('reports no warning for a mark-paid that did change something', async () => {
+    markCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 })
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.markStatementPaid('c1', 'bank-trading212'))
+
+    await waitFor(() => expect(getCardStatementsByMonthMock).toHaveBeenCalledTimes(2))
+    expect(result.current.listActionWarning).toBeNull()
+  })
+
+  it('surfaces a warning the server returned for an unmark that changed nothing', async () => {
+    unmarkCardStatementPaidMock.mockResolvedValue({
+      ...CARD_STATEMENTS[1],
+      isPaid: false,
+      warning: 'This statement was not marked paid; nothing changed.',
+    })
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.unmarkStatementPaid('c2'))
+
+    await waitFor(() =>
+      expect(result.current.listActionWarning).toBe('This statement was not marked paid; nothing changed.'),
+    )
+  })
+
+  it('exposes a failed mark-paid as an action error', async () => {
+    markCardStatementPaidMock.mockRejectedValue(new Error('boom'))
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.markStatementPaid('c1', 'bank-trading212'))
+
+    await waitFor(() => expect(result.current.listActionError).not.toBeNull())
+    expect(result.current.listActionWarning).toBeNull()
+  })
+
   it('tracks the selected paying bank per statement', async () => {
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

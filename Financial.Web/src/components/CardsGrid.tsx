@@ -9,6 +9,11 @@ interface CardsGridProps {
   setMarkPaidSource: (id: string, bank: string) => void
   markStatementPaid: (id: string, paymentSource: string) => void
   unmarkStatementPaid: (id: string) => void
+  /** Outcome of the last mark/unmark action. An error is a failure the action did not complete; a
+   * warning is a completed call that changed nothing - "already paid", say. Both were being
+   * discarded, so a failed mark-paid and a no-op mark-paid looked exactly like a successful one. */
+  statementActionError?: string | null
+  statementActionWarning?: string | null
   /** When provided (Credit Card tab), adds Next Invoice Due Date/Active columns, one row per
    * credit card (not just cards with a statement this month, so a deactivated card - which stops
    * getting new monthly statements - stays manageable here). Omitted on the read-only Summary tab. */
@@ -57,6 +62,8 @@ export default function CardsGrid({
   setMarkPaidSource,
   markStatementPaid,
   unmarkStatementPaid,
+  statementActionError,
+  statementActionWarning,
   creditCards,
   updatingCardId,
   updateError,
@@ -67,6 +74,16 @@ export default function CardsGrid({
 
   return (
     <section className="monthly-page__section monthly-page__section--grid">
+      {statementActionError && (
+        <p className="monthly-page__action-error" role="alert">
+          {statementActionError}
+        </p>
+      )}
+      {statementActionWarning && (
+        <p className="monthly-page__action-warning" role="status">
+          {statementActionWarning}
+        </p>
+      )}
       <div className="monthly-page__table-scroll">
         <table className="monthly-page__table data-table">
           <thead>

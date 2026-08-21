@@ -175,3 +175,23 @@
   margin-top: 6px;
   color: var(--error, #c0392b);
 }
+
+/* Outcome of a mark/unmark action, shown above the cards grid so it sits next to the buttons that
+   produced it - the same placement CardsGridView.xaml uses in the WPF app. */
+.monthly-page__action-error {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  color: var(--error, #c0392b);
+  background: var(--error-bg, #fdecea);
+  border: 1px solid var(--error-border, #f5c2bd);
+  border-radius: 4px;
+}
+
+.monthly-page__action-warning {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  color: var(--warning-text, #8a6d00);
+  background: var(--warning-bg, #fff8e1);
+  border: 1px solid var(--warning-border, #f0d878);
+  border-radius: 4px;
+}
