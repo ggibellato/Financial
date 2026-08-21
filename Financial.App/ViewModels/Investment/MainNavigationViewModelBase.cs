@@ -173,7 +173,12 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
         broker!.IsExpanded = true;
         portfolio!.IsExpanded = true;
-        SelectedNode = asset;
+
+        // IsSelected, not SelectedNode: the container style binds it two-way, so this is what
+        // actually highlights the row in the tree. It raises NodeSelected, which sets SelectedNode
+        // on the way through - assigning SelectedNode alone would leave the moved asset current in
+        // the view model but unhighlighted in the tree the user is looking at.
+        asset.IsSelected = true;
     }
 
     /// <summary>
@@ -301,9 +306,16 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         };
     }
 
+    /// <summary>
+    /// A click in the tree arrives here, via TreeViewItem.IsSelected -> TreeNodeViewModel.IsSelected
+    /// -> NodeSelected. Assigning the property rather than loading the details directly is what
+    /// keeps <see cref="SelectedNode"/> in step with the tree; its setter does the loading. This
+    /// used to call LoadSelectionDetails on its own, which left SelectedNode permanently null -
+    /// harmless while nothing read it, and the reason the move command could never enable.
+    /// </summary>
     private void OnTreeNodeSelected(object? sender, TreeNodeViewModel selectedNode)
     {
-        LoadSelectionDetails(selectedNode);
+        SelectedNode = selectedNode;
     }
 
     private void OnNodeSelectionChanged()

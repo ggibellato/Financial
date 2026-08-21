@@ -137,6 +137,38 @@ public class MainNavigationViewModelMoveTests
     }
 
     [Fact]
+    public async Task SelectingAnAssetInTheTree_MakesItTheSelectedNode()
+    {
+        // The regression: clicking a node used to load the detail panel without ever setting
+        // SelectedNode, so every command reading it stayed disabled no matter what the user picked.
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+
+        AssetNode(sut, "AAAA").IsSelected = true;
+
+        using (new AssertionScope())
+        {
+            sut.SelectedNode.Should().NotBeNull();
+            sut.SelectedNode!.GetMetadata<string>("AssetName").Should().Be("AAAA");
+            sut.MoveAssetCommand.CanExecute(null).Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public async Task MoveSelectedAssetAsync_AfterMoving_HighlightsTheMovedAssetInTheTree()
+    {
+        // Not just current in the view model - actually selected in the tree the user is looking at.
+        var sut = CreateViewModel();
+        await SelectAssetAsync(sut, "AAAA");
+        sut.MoveDialogResponse = dialog => { dialog.SelectedPortfolioName = "ISA"; return true; };
+        _moveService.OnMove = () => sut.NavigationService.Tree = BuildTree(assetPortfolio: "ISA");
+
+        await sut.MoveSelectedAssetAsync();
+
+        AssetNode(sut, "AAAA").IsSelected.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task MoveAssetCommand_IsUnavailableUntilAnAssetIsSelected()
     {
         var sut = CreateViewModel();
@@ -153,7 +185,7 @@ public class MainNavigationViewModelMoveTests
     {
         var sut = CreateViewModel();
         await sut.LoadNavigationTreeAsync();
-        sut.SelectedNode = sut.RootNodes[0].Children[0];
+        sut.RootNodes[0].Children[0].IsSelected = true;
 
         await sut.MoveSelectedAssetAsync();
 
@@ -170,14 +202,23 @@ public class MainNavigationViewModelMoveTests
             assetMoveService: _moveService);
     }
 
+    /// <summary>
+    /// Selects through IsSelected, which is the only route the UI has - the container style binds
+    /// it two-way and the resulting NodeSelected event is what reaches the view model. Assigning
+    /// SelectedNode directly, as these tests used to, exercises a path no click can take, and hid
+    /// the fact that the move command could never enable in the running app.
+    /// </summary>
     private static async Task SelectAssetAsync(TestableNavigationViewModel sut, string assetName)
     {
         await sut.LoadNavigationTreeAsync();
-        sut.SelectedNode = sut.RootNodes
+        AssetNode(sut, assetName).IsSelected = true;
+    }
+
+    private static TreeNodeViewModel AssetNode(TestableNavigationViewModel sut, string assetName) =>
+        sut.RootNodes
             .SelectMany(broker => broker.Children)
             .SelectMany(portfolio => portfolio.Children)
             .First(asset => asset.GetMetadata<string>("AssetName") == assetName);
-    }
 
     /// <summary>Broker XPI with portfolios "Default" and "ISA"; the asset sits in whichever is named.</summary>
     private static TreeNodeDTO BuildTree(string assetPortfolio)
