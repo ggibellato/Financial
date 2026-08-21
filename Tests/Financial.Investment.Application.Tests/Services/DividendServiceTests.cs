@@ -55,6 +55,20 @@ public class DividendServiceTests
         act.Should().Throw<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// The lookup takes only a ticker, so the ticker is the one thing that has to reach it. Nothing
+    /// asserted this while the signature also carried an exchange it ignored.
+    /// </summary>
+    [Fact]
+    public void GetDividendHistory_PassesTheRequestedTickerToTheDataSource()
+    {
+        var service = CreateService();
+
+        service.GetDividendHistory(MakeRequest(exchange: "NYSE", ticker: "BCIA11"));
+
+        _dataSource.LastTicker.Should().Be("BCIA11");
+    }
+
     [Theory]
     [InlineData("", "TICK")]
     [InlineData("   ", "TICK")]
@@ -246,7 +260,13 @@ public class DividendServiceTests
     {
         public IReadOnlyList<DividendValue> Dividends { get; set; } = [];
 
-        public IReadOnlyList<DividendValue> GetDividends(string exchange, string ticker) => Dividends;
+        public string? LastTicker { get; private set; }
+
+        public IReadOnlyList<DividendValue> GetDividends(string ticker)
+        {
+            LastTicker = ticker;
+            return Dividends;
+        }
     }
 
     private sealed class StubSnapshotSource : IAssetSnapshotSource

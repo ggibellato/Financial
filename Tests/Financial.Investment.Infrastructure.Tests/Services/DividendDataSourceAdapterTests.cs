@@ -31,7 +31,7 @@ public class DividendDataSourceAdapterTests
         var adapter = new DividendDataSourceAdapter(
             ticker => ticker == "BCIA11" ? dividends : throw new InvalidOperationException());
 
-        var result = adapter.GetDividends("BVMF", "BCIA11");
+        var result = adapter.GetDividends("BCIA11");
 
         result.Should().BeSameAs(dividends);
     }
