@@ -1,7 +1,7 @@
 using Financial.Presentation.App.ViewModels.Investment;
 using System.Windows;
 
-namespace Financial.Presentation.App;
+namespace Financial.Presentation.App.Views.Investment;
 
 public partial class MoveAssetDialog : Window
 {
