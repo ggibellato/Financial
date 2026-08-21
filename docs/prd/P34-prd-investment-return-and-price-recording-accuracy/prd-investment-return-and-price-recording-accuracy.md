@@ -353,76 +353,190 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. XIRR Solver Convergence
-- [ ] TASA4's series — purchases of -1,539.15, -1,439.69, -157.80 and terminal 1,080.20 — returns -32.21% within 0.05 percentage points
-- [ ] A series whose first Newton step from +0.10 would land below -1 still converges
-- [ ] A series with no sign change returns null
-- [ ] A series of fewer than 2 flows returns null
-- [ ] A series whose flows all share one date returns null
-- [ ] No candidate rate at or below -1 is ever evaluated
-- [ ] A result outside decimal range returns null rather than throwing
-- [ ] Reordering an unsorted series does not change the result
+- [x] TASA4's series — purchases of -1,539.15, -1,439.69, -157.80 and terminal 1,080.20 — returns -32.21% within 0.05 percentage points
+- [x] A series whose first Newton step from +0.10 would land below -1 still converges
+- [x] A series with no sign change returns null
+- [x] A series of fewer than 2 flows returns null
+- [x] A series whose flows all share one date returns null
+- [x] No candidate rate at or below -1 is ever evaluated
+- [x] A result outside decimal range returns null rather than throwing
+- [x] Reordering an unsorted series does not change the result
 
 ### F02. Credits Double-Count Correction
 - [ ] TASA4 reports XIRR w/ Credits -30.94% within 0.05 percentage points
-- [ ] The terminal value paired with a credits-bearing series equals quantity multiplied by current price, with no credits added
-- [ ] The "Total Current + Credits" displayed figure is unchanged
-- [ ] Historic-scope calculations, which use a terminal value of zero, are unchanged
+- [x] The terminal value paired with a credits-bearing series equals quantity multiplied by current price, with no credits added
+- [x] The "Total Current + Credits" displayed figure is unchanged
+- [x] Historic-scope calculations, which use a terminal value of zero, are unchanged
 
 ### F03. Single XIRR Implementation
-- [ ] `Financial.Web/src/utils/xirr.ts` and its test file no longer exist
-- [ ] Each portfolio grid row's XIRR is obtained from the calculate endpoint
-- [ ] A row shows a loading indicator until its price and rate have arrived
-- [ ] A row whose price fetch failed shows an em dash and issues no rate request
-- [ ] Historic rows compute with a terminal value of zero
+- [x] `Financial.Web/src/utils/xirr.ts` and its test file no longer exist
+- [x] Each portfolio grid row's XIRR is obtained from the calculate endpoint
+- [x] A row shows a loading indicator until its price and rate have arrived
+- [x] A row whose price fetch failed shows an em dash and issues no rate request
+- [x] Historic rows compute with a terminal value of zero
 
 ### F04. Price-History Write-Failure Visibility
-- [ ] With a storage layer that throws, the call does not mark its telemetry span successful
-- [ ] With a storage layer that throws, a log entry naming broker, portfolio, and asset is emitted
-- [ ] With a storage layer that throws, in-memory state does not retain an entry that was never persisted
-- [ ] A fetch supplying portfolio and asset name that resolves no asset emits a warning naming the triple
-- [ ] On success, exactly one entry exists for today, marked automatic, asserted against persisted content rather than in-memory state
-- [ ] A repeat fetch on the same day at the same price performs no second write
-- [ ] A live fetch failure with no entry for today still propagates as an error
+- [x] With a storage layer that throws, the call does not mark its telemetry span successful
+- [x] With a storage layer that throws, a log entry naming broker, portfolio, and asset is emitted
+- [x] With a storage layer that throws, in-memory state does not retain an entry that was never persisted
+- [x] A fetch supplying portfolio and asset name that resolves no asset emits a warning naming the triple
+- [x] On success, exactly one entry exists for today, marked automatic, asserted against persisted content rather than in-memory state
+- [x] A repeat fetch on the same day at the same price performs no second write
+- [x] A live fetch failure with no entry for today still propagates as an error
 
 ### F05. Manual Price Precedence
-- [ ] A manual price recorded for today survives a subsequent successful fetch
-- [ ] With a manual entry for today, the current-price response returns that price with its manual flag true
-- [ ] With a manual entry for today, no automatic write occurs
-- [ ] The `(Manual)` badge is displayed in both front ends when the value is manual
-- [ ] A manual entry dated earlier than today does not suppress today's automatic recording
+- [x] A manual price recorded for today survives a subsequent successful fetch
+- [x] With a manual entry for today, the current-price response returns that price with its manual flag true
+- [x] With a manual entry for today, no automatic write occurs
+- [x] The `(Manual)` badge is displayed in both front ends when the value is manual
+- [x] A manual entry dated earlier than today does not suppress today's automatic recording
 
 ### F06. Manual Price As-Of Date
-- [ ] A history-sourced price returns the originating entry's date rather than null
-- [ ] A history-sourced price displays a date with no time component in both front ends
-- [ ] A live-fetched price continues to display date and time
-- [ ] "As of" shows an em dash only when no price was obtained
+- [x] A history-sourced price returns the originating entry's date rather than null
+- [x] A history-sourced price displays a date with no time component in both front ends
+- [x] A live-fetched price continues to display date and time
+- [x] "As of" shows an em dash only when no price was obtained
 
 ### F07. Batch Check Prices Recording
-- [ ] The Web batch request carries broker, portfolio, and asset name
-- [ ] The WPF batch call routes through the price orchestration, not the fetcher directly
-- [ ] A successful batch run records one automatic entry per priced asset
+- [x] The Web batch request carries broker, portfolio, and asset name
+- [x] The WPF batch call routes through the price orchestration, not the fetcher directly
+- [x] A successful batch run records one automatic entry per priced asset
 - [ ] One asset's failure does not abort the run, and its error is listed
-- [ ] Both batch loops process assets sequentially
+- [x] Both batch loops process assets sequentially
 
 ### F08. Asset Class Fetcher Routing
-- [ ] An asset class with no supporting fetcher returns an unsupported-class result naming the class
-- [ ] An unsupported class does not fall through to the standard fetcher
-- [ ] The portfolio grid and asset page resolve the same class for the same asset
-- [ ] Cryptocurrency and bond classes continue to route to their dedicated fetchers
-- [ ] A row with an unsupported class shows an unavailable indicator, not a server error
+- [x] An asset class with no supporting fetcher returns an unsupported-class result naming the class
+- [x] An unsupported class does not fall through to the standard fetcher
+- [x] The portfolio grid and asset page resolve the same class for the same asset
+- [x] Cryptocurrency and bond classes continue to route to their dedicated fetchers
+- [x] A row with an unsupported class shows an unavailable indicator, not a server error
 
 ### F09. Sell Fee Direction
-- [ ] A purchase totals unit price multiplied by quantity plus fees
-- [ ] A sale totals unit price multiplied by quantity minus fees
-- [ ] Deriving a sale from a net total amount yields a positive fee, not zero
-- [ ] Realized Gain/Loss for a sale deducts the fee from proceeds
-- [ ] Average Sell Price reflects net proceeds per unit
-- [ ] Average cost basis for purchases is unchanged
-- [ ] An asset with no sales produces an identical XIRR before and after
+- [x] A purchase totals unit price multiplied by quantity plus fees
+- [x] A sale totals unit price multiplied by quantity minus fees
+- [x] Deriving a sale from a net total amount yields a positive fee, not zero
+- [x] Realized Gain/Loss for a sale deducts the fee from proceeds
+- [x] Average Sell Price reflects net proceeds per unit
+- [x] Average cost basis for purchases is unchanged
+- [x] An asset with no sales produces an identical XIRR before and after
 
 ### Cross-Feature Integration
-- [ ] The converged rate from the solver (F01) produces the corrected credits-bearing figure in the asset panel (F02), and that figure equals the portfolio grid's XIRR for the same asset
-- [ ] The converged rate from the solver (F01) is what the portfolio grid renders per row (F03), with no browser-local implementation involved
-- [ ] Today's stored snapshot and persistence outcome from the record step (F04) drive manual precedence (F05), so a manual entry suppresses the automatic write
-- [ ] The manual flag and snapshot date returned by manual precedence (F05) are what the "As of" field renders date-only (F06)
-- [ ] The record-on-fetch orchestration keyed by broker, portfolio, and asset (F04) is exercised by the batch screen (F07), producing an automatic entry per priced asset
+- [x] The converged rate from the solver (F01) produces the corrected credits-bearing figure in the asset panel (F02), and that figure equals the portfolio grid's XIRR for the same asset
+- [x] The converged rate from the solver (F01) is what the portfolio grid renders per row (F03), with no browser-local implementation involved
+- [x] Today's stored snapshot and persistence outcome from the record step (F04) drive manual precedence (F05), so a manual entry suppresses the automatic write
+- [x] The manual flag and snapshot date returned by manual precedence (F05) are what the "As of" field renders date-only (F06)
+- [x] The record-on-fetch orchestration keyed by broker, portfolio, and asset (F04) is exercised by the batch screen (F07), producing an automatic entry per priced asset
+
+---
+
+#### Verification note — 2026-08-21
+
+Back-verified against `main` @ `eeea9043` during the `docs/app-known-issues-backlog.md` §3
+documentation-hygiene pass, after #517 closed the three genuine gaps. 53 of the 55 criteria are
+confirmed; the two exceptions are at the bottom, and **one of them is a live defect, not a
+documentation problem**.
+
+**F01 — solver** (`Financial.Investment.Domain/Rules/XirrCalculator.cs`)
+The solver brackets in `(1 + rate)` space then bisects, so it never seeds from a fixed point.
+`Tests/Financial.Investment.Domain.Tests/Domain/XirrCalculatorTests.cs` pins every criterion:
+the TASA4 series at `:24` (`-0.3221 ± 0.0005`, i.e. within 0.05 pp), staying above `-1` at `:33`
+and `:79`, fewer-than-two flows `:41`, no-sign-change `:136,150`, single-date `:164`,
+out-of-range `:122`, reordering `:95`. The domain guard is structural too: `ProbeRates` starts at a
+growth factor of `1e-6` and `NetPresentValue` returns `NaN` for any factor at or below zero.
+*Note on the second criterion* — it is phrased against a Newton step that no longer exists; what it
+asserts (a series that used to diverge now converges) is exactly what `:24` and `:33` cover.
+
+**F02 — credits double-count** — `Financial.App/ViewModels/Investment/AssetDetailsViewModel.cs:210`
+pairs `_cashFlowsWithCredits` with `TotalCurrentValue` (`:198`, `TodayCurrentValue * Quantity`), with
+credits present only as dated flows. Asserted by
+`Tests/Financial.Presentation.Tests/ViewModels/AssetDetailsViewModelXirrTests.cs:104`
+(`XirrWithCredits_DoesNotAddCreditsToTheTerminalValue`) and `:112`. The displayed
+"Total Current + Credits" is a separate property (`:200`) still rendered at
+`Components/NavigationView.xaml:354-357`, untouched. Historic scope uses a zero terminal at `:216`,
+asserted at `AssetDetailsViewModelXirrTests.cs:206`.
+
+**F03 — one implementation** — no `xirr.ts` exists anywhere in the tree. Each row calls
+`apiClient.calculateXirr` (`Financial.Web/src/hooks/usePortfolioAssetSummary.ts:125`), i.e.
+`POST /xirr/calculate`. `isLoadingXirr` starts true (`:59`) and clears only on settle (`:83`);
+a failed price dispatches `ROW_PRICE_ERROR` **and** settles the rate to null without issuing a
+request (`:154-158`, "No price means no terminal value, so there is no rate to ask for"), which
+`renderGatedCell` (`components/PortfolioSummaryTab.tsx:21-30`) renders as an em dash. Historic rows
+pass a terminal of `0` (`:139`). Tests:
+`hooks/usePortfolioAssetSummary.test.ts:290,311,339,351,363,376`.
+
+**F04 / F05 — write-failure visibility and manual precedence**
+(`Financial.Investment.Application/Services/PriceService.cs`). Every criterion has a
+same-named test in `Tests/Financial.Investment.Application.Tests/Services/PriceServiceTests.cs`:
+`WhenPersistenceFails_DoesNotReportSuccess` `:582`, `LogsAnErrorNamingTheAsset` `:600`,
+`LeavesNoEntryInMemory` `:683`, `WhenAssetContextResolvesNothing_LogsAWarningNamingTheTriple` `:701`,
+`LiveFetchSucceeds_PersistsTheEntryToTheDataFile` `:642` (persisted content, not in-memory state),
+`SameAutomaticPriceAlreadyRecorded_SkipsSave` `:280`,
+`LiveFetchFails_NoEntryForToday_RethrowsOriginalException` `:511`,
+`ManualEntryForToday_KeepsItInsteadOfOverwriting` `:300`, `ManualEntryForToday_WritesNothing` `:325`,
+`ManualEntryForToday_DoesNotFetchAtAll` `:350`,
+`ManualEntryForAnEarlierDate_StillRecordsTodayAutomatically` `:370`.
+The in-memory rollback is the `catch` in `RecordAutomaticPriceIfNeededAsync` calling
+`asset.RestorePrice(today, displaced)` — the #517 change. The `(Manual)` badge renders at
+`Financial.Web/src/components/AssetSummaryTab.tsx:179` and
+`Financial.App/Components/NavigationView.xaml:321`.
+
+**F06 — as-of date** — `PriceService.BuildPriceFrom` sets `AsOfDate` from the snapshot and leaves
+`AsOf` null for a history-sourced price. Both front ends branch on which field is populated:
+`Financial.Web/src/components/AssetSummaryTab.tsx:18-23` (`formatDateTime` vs `formatShortDateUtc`)
+and `Financial.App/ViewModels/Investment/TodayInfoTracker.cs:60-63`
+(`AsOf?.ToLocalTime().ToString("g")` vs `AsOfDate?.ToString("d")`).
+*One parity nit worth recording:* when no price was obtained the Web shows an em dash
+(`AssetSummaryTab.tsx:19,22`) while WPF falls through to `string.Empty` — a blank cell instead. The
+criterion's actual constraint (an em dash **only** when no price) holds in both, so it is ticked, but
+the two front ends do not render the empty state identically.
+
+**F07 — batch recording** — the Web loop supplies broker, portfolio and asset name
+(`pages/CurrentValuesPage.tsx:83-90`), which is what makes the API record to Price History; WPF goes
+through `IPriceService.GetCurrentPriceAsync`, the orchestration, not `IAssetPriceService`
+(`ViewModels/Investment/AssetPriceFetchViewModel.cs:12,79`). Both loops are sequential `for` plus
+`await` (`CurrentValuesPage.tsx:79`, `AssetPriceFetchViewModel.cs:68`).
+
+**F08 — fetcher routing** — `AssetPriceService.cs:35-40` throws `UnsupportedAssetClassException`
+naming the class, asserted at
+`Tests/Financial.Investment.Application.Tests/Services/AssetPriceServiceTests.cs:84` and `:101`
+(`DoesNotCallAnyFetcher`), surfaced as 422 at
+`Tests/Financial.Api.Tests/AssetPriceEndpointsTests.cs:301`, which the grid renders through the same
+`fetchFailed` path as any other price failure. Crypto and bond keep their dedicated fetchers
+(`CryptocurrencyAssetPriceFetcherTests.cs:39`, `BondAssetPriceFetcherTests.cs:28`).
+The grid/asset-page agreement is `PriceService.DescribeWith`, which overrides the caller's
+`AssetClass` with `asset.Class` — its own comment states the criterion: "the portfolio grid sends the
+stored class while the asset page sends a label from a front-end table, so the same asset could be
+priced two different ways". This one is confirmed by reading; it has no dedicated unit test.
+
+**F09 — sell fee direction** — `Financial.Investment.Domain/Entities/Transaction.cs:21`,
+`TotalPrice => IsPurchase ? GrossAmount + Fees : GrossAmount - Fees`, with
+`TransactionFeeCalculator.RecoverFee` as its inverse (gross minus total for a sale, so a net total
+below gross yields a **positive** fee). `Entities/Transactions.cs:36` feeds that net `TotalPrice`
+into `RealizedCapitalGain`, and `:37-38` into `_totalSoldValue`, so Average Sell Price is net
+proceeds per unit. The purchase branch (`:32`) is untouched, which is also why an asset with no sales
+cannot change: nothing in the buy path was altered. Tests:
+`Domain/TransactionTests.cs:37,50,58,91` and `Domain/TransactionFeeCalculatorTests.cs:10,18,31,39,48`.
+
+**Cross-feature** — all five hold by construction and are covered above: the grid and the asset tab
+call one solver (`PortfolioSummaryTab.tsx:63`, "the same solver the asset tab uses") with no
+browser-local implementation left; the stored-snapshot and persistence outcome drive manual
+precedence in `PriceService.GetCurrentPriceAsync`; `BuildPriceFrom` is the single origin of both the
+manual flag and the date-only "As of"; and both batch screens pass the broker/portfolio/asset triple
+that keys the record-on-fetch orchestration.
+
+**Left unticked — not verifiable from the repository**
+- *TASA4 reports XIRR w/ Credits -30.94% within 0.05 pp.* Unlike F01's -32.21%, which is pinned by
+  `XirrCalculatorTests.cs:24`, no test asserts this figure and it depends on the real TASA4 position
+  and its live price. The mechanism behind it is fully verified above; only the number is unchecked.
+  Adding a fixture alongside `DeeplyNegativePositionCashFlows` would close this permanently.
+
+**Left unticked — a real defect, please read**
+- *"One asset's failure does not abort the run, and its error is listed."* True in the Web batch:
+  `pages/CurrentValuesPage.tsx:103-116` catches per asset, pushes an error row and continues.
+  **Not true in WPF.** `ViewModels/Investment/AssetPriceFetchViewModel.cs` puts its `try` at `:61`
+  and its `catch` at `:93` — **outside** the `for` loop at `:68-89`. The first asset that throws
+  terminates the loop, every remaining asset goes unfetched and unrecorded, and the user gets a
+  single `MessageBox` instead of a per-asset error in `Results`. On a batch run this is the
+  difference between "3 of 40 failed" and "37 of 40 silently never ran". *Fix:* move the
+  `try`/`catch` inside the loop and add a failed entry to `Results`, mirroring the Web. This belongs
+  in `docs/app-known-issues-backlog.md` §2 as a confirmed defect, not in §3.
