@@ -1,0 +1,63 @@
+.move-asset-dialog__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.move-asset-dialog {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, #e0e0e0);
+  border-radius: 6px;
+  padding: 20px;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.move-asset-dialog__title {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.move-asset-dialog__context {
+  margin: 0 0 16px;
+  font-size: 12px;
+  color: var(--text-muted, #888);
+}
+
+.move-asset-dialog__option {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.move-asset-dialog__input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 12px 20px;
+  max-width: calc(100% - 20px);
+  padding: 5px 6px;
+}
+
+.move-asset-dialog__error {
+  margin: 8px 0 0;
+  color: var(--danger, #c0392b);
+  font-size: 12px;
+}
+
+.move-asset-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.move-asset-dialog__actions button {
+  min-width: 84px;
+  padding: 6px 12px;
+}

@@ -5,6 +5,7 @@ import AggregatedSummaryTab from './AggregatedSummaryTab'
 import AssetSummaryTab from './AssetSummaryTab'
 import PortfolioSummaryTab from './PortfolioSummaryTab'
 import CreditsTab from './CreditsTab'
+import MoveAssetDialog from './MoveAssetDialog'
 import TransactionsTab from './TransactionsTab'
 import PriceHistoryTab from './PriceHistoryTab'
 import './DetailPanel.css'
@@ -24,9 +25,10 @@ function nodeKey(n: ReturnType<typeof useSelectedNode>['selectedNode']): string 
 }
 
 export default function DetailPanel() {
-  const { selectedNode } = useSelectedNode()
+  const { selectedNode, setSelectedNode, scope, reload } = useSelectedNode()
   const [activeTab, setActiveTab] = useState<TabId>('summary')
   const [prevKey, setPrevKey] = useState('')
+  const [isMoving, setIsMoving] = useState(false)
 
   const currentKey = nodeKey(selectedNode)
   if (currentKey !== prevKey) {
@@ -79,6 +81,16 @@ export default function DetailPanel() {
               ⧉
             </button>
           )}
+          {isAsset && (
+            <button
+              className="detail-panel__action-btn"
+              onClick={() => setIsMoving(true)}
+              type="button"
+              title="Move to another portfolio"
+            >
+              Move...
+            </button>
+          )}
           {isAsset && selectedNode.positionType && (
             <span
               className={`detail-panel__status detail-panel__status--${POSITION_TYPE_STATUS_CLASS[selectedNode.positionType]}`}
@@ -89,6 +101,23 @@ export default function DetailPanel() {
         </div>
         {breadcrumb && <p className="detail-panel__breadcrumb">{breadcrumb}</p>}
       </div>
+
+      {isMoving && selectedNode.portfolioName && selectedNode.assetName && (
+        <MoveAssetDialog
+          brokerName={selectedNode.brokerName}
+          portfolioName={selectedNode.portfolioName}
+          assetName={selectedNode.assetName}
+          scope={scope}
+          onCancel={() => setIsMoving(false)}
+          onMoved={(moved) => {
+            setIsMoving(false)
+            // Point the selection at where the asset landed before refreshing the tree, so the
+            // detail panel is never left describing a portfolio the asset has left.
+            setSelectedNode({ ...selectedNode, portfolioName: moved.portfolioName })
+            reload()
+          }}
+        />
+      )}
 
       <div className="detail-panel__tabs">
         {TABS.map((tab) => (
