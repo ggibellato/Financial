@@ -4,17 +4,8 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import './index.css'
 import './styles/data-table.css'
 import App from './App'
-import ActiveInvestmentsPage from './pages/ActiveInvestmentsPage'
-import HistoricInvestmentsPage from './pages/HistoricInvestmentsPage'
-import DividendCheckPage from './pages/DividendCheckPage'
-import CurrentValuesPage from './pages/CurrentValuesPage'
-import ControleMaePage from './pages/ControleMaePage'
-import InvestmentSnapshotsPage from './pages/InvestmentSnapshotsPage'
-import MensaisPage from './pages/MensaisPage'
-import MonthlyPage from './pages/MonthlyPage'
-import ReservaPage from './pages/ReservaPage'
+import { PAGE_ROUTES } from './navigation/routes'
 import RootRedirect from './pages/RootRedirect'
-import AnnualSummaryPage from './pages/AnnualSummaryPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -22,16 +13,9 @@ createRoot(document.getElementById('root')!).render(
       <Routes>
         <Route path="/" element={<App />}>
           <Route index element={<RootRedirect />} />
-          <Route path="investments/active-investments" element={<ActiveInvestmentsPage />} />
-          <Route path="investments/historic-investments" element={<HistoricInvestmentsPage />} />
-          <Route path="investments/dividend-check" element={<DividendCheckPage />} />
-          <Route path="investments/current-values" element={<CurrentValuesPage />} />
-          <Route path="cashflow/monthly" element={<MonthlyPage />} />
-          <Route path="cashflow/reserva" element={<ReservaPage />} />
-          <Route path="cashflow/mensais" element={<MensaisPage />} />
-          <Route path="cashflow/controle-mae" element={<ControleMaePage />} />
-          <Route path="cashflow/investment-snapshots" element={<InvestmentSnapshotsPage />} />
-          <Route path="cashflow/annual-summary" element={<AnnualSummaryPage />} />
+          {PAGE_ROUTES.map(({ path, element }) => (
+            <Route key={path} path={path} element={element} />
+          ))}
           <Route path="*" element={<div>Page not found.</div>} />
         </Route>
       </Routes>
