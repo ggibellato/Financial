@@ -1,5 +1,6 @@
 using Financial.Api.Middleware;
 using Financial.CashFlow.Application.Exceptions;
+using Financial.Investment.Domain.Exceptions;
 using Financial.TestUtilities;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -76,6 +77,43 @@ public class DomainExceptionLoggingTests
     }
 
     [Fact]
+    public async Task RefusedMove_LogsTheExceptionTypeAsAWarning_WithoutTheEntityNamesInItsMessage()
+    {
+        // The real message Broker.MoveAsset throws, verbatim in shape: it names the asset and the
+        // portfolio it collided with.
+        var exception = new InvestmentRuleViolationException(
+            "Portfolio \"ETF ISA\" already holds an asset named \"VUSA\".");
+
+        var (logger, context) = await InvokeWithAsync(exception, "POST", "/api/v1/financial/assets/move");
+
+        context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
+
+        var entry = logger.Entries.Should().ContainSingle().Which;
+        entry.Level.Should().Be(LogLevel.Warning);
+        entry.Message.Should().Contain(nameof(InvestmentRuleViolationException));
+        entry.Message.Should().Contain("409");
+        entry.Message.Should().Contain("/api/v1/financial/assets/move");
+
+        // Holdings the user owns must not leak into the log stream.
+        entry.Message.Should().NotContain("VUSA");
+        entry.Message.Should().NotContain("ETF ISA");
+    }
+
+    [Fact]
+    public async Task RefusedMove_StillWritesTheReasonToTheCaller()
+    {
+        // The user has to be told which rule blocked the move; only the log is redacted.
+        var exception = new InvestmentRuleViolationException(
+            "Portfolio \"ETF ISA\" already holds an asset named \"VUSA\".");
+
+        var (_, context) = await InvokeWithAsync(exception, "POST", "/api/v1/financial/assets/move");
+
+        var body = await ReadResponseBodyAsync(context);
+        body.Should().Contain("VUSA");
+        body.Should().Contain("ETF ISA");
+    }
+
+    [Fact]
     public async Task SuccessfulRequest_LogsNothing()
     {
         var logger = new RecordingLogger<DomainExceptionMappingMiddleware>();
@@ -90,8 +128,10 @@ public class DomainExceptionLoggingTests
     [Fact]
     public async Task UnmappedException_IsNotSwallowedOrLogged()
     {
-        // Only the three mapped domain exception types are translated; anything else must keep
-        // propagating to the outer exception handler rather than being quietly logged here.
+        // Only the four mapped domain exception types are translated; anything else must keep
+        // propagating to the outer exception handler rather than being quietly logged here. This
+        // case matters doubly now: Infrastructure throws InvalidOperationException for real upstream
+        // faults, and mapping it here would hide them behind a 409.
         var logger = new RecordingLogger<DomainExceptionMappingMiddleware>();
         var context = CreateHttpContext("GET", "/api/v1/financial/banks");
         var middleware = new DomainExceptionMappingMiddleware(

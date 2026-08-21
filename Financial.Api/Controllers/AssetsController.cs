@@ -13,10 +13,12 @@ namespace Financial.Api.Controllers;
 public sealed class AssetsController : ControllerBase
 {
     private readonly INavigationService _navigationService;
+    private readonly IAssetMoveService _assetMoveService;
 
-    public AssetsController(INavigationService navigationService)
+    public AssetsController(INavigationService navigationService, IAssetMoveService assetMoveService)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+        _assetMoveService = assetMoveService ?? throw new ArgumentNullException(nameof(assetMoveService));
     }
 
     /// <summary>Returns the full details for a single asset.</summary>
@@ -41,5 +43,30 @@ public sealed class AssetsController : ControllerBase
         }
 
         return Ok(asset);
+    }
+
+    /// <summary>Moves an asset into another portfolio of the same broker.</summary>
+    /// <param name="request">The asset to move and where it should go. The destination portfolio is created when the name is one the broker does not have yet.</param>
+    /// <returns>
+    /// 200 OK with the moved asset read back from its new portfolio,
+    /// 400 Bad Request if a field or the destination name is blank,
+    /// 404 Not Found if the broker, portfolio or asset does not exist,
+    /// or 409 Conflict if a move rule refused it.
+    /// </returns>
+    [HttpPost("move")]
+    [ProducesResponseType(typeof(AssetDetailsDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<AssetDetailsDTO>> MoveAsset([FromBody] MoveAssetRequestDTO request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        // Rejections travel as exceptions so the reason survives to the caller;
+        // DomainExceptionMappingMiddleware turns each into its status code.
+        return Ok(await _assetMoveService.MoveAssetAsync(request));
     }
 }
