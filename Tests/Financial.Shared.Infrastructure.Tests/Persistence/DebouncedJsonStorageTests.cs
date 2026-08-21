@@ -50,16 +50,27 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task WriteDuringDebounceWindow_ResetsWait_OnlyLatestJsonUploaded()
     {
-        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(150));
+        var clock = new ObservableFakeClock(new DateTimeOffset(2026, 8, 13, 10, 0, 0, TimeSpan.Zero));
+        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(150), clock);
 
         await storage.WriteAsync("{\"a\":1}");
-        await Task.Delay(50);
+        await WaitForAsync(() => clock.TimersArmed == 1);
+        clock.Advance(TimeSpan.FromMilliseconds(100));
+
         await storage.WriteAsync("{\"a\":2}");
+        await WaitForAsync(() => clock.TimersArmed == 2);
+        clock.Advance(TimeSpan.FromMilliseconds(100));
 
-        await WaitForAsync(() => _inner.WrittenJson.Count >= 1);
-        await Task.Delay(100);
+        // 200ms have now passed since the first write, so its 150ms window would have elapsed had
+        // the second write not restarted it.
+        _inner.WrittenJson.Should().BeEmpty();
 
-        _inner.WrittenJson.Should().ContainSingle().Which.Should().Be("{\"a\":2}");
+        clock.Advance(TimeSpan.FromMilliseconds(60));
+        await WaitForAsync(() => _inner.WrittenJson.Count == 1);
+
+        // The whole upload sequence, not a sample of it: had the wait not reset, the first window
+        // would have uploaded {"a":1} on its own and this would read ["{\"a\":1}", "{\"a\":2}"].
+        _inner.WrittenJson.Should().Equal("{\"a\":2}");
     }
 
     [Fact]
@@ -145,19 +156,34 @@ public class DebouncedJsonStorageTests
     [Fact]
     public async Task SuccessfulSave_WhenStillDirtyFromANewerWrite_StatusBecomesPendingNotIdle()
     {
+        var clock = new ObservableFakeClock(new DateTimeOffset(2026, 8, 13, 10, 0, 0, TimeSpan.Zero));
         _inner.HoldWritesUntilReleased();
-        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(300));
+        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(300), clock);
 
         await storage.WriteAsync("{\"a\":1}");
+        await WaitForAsync(() => clock.TimersArmed == 1);
+        clock.Advance(TimeSpan.FromMilliseconds(300));
         await WaitForAsync(() => storage.GetStatus().State == SyncState.Saving);
 
+        // Dirties the document again while the first save is still blocked on the gate.
         await storage.WriteAsync("{\"a\":2}");
-
         _inner.Release();
 
         await WaitForAsync(() => _inner.WrittenJson.Count == 1);
 
-        storage.GetStatus().State.Should().Be(SyncState.Pending);
+        // Pending is a resting state here, not a moment to be caught: the follow-up cycle waits on
+        // the fake clock, so it cannot advance to Saving until this test says so. That is what the
+        // old version raced - it sampled the status and lost when the runner stalled past 300ms.
+        await WaitForAsync(() => storage.GetStatus().State == SyncState.Pending);
+
+        // Then drive the rest of the sequence to prove Pending meant "a newer document is still
+        // queued", rather than the save cycle having quietly stalled.
+        await WaitForAsync(() => clock.TimersArmed == 2);
+        clock.Advance(TimeSpan.FromMilliseconds(300));
+        await WaitForAsync(() => _inner.WrittenJson.Count == 2);
+        await WaitForAsync(() => storage.GetStatus().State == SyncState.Idle);
+
+        _inner.WrittenJson.Should().Equal("{\"a\":1}", "{\"a\":2}");
     }
 
     [Fact]
