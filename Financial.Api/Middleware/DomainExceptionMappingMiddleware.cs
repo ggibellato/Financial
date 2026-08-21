@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.Exceptions;
+using Financial.Investment.Application.Exceptions;
 using Microsoft.AspNetCore.Http;
 
 namespace Financial.Api.Middleware;
@@ -6,6 +7,10 @@ namespace Financial.Api.Middleware;
 /// <summary>
 /// Maps domain exceptions raised by Application services to the HTTP status code controllers
 /// used to translate by hand, so no controller needs its own try/catch for these cases.
+/// <para>
+/// Both bounded contexts are mapped here. The BCL cases below already covered Investment, but a
+/// condition Investment alone can raise needs its own entry or it falls through to a 500.
+/// </para>
 /// </summary>
 internal sealed class DomainExceptionMappingMiddleware
 {
@@ -27,6 +32,13 @@ internal sealed class DomainExceptionMappingMiddleware
         catch (OverdraftConfirmationRequiredException ex)
         {
             await HandleAsync(context, ex, StatusCodes.Status409Conflict);
+        }
+        catch (UnsupportedAssetClassException ex)
+        {
+            // 422 rather than 400: the request is well formed and the asset is real, there is just
+            // no price source for its class. 400 would invite the client to fix the request, and a
+            // 500 - what this used to be - invites a retry that can never succeed.
+            await HandleAsync(context, ex, StatusCodes.Status422UnprocessableEntity);
         }
         catch (KeyNotFoundException ex)
         {

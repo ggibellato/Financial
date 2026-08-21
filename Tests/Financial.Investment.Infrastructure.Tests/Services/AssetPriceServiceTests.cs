@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Exceptions;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.ValueObjects;
@@ -88,7 +89,7 @@ public class AssetPriceServiceTests
 
         var act = () => service.GetCurrentPrice(request);
 
-        act.Should().Throw<NotSupportedException>().WithMessage("*PrivateCredit*");
+        act.Should().Throw<UnsupportedAssetClassException>().WithMessage("*PrivateCredit*");
     }
 
     /// <summary>
@@ -106,7 +107,7 @@ public class AssetPriceServiceTests
 
         var act = () => service.GetCurrentPrice(request);
 
-        act.Should().Throw<NotSupportedException>();
+        act.Should().Throw<UnsupportedAssetClassException>();
         fetcher.SnapshotCallCount.Should().Be(0);
     }
 

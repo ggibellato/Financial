@@ -1,7 +1,9 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Exceptions;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -283,6 +285,37 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
         var response = await Client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>
+    /// A holding whose class has no price source is a permanent, expected condition, not an
+    /// outage. As a 500 it read as a server fault the user should retry, and the front ends showed
+    /// a server error rather than an unavailable indicator.
+    /// </summary>
+    /// <summary>
+    /// Status and body are asserted together on purpose. An unmapped exception still surfaces a
+    /// ProblemDetails carrying the message, so a body-only assertion passes whether or not the
+    /// mapping exists - it was the status that was wrong.
+    /// </summary>
+    [Fact]
+    public async Task GetCurrentPrice_WhenNoPriceSourceSupportsTheAssetClass_ReturnsUnprocessableEntityNamingTheClass()
+    {
+        await using var factory = CreateFactory(new UnsupportedClassAssetPriceServiceStub());
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/v1/financial/prices/current?ticker=XXX&assetClass=PrivateCredit");
+
+        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem.Should().NotBeNull();
+        problem!.Detail.Should().Contain("PrivateCredit");
+    }
+
+    private sealed class UnsupportedClassAssetPriceServiceStub : IAssetPriceService
+    {
+        public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request) =>
+            throw new UnsupportedAssetClassException($"No price source supports the asset class '{request.AssetClass}'.");
     }
 
     private static WebApplicationFactory<Program> CreateFactory(IAssetPriceService? stub = null)
