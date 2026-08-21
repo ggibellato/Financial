@@ -7,17 +7,17 @@ namespace Financial.Investment.Domain.Tests.Domain;
 public class TransactionFeeCalculatorTests
 {
     [Fact]
-    public void DeriveFromTotal_ForPurchase_ReturnsTheExcessOverGrossAmount()
+    public void RecoverFee_ForPurchase_ReturnsTheExcessOverGrossAmount()
     {
-        var fees = TransactionFeeCalculator.DeriveFromTotal(Transaction.TransactionType.Buy, 2m, 10m, totalAmount: 21m);
+        var fees = TransactionFeeCalculator.RecoverFee(Transaction.TransactionType.Buy, 2m, 10m, totalPrice: 21m);
 
         fees.Should().Be(1m);
     }
 
     [Fact]
-    public void DeriveFromTotal_ForSale_ReturnsTheShortfallBelowGrossAmount()
+    public void RecoverFee_ForSale_ReturnsTheShortfallBelowGrossAmount()
     {
-        var fees = TransactionFeeCalculator.DeriveFromTotal(Transaction.TransactionType.Sell, 2m, 10m, totalAmount: 19m);
+        var fees = TransactionFeeCalculator.RecoverFee(Transaction.TransactionType.Sell, 2m, 10m, totalPrice: 19m);
 
         fees.Should().Be(1m);
     }
@@ -28,27 +28,27 @@ public class TransactionFeeCalculatorTests
     /// needed none.
     /// </summary>
     [Fact]
-    public void DeriveFromTotal_ForPurchaseWhoseTotalIsBelowGross_ReturnsTheNegativeFigure()
+    public void RecoverFee_ForPurchaseWhoseTotalIsBelowGross_ReturnsTheNegativeFigure()
     {
-        var fees = TransactionFeeCalculator.DeriveFromTotal(Transaction.TransactionType.Buy, 2m, 10m, totalAmount: 19m);
+        var fees = TransactionFeeCalculator.RecoverFee(Transaction.TransactionType.Buy, 2m, 10m, totalPrice: 19m);
 
         fees.Should().Be(-1m);
     }
 
     [Fact]
-    public void DeriveFromTotal_ForSaleWhoseTotalIsAboveGross_ReturnsTheNegativeFigure()
+    public void RecoverFee_ForSaleWhoseTotalIsAboveGross_ReturnsTheNegativeFigure()
     {
-        var fees = TransactionFeeCalculator.DeriveFromTotal(Transaction.TransactionType.Sell, 2m, 10m, totalAmount: 21m);
+        var fees = TransactionFeeCalculator.RecoverFee(Transaction.TransactionType.Sell, 2m, 10m, totalPrice: 21m);
 
         fees.Should().Be(-1m);
     }
 
     /// <summary>The direction is the whole rule: the same inputs mean opposite things per side.</summary>
     [Fact]
-    public void DeriveFromTotal_ForTheSameInputs_ReturnsOppositeSignsPerDirection()
+    public void RecoverFee_ForTheSameInputs_ReturnsOppositeSignsPerDirection()
     {
-        var purchase = TransactionFeeCalculator.DeriveFromTotal(Transaction.TransactionType.Buy, 2m, 10m, totalAmount: 21m);
-        var sale = TransactionFeeCalculator.DeriveFromTotal(Transaction.TransactionType.Sell, 2m, 10m, totalAmount: 21m);
+        var purchase = TransactionFeeCalculator.RecoverFee(Transaction.TransactionType.Buy, 2m, 10m, totalPrice: 21m);
+        var sale = TransactionFeeCalculator.RecoverFee(Transaction.TransactionType.Sell, 2m, 10m, totalPrice: 21m);
 
         purchase.Should().Be(1m);
         sale.Should().Be(-1m);

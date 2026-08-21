@@ -56,8 +56,8 @@ internal sealed class GoogleSheetsAssetReader
     /// <summary>
     /// <paramref name="progress"/> is the import tool's operator log. A row whose recorded total
     /// disagrees with unit price times quantity yields a negative fee, which
-    /// <see cref="Transaction.CreateFromTotal"/> floors to zero - a repair that used to leave no
-    /// trace, so a spreadsheet with bad totals imported looking exactly like a clean one.
+    /// <see cref="Transaction"/> floors to zero - a repair that used to leave no trace, so a
+    /// spreadsheet with bad totals imported looking exactly like a clean one.
     /// </summary>
     internal async Task<List<Transaction>> ReadTransactionsAsync(string fileId, string spreadSheetName, IProgress<string> progress = null)
     {
@@ -77,20 +77,17 @@ internal sealed class GoogleSheetsAssetReader
             var transactionType = type == SellTransactionCode ? Transaction.TransactionType.Sell : Transaction.TransactionType.Buy;
             var transactionDate = DateTime.FromOADate(date);
 
-            var derivedFees = TransactionFeeCalculator.DeriveFromTotal(transactionType, quantity, unitPrice, totalAmount);
-            if (derivedFees < 0)
+            // Recovered once and handed to the entity, which floors it. Recovering it here and
+            // again inside the factory left two evaluations of one rule that could disagree.
+            var fees = TransactionFeeCalculator.RecoverFee(transactionType, quantity, unitPrice, totalAmount);
+            if (fees < 0)
             {
                 progress?.Report(
                     $"[{spreadSheetName}] {transactionDate:yyyy-MM-dd} {transactionType}: recorded total {totalAmount} "
-                    + $"disagrees with {quantity} x {unitPrice}, giving a fee of {derivedFees}. Imported with a fee of 0 - check the source row.");
+                    + $"disagrees with {quantity} x {unitPrice}, giving a fee of {fees}. Imported with a fee of 0 - check the source row.");
             }
 
-            transactions.Add(Transaction.CreateFromTotal(
-                transactionDate,
-                transactionType,
-                quantity,
-                unitPrice,
-                totalAmount));
+            transactions.Add(Transaction.Create(transactionDate, transactionType, quantity, unitPrice, fees));
         }
         return transactions;
     }
