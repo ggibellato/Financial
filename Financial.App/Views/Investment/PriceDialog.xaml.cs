@@ -3,11 +3,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace Financial.Presentation.App;
+namespace Financial.Presentation.App.Views.Investment;
 
-public partial class TransactionDialog : Window
+public partial class PriceDialog : Window
 {
-    public TransactionDialog(TransactionDialogViewModel viewModel)
+    public PriceDialog(PriceDialogViewModel viewModel)
     {
         InitializeComponent();
         DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
@@ -16,7 +16,7 @@ public partial class TransactionDialog : Window
 
     private void OnCloseRequested(object? sender, bool? dialogResult)
     {
-        if (sender is TransactionDialogViewModel viewModel)
+        if (sender is PriceDialogViewModel viewModel)
         {
             viewModel.CloseRequested -= OnCloseRequested;
         }

@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
+using Financial.Presentation.App.Views.Investment;
 using Financial.Presentation.App.Helpers;
 using OxyPlot;
 using System.Collections.ObjectModel;

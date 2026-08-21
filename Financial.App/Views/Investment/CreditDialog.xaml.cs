@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace Financial.Presentation.App;
+namespace Financial.Presentation.App.Views.Investment;
 
 public partial class CreditDialog : Window
 {
