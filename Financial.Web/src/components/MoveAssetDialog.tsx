@@ -21,6 +21,11 @@ function getMetaString(metadata: Record<string, unknown>, key: string): string {
   return typeof value === 'string' ? value : ''
 }
 
+function getMetaNumber(metadata: Record<string, unknown>, key: string): number {
+  const value = metadata[key]
+  return typeof value === 'number' ? value : -1
+}
+
 /** The broker's portfolios in one scope, taken from the tree that scope is rendered from. */
 function portfolioNamesOf(tree: TreeNodeDto | null, brokerName: string): string[] {
   const broker = tree?.children.find(
@@ -51,6 +56,9 @@ export default function MoveAssetDialog({
   const [newPortfolioName, setNewPortfolioName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  // Set once the move has succeeded and left the source portfolio holding nothing. The dialog then
+  // asks whether to remove it, rather than closing and leaving an empty portfolio behind.
+  const [emptiedSource, setEmptiedSource] = useState<AssetDetailsDto | null>(null)
 
   useEffect(() => {
     // Every Historic portfolio is a candidate, including one named like the source: across scopes
@@ -120,10 +128,51 @@ export default function MoveAssetDialog({
             assetName,
             destinationPortfolioName,
           })
+      // Whether the source is now empty comes from the tree, which already carries the count -
+      // no extra field on the move response, and the freshest answer available.
+      const sourceIsEmpty = await isSourceEmptyAsync()
+      if (sourceIsEmpty) {
+        setEmptiedSource(moved)
+        setIsSaving(false)
+        return
+      }
+
       onMoved(moved, archiveToHistoric)
     } catch (err: unknown) {
       // The reason comes from the domain, so this reads the same as the desktop app.
       setError(getErrorMessage(err, 'The asset could not be moved.'))
+      setIsSaving(false)
+    }
+  }
+
+  const isSourceEmptyAsync = async () => {
+    try {
+      const tree = await apiClient.getNavigationTree(scope)
+      const broker = tree.children.find(
+        (child) => child.nodeType === 'Broker' && getMetaString(child.metadata, 'BrokerName') === brokerName,
+      )
+      const source = broker?.children.find(
+        (child) => getMetaString(child.metadata, 'PortfolioName') === portfolioName,
+      )
+      // -1 when absent, so an unknown count never reads as empty.
+      const count = source ? getMetaNumber(source.metadata, 'AssetCount') : -1
+      return count === 0
+    } catch {
+      // The move already succeeded; failing to work out whether to tidy up must not undo it.
+      return false
+    }
+  }
+
+  const handleDeleteEmptiedSource = async () => {
+    if (!emptiedSource) return
+
+    setIsSaving(true)
+    try {
+      await apiClient.deleteEmptyPortfolio(brokerName, portfolioName, scope)
+      onMoved(emptiedSource, archiveToHistoric)
+    } catch (err: unknown) {
+      // The move stands either way; only the tidy-up failed.
+      setError(getErrorMessage(err, 'The portfolio could not be deleted.'))
       setIsSaving(false)
     }
   }
@@ -142,6 +191,27 @@ export default function MoveAssetDialog({
           {brokerName} / {portfolioName} / {assetName}
         </p>
 
+        {emptiedSource ? (
+          <>
+            <p className="move-asset-dialog__prompt">
+              &ldquo;{portfolioName}&rdquo; is now empty. Delete it?
+            </p>
+            {error && (
+              <p className="move-asset-dialog__error" role="alert">
+                {error}
+              </p>
+            )}
+            <div className="move-asset-dialog__actions">
+              <button type="button" onClick={handleDeleteEmptiedSource} disabled={isSaving}>
+                Delete
+              </button>
+              <button type="button" onClick={() => onMoved(emptiedSource, archiveToHistoric)} disabled={isSaving}>
+                Keep
+              </button>
+            </div>
+          </>
+        ) : (
+        <>
         {canArchive && (
           <fieldset className="move-asset-dialog__scope">
             <legend className="move-asset-dialog__legend">Destination</legend>
@@ -217,6 +287,8 @@ export default function MoveAssetDialog({
             Cancel
           </button>
         </div>
+        </>
+        )}
       </div>
     </div>
   )

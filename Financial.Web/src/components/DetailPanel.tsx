@@ -1,4 +1,6 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+import { createFinancialApiClient } from '../api/financialApiClient'
+import { getErrorMessage } from '../utils/formatters'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { POSITION_TYPE_STATUS_CLASS } from '../utils/positionType'
 import AggregatedSummaryTab from './AggregatedSummaryTab'
@@ -29,6 +31,8 @@ export default function DetailPanel() {
   const [activeTab, setActiveTab] = useState<TabId>('summary')
   const [prevKey, setPrevKey] = useState('')
   const [isMoving, setIsMoving] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const apiClient = useMemo(() => createFinancialApiClient(), [])
 
   const currentKey = nodeKey(selectedNode)
   if (currentKey !== prevKey) {
@@ -52,6 +56,21 @@ export default function DetailPanel() {
 
   const isAsset = selectedNode.nodeType === 'Asset'
   const isPortfolio = selectedNode.nodeType === 'Portfolio'
+
+  // assetCount is -1 when the tree did not carry it, so an unknown count never offers deletion.
+  const canDeletePortfolio = isPortfolio && selectedNode.assetCount === 0
+
+  const handleDeletePortfolio = async () => {
+    setDeleteError(null)
+    try {
+      await apiClient.deleteEmptyPortfolio(selectedNode.brokerName, selectedNode.portfolioName ?? '', scope)
+      // The portfolio is gone, so nothing here describes anything any more.
+      setSelectedNode(null)
+      reload()
+    } catch (err: unknown) {
+      setDeleteError(getErrorMessage(err, 'The portfolio could not be deleted.'))
+    }
+  }
 
   const breadcrumb = isAsset
     ? `${selectedNode.ticker} · ${selectedNode.exchange} · ${selectedNode.brokerName} · ${selectedNode.portfolioName}`
@@ -91,6 +110,16 @@ export default function DetailPanel() {
               Move...
             </button>
           )}
+          {canDeletePortfolio && (
+            <button
+              className="detail-panel__action-btn"
+              onClick={handleDeletePortfolio}
+              type="button"
+              title="Delete this empty portfolio"
+            >
+              Delete Portfolio
+            </button>
+          )}
           {isAsset && selectedNode.positionType && (
             <span
               className={`detail-panel__status detail-panel__status--${POSITION_TYPE_STATUS_CLASS[selectedNode.positionType]}`}
@@ -100,6 +129,11 @@ export default function DetailPanel() {
           )}
         </div>
         {breadcrumb && <p className="detail-panel__breadcrumb">{breadcrumb}</p>}
+        {deleteError && (
+          <p className="detail-panel__error" role="alert">
+            {deleteError}
+          </p>
+        )}
       </div>
 
       {isMoving && selectedNode.portfolioName && selectedNode.assetName && (

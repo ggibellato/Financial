@@ -85,6 +85,7 @@ export interface FinancialApiClient {
   getTransactionsByPortfolio: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<TransactionSummaryItemDto[]>
   moveAsset: (request: MoveAssetRequestDto) => Promise<AssetDetailsDto>
   archiveAsset: (request: ArchiveAssetRequestDto) => Promise<AssetDetailsDto>
+  deleteEmptyPortfolio: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<void>
   addTransaction: (request: TransactionCreateDto) => Promise<AssetDetailsDto>
   updateTransaction: (request: TransactionUpdateDto) => Promise<AssetDetailsDto>
   deleteTransaction: (request: TransactionDeleteDto) => Promise<AssetDetailsDto>
@@ -275,6 +276,11 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         method: 'POST',
         body: JSON.stringify(requestBody),
       }),
+    deleteEmptyPortfolio: (brokerName, portfolioName, scope = 'active') =>
+      requestVoid(
+        `/portfolios/${encodeURIComponent(brokerName)}/${encodeURIComponent(portfolioName)}${buildScopeQuery(scope)}`,
+        { method: 'DELETE' },
+      ),
     addTransaction: (requestBody) =>
       request<AssetDetailsDto>('/transactions', {
         method: 'POST',

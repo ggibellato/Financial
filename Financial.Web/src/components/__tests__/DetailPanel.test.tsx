@@ -4,6 +4,7 @@ import DetailPanel from '../DetailPanel'
 import { SelectedNodeProvider, useSelectedNode } from '../../context/SelectedNodeContext'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { SelectedNode } from '../../api/types'
+import { ApiError } from '../../api/apiError'
 
 const getAssetDetailsMock = vi.fn()
 const getCurrentPriceMock = vi.fn()
@@ -12,6 +13,7 @@ const getSummaryByPortfolioMock = vi.fn()
 const getPortfolioAssetsSummaryMock = vi.fn()
 const getTransactionsByBrokerMock = vi.fn().mockResolvedValue([])
 const getTransactionsByPortfolioMock = vi.fn().mockResolvedValue([])
+const deleteEmptyPortfolioMock = vi.fn()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
@@ -22,6 +24,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getPortfolioAssetsSummary: getPortfolioAssetsSummaryMock,
     getTransactionsByBroker: getTransactionsByBrokerMock,
     getTransactionsByPortfolio: getTransactionsByPortfolioMock,
+    deleteEmptyPortfolio: deleteEmptyPortfolioMock,
   }),
 }))
 
@@ -48,6 +51,14 @@ const portfolioNode: SelectedNode = {
   nodeType: 'Portfolio',
   brokerName: 'XPI',
   portfolioName: 'Acoes',
+  assetCount: 2,
+}
+
+const emptyPortfolioNode: SelectedNode = {
+  nodeType: 'Portfolio',
+  brokerName: 'XPI',
+  portfolioName: 'Stale',
+  assetCount: 0,
 }
 const activeAssetNode: SelectedNode = {
   nodeType: 'Asset',
@@ -251,5 +262,49 @@ describe('DetailPanel', () => {
     fireEvent.click(screen.getByTestId('set-portfolio'))
     expect(screen.getByRole('button', { name: 'Summary' })).toHaveClass('detail-panel__tab--active')
     expect(screen.getByRole('button', { name: 'Transactions' })).not.toHaveClass('detail-panel__tab--active')
+  })
+
+  it('offers to delete a portfolio that holds nothing', async () => {
+    renderPanel(emptyPortfolioNode)
+    fireEvent.click(screen.getByTestId('setter'))
+
+    expect(screen.getByRole('button', { name: 'Delete Portfolio' })).toBeInTheDocument()
+  })
+
+  it('does not offer to delete a portfolio that still holds assets', async () => {
+    renderPanel(portfolioNode)
+    fireEvent.click(screen.getByTestId('setter'))
+
+    expect(screen.queryByRole('button', { name: 'Delete Portfolio' })).not.toBeInTheDocument()
+  })
+
+  it('does not offer to delete when the asset count is unknown', async () => {
+    // -1 is what the tree reports when the metadata is missing; it must not read as empty.
+    renderPanel({ ...emptyPortfolioNode, assetCount: -1 })
+    fireEvent.click(screen.getByTestId('setter'))
+
+    expect(screen.queryByRole('button', { name: 'Delete Portfolio' })).not.toBeInTheDocument()
+  })
+
+  it('deletes the portfolio and clears the selection', async () => {
+    deleteEmptyPortfolioMock.mockResolvedValue(undefined)
+    renderPanel(emptyPortfolioNode)
+    fireEvent.click(screen.getByTestId('setter'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Portfolio' }))
+
+    await waitFor(() => expect(deleteEmptyPortfolioMock).toHaveBeenCalledWith('XPI', 'Stale', 'active'))
+    // Nothing here describes anything once the portfolio is gone.
+    await waitFor(() => expect(screen.getByText('Select an item to view details')).toBeInTheDocument())
+  })
+
+  it("shows the server's reason when a deletion is refused", async () => {
+    deleteEmptyPortfolioMock.mockRejectedValue(new ApiError('Portfolio "Stale" still holds 1 asset(s).', 409))
+    renderPanel(emptyPortfolioNode)
+    fireEvent.click(screen.getByTestId('setter'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Portfolio' }))
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('still holds'))
   })
 })

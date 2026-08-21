@@ -61,6 +61,12 @@
   border-color: var(--accent, #007acc);
 }
 
+.detail-panel__error {
+  margin: 6px 0 0;
+  color: var(--danger, #c0392b);
+  font-size: 12px;
+}
+
 .detail-panel__status {
   font-size: 11px;
   flex-shrink: 0;

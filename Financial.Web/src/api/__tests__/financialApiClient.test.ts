@@ -180,6 +180,26 @@ describe('financialApiClient', () => {
     ).rejects.toThrow('already holds an asset named "BCIA11"')
   })
 
+  it('deletes an empty portfolio, scoped', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteEmptyPortfolio('Trading 212', 'ETF ISA', 'historic')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/portfolios/Trading%20212/ETF%20ISA?scope=historic`)
+    expect(init?.method).toBe('DELETE')
+  })
+
+  it('defaults an empty-portfolio deletion to the active scope', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteEmptyPortfolio('XPI', 'Stale')
+
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/portfolios/XPI/Stale?scope=active`)
+  })
+
   it('posts a new transaction', async () => {
     const responseBody = { name: 'BCIA11' } as AssetDetailsDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
