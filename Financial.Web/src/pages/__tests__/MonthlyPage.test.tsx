@@ -732,6 +732,16 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(unmarkCardStatementPaidMock).toHaveBeenCalledWith('c2'))
   })
 
+  it('does not unmark a paid statement when the user cancels the confirmation', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('cell', { name: 'ChaseMaster4023' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Unmark Paid' }))
+
+    expect(unmarkCardStatementPaidMock).not.toHaveBeenCalled()
+  })
+
   it('opens the New Expense form on the Expense tab locked to bank mode, no toggle', async () => {
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
@@ -903,6 +913,17 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Delete expense' })[0])
 
     await waitFor(() => expect(deleteExpenseMock).toHaveBeenCalledWith('e1'))
+  })
+
+  it('does not delete an expense when the user cancels the confirmation', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Expense' }))
+
+    await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete expense' })[0])
+
+    expect(deleteExpenseMock).not.toHaveBeenCalled()
   })
 
   it('renders the income list on the Incoming tab', async () => {
@@ -1350,6 +1371,17 @@ describe('MonthlyPage', () => {
       expect(updateBalanceAdjustmentMock).toHaveBeenCalledWith('bank-barclays', 'a1', expect.objectContaining({ targetBalance: 50 })),
     )
     await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
+  })
+
+  it('does not delete a transfer when the user cancels the confirmation', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
+
+    await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Delete transfer' }))
+
+    expect(deleteTransferMock).not.toHaveBeenCalled()
   })
 
   it('deletes a transfer from the operations list after confirmation, and refreshes balances', async () => {

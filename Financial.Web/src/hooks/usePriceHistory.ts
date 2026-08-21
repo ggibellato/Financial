@@ -263,7 +263,6 @@ export function usePriceHistory(): PriceHistoryData {
   const deleteEntry = useCallback(
     (date: string) => {
       if (!selectedNode?.portfolioName || !selectedNode.assetName) return
-      if (!window.confirm('Delete this price entry?')) return
 
       void apiClient
         .deleteAssetPrice({

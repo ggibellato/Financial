@@ -211,6 +211,14 @@ export default function PriceHistoryTab() {
     deleteEntry,
   } = usePriceHistory()
 
+  // Confirmation belongs to the caller, not to the data hook. A hook that calls window.confirm
+  // can only be tested by stubbing a browser global, and it decides for every caller that a
+  // prompt is wanted at all. Same reasoning as ControleMaePage and MensaisPage, which already
+  // did it this way.
+  const confirmAndDeleteEntry = (date: string) => {
+    if (window.confirm('Delete this price entry?')) deleteEntry(date)
+  }
+
   if (isLoading) {
     return <LoadingState />
   }
@@ -270,7 +278,7 @@ export default function PriceHistoryTab() {
           </thead>
           <tbody>
             {entries.map((entry) => (
-              <PriceRow key={entry.date} entry={entry} onEdit={showEditForm} onDelete={deleteEntry} />
+              <PriceRow key={entry.date} entry={entry} onEdit={showEditForm} onDelete={confirmAndDeleteEntry} />
             ))}
           </tbody>
         </table>

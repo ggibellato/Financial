@@ -402,7 +402,6 @@ export function useTransactions(): TransactionsData {
   const deleteTransaction = useCallback(
     (id: string) => {
       if (!selectedNode?.portfolioName || !selectedNode.assetName) return
-      if (!window.confirm('Delete this transaction?')) return
 
       void apiClient
         .deleteTransaction({

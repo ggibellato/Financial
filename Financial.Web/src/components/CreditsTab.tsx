@@ -284,6 +284,14 @@ export default function CreditsTab() {
     deleteCredit,
   } = useCredits()
 
+  // Confirmation belongs to the caller, not to the data hook. A hook that calls window.confirm
+  // can only be tested by stubbing a browser global, and it decides for every caller that a
+  // prompt is wanted at all. Same reasoning as ControleMaePage and MensaisPage, which already
+  // did it this way.
+  const confirmAndDeleteCredit = (id: string) => {
+    if (window.confirm('Delete this credit?')) deleteCredit(id)
+  }
+
   if (isLoading) {
     return <LoadingState />
   }
@@ -386,7 +394,7 @@ export default function CreditsTab() {
           </thead>
           <tbody>
             {credits.map((c) => (
-              <CreditRow key={c.id} credit={c} onEdit={showEditForm} onDelete={deleteCredit} />
+              <CreditRow key={c.id} credit={c} onEdit={showEditForm} onDelete={confirmAndDeleteCredit} />
             ))}
           </tbody>
         </table>

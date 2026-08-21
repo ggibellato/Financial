@@ -286,6 +286,14 @@ export default function TransactionsTab() {
     deleteTransaction,
   } = useTransactions()
 
+  // Confirmation belongs to the caller, not to the data hook. A hook that calls window.confirm
+  // can only be tested by stubbing a browser global, and it decides for every caller that a
+  // prompt is wanted at all. Same reasoning as ControleMaePage and MensaisPage, which already
+  // did it this way.
+  const confirmAndDeleteTransaction = (id: string) => {
+    if (window.confirm('Delete this transaction?')) deleteTransaction(id)
+  }
+
   if (isLoading) {
     return <LoadingState />
   }
@@ -361,7 +369,7 @@ export default function TransactionsTab() {
                 key={t.id}
                 transaction={t}
                 onEdit={showEditForm}
-                onDelete={deleteTransaction}
+                onDelete={confirmAndDeleteTransaction}
               />
             ))}
           </tbody>
