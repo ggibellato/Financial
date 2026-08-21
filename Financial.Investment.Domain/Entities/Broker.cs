@@ -80,6 +80,30 @@ public class Broker
     }
 
     /// <summary>
+    /// Removes a portfolio that holds no assets.
+    /// </summary>
+    /// <remarks>
+    /// Only an empty one: a portfolio still holding assets is the only record of where they live,
+    /// so removing it would take them with it. Emptying it first is a move, which is a separate,
+    /// deliberate act.
+    /// </remarks>
+    /// <exception cref="KeyNotFoundException">No portfolio by that name.</exception>
+    /// <exception cref="InvestmentRuleViolationException">The portfolio still holds assets.</exception>
+    public bool RemoveEmptyPortfolio(string name)
+    {
+        var portfolio = FindPortfolio(name)
+            ?? throw new KeyNotFoundException($"Portfolio \"{name}\" was not found under broker \"{Name}\".");
+
+        if (!portfolio.IsEmpty)
+        {
+            throw new InvestmentRuleViolationException(
+                $"Portfolio \"{name}\" still holds {portfolio.Assets.Count} asset(s). Only an empty portfolio can be deleted.");
+        }
+
+        return _portfolios.Remove(portfolio);
+    }
+
+    /// <summary>
     /// Trims a destination name and rejects a blank one. Shared with <see cref="Investments"/>,
     /// which applies the same naming rules when archiving across scopes.
     /// </summary>
