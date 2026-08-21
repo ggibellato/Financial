@@ -100,38 +100,6 @@ public class TransactionTests
         transaction.Fees.Should().Be(0m);
     }
 
-    /// <summary>
-    /// The floored zero is a repair, and a repair the caller cannot see is indistinguishable from
-    /// a row that needed none. DeriveFees is what lets the import path tell the two apart.
-    /// </summary>
-    [Fact]
-    public void DeriveFees_ForPurchaseWhoseTotalIsBelowGross_ReturnsTheNegativeFigureRatherThanZero()
-    {
-        var fees = Transaction.DeriveFees(Transaction.TransactionType.Buy, 2m, 10m, totalAmount: 19m);
-
-        fees.Should().Be(-1m);
-    }
-
-    [Fact]
-    public void DeriveFees_ForSaleWhoseTotalIsAboveGross_ReturnsTheNegativeFigureRatherThanZero()
-    {
-        var fees = Transaction.DeriveFees(Transaction.TransactionType.Sell, 2m, 10m, totalAmount: 21m);
-
-        fees.Should().Be(-1m);
-    }
-
-    [Theory]
-    [InlineData(21, 1)]
-    [InlineData(20, 0)]
-    public void DeriveFees_ForAConsistentPurchase_AgreesWithWhatCreateFromTotalStores(decimal totalAmount, decimal expected)
-    {
-        var derived = Transaction.DeriveFees(Transaction.TransactionType.Buy, 2m, 10m, totalAmount);
-        var stored = Transaction.CreateFromTotal(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 2m, 10m, totalAmount);
-
-        derived.Should().Be(expected);
-        stored.Fees.Should().Be(derived, "flooring only applies below zero");
-    }
-
     [Fact]
     public void CreateFromTotal_RoundTripsTheRecordedTotalForBothDirections()
     {

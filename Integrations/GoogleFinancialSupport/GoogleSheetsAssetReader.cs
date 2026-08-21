@@ -1,4 +1,5 @@
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -76,7 +77,7 @@ internal sealed class GoogleSheetsAssetReader
             var transactionType = type == SellTransactionCode ? Transaction.TransactionType.Sell : Transaction.TransactionType.Buy;
             var transactionDate = DateTime.FromOADate(date);
 
-            var derivedFees = Transaction.DeriveFees(transactionType, quantity, unitPrice, totalAmount);
+            var derivedFees = TransactionFeeCalculator.DeriveFromTotal(transactionType, quantity, unitPrice, totalAmount);
             if (derivedFees < 0)
             {
                 progress?.Report(
