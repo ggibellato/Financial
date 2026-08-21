@@ -120,7 +120,7 @@
               "ISIN": "",
               "Exchange": "",
               "Ticker": "BTC",
-              "Country": "",
+              "Country": "Unknown",
               "LocalTypeCode": "",
               "Class": "Cryptocurrency",
               "PositionType": "Long",
