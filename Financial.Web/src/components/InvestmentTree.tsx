@@ -65,6 +65,8 @@ function AssetNode({ node, brokerName, portfolioName, filterClass }: AssetNodePr
   const exchange = getMetaString(node.metadata, 'Exchange')
   const positionType = getMetaPositionType(node.metadata)
   const assetClass = getMetaNumber(node.metadata, 'GlobalAssetClass')
+  // getMetaNumber yields -1 when absent, so a missing quantity never reads as a closed position.
+  const quantity = getMetaNumber(node.metadata, 'Quantity')
 
   if (filterClass !== ALL_CLASSES && String(assetClass) !== filterClass) return null
 
@@ -80,6 +82,7 @@ function AssetNode({ node, brokerName, portfolioName, filterClass }: AssetNodePr
       ticker,
       exchange,
       positionType,
+      quantity,
       assetClass: ASSET_CLASS_OPTIONS.find((o) => o.value === assetClass)?.label,
     })
   }
