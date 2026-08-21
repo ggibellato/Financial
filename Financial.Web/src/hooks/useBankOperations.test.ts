@@ -77,7 +77,6 @@ describe('useBankOperations', () => {
     getAdjustmentsByBankMock.mockImplementation((bankId: string) =>
       Promise.resolve(bankId === 'bank-barclays' ? BARCLAYS_ADJUSTMENTS : []),
     )
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
   it('combines transfers and adjustments into one flat list sorted newest-first', async () => {
@@ -145,7 +144,7 @@ describe('useBankOperations', () => {
     expect(getTransfersByMonthMock.mock.calls.length).toBe(fetchCallsBefore)
   })
 
-  it('deleteTransfer confirms, calls the client, refetches, and calls onChanged', async () => {
+  it('deleteTransfer calls the client, refetches, and calls onChanged', async () => {
     deleteTransferMock.mockResolvedValue(undefined)
     const onChanged = vi.fn()
     const { result } = renderHook(() => useBankOperations(2026, 7, BANKS, onChanged))
@@ -157,17 +156,7 @@ describe('useBankOperations', () => {
     expect(onChanged).toHaveBeenCalledOnce()
   })
 
-  it('deleteTransfer does nothing when the user cancels the confirmation', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
-    const { result } = renderHook(() => useBankOperations(2026, 7, BANKS, vi.fn()))
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    result.current.deleteTransfer('t1')
-
-    expect(deleteTransferMock).not.toHaveBeenCalled()
-  })
-
-  it('deleteAdjustment confirms, calls the client, refetches, and calls onChanged', async () => {
+  it('deleteAdjustment calls the client, refetches, and calls onChanged', async () => {
     deleteBalanceAdjustmentMock.mockResolvedValue(undefined)
     const onChanged = vi.fn()
     const { result } = renderHook(() => useBankOperations(2026, 7, BANKS, onChanged))

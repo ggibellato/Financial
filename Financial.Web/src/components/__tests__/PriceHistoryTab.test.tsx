@@ -79,6 +79,9 @@ function setMock(overrides: Partial<PriceHistoryData>) {
 
 describe('PriceHistoryTab', () => {
   beforeEach(() => {
+  // Confirmation moved out of the data hooks and into their callers, so the stub belongs here
+  // now. Default to accepting; the cancel path gets its own test.
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
     mockShowNewForm.mockReset()
     mockShowEditForm.mockReset()
     mockCancelForm.mockReset()
@@ -202,6 +205,14 @@ describe('PriceHistoryTab', () => {
     render(<PriceHistoryTab />)
     fireEvent.click(screen.getByRole('button', { name: 'Delete price' }))
     expect(mockDeleteEntry).toHaveBeenCalledWith('2024-03-15T00:00:00')
+  })
+
+  it('delete_icon_calls_delete_entry_only_after_the_user_confirms', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    setMock({ entries: [MANUAL_ENTRY] })
+    render(<PriceHistoryTab />)
+    fireEvent.click(screen.getByRole('button', { name: 'Delete price' }))
+    expect(mockDeleteEntry).not.toHaveBeenCalled()
   })
 
   it('renders_save_error_below_form', () => {

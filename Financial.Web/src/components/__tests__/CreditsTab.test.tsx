@@ -96,6 +96,9 @@ function setMock(overrides: Partial<CreditsData>) {
 
 describe('CreditsTab', () => {
   beforeEach(() => {
+  // Confirmation moved out of the data hooks and into their callers, so the stub belongs here
+  // now. Default to accepting; the cancel path gets its own test.
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
     mockShowNewForm.mockReset()
     mockShowEditForm.mockReset()
     mockCancelForm.mockReset()
@@ -229,6 +232,14 @@ describe('CreditsTab', () => {
     render(<CreditsTab />)
     fireEvent.click(screen.getByRole('button', { name: 'Delete credit' }))
     expect(mockDeleteCredit).toHaveBeenCalledWith('aaa')
+  })
+
+  it('delete_icon_calls_delete_credit_only_after_the_user_confirms', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    setMock({ credits: [CREDIT_DIVIDEND] })
+    render(<CreditsTab />)
+    fireEvent.click(screen.getByRole('button', { name: 'Delete credit' }))
+    expect(mockDeleteCredit).not.toHaveBeenCalled()
   })
 
   it('renders_save_error_below_form', () => {

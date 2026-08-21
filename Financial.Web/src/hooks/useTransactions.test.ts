@@ -23,7 +23,6 @@ vi.mock('../api/financialApiClient', () => ({
   }),
 }))
 
-vi.stubGlobal('confirm', vi.fn(() => true))
 
 const ASSET_NODE: SelectedNode = {
   nodeType: 'Asset',
@@ -113,7 +112,6 @@ describe('useTransactions', () => {
     deleteTransactionMock.mockReset()
     getTransactionsByBrokerMock.mockReset().mockResolvedValue([])
     getTransactionsByPortfolioMock.mockReset().mockResolvedValue([])
-    vi.mocked(window.confirm).mockReturnValue(true)
   })
 
   it('returns_initial_empty_state', () => {

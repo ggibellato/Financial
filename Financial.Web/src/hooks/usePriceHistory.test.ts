@@ -17,7 +17,6 @@ vi.mock('../api/financialApiClient', () => ({
   }),
 }))
 
-vi.stubGlobal('confirm', vi.fn(() => true))
 
 const ASSET_NODE: SelectedNode = {
   nodeType: 'Asset',
@@ -77,7 +76,6 @@ describe('usePriceHistory', () => {
     getAssetDetailsMock.mockReset()
     setAssetPriceMock.mockReset()
     deleteAssetPriceMock.mockReset()
-    vi.mocked(window.confirm).mockReturnValue(true)
   })
 
   it('returns_initial_empty_state', () => {

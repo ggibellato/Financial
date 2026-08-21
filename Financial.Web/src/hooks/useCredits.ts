@@ -396,7 +396,6 @@ export function useCredits(): CreditsData {
   const deleteCredit = useCallback(
     (id: string) => {
       if (!selectedNode?.portfolioName || !selectedNode.assetName) return
-      if (!window.confirm('Delete this credit?')) return
 
       void apiClient
         .deleteCredit({

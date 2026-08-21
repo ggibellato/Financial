@@ -167,8 +167,6 @@ export function useBankOperations(
   const retry = () => dispatch({ type: 'RETRY' })
 
   const deleteTransfer = (id: string) => {
-    if (!window.confirm('Delete this transfer?')) return
-
     void apiClient
       .deleteTransfer(id)
       .then(() => {
@@ -181,8 +179,6 @@ export function useBankOperations(
   }
 
   const deleteAdjustment = (bankId: string, id: string) => {
-    if (!window.confirm('Delete this balance adjustment?')) return
-
     void apiClient
       .deleteBalanceAdjustment(bankId, id)
       .then(() => {

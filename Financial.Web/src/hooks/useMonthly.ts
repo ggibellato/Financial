@@ -220,8 +220,6 @@ export function useMonthly(): MonthlyData {
 
   const deleteExpense = useCallback(
     (id: string) => {
-      if (!window.confirm('Delete this expense?')) return
-
       void apiClient
         .deleteExpense(id)
         .then(() => dispatch({ type: 'RETRY' }))
@@ -254,8 +252,6 @@ export function useMonthly(): MonthlyData {
 
   const unmarkStatementPaid = useCallback(
     (id: string) => {
-      if (!window.confirm('Unmark this statement as paid? Its settled charges revert to unsettled.')) return
-
       void apiClient
         .unmarkCardStatementPaid(id)
         .then((statement) => {
@@ -271,8 +267,6 @@ export function useMonthly(): MonthlyData {
 
   const deleteIncome = useCallback(
     (id: string) => {
-      if (!window.confirm('Delete this income entry?')) return
-
       void apiClient
         .deleteIncome(id)
         .then(() => dispatch({ type: 'RETRY' }))

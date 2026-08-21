@@ -108,6 +108,31 @@ export default function MonthlyPage() {
     listActionWarning,
   } = useMonthly()
 
+  // Confirmation belongs to the caller, not to the data hook. A hook that calls window.confirm
+  // can only be tested by stubbing a browser global, and it decides for every caller that a
+  // prompt is wanted at all. This page already owned its confirmations for other actions.
+  const confirmAndDeleteExpense = (id: string) => {
+    if (window.confirm('Delete this expense?')) deleteExpense(id)
+  }
+
+  const confirmAndDeleteIncome = (id: string) => {
+    if (window.confirm('Delete this income entry?')) deleteIncome(id)
+  }
+
+  const confirmAndUnmarkStatementPaid = (id: string) => {
+    if (window.confirm('Unmark this statement as paid? Its settled charges revert to unsettled.')) {
+      unmarkStatementPaid(id)
+    }
+  }
+
+  const confirmAndDeleteTransfer = (id: string) => {
+    if (window.confirm('Delete this transfer?')) bankOperations.deleteTransfer(id)
+  }
+
+  const confirmAndDeleteAdjustment = (bankId: string, id: string) => {
+    if (window.confirm('Delete this balance adjustment?')) bankOperations.deleteAdjustment(bankId, id)
+  }
+
   const {
     isCreateFormOpen,
     createDate,
@@ -289,7 +314,7 @@ export default function MonthlyPage() {
                 markPaidSources={markPaidSources}
                 setMarkPaidSource={setMarkPaidSource}
                 markStatementPaid={markStatementPaid}
-                unmarkStatementPaid={unmarkStatementPaid}
+                unmarkStatementPaid={confirmAndUnmarkStatementPaid}
               />
             </div>
             <div className="monthly-page__grids-row">
@@ -308,7 +333,7 @@ export default function MonthlyPage() {
               <ExpensesSection
                 expenses={expenses}
                 onEdit={showEditForm}
-                onDelete={deleteExpense}
+                onDelete={confirmAndDeleteExpense}
                 onNewExpense={() => showCreateForm('bank')}
               />
             </>
@@ -323,7 +348,7 @@ export default function MonthlyPage() {
                 markPaidSources={markPaidSources}
                 setMarkPaidSource={setMarkPaidSource}
                 markStatementPaid={markStatementPaid}
-                unmarkStatementPaid={unmarkStatementPaid}
+                unmarkStatementPaid={confirmAndUnmarkStatementPaid}
                 creditCards={creditCardsData.creditCards}
                 updatingCardId={creditCardsData.updatingCardId}
                 updateError={creditCardsData.error ?? creditCardsData.updateError}
@@ -335,7 +360,7 @@ export default function MonthlyPage() {
               <ExpensesSection
                 expenses={unpaidCardCharges}
                 onEdit={showEditForm}
-                onDelete={deleteExpense}
+                onDelete={confirmAndDeleteExpense}
                 onNewExpense={() => showCreateForm('card')}
               />
             </>
@@ -371,7 +396,7 @@ export default function MonthlyPage() {
               <IncomeSection
                 incomes={incomes}
                 onEdit={showEditIncomeForm}
-                onDelete={deleteIncome}
+                onDelete={confirmAndDeleteIncome}
                 onNewIncome={showCreateIncomeForm}
               />
             </>
@@ -433,8 +458,8 @@ export default function MonthlyPage() {
                 onNewBalanceCorrection={() => adjustmentForm.openCreateForm()}
                 onEditTransfer={transferForm.openEditForm}
                 onEditAdjustment={adjustmentForm.openEditForm}
-                onDeleteTransfer={bankOperations.deleteTransfer}
-                onDeleteAdjustment={bankOperations.deleteAdjustment}
+                onDeleteTransfer={confirmAndDeleteTransfer}
+                onDeleteAdjustment={confirmAndDeleteAdjustment}
               />
             </>
           )}

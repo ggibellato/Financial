@@ -151,7 +151,6 @@ describe('useMonthly', () => {
     getIncomesByMonthMock.mockResolvedValue(INCOMES)
     getBankBalancesByMonthMock.mockResolvedValue(BANK_BALANCES)
     getTitheSummaryByMonthMock.mockResolvedValue(TITHE_SUMMARY)
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
   it('fetches expenses, category totals, card statements, and banks for the current month on mount', async () => {
@@ -214,7 +213,7 @@ describe('useMonthly', () => {
     await waitFor(() => expect(getExpensesByMonthMock).toHaveBeenCalledWith(NEXT_MONTH_YEAR, NEXT_MONTH))
   })
 
-  it('deletes an expense after confirmation and re-fetches', async () => {
+  it('deletes an expense and re-fetches', async () => {
     deleteExpenseMock.mockResolvedValue(undefined)
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -223,16 +222,6 @@ describe('useMonthly', () => {
 
     await waitFor(() => expect(deleteExpenseMock).toHaveBeenCalledWith('e1'))
     await waitFor(() => expect(getExpensesByMonthMock).toHaveBeenCalledTimes(2))
-  })
-
-  it('does not delete when the user cancels the confirmation', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
-    const { result } = renderHook(() => useMonthly())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => result.current.deleteExpense('e1'))
-
-    expect(deleteExpenseMock).not.toHaveBeenCalled()
   })
 
   it('marks a card statement paid with the selected bank and re-fetches', async () => {
@@ -311,7 +300,7 @@ describe('useMonthly', () => {
     expect(result.current.markPaidSources).toEqual({ c1: 'bank-chase' })
   })
 
-  it('unmarks a paid statement after confirmation and re-fetches', async () => {
+  it('unmarks a paid statement and re-fetches', async () => {
     unmarkCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[1], isPaid: false, outstandingTotal: 45 })
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -320,16 +309,6 @@ describe('useMonthly', () => {
 
     await waitFor(() => expect(unmarkCardStatementPaidMock).toHaveBeenCalledWith('c2'))
     await waitFor(() => expect(getCardStatementsByMonthMock).toHaveBeenCalledTimes(2))
-  })
-
-  it('does not unmark when the user cancels the confirmation', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
-    const { result } = renderHook(() => useMonthly())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => result.current.unmarkStatementPaid('c2'))
-
-    expect(unmarkCardStatementPaidMock).not.toHaveBeenCalled()
   })
 
   it("sources each bank's balance from the fetched bank-balances data, not from summing the month's expenses", async () => {
@@ -404,7 +383,7 @@ describe('useMonthly', () => {
     expect(result.current.titheSummary).toEqual(TITHE_SUMMARY)
   })
 
-  it('deletes an income entry after confirmation and re-fetches', async () => {
+  it('deletes an income entry and re-fetches', async () => {
     deleteIncomeMock.mockResolvedValue(undefined)
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
