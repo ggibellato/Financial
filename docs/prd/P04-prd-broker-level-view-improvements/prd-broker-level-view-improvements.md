@@ -475,100 +475,226 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Aggregated Totals Enhancement — Application Layer
-- [ ] `GET /summary/broker/{brokerName}` response includes `totalInvested`, equal to `totalBought − totalSold`
-- [ ] `GET /summary/portfolio/{brokerName}/{portfolioName}` response includes `totalInvested`, equal to `totalBought − totalSold`
-- [ ] Broker-level totals exclude all transactions and credits from assets in the Encerradas portfolio
+- [x] `GET /summary/broker/{brokerName}` response includes `totalInvested`, equal to `totalBought − totalSold`
+- [x] `GET /summary/portfolio/{brokerName}/{portfolioName}` response includes `totalInvested`, equal to `totalBought − totalSold`
+- [x] Broker-level totals exclude all transactions and credits from assets in the Encerradas portfolio
 - [ ] Broker-level and Portfolio-level totals continue to exclude assets with `Quantity == 0`
-- [ ] Selecting the Encerradas portfolio directly still returns its own unfiltered totals
-- [ ] A broker with zero eligible portfolios after exclusion returns all totals as 0, not an error
-- [ ] Existing HTTP 400 behaviour for missing/whitespace names is unchanged
+- [x] Selecting the Encerradas portfolio directly still returns its own unfiltered totals
+- [x] A broker with zero eligible portfolios after exclusion returns all totals as 0, not an error
+- [x] Existing HTTP 400 behaviour for missing/whitespace names is unchanged
 
 ### F02. Broker Portfolio & Asset Breakdown Service — Application Layer
-- [ ] `GET /summary/broker/{brokerName}/breakdown` returns HTTP 200 with a list of portfolios, each with `portfolioName`, `totalInvested`, and an `assets` array
-- [ ] The Encerradas portfolio never appears in the response
-- [ ] Assets with `Quantity == 0` or `totalInvested <= 0` never appear in a portfolio's `assets` array
-- [ ] A portfolio's `totalInvested` equals the sum of its included assets' `totalInvested`
-- [ ] A portfolio with zero qualifying assets is omitted entirely from the response
-- [ ] Portfolios and assets are sorted alphabetically by name
-- [ ] Returns `[]` with HTTP 200 when the broker has no eligible portfolios
-- [ ] Returns HTTP 400 when `brokerName` is null or whitespace
+- [x] `GET /summary/broker/{brokerName}/breakdown` returns HTTP 200 with a list of portfolios, each with `portfolioName`, `totalInvested`, and an `assets` array
+- [x] The Encerradas portfolio never appears in the response
+- [x] Assets with `Quantity == 0` or `totalInvested <= 0` never appear in a portfolio's `assets` array
+- [x] A portfolio's `totalInvested` equals the sum of its included assets' `totalInvested`
+- [x] A portfolio with zero qualifying assets is omitted entirely from the response
+- [x] Portfolios and assets are sorted alphabetically by name
+- [x] Returns `[]` with HTTP 200 when the broker has no eligible portfolios
+- [x] Returns HTTP 400 when `brokerName` is null or whitespace
 
 ### F03. Broker & Portfolio Transactions Aggregation Service — Application Layer
 - [ ] `GET /transactions/broker/{brokerName}` returns every transaction (Buy and Sell) for every asset under the broker, across all portfolios including Encerradas
-- [ ] `GET /transactions/portfolio/{brokerName}/{portfolioName}` returns every transaction for every asset under that portfolio only
-- [ ] Both endpoints return results sorted ascending by date
-- [ ] Returns `[]` with HTTP 200 when the scope has no transactions
-- [ ] Returns HTTP 400 when required route parameters are null or whitespace
+- [x] `GET /transactions/portfolio/{brokerName}/{portfolioName}` returns every transaction for every asset under that portfolio only
+- [x] Both endpoints return results sorted ascending by date
+- [x] Returns `[]` with HTTP 200 when the scope has no transactions
+- [x] Returns HTTP 400 when required route parameters are null or whitespace
 
 ### F04. Chart Period Filter — YTD Extension
-- [ ] Credits tab (web and WPF) offers exactly 6 period options: This Month, Last 3 Months, Last 6 Months, Last 12 Months, YTD, All Time
-- [ ] Selecting YTD filters to transactions/credits dated January 1st of the current year through today
-- [ ] The relabelled "Last 12 Months" and "All Time" options produce identical date ranges to the previous "Last Year" and "All" options
-- [ ] Changing the period filter does not trigger a new network request (filtering happens on already-fetched data)
+- [x] Credits tab (web and WPF) offers exactly 6 period options: This Month, Last 3 Months, Last 6 Months, Last 12 Months, YTD, All Time
+- [x] Selecting YTD filters to transactions/credits dated January 1st of the current year through today
+- [x] The relabelled "Last 12 Months" and "All Time" options produce identical date ranges to the previous "Last Year" and "All" options
+- [x] Changing the period filter does not trigger a new network request (filtering happens on already-fetched data)
 
 ### F05. Broker & Portfolio Totals Display — Web Frontend
-- [ ] Selecting a Broker node shows 4 totals in order: Total Bought, Total Sold, Total Credits, Total Invested
-- [ ] Selecting a Portfolio node shows the same 4 totals in the same order
-- [ ] Total Invested is styled green when `>= 0` and red when `< 0`
-- [ ] Total Invested value matches `totalBought − totalSold` from the API response exactly
+- [x] Selecting a Broker node shows 4 totals in order: Total Bought, Total Sold, Total Credits, Total Invested
+- [x] Selecting a Portfolio node shows the same 4 totals in the same order
+- [x] Total Invested is styled green when `>= 0` and red when `< 0`
+- [x] Total Invested value matches `totalBought − totalSold` from the API response exactly
 
 ### F06. Broker & Portfolio Totals Display — WPF
-- [ ] Selecting a Broker node in WPF shows only 4 colour-coded totals (Total Bought, Total Sold, Total Credits, Total Invested) and no Quantity, Average Price, ISIN, Country, Local Type, Asset Class, Current Value section, or Status fields
-- [ ] Selecting a Portfolio node in WPF shows the existing per-asset DataGrid plus 4 totals including Total Invested
-- [ ] Selecting an Asset node in WPF is unaffected (regression check): all asset-specific fields still render as before
-- [ ] Total Invested is styled green when `>= 0` and red when `< 0`
+- [x] Selecting a Broker node in WPF shows only 4 colour-coded totals (Total Bought, Total Sold, Total Credits, Total Invested) and no Quantity, Average Price, ISIN, Country, Local Type, Asset Class, Current Value section, or Status fields
+- [x] Selecting a Portfolio node in WPF shows the existing per-asset DataGrid plus 4 totals including Total Invested
+- [x] Selecting an Asset node in WPF is unaffected (regression check): all asset-specific fields still render as before
+- [x] Total Invested is styled green when `>= 0` and red when `< 0`
 
 ### F07. Broker Breakdown Pie Charts — Web Frontend
-- [ ] Selecting a Broker node renders a "Portfolio Breakdown" pie chart below the 4 totals, with one slice per eligible portfolio
-- [ ] One additional pie chart renders per eligible portfolio, showing that portfolio's eligible assets
-- [ ] Hovering a slice shows its name, Total Invested value, and percentage
-- [ ] The Encerradas portfolio and any asset with `totalInvested <= 0` never appear as a slice
-- [ ] Selecting a Portfolio or Asset node does not render this component (regression check)
-- [ ] Zero eligible portfolios renders an empty-state message instead of an empty chart
-- [ ] A failed breakdown fetch shows an `ErrorState` with Retry; the 4 totals above remain visible and functional
+- [x] Selecting a Broker node renders a "Portfolio Breakdown" pie chart below the 4 totals, with one slice per eligible portfolio
+- [x] One additional pie chart renders per eligible portfolio, showing that portfolio's eligible assets
+- [x] Hovering a slice shows its name, Total Invested value, and percentage
+- [x] The Encerradas portfolio and any asset with `totalInvested <= 0` never appear as a slice
+- [x] Selecting a Portfolio or Asset node does not render this component (regression check)
+- [x] Zero eligible portfolios renders an empty-state message instead of an empty chart
+- [x] A failed breakdown fetch shows an `ErrorState` with Retry; the 4 totals above remain visible and functional
 
 ### F08. Broker Breakdown Pie Charts — WPF
-- [ ] Selecting a Broker node in WPF renders the overall portfolio breakdown pie and one pie per eligible portfolio
-- [ ] Hovering a slice in WPF shows its name, value, and percentage via OxyPlot's tracker
-- [ ] Zero eligible portfolios shows an empty-state message
-- [ ] A failed breakdown fetch shows an inline error; the 4 totals remain visible
+- [x] Selecting a Broker node in WPF renders the overall portfolio breakdown pie and one pie per eligible portfolio
+- [x] Hovering a slice in WPF shows its name, value, and percentage via OxyPlot's tracker
+- [x] Zero eligible portfolios shows an empty-state message
+- [x] A failed breakdown fetch shows an inline error; the 4 totals remain visible
 
 ### F09. Transactions Monthly Investment Chart — Web Frontend
-- [ ] Selecting a Broker or Portfolio node in the Transactions tab shows the monthly chart instead of the previous placeholder message, with no transaction table
-- [ ] Selecting an Asset node shows the existing transaction table plus the new chart above it
-- [ ] Each month's plotted value equals `sum(Buy.totalPrice) − sum(Sell.totalPrice)` for that month
-- [ ] Months with no transactions within the selected period still appear on the chart with a value of 0
-- [ ] The chart defaults to Bar display; toggling to Line re-renders the same data as a line
-- [ ] The 6 period filter buttons correctly narrow the plotted months; default period on load is Last 12 Months
-- [ ] A failed Broker/Portfolio transaction fetch shows an `ErrorState` with Retry
+- [x] Selecting a Broker or Portfolio node in the Transactions tab shows the monthly chart instead of the previous placeholder message, with no transaction table
+- [x] Selecting an Asset node shows the existing transaction table plus the new chart above it
+- [x] Each month's plotted value equals `sum(Buy.totalPrice) − sum(Sell.totalPrice)` for that month
+- [x] Months with no transactions within the selected period still appear on the chart with a value of 0
+- [x] The chart defaults to Bar display; toggling to Line re-renders the same data as a line
+- [x] The 6 period filter buttons correctly narrow the plotted months; default period on load is Last 12 Months
+- [x] A failed Broker/Portfolio transaction fetch shows an `ErrorState` with Retry
 
 ### F10. Transactions Monthly Investment Chart — WPF
-- [ ] Selecting a Broker or Portfolio node in WPF's Transactions tab shows the monthly chart with no DataGrid
-- [ ] Selecting an Asset node shows the existing DataGrid plus the new chart above it
-- [ ] Chart values and zero-fill behaviour match the web frontend's computation for the same underlying data
-- [ ] Bar is the default chart type; toggling to Line updates the `PlotModel` accordingly
-- [ ] All 6 period filters are available and correctly filter the plotted months
+- [x] Selecting a Broker or Portfolio node in WPF's Transactions tab shows the monthly chart with no DataGrid
+- [x] Selecting an Asset node shows the existing DataGrid plus the new chart above it
+- [x] Chart values and zero-fill behaviour match the web frontend's computation for the same underlying data
+- [x] Bar is the default chart type; toggling to Line updates the `PlotModel` accordingly
+- [x] All 6 period filters are available and correctly filter the plotted months
 
 ### F11. Credits Chart Bar/Line Toggle — Web Frontend
-- [ ] The Credits chart offers a Bar/Line toggle independent from the existing Stacked/Grouped toggle, at Broker, Portfolio, and Asset levels
-- [ ] Default chart display mode is Bar; existing Stacked/Grouped bar rendering is visually unchanged when Bar is selected
-- [ ] Selecting Line with Grouped selected renders a single line representing the combined total across all credit types per month
-- [ ] Selecting Line with Stacked selected renders one line per credit type, not cumulative, matching the number of types present in the data
-- [ ] Changing either toggle does not trigger a new network request
-- [ ] The Bar/Line selection persists per node selection (Broker/Portfolio/Asset), independent from the Stacked/Grouped selection's own persistence
+- [x] The Credits chart offers a Bar/Line toggle independent from the existing Stacked/Grouped toggle, at Broker, Portfolio, and Asset levels
+- [x] Default chart display mode is Bar; existing Stacked/Grouped bar rendering is visually unchanged when Bar is selected
+- [x] Selecting Line with Grouped selected renders a single line representing the combined total across all credit types per month
+- [x] Selecting Line with Stacked selected renders one line per credit type, not cumulative, matching the number of types present in the data
+- [x] Changing either toggle does not trigger a new network request
+- [x] The Bar/Line selection persists per node selection (Broker/Portfolio/Asset), independent from the Stacked/Grouped selection's own persistence
 
 ### F12. Credits Chart Bar/Line Toggle — WPF
-- [ ] The Credits chart offers a Bar/Line toggle independent from the existing Stacked/Grouped toggle, at Broker, Portfolio, and Asset levels
-- [ ] Default chart display mode is Bar; existing Stacked/Grouped bar rendering is visually unchanged when Bar is selected
-- [ ] Selecting Line with Grouped selected renders a single line representing the combined total across all credit types per month
-- [ ] Selecting Line with Stacked selected renders one line per credit type, not cumulative, matching the number of types present in the data
-- [ ] Chart values in Line mode match the Bar mode's underlying data exactly
-- [ ] The Bar/Line selection persists per node selection (Broker/Portfolio/Asset), independent from the Stacked/Grouped selection's own persistence
+- [x] The Credits chart offers a Bar/Line toggle independent from the existing Stacked/Grouped toggle, at Broker, Portfolio, and Asset levels
+- [x] Default chart display mode is Bar; existing Stacked/Grouped bar rendering is visually unchanged when Bar is selected
+- [x] Selecting Line with Grouped selected renders a single line representing the combined total across all credit types per month
+- [x] Selecting Line with Stacked selected renders one line per credit type, not cumulative, matching the number of types present in the data
+- [x] Chart values in Line mode match the Bar mode's underlying data exactly
+- [x] The Bar/Line selection persists per node selection (Broker/Portfolio/Asset), independent from the Stacked/Grouped selection's own persistence
 
 ### Cross-Feature Integration
-- [ ] `totalInvested` computed by F01 for Broker scope is displayed without transformation in F05's and F06's fourth total
-- [ ] `totalInvested` computed by F01 for Portfolio scope is displayed without transformation in F05's and F06's fourth total for Portfolio selection
-- [ ] Portfolio and asset `totalInvested` values from F02's breakdown endpoint are used without transformation to size and label slices in F07 and F08
-- [ ] The Encerradas exclusion and non-positive-slice omission rules defined in F02 are reflected exactly in what F07 and F08 render (no additional or missing slices)
-- [ ] The transaction list returned by F03 for a Broker or Portfolio scope is used without transformation by F09 and F10 to compute each month's net-invested value
-- [ ] The period options and date-range rules defined by F04 are applied identically by F09 and F10 when filtering the monthly chart, and continue to be applied identically by the existing Credits chart
+- [x] `totalInvested` computed by F01 for Broker scope is displayed without transformation in F05's and F06's fourth total
+- [x] `totalInvested` computed by F01 for Portfolio scope is displayed without transformation in F05's and F06's fourth total for Portfolio selection
+- [x] Portfolio and asset `totalInvested` values from F02's breakdown endpoint are used without transformation to size and label slices in F07 and F08
+- [x] The Encerradas exclusion and non-positive-slice omission rules defined in F02 are reflected exactly in what F07 and F08 render (no additional or missing slices)
+- [x] The transaction list returned by F03 for a Broker or Portfolio scope is used without transformation by F09 and F10 to compute each month's net-invested value
+- [x] The period options and date-range rules defined by F04 are applied identically by F09 and F10 when filtering the monthly chart, and continue to be applied identically by the existing Credits chart
+
+---
+
+#### Verification note — 2026-08-21
+
+Back-verified against `main` @ `eeea9043` during the `docs/app-known-issues-backlog.md` §3
+documentation-hygiene pass. 71 of the 73 criteria are confirmed. The two exceptions, and the three
+criteria whose *mechanism* changed even though their outcome held, are called out below — this PRD
+predates the Active/Historic `InvestmentScope` model, and that model absorbed several of its rules.
+
+**The mechanism shift, stated once**
+P04 filtered the Encerradas portfolio inside the Application services, by name. That filter is gone:
+closed portfolios are now separated at **import** time — `AssetMetadataResolver.IsClosedPortfolio`
+(`Integrations/GoogleFinancialSupport/AssetMetadataResolver.cs:46`) routes them through
+`GoogleGenerator.cs:76` into `AddHistoricBroker`, and
+`Financial.Investment.Infrastructure/Repositories/InvestmentJsonRepository.cs:79-80` resolves
+`ActiveBrokers` or `HistoricBrokers` per scope. The services now deliberately filter nothing, which
+their test names say out loud:
+`SummaryServiceTests.GetBrokerSummary_IncludesEveryPortfolioRegardlessOfName` `:117` and
+`BrokerBreakdownServiceTests.GetBrokerBreakdown_DoesNotFilterByPortfolioName_ScopePurityComesFromRepository`
+`:199`. The word "Encerradas" no longer appears anywhere in `Financial.Investment.*`.
+
+**F01 — aggregated totals** (`Financial.Investment.Application/Services/SummaryService.cs`)
+`Aggregate` (`:91-107`) returns `TotalInvested = totalBought - totalSold`, asserted at
+`SummaryServiceTests.cs:136` (broker) and `:243` (portfolio), with the negative case at `:149`;
+end to end at `Tests/Financial.Api.Tests/SummaryEndpointsTests.cs:55,70`.
+Encerradas exclusion holds under the new mechanism above, and selecting a closed portfolio directly
+still returns its own totals — now via `?scope=historic`, covered by `SummaryEndpointsTests.cs:124`
+(`GetPortfolioSummary_ScopeHistoric_ReturnsHistoricOnly`) and `:111`. A broker with nothing eligible
+returns an all-zero DTO rather than an error (`SummaryService.cs:34,42,68`, tests `:103,165,262`).
+*On the HTTP 400 criterion:* nothing regressed, so it is ticked, but the current behaviour is worth
+recording because it is **asymmetric**. `/summary/broker/{brokerName}` and
+`/summary/portfolio/{...}` return **200 with zeros** for a whitespace name
+(`SummaryController.cs:36-40,50-57` add no guard), while `/summary/portfolio/{...}/assets` and
+`/summary/broker/{brokerName}/breakdown` return **400** (`:72-73`, `:88-89`). Two endpoint families on
+one controller answer the same bad input differently.
+
+**F02 — breakdown** (`Services/BrokerBreakdownService.cs`, `Services/BrokerBreakdownBuilder.cs`)
+The builder filters assets to `TotalInvested > 0`, drops portfolios with no qualifying assets, and
+sorts both levels with `StringComparer.CurrentCultureIgnoreCase`; the portfolio total is the sum of
+its included assets. Every criterion has a test in `BrokerBreakdownServiceTests.cs`: shape `:34`,
+non-positive exclusion `:53`, zero-quantity exclusion `:160`, sorting `:68,248`, portfolio omission
+`:218`, empty result `:88,236`. The 400 is `SummaryController.cs:88-89`, asserted at
+`SummaryEndpointsTests.cs:103`.
+
+**F03 — transactions aggregation** — `TransactionService.cs:129` and its portfolio twin, ordered by
+`OrderBy(item => item.Date)` (`:187`), returning `[]` and 400 as specified
+(`TransactionEndpointsTests.cs:174,187,195,207,215`).
+
+**F04 — period filter** — six options in the same order on both sides:
+`Financial.Web/src/utils/periodFilter.ts:11-18` and
+`Financial.App/Helpers/PeriodFilterHelper.cs:17-24`. YTD resolves to 1 January of the reference year
+in both (`periodFilter.ts:33`, `PeriodFilterHelper.cs:38`). Asserted at
+`Financial.Web/src/utils/periodFilter.test.ts` and
+`Tests/Financial.Presentation.Tests/Helpers/PeriodFilterHelperTests.cs:11-70`, including
+`Options_HasExactlySixOptionsInOrder` and the January edge case at `:53`. Filtering is client-side on
+already-fetched data — `buildMonthlyNetInvested` (`hooks/useTransactions.ts:43`) and
+`TransactionsMonthlyAggregator` both take the fetched list as input, and
+`AssetDetailsViewModelTransactionsChartTests.cs:134`
+(`LoadAssetDetails_BuildsTransactionsPlotModel_FromAlreadyLoadedTransactions_NoNewFetch`) pins it.
+
+**F05 / F06 — totals display** — Web renders the four in order with
+`signClass(summary.totalInvested, …)` driving green/red and no transformation of the API value
+(`components/AggregatedSummaryTab.tsx:30-51`), asserted at
+`components/__tests__/AggregatedSummaryTab.test.tsx:75-121`. WPF shows the same four with
+`SignedValueToBrushConverter` on Total Invested (`Components/NavigationView.xaml:502-532`), with
+`AssetDetailsViewModelBrokerSummaryTests.cs:38,48,70` covering the totals and
+`LoadBrokerSummary_ClearsAssetSpecificFields`, and `:112,130,140` covering the view-mode regressions.
+
+**F07 / F08 — pie charts** — Web: `components/BrokerBreakdownCharts.tsx`, tooltip carrying name,
+`formatN2(value)` and `formatPercent1` (`:40-46`), empty state "No active portfolios to display"
+(`:111`), `ErrorState` with retry (`:103`). Tests `__tests__/BrokerBreakdownCharts.test.tsx:97-155`
+cover every criterion, and `AggregatedSummaryTab.test.tsx:147,153` covers rendering for a broker node
+only. WPF: `ViewModels/Investment/BrokerBreakdownChartBuilder.cs` uses
+`TrackerFormatString = "{1}\n{2:N2}\n{3:P1}"` — name, value, percentage — and the **same palette as
+the web**; the empty state is the identical string at `Components/NavigationView.xaml:471` and the
+inline error at `:464`. Tests: `AssetDetailsViewModelBrokerSummaryTests.cs:150-268`.
+
+**F09 / F10 — monthly investment chart** — the two implementations are deliberate mirrors:
+`buildMonthlyNetInvested` (`hooks/useTransactions.ts:43-74`) and
+`ViewModels/Investment/TransactionsMonthlyAggregator.cs` both net `Buy - Sell` per month and zero-fill
+every month in range, with matching test pairs
+(`hooks/useTransactions.test.ts:433,443` / `TransactionsMonthlyAggregatorTests.cs:13,32,48,64,77`).
+Bar is the default in both (`ChartTypeMode.Bar` is ordinal 0; `renders_bar_line_toggle_defaulting_to_bar`
+at `components/__tests__/TransactionsTab.test.tsx:148`), and the Line branch is covered at
+`TransactionsChartBuilderTests.cs:25`. Node-dependent layout: `TransactionsTab.test.tsx:123,130` and
+`AssetDetailsViewModelTransactionsChartTests.cs:149,157`. Error states: `TransactionsTab.test.tsx:166`
+and `AssetDetailsViewModelTransactionsChartTests.cs:81`.
+
+**F11 / F12 — credits Bar/Line toggle** — independent of Stacked/Grouped on both sides. Web:
+`components/CreditsTab.tsx:195-249` renders one `<Line dataKey="total">` when Grouped and one `<Line>`
+per credit type when Stacked, each on its own `dataKey` (so not cumulative); toggle at `:313-320`.
+Tests `components/__tests__/CreditsTab.test.tsx:269,275,282,295,301` and
+`hooks/useCredits.test.ts:222,482,491` (default Bar, per-node persistence, independent of the
+filter/mode persistence). WPF: `CreditsChartBuilderTests.cs:21,33,47`
+(`Build_LineMode_Grouped_ProducesSingleSeriesOnTotal`,
+`Build_LineMode_Stacked_ProducesOneSeriesPerCreditType`) and
+`AssetDetailsViewModelCreditsChartTests.cs:25,33,49,60` — default Bar, per-node persistence, no
+interference with the type mode, and a rebuild off the same `CreditsMonthTypeTotals` input, which is
+what makes Line and Bar values identical by construction.
+
+**Cross-feature** — all six hold and are covered above: both front ends render the service's
+`totalInvested` and the breakdown's slice values without transformation; the exclusion rules live
+entirely server-side so the two UIs cannot add or drop a slice; and F09/F10 consume F03's
+`TransactionSummaryItemDTO` list directly with F04's shared period definitions.
+
+**Left unticked — superseded by the Active/Historic scope model**
+1. *"Broker-level and Portfolio-level totals continue to exclude assets with `Quantity == 0`."*
+   `SummaryService.Aggregate` (`:91-107`) sums **every** asset the repository returns for the scope,
+   with no quantity filter — and that is deliberate, not an oversight:
+   `SummaryServiceTests.GetBrokerSummary_IncludesEveryAssetInScope_ScopePurityComesFromRepository`
+   `:73` and `GetPortfolioSummary_IncludesEveryAssetInScope_…` `:215` assert it. In the common case
+   the outcome is unchanged, because a fully-closed position lives under `HistoricBrokers` and an
+   Active-scope query never sees it. But an asset sold down to zero inside an *active* portfolio is
+   now counted in that portfolio's and broker's totals, where this criterion says it should not be.
+   Unlike the Encerradas rule, this one has **no equivalent guarantee** under the new model, so it is
+   left unticked rather than re-interpreted. It needs a decision: restore the filter in `Aggregate`,
+   or retire the criterion against the two tests above.
+2. *"`GET /transactions/broker/{brokerName}` returns every transaction … across all portfolios
+   **including Encerradas**."* The PRD is explicit that no exclusion applies here, "since this is raw
+   historical transaction history, not a live-capital total". The scope model overrode that:
+   `TransactionEndpointsTests.GetTransactionsByBroker_DefaultScope_ExcludesHistoricAssetTransactions`
+   `:223` and `GetTransactionsByPortfolio_DefaultScope_DoesNotReturnHistoricOnlyPortfolio` `:258`.
+   Closed-portfolio transactions are now reachable only through `?scope=historic` (`:234,246`). The
+   endpoint is consistent with the rest of the API; the criterion simply describes the older contract
+   and should be rewritten against scope rather than ticked.

@@ -366,3 +366,30 @@ graph TD
 - [x] Seeded `ReserveBucket` records (F01) are correctly returned by `GET /reserve-buckets` (F05), including `id`, `name`, `isActive`, and `splitPercentage`
 - [x] The split-result response (F03), bucket balances (F04), and bucket list (F05) are correctly fetched and rendered in both the web Reserva page (F06) and the WPF Reserva view (F07), including the percentage-sum warning computed from F05's data
 - [x] Seeded `ReserveBucket` records (F01) are correctly resolved by name during spreadsheet import (F08), and the resulting `ReserveMovement`s correctly reference those bucket entities (F02)
+
+---
+
+#### Verification note — 2026-08-21
+
+Reviewed against `main` @ `eeea9043` during the `docs/app-known-issues-backlog.md` §3
+documentation-hygiene pass.
+
+**Superseded, not unbuilt** — *"A backup of the data file is created before any write occurs."*
+The failure this guarded against — a half-written file left behind by a save that died mid-stream —
+can no longer happen. `Financial.Shared.Infrastructure/Persistence/LocalJsonStorage.cs:39-52` stages
+every write to `<file>.tmp` and then calls `File.Move(..., overwrite: true)`, an atomic rename: the
+target file is either the complete old content or the complete new content, never a partial write.
+Retry around transient failures is `Resilience/TransientRetryPolicy.cs`, and a save that ultimately
+fails reaches the user through `Sync/SyncStatus.cs` — `SyncStatusBanner` on the web,
+`SyncStatusIndicator` in `MainWindow.xaml`. A pre-write backup copy would now add a second full-file
+write per save with nothing left to protect. This criterion should be retired rather than
+implemented.
+
+**Explicitly *not* superseded — the split-percentage requirement is live again.**
+This PRD's server-side ~100% split-percentage rule is a current requirement, not historical wording,
+and it has since grown: it must also fire when a bucket is **added or modified**. That trigger does
+not exist yet — reserve buckets are read-only end to end (`ReserveBucket` has no mutators,
+`ICashFlowRepository` exposes only `GetReserveBuckets()`, `ReserveBucketsController` has a single
+`GET`), so bucket CRUD has to be built underneath it first. See
+`docs/app-known-issues-backlog.md` §2.3 for the scope, which spans all four layers and both front
+ends and is sized as its own PRD.
