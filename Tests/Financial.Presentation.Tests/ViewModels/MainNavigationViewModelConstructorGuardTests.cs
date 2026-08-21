@@ -22,6 +22,7 @@ public class MainNavigationViewModelConstructorGuardTests
     private static readonly IProfitCalculationService ValidProfitCalculationService = new StubProfitCalculationService();
     private static readonly IPriceService ValidPriceService = new StubPriceService();
     private static readonly IAssetMoveService ValidAssetMoveService = new StubAssetMoveService();
+    private static readonly IPortfolioService ValidPortfolioService = new StubPortfolioService();
 
     [Fact]
     public void MainNavigationViewModel_NullNavigationService_Throws()
@@ -29,7 +30,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModel(
             null!, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("navigationService");
     }
 
@@ -39,7 +40,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModel(
             ValidNavigationService, null!, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("creditQueryService");
     }
 
@@ -49,7 +50,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModel(
             ValidNavigationService, ValidCreditQueryService, null!, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("summaryService");
     }
 
@@ -59,7 +60,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModel(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, null!,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("portfolioAssetSummaryService");
     }
 
@@ -69,7 +70,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModel(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             null!, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("transactionService");
     }
 
@@ -79,7 +80,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModel(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, null!, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("creditService");
     }
 
@@ -89,7 +90,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModel(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, null!, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("assetPriceService");
     }
 
@@ -99,7 +100,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModel(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, null!,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("brokerBreakdownService");
     }
 
@@ -109,7 +110,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModel(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            null!, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            null!, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("transactionQueryService");
     }
 
@@ -119,7 +120,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModel(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, null!, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, null!, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("xirrCalculationService");
     }
 
@@ -129,7 +130,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModel(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, null!, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, null!, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("priceService");
     }
 
@@ -139,7 +140,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModel(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, null!, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, null!, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("profitCalculationService");
     }
 
@@ -149,8 +150,18 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModel(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, null!);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, null!, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("assetMoveService");
+    }
+
+    [Fact]
+    public void MainNavigationViewModel_NullPortfolioService_Throws()
+    {
+        Action act = () => new MainNavigationViewModel(
+            ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
+            ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("portfolioService");
     }
 
     [Fact]
@@ -159,7 +170,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModelHistoric(
             null!, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("navigationService");
     }
 
@@ -169,7 +180,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModelHistoric(
             ValidNavigationService, null!, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("creditQueryService");
     }
 
@@ -179,7 +190,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModelHistoric(
             ValidNavigationService, ValidCreditQueryService, null!, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("summaryService");
     }
 
@@ -189,7 +200,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModelHistoric(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, null!,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("portfolioAssetSummaryService");
     }
 
@@ -199,7 +210,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModelHistoric(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             null!, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("transactionService");
     }
 
@@ -209,7 +220,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModelHistoric(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, null!, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("creditService");
     }
 
@@ -219,7 +230,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModelHistoric(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, null!, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("assetPriceService");
     }
 
@@ -229,7 +240,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModelHistoric(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, null!,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("brokerBreakdownService");
     }
 
@@ -239,7 +250,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModelHistoric(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            null!, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            null!, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("transactionQueryService");
     }
 
@@ -249,7 +260,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModelHistoric(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, null!, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, null!, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("xirrCalculationService");
     }
 
@@ -259,7 +270,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModelHistoric(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, null!, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, null!, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("priceService");
     }
 
@@ -269,7 +280,7 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModelHistoric(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, null!, ValidPriceService, ValidAssetMoveService);
+            ValidTransactionQueryService, ValidXirrCalculationService, null!, ValidPriceService, ValidAssetMoveService, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("profitCalculationService");
     }
 
@@ -279,8 +290,18 @@ public class MainNavigationViewModelConstructorGuardTests
         Action act = () => new MainNavigationViewModelHistoric(
             ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
             ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
-            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, null!);
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, null!, ValidPortfolioService);
         act.Should().Throw<ArgumentNullException>().WithParameterName("assetMoveService");
+    }
+
+    [Fact]
+    public void MainNavigationViewModelHistoric_NullPortfolioService_Throws()
+    {
+        Action act = () => new MainNavigationViewModelHistoric(
+            ValidNavigationService, ValidCreditQueryService, ValidSummaryService, ValidPortfolioAssetSummaryService,
+            ValidTransactionService, ValidCreditService, ValidAssetPriceService, ValidBrokerBreakdownService,
+            ValidTransactionQueryService, ValidXirrCalculationService, ValidProfitCalculationService, ValidPriceService, ValidAssetMoveService, null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("portfolioService");
     }
 
     private sealed class StubNavigationService : INavigationService
@@ -355,6 +376,11 @@ public class MainNavigationViewModelConstructorGuardTests
         public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
         public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
         public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request) => throw new NotImplementedException();
+    }
+
+    private sealed class StubPortfolioService : IPortfolioService
+    {
+        public Task DeleteEmptyPortfolioAsync(string brokerName, string portfolioName, InvestmentScope scope) => throw new NotImplementedException();
     }
 
     private sealed class StubAssetMoveService : IAssetMoveService

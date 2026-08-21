@@ -19,6 +19,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     private readonly ISummaryService _summaryService;
     private readonly IPortfolioAssetSummaryService _portfolioAssetSummaryService;
     private readonly IAssetMoveService _assetMoveService;
+    private readonly IPortfolioService _portfolioService;
     private readonly InvestmentScope _scope;
     private TreeNodeViewModel? _selectedNode;
     private bool _isLoading;
@@ -67,7 +68,8 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         IPortfolioAssetSummaryService portfolioAssetSummaryService,
         TAssetDetailsViewModel assetDetails,
         InvestmentScope scope,
-        IAssetMoveService assetMoveService)
+        IAssetMoveService assetMoveService,
+        IPortfolioService portfolioService)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _creditQueryService = creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService));
@@ -75,12 +77,15 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         _portfolioAssetSummaryService = portfolioAssetSummaryService ?? throw new ArgumentNullException(nameof(portfolioAssetSummaryService));
         AssetDetails = assetDetails ?? throw new ArgumentNullException(nameof(assetDetails));
         _assetMoveService = assetMoveService ?? throw new ArgumentNullException(nameof(assetMoveService));
+        _portfolioService = portfolioService ?? throw new ArgumentNullException(nameof(portfolioService));
         _scope = scope;
         MoveAssetCommand = new RelayCommand(async () => await MoveSelectedAssetAsync(), CanMoveSelectedAsset);
+        DeletePortfolioCommand = new RelayCommand(async () => await DeleteSelectedPortfolioAsync(), CanDeleteSelectedPortfolio);
         InitializeAssetClassFilters();
     }
 
     public RelayCommand MoveAssetCommand { get; }
+    public RelayCommand DeletePortfolioCommand { get; }
 
     /// <summary>
     /// Moves the selected asset into another portfolio of the same broker, then rebuilds the tree
@@ -149,6 +154,8 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             {
                 SelectAsset(brokerName, moved.PortfolioName, assetName);
             }
+
+            await OfferToDeleteEmptiedPortfolioAsync(brokerName, portfolioName);
         }
         catch (Exception ex)
         {
@@ -159,6 +166,98 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
                 : $"The asset could not be moved: {ex.GetType().Name}.");
         }
     }
+
+    /// <summary>
+    /// Deletes the portfolio the user has selected, once it holds nothing.
+    /// </summary>
+    /// <remarks>
+    /// Separate from the post-move offer so a portfolio emptied earlier - or in a previous session -
+    /// is no harder to remove than one emptied a second ago.
+    /// </remarks>
+    public async Task DeleteSelectedPortfolioAsync()
+    {
+        if (!CanDeleteSelectedPortfolio())
+        {
+            return;
+        }
+
+        var portfolioNode = SelectedNode!;
+        var brokerName = portfolioNode.Parent!.GetMetadata<string>("BrokerName") ?? string.Empty;
+        var portfolioName = portfolioNode.GetMetadata<string>("PortfolioName") ?? string.Empty;
+
+        if (!ConfirmDeletePortfolio(portfolioName))
+        {
+            return;
+        }
+
+        await DeletePortfolioAsync(brokerName, portfolioName);
+    }
+
+    /// <summary>
+    /// When a move has just emptied the portfolio it came from, says so and offers to remove it.
+    /// Declining leaves it in place; the move that already succeeded is untouched either way.
+    /// </summary>
+    private async Task OfferToDeleteEmptiedPortfolioAsync(string brokerName, string portfolioName)
+    {
+        if (!IsPortfolioEmpty(brokerName, portfolioName) || !ConfirmDeleteEmptiedPortfolio(portfolioName))
+        {
+            return;
+        }
+
+        await DeletePortfolioAsync(brokerName, portfolioName);
+    }
+
+    private async Task DeletePortfolioAsync(string brokerName, string portfolioName)
+    {
+        try
+        {
+            await _portfolioService.DeleteEmptyPortfolioAsync(brokerName, portfolioName, _scope);
+        }
+        catch (Exception ex)
+        {
+            ShowMoveFailed(ex is KeyNotFoundException or ArgumentException or InvestmentRuleViolationException
+                ? ex.Message
+                : $"The portfolio could not be deleted: {ex.GetType().Name}.");
+            return;
+        }
+
+        // Rebuilding clears the selection, which is also how a deleted portfolio stops being the
+        // selected node rather than lingering as a stale one.
+        await LoadNavigationTreeAsync();
+    }
+
+    /// <summary>
+    /// Reads the count from the rebuilt tree rather than tracking it: the reload has already
+    /// happened, so the tree is the freshest answer available. The sentinel matters - a default of
+    /// zero for missing metadata would offer to delete a portfolio that still holds assets.
+    /// </summary>
+    private bool IsPortfolioEmpty(string brokerName, string portfolioName) =>
+        FindPortfolioNode(brokerName, portfolioName)?.GetMetadata("AssetCount", int.MinValue) == 0;
+
+    private TreeNodeViewModel? FindPortfolioNode(string brokerName, string portfolioName) =>
+        RootNodes.FirstOrDefault(node => node.GetMetadata<string>("BrokerName") == brokerName)?
+            .Children.FirstOrDefault(node => node.GetMetadata<string>("PortfolioName") == portfolioName);
+
+    private bool CanDeleteSelectedPortfolio() =>
+        SelectedNode?.NodeType == TreeNodeType.Portfolio
+        && SelectedNode.Parent is not null
+        && SelectedNode.GetMetadata("AssetCount", int.MinValue) == 0;
+
+    /// <summary>Seam for tests, which have no message pump to show a modal on.</summary>
+    protected virtual bool ConfirmDeleteEmptiedPortfolio(string portfolioName) =>
+        System.Windows.MessageBox.Show(
+            $"\"{portfolioName}\" is now empty. Delete it?",
+            "Move Asset",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Question) == System.Windows.MessageBoxResult.Yes;
+
+    /// <summary>Seam for tests, for the same reason.</summary>
+    protected virtual bool ConfirmDeletePortfolio(string portfolioName) =>
+        System.Windows.MessageBox.Show(
+            $"Delete the empty portfolio \"{portfolioName}\"?",
+            "Delete Portfolio",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Question) == System.Windows.MessageBoxResult.Yes;
 
     /// <summary>Seam for tests, which have no message pump to show a modal on.</summary>
     protected virtual bool ShowMoveAssetDialog(MoveAssetDialogViewModel viewModel) =>
