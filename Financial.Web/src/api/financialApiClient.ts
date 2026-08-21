@@ -4,6 +4,7 @@ import type {
   AggregatedSummaryDto,
   AssetCashFlowDto,
   AssetDetailsDto,
+  ArchiveAssetRequestDto,
   AssetPriceDto,
   BankBalanceDto,
   BankDto,
@@ -83,6 +84,7 @@ export interface FinancialApiClient {
   getTransactionsByBroker: (brokerName: string, scope?: InvestmentScope) => Promise<TransactionSummaryItemDto[]>
   getTransactionsByPortfolio: (brokerName: string, portfolioName: string, scope?: InvestmentScope) => Promise<TransactionSummaryItemDto[]>
   moveAsset: (request: MoveAssetRequestDto) => Promise<AssetDetailsDto>
+  archiveAsset: (request: ArchiveAssetRequestDto) => Promise<AssetDetailsDto>
   addTransaction: (request: TransactionCreateDto) => Promise<AssetDetailsDto>
   updateTransaction: (request: TransactionUpdateDto) => Promise<AssetDetailsDto>
   deleteTransaction: (request: TransactionDeleteDto) => Promise<AssetDetailsDto>
@@ -265,6 +267,11 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       ),
     moveAsset: (requestBody) =>
       request<AssetDetailsDto>('/assets/move', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    archiveAsset: (requestBody) =>
+      request<AssetDetailsDto>('/assets/archive', {
         method: 'POST',
         body: JSON.stringify(requestBody),
       }),

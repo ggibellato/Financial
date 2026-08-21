@@ -14,6 +14,11 @@ export interface SelectedNode {
   currency?: string
   positionType?: PositionType
   assetClass?: string
+  /**
+   * Carried so the move dialog can tell a closed position from an open one. Not derived from
+   * positionType, which defaults to 'Flat' when metadata is missing and would read as closed.
+   */
+  quantity?: number
 }
 
 export interface SelectedNodeContextValue {
@@ -115,6 +120,13 @@ export interface AssetDetailsDto {
   priceHistory: AssetPriceSnapshotDto[]
   cashFlowsWithCredits: AssetCashFlowDto[]
   cashFlowsWithoutCredits: AssetCashFlowDto[]
+}
+
+export interface ArchiveAssetRequestDto {
+  brokerName: string
+  sourcePortfolioName: string
+  assetName: string
+  destinationPortfolioName: string
 }
 
 export interface MoveAssetRequestDto {

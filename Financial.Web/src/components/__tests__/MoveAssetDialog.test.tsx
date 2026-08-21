@@ -7,11 +7,13 @@ import { ApiError } from '../../api/apiError'
 
 const getNavigationTreeMock = vi.fn()
 const moveAssetMock = vi.fn()
+const archiveAssetMock = vi.fn()
 
 vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getNavigationTree: getNavigationTreeMock,
     moveAsset: moveAssetMock,
+    archiveAsset: archiveAssetMock,
   }),
 }))
 
@@ -44,13 +46,20 @@ function movedAsset(destination: string): AssetDetailsDto {
   return { name: 'BCIA11', portfolioName: destination } as AssetDetailsDto
 }
 
-function renderDialog(overrides: { onCancel?: () => void; onMoved?: (a: AssetDetailsDto) => void } = {}) {
+function renderDialog(
+  overrides: {
+    onCancel?: () => void
+    onMoved?: (a: AssetDetailsDto, archived: boolean) => void
+    canArchive?: boolean
+  } = {},
+) {
   return render(
     <MoveAssetDialog
       brokerName="XPI"
       portfolioName="Default"
       assetName="BCIA11"
       scope="active"
+      canArchive={overrides.canArchive ?? false}
       onCancel={overrides.onCancel ?? vi.fn()}
       onMoved={overrides.onMoved ?? vi.fn()}
     />,
@@ -61,8 +70,10 @@ describe('MoveAssetDialog', () => {
   beforeEach(() => {
     getNavigationTreeMock.mockReset()
     moveAssetMock.mockReset()
+    archiveAssetMock.mockReset()
     getNavigationTreeMock.mockResolvedValue(tree(['Default', 'ISA', 'SIPP']))
     moveAssetMock.mockResolvedValue(movedAsset('ISA'))
+    archiveAssetMock.mockResolvedValue(movedAsset('Closed'))
   })
 
   it('offers the other portfolios of the broker, not the one the asset is in', async () => {
@@ -153,6 +164,85 @@ describe('MoveAssetDialog', () => {
       expect(screen.getByRole('alert')).toHaveTextContent('already holds an asset named "BCIA11"'),
     )
     expect(onMoved).not.toHaveBeenCalled()
+  })
+
+  it('does not offer archiving unless the asset can be archived', async () => {
+    renderDialog()
+
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    expect(screen.queryByRole('radio', { name: 'Archive to Historic Investments' })).not.toBeInTheDocument()
+  })
+
+  it('offers Historic destinations for a closed asset, keeping one named like the source', async () => {
+    // Across scopes a Historic "Default" is a different portfolio from the Active one being left.
+    getNavigationTreeMock.mockImplementation((scope?: string) =>
+      Promise.resolve(scope === 'historic' ? tree(['Closed', 'Default']) : tree(['Default', 'ISA', 'SIPP'])),
+    )
+    renderDialog({ canArchive: true })
+
+    await waitFor(() =>
+      expect(screen.getByRole('radio', { name: 'Archive to Historic Investments' })).toBeInTheDocument(),
+    )
+    fireEvent.click(screen.getByRole('radio', { name: 'Archive to Historic Investments' }))
+
+    await waitFor(() =>
+      expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Closed', 'Default']),
+    )
+  })
+
+  it('archives instead of moving when Historic is chosen', async () => {
+    const onMoved = vi.fn()
+    getNavigationTreeMock.mockImplementation((scope?: string) =>
+      Promise.resolve(scope === 'historic' ? tree(['Closed']) : tree(['Default', 'ISA'])),
+    )
+    renderDialog({ canArchive: true, onMoved })
+
+    await waitFor(() =>
+      expect(screen.getByRole('radio', { name: 'Archive to Historic Investments' })).toBeInTheDocument(),
+    )
+    fireEvent.click(screen.getByRole('radio', { name: 'Archive to Historic Investments' }))
+    await waitFor(() => expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Closed']))
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+
+    await waitFor(() => expect(onMoved).toHaveBeenCalled())
+    expect(moveAssetMock).not.toHaveBeenCalled()
+    expect(archiveAssetMock).toHaveBeenCalledWith({
+      brokerName: 'XPI',
+      sourcePortfolioName: 'Default',
+      assetName: 'BCIA11',
+      destinationPortfolioName: 'Closed',
+    })
+    expect(onMoved.mock.calls[0][1]).toBe(true)
+  })
+
+  it("shows the server's reason when an archive is refused", async () => {
+    getNavigationTreeMock.mockImplementation((scope?: string) =>
+      Promise.resolve(scope === 'historic' ? tree(['Closed']) : tree(['Default', 'ISA'])),
+    )
+    archiveAssetMock.mockRejectedValue(
+      new ApiError('BCIA11 still holds a position of 8. Only a fully closed asset can be archived.', 409),
+    )
+    renderDialog({ canArchive: true })
+
+    await waitFor(() =>
+      expect(screen.getByRole('radio', { name: 'Archive to Historic Investments' })).toBeInTheDocument(),
+    )
+    fireEvent.click(screen.getByRole('radio', { name: 'Archive to Historic Investments' }))
+    await waitFor(() => expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Closed']))
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('fully closed'))
+  })
+
+  it('reports a same-scope move as not archived', async () => {
+    const onMoved = vi.fn()
+    renderDialog({ onMoved })
+
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+
+    await waitFor(() => expect(onMoved).toHaveBeenCalled())
+    expect(onMoved.mock.calls[0][1]).toBe(false)
   })
 
   it('cancels without moving anything', async () => {
