@@ -222,8 +222,7 @@ public class ControllerGuardClauseTests
             null!,
             Options.Create(new CashFlowRepositorySettingsOptions()),
             new StubInvestmentRepository(),
-            new StubCashFlowRepository(),
-            new StubHostEnvironment());
+            new StubCashFlowRepository());
         act.Should().Throw<ArgumentNullException>();
     }
 
@@ -234,8 +233,7 @@ public class ControllerGuardClauseTests
             Options.Create(new InvestmentRepositorySettingsOptions()),
             null!,
             new StubInvestmentRepository(),
-            new StubCashFlowRepository(),
-            new StubHostEnvironment());
+            new StubCashFlowRepository());
         act.Should().Throw<ArgumentNullException>();
     }
 
@@ -246,8 +244,7 @@ public class ControllerGuardClauseTests
             Options.Create(new InvestmentRepositorySettingsOptions()),
             Options.Create(new CashFlowRepositorySettingsOptions()),
             null!,
-            new StubCashFlowRepository(),
-            new StubHostEnvironment());
+            new StubCashFlowRepository());
         act.Should().Throw<ArgumentNullException>().WithParameterName("investmentRepository");
     }
 
@@ -258,21 +255,8 @@ public class ControllerGuardClauseTests
             Options.Create(new InvestmentRepositorySettingsOptions()),
             Options.Create(new CashFlowRepositorySettingsOptions()),
             new StubInvestmentRepository(),
-            null!,
-            new StubHostEnvironment());
-        act.Should().Throw<ArgumentNullException>().WithParameterName("cashFlowRepository");
-    }
-
-    [Fact]
-    public void DiagnosticsController_NullEnvironment_Throws()
-    {
-        Action act = () => new DiagnosticsController(
-            Options.Create(new InvestmentRepositorySettingsOptions()),
-            Options.Create(new CashFlowRepositorySettingsOptions()),
-            new StubInvestmentRepository(),
-            new StubCashFlowRepository(),
             null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("environment");
+        act.Should().Throw<ArgumentNullException>().WithParameterName("cashFlowRepository");
     }
 
     [Fact]

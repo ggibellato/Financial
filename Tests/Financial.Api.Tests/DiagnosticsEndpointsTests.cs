@@ -62,94 +62,22 @@ public class DiagnosticsEndpointsTests : ApiEndpointTests
         }
     }
 
-    [Fact]
-    public async Task GetRepositoryConfig_InDevelopment_ReturnsOk()
-    {
-        await using var factory = CreateFactory("Development");
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/config/repository");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        body.GetProperty("investment").GetProperty("provider").GetString().Should().Be("LocalJson");
-    }
-
-    [Fact]
-    public async Task GetRepositoryConfig_InDevelopment_IncludesTheActualPaths()
-    {
-        await using var factory = CreateFactory("Development");
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/config/repository");
-
-        var investment = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("investment");
-
-        using (new AssertionScope())
-        {
-            investment.GetProperty("dataJsonFile").GetString().Should().NotBeNullOrWhiteSpace();
-            investment.GetProperty("dataJsonFileConfigured").GetBoolean().Should().BeTrue();
-        }
-    }
-
     /// <summary>
-    /// Previously a 404, which made the endpoint useless in the only environment whose configuration
-    /// you cannot simply read off your own machine.
+    /// The repository-config endpoint was removed rather than gated: its gate was
+    /// ASPNETCORE_ENVIRONMENT, and the deployed container sets that to Development, so the gate
+    /// never closed. This pins the route as gone, in both environments.
     /// </summary>
-    [Fact]
-    public async Task GetRepositoryConfig_OutsideDevelopment_ReturnsOkRatherThanNotFound()
+    [Theory]
+    [InlineData("Development")]
+    [InlineData("Production")]
+    public async Task GetRepositoryConfig_IsNoLongerServed(string environment)
     {
-        await using var factory = CreateFactory("Production");
+        await using var factory = CreateFactory(environment);
         using var client = factory.CreateClient();
 
         var response = await client.GetAsync("/api/v1/financial/config/repository");
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-    }
-
-    /// <summary>
-    /// The API has no authentication, so the paths themselves stay out of a production response -
-    /// the flags answer "is it configured" without disclosing the filesystem or credential layout.
-    /// </summary>
-    [Fact]
-    public async Task GetRepositoryConfig_OutsideDevelopment_WithholdsPathsButKeepsProviderAndFlags()
-    {
-        await using var factory = CreateFactory("Production");
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/config/repository");
-
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-
-        using (new AssertionScope())
-        {
-            foreach (var context in new[] { "investment", "cashFlow" })
-            {
-                var reported = body.GetProperty(context);
-                reported.GetProperty("provider").GetString().Should().Be("LocalJson");
-                reported.GetProperty("dataJsonFileConfigured").GetBoolean().Should().BeTrue();
-                reported.GetProperty("dataJsonFile").ValueKind.Should().Be(JsonValueKind.Null);
-                reported.GetProperty("googleDriveCredentialsPath").ValueKind.Should().Be(JsonValueKind.Null);
-                reported.GetProperty("googleDriveFilePath").ValueKind.Should().Be(JsonValueKind.Null);
-            }
-        }
-    }
-
-    [Fact]
-    public async Task GetRepositoryConfig_ReportsBothContexts()
-    {
-        await using var factory = CreateFactory("Development");
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/v1/financial/config/repository");
-
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-
-        using (new AssertionScope())
-        {
-            body.TryGetProperty("investment", out _).Should().BeTrue();
-            body.TryGetProperty("cashFlow", out _).Should().BeTrue("a CashFlow misconfiguration was invisible here");
-        }
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     private static WebApplicationFactory<Program> CreateFactory(string environment)

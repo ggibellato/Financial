@@ -10,9 +10,14 @@ using Microsoft.Extensions.Options;
 namespace Financial.Api.Controllers;
 
 /// <summary>
-/// Diagnostic endpoints for checking API liveness and the active data repository configuration.
-/// Both cover each bounded context; reporting only Investment made a CashFlow misconfiguration
-/// invisible in the one place you would look for it.
+/// Reports API liveness and each bounded context's storage state.
+/// <para>
+/// There is deliberately no endpoint returning repository paths. One existed, gated on
+/// ASPNETCORE_ENVIRONMENT - which the deployed container sets to Development, so the gate never
+/// closed and the real data-file path was readable by anything that could reach the port. The API
+/// has no authentication, so the only reliable protection is not to serve the paths at all. Where a
+/// deployment stores its data is answerable from its own compose file and environment.
+/// </para>
 /// </summary>
 [ApiController]
 [Route("")]
@@ -22,14 +27,12 @@ public sealed class DiagnosticsController : ControllerBase
     private readonly CashFlowRepositorySettingsOptions _cashFlowSettings;
     private readonly IInvestmentRepository _investmentRepository;
     private readonly ICashFlowRepository _cashFlowRepository;
-    private readonly IHostEnvironment _environment;
 
     public DiagnosticsController(
         IOptions<InvestmentRepositorySettingsOptions> investmentSettings,
         IOptions<CashFlowRepositorySettingsOptions> cashFlowSettings,
         IInvestmentRepository investmentRepository,
-        ICashFlowRepository cashFlowRepository,
-        IHostEnvironment environment)
+        ICashFlowRepository cashFlowRepository)
     {
         ArgumentNullException.ThrowIfNull(investmentSettings);
         ArgumentNullException.ThrowIfNull(cashFlowSettings);
@@ -37,7 +40,6 @@ public sealed class DiagnosticsController : ControllerBase
         _cashFlowSettings = cashFlowSettings.Value;
         _investmentRepository = investmentRepository ?? throw new ArgumentNullException(nameof(investmentRepository));
         _cashFlowRepository = cashFlowRepository ?? throw new ArgumentNullException(nameof(cashFlowRepository));
-        _environment = environment ?? throw new ArgumentNullException(nameof(environment));
     }
 
     /// <summary>Reports whether the API is up, and each context's storage provider and sync state.</summary>
@@ -60,34 +62,6 @@ public sealed class DiagnosticsController : ControllerBase
         });
     }
 
-    /// <summary>Returns both contexts' active repository configuration (provider and file paths).</summary>
-    /// <returns>
-    /// 200 OK with the configuration. Path values are populated only in Development; elsewhere the
-    /// provider and the <c>*Configured</c> flags are returned without them.
-    /// </returns>
-    [HttpGet("config/repository")]
-    [ProducesResponseType(typeof(RepositoryConfigDTO), StatusCodes.Status200OK)]
-    public ActionResult<RepositoryConfigDTO> GetRepositoryConfig()
-    {
-        var includePaths = _environment.IsDevelopment();
-
-        return Ok(new RepositoryConfigDTO
-        {
-            Investment = BuildContextConfig(
-                _investmentSettings.Provider,
-                _investmentSettings.DataJsonFile,
-                _investmentSettings.GoogleDriveCredentialsPath,
-                _investmentSettings.GoogleDriveFilePath,
-                includePaths),
-            CashFlow = BuildContextConfig(
-                _cashFlowSettings.Provider,
-                _cashFlowSettings.DataJsonFile,
-                _cashFlowSettings.GoogleDriveCredentialsPath,
-                _cashFlowSettings.GoogleDriveFilePath,
-                includePaths)
-        });
-    }
-
     /// <summary>
     /// A repository whose storage writes straight through, rather than through the debounced path
     /// that tracks status, reports Idle instead of failing the whole health response.
@@ -106,20 +80,4 @@ public sealed class DiagnosticsController : ControllerBase
             LastSuccessfulSaveUtc = status.LastSuccessfulSaveUtc
         };
     }
-
-    private static RepositoryContextConfigDTO BuildContextConfig(
-        string? provider,
-        string? dataJsonFile,
-        string? googleDriveCredentialsPath,
-        string? googleDriveFilePath,
-        bool includePaths) => new()
-        {
-            Provider = provider,
-            DataJsonFile = includePaths ? dataJsonFile : null,
-            DataJsonFileConfigured = !string.IsNullOrWhiteSpace(dataJsonFile),
-            GoogleDriveCredentialsPath = includePaths ? googleDriveCredentialsPath : null,
-            GoogleDriveCredentialsConfigured = !string.IsNullOrWhiteSpace(googleDriveCredentialsPath),
-            GoogleDriveFilePath = includePaths ? googleDriveFilePath : null,
-            GoogleDriveFileConfigured = !string.IsNullOrWhiteSpace(googleDriveFilePath)
-        };
 }

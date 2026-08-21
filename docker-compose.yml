@@ -4,7 +4,13 @@ services:
     ports:
       - "8080:8080"
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      # Production, not Development. Program.cs gates Swagger UI and the developer exception page on
+      # IsDevelopment, so a container claiming Development served its whole API surface and stack
+      # traces carrying real file paths on this published port, which has no authentication in front
+      # of it. Nothing here needs the Development settings file: its CORS origins are for the Vite
+      # dev server (the container serves the SPA same-origin) and its data paths are overridden by
+      # the Investment__/CashFlow__ variables below.
+      ASPNETCORE_ENVIRONMENT: Production
       Investment__DataJsonFile: /app/data/data-investment.json
       Investment__Repository__Provider: LocalJson
       CashFlow__DataJsonFile: /app/data/data-cashflow.json
