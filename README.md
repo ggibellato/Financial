@@ -60,10 +60,10 @@ process is serving - a storage fault shows in the body, not the status code, so 
 restart the container over an outage a restart cannot fix.
 
 There is deliberately **no endpoint that returns repository paths**. One existed, gated on
-`ASPNETCORE_ENVIRONMENT`; because the deployed container ran as `Development`, the gate never closed
-and the data-file path was readable by anything that could reach the published port, which has no
-authentication in front of it. Where a deployment stores its data is answerable from its own
-`docker-compose.yml`.
+`ASPNETCORE_ENVIRONMENT` - a guard one environment variable away from being off, and
+`docker-compose.yml` runs `Development`, so anyone starting the app that way published their
+data-file path on a port with no authentication in front of it. Where an install stores its data is
+answerable from its own compose file and environment; the API does not need to answer it.
 
 ### Web (Financial.Web)
 

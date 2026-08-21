@@ -63,9 +63,10 @@ public class DiagnosticsEndpointsTests : ApiEndpointTests
     }
 
     /// <summary>
-    /// The repository-config endpoint was removed rather than gated: its gate was
-    /// ASPNETCORE_ENVIRONMENT, and the deployed container sets that to Development, so the gate
-    /// never closed. This pins the route as gone, in both environments.
+    /// The repository-config endpoint was removed rather than gated: its only guard was
+    /// ASPNETCORE_ENVIRONMENT, which is a runtime setting that can be - and in docker-compose.yml
+    /// is - Development. This pins the route as gone in both environments, so no setting can bring
+    /// it back.
     /// </summary>
     [Theory]
     [InlineData("Development")]

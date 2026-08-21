@@ -13,10 +13,11 @@ namespace Financial.Api.Controllers;
 /// Reports API liveness and each bounded context's storage state.
 /// <para>
 /// There is deliberately no endpoint returning repository paths. One existed, gated on
-/// ASPNETCORE_ENVIRONMENT - which the deployed container sets to Development, so the gate never
-/// closed and the real data-file path was readable by anything that could reach the port. The API
-/// has no authentication, so the only reliable protection is not to serve the paths at all. Where a
-/// deployment stores its data is answerable from its own compose file and environment.
+/// ASPNETCORE_ENVIRONMENT: a guard one environment variable away from being off, and the repo's own
+/// docker-compose.yml runs Development, so starting the app that way published the real data-file
+/// path on a port with no authentication in front of it. The only protection that does not depend
+/// on a runtime setting being right is not to serve the paths at all. Where an install stores its
+/// data is answerable from its own compose file and environment.
 /// </para>
 /// </summary>
 [ApiController]
