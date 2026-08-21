@@ -1,14 +1,14 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { FinancialApiClient } from '../api/financialApiClient'
-import type { AggregatedSummaryDto, SelectedNode } from '../api/types'
-import { createSelectedNodeWrapper } from '../test-utils/selectedNodeTestWrapper'
-import { useAggregatedSummary } from './useAggregatedSummary'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { AggregatedSummaryDto, SelectedNode } from '../../api/types'
+import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
+import { useAggregatedSummary } from '../useAggregatedSummary'
 
 const getSummaryByBrokerMock = vi.fn<FinancialApiClient['getSummaryByBroker']>()
 const getSummaryByPortfolioMock = vi.fn<FinancialApiClient['getSummaryByPortfolio']>()
 
-vi.mock('../api/financialApiClient', () => ({
+vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getSummaryByBroker: getSummaryByBrokerMock,
     getSummaryByPortfolio: getSummaryByPortfolioMock,

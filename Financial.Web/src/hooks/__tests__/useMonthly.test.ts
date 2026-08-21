@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { FinancialApiClient } from '../api/financialApiClient'
+import type { FinancialApiClient } from '../../api/financialApiClient'
 import type {
   BankBalanceDto,
   BankDto,
@@ -11,8 +11,8 @@ import type {
   IncomeDto,
   IncomeSourceDto,
   TitheSummaryDto,
-} from '../api/types'
-import { useMonthly } from './useMonthly'
+} from '../../api/types'
+import { useMonthly } from '../useMonthly'
 
 const NOW = new Date()
 const CURRENT_YEAR = NOW.getFullYear()
@@ -37,7 +37,7 @@ const deleteIncomeMock = vi.fn<FinancialApiClient['deleteIncome']>()
 const getBankBalancesByMonthMock = vi.fn<FinancialApiClient['getBankBalancesByMonth']>()
 const getTitheSummaryByMonthMock = vi.fn<FinancialApiClient['getTitheSummaryByMonth']>()
 
-vi.mock('../api/financialApiClient', () => ({
+vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getExpensesByMonth: getExpensesByMonthMock,
     getUnpaidCardChargesByMonth: getUnpaidCardChargesByMonthMock,

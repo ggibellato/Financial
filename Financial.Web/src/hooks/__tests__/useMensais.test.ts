@@ -1,8 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { FinancialApiClient } from '../api/financialApiClient'
-import type { RecurringBillDto } from '../api/types'
-import { useMensais } from './useMensais'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { RecurringBillDto } from '../../api/types'
+import { useMensais } from '../useMensais'
 
 const NOW = new Date()
 const CURRENT_YEAR = NOW.getFullYear()
@@ -18,7 +18,7 @@ const updateMensaisBillMock = vi.fn<FinancialApiClient['updateMensaisBill']>()
 const deleteMensaisBillMock = vi.fn<FinancialApiClient['deleteMensaisBill']>()
 const resetMensaisToUnsetMock = vi.fn<FinancialApiClient['resetMensaisToUnset']>()
 
-vi.mock('../api/financialApiClient', () => ({
+vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getMensaisBills: getMensaisBillsMock,
     createMensaisBill: createMensaisBillMock,

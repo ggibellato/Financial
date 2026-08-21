@@ -1,9 +1,9 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { FinancialApiClient } from '../api/financialApiClient'
-import type { AssetDetailsDto, CreditDto, SelectedNode } from '../api/types'
-import { createSelectedNodeWrapper } from '../test-utils/selectedNodeTestWrapper'
-import { useCredits } from './useCredits'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { AssetDetailsDto, CreditDto, SelectedNode } from '../../api/types'
+import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
+import { useCredits } from '../useCredits'
 
 const getAssetDetailsMock = vi.fn<FinancialApiClient['getAssetDetails']>()
 const getCreditsByBrokerMock = vi.fn<FinancialApiClient['getCreditsByBroker']>()
@@ -12,7 +12,7 @@ const addCreditMock = vi.fn<FinancialApiClient['addCredit']>()
 const updateCreditMock = vi.fn<FinancialApiClient['updateCredit']>()
 const deleteCreditMock = vi.fn<FinancialApiClient['deleteCredit']>()
 
-vi.mock('../api/financialApiClient', () => ({
+vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getAssetDetails: getAssetDetailsMock,
     getCreditsByBroker: getCreditsByBrokerMock,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mapTransferErrorToField } from './mapTransferErrorToField'
+import { mapTransferErrorToField } from '../mapTransferErrorToField'
 
 describe('mapTransferErrorToField', () => {
   it('maps an unresolvable source bank message to the sourceBank field', () => {

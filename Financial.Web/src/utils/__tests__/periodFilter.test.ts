@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PERIOD_FILTER_OPTIONS, getPeriodFilterStartDate } from './periodFilter'
+import { PERIOD_FILTER_OPTIONS, getPeriodFilterStartDate } from '../periodFilter'
 
 describe('getPeriodFilterStartDate', () => {
   const referenceDate = new Date(2026, 6, 15) // 2026-07-15
