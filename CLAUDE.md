@@ -50,6 +50,18 @@ dotnet test --settings coverlet.runsettings --results-directory TestResults
 
 No coverage threshold is enforced; a drop never fails the build.
 
+The public API's shape is pinned by a committed OpenAPI snapshot
+(`Tests/Financial.Api.Tests/Contract/openapi-v1.snapshot.json`, asserted by `OpenApiContractTests`).
+Domain-facing controllers return Application DTOs directly, so reshaping one is a wire-format change
+for `Financial.Web` — whose `types.ts` is hand-written and will not fail to compile against it. When a
+change to the API is intended, regenerate the snapshot and review the diff:
+
+```
+UPDATE_OPENAPI_SNAPSHOT=1 dotnet test Tests/Financial.Api.Tests
+```
+
+Anything the diff shows as removed or renamed is a breaking change; update `types.ts` in the same PR.
+
 Run the API locally (serves API only, expects the SPA dev server separately):
 ```
 dotnet run --project Financial.Api
