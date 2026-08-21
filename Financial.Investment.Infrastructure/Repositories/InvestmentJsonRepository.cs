@@ -45,6 +45,8 @@ public sealed class InvestmentJsonRepository : IInvestmentRepository, ISyncStatu
         return ResolveBrokers(scope);
     }
 
+    public Investments GetInvestments() => _investiments;
+
     public async Task<bool> ApplyAndSaveAsync(Func<bool> applyChanges)
     {
         ArgumentNullException.ThrowIfNull(applyChanges);
