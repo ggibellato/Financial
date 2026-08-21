@@ -216,6 +216,66 @@ public class BrokerTests
         broker.Portfolios.Should().HaveCount(2, "no lookalike portfolio may be created");
     }
 
+    [Fact]
+    public void RemoveEmptyPortfolio_WhenEmpty_RemovesItAndReportsTrue()
+    {
+        var broker = Broker.Create("Broker A", "USD");
+        broker.AddPortfolio("Default");
+        broker.AddPortfolio("Stale");
+
+        var removed = broker.RemoveEmptyPortfolio("Stale");
+
+        using (new AssertionScope())
+        {
+            removed.Should().BeTrue();
+            broker.FindPortfolio("Stale").Should().BeNull();
+            broker.Portfolios.Should().ContainSingle().Which.Name.Should().Be("Default");
+        }
+    }
+
+    [Fact]
+    public void RemoveEmptyPortfolio_WhenItStillHoldsAssets_IsRefusedAndChangesNothing()
+    {
+        // The portfolio is the only record of where its assets live; removing it would take them
+        // with it. Emptying it first is a move, which is a separate deliberate act.
+        var broker = CreateBrokerWithAsset(out _);
+
+        var act = () => broker.RemoveEmptyPortfolio("Default");
+
+        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*Only an empty portfolio*");
+        using (new AssertionScope())
+        {
+            broker.FindPortfolio("Default").Should().NotBeNull();
+            broker.FindPortfolio("Default")!.Assets.Should().ContainSingle();
+        }
+    }
+
+    [Fact]
+    public void RemoveEmptyPortfolio_AfterAMoveEmptiesIt_IsAllowed()
+    {
+        // The sequence the feature exists for: the last asset leaves, then the portfolio can go.
+        var broker = CreateBrokerWithAsset(out _);
+
+        broker.MoveAsset("Default", "Asset A", "ISA");
+        broker.RemoveEmptyPortfolio("Default");
+
+        using (new AssertionScope())
+        {
+            broker.FindPortfolio("Default").Should().BeNull();
+            broker.FindPortfolio("ISA")!.Assets.Should().ContainSingle();
+        }
+    }
+
+    [Fact]
+    public void RemoveEmptyPortfolio_WhenUnknown_ThrowsNotFound()
+    {
+        var broker = Broker.Create("Broker A", "USD");
+
+        var act = () => broker.RemoveEmptyPortfolio("Nope");
+
+        act.Should().Throw<KeyNotFoundException>();
+    }
+
     /// <summary>An asset with transactions, credits and price history, so a move has something to lose.</summary>
     private static Broker CreateBrokerWithAsset(out Asset asset)
     {

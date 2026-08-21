@@ -72,6 +72,13 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
+    public void PortfoliosController_NullPortfolioService_Throws()
+    {
+        Action act = () => new PortfoliosController(null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
     public void NavigationController_NullNavigationService_Throws()
     {
         Action act = () => new NavigationController(null!);
