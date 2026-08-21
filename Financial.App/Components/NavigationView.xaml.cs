@@ -1,10 +1,10 @@
-using System.Windows;
 using System.Windows.Controls;
 
 namespace Financial.Presentation.App.Components
 {
     /// <summary>
-    /// Interaction logic for NavigationView.xaml
+    /// Interaction logic for NavigationView.xaml. The four Investment tabs live in their own views
+    /// under Views/Investment; the plot size-changed handlers moved with the markup that raises them.
     /// </summary>
     public partial class NavigationView : UserControl
     {
@@ -12,24 +12,5 @@ namespace Financial.Presentation.App.Components
         {
             InitializeComponent();
         }
-
-        private void OnCreditsPlotSizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (DataContext is IMainNavigationViewModel viewModel)
-            {
-                viewModel.AssetDetails.UpdateCreditsPlotWidth(e.NewSize.Width);
-            }
-        }
-
-        private void OnTransactionsPlotSizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (DataContext is IMainNavigationViewModel viewModel)
-            {
-                viewModel.AssetDetails.UpdateTransactionsPlotWidth(e.NewSize.Width);
-            }
-        }
     }
 }
-
-
-
