@@ -17,6 +17,6 @@ public sealed class DividendDataSourceAdapter : IDividendDataSource
         _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
     }
 
-    public IReadOnlyList<DividendValue> GetDividends(string exchange, string ticker) =>
+    public IReadOnlyList<DividendValue> GetDividends(string ticker) =>
         _lookup(ticker);
 }
