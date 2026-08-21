@@ -1,13 +1,13 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { FinancialApiClient } from '../api/financialApiClient'
-import type { BankDto, CategoryDto, ExpenseDto } from '../api/types'
-import { useExpenseForm } from './useExpenseForm'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { BankDto, CategoryDto, ExpenseDto } from '../../api/types'
+import { useExpenseForm } from '../useExpenseForm'
 
 const createExpenseMock = vi.fn<FinancialApiClient['createExpense']>()
 const updateExpenseMock = vi.fn<FinancialApiClient['updateExpense']>()
 
-vi.mock('../api/financialApiClient', () => ({
+vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     createExpense: createExpenseMock,
     updateExpense: updateExpenseMock,

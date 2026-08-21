@@ -12,7 +12,7 @@ import {
   parseMonthInputValue,
   previousYearJanuaryFirst,
   toInputDate,
-} from './formatters'
+} from '../formatters'
 
 describe('pad', () => {
   it('pad_SingleDigit_PadsWithLeadingZero', () => {

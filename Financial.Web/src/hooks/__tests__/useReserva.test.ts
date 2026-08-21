@@ -1,9 +1,9 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError } from '../api/apiError'
-import type { FinancialApiClient } from '../api/financialApiClient'
-import type { ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../api/types'
-import { useReserva } from './useReserva'
+import { ApiError } from '../../api/apiError'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../../api/types'
+import { useReserva } from '../useReserva'
 
 const getReserveBalancesMock = vi.fn<FinancialApiClient['getReserveBalances']>()
 const getReserveMovementsMock = vi.fn<FinancialApiClient['getReserveMovements']>()
@@ -13,7 +13,7 @@ const postWithdrawalMock = vi.fn<FinancialApiClient['postWithdrawal']>()
 const updateReserveMovementMock = vi.fn<FinancialApiClient['updateReserveMovement']>()
 const deleteReserveMovementMock = vi.fn<FinancialApiClient['deleteReserveMovement']>()
 
-vi.mock('../api/financialApiClient', () => ({
+vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getReserveBalances: getReserveBalancesMock,
     getReserveMovements: getReserveMovementsMock,

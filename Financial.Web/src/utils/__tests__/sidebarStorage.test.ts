@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { getStoredSidebarCollapsed, setStoredSidebarCollapsed } from './sidebarStorage'
+import { getStoredSidebarCollapsed, setStoredSidebarCollapsed } from '../sidebarStorage'
 
 describe('sidebarStorage', () => {
   afterEach(() => {

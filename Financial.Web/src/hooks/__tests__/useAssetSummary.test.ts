@@ -1,16 +1,16 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { FinancialApiClient } from '../api/financialApiClient'
-import type { AssetDetailsDto, AssetPriceDto, PortfolioAssetSummaryItemDto, SelectedNode, XirrResultDto } from '../api/types'
-import { createSelectedNodeWrapper } from '../test-utils/selectedNodeTestWrapper'
-import { useAssetSummary } from './useAssetSummary'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { AssetDetailsDto, AssetPriceDto, PortfolioAssetSummaryItemDto, SelectedNode, XirrResultDto } from '../../api/types'
+import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
+import { useAssetSummary } from '../useAssetSummary'
 
 const getAssetDetailsMock = vi.fn<FinancialApiClient['getAssetDetails']>()
 const getCurrentPriceMock = vi.fn<FinancialApiClient['getCurrentPrice']>()
 const calculateXirrMock = vi.fn<FinancialApiClient['calculateXirr']>()
 const getPortfolioAssetsSummaryMock = vi.fn<FinancialApiClient['getPortfolioAssetsSummary']>()
 
-vi.mock('../api/financialApiClient', () => ({
+vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getAssetDetails: getAssetDetailsMock,
     getCurrentPrice: getCurrentPriceMock,

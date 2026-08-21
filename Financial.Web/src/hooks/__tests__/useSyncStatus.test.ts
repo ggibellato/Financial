@@ -1,12 +1,12 @@
 import { renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { FinancialApiClient } from '../api/financialApiClient'
-import type { SyncStatusResponseDto } from '../api/types'
-import { useSyncStatus } from './useSyncStatus'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { SyncStatusResponseDto } from '../../api/types'
+import { useSyncStatus } from '../useSyncStatus'
 
 const getSyncStatusMock = vi.fn<FinancialApiClient['getSyncStatus']>()
 
-vi.mock('../api/financialApiClient', () => ({
+vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getSyncStatus: getSyncStatusMock,
   }),

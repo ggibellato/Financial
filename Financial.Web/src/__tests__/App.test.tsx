@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it } from 'vitest'
-import App from './App'
+import App from '../App'
 
 const AppWithRoutes = ({ initialEntry = '/investments/active-investments' }: { initialEntry?: string }) => (
   <MemoryRouter initialEntries={[initialEntry]}>

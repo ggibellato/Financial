@@ -1,8 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { FinancialApiClient } from '../api/financialApiClient'
-import type { MaeLedgerEntryDto, MaeLedgerTotalsDto } from '../api/types'
-import { useControleMae } from './useControleMae'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { MaeLedgerEntryDto, MaeLedgerTotalsDto } from '../../api/types'
+import { useControleMae } from '../useControleMae'
 
 const CURRENT_YEAR = new Date().getFullYear()
 const DEFAULT_FROM_DATE = `${CURRENT_YEAR - 1}-01-01`
@@ -14,7 +14,7 @@ const createMaeLedgerEntryMock = vi.fn<FinancialApiClient['createMaeLedgerEntry'
 const updateMaeLedgerEntryValuesMock = vi.fn<FinancialApiClient['updateMaeLedgerEntryValues']>()
 const deleteMaeLedgerEntryMock = vi.fn<FinancialApiClient['deleteMaeLedgerEntry']>()
 
-vi.mock('../api/financialApiClient', () => ({
+vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getMaeLedgerEntriesFromDate: getMaeLedgerEntriesFromDateMock,
     getMaeLedgerTotals: getMaeLedgerTotalsMock,

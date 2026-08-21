@@ -1,15 +1,15 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { FinancialApiClient } from '../api/financialApiClient'
-import type { BalanceAdjustmentDto, BankDto, TransferDto } from '../api/types'
-import { ALL_BANKS_FILTER, useBankOperations } from './useBankOperations'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { BalanceAdjustmentDto, BankDto, TransferDto } from '../../api/types'
+import { ALL_BANKS_FILTER, useBankOperations } from '../useBankOperations'
 
 const getTransfersByMonthMock = vi.fn<FinancialApiClient['getTransfersByMonth']>()
 const deleteTransferMock = vi.fn<FinancialApiClient['deleteTransfer']>()
 const getAdjustmentsByBankMock = vi.fn<FinancialApiClient['getAdjustmentsByBank']>()
 const deleteBalanceAdjustmentMock = vi.fn<FinancialApiClient['deleteBalanceAdjustment']>()
 
-vi.mock('../api/financialApiClient', () => ({
+vi.mock('../../api/financialApiClient', () => ({
   createFinancialApiClient: (): Partial<FinancialApiClient> => ({
     getTransfersByMonth: getTransfersByMonthMock,
     deleteTransfer: deleteTransferMock,

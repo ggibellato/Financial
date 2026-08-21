@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mapBalanceAdjustmentErrorToField } from './mapBalanceAdjustmentErrorToField'
+import { mapBalanceAdjustmentErrorToField } from '../mapBalanceAdjustmentErrorToField'
 
 describe('mapBalanceAdjustmentErrorToField', () => {
   it('maps a negative balance message to the targetBalance field', () => {

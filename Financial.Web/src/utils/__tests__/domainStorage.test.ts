@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { getStoredDomain, setStoredDomain } from './domainStorage'
+import { getStoredDomain, setStoredDomain } from '../domainStorage'
 
 describe('domainStorage', () => {
   afterEach(() => {

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ApiError } from './apiError'
-import { API_BASE_URL } from './config'
-import { createFinancialApiClient } from './financialApiClient'
+import { ApiError } from '../apiError'
+import { API_BASE_URL } from '../config'
+import { createFinancialApiClient } from '../financialApiClient'
 import type {
   AssetDetailsDto,
   AssetPriceDto,
@@ -33,7 +33,7 @@ import type {
   UpdateTransferDto,
   WithdrawalRequestDto,
   XirrResultDto,
-} from './types'
+} from '../types'
 
 const okResponse = <T,>(payload: T) =>
   ({
