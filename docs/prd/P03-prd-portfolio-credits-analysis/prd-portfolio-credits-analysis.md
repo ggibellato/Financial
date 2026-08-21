@@ -286,21 +286,64 @@ graph TD
 
 ### F03. Credits Analysis Columns and Footer — WPF
 
-- [ ] Five new DataGrid columns appear after XIRR in the WPF DataGrid: Last Month Credits, Last Credit Month, Last Month %, Est. Annual Credits, Est. Annual %
-- [ ] The "Last Month Credits" DataGrid column has a visually distinct thick left border separating it from XIRR
-- [ ] New columns are populated immediately when the Application service response arrives, before any price fetches complete
-- [ ] An asset with no credits shows "—" in Last Month Credits, Last Credit Month, and Last Month %
-- [ ] An asset with fewer than 2 distinct credit months shows "—" in Est. Annual Credits and Est. Annual %
-- [ ] Last Credit Month displays as "MMM yyyy" (e.g., "Jun 2026"); "—" when null
-- [ ] Footer panel is a separate XAML element below the DataGrid (not a DataGrid row)
-- [ ] WPF footer shows: Total Invested, Total Credits, Current Value, Credits [Mon yyyy] (current month), Est. Annual Credits — consistent with the web footer
-- [ ] WPF footer "Credits" label includes the current month and year (e.g., "Credits Jul 2026")
-- [ ] Current Value in the WPF footer shows "Calculating…" while any row has `IsLoadingPrice = true`; updates via property-change notification as prices resolve
-- [ ] All existing DataGrid columns (Asset Name through XIRR) and the three colour-coded totals above the DataGrid are unaffected (P02 regression check)
+- [x] Five new DataGrid columns appear after XIRR in the WPF DataGrid: Last Month Credits, Last Credit Month, Last Month %, Est. Annual Credits, Est. Annual %
+- [x] The "Last Month Credits" DataGrid column has a visually distinct thick left border separating it from XIRR
+- [x] New columns are populated immediately when the Application service response arrives, before any price fetches complete
+- [x] An asset with no credits shows "—" in Last Month Credits, Last Credit Month, and Last Month %
+- [x] An asset with fewer than 2 distinct credit months shows "—" in Est. Annual Credits and Est. Annual %
+- [x] Last Credit Month displays as "MMM yyyy" (e.g., "Jun 2026"); "—" when null
+- [x] Footer panel is a separate XAML element below the DataGrid (not a DataGrid row)
+- [x] WPF footer shows: Total Invested, Total Credits, Current Value, Credits [Mon yyyy] (current month), Est. Annual Credits — consistent with the web footer
+- [x] WPF footer "Credits" label includes the current month and year (e.g., "Credits Jul 2026")
+- [x] Current Value in the WPF footer shows "Calculating…" while any row has `IsLoadingPrice = true`; updates via property-change notification as prices resolve
+- [x] All existing DataGrid columns (Asset Name through XIRR) and the three colour-coded totals above the DataGrid are unaffected (P02 regression check)
 
 ### Cross-Feature Integration
 
 - [x] The `lastMonthCredits`, `lastCreditMonth`, `lastMonthCreditsPercent`, `estimatedAnnualCredits`, `estimatedAnnualPercent`, and `currentMonthCredits` values returned by F01's endpoint are used without transformation in F02's column rendering
-- [ ] The same fields from F01's Application service are used without transformation in F03's row view model properties
+- [x] The same fields from F01's Application service are used without transformation in F03's row view model properties
 - [x] The `currentMonthCredits` values from F01 are summed by F02 to produce the footer "Credits [Mon YYYY]" total, verified with a portfolio containing assets with credits in the current month and assets without
-- [ ] The `currentMonthCredits` values from F01 are summed by F03 to produce the WPF footer total, verified with the same test portfolio
+- [x] The `currentMonthCredits` values from F01 are summed by F03 to produce the WPF footer total, verified with the same test portfolio
+
+---
+
+#### Verification note — 2026-08-21
+
+F03 and the two WPF cross-feature criteria were back-verified against `main` @ `eeea9043` during the
+`docs/app-known-issues-backlog.md` §3 documentation-hygiene pass, and all 13 are confirmed. The
+original discovery pass reported F03 as "missing entirely"; that was a bad grep — it searched for the
+DTO field names and missed the `Display*`-prefixed WPF properties inside `Financial.App/Components/`.
+
+**Columns and grouping** — `Financial.App/Components/NavigationView.xaml`: the five columns follow
+XIRR (`:718`) at `:742` Credits, `:759` Month, `:764` %, `:769` Est. Annual Credits, `:774` Est.
+Annual %. The thick separator is `BorderThickness="3,0,0,0" BorderBrush="#007ACC"` on the column's
+`CellStyle`/`HeaderStyle` (`:744-753`) and on the group-header bar (`:576`), which also spans the
+"Last Month" and "Est. Annual" group titles (`:576-581`). The historic variant repeats all of it at
+`:1029-1064`.
+
+**Footer** — a `<Border Grid.Row="2">` sibling of the `ScrollViewer` that holds the grid, so it is
+genuinely outside the `DataGrid` (`:783-815`). It binds `FooterTotalInvested`, `FooterTotalCredits`,
+`FooterCurrentValueDisplay`, `FooterCurrentMonthLabel`/`FooterCurrentMonthCredits` and
+`FooterEstimatedAnnualCreditsDisplay` from
+`ViewModels/Investment/AssetDetailsViewModel.cs:292-297`, computed at `:462-469`.
+`FooterCurrentMonthLabel` is `"Credits " + DateTime.Today.ToString("MMM yyyy")` (`:466`).
+`FooterCurrentValueDisplay` (`:299-307`) returns `"Calculating…"` while any row has
+`IsLoadingPrice`, and is re-raised on price arrival at `:889`.
+
+**Row formatting** — `ViewModels/Investment/PortfolioAssetSummaryRowViewModel.cs:64-80`:
+`DisplayLastMonthCredits` and `LastCreditMonthDisplay` return `"—"` when `LastCreditMonth` is null,
+`LastCreditMonthDisplay` formats `yyyy-MM` → `MMM yyyy` invariantly, and the two `Display…Percent`
+properties return `F2` + `%` or `"—"`.
+
+**Fields used without transformation** — `PortfolioAssetSummaryRowViewModel.cs:157-162` assigns all
+six F01 fields straight from the DTO into get-only properties; the row is constructed with
+`_isLoadingPrice = true` (`:13`), so the credits columns populate before any price fetch resolves.
+
+**Test backing** — `Tests/Financial.Presentation.Tests/ViewModels/PortfolioAssetSummaryRowViewModelTests.cs:486-552`
+covers all ten display/dash cases; `AssetDetailsViewModelPortfolioSummaryTests.cs:192-259` covers each
+footer total, the `Credits MMM yyyy` label (regex-asserted), the est.-annual sum and all-null dash, and
+`FooterCurrentValueDisplay_WhenAnyRowIsLoading_ReturnsCalculating`. The `currentMonthCredits` footer sum
+is asserted at `:219-224`.
+
+**P02 regression** — the Asset Name → XIRR columns (`:592-741`) and the four colour-coded totals above
+the grid (`:502-532`, Green/Red/Blue plus `SignedValueToBrushConverter`) are untouched by this feature.

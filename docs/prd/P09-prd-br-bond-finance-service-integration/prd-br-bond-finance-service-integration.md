@@ -203,20 +203,76 @@ graph TD
 - [x] `GoogleFinanceService` is registered in DI as a singleton
 
 ### F02. Status Invest Finance Service
-- [ ] `StatusInvestFinanceService` derives the correct slug for representative bond titles (e.g., "TESOURO IPCA+ 2029" → "tesouro-ipca-2029")
-- [ ] `StatusInvestFinanceService.GetAssetValue` returns the page's "Valor Unitário" value and an as-of date when the derived slug resolves to a valid page
-- [ ] `StatusInvestFinanceService.GetAssetValue` throws when the derived slug's page 404s or has no "Valor Unitário" element
-- [ ] `StatusInvestFinanceService` is registered in DI as a singleton
+- [x] `StatusInvestFinanceService` derives the correct slug for representative bond titles (e.g., "TESOURO IPCA+ 2029" → "tesouro-ipca-2029")
+- [x] `StatusInvestFinanceService.GetAssetValue` returns the page's "Valor Unitário" value and an as-of date when the derived slug resolves to a valid page
+- [x] `StatusInvestFinanceService.GetAssetValue` throws when the derived slug's page 404s or has no "Valor Unitário" element
+- [x] `StatusInvestFinanceService` is registered in DI as a singleton
 
 ### F03. BR Bond Price Fetcher
-- [ ] `BondAssetPriceFetcher.Supports` returns `true` only for `GlobalAssetClass.Bond`
-- [ ] `AssetPriceRequestDTO` has a `Name` field, and `BondAssetPriceFetcher.GetSnapshot` throws `ArgumentException` when it is blank
-- [ ] A request whose bond title resolves via Status Invest returns that source's price
-- [ ] A request not found by Status Invest fails the same way `StandardAssetPriceFetcher` fails today when Google Finance can't resolve a ticker
-- [ ] `StandardAssetPriceFetcher.Supports` returns `false` for `GlobalAssetClass.Bond` (in addition to its existing `Cryptocurrency` exclusion)
-- [ ] `BondAssetPriceFetcher` is registered in DI as another `IAssetPriceFetcher`
+- [x] `BondAssetPriceFetcher.Supports` returns `true` only for `GlobalAssetClass.Bond`
+- [x] `AssetPriceRequestDTO` has a `Name` field, and `BondAssetPriceFetcher.GetSnapshot` throws `ArgumentException` when it is blank
+- [x] A request whose bond title resolves via Status Invest returns that source's price
+- [x] A request not found by Status Invest fails the same way `StandardAssetPriceFetcher` fails today when Google Finance can't resolve a ticker
+- [x] `StandardAssetPriceFetcher.Supports` returns `false` for `GlobalAssetClass.Bond` (in addition to its existing `Cryptocurrency` exclusion)
+- [x] `BondAssetPriceFetcher` is registered in DI as another `IAssetPriceFetcher`
 - [ ] A request with `AssetClass = Cryptocurrency` and a request with any other non-Bond, non-Cryptocurrency `AssetClass` still dispatch to `CryptocurrencyAssetPriceFetcher` and `StandardAssetPriceFetcher` respectively, unchanged
 
 ### Cross-Feature Integration
-- [ ] A bond resolved via Status Invest (F02) is correctly returned as the price by `BondAssetPriceFetcher` (F03)
-- [ ] A bond not resolvable via Status Invest (F02) causes `BondAssetPriceFetcher` (F03) to fail rather than return a partial or default price
+- [x] A bond resolved via Status Invest (F02) is correctly returned as the price by `BondAssetPriceFetcher` (F03)
+- [x] A bond not resolvable via Status Invest (F02) causes `BondAssetPriceFetcher` (F03) to fail rather than return a partial or default price
+
+---
+
+#### Verification note — 2026-08-21
+
+F02, F03 and the cross-feature criteria were back-verified against `main` @ `eeea9043` during the
+`docs/app-known-issues-backlog.md` §3 documentation-hygiene pass. Twelve of the thirteen are confirmed;
+the thirteenth was superseded by a later deliberate change and is left unticked on purpose.
+
+**F02 — Status Invest finance service**
+- Slug derivation lives in `Integrations/WebPageParser/StatusInvest.cs:41-56` (lowercase → strip
+  diacritics → drop non-alphanumerics → collapse whitespace → hyphenate). Asserted for three
+  representative titles in `Tests/Financial.Investment.Infrastructure.Tests/Integrations/StatusInvestTests.cs:9-29`,
+  including `"TESOURO IPCA+ 2029"` → `tesouro-ipca-2029` and the Juros Semestrais variant.
+- `GetSellValue` (`StatusInvest.cs:19-39`) returns
+  `new AssetValueSnapshot(bondTitle, bondTitle, price, DateTimeOffset.Now)` — price plus as-of date.
+  Price extraction is asserted at `StatusInvestTests.cs:33-67`, including Brazilian
+  thousands/decimal parsing.
+- Both failure modes throw `InvalidOperationException`: page load failure at `StatusInvest.cs:32`,
+  missing "Valor Unitário" at `:36`. The two `ExtractSellPrice_…_ReturnsNull` tests
+  (`:43-59`) pin the null that drives the second throw.
+- Registered singleton at
+  `Financial.Investment.Infrastructure/DependencyInjection/InvestmentInfrastructureServiceCollectionExtensions.cs:41`.
+
+**F03 — Bond price fetcher**
+- `Financial.Investment.Infrastructure/Services/BondAssetPriceFetcher.cs:21` —
+  `Supports(assetClass) => assetClass == GlobalAssetClass.Bond`. Asserted three ways in
+  `Tests/…/Services/BondAssetPriceFetcherTests.cs:28,36,44`.
+- `AssetPriceRequestDTO.Name` is required; blank throws `ArgumentException`
+  (`BondAssetPriceFetcher.cs:23-27`, asserted at `BondAssetPriceFetcherTests.cs:52`).
+- Successful resolution delegates straight through (`BondAssetPriceFetcher.cs:29`, asserted at
+  `BondAssetPriceFetcherTests.cs:62`).
+- `StandardAssetPriceFetcher.Supports` excludes `Bond`, asserted at
+  `StandardAssetPriceFetcherTests.cs:53` (and `Cryptocurrency` at `:29`).
+- Registered as an additional `IAssetPriceFetcher` at
+  `InvestmentInfrastructureServiceCollectionExtensions.cs:44-45`.
+
+**Cross-feature** — the resolved-bond path is covered by the delegation test above. The
+not-resolvable path needs no test to confirm: neither `BondAssetPriceFetcher` nor
+`StatusInvestFinanceService` contains a `catch` or a default-value fallback, and DI wires the fetcher
+to `StatusInvestFinanceService` directly rather than to `FallbackFinanceService`
+(`InvestmentInfrastructureServiceCollectionExtensions.cs:45`), so the `InvalidOperationException`
+propagates — the same failure shape `StandardAssetPriceFetcher` has when Google Finance cannot
+resolve a ticker.
+
+**Left unticked — superseded by a later change**
+- *"…any other non-Bond, non-Cryptocurrency `AssetClass` still dispatch[es] to
+  `StandardAssetPriceFetcher`"* — no longer true, and deliberately so.
+  `StandardAssetPriceFetcher.Supports` was later narrowed from an exclusion list to the explicit
+  allow-list `ExchangeListedClasses` = `{ Unknown, Equity, RealEstate, Fund, ETF }`
+  (`StandardAssetPriceFetcher.cs:25-34`). Its own XML doc gives the reason: the exclusion list
+  "quietly claimed Cash, Pension, Other and PrivateCredit as well, and then asked the finance provider
+  for a ticker that does not exist there." So those four classes now dispatch to **no** fetcher by
+  design. The Cryptocurrency half of this criterion still holds
+  (`CryptocurrencyAssetPriceFetcherTests.cs:39`). Ticking it would assert behaviour the codebase
+  intentionally removed — it should be rewritten against the allow-list, not checked off.
