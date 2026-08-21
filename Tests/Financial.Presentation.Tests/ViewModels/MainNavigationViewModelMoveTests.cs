@@ -22,6 +22,7 @@ namespace Financial.Presentation.Tests.ViewModels;
 public class MainNavigationViewModelMoveTests
 {
     private readonly StubAssetMoveService _moveService = new();
+    private readonly RecordingPortfolioService _portfolioService = new();
 
     [Fact]
     public async Task MoveSelectedAssetAsync_SendsTheSelectedAssetAndTheChosenDestination()
@@ -281,6 +282,146 @@ public class MainNavigationViewModelMoveTests
         _moveService.LastRequest.Should().BeNull();
     }
 
+    [Fact]
+    public async Task MoveSelectedAssetAsync_WhenTheMoveEmptiesTheSource_OffersToDeleteIt()
+    {
+        var sut = CreateViewModel();
+        await SelectAssetAsync(sut, "AAAA");
+        sut.MoveDialogResponse = dialog => { dialog.SelectedPortfolioName = "ISA"; return true; };
+        // What the tree looks like once the asset has left: "Default" is empty.
+        _moveService.OnMove = () => sut.NavigationService.Tree = BuildTree(assetPortfolio: "ISA");
+        sut.DeleteConfirmationResponse = _ => true;
+
+        await sut.MoveSelectedAssetAsync();
+
+        using (new AssertionScope())
+        {
+            sut.LastEmptiedPortfolioOffered.Should().Be("Default");
+            _portfolioService.Deleted.Should().ContainSingle()
+                .Which.Should().Be(("XPI", "Default", InvestmentScope.Active));
+        }
+    }
+
+    [Fact]
+    public async Task MoveSelectedAssetAsync_WhenTheOfferIsDeclined_LeavesThePortfolioAndTheMove()
+    {
+        var sut = CreateViewModel();
+        await SelectAssetAsync(sut, "AAAA");
+        sut.MoveDialogResponse = dialog => { dialog.SelectedPortfolioName = "ISA"; return true; };
+        _moveService.OnMove = () => sut.NavigationService.Tree = BuildTree(assetPortfolio: "ISA");
+        sut.DeleteConfirmationResponse = _ => false;
+
+        await sut.MoveSelectedAssetAsync();
+
+        using (new AssertionScope())
+        {
+            sut.LastEmptiedPortfolioOffered.Should().Be("Default", "the user is still told it is empty");
+            _portfolioService.Deleted.Should().BeEmpty();
+            _moveService.LastRequest.Should().NotBeNull("declining must not undo the move");
+        }
+    }
+
+    [Fact]
+    public async Task MoveSelectedAssetAsync_WhenTheSourceStillHoldsAssets_DoesNotOffer()
+    {
+        var sut = CreateViewModel();
+        await SelectAssetAsync(sut, "AAAA");
+        sut.MoveDialogResponse = dialog => { dialog.SelectedPortfolioName = "ISA"; return true; };
+        // "Default" keeps an asset, so there is nothing to tidy up.
+        _moveService.OnMove = () => sut.NavigationService.Tree = BuildTree(assetPortfolio: "Default");
+        sut.DeleteConfirmationResponse = _ => true;
+
+        await sut.MoveSelectedAssetAsync();
+
+        using (new AssertionScope())
+        {
+            sut.LastEmptiedPortfolioOffered.Should().BeNull();
+            _portfolioService.Deleted.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task DeleteSelectedPortfolioAsync_DeletesAnEmptyPortfolioChosenInTheTree()
+    {
+        // FR-025: available on its own, so a portfolio emptied earlier is no harder to remove.
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+        EmptyPortfolioNode(sut, "ISA").IsSelected = true;
+        sut.DeleteConfirmationResponse = _ => true;
+
+        await sut.DeleteSelectedPortfolioAsync();
+
+        _portfolioService.Deleted.Should().ContainSingle()
+            .Which.Should().Be(("XPI", "ISA", InvestmentScope.Active));
+    }
+
+    [Fact]
+    public async Task DeleteSelectedPortfolioAsync_WhenDeclined_DeletesNothing()
+    {
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+        EmptyPortfolioNode(sut, "ISA").IsSelected = true;
+        sut.DeleteConfirmationResponse = _ => false;
+
+        await sut.DeleteSelectedPortfolioAsync();
+
+        _portfolioService.Deleted.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DeletePortfolioCommand_IsUnavailableForAPortfolioThatStillHoldsAssets()
+    {
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+
+        PortfolioNode(sut, "Default").IsSelected = true;
+
+        sut.DeletePortfolioCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task DeletePortfolioCommand_IsAvailableForAnEmptyPortfolio()
+    {
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+
+        EmptyPortfolioNode(sut, "ISA").IsSelected = true;
+
+        sut.DeletePortfolioCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task DeletePortfolioCommand_IsUnavailableForAnAsset()
+    {
+        var sut = CreateViewModel();
+        await SelectAssetAsync(sut, "AAAA");
+
+        sut.DeletePortfolioCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task DeleteSelectedPortfolioAsync_WhenTheServiceFails_ReportsItRatherThanEscaping()
+    {
+        // Same async-void hazard as the move command: an escaping exception ends the process.
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+        EmptyPortfolioNode(sut, "ISA").IsSelected = true;
+        sut.DeleteConfirmationResponse = _ => true;
+        _portfolioService.Failure = new IOException("the network drive went away");
+
+        await sut.DeleteSelectedPortfolioAsync();
+
+        sut.LastMoveFailureMessage.Should().Contain(nameof(IOException));
+    }
+
+    private static TreeNodeViewModel PortfolioNode(TestableNavigationViewModel sut, string name) =>
+        sut.RootNodes.SelectMany(broker => broker.Children)
+            .First(portfolio => portfolio.GetMetadata<string>("PortfolioName") == name);
+
+    /// <summary>The tree's "ISA" holds nothing, which is what makes it deletable.</summary>
+    private static TreeNodeViewModel EmptyPortfolioNode(TestableNavigationViewModel sut, string name) =>
+        PortfolioNode(sut, name);
+
     private TestableNavigationViewModel CreateViewModel(
         decimal? assetQuantity = 8m,
         InvestmentScope scope = InvestmentScope.Active)
@@ -295,7 +436,8 @@ public class MainNavigationViewModelMoveTests
             new SpyAssetDetailsViewModel(),
             _navigationService: navigationService,
             scope: scope,
-            assetMoveService: _moveService);
+            assetMoveService: _moveService,
+            portfolioService: _portfolioService);
     }
 
     /// <summary>
@@ -323,7 +465,13 @@ public class MainNavigationViewModelMoveTests
         {
             NodeType = TreeNodeType.Portfolio,
             DisplayName = name,
-            Metadata = new Dictionary<string, object> { ["PortfolioName"] = name },
+            // AssetCount is what decides whether a portfolio can be deleted, so the tree the real
+            // navigation service builds carries it and so must this one.
+            Metadata = new Dictionary<string, object>
+            {
+                ["PortfolioName"] = name,
+                ["AssetCount"] = name == assetPortfolio ? 1 : 0
+            },
             Children = name == assetPortfolio
                 ?
                 [
@@ -362,6 +510,23 @@ public class MainNavigationViewModelMoveTests
                 }
             ]
         };
+    }
+
+    private sealed class RecordingPortfolioService : IPortfolioService
+    {
+        public List<(string Broker, string Portfolio, InvestmentScope Scope)> Deleted { get; } = [];
+        public Exception? Failure { get; set; }
+
+        public Task DeleteEmptyPortfolioAsync(string brokerName, string portfolioName, InvestmentScope scope)
+        {
+            if (Failure is not null)
+            {
+                return Task.FromException(Failure);
+            }
+
+            Deleted.Add((brokerName, portfolioName, scope));
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class StubAssetMoveService : IAssetMoveService

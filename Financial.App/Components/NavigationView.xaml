@@ -36,11 +36,15 @@
                           SelectedItem="{Binding SelectedAssetClassFilter}"
                           DisplayMemberPath="Label"
                           MinWidth="180"/>
-                <Button Content="Move Asset..."
-                        Command="{Binding MoveAssetCommand}"
-                        HorizontalAlignment="Left"
-                        Padding="10,3"
-                        Margin="0,8,0,0"/>
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                    <Button Content="Move Asset..."
+                            Command="{Binding MoveAssetCommand}"
+                            Padding="10,3"/>
+                    <Button Content="Delete Portfolio"
+                            Command="{Binding DeletePortfolioCommand}"
+                            Padding="10,3"
+                            Margin="8,0,0,0"/>
+                </StackPanel>
             </StackPanel>
 
             <TreeView Grid.Row="1" 

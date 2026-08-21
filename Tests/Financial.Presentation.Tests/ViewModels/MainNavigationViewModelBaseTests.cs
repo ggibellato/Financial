@@ -428,8 +428,9 @@ public class MainNavigationViewModelBaseTests
             StubNavigationService? _navigationService = null,
             InvestmentScope scope = InvestmentScope.Active,
             ICreditQueryService? _creditQueryService = null,
-            IAssetMoveService? assetMoveService = null)
-            : this(_navigationService ?? new StubNavigationService(), summaryService, spy, portfolioAssetSummaryService, scope, _creditQueryService, assetMoveService ?? new StubAssetMoveService())
+            IAssetMoveService? assetMoveService = null,
+            IPortfolioService? portfolioService = null)
+            : this(_navigationService ?? new StubNavigationService(), summaryService, spy, portfolioAssetSummaryService, scope, _creditQueryService, assetMoveService ?? new StubAssetMoveService(), portfolioService ?? new StubPortfolioService())
         {
         }
 
@@ -440,8 +441,9 @@ public class MainNavigationViewModelBaseTests
             IPortfolioAssetSummaryService? portfolioAssetSummaryService,
             InvestmentScope scope,
             ICreditQueryService? _creditQueryService,
-            IAssetMoveService assetMoveService)
-            : base(_navigationService, _creditQueryService ?? new StubCreditQueryService(), summaryService, portfolioAssetSummaryService ?? new StubPortfolioAssetSummaryService(), spy, scope, assetMoveService)
+            IAssetMoveService assetMoveService,
+            IPortfolioService portfolioService)
+            : base(_navigationService, _creditQueryService ?? new StubCreditQueryService(), summaryService, portfolioAssetSummaryService ?? new StubPortfolioAssetSummaryService(), spy, scope, assetMoveService, portfolioService)
         {
             NavigationService = _navigationService;
         }
@@ -461,11 +463,31 @@ public class MainNavigationViewModelBaseTests
 
         protected override void ShowMoveFailed(string message) => LastMoveFailureMessage = message;
 
+        /// <summary>Stands in for the Yes/No prompt, which has no message pump in a test host.</summary>
+        public Func<string, bool> DeleteConfirmationResponse { get; set; } = _ => false;
+
+        public string? LastEmptiedPortfolioOffered { get; private set; }
+
+        protected override bool ConfirmDeleteEmptiedPortfolio(string portfolioName)
+        {
+            LastEmptiedPortfolioOffered = portfolioName;
+            return DeleteConfirmationResponse(portfolioName);
+        }
+
+        protected override bool ConfirmDeletePortfolio(string portfolioName) => DeleteConfirmationResponse(portfolioName);
+
         /// <summary>Stands in for the service in the many base tests that never move anything.</summary>
         private sealed class StubAssetMoveService : IAssetMoveService
         {
             public Task<AssetDetailsDTO> MoveAssetAsync(MoveAssetRequestDTO request) => throw new NotImplementedException();
             public Task<AssetDetailsDTO> ArchiveAssetAsync(ArchiveAssetRequestDTO request) => throw new NotImplementedException();
+        }
+
+        /// <summary>Stands in for the service in the many base tests that never delete anything.</summary>
+        private sealed class StubPortfolioService : IPortfolioService
+        {
+            public Task DeleteEmptyPortfolioAsync(string brokerName, string portfolioName, InvestmentScope scope) =>
+                throw new NotImplementedException();
         }
     }
 
