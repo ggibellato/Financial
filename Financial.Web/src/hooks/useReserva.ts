@@ -236,6 +236,16 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
   }
 }
 
+/**
+ * Asked by submitWithdrawal when the server rejects a withdrawal with 409 and a reason -
+ * typically that it would overdraw the bucket. Returning true replays the request with
+ * confirmed: true; returning false surfaces the server's message as the error.
+ *
+ * Injected rather than called here so this hook stays free of browser globals: the prompt is a
+ * presentation decision, and a test can pass a plain function instead of stubbing window.
+ */
+export type ConfirmProceed = (serverMessage: string) => boolean
+
 export interface ReservaData {
   balances: ReserveBucketBalanceDto[]
   totalBalance: number
@@ -268,7 +278,7 @@ export interface ReservaData {
   showWithdrawalForm: () => void
   cancelWithdrawalForm: () => void
   setWithdrawalField: (field: WithdrawalFormField, value: string) => void
-  submitWithdrawal: () => void
+  submitWithdrawal: (confirmProceed: ConfirmProceed) => void
   editingMovementId: string | null
   editMovementBucketId: string
   editMovementAmount: string
@@ -420,7 +430,7 @@ export function useReserva(): ReservaData {
       })
   }
 
-  function performWithdrawal(confirmed: boolean) {
+  function performWithdrawal(confirmed: boolean, confirmProceed: ConfirmProceed) {
     const { withdrawalBucketId, withdrawalAmount, withdrawalDate, withdrawalDescription } = state
 
     void apiClient
@@ -437,8 +447,8 @@ export function useReserva(): ReservaData {
       })
       .catch((err: unknown) => {
         if (err instanceof ApiError && err.status === 409 && !confirmed) {
-          if (window.confirm(`${err.message}\n\nProceed anyway?`)) {
-            performWithdrawal(true)
+          if (confirmProceed(err.message)) {
+            performWithdrawal(true, confirmProceed)
             return
           }
           dispatch({ type: 'WITHDRAWAL_ERROR', payload: err.message })
@@ -452,7 +462,7 @@ export function useReserva(): ReservaData {
       })
   }
 
-  function submitWithdrawal() {
+  function submitWithdrawal(confirmProceed: ConfirmProceed) {
     const { withdrawalBucketId, withdrawalAmount, withdrawalDate, withdrawalDescription } = state
 
     if (!withdrawalBucketId.trim()) {
@@ -477,7 +487,7 @@ export function useReserva(): ReservaData {
     }
 
     dispatch({ type: 'WITHDRAWAL_START' })
-    performWithdrawal(false)
+    performWithdrawal(false, confirmProceed)
   }
 
   function saveMovementEdit() {

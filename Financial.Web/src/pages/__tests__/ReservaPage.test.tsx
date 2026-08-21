@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ReservaPage from '../ReservaPage'
+import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../../api/types'
 
@@ -185,6 +186,50 @@ describe('ReservaPage', () => {
       }),
     )
     await waitFor(() => expect(screen.getByText('700.00')).toBeInTheDocument())
+  })
+
+  // useReserva no longer prompts; it asks its caller. These two prove the page is the caller
+  // that answers, and that the prompt text is assembled here.
+  it('prompts with the server reason when a withdrawal is rejected as an overdraw, and resubmits on accept', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    postWithdrawalMock
+      .mockRejectedValueOnce(new ApiError('This withdrawal exceeds the balance.', 409))
+      .mockResolvedValueOnce({ ...MOVEMENTS[0], id: 'm9', amount: -100, description: 'Big purchase' })
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Withdrawal' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Withdrawal' }))
+    fireEvent.change(screen.getByLabelText('Bucket'), { target: { value: 'b1' } })
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '100' } })
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-01' } })
+    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Big purchase' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Record Withdrawal' }))
+
+    await waitFor(() =>
+      expect(window.confirm).toHaveBeenCalledWith(
+        expect.stringContaining('This withdrawal exceeds the balance.'),
+      ),
+    )
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('Proceed anyway?'))
+    await waitFor(() => expect(postWithdrawalMock).toHaveBeenCalledTimes(2))
+    expect(postWithdrawalMock).toHaveBeenNthCalledWith(2, expect.objectContaining({ confirmed: true }))
+  })
+
+  it('does not resubmit an overdrawing withdrawal when the prompt is declined', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    postWithdrawalMock.mockRejectedValue(new ApiError('This withdrawal exceeds the balance.', 409))
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Withdrawal' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Withdrawal' }))
+    fireEvent.change(screen.getByLabelText('Bucket'), { target: { value: 'b1' } })
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '100' } })
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-07-01' } })
+    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Big purchase' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Record Withdrawal' }))
+
+    await waitFor(() => expect(window.confirm).toHaveBeenCalled())
+    expect(postWithdrawalMock).toHaveBeenCalledTimes(1)
   })
 
   it('warns that deleting a split movement removes all 4 lines, and deletes on confirm', async () => {

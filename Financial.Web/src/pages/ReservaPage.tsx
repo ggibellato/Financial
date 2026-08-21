@@ -77,6 +77,12 @@ export default function ReservaPage() {
     deleteMovement,
   } = useReserva()
 
+  // useReserva asks whether to proceed when the server rejects a withdrawal with 409; how to ask,
+  // and in what words, is presentation and belongs here. This page already owned its other
+  // confirmation, on deleting a movement.
+  const confirmProceedWithWithdrawal = (serverMessage: string) =>
+    window.confirm(`${serverMessage}\n\nProceed anyway?`)
+
   if (isLoading) {
     return <LoadingState />
   }
@@ -235,7 +241,7 @@ export default function ReservaPage() {
             </div>
           </div>
           <div className="reserva-page__form-actions">
-            <button className="reserva-page__submit-btn" type="button" disabled={isSubmittingWithdrawal} onClick={submitWithdrawal}>
+            <button className="reserva-page__submit-btn" type="button" disabled={isSubmittingWithdrawal} onClick={() => submitWithdrawal(confirmProceedWithWithdrawal)}>
               {isSubmittingWithdrawal ? 'Saving...' : 'Record Withdrawal'}
             </button>
             <button className="reserva-page__cancel-btn" type="button" onClick={cancelWithdrawalForm}>
