@@ -56,7 +56,14 @@ Domain-facing controllers return Application DTOs directly, so reshaping one is 
 for `Financial.Web` — whose `types.ts` is hand-written and will not fail to compile against it. When a
 change to the API is intended, regenerate the snapshot and review the diff:
 
+```powershell
+$env:UPDATE_OPENAPI_SNAPSHOT=1; dotnet test Tests/Financial.Api.Tests; Remove-Item Env:\UPDATE_OPENAPI_SNAPSHOT
 ```
+
+The `Remove-Item` matters: leave the variable set and every later run silently rewrites the snapshot
+instead of checking it. In bash it is a one-shot prefix, so there is nothing to unset:
+
+```bash
 UPDATE_OPENAPI_SNAPSHOT=1 dotnet test Tests/Financial.Api.Tests
 ```
 

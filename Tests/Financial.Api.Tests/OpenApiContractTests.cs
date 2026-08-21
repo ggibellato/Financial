@@ -25,7 +25,10 @@ namespace Financial.Api.Tests;
 /// </summary>
 public class OpenApiContractTests
 {
-    /// <summary>Set to any non-empty value to rewrite the snapshot instead of asserting against it.</summary>
+    /// <summary>
+    /// Set to any non-empty value to rewrite the snapshot instead of asserting against it.
+    /// See CLAUDE.md for the PowerShell and bash invocations.
+    /// </summary>
     private const string UpdateFlag = "UPDATE_OPENAPI_SNAPSHOT";
 
     [Fact]
@@ -42,8 +45,8 @@ public class OpenApiContractTests
         }
 
         File.Exists(snapshotPath).Should().BeTrue(
-            $"the API contract snapshot should be committed at {snapshotPath}. Regenerate it with " +
-            $"{UpdateFlag}=1 dotnet test Tests/Financial.Api.Tests");
+            $"the API contract snapshot should be committed at {snapshotPath}. Regenerate it by setting " +
+            $"{UpdateFlag}=1 and running: dotnet test Tests/Financial.Api.Tests");
 
         var committed = await File.ReadAllTextAsync(snapshotPath, Encoding.UTF8);
 
@@ -52,8 +55,8 @@ public class OpenApiContractTests
         var differences = DescribeDifferences(committed, current);
 
         differences.Should().BeNullOrEmpty(
-            "the public API shape changed. If the change is intended, regenerate the snapshot with " +
-            $"{UpdateFlag}=1 dotnet test Tests/Financial.Api.Tests and review the diff - anything removed " +
+            "the public API shape changed. If the change is intended, regenerate the snapshot by setting " +
+            $"{UpdateFlag}=1 and running: dotnet test Tests/Financial.Api.Tests. Review the diff - anything removed " +
             "or renamed is a breaking change for Financial.Web, whose types.ts is hand-written and will " +
             "not fail to compile against it");
     }
