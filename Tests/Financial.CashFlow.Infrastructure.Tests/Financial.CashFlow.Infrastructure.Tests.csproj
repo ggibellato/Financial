@@ -26,4 +26,12 @@
     <ProjectReference Include="..\Financial.TestUtilities\Financial.TestUtilities.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The tracked seed the README tells you to copy. Linked in so the test below
+         validates the real file rather than a snapshot of it. -->
+    <Content Include="..\..\data\data-cashflow.example.json" Link="ExampleData\data-cashflow.example.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

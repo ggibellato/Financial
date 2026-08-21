@@ -27,6 +27,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The tracked seed the README tells you to copy. Linked in so the test below
+         validates the real file rather than a snapshot of it. -->
+    <Content Include="..\..\data\data-investment.example.json" Link="ExampleData\data-investment.example.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="TestData\data.test.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
