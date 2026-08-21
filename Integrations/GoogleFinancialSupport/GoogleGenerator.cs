@@ -122,7 +122,7 @@ public sealed class GoogleGenerator
             assetData.assetClass);
         portfolio.AddAsset(asset);
 
-        asset.AddTransactions(await _sheetsReader.ReadTransactionsAsync(fileId, spreadsheet.Name));
+        asset.AddTransactions(await _sheetsReader.ReadTransactionsAsync(fileId, spreadsheet.Name, progress));
         await Task.Delay(DelayBetweenOperationsMs);
         asset.AddCredits(await _sheetsReader.ReadCreditsAsync(fileId, spreadsheet.Name));
     }

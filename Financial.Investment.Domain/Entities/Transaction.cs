@@ -43,14 +43,33 @@ public class Transaction
         new(id, date, type, quantity, unitPrice, fees);
 
     /// <summary>
-    /// Derives Fees as the inverse of <see cref="TotalPrice"/>, floored at zero. The derivation
-    /// follows the transaction direction: for a purchase the total paid exceeds the gross amount
-    /// by the fee, while for a sale the total received falls short of it by the fee.
+    /// Derives the fee as the inverse of <see cref="TotalPrice"/>, following the transaction
+    /// direction: for a purchase the total paid exceeds the gross amount by the fee, while for a
+    /// sale the total received falls short of it by the fee.
+    /// <para>
+    /// Returns the raw figure, negative included. A negative fee is not a fee - it means the
+    /// recorded total disagrees with unit price times quantity - so the caller can see the anomaly
+    /// before <see cref="CreateFromTotal"/> floors it away.
+    /// </para>
+    /// </summary>
+    public static decimal DeriveFees(TransactionType type, decimal quantity, decimal unitPrice, decimal totalAmount)
+    {
+        var grossAmount = unitPrice * quantity;
+        return type == TransactionType.Buy ? totalAmount - grossAmount : grossAmount - totalAmount;
+    }
+
+    /// <summary>
+    /// Derives Fees per <see cref="DeriveFees"/>, floored at zero.
+    /// <para>
+    /// The floor stays: a negative fee is bad source data, and storing it would push the error into
+    /// Realized Gain/Loss and the XIRR series. But flooring is a repair, and an import that repairs
+    /// a row silently reports the same success as one that had nothing to repair - so callers that
+    /// can report it should check <see cref="DeriveFees"/> first.
+    /// </para>
     /// </summary>
     public static Transaction CreateFromTotal(DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal totalAmount)
     {
-        var grossAmount = unitPrice * quantity;
-        var fees = type == TransactionType.Buy ? totalAmount - grossAmount : grossAmount - totalAmount;
+        var fees = DeriveFees(type, quantity, unitPrice, totalAmount);
         return new(Guid.NewGuid(), date, type, quantity, unitPrice, fees < 0 ? 0 : fees);
     }
 }
