@@ -128,6 +128,58 @@ describe('financialApiClient', () => {
     ])
   })
 
+  it('posts a move to the move endpoint', async () => {
+    const responseBody = { name: 'BCIA11', portfolioName: 'ISA' } as AssetDetailsDto
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({
+      baseUrl: API_BASE_URL,
+      fetch: fetchMock,
+    })
+
+    const result = await client.moveAsset({
+      brokerName: 'XPI',
+      scope: 'active',
+      sourcePortfolioName: 'Default',
+      assetName: 'BCIA11',
+      destinationPortfolioName: 'ISA',
+    })
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/assets/move`)
+    expect(init?.method).toBe('POST')
+    expect(init?.body).toBe(
+      JSON.stringify({
+        brokerName: 'XPI',
+        scope: 'active',
+        sourcePortfolioName: 'Default',
+        assetName: 'BCIA11',
+        destinationPortfolioName: 'ISA',
+      }),
+    )
+    expect(result.portfolioName).toBe('ISA')
+  })
+
+  it('surfaces the reason a move was refused', async () => {
+    // 409 carries the rule that blocked it; the UI shows that sentence verbatim.
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ status: 409, detail: 'Portfolio "ISA" already holds an asset named "BCIA11".' }), {
+        status: 409,
+        headers: { 'Content-Type': 'application/problem+json' },
+      }),
+    )
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await expect(
+      client.moveAsset({
+        brokerName: 'XPI',
+        scope: 'active',
+        sourcePortfolioName: 'Default',
+        assetName: 'BCIA11',
+        destinationPortfolioName: 'ISA',
+      }),
+    ).rejects.toThrow('already holds an asset named "BCIA11"')
+  })
+
   it('posts a new transaction', async () => {
     const responseBody = { name: 'BCIA11' } as AssetDetailsDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))

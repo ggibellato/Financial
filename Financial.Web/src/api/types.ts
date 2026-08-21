@@ -20,6 +20,10 @@ export interface SelectedNodeContextValue {
   selectedNode: SelectedNode | null
   setSelectedNode: (node: SelectedNode | null) => void
   scope: InvestmentScope
+  /** Re-fetches the navigation tree. The tree is built from a snapshot, so it does not observe a move. */
+  reload: () => void
+  /** Bumped by reload(); the tree re-fetches when it changes. */
+  reloadToken: number
 }
 
 export interface TreeNodeDto {
@@ -111,6 +115,14 @@ export interface AssetDetailsDto {
   priceHistory: AssetPriceSnapshotDto[]
   cashFlowsWithCredits: AssetCashFlowDto[]
   cashFlowsWithoutCredits: AssetCashFlowDto[]
+}
+
+export interface MoveAssetRequestDto {
+  brokerName: string
+  scope: InvestmentScope
+  sourcePortfolioName: string
+  assetName: string
+  destinationPortfolioName: string
 }
 
 export interface TransactionCreateDto {
