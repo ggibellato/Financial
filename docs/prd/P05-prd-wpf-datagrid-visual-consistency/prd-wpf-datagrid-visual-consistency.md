@@ -137,11 +137,11 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. WPF DataGrid Visual Standardization
-- [ ] Assets Current Prices, Portfolio Summary, Assets Transactions, Assets Credits, Dividend History, and By Year grids all use the same `FontFamily`, `FontSize`, and `FontWeight` for base row text
-- [ ] All 6 grids render alternating row background striping using the same shared `RowStyle` resource (verified by identical `StaticResource` key usage)
+- [x] Assets Current Prices, Portfolio Summary, Assets Transactions, Assets Credits, Dividend History, and By Year grids all use the same `FontFamily`, `FontSize`, and `FontWeight` for base row text
+- [x] All 6 grids render alternating row background striping using the same shared `RowStyle` resource (verified by identical `StaticResource` key usage)
 - [ ] All 6 grids use the same `ColumnHeaderStyle` (background, foreground, font weight, padding, border)
 - [ ] Every numeric/currency column across all 6 grids is right-aligned (`TextAlignment="Right"`) via the shared numeric-column style, including the Assets Current Prices grid's own Price column
-- [ ] The `Consolas` font override on the Portfolio Summary grid's numeric columns is removed; those columns use the same default font as the rest of the app
+- [x] The `Consolas` font override on the Portfolio Summary grid's numeric columns is removed; those columns use the same default font as the rest of the app
 - [ ] Profit/loss green-red coloring (% Profit, % Profit w/ Credits, XIRR, Total Invested) in the Portfolio Summary grid renders identically to before this change, with only font/zebra differing
 - [ ] Transaction-type coloring and the bold Total column in the Assets Transactions grid render identically to before this change
 - [ ] Selection highlighting (`LightYellow` background) behaves identically across all 6 grids
@@ -149,4 +149,53 @@ graph TD
 - [ ] Existing sorting, row selection, and action-button (update/delete) behavior in Assets Transactions and Assets Credits grids is unaffected (regression check)
 
 ### Cross-Feature Integration
-- [ ] N/A — this PRD has a single feature with no functional data dependencies on other features
+- [x] N/A — this PRD has a single feature with no functional data dependencies on other features
+
+---
+
+#### Verification note — 2026-08-21
+
+Section 9 was back-verified against `main` @ `eeea9043` during the `docs/app-known-issues-backlog.md`
+§3 documentation-hygiene pass. Every ticked box below has cited source evidence; the rest stay
+unticked deliberately, each with the reason.
+
+**Confirmed — ticked**
+- *Same base row font across all 6 grids* — the implicit `DataGrid` style in
+  `Financial.App/App.xaml` sets `FontSize="13"`; no grid overrides `FontFamily`, `FontSize` or
+  `FontWeight` on base row text. The 6 grids are `Components/NavigationView.xaml:585` (Portfolio
+  Summary), `:902` (historic), `:1152` (Transactions), `:1458` (Credits), `:1801` (Price History),
+  plus `Views/Investment/DividendCheckView.xaml:129,144` and `Views/Investment/AssetPriceView.xaml:71`.
+- *Shared alternating-row striping* — the implicit `DataGridRow` style (`App.xaml`) plus
+  `AlternatingRowBackground="#F5F5F5"` on the implicit `DataGrid` style. Note the mechanism is an
+  **implicit** style, not the keyed `StaticResource` the criterion's parenthetical assumed; the
+  styling is genuinely shared and defined once, so the substance holds.
+- *`Consolas` removed from Portfolio Summary grid columns* — no `FontFamily="Consolas"` occurs
+  between `NavigationView.xaml:585` and `:780`. The 38 surviving `Consolas` usages are all on
+  detail-panel and footer `TextBlock`s outside any grid (`:198-530`, `:791-847`, `:1078-1100`).
+
+**Left unticked — deviation found in the shipped code**
+- *Same `ColumnHeaderStyle` across all 6 grids* and *`LightYellow` selection behaves identically*
+  and *no duplicated style blocks remain* — all three are blocked by the same four style blocks.
+  `NavigationView.xaml:744` and `:750` (and the historic copies at `:1031`, `:1037`) set a column-level
+  `CellStyle`/`HeaderStyle` **without `BasedOn`**, to draw the `#007ACC` group-separator border on the
+  Credits column. An explicit column style with no `BasedOn` replaces the implicit `App.xaml` style
+  outright, so those cells lose `VerticalContentAlignment` and the `IsSelected` → `LightYellow`
+  triggers, and those headers lose the shared background, foreground, bold and padding.
+  *Fix is one line each:* add `BasedOn="{StaticResource {x:Type DataGridCell}}"` /
+  `BasedOn="{StaticResource {x:Type DataGridColumnHeader}}"`.
+  `AssetPriceView.xaml:75,83` also inline a `TextBlock` style that duplicates the keyed
+  `PlainColumnTextStyle` rather than referencing it.
+- *Every numeric column right-aligned via the shared numeric-column style* — right-alignment is real
+  everywhere, but the two Dividend grids do not use the shared resource. `DividendCheckView.xaml:129,144`
+  set `AutoGenerateColumns="True"` and build the style by hand in code-behind
+  (`DividendCheckView.xaml.cs:53-58`), which sets `TextAlignment=Right` but omits the `Padding="8"`
+  that `NumericColumnTextStyle` carries. `NavigationView.xaml` (27 references) and
+  `AssetPriceView.xaml:92` do use the shared style.
+
+**Left unticked — not verifiable from source**
+These three are visual regression checks against the pre-change build ("renders identically to
+before this change"). `Tests/Financial.Presentation.Tests` contains no XAML or style tests, so
+nothing in the repo can settle them; they need a manual side-by-side pass:
+- Profit/loss green-red coloring renders identically
+- Transaction-type coloring and bold Total column render identically
+- Sorting, row selection and action-button behaviour unaffected

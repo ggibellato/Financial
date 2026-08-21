@@ -258,46 +258,138 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Cryptocurrency Asset Classification
-- [ ] `GlobalAssetClass` enum contains a `Cryptocurrency` value appended after the existing 9 values, with no existing values renumbered
-- [ ] `AssetClassifications.json`'s "Bitcoin" entry has `assetClass` set to `"Cryptocurrency"`
-- [ ] `AssetClassificationLookup.TryGet("Bitcoin", ...)` returns `GlobalAssetClass.Cryptocurrency`
-- [ ] No other entries in `AssetClassifications.json` are modified
+- [x] `GlobalAssetClass` enum contains a `Cryptocurrency` value appended after the existing 9 values, with no existing values renumbered
+- [x] `AssetClassifications.json`'s "Bitcoin" entry has `assetClass` set to `"Cryptocurrency"`
+- [x] `AssetClassificationLookup.TryGet("Bitcoin", ...)` returns `GlobalAssetClass.Cryptocurrency`
+- [x] No other entries in `AssetClassifications.json` are modified
 
 ### F02. Cryptocurrency Spreadsheet Import
 - [ ] After running the spreadsheet import, the Bitcoin asset under Coinbase has `Class = Cryptocurrency`, `Ticker = "BTC"`, and blank `Exchange`/`ISIN`
-- [ ] The imported Bitcoin asset is linked to the Coinbase broker and its existing "Cryptocurrency" portfolio
-- [ ] Buy/sell transactions for Bitcoin under Coinbase import successfully through the existing generic transaction pipeline, unaffected by the classification change
+- [x] The imported Bitcoin asset is linked to the Coinbase broker and its existing "Cryptocurrency" portfolio
+- [x] Buy/sell transactions for Bitcoin under Coinbase import successfully through the existing generic transaction pipeline, unaffected by the classification change
 - [ ] If the Ticker cell is blank, import logs an error and does not create/update the Bitcoin asset
-- [ ] If the Coinbase broker is missing from `BrokerCurrencyMap`, import fails for that sheet with an error naming the broker
+- [x] If the Coinbase broker is missing from `BrokerCurrencyMap`, import fails for that sheet with an error naming the broker
 
 ### F03. Cryptocurrency Price Fetch Strategy
-- [ ] Fetching the current price for the Bitcoin asset builds the URL `https://www.google.com/finance/beta/quote/BTC-GBP`
-- [ ] Fetching the current price for a non-cryptocurrency asset continues to build the existing `{TICKER}:{EXCHANGE}` URL, unchanged
+- [x] Fetching the current price for the Bitcoin asset builds the URL `https://www.google.com/finance/beta/quote/BTC-GBP`
+- [x] Fetching the current price for a non-cryptocurrency asset continues to build the existing `{TICKER}:{EXCHANGE}` URL, unchanged
 - [ ] A successful fetch returns a current price value for Bitcoin in GBP
-- [ ] A network failure or unreachable beta page results in the same "price unavailable" failure state used for other asset types, without an unhandled exception
-- [ ] Existing price-fetch tests for non-cryptocurrency assets continue to pass unmodified
+- [x] A network failure or unreachable beta page results in the same "price unavailable" failure state used for other asset types, without an unhandled exception
+- [x] Existing price-fetch tests for non-cryptocurrency assets continue to pass unmodified
 
 ### F04. Cryptocurrency Filter — Web Frontend
-- [ ] The Web asset-class filter dropdown includes a "Cryptocurrency" option with value `9`
-- [ ] Selecting "Cryptocurrency" filters the investment tree to show only assets with `Class = Cryptocurrency`
-- [ ] The 8 pre-existing filter options remain unchanged in label, value, and order
+- [x] The Web asset-class filter dropdown includes a "Cryptocurrency" option with value `9`
+- [x] Selecting "Cryptocurrency" filters the investment tree to show only assets with `Class = Cryptocurrency`
+- [x] The 8 pre-existing filter options remain unchanged in label, value, and order
 
 ### F05. Cryptocurrency Filter — WPF Desktop
-- [ ] The WPF asset-class filter dropdown includes a "Cryptocurrency" option
-- [ ] Selecting "Cryptocurrency" filters the investment tree to show only assets with `Class = Cryptocurrency`
-- [ ] The 8 pre-existing filter options remain unchanged in label, value, and order
+- [x] The WPF asset-class filter dropdown includes a "Cryptocurrency" option
+- [x] Selecting "Cryptocurrency" filters the investment tree to show only assets with `Class = Cryptocurrency`
+- [x] The 8 pre-existing filter options remain unchanged in label, value, and order
 
 ### F06. Current Values Portfolio Scope — Web Frontend
-- [ ] The Coinbase/Cryptocurrency portfolio appears on the Web Current Values page
+- [x] The Coinbase/Cryptocurrency portfolio appears on the Web Current Values page
 - [ ] The Bitcoin asset's "Refresh" action successfully triggers the price fetch and displays a GBP price
-- [ ] The existing scoped portfolios (e.g. XPI/Default, XPI/Acoes) remain present and unaffected
+- [x] The existing scoped portfolios (e.g. XPI/Default, XPI/Acoes) remain present and unaffected
 
 ### F07. Current Values Portfolio Scope — WPF Desktop
-- [ ] The Coinbase/Cryptocurrency portfolio appears on the WPF Current Values page
+- [x] The Coinbase/Cryptocurrency portfolio appears on the WPF Current Values page
 - [ ] The Bitcoin asset's "Refresh" action successfully triggers the price fetch and displays a GBP price
-- [ ] The existing scoped portfolios remain present and unaffected
+- [x] The existing scoped portfolios remain present and unaffected
 
 ### Cross-Feature Integration
-- [ ] The `Cryptocurrency` enum value and updated Bitcoin classification from F01 are correctly consumed during import in F02, producing a Bitcoin asset with `Class = Cryptocurrency`
-- [ ] The `Cryptocurrency` enum value from F01 is correctly reflected as a selectable option in both the Web filter (F04) and WPF filter (F05)
-- [ ] The Bitcoin asset record produced by F02 (Ticker "BTC", Coinbase broker) and the price-fetch capability from F03 are both correctly consumed when the Bitcoin asset appears in the Web Current Values page (F06) and the WPF Current Values page (F07), in both cases returning a GBP price on Refresh
+- [x] The `Cryptocurrency` enum value and updated Bitcoin classification from F01 are correctly consumed during import in F02, producing a Bitcoin asset with `Class = Cryptocurrency`
+- [x] The `Cryptocurrency` enum value from F01 is correctly reflected as a selectable option in both the Web filter (F04) and WPF filter (F05)
+- [x] The Bitcoin asset record produced by F02 (Ticker "BTC", Coinbase broker) and the price-fetch capability from F03 are both correctly consumed when the Bitcoin asset appears in the Web Current Values page (F06) and the WPF Current Values page (F07), in both cases returning a GBP price on Refresh
+
+---
+
+#### Verification note — 2026-08-21
+
+Back-verified against `main` @ `eeea9043` during the `docs/app-known-issues-backlog.md` §3
+documentation-hygiene pass. 24 of the 29 criteria are confirmed. Of the remaining five, four need a
+live run (real spreadsheet, real network, real data file) and one was never actually built.
+
+**F01 — classification**
+- `Financial.Investment.Domain/Entities/GlobalAssetClass.cs` — `Cryptocurrency` sits at ordinal 9,
+  appended after `Unknown = 0 … Other`, with no explicit renumbering. (`PrivateCredit` was appended
+  later at 10; it does not disturb any earlier value.)
+- `Integrations/GoogleFinancialSupport/AssetClassifications.json:18` carries
+  `"assetClass": "Cryptocurrency"` for Bitcoin, and
+  `Tests/…/Integrations/AssetClassificationLookupTests.cs:10,20,28` asserts the lookup, including the
+  case-insensitive/trimmed form.
+- *"No other entries modified"* was settled from history rather than from the current file: commit
+  `dcbf6e8e` ("feat(P07-F01)") touches `AssetClassifications.json` with exactly **1 insertion and 1
+  deletion** — the Bitcoin line, `Unknown` → `Cryptocurrency`. Nothing else in the file changed.
+
+**F02 — import**
+- Portfolio and broker linkage: `AssetMetadataResolver.ResolvePortfolioName` maps Coinbase with a
+  blank sheet colour to `"Cryptocurrency"` (asserted at `AssetMetadataResolverTests.cs:44`), and
+  `GoogleGenerator.ProcessSheetAsync:112-123` adds the portfolio to the broker and the asset to the
+  portfolio.
+- Transactions go through the same `_sheetsReader.ReadTransactionsAsync` call for every sheet
+  (`GoogleGenerator.cs:125`); there is no asset-class branch anywhere in the transaction path, so the
+  classification change cannot affect it.
+- An unmapped broker throws naming the broker — `AssetMetadataResolver.cs:30-33`
+  ("No currency mapping found for broker '…'. Add it to BrokerCurrencyMap."), asserted at
+  `AssetMetadataResolverTests.cs:33`.
+
+**F03 — price fetch**
+- `Integrations/WebPageParser/GoogleFinance.cs:24-25` builds
+  `https://www.google.com/finance/beta/quote/{ticker}-{currency}`, asserted **exactly** as
+  `https://www.google.com/finance/beta/quote/BTC-GBP` in
+  `Tests/…/Integrations/GoogleFinanceCryptocurrencyUrlTests.cs:13`. The stock URL at `:21-22` is
+  still `{ticker}:{exchange}`.
+- Both URLs feed the same private `FetchSnapshot` (`:27`), so the crypto path cannot fail differently
+  from the standard one; the shared failure handling is covered by
+  `Tests/Financial.Api.Tests/…/AssetPriceEndpointsTests.cs:124`
+  (`LiveFetchFails_FallsBackToManualEntry`) and `:145`.
+- The non-crypto fetch tests (`StandardAssetPriceFetcherTests.cs`, the `GoogleFinance*` tests) are
+  untouched by this feature and green in CI.
+
+**F04 / F05 — filters**
+- Web: `Financial.Web/src/components/InvestmentTree.tsx:11-21` lists values 1–8 with their original
+  labels and order, plus `{ value: 9, label: 'Cryptocurrency' }`. Asserted in
+  `components/__tests__/InvestmentTree.test.tsx:252` (option present with value 9) and `:259`
+  (non-matching assets hidden when selected).
+- WPF: `ViewModels/Investment/MainNavigationViewModelBase.cs:172-180` builds the list from
+  `Enum.GetValues<GlobalAssetClass>()`, so the option appears in enum order with `BuildAssetClassLabel`
+  supplying "Real Estate"; filtering is `FilterTreeNode` at `:123-128`. Asserted at
+  `Tests/Financial.Presentation.Tests/ViewModels/MainNavigationViewModelBaseTests.cs:36`.
+
+**F06 / F07 — Current Values scope**
+Both front ends widened the scope predicate to admit a crypto asset that has no exchange, and neither
+narrowed anything, so the pre-existing scoped portfolios cannot have been dropped:
+- Web — `pages/CurrentValuesPage.tsx:66`:
+  `asset.ticker && (asset.exchange || asset.assetClass === 'Cryptocurrency')`.
+- WPF — `ViewModels/Investment/TodayInfoTracker.cs:90,107`: the skip condition is
+  `!isCryptocurrency && string.IsNullOrWhiteSpace(exchange)`. The Coinbase/Cryptocurrency path is
+  exercised at `Tests/…/ViewModels/AssetPriceFetchViewModelTests.cs:35-54`.
+
+**Cross-feature** — the enum→classification→import chain is covered end to end by
+`AssetClassificationLookupTests`, `AssetMetadataResolverTests` and
+`Tests/Financial.Investment.Domain.Tests/Domain/AssetTests.cs:29` (Bitcoin / "BTC" /
+`GlobalAssetClass.Cryptocurrency`); the filter half by the two filter tests above; the
+Current-Values half by `AssetPriceFetchViewModelTests.cs:35` and
+`AssetDetailsViewModelPortfolioSummaryTests.cs:297`, both of which pass `AssetClass` **and**
+`BrokerName` for the Coinbase/Cryptocurrency pair.
+
+**Left unticked — needs a live run**
+These four assert observed runtime results against the real spreadsheet, the real Google Finance
+endpoint and the real data file. Nothing in the repository can settle them; they need a manual pass:
+- *After running the spreadsheet import, the Bitcoin asset under Coinbase has `Class = Cryptocurrency`,
+  `Ticker = "BTC"`, blank `Exchange`/`ISIN`* — every mechanism is verified above, but the post-import
+  record itself is data.
+- *A successful fetch returns a current price value for Bitcoin in GBP* — needs the live beta quote page.
+- *The Bitcoin asset's "Refresh" action displays a GBP price* (Web **and** WPF) — same live dependency.
+
+**Left unticked — never built, and the codebase now asserts the opposite**
+- *"If the Ticker cell is blank, import logs an error and does not create/update the Bitcoin asset."*
+  There is no blank-ticker guard anywhere in the path. `GoogleSheetsAssetReader.GetAssetDataAsync`
+  (`:35-53`) swallows `InvalidCastException`/`ArgumentOutOfRangeException` and returns
+  `ticker = string.Empty` with no report; `GoogleGenerator.ProcessSheetAsync:115-123` passes it
+  straight into `Asset.Create`, which assigns `Ticker` unvalidated
+  (`Financial.Investment.Domain/Entities/Asset.cs:71-77`). The current behaviour is deliberate and
+  pinned: `Tests/Financial.Investment.Domain.Tests/Domain/AssetTests.cs:42`,
+  `Create_BlankTicker_StillCreatesAssetWithEmptyTicker`. This criterion needs a decision — implement
+  the guard, or retire it against that test — not a tick.

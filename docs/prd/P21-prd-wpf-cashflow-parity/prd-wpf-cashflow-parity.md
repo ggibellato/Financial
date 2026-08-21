@@ -357,7 +357,7 @@ graph TD
 - [x] `dotnet build` succeeds for `Financial.App` and `Financial.Presentation.Tests` with the new references
 
 ### F02. WPF Monthly View — Expenses & Income
-- [ ] Monthly view shows Summary, Expense, and Incoming sub-tabs with a Month+Year selector
+- [x] Monthly view shows Summary, Expense, and Incoming sub-tabs with a Month+Year selector
 - [x] Adding an expense with valid Date/Description/Category/Value/Payment fields creates it and it appears in the Expense grid for that month
 - [x] Selecting "Charge to card" shows the 5-item Card ComboBox and hides Payment Source/Round-Up
 - [x] Selecting "Pay immediately" with a round-up-enabled bank shows the Round-Up field constrained to £0.00–£0.99; an out-of-range value blocks save
@@ -423,3 +423,48 @@ graph TD
 ### Cross-Feature Integration
 - [x] The Cash Flow tab created by F01 correctly hosts and displays each of F02, F04, F05, F06, F07, F08's views in their respective nested tab, with no layout or data bleed between tabs
 - [x] F03's Banks/Cards grids and Move Money/Correct Balance actions render correctly inside the Summary sub-tab container established by F02, without disrupting F02's Category Totals/tithe display already on that sub-tab
+
+---
+
+#### Verification note — 2026-08-21
+
+Reviewed against `main` @ `eeea9043` during the `docs/app-known-issues-backlog.md` §3
+documentation-hygiene pass. `docs/app-known-issues-backlog.md` recorded all five of this PRD's
+unchecked criteria as "describing a top-level tab strip that no longer exists". Checking them one by
+one, **that is true of three of them, not five** — the other two are unrelated to navigation. The
+backlog entry should be corrected alongside this note.
+
+**Superseded by P23 — the shell was replaced, not left unbuilt** (F01, three criteria)
+`Financial.App/MainWindow.xaml` is a `Sidebar` (`:14`), a breadcrumb `TextBlock` (`:23`) and a
+`ContentControl` bound to `SelectedContent` (`:25`). There is no top-level `TabControl` anywhere in
+it, so no criterion phrased as "MainWindow's top-level tab strip …" can ever be satisfied again:
+- *Top-level tab strip showing "Investments" and "Cash Flow" as peer domain tabs*
+- *The Cash Flow tab contains a nested tab strip with exactly 6 tabs*
+- *Selecting the Cash Flow tab does not affect the Investments domain's nested tabs*
+
+What the second one asked for does exist, in the new shape: `Financial.App/Navigation/NavTree.cs:30-35`
+declares exactly those six CashFlow destinations in exactly that order — Monthly, Reserva, Mensais,
+Controle Mae, Investment Snapshots, Annual Summary — as sidebar children rather than tabs. The third
+is moot: sidebar destinations are mutually exclusive `ContentControl` content, so there is no
+cross-domain tab state left to disturb.
+(For the avoidance of doubt, the `TabControl` at `Components/NavigationView.xaml:164` is the
+Investment *sub*-tab strip and is unrelated to this criterion.)
+
+**Now ticked — this one was simply never checked off** (F02)
+*"Monthly view shows Summary, Expense, and Incoming sub-tabs with a Month+Year selector."*
+`Views/CashFlow/MonthlyView.xaml:12-16` hosts a `MonthYearPicker` bound to `Year` and `Month`, and
+`:27,30,50` are the `Summary`, `Expense` and `Income` tabs. The tab is labelled "Income" rather than
+"Incoming", and P22/P24 have since added "Credit Card" (`:40`) and "Bank" (`:60`) alongside them —
+neither of which contradicts what this criterion asks for.
+
+**Superseded in part, by a decision you confirmed at the time** (F06)
+*"Changing the 'From' date refetches and re-filters the grid and totals."* Half of this shipped and
+half was deliberately reversed. `Views/CashFlow/ControleMaeView.xaml:28-29` binds the `From`
+`DatePicker` to `FromDate` two-way, and the setter reloads the ledger
+(`ViewModels/CashFlow/ControleMaeViewModel.cs:106-119`) — but the totals are **intentionally**
+independent of it. The class summary says so ("fetched independently of FromDate — confirmed with the
+user to match the web reference's" behaviour, `:16`), `:147` repeats it, and
+`Tests/Financial.Presentation.Tests/ViewModels/CashFlow/ControleMaeViewModelTests.cs:41`
+(`SettingFromDate_RefetchesEntriesButNotTotals`) pins it. Ticking this would assert all-time totals
+re-filter, which they must not. It should be rewritten as "refetches and re-filters the grid; totals
+remain all-time".

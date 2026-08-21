@@ -155,15 +155,48 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Web DataGrid Visual Standardization
-- [ ] Assets Current Prices, Portfolio Summary, Assets Transactions, Assets Credits, Dividend History, and By Year tables all render body and header text at the same 13px font-size
-- [ ] All 6 tables render alternating row background striping using the shared `.data-table` zebra rule (verified by each `<table>` carrying the `data-table` class)
-- [ ] All 6 tables use the same plain header style (left-aligned, `var(--text-h)` color, no uppercase/letter-spacing/muted color)
-- [ ] Every numeric/currency column across all 6 tables is right-aligned, either via the shared `data-table__col--numeric` class or (Portfolio Summary only) the existing positional rule, both resolving to `text-align: right`
-- [ ] Profit/loss green/red coloring in Portfolio Summary renders identically to before this change, with only font-size/header style differing
-- [ ] Transaction-type coloring and the bold Total column in Assets Transactions render identically to before this change
-- [ ] Credit-type coloring and the bold Value column in Assets Credits render identically to before this change
-- [ ] The shared base table/zebra/header/numeric-alignment rules exist exactly once, in `src/styles/data-table.css`; the now-redundant duplicate declarations are removed from the five component/page CSS files
-- [ ] Existing row action buttons (update/delete), filters, and mode toggles in Assets Transactions and Assets Credits are unaffected (regression check)
+- [x] Assets Current Prices, Portfolio Summary, Assets Transactions, Assets Credits, Dividend History, and By Year tables all render body and header text at the same 13px font-size
+- [x] All 6 tables render alternating row background striping using the shared `.data-table` zebra rule (verified by each `<table>` carrying the `data-table` class)
+- [x] All 6 tables use the same plain header style (left-aligned, `var(--text-h)` color, no uppercase/letter-spacing/muted color)
+- [x] Every numeric/currency column across all 6 tables is right-aligned, either via the shared `data-table__col--numeric` class or (Portfolio Summary only) the existing positional rule, both resolving to `text-align: right`
+- [x] Profit/loss green/red coloring in Portfolio Summary renders identically to before this change, with only font-size/header style differing
+- [x] Transaction-type coloring and the bold Total column in Assets Transactions render identically to before this change
+- [x] Credit-type coloring and the bold Value column in Assets Credits render identically to before this change
+- [x] The shared base table/zebra/header/numeric-alignment rules exist exactly once, in `src/styles/data-table.css`; the now-redundant duplicate declarations are removed from the five component/page CSS files
+- [x] Existing row action buttons (update/delete), filters, and mode toggles in Assets Transactions and Assets Credits are unaffected (regression check)
 
 ### Cross-Feature Integration
-- [ ] N/A — this PRD has a single feature with no functional data dependencies on other features
+- [x] N/A — this PRD has a single feature with no functional data dependencies on other features
+
+---
+
+#### Verification note — 2026-08-21
+
+Section 9 was back-verified against `main` @ `eeea9043` during the `docs/app-known-issues-backlog.md`
+§3 documentation-hygiene pass. All eleven criteria are confirmed; evidence below.
+
+- **Shared rules exist exactly once** — `Financial.Web/src/styles/data-table.css`, imported once from
+  `src/main.tsx:5`. It owns the 13px base size, the `th` plain style (left-aligned, `var(--text-h)`,
+  no uppercase/letter-spacing), the `td` padding/border, the `tbody tr:nth-child(even)` zebra and
+  `.data-table__col--numeric { text-align: right }`.
+- **All 6 tables carry `data-table`** — Assets Current Prices `pages/CurrentValuesPage.tsx:160`,
+  Portfolio Summary `components/PortfolioSummaryTab.tsx:180`, Assets Transactions
+  `components/TransactionsTab.tsx:345`, Assets Credits `components/CreditsTab.tsx:377`, Dividend
+  History `pages/DividendCheckPage.tsx:123`, By Year `pages/DividendCheckPage.tsx:148`.
+  (Every other table in the app carries it too — 26 in total.)
+- **No duplicate/overriding declarations remain** — `CurrentValuesPage.css` and `DividendCheckPage.css`
+  add only a wrapper border; `TransactionsTab.css` / `CreditsTab.css` add only toolbar and wrapper
+  rules. The single surviving `th` override is `PortfolioSummaryTab.css:25` (`vertical-align: middle`)
+  plus the two-row sticky offset at `:35` — neither touches font-size, color or zebra. No global
+  `th`/`table` rule exists in `index.css` or `App.css`.
+- **Numeric alignment** — `data-table__col--numeric` on Current Prices (`CurrentValuesPage.tsx:164,171`),
+  both Dividend tables (`DividendCheckPage.tsx:128,135,155,160`), Transactions (8 uses) and Credits
+  (2 uses); Portfolio Summary uses the positional rule at `PortfolioSummaryTab.css:20-22`, exactly as
+  the criterion allows.
+- **The three "renders identically" criteria have automated coverage**, so they did not need a manual
+  visual pass: `components/__tests__/PortfolioSummaryTab.test.tsx:350,438,455,472,489,497,505` asserts
+  `portfolio-summary__profit--green/--red`; `TransactionsTab.test.tsx:190,197,210`
+  (`renders_buy_type_in_green_bold`, `renders_sell_type_in_red_bold`, `renders_total_in_bold`);
+  `CreditsTab.test.tsx:158,165,168` (`--dividend`, `--rent`, `renders_value_in_n2_bold`).
+- **Action/filter/toggle regression** — `TransactionsTab.test.tsx:138,148,154,160,217,247,254,267`
+  covers period filters, the bar/line toggle, new, edit, delete and the delete-error row.
