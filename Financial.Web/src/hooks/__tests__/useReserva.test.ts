@@ -46,6 +46,12 @@ const BUCKETS: ReserveBucketDto[] = [
   { id: 'b4', name: 'Gleison', isActive: true, splitPercentage: 16.67 },
 ]
 
+// Only the 409 tests should reach the confirmation policy. Everywhere else, being asked at all
+// is the bug - so the default stub fails the test instead of quietly answering.
+const rejectUnexpectedConfirm = (): boolean => {
+  throw new Error('submitWithdrawal consulted confirmProceed when no 409 was returned')
+}
+
 describe('useReserva', () => {
   beforeEach(() => {
     getReserveBalancesMock.mockReset()
@@ -192,7 +198,7 @@ describe('useReserva', () => {
     act(() => result.current.setWithdrawalField('withdrawalAmount', '30'))
     act(() => result.current.setWithdrawalField('withdrawalDate', '2026-07-01'))
     act(() => result.current.setWithdrawalField('withdrawalDescription', 'Groceries top-up'))
-    act(() => result.current.submitWithdrawal())
+    act(() => result.current.submitWithdrawal(rejectUnexpectedConfirm))
 
     await waitFor(() => expect(postWithdrawalMock).toHaveBeenCalledTimes(1))
     expect(postWithdrawalMock).toHaveBeenCalledWith(
@@ -201,8 +207,8 @@ describe('useReserva', () => {
     await waitFor(() => expect(getReserveBalancesMock).toHaveBeenCalledTimes(2))
   })
 
-  it('prompts for confirmation on a 409 and resubmits confirmed when accepted', async () => {
-    vi.stubGlobal('confirm', vi.fn(() => true))
+  it('asks the caller on a 409 and resubmits confirmed when it accepts', async () => {
+    const confirmProceed = vi.fn(() => true)
     postWithdrawalMock
       .mockRejectedValueOnce(new ApiError('This withdrawal exceeds the balance.', 409))
       .mockResolvedValueOnce({
@@ -219,15 +225,15 @@ describe('useReserva', () => {
     act(() => result.current.setWithdrawalField('withdrawalAmount', '100'))
     act(() => result.current.setWithdrawalField('withdrawalDate', '2026-07-01'))
     act(() => result.current.setWithdrawalField('withdrawalDescription', 'Big purchase'))
-    act(() => result.current.submitWithdrawal())
+    act(() => result.current.submitWithdrawal(confirmProceed))
 
     await waitFor(() => expect(postWithdrawalMock).toHaveBeenCalledTimes(2))
     expect(postWithdrawalMock).toHaveBeenNthCalledWith(1, expect.objectContaining({ confirmed: false }))
     expect(postWithdrawalMock).toHaveBeenNthCalledWith(2, expect.objectContaining({ confirmed: true }))
   })
 
-  it('does not resubmit a 409 withdrawal when the user declines the confirmation', async () => {
-    vi.stubGlobal('confirm', vi.fn(() => false))
+  it('does not resubmit a 409 withdrawal when the caller declines', async () => {
+    const confirmProceed = vi.fn(() => false)
     postWithdrawalMock.mockRejectedValue(new ApiError('This withdrawal exceeds the balance.', 409))
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -235,7 +241,7 @@ describe('useReserva', () => {
     act(() => result.current.setWithdrawalField('withdrawalAmount', '100'))
     act(() => result.current.setWithdrawalField('withdrawalDate', '2026-07-01'))
     act(() => result.current.setWithdrawalField('withdrawalDescription', 'Big purchase'))
-    act(() => result.current.submitWithdrawal())
+    act(() => result.current.submitWithdrawal(confirmProceed))
 
     await waitFor(() => expect(result.current.withdrawalError).toBe('This withdrawal exceeds the balance.'))
     expect(postWithdrawalMock).toHaveBeenCalledTimes(1)
@@ -330,7 +336,7 @@ describe('useReserva', () => {
     act(() => result.current.setWithdrawalField('withdrawalAmount', '30'))
     act(() => result.current.setWithdrawalField('withdrawalDate', '2026-07-01'))
     act(() => result.current.setWithdrawalField('withdrawalDescription', 'Groceries top-up'))
-    act(() => result.current.submitWithdrawal())
+    act(() => result.current.submitWithdrawal(rejectUnexpectedConfirm))
 
     await waitFor(() => expect(getReserveBalancesMock).toHaveBeenCalledTimes(2))
     expect(getReserveBucketsMock).toHaveBeenCalledTimes(1)
@@ -375,7 +381,7 @@ describe('useReserva', () => {
     act(() => result.current.setWithdrawalField('withdrawalAmount', '30'))
     act(() => result.current.setWithdrawalField('withdrawalDate', '2026-07-01'))
     act(() => result.current.setWithdrawalField('withdrawalDescription', 'Groceries top-up'))
-    act(() => result.current.submitWithdrawal())
+    act(() => result.current.submitWithdrawal(rejectUnexpectedConfirm))
 
     await waitFor(() => expect(result.current.withdrawalError).toBe('Bucket is required'))
     expect(postWithdrawalMock).not.toHaveBeenCalled()
