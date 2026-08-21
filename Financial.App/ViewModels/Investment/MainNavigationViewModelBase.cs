@@ -97,11 +97,21 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         var portfolioName = assetNode.Parent!.GetMetadata<string>("PortfolioName") ?? string.Empty;
         var assetName = assetNode.GetMetadata<string>("AssetName") ?? string.Empty;
 
+        // Only a closed position in Active Investments can be archived, so Historic destinations
+        // are offered only then - and never for an asset already in Historic, which never comes
+        // back out. The server refuses either way; this keeps the dialog from offering it.
+        // The sentinel matters: GetMetadata defaults a missing decimal to 0, which reads as "closed"
+        // and would offer archiving for every open position. Absent metadata must fail closed.
+        var quantity = assetNode.GetMetadata("Quantity", decimal.MinValue);
+        var canArchive = _scope == InvestmentScope.Active && quantity == 0m;
+
         var dialog = new MoveAssetDialogViewModel(
             brokerName,
             portfolioName,
             assetName,
-            PortfolioNamesOf(assetNode.Parent.Parent));
+            PortfolioNamesOf(assetNode.Parent.Parent),
+            canArchive ? HistoricPortfolioNamesOf(brokerName) : null,
+            canArchive);
 
         if (!ShowMoveAssetDialog(dialog))
         {
@@ -113,17 +123,31 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         // upload inside the save is the likeliest thing to fail, not the domain rules.
         try
         {
-            var moved = await _assetMoveService.MoveAssetAsync(new MoveAssetRequestDTO
-            {
-                BrokerName = brokerName,
-                Scope = _scope.ToString(),
-                SourcePortfolioName = portfolioName,
-                AssetName = assetName,
-                DestinationPortfolioName = dialog.DestinationPortfolioName
-            });
+            var moved = dialog.ArchiveToHistoric
+                ? await _assetMoveService.ArchiveAssetAsync(new ArchiveAssetRequestDTO
+                {
+                    BrokerName = brokerName,
+                    SourcePortfolioName = portfolioName,
+                    AssetName = assetName,
+                    DestinationPortfolioName = dialog.DestinationPortfolioName
+                })
+                : await _assetMoveService.MoveAssetAsync(new MoveAssetRequestDTO
+                {
+                    BrokerName = brokerName,
+                    Scope = _scope.ToString(),
+                    SourcePortfolioName = portfolioName,
+                    AssetName = assetName,
+                    DestinationPortfolioName = dialog.DestinationPortfolioName
+                });
 
             await LoadNavigationTreeAsync();
-            SelectAsset(brokerName, moved.PortfolioName, assetName);
+
+            // An archived asset has left this scope entirely, so there is nothing here to reselect -
+            // it is now in the Historic Investments view.
+            if (!dialog.ArchiveToHistoric)
+            {
+                SelectAsset(brokerName, moved.PortfolioName, assetName);
+            }
         }
         catch (Exception ex)
         {
@@ -148,6 +172,16 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
     private static string BrokerNameOf(TreeNodeViewModel assetNode) =>
         assetNode.Parent?.Parent?.GetMetadata<string>("BrokerName") ?? string.Empty;
+
+    /// <summary>
+    /// The broker's Historic portfolios, read from the navigation service rather than the tree -
+    /// this view model only ever holds one scope's tree, and archiving needs the other one.
+    /// </summary>
+    private IEnumerable<string> HistoricPortfolioNamesOf(string brokerName) =>
+        _navigationService.GetBrokers(InvestmentScope.Historic)
+            .Where(broker => broker.Name == brokerName)
+            .SelectMany(broker => broker.Portfolios)
+            .Select(portfolio => portfolio.Name);
 
     private static IEnumerable<string> PortfolioNamesOf(TreeNodeViewModel? brokerNode) =>
         brokerNode?.Children

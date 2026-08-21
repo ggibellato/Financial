@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Exceptions;
 using System.IO;
@@ -169,6 +170,94 @@ public class MainNavigationViewModelMoveTests
     }
 
     [Fact]
+    public async Task MoveSelectedAssetAsync_WhenTheAssetIsClosed_OffersHistoricAsADestination()
+    {
+        var sut = CreateViewModel(assetQuantity: 0m);
+        await SelectAssetAsync(sut, "AAAA");
+
+        await sut.MoveSelectedAssetAsync();
+
+        sut.LastMoveDialog!.CanArchive.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task MoveSelectedAssetAsync_WhileTheAssetStillHoldsAPosition_DoesNotOfferHistoric()
+    {
+        var sut = CreateViewModel(assetQuantity: 8m);
+        await SelectAssetAsync(sut, "AAAA");
+
+        await sut.MoveSelectedAssetAsync();
+
+        sut.LastMoveDialog!.CanArchive.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task MoveSelectedAssetAsync_ForAHistoricAsset_NeverOffersToArchive()
+    {
+        // FR-019: an asset does not come back out of the archive, so the option is not shown even
+        // for a closed position that is already there.
+        var sut = CreateViewModel(assetQuantity: 0m, scope: InvestmentScope.Historic);
+        await SelectAssetAsync(sut, "AAAA");
+
+        await sut.MoveSelectedAssetAsync();
+
+        sut.LastMoveDialog!.CanArchive.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task MoveSelectedAssetAsync_WhenTheQuantityIsUnknown_DoesNotOfferHistoric()
+    {
+        // Absent metadata must fail closed. GetMetadata defaults a missing decimal to 0, which
+        // reads as "closed" and would offer archiving for a position that is still open.
+        var sut = CreateViewModel(assetQuantity: null);
+        await SelectAssetAsync(sut, "AAAA");
+
+        await sut.MoveSelectedAssetAsync();
+
+        sut.LastMoveDialog!.CanArchive.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task MoveSelectedAssetAsync_WhenArchiveIsChosen_ArchivesInsteadOfMoving()
+    {
+        var sut = CreateViewModel(assetQuantity: 0m);
+        await SelectAssetAsync(sut, "AAAA");
+        sut.MoveDialogResponse = dialog =>
+        {
+            dialog.ArchiveToHistoric = true;
+            dialog.CreateNewPortfolio = true;
+            dialog.NewPortfolioName = "Closed 2024";
+            return true;
+        };
+
+        await sut.MoveSelectedAssetAsync();
+
+        using (new AssertionScope())
+        {
+            _moveService.LastRequest.Should().BeNull("archiving is not a move");
+            _moveService.LastArchiveRequest.Should().NotBeNull();
+            _moveService.LastArchiveRequest!.BrokerName.Should().Be("XPI");
+            _moveService.LastArchiveRequest.SourcePortfolioName.Should().Be("Default");
+            _moveService.LastArchiveRequest.AssetName.Should().Be("AAAA");
+            _moveService.LastArchiveRequest.DestinationPortfolioName.Should().Be("Closed 2024");
+        }
+    }
+
+    [Fact]
+    public async Task MoveSelectedAssetAsync_WhenArchiveIsRefused_ShowsTheDomainsReason()
+    {
+        const string reason = "\"AAAA\" still holds a position of 8. Only a fully closed asset can be archived into Historic Investments.";
+        var sut = CreateViewModel(assetQuantity: 0m);
+        await SelectAssetAsync(sut, "AAAA");
+        sut.MoveDialogResponse = dialog => { dialog.ArchiveToHistoric = true; dialog.NewPortfolioName = "Closed"; dialog.CreateNewPortfolio = true; return true; };
+        _moveService.Failure = new InvestmentRuleViolationException(reason);
+
+        await sut.MoveSelectedAssetAsync();
+
+        sut.LastMoveFailureMessage.Should().Be(reason);
+    }
+
+    [Fact]
     public async Task MoveAssetCommand_IsUnavailableUntilAnAssetIsSelected()
     {
         var sut = CreateViewModel();
@@ -192,13 +281,20 @@ public class MainNavigationViewModelMoveTests
         _moveService.LastRequest.Should().BeNull();
     }
 
-    private TestableNavigationViewModel CreateViewModel()
+    private TestableNavigationViewModel CreateViewModel(
+        decimal? assetQuantity = 8m,
+        InvestmentScope scope = InvestmentScope.Active)
     {
-        var navigationService = new StubNavigationService { Tree = BuildTree(assetPortfolio: "Default") };
+        var navigationService = new StubNavigationService
+        {
+            Tree = BuildTree(assetPortfolio: "Default", assetQuantity: assetQuantity)
+        };
+
         return new TestableNavigationViewModel(
             new StubSummaryService(),
             new SpyAssetDetailsViewModel(),
             _navigationService: navigationService,
+            scope: scope,
             assetMoveService: _moveService);
     }
 
@@ -221,7 +317,7 @@ public class MainNavigationViewModelMoveTests
             .First(asset => asset.GetMetadata<string>("AssetName") == assetName);
 
     /// <summary>Broker XPI with portfolios "Default" and "ISA"; the asset sits in whichever is named.</summary>
-    private static TreeNodeDTO BuildTree(string assetPortfolio)
+    private static TreeNodeDTO BuildTree(string assetPortfolio, decimal? assetQuantity = 8m)
     {
         TreeNodeDTO Portfolio(string name) => new()
         {
@@ -235,7 +331,15 @@ public class MainNavigationViewModelMoveTests
                     {
                         NodeType = TreeNodeType.Asset,
                         DisplayName = "AAAA",
-                        Metadata = new Dictionary<string, object> { ["AssetName"] = "AAAA" },
+                        // Quantity is what decides whether archiving is offered, so the tree the
+                        // real navigation service builds carries it and so must this one.
+                        Metadata = assetQuantity is null
+                            ? new Dictionary<string, object> { ["AssetName"] = "AAAA" }
+                            : new Dictionary<string, object>
+                            {
+                                ["AssetName"] = "AAAA",
+                                ["Quantity"] = assetQuantity.Value
+                            },
                         Children = []
                     }
                 ]
@@ -266,7 +370,26 @@ public class MainNavigationViewModelMoveTests
         public Exception? Failure { get; set; }
         public Action? OnMove { get; set; }
 
-        public Task<AssetDetailsDTO> ArchiveAssetAsync(ArchiveAssetRequestDTO request) => throw new NotImplementedException();
+        public ArchiveAssetRequestDTO? LastArchiveRequest { get; private set; }
+
+        public Task<AssetDetailsDTO> ArchiveAssetAsync(ArchiveAssetRequestDTO request)
+        {
+            if (Failure is not null)
+            {
+                return Task.FromException<AssetDetailsDTO>(Failure);
+            }
+
+            LastArchiveRequest = request;
+            OnMove?.Invoke();
+
+            return Task.FromResult(new AssetDetailsDTO
+            {
+                Name = request.AssetName,
+                BrokerName = request.BrokerName,
+                PortfolioName = request.DestinationPortfolioName,
+                Ticker = request.AssetName
+            });
+        }
 
         public Task<AssetDetailsDTO> MoveAssetAsync(MoveAssetRequestDTO request)
         {
