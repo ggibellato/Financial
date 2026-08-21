@@ -18,6 +18,8 @@ function makeAsset(
   isActive: boolean,
   assetClass: number,
   positionType: PositionType = isActive ? 'Long' : 'Flat',
+  // null omits the key entirely; undefined would just trigger this default.
+  quantity: number | null = isActive ? 8 : 0,
 ): TreeNodeDto {
   return {
     nodeType: 'Asset',
@@ -28,6 +30,7 @@ function makeAsset(
       Exchange: 'BVMF',
       PositionType: positionType,
       GlobalAssetClass: assetClass,
+      ...(quantity === null ? {} : { Quantity: quantity }),
     },
     children: [],
   }
@@ -69,9 +72,12 @@ function SelectedNodeDisplay() {
   const { selectedNode } = useSelectedNode()
   if (!selectedNode) return <div data-testid="selected">none</div>
   return (
-    <div data-testid="selected">
-      {selectedNode.nodeType}:{selectedNode.brokerName}:{selectedNode.portfolioName ?? ''}:{selectedNode.assetName ?? ''}
-    </div>
+    <>
+      <div data-testid="selected">
+        {selectedNode.nodeType}:{selectedNode.brokerName}:{selectedNode.portfolioName ?? ''}:{selectedNode.assetName ?? ''}
+      </div>
+      <div data-testid="selected-quantity">{selectedNode.quantity ?? 'absent'}</div>
+    </>
   )
 }
 
@@ -180,6 +186,47 @@ describe('InvestmentTree', () => {
     fireEvent.click(expandBtn)
     fireEvent.click(screen.getByRole('button', { name: '● KLBN4' }))
     expect(screen.getByTestId('selected').textContent).toBe('Asset:XPI:Acoes:KLBN4')
+  })
+
+  it('clicking an asset carries its quantity onto the selection', async () => {
+    // The detail panel decides from this whether archiving is offered, and it only ever gets it by
+    // a click - so the click is what the test has to make.
+    renderTree()
+    await screen.findByText('XPI (BRL)')
+    fireEvent.click(screen.getAllByLabelText('Expand')[0])
+
+    fireEvent.click(screen.getByRole('button', { name: '● KLBN4' }))
+
+    expect(screen.getByTestId('selected-quantity').textContent).toBe('8')
+  })
+
+  it('carries a zero quantity as zero, not as absent', async () => {
+    renderTree()
+    await screen.findByText('XPI (BRL)')
+    fireEvent.click(screen.getAllByLabelText('Expand')[0])
+
+    fireEvent.click(screen.getByRole('button', { name: '● TRPL4' }))
+
+    expect(screen.getByTestId('selected-quantity').textContent).toBe('0')
+  })
+
+  it('reports a missing quantity as -1 so it never reads as a closed position', async () => {
+    // getMetaNumber's sentinel. A default of 0 here would offer archiving for every open position.
+    const tree: TreeNodeDto = {
+      nodeType: 'Investments',
+      displayName: 'Investments',
+      metadata: {},
+      children: [
+        makeBroker('XPI', 'BRL', [makePortfolio('Acoes', [makeAsset('NOQTY', true, 1, 'Long', null)])]),
+      ],
+    }
+    renderTree(tree)
+    await screen.findByText('XPI (BRL)')
+    fireEvent.click(screen.getAllByLabelText('Expand')[0])
+
+    fireEvent.click(screen.getByRole('button', { name: '● NOQTY' }))
+
+    expect(screen.getByTestId('selected-quantity').textContent).toBe('-1')
   })
 
   it('clicking broker node sets selectedNode in context', async () => {

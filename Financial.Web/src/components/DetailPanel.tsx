@@ -108,12 +108,14 @@ export default function DetailPanel() {
           portfolioName={selectedNode.portfolioName}
           assetName={selectedNode.assetName}
           scope={scope}
+          canArchive={scope === 'active' && selectedNode.quantity === 0}
           onCancel={() => setIsMoving(false)}
-          onMoved={(moved) => {
+          onMoved={(moved, archived) => {
             setIsMoving(false)
-            // Point the selection at where the asset landed before refreshing the tree, so the
-            // detail panel is never left describing a portfolio the asset has left.
-            setSelectedNode({ ...selectedNode, portfolioName: moved.portfolioName })
+            // An archived asset has left this scope entirely - it is in the Historic Investments
+            // view now - so the selection is cleared rather than pointed at a portfolio this tree
+            // will no longer show. A move within the scope keeps it, pointed at where it landed.
+            setSelectedNode(archived ? null : { ...selectedNode, portfolioName: moved.portfolioName })
             reload()
           }}
         />

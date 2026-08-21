@@ -9,8 +9,11 @@ interface MoveAssetDialogProps {
   portfolioName: string
   assetName: string
   scope: InvestmentScope
+  /** Only a closed position in Active Investments can be archived. */
+  canArchive: boolean
   onCancel: () => void
-  onMoved: (moved: AssetDetailsDto) => void
+  /** archived is true when the asset left this scope for Historic Investments. */
+  onMoved: (moved: AssetDetailsDto, archived: boolean) => void
 }
 
 function getMetaString(metadata: Record<string, unknown>, key: string): string {
@@ -18,7 +21,7 @@ function getMetaString(metadata: Record<string, unknown>, key: string): string {
   return typeof value === 'string' ? value : ''
 }
 
-/** The broker's portfolios, taken from the tree the user is already looking at. */
+/** The broker's portfolios in one scope, taken from the tree that scope is rendered from. */
 function portfolioNamesOf(tree: TreeNodeDto | null, brokerName: string): string[] {
   const broker = tree?.children.find(
     (child) => child.nodeType === 'Broker' && getMetaString(child.metadata, 'BrokerName') === brokerName,
@@ -35,69 +38,93 @@ export default function MoveAssetDialog({
   portfolioName,
   assetName,
   scope,
+  canArchive,
   onCancel,
   onMoved,
 }: MoveAssetDialogProps) {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
-  const [allPortfolios, setAllPortfolios] = useState<string[]>([])
+  const [samePortfolios, setSamePortfolios] = useState<string[]>([])
+  const [historicPortfolios, setHistoricPortfolios] = useState<string[]>([])
+  const [archiveToHistoric, setArchiveToHistoric] = useState(false)
   const [createNew, setCreateNew] = useState(false)
   const [selectedPortfolio, setSelectedPortfolio] = useState('')
   const [newPortfolioName, setNewPortfolioName] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [isMoving, setIsMoving] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    apiClient
-      .getNavigationTree(scope)
-      .then((tree) => {
-        const names = portfolioNamesOf(tree, brokerName)
-        setAllPortfolios(names)
+    // Every Historic portfolio is a candidate, including one named like the source: across scopes
+    // that is a different portfolio, not the one the asset is already in.
+    const trees = canArchive
+      ? Promise.all([apiClient.getNavigationTree(scope), apiClient.getNavigationTree('historic')])
+      : apiClient.getNavigationTree(scope).then((tree) => [tree, null] as const)
 
-        const destinations = names.filter((name) => name !== portfolioName)
-        setSelectedPortfolio(destinations[0] ?? '')
-
-        // Nowhere to move to yet means naming a portfolio is the only way forward, so start there
-        // rather than on an empty list the user cannot act on.
-        setCreateNew(destinations.length === 0)
+    Promise.resolve(trees)
+      .then(([sameScopeTree, historicTree]) => {
+        setSamePortfolios(portfolioNamesOf(sameScopeTree, brokerName).filter((name) => name !== portfolioName))
+        setHistoricPortfolios(historicTree ? portfolioNamesOf(historicTree, brokerName) : [])
       })
       .catch((err: unknown) => setError(getErrorMessage(err, 'Unable to load portfolios.')))
-  }, [apiClient, scope, brokerName, portfolioName])
+  }, [apiClient, scope, brokerName, portfolioName, canArchive])
 
-  const destinations = allPortfolios.filter((name) => name !== portfolioName)
+  const destinations = archiveToHistoric ? historicPortfolios : samePortfolios
+
+  // Derived, not reset by an effect. The portfolio lists arrive asynchronously, and an effect that
+  // re-defaulted the choice when they landed would overwrite a selection the user had already made
+  // in the meantime.
+  const selected = destinations.includes(selectedPortfolio) ? selectedPortfolio : (destinations[0] ?? '')
+
+  // Nothing to choose from means naming a portfolio is the only way forward, so the dialog settles
+  // there rather than on an empty list the user cannot act on.
+  const createNewPortfolio = destinations.length === 0 || createNew
+
   const trimmedNewName = newPortfolioName.trim()
 
   // Shape only: that something was chosen, or that a typed name is not blank. Whether the
-  // destination is legal is the domain's to decide, and its refusal is what the user is shown -
-  // re-deciding it here would put the same rule in two places and let the wordings drift apart.
-  const validationMessage = createNew
+  // destination is legal is the domain's to decide, and its refusal is what the user is shown.
+  const validationMessage = createNewPortfolio
     ? trimmedNewName.length === 0
       ? 'Enter a name for the new portfolio.'
       : ''
-    : selectedPortfolio.length === 0
+    : selected.length === 0
       ? 'Select the portfolio to move the asset into.'
       : ''
 
-  const destinationPortfolioName = createNew ? trimmedNewName : selectedPortfolio
-  const canMove = validationMessage.length === 0 && !isMoving
+  const destinationPortfolioName = createNewPortfolio ? trimmedNewName : selected
+  const canSubmit = validationMessage.length === 0 && !isSaving
 
-  const handleMove = async () => {
-    if (!canMove) return
+  /** Switching scope starts that scope's choice fresh rather than carrying the other one's over. */
+  const selectScope = (toHistoric: boolean) => {
+    setArchiveToHistoric(toHistoric)
+    setSelectedPortfolio('')
+    setCreateNew(false)
+  }
 
-    setIsMoving(true)
+  const handleSubmit = async () => {
+    if (!canSubmit) return
+
+    setIsSaving(true)
     setError(null)
     try {
-      const moved = await apiClient.moveAsset({
-        brokerName,
-        scope,
-        sourcePortfolioName: portfolioName,
-        assetName,
-        destinationPortfolioName,
-      })
-      onMoved(moved)
+      const moved = archiveToHistoric
+        ? await apiClient.archiveAsset({
+            brokerName,
+            sourcePortfolioName: portfolioName,
+            assetName,
+            destinationPortfolioName,
+          })
+        : await apiClient.moveAsset({
+            brokerName,
+            scope,
+            sourcePortfolioName: portfolioName,
+            assetName,
+            destinationPortfolioName,
+          })
+      onMoved(moved, archiveToHistoric)
     } catch (err: unknown) {
       // The reason comes from the domain, so this reads the same as the desktop app.
       setError(getErrorMessage(err, 'The asset could not be moved.'))
-      setIsMoving(false)
+      setIsSaving(false)
     }
   }
 
@@ -115,11 +142,35 @@ export default function MoveAssetDialog({
           {brokerName} / {portfolioName} / {assetName}
         </p>
 
+        {canArchive && (
+          <fieldset className="move-asset-dialog__scope">
+            <legend className="move-asset-dialog__legend">Destination</legend>
+            <label className="move-asset-dialog__option">
+              <input
+                type="radio"
+                name="move-scope"
+                checked={!archiveToHistoric}
+                onChange={() => selectScope(false)}
+              />
+              Keep in Active Investments
+            </label>
+            <label className="move-asset-dialog__option">
+              <input
+                type="radio"
+                name="move-scope"
+                checked={archiveToHistoric}
+                onChange={() => selectScope(true)}
+              />
+              Archive to Historic Investments
+            </label>
+          </fieldset>
+        )}
+
         <label className="move-asset-dialog__option">
           <input
             type="radio"
             name="move-destination"
-            checked={!createNew}
+            checked={!createNewPortfolio}
             disabled={destinations.length === 0}
             onChange={() => setCreateNew(false)}
           />
@@ -128,8 +179,8 @@ export default function MoveAssetDialog({
         <select
           className="move-asset-dialog__input"
           aria-label="Destination portfolio"
-          value={selectedPortfolio}
-          disabled={createNew || destinations.length === 0}
+          value={selected}
+          disabled={createNewPortfolio || destinations.length === 0}
           onChange={(e) => setSelectedPortfolio(e.target.value)}
         >
           {destinations.map((name) => (
@@ -140,12 +191,7 @@ export default function MoveAssetDialog({
         </select>
 
         <label className="move-asset-dialog__option">
-          <input
-            type="radio"
-            name="move-destination"
-            checked={createNew}
-            onChange={() => setCreateNew(true)}
-          />
+          <input type="radio" name="move-destination" checked={createNewPortfolio} onChange={() => setCreateNew(true)} />
           Move to a new portfolio
         </label>
         <input
@@ -153,7 +199,7 @@ export default function MoveAssetDialog({
           type="text"
           aria-label="New portfolio name"
           value={newPortfolioName}
-          disabled={!createNew}
+          disabled={!createNewPortfolio}
           onChange={(e) => setNewPortfolioName(e.target.value)}
         />
 
@@ -164,7 +210,7 @@ export default function MoveAssetDialog({
         )}
 
         <div className="move-asset-dialog__actions">
-          <button type="button" onClick={handleMove} disabled={!canMove}>
+          <button type="button" onClick={handleSubmit} disabled={!canSubmit}>
             Move
           </button>
           <button type="button" onClick={onCancel}>
