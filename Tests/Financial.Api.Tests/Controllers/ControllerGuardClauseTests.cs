@@ -48,8 +48,25 @@ public class ControllerGuardClauseTests
     [Fact]
     public void AssetsController_NullNavigationService_Throws()
     {
-        Action act = () => new AssetsController(null!);
+        Action act = () => new AssetsController(null!, new StubAssetMoveService());
         act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void AssetsController_NullAssetMoveService_Throws()
+    {
+        Action act = () => new AssetsController(new StubNavigationService(), null!);
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public async Task AssetsController_MoveAsset_NullBody_ReturnsBadRequest()
+    {
+        var controller = new AssetsController(new StubNavigationService(), new StubAssetMoveService());
+
+        var result = await controller.MoveAsset(null!);
+
+        result.Result.Should().BeOfType<Microsoft.AspNetCore.Mvc.BadRequestResult>();
     }
 
     [Fact]
@@ -336,6 +353,19 @@ public class ControllerGuardClauseTests
         public Task<AssetDetailsDTO?> AddCreditAsync(CreditCreateDTO request) => throw new NotImplementedException();
         public Task<AssetDetailsDTO?> UpdateCreditAsync(CreditUpdateDTO request) => throw new NotImplementedException();
         public Task<AssetDetailsDTO?> DeleteCreditAsync(CreditDeleteDTO request) => throw new NotImplementedException();
+    }
+
+    private sealed class StubAssetMoveService : IAssetMoveService
+    {
+        public Task<AssetDetailsDTO> MoveAssetAsync(MoveAssetRequestDTO request) => throw new NotImplementedException();
+    }
+
+    private sealed class StubNavigationService : INavigationService
+    {
+        public TreeNodeDTO GetNavigationTree(InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
+        public AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
+        public IEnumerable<BrokerNodeDTO> GetBrokers(InvestmentScope scope = InvestmentScope.Active) => throw new NotImplementedException();
+        public IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName) => throw new NotImplementedException();
     }
 
     private sealed class StubPriceService : IPriceService

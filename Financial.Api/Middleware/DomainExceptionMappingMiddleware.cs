@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.Exceptions;
 using Financial.Investment.Application.Exceptions;
+using Financial.Investment.Domain.Exceptions;
 using Microsoft.AspNetCore.Http;
 
 namespace Financial.Api.Middleware;
@@ -47,6 +48,19 @@ internal sealed class DomainExceptionMappingMiddleware
         catch (ArgumentException ex)
         {
             await HandleAsync(context, ex, StatusCodes.Status400BadRequest);
+        }
+        // A well-formed request the domain refuses on its own rules - moving an asset onto itself,
+        // or into a portfolio that already holds one by that name. 409 rather than 400 because the
+        // request is not malformed, and the distinction is what tells a client whether re-sending
+        // the same body could ever succeed.
+        //
+        // Deliberately its own type rather than InvalidOperationException: Infrastructure already
+        // throws that for genuine upstream faults (an unreadable Yahoo Finance response, a missing
+        // price fetcher), and catching it here would relabel those as client conflicts and hide
+        // real defects behind a 409.
+        catch (InvestmentRuleViolationException ex)
+        {
+            await HandleAsync(context, ex, StatusCodes.Status409Conflict);
         }
     }
 
