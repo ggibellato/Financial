@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Exceptions;
 using System.Collections.ObjectModel;
 
 namespace Financial.Presentation.App.ViewModels.Investment;
@@ -16,6 +17,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     private readonly ICreditQueryService _creditQueryService;
     private readonly ISummaryService _summaryService;
     private readonly IPortfolioAssetSummaryService _portfolioAssetSummaryService;
+    private readonly IAssetMoveService _assetMoveService;
     private readonly InvestmentScope _scope;
     private TreeNodeViewModel? _selectedNode;
     private bool _isLoading;
@@ -63,15 +65,115 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         ISummaryService summaryService,
         IPortfolioAssetSummaryService portfolioAssetSummaryService,
         TAssetDetailsViewModel assetDetails,
-        InvestmentScope scope = InvestmentScope.Active)
+        InvestmentScope scope,
+        IAssetMoveService assetMoveService)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _creditQueryService = creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService));
         _summaryService = summaryService ?? throw new ArgumentNullException(nameof(summaryService));
         _portfolioAssetSummaryService = portfolioAssetSummaryService ?? throw new ArgumentNullException(nameof(portfolioAssetSummaryService));
         AssetDetails = assetDetails ?? throw new ArgumentNullException(nameof(assetDetails));
+        _assetMoveService = assetMoveService ?? throw new ArgumentNullException(nameof(assetMoveService));
         _scope = scope;
+        MoveAssetCommand = new RelayCommand(async () => await MoveSelectedAssetAsync(), CanMoveSelectedAsset);
         InitializeAssetClassFilters();
+    }
+
+    public RelayCommand MoveAssetCommand { get; }
+
+    /// <summary>
+    /// Moves the selected asset into another portfolio of the same broker, then rebuilds the tree
+    /// and reselects the asset so the user can see where it landed.
+    /// </summary>
+    public async Task MoveSelectedAssetAsync()
+    {
+        if (!CanMoveSelectedAsset())
+        {
+            return;
+        }
+
+        var assetNode = SelectedNode!;
+        var brokerName = BrokerNameOf(assetNode);
+        var portfolioName = assetNode.Parent!.GetMetadata<string>("PortfolioName") ?? string.Empty;
+        var assetName = assetNode.GetMetadata<string>("AssetName") ?? string.Empty;
+
+        var dialog = new MoveAssetDialogViewModel(
+            brokerName,
+            portfolioName,
+            assetName,
+            PortfolioNamesOf(assetNode.Parent.Parent));
+
+        if (!ShowMoveAssetDialog(dialog))
+        {
+            return;
+        }
+
+        // Everything after the dialog is inside the catch. The command is invoked as async void,
+        // so anything escaping here takes the process down - and on a Google Drive install the
+        // upload inside the save is the likeliest thing to fail, not the domain rules.
+        try
+        {
+            var moved = await _assetMoveService.MoveAssetAsync(new MoveAssetRequestDTO
+            {
+                BrokerName = brokerName,
+                Scope = _scope.ToString(),
+                SourcePortfolioName = portfolioName,
+                AssetName = assetName,
+                DestinationPortfolioName = dialog.DestinationPortfolioName
+            });
+
+            await LoadNavigationTreeAsync();
+            SelectAsset(brokerName, moved.PortfolioName, assetName);
+        }
+        catch (Exception ex)
+        {
+            // A domain refusal already reads as a sentence for the user; anything else does not,
+            // so it is named rather than shown raw.
+            ShowMoveFailed(ex is KeyNotFoundException or ArgumentException or InvestmentRuleViolationException
+                ? ex.Message
+                : $"The asset could not be moved: {ex.GetType().Name}.");
+        }
+    }
+
+    /// <summary>Seam for tests, which have no message pump to show a modal on.</summary>
+    protected virtual bool ShowMoveAssetDialog(MoveAssetDialogViewModel viewModel) =>
+        new MoveAssetDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow }.ShowDialog() == true;
+
+    /// <summary>Seam for tests, for the same reason.</summary>
+    protected virtual void ShowMoveFailed(string message) =>
+        System.Windows.MessageBox.Show(message, "Move Asset", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+
+    private bool CanMoveSelectedAsset() =>
+        SelectedNode?.NodeType == TreeNodeType.Asset && SelectedNode.Parent?.Parent is not null;
+
+    private static string BrokerNameOf(TreeNodeViewModel assetNode) =>
+        assetNode.Parent?.Parent?.GetMetadata<string>("BrokerName") ?? string.Empty;
+
+    private static IEnumerable<string> PortfolioNamesOf(TreeNodeViewModel? brokerNode) =>
+        brokerNode?.Children
+            .Where(child => child.NodeType == TreeNodeType.Portfolio)
+            .Select(child => child.GetMetadata<string>("PortfolioName") ?? string.Empty)
+            .Where(name => name.Length > 0)
+        ?? [];
+
+    /// <summary>
+    /// Reselects an asset after the tree has been rebuilt. The rebuild replaces every node, so the
+    /// node the user had selected no longer exists and has to be found again by name.
+    /// </summary>
+    private void SelectAsset(string brokerName, string portfolioName, string assetName)
+    {
+        var broker = RootNodes.FirstOrDefault(node => node.GetMetadata<string>("BrokerName") == brokerName);
+        var portfolio = broker?.Children.FirstOrDefault(node => node.GetMetadata<string>("PortfolioName") == portfolioName);
+        var asset = portfolio?.Children.FirstOrDefault(node => node.GetMetadata<string>("AssetName") == assetName);
+
+        if (asset is null)
+        {
+            return;
+        }
+
+        broker!.IsExpanded = true;
+        portfolio!.IsExpanded = true;
+        SelectedNode = asset;
     }
 
     /// <summary>
@@ -113,10 +215,18 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         var filter = SelectedAssetClassFilter?.Filter;
         var filteredTree = filter == null ? _fullTree : FilterTreeNode(_fullTree, filter.Value);
 
-        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        // RootNodes is bound to the tree, so the update has to reach the UI thread - this runs on a
+        // worker via LoadNavigationTreeAsync's Task.Run. Outside a running WPF application there is
+        // no bound UI thread to marshal to at all, which is also true of the non-UI hosting this
+        // class supports, so the update runs here instead.
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher is null)
         {
             UpdateRootNodes(filteredTree);
-        });
+            return;
+        }
+
+        dispatcher.Invoke(() => UpdateRootNodes(filteredTree));
     }
 
     private static TreeNodeDTO? FilterTreeNode(TreeNodeDTO node, GlobalAssetClass filter)

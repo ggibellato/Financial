@@ -225,16 +225,7 @@ public class MainNavigationViewModelBaseTests
     [Fact]
     public async Task LoadNavigationTreeAsync_RequestsActiveScope()
     {
-        // GetNavigationTree runs (and records its scope) before ApplyAssetClassFilter's
-        // System.Windows.Application.Current.Dispatcher.Invoke, which throws here because no
-        // WPF Application runs in this test host; only the scope pass-through is under test.
-        try
-        {
-            await _sut.LoadNavigationTreeAsync();
-        }
-        catch (NullReferenceException)
-        {
-        }
+        await _sut.LoadNavigationTreeAsync();
 
         _navigationService.LastTreeScope.Should().Be(InvestmentScope.Active);
     }
@@ -426,7 +417,7 @@ public class MainNavigationViewModelBaseTests
         return new TreeNodeViewModel(dto);
     }
 
-    private sealed class TestableNavigationViewModel : MainNavigationViewModelBase<SpyAssetDetailsViewModel>
+    internal sealed class TestableNavigationViewModel : MainNavigationViewModelBase<SpyAssetDetailsViewModel>
     {
         public StubNavigationService NavigationService { get; }
 
@@ -436,8 +427,9 @@ public class MainNavigationViewModelBaseTests
             IPortfolioAssetSummaryService? portfolioAssetSummaryService = null,
             StubNavigationService? _navigationService = null,
             InvestmentScope scope = InvestmentScope.Active,
-            ICreditQueryService? _creditQueryService = null)
-            : this(_navigationService ?? new StubNavigationService(), summaryService, spy, portfolioAssetSummaryService, scope, _creditQueryService)
+            ICreditQueryService? _creditQueryService = null,
+            IAssetMoveService? assetMoveService = null)
+            : this(_navigationService ?? new StubNavigationService(), summaryService, spy, portfolioAssetSummaryService, scope, _creditQueryService, assetMoveService ?? new StubAssetMoveService())
         {
         }
 
@@ -447,14 +439,36 @@ public class MainNavigationViewModelBaseTests
             SpyAssetDetailsViewModel spy,
             IPortfolioAssetSummaryService? portfolioAssetSummaryService,
             InvestmentScope scope,
-            ICreditQueryService? _creditQueryService)
-            : base(_navigationService, _creditQueryService ?? new StubCreditQueryService(), summaryService, portfolioAssetSummaryService ?? new StubPortfolioAssetSummaryService(), spy, scope)
+            ICreditQueryService? _creditQueryService,
+            IAssetMoveService assetMoveService)
+            : base(_navigationService, _creditQueryService ?? new StubCreditQueryService(), summaryService, portfolioAssetSummaryService ?? new StubPortfolioAssetSummaryService(), spy, scope, assetMoveService)
         {
             NavigationService = _navigationService;
         }
+
+        /// <summary>Stands in for the modal, which has no message pump in a test host.</summary>
+        public Func<MoveAssetDialogViewModel, bool> MoveDialogResponse { get; set; } = _ => false;
+
+        public MoveAssetDialogViewModel? LastMoveDialog { get; private set; }
+
+        public string? LastMoveFailureMessage { get; private set; }
+
+        protected override bool ShowMoveAssetDialog(MoveAssetDialogViewModel viewModel)
+        {
+            LastMoveDialog = viewModel;
+            return MoveDialogResponse(viewModel);
+        }
+
+        protected override void ShowMoveFailed(string message) => LastMoveFailureMessage = message;
+
+        /// <summary>Stands in for the service in the many base tests that never move anything.</summary>
+        private sealed class StubAssetMoveService : IAssetMoveService
+        {
+            public Task<AssetDetailsDTO> MoveAssetAsync(MoveAssetRequestDTO request) => throw new NotImplementedException();
+        }
     }
 
-    private sealed class SpyAssetDetailsViewModel : IAssetDetailsViewModel
+    internal sealed class SpyAssetDetailsViewModel : IAssetDetailsViewModel
     {
         public AggregatedSummaryDTO? LastPortfolioSummary { get; private set; }
         public AggregatedSummaryDTO? LastBrokerSummary { get; private set; }
@@ -539,7 +553,7 @@ public class MainNavigationViewModelBaseTests
         }
     }
 
-    private sealed class StubSummaryService : ISummaryService
+    internal sealed class StubSummaryService : ISummaryService
     {
         public AggregatedSummaryDTO BrokerSummary { get; set; } = new();
         public AggregatedSummaryDTO PortfolioSummary { get; set; } = new();
@@ -565,16 +579,19 @@ public class MainNavigationViewModelBaseTests
         }
     }
 
-    private sealed class StubNavigationService : INavigationService
+    internal sealed class StubNavigationService : INavigationService
     {
         public InvestmentScope? LastTreeScope { get; private set; }
         public InvestmentScope? LastAssetDetailsScope { get; private set; }
         public AssetDetailsDTO? AssetDetails { get; set; }
 
+        /// <summary>Overrides the empty default for tests that need a tree to select within.</summary>
+        public TreeNodeDTO? Tree { get; set; }
+
         public TreeNodeDTO GetNavigationTree(InvestmentScope scope = InvestmentScope.Active)
         {
             LastTreeScope = scope;
-            return new() { NodeType = TreeNodeType.Broker, DisplayName = "Root", Metadata = [], Children = [] };
+            return Tree ?? new() { NodeType = TreeNodeType.Broker, DisplayName = "Root", Metadata = [], Children = [] };
         }
 
         public AssetDetailsDTO? GetAssetDetails(string brokerName, string portfolioName, string assetName, InvestmentScope scope = InvestmentScope.Active)
