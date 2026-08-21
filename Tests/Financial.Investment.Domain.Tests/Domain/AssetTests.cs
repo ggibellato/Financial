@@ -231,6 +231,67 @@ public class AssetTests
     }
 
     [Fact]
+    public void RestorePrice_WhenNothingWasDisplaced_RemovesTheEntry()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var date = new DateOnly(2026, 8, 15);
+        asset.SetPrice(date, 100m, isManual: false);
+
+        asset.RestorePrice(date, previous: null);
+
+        asset.GetPriceForDate(date).Should().BeNull();
+        asset.PriceHistory.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RestorePrice_WhenAnEntryWasDisplaced_PutsTheOriginalBack()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var date = new DateOnly(2026, 8, 15);
+        asset.SetPrice(date, 100m, isManual: false);
+        var displaced = asset.GetPriceForDate(date);
+        asset.SetPrice(date, 175m, isManual: false);
+
+        asset.RestorePrice(date, displaced);
+
+        asset.PriceHistory.Should().ContainSingle();
+        asset.GetPriceForDate(date)!.Price.Should().Be(100m);
+    }
+
+    /// <summary>
+    /// RemovePrice refuses an automatic entry so the delete path cannot discard a hand-entered
+    /// price. RestorePrice must not inherit that rule: the entry it undoes is the automatic one the
+    /// same failed save just wrote, and leaving it behind is what made a lost write read back as a
+    /// recorded one.
+    /// </summary>
+    [Fact]
+    public void RestorePrice_OnAnAutomaticEntry_SucceedsWhereRemovePriceRefuses()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var date = new DateOnly(2026, 8, 15);
+        asset.SetPrice(date, 100m, isManual: false);
+
+        asset.RemovePrice(date).Should().BeFalse();
+        asset.GetPriceForDate(date).Should().NotBeNull();
+
+        asset.RestorePrice(date, previous: null);
+
+        asset.GetPriceForDate(date).Should().BeNull();
+    }
+
+    [Fact]
+    public void RestorePrice_ForADateWithNoEntry_LeavesHistoryUntouched()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.SetPrice(new DateOnly(2026, 8, 14), 90m, isManual: true);
+
+        asset.RestorePrice(new DateOnly(2026, 8, 15), previous: null);
+
+        asset.PriceHistory.Should().ContainSingle();
+        asset.GetPriceForDate(new DateOnly(2026, 8, 14))!.Price.Should().Be(90m);
+    }
+
+    [Fact]
     public void SetPrice_NewDate_AddsEntry()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");

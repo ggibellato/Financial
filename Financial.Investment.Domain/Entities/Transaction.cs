@@ -26,6 +26,17 @@ public class Transaction
 
     private Transaction() { }
 
+    /// <summary>
+    /// Fees are floored at zero here rather than at any one call site, because a negative fee is
+    /// never a valid Transaction: it would invert <see cref="TotalPrice"/> and carry the error into
+    /// Realized Gain/Loss and the XIRR series. A caller holding a figure that might be negative -
+    /// an importer recovering it from a recorded total - should report the anomaly before
+    /// constructing, because from here on it is gone.
+    /// <para>
+    /// Deserialization does not come through here: it uses the parameterless constructor and
+    /// property setters, so stored history is loaded as written rather than silently repaired.
+    /// </para>
+    /// </summary>
     private Transaction(Guid id, DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees)
     {
         Id = id == Guid.Empty ? Guid.NewGuid() : id;
@@ -33,7 +44,7 @@ public class Transaction
         Type = type;
         Quantity = quantity;
         UnitPrice = unitPrice;
-        Fees = fees;
+        Fees = fees < 0 ? 0 : fees;
     }
 
     public static Transaction Create(DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees) =>
@@ -41,16 +52,4 @@ public class Transaction
 
     public static Transaction CreateWithId(Guid id, DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal fees) =>
         new(id, date, type, quantity, unitPrice, fees);
-
-    /// <summary>
-    /// Derives Fees as the inverse of <see cref="TotalPrice"/>, floored at zero. The derivation
-    /// follows the transaction direction: for a purchase the total paid exceeds the gross amount
-    /// by the fee, while for a sale the total received falls short of it by the fee.
-    /// </summary>
-    public static Transaction CreateFromTotal(DateTime date, TransactionType type, decimal quantity, decimal unitPrice, decimal totalAmount)
-    {
-        var grossAmount = unitPrice * quantity;
-        var fees = type == TransactionType.Buy ? totalAmount - grossAmount : grossAmount - totalAmount;
-        return new(Guid.NewGuid(), date, type, quantity, unitPrice, fees < 0 ? 0 : fees);
-    }
 }

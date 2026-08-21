@@ -1,4 +1,5 @@
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using FluentAssertions;
 
 namespace Financial.Investment.Domain.Tests;
@@ -62,51 +63,38 @@ public class TransactionTests
     }
 
     [Fact]
-    public void CreateFromTotal_ForPurchase_DerivesFeesAsExcessOverGrossAmount()
+    public void Create_WithANegativeFee_FloorsItAtZero()
     {
-        var transaction = Transaction.CreateFromTotal(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 2m, 10m, totalAmount: 21m);
+        var transaction = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 2m, 10m, fees: -1m);
 
-        transaction.Fees.Should().Be(1m);
-        transaction.TotalPrice.Should().Be(21m);
+        transaction.Fees.Should().Be(0m);
+    }
+
+    [Fact]
+    public void CreateWithId_WithANegativeFee_FloorsItAtZero()
+    {
+        var id = Guid.NewGuid();
+
+        var transaction = Transaction.CreateWithId(id, new DateTime(2024, 1, 1), Transaction.TransactionType.Sell, 2m, 10m, fees: -1m);
+
+        transaction.Id.Should().Be(id);
+        transaction.Fees.Should().Be(0m);
     }
 
     /// <summary>
-    /// A sale's recorded total is the net proceeds, which fall short of the gross amount by the
-    /// fee. Deriving it in the purchase direction produced a negative fee that was floored to
-    /// zero, silently discarding it.
+    /// The importer recovers a fee from a recorded total and hands it straight to Create. These
+    /// assert the two halves meet: a recovered fee round-trips back to the total it came from.
     /// </summary>
-    [Fact]
-    public void CreateFromTotal_ForSale_DerivesFeesAsShortfallBelowGrossAmount()
+    [Theory]
+    [InlineData(Transaction.TransactionType.Buy, 22.5)]
+    [InlineData(Transaction.TransactionType.Sell, 19.5)]
+    public void Create_WithARecoveredFee_RoundTripsTheRecordedTotal(Transaction.TransactionType type, decimal recordedTotal)
     {
-        var transaction = Transaction.CreateFromTotal(new DateTime(2024, 1, 1), Transaction.TransactionType.Sell, 2m, 10m, totalAmount: 19m);
+        var fees = TransactionFeeCalculator.RecoverFee(type, 3m, 7m, recordedTotal);
 
-        transaction.Fees.Should().Be(1m);
-        transaction.TotalPrice.Should().Be(19m);
+        var transaction = Transaction.Create(new DateTime(2024, 1, 1), type, 3m, 7m, fees);
+
+        transaction.TotalPrice.Should().Be(recordedTotal);
     }
 
-    [Fact]
-    public void CreateFromTotal_ForPurchaseWhenDerivedFeesWouldBeNegative_FloorsAtZero()
-    {
-        var transaction = Transaction.CreateFromTotal(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 2m, 10m, totalAmount: 19m);
-
-        transaction.Fees.Should().Be(0m);
-    }
-
-    [Fact]
-    public void CreateFromTotal_ForSaleWhenDerivedFeesWouldBeNegative_FloorsAtZero()
-    {
-        var transaction = Transaction.CreateFromTotal(new DateTime(2024, 1, 1), Transaction.TransactionType.Sell, 2m, 10m, totalAmount: 21m);
-
-        transaction.Fees.Should().Be(0m);
-    }
-
-    [Fact]
-    public void CreateFromTotal_RoundTripsTheRecordedTotalForBothDirections()
-    {
-        var purchase = Transaction.CreateFromTotal(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 3m, 7m, totalAmount: 22.5m);
-        var sale = Transaction.CreateFromTotal(new DateTime(2024, 1, 1), Transaction.TransactionType.Sell, 3m, 7m, totalAmount: 19.5m);
-
-        purchase.TotalPrice.Should().Be(22.5m);
-        sale.TotalPrice.Should().Be(19.5m);
-    }
 }

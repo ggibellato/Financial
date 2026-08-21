@@ -1,4 +1,5 @@
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,7 +53,13 @@ internal sealed class GoogleSheetsAssetReader
         return (isin, exchangeId, ticker);
     }
 
-    internal async Task<List<Transaction>> ReadTransactionsAsync(string fileId, string spreadSheetName)
+    /// <summary>
+    /// <paramref name="progress"/> is the import tool's operator log. A row whose recorded total
+    /// disagrees with unit price times quantity yields a negative fee, which
+    /// <see cref="Transaction"/> floors to zero - a repair that used to leave no trace, so a
+    /// spreadsheet with bad totals imported looking exactly like a clean one.
+    /// </summary>
+    internal async Task<List<Transaction>> ReadTransactionsAsync(string fileId, string spreadSheetName, IProgress<string> progress = null)
     {
         var transactions = new List<Transaction>();
         var values = await _service.GetSpreadSheetDataAsync(fileId, $"{spreadSheetName}!A3:G");
@@ -67,12 +74,20 @@ internal sealed class GoogleSheetsAssetReader
             var unitPrice = GoogleSheetValueParser.ToDecimal(value[TransactionUnitPriceColumn]);
             var totalAmount = GoogleSheetValueParser.ToDecimal(value[TransactionTotalAmountColumn]);
 
-            transactions.Add(Transaction.CreateFromTotal(
-                DateTime.FromOADate(date),
-                type == SellTransactionCode ? Transaction.TransactionType.Sell : Transaction.TransactionType.Buy,
-                quantity,
-                unitPrice,
-                totalAmount));
+            var transactionType = type == SellTransactionCode ? Transaction.TransactionType.Sell : Transaction.TransactionType.Buy;
+            var transactionDate = DateTime.FromOADate(date);
+
+            // Recovered once and handed to the entity, which floors it. Recovering it here and
+            // again inside the factory left two evaluations of one rule that could disagree.
+            var fees = TransactionFeeCalculator.RecoverFee(transactionType, quantity, unitPrice, totalAmount);
+            if (fees < 0)
+            {
+                progress?.Report(
+                    $"[{spreadSheetName}] {transactionDate:yyyy-MM-dd} {transactionType}: recorded total {totalAmount} "
+                    + $"disagrees with {quantity} x {unitPrice}, giving a fee of {fees}. Imported with a fee of 0 - check the source row.");
+            }
+
+            transactions.Add(Transaction.Create(transactionDate, transactionType, quantity, unitPrice, fees));
         }
         return transactions;
     }

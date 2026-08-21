@@ -186,6 +186,38 @@ public class Asset
     }
 
     /// <summary>
+    /// Puts <paramref name="date"/> back to <paramref name="previous"/>, removing the entry
+    /// entirely when there was none. This is the compensating half of <see cref="SetPrice"/>, for
+    /// the case where the write could not be persisted: leaving the entry behind is what let a
+    /// lost write read back as a recorded one.
+    /// <para>
+    /// Unlike <see cref="RemovePrice"/> this does not require the entry to be manual. That rule
+    /// exists to stop the delete path discarding a hand-entered price, and it still does - the
+    /// entry being undone here is the automatic one this same operation just wrote, and the caller
+    /// supplies what it displaced rather than choosing a row to drop.
+    /// </para>
+    /// </summary>
+    public void RestorePrice(DateOnly date, AssetPriceSnapshot? previous)
+    {
+        if (previous is not null)
+        {
+            UpsertPriceEntry(previous);
+            return;
+        }
+
+        var current = _priceHistory;
+        var index = current.FindIndex(entry => entry.Date == date);
+        if (index < 0)
+        {
+            return;
+        }
+
+        var updated = new List<AssetPriceSnapshot>(current);
+        updated.RemoveAt(index);
+        _priceHistory = updated;
+    }
+
+    /// <summary>
     /// Price history is replaced wholesale rather than edited in place. Recording a fetched price
     /// and reading the history happen concurrently — a portfolio grid prices every row at once
     /// while the asset page loads details for one of them — and an in-place Add or index

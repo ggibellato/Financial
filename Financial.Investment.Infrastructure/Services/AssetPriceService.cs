@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Exceptions;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.Interfaces;
 
@@ -34,7 +35,7 @@ public sealed class AssetPriceService : IAssetPriceService
         // a lookup that was always going to fail - a private-credit holding was asked for as an
         // equity ticker. An unsupported class is now named as such.
         var fetcher = _fetchers.FirstOrDefault(f => f.Supports(request.AssetClass))
-            ?? throw new NotSupportedException($"No price source supports the asset class '{request.AssetClass}'.");
+            ?? throw new UnsupportedAssetClassException($"No price source supports the asset class '{request.AssetClass}'.");
 
         var snapshot = fetcher.GetSnapshot(request);
 
