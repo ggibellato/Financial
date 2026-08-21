@@ -1,3 +1,4 @@
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 
 namespace Financial.Presentation.App.ViewModels.Investment;
@@ -19,7 +20,8 @@ public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsV
         ITransactionQueryService transactionQueryService,
         IXirrCalculationService xirrCalculationService,
         IProfitCalculationService profitCalculationService,
-        IPriceService priceService)
+        IPriceService priceService,
+        IAssetMoveService assetMoveService)
         : base(
             navigationService ?? throw new ArgumentNullException(nameof(navigationService)),
             creditQueryService ?? throw new ArgumentNullException(nameof(creditQueryService)),
@@ -33,7 +35,9 @@ public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsV
                 transactionQueryService ?? throw new ArgumentNullException(nameof(transactionQueryService)),
                 xirrCalculationService ?? throw new ArgumentNullException(nameof(xirrCalculationService)),
                 profitCalculationService ?? throw new ArgumentNullException(nameof(profitCalculationService)),
-                priceService: priceService ?? throw new ArgumentNullException(nameof(priceService))))
+                priceService: priceService ?? throw new ArgumentNullException(nameof(priceService))),
+            InvestmentScope.Active,
+            assetMoveService ?? throw new ArgumentNullException(nameof(assetMoveService)))
     {
     }
 }

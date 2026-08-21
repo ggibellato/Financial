@@ -35,6 +35,11 @@
                           SelectedItem="{Binding SelectedAssetClassFilter}"
                           DisplayMemberPath="Label"
                           MinWidth="180"/>
+                <Button Content="Move Asset..."
+                        Command="{Binding MoveAssetCommand}"
+                        HorizontalAlignment="Left"
+                        Padding="10,3"
+                        Margin="0,8,0,0"/>
             </StackPanel>
 
             <TreeView Grid.Row="1" 
