@@ -309,10 +309,10 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. Persistence Abstraction Extraction
-- [ ] `IJsonStorage`, `IRemoteFileClient`, `IRemoteFileClientFactory`, `ReflectionJsonTypeInfoHelpers` compile in `Financial.Shared.Abstractions.Persistence` with identical public signatures to their current `Financial.Shared.Infrastructure.Persistence` versions
-- [ ] `IJsonStorageFactory` is defined in `Financial.Shared.Abstractions.Persistence` with `CreateLocal` and `CreateGoogleDrive` methods returning `IJsonStorage`
-- [ ] The concrete `JsonStorageFactory` in `Financial.Shared.Infrastructure` implements `IJsonStorageFactory` and produces the same `IJsonStorage` graph (debounce-wrapped for Google Drive, direct for Local) as the current static methods
-- [ ] `Financial.Shared.Abstractions.csproj` has zero new `PackageReference` entries after the move
+- [x] `IJsonStorage`, `IRemoteFileClient`, `IRemoteFileClientFactory`, `ReflectionJsonTypeInfoHelpers` compile in `Financial.Shared.Abstractions.Persistence` with identical public signatures to their current `Financial.Shared.Infrastructure.Persistence` versions
+- [x] `IJsonStorageFactory` is defined in `Financial.Shared.Abstractions.Persistence` with `CreateLocal` and `CreateGoogleDrive` methods returning `IJsonStorage`
+- [x] The concrete `JsonStorageFactory` in `Financial.Shared.Infrastructure` implements `IJsonStorageFactory` and produces the same `IJsonStorage` graph (debounce-wrapped for Google Drive, direct for Local) as the current static methods
+- [x] `Financial.Shared.Abstractions.csproj` has zero new `PackageReference` entries after the move
 
 ### F02. Sync Abstraction Extraction
 - [ ] `ISyncStatusProvider`, `SyncStatus`, `SyncState`, `JsonStorageSyncExtensions` compile in `Financial.Shared.Abstractions.Sync` with identical public signatures
