@@ -2,18 +2,111 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:oxy="http://oxyplot.org/wpf">
+    <!--
+        Layout follows docs/ui/forms-data-and-visualisations.md's "Grid-and-chart
+        pages" rule: filters/mode controls at the top, then stacked (this grid has
+        too many columns — actions, date, type, quantity, unit price, fees, total —
+        to fit a fixed side panel) — mirrors Financial.Web's TransactionsTab.tsx
+        (chart on top, full-width grid below).
+    -->
     <UserControl.Resources>
         <DataTemplate x:Key="TransactionsAssetTemplate">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="2*"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
+
+                <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="View:" Margin="0,0,8,0" Foreground="#666666"/>
+                        <ItemsControl ItemsSource="{Binding AssetDetails.ChartTypeModes}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Command="{Binding DataContext.AssetDetails.SelectTransactionsChartModeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Padding="4,0"
+                                            Margin="0,0,12,0">
+                                        <TextBlock Text="{Binding Label}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#007ACC"/>
+                                                    <Setter Property="TextDecorations" Value="Underline"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                            <Setter Property="Foreground" Value="Black"/>
+                                                            <Setter Property="TextDecorations" Value="{x:Null}"/>
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding AssetDetails.TransactionsFilters}"
+                                  HorizontalAlignment="Left"
+                                  Margin="0,6,0,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Command="{Binding DataContext.AssetDetails.SelectTransactionsFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Padding="4,0"
+                                        Margin="0,0,12,0">
+                                    <TextBlock Text="{Binding Label}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#007ACC"/>
+                                                <Setter Property="TextDecorations" Value="Underline"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="Foreground" Value="Black"/>
+                                                        <Setter Property="TextDecorations" Value="{x:Null}"/>
+                                                        <Setter Property="FontWeight" Value="Bold"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <oxy:PlotView Grid.Row="1"
+                              Background="Transparent"
+                              Model="{Binding AssetDetails.TransactionsPlotModel}"
+                              SizeChanged="OnTransactionsPlotSizeChanged" />
+
+                <GridSplitter Grid.Row="2"
+                              Height="6"
+                              HorizontalAlignment="Stretch"
+                              Background="#E0E0E0"
+                              ResizeDirection="Rows"
+                              ResizeBehavior="PreviousAndNext"/>
+
+                <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="0,8,0,8">
                     <Button Command="{Binding AssetDetails.AddTransactionCommand}" ToolTip="New transaction">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE710;" Margin="0,0,6,0"/>
@@ -21,7 +114,8 @@
                         </StackPanel>
                     </Button>
                 </StackPanel>
-                <DataGrid Grid.Row="1"
+
+                <DataGrid Grid.Row="4"
                           ItemsSource="{Binding AssetDetails.Transactions}"
                           SelectedItem="{Binding AssetDetails.SelectedTransaction, Mode=TwoWay}"
                           AutoGenerateColumns="False"
@@ -104,91 +198,6 @@
                         </DataGridTextColumn>
                     </DataGrid.Columns>
                 </DataGrid>
-                <GridSplitter Grid.Row="2"
-                              Height="6"
-                              HorizontalAlignment="Stretch"
-                              Background="#E0E0E0"
-                              ResizeDirection="Rows"
-                              ResizeBehavior="PreviousAndNext"/>
-                <oxy:PlotView Grid.Row="3"
-                              Background="Transparent"
-                              Model="{Binding AssetDetails.TransactionsPlotModel}"
-                              SizeChanged="OnTransactionsPlotSizeChanged" />
-                <StackPanel Grid.Row="4"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Center"
-                            Margin="0,8,0,0">
-                    <TextBlock Text="View:" Margin="0,0,8,0" Foreground="#666666"/>
-                    <ItemsControl ItemsSource="{Binding AssetDetails.ChartTypeModes}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Button Command="{Binding DataContext.AssetDetails.SelectTransactionsChartModeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                        CommandParameter="{Binding}"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        Padding="4,0"
-                                        Margin="0,0,12,0">
-                                    <TextBlock Text="{Binding Label}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#007ACC"/>
-                                                <Setter Property="TextDecorations" Value="Underline"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                        <Setter Property="Foreground" Value="Black"/>
-                                                        <Setter Property="TextDecorations" Value="{x:Null}"/>
-                                                        <Setter Property="FontWeight" Value="Bold"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </Button>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-                <ItemsControl Grid.Row="5"
-                              ItemsSource="{Binding AssetDetails.TransactionsFilters}"
-                              HorizontalAlignment="Center"
-                              Margin="0,6,0,0">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Command="{Binding DataContext.AssetDetails.SelectTransactionsFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                    CommandParameter="{Binding}"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    Padding="4,0"
-                                    Margin="0,0,12,0">
-                                <TextBlock Text="{Binding Label}">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Foreground" Value="#007ACC"/>
-                                            <Setter Property="TextDecorations" Value="Underline"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter Property="Foreground" Value="Black"/>
-                                                    <Setter Property="TextDecorations" Value="{x:Null}"/>
-                                                    <Setter Property="FontWeight" Value="Bold"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                            </Button>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
             </Grid>
         </DataTemplate>
         <DataTemplate x:Key="TransactionsAggregateTemplate">
@@ -196,29 +205,50 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0"
-                           Text="Loading transactions..."
-                           Margin="0,0,0,8"
-                           Visibility="{Binding AssetDetails.IsTransactionsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                <TextBlock Grid.Row="1"
-                           Text="{Binding AssetDetails.TransactionsError}"
-                           Foreground="DarkRed"
-                           Margin="0,0,0,8"
-                           Visibility="{Binding AssetDetails.HasTransactionsError, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                <oxy:PlotView Grid.Row="2"
-                              Background="Transparent"
-                              Model="{Binding AssetDetails.TransactionsPlotModel}"
-                              SizeChanged="OnTransactionsPlotSizeChanged" />
-                <StackPanel Grid.Row="3"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Center"
-                            Margin="0,8,0,0">
-                    <TextBlock Text="View:" Margin="0,0,8,0" Foreground="#666666"/>
-                    <ItemsControl ItemsSource="{Binding AssetDetails.ChartTypeModes}">
+
+                <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="View:" Margin="0,0,8,0" Foreground="#666666"/>
+                        <ItemsControl ItemsSource="{Binding AssetDetails.ChartTypeModes}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Command="{Binding DataContext.AssetDetails.SelectTransactionsChartModeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Padding="4,0"
+                                            Margin="0,0,12,0">
+                                        <TextBlock Text="{Binding Label}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#007ACC"/>
+                                                    <Setter Property="TextDecorations" Value="Underline"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                            <Setter Property="Foreground" Value="Black"/>
+                                                            <Setter Property="TextDecorations" Value="{x:Null}"/>
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding AssetDetails.TransactionsFilters}"
+                                  HorizontalAlignment="Left"
+                                  Margin="0,6,0,0">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <StackPanel Orientation="Horizontal"/>
@@ -226,7 +256,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Button Command="{Binding DataContext.AssetDetails.SelectTransactionsChartModeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                <Button Command="{Binding DataContext.AssetDetails.SelectTransactionsFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                         CommandParameter="{Binding}"
                                         Background="Transparent"
                                         BorderThickness="0"
@@ -252,42 +282,21 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </StackPanel>
-                <ItemsControl Grid.Row="4"
-                              ItemsSource="{Binding AssetDetails.TransactionsFilters}"
-                              HorizontalAlignment="Center"
-                              Margin="0,6,0,0">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Command="{Binding DataContext.AssetDetails.SelectTransactionsFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                    CommandParameter="{Binding}"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    Padding="4,0"
-                                    Margin="0,0,12,0">
-                                <TextBlock Text="{Binding Label}">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Foreground" Value="#007ACC"/>
-                                            <Setter Property="TextDecorations" Value="Underline"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter Property="Foreground" Value="Black"/>
-                                                    <Setter Property="TextDecorations" Value="{x:Null}"/>
-                                                    <Setter Property="FontWeight" Value="Bold"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                            </Button>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+
+                <TextBlock Grid.Row="1"
+                           Text="Loading transactions..."
+                           Margin="0,0,0,8"
+                           Visibility="{Binding AssetDetails.IsTransactionsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                <TextBlock Grid.Row="2"
+                           Text="{Binding AssetDetails.TransactionsError}"
+                           Foreground="DarkRed"
+                           Margin="0,0,0,8"
+                           Visibility="{Binding AssetDetails.HasTransactionsError, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                <oxy:PlotView Grid.Row="3"
+                              Background="Transparent"
+                              Model="{Binding AssetDetails.TransactionsPlotModel}"
+                              SizeChanged="OnTransactionsPlotSizeChanged" />
             </Grid>
         </DataTemplate>
     </UserControl.Resources>
