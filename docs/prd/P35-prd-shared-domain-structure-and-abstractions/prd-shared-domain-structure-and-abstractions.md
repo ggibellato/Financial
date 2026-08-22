@@ -346,7 +346,7 @@ graph TD
 - [x] `Financial.Api/Program.cs` registers `IJsonStorageFactory` and both `ShutdownFlushHostedService<T>` instances
 - [x] `Financial.App/App.xaml.cs` registers `IJsonStorageFactory` and both `ShutdownFlushHostedService<T>` instances
 - [x] `docker-compose up` starts the API cleanly and a shutdown (container stop) still flushes a pending debounced write before exit
-- [ ] The WPF app starts cleanly via `scripts/deploy.ps1` + `deploy/start-app.ps1` and exits cleanly, flushing any pending write — not run this session (launching the deployed WPF app via these scripts wasn't performed autonomously); the underlying flush mechanism is unit-tested (`ShutdownFlushHostedServiceTests` + `DebouncedJsonStorageTests`) and `App.xaml.cs`'s registration was confirmed by direct code read, but the literal script-driven manual check is still open — please run it when convenient and let me know the result
+- [x] The WPF app starts cleanly and exits cleanly, flushing any pending write — confirmed by the user running the app manually from Visual Studio (not the literal `scripts/deploy.ps1`/`deploy/start-app.ps1` path, but the same `App.xaml.cs` composition root and DI wiring); worked fine
 
 ### F09. GoogleFinancialSupport Integration Reference Realignment
 - [x] `Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj` has an explicit `ProjectReference` to `Financial.Shared.Abstractions.csproj`
