@@ -6,6 +6,7 @@
              xmlns:oxy="http://oxyplot.org/wpf"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:vm="clr-namespace:Financial.Presentation.App.ViewModels.Investment"
+             xmlns:behaviors="clr-namespace:Financial.Presentation.App.Behaviors"
              xmlns:views="clr-namespace:Financial.Presentation.App.Views.Investment"
              mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="1200">
@@ -50,6 +51,7 @@
             <TreeView Grid.Row="1" 
                       ItemsSource="{Binding RootNodes}"
                       Margin="10,0,10,10"
+                      behaviors:TreeViewDragDropBehavior.IsEnabled="True"
                       VirtualizingPanel.IsVirtualizing="True"
                       VirtualizingPanel.VirtualizationMode="Recycling">
                 <TreeView.ItemContainerStyle>
@@ -62,6 +64,12 @@
                                 <Setter Property="Background" Value="#007ACC"/>
                                 <Setter Property="Foreground" Value="White"/>
                             </Trigger>
+                            <!-- Bound to the node, not the container: the tree recycles its
+                                 containers, so a recycled one would carry a stale highlight. -->
+                            <DataTrigger Binding="{Binding IsDropTarget}" Value="True">
+                                <Setter Property="Background" Value="#CCE8FF"/>
+                                <Setter Property="Foreground" Value="#000000"/>
+                            </DataTrigger>
                         </Style.Triggers>
                         <Style.Resources>
                             <!-- Override inactive selection color to match active selection -->

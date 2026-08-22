@@ -10,6 +10,7 @@ public class TreeNodeViewModel : ViewModelBase
 {
     private bool _isExpanded;
     private bool _isSelected;
+    private bool _isDropTarget;
 
     /// <summary>
     /// Display name for the node
@@ -58,6 +59,19 @@ public class TreeNodeViewModel : ViewModelBase
                 OnNodeSelected();
             }
         }
+    }
+
+    /// <summary>
+    /// Whether a drag is currently over this node and it would accept the drop.
+    /// </summary>
+    /// <remarks>
+    /// Lives here rather than on the TreeViewItem because the tree recycles its containers: a
+    /// recycled item would otherwise carry another node's highlight.
+    /// </remarks>
+    public bool IsDropTarget
+    {
+        get => _isDropTarget;
+        set => SetProperty(ref _isDropTarget, value);
     }
 
     /// <summary>
