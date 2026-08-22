@@ -4,8 +4,8 @@ import ExpenseForm from '../ExpenseForm'
 import type { BankDto, CategoryDto, CreditCardDto } from '../../api/types'
 
 const BANKS: BankDto[] = [
-  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
-  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01' },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01' },
 ]
 
 const CATEGORIES: CategoryDto[] = [

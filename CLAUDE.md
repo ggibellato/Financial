@@ -68,6 +68,10 @@ UPDATE_OPENAPI_SNAPSHOT=1 dotnet test Tests/Financial.Api.Tests
 ```
 
 Anything the diff shows as removed or renamed is a breaking change; update `types.ts` in the same PR.
+`Financial.Web/src/api/__tests__/contractDrift.test.ts` (run by `npm test`) checks this automatically: it
+matches each OpenAPI schema to its `types.ts` counterpart by name and fails naming any field only one
+side declares, so a snapshot update that isn't mirrored in `types.ts` fails in the same PR instead of
+only at runtime.
 
 Run the API locally (serves API only, expects the SPA dev server separately):
 ```
