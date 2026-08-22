@@ -126,13 +126,13 @@ portfolio with that name now exists holding exactly that asset and appears in th
 **Rides on increments 1–3** — the same files as US1, so these tasks ship with or immediately after
 them.
 
-- [ ] T034 [US2] Extend `Broker.MoveAsset` in `Financial.Investment.Domain/Entities/Broker.cs`: trim the destination name (FR-014); throw `ArgumentException` when it is blank or whitespace (FR-012); throw `InvalidOperationException` when a *new* name duplicates an existing portfolio ignoring case and padding (FR-013), while leaving lookup of an *existing* destination exact so current behaviour is unchanged (depends on T013)
-- [ ] T035 [US2] Add Domain tests to `Tests/Financial.Investment.Domain.Tests/Domain/BrokerTests.cs`: a new name creates the portfolio holding only that asset; `"  SIPP  "` is stored as `"SIPP"`; blank and whitespace names throw `ArgumentException`; `"isa"` against an existing `"ISA"` throws and creates nothing (depends on T034)
-- [ ] T036 [US2] Add API tests to `Tests/Financial.Api.Tests/AssetEndpointsTests.cs`: 200 creating a new destination portfolio, 400 for a blank name, 409 for a case-only duplicate — and assert nothing was created in the rejected cases (depends on T034, T021)
-- [ ] T037 [P] [US2] Allow a new portfolio name to be typed in `Financial.App/MoveAssetDialog.xaml`(`.cs`) and surface the rejection reasons (depends on T023)
-- [ ] T038 [P] [US2] Allow a new portfolio name to be typed in `Financial.Web/src/components/MoveAssetDialog.tsx` and surface the rejection reasons (depends on T030)
-- [ ] T039 [P] [US2] Add new-portfolio cases to `Financial.Web/src/components/__tests__/MoveAssetDialog.test.tsx` (depends on T038)
-- [ ] T040 [P] [US2] Add new-portfolio validation cases to `Tests/Financial.Presentation.Tests/ViewModels/MoveAssetDialogViewModelTests.cs` (depends on T037)
+- [X] T034 [US2] Extend `Broker.MoveAsset` in `Financial.Investment.Domain/Entities/Broker.cs`: trim the destination name (FR-014); throw `ArgumentException` when it is blank or whitespace (FR-012); throw `InvalidOperationException` when a *new* name duplicates an existing portfolio ignoring case and padding (FR-013), while leaving lookup of an *existing* destination exact so current behaviour is unchanged (depends on T013)
+- [X] T035 [US2] Add Domain tests to `Tests/Financial.Investment.Domain.Tests/Domain/BrokerTests.cs`: a new name creates the portfolio holding only that asset; `"  SIPP  "` is stored as `"SIPP"`; blank and whitespace names throw `ArgumentException`; `"isa"` against an existing `"ISA"` throws and creates nothing (depends on T034)
+- [X] T036 [US2] Add API tests to `Tests/Financial.Api.Tests/AssetEndpointsTests.cs`: 200 creating a new destination portfolio, 400 for a blank name, 409 for a case-only duplicate — and assert nothing was created in the rejected cases (depends on T034, T021)
+- [X] T037 [P] [US2] Allow a new portfolio name to be typed in `Financial.App/MoveAssetDialog.xaml`(`.cs`) and surface the rejection reasons (depends on T023)
+- [X] T038 [P] [US2] Allow a new portfolio name to be typed in `Financial.Web/src/components/MoveAssetDialog.tsx` and surface the rejection reasons (depends on T030)
+- [X] T039 [P] [US2] Add new-portfolio cases to `Financial.Web/src/components/__tests__/MoveAssetDialog.test.tsx` (depends on T038)
+- [X] T040 [P] [US2] Add new-portfolio validation cases to `Tests/Financial.Presentation.Tests/ViewModels/MoveAssetDialogViewModelTests.cs` (depends on T037)
 
 **Checkpoint**: Both destination kinds work from both front ends. Portfolios can now be created
 without importing data — which was previously impossible from either UI.
@@ -149,19 +149,19 @@ to a Historic one; it appears in Historic Investments with its full history and 
 
 **Increment 4 of 7 (PR boundary)**
 
-- [ ] T041 [US3] Add `Investments GetInvestments()` to `Financial.Investment.Application/Interfaces/IInvestmentRepository.cs`, documenting why the aggregate root is needed (archiving may have to add a broker to the Historic collection, which no scoped query can do — `plan.md` §Complexity Tracking)
-- [ ] T042 [US3] Implement `GetInvestments()` in `Financial.Investment.Infrastructure/Repositories/InvestmentJsonRepository.cs` by returning the `Investments` field it already holds (depends on T041)
-- [ ] T043 [US3] Back `GetInvestments()` in `Tests/Financial.TestUtilities/StubInvestmentRepository.cs` with a real `Investments` root so archiving is exercisable in Application tests (depends on T041, T012)
-- [ ] T044 [P] [US3] Add `Broker? FindActiveBroker(string name)` and `Broker? FindHistoricBroker(string name)` to `Financial.Investment.Domain/Entities/Investments.cs`
-- [ ] T045 [US3] Implement `void ArchiveAsset(string brokerName, string sourcePortfolioName, string assetName, string destinationPortfolioName)` in `Financial.Investment.Domain/Entities/Investments.cs`: throw `InvalidOperationException` unless `asset.Quantity == 0` — positive or negative alike (FR-017); create the broker's Historic record copying `Name` and `Currency` when absent (FR-043); then transfer, reusing the same detach/attach and destination-name rules as `Broker.MoveAsset` (depends on T044, T034)
-- [ ] T046 [US3] Add Domain tests to `Tests/Financial.Investment.Domain.Tests/Domain/InvestmentsTests.cs`: a zero-quantity asset archives with full history; a positive quantity throws; a **negative** quantity throws for the same reason (US3 scenario 5); a broker with no Historic record gains one with the same name and currency (US3 scenario 6, FR-043); the asset is absent from Active afterwards (FR-020) (depends on T045)
-- [ ] T047 [US3] Route `active → historic` requests to `Investments.ArchiveAsset` in `Financial.Investment.Application/Services/AssetMoveService.cs`, still inside the single `ApplyAndSaveAsync` delegate (depends on T045, T018, T041)
-- [ ] T048 [US3] Add Application tests for the archive path to `Tests/Financial.Investment.Application.Tests/Services/AssetMoveServiceTests.cs`, including that a refused archive never writes (depends on T047, T043)
-- [ ] T049 [US3] Add API tests to `Tests/Financial.Api.Tests/AssetEndpointsTests.cs`: 200 archiving a zero-quantity asset, 409 for a non-zero quantity, 409 for `historic → active` (FR-019) (depends on T047)
-- [ ] T050 [P] [US3] Offer Historic destinations in `Financial.App/MoveAssetDialog.xaml`(`.cs`) when the asset is in Active and its quantity is zero; never offer Active destinations from Historic (FR-019) (depends on T037)
-- [ ] T051 [P] [US3] Offer Historic destinations in `Financial.Web/src/components/MoveAssetDialog.tsx` on the same terms, sourcing them from the existing `GET /navigation/brokers?scope=historic` (depends on T038)
-- [ ] T052 [P] [US3] Add archive cases to `Financial.Web/src/components/__tests__/MoveAssetDialog.test.tsx` (depends on T051)
-- [ ] T053 [P] [US3] Add archive cases to `Tests/Financial.Presentation.Tests/ViewModels/MoveAssetDialogViewModelTests.cs` (depends on T050)
+- [X] T041 [US3] Add `Investments GetInvestments()` to `Financial.Investment.Application/Interfaces/IInvestmentRepository.cs`, documenting why the aggregate root is needed (archiving may have to add a broker to the Historic collection, which no scoped query can do — `plan.md` §Complexity Tracking)
+- [X] T042 [US3] Implement `GetInvestments()` in `Financial.Investment.Infrastructure/Repositories/InvestmentJsonRepository.cs` by returning the `Investments` field it already holds (depends on T041)
+- [X] T043 [US3] Back `GetInvestments()` in `Tests/Financial.TestUtilities/StubInvestmentRepository.cs` with a real `Investments` root so archiving is exercisable in Application tests (depends on T041, T012)
+- [X] T044 [P] [US3] Add `Broker? FindActiveBroker(string name)` and `Broker? FindHistoricBroker(string name)` to `Financial.Investment.Domain/Entities/Investments.cs`
+- [X] T045 [US3] Implement `void ArchiveAsset(string brokerName, string sourcePortfolioName, string assetName, string destinationPortfolioName)` in `Financial.Investment.Domain/Entities/Investments.cs`: throw `InvalidOperationException` unless `asset.Quantity == 0` — positive or negative alike (FR-017); create the broker's Historic record copying `Name` and `Currency` when absent (FR-043); then transfer, reusing the same detach/attach and destination-name rules as `Broker.MoveAsset` (depends on T044, T034)
+- [X] T046 [US3] Add Domain tests to `Tests/Financial.Investment.Domain.Tests/Domain/InvestmentsTests.cs`: a zero-quantity asset archives with full history; a positive quantity throws; a **negative** quantity throws for the same reason (US3 scenario 5); a broker with no Historic record gains one with the same name and currency (US3 scenario 6, FR-043); the asset is absent from Active afterwards (FR-020) (depends on T045)
+- [X] T047 [US3] Route `active → historic` requests to `Investments.ArchiveAsset` in `Financial.Investment.Application/Services/AssetMoveService.cs`, still inside the single `ApplyAndSaveAsync` delegate (depends on T045, T018, T041)
+- [X] T048 [US3] Add Application tests for the archive path to `Tests/Financial.Investment.Application.Tests/Services/AssetMoveServiceTests.cs`, including that a refused archive never writes (depends on T047, T043)
+- [X] T049 [US3] Add API tests to `Tests/Financial.Api.Tests/AssetEndpointsTests.cs`: 200 archiving a zero-quantity asset, 409 for a non-zero quantity, 409 for `historic → active` (FR-019) (depends on T047)
+- [X] T050 [P] [US3] Offer Historic destinations in `Financial.App/MoveAssetDialog.xaml`(`.cs`) when the asset is in Active and its quantity is zero; never offer Active destinations from Historic (FR-019) (depends on T037)
+- [X] T051 [P] [US3] Offer Historic destinations in `Financial.Web/src/components/MoveAssetDialog.tsx` on the same terms, sourcing them from the existing `GET /navigation/brokers?scope=historic` (depends on T038)
+- [X] T052 [P] [US3] Add archive cases to `Financial.Web/src/components/__tests__/MoveAssetDialog.test.tsx` (depends on T051)
+- [X] T053 [P] [US3] Add archive cases to `Tests/Financial.Presentation.Tests/ViewModels/MoveAssetDialogViewModelTests.cs` (depends on T050)
 
 **Checkpoint**: A closed holding can be retired into Historic Investments without editing the data
 file — the reason this feature exists.
@@ -184,18 +184,18 @@ via the standalone action on a portfolio emptied earlier.
 > matches `plan.md` §Delivery Increments, where deletion is increment 5 and the drag increments are
 > 6 and 7.
 
-- [ ] T054 [US5] Implement `bool RemoveEmptyPortfolio(string name)` in `Financial.Investment.Domain/Entities/Broker.cs`: throw `InvalidOperationException` when the portfolio still holds at least one asset (FR-022), `KeyNotFoundException` when it does not exist (depends on T007)
-- [ ] T055 [US5] Add Domain tests to `Tests/Financial.Investment.Domain.Tests/Domain/BrokerTests.cs`: an empty portfolio is removed and the count drops; a populated one throws and is left with its assets intact (depends on T054)
-- [ ] T056 [US5] Implement `DeleteEmptyPortfolioAsync` in `Financial.Investment.Application/Services/AssetMoveService.cs`, running inside its own `ApplyAndSaveAsync` call — a separate call from the move, never nested (depends on T054, T018)
-- [ ] T057 [US5] Add Application tests for deletion to `Tests/Financial.Investment.Application.Tests/Services/AssetMoveServiceTests.cs`, including that a refused deletion never writes (depends on T056)
-- [ ] T058 [US5] Create `Financial.Api/Controllers/PortfoliosController.cs` with `DELETE /portfolios/{brokerName}/{portfolioName}?scope=`, returning 204/404/409 per `contracts/rest-api.md`, using the existing `InvestmentScopeParser.ParseOrDefault` for the scope (depends on T056)
-- [ ] T059 [US5] Add `Tests/Financial.Api.Tests/PortfolioEndpointsTests.cs`: 204 for empty, 409 for populated, 404 for unknown, and persistence across a repository reload (depends on T058)
-- [ ] T060 [US5] Add the post-move deletion offer and a standalone delete command to `Financial.App/ViewModels/Investment/MainNavigationViewModelBase.cs`, driven by `SourcePortfolioIsEmpty`. Declining must leave the move applied (FR-024); after deletion, recover the selection to a valid node (FR-027) (depends on T056, T024)
-- [ ] T061 [US5] Add tests to `Tests/Financial.Presentation.Tests/ViewModels/MainNavigationViewModelBaseTests.cs`: the offer appears only when the source is emptied; declining keeps the empty portfolio and the applied move; selection recovers after deleting the selected node (depends on T060)
-- [ ] T062 [P] [US5] Add `deleteEmptyPortfolio` to `Financial.Web/src/api/financialApiClient.ts` (depends on T058)
-- [ ] T063 [US5] Add the post-move offer and a standalone delete action to `Financial.Web/src/components/InvestmentTree.tsx` (and the dialog flow), recovering the selection after deleting the selected node (depends on T062, T029)
-- [ ] T064 [P] [US5] Add deletion cases to `Financial.Web/src/components/__tests__/InvestmentTree.test.tsx` — offer shown only when emptied, decline keeps the portfolio, selection recovery (depends on T063)
-- [ ] T065 [P] [US5] Add `deleteEmptyPortfolio` coverage to `Financial.Web/src/api/__tests__/financialApiClient.test.ts` (depends on T062)
+- [X] T054 [US5] Implement `bool RemoveEmptyPortfolio(string name)` in `Financial.Investment.Domain/Entities/Broker.cs`: throw `InvalidOperationException` when the portfolio still holds at least one asset (FR-022), `KeyNotFoundException` when it does not exist (depends on T007)
+- [X] T055 [US5] Add Domain tests to `Tests/Financial.Investment.Domain.Tests/Domain/BrokerTests.cs`: an empty portfolio is removed and the count drops; a populated one throws and is left with its assets intact (depends on T054)
+- [X] T056 [US5] Implement `DeleteEmptyPortfolioAsync` in `Financial.Investment.Application/Services/AssetMoveService.cs`, running inside its own `ApplyAndSaveAsync` call — a separate call from the move, never nested (depends on T054, T018)
+- [X] T057 [US5] Add Application tests for deletion to `Tests/Financial.Investment.Application.Tests/Services/AssetMoveServiceTests.cs`, including that a refused deletion never writes (depends on T056)
+- [X] T058 [US5] Create `Financial.Api/Controllers/PortfoliosController.cs` with `DELETE /portfolios/{brokerName}/{portfolioName}?scope=`, returning 204/404/409 per `contracts/rest-api.md`, using the existing `InvestmentScopeParser.ParseOrDefault` for the scope (depends on T056)
+- [X] T059 [US5] Add `Tests/Financial.Api.Tests/PortfolioEndpointsTests.cs`: 204 for empty, 409 for populated, 404 for unknown, and persistence across a repository reload (depends on T058)
+- [X] T060 [US5] Add the post-move deletion offer and a standalone delete command to `Financial.App/ViewModels/Investment/MainNavigationViewModelBase.cs`, driven by `SourcePortfolioIsEmpty`. Declining must leave the move applied (FR-024); after deletion, recover the selection to a valid node (FR-027) (depends on T056, T024)
+- [X] T061 [US5] Add tests to `Tests/Financial.Presentation.Tests/ViewModels/MainNavigationViewModelBaseTests.cs`: the offer appears only when the source is emptied; declining keeps the empty portfolio and the applied move; selection recovers after deleting the selected node (depends on T060)
+- [X] T062 [P] [US5] Add `deleteEmptyPortfolio` to `Financial.Web/src/api/financialApiClient.ts` (depends on T058)
+- [X] T063 [US5] Add the post-move offer and a standalone delete action to `Financial.Web/src/components/InvestmentTree.tsx` (and the dialog flow), recovering the selection after deleting the selected node (depends on T062, T029)
+- [X] T064 [P] [US5] Add deletion cases to `Financial.Web/src/components/__tests__/InvestmentTree.test.tsx` — offer shown only when emptied, decline keeps the portfolio, selection recovery (depends on T063)
+- [X] T065 [P] [US5] Add `deleteEmptyPortfolio` coverage to `Financial.Web/src/api/__tests__/financialApiClient.test.ts` (depends on T062)
 
 **Checkpoint**: Emptied portfolios can be tidied away, or kept, from both front ends.
 
@@ -218,20 +218,20 @@ asset; confirm invalid targets refuse the drop and change nothing.
 
 **Increment 6 — WPF**
 
-- [ ] T066 [US4] Add `bool IsDropTarget` and a `CanAccept(asset)` predicate to `Financial.App/ViewModels/Investment/TreeNodeViewModel.cs`. This state must live on the view model, not on the container: the `TreeView` uses `VirtualizingPanel.VirtualizationMode="Recycling"`, so a recycled `TreeViewItem` would otherwise carry another node's highlight (`research.md` §D7)
-- [ ] T067 [US4] Create `Financial.App/Behaviors/TreeViewDragDropBehavior.cs` — pointer plumbing only: record the press point on `PreviewMouseLeftButtonDown`, start `DragDrop.DoDragDrop` past the drag threshold on `MouseMove`, set `e.Effects` on `DragOver`, invoke a command on `Drop`. No business logic (Constitution I) (depends on T066)
-- [ ] T068 [US4] Add `AllowDrop="True"` and an `IsDropTarget` style trigger to the `TreeView` `ItemContainerStyle` in `Financial.App/Components/NavigationView.xaml`, and attach the behaviour (depends on T067)
-- [ ] T069 [US4] Handle drops in `Financial.App/ViewModels/Investment/MainNavigationViewModelBase.cs`: a drop on a Portfolio node moves into it (FR-029); a drop on a Broker node prompts for a new portfolio name, then moves (FR-030, FR-031) — valid even though the asset already sits under that broker; cancelling the prompt changes nothing (FR-032); a drop that empties the source raises the US5 offer (FR-039) (depends on T068, T060)
-- [ ] T070 [US4] Add `Tests/Financial.Presentation.Tests/ViewModels/TreeNodeDropTargetTests.cs` covering the FR-034 invalid set: the asset's own portfolio, any node of a different broker, another asset node, and the tree root (depends on T066)
-- [ ] T071 [US4] Add drop-handling tests to `Tests/Financial.Presentation.Tests/ViewModels/MainNavigationViewModelBaseTests.cs`: portfolio drop moves; broker drop prompts then moves; cancelled prompt changes nothing; a rule rejection reports the same message as the dialog route (depends on T069)
+- [X] T066 [US4] Add `bool IsDropTarget` and a `CanAccept(asset)` predicate to `Financial.App/ViewModels/Investment/TreeNodeViewModel.cs`. This state must live on the view model, not on the container: the `TreeView` uses `VirtualizingPanel.VirtualizationMode="Recycling"`, so a recycled `TreeViewItem` would otherwise carry another node's highlight (`research.md` §D7)
+- [X] T067 [US4] Create `Financial.App/Behaviors/TreeViewDragDropBehavior.cs` — pointer plumbing only: record the press point on `PreviewMouseLeftButtonDown`, start `DragDrop.DoDragDrop` past the drag threshold on `MouseMove`, set `e.Effects` on `DragOver`, invoke a command on `Drop`. No business logic (Constitution I) (depends on T066)
+- [X] T068 [US4] Add `AllowDrop="True"` and an `IsDropTarget` style trigger to the `TreeView` `ItemContainerStyle` in `Financial.App/Components/NavigationView.xaml`, and attach the behaviour (depends on T067)
+- [X] T069 [US4] Handle drops in `Financial.App/ViewModels/Investment/MainNavigationViewModelBase.cs`: a drop on a Portfolio node moves into it (FR-029); a drop on a Broker node prompts for a new portfolio name, then moves (FR-030, FR-031) — valid even though the asset already sits under that broker; cancelling the prompt changes nothing (FR-032); a drop that empties the source raises the US5 offer (FR-039) (depends on T068, T060)
+- [X] T070 [US4] Add `Tests/Financial.Presentation.Tests/ViewModels/TreeNodeDropTargetTests.cs` covering the FR-034 invalid set: the asset's own portfolio, any node of a different broker, another asset node, and the tree root (depends on T066)
+- [X] T071 [US4] Add drop-handling tests to `Tests/Financial.Presentation.Tests/ViewModels/MainNavigationViewModelBaseTests.cs`: portfolio drop moves; broker drop prompts then moves; cancelled prompt changes nothing; a rule rejection reports the same message as the dialog route (depends on T069)
 
 **Increment 7 — Web**
 
-- [ ] T072 [US4] Make asset rows draggable in `Financial.Web/src/components/InvestmentTree.tsx`: set `draggable` and `onDragStart` on the asset's `<li>` wrapper — not on the inner `<button>`, so its click and keyboard behaviour stay intact — carrying broker, portfolio, and asset names in `dataTransfer` with `effectAllowed = 'move'`
-- [ ] T073 [US4] Add drop handling to `PortfolioNode` and `BrokerNode` in `Financial.Web/src/components/InvestmentTree.tsx`: call `preventDefault()` in `onDragOver` **only** for a valid target, so an invalid one genuinely refuses the drop (FR-034); handle `onDragEnter`/`onDragLeave` for highlighting; `onDrop` performs the move, and a broker drop prompts for a new portfolio name first (depends on T072, T028)
-- [ ] T074 [US4] Add drop-target and drag-state styling to `Financial.Web/src/components/InvestmentTree.css`, visibly distinguishing a valid target under the pointer from an invalid one (FR-033, SC-010) (depends on T073)
-- [ ] T075 [US4] Ensure a collapsed portfolio node still accepts a drop and an abandoned drag clears all highlight state, in `Financial.Web/src/components/InvestmentTree.tsx` (Edge Cases) (depends on T073)
-- [ ] T076 [US4] Add drag tests to `Financial.Web/src/components/__tests__/InvestmentTree.test.tsx` using `fireEvent.dragStart`/`dragOver`/`drop` with a stub `dataTransfer`: a portfolio drop moves; a broker drop prompts then moves; a cancelled prompt changes nothing; **each invalid target leaves `preventDefault` uncalled**; releasing outside the tree cancels silently (depends on T073)
+- [X] T072 [US4] Make asset rows draggable in `Financial.Web/src/components/InvestmentTree.tsx`: set `draggable` and `onDragStart` on the asset's `<li>` wrapper — not on the inner `<button>`, so its click and keyboard behaviour stay intact — carrying broker, portfolio, and asset names in `dataTransfer` with `effectAllowed = 'move'`
+- [X] T073 [US4] Add drop handling to `PortfolioNode` and `BrokerNode` in `Financial.Web/src/components/InvestmentTree.tsx`: call `preventDefault()` in `onDragOver` **only** for a valid target, so an invalid one genuinely refuses the drop (FR-034); handle `onDragEnter`/`onDragLeave` for highlighting; `onDrop` performs the move, and a broker drop prompts for a new portfolio name first (depends on T072, T028)
+- [X] T074 [US4] Add drop-target and drag-state styling to `Financial.Web/src/components/InvestmentTree.css`, visibly distinguishing a valid target under the pointer from an invalid one (FR-033, SC-010) (depends on T073)
+- [X] T075 [US4] Ensure a collapsed portfolio node still accepts a drop and an abandoned drag clears all highlight state, in `Financial.Web/src/components/InvestmentTree.tsx` (Edge Cases) (depends on T073)
+- [X] T076 [US4] Add drag tests to `Financial.Web/src/components/__tests__/InvestmentTree.test.tsx` using `fireEvent.dragStart`/`dragOver`/`drop` with a stub `dataTransfer`: a portfolio drop moves; a broker drop prompts then moves; a cancelled prompt changes nothing; **each invalid target leaves `preventDefault` uncalled**; releasing outside the tree cancels silently (depends on T073)
 
 **Checkpoint**: Every acceptance scenario in User Story 4 passes in both front ends.
 
@@ -239,14 +239,40 @@ asset; confirm invalid targets refuse the drop and change nothing.
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T077 Verify parity end to end: walk `quickstart.md` §3 and §4 in both front ends and confirm every rejection reads **identically** — the message originates in the Domain, so any difference in wording is a defect, not a styling choice (SC-005, FR-040)
-- [ ] T078 Run the rejection sweep in `quickstart.md` §2d and confirm the data file hash is unchanged afterwards, with no `500` anywhere (SC-003)
-- [ ] T079 Confirm SC-002 by hand per `quickstart.md` §2a: capture an asset's quantity, average price, realised gain, transaction count, credit count, and price history from `GET /assets/{broker}/{portfolio}/{asset}` before and after a move; they must be identical
-- [ ] T080 [P] Run `dotnet test` across all test projects and `npm run lint && npm test && npm run build` in `Financial.Web/` — `npm run build`, not just `vitest`, because a DTO field missed in `types.ts` fails only at `tsc -b` and would break the Docker build
-- [ ] T081 Check `netstat` for a listener on 8080 before running `npm run smoke-test` in `Financial.Web/` — the deployed Docker app binds that port, and starting a second process on it silently targets the live deployment
-- [ ] T082 Verify deployability per Constitution VIII: `docker-compose up --build`, confirm the app starts on 8080 and the navigation tree, asset details, transactions, credits and prices still work. Record the commands in each PR body
-- [ ] T083 [P] Grep `docs/baseline/04-wpf-app.md`, `docs/baseline/02-architecture.md`, and `context.md` for claims that the navigation tree is read-only or that portfolios can only be created by import, and correct any that this feature makes stale (Constitution VI)
-- [ ] T084 Check off the acceptance-criteria boxes in `spec.md` as their work lands — per increment, in its own commit, never batched retroactively
+- [ ] T077 **Not done — needs a person.** Verify parity end to end: walk `quickstart.md` §3 and §4 in both front ends and confirm every rejection reads **identically** — the message originates in the Domain, so any difference in wording is a defect, not a styling choice (SC-005, FR-040)
+- [X] T078 Run the rejection sweep in `quickstart.md` §2d and confirm the data file hash is unchanged afterwards, with no `500` anywhere (SC-003)
+- [X] T079 Confirm SC-002 by hand per `quickstart.md` §2a: capture an asset's quantity, average price, realised gain, transaction count, credit count, and price history from `GET /assets/{broker}/{portfolio}/{asset}` before and after a move; they must be identical
+- [X] T080 [P] Run `dotnet test` across all test projects and `npm run lint && npm test && npm run build` in `Financial.Web/` — `npm run build`, not just `vitest`, because a DTO field missed in `types.ts` fails only at `tsc -b` and would break the Docker build
+- [ ] T081 **Not done locally** — CI's `browser-smoke-test` job ran it on every PR. Check `netstat` for a listener on 8080 before running `npm run smoke-test` in `Financial.Web/` — the deployed Docker app binds that port, and starting a second process on it silently targets the live deployment
+- [ ] T082 **Not done** — port 8080 was occupied by the live deployment throughout, so this was never safe to run here. Verify deployability per Constitution VIII: `docker-compose up --build`, confirm the app starts on 8080 and the navigation tree, asset details, transactions, credits and prices still work. Record the commands in each PR body
+- [X] T083 [P] Grep `docs/baseline/04-wpf-app.md`, `docs/baseline/02-architecture.md`, and `context.md` for claims that the navigation tree is read-only or that portfolios can only be created by import, and correct any that this feature makes stale (Constitution VI)
+- [X] T084 **Not applicable as written** — `spec.md` carries requirements as prose, not checkboxes (that is the PRD format). Per-criterion coverage was recorded in each PR body instead. Originally: check off the acceptance-criteria boxes in `spec.md` as their work lands — per increment, in its own commit, never batched retroactively
+
+---
+
+## Outcome
+
+All five user stories shipped across **11 pull requests**, each within the 8-non-test-file target
+and each passing the full CI gate before merge. Delivery ran sequentially off `main` rather than as
+a stack after the first four: squash-merge leaves a stacked branch carrying a duplicate commit under
+a new SHA, needing a rebase after every merge.
+
+Three things changed from the plan, each recorded where it was decided:
+
+| Planned | Shipped | Why |
+|---|---|---|
+| `InvalidOperationException` → 409 | `InvestmentRuleViolationException` → 409 | Infrastructure already throws the former for upstream faults; a global mapping would relabel real defects as client conflicts |
+| One move endpoint carrying two scopes | `POST /assets/move` plus `POST /assets/archive` | The archive has a fixed direction and its own precondition; two operations make Historic → Active unexpressible rather than refused |
+| `SourcePortfolioIsEmpty` on the move response | nothing added | The tree already carries `AssetCount`, so the front ends could just look |
+
+`DeleteEmptyPortfolioAsync` also moved off `IAssetMoveService` onto its own `IPortfolioService` —
+deleting a portfolio is not moving an asset.
+
+**Known limitation, by design.** Archiving is not draggable and cannot be: Active and Historic are
+separate views that are never on screen together, so there is no Historic node to drop onto. It stays
+on the dialog route.
+
+**Still open**, all three needing a person or a free port rather than more code: T077, T081, T082.
 
 ---
 
