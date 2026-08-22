@@ -331,10 +331,10 @@ graph TD
 - [x] `ObservabilityIsolationRuleTests` passes unmodified
 
 ### F06. CashFlow Infrastructure Dependency Realignment
-- [ ] `Financial.CashFlow.Infrastructure.csproj` has no `ProjectReference` to `Financial.Shared.Infrastructure.csproj`
-- [ ] `dotnet build Financial.CashFlow.Infrastructure` succeeds standalone
-- [ ] All existing `Financial.CashFlow.Infrastructure.Tests` pass unmodified in behavior (signature/namespace-only test updates permitted)
-- [ ] Local and Google Drive provider selection for CashFlow data still produces a working repository, verified by existing `CashFlowRepositoryFactoryTests`
+- [x] `Financial.CashFlow.Infrastructure.csproj` has no `ProjectReference` to `Financial.Shared.Infrastructure.csproj`
+- [x] `dotnet build Financial.CashFlow.Infrastructure` succeeds standalone
+- [x] All existing `Financial.CashFlow.Infrastructure.Tests` pass unmodified in behavior (signature/namespace-only test updates permitted)
+- [x] Local and Google Drive provider selection for CashFlow data still produces a working repository, verified by existing `CashFlowRepositoryFactoryTests`
 
 ### F07. Investment Infrastructure Dependency Realignment
 - [ ] `Financial.Investment.Infrastructure.csproj` has no `ProjectReference` to `Financial.Shared.Infrastructure.csproj`
