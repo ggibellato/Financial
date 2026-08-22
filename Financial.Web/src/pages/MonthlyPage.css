@@ -97,12 +97,19 @@
 }
 
 .monthly-page__section--grid {
-  flex: 1 1 260px;
-  min-width: 260px;
-  max-height: 320px;
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+
+/* The equal-height stretch only makes sense when grids sit side by side (the
+   Summary tab's grids-row). A grid used standalone (e.g. the Expense tab's
+   BanksGrid) should size to its content instead of stretching to fill a
+   height meant for a multi-grid row it isn't part of. */
+.monthly-page__grids-row .monthly-page__section--grid {
+  flex: 1 1 260px;
+  min-width: 260px;
+  max-height: 320px;
 }
 
 .monthly-page__section--grid .monthly-page__table {

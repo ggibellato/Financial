@@ -9,22 +9,26 @@
 
         <DataGrid Grid.Row="0" ItemsSource="{Binding BankTotals}" AutoGenerateColumns="False" IsReadOnly="True">
             <DataGrid.Columns>
-                <DataGridTextColumn Binding="{Binding Bank}" Header="Bank" Width="140"
+                <DataGridTextColumn Binding="{Binding Bank}" Header="Bank" Width="*"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
-                <DataGridTextColumn Binding="{Binding Balance, StringFormat=N2}" Header="Bank Balance" Width="120"
+                <DataGridTextColumn Binding="{Binding Balance, StringFormat=N2}" Header="Bank Balance" Width="140"
                                      ElementStyle="{StaticResource NumericColumnTextStyle}"/>
-                <DataGridTextColumn Binding="{Binding RoundUpTotal, StringFormat=N2}" Header="Round-Up" Width="100"
+                <DataGridTextColumn Binding="{Binding RoundUpTotal, StringFormat=N2}" Header="Round-Up" Width="120"
                                      ElementStyle="{StaticResource NumericColumnTextStyle}"/>
             </DataGrid.Columns>
         </DataGrid>
 
-        <TextBlock Grid.Row="1" Margin="0,8,0,0">
-            <TextBlock.Text>
-                <MultiBinding StringFormat="Bank Balance: {0:N2} · Round-Up: {1:N2}">
-                    <Binding Path="BankTotalsSum"/>
-                    <Binding Path="RoundUpTotalsSum"/>
-                </MultiBinding>
-            </TextBlock.Text>
-        </TextBlock>
+        <!--
+            Individual TextBlock.Text bindings, not Run.Text (Run.Text defaults to
+            TwoWay and crashes on a read-only bound property; TextBlock.Text
+            defaults to OneWay) — this is how the values get bold like Web's
+            ExpensesGrid `<strong>` without hitting that.
+        -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,0">
+            <TextBlock Text="Bank Balance: "/>
+            <TextBlock Text="{Binding BankTotalsSum, StringFormat=N2}" FontWeight="Bold"/>
+            <TextBlock Text=" · Round-Up: "/>
+            <TextBlock Text="{Binding RoundUpTotalsSum, StringFormat=N2}" FontWeight="Bold"/>
+        </StackPanel>
     </Grid>
 </UserControl>
