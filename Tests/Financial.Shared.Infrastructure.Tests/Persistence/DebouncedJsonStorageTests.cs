@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Resilience;
 using Financial.Shared.Infrastructure.Persistence;
-using Financial.Shared.Infrastructure.Resilience;
 using Financial.Shared.Abstractions.Sync;
 using Financial.TestUtilities;
 using FluentAssertions;

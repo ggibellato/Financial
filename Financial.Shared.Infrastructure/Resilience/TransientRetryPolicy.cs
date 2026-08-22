@@ -1,5 +1,6 @@
 using System.Net.Http;
 using System.Net.Sockets;
+using Financial.Shared.Abstractions.Resilience;
 
 namespace Financial.Shared.Infrastructure.Resilience;
 

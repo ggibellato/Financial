@@ -1,5 +1,5 @@
 using Financial.Shared.Abstractions.Persistence;
-using Financial.Shared.Infrastructure.Resilience;
+using Financial.Shared.Abstractions.Resilience;
 
 namespace Financial.Shared.Infrastructure.Tests.Persistence;
 

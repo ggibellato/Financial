@@ -1,6 +1,6 @@
 using System.Net;
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
-using Financial.Shared.Infrastructure.Resilience;
+using Financial.Shared.Abstractions.Resilience;
 using FluentAssertions;
 using Google;
 

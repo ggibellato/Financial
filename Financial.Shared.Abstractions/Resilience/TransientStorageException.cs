@@ -1,4 +1,4 @@
-namespace Financial.Shared.Infrastructure.Resilience;
+namespace Financial.Shared.Abstractions.Resilience;
 
 public sealed class TransientStorageException : Exception
 {
