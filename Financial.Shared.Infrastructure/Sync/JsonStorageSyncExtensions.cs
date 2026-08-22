@@ -1,4 +1,4 @@
-using Financial.Shared.Infrastructure.Persistence;
+using Financial.Shared.Abstractions.Persistence;
 
 namespace Financial.Shared.Infrastructure.Sync;
 

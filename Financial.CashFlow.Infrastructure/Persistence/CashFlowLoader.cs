@@ -1,5 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
-using Financial.Shared.Infrastructure.Persistence;
+using Financial.Shared.Abstractions.Persistence;
 
 namespace Financial.CashFlow.Infrastructure.Persistence;
 

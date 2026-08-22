@@ -1,4 +1,5 @@
 using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Resilience;
 using Financial.Shared.Infrastructure.Sync;
 using Microsoft.Extensions.Logging;

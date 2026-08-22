@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.Configuration;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using Microsoft.Extensions.Logging;
 
@@ -40,21 +41,27 @@ public sealed class CashFlowRepositoryFactory
         return new CashFlowJsonRepository(data, storage, _serializer);
     }
 
-    private IJsonStorage CreateStorage(CashFlowRepositorySelectionOptions options) =>
-        options.Provider switch
+    private IJsonStorage CreateStorage(CashFlowRepositorySelectionOptions options)
+    {
+        // Instantiated per call rather than DI-injected: F06 (Wave 2 of the shared-domain-structure
+        // refactor) moves this to constructor injection once IJsonStorageFactory is registered at
+        // the composition root (F08). Until then this keeps CashFlow.Infrastructure buildable
+        // against the now-instance-based JsonStorageFactory.
+        var storageFactory = new JsonStorageFactory(
+            _remoteFileClientFactory, _tracer ?? NoOpTelemetryTracer.Instance, _storageLogger as ILogger<DebouncedJsonStorage>);
+
+        return options.Provider switch
         {
             CashFlowRepositoryProvider.LocalJson =>
-                JsonStorageFactory.CreateLocal(options.LocalDataPath, DefaultDataFileName),
+                storageFactory.CreateLocal(options.LocalDataPath, DefaultDataFileName),
             CashFlowRepositoryProvider.GoogleDriveJson =>
-                JsonStorageFactory.CreateGoogleDrive(
+                storageFactory.CreateGoogleDrive(
                     options.GoogleDriveCredentialsPath,
                     options.GoogleDriveFilePath,
-                    _remoteFileClientFactory,
                     CashFlowRepositoryConfigurationKeys.GoogleDriveCredentialsPath,
-                    nameof(CashFlowRepositoryProvider.GoogleDriveJson),
-                    _tracer,
-                    _storageLogger),
+                    nameof(CashFlowRepositoryProvider.GoogleDriveJson)),
             _ => throw new ArgumentOutOfRangeException(
                     nameof(options.Provider), options.Provider, "Unsupported repository provider.")
         };
+    }
 }

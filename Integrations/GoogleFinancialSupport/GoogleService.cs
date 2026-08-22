@@ -1,5 +1,5 @@
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
-using Financial.Shared.Infrastructure.Persistence;
+using Financial.Shared.Abstractions.Persistence;
 using Google;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
