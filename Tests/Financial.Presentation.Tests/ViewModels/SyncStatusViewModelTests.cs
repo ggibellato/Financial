@@ -1,7 +1,7 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.Investment.Application.Interfaces;
 using Financial.Presentation.App.ViewModels;
-using Financial.Shared.Infrastructure.Sync;
+using Financial.Shared.Abstractions.Sync;
 using Financial.TestUtilities;
 using FluentAssertions;
 

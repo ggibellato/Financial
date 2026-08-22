@@ -1,5 +1,5 @@
 using Financial.Shared.Abstractions.Persistence;
-using Financial.Shared.Infrastructure.Sync;
+using Financial.Shared.Abstractions.Sync;
 
 namespace Financial.TestUtilities;
 

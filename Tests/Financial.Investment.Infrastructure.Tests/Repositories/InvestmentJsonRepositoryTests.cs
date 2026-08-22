@@ -3,7 +3,7 @@ using Financial.Investment.Domain.Entities;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
-using Financial.Shared.Infrastructure.Sync;
+using Financial.Shared.Abstractions.Sync;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.TestUtilities;
 using FluentAssertions;

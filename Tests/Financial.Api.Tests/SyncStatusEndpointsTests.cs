@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Financial.Api.DTOs;
 using Financial.CashFlow.Application.Interfaces;
-using Financial.Shared.Infrastructure.Sync;
+using Financial.Shared.Abstractions.Sync;
 using Financial.TestUtilities;
 using FluentAssertions;
 using Microsoft.AspNetCore.TestHost;

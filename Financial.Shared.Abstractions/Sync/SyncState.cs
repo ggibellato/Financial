@@ -1,4 +1,4 @@
-namespace Financial.Shared.Infrastructure.Sync;
+namespace Financial.Shared.Abstractions.Sync;
 
 public enum SyncState
 {

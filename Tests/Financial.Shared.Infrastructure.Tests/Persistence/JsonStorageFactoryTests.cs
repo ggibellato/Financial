@@ -1,7 +1,7 @@
 using Financial.Shared.Abstractions;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
-using Financial.Shared.Infrastructure.Sync;
+using Financial.Shared.Abstractions.Sync;
 using FluentAssertions;
 
 namespace Financial.Shared.Infrastructure.Tests.Persistence;
