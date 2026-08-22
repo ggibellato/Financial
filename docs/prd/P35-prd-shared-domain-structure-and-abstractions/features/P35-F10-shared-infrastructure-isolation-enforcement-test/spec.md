@@ -61,7 +61,12 @@ N/A.
 
 ## 7. Testing Strategy
 
-This feature *is* a test — no additional coverage needed. Validation is the test itself:
+This feature *is* a test — no additional coverage needed. Validation is the test itself.
+
+**Negative verification performed:** a bare `ProjectReference` to `Financial.Shared.Infrastructure` added back to `Financial.CashFlow.Infrastructure.csproj` alone did *not* fail the test — Roslyn only emits an `AssemblyRef` for a project reference whose types are actually used in code, so an unused reference is invisible to `GetReferencedAssemblies()`. Adding one real type usage (a `LocalJsonStorage?` field) alongside the reference did fail the theory case for `Financial.CashFlow.Infrastructure`, with the exact assertion message naming the offending assembly and every one of its referenced assemblies. Both changes were reverted immediately after; `git diff` confirmed a clean revert before committing anything else.
+
+| Test File | Test Type | Target | Coverage Goal |
+|-----------|-----------|--------|-----------------|
 
 | Test File | Test Type | Target | Coverage Goal |
 |-----------|-----------|--------|-----------------|
