@@ -30,7 +30,9 @@
                    Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                    Text="{Binding DeletingExpenseError}"/>
 
-        <DataGrid Grid.Row="3" ItemsSource="{Binding Expenses}" AutomationProperties.Name="Expenses">
+        <DataGrid Grid.Row="3" ItemsSource="{Binding Expenses}" AutomationProperties.Name="Expenses"
+                  AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeRows="False" CanUserSortColumns="True"
+                  GridLinesVisibility="Horizontal" HeadersVisibility="Column" SelectionMode="Single">
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="" Width="34">
                     <DataGridTemplateColumn.CellTemplate>
