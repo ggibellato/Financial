@@ -1,9 +1,5 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-/// <summary>
-/// Combined read model for the Annual Summary page's Category Totals tab: category totals,
-/// income summary, and the server-computed Total despesas / Resultado (R-D-Inv) figures.
-/// </summary>
 public sealed class CategoryTotalsAnnualDTO
 {
     public required IReadOnlyList<CategoryAnnualTotalDTO> CategoryTotals { get; init; }

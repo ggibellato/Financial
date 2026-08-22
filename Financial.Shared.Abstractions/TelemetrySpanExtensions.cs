@@ -7,7 +7,6 @@ namespace Financial.Shared.Abstractions;
 /// </summary>
 public static class TelemetrySpanExtensions
 {
-    /// <summary>Marks the operation as completed successfully.</summary>
     public static void MarkSuccess(this ITelemetrySpan span) =>
         span.SetAttribute(TelemetryAttributeKeys.OperationResult, TelemetryOperationResults.Success);
 

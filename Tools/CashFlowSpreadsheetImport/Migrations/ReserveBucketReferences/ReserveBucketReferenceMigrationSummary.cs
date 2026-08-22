@@ -2,12 +2,6 @@ using System.Text;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.ReserveBucketReferences;
 
-/// <summary>
-/// Outcome of one migration run: whether the file already carried the current BucketId-based
-/// shape (no-op), how many reserve buckets had to be bootstrapped (file predates even F01), how
-/// many reserve movements were rewritten, and any movement whose legacy bucket name didn't
-/// resolve and needs manual review.
-/// </summary>
 public sealed class ReserveBucketReferenceMigrationSummary
 {
     private readonly List<(Guid Id, string Details)> _unresolvedMovements = new();

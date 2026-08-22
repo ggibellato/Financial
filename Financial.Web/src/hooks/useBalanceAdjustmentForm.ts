@@ -60,9 +60,8 @@ export interface UseBalanceAdjustmentFormResult {
 }
 
 /**
- * Owns a balance adjustment's create/edit form state and orchestrates F02's create/update
- * endpoints. Create opens with no bank pre-selected; picking a bank resolves its current
- * calculated balance client-side from the already-fetched bankTotals (no new network call).
+ * Create opens with no bank pre-selected; picking a bank resolves its current calculated
+ * balance client-side from the already-fetched bankTotals (no new network call).
  */
 export function useBalanceAdjustmentForm(
   bankTotals: BankTotal[],

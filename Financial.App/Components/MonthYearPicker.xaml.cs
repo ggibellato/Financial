@@ -3,11 +3,6 @@ using System.Windows.Controls;
 
 namespace Financial.Presentation.App.Components;
 
-/// <summary>
-/// Reusable Month + Year selector. Exposes SelectedYear/SelectedMonth as bindable dependency
-/// properties so pages (Monthly, Mensais, Investment Snapshots) can bind them directly to a
-/// ViewModel's period without re-implementing the same two-ComboBox wiring.
-/// </summary>
 public partial class MonthYearPicker : UserControl
 {
     private static readonly string[] MonthNames =

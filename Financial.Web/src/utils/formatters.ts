@@ -42,7 +42,6 @@ export function formatShortDateUtc(isoString: string | null | undefined): string
   return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`
 }
 
-/** Like {@link formatShortDate}, but also includes the local time as `HH:mm`. */
 export function formatDateTime(isoString: string | null | undefined): string {
   if (!isoString) return ''
   const d = new Date(isoString)
@@ -82,17 +81,14 @@ export function formatMonthYear(date: Date): string {
   return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
 }
 
-/** CSS modifier class for a signed value, e.g. signClass(-5, 'asset-summary__value') -> 'asset-summary__value--red'. */
 export function signClass(value: number, basePrefix: string): string {
   return `${basePrefix}--${value >= 0 ? 'green' : 'red'}`
 }
 
-/** Extracts a caught value's message, falling back to a caller-supplied default for a non-Error throw (e.g. a rejected fetch). */
 export function getErrorMessage(err: unknown, fallback: string): string {
   return err instanceof Error ? err.message : fallback
 }
 
-/** Parses a form-input string to a finite number within an optional [min, max] range; returns null for blank, non-finite, or out-of-range input. */
 export function parseValidatedNumber(value: string, options: { min?: number; max?: number } = {}): number | null {
   const parsed = Number(value)
   if (!value.trim() || !isFinite(parsed)) return null

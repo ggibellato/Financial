@@ -119,11 +119,6 @@ export interface UseBankOperationsResult {
   deleteAdjustment: (bankId: string, id: string) => void
 }
 
-/**
- * Fetches the month's transfers (all banks) and each bank's adjustments (scoped to the
- * month client-side), combines them into one flat, newest-first list, and exposes a
- * client-side bank filter plus delete actions. Replaces the per-bank grouped useBankHistory.
- */
 export function useBankOperations(
   year: number,
   month: number,

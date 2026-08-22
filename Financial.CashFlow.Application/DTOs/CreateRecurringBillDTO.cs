@@ -1,8 +1,5 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-/// <summary>
-/// Request to create a new recurring bill.
-/// </summary>
 public sealed class CreateRecurringBillDTO
 {
     public required int DueDay { get; init; }

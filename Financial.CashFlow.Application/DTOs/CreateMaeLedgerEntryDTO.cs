@@ -1,8 +1,5 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-/// <summary>
-/// Request to create a new Controle Mae ledger entry.
-/// </summary>
 public sealed class CreateMaeLedgerEntryDTO
 {
     public required DateOnly Date { get; init; }

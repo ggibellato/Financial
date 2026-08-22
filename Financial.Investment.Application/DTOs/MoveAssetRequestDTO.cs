@@ -19,10 +19,8 @@ public class MoveAssetRequestDTO
     /// </summary>
     public required string Scope { get; set; }
 
-    /// <summary>Portfolio the asset is in now.</summary>
     public required string SourcePortfolioName { get; set; }
 
-    /// <summary>Asset to move.</summary>
     public required string AssetName { get; set; }
 
     /// <summary>Portfolio to move the asset into, existing or to be created.</summary>

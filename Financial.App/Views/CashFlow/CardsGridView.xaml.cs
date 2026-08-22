@@ -7,9 +7,6 @@ namespace Financial.Presentation.App.Views.CashFlow;
 
 public partial class CardsGridView : UserControl
 {
-    /// <summary>When true (Credit Card tab), shows the Next Invoice Due Date/Active columns for
-    /// managing the card itself, alongside this month's statement. False (Summary tab) shows the
-    /// statement columns only, unchanged from before the merge.</summary>
     public static readonly DependencyProperty ShowCardManagementColumnsProperty = DependencyProperty.Register(
         nameof(ShowCardManagementColumns), typeof(bool), typeof(CardsGridView), new PropertyMetadata(false));
 

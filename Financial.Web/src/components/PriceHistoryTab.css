@@ -5,7 +5,6 @@
   overflow: hidden;
 }
 
-/* Controls: filter toolbar */
 .price-history-tab__controls {
   display: flex;
   align-items: center;
@@ -43,7 +42,6 @@
   text-decoration: none;
 }
 
-/* Inner resizable split */
 .price-history-tab__split {
   display: flex;
   flex: 1;
@@ -67,7 +65,6 @@
   overflow: hidden;
 }
 
-/* Table toolbar */
 .price-history-tab__table-toolbar {
   display: flex;
   align-items: center;
@@ -90,7 +87,6 @@
   background: #005fa3;
 }
 
-/* Inline form */
 .price-history-tab__form {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border, #e5e4e7);
@@ -173,7 +169,6 @@
   color: #c62828;
 }
 
-/* Price table */
 .price-history-tab__table-wrapper {
   flex: 1;
   min-height: 0;
@@ -200,7 +195,6 @@
   color: var(--text, #333);
 }
 
-/* Source column */
 .price-history-tab__source--manual {
   color: #e65100;
 }
@@ -216,7 +210,6 @@
   flex-shrink: 0;
 }
 
-/* Chart */
 .price-history-tab__chart-panel {
   display: flex;
   flex-direction: column;

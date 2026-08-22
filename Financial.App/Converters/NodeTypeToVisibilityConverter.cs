@@ -4,9 +4,6 @@ using System.Windows.Data;
 
 namespace Financial.Presentation.App.Converters;
 
-/// <summary>
-/// Shows icon only for Asset node types
-/// </summary>
 public class NodeTypeToVisibilityConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)

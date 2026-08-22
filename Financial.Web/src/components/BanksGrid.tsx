@@ -7,7 +7,6 @@ interface BanksGridProps {
   roundUpTotalsSum: number
 }
 
-/** Read-only Summary balances table: Bank, Balance, Round-Up plus a totals row. No interaction. */
 export default function BanksGrid({ bankTotals, bankTotalsSum, roundUpTotalsSum }: BanksGridProps) {
   return (
     <section className="monthly-page__section monthly-page__section--grid">

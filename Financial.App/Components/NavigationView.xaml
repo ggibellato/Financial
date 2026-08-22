@@ -17,7 +17,6 @@
             <ColumnDefinition Width="*" MinWidth="400"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Left Panel: Navigation Tree -->
         <Grid Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -58,7 +57,6 @@
                     <Style TargetType="TreeViewItem">
                         <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
                         <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
-                        <!-- Keep selection color when control loses focus -->
                         <Style.Triggers>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter Property="Background" Value="#007ACC"/>
@@ -72,7 +70,6 @@
                             </DataTrigger>
                         </Style.Triggers>
                         <Style.Resources>
-                            <!-- Override inactive selection color to match active selection -->
                             <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#007ACC"/>
                             <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="White"/>
                         </Style.Resources>
@@ -82,7 +79,6 @@
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate ItemsSource="{Binding Children}">
                         <StackPanel Orientation="Horizontal">
-                            <!-- Icon for Asset nodes colored by position type -->
                             <TextBlock Text="●"
                                        Foreground="{Binding PositionType, Converter={StaticResource PositionTypeToColorConverter}}"
                                        Visibility="{Binding NodeType, Converter={StaticResource NodeTypeToVisibilityConverter}}"
@@ -97,7 +93,6 @@
                 </TreeView.ItemTemplate>
             </TreeView>
 
-            <!-- Loading Indicator -->
             <Grid Grid.Row="1" 
                   Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
                   Background="#80FFFFFF">
@@ -111,20 +106,17 @@
             </Grid>
         </Grid>
 
-        <!-- Splitter -->
         <GridSplitter Grid.Column="1" 
                       Width="5" 
                       HorizontalAlignment="Stretch" 
                       Background="#E0E0E0"/>
 
-        <!-- Right Panel: Asset Details -->
         <Grid Grid.Column="2" Margin="10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Asset Header -->
             <Border Grid.Row="0" 
                     BorderBrush="#CCCCCC" 
                     BorderThickness="0,0,0,1" 
@@ -178,7 +170,6 @@
                 </StackPanel>
             </Border>
 
-            <!-- Tab Control for Details -->
             <TabControl Grid.Row="1">
                 <TabItem Header="Summary">
                     <views:PortfolioSummaryView/>
@@ -194,7 +185,6 @@
                 </TabItem>
             </TabControl>
 
-            <!-- Empty State -->
             <StackPanel Grid.Row="1" 
                         HorizontalAlignment="Center" 
                         VerticalAlignment="Center"

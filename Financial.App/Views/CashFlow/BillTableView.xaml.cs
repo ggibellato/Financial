@@ -5,11 +5,6 @@ using System.Windows.Input;
 
 namespace Financial.Presentation.App.Views.CashFlow;
 
-/// <summary>
-/// Reusable Mensais bill table. Bound twice from MensaisView (once per Area) — ShowBrasilFields
-/// toggles the NIT/Min. Wage columns' visibility, matching Financial.Web's single BillTable
-/// component parameterized by showBrasilFields.
-/// </summary>
 public partial class BillTableView : UserControl
 {
     public static readonly DependencyProperty BillsProperty = DependencyProperty.Register(

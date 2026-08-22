@@ -180,7 +180,6 @@ export default function MoveAssetDialog({
   }
 
   // A drop on a portfolio already answered "where should this go", so there is nothing to ask.
-  // Declared after handleSubmit because it calls it.
   const hasSubmittedPreset = useRef(false)
   useEffect(() => {
     if (presetDestination && !hasSubmittedPreset.current) {

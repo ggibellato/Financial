@@ -1,8 +1,5 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-/// <summary>
-/// Read model for the Annual Summary page's Income Summary table.
-/// </summary>
 public sealed class IncomeAnnualSummaryDTO
 {
     /// <summary>Row 2 "Salary": sum of Gleison + Ariana gross values, per month.</summary>

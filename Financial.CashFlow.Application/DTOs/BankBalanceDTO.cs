@@ -5,7 +5,6 @@ namespace Financial.CashFlow.Application.DTOs;
 /// </summary>
 public sealed class BankBalanceDTO
 {
-    /// <summary>Bank name.</summary>
     public required string Bank { get; init; }
 
     /// <summary>Opening balance plus income minus (round-up-adjusted) expenses, from the bank's opening date through the end of the requested month.</summary>

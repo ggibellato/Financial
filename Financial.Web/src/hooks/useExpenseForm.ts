@@ -15,7 +15,6 @@ function computeRoundUpSuggestion(value: number): number {
   return Math.round((Math.ceil(value) - value) * 100) / 100
 }
 
-/** Suggests a round-up amount for the given bank/value, or null if not eligible or no value yet. */
 function suggestRoundUpAmount(banks: BankDto[], bankId: string, value: string): string | null {
   const bank = banks.find((b) => b.id === bankId)
   if (!bank?.roundUpEnabled) return null
@@ -240,7 +239,6 @@ export interface UseExpenseFormResult {
   saveEdit: () => void
 }
 
-/** Owns an expense's create/edit form state and orchestrates the create/update endpoints. */
 export function useExpenseForm(banks: BankDto[], categories: CategoryDto[], onSaved: () => void): UseExpenseFormResult {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)

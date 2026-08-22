@@ -3,10 +3,6 @@ using System.Windows.Data;
 
 namespace Financial.Presentation.App.Converters;
 
-/// <summary>
-/// Compares two bound values for equality, e.g. a nav item's id against the currently
-/// selected id, to drive a Tag-bound DataTrigger for active-item highlighting.
-/// </summary>
 public class EqualityToBoolConverter : IMultiValueConverter
 {
     public object Convert(object?[] values, Type targetType, object? parameter, CultureInfo culture)

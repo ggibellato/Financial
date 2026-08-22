@@ -50,7 +50,6 @@ export interface UseTransferFormResult {
   submit: () => void
 }
 
-/** Owns a transfer's create/edit form state and orchestrates F01's create/update endpoints. */
 export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTransferFormResult {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, setState] = useState<TransferFormState>(BLANK_STATE)

@@ -1,8 +1,5 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-/// <summary>
-/// Read model for a single reserve ledger movement.
-/// </summary>
 public sealed class ReserveMovementDTO
 {
     public required Guid Id { get; init; }

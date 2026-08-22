@@ -5,12 +5,6 @@ using Financial.Presentation.App.Helpers;
 
 namespace Financial.Presentation.App.Components;
 
-/// <summary>
-/// Single-field Month + Year entry, formatted using the OS locale's short-date pattern with the
-/// day component stripped (e.g. "MM/yyyy" for en-GB). Exposes the same SelectedYear/SelectedMonth
-/// bindable contract as MonthYearPicker, so it can be swapped in wherever a compact single-field
-/// control is preferred over the two-ComboBox layout.
-/// </summary>
 public partial class MonthYearTextBox : UserControl
 {
     public static readonly DependencyProperty SelectedYearProperty = DependencyProperty.Register(

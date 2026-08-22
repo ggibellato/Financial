@@ -5,8 +5,6 @@ using System.Text.RegularExpressions;
 namespace Financial.Investment.Infrastructure.Integrations.WebPageParser;
 
 /// <summary>
-/// Parses financial data from Google Finance web pages.
-/// Uses multi-strategy approach with fallbacks to handle HTML structure changes.
 /// See GoogleFinance.Selectors.md for maintenance guide.
 /// Update selectors in GoogleFinanceSelectors.cs when the HTML structure changes.
 /// </summary>

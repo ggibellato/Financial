@@ -24,7 +24,6 @@ public class GoogleFinanceVerificationTests
         _output.WriteLine("Testing Google Finance selectors with live data...");
         _output.WriteLine("");
 
-        // Test multiple Brazilian stocks
         var stocks = new[]
         {
             ("BBAS3", "BVMF", "Banco do Brasil"),
@@ -84,7 +83,6 @@ public class GoogleFinanceVerificationTests
     [Fact(Skip = "Manual - use this to run the detailed verifier utility")]
     public void RunDetailedVerification()
     {
-        // This will show which strategies were used for each element
         GoogleFinanceVerifier.VerifyMultipleUrls();
     }
 }

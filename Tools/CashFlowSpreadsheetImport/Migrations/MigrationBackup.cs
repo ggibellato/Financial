@@ -1,9 +1,5 @@
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations;
 
-/// <summary>
-/// Copies the data file to a timestamped sibling before a migration touches it,
-/// so a failed or interrupted run can always be recovered from.
-/// </summary>
 public static class MigrationBackup
 {
     private const string BackupTimestampFormat = "yyyyMMdd-HHmmss";

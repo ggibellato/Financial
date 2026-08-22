@@ -5,12 +5,10 @@ namespace Financial.CashFlow.Application.DTOs;
 /// </summary>
 public sealed class BalanceAdjustmentUpdateDTO
 {
-    /// <summary>Reconciliation date.</summary>
     public required DateOnly Date { get; init; }
 
     /// <summary>The real balance from the bank statement. Must be greater than or equal to zero.</summary>
     public required decimal TargetBalance { get; init; }
 
-    /// <summary>Optional free-text note.</summary>
     public string? Note { get; init; }
 }

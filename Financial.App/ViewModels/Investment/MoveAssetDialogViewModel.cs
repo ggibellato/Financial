@@ -33,10 +33,8 @@ public sealed class MoveAssetDialogViewModel : ViewModelBase
     /// </summary>
     public bool CanArchive { get; }
 
-    /// <summary>Destinations for the scope currently chosen.</summary>
     public ObservableCollection<string> AvailablePortfolios { get; } = [];
 
-    /// <summary>False when the chosen scope offers nothing, so naming a new portfolio is the only route.</summary>
     public bool HasExistingDestination => AvailablePortfolios.Count > 0;
 
     public string Title => "Move Asset";
@@ -110,7 +108,6 @@ public sealed class MoveAssetDialogViewModel : ViewModelBase
         private set => SetProperty(ref _validationMessage, value);
     }
 
-    /// <summary>The chosen destination. Empty while nothing has been chosen or typed.</summary>
     public string DestinationPortfolioName =>
         CreateNewPortfolio ? NewPortfolioName.Trim() : SelectedPortfolioName ?? string.Empty;
 

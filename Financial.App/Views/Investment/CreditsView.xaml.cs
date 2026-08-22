@@ -11,10 +11,6 @@ public partial class CreditsView : UserControl
         InitializeComponent();
     }
 
-    /// <summary>
-    /// Moved here with the markup that raises it. DataContext is inherited from the hosting
-    /// TabItem, so the view model this reaches is the same one NavigationView saw.
-    /// </summary>
     private void OnCreditsPlotSizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (DataContext is IMainNavigationViewModel viewModel)

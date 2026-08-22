@@ -1,8 +1,5 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-/// <summary>
-/// Request to edit a single Reserva movement's fields.
-/// </summary>
 public sealed class UpdateReserveMovementDTO
 {
     public required Guid BucketId { get; init; }

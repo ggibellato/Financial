@@ -3,52 +3,28 @@ using System.Collections.ObjectModel;
 
 namespace Financial.Presentation.App.ViewModels.Investment;
 
-/// <summary>
-/// ViewModel for hierarchical tree nodes (Broker, Portfolio, Asset)
-/// </summary>
 public class TreeNodeViewModel : ViewModelBase
 {
     private bool _isExpanded;
     private bool _isSelected;
     private bool _isDropTarget;
 
-    /// <summary>
-    /// Display name for the node
-    /// </summary>
     public string DisplayName { get; }
 
-    /// <summary>
-    /// Type of node (Broker, Portfolio, Asset)
-    /// </summary>
     public TreeNodeType NodeType { get; }
 
-    /// <summary>
-    /// Metadata associated with the node
-    /// </summary>
     public IReadOnlyDictionary<string, object> Metadata { get; }
 
-    /// <summary>
-    /// Child nodes
-    /// </summary>
     public ObservableCollection<TreeNodeViewModel> Children { get; }
 
-    /// <summary>
-    /// Parent node (null for root)
-    /// </summary>
     public TreeNodeViewModel? Parent { get; }
 
-    /// <summary>
-    /// Whether the node is expanded in the tree
-    /// </summary>
     public bool IsExpanded
     {
         get => _isExpanded;
         set => SetProperty(ref _isExpanded, value);
     }
 
-    /// <summary>
-    /// Whether the node is currently selected
-    /// </summary>
     public bool IsSelected
     {
         get => _isSelected;
@@ -85,9 +61,6 @@ public class TreeNodeViewModel : ViewModelBase
         set => SetProperty(ref _isDropTarget, value);
     }
 
-    /// <summary>
-    /// Event fired when this node is selected
-    /// </summary>
     public event EventHandler<TreeNodeViewModel>? NodeSelected;
 
     public TreeNodeViewModel(TreeNodeDTO dto, TreeNodeViewModel? parent = null)
@@ -112,14 +85,10 @@ public class TreeNodeViewModel : ViewModelBase
 
     private void OnChildNodeSelected(TreeNodeViewModel child)
     {
-        // Bubble up selection event
         NodeSelected?.Invoke(this, child);
         Parent?.OnChildNodeSelected(child);
     }
 
-    /// <summary>
-    /// Gets metadata value by key with default
-    /// </summary>
     public T? GetMetadata<T>(string key, T? defaultValue = default)
     {
         if (Metadata.TryGetValue(key, out var value) && value is T typedValue)
