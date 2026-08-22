@@ -5,7 +5,6 @@
   overflow: hidden;
 }
 
-/* Controls: filter + mode toolbar */
 .credits-tab__controls {
   display: flex;
   align-items: center;
@@ -76,7 +75,6 @@
   text-decoration: none;
 }
 
-/* Inner resizable split (asset only) */
 .credits-tab__split {
   display: flex;
   flex: 1;
@@ -100,7 +98,6 @@
   overflow: hidden;
 }
 
-/* Table toolbar */
 .credits-tab__table-toolbar {
   display: flex;
   align-items: center;
@@ -123,7 +120,6 @@
   background: #005fa3;
 }
 
-/* Inline form */
 .credits-tab__form {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border, #e5e4e7);
@@ -207,7 +203,6 @@
   color: #c62828;
 }
 
-/* Credits table */
 .credits-tab__table-wrapper {
   flex: 1;
   min-height: 0;
@@ -230,7 +225,6 @@
   color: var(--text, #333);
 }
 
-/* Type colour modifiers */
 .credits-tab__type--dividend {
   color: #1565c0;
 }
@@ -239,7 +233,6 @@
   color: #0277bd;
 }
 
-/* Value column */
 .credits-tab__value {
   font-weight: bold;
 }
@@ -251,7 +244,6 @@
   flex-shrink: 0;
 }
 
-/* Chart */
 .credits-tab__chart-panel {
   display: flex;
   flex-direction: column;

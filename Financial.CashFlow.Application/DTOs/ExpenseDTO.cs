@@ -1,26 +1,18 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-/// <summary>
-/// Read model for an expense record.
-/// </summary>
 public sealed class ExpenseDTO
 {
-    /// <summary>Expense identifier.</summary>
     public required Guid Id { get; init; }
 
-    /// <summary>Expense date.</summary>
     public required DateOnly Date { get; init; }
 
-    /// <summary>Free-text description.</summary>
     public required string Description { get; init; }
 
     /// <summary>Amount in GBP. Negative values represent a Reserva return or transfer out.</summary>
     public required decimal Value { get; init; }
 
-    /// <summary>Expense category identifier.</summary>
     public required Guid CategoryId { get; init; }
 
-    /// <summary>Expense category display name.</summary>
     public required string CategoryName { get; init; }
 
     /// <summary>Payment source bank identifier. Null while the expense is an unsettled credit card charge.</summary>

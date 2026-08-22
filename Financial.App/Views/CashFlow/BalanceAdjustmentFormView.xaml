@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border BorderBrush="#CCCCCC" BorderThickness="1" Padding="12" Margin="0,0,0,12" Background="#FAFAFA">
         <Grid>
-            <!-- Post-save result -->
             <StackPanel Visibility="{Binding HasAdjustmentResult, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock FontWeight="Bold" Text="Balance Corrected" Margin="0,0,0,8"/>
                 <TextBlock Text="{Binding AdjustmentSavedDelta, StringFormat='Adjustment of {0:N2} recorded'}"/>
@@ -11,7 +10,6 @@
                         Command="{Binding DismissAdjustmentResultCommand}"/>
             </StackPanel>
 
-            <!-- Form -->
             <Grid Visibility="{Binding ShowAdjustmentForm, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -53,7 +51,6 @@
                     </ComboBox.Style>
                 </ComboBox>
 
-                <!-- Remaining fields activate only once a bank has been picked -->
                 <Grid Grid.Row="2" Grid.ColumnSpan="2" Visibility="{Binding IsAdjustmentBankSelected, Converter={StaticResource BoolToVisibilityConverter}}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>

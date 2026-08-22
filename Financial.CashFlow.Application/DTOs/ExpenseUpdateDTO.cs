@@ -5,7 +5,6 @@ namespace Financial.CashFlow.Application.DTOs;
 /// </summary>
 public sealed class ExpenseUpdateDTO
 {
-    /// <summary>Expense date.</summary>
     public required DateOnly Date { get; init; }
 
     /// <summary>Free-text description, up to 200 characters.</summary>
@@ -14,7 +13,6 @@ public sealed class ExpenseUpdateDTO
     /// <summary>Amount in GBP. Negative values represent a Reserva return or transfer out.</summary>
     public required decimal Value { get; init; }
 
-    /// <summary>Expense category identifier.</summary>
     public required Guid CategoryId { get; init; }
 
     /// <summary>Payment source bank identifier. Omit when charging to a credit card.</summary>

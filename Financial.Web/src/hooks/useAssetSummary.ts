@@ -30,8 +30,6 @@ type SummaryAction =
   | { type: 'XIRR_FETCH_SUCCESS'; xirr: number | null; xirrWithCredits: number | null }
   | { type: 'PORTFOLIO_WEIGHT_SUCCESS'; portfolioWeight: number | null }
 
-/** Resolves the args to fetch a live price for a ticker, or null if the asset doesn't qualify
- * (needs an exchange, or to be a Cryptocurrency, or a Bond with a name for lookup). */
 function resolvePriceFetchArgs(
   ticker: string | null | undefined,
   exchange: string | null | undefined,

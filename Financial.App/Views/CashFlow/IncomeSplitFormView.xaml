@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border BorderBrush="#CCCCCC" BorderThickness="1" Padding="12" Margin="0,0,0,12" Background="#FAFAFA">
         <Grid>
-            <!-- Post-save result -->
             <StackPanel Visibility="{Binding HasSplitResult, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock FontWeight="Bold" Text="Income Split Posted" Margin="0,0,0,8"/>
                 <ItemsControl ItemsSource="{Binding LastSplitResult.Buckets}">
@@ -20,7 +19,6 @@
                         Command="{Binding DismissSplitResultCommand}"/>
             </StackPanel>
 
-            <!-- Form -->
             <Grid Visibility="{Binding ShowSplitFormFields, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>

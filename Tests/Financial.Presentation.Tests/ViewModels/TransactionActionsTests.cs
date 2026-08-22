@@ -38,8 +38,6 @@ public class TransactionActionsTests
         UnitPrice: 25m,
         Fees: 1.5m);
 
-    // --- Add ---
-
     [Fact]
     public async Task Add_NoContext_ShowsInfoAndDoesNotCallService()
     {
@@ -104,8 +102,6 @@ public class TransactionActionsTests
         service.LastAddRequest.Fees.Should().Be(1.5m);
         spy.AppliedDetails.Should().Be(expectedDetails);
     }
-
-    // --- Update ---
 
     [Fact]
     public async Task Update_NullSelectedTransaction_DoesNotCallService()
@@ -183,8 +179,6 @@ public class TransactionActionsTests
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
         spy.AppliedDetails.Should().BeNull();
     }
-
-    // --- Delete ---
 
     [Fact]
     public async Task Delete_NullSelectedTransaction_DoesNotCallService()

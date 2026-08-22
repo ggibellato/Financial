@@ -1,8 +1,5 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-/// <summary>
-/// Read model for a Controle Mae ledger entry.
-/// </summary>
 public sealed class MaeLedgerEntryDTO
 {
     public required Guid Id { get; init; }

@@ -1,14 +1,9 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-/// <summary>
-/// Read model for a tracked bank.
-/// </summary>
 public sealed class BankDTO
 {
-    /// <summary>Bank identifier.</summary>
     public required Guid Id { get; init; }
 
-    /// <summary>Bank name.</summary>
     public required string Name { get; init; }
 
     /// <summary>Whether this bank rounds up card payments.</summary>

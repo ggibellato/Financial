@@ -67,7 +67,6 @@ interface BankOperationsSectionProps {
   onDeleteAdjustment: (bankName: string, id: string) => void
 }
 
-/** Bank tab body: the two entry-point buttons, the bank filter, and the flat operations list. */
 export default function BankOperationsSection({
   operations,
   bankFilter,

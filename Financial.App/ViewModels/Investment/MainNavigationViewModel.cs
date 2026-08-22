@@ -3,9 +3,6 @@ using Financial.Investment.Application.Interfaces;
 
 namespace Financial.Presentation.App.ViewModels.Investment;
 
-/// <summary>
-/// Main ViewModel for the navigation view, coordinating the tree and detail panels
-/// </summary>
 public class MainNavigationViewModel : MainNavigationViewModelBase<AssetDetailsViewModel>
 {
     public MainNavigationViewModel(

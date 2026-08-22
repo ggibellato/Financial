@@ -11,10 +11,6 @@ public partial class TransactionsView : UserControl
         InitializeComponent();
     }
 
-    /// <summary>
-    /// Moved here with the markup that raises it. DataContext is inherited from the hosting
-    /// TabItem, so the view model this reaches is the same one NavigationView saw.
-    /// </summary>
     private void OnTransactionsPlotSizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (DataContext is IMainNavigationViewModel viewModel)

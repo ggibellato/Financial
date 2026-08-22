@@ -1,8 +1,5 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-/// <summary>
-/// Read model for a month's calculated tithe and tithe balance.
-/// </summary>
 public sealed class TitheSummaryDTO
 {
     /// <summary>10% of the month's total income net value.</summary>

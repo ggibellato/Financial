@@ -36,8 +36,6 @@ public class CreditActionsTests
         Type: "Dividend",
         Value: 12.5m);
 
-    // --- Add ---
-
     [Fact]
     public async Task Add_NoContext_ShowsInfoAndDoesNotCallService()
     {
@@ -100,8 +98,6 @@ public class CreditActionsTests
         service.LastAddRequest.Value.Should().Be(12.5m);
         spy.AppliedDetails.Should().Be(expectedDetails);
     }
-
-    // --- Update ---
 
     [Fact]
     public async Task Update_NullSelectedCredit_DoesNotCallService()
@@ -179,8 +175,6 @@ public class CreditActionsTests
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
         spy.AppliedDetails.Should().BeNull();
     }
-
-    // --- Delete ---
 
     [Fact]
     public async Task Delete_NullSelectedCredit_DoesNotCallService()

@@ -97,11 +97,26 @@ What to test, and at which layer, is the `testing-guide-Financial` skill's job. 
 
 ## Comments
 
-**Priority rule: never remove a comment used by Swagger or any other tooling.** It outranks every removal criterion below.
+**Priority rule:** never remove a comment used by Swagger or any other tooling. It outranks every removal criterion below.
 
-Remove a comment only when **all three** are true: not used by tooling, out of date, and adding nothing beyond what the code already says clearly.
+**Default stance:** do not add comments.
 
-Keep comments that explain business rules or constraints, non-obvious implementation choices, historical context or workarounds, and performance or security considerations.
+- Prefer self-explanatory code: clear names, small functions, explicit types.
+- Only add a comment if:
+  - It is required by tooling (e.g., Swagger XML comments), OR
+  - It documents a non-obvious business rule / constraint that cannot be expressed in the code, OR
+  - It records a critical workaround or historical reason that would otherwise be impossible to infer.
+
+**Never add comments that:**
+
+- Restate what the code already says.
+- Explain how something will be used elsewhere (that belongs in the caller or in docs, not inline).
+- Describe obvious implementation details.
+
+When editing existing code:
+
+- Do not introduce new comments unless one of the allowed cases above applies.
+- If an existing comment is redundant or obvious, you may remove it (as long as it’s not used by tooling).
 
 ## Before finishing — self-review
 

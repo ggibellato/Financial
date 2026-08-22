@@ -9,6 +9,5 @@ public sealed class CreditCardUpdateDTO
     /// <summary>New due date, or <c>null</c> to clear it.</summary>
     public DateOnly? NextInvoiceDueDate { get; init; }
 
-    /// <summary>New active flag.</summary>
     public required bool IsActive { get; init; }
 }

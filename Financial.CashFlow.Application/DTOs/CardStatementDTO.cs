@@ -1,8 +1,5 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-/// <summary>
-/// Read model for a card statement, joined with its computed outstanding total.
-/// </summary>
 public sealed class CardStatementDTO
 {
     public required Guid Id { get; init; }

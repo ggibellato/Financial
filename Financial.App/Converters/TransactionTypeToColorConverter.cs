@@ -4,9 +4,6 @@ using System.Windows.Media;
 
 namespace Financial.Presentation.App.Converters;
 
-/// <summary>
-/// Converts transaction type (Buy/Sell) to color brush
-/// </summary>
 public class TransactionTypeToColorConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)

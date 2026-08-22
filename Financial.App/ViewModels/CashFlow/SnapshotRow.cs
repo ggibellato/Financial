@@ -2,10 +2,6 @@ using Financial.CashFlow.Application.DTOs;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;
 
-/// <summary>
-/// A snapshot grid row. Wraps InvestmentSnapshotDTO with a display label suffixed
-/// " (liability)" for liability accounts, matching Financial.Web's SnapshotRow component.
-/// </summary>
 public sealed class SnapshotRow
 {
     public required Guid Id { get; init; }

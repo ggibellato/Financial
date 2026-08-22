@@ -4,10 +4,6 @@ using Financial.Presentation.App.Navigation;
 
 namespace Financial.Presentation.App.Converters;
 
-/// <summary>
-/// Given a category's children and the shell's currently selected child id, returns whether
-/// this category's icon should show the active tint.
-/// </summary>
 public class CategoryHasSelectedChildConverter : IMultiValueConverter
 {
     public object Convert(object?[] values, Type targetType, object? parameter, CultureInfo culture)

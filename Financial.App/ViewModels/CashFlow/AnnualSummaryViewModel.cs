@@ -5,13 +5,6 @@ using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;
 
-/// <summary>
-/// ViewModel for the Annual Summary tab: a Year selector driving 3 read-only sub-tabs
-/// (Category Totals, Investments, Historic Summary Average). All 3 sub-tabs' data loads
-/// together per Year change (mirrors useAnnualSummary.ts's combined Promise.all) — switching
-/// sub-tabs is pure UI state and never triggers a re-fetch. Standalone from the other
-/// CashFlow ViewModels; entirely read-only, no confirm delegate needed.
-/// </summary>
 public class AnnualSummaryViewModel : ViewModelBase
 {
     private static readonly string[] MonthLabels =

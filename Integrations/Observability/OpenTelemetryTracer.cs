@@ -3,12 +3,6 @@ using Financial.Shared.Abstractions;
 
 namespace Financial.Integrations.Observability;
 
-/// <summary>
-/// ITelemetryTracer implementation used when Observability:Enabled is true. Wraps a
-/// System.Diagnostics.ActivitySource; the OpenTelemetry SDK registered alongside this class
-/// (ObservabilityServiceCollectionExtensions) subscribes to the same source name and does the
-/// actual export.
-/// </summary>
 public sealed class OpenTelemetryTracer : ITelemetryTracer
 {
     internal const string ActivitySourceName = "Financial";

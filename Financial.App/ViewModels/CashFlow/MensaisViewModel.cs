@@ -7,11 +7,6 @@ using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 namespace Financial.Presentation.App.ViewModels.CashFlow;
 
 /// <summary>
-/// ViewModel for the Mensais tab: recurring bills split into Brasil/UK tables, Add Bill,
-/// Edit Bill (Value/Status), delete, and Reset All to Unset. Mirrors Financial.Web's
-/// useMensais.ts hook. Standalone from <see cref="MonthlyViewModel"/>/<see cref="ReservaViewModel"/>
-/// — Mensais is its own top-level destination with no shared state.
-///
 /// The Month+Year picker is display-only: RecurringBillDTO has no year/month field, and
 /// GetBills() is not filterable by period — the picker never affects what RefreshAsync loads.
 /// This matches useMensais.ts's own monthInputValue, which has zero effect on getMensaisBills().

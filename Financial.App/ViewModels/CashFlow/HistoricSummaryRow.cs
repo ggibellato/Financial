@@ -1,10 +1,5 @@
 namespace Financial.Presentation.App.ViewModels.CashFlow;
 
-/// <summary>
-/// A single row of the Annual Summary page's Historic Summary Average sub-tab: one per
-/// category, with one value per available year. Columns are built dynamically in the View's
-/// code-behind from the ViewModel's AvailableYears list, bound via ValuesByYear[year].
-/// </summary>
 public sealed class HistoricSummaryRow
 {
     private static readonly HashSet<string> SpacerAfterCategories = ["Tax difference", "Dividendo/Juros", "Reserva"];

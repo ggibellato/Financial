@@ -2,10 +2,6 @@ using System.Text;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Incomes;
 
-/// <summary>
-/// Outcome of one migration run: confirms the Incomes collection is present
-/// and reports how many entries it currently holds.
-/// </summary>
 public sealed class IncomeMigrationSummary
 {
     public int IncomeCount { get; }

@@ -8,9 +8,6 @@ using System.Collections.ObjectModel;
 
 namespace Financial.Presentation.App.ViewModels.Investment;
 
-/// <summary>
-/// Shared navigation view model logic for UI and Tools
-/// </summary>
 public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : ViewModelBase, IMainNavigationViewModel
     where TAssetDetailsViewModel : class, IAssetDetailsViewModel
 {
@@ -88,10 +85,6 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     public RelayCommand MoveAssetCommand { get; }
     public RelayCommand DeletePortfolioCommand { get; }
 
-    /// <summary>
-    /// Moves the selected asset into another portfolio of the same broker, then rebuilds the tree
-    /// and reselects the asset so the user can see where it landed.
-    /// </summary>
     public async Task MoveSelectedAssetAsync()
     {
         if (!CanMoveSelectedAsset())
@@ -217,9 +210,6 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         };
     }
 
-    /// <summary>
-    /// Highlights the node a drag is over, and only that one.
-    /// </summary>
     public void HighlightDropTarget(TreeNodeViewModel? target)
     {
         if (ReferenceEquals(_highlightedDropTarget, target))
@@ -428,9 +418,6 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         asset.IsSelected = true;
     }
 
-    /// <summary>
-    /// Loads the navigation tree from the service
-    /// </summary>
     public async Task LoadNavigationTreeAsync()
     {
         IsLoading = true;
@@ -603,7 +590,6 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     {
         var assetName = assetNode.GetMetadata<string>("AssetName");
 
-        // Find broker and portfolio by traversing up the tree
         var portfolioNode = assetNode.Parent;
         var brokerNode = portfolioNode?.Parent;
 

@@ -2,9 +2,6 @@ using System.Text;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.CreditCards;
 
-/// <summary>
-/// Outcome of one migration run: how many credit cards were seeded vs. already present.
-/// </summary>
 public sealed class CreditCardMigrationSummary
 {
     public int CardsSeededCount { get; private set; }

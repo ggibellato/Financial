@@ -154,8 +154,6 @@ export interface MonthlyData {
   listActionWarning: string | null
 }
 
-/** Fetches a month's cash-flow data and owns list-level mutations (delete, mark paid/unpaid).
- * Create/edit form state lives in {@link useExpenseForm} and {@link useIncomeForm}. */
 export function useMonthly(): MonthlyData {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, undefined, buildInitialState)

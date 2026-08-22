@@ -3,10 +3,6 @@ using Financial.CashFlow.Domain.Entities;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Banks;
 
-/// <summary>
-/// Outcome of one migration run: how many banks were seeded and how every expense's
-/// existing bank tag audited against them, plus anything that needs manual review.
-/// </summary>
 public sealed class BankMigrationSummary
 {
     private readonly List<Expense> _unresolvedExpenses = new();

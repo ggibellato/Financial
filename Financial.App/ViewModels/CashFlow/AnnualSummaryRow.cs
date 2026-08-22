@@ -1,11 +1,5 @@
 namespace Financial.Presentation.App.ViewModels.CashFlow;
 
-/// <summary>
-/// A single row of the Annual Summary page's Category Totals sub-tab. Used for both the fixed
-/// income rows (Salary, Salary after taxes, Tax difference, Dividendo/Juros), the dynamic
-/// per-category rows, spacer rows, and the emphasized Resultado/Total despesas rows — one flat
-/// row shape mirrors AnnualSummaryPage.tsx's own flat JSX row sequence.
-/// </summary>
 public sealed class AnnualSummaryRow
 {
     public required string Label { get; init; }

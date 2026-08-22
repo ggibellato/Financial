@@ -4,9 +4,6 @@ using System.Windows.Data;
 
 namespace Financial.Presentation.App.Converters;
 
-/// <summary>
-/// Converts boolean to Visibility (true = Visible, false = Collapsed)
-/// </summary>
 public class BoolToVisibilityConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)

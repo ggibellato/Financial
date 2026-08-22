@@ -2,10 +2,6 @@ using Financial.Shared.Abstractions;
 
 namespace Financial.Shared.Infrastructure.Persistence;
 
-/// <summary>
-/// Shared "resolve credentials path, build a remote client, wrap it as JSON storage" flow used by
-/// every bounded context's repository factory when configured for the GoogleDriveJson provider.
-/// </summary>
 public static class GoogleDriveStorageFactory
 {
     public static IJsonStorage Create(

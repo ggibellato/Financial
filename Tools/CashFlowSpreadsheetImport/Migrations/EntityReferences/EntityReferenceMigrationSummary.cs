@@ -2,12 +2,6 @@ using System.Text;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.EntityReferences;
 
-/// <summary>
-/// Outcome of one migration run: whether the file already carried the current Id-based shape
-/// (no-op), how many Banks got a fresh Id, how many of each referencing entity resolved and were
-/// rewritten, and any legacy record whose name didn't resolve against the seeded collections and
-/// needs manual review.
-/// </summary>
 public sealed class EntityReferenceMigrationSummary
 {
     private readonly List<(Guid Id, string Details)> _unresolvedIncomes = new();

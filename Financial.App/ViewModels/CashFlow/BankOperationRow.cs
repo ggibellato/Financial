@@ -8,12 +8,6 @@ public enum BankOperationKind
     Adjustment,
 }
 
-/// <summary>
-/// One row of the Bank tab's flat, cross-bank operations list: a single Transfer or Balance
-/// Adjustment, carrying both its display fields and the fields needed to filter it by bank.
-/// Replaces the per-bank <c>BankHistoryEntry</c> now that operations are shown in one combined
-/// list rather than expanded per bank row.
-/// </summary>
 public sealed class BankOperationRow
 {
     public required BankOperationKind Kind { get; init; }
@@ -28,10 +22,8 @@ public sealed class BankOperationRow
     public TransferDTO? Transfer { get; init; }
     public BalanceAdjustmentDTO? Adjustment { get; init; }
 
-    /// <summary>Single Amount/Delta grid column value: the transfer amount, or the adjustment's signed delta.</summary>
     public decimal DisplayAmount => Kind == BankOperationKind.Transfer ? Amount ?? 0m : Delta ?? 0m;
 
-    /// <summary>True when the selected bank filter matches this row: source-or-destination for a transfer, exact bank for an adjustment.</summary>
     public bool MatchesBank(string bankName) => Kind == BankOperationKind.Transfer
         ? SourceBank == bankName || DestinationBank == bankName
         : Bank == bankName;

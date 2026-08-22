@@ -7,13 +7,6 @@ using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;
 
-/// <summary>
-/// ViewModel for the Reserva tab: bucket balances, movement history (with split-group
-/// subtotals), Income Split, Withdrawal (with overdraft confirmation), and movement
-/// edit/delete. Mirrors Financial.Web's useReserva.ts hook. Standalone from
-/// <see cref="MonthlyViewModel"/> — Reserva is its own top-level destination with no shared
-/// state with Monthly.
-/// </summary>
 public class ReservaViewModel : ViewModelBase
 {
     private const decimal SplitPercentageTolerance = 0.01m;
@@ -83,7 +76,6 @@ public class ReservaViewModel : ViewModelBase
         }
     }
 
-    /// <summary>First active bucket's id, falling back to the first bucket overall, or null when none loaded.</summary>
     private Guid? DefaultBucketId() =>
         (ActiveBuckets.FirstOrDefault() ?? Buckets.FirstOrDefault())?.Id;
 
@@ -268,7 +260,6 @@ public class ReservaViewModel : ViewModelBase
 
     public bool HasSplitResult => LastSplitResult != null;
 
-    /// <summary>True while the panel is open and showing the entry fields (not the post-save result).</summary>
     public bool ShowSplitFormFields => IsSplitFormOpen && LastSplitResult == null;
 
     public RelayCommand ShowSplitFormCommand { get; private set; } = null!;

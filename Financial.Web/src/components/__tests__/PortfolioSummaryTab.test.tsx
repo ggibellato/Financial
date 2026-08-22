@@ -532,8 +532,6 @@ describe('PortfolioSummaryTab', () => {
     expect(screen.getByText('F01 fetch failed')).toBeInTheDocument()
   })
 
-  // ── P03-F02: Credits Analysis Columns ─────────────────────────────────────
-
   it('renders_grouped_credits_analysis_column_headers_after_xirr', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
@@ -639,8 +637,6 @@ describe('PortfolioSummaryTab', () => {
     const header = screen.getByText('Last Month')
     expect(header).toHaveClass('portfolio-summary__credits-separator')
   })
-
-  // ── P03-F02: Footer Panel ──────────────────────────────────────────────────
 
   it('renders_footer_with_total_invested_sum', () => {
     const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, totalInvested: 1000 }

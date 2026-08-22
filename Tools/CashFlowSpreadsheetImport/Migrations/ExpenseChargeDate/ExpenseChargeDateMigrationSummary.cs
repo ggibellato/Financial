@@ -3,11 +3,6 @@ using Financial.CashFlow.Domain.Entities;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.ExpenseChargeDate;
 
-/// <summary>
-/// Outcome of one migration run: how many expenses were migrated in each shape, plus the
-/// already-settled expenses that couldn't be migrated (no matching statement, or no recoverable
-/// legacy SettledAt) and need manual review.
-/// </summary>
 public sealed class ExpenseChargeDateMigrationSummary
 {
     private readonly List<Expense> _missingStatementExpenses = new();

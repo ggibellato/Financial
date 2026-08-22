@@ -65,8 +65,6 @@ public sealed class AssetsController : ControllerBase
             return BadRequest();
         }
 
-        // Rejections travel as exceptions so the reason survives to the caller;
-        // DomainExceptionMappingMiddleware turns each into its status code.
         return Ok(await _assetMoveService.MoveAssetAsync(request));
     }
 

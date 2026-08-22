@@ -1,8 +1,5 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-/// <summary>
-/// Read model for a recurring bill.
-/// </summary>
 public sealed class RecurringBillDTO
 {
     public required Guid Id { get; init; }

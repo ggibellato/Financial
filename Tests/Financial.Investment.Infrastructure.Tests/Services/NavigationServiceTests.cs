@@ -35,10 +35,8 @@ public class NavigationServiceTests
     [Fact]
     public void Constructor_WithNullRepository_ThrowsArgumentNullException()
     {
-        // Act
         Action act = () => new NavigationService(null!, new RecordingTelemetryTracer(), NullLogger<NavigationService>.Instance);
 
-        // Assert
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("repository");
     }
@@ -46,10 +44,8 @@ public class NavigationServiceTests
     [Fact]
     public void Constructor_WithNullTracer_ThrowsArgumentNullException()
     {
-        // Act
         Action act = () => new NavigationService(_repository, null!, NullLogger<NavigationService>.Instance);
 
-        // Assert
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("tracer");
     }
@@ -57,10 +53,8 @@ public class NavigationServiceTests
     [Fact]
     public void GetNavigationTree_ShouldReturnRootNode()
     {
-        // Act
         var result = _sut.GetNavigationTree();
 
-        // Assert
         result.Should().NotBeNull();
         result.NodeType.Should().Be(TreeNodeType.Investments);
         result.DisplayName.Should().Be("All Investments");
@@ -70,10 +64,8 @@ public class NavigationServiceTests
     [Fact]
     public void GetNavigationTree_ShouldContainBrokerNodes()
     {
-        // Act
         var result = _sut.GetNavigationTree();
 
-        // Assert
         result.Children.Should().AllSatisfy(node =>
         {
             node.NodeType.Should().Be(TreeNodeType.Broker);
@@ -85,11 +77,9 @@ public class NavigationServiceTests
     [Fact]
     public void GetNavigationTree_BrokersShouldContainPortfolios()
     {
-        // Act
         var result = _sut.GetNavigationTree();
         var brokerNode = result.Children.First();
 
-        // Assert
         brokerNode.Children.Should().NotBeEmpty();
         brokerNode.Children.Should().AllSatisfy(node =>
         {
@@ -101,12 +91,10 @@ public class NavigationServiceTests
     [Fact]
     public void GetNavigationTree_PortfoliosShouldContainAssets()
     {
-        // Act
         var result = _sut.GetNavigationTree();
         var brokerNode = result.Children.First();
         var portfolioNode = brokerNode.Children.First();
 
-        // Assert
         portfolioNode.Children.Should().NotBeEmpty();
         portfolioNode.Children.Should().AllSatisfy(node =>
         {
@@ -119,10 +107,8 @@ public class NavigationServiceTests
     [Fact]
     public void GetBrokers_ShouldReturnBrokerList()
     {
-        // Act
         var result = _sut.GetBrokers().ToList();
 
-        // Assert
         result.Should().NotBeEmpty();
         result.Should().AllSatisfy(broker =>
         {
@@ -135,11 +121,9 @@ public class NavigationServiceTests
     [Fact]
     public void GetBrokers_BrokersShouldHavePortfolios()
     {
-        // Act
         var result = _sut.GetBrokers().ToList();
         var broker = result.First();
 
-        // Assert
         broker.Portfolios.Should().NotBeEmpty();
         broker.PortfolioCount.Should().Be(broker.Portfolios.Count);
     }
@@ -147,12 +131,10 @@ public class NavigationServiceTests
     [Fact]
     public void GetBrokers_PortfoliosShouldHaveAssets()
     {
-        // Act
         var result = _sut.GetBrokers().ToList();
         var broker = result.First();
         var portfolio = broker.Portfolios.First();
 
-        // Assert
         portfolio.Assets.Should().NotBeEmpty();
         portfolio.AssetCount.Should().Be(portfolio.Assets.Count);
     }
@@ -166,36 +148,28 @@ public class NavigationServiceTests
     [InlineData("XPI", "Default", "")]
     public void GetAssetDetails_WithInvalidParameters_ReturnsNull(string? broker, string? portfolio, string? asset)
     {
-        // Act
         var result = _sut.GetAssetDetails(broker!, portfolio!, asset!);
 
-        // Assert
         result.Should().BeNull();
     }
 
     [Fact]
     public void GetAssetDetails_WithNonExistentAsset_ReturnsNull()
     {
-        // Act
         var result = _sut.GetAssetDetails("XPI", "Default", "NONEXISTENT");
 
-        // Assert
         result.Should().BeNull();
     }
 
     [Fact]
     public void GetAssetDetails_WithValidParameters_ReturnsAssetDetails()
     {
-        // Arrange
-        // Using actual data from the JSON - XPI broker has BCIA11 in Default portfolio
         const string brokerName = "XPI";
         const string portfolioName = "Default";
         const string assetName = "BCIA11";
 
-        // Act
         var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
 
-        // Assert
         result.Should().NotBeNull();
         result!.Name.Should().Be(assetName);
         result.BrokerName.Should().Be(brokerName);
@@ -206,15 +180,12 @@ public class NavigationServiceTests
     [Fact]
     public void GetAssetDetails_ShouldIncludeTransactions()
     {
-        // Arrange
         const string brokerName = "XPI";
         const string portfolioName = "Default";
         const string assetName = "BCIA11";
 
-        // Act
         var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
 
-        // Assert
         result.Should().NotBeNull();
         result!.Transactions.Should().NotBeEmpty();
         result.Transactions.Should().AllSatisfy(t =>
@@ -227,15 +198,12 @@ public class NavigationServiceTests
     [Fact]
     public void GetAssetDetails_ShouldIncludeCredits()
     {
-        // Arrange
         const string brokerName = "XPI";
         const string portfolioName = "Default";
         const string assetName = "BCIA11";
 
-        // Act
         var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
 
-        // Assert
         result.Should().NotBeNull();
         result!.Credits.Should().NotBeEmpty();
         result.Credits.Should().AllSatisfy(credit =>
@@ -248,15 +216,12 @@ public class NavigationServiceTests
     [Fact]
     public void GetAssetDetails_ShouldIncludeCashFlowsWithCredits()
     {
-        // Arrange
         const string brokerName = "XPI";
         const string portfolioName = "Default";
         const string assetName = "BCIA11";
 
-        // Act
         var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
 
-        // Assert
         result.Should().NotBeNull();
         result!.CashFlowsWithCredits.Should().HaveCount(result.Transactions.Count + result.Credits.Count);
     }
@@ -264,15 +229,12 @@ public class NavigationServiceTests
     [Fact]
     public void GetAssetDetails_ShouldIncludeCashFlowsWithoutCredits_ExcludingCredits()
     {
-        // Arrange
         const string brokerName = "XPI";
         const string portfolioName = "Default";
         const string assetName = "BCIA11";
 
-        // Act
         var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
 
-        // Assert
         result.Should().NotBeNull();
         result!.CashFlowsWithoutCredits.Should().HaveCount(result.Transactions.Count);
     }
@@ -280,17 +242,14 @@ public class NavigationServiceTests
     [Fact]
     public void GetAssetDetails_ShouldIncludePriceHistory()
     {
-        // Arrange
         const string brokerName = "XPI";
         const string portfolioName = "Default";
         const string assetName = "BCIA11";
         var date = new DateOnly(2026, 8, 15);
         _repository.GetAsset(brokerName, portfolioName, assetName)!.SetPrice(date, 123.45m, isManual: true);
 
-        // Act
         var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
 
-        // Assert
         result.Should().NotBeNull();
         result!.PriceHistory.Should().ContainSingle(p => p.Date == date && p.Price == 123.45m && p.IsManual);
     }
@@ -298,15 +257,12 @@ public class NavigationServiceTests
     [Fact]
     public void GetAssetDetails_WithNoPriceHistory_ReturnsEmptyList()
     {
-        // Arrange
         const string brokerName = "XPI";
         const string portfolioName = "Default";
         const string assetName = "BCIA11";
 
-        // Act
         var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
 
-        // Assert
         result.Should().NotBeNull();
         result!.PriceHistory.Should().BeEmpty();
     }
@@ -314,19 +270,15 @@ public class NavigationServiceTests
     [Fact]
     public void GetAssetDetails_ShouldCalculateTotalsCorrectly()
     {
-        // Arrange
         const string brokerName = "XPI";
         const string portfolioName = "Default";
         const string assetName = "BCIA11";
 
-        // Act
         var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
 
-        // Assert
         result.Should().NotBeNull();
         result!.TotalBought.Should().BeGreaterThan(0);
         result.TotalCredits.Should().BeGreaterThan(0);
-        // Verify totals match sum of individual items
         var expectedTotalCredits = result.Credits.Sum(c => c.Value);
         result.TotalCredits.Should().Be(expectedTotalCredits);
     }
@@ -334,15 +286,12 @@ public class NavigationServiceTests
     [Fact]
     public void GetAssetDetails_TransactionsShouldBeOrderedByDateDescending()
     {
-        // Arrange
         const string brokerName = "XPI";
         const string portfolioName = "Default";
         const string assetName = "BCIA11";
 
-        // Act
         var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
 
-        // Assert
         result.Should().NotBeNull();
         if (result!.Transactions.Count > 1)
         {
@@ -356,15 +305,12 @@ public class NavigationServiceTests
     [Fact]
     public void GetAssetDetails_CreditsShouldBeOrderedByDateDescending()
     {
-        // Arrange
         const string brokerName = "XPI";
         const string portfolioName = "Default";
         const string assetName = "BCIA11";
 
-        // Act
         var result = _sut.GetAssetDetails(brokerName, portfolioName, assetName);
 
-        // Assert
         result.Should().NotBeNull();
         if (result!.Credits.Count > 1)
         {
@@ -380,10 +326,8 @@ public class NavigationServiceTests
     [InlineData("")]
     public void GetCreditsByBroker_WithInvalidParameters_ReturnsEmpty(string? brokerName)
     {
-        // Act
         var result = _creditSut.GetCreditsByBroker(brokerName!);
 
-        // Assert
         result.Should().BeEmpty();
     }
 
@@ -394,23 +338,18 @@ public class NavigationServiceTests
     [InlineData("XPI", "")]
     public void GetCreditsByPortfolio_WithInvalidParameters_ReturnsEmpty(string? brokerName, string? portfolioName)
     {
-        // Act
         var result = _creditSut.GetCreditsByPortfolio(brokerName!, portfolioName!);
 
-        // Assert
         result.Should().BeEmpty();
     }
 
     [Fact]
     public void GetCreditsByBroker_ShouldReturnCredits()
     {
-        // Arrange
         const string brokerName = "XPI";
 
-        // Act
         var result = _creditSut.GetCreditsByBroker(brokerName);
 
-        // Assert
         result.Should().NotBeEmpty();
         result.Should().HaveCount(2);
         result.Should().AllSatisfy(credit =>
@@ -423,14 +362,11 @@ public class NavigationServiceTests
     [Fact]
     public void GetCreditsByPortfolio_ShouldReturnCredits()
     {
-        // Arrange
         const string brokerName = "XPI";
         const string portfolioName = "Default";
 
-        // Act
         var result = _creditSut.GetCreditsByPortfolio(brokerName, portfolioName);
 
-        // Assert
         result.Should().NotBeEmpty();
         result.Should().HaveCount(2);
         result.Should().AllSatisfy(credit =>
@@ -443,13 +379,10 @@ public class NavigationServiceTests
     [Fact]
     public void GetCreditsByBroker_CreditsShouldBeOrderedByDateDescending()
     {
-        // Arrange
         const string brokerName = "XPI";
 
-        // Act
         var result = _creditSut.GetCreditsByBroker(brokerName);
 
-        // Assert
         if (result.Count > 1)
         {
             for (int i = 0; i < result.Count - 1; i++)

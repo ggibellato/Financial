@@ -4,9 +4,6 @@ using System.Windows.Data;
 
 namespace Financial.Presentation.App.Converters;
 
-/// <summary>
-/// Converts the sidebar's IsCollapsed flag into its column width: 56px collapsed, 240px expanded.
-/// </summary>
 public class BoolToSidebarWidthConverter : IValueConverter
 {
     private const double CollapsedWidth = 56;

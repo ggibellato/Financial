@@ -3,9 +3,6 @@ using System.Windows.Data;
 
 namespace Financial.Presentation.App.Converters;
 
-/// <summary>
-/// Converts DateOnly? to DateTime? for binding a DatePicker directly to a DateOnly? field.
-/// </summary>
 public class DateOnlyToDateTimeConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>

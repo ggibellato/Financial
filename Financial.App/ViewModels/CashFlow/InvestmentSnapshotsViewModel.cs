@@ -5,12 +5,6 @@ using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;
 
-/// <summary>
-/// ViewModel for the Investment Snapshots tab: a month-filtered snapshot grid (functional
-/// Year/Month picker, unlike F05's Mensais picker), a client-computed net-of-liabilities
-/// total, and an inline Edit Value form. Mirrors Financial.Web's useInvestmentSnapshots.ts
-/// hook. Standalone from the other CashFlow ViewModels.
-/// </summary>
 public class InvestmentSnapshotsViewModel : ViewModelBase
 {
     private readonly IInvestmentSnapshotService _investmentSnapshotService;

@@ -23,14 +23,12 @@ const ASSET_CLASS_OPTIONS: { value: number; label: string }[] = [
 
 const ALL_CLASSES = 'all'
 
-/** What is being dragged, and where it came from. */
 export interface DraggedAsset {
   brokerName: string
   portfolioName: string
   assetName: string
 }
 
-/** A drop lands on a portfolio (move straight there) or on a broker (name a new portfolio). */
 export interface AssetDrop extends DraggedAsset {
   destinationPortfolioName?: string
 }

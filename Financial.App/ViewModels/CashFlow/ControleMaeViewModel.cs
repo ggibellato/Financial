@@ -7,11 +7,6 @@ using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 namespace Financial.Presentation.App.ViewModels.CashFlow;
 
 /// <summary>
-/// ViewModel for the Controle Mãe tab: a BRL/GBP ledger filtered by a "From" date, an
-/// all-time totals row, Create Entry (single-currency input, backend FX conversion), Edit
-/// Entry (direct BRL/GBP override), and delete. Mirrors Financial.Web's useControleMae.ts
-/// hook. Standalone from the other CashFlow ViewModels — its own top-level destination.
-///
 /// Totals are all-time (IControleMaeService.GetTotals() has no date parameter) and are
 /// fetched independently of FromDate — confirmed with the user to match the web reference's
 /// actual behavior (its totals useEffect has no fromDate dependency, and the totals row is

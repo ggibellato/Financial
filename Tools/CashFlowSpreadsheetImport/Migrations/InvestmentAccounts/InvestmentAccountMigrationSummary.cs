@@ -3,11 +3,6 @@ using Financial.CashFlow.Domain.Entities;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
 
-/// <summary>
-/// Outcome of one migration run: how many investment accounts were seeded and how every
-/// existing snapshot's account reference audited against them, plus anything that needs
-/// manual review.
-/// </summary>
 public sealed class InvestmentAccountMigrationSummary
 {
     private readonly List<InvestmentSnapshot> _unresolvedSnapshots = new();

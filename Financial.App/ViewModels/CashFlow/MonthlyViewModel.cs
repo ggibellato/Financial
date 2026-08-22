@@ -6,12 +6,6 @@ using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;
 
-/// <summary>
-/// ViewModel for the Monthly tab: owns the selected period and the data/forms for its
-/// Summary (category totals, tithe), Expense, and Incoming sub-tabs. Mirrors Financial.Web's
-/// useMonthly.ts hook. F03 extends this same class with Banks/Cards/Transfer/Adjustment
-/// state rather than introducing a second Monthly ViewModel.
-/// </summary>
 public class MonthlyViewModel : ViewModelBase
 {
     private readonly IExpenseService _expenseService;
@@ -96,11 +90,8 @@ public class MonthlyViewModel : ViewModelBase
     public ObservableCollection<CreditCardDTO> CreditCards { get; } = [];
     public ObservableCollection<CategoryDTO> Categories { get; } = [];
 
-    /// <summary>Active-only credit cards for the expense-entry picker, mirroring Financial.Web's <c>activeCreditCards</c>.</summary>
     public IEnumerable<CreditCardDTO> ActiveCreditCards => CreditCards.Where(c => c.IsActive);
 
-    /// <summary>One row per credit card merged with its current month's statement (if any), for
-    /// the Credit Card tab's single grid - mirrors Financial.Web's <c>CardsGrid</c> merge.</summary>
     public IEnumerable<CreditCardManagementRow> CreditCardManagementRows =>
         CreditCards.Select(c => new CreditCardManagementRow
         {
@@ -108,7 +99,6 @@ public class MonthlyViewModel : ViewModelBase
             Statement = CardStatements.FirstOrDefault(s => s.CreditCardId == c.Id),
         });
 
-    /// <summary>Active-only categories for the expense-entry picker, mirroring Financial.Web's <c>activeCategories</c>.</summary>
     public IEnumerable<CategoryDTO> ActiveCategories => Categories.Where(c => c.Active);
 
     public decimal BankTotalsSum => BankTotals.Sum(b => b.Balance);
@@ -308,7 +298,6 @@ public class MonthlyViewModel : ViewModelBase
             .ToList();
     }
 
-    /// <summary>Combines every bank's transfers and adjustments for the month into one flat, newest-first list, mirroring the Bank tab's useMonthly.ts equivalent.</summary>
     private static List<BankOperationRow> BuildBankOperations(
         IReadOnlyList<TransferDTO> transfers,
         IReadOnlyList<IReadOnlyList<BalanceAdjustmentDTO>> adjustmentsByBank,
@@ -336,8 +325,6 @@ public class MonthlyViewModel : ViewModelBase
         new[] { new IncomeBankOptionViewModel(null, NoBankOptionLabel) }
             .Concat(banks.Select(b => new IncomeBankOptionViewModel(b.Id, b.Name)))
             .ToList();
-
-    // ----- Expense CRUD -----
 
     private const string SettledStatus = "CreditCardSettled";
 
@@ -451,7 +438,6 @@ public class MonthlyViewModel : ViewModelBase
         set => SetProperty(ref _expenseFormCreditCardId, value);
     }
 
-    /// <summary>Read-only display name for the settled-expense note; the dropdown itself binds by Id (<see cref="ExpenseFormCreditCardId"/>).</summary>
     public string ExpenseFormCreditCardName
     {
         get => _expenseFormCreditCardName;
@@ -717,15 +703,12 @@ public class MonthlyViewModel : ViewModelBase
         }
     }
 
-    // ----- Income CRUD -----
-
     private static readonly HashSet<string> IncomeSourcesWithGrossValue = ["Gleison", "Ariana"];
 
     /// <summary>Matches the picklist's historical display order. A source name outside this list
     /// (unexpected but not invalid) sorts last rather than being dropped or erroring.</summary>
     private static readonly string[] IncomeSourceDisplayOrder = ["Gleison", "Ariana", "Lottery", "DividendoJuros"];
 
-    /// <summary>Active income sources from <see cref="IncomeSources"/>, ordered to match the picklist's historical display order.</summary>
     public IReadOnlyList<IncomeSourceDTO> IncomeSourceOptions =>
         IncomeSources
             .Where(s => s.IsActive)
@@ -954,8 +937,6 @@ public class MonthlyViewModel : ViewModelBase
         }
     }
 
-    // ----- Bank tab: flat operations list & filter -----
-
     public const string AllBanksFilter = "All Banks";
 
     private string? _bankOperationsError;
@@ -1003,7 +984,6 @@ public class MonthlyViewModel : ViewModelBase
         DeleteBankOperationCommand = new RelayCommand<BankOperationRow>(async row => await DeleteBankOperationAsync(row));
     }
 
-    /// <summary>Recomputes <see cref="FilteredBankOperations"/> from the already-fetched <see cref="BankOperations"/> — no network request.</summary>
     private void ApplyBankFilter()
     {
         var matching = SelectedBankFilter == AllBanksFilter
@@ -1050,8 +1030,6 @@ public class MonthlyViewModel : ViewModelBase
             BankOperationsError = ex.Message;
         }
     }
-
-    // ----- Transfer form -----
 
     private bool _isTransferFormOpen;
     private Guid? _editingTransferId;
@@ -1223,8 +1201,6 @@ public class MonthlyViewModel : ViewModelBase
         },
         SaveTransferCommand.RaiseCanExecuteChanged);
 
-    // ----- Balance Adjustment form -----
-
     private bool _isAdjustmentFormOpen;
     private Guid? _editingAdjustmentBank;
     private Guid? _editingAdjustmentId;
@@ -1245,11 +1221,6 @@ public class MonthlyViewModel : ViewModelBase
 
     public bool IsEditingAdjustment => _editingAdjustmentId != null;
 
-    /// <summary>
-    /// The bank picked in the Correct Balance form. Setting it looks up that bank's already-loaded
-    /// <see cref="BankTotals"/> balance (D3) — the same figure the Summary grid shows — and reveals
-    /// the rest of the form via <see cref="IsAdjustmentBankSelected"/>.
-    /// </summary>
     public Guid? AdjustmentFormBankName
     {
         get => _adjustmentFormBankName;
@@ -1265,10 +1236,8 @@ public class MonthlyViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Display-only bank name for the selected <see cref="AdjustmentFormBankName"/> Id, used anywhere the UI shows the bank as text (e.g. the current-balance caption) rather than binding the raw Guid.</summary>
     public string AdjustmentFormBankDisplayName => Banks.FirstOrDefault(b => b.Id == AdjustmentFormBankName)?.Name ?? string.Empty;
 
-    /// <summary>Gates the rest of the Correct Balance form and its Save action until a bank has been picked.</summary>
     public bool IsAdjustmentBankSelected => AdjustmentFormBankName is not null;
 
     public decimal AdjustmentFormCurrentBalance
@@ -1307,7 +1276,6 @@ public class MonthlyViewModel : ViewModelBase
         private set => SetProperty(ref _adjustmentSaveError, value);
     }
 
-    /// <summary>Set after a successful save; the form shows this delta instead of the fields until dismissed.</summary>
     public decimal? AdjustmentSavedDelta
     {
         get => _adjustmentSavedDelta;
@@ -1340,7 +1308,6 @@ public class MonthlyViewModel : ViewModelBase
         DismissAdjustmentResultCommand = new RelayCommand(() => AdjustmentSavedDelta = null);
     }
 
-    /// <summary>Generic entry point (D-per-spec Section 3/PRD F02): opens with no bank pre-selected.</summary>
     private void ShowCreateAdjustmentForm()
     {
         _editingAdjustmentBank = null;
@@ -1414,8 +1381,6 @@ public class MonthlyViewModel : ViewModelBase
         },
         SaveAdjustmentCommand.RaiseCanExecuteChanged);
 
-    // ----- Cards grid -----
-
     private string? _cardStatementError;
 
     public string? CardStatementError
@@ -1437,7 +1402,6 @@ public class MonthlyViewModel : ViewModelBase
         private set => SetProperty(ref _cardStatementWarning, value);
     }
 
-    /// <summary>Pending "pay from" bank selection per unpaid card statement, keyed by statement id, mirroring useMonthly.ts's markPaidSources.</summary>
     public Dictionary<Guid, Guid> MarkPaidSources { get; } = [];
 
     public RelayCommand<CardStatementDTO> MarkStatementPaidCommand { get; private set; } = null!;
@@ -1502,8 +1466,6 @@ public class MonthlyViewModel : ViewModelBase
         }
     }
 
-    // ----- Credit cards -----
-
     private string? _creditCardUpdateError;
     private Guid? _updatingCreditCardId;
 
@@ -1513,14 +1475,12 @@ public class MonthlyViewModel : ViewModelBase
         private set => SetProperty(ref _creditCardUpdateError, value);
     }
 
-    /// <summary>Id of the card currently being saved, if any, so its grid row can disable its controls while in flight.</summary>
     public Guid? UpdatingCreditCardId
     {
         get => _updatingCreditCardId;
         private set => SetProperty(ref _updatingCreditCardId, value);
     }
 
-    /// <summary>Saves a card's due date and active flag (full replace, mirroring <see cref="ICreditCardService.UpdateCreditCardAsync"/>'s contract), then re-fetches so the expense picker and this grid stay in sync.</summary>
     internal async Task UpdateCreditCardAsync(CreditCardDTO? card, DateOnly? nextInvoiceDueDate, bool isActive)
     {
         if (card is null)

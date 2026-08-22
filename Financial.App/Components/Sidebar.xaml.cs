@@ -8,9 +8,6 @@ using Financial.Presentation.App.ViewModels;
 
 namespace Financial.Presentation.App.Components
 {
-    /// <summary>
-    /// Interaction logic for Sidebar.xaml
-    /// </summary>
     public partial class Sidebar : UserControl
     {
         private const int CloseDelayMilliseconds = 250;

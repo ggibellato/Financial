@@ -9,7 +9,6 @@ export const INCOME_SOURCES_WITH_GROSS_VALUE = ['Gleison', 'Ariana']
  * list (unexpected but not invalid) sort last rather than being dropped or erroring. */
 const INCOME_SOURCE_DISPLAY_ORDER = ['Gleison', 'Ariana', 'Lottery', 'DividendoJuros']
 
-/** Active income sources, ordered to match the picklist's historical display order. */
 export function selectActiveIncomeSources(sources: IncomeSourceDto[]): IncomeSourceDto[] {
   return sources
     .filter((s) => s.isActive)
@@ -23,7 +22,6 @@ export function selectActiveIncomeSources(sources: IncomeSourceDto[]): IncomeSou
     })
 }
 
-/** Resolves an income source Id back to its name for the gross-value-eligibility check. */
 function resolveIncomeSourceName(sources: IncomeSourceDto[], incomeSourceId: string): string {
   return sources.find((s) => s.id === incomeSourceId)?.name ?? ''
 }
@@ -184,7 +182,6 @@ export interface UseIncomeFormResult {
   saveEditIncome: () => void
 }
 
-/** Owns an income entry's create/edit form state and orchestrates the create/update endpoints. */
 export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => void): UseIncomeFormResult {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)

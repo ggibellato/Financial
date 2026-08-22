@@ -1,8 +1,5 @@
 namespace Financial.CashFlow.Application.DTOs;
 
-/// <summary>
-/// Read model for a monthly investment account snapshot, joined with its account's liability classification.
-/// </summary>
 public sealed class InvestmentSnapshotDTO
 {
     public required Guid Id { get; init; }

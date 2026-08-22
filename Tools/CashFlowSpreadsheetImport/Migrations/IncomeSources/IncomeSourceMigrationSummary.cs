@@ -3,10 +3,6 @@ using Financial.CashFlow.Domain.Entities;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.IncomeSources;
 
-/// <summary>
-/// Outcome of one migration run: how many income sources were seeded and how every existing
-/// income's source name audited against them, plus anything that needs manual review.
-/// </summary>
 public sealed class IncomeSourceMigrationSummary
 {
     private readonly List<Income> _unresolvedIncomes = new();
