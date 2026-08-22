@@ -3,9 +3,10 @@ using Financial.Investment.Domain.Entities;
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
+using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Persistence;
-using Financial.Shared.Infrastructure.Persistence;
 using Financial.Shared.Abstractions.Sync;
+using Financial.Shared.Infrastructure.Persistence;
 using Financial.TestUtilities;
 using FluentAssertions;
 using System.IO;
@@ -19,17 +20,25 @@ public class InvestmentRepositoryFactoryTests
 
     public InvestmentRepositoryFactoryTests()
     {
-        _stubbedFactory = new InvestmentRepositoryFactory(new InvestmentsSerializerAdapter(), new StubRemoteFileClientFactory());
+        _stubbedFactory = new InvestmentRepositoryFactory(
+            new InvestmentsSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(), NoOpTelemetryTracer.Instance));
     }
 
     private static readonly InvestmentRepositoryFactory Factory =
-        new(new InvestmentsSerializerAdapter(), new GoogleFileClientFactory());
+        new(new InvestmentsSerializerAdapter(), new JsonStorageFactory(new GoogleFileClientFactory(), NoOpTelemetryTracer.Instance));
 
     [Fact]
     public void Constructor_WithNullSerializer_Throws()
     {
-        Action act = () => new InvestmentRepositoryFactory(null!);
+        Action act = () => new InvestmentRepositoryFactory(null!, new JsonStorageFactory(null, NoOpTelemetryTracer.Instance));
         act.Should().Throw<ArgumentNullException>().WithParameterName("serializer");
+    }
+
+    [Fact]
+    public void Constructor_WithNullStorageFactory_Throws()
+    {
+        Action act = () => new InvestmentRepositoryFactory(new InvestmentsSerializerAdapter(), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("storageFactory");
     }
 
     [Fact]
@@ -119,7 +128,8 @@ public class InvestmentRepositoryFactoryTests
     [Fact]
     public void Create_WithGoogleDriveProvider_NoRemoteFileClientFactoryRegistered_ThrowsInvalidOperationException()
     {
-        var factoryWithoutRemoteFileClient = new InvestmentRepositoryFactory(new InvestmentsSerializerAdapter());
+        var factoryWithoutRemoteFileClient = new InvestmentRepositoryFactory(
+            new InvestmentsSerializerAdapter(), new JsonStorageFactory(null, NoOpTelemetryTracer.Instance));
         var options = new InvestmentRepositorySelectionOptions(
             InvestmentRepositoryProvider.GoogleDriveJson,
             null,
@@ -188,7 +198,8 @@ public class InvestmentRepositoryFactoryTests
     public async Task Create_WithGoogleDriveProvider_MutationEventuallyUploadsQueuedChangeViaDebouncedStorage()
     {
         var remoteFileClient = new RecordingRemoteFileClient();
-        var factory = new InvestmentRepositoryFactory(new InvestmentsSerializerAdapter(), new RecordingRemoteFileClientFactory(remoteFileClient));
+        var factory = new InvestmentRepositoryFactory(
+            new InvestmentsSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), NoOpTelemetryTracer.Instance));
         var options = new InvestmentRepositorySelectionOptions(
             InvestmentRepositoryProvider.GoogleDriveJson,
             null,
@@ -240,7 +251,7 @@ public class InvestmentRepositoryFactoryTests
         var remoteFileClient = new RecordingRemoteFileClient();
         var tracer = new RecordingTelemetryTracer();
         var factory = new InvestmentRepositoryFactory(
-            new InvestmentsSerializerAdapter(), new RecordingRemoteFileClientFactory(remoteFileClient), tracer);
+            new InvestmentsSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), tracer));
         var options = new InvestmentRepositorySelectionOptions(
             InvestmentRepositoryProvider.GoogleDriveJson,
             null,

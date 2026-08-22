@@ -6,6 +6,7 @@ using Financial.CashFlow.Infrastructure.DependencyInjection;
 using Financial.Integrations.Observability;
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DependencyInjection;
+using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Shared.Abstractions.Persistence;
@@ -105,6 +106,7 @@ builder.Services.AddFinancialInfrastructure(configuration);
 builder.Services.AddFinancialCashFlowApplication();
 builder.Services.AddFinancialCashFlowInfrastructure(configuration);
 builder.Services.AddHostedService<ShutdownFlushHostedService<ICashFlowRepository>>();
+builder.Services.AddHostedService<ShutdownFlushHostedService<IInvestmentRepository>>();
 
 var app = builder.Build();
 

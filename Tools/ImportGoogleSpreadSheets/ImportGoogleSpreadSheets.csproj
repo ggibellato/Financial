@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Integrations\GoogleFinancialSupport\GoogleFinancialSupport.csproj" />
     <ProjectReference Include="..\..\Financial.Investment.Infrastructure\Financial.Investment.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Financial.Shared.Infrastructure\Financial.Shared.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
