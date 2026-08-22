@@ -1,4 +1,4 @@
-namespace Financial.Shared.Infrastructure.Configuration;
+namespace Financial.Shared.Abstractions.Configuration;
 
 public static class RepositoryProviderResolver
 {
