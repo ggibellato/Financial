@@ -2,6 +2,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  LabelList,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -236,7 +237,15 @@ function TransactionsChart({
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
               <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
-              <Bar dataKey="netInvested" fill={CHART_COLOR} />
+              <Bar dataKey="netInvested" fill={CHART_COLOR}>
+                <LabelList
+                  dataKey="netInvested"
+                  position="top"
+                  fill="#111"
+                  formatter={(v: unknown) => (typeof v === 'number' && v !== 0 ? formatN2(v) : '')}
+                  style={{ fontSize: 10 }}
+                />
+              </Bar>
             </BarChart>
           ) : (
             <LineChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>

@@ -81,6 +81,13 @@ export function formatMonthYear(date: Date): string {
   return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
 }
 
+// Monthly chart axis label, shared by every "value by month" chart
+// (Transactions/Credits) — docs/ui/forms-data-and-visualisations.md's
+// "Month-axis labels" rule: MM/yyyy everywhere, not a short month name.
+export function formatMonthKey(date: Date): string {
+  return `${pad(date.getMonth() + 1)}/${date.getFullYear()}`
+}
+
 export function signClass(value: number, basePrefix: string): string {
   return `${basePrefix}--${value >= 0 ? 'green' : 'red'}`
 }

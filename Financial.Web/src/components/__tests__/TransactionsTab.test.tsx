@@ -10,6 +10,7 @@ vi.mock('recharts', () => ({
   LineChart: ({ children }: { children: ReactNode }) => <div data-testid="line-chart">{children}</div>,
   Bar: () => null,
   Line: () => null,
+  LabelList: () => null,
   XAxis: () => null,
   YAxis: () => null,
   CartesianGrid: () => null,

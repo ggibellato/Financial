@@ -4,7 +4,7 @@ import type { CreditDto, SelectedNode } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
-import { getErrorMessage, pad, parseValidatedNumber, toInputDate } from '../utils/formatters'
+import { formatMonthKey, getErrorMessage, parseValidatedNumber, toInputDate } from '../utils/formatters'
 
 export type ViewMode = 'Stacked' | 'Grouped'
 export type ChartType = 'Bar' | 'Line'
@@ -188,14 +188,10 @@ export function buildSelectionKey(node: SelectedNode): string {
   return `Broker|${node.brokerName}`
 }
 
-function buildMonthKey(date: Date): string {
-  return `${pad(date.getMonth() + 1)}/${date.getFullYear()}`
-}
-
 function aggregateByMonth(credits: CreditDto[]): MonthBucket[] {
   const map = new Map<string, MonthBucket>()
   for (const c of credits) {
-    const key = buildMonthKey(new Date(c.date))
+    const key = formatMonthKey(new Date(c.date))
     const existing = map.get(key) ?? { month: key, total: 0, byType: {} }
     const byType = { ...existing.byType }
     byType[c.type] = (byType[c.type] ?? 0) + c.value
