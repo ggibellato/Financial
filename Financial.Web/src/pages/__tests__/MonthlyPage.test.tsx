@@ -1269,8 +1269,8 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
 
-    await waitFor(() => expect(screen.getByRole('button', { name: '+ New Transfer' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: '+ New Transfer' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Transfer' }))
 
     expect(screen.getByText('Move Money', { selector: 'p' })).toBeInTheDocument()
 
@@ -1292,8 +1292,8 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
 
-    await waitFor(() => expect(screen.getByRole('button', { name: '+ New Balance Correction' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: '+ New Balance Correction' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Balance Correction' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Balance Correction' }))
 
     const correctBalanceFormPanel = screen.getByLabelText('Bank').closest('.monthly-page__form-panel') as HTMLElement
     expect(within(correctBalanceFormPanel).getByRole('button', { name: 'Correct Balance' })).toBeDisabled()
@@ -1429,14 +1429,14 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
 
-    await waitFor(() => expect(screen.getByRole('button', { name: '+ New Transfer' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: '+ New Transfer' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'New Transfer' }))
     expect(screen.getByText('Move Money', { selector: 'p' })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
     fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
 
     expect(screen.queryByText('Move Money', { selector: 'p' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '+ New Transfer' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument()
   })
 })

@@ -1,3 +1,5 @@
+import { Button } from '@fluentui/react-components'
+import { AddRegular } from '@fluentui/react-icons'
 import type { BalanceAdjustmentDto, BankDto, TransferDto } from '../api/types'
 import { ALL_BANKS_FILTER, type BankOperationEntry } from '../hooks/useBankOperations'
 import { formatN2, formatShortDate } from '../utils/formatters'
@@ -83,12 +85,12 @@ export default function BankOperationsSection({
     <section className="bank-operations-section">
       <div className="bank-operations-section__header">
         <div className="bank-operations-section__actions">
-          <button className="bank-operations-section__new-btn" type="button" onClick={onNewTransfer}>
-            + New Transfer
-          </button>
-          <button className="bank-operations-section__new-btn" type="button" onClick={onNewBalanceCorrection}>
-            + New Balance Correction
-          </button>
+          <Button appearance="primary" icon={<AddRegular />} onClick={onNewTransfer}>
+            New Transfer
+          </Button>
+          <Button appearance="primary" icon={<AddRegular />} onClick={onNewBalanceCorrection}>
+            New Balance Correction
+          </Button>
         </div>
         <div className="bank-operations-section__filter">
           <label htmlFor="bank-operations-filter">Filter by Bank</label>

@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
+import { render } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import BankOperationsSection from '../BankOperationsSection'
 import type { BankDto } from '../../api/types'
@@ -65,8 +66,8 @@ describe('BankOperationsSection', () => {
   it('renders both entry-point buttons and the filter dropdown with All Banks default', () => {
     render(<BankOperationsSection {...baseProps} />)
 
-    expect(screen.getByRole('button', { name: '+ New Transfer' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '+ New Balance Correction' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New Balance Correction' })).toBeInTheDocument()
     expect(screen.getByLabelText('Filter by Bank')).toHaveValue(ALL_BANKS_FILTER)
   })
 
@@ -77,8 +78,8 @@ describe('BankOperationsSection', () => {
       <BankOperationsSection {...baseProps} onNewTransfer={onNewTransfer} onNewBalanceCorrection={onNewBalanceCorrection} />,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '+ New Transfer' }))
-    fireEvent.click(screen.getByRole('button', { name: '+ New Balance Correction' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New Transfer' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New Balance Correction' }))
 
     expect(onNewTransfer).toHaveBeenCalledOnce()
     expect(onNewBalanceCorrection).toHaveBeenCalledOnce()

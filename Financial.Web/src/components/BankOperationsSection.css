@@ -20,20 +20,6 @@
   gap: 8px;
 }
 
-.bank-operations-section__new-btn {
-  font-size: 12px;
-  padding: 3px 12px;
-  cursor: pointer;
-  background: #007acc;
-  color: #fff;
-  border: none;
-  border-radius: 3px;
-}
-
-.bank-operations-section__new-btn:hover {
-  background: #005fa3;
-}
-
 .bank-operations-section__filter {
   display: flex;
   align-items: center;

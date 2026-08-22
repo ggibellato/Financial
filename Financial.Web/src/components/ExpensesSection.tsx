@@ -8,7 +8,7 @@ const useStyles = makeStyles({
   header: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
     marginBottom: tokens.spacingVerticalM,
   },
 })
