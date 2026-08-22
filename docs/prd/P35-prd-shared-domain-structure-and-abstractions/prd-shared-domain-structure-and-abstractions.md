@@ -354,9 +354,9 @@ graph TD
 - [x] Existing `GoogleTransientErrorTranslatorTests` and `GoogleFinancialSupportServiceCollectionExtensionsTests` pass unmodified in behavior
 
 ### F10. Shared Infrastructure Isolation Enforcement Test
-- [ ] A new theory-based test in `Tests/Financial.Architecture.Tests` asserts `Financial.CashFlow.Infrastructure`, `Financial.Investment.Infrastructure`, `Integrations/GoogleFinancialSupport`, and `Integrations/WebPageParser` never reference `Financial.Shared.Infrastructure`
-- [ ] The test passes once F06, F07, and F09 are complete
-- [ ] Reverting any one of F06/F07/F09 locally causes this test to fail with a message naming the offending project (manually verified once, not a permanent regression test)
+- [x] A new theory-based test in `Tests/Financial.Architecture.Tests` asserts `Financial.CashFlow.Infrastructure`, `Financial.Investment.Infrastructure`, `Integrations/GoogleFinancialSupport`, and `Integrations/WebPageParser` never reference `Financial.Shared.Infrastructure`
+- [x] The test passes once F06, F07, and F09 are complete
+- [x] Reverting any one of F06/F07/F09 locally causes this test to fail with a message naming the offending project (manually verified once, not a permanent regression test)
 
 ### Cross-Feature Integration
 - [x] F06 and F07 each correctly resolve the `IJsonStorage` produced by F01's `IJsonStorageFactory` (local file path or Google Drive document, per configured provider) with no change in the resulting `CashFlowData`/investment data loaded at startup
