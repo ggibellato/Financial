@@ -337,10 +337,10 @@ graph TD
 - [x] Local and Google Drive provider selection for CashFlow data still produces a working repository, verified by existing `CashFlowRepositoryFactoryTests`
 
 ### F07. Investment Infrastructure Dependency Realignment
-- [ ] `Financial.Investment.Infrastructure.csproj` has no `ProjectReference` to `Financial.Shared.Infrastructure.csproj`
-- [ ] `dotnet build Financial.Investment.Infrastructure` succeeds standalone
-- [ ] All existing `Financial.Investment.Infrastructure.Tests` pass unmodified in behavior (signature/namespace-only test updates permitted)
-- [ ] Local and Google Drive provider selection for Investment data still produces a working repository, verified by existing `InvestmentRepositoryFactoryTests`
+- [x] `Financial.Investment.Infrastructure.csproj` has no `ProjectReference` to `Financial.Shared.Infrastructure.csproj`
+- [x] `dotnet build Financial.Investment.Infrastructure` succeeds standalone
+- [x] All existing `Financial.Investment.Infrastructure.Tests` pass unmodified in behavior (signature/namespace-only test updates permitted)
+- [x] Local and Google Drive provider selection for Investment data still produces a working repository, verified by existing `InvestmentRepositoryFactoryTests`
 
 ### F08. Composition Root Wiring for Shared Infrastructure
 - [ ] `Financial.Api/Program.cs` registers `IJsonStorageFactory` and both `ShutdownFlushHostedService<T>` instances
@@ -359,8 +359,8 @@ graph TD
 - [ ] Reverting any one of F06/F07/F09 locally causes this test to fail with a message naming the offending project (manually verified once, not a permanent regression test)
 
 ### Cross-Feature Integration
-- [ ] F06 and F07 each correctly resolve the `IJsonStorage` produced by F01's `IJsonStorageFactory` (local file path or Google Drive document, per configured provider) with no change in the resulting `CashFlowData`/investment data loaded at startup
-- [ ] F06 and F07 each correctly report sync status (`Idle`/`Pending`/`Saving`/`Failed`) via F02's `ISyncStatusProvider`/`SyncStatus`/`SyncState` through the same API/WPF sync indicator that reads it today
-- [ ] F06 and F07 each correctly resolve their configured storage provider via F04's `RepositoryProviderResolver`, including the unsupported-provider error path
+- [x] F06 and F07 each correctly resolve the `IJsonStorage` produced by F01's `IJsonStorageFactory` (local file path or Google Drive document, per configured provider) with no change in the resulting `CashFlowData`/investment data loaded at startup
+- [x] F06 and F07 each correctly report sync status (`Idle`/`Pending`/`Saving`/`Failed`) via F02's `ISyncStatusProvider`/`SyncStatus`/`SyncState` through the same API/WPF sync indicator that reads it today
+- [x] F06 and F07 each correctly resolve their configured storage provider via F04's `RepositoryProviderResolver`, including the unsupported-provider error path
 - [ ] F09's `GoogleFileClientFactory` correctly implements F01's `IRemoteFileClient`/`IRemoteFileClientFactory`, and F09's `GoogleTransientErrorTranslator` correctly throws F03's `TransientStorageException`, both consumed transparently by F06/F07's Google Drive storage path
 - [ ] F08's composition-root registration of F01's `IJsonStorageFactory` is what F06 and F07 resolve at startup — removing the registration causes both hosts to fail DI resolution at startup, verified once manually during implementation

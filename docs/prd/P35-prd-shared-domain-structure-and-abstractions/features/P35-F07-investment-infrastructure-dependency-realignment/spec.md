@@ -7,7 +7,7 @@
 **Why:** Same rationale as F06 — F01 moved the storage contracts to `Financial.Shared.Abstractions`, but `Financial.Investment.Infrastructure` still reaches into `Financial.Shared.Infrastructure` directly.
 
 **Scope:**
-- Included: everything in PRD Core Scope for F07, plus the composition-root wiring this feature now depends on (see Technical Decisions — same "why now, not F08" rationale as F06, with one addition specific to F07).
+- Included: everything in PRD Core Scope for F07, plus the composition-root wiring this feature now depends on (see Technical Decisions — same "why now, not F08" rationale as F06, with one addition specific to F07), plus one PRD-unanticipated fix: `Tools/ImportGoogleSpreadSheets` (in-solution, not mentioned anywhere in the PRD) used `LocalJsonStorage` only by riding `Financial.Investment.Infrastructure`'s transitive reference to `Financial.Shared.Infrastructure`. Once that reference is dropped, the tool needs its own explicit `ProjectReference` to keep building — a one-line, unavoidable fix surfaced by the full-solution build, not a scope choice.
 - Excluded (deferred): `Integrations/GoogleFinancialSupport`'s explicit `Financial.Shared.Abstractions` reference (F09 — unaffected by this feature, since `GoogleFinancialSupport` still reaches `Financial.Shared.Abstractions` transitively via `Financial.Investment.Infrastructure` → `Financial.Investment.Application`, which is untouched here); the architecture-test enforcement (F10).
 
 ## 2. Architecture Impact
