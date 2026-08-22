@@ -4,6 +4,7 @@ using Financial.CashFlow.Infrastructure.DependencyInjection;
 using Financial.Integrations.Observability;
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DependencyInjection;
+using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Presentation.App.ViewModels.CashFlow;
@@ -50,6 +51,7 @@ namespace Financial.Presentation.App
                     services.AddFinancialCashFlowApplication();
                     services.AddFinancialCashFlowInfrastructure(context.Configuration);
                     services.AddHostedService<ShutdownFlushHostedService<ICashFlowRepository>>();
+                    services.AddHostedService<ShutdownFlushHostedService<IInvestmentRepository>>();
                     services.Configure<WatchlistOptions>(context.Configuration.GetSection(WatchlistOptions.SectionName));
                     services.Configure<AssetPriceFetchOptions>(context.Configuration.GetSection(AssetPriceFetchOptions.SectionName));
                     services.Configure<DividendOptions>(context.Configuration.GetSection(DividendOptions.SectionName));
