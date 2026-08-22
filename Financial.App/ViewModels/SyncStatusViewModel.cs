@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Windows.Threading;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.Investment.Application.Interfaces;
-using Financial.Shared.Infrastructure.Sync;
+using Financial.Shared.Abstractions.Sync;
 
 namespace Financial.Presentation.App.ViewModels;
 
