@@ -5,6 +5,7 @@ import { useSelectedNode } from '../context/SelectedNodeContext'
 import { getErrorMessage } from '../utils/formatters'
 import { POSITION_TYPE_STATUS_CLASS } from '../utils/positionType'
 import ErrorState from './ErrorState'
+import MoveAssetDialog from './MoveAssetDialog'
 import LoadingState from './LoadingState'
 import './InvestmentTree.css'
 
@@ -21,6 +22,20 @@ const ASSET_CLASS_OPTIONS: { value: number; label: string }[] = [
 ]
 
 const ALL_CLASSES = 'all'
+
+/** What is being dragged, and where it came from. */
+export interface DraggedAsset {
+  brokerName: string
+  portfolioName: string
+  assetName: string
+}
+
+/** A drop lands on a portfolio (move straight there) or on a broker (name a new portfolio). */
+export interface AssetDrop extends DraggedAsset {
+  destinationPortfolioName?: string
+}
+
+const DRAG_MIME = 'application/x-financial-asset'
 
 function getMetaString(metadata: Record<string, unknown>, key: string): string {
   const v = metadata[key]
@@ -51,14 +66,33 @@ function nodeMatchesSelected(selected: SelectedNode | null, nodeType: string, ma
   return true
 }
 
+interface DragContext {
+  dragged: DraggedAsset | null
+  setDragged: (asset: DraggedAsset | null) => void
+  onDrop: (drop: AssetDrop) => void
+}
+
+/**
+ * Narrows what the tree offers; it does not decide the move. A drop that looks fine here can still
+ * be refused by the server, and that refusal is what the user is shown.
+ *
+ * A broker is always a valid target, even the one the asset already sits under: dropping there
+ * means "into a new portfolio here", the only route to a portfolio that does not exist yet.
+ */
+function canAccept(dragged: DraggedAsset | null, brokerName: string, portfolioName?: string): boolean {
+  if (!dragged || dragged.brokerName !== brokerName) return false
+  return portfolioName === undefined || portfolioName !== dragged.portfolioName
+}
+
 interface AssetNodeProps {
   node: TreeNodeDto
   brokerName: string
   portfolioName: string
   filterClass: string
+  drag: DragContext
 }
 
-function AssetNode({ node, brokerName, portfolioName, filterClass }: AssetNodeProps) {
+function AssetNode({ node, brokerName, portfolioName, filterClass, drag }: AssetNodeProps) {
   const { selectedNode, setSelectedNode } = useSelectedNode()
   const assetName = getMetaString(node.metadata, 'AssetName')
   const ticker = getMetaString(node.metadata, 'Ticker')
@@ -88,7 +122,16 @@ function AssetNode({ node, brokerName, portfolioName, filterClass }: AssetNodePr
   }
 
   return (
-    <li>
+    <li
+      draggable
+      onDragStart={(e) => {
+        // The payload has to be set for the drag to start at all; the context carries the detail.
+        e.dataTransfer.setData(DRAG_MIME, assetName)
+        e.dataTransfer.effectAllowed = 'move'
+        drag.setDragged({ brokerName, portfolioName, assetName })
+      }}
+      onDragEnd={() => drag.setDragged(null)}
+    >
       <button
         className={`investment-tree__node investment-tree__node--asset${isSelected ? ' investment-tree__node--selected' : ''}`}
         onClick={handleClick}
@@ -104,11 +147,13 @@ interface PortfolioNodeProps {
   node: TreeNodeDto
   brokerName: string
   filterClass: string
+  drag: DragContext
 }
 
-function PortfolioNode({ node, brokerName, filterClass }: PortfolioNodeProps) {
+function PortfolioNode({ node, brokerName, filterClass, drag }: PortfolioNodeProps) {
   const { selectedNode, setSelectedNode } = useSelectedNode()
   const [expanded, setExpanded] = useState(false)
+  const [isDropTarget, setIsDropTarget] = useState(false)
   const portfolioName = getMetaString(node.metadata, 'PortfolioName')
   // -1 when absent, so a portfolio whose count is unknown is never offered for deletion.
   const assetCount = getMetaNumber(node.metadata, 'AssetCount')
@@ -127,9 +172,29 @@ function PortfolioNode({ node, brokerName, filterClass }: PortfolioNodeProps) {
     setSelectedNode({ nodeType: 'Portfolio', brokerName, portfolioName, assetCount })
   }
 
+  const accepts = canAccept(drag.dragged, brokerName, portfolioName)
+
   return (
     <li>
-      <div className="investment-tree__row">
+      <div
+        className={`investment-tree__row${isDropTarget ? ' investment-tree__row--drop-target' : ''}`}
+        // preventDefault only for a target that would take it: that is what makes an illegal drop
+        // genuinely refuse rather than merely fail afterwards.
+        onDragOver={(e) => {
+          if (!accepts) return
+          e.preventDefault()
+          e.dataTransfer.dropEffect = 'move'
+          setIsDropTarget(true)
+        }}
+        onDragLeave={() => setIsDropTarget(false)}
+        onDrop={(e) => {
+          setIsDropTarget(false)
+          if (!accepts || !drag.dragged) return
+          e.preventDefault()
+          e.stopPropagation()
+          drag.onDrop({ ...drag.dragged, destinationPortfolioName: portfolioName })
+        }}
+      >
         <button
           className="investment-tree__chevron"
           onClick={() => setExpanded((e) => !e)}
@@ -156,6 +221,7 @@ function PortfolioNode({ node, brokerName, filterClass }: PortfolioNodeProps) {
                 brokerName={brokerName}
                 portfolioName={portfolioName}
                 filterClass={filterClass}
+                drag={drag}
               />
             ) : null,
           )}
@@ -168,11 +234,13 @@ function PortfolioNode({ node, brokerName, filterClass }: PortfolioNodeProps) {
 interface BrokerNodeProps {
   node: TreeNodeDto
   filterClass: string
+  drag: DragContext
 }
 
-function BrokerNode({ node, filterClass }: BrokerNodeProps) {
+function BrokerNode({ node, filterClass, drag }: BrokerNodeProps) {
   const { selectedNode, setSelectedNode } = useSelectedNode()
   const [expanded, setExpanded] = useState(true)
+  const [isDropTarget, setIsDropTarget] = useState(false)
   const brokerName = getMetaString(node.metadata, 'BrokerName')
   const currency = getMetaString(node.metadata, 'Currency')
 
@@ -192,9 +260,27 @@ function BrokerNode({ node, filterClass }: BrokerNodeProps) {
     setSelectedNode({ nodeType: 'Broker', brokerName, currency })
   }
 
+  const accepts = canAccept(drag.dragged, brokerName)
+
   return (
     <li>
-      <div className="investment-tree__row">
+      <div
+        className={`investment-tree__row${isDropTarget ? ' investment-tree__row--drop-target' : ''}`}
+        onDragOver={(e) => {
+          if (!accepts) return
+          e.preventDefault()
+          e.dataTransfer.dropEffect = 'move'
+          setIsDropTarget(true)
+        }}
+        onDragLeave={() => setIsDropTarget(false)}
+        onDrop={(e) => {
+          setIsDropTarget(false)
+          if (!accepts || !drag.dragged) return
+          e.preventDefault()
+          // No destination: dropping on the broker means a portfolio that does not exist yet.
+          drag.onDrop({ ...drag.dragged })
+        }}
+      >
         <button
           className="investment-tree__chevron"
           onClick={() => setExpanded((e) => !e)}
@@ -220,6 +306,7 @@ function BrokerNode({ node, filterClass }: BrokerNodeProps) {
                 node={child}
                 brokerName={brokerName}
                 filterClass={filterClass}
+                drag={drag}
               />
             ) : null,
           )}
@@ -231,12 +318,14 @@ function BrokerNode({ node, filterClass }: BrokerNodeProps) {
 
 export default function InvestmentTree() {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
-  const { scope, reloadToken } = useSelectedNode()
+  const { scope, reloadToken, reload, setSelectedNode } = useSelectedNode()
   const [tree, setTree] = useState<TreeNodeDto | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
   const [filterClass, setFilterClass] = useState(ALL_CLASSES)
+  const [dragged, setDragged] = useState<DraggedAsset | null>(null)
+  const [drop, setDrop] = useState<AssetDrop | null>(null)
 
   useEffect(() => {
     apiClient
@@ -278,6 +367,30 @@ export default function InvestmentTree() {
           ))}
         </select>
       </div>
+      {drop && (
+        // A drop routes through the same dialog a menu move does, so the two cannot answer
+        // differently: with a destination it moves straight away, without one it asks for a name.
+        <MoveAssetDialog
+          brokerName={drop.brokerName}
+          portfolioName={drop.portfolioName}
+          assetName={drop.assetName}
+          scope={scope}
+          canArchive={false}
+          presetDestination={drop.destinationPortfolioName}
+          newPortfolioOnly={drop.destinationPortfolioName === undefined}
+          onCancel={() => setDrop(null)}
+          onMoved={(moved) => {
+            setDrop(null)
+            setSelectedNode({
+              nodeType: 'Asset',
+              brokerName: drop.brokerName,
+              portfolioName: moved.portfolioName,
+              assetName: drop.assetName,
+            })
+            reload()
+          }}
+        />
+      )}
       {isLoading ? (
         <LoadingState message="Loading investments..." />
       ) : error ? (
@@ -286,7 +399,12 @@ export default function InvestmentTree() {
         <ul className="investment-tree__list">
           {tree.children.map((child) =>
             child.nodeType === 'Broker' ? (
-              <BrokerNode key={child.displayName} node={child} filterClass={filterClass} />
+              <BrokerNode
+                key={child.displayName}
+                node={child}
+                filterClass={filterClass}
+                drag={{ dragged, setDragged, onDrop: setDrop }}
+              />
             ) : null,
           )}
         </ul>

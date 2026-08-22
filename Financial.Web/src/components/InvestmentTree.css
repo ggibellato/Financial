@@ -101,3 +101,9 @@
 .investment-tree__node--broker {
   font-weight: 500;
 }
+
+.investment-tree__row--drop-target {
+  background: var(--drop-target, #cce8ff);
+  outline: 1px solid var(--accent, #007acc);
+  border-radius: 3px;
+}

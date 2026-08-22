@@ -191,6 +191,109 @@ describe('InvestmentTree', () => {
     expect(screen.getByTestId('selected').textContent).toBe('Asset:XPI:Acoes:KLBN4')
   })
 
+  /** A DataTransfer stand-in; jsdom does not provide one. */
+  function dataTransfer() {
+    return { setData: vi.fn(), getData: vi.fn(), effectAllowed: '', dropEffect: '' }
+  }
+
+  /**
+   * fireEvent returns false when the handler called preventDefault. For a drop target that is the
+   * whole signal: preventDefault means "I will take this", its absence means the drop is refused.
+   */
+  const accepts = (row: HTMLElement) => !fireEvent.dragOver(row, { dataTransfer: dataTransfer() })
+
+  /** The row element carries the drop handlers; the label sits inside it. */
+  const rowOf = (label: string) => screen.getByText(label).closest('.investment-tree__row') as HTMLElement
+
+  const twoBrokerTree: TreeNodeDto = {
+    nodeType: 'Investments',
+    displayName: 'Investments',
+    metadata: {},
+    children: [
+      makeBroker('XPI', 'BRL', [
+        makePortfolio('Acoes', [makeAsset('KLBN4', true, 1)]),
+        makePortfolio('FII', []),
+      ]),
+      makeBroker('Coinbase', 'GBP', [makePortfolio('Default', [])]),
+    ],
+  }
+
+  async function startDraggingKLBN4() {
+    renderTree(twoBrokerTree)
+    await screen.findByText('XPI (BRL)')
+    fireEvent.click(screen.getAllByLabelText('Expand')[0])
+    const asset = screen.getByRole('button', { name: '● KLBN4' }).closest('li') as HTMLElement
+    fireEvent.dragStart(asset, { dataTransfer: dataTransfer() })
+  }
+
+  it('a sibling portfolio of the same broker accepts the drop', async () => {
+    await startDraggingKLBN4()
+
+    expect(accepts(rowOf('FII (0 assets)'))).toBe(true)
+  })
+
+  it('the broker accepts the drop, because that means a new portfolio', async () => {
+    await startDraggingKLBN4()
+
+    expect(accepts(rowOf('XPI (BRL)'))).toBe(true)
+  })
+
+  it('the portfolio the asset is already in refuses the drop', async () => {
+    await startDraggingKLBN4()
+
+    expect(accepts(rowOf('Acoes (1 assets)'))).toBe(false)
+  })
+
+  it('another broker and its portfolios refuse the drop', async () => {
+    await startDraggingKLBN4()
+
+    expect(accepts(rowOf('Coinbase (GBP)'))).toBe(false)
+    expect(accepts(rowOf('Default (0 assets)'))).toBe(false)
+  })
+
+  it('nothing accepts a drop when no drag is in progress', async () => {
+    renderTree(twoBrokerTree)
+    await screen.findByText('XPI (BRL)')
+
+    expect(accepts(rowOf('FII (0 assets)'))).toBe(false)
+  })
+
+  it('highlights only the row the drag is over, and clears it on leave', async () => {
+    await startDraggingKLBN4()
+
+    accepts(rowOf('XPI (BRL)'))
+    expect(rowOf('XPI (BRL)')).toHaveClass('investment-tree__row--drop-target')
+
+    fireEvent.dragLeave(rowOf('XPI (BRL)'))
+    expect(rowOf('XPI (BRL)')).not.toHaveClass('investment-tree__row--drop-target')
+  })
+
+  it('dropping on a portfolio moves straight there, without asking anything', async () => {
+    await startDraggingKLBN4()
+
+    fireEvent.drop(rowOf('FII (0 assets)'), { dataTransfer: dataTransfer() })
+
+    // The dialog opens already resolved: there is nothing left to ask.
+    await waitFor(() => expect(screen.getByText('Moving…')).toBeInTheDocument())
+  })
+
+  it('dropping on the broker asks for a name for the new portfolio', async () => {
+    await startDraggingKLBN4()
+
+    fireEvent.drop(rowOf('XPI (BRL)'), { dataTransfer: dataTransfer() })
+
+    await waitFor(() => expect(screen.getByRole('textbox', { name: 'New portfolio name' })).toBeEnabled())
+    expect(screen.queryByText('Moving…')).not.toBeInTheDocument()
+  })
+
+  it('dropping on a refusing target does nothing at all', async () => {
+    await startDraggingKLBN4()
+
+    fireEvent.drop(rowOf('Coinbase (GBP)'), { dataTransfer: dataTransfer() })
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
   it('clicking an asset carries its quantity onto the selection', async () => {
     // The detail panel decides from this whether archiving is offered, and it only ever gets it by
     // a click - so the click is what the test has to make.
