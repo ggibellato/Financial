@@ -1,6 +1,6 @@
 using Financial.Shared.Abstractions.Persistence;
 
-namespace Financial.Shared.Infrastructure.Sync;
+namespace Financial.Shared.Abstractions.Sync;
 
 public static class JsonStorageSyncExtensions
 {
