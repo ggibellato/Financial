@@ -7,6 +7,7 @@
 #
 # Rules are evaluated top to bottom; the first pattern that matches a file decides its jobs.
 # Fail-safe: a missing base, a failed diff, or a path no rule knows about runs everything.
+# FULL_RUN=true bypasses classification entirely (used for every push to main).
 set -u
 
 BASE_SHA="${1:-}"
@@ -64,7 +65,9 @@ classify() {
   esac
 }
 
-if [[ -z "$BASE_SHA" || "$BASE_SHA" =~ ^0+$ ]]; then
+if [[ "${FULL_RUN:-false}" == true ]]; then
+  run_everything "FULL_RUN requested"
+elif [[ -z "$BASE_SHA" || "$BASE_SHA" =~ ^0+$ ]]; then
   run_everything "no base commit to diff against"
 elif ! changed=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" 2>/dev/null); then
   run_everything "git diff $BASE_SHA..$HEAD_SHA failed"

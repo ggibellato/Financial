@@ -7,9 +7,10 @@ on:
     branches: [ main ]
     types: [opened, synchronize, reopened]
 
-# `changes` maps the diff onto the jobs below (rules live in .github/scripts/detect-changes.sh).
-# Every job still appears on the PR; skipped ones report "skipped", and `ci-status` is the single
-# required check that fails only when a job that actually ran failed.
+# On pull requests `changes` maps the diff onto the jobs below (rules live in
+# .github/scripts/detect-changes.sh); skipped jobs report "skipped" and `ci-status` is the single
+# required check that fails only when a job that actually ran failed. Every push to main runs the
+# full pipeline regardless of what changed: main must always be deployable.
 jobs:
   changes:
     runs-on: ubuntu-latest
@@ -27,6 +28,7 @@ jobs:
     - name: Detect affected jobs
       id: detect
       env:
+        FULL_RUN: ${{ github.event_name == 'push' }}
         BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       run: |

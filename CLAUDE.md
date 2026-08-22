@@ -103,7 +103,8 @@ Builds the React SPA and the API into a single image (`Dockerfile`), API serves 
 diff with `.github/scripts/detect-changes.sh`, then `backend` (Windows, API build + all non-WPF tests
 with coverage), `wpf` (Windows), `web` (Ubuntu lint+test+build) and `smoke` (publishes the full app
 against seeded test JSON and runs the Playwright smoke test) run conditionally. Docs-only changes run
-nothing; unknown paths or a missing base commit run everything. `ci-status` is the single required
+nothing; unknown paths or a missing base commit run everything, and every push to `main` always runs the
+full pipeline. `ci-status` is the single required
 check and passes when every job succeeded or was skipped. Rules and extension steps are in
 `docs/ci-affected-pipeline.md`. PR titles are enforced as Conventional Commits
 (`feat|fix|docs|chore|refactor|test|perf|ci|build`) by `semantic-pr.yml`.

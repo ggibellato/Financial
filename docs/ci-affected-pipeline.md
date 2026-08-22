@@ -1,7 +1,10 @@
 # CI: affected-only pipeline
 
-`.github/workflows/build.yml` runs only the jobs a change can affect. The mapping from paths to jobs
-lives in one place, `.github/scripts/detect-changes.sh`; the workflow just consumes its outputs.
+`.github/workflows/build.yml` runs only the jobs a pull request can affect. The mapping from paths to
+jobs lives in one place, `.github/scripts/detect-changes.sh`; the workflow just consumes its outputs.
+
+Every push to `main` (i.e. every merge) runs the full pipeline regardless of the diff: `main` must
+always be deployable, and the merge commit is what gets deployed.
 
 ## Path groups
 
@@ -32,6 +35,7 @@ checks them (first match wins):
 | Web | – | – | ✔ | ✔ |
 | Backend core | ✔ | ✔ | – | ✔ |
 | Infra / unclassified / no base commit / diff failure | ✔ | ✔ | ✔ | ✔ |
+| Any push to `main` | ✔ | ✔ | ✔ | ✔ |
 
 Jobs:
 
