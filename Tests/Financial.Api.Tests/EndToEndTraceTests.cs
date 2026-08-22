@@ -5,7 +5,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.TestUtilities;
 using FluentAssertions;

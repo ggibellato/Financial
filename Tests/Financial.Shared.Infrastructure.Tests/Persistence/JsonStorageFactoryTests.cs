@@ -1,4 +1,4 @@
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Shared.Abstractions.Sync;

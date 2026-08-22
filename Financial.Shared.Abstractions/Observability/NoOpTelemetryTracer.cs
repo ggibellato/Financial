@@ -1,4 +1,4 @@
-namespace Financial.Shared.Abstractions;
+namespace Financial.Shared.Abstractions.Observability;
 
 /// <summary>
 /// The contract's null object: an ITelemetryTracer whose spans do nothing, so callers never need

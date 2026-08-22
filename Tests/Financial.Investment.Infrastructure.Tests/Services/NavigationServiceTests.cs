@@ -3,7 +3,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
 using Financial.Investment.Infrastructure.Persistence;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.TestUtilities;

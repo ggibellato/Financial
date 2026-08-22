@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using static Financial.Presentation.App.Helpers.ObservableCollectionHelper;
 
 namespace Financial.Presentation.App.ViewModels.CashFlow;

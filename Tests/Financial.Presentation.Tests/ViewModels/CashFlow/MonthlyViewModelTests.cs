@@ -1,6 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.Presentation.App.ViewModels.CashFlow;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using FluentAssertions;
 

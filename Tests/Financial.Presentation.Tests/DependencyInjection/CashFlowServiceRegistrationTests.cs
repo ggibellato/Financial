@@ -2,7 +2,7 @@ using System.IO;
 using Financial.CashFlow.Application.DependencyInjection;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;

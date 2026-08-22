@@ -3,7 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
 using Microsoft.Extensions.Logging;
 

@@ -1,6 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;

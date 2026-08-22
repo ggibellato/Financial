@@ -1,5 +1,5 @@
 using System.Text;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Exporter;

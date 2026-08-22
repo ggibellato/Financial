@@ -4,7 +4,7 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.CashFlow.Domain.ValueObjects;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;

@@ -4,7 +4,7 @@ using Financial.CashFlow.Infrastructure.Configuration;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.CashFlow.Infrastructure.Services;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Configuration;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Hosting;

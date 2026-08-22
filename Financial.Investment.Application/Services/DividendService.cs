@@ -2,7 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Rules;
 using Financial.Investment.Domain.ValueObjects;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;

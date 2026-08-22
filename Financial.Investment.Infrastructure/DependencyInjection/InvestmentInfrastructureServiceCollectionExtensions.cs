@@ -5,7 +5,7 @@ using Financial.Investment.Infrastructure.Interfaces;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.Investment.Infrastructure.Services;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Configuration;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Hosting;

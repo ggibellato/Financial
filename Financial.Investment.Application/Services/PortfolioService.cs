@@ -1,6 +1,6 @@
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
