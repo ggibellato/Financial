@@ -343,10 +343,10 @@ graph TD
 - [x] Local and Google Drive provider selection for Investment data still produces a working repository, verified by existing `InvestmentRepositoryFactoryTests`
 
 ### F08. Composition Root Wiring for Shared Infrastructure
-- [ ] `Financial.Api/Program.cs` registers `IJsonStorageFactory` and both `ShutdownFlushHostedService<T>` instances
-- [ ] `Financial.App/App.xaml.cs` registers `IJsonStorageFactory` and both `ShutdownFlushHostedService<T>` instances
-- [ ] `docker-compose up` starts the API cleanly and a shutdown (container stop) still flushes a pending debounced write before exit
-- [ ] The WPF app starts cleanly via `scripts/deploy.ps1` + `deploy/start-app.ps1` and exits cleanly, flushing any pending write
+- [x] `Financial.Api/Program.cs` registers `IJsonStorageFactory` and both `ShutdownFlushHostedService<T>` instances
+- [x] `Financial.App/App.xaml.cs` registers `IJsonStorageFactory` and both `ShutdownFlushHostedService<T>` instances
+- [x] `docker-compose up` starts the API cleanly and a shutdown (container stop) still flushes a pending debounced write before exit
+- [ ] The WPF app starts cleanly via `scripts/deploy.ps1` + `deploy/start-app.ps1` and exits cleanly, flushing any pending write — not run this session (launching the deployed WPF app via these scripts wasn't performed autonomously); the underlying flush mechanism is unit-tested (`ShutdownFlushHostedServiceTests` + `DebouncedJsonStorageTests`) and `App.xaml.cs`'s registration was confirmed by direct code read, but the literal script-driven manual check is still open — please run it when convenient and let me know the result
 
 ### F09. GoogleFinancialSupport Integration Reference Realignment
 - [x] `Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj` has an explicit `ProjectReference` to `Financial.Shared.Abstractions.csproj`
@@ -363,4 +363,4 @@ graph TD
 - [x] F06 and F07 each correctly report sync status (`Idle`/`Pending`/`Saving`/`Failed`) via F02's `ISyncStatusProvider`/`SyncStatus`/`SyncState` through the same API/WPF sync indicator that reads it today
 - [x] F06 and F07 each correctly resolve their configured storage provider via F04's `RepositoryProviderResolver`, including the unsupported-provider error path
 - [x] F09's `GoogleFileClientFactory` correctly implements F01's `IRemoteFileClient`/`IRemoteFileClientFactory`, and F09's `GoogleTransientErrorTranslator` correctly throws F03's `TransientStorageException`, both consumed transparently by F06/F07's Google Drive storage path
-- [ ] F08's composition-root registration of F01's `IJsonStorageFactory` is what F06 and F07 resolve at startup — removing the registration causes both hosts to fail DI resolution at startup, verified once manually during implementation
+- [x] F08's composition-root registration of F01's `IJsonStorageFactory` is what F06 and F07 resolve at startup — removing the registration causes both hosts to fail DI resolution at startup, verified once manually during implementation

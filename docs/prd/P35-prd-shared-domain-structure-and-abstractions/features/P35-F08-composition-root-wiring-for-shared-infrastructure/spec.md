@@ -29,6 +29,8 @@ builder.Services.AddHostedService<ShutdownFlushHostedService<IInvestmentReposito
 
 **Runtime proof the wiring actually works, not just that the lines exist:** `Tests/Financial.Api.Tests/ShutdownFlushHostedServiceRegistrationTests.cs` (added in F06, extended in F07) boots the *real* `Program.cs` via `WebApplicationFactory<Program>` and asserts both `ShutdownFlushHostedService<T>` instances are resolvable from the live host's `IServiceProvider` — this is a stronger proof than re-reading the source, because it would fail if `IJsonStorageFactory` were unregistered (the hosted service's own dependency chain would fail to construct) or if the registration order were wrong.
 
+**Negative verification (PRD Cross-Feature Integration criterion):** temporarily commented out the `IJsonStorageFactory` registration line in `Program.cs` and re-ran `ShutdownFlushHostedServiceRegistrationTests` — the host failed to start with `InvalidOperationException: Unable to resolve service for type 'Financial.Shared.Abstractions.Persistence.IJsonStorageFactory'`, confirming the registration is load-bearing, not incidental. Reverted immediately; `git diff` confirmed a clean revert before committing anything else.
+
 ## 3. Technical Decisions
 
 | Decision | Chosen Approach | Alternative Considered | Trade-off |
