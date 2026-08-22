@@ -56,11 +56,12 @@ public sealed class TodayInfoTracker
     }
 
     /// <summary>A live quote carries a time of day; a price read from Price History carries only
-    /// a date, so it is shown as one rather than padded with a midnight that was never measured.</summary>
+    /// a date, so it is shown as one rather than padded with a midnight that was never measured.
+    /// Falls back to an em dash, matching the web's <c>formatAsOf</c> in AssetSummaryTab.tsx.</summary>
     private static string FormatAsOf(AssetPriceDTO price) =>
         price.AsOf?.ToLocalTime().ToString("g")
         ?? price.AsOfDate?.ToString("d")
-        ?? string.Empty;
+        ?? "—";
 
     public async Task RefreshAsync(
         bool forceRefresh,

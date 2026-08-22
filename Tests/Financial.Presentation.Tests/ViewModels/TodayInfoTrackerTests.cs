@@ -151,6 +151,42 @@ public class TodayInfoTrackerTests
         applied[0].AsOf.Should().NotContain(":", "a stored entry carries no time of day");
     }
 
+    /// <summary>
+    /// A price with neither a live timestamp nor a stored entry date used to render "As of" as a blank
+    /// string in WPF while the web showed an em dash for the equivalent case (AssetSummaryTab.tsx).
+    /// </summary>
+    [Fact]
+    public async Task RefreshAsync_PriceWithNoDate_ShowsAnEmDash()
+    {
+        var applied = new List<TodayInfoSnapshot>();
+        var tracker = new TodayInfoTracker(applied.Add, () => { }, () => { });
+        tracker.UpdateAssetKey("XPI|Acoes|TASA4");
+
+        await tracker.RefreshAsync(
+            forceRefresh: true, hasAssetContext: true, new NoDatePriceService(),
+            GlobalAssetClass.Equity, "XPI", "BVMF", "TASA4", "TASA4", "Acoes", "TASA4", _ => { });
+
+        applied.Should().ContainSingle();
+        applied[0].AsOf.Should().Be("—");
+    }
+
+    private sealed class NoDatePriceService : IPriceService
+    {
+        public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
+        public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
+
+        public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request) =>
+            Task.FromResult(new AssetPriceDTO
+            {
+                Exchange = request.Exchange,
+                Ticker = request.Ticker,
+                Price = 1.23m,
+                AsOf = null,
+                AsOfDate = null,
+                IsManual = true
+            });
+    }
+
     private sealed class StoredPriceService : IPriceService
     {
         private readonly DateOnly _asOfDate;
