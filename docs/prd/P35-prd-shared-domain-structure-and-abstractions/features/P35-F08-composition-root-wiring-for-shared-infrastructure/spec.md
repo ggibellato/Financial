@@ -62,7 +62,7 @@ No new tests — every behavior F08 specifies is already covered:
 **Acceptance criteria this feature satisfies (PRD Section 9, F08):**
 - `Financial.Api/Program.cs` registers `IJsonStorageFactory` and both `ShutdownFlushHostedService<T>` instances — confirmed by direct read (Section 2 above)
 - `Financial.App/App.xaml.cs` registers `IJsonStorageFactory` and both `ShutdownFlushHostedService<T>` instances — confirmed by direct read
-- `docker-compose up` starts the API cleanly and a shutdown flushes a pending debounced write — manually verified once during this feature (see Verification Log below)
+- `docker-compose up` starts the API cleanly and a shutdown flushes a pending debounced write — manually verified during this feature: `docker-compose up --build -d` built and started the container cleanly; `GET /api/v1/financial/sync-status` and `GET /` both returned `200`; `docker-compose stop` exited cleanly (exit code `0`, no forced kill/timeout); `docker-compose down` tore the stack down with no errors. The write-flush-on-shutdown behavior itself is covered at the unit level (`ShutdownFlushHostedServiceTests` + `DebouncedJsonStorageTests`) rather than re-exercised end-to-end in the container, per the Technical Decisions row above
 - The WPF app starts cleanly and exits cleanly, flushing any pending write — this repo's test suite has no automated WPF-launch harness (consistent with `testing-guide-Financial`'s scope); covered by the same unit-level chain (`ShutdownFlushHostedServiceTests` + `DebouncedJsonStorageTests`) since `App.xaml.cs` registers the identical hosted service against the identical `DebouncedJsonStorage`/`ShutdownFlushHostedService` implementation the API host uses
 
 **Verification commands:**
