@@ -3,6 +3,8 @@ using Financial.CashFlow.Application.DependencyInjection;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Persistence;
+using Financial.Shared.Infrastructure.Persistence;
 using Financial.TestUtilities;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
@@ -44,6 +46,7 @@ public class CashFlowServiceRegistrationTests
 
         var services = new ServiceCollection();
         services.AddSingleton<ITelemetryTracer>(new RecordingTelemetryTracer());
+        services.AddSingleton<IJsonStorageFactory, JsonStorageFactory>();
         services.AddFinancialCashFlowApplication();
         services.AddFinancialCashFlowInfrastructure(configuration);
 

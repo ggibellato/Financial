@@ -1,12 +1,16 @@
 using Asp.Versioning;
 using Financial.Api.Middleware;
 using Financial.CashFlow.Application.DependencyInjection;
+using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
 using Financial.Integrations.Observability;
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DependencyInjection;
 using Financial.Investment.Infrastructure.DependencyInjection;
 using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Shared.Abstractions.Persistence;
+using Financial.Shared.Infrastructure.Hosting;
+using Financial.Shared.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
 using Serilog;
@@ -96,9 +100,11 @@ builder.Services.Configure<AssetPriceFetchOptions>(configuration.GetSection(Asse
 builder.Services.AddObservability(configuration, serviceName: "Financial.Api");
 builder.Services.AddFinancialApplication();
 builder.Services.AddGoogleDriveFileClient();
+builder.Services.AddSingleton<IJsonStorageFactory, JsonStorageFactory>();
 builder.Services.AddFinancialInfrastructure(configuration);
 builder.Services.AddFinancialCashFlowApplication();
 builder.Services.AddFinancialCashFlowInfrastructure(configuration);
+builder.Services.AddHostedService<ShutdownFlushHostedService<ICashFlowRepository>>();
 
 var app = builder.Build();
 

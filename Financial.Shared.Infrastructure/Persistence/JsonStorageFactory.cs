@@ -13,8 +13,8 @@ public sealed class JsonStorageFactory : IJsonStorageFactory
     private readonly ILogger<DebouncedJsonStorage>? _logger;
 
     public JsonStorageFactory(
-        IRemoteFileClientFactory? remoteFileClientFactory,
-        ITelemetryTracer tracer,
+        IRemoteFileClientFactory? remoteFileClientFactory = null,
+        ITelemetryTracer tracer = null!,
         ILogger<DebouncedJsonStorage>? logger = null)
     {
         _remoteFileClientFactory = remoteFileClientFactory;

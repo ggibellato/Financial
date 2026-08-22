@@ -4,14 +4,10 @@ using Financial.CashFlow.Infrastructure.Configuration;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.CashFlow.Infrastructure.Services;
-using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Configuration;
 using Financial.Shared.Abstractions.Persistence;
-using Financial.Shared.Infrastructure.Hosting;
-using Financial.Shared.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Financial.CashFlow.Infrastructure.DependencyInjection;
@@ -42,11 +38,8 @@ public static class CashFlowInfrastructureServiceCollectionExtensions
             var options = BuildRepositoryOptions(settings);
             return new CashFlowRepositoryFactory(
                 sp.GetRequiredService<ICashFlowSerializer>(),
-                sp.GetService<IRemoteFileClientFactory>(),
-                sp.GetRequiredService<ITelemetryTracer>(),
-                sp.GetService<Microsoft.Extensions.Logging.ILogger<DebouncedJsonStorage>>()).Create(options);
+                sp.GetRequiredService<IJsonStorageFactory>()).Create(options);
         });
-        services.AddHostedService<ShutdownFlushHostedService<ICashFlowRepository>>();
 
         return services;
     }
