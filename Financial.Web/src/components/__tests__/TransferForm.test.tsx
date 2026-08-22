@@ -4,9 +4,9 @@ import TransferForm from '../TransferForm'
 import type { BankDto } from '../../api/types'
 
 const BANKS: BankDto[] = [
-  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
-  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
-  { id: 'bank-chase', name: 'Chase', roundUpEnabled: true },
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01' },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01' },
+  { id: 'bank-chase', name: 'Chase', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01' },
 ]
 
 const baseProps = {

@@ -5,8 +5,8 @@ import type { BankDto } from '../../api/types'
 import { ALL_BANKS_FILTER, type BankOperationEntry } from '../../hooks/useBankOperations'
 
 const BANKS: BankDto[] = [
-  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
-  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01' },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01' },
 ]
 
 const TRANSFER_ENTRY = {

@@ -26,6 +26,7 @@ const baseSummary: DividendSummaryDto = {
   dividendYieldPercent: 13.33,
   priceMaxBuy: 20.0,
   discountPercent: 47.5,
+  history: [],
   yearTotals: [{ year: 2023, total: 1.4 }],
 }
 

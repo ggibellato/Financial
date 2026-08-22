@@ -231,6 +231,7 @@ export interface DividendSummaryDto {
   dividendYieldPercent: number
   priceMaxBuy: number
   discountPercent: number
+  history: DividendHistoryItemDto[]
   yearTotals: DividendYearTotalDto[]
 }
 
@@ -466,6 +467,8 @@ export interface BankDto {
   id: string
   name: string
   roundUpEnabled: boolean
+  openingBalance: number
+  openingBalanceDate: string
 }
 
 export interface IncomeSourceDto {

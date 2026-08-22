@@ -19,8 +19,8 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const BANKS: BankDto[] = [
-  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false },
-  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true },
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01' },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01' },
 ]
 
 const TRANSFERS: TransferDto[] = [
