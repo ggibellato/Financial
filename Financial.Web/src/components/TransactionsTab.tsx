@@ -19,7 +19,10 @@ import type { PeriodFilterOption } from '../utils/periodFilter'
 import { formatN2, formatN8, formatShortDate } from '../utils/formatters'
 import './TransactionsTab.css'
 
-const CHART_COLOR = '#6b7280'
+// Matches the blue already established by CreditsTab/PriceHistoryTab
+// (docs/ui/forms-data-and-visualisations.md's "Series color" rule) — not a
+// neutral/grey, single-series charts are blue on both platforms.
+const CHART_COLOR = '#4682b4'
 
 interface TransactionRowProps {
   transaction: TransactionDto
