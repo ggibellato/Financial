@@ -1,4 +1,4 @@
-using Financial.Shared.Infrastructure.Persistence;
+using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Resilience;
 
 namespace Financial.Shared.Infrastructure.Tests.Persistence;
