@@ -7,6 +7,7 @@ using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.ViewModels.Investment;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
+using System.Collections.Specialized;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
@@ -123,6 +124,83 @@ public class AssetPriceFetchViewModelTests
         request.AssetName.Should().Be("TASA4");
     }
 
+    [Fact]
+    public async Task FetchAsync_OneAssetFails_StillFetchesEveryRemainingAsset()
+    {
+        _navigationService.AssetsByBrokerPortfolio[("XPI", "Acoes")] =
+        [
+            new AssetNodeDTO { Name = "Asset 1", Ticker = "AAA1", Exchange = "BVMF", Class = GlobalAssetClass.Equity },
+            new AssetNodeDTO { Name = "Asset 2", Ticker = "AAA2", Exchange = "BVMF", Class = GlobalAssetClass.Equity },
+            new AssetNodeDTO { Name = "Asset 3", Ticker = "AAA3", Exchange = "BVMF", Class = GlobalAssetClass.Equity },
+        ];
+        _priceService.TickersToFail.Add("AAA2");
+        var vm = CreateViewModel("XPI", "Acoes");
+
+        vm.FetchCommand.Execute(null);
+        await WaitForResultsAsync(vm, expectedCount: 3, TimeSpan.FromSeconds(5));
+
+        _priceService.AllRequests.Select(r => r.Ticker).Should().BeEquivalentTo(["AAA1", "AAA2", "AAA3"]);
+    }
+
+    [Fact]
+    public async Task FetchAsync_OneAssetFails_AddsAnErrorRowInsteadOfAbortingTheRun()
+    {
+        _navigationService.AssetsByBrokerPortfolio[("XPI", "Acoes")] =
+        [
+            new AssetNodeDTO { Name = "Asset 1", Ticker = "AAA1", Exchange = "BVMF", Class = GlobalAssetClass.Equity },
+            new AssetNodeDTO { Name = "Asset 2", Ticker = "AAA2", Exchange = "BVMF", Class = GlobalAssetClass.Equity },
+        ];
+        _priceService.TickersToFail.Add("AAA2");
+        _priceService.FailureMessage = "Unable to fetch price.";
+        var vm = CreateViewModel("XPI", "Acoes");
+
+        vm.FetchCommand.Execute(null);
+        await WaitForResultsAsync(vm, expectedCount: 2, TimeSpan.FromSeconds(5));
+
+        var successRow = vm.Results.Single(r => r.Ticker == "AAA1");
+        successRow.HasError.Should().BeFalse();
+        successRow.Price.Should().Be(1m);
+
+        var failedRow = vm.Results.Single(r => r.Ticker == "AAA2");
+        failedRow.HasError.Should().BeTrue();
+        failedRow.Error.Should().Be("Unable to fetch price.");
+        failedRow.Price.Should().BeNull();
+    }
+
+    /// <summary>Waits on the collection's own change notifications rather than sampling <c>Results.Count</c>
+    /// on a timer, so the test cannot flake on how fast the stub happens to complete.</summary>
+    private static async Task WaitForResultsAsync(AssetPriceFetchViewModel vm, int expectedCount, TimeSpan timeout)
+    {
+        if (vm.Results.Count >= expectedCount)
+        {
+            return;
+        }
+
+        var tcs = new TaskCompletionSource();
+        void Handler(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (vm.Results.Count >= expectedCount)
+            {
+                tcs.TrySetResult();
+            }
+        }
+
+        vm.Results.CollectionChanged += Handler;
+        try
+        {
+            if (vm.Results.Count >= expectedCount)
+            {
+                return;
+            }
+
+            await tcs.Task.WaitAsync(timeout);
+        }
+        finally
+        {
+            vm.Results.CollectionChanged -= Handler;
+        }
+    }
+
     private sealed class StubNavigationService : INavigationService
     {
         public Dictionary<(string BrokerName, string PortfolioName), List<AssetNodeDTO>> AssetsByBrokerPortfolio { get; } = new();
@@ -140,6 +218,11 @@ public class AssetPriceFetchViewModelTests
         private readonly TaskCompletionSource<AssetPriceRequestDTO> _tcs = new();
 
         public Task<AssetPriceRequestDTO> RequestReceived => _tcs.Task;
+        public List<AssetPriceRequestDTO> AllRequests { get; } = new();
+
+        /// <summary>Tickers in this set fail with <see cref="FailureMessage"/> instead of returning a price.</summary>
+        public HashSet<string> TickersToFail { get; } = new();
+        public string FailureMessage { get; set; } = "boom";
 
         public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
 
@@ -148,6 +231,13 @@ public class AssetPriceFetchViewModelTests
         public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request)
         {
             _tcs.TrySetResult(request);
+            AllRequests.Add(request);
+
+            if (TickersToFail.Contains(request.Ticker))
+            {
+                throw new InvalidOperationException(FailureMessage);
+            }
+
             return Task.FromResult(new AssetPriceDTO
             {
                 Exchange = request.Exchange,

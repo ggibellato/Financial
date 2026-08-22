@@ -36,7 +36,7 @@ public class AssetPriceFetchViewModel : ViewModelBase
         private set => SetProperty(ref _progressPercent, value);
     }
 
-    public ObservableCollection<AssetPriceDTO> Results { get; } = new();
+    public ObservableCollection<AssetPriceFetchResult> Results { get; } = new();
     public RelayCommand FetchCommand { get; }
 
     public AssetPriceFetchViewModel(
@@ -72,21 +72,31 @@ public class AssetPriceFetchViewModel : ViewModelBase
                 ProgressPercent = (i + 1) * 100.0 / total;
                 ProgressMessage = $"Fetching {i + 1} of {total}: {asset.Ticker}...";
 
-                // Supplying the broker, portfolio and asset name is what makes the orchestration
-                // record the fetched price into Price History, the same as the per-asset Refresh
-                // button and the portfolio grid. Without them this screen took the lookup-only
-                // path and built no history at all.
-                var result = await _priceService.GetCurrentPriceAsync(new AssetPriceRequestDTO
+                // Per-asset, so one failing fetch does not end the run for every asset after it -
+                // the batch is what builds Price History, so an aborted run leaves silent gaps
+                // rather than a screenful of "3 failed".
+                try
                 {
-                    Exchange = asset.Exchange,
-                    Ticker = asset.Ticker,
-                    AssetClass = asset.Class,
-                    BrokerName = brokerName,
-                    Name = asset.Name,
-                    PortfolioName = portfolioName,
-                    AssetName = asset.Name
-                });
-                Results.Add(result);
+                    // Supplying the broker, portfolio and asset name is what makes the orchestration
+                    // record the fetched price into Price History, the same as the per-asset Refresh
+                    // button and the portfolio grid. Without them this screen took the lookup-only
+                    // path and built no history at all.
+                    var price = await _priceService.GetCurrentPriceAsync(new AssetPriceRequestDTO
+                    {
+                        Exchange = asset.Exchange,
+                        Ticker = asset.Ticker,
+                        AssetClass = asset.Class,
+                        BrokerName = brokerName,
+                        Name = asset.Name,
+                        PortfolioName = portfolioName,
+                        AssetName = asset.Name
+                    });
+                    Results.Add(AssetPriceFetchResult.Success(price.Ticker, price.Name, price.Price));
+                }
+                catch (Exception ex)
+                {
+                    Results.Add(AssetPriceFetchResult.Failure(asset.Ticker, asset.Name, ex.Message));
+                }
             }
 
             ProgressMessage = $"Completed! Loaded {total} assets.";
