@@ -59,6 +59,17 @@ single canonical value for any status color on either platform today.
   already contrast-tested for WCAG 2.2 AA in both light and dark themes.
 - The `--accent: #aa3bff` / `#c084fc` tokens in `Financial.Web/src/index.css`
   are retired in favor of the Fluent brand token during token implementation.
+  **Retired 2026-08-22**: `--accent`/`--accent-bg`/`--accent-border` (both
+  light and dark) now hold `webLightTheme`/`webDarkTheme`'s
+  `colorBrandForeground1`/`colorBrandBackground2` values instead, the moment
+  the purple showed up somewhere real — `Financial.Web`'s sidebar navigation
+  (active category label, active link, hover backgrounds) — while the WPF
+  pilot was blue. The user confirmed explicitly: blue is their company
+  color, not a fallback choice (see the `project_brand_color_blue` memory).
+  Because these are global CSS custom properties, every consumer
+  (`Sidebar.css`, `App.css`, `DetailPanel.css`, `InvestmentTree.css`,
+  `PortfolioSummaryTab.css`, `SplitPanel.css`) picked up the fix from the one
+  token change — no per-file edits needed.
 
 ## Consequences
 
