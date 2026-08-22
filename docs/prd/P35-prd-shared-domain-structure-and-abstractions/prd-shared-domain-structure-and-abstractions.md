@@ -323,7 +323,7 @@ graph TD
 - [x] `TransientRetryPolicy.IsRetryable` in `Financial.Shared.Infrastructure` still catches the relocated exception type
 
 ### F04. Configuration Abstraction Extraction
-- [ ] `RepositoryProviderResolver.Resolve<TEnum>` compiles in `Financial.Shared.Abstractions.Configuration` with identical behavior, including the `InvalidOperationException` message format on an unrecognized provider value
+- [x] `RepositoryProviderResolver.Resolve<TEnum>` compiles in `Financial.Shared.Abstractions.Configuration` with identical behavior, including the `InvalidOperationException` message format on an unrecognized provider value
 
 ### F05. Observability Namespace Reorganization
 - [ ] `ITelemetryTracer`, `ITelemetrySpan`, `NoOpTelemetryTracer`, `TelemetryAttributeKeys`, `TelemetrySpanExtensions`, `TelemetryTracerExtensions` compile in `Financial.Shared.Abstractions.Observability`
