@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Text.Json.Serialization.Metadata;
 
-namespace Financial.Shared.Infrastructure.Persistence;
+namespace Financial.Shared.Abstractions.Persistence;
 
 /// <summary>
 /// Reflection-based wiring shared by the CashFlow and Investment <c>JsonTypeInfoResolver</c>s:

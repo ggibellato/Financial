@@ -1,3 +1,5 @@
+using Financial.Shared.Abstractions.Persistence;
+
 namespace Financial.Shared.Infrastructure.Persistence;
 
 public sealed class LocalJsonStorage : IJsonStorage

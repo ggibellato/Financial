@@ -1,4 +1,4 @@
-namespace Financial.Shared.Infrastructure.Persistence;
+namespace Financial.Shared.Abstractions.Persistence;
 
 public interface IRemoteFileClient
 {
