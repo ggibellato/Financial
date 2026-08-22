@@ -23,6 +23,7 @@
     <ProjectReference Include="..\..\Financial.Investment.Application\Financial.Investment.Application.csproj" />
     <ProjectReference Include="..\..\Financial.Investment.Domain\Financial.Investment.Domain.csproj" />
     <ProjectReference Include="..\..\Financial.Investment.Infrastructure\Financial.Investment.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Financial.Shared.Abstractions\Financial.Shared.Abstractions.csproj" />
     <ProjectReference Include="..\WebPageParser\WebPageParser.csproj" />
   </ItemGroup>
 
