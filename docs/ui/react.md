@@ -37,6 +37,16 @@ is the reference.
 - Preserve logical DOM reading order when layouts reflow.
 - Keep responsive behavior near the component or within the established styling
   layer.
+- A component's own hardcoded className must not bake in a sizing assumption
+  (a stretch/`flex`, a `max-height`, an equal-height rule) that only holds for
+  one of its usage contexts. If a component is reused standalone (its natural
+  content height) and inside a side-by-side row (stretched to match
+  siblings), scope the stretching rule to the ancestor selector for that row
+  (e.g. `.grids-row .section--grid { max-height: ... }`), not the component's
+  bare class — otherwise the standalone usage inherits a fixed height meant
+  for the row and shows a large, unintentional gap below its content. This is
+  exactly what happened to `BanksGrid` when reused on the CashFlow Monthly
+  page's Expense tab outside the Summary tab's grids-row (fixed 2026-08-22).
 
 ## Forms
 

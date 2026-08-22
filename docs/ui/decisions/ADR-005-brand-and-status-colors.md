@@ -35,13 +35,24 @@ single canonical value for any status color on either platform today.
   file-by-file.
   - `Financial.Web`'s `FluentProvider` (from ADR-004) uses
     `@fluentui/react-components`'s default `webLightTheme` / `webDarkTheme`
-    brand ramp. If visual comparison during implementation shows the default
-    ramp reads noticeably different from the current `#007ACC`, a custom brand
-    ramp generated from `#0078D4` via Fluent's theme designer tooling is an
-    acceptable substitution — the exact ramp is pinned during token
-    implementation, not by this ADR.
-  - `Financial.App`'s WPF-UI theme (from ADR-004) is configured to the same
-    brand ramp so both platforms render the same accent.
+    brand ramp as-is (light: `colorBrandBackground #0F6CBD`, hover
+    `colorBrandBackgroundHover #115EA3`, pressed
+    `colorBrandBackgroundPressed #0C3B5E`). Verified during the CashFlow
+    Monthly Expense pilot (2026-08-22) to read close enough to the legacy
+    `#007ACC` that no custom ramp is needed.
+  - `Financial.App`'s WPF-UI theme must render the **exact same** hex values,
+    pinned as literal `SolidColorBrush` resources under the specific keys
+    `Wpf.Ui.Controls.Button`'s `Primary` appearance actually binds —
+    `AccentButtonBackground` (`#0F6CBD`), `AccentButtonBackgroundPointerOver`
+    (`#115EA3`), `AccentButtonBackgroundPressed` (`#0C3B5E`) — defined in the
+    same scoped `UserControl.Resources` that merges
+    `ui:ThemesDictionary`/`ui:ControlsDictionary` (see `docs/ui/wpf.md`).
+    **Do not** use `Wpf.Ui.Appearance.ApplicationAccentColorManager.Apply(...)`
+    to do this: it generates its own shade ramp from the seed color rather
+    than using it directly (confirmed both by testing — feeding it
+    `#0F6CBD` produced `#559CE4` on the button, a visibly different, lighter
+    blue — and by [lepoco/wpfui#1481](https://github.com/lepoco/wpfui/issues/1481)),
+    so it cannot be trusted to reproduce a specific hex.
 - Status colors (`color.status.success` / `warning` / `danger` / `info`)
   adopt **Fluent 2's default status palette** on both platforms rather than
   any of the currently competing hex values, since Fluent's status ramp is
@@ -66,3 +77,7 @@ single canonical value for any status color on either platform today.
   match Web's semantic values, not just their sign (positive/negative).
 - Dark-mode status/brand colors are defined from day one instead of
   inheriting Web's current partial dark-mode coverage (see audit).
+- Status colors (success/warning/danger/info) are not yet pinned to literal
+  hex values on WPF — do the same exact-value verification (screenshot both
+  platforms, sample the rendered pixel) before considering a status color
+  migrated, not just visual comparison by eye.

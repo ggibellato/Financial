@@ -94,6 +94,19 @@ Grids must provide applicable:
 - Stable row height and column layout
 - Pagination or virtualization for larger data sets
 
+Let the identifying/label column (leftmost, textual — e.g. "Bank", "Description")
+take the remaining width so the grid fills its available space the way a
+plain HTML table does by default; keep numeric/status columns compact. Do not
+leave fixed-width columns that add up to less than the container width — the
+gap reads as an unfinished/broken grid, not intentional whitespace.
+
+Column-header click-to-sort is not a designed feature yet on either platform.
+A native WPF `DataGrid` may expose default sorting via
+`CanUserSortColumns="True"` while React's plain `<th>` headers have none —
+that is not feature parity, just an accident of the native control. When
+sorting is actually specified, implement equivalent, explicit sort behavior
+on both platforms as part of that feature's own slice.
+
 ### Alignment and financial values
 
 - Text normally aligns left.
@@ -109,7 +122,15 @@ Grids must provide applicable:
 Totals must:
 
 - Have a clear label.
-- Be visually distinct from ordinary rows.
+- Be visually distinct from ordinary rows — in practice, bold the value
+  (React: `<strong>`; WPF: `FontWeight="Bold"`) on both platforms, not just
+  one. If a total's text is otherwise one bound/formatted string (e.g. a WPF
+  `MultiBinding` producing "Bank Balance: 45.00 · Round-Up: 0.00"), split it
+  into separate label/value elements instead so only the values are bold —
+  you cannot make part of a single bound string bold. On WPF, use separate
+  `TextBlock.Text` bindings for this, not `<Run Text="{Binding ...}">`:
+  `Run.Text` defaults to `TwoWay` and crashes on a read-only bound property,
+  unlike `TextBlock.Text`, which defaults to `OneWay`.
 - State whether they are filtered subtotal, period total, or grand total.
 - Use consistent calculation and formatting rules.
 - Update after relevant changes.

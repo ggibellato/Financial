@@ -103,6 +103,11 @@ Do not call UI work complete until:
 
 - Relevant items in `docs/ui/review-checklist.md` have been reviewed.
 - React and/or WPF builds and relevant tests have run.
+- The affected view has actually been run and looked at on each platform it
+  changed (Web: dev server in a browser; WPF: the built app launched) — a
+  clean build and green tests do not guarantee the UI renders correctly; see
+  `docs/ui/current-state-audit.md`'s pilot notes for a concrete case where
+  they didn't.
 - React behavior has been checked against the UI standards.
 - Equivalent WPF behavior has been verified, or an intentional difference is
   documented and justified.

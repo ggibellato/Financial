@@ -129,6 +129,17 @@ Run applicable project commands:
   change where intended
 - Critical workflow: relevant Playwright smoke test when practical
 
+Build and tests passing is not the same as the UI being correct — actually
+run the affected view on both platforms and look at it (Web: dev server in a
+browser; WPF: launch the built app) before calling the work done. The
+CashFlow Monthly Expense pilot (2026-08-22) shipped clean builds and green
+tests with a visibly broken grid (missing `AutoGenerateColumns="False"` after
+scoping a WPF-UI style locally) and a truncated button — neither caught
+until the app was actually opened. When comparing the same workflow across
+platforms, prefer sampling the actual rendered pixel color over eyeballing a
+screenshot (a generated accent ramp can look "close enough" and still be a
+different hex — see `docs/ui/decisions/ADR-005-brand-and-status-colors.md`).
+
 Report:
 
 - UX decisions

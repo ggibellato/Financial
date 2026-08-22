@@ -268,3 +268,63 @@ instead; "Category" is used identically on both.
 - Accessibility attribution is uneven on Web and entirely absent on WPF
   (`AutomationProperties` count: 0) — WPF accessibility work is close to a
   clean slate.
+
+## CashFlow Monthly Expense pilot (2026-08-22)
+
+First real migration under this standard: `ExpenseForm`/`ExpensesSection`
+(Web) and `ExpenseFormView`/`ExpenseSectionView` (WPF), per `ADR-004`
+(component libraries) and `ADR-005` (brand color). Recorded here because it's
+where the standards above were actually tested against a real page instead
+of just written down; the general lessons are folded into
+`docs/ui/wpf.md`, `docs/ui/react.md`, and
+`docs/ui/forms-data-and-visualisations.md` as rules — this section is the
+concrete history behind them.
+
+What shipped clean the first time: Fluent UI React v9 components on Web
+(`Field`/`Input`/`Select`/`Checkbox`/`Button`/`MessageBar`), WPF-UI scoped to
+just the two pilot views on WPF, the Date→Category→Description→Value field
+order from `ADR-002`, and `AutomationProperties.Name` added throughout the
+WPF form (previously zero).
+
+What passed build and tests but was visibly wrong when the app was actually
+run (all fixed same day):
+
+- **WPF `DataGrid` auto-generated a raw column per DTO property** alongside
+  the intended ones. Cause: scoping WPF-UI's `ControlsDictionary` locally
+  gives the grid a *different* implicit `DataGrid` style than `App.xaml`'s,
+  not a merge of the two — `AutoGenerateColumns="False"` from the app-wide
+  style silently stopped applying. Fix: set grid behavior properties
+  explicitly on the element.
+- **WPF action buttons truncated their text** (`Width="90"` was sized for
+  the old native `Button`; `ui:Button`'s Fluent padding needs more). Fixed
+  with `MinWidth` instead of a fixed `Width`.
+- **WPF's brand blue didn't match Web's.** Both platforms defaulted to their
+  library's own accent independently. `ApplicationAccentColorManager.Apply`
+  looked like the obvious fix but generates its own ramp from the seed color
+  (confirmed: feeding it Web's exact `#0F6CBD` produced a visibly different
+  `#559CE4` on the actual button) — the fix that worked was overriding the
+  three specific brush keys `Wpf.Ui.Controls.Button`'s `Primary` appearance
+  binds, with Web's literal `colorBrandBackground`/`Hover`/`Pressed` values.
+  Verified by sampling the rendered pixel on both platforms, not by eye.
+- **Web's `BanksGrid` had a large, unintentional gap** below its rows when
+  used standalone on the Expense tab. Cause: the component's own class
+  carried a `max-height`/flex-stretch rule that only makes sense for its
+  *other* usage (side-by-side in the Summary tab's grids-row); reused
+  standalone, it stretched to fill a height meant for a multi-grid row it
+  wasn't part of. Fixed by scoping that rule to the ancestor selector.
+- **WPF's totals weren't bold** where Web's were (`<strong>` vs a plain
+  `TextBlock` built from a `MultiBinding`). Fixed by splitting the bound
+  string into separate `TextBlock.Text` bindings (not `Run.Text` — see
+  `docs/ui/wpf.md`).
+- **WPF's Bank grid didn't fill its width** (all three columns fixed-width,
+  leaving a dead blank header/body area) while Web's table naturally
+  stretched. Fixed by giving the leftmost/label column `Width="*"`.
+- **WPF's form was a single-column, one-field-per-row, label-left layout**
+  where Web's was a 4-column, label-above-control CSS grid (`ADR-002`).
+  Rebuilt the WPF form as a matching 4-column `Grid` with label-above cells.
+
+One difference intentionally left as-is: WPF's `DataGrid` got
+`CanUserSortColumns="True"` (its native default once the grid was styled
+explicitly) while Web's plain `<th>` headers have no sort behavior at all.
+Column-header sorting isn't a designed feature on either platform yet — see
+`docs/ui/forms-data-and-visualisations.md`.
