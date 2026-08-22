@@ -315,8 +315,8 @@ graph TD
 - [x] `Financial.Shared.Abstractions.csproj` has zero new `PackageReference` entries after the move
 
 ### F02. Sync Abstraction Extraction
-- [ ] `ISyncStatusProvider`, `SyncStatus`, `SyncState`, `JsonStorageSyncExtensions` compile in `Financial.Shared.Abstractions.Sync` with identical public signatures
-- [ ] `DebouncedJsonStorage.GetStatus()`/`FlushAsync()` continue to satisfy `ISyncStatusProvider` from the new namespace with no behavior change
+- [x] `ISyncStatusProvider`, `SyncStatus`, `SyncState`, `JsonStorageSyncExtensions` compile in `Financial.Shared.Abstractions.Sync` with identical public signatures
+- [x] `DebouncedJsonStorage.GetStatus()`/`FlushAsync()` continue to satisfy `ISyncStatusProvider` from the new namespace with no behavior change
 
 ### F03. Resilience Abstraction Extraction
 - [ ] `TransientStorageException` compiles in `Financial.Shared.Abstractions.Resilience` with the same constructor signature
