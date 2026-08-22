@@ -478,9 +478,9 @@ graph TD
 - [x] `GET /summary/broker/{brokerName}` response includes `totalInvested`, equal to `totalBought − totalSold`
 - [x] `GET /summary/portfolio/{brokerName}/{portfolioName}` response includes `totalInvested`, equal to `totalBought − totalSold`
 - [x] Broker-level totals exclude all transactions and credits from assets in the Encerradas portfolio
-- [x] Broker-level and Portfolio-level totals continue to exclude assets with `Quantity == 0` — restored,
-      scoped to `InvestmentScope.Active` only (see the Verification note below; Historic scope must
-      include every asset, since `Quantity == 0` is the defining property of a historic position)
+- [x] Broker-level and Portfolio-level totals continue to exclude assets with `Quantity == 0` — restored
+      in #561, scoped to `InvestmentScope.Active` only (see the Verification note below; Historic scope
+      must include every asset, since `Quantity == 0` is the defining property of a historic position)
 - [x] Selecting the Encerradas portfolio directly still returns its own unfiltered totals
 - [x] A broker with zero eligible portfolios after exclusion returns all totals as 0, not an error
 - [x] Existing HTTP 400 behaviour for missing/whitespace names is unchanged
@@ -690,7 +690,7 @@ entirely server-side so the two UIs cannot add or drop a slice; and F09/F10 cons
    endpoint is consistent with the rest of the API; the criterion simply describes the older contract
    and should be rewritten against scope rather than ticked.
 
-**Resolved — 2026-08-22.** *"Broker-level and Portfolio-level totals continue to exclude assets with
+**Resolved in #561 — 2026-08-22.** *"Broker-level and Portfolio-level totals continue to exclude assets with
 `Quantity == 0`"* was left unticked above because `SummaryService.Aggregate` summed every asset with no
 quantity filter. Decision made (2026-08-22): restore the filter, but scoped to `InvestmentScope.Active`
 only — Historic scope must never apply it, since `Quantity == 0` is what makes a position historic in
