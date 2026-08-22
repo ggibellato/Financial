@@ -62,6 +62,17 @@ public class TreeNodeViewModel : ViewModelBase
     }
 
     /// <summary>
+    /// The asset's position type, or empty for a node that has none.
+    /// </summary>
+    /// <remarks>
+    /// Bound in place of Metadata[PositionType]. The dictionary indexer throws when the key is
+    /// absent, which it is for every broker and portfolio row, and WPF logged the exception on each
+    /// one - the icon was hidden by its Visibility binding, but the Foreground binding was
+    /// evaluated regardless.
+    /// </remarks>
+    public string PositionType => GetMetadata<string>("PositionType") ?? string.Empty;
+
+    /// <summary>
     /// Whether a drag is currently over this node and it would accept the drop.
     /// </summary>
     /// <remarks>

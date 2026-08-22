@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Presentation.App.ViewModels;
 using Financial.Presentation.App.ViewModels.Investment;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
@@ -57,6 +58,39 @@ public class TreeNodeViewModelTests
         asset.DisplayName.Should().Be("PETR4");
         asset.Parent.Should().BeSameAs(portfolio);
         portfolio.Parent.Should().BeSameAs(root);
+    }
+
+    [Fact]
+    public void PositionType_ForAnAssetNode_ReadsTheMetadata()
+    {
+        var node = new TreeNodeViewModel(
+            BuildDto("PETR4", TreeNodeType.Asset, new Dictionary<string, object> { ["PositionType"] = "Long" }));
+
+        node.PositionType.Should().Be("Long");
+    }
+
+    [Fact]
+    public void PositionType_ForANodeWithoutOne_IsEmptyRatherThanThrowing()
+    {
+        // Every broker and portfolio row lands here. Binding Metadata[PositionType] instead threw
+        // KeyNotFoundException on each one, which WPF caught and logged as a binding error.
+        var broker = new TreeNodeViewModel(BuildDto("XPI", TreeNodeType.Broker));
+        var portfolio = new TreeNodeViewModel(BuildDto("Default", TreeNodeType.Portfolio));
+
+        using (new AssertionScope())
+        {
+            broker.PositionType.Should().BeEmpty();
+            portfolio.PositionType.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public void PositionType_WhenTheMetadataIsNotAString_IsEmpty()
+    {
+        var node = new TreeNodeViewModel(
+            BuildDto("PETR4", TreeNodeType.Asset, new Dictionary<string, object> { ["PositionType"] = 42 }));
+
+        node.PositionType.Should().BeEmpty();
     }
 
     [Fact]
