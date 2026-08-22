@@ -44,7 +44,7 @@ public sealed class SummaryService : ISummaryService
 
             var assets = broker.Portfolios.SelectMany(p => p.Assets);
 
-            var result = Aggregate(assets);
+            var result = Aggregate(assets, scope);
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBrokerSummary");
             return result;
@@ -69,7 +69,7 @@ public sealed class SummaryService : ISummaryService
             }
 
             var assets = _repository.GetAssetsByBrokerPortfolio(brokerName, portfolioName, scope);
-            var result = Aggregate(assets);
+            var result = Aggregate(assets, scope);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetPortfolioSummary");
@@ -88,11 +88,22 @@ public sealed class SummaryService : ISummaryService
         return _tracer.StartServiceSpan("Investment", nameof(SummaryService), operationName, EntityType);
     }
 
-    private static AggregatedSummaryDTO Aggregate(IEnumerable<Asset> assets)
+    /// <summary>
+    /// Active-scope totals exclude a position sold down to zero quantity - a fully-closed portfolio is
+    /// routed to Historic wholesale, but a single asset closing out inside an otherwise-still-open
+    /// portfolio has nowhere else to go, so it must be filtered out here to keep "Active" meaning
+    /// currently-held capital. Historic scope must never apply this filter: every asset there has
+    /// Quantity == 0 by definition, so filtering would zero out every Historic total.
+    /// </summary>
+    private static AggregatedSummaryDTO Aggregate(IEnumerable<Asset> assets, InvestmentScope scope)
     {
+        var relevantAssets = scope == InvestmentScope.Active
+            ? assets.Where(a => a.Quantity != 0)
+            : assets;
+
         decimal totalBought = 0, totalSold = 0, totalCredits = 0;
 
-        foreach (var asset in assets)
+        foreach (var asset in relevantAssets)
         {
             var (bought, sold, credits) = NavigationMapper.CalculateTotals(asset);
             totalBought += bought;
