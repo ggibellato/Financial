@@ -122,8 +122,8 @@ const EXPENSES: ExpenseDto[] = [
 const CATEGORY_TOTALS: CategoryTotalDto[] = [{ category: 'Mercado', totalValue: 42.5 }]
 
 const CARD_STATEMENTS: CardStatementDto[] = [
-  { id: 'c1', creditCardId: 'card-baamex', creditCardName: 'BaAmex', year: 2026, month: 7, isPaid: false, outstandingTotal: 100 },
-  { id: 'c2', creditCardId: 'card-chase', creditCardName: 'ChaseMaster4023', year: 2026, month: 7, isPaid: true, outstandingTotal: 0 },
+  { id: 'c1', creditCardId: 'card-baamex', creditCardName: 'BaAmex', year: 2026, month: 7, isPaid: false, outstandingTotal: 100, warning: null },
+  { id: 'c2', creditCardId: 'card-chase', creditCardName: 'ChaseMaster4023', year: 2026, month: 7, isPaid: true, outstandingTotal: 0, warning: null },
 ]
 
 const CREDIT_CARDS: CreditCardDto[] = [
@@ -322,7 +322,7 @@ describe('MonthlyPage', () => {
 
     getCategoryTotalsByMonthMock.mockResolvedValue([{ category: 'Viagem', totalValue: 300 }])
     getCardStatementsByMonthMock.mockResolvedValue([
-      { id: 'c3', creditCardId: 'card-paypal', creditCardName: 'PaypalCredit', year: 2026, month: 8, isPaid: false, outstandingTotal: 55 },
+      { id: 'c3', creditCardId: 'card-paypal', creditCardName: 'PaypalCredit', year: 2026, month: 8, isPaid: false, outstandingTotal: 55, warning: null },
     ])
     getBankBalancesByMonthMock.mockResolvedValue([{ bank: 'Barclays', balance: 300 }])
     getIncomesByMonthMock.mockResolvedValue([

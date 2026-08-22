@@ -5,35 +5,19 @@
         "properties": {
           "totalBought": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "totalCredits": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "totalInvested": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "totalSold": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "type": "object"
@@ -68,11 +52,7 @@
           },
           "totalInvested": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "type": "object"
@@ -81,11 +61,7 @@
         "properties": {
           "amount": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "date": {
             "format": "date-time",
@@ -98,19 +74,13 @@
         "properties": {
           "averagePrice": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "averageSellPrice": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           },
           "brokerName": {
@@ -166,46 +136,26 @@
           },
           "quantity": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "realizedGainLoss": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "ticker": {
             "type": "string"
           },
           "totalBought": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "totalCredits": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "totalSold": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "transactions": {
             "items": {
@@ -226,11 +176,7 @@
         "properties": {
           "averagePrice": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "class": {
             "$ref": "#/components/schemas/GlobalAssetClass"
@@ -240,11 +186,7 @@
           },
           "creditCount": {
             "format": "int32",
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ]
+            "type": "integer"
           },
           "exchange": {
             "type": "string"
@@ -263,22 +205,14 @@
           },
           "quantity": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "ticker": {
             "type": "string"
           },
           "transactionCount": {
             "format": "int32",
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ]
+            "type": "integer"
           }
         },
         "required": [
@@ -314,11 +248,7 @@
           },
           "price": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "ticker": {
             "type": "string"
@@ -356,11 +286,7 @@
           },
           "price": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "type": "object"
@@ -379,11 +305,7 @@
           },
           "targetBalance": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -407,11 +329,7 @@
           },
           "delta": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "id": {
             "format": "uuid",
@@ -425,11 +343,7 @@
           },
           "targetBalance": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -456,11 +370,7 @@
           },
           "targetBalance": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -473,11 +383,7 @@
         "properties": {
           "balance": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "bank": {
             "type": "string"
@@ -500,11 +406,7 @@
           },
           "openingBalance": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "openingBalanceDate": {
             "format": "date",
@@ -527,11 +429,7 @@
         "properties": {
           "openingBalance": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "openingBalanceDate": {
             "format": "date",
@@ -554,11 +452,7 @@
           },
           "portfolioCount": {
             "format": "int32",
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ]
+            "type": "integer"
           },
           "portfolios": {
             "items": {
@@ -568,11 +462,7 @@
           },
           "totalAssets": {
             "format": "int32",
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ]
+            "type": "integer"
           }
         },
         "required": [
@@ -585,11 +475,7 @@
         "properties": {
           "amount": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "bucketId": {
             "format": "uuid",
@@ -616,11 +502,7 @@
           },
           "terminalValue": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "type": "object"
@@ -643,19 +525,11 @@
           },
           "month": {
             "format": "int32",
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ]
+            "type": "integer"
           },
           "outstandingTotal": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "warning": {
             "type": [
@@ -665,11 +539,7 @@
           },
           "year": {
             "format": "int32",
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ]
+            "type": "integer"
           }
         },
         "required": [
@@ -693,11 +563,7 @@
           },
           "year": {
             "format": "int32",
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ]
+            "type": "integer"
           }
         },
         "required": [
@@ -710,19 +576,11 @@
         "properties": {
           "annualTotal": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "average": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "category": {
             "type": "string"
@@ -730,11 +588,7 @@
           "monthlyTotals": {
             "items": {
               "format": "double",
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-              "type": [
-                "number",
-                "string"
-              ]
+              "type": "number"
             },
             "type": "array"
           }
@@ -782,11 +636,7 @@
           },
           "value": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -802,11 +652,7 @@
           },
           "totalValue": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -828,55 +674,31 @@
           },
           "resultadoAnnualTotal": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "resultadoAverage": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "resultadoMonthly": {
             "items": {
               "format": "double",
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-              "type": [
-                "number",
-                "string"
-              ]
+              "type": "number"
             },
             "type": "array"
           },
           "totalDespesasAnnualTotal": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "totalDespesasAverage": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "totalDespesasMonthly": {
             "items": {
               "format": "double",
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-              "type": [
-                "number",
-                "string"
-              ]
+              "type": "number"
             },
             "type": "array"
           }
@@ -918,11 +740,7 @@
           },
           "sourceValue": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -943,22 +761,14 @@
           },
           "dueDay": {
             "format": "int32",
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ]
+            "type": "integer"
           },
           "note": {
             "type": "string"
           },
           "value": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -1034,11 +844,7 @@
           },
           "value": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -1064,11 +870,7 @@
           },
           "value": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -1123,11 +925,7 @@
           },
           "value": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -1172,11 +970,7 @@
           },
           "value": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -1188,35 +982,19 @@
         "properties": {
           "averageDividendLastFiveYears": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "currentPrice": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "discountPercent": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "dividendYieldPercent": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "exchange": {
             "type": "string"
@@ -1236,11 +1014,7 @@
           },
           "priceMaxBuy": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "ticker": {
             "type": "string"
@@ -1265,19 +1039,11 @@
         "properties": {
           "total": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "year": {
             "format": "int32",
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ]
+            "type": "integer"
           }
         },
         "type": "object"
@@ -1321,20 +1087,14 @@
           },
           "roundUpAmount": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           },
           "value": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -1413,29 +1173,21 @@
           },
           "roundUpAmount": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           },
           "suggestedRoundUpAmount": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           },
           "value": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -1488,20 +1240,14 @@
           },
           "roundUpAmount": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           },
           "value": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -1600,109 +1346,61 @@
         "properties": {
           "dividendoJurosAnnualTotal": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "dividendoJurosAverage": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "dividendoJurosMonthly": {
             "items": {
               "format": "double",
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-              "type": [
-                "number",
-                "string"
-              ]
+              "type": "number"
             },
             "type": "array"
           },
           "salaryAfterTaxesAnnualTotal": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "salaryAfterTaxesAverage": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "salaryAfterTaxesMonthly": {
             "items": {
               "format": "double",
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-              "type": [
-                "number",
-                "string"
-              ]
+              "type": "number"
             },
             "type": "array"
           },
           "salaryAnnualTotal": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "salaryAverage": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "salaryMonthly": {
             "items": {
               "format": "double",
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-              "type": [
-                "number",
-                "string"
-              ]
+              "type": "number"
             },
             "type": "array"
           },
           "taxDifferenceAnnualTotal": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "taxDifferenceAverage": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "taxDifferenceMonthly": {
             "items": {
               "format": "double",
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-              "type": [
-                "number",
-                "string"
-              ]
+              "type": "number"
             },
             "type": "array"
           }
@@ -1744,11 +1442,9 @@
           },
           "grossValue": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           },
           "incomeSourceId": {
@@ -1757,11 +1453,7 @@
           },
           "netValue": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -1798,11 +1490,9 @@
           },
           "grossValue": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           },
           "id": {
@@ -1818,11 +1508,7 @@
           },
           "netValue": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -1862,11 +1548,7 @@
         "properties": {
           "amount": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -1893,11 +1575,7 @@
           },
           "total": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -1927,11 +1605,9 @@
           },
           "grossValue": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           },
           "incomeSourceId": {
@@ -1940,11 +1616,7 @@
           },
           "netValue": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -1965,11 +1637,9 @@
           "monthlyDiffs": {
             "items": {
               "format": "double",
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
               "type": [
                 "null",
-                "number",
-                "string"
+                "number"
               ]
             },
             "type": "array"
@@ -1977,11 +1647,7 @@
           "monthlyValues": {
             "items": {
               "format": "double",
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-              "type": [
-                "number",
-                "string"
-              ]
+              "type": "number"
             },
             "type": "array"
           }
@@ -2054,27 +1720,15 @@
           },
           "month": {
             "format": "int32",
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ]
+            "type": "integer"
           },
           "value": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "year": {
             "format": "int32",
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ]
+            "type": "integer"
           }
         },
         "required": [
@@ -2092,11 +1746,9 @@
         "properties": {
           "brlValue": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           },
           "date": {
@@ -2108,11 +1760,9 @@
           },
           "gbpValue": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           },
           "id": {
@@ -2139,19 +1789,11 @@
         "properties": {
           "totalBrlValue": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "totalGbpValue": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -2203,28 +1845,18 @@
         "properties": {
           "averageMonthResult": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "fullYearNetChange": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "monthlyDiffs": {
             "items": {
               "format": "double",
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
               "type": [
                 "null",
-                "number",
-                "string"
+                "number"
               ]
             },
             "type": "array"
@@ -2232,21 +1864,13 @@
           "monthlyValues": {
             "items": {
               "format": "double",
-              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-              "type": [
-                "number",
-                "string"
-              ]
+              "type": "number"
             },
             "type": "array"
           },
           "sumOfMonthResults": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -2265,19 +1889,13 @@
           },
           "averagePrice": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "averageSellPrice": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           },
           "cashFlows": {
@@ -2291,45 +1909,31 @@
           },
           "creditFrequencyPerYear": {
             "format": "int32",
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ]
           },
           "currentMonthCredits": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "currentQuantity": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "estimatedAnnualCredits": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           },
           "estimatedAnnualPercent": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           },
           "exchange": {
@@ -2350,71 +1954,41 @@
           },
           "lastMonthCredits": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "lastMonthCreditsPercent": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           },
           "portfolioWeight": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "realizedGainLoss": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "ticker": {
             "type": "string"
           },
           "totalBought": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "totalCredits": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "totalInvested": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "totalSold": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "type": "object"
@@ -2432,11 +2006,7 @@
           },
           "totalInvested": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "type": "object"
@@ -2445,11 +2015,7 @@
         "properties": {
           "assetCount": {
             "format": "int32",
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ]
+            "type": "integer"
           },
           "assets": {
             "items": {
@@ -2489,11 +2055,9 @@
           },
           "status": {
             "format": "int32",
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ]
           },
           "title": {
@@ -2521,11 +2085,7 @@
           },
           "dueDay": {
             "format": "int32",
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ]
+            "type": "integer"
           },
           "id": {
             "format": "uuid",
@@ -2533,11 +2093,9 @@
           },
           "minimumWageValue": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           },
           "nitNumber": {
@@ -2554,11 +2112,7 @@
           },
           "value": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -2576,11 +2130,7 @@
         "properties": {
           "balance": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "bucketId": {
             "format": "uuid",
@@ -2611,11 +2161,7 @@
           },
           "splitPercentage": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -2630,11 +2176,7 @@
         "properties": {
           "amount": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "bucketId": {
             "format": "uuid",
@@ -2682,11 +2224,7 @@
           },
           "price": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -2744,19 +2282,11 @@
         "properties": {
           "calculatedTithe": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "titheBalance": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -2779,33 +2309,21 @@
           },
           "fees": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "portfolioName": {
             "type": "string"
           },
           "quantity": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "type": {
             "type": "string"
           },
           "unitPrice": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -2824,11 +2342,7 @@
           },
           "fees": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "id": {
             "format": "uuid",
@@ -2836,30 +2350,18 @@
           },
           "quantity": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "totalPrice": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "type": {
             "type": "string"
           },
           "unitPrice": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -2901,11 +2403,7 @@
           },
           "totalPrice": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "type": {
             "type": "string"
@@ -2931,11 +2429,7 @@
           },
           "fees": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "id": {
             "format": "uuid",
@@ -2946,22 +2440,14 @@
           },
           "quantity": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "type": {
             "type": "string"
           },
           "unitPrice": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -2976,11 +2462,7 @@
         "properties": {
           "amount": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -3013,11 +2495,7 @@
         "properties": {
           "amount": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -3063,11 +2541,7 @@
         "properties": {
           "amount": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "date": {
             "format": "date",
@@ -3132,11 +2606,7 @@
         "properties": {
           "value": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -3148,20 +2618,16 @@
         "properties": {
           "brlValue": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           },
           "gbpValue": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           }
         },
@@ -3174,11 +2640,7 @@
           },
           "value": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           }
         },
         "required": [
@@ -3191,11 +2653,7 @@
         "properties": {
           "amount": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "bucketId": {
             "format": "uuid",
@@ -3236,11 +2694,7 @@
         "properties": {
           "amount": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": "number"
           },
           "bucketId": {
             "format": "uuid",
@@ -3269,11 +2723,9 @@
         "properties": {
           "xirr": {
             "format": "double",
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
             "type": [
               "null",
-              "number",
-              "string"
+              "number"
             ]
           }
         },

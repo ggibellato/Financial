@@ -1,6 +1,24 @@
+import type { components } from './generated/openapi'
+
+type Schema<Name extends keyof components['schemas']> = DeepRequired<components['schemas'][Name]>
+
+/**
+ * The generated schema marks a property optional whenever the backend's OpenAPI generator didn't infer
+ * it as required (mainly non-nullable value types - see OpenApiContractTests for why), even though every
+ * DTO property is always present on the wire. `Required<T>` is shallow, so a plain alias would still leave
+ * every nested object/array (e.g. AssetDetailsDto.transactions[*].quantity) optional one level down; this
+ * recurses so the whole tree matches the "every key present, nullability via `| null`" shape this file
+ * used before codegen.
+ */
+type DeepRequired<T> = T extends (infer Item)[]
+  ? DeepRequired<Item>[]
+  : T extends object
+    ? { [Key in keyof T]-?: DeepRequired<T[Key]> }
+    : T
+
 export type NodeType = 'Asset' | 'Portfolio' | 'Broker'
 
-export type PositionType = 'Long' | 'Flat' | 'Short'
+export type PositionType = Schema<'PositionType'>
 
 export type InvestmentScope = 'active' | 'historic'
 
@@ -33,664 +51,88 @@ export interface SelectedNodeContextValue {
   reloadToken: number
 }
 
-export interface TreeNodeDto {
-  nodeType: string
-  displayName: string
-  children: TreeNodeDto[]
-  metadata: Record<string, unknown>
-}
-
-export interface BrokerNodeDto {
-  name: string
-  currency: string
-  portfolioCount: number
-  totalAssets: number
-  portfolios: PortfolioNodeDto[]
-}
-
-export interface PortfolioNodeDto {
-  name: string
-  assetCount: number
-  assets: AssetNodeDto[]
-}
-
-export interface AssetNodeDto {
-  name: string
-  ticker: string
-  exchange: string
-  country: string
-  localTypeCode: string
-  class: string
-  isin: string
-  quantity: number
-  averagePrice: number
-  positionType: PositionType
-  transactionCount: number
-  creditCount: number
-}
-
-export interface TransactionDto {
-  id: string
-  date: string
-  type: string
-  quantity: number
-  unitPrice: number
-  fees: number
-  totalPrice: number
-}
-
-export interface TransactionSummaryItemDto {
-  assetName: string
-  date: string
-  type: string
-  totalPrice: number
-}
-
-export interface CreditDto {
-  id: string
-  date: string
-  type: string
-  value: number
-}
-
-export interface AssetPriceSnapshotDto {
-  date: string
-  price: number
-  isManual: boolean
-}
-
-export interface AssetDetailsDto {
-  name: string
-  brokerName: string
-  portfolioName: string
-  ticker: string
-  isin: string
-  exchange: string
-  country: string
-  localTypeCode: string
-  class: string
-  quantity: number
-  averagePrice: number
-  averageSellPrice: number | null
-  positionType: PositionType
-  totalBought: number
-  totalSold: number
-  totalCredits: number
-  realizedGainLoss: number
-  transactions: TransactionDto[]
-  credits: CreditDto[]
-  priceHistory: AssetPriceSnapshotDto[]
-  cashFlowsWithCredits: AssetCashFlowDto[]
-  cashFlowsWithoutCredits: AssetCashFlowDto[]
-}
-
-export interface ArchiveAssetRequestDto {
-  brokerName: string
-  sourcePortfolioName: string
-  assetName: string
-  destinationPortfolioName: string
-}
-
-export interface MoveAssetRequestDto {
-  brokerName: string
-  scope: InvestmentScope
-  sourcePortfolioName: string
-  assetName: string
-  destinationPortfolioName: string
-}
-
-export interface TransactionCreateDto {
-  brokerName: string
-  portfolioName: string
-  assetName: string
-  date: string
-  type: string
-  quantity: number
-  unitPrice: number
-  fees: number
-}
-
-export interface TransactionUpdateDto {
-  brokerName: string
-  portfolioName: string
-  assetName: string
-  id: string
-  date: string
-  type: string
-  quantity: number
-  unitPrice: number
-  fees: number
-}
-
-export interface TransactionDeleteDto {
-  brokerName: string
-  portfolioName: string
-  assetName: string
-  id: string
-}
-
-export interface CreditCreateDto {
-  brokerName: string
-  portfolioName: string
-  assetName: string
-  date: string
-  type: string
-  value: number
-}
-
-export interface CreditUpdateDto {
-  brokerName: string
-  portfolioName: string
-  assetName: string
-  id: string
-  date: string
-  type: string
-  value: number
-}
-
-export interface CreditDeleteDto {
-  brokerName: string
-  portfolioName: string
-  assetName: string
-  id: string
-}
-
-export interface SetAssetPriceDto {
-  brokerName: string
-  portfolioName: string
-  assetName: string
-  date: string
-  price: number
-}
-
-export interface DeleteAssetPriceDto {
-  brokerName: string
-  portfolioName: string
-  assetName: string
-  date: string
-}
-
-export interface DividendHistoryItemDto {
-  type: string
-  date: string
-  value: number
-}
-
-export interface DividendYearTotalDto {
-  year: number
-  total: number
-}
-
-export interface DividendSummaryDto {
-  exchange: string
-  ticker: string
-  name: string
-  currentPrice: number
-  priceAsOf: string
-  averageDividendLastFiveYears: number
-  dividendYieldPercent: number
-  priceMaxBuy: number
-  discountPercent: number
-  history: DividendHistoryItemDto[]
-  yearTotals: DividendYearTotalDto[]
-}
-
-export interface AssetPriceDto {
-  exchange: string
-  ticker: string
-  name: string
-  price: number
-  asOf: string | null
-  /** Date-only, e.g. "2026-08-16". Set when the price came from Price History. */
-  asOfDate: string | null
-  isManual: boolean
-}
-
-export interface AggregatedSummaryDto {
-  totalBought: number
-  totalSold: number
-  totalCredits: number
-  totalInvested: number
-}
-
-export interface AssetBreakdownItemDto {
-  assetName: string
-  totalInvested: number
-}
-
-export interface PortfolioBreakdownItemDto {
-  portfolioName: string
-  totalInvested: number
-  assets: AssetBreakdownItemDto[]
-}
-
-export interface WatchlistItemDto {
-  group: string
-  name: string
-}
-
-export interface PortfolioReferenceDto {
-  brokerName: string
-  portfolioName: string
-}
-
-export interface AssetCashFlowDto {
-  date: string
-  amount: number
-}
-
-export interface CalculateXirrRequestDto {
-  cashFlows: AssetCashFlowDto[]
-  terminalValue: number
-}
-
-export interface XirrResultDto {
-  xirr: number | null
-}
-
-export interface PortfolioAssetSummaryItemDto {
-  assetName: string
-  ticker: string
-  exchange: string
-  class: string
-  firstInvestmentDate: string | null
-  currentQuantity: number
-  averagePrice: number
-  averageSellPrice: number | null
-  totalBought: number
-  totalSold: number
-  totalInvested: number
-  realizedGainLoss: number
-  portfolioWeight: number
-  totalCredits: number
-  cashFlows: AssetCashFlowDto[]
-  lastMonthCredits: number
-  lastCreditMonth: string | null
-  lastMonthCreditsPercent: number | null
-  creditFrequencyPerYear: number | null
-  estimatedAnnualCredits: number | null
-  estimatedAnnualPercent: number | null
-  currentMonthCredits: number
-}
-
-export interface ReserveBucketBalanceDto {
-  bucketId: string
-  bucketName: string
-  balance: number
-}
-
-export interface ReserveBucketDto {
-  id: string
-  name: string
-  isActive: boolean
-  splitPercentage: number
-}
-
-export interface ReserveMovementDto {
-  id: string
-  bucketId: string
-  bucketName: string
-  amount: number
-  date: string
-  description: string
-}
-
-export interface IncomeSplitRequestDto {
-  date: string
-  amount: number
-  description: string
-}
-
-export interface BucketSplitAmountDto {
-  bucketId: string
-  bucketName: string
-  amount: number
-}
-
-export interface IncomeSplitResultDto {
-  buckets: BucketSplitAmountDto[]
-  total: number
-}
-
-export interface WithdrawalRequestDto {
-  bucketId: string
-  amount: number
-  date: string
-  description: string
-  confirmed: boolean
-}
-
-export interface UpdateReserveMovementDto {
-  bucketId: string
-  amount: number
-  date: string
-  description: string
-}
-
-export interface RecurringBillDto {
-  id: string
-  dueDay: number
-  description: string
-  area: string
-  note: string
-  nitNumber: string | null
-  minimumWageValue: number | null
-  value: number
-  status: string
-}
-
-export interface CreateRecurringBillDto {
-  dueDay: number
-  description: string
-  value: number
-  area: string
-  note: string
-}
-
-export interface UpdateRecurringBillDto {
-  status: string
-  value: number
-}
-
-export interface MaeLedgerEntryDto {
-  id: string
-  date: string
-  description: string
-  note: string
-  sourceCurrency: string
-  brlValue: number | null
-  gbpValue: number | null
-}
-
-export interface CreateMaeLedgerEntryDto {
-  date: string
-  description: string
-  note: string
-  sourceCurrency: string
-  sourceValue: number
-}
-
-export interface MaeLedgerTotalsDto {
-  totalBrlValue: number
-  totalGbpValue: number
-}
-
-export interface UpdateMaeLedgerEntryValuesDto {
-  brlValue: number | null
-  gbpValue: number | null
-}
-
-export interface ExpenseDto {
-  id: string
-  date: string
-  description: string
-  value: number
-  categoryId: string
-  categoryName: string
-  paymentSourceBankId: string | null
-  paymentSourceBankName: string | null
-  creditCardId: string | null
-  creditCardName: string | null
-  chargeDate: string | null
-  invoiceDate: string | null
-  paymentStatus: string
-  roundUpAmount: number | null
-  suggestedRoundUpAmount: number | null
-  countsAsTithe: boolean
-}
-
-export interface CreateExpenseDto {
-  date: string
-  description: string
-  value: number
-  categoryId: string
-  paymentSourceBankId: string | null
-  creditCardId: string | null
-  invoiceDate: string | null
-  roundUpAmount: number | null
-  countsAsTithe: boolean
-}
-
-export interface UpdateExpenseDto {
-  date: string
-  description: string
-  value: number
-  categoryId: string
-  paymentSourceBankId: string | null
-  creditCardId: string | null
-  invoiceDate: string | null
-  roundUpAmount: number | null
-  countsAsTithe: boolean
-}
-
-export interface BankDto {
-  id: string
-  name: string
-  roundUpEnabled: boolean
-  openingBalance: number
-  openingBalanceDate: string
-}
-
-export interface IncomeSourceDto {
-  id: string
-  name: string
-  isActive: boolean
-  group: string
-}
-
-export interface CategoryDto {
-  id: string
-  name: string
-  active: boolean
-  isInvestment: boolean
-  isTithe: boolean
-}
-
-export interface BankBalanceDto {
-  bank: string
-  balance: number
-}
-
-export interface TitheSummaryDto {
-  calculatedTithe: number
-  titheBalance: number
-}
-
-export interface IncomeDto {
-  id: string
-  date: string
-  incomeSourceId: string
-  incomeSourceName: string
-  grossValue: number | null
-  netValue: number
-  bankId: string | null
-  bankName: string | null
-  description: string | null
-}
-
-export interface CreateIncomeDto {
-  date: string
-  incomeSourceId: string
-  grossValue: number | null
-  netValue: number
-  bankId: string | null
-  description: string | null
-}
-
-export interface UpdateIncomeDto {
-  date: string
-  incomeSourceId: string
-  grossValue: number | null
-  netValue: number
-  bankId: string | null
-  description: string | null
-}
-
-export interface CategoryTotalDto {
-  category: string
-  totalValue: number
-}
-
-export interface CardStatementDto {
-  id: string
-  creditCardId: string
-  creditCardName: string
-  year: number
-  month: number
-  isPaid: boolean
-  outstandingTotal: number
-  warning?: string | null
-}
-
-export interface CreditCardDto {
-  id: string
-  name: string
-  isActive: boolean
-  nextInvoiceDueDate: string | null
-}
-
-export interface UpdateCreditCardDto {
-  nextInvoiceDueDate: string | null
-  isActive: boolean
-}
-
-export interface MarkCardStatementPaidDto {
-  paymentSourceBankId: string | null
-}
-
-export interface CategoryAnnualTotalDto {
-  category: string
-  monthlyTotals: number[]
-  annualTotal: number
-  average: number
-}
-
-export interface InvestmentAccountAnnualDiffDto {
-  account: string
-  isLiability: boolean
-  monthlyValues: number[]
-  monthlyDiffs: (number | null)[]
-}
-
-export interface NetPositionAnnualDiffDto {
-  monthlyValues: number[]
-  monthlyDiffs: (number | null)[]
-  fullYearNetChange: number
-  averageMonthResult: number
-  sumOfMonthResults: number
-}
-
-export interface InvestmentAnnualResultDto {
-  accounts: InvestmentAccountAnnualDiffDto[]
-  netPosition: NetPositionAnnualDiffDto
-}
-
-export interface IncomeAnnualSummaryDto {
-  salaryMonthly: number[]
-  salaryAnnualTotal: number
-  salaryAverage: number
-  salaryAfterTaxesMonthly: number[]
-  salaryAfterTaxesAnnualTotal: number
-  salaryAfterTaxesAverage: number
-  taxDifferenceMonthly: number[]
-  taxDifferenceAnnualTotal: number
-  taxDifferenceAverage: number
-  dividendoJurosMonthly: number[]
-  dividendoJurosAnnualTotal: number
-  dividendoJurosAverage: number
-}
-
-export interface CategoryTotalsAnnualDto {
-  categoryTotals: CategoryAnnualTotalDto[]
-  incomeSummary: IncomeAnnualSummaryDto
-  totalDespesasMonthly: number[]
-  totalDespesasAnnualTotal: number
-  totalDespesasAverage: number
-  resultadoMonthly: number[]
-  resultadoAnnualTotal: number
-  resultadoAverage: number
-}
-
-export interface InvestmentSnapshotDto {
-  id: string
-  accountId: string
-  accountName: string
-  isLiability: boolean
-  year: number
-  month: number
-  value: number
-}
-
-export interface UpdateInvestmentSnapshotValueDto {
-  value: number
-}
-
-export interface CategoryAnnualAverageDto {
-  year: number
-  annualAverages: CategoryAverageDto[]
-}
-
-export interface CategoryAverageDto {
-  category: string
-  value: number
-}
-
-export interface TransferDto {
-  id: string
-  date: string
-  sourceBankId: string
-  sourceBankName: string
-  destinationBankId: string
-  destinationBankName: string
-  amount: number
-  note: string | null
-}
-
-export interface CreateTransferDto {
-  date: string
-  sourceBankId: string
-  destinationBankId: string
-  amount: number
-  note: string | null
-}
-
-export interface UpdateTransferDto {
-  date: string
-  sourceBankId: string
-  destinationBankId: string
-  amount: number
-  note: string | null
-}
-
-export interface BalanceAdjustmentDto {
-  id: string
-  date: string
-  bankId: string
-  bankName: string
-  targetBalance: number
-  delta: number
-  note: string | null
-}
-
-export interface CreateBalanceAdjustmentDto {
-  date: string
-  targetBalance: number
-  note: string | null
-}
-
-export interface UpdateBalanceAdjustmentDto {
-  date: string
-  targetBalance: number
-  note: string | null
-}
-
-export interface SyncStatusDto {
-  state: string
-  lastError: string | null
-  lastSuccessfulSaveUtc: string | null
-}
-
-export interface SyncStatusResponseDto {
-  cashFlow: SyncStatusDto
-  investment: SyncStatusDto
-}
+export type TreeNodeDto = Schema<'TreeNodeDTO'>
+export type BrokerNodeDto = Schema<'BrokerNodeDTO'>
+export type PortfolioNodeDto = Schema<'PortfolioNodeDTO'>
+export type AssetNodeDto = Schema<'AssetNodeDTO'>
+export type TransactionDto = Schema<'TransactionDTO'>
+export type TransactionSummaryItemDto = Schema<'TransactionSummaryItemDTO'>
+export type CreditDto = Schema<'CreditDTO'>
+export type AssetPriceSnapshotDto = Schema<'AssetPriceSnapshotDTO'>
+export type AssetDetailsDto = Schema<'AssetDetailsDTO'>
+export type ArchiveAssetRequestDto = Schema<'ArchiveAssetRequestDTO'>
+export type MoveAssetRequestDto = Schema<'MoveAssetRequestDTO'>
+export type TransactionCreateDto = Schema<'TransactionCreateDTO'>
+export type TransactionUpdateDto = Schema<'TransactionUpdateDTO'>
+export type TransactionDeleteDto = Schema<'TransactionDeleteDTO'>
+export type CreditCreateDto = Schema<'CreditCreateDTO'>
+export type CreditUpdateDto = Schema<'CreditUpdateDTO'>
+export type CreditDeleteDto = Schema<'CreditDeleteDTO'>
+export type SetAssetPriceDto = Schema<'SetAssetPriceDTO'>
+export type DeleteAssetPriceDto = Schema<'DeleteAssetPriceDTO'>
+export type DividendHistoryItemDto = Schema<'DividendHistoryItemDTO'>
+export type DividendYearTotalDto = Schema<'DividendYearTotalDTO'>
+export type DividendSummaryDto = Schema<'DividendSummaryDTO'>
+export type AssetPriceDto = Schema<'AssetPriceDTO'>
+export type AggregatedSummaryDto = Schema<'AggregatedSummaryDTO'>
+export type AssetBreakdownItemDto = Schema<'AssetBreakdownItemDTO'>
+export type PortfolioBreakdownItemDto = Schema<'PortfolioBreakdownItemDTO'>
+export type WatchlistItemDto = Schema<'WatchlistItem'>
+/** Named `AssetPriceFetch` on the backend - it's the scope entry for the batch price-fetch feature. */
+export type PortfolioReferenceDto = Schema<'AssetPriceFetch'>
+export type AssetCashFlowDto = Schema<'AssetCashFlowDTO'>
+export type CalculateXirrRequestDto = Schema<'CalculateXirrRequestDTO'>
+export type XirrResultDto = Schema<'XirrResultDTO'>
+export type PortfolioAssetSummaryItemDto = Schema<'PortfolioAssetSummaryItemDTO'>
+export type ReserveBucketBalanceDto = Schema<'ReserveBucketBalanceDTO'>
+export type ReserveBucketDto = Schema<'ReserveBucketDTO'>
+export type ReserveMovementDto = Schema<'ReserveMovementDTO'>
+export type IncomeSplitRequestDto = Schema<'IncomeSplitRequestDTO'>
+export type BucketSplitAmountDto = Schema<'BucketSplitAmountDTO'>
+export type IncomeSplitResultDto = Schema<'IncomeSplitResultDTO'>
+export type WithdrawalRequestDto = Schema<'WithdrawalRequestDTO'>
+export type UpdateReserveMovementDto = Schema<'UpdateReserveMovementDTO'>
+export type RecurringBillDto = Schema<'RecurringBillDTO'>
+export type CreateRecurringBillDto = Schema<'CreateRecurringBillDTO'>
+export type UpdateRecurringBillDto = Schema<'UpdateRecurringBillDTO'>
+export type MaeLedgerEntryDto = Schema<'MaeLedgerEntryDTO'>
+export type CreateMaeLedgerEntryDto = Schema<'CreateMaeLedgerEntryDTO'>
+export type MaeLedgerTotalsDto = Schema<'MaeLedgerTotalsDTO'>
+export type UpdateMaeLedgerEntryValuesDto = Schema<'UpdateMaeLedgerEntryValuesDTO'>
+export type ExpenseDto = Schema<'ExpenseDTO'>
+export type CreateExpenseDto = Schema<'ExpenseCreateDTO'>
+export type UpdateExpenseDto = Schema<'ExpenseUpdateDTO'>
+export type BankDto = Schema<'BankDTO'>
+export type IncomeSourceDto = Schema<'IncomeSourceDTO'>
+export type CategoryDto = Schema<'CategoryDTO'>
+export type BankBalanceDto = Schema<'BankBalanceDTO'>
+export type TitheSummaryDto = Schema<'TitheSummaryDTO'>
+export type IncomeDto = Schema<'IncomeDTO'>
+export type CreateIncomeDto = Schema<'IncomeCreateDTO'>
+export type UpdateIncomeDto = Schema<'IncomeUpdateDTO'>
+export type CategoryTotalDto = Schema<'CategoryTotalDTO'>
+export type CardStatementDto = Schema<'CardStatementDTO'>
+export type CreditCardDto = Schema<'CreditCardDTO'>
+export type UpdateCreditCardDto = Schema<'CreditCardUpdateDTO'>
+/** Named `MarkStatementPaidDTO` on the backend. */
+export type MarkCardStatementPaidDto = Schema<'MarkStatementPaidDTO'>
+export type CategoryAnnualTotalDto = Schema<'CategoryAnnualTotalDTO'>
+export type InvestmentAccountAnnualDiffDto = Schema<'InvestmentAccountAnnualDiffDTO'>
+export type NetPositionAnnualDiffDto = Schema<'NetPositionAnnualDiffDTO'>
+export type InvestmentAnnualResultDto = Schema<'InvestmentAnnualResultDTO'>
+export type IncomeAnnualSummaryDto = Schema<'IncomeAnnualSummaryDTO'>
+export type CategoryTotalsAnnualDto = Schema<'CategoryTotalsAnnualDTO'>
+export type InvestmentSnapshotDto = Schema<'InvestmentSnapshotDTO'>
+export type UpdateInvestmentSnapshotValueDto = Schema<'UpdateInvestmentSnapshotValueDTO'>
+/** Named `CategoryAnnualGroupValueDTO` on the backend. */
+export type CategoryAnnualAverageDto = Schema<'CategoryAnnualGroupValueDTO'>
+/** Named `CategoryGroupValueDTO` on the backend. */
+export type CategoryAverageDto = Schema<'CategoryGroupValueDTO'>
+export type TransferDto = Schema<'TransferDTO'>
+export type CreateTransferDto = Schema<'TransferCreateDTO'>
+export type UpdateTransferDto = Schema<'TransferUpdateDTO'>
+export type BalanceAdjustmentDto = Schema<'BalanceAdjustmentDTO'>
+export type CreateBalanceAdjustmentDto = Schema<'BalanceAdjustmentCreateDTO'>
+export type UpdateBalanceAdjustmentDto = Schema<'BalanceAdjustmentUpdateDTO'>
+export type SyncStatusDto = Schema<'SyncStatusDTO'>
+export type SyncStatusResponseDto = Schema<'SyncStatusResponseDTO'>

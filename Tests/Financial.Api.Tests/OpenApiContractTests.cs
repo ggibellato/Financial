@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -59,6 +60,45 @@ public class OpenApiContractTests
             $"{UpdateFlag}=1 and running: dotnet test Tests/Financial.Api.Tests. Review the diff - anything removed " +
             "or renamed is a breaking change for Financial.Web, whose types.ts is hand-written and will " +
             "not fail to compile against it");
+    }
+
+    /// <summary>
+    /// The built-in schema generator hedges every decimal/int property as <c>["number","string"]</c> in
+    /// case a consumer sends it quoted. Nothing here does - no <c>JsonNumberHandling.WriteAsString</c> is
+    /// configured, so the wire format is always a plain JSON number - and the hedge would force generated
+    /// TypeScript to accept a <c>string</c> that never actually arrives. Program.cs strips it via a schema
+    /// transformer; this pins that it stays stripped.
+    /// </summary>
+    [Fact]
+    public async Task OpenApiDocument_NumericProperties_DoNotAdvertiseAStringFallback()
+    {
+        using var document = JsonDocument.Parse(await FetchDocumentAsync());
+        var schemas = document.RootElement.GetProperty("components").GetProperty("schemas");
+
+        var offending = new List<string>();
+        foreach (var schema in schemas.EnumerateObject())
+        {
+            if (!schema.Value.TryGetProperty("properties", out var properties))
+            {
+                continue;
+            }
+
+            foreach (var property in properties.EnumerateObject())
+            {
+                if (!property.Value.TryGetProperty("type", out var type) || type.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                var types = type.EnumerateArray().Select(t => t.GetString()).ToList();
+                if (types.Contains("string") && (types.Contains("number") || types.Contains("integer")))
+                {
+                    offending.Add($"{schema.Name}.{property.Name}");
+                }
+            }
+        }
+
+        offending.Should().BeEmpty("every numeric property should describe only its real wire type");
     }
 
     /// <summary>

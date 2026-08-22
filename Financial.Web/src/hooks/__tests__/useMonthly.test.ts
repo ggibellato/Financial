@@ -99,8 +99,8 @@ const EXPENSES: ExpenseDto[] = [
 const CATEGORY_TOTALS: CategoryTotalDto[] = [{ category: 'Mercado', totalValue: 42.5 }]
 
 const CARD_STATEMENTS: CardStatementDto[] = [
-  { id: 'c1', creditCardId: 'card-baamex', creditCardName: 'BaAmex', year: CURRENT_YEAR, month: CURRENT_MONTH, isPaid: false, outstandingTotal: 100 },
-  { id: 'c2', creditCardId: 'card-chase', creditCardName: 'ChaseMaster4023', year: CURRENT_YEAR, month: CURRENT_MONTH, isPaid: true, outstandingTotal: 0 },
+  { id: 'c1', creditCardId: 'card-baamex', creditCardName: 'BaAmex', year: CURRENT_YEAR, month: CURRENT_MONTH, isPaid: false, outstandingTotal: 100, warning: null },
+  { id: 'c2', creditCardId: 'card-chase', creditCardName: 'ChaseMaster4023', year: CURRENT_YEAR, month: CURRENT_MONTH, isPaid: true, outstandingTotal: 0, warning: null },
 ]
 
 const INCOMES: IncomeDto[] = [
