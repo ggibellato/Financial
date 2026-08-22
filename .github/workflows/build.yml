@@ -2,15 +2,46 @@ name: Financial build
 
 on:
   push:
-    branches: [ main ]  
+    branches: [ main ]
   pull_request:
     branches: [ main ]
     types: [opened, synchronize, reopened]
-    
-jobs:
-  build-and-test:
-    runs-on: windows-latest
 
+# On pull requests `changes` maps the diff onto the jobs below (rules live in
+# .github/scripts/detect-changes.sh); skipped jobs report "skipped" and `ci-status` is the single
+# required check that fails only when a job that actually ran failed. Every push to main runs the
+# full pipeline regardless of what changed: main must always be deployable.
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.detect.outputs.backend }}
+      wpf: ${{ steps.detect.outputs.wpf }}
+      web: ${{ steps.detect.outputs.web }}
+      smoke: ${{ steps.detect.outputs.smoke }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Detect affected jobs
+      id: detect
+      env:
+        FULL_RUN: ${{ github.event_name == 'push' }}
+        BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      run: |
+        if [ -n "$BASE_SHA" ] && ! git cat-file -e "$BASE_SHA" 2>/dev/null; then
+          git fetch --no-tags origin "$BASE_SHA" || true
+        fi
+        merge_base=$(git merge-base "$BASE_SHA" "$HEAD_SHA" 2>/dev/null || echo "$BASE_SHA")
+        bash .github/scripts/detect-changes.sh "$merge_base" "$HEAD_SHA"
+
+  backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: windows-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -20,14 +51,19 @@ jobs:
       with:
         dotnet-version: 10.0.x
 
-    - name: Restore dependencies
-      run: dotnet restore
+    - name: Build API
+      run: dotnet build Financial.Api/Financial.Api.csproj --configuration Release
 
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
-
+    # Every test project in the solution except the WPF one, which the `wpf` job owns.
     - name: Run tests
-      run: dotnet test --configuration Release --no-build --verbosity normal --settings coverlet.runsettings --results-directory TestResults
+      run: |
+        $projects = Select-String -Path Financial.slnx -Pattern '<Project Path="(Tests/[^"]+\.Tests\.csproj)"' |
+          ForEach-Object { $_.Matches[0].Groups[1].Value } |
+          Where-Object { $_ -notlike '*Financial.Presentation.Tests*' }
+        foreach ($project in $projects) {
+          dotnet test $project --configuration Release --verbosity normal --settings coverlet.runsettings --results-directory TestResults
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        }
 
     # coverlet.runsettings declares the XPlat collector itself, so --settings is enough to turn
     # collection on - no --collect argument, and so no "XPlat Code Coverage" quoting to get wrong
@@ -39,9 +75,31 @@ jobs:
         ./.tools/reportgenerator.exe "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:CoverageReport" "-reporttypes:MarkdownSummaryGithub"
         Get-Content CoverageReport/SummaryGithub.md | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
 
-  web-build-test:
-    runs-on: ubuntu-latest
+  wpf:
+    needs: changes
+    if: needs.changes.outputs.wpf == 'true'
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
 
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Build WPF app
+      run: dotnet build Financial.App/Financial.App.csproj --configuration Release
+
+    - name: Run tests
+      run: |
+        dotnet test Tests/Financial.Presentation.Tests --configuration Release --verbosity normal --settings coverlet.runsettings --results-directory TestResults
+        dotnet test Tests/Financial.Architecture.Tests --configuration Release --verbosity normal
+
+  web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -67,10 +125,16 @@ jobs:
       working-directory: Financial.Web
       run: npm run build
 
-  browser-smoke-test:
-    needs: [ build-and-test, web-build-test ]
+  # Boots the published API with the built SPA and drives it with Playwright. Runs whenever either
+  # side of the HTTP boundary changed; waits for backend/web but tolerates them being skipped.
+  smoke:
+    needs: [ changes, backend, web ]
+    if: >-
+      always()
+      && needs.changes.outputs.smoke == 'true'
+      && !contains(needs.*.result, 'failure')
+      && !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -142,3 +206,23 @@ jobs:
         SMOKE_EXIT=$?
         kill $API_PID
         exit $SMOKE_EXIT
+
+  # The one status check branch protection requires. Always runs; passes when every job either
+  # succeeded or was legitimately skipped by `changes`, fails otherwise.
+  ci-status:
+    needs: [ changes, backend, wpf, web, smoke ]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Evaluate job results
+      env:
+        RESULTS: ${{ toJSON(needs) }}
+      run: |
+        echo "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+        if [ "${{ needs.changes.result }}" != "success" ]; then
+          echo "change detection did not succeed"; exit 1
+        fi
+        if echo "$RESULTS" | jq -e '[.[] | .result] | any(. == "failure" or . == "cancelled")' > /dev/null; then
+          echo "a job failed or was cancelled"; exit 1
+        fi
+        echo "all required work passed or was safely skipped"
