@@ -167,6 +167,29 @@ Every chart must provide:
 
 Charts must answer a user question. Do not use them as decoration.
 
+### Series color
+
+Single-series bars and lines are **blue**, not grey/neutral — the same blue
+already established by the Investment Credits and Price History charts on
+both platforms (Web: `#4682b4`, a light-to-dark blue gradient
+`rgb(173,216,230)`→`rgb(8,81,156)` for multi-type bars; WPF:
+`OxyColors.SteelBlue`, the equivalent RGB gradient in
+`*ChartBuilder.BuildBluePalette`). A chart is not exempt from this because it
+started out grey for an unrelated reason (e.g. reusing a neutral/disabled
+color) — match the existing chart blue, don't invent a new one.
+
+### Value labels
+
+When a chart shows a value directly on/at a bar or point, position the label
+so it reads clearly regardless of the mark's own fill color — above/outside
+the mark in a fixed, explicit dark color, not inside a colored fill where
+contrast depends on which color in a gradient palette that particular bar
+happens to be. WPF's `TextAnnotation`-above-the-bar convention (`OxyColors
+.Black`, anchored above positive values / below negative ones) is the
+reference; Web must produce the same readable result even though Recharts'
+`LabelList` needs a different prop to do it (`position="top"` with an
+explicit `fill`, not `position="inside"` with no fill set).
+
 ## Grid-and-chart pages
 
 A page pairing one grid with one chart over the same data (e.g. Investment
