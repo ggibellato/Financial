@@ -190,6 +190,22 @@ reference; Web must produce the same readable result even though Recharts'
 `LabelList` needs a different prop to do it (`position="top"` with an
 explicit `fill`, not `position="inside"` with no fill set).
 
+Every bar chart shows its value on top of the bar whenever there is room for
+it — this is the standard, not an enhancement one platform happens to have.
+A chart that currently shows no value labels at all (not just badly
+positioned ones) is missing this, the same as one with unreadable labels.
+
+### Month-axis labels
+
+Every chart bucketed by month uses the same axis label format,
+**`MM/yyyy`** (e.g. `09/2025`) — never a short month name like `Sep` or
+`Sept`. This applies identically on both platforms and to every such chart
+(Transactions, Credits, and any future one), not just the ones that already
+happened to agree. On Web, build the label through one shared formatter
+(`formatMonthKey` in `utils/formatters.ts`) rather than each chart hook
+formatting its own month string — that divergence is exactly how Transactions
+ended up different from Credits.
+
 ## Grid-and-chart pages
 
 A page pairing one grid with one chart over the same data (e.g. Investment

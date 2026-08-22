@@ -98,6 +98,15 @@ Do not use an old WPF pattern as the reason to diverge from the React target.
 - Reuse approved `DataGrid`, `TreeView`, and chart patterns.
 - Preserve keyboard navigation and selection behavior.
 - Use virtualization appropriately.
+- If an OxyPlot chart thins its value-label density based on the `PlotView`'s
+  measured width (`SizeChanged`), don't gate label rendering on that width
+  being known yet (`if (plotWidth <= 0) return;`). The first build can run
+  before the view's first `SizeChanged` fires, so that guard means no labels
+  ever appear until an actual resize happens — silently, since nothing
+  errors. Default to showing every label (no thinning) when the width isn't
+  known yet, and re-thin once a real measurement arrives. This is what made
+  `TransactionsChartBuilder`'s labels never show up (`CreditsChartBuilder`
+  had the identical bug, just harder to notice in casual testing).
 - Keep totals distinct: use `FontWeight="Bold"` on the numeric values, to
   match React's `<strong>` (see `docs/ui/forms-data-and-visualisations.md`).
   When a total's text is otherwise data-bound (e.g. built from a
