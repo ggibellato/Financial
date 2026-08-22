@@ -414,6 +414,184 @@ public class MainNavigationViewModelMoveTests
         sut.LastMoveFailureMessage.Should().Contain(nameof(IOException));
     }
 
+    [Fact]
+    public async Task CanAcceptDrop_AllowsASiblingPortfolioOfTheSameBroker()
+    {
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+
+        sut.CanAcceptDrop(AssetNode(sut, "AAAA"), PortfolioNode(sut, "ISA")).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task CanAcceptDrop_AllowsTheBrokerItself_BecauseThatMeansANewPortfolio()
+    {
+        // FR-031: the broker stays a valid target even though the asset is already under it - it is
+        // the only route to a portfolio that does not exist yet.
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+
+        sut.CanAcceptDrop(AssetNode(sut, "AAAA"), sut.RootNodes[0]).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task CanAcceptDrop_RefusesThePortfolioTheAssetIsAlreadyIn()
+    {
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+
+        sut.CanAcceptDrop(AssetNode(sut, "AAAA"), PortfolioNode(sut, "Default")).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task CanAcceptDrop_RefusesAnotherAsset_AndTheRoot_AndNothing()
+    {
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+        var asset = AssetNode(sut, "AAAA");
+
+        using (new AssertionScope())
+        {
+            sut.CanAcceptDrop(asset, asset).Should().BeFalse("an asset is not a destination");
+            sut.CanAcceptDrop(asset, null).Should().BeFalse();
+            sut.CanAcceptDrop(null, PortfolioNode(sut, "ISA")).Should().BeFalse();
+            sut.CanAcceptDrop(PortfolioNode(sut, "Default"), PortfolioNode(sut, "ISA"))
+                .Should().BeFalse("only an asset can be dragged");
+        }
+    }
+
+    [Fact]
+    public async Task CanAcceptDrop_RefusesAnyNodeOfADifferentBroker()
+    {
+        var sut = CreateViewModel(secondBroker: true);
+        await sut.LoadNavigationTreeAsync();
+        var asset = AssetNode(sut, "AAAA");
+        var otherBroker = sut.RootNodes.First(node => node.GetMetadata<string>("BrokerName") == "Coinbase");
+
+        using (new AssertionScope())
+        {
+            sut.CanAcceptDrop(asset, otherBroker).Should().BeFalse();
+            sut.CanAcceptDrop(asset, otherBroker.Children[0]).Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    public async Task HighlightDropTarget_HighlightsOneNodeAtATime()
+    {
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+        var isa = PortfolioNode(sut, "ISA");
+        var broker = sut.RootNodes[0];
+
+        sut.HighlightDropTarget(isa);
+        sut.HighlightDropTarget(broker);
+
+        using (new AssertionScope())
+        {
+            isa.IsDropTarget.Should().BeFalse("the previous highlight is cleared");
+            broker.IsDropTarget.Should().BeTrue();
+        }
+
+        sut.HighlightDropTarget(null);
+        broker.IsDropTarget.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task DropAssetAsync_OntoAPortfolio_MovesStraightThereWithoutADialog()
+    {
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+
+        await sut.DropAssetAsync(AssetNode(sut, "AAAA"), PortfolioNode(sut, "ISA"));
+
+        using (new AssertionScope())
+        {
+            sut.LastMoveDialog.Should().BeNull("dropping on a portfolio says everything the move needs");
+            _moveService.LastRequest!.DestinationPortfolioName.Should().Be("ISA");
+            _moveService.LastRequest.SourcePortfolioName.Should().Be("Default");
+        }
+    }
+
+    [Fact]
+    public async Task DropAssetAsync_OntoTheBroker_AsksForANameThenMoves()
+    {
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+        sut.MoveDialogResponse = dialog =>
+        {
+            dialog.NewPortfolioName = "SIPP";
+            return true;
+        };
+
+        await sut.DropAssetAsync(AssetNode(sut, "AAAA"), sut.RootNodes[0]);
+
+        using (new AssertionScope())
+        {
+            // An empty destination list is what leaves naming as the only route.
+            sut.LastMoveDialog!.HasExistingDestination.Should().BeFalse();
+            sut.LastMoveDialog.CreateNewPortfolio.Should().BeTrue();
+            _moveService.LastRequest!.DestinationPortfolioName.Should().Be("SIPP");
+        }
+    }
+
+    [Fact]
+    public async Task DropAssetAsync_WhenTheNamePromptIsCancelled_MovesNothing()
+    {
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+        sut.MoveDialogResponse = _ => false;
+
+        await sut.DropAssetAsync(AssetNode(sut, "AAAA"), sut.RootNodes[0]);
+
+        _moveService.LastRequest.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DropAssetAsync_OntoAnInvalidTarget_CancelsSilentlyAndClearsTheHighlight()
+    {
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+        var ownPortfolio = PortfolioNode(sut, "Default");
+        sut.HighlightDropTarget(ownPortfolio);
+
+        await sut.DropAssetAsync(AssetNode(sut, "AAAA"), ownPortfolio);
+
+        using (new AssertionScope())
+        {
+            _moveService.LastRequest.Should().BeNull();
+            sut.LastMoveFailureMessage.Should().BeNull("releasing somewhere invalid is not an error");
+            ownPortfolio.IsDropTarget.Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    public async Task DropAssetAsync_WhenARuleRefusesIt_ShowsTheSameReasonTheDialogWould()
+    {
+        const string reason = "Portfolio \"ISA\" already holds an asset named \"AAAA\".";
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+        _moveService.Failure = new InvestmentRuleViolationException(reason);
+
+        await sut.DropAssetAsync(AssetNode(sut, "AAAA"), PortfolioNode(sut, "ISA"));
+
+        sut.LastMoveFailureMessage.Should().Be(reason);
+    }
+
+    [Fact]
+    public async Task DropAssetAsync_WhenItEmptiesTheSource_OffersToDeleteIt()
+    {
+        // FR-039: a drop reaches the same tidy-up offer a dialog move does.
+        var sut = CreateViewModel();
+        await sut.LoadNavigationTreeAsync();
+        _moveService.OnMove = () => sut.NavigationService.Tree = BuildTree(assetPortfolio: "ISA");
+        sut.DeleteConfirmationResponse = _ => true;
+
+        await sut.DropAssetAsync(AssetNode(sut, "AAAA"), PortfolioNode(sut, "ISA"));
+
+        _portfolioService.Deleted.Should().ContainSingle()
+            .Which.Should().Be(("XPI", "Default", InvestmentScope.Active));
+    }
+
     private static TreeNodeViewModel PortfolioNode(TestableNavigationViewModel sut, string name) =>
         sut.RootNodes.SelectMany(broker => broker.Children)
             .First(portfolio => portfolio.GetMetadata<string>("PortfolioName") == name);
@@ -424,11 +602,12 @@ public class MainNavigationViewModelMoveTests
 
     private TestableNavigationViewModel CreateViewModel(
         decimal? assetQuantity = 8m,
-        InvestmentScope scope = InvestmentScope.Active)
+        InvestmentScope scope = InvestmentScope.Active,
+        bool secondBroker = false)
     {
         var navigationService = new StubNavigationService
         {
-            Tree = BuildTree(assetPortfolio: "Default", assetQuantity: assetQuantity)
+            Tree = BuildTree(assetPortfolio: "Default", assetQuantity: assetQuantity, secondBroker: secondBroker)
         };
 
         return new TestableNavigationViewModel(
@@ -459,7 +638,7 @@ public class MainNavigationViewModelMoveTests
             .First(asset => asset.GetMetadata<string>("AssetName") == assetName);
 
     /// <summary>Broker XPI with portfolios "Default" and "ISA"; the asset sits in whichever is named.</summary>
-    private static TreeNodeDTO BuildTree(string assetPortfolio, decimal? assetQuantity = 8m)
+    private static TreeNodeDTO BuildTree(string assetPortfolio, decimal? assetQuantity = 8m, bool secondBroker = false)
     {
         TreeNodeDTO Portfolio(string name) => new()
         {
@@ -494,21 +673,48 @@ public class MainNavigationViewModelMoveTests
                 : []
         };
 
+        var brokers = new List<TreeNodeDTO>
+        {
+            new()
+            {
+                NodeType = TreeNodeType.Broker,
+                DisplayName = "XPI",
+                Metadata = new Dictionary<string, object> { ["BrokerName"] = "XPI" },
+                Children = [Portfolio("Default"), Portfolio("ISA")]
+            }
+        };
+
+        if (secondBroker)
+        {
+            // A second broker exists only so a drop across brokers has somewhere to be refused.
+            brokers.Add(new TreeNodeDTO
+            {
+                NodeType = TreeNodeType.Broker,
+                DisplayName = "Coinbase",
+                Metadata = new Dictionary<string, object> { ["BrokerName"] = "Coinbase" },
+                Children =
+                [
+                    new TreeNodeDTO
+                    {
+                        NodeType = TreeNodeType.Portfolio,
+                        DisplayName = "Default",
+                        Metadata = new Dictionary<string, object>
+                        {
+                            ["PortfolioName"] = "Default",
+                            ["AssetCount"] = 0
+                        },
+                        Children = []
+                    }
+                ]
+            });
+        }
+
         return new TreeNodeDTO
         {
             NodeType = TreeNodeType.Investments,
             DisplayName = "Root",
             Metadata = [],
-            Children =
-            [
-                new TreeNodeDTO
-                {
-                    NodeType = TreeNodeType.Broker,
-                    DisplayName = "XPI",
-                    Metadata = new Dictionary<string, object> { ["BrokerName"] = "XPI" },
-                    Children = [Portfolio("Default"), Portfolio("ISA")]
-                }
-            ]
+            Children = brokers
         };
     }
 

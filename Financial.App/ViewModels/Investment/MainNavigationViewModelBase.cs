@@ -22,6 +22,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     private readonly IPortfolioService _portfolioService;
     private readonly InvestmentScope _scope;
     private TreeNodeViewModel? _selectedNode;
+    private TreeNodeViewModel? _highlightedDropTarget;
     private bool _isLoading;
     private TreeNodeDTO? _fullTree;
     private AssetClassFilterOptionViewModel? _selectedAssetClassFilter;
@@ -124,18 +125,32 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
-        // Everything after the dialog is inside the catch. The command is invoked as async void,
-        // so anything escaping here takes the process down - and on a Google Drive install the
-        // upload inside the save is the likeliest thing to fail, not the domain rules.
+        await MoveAssetAsync(brokerName, portfolioName, assetName, dialog.DestinationPortfolioName, dialog.ArchiveToHistoric);
+    }
+
+    /// <summary>
+    /// Performs the move and everything that follows it. Shared by the dialog and by a drop, so the
+    /// two routes cannot drift apart - which is the whole point of offering both.
+    /// </summary>
+    private async Task MoveAssetAsync(
+        string brokerName,
+        string portfolioName,
+        string assetName,
+        string destinationPortfolioName,
+        bool archiveToHistoric)
+    {
+        // Everything here is inside the catch. Both routes are invoked as async void, so anything
+        // escaping takes the process down - and on a Google Drive install the upload inside the
+        // save is the likeliest thing to fail, not the domain rules.
         try
         {
-            var moved = dialog.ArchiveToHistoric
+            var moved = archiveToHistoric
                 ? await _assetMoveService.ArchiveAssetAsync(new ArchiveAssetRequestDTO
                 {
                     BrokerName = brokerName,
                     SourcePortfolioName = portfolioName,
                     AssetName = assetName,
-                    DestinationPortfolioName = dialog.DestinationPortfolioName
+                    DestinationPortfolioName = destinationPortfolioName
                 })
                 : await _assetMoveService.MoveAssetAsync(new MoveAssetRequestDTO
                 {
@@ -143,14 +158,14 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
                     Scope = _scope.ToString(),
                     SourcePortfolioName = portfolioName,
                     AssetName = assetName,
-                    DestinationPortfolioName = dialog.DestinationPortfolioName
+                    DestinationPortfolioName = destinationPortfolioName
                 });
 
             await LoadNavigationTreeAsync();
 
             // An archived asset has left this scope entirely, so there is nothing here to reselect -
             // it is now in the Historic Investments view.
-            if (!dialog.ArchiveToHistoric)
+            if (!archiveToHistoric)
             {
                 SelectAsset(brokerName, moved.PortfolioName, assetName);
             }
@@ -165,6 +180,104 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
                 ? ex.Message
                 : $"The asset could not be moved: {ex.GetType().Name}.");
         }
+    }
+
+    /// <summary>
+    /// Whether dropping <paramref name="dragged"/> on <paramref name="target"/> would do anything.
+    /// </summary>
+    /// <remarks>
+    /// Narrows what the tree offers; it does not decide the move. A drop that looks fine here can
+    /// still be refused by the domain - a destination already holding an asset of that name, for
+    /// one - and that refusal is what the user is shown.
+    /// <para>
+    /// A broker is always a valid target, even the one the asset already sits under: dropping there
+    /// means "into a new portfolio here", which is the only route to a portfolio that does not
+    /// exist yet.
+    /// </para>
+    /// </remarks>
+    public bool CanAcceptDrop(TreeNodeViewModel? dragged, TreeNodeViewModel? target)
+    {
+        if (dragged?.NodeType != TreeNodeType.Asset || target is null)
+        {
+            return false;
+        }
+
+        var sourcePortfolio = dragged.Parent;
+        var sourceBroker = sourcePortfolio?.Parent;
+        if (sourceBroker is null)
+        {
+            return false;
+        }
+
+        return target.NodeType switch
+        {
+            TreeNodeType.Portfolio => ReferenceEquals(target.Parent, sourceBroker) && !ReferenceEquals(target, sourcePortfolio),
+            TreeNodeType.Broker => ReferenceEquals(target, sourceBroker),
+            _ => false
+        };
+    }
+
+    /// <summary>
+    /// Highlights the node a drag is over, and only that one.
+    /// </summary>
+    public void HighlightDropTarget(TreeNodeViewModel? target)
+    {
+        if (ReferenceEquals(_highlightedDropTarget, target))
+        {
+            return;
+        }
+
+        if (_highlightedDropTarget is not null)
+        {
+            _highlightedDropTarget.IsDropTarget = false;
+        }
+
+        _highlightedDropTarget = target;
+
+        if (target is not null)
+        {
+            target.IsDropTarget = true;
+        }
+    }
+
+    /// <summary>
+    /// Completes a drop: onto a portfolio it moves straight there, onto a broker it asks for a name
+    /// for the portfolio to create. Everything after that is the dialog route's path, so a drop and
+    /// a dialog cannot drift apart.
+    /// </summary>
+    public async Task DropAssetAsync(TreeNodeViewModel? dragged, TreeNodeViewModel? target)
+    {
+        HighlightDropTarget(null);
+
+        if (!CanAcceptDrop(dragged, target))
+        {
+            return;
+        }
+
+        var assetNode = dragged!;
+        var brokerName = BrokerNameOf(assetNode);
+        var portfolioName = assetNode.Parent!.GetMetadata<string>("PortfolioName") ?? string.Empty;
+        var assetName = assetNode.GetMetadata<string>("AssetName") ?? string.Empty;
+
+        string destinationPortfolioName;
+        if (target!.NodeType == TreeNodeType.Portfolio)
+        {
+            destinationPortfolioName = target.GetMetadata<string>("PortfolioName") ?? string.Empty;
+        }
+        else
+        {
+            // Dropping on the broker means a portfolio that does not exist yet, so the only thing
+            // left to ask is its name. An empty destination list is what puts the dialog there.
+            var prompt = new MoveAssetDialogViewModel(brokerName, portfolioName, assetName, []);
+            if (!ShowMoveAssetDialog(prompt))
+            {
+                return;
+            }
+
+            destinationPortfolioName = prompt.DestinationPortfolioName;
+        }
+
+        await MoveAssetAsync(brokerName, portfolioName, assetName, destinationPortfolioName, archiveToHistoric: false);
     }
 
     /// <summary>
