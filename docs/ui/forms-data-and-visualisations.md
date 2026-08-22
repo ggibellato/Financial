@@ -2,6 +2,20 @@
 
 ## Forms
 
+### Month/year selection
+
+Where a page's primary scope is one calendar month (e.g. CashFlow Monthly's
+top-of-page period filter), month and year are **one control**, not two
+separate fields the user operates independently. Web's native
+`<input type="month">` is the reference: a single edit surface that holds
+month and year together. WPF must reach the same *held-together* result even
+though it has no native month-only picker — wrap the month `ComboBox` and
+year `ComboBox` in one visually unified control (single border/background
+around both, no visible seam between them, thin divider at most) rather than
+presenting them as two independent, separately-bordered dropdowns. This is a
+visual/interaction requirement, not a literal-control requirement: two
+`ComboBox`es are fine internally as long as they read as one field.
+
 ### Default field order
 
 Unless an approved financial workflow requires another order:
@@ -80,6 +94,26 @@ Do not use placeholders as labels.
 - Do not use colour alone for invalid state.
 
 ## Data grids
+
+### Grid create/new actions
+
+A button that creates a new row for a grid (New Expense, New Income, New
+Transfer, New Balance Correction, etc.) is styled and placed the same way
+everywhere, on both platforms:
+
+- **Position: left**, directly above the grid it creates rows for — not
+  right-aligned. CashFlow Monthly's Bank tab is the reference; every other
+  tab under it (Expense, Credit Card, Income) must match, not the other way
+  around.
+- **Style:** primary-appearance button with a leading "add" icon and a
+  concise label (`New Expense`, `New Income`, `New Transfer`) — the same
+  size, color, and icon convention everywhere. Don't hand-draw a "+" as a
+  text character (Web) or leave one tab's button as a plain unstyled
+  `Button` while another uses the real primary/icon treatment (WPF) — both
+  are the same drift this rule exists to prevent.
+- A tab with more than one create action (Bank: New Transfer / New Balance
+  Correction) places both buttons together, left-aligned, in the same style
+  — do not demote one to a lesser style just because there are two.
 
 Grids must provide applicable:
 
