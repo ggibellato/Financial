@@ -1,4 +1,4 @@
-namespace Financial.Shared.Abstractions;
+namespace Financial.Shared.Abstractions.Observability;
 
 /// <summary>
 /// The span-opening convention every Application service uses, defined once: span name

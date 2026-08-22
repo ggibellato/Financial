@@ -1,5 +1,5 @@
 using Financial.Integrations.Observability;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

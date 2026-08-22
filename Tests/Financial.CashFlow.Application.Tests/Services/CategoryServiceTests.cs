@@ -1,5 +1,5 @@
 using Financial.CashFlow.Application.Services;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;

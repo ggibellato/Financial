@@ -3,7 +3,7 @@ using Financial.CashFlow.Application.DependencyInjection;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
 using Financial.Integrations.Observability;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

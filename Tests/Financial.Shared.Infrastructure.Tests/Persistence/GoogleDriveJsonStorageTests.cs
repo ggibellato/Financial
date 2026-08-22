@@ -1,4 +1,4 @@
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.TestUtilities;
 using FluentAssertions;

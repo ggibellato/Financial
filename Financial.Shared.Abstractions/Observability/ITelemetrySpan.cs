@@ -1,4 +1,4 @@
-namespace Financial.Shared.Abstractions;
+namespace Financial.Shared.Abstractions.Observability;
 
 public interface ITelemetrySpan : IDisposable
 {

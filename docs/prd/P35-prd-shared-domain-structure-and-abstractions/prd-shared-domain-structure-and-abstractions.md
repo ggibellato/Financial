@@ -326,9 +326,9 @@ graph TD
 - [x] `RepositoryProviderResolver.Resolve<TEnum>` compiles in `Financial.Shared.Abstractions.Configuration` with identical behavior, including the `InvalidOperationException` message format on an unrecognized provider value
 
 ### F05. Observability Namespace Reorganization
-- [ ] `ITelemetryTracer`, `ITelemetrySpan`, `NoOpTelemetryTracer`, `TelemetryAttributeKeys`, `TelemetrySpanExtensions`, `TelemetryTracerExtensions` compile in `Financial.Shared.Abstractions.Observability`
-- [ ] Every existing consumer (`Financial.CashFlow.Infrastructure`, `Financial.Investment.Infrastructure`, `Financial.Shared.Infrastructure`, `Integrations/Observability`, `Financial.Api`, `Financial.App`) builds successfully against the new namespace
-- [ ] `ObservabilityIsolationRuleTests` passes unmodified
+- [x] `ITelemetryTracer`, `ITelemetrySpan`, `NoOpTelemetryTracer`, `TelemetryAttributeKeys`, `TelemetrySpanExtensions`, `TelemetryTracerExtensions` compile in `Financial.Shared.Abstractions.Observability`
+- [x] Every existing consumer (`Financial.CashFlow.Infrastructure`, `Financial.Investment.Infrastructure`, `Financial.Shared.Infrastructure`, `Integrations/Observability`, `Financial.Api`, `Financial.App`) builds successfully against the new namespace
+- [x] `ObservabilityIsolationRuleTests` passes unmodified
 
 ### F06. CashFlow Infrastructure Dependency Realignment
 - [ ] `Financial.CashFlow.Infrastructure.csproj` has no `ProjectReference` to `Financial.Shared.Infrastructure.csproj`

@@ -8,7 +8,7 @@ using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
 using Financial.Presentation.App.ViewModels.CashFlow;
 using Financial.Presentation.App.Views.CashFlow;
 using Financial.Presentation.App.Views.Investment;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;

@@ -1,7 +1,7 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.Configuration;
 using Financial.CashFlow.Infrastructure.Persistence;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using Microsoft.Extensions.Logging;

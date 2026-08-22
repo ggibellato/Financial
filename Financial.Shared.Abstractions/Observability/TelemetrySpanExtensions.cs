@@ -1,4 +1,4 @@
-namespace Financial.Shared.Abstractions;
+namespace Financial.Shared.Abstractions.Observability;
 
 /// <summary>
 /// The two outcome epilogues every instrumented operation ends with, defined once so the

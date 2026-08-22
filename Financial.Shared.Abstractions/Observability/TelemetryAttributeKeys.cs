@@ -1,4 +1,4 @@
-namespace Financial.Shared.Abstractions;
+namespace Financial.Shared.Abstractions.Observability;
 
 /// <summary>
 /// Attribute names for <see cref="ITelemetrySpan.SetAttribute"/>, matching the allow-list in

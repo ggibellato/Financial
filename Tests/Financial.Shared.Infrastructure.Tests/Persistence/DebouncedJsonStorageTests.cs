@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Resilience;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.Shared.Abstractions.Sync;

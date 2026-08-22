@@ -3,7 +3,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Rules;
 using Financial.Investment.Domain.ValueObjects;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;

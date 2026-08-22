@@ -1,4 +1,4 @@
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Logging;
 
