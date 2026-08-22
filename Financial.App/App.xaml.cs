@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.DependencyInjection;
+using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
 using Financial.Integrations.Observability;
 using Financial.Investment.Application.Configuration;
@@ -9,6 +10,9 @@ using Financial.Presentation.App.ViewModels.CashFlow;
 using Financial.Presentation.App.Views.CashFlow;
 using Financial.Presentation.App.Views.Investment;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Persistence;
+using Financial.Shared.Infrastructure.Hosting;
+using Financial.Shared.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -41,9 +45,11 @@ namespace Financial.Presentation.App
                     services.AddObservability(context.Configuration, serviceName: "Financial.App");
                     services.AddFinancialApplication();
                     services.AddGoogleDriveFileClient();
+                    services.AddSingleton<IJsonStorageFactory, JsonStorageFactory>();
                     services.AddFinancialInfrastructure(context.Configuration);
                     services.AddFinancialCashFlowApplication();
                     services.AddFinancialCashFlowInfrastructure(context.Configuration);
+                    services.AddHostedService<ShutdownFlushHostedService<ICashFlowRepository>>();
                     services.Configure<WatchlistOptions>(context.Configuration.GetSection(WatchlistOptions.SectionName));
                     services.Configure<AssetPriceFetchOptions>(context.Configuration.GetSection(AssetPriceFetchOptions.SectionName));
                     services.Configure<DividendOptions>(context.Configuration.GetSection(DividendOptions.SectionName));
