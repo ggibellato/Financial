@@ -99,7 +99,14 @@ Builds the React SPA and the API into a single image (`Dockerfile`), API serves 
 
 ## CI
 
-`.github/workflows/build.yml` runs three jobs on every PR: `.NET build+test` (Windows), `web lint+test+build` (Ubuntu/Node 24), and a `browser-smoke-test` job that publishes the full app, boots it against seeded test JSON data, and runs the Playwright smoke test end to end. PR titles are enforced as Conventional Commits (`feat|fix|docs|chore|refactor|test|perf|ci|build`) by `semantic-pr.yml`.
+`.github/workflows/build.yml` runs only the jobs a change can affect: a `changes` job classifies the
+diff with `.github/scripts/detect-changes.sh`, then `backend` (Windows, API build + all non-WPF tests
+with coverage), `wpf` (Windows), `web` (Ubuntu lint+test+build) and `smoke` (publishes the full app
+against seeded test JSON and runs the Playwright smoke test) run conditionally. Docs-only changes run
+nothing; unknown paths or a missing base commit run everything. `ci-status` is the single required
+check and passes when every job succeeded or was skipped. Rules and extension steps are in
+`docs/ci-affected-pipeline.md`. PR titles are enforced as Conventional Commits
+(`feat|fix|docs|chore|refactor|test|perf|ci|build`) by `semantic-pr.yml`.
 
 # GIT Policy
 
