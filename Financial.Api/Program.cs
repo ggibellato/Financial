@@ -54,6 +54,18 @@ builder.Services
             document.Servers = [new OpenApiServer { Url = apiRoutePrefix }];
             return Task.CompletedTask;
         });
+
+        options.Document.AddSchemaTransformer((schema, _, _) =>
+        {
+            if (schema.Type is { } type && type.HasFlag(JsonSchemaType.String) &&
+                (type.HasFlag(JsonSchemaType.Number) || type.HasFlag(JsonSchemaType.Integer)))
+            {
+                schema.Type = type & ~JsonSchemaType.String;
+                schema.Pattern = null;
+            }
+
+            return Task.CompletedTask;
+        });
     });
 
 builder.Services.AddControllers(options => options.Filters.Add(new ProducesAttribute("application/json")));
