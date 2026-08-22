@@ -1,6 +1,6 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
-using Financial.Shared.Infrastructure.Sync;
+using Financial.Shared.Abstractions.Sync;
 
 namespace Financial.TestUtilities;
 
