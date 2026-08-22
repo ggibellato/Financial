@@ -85,6 +85,16 @@ Do not use an old WPF pattern as the reason to diverge from the React target.
 
 ## Data, trees, and charts
 
+- A page combining one grid with one chart (Investment Transactions/Credits/
+  Price History) follows `docs/ui/forms-data-and-visualisations.md`'s
+  "Grid-and-chart pages" rule: filters at the top always, then side-by-side
+  (grid in a resizable left column, chart filling the right) or stacked
+  (chart on top, full-width grid below) depending on how many columns the
+  grid needs — not platform habit. Build the side-by-side case as a `Grid`
+  with two `ColumnDefinition`s and a vertical `GridSplitter`
+  (`ResizeDirection="Columns"`) between them, the same way the stacked case
+  already uses a horizontal `GridSplitter` between rows
+  (`ResizeDirection="Rows"`).
 - Reuse approved `DataGrid`, `TreeView`, and chart patterns.
 - Preserve keyboard navigation and selection behavior.
 - Use virtualization appropriately.

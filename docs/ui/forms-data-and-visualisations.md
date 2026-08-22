@@ -167,6 +167,40 @@ Every chart must provide:
 
 Charts must answer a user question. Do not use them as decoration.
 
+## Grid-and-chart pages
+
+A page pairing one grid with one chart over the same data (e.g. Investment
+Transactions/Credits/Price History) follows one layout rule, decided by how
+much width the grid's columns actually need — not by platform convention or
+habit:
+
+- **Filters/period controls (e.g. "This Month", "Last 3 Months") always go at
+  the top of the page**, above both the grid and the chart — never below
+  either.
+- **If the grid's columns fit comfortably in a fixed side panel** (roughly
+  260–450px — few columns, or values that don't need much horizontal room,
+  as in Credits and Price History), lay the page out **side by side**: grid
+  in a resizable left panel, chart filling the remaining width on the right.
+  Both stay visible without scrolling.
+- **If the grid has enough columns/values that a side panel would cramp it**
+  (as in Transactions — action icons, date, type, quantity, unit price, fees,
+  and total), **stack instead**: chart full-width on top, grid full-width
+  below. Do not force a wide grid into a narrow side panel just to keep a
+  side-by-side layout consistent across pages — the grid's actual column
+  count decides the layout, the page doesn't get to override it.
+- Whichever layout applies, the New/action toolbar for the grid sits directly
+  above that grid (inside its panel when side by side), not detached from it.
+
+This is drawn directly from `Financial.Web`'s existing Transactions/Credits/
+Price History tabs (React is the UX source of truth — see
+`docs/ui/decisions/ADR-001-ui-standards-stack.md`): `TransactionsTab.tsx`
+stacks (its grid has 8 columns including actions); `CreditsTab.tsx` and
+`PriceHistoryTab.tsx` split side by side (5 columns each, via the shared
+`SplitPanel` component). WPF must reach the same layout outcome using a
+`GridSplitter`-based row split (stacked) or column split (side by side) —
+identical controls are not required, the resulting reading order and use of
+width are.
+
 ## Inline form, dialog, drawer, or page
 
 Use an inline form when the task is short, repeated, and benefits from nearby
