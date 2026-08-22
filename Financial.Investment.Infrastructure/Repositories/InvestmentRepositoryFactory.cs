@@ -2,6 +2,7 @@ using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.Configuration;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using Microsoft.Extensions.Logging;
 
@@ -40,21 +41,27 @@ public sealed class InvestmentRepositoryFactory
         return new InvestmentJsonRepository(investments, storage, _serializer);
     }
 
-    private IJsonStorage CreateStorage(InvestmentRepositorySelectionOptions options) =>
-        options.Provider switch
+    private IJsonStorage CreateStorage(InvestmentRepositorySelectionOptions options)
+    {
+        // Instantiated per call rather than DI-injected: F07 (Wave 2 of the shared-domain-structure
+        // refactor) moves this to constructor injection once IJsonStorageFactory is registered at
+        // the composition root (F08). Until then this keeps Investment.Infrastructure buildable
+        // against the now-instance-based JsonStorageFactory.
+        var storageFactory = new JsonStorageFactory(
+            _remoteFileClientFactory, _tracer ?? NoOpTelemetryTracer.Instance, _storageLogger as ILogger<DebouncedJsonStorage>);
+
+        return options.Provider switch
         {
             InvestmentRepositoryProvider.LocalJson =>
-                JsonStorageFactory.CreateLocal(options.LocalDataPath, DefaultDataFileName),
+                storageFactory.CreateLocal(options.LocalDataPath, DefaultDataFileName),
             InvestmentRepositoryProvider.GoogleDriveJson =>
-                JsonStorageFactory.CreateGoogleDrive(
+                storageFactory.CreateGoogleDrive(
                     options.GoogleDriveCredentialsPath,
                     options.GoogleDriveFilePath,
-                    _remoteFileClientFactory,
                     InvestmentRepositoryConfigurationKeys.GoogleDriveCredentialsPath,
-                    nameof(InvestmentRepositoryProvider.GoogleDriveJson),
-                    _tracer,
-                    _storageLogger),
+                    nameof(InvestmentRepositoryProvider.GoogleDriveJson)),
             _ => throw new ArgumentOutOfRangeException(
                     nameof(options.Provider), options.Provider, "Unsupported repository provider.")
         };
+    }
 }

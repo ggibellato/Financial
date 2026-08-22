@@ -1,4 +1,4 @@
-using Financial.Shared.Infrastructure.Persistence;
+using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;

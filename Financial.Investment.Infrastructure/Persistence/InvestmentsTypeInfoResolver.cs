@@ -1,5 +1,5 @@
 using Financial.Investment.Domain.Entities;
-using Financial.Shared.Infrastructure.Persistence;
+using Financial.Shared.Abstractions.Persistence;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
