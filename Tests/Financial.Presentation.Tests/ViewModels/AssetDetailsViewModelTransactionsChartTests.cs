@@ -59,7 +59,11 @@ public class AssetDetailsViewModelTransactionsChartTests
     [Fact]
     public void LoadBrokerTransactions_SetsIsTransactionsLoadingTrue_Synchronously()
     {
-        var vm = BuildViewModel();
+        // Uses a blocking stub rather than the shared StubTransactionQueryService: the latter
+        // returns instantly, so the background Task.Run could reach ApplyFetchedTransactions
+        // (which sets IsTransactionsLoading = false) before this synchronous assertion runs -
+        // a real, previously-observed race (flaked in CI 2026-08-21), not a hypothetical one.
+        var vm = BuildViewModel(transactionQueryService: new BlockingTransactionQueryService());
         _ = vm.LoadBrokerTransactions("XPI");
         vm.IsTransactionsLoading.Should().BeTrue();
     }
@@ -220,4 +224,25 @@ public class AssetDetailsViewModelTransactionsChartTests
         vm.IsTransactionsAggregateView.Should().BeFalse();
     }
 
+    private sealed class BlockingTransactionQueryService : ITransactionQueryService
+    {
+        // Bounded, not infinite: same reasoning as NeverResolvingPriceService
+        // (AssetDetailsViewModelPortfolioSummaryTests.cs) - the test only needs the block to
+        // outlast its own synchronous assertion, and an unbounded wait would accumulate
+        // permanently-blocked threads across the test run.
+        private readonly SemaphoreSlim _blocker = new(0);
+        private static readonly TimeSpan MaxBlockDuration = TimeSpan.FromSeconds(2);
+
+        public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByBroker(string brokerName, InvestmentScope scope = InvestmentScope.Active)
+        {
+            _blocker.Wait(MaxBlockDuration);
+            return [];
+        }
+
+        public IReadOnlyList<TransactionSummaryItemDTO> GetTransactionsByPortfolio(string brokerName, string portfolioName, InvestmentScope scope = InvestmentScope.Active)
+        {
+            _blocker.Wait(MaxBlockDuration);
+            return [];
+        }
+    }
 }
