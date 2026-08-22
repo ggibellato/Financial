@@ -1,11 +1,11 @@
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
-using Financial.Shared.Infrastructure.Hosting;
+using Financial.Shared.Abstractions.Persistence;
+using Financial.Shared.Infrastructure.Persistence;
 using Financial.TestUtilities;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace Financial.Investment.Infrastructure.Tests.DependencyInjection;
 
@@ -39,19 +39,6 @@ public class InvestmentInfrastructureServiceCollectionExtensionsTests
         repository.Should().NotBeNull();
     }
 
-    [Fact]
-    public void AddFinancialInfrastructure_RegistersInvestmentShutdownFlushHostedService()
-    {
-        var provider = BuildServiceProvider(new Dictionary<string, string?>
-        {
-            ["Investment:DataJsonFile"] = TestDataPaths.DataJsonFile
-        });
-
-        var hostedServices = provider.GetServices<IHostedService>();
-
-        hostedServices.Should().ContainSingle(service => service is ShutdownFlushHostedService<IInvestmentRepository>);
-    }
-
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)
     {
         var configuration = new ConfigurationBuilder()
@@ -63,6 +50,11 @@ public class InvestmentInfrastructureServiceCollectionExtensionsTests
         // this minimal container mirrors that invariant with the contract's null object.
         services.AddSingleton<Financial.Shared.Abstractions.Observability.ITelemetryTracer>(
             Financial.Shared.Abstractions.Observability.NoOpTelemetryTracer.Instance);
+        // The composition roots also always register IJsonStorageFactory before calling
+        // AddFinancialInfrastructure (see Program.cs/App.xaml.cs) - this minimal container mirrors
+        // that invariant, matching how ShutdownFlushHostedService's own registration moved out to
+        // the composition root too (F06/F07/F08 of the shared-domain-structure refactor).
+        services.AddSingleton<IJsonStorageFactory, JsonStorageFactory>();
         services.AddFinancialInfrastructure(configuration);
         return services.BuildServiceProvider();
     }
