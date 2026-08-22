@@ -319,8 +319,8 @@ graph TD
 - [x] `DebouncedJsonStorage.GetStatus()`/`FlushAsync()` continue to satisfy `ISyncStatusProvider` from the new namespace with no behavior change
 
 ### F03. Resilience Abstraction Extraction
-- [ ] `TransientStorageException` compiles in `Financial.Shared.Abstractions.Resilience` with the same constructor signature
-- [ ] `TransientRetryPolicy.IsRetryable` in `Financial.Shared.Infrastructure` still catches the relocated exception type
+- [x] `TransientStorageException` compiles in `Financial.Shared.Abstractions.Resilience` with the same constructor signature
+- [x] `TransientRetryPolicy.IsRetryable` in `Financial.Shared.Infrastructure` still catches the relocated exception type
 
 ### F04. Configuration Abstraction Extraction
 - [ ] `RepositoryProviderResolver.Resolve<TEnum>` compiles in `Financial.Shared.Abstractions.Configuration` with identical behavior, including the `InvalidOperationException` message format on an unrecognized provider value
