@@ -1,48 +1,72 @@
 # UI Review Checklist
 
-## Structure
+## Workflow and financial clarity
 
-- [ ] The page purpose is obvious.
-- [ ] Heading levels are logical.
-- [ ] Content is grouped by meaning.
-- [ ] The layout does not rely on decorative containers.
+- [ ] The primary user task is obvious.
+- [ ] The relevant account, portfolio, period, category, or scope is visible.
+- [ ] Financial values, units, signs, precision, and date formats are unambiguous.
+- [ ] Filtered totals and grand totals are clearly distinguished.
+- [ ] User context is preserved through loading, saving, success, and recoverable failure.
+- [ ] The design supports efficient repeated single-user financial work.
 
-## Interaction
+## Fluent and visual consistency
 
-- [ ] There is one clear primary action per region.
-- [ ] Actions use meaningful verbs.
-- [ ] Destructive actions are clearly distinguished.
-- [ ] Unsaved changes are protected.
-- [ ] Loading and save progress are visible.
+- [ ] Existing Fluent components or project wrappers are reused.
+- [ ] Semantic tokens/resources are used.
+- [ ] No repeated arbitrary visual values were introduced.
+- [ ] Spacing follows the shared rhythm.
+- [ ] Typography provides clear hierarchy.
+- [ ] Cards, borders, shadows, and surfaces are restrained.
+- [ ] Light and dark behavior is considered.
 
 ## Forms
 
-- [ ] Labels are visible.
-- [ ] Field order follows the shared rule.
-- [ ] Field widths match their content.
-- [ ] Errors are specific and actionable.
-- [ ] Server-side errors are handled.
+- [ ] Field order follows the documented default or has a documented exception.
+- [ ] Labels are visible and associated with controls.
+- [ ] Field widths suit their data.
+- [ ] One primary action exists per form/region.
+- [ ] Validation is specific, actionable, and accessible.
+- [ ] Saving state prevents duplicate actions.
+- [ ] Failed saves preserve entered data.
+- [ ] Unsaved changes are protected where applicable.
 
-## Data
+## Data views
 
-- [ ] Numeric values align consistently.
-- [ ] Totals are visually distinct.
-- [ ] Sorting and filtering states are clear.
-- [ ] Empty and error states are useful.
+- [ ] Grids provide clear headers, filtering, sorting, selection, loading, empty, and error states.
+- [ ] Numeric and financial values align and format consistently.
+- [ ] Totals are visually and semantically distinct.
+- [ ] Trees communicate hierarchy and support keyboard navigation.
+- [ ] Charts have titles, labels, units, correct state handling, and accessible equivalents.
+- [ ] Dense views remain readable.
+
+## Responsive and adaptive behavior
+
+- [ ] Web layout works at wide, medium, and narrow widths.
+- [ ] Web forms reflow without unusable controls.
+- [ ] Web remains usable at required zoom/text scale.
+- [ ] WPF works at narrow window sizes, high DPI, and increased text scale.
+- [ ] Essential information/actions are not removed without an alternative.
 
 ## Accessibility
 
-- [ ] Keyboard-only operation works.
-- [ ] Focus is visible and predictable.
-- [ ] Icon-only actions have accessible names.
-- [ ] Status does not rely on color alone.
-- [ ] Zoom and reflow have been tested.
-- [ ] Graphs have accessible alternatives.
+- [ ] All functionality is keyboard operable.
+- [ ] Focus is visible and logical.
+- [ ] Dialogs, drawers, and menus restore focus correctly.
+- [ ] Icon-only controls have accessible names.
+- [ ] Status is not communicated by colour alone.
+- [ ] Contrast is sufficient.
+- [ ] Errors are clear, accessible, and recoverable.
+- [ ] High contrast is considered where supported.
 
-## Cross-platform
+## React-led WPF parity
 
-- [ ] Web and WPF terminology matches.
-- [ ] Web and WPF field order matches.
-- [ ] Web and WPF action priority matches.
-- [ ] Web and WPF validation meaning matches.
-- [ ] Platform-specific controls do not alter the workflow.
+- [ ] React behavior was reviewed against repository UI standards.
+- [ ] WPF preserves the React-defined user task and information hierarchy.
+- [ ] WPF terminology matches React.
+- [ ] WPF field order matches React unless a documented desktop exception exists.
+- [ ] WPF action labels and priority match React.
+- [ ] WPF validation wording and meaning match React.
+- [ ] WPF financial formatting and totals behavior match React.
+- [ ] WPF loading, empty, saving, success, and error outcomes match React.
+- [ ] WPF keyboard and focus behavior is equivalent or better for desktop use.
+- [ ] Intentional WPF differences are documented and justified by desktop convention, accessibility, or better usability.
