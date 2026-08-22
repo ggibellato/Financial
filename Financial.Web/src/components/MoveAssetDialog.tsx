@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { AssetDetailsDto, InvestmentScope, TreeNodeDto } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
@@ -11,6 +11,16 @@ interface MoveAssetDialogProps {
   scope: InvestmentScope
   /** Only a closed position in Active Investments can be archived. */
   canArchive: boolean
+  /**
+   * Set by a drop on a portfolio: the destination is already known, so the move runs straight away
+   * and the only thing left to show is the offer to tidy up an emptied source.
+   */
+  presetDestination?: string
+  /**
+   * Set by a drop on a broker, which means "into a new portfolio here". Offering no existing
+   * destination is what leaves naming as the only route.
+   */
+  newPortfolioOnly?: boolean
   onCancel: () => void
   /** archived is true when the asset left this scope for Historic Investments. */
   onMoved: (moved: AssetDetailsDto, archived: boolean) => void
@@ -44,6 +54,8 @@ export default function MoveAssetDialog({
   assetName,
   scope,
   canArchive,
+  presetDestination,
+  newPortfolioOnly = false,
   onCancel,
   onMoved,
 }: MoveAssetDialogProps) {
@@ -69,11 +81,15 @@ export default function MoveAssetDialog({
 
     Promise.resolve(trees)
       .then(([sameScopeTree, historicTree]) => {
-        setSamePortfolios(portfolioNamesOf(sameScopeTree, brokerName).filter((name) => name !== portfolioName))
+        setSamePortfolios(
+          newPortfolioOnly
+            ? []
+            : portfolioNamesOf(sameScopeTree, brokerName).filter((name) => name !== portfolioName),
+        )
         setHistoricPortfolios(historicTree ? portfolioNamesOf(historicTree, brokerName) : [])
       })
       .catch((err: unknown) => setError(getErrorMessage(err, 'Unable to load portfolios.')))
-  }, [apiClient, scope, brokerName, portfolioName, canArchive])
+  }, [apiClient, scope, brokerName, portfolioName, canArchive, newPortfolioOnly])
 
   const destinations = archiveToHistoric ? historicPortfolios : samePortfolios
 
@@ -108,8 +124,8 @@ export default function MoveAssetDialog({
     setCreateNew(false)
   }
 
-  const handleSubmit = async () => {
-    if (!canSubmit) return
+  const handleSubmit = async (destination = destinationPortfolioName) => {
+    if (destination.length === 0 || isSaving) return
 
     setIsSaving(true)
     setError(null)
@@ -119,14 +135,14 @@ export default function MoveAssetDialog({
             brokerName,
             sourcePortfolioName: portfolioName,
             assetName,
-            destinationPortfolioName,
+            destinationPortfolioName: destination,
           })
         : await apiClient.moveAsset({
             brokerName,
             scope,
             sourcePortfolioName: portfolioName,
             assetName,
-            destinationPortfolioName,
+            destinationPortfolioName: destination,
           })
       // Whether the source is now empty comes from the tree, which already carries the count -
       // no extra field on the move response, and the freshest answer available.
@@ -163,6 +179,16 @@ export default function MoveAssetDialog({
     }
   }
 
+  // A drop on a portfolio already answered "where should this go", so there is nothing to ask.
+  // Declared after handleSubmit because it calls it.
+  const hasSubmittedPreset = useRef(false)
+  useEffect(() => {
+    if (presetDestination && !hasSubmittedPreset.current) {
+      hasSubmittedPreset.current = true
+      void handleSubmit(presetDestination)
+    }
+  })
+
   const handleDeleteEmptiedSource = async () => {
     if (!emptiedSource) return
 
@@ -191,7 +217,9 @@ export default function MoveAssetDialog({
           {brokerName} / {portfolioName} / {assetName}
         </p>
 
-        {emptiedSource ? (
+        {presetDestination && !emptiedSource ? (
+          <p className="move-asset-dialog__prompt">Moving…</p>
+        ) : emptiedSource ? (
           <>
             <p className="move-asset-dialog__prompt">
               &ldquo;{portfolioName}&rdquo; is now empty. Delete it?
@@ -280,7 +308,7 @@ export default function MoveAssetDialog({
         )}
 
         <div className="move-asset-dialog__actions">
-          <button type="button" onClick={handleSubmit} disabled={!canSubmit}>
+          <button type="button" onClick={() => handleSubmit()} disabled={!canSubmit}>
             Move
           </button>
           <button type="button" onClick={onCancel}>
