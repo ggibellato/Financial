@@ -8,13 +8,29 @@ Where a page's primary scope is one calendar month (e.g. CashFlow Monthly's
 top-of-page period filter), month and year are **one control**, not two
 separate fields the user operates independently. Web's native
 `<input type="month">` is the reference: a single edit surface that holds
-month and year together. WPF must reach the same *held-together* result even
-though it has no native month-only picker — wrap the month `ComboBox` and
-year `ComboBox` in one visually unified control (single border/background
-around both, no visible seam between them, thin divider at most) rather than
-presenting them as two independent, separately-bordered dropdowns. This is a
-visual/interaction requirement, not a literal-control requirement: two
-`ComboBox`es are fine internally as long as they read as one field.
+month and year together, with a built-in calendar affordance for picking the
+value visually rather than typing/spinning it. WPF must reach the same
+result with a genuine calendar picker restricted to month/year — not two
+`ComboBox`es, even visually unified ones (that was tried first and rejected:
+it reads as two fields, not one, and has no calendar affordance at all).
+
+`Financial.App/Components/MonthYearPicker.xaml` is the reference
+implementation: a flat, bordered field showing the selected period as
+`"MMMM yyyy"` (an outline-only `Border` around a `ui:Button` with
+`Appearance="Transparent"` — not a raised/filled button, matching the plain
+look of Web's native `<input type="month">`), which opens a fixed-size
+popup: a year header with prev/next arrows, and a 4x3 grid of month cells.
+Month cells match the browser's own native month-picker popup exactly — flat
+text at rest, a solid rounded accent highlight only on the selected month —
+via a custom flat `ControlTemplate`, not `ui:Button` or the native `Calendar`
+control's `Year` view (both were tried first and rejected: a bare
+`Calendar`'s `Year` view has no bounded natural size inside an unconstrained
+`Popup`, so it rendered full screen-width before a month was ever picked, and
+`ui:Button`'s default chrome/border made the grid read as a "board" of
+bordered buttons rather than flat text like the reference). This keeps the
+existing `SelectedYear`/`SelectedMonth` dependency-property API so
+`MonthlyView.xaml`, `MensaisView.xaml`, and `InvestmentSnapshotsView.xaml`
+need no changes to consume it.
 
 ### Default field order
 

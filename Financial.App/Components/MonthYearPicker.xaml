@@ -3,11 +3,19 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
     <!--
-        Month and year read as ONE control, not two independent dropdowns —
-        mirrors Financial.Web's native <input type="month"> (see
-        docs/ui/forms-data-and-visualisations.md's "Month/year selection" rule).
-        Still two ComboBoxes internally (see code-behind), just visually unified:
-        one border/background around both, a thin divider instead of a gap.
+        A single flat, bordered field showing "MMMM yyyy" that opens a
+        fixed-size popup with a year header (prev/next arrows) and a 4x3 grid
+        of month cells — no day is ever selectable, mirroring Financial.Web's
+        native <input type="month"> (see docs/ui/forms-data-and-visualisations
+        .md's "Month/year selection" rule). Month cells match the browser's
+        own month-picker popup exactly (see the reference screenshot in that
+        doc section): flat text at rest, a solid rounded accent highlight only
+        on the selected month — not a "board" of bordered buttons. That's why
+        cells use a custom flat ControlTemplate instead of ui:Button/
+        WPF-UI's Calendar Year view: a bare Calendar's Year view has no
+        bounded natural size inside an unconstrained Popup (rendered full
+        screen-width before a month was ever picked), and ui:Button's default
+        chrome/border reads as a grid of buttons rather than flat text.
     -->
     <UserControl.Resources>
         <ResourceDictionary>
@@ -15,17 +23,79 @@
                 <ui:ThemesDictionary Theme="Light"/>
                 <ui:ControlsDictionary/>
             </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="FlatMonthButtonStyle" TargetType="Button">
+                <Setter Property="Margin" Value="2"/>
+                <Setter Property="Padding" Value="0,6"/>
+                <Setter Property="Foreground" Value="#0F6CBD"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border" Background="{TemplateBinding Background}"
+                                    CornerRadius="4">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background"
+                                            Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="SelectedMonthButtonStyle" TargetType="Button" BasedOn="{StaticResource FlatMonthButtonStyle}">
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="Background" Value="#0F6CBD"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
-    <Border BorderThickness="1" CornerRadius="4" Padding="2"
-            BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-            Background="{DynamicResource ControlFillColorDefaultBrush}">
-        <StackPanel Orientation="Horizontal">
-            <ComboBox x:Name="monthComboBox" Width="130" BorderThickness="0" Background="Transparent"
-                      AutomationProperties.Name="Month" SelectionChanged="OnMonthSelectionChanged"/>
-            <Border Width="1" Margin="2,4" Background="{DynamicResource ControlElevationBorderBrush}"/>
-            <ComboBox x:Name="yearComboBox" Width="90" BorderThickness="0" Background="Transparent"
-                      AutomationProperties.Name="Year" SelectionChanged="OnYearSelectionChanged"/>
-        </StackPanel>
-    </Border>
+    <Grid>
+        <!--
+            Flat trigger — Financial.Web's <input type="month"> is a plain
+            bordered field, not a raised/filled button, so the outline comes
+            from this Border and the ui:Button inside stays Appearance=
+            Transparent (no fill/shadow of its own).
+        -->
+        <Border BorderThickness="1" CornerRadius="4"
+                BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                Background="{DynamicResource ControlFillColorDefaultBrush}">
+            <ui:Button x:Name="triggerButton" MinWidth="140" HorizontalContentAlignment="Left"
+                       Appearance="Transparent"
+                       Icon="{ui:SymbolIcon Symbol=CalendarMonth20}"
+                       Click="OnTriggerButtonClick"/>
+        </Border>
+        <Popup x:Name="popup" PlacementTarget="{Binding ElementName=triggerButton}"
+               Placement="Bottom" StaysOpen="False" AllowsTransparency="True">
+            <Border Width="220" BorderThickness="1" CornerRadius="4" Padding="8"
+                    Background="{DynamicResource ApplicationBackgroundBrush}"
+                    BorderBrush="{DynamicResource ControlElevationBorderBrush}">
+                <StackPanel>
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Style="{StaticResource FlatMonthButtonStyle}" Padding="6,4"
+                                Content="&#xE76B;" FontFamily="Segoe MDL2 Assets"
+                                AutomationProperties.Name="Previous year"
+                                Click="OnPreviousYearClick"/>
+                        <TextBlock x:Name="yearHeaderText" Grid.Column="1"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   FontWeight="Bold"/>
+                        <Button Grid.Column="2" Style="{StaticResource FlatMonthButtonStyle}" Padding="6,4"
+                                Content="&#xE76C;" FontFamily="Segoe MDL2 Assets"
+                                AutomationProperties.Name="Next year"
+                                Click="OnNextYearClick"/>
+                    </Grid>
+                    <UniformGrid x:Name="monthsGrid" Columns="4" Rows="3"/>
+                </StackPanel>
+            </Border>
+        </Popup>
+    </Grid>
 </UserControl>
