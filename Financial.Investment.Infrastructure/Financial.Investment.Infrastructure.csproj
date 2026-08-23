@@ -9,14 +9,15 @@
   <ItemGroup>
     <ProjectReference Include="..\Financial.Investment.Application\Financial.Investment.Application.csproj" />
     <ProjectReference Include="..\Financial.Investment.Domain\Financial.Investment.Domain.csproj" />
+    <ProjectReference Include="..\Integrations\GoogleDrive\GoogleDrive.csproj" />
+    <ProjectReference Include="..\Integrations\GoogleSheets\GoogleSheets.csproj" />
     <ProjectReference Include="..\Integrations\WebPageParser\WebPageParser.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Integrations\**\*.cs" />
-    <Page Remove="Integrations\**\*.xaml" />
-    <EmbeddedResource Remove="Integrations\**\*.resx" />
-    <None Remove="Integrations\**\*" />
+    <!-- Manifest name is RootNamespace + folder path, and
+         SpreadsheetImport\AssetClassificationLookup.cs hardcodes the result. -->
+    <EmbeddedResource Include="SpreadsheetImport\AssetClassifications.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,6 +29,3 @@
   </ItemGroup>
 
 </Project>
-
-
-

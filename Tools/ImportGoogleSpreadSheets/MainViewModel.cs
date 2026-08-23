@@ -1,4 +1,6 @@
-using Financial.Integrations.GoogleFinancialSupport;
+using Financial.Integrations.GoogleDrive;
+using Financial.Integrations.GoogleSheets;
+using Financial.Investment.Infrastructure.SpreadsheetImport;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using System;
@@ -16,7 +18,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
 {
     private static readonly string DefaultOutputPath = Path.Combine(AppContext.BaseDirectory, "data");
 
-    private readonly GoogleService? _service;
+    private readonly IGoogleDriveFileSource? _driveFiles;
+    private readonly IGoogleSheetsDataSource? _sheets;
     private readonly IInvestmentsSerializer _serializer;
     private readonly RelayCommand _connectCommand;
     private readonly RelayCommand _generateCommand;
@@ -63,25 +66,29 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand ConnectCommand { get; }
     public ICommand GenerateCommand { get; }
 
-    public MainViewModel(GoogleService? service, IInvestmentsSerializer serializer)
+    public MainViewModel(
+        IGoogleDriveFileSource? driveFiles,
+        IGoogleSheetsDataSource? sheets,
+        IInvestmentsSerializer serializer)
     {
-        _service = service;
+        _driveFiles = driveFiles;
+        _sheets = sheets;
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
-        _connectCommand = new RelayCommand(async () => await ConnectAsync(), () => _service != null && !IsBusy);
-        _generateCommand = new RelayCommand(async () => await GenerateAsync(), () => _service != null && !IsBusy);
+        _connectCommand = new RelayCommand(async () => await ConnectAsync(), () => _driveFiles != null && _sheets != null && !IsBusy);
+        _generateCommand = new RelayCommand(async () => await GenerateAsync(), () => _driveFiles != null && _sheets != null && !IsBusy);
         ConnectCommand = _connectCommand;
         GenerateCommand = _generateCommand;
     }
 
     private async Task ConnectAsync()
     {
-        if (_service == null) return;
+        if (_driveFiles == null || _sheets == null) return;
         try
         {
             IsBusy = true;
             Status = "Connecting to Google Drive...";
 
-            var files = await _service.GetFilesNameAsync();
+            var files = await _driveFiles.GetFilesAsync();
             var filtered = files
                 .Where(f => !string.Equals(f.Name, "data-investment.json", StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -105,7 +112,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private async Task GenerateAsync()
     {
-        if (_service == null) return;
+        if (_driveFiles == null || _sheets == null) return;
 
         var selectedFiles = Files.Where(f => f.IsSelected).ToList();
         if (selectedFiles.Count == 0)
@@ -121,7 +128,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Status = "Starting data generation...";
 
             var generator = new GoogleGenerator(
-                _service,
+                _driveFiles,
+                _sheets,
                 new LocalJsonStorage(OutputPath),
                 GoogleGeneratorConfiguration.BuildOptions(),
                 _serializer);
