@@ -1,7 +1,7 @@
-using Financial.Investment.Infrastructure.Integrations.WebPageParser;
+using Financial.Integrations.WebPageParser;
 using HtmlAgilityPack;
 
-namespace Financial.Investment.Infrastructure.Integrations;
+namespace Financial.Integrations.WebPageParser;
 
 /// <summary>
 /// Manual verification utility to test Google Finance parsing against live URLs.

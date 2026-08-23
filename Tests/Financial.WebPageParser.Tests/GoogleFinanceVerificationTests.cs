@@ -1,8 +1,7 @@
-using Financial.Investment.Infrastructure.Integrations;
-using Financial.Investment.Infrastructure.Integrations.WebPageParser;
+using Financial.Integrations.WebPageParser;
 using Xunit.Abstractions;
 
-namespace Financial.Investment.Infrastructure.Tests.Integrations;
+namespace Financial.WebPageParser.Tests;
 
 /// <summary>
 /// Manual verification tests for Google Finance selectors.

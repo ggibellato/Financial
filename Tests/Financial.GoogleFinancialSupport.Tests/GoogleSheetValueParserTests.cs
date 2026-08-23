@@ -1,8 +1,8 @@
-using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Integrations.GoogleFinancialSupport;
 using FluentAssertions;
 using Google.Apis.Sheets.v4.Data;
 
-namespace Financial.Investment.Infrastructure.Tests.Integrations;
+namespace Financial.GoogleFinancialSupport.Tests;
 
 public class GoogleSheetValueParserTests
 {

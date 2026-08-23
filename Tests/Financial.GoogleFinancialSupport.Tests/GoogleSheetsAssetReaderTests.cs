@@ -1,8 +1,8 @@
 using Financial.Investment.Domain.Entities;
-using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Integrations.GoogleFinancialSupport;
 using FluentAssertions;
 
-namespace Financial.Investment.Infrastructure.Tests.Integrations;
+namespace Financial.GoogleFinancialSupport.Tests;
 
 public class GoogleSheetsAssetReaderTests
 {

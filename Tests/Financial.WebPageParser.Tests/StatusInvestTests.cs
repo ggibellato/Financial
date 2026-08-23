@@ -1,7 +1,7 @@
-using Financial.Investment.Infrastructure.Integrations.WebPageParser;
+using Financial.Integrations.WebPageParser;
 using FluentAssertions;
 
-namespace Financial.Investment.Infrastructure.Tests.Integrations;
+namespace Financial.WebPageParser.Tests;
 
 public class StatusInvestTests
 {

@@ -1,10 +1,10 @@
 using System.Net;
 using System.Net.Http;
-using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Integrations.GoogleFinancialSupport;
 using FluentAssertions;
 using Google;
 
-namespace Financial.Investment.Infrastructure.Tests.Integrations;
+namespace Financial.GoogleFinancialSupport.Tests;
 
 public class GoogleRetryPolicyTests
 {

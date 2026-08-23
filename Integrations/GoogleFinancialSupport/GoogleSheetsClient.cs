@@ -1,4 +1,4 @@
-using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
+using Financial.Integrations.GoogleFinancialSupport.DTO;
 using Google.Apis.Sheets.v4;
 using Microsoft.Extensions.Logging;
 using System;
@@ -7,7 +7,7 @@ using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Integrations.GoogleFinancialSupport;
 
 internal sealed class GoogleSheetsClient
 {

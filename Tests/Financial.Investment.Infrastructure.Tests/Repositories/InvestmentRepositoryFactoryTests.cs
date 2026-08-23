@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using Financial.Investment.Domain.Entities;
-using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Integrations.GoogleFinancialSupport;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.Shared.Abstractions.Observability;

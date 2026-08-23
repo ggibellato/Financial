@@ -1,4 +1,4 @@
-using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Integrations.GoogleFinancialSupport;
 using System.Collections.Generic;
 
 namespace Financial.Investment.Infrastructure.Tools.ImportGoogleSpreadSheets;

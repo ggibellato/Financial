@@ -1,7 +1,7 @@
 using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Integrations.GoogleFinancialSupport;
 
 public static class GoogleFinancialSupportServiceCollectionExtensions
 {

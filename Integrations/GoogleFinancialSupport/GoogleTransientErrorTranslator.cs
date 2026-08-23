@@ -2,7 +2,7 @@ using System.Net;
 using Financial.Shared.Abstractions.Resilience;
 using Google;
 
-namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Integrations.GoogleFinancialSupport;
 
 internal static class GoogleTransientErrorTranslator
 {
