@@ -4,7 +4,7 @@ using Financial.Shared.Abstractions.Persistence;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Financial.Investment.Infrastructure.Tests.Integrations;
+namespace Financial.GoogleFinancialSupport.Tests;
 
 public class GoogleFinancialSupportServiceCollectionExtensionsTests
 {

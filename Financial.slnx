@@ -36,6 +36,9 @@
 		<Project Path="Tests/Financial.CashFlow.Infrastructure.Tests/Financial.CashFlow.Infrastructure.Tests.csproj" />
 		<Project Path="Tests/Financial.CashFlowSpreadsheetImport.Tests/Financial.CashFlowSpreadsheetImport.Tests.csproj" />
 		<Project Path="Tests/Financial.TestUtilities/Financial.TestUtilities.csproj" />
+	</Folder>
+	<Folder Name="/Tests/Integrations/">
+		<Project Path="Tests/Financial.GoogleFinancialSupport.Tests/Financial.GoogleFinancialSupport.Tests.csproj" />
 		<Project Path="Tests/Financial.Observability.Tests/Financial.Observability.Tests.csproj" />
 	</Folder>
 	<Folder Name="/Presentation/">

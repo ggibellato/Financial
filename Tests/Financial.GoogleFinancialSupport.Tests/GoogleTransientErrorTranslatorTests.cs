@@ -4,7 +4,7 @@ using Financial.Shared.Abstractions.Resilience;
 using FluentAssertions;
 using Google;
 
-namespace Financial.Investment.Infrastructure.Tests.Integrations;
+namespace Financial.GoogleFinancialSupport.Tests;
 
 public class GoogleTransientErrorTranslatorTests
 {

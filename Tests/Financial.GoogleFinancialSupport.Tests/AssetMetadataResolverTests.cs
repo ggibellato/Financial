@@ -2,7 +2,7 @@ using Financial.Integrations.GoogleFinancialSupport;
 using Financial.Integrations.GoogleFinancialSupport.DTO;
 using FluentAssertions;
 
-namespace Financial.Investment.Infrastructure.Tests.Integrations;
+namespace Financial.GoogleFinancialSupport.Tests;
 
 public class AssetMetadataResolverTests
 {
