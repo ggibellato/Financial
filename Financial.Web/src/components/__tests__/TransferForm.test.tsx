@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
+import { render } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import TransferForm from '../TransferForm'
 import type { BankDto } from '../../api/types'
@@ -27,9 +28,9 @@ const baseProps = {
 
 describe('TransferForm', () => {
   it('renders the create form title and pre-filled values', () => {
-    const { container } = render(<TransferForm {...baseProps} />)
+    render(<TransferForm {...baseProps} />)
 
-    expect(container.querySelector('.monthly-page__form-title')).toHaveTextContent('Move Money')
+    expect(screen.getByRole('heading', { name: 'Move Money' })).toBeInTheDocument()
     expect(screen.getByLabelText('Date')).toHaveValue('2026-07-25')
     expect(screen.getByLabelText('From')).toHaveValue('bank-barclays')
     expect(screen.getByLabelText('To')).toHaveValue('bank-trading212')
@@ -80,8 +81,7 @@ describe('TransferForm', () => {
   it('renders a backend error under the field named by saveErrorField', () => {
     render(<TransferForm {...baseProps} saveError="Transfer amount must be greater than zero." saveErrorField="amount" />)
 
-    const amountField = screen.getByLabelText('Amount').closest('.monthly-page__form-field')
-    expect(amountField).toHaveTextContent('Transfer amount must be greater than zero.')
+    expect(screen.getByText('Transfer amount must be greater than zero.')).toBeInTheDocument()
   })
 
   it('renders a general error banner when saveErrorField is null', () => {

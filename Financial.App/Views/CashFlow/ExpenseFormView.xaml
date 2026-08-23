@@ -118,11 +118,11 @@
             <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,8,8">
                 <StackPanel Visibility="{Binding IsCardPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}">
                     <TextBlock Text="Invoice Month" Style="{StaticResource FieldLabelStyle}"/>
-                    <components:MonthYearTextBox AutomationProperties.Name="Invoice month"
-                                                  IsEnabled="{Binding ShowPaymentModeFields}"
-                                                  HorizontalAlignment="Left"
-                                                  SelectedYear="{Binding ExpenseFormInvoiceYear, Mode=TwoWay}"
-                                                  SelectedMonth="{Binding ExpenseFormInvoiceMonth, Mode=TwoWay}"/>
+                    <components:MonthYearPicker AutomationProperties.Name="Invoice month"
+                                                 IsEnabled="{Binding ShowPaymentModeFields}"
+                                                 HorizontalAlignment="Left"
+                                                 SelectedYear="{Binding ExpenseFormInvoiceYear, Mode=TwoWay}"
+                                                 SelectedMonth="{Binding ExpenseFormInvoiceMonth, Mode=TwoWay}"/>
                 </StackPanel>
                 <StackPanel Visibility="{Binding ShowRoundUpField, Converter={StaticResource BoolToVisibilityConverter}}">
                     <TextBlock Text="Round-Up" Style="{StaticResource FieldLabelStyle}"/>

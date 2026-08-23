@@ -110,7 +110,7 @@ export default function ExpenseForm({
 
   return (
     <div className={styles.panel}>
-      <Text weight="semibold" size={400}>
+      <Text as="h2" weight="semibold" size={400}>
         {isEditing ? 'Edit Expense' : 'New Expense'}
       </Text>
 

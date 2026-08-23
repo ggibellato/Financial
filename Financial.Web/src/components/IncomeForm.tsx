@@ -1,3 +1,4 @@
+import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text, makeStyles, tokens } from '@fluentui/react-components'
 import type { BankDto, IncomeSourceDto } from '../api/types'
 import { INCOME_SOURCES_WITH_GROSS_VALUE, selectActiveIncomeSources } from '../hooks/useIncomeForm'
 
@@ -20,6 +21,35 @@ interface IncomeFormProps {
   onCancel: () => void
 }
 
+const useStyles = makeStyles({
+  panel: {
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalM,
+    padding: tokens.spacingVerticalM,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+    borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorNeutralBackground2,
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+    gap: tokens.spacingVerticalM,
+    '@media (max-width: 1023px)': {
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    },
+    '@media (max-width: 639px)': {
+      gridTemplateColumns: '1fr',
+    },
+  },
+  actions: {
+    display: 'flex',
+    gap: tokens.spacingHorizontalS,
+    alignItems: 'center',
+  },
+})
+
 export default function IncomeForm({
   isEditing,
   date,
@@ -36,90 +66,83 @@ export default function IncomeForm({
   onSave,
   onCancel,
 }: IncomeFormProps) {
+  const styles = useStyles()
   const activeIncomeSources = selectActiveIncomeSources(incomeSources)
   const showGrossValueField = INCOME_SOURCES_WITH_GROSS_VALUE.includes(
     incomeSources.find((s) => s.id === incomeSource)?.name ?? '',
   )
+
   return (
-    <div className="monthly-page__form-panel">
-      <p className="monthly-page__form-title">{isEditing ? 'Edit Income' : 'New Income'}</p>
-      <div className="monthly-page__form">
-        <div className="monthly-page__form-field">
-          <label htmlFor="income-date">Date</label>
-          <input
-            id="income-date"
-            type="date"
-            value={date}
-            onChange={(e) => onFieldChange('date', e.target.value)}
-          />
-        </div>
-        <div className="monthly-page__form-field">
-          <label htmlFor="income-source">Source</label>
-          <select
-            id="income-source"
-            value={incomeSource}
-            onChange={(e) => onFieldChange('incomeSource', e.target.value)}
-          >
+    <div className={styles.panel}>
+      <Text as="h2" weight="semibold" size={400}>
+        {isEditing ? 'Edit Income' : 'New Income'}
+      </Text>
+
+      <div className={styles.grid}>
+        <Field label="Date">
+          <Input type="date" value={date} onChange={(e) => onFieldChange('date', e.target.value)} />
+        </Field>
+
+        <Field label="Source">
+          <Select value={incomeSource} onChange={(e) => onFieldChange('incomeSource', e.target.value)}>
             {activeIncomeSources.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
               </option>
             ))}
-          </select>
-        </div>
+          </Select>
+        </Field>
+
         {showGrossValueField && (
-          <div className="monthly-page__form-field">
-            <label htmlFor="income-gross-value">Gross Value</label>
-            <input
-              id="income-gross-value"
+          <Field label="Gross Value">
+            <Input
               type="number"
               step="0.01"
               value={grossValue}
               onChange={(e) => onFieldChange('grossValue', e.target.value)}
             />
-          </div>
+          </Field>
         )}
-        <div className="monthly-page__form-field">
-          <label htmlFor="income-net-value">Net Value</label>
-          <input
-            id="income-net-value"
+
+        <Field label="Net Value">
+          <Input
             type="number"
             step="0.01"
             value={netValue}
             onChange={(e) => onFieldChange('netValue', e.target.value)}
           />
-        </div>
-        <div className="monthly-page__form-field">
-          <label htmlFor="income-bank">Bank</label>
-          <select id="income-bank" value={bank} onChange={(e) => onFieldChange('bank', e.target.value)}>
+        </Field>
+
+        <Field label="Bank">
+          <Select value={bank} onChange={(e) => onFieldChange('bank', e.target.value)}>
             <option value="">— No bank —</option>
             {banks.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
               </option>
             ))}
-          </select>
-        </div>
-        <div className="monthly-page__form-field">
-          <label htmlFor="income-description">Description</label>
-          <input
-            id="income-description"
-            type="text"
-            placeholder="e.g. Chip ISA dividend"
-            value={description}
-            onChange={(e) => onFieldChange('description', e.target.value)}
-          />
-        </div>
+          </Select>
+        </Field>
+
+        <Field label="Description">
+          <Input value={description} onChange={(e) => onFieldChange('description', e.target.value)} />
+        </Field>
       </div>
-      <div className="monthly-page__form-actions">
-        <button className="monthly-page__submit-btn" type="button" disabled={isSaving} onClick={onSave}>
+
+      <div className={styles.actions}>
+        <Button appearance="primary" disabled={isSaving} onClick={onSave}>
           {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Income'}
-        </button>
-        <button className="monthly-page__cancel-btn" type="button" onClick={onCancel}>
+        </Button>
+        <Button appearance="secondary" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
       </div>
-      {saveError && <p className="monthly-page__error">{saveError}</p>}
+
+      {saveError && (
+        <MessageBar intent="error">
+          <MessageBarBody>{saveError}</MessageBarBody>
+        </MessageBar>
+      )}
     </div>
   )
 }

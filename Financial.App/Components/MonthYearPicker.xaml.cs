@@ -62,7 +62,14 @@ public partial class MonthYearPicker : UserControl
 
     private void UpdateTriggerText()
     {
-        triggerButton.Content = new DateTime(SelectedYear, SelectedMonth, 1).ToString("MMMM yyyy");
+        // SelectedYear/SelectedMonth can transiently hold an unset ViewModel
+        // default (0) before a consuming form has ever been opened — e.g.
+        // ExpenseFormView's Invoice Month field binds these before "New
+        // Expense" is first clicked. Fall back to today rather than let an
+        // invalid DateTime crash the binding pipeline.
+        var year = SelectedYear is >= 1 and <= 9999 ? SelectedYear : DateTime.Today.Year;
+        var month = SelectedMonth is >= 1 and <= 12 ? SelectedMonth : DateTime.Today.Month;
+        triggerButton.Content = new DateTime(year, month, 1).ToString("MMMM yyyy");
     }
 
     private void OnTriggerButtonClick(object sender, RoutedEventArgs e)

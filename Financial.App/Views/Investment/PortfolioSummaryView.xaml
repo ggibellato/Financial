@@ -73,16 +73,6 @@
                                Margin="10,5"
                                Foreground="Blue"/>
 
-                    <TextBlock Grid.Row="5" Grid.Column="2" Text="Realized Gain/Loss:" FontWeight="Bold" Margin="20,5,0,5"
-                               Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                    <TextBlock Grid.Row="5" Grid.Column="3"
-                               Text="{Binding AssetDetails.RealizedGainLoss, Mode=OneWay, StringFormat=N2}"
-                               TextAlignment="Right"
-                               FontFamily="Consolas"
-                               Foreground="{Binding AssetDetails.RealizedGainLoss, Converter={StaticResource SignedValueToBrushConverter}}"
-                               Margin="10,5"
-                               Visibility="{Binding AssetDetails.IsActiveScope, Converter={StaticResource BoolToVisibilityConverter}}"/>
-
                     <Border Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="4"
                             BorderBrush="#EEEEEE" BorderThickness="0,1,0,0" Margin="0,15,0,15"/>
 

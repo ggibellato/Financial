@@ -1272,14 +1272,14 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Transfer' }))
 
-    expect(screen.getByText('Move Money', { selector: 'p' })).toBeInTheDocument()
+    expect(screen.getByText('Move Money', { selector: 'h2' })).toBeInTheDocument()
 
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
     const transfersCallsBefore = getTransfersByMonthMock.mock.calls.length
 
     fireEvent.change(screen.getByLabelText('To'), { target: { value: 'bank-trading212' } })
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '50' } })
-    const transferFormPanel = screen.getByLabelText('From').closest('.monthly-page__form-panel') as HTMLElement
+    const transferFormPanel = screen.getByTestId('transfer-form-panel')
     fireEvent.click(within(transferFormPanel).getByRole('button', { name: 'Move Money' }))
 
     await waitFor(() => expect(createTransferMock).toHaveBeenCalled())
@@ -1295,7 +1295,7 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Balance Correction' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Balance Correction' }))
 
-    const correctBalanceFormPanel = screen.getByLabelText('Bank').closest('.monthly-page__form-panel') as HTMLElement
+    const correctBalanceFormPanel = screen.getByTestId('balance-adjustment-form-panel')
     expect(within(correctBalanceFormPanel).getByRole('button', { name: 'Correct Balance' })).toBeDisabled()
     expect(screen.queryByLabelText('Target Balance')).not.toBeInTheDocument()
 
@@ -1344,7 +1344,7 @@ describe('MonthlyPage', () => {
 
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '150' } })
-    const transferFormPanel = screen.getByLabelText('Amount').closest('.monthly-page__form-panel') as HTMLElement
+    const transferFormPanel = screen.getByTestId('transfer-form-panel')
     fireEvent.click(within(transferFormPanel).getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(updateTransferMock).toHaveBeenCalledWith('t1', expect.objectContaining({ amount: 150 })))
@@ -1365,7 +1365,7 @@ describe('MonthlyPage', () => {
 
     const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
     fireEvent.change(screen.getByLabelText('Target Balance'), { target: { value: '50' } })
-    const adjustmentFormPanel = screen.getByLabelText('Target Balance').closest('.monthly-page__form-panel') as HTMLElement
+    const adjustmentFormPanel = screen.getByTestId('balance-adjustment-form-panel')
     fireEvent.click(within(adjustmentFormPanel).getByRole('button', { name: 'Save' }))
 
     await waitFor(() =>
@@ -1431,12 +1431,12 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'New Transfer' }))
-    expect(screen.getByText('Move Money', { selector: 'p' })).toBeInTheDocument()
+    expect(screen.getByText('Move Money', { selector: 'h2' })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Summary' }))
     fireEvent.click(screen.getByRole('button', { name: 'Bank' }))
 
-    expect(screen.queryByText('Move Money', { selector: 'p' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Move Money', { selector: 'h2' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'New Transfer' })).toBeInTheDocument()
   })
 })

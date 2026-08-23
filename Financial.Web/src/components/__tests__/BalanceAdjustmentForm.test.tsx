@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
+import { render } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import BalanceAdjustmentForm from '../BalanceAdjustmentForm'
 import type { BankDto } from '../../api/types'
@@ -34,17 +35,15 @@ describe('BalanceAdjustmentForm', () => {
   })
 
   it('renders the create form title', () => {
-    const { container } = render(<BalanceAdjustmentForm {...baseProps} />)
+    render(<BalanceAdjustmentForm {...baseProps} />)
 
-    expect(container.querySelector('.monthly-page__form-title')).toHaveTextContent('Correct Balance')
+    expect(screen.getByRole('heading', { name: 'Correct Balance' })).toBeInTheDocument()
   })
 
   it('renders the edit form title and pre-filled values', () => {
-    const { container } = render(
-      <BalanceAdjustmentForm {...baseProps} isEditing targetBalance="150" note="Matched statement" />,
-    )
+    render(<BalanceAdjustmentForm {...baseProps} isEditing targetBalance="150" note="Matched statement" />)
 
-    expect(container.querySelector('.monthly-page__form-title')).toHaveTextContent('Edit Balance Adjustment')
+    expect(screen.getByRole('heading', { name: 'Edit Balance Adjustment' })).toBeInTheDocument()
     expect(screen.getByLabelText('Target Balance')).toHaveValue(150)
     expect(screen.getByLabelText('Note')).toHaveValue('Matched statement')
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
@@ -88,8 +87,7 @@ describe('BalanceAdjustmentForm', () => {
   it('renders a backend error under the field named by saveErrorField', () => {
     render(<BalanceAdjustmentForm {...baseProps} saveError="Balance cannot be negative." saveErrorField="targetBalance" />)
 
-    const field = screen.getByLabelText('Target Balance').closest('.monthly-page__form-field')
-    expect(field).toHaveTextContent('Balance cannot be negative.')
+    expect(screen.getByText('Balance cannot be negative.')).toBeInTheDocument()
   })
 
   it('renders a general error banner when saveErrorField is null', () => {
