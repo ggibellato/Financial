@@ -38,7 +38,7 @@
     <ProjectReference Include="..\Financial.Investment.Application\Financial.Investment.Application.csproj" />
     <ProjectReference Include="..\Financial.Investment.Domain\Financial.Investment.Domain.csproj" />
     <ProjectReference Include="..\Financial.Investment.Infrastructure\Financial.Investment.Infrastructure.csproj" />
-    <ProjectReference Include="..\Integrations\GoogleFinancialSupport\GoogleFinancialSupport.csproj" />
+    <ProjectReference Include="..\Integrations\GoogleDrive\GoogleDrive.csproj" />
     <ProjectReference Include="..\Integrations\Observability\Observability.csproj" />
     <ProjectReference Include="..\Financial.Shared.Infrastructure\Financial.Shared.Infrastructure.csproj" />
   </ItemGroup>

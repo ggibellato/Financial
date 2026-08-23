@@ -16,8 +16,11 @@ public class SharedInfrastructureIsolationRuleTests
     {
         "Financial.CashFlow.Infrastructure",
         "Financial.Investment.Infrastructure",
-        "Financial.Integrations.GoogleFinancialSupport",
+        "Financial.Integrations.GoogleCore",
+        "Financial.Integrations.GoogleDrive",
+        "Financial.Integrations.GoogleSheets",
         "Financial.Integrations.WebPageParser",
+        "Financial.Investment.SpreadsheetImport",
     };
 
     [Theory]

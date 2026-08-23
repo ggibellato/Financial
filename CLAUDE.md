@@ -13,7 +13,8 @@ Financial.Shared.Infrastructure                             JSON/Google Drive st
 Financial.Api                                                ASP.NET Core, serves REST API + hosts the built SPA
 Financial.App                                                WPF desktop client
 Financial.Web                                                React + TypeScript SPA, separate from the .slnx
-Integrations/       CashFlowSpreadsheetImport, GoogleFinancialSupport, ImportGoogleSpreadSheets, WebPageParser
+Integrations/       GoogleCore, GoogleDrive, GoogleSheets, Observability, WebPageParser (vendor SDKs, no bounded-context types)
+Tools/              CashFlowSpreadsheetImport, ImportGoogleSpreadSheets, InvestmentSpreadsheetImport
 Tests/              One test project per Domain/Application/Infrastructure/Presentation project
 ```
 

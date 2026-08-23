@@ -31,6 +31,8 @@
     <ProjectReference Include="..\..\Financial.Investment.Infrastructure\Financial.Investment.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Financial.Api\Financial.Api.csproj" />
     <ProjectReference Include="..\..\Financial.App\Financial.App.csproj" />
+    <ProjectReference Include="..\..\Integrations\GoogleSheets\GoogleSheets.csproj" />
+    <ProjectReference Include="..\..\Tools\InvestmentSpreadsheetImport\InvestmentSpreadsheetImport.csproj" />
   </ItemGroup>
 
 </Project>
