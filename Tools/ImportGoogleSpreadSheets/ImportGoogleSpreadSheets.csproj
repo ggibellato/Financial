@@ -14,7 +14,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Integrations\GoogleDrive\GoogleDrive.csproj" />
-    <ProjectReference Include="..\..\Integrations\GoogleSheets\GoogleSheets.csproj" />
+    <ProjectReference Include="..\InvestmentSpreadsheetImport\InvestmentSpreadsheetImport.csproj" />
     <ProjectReference Include="..\..\Financial.Investment.Infrastructure\Financial.Investment.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Financial.Shared.Infrastructure\Financial.Shared.Infrastructure.csproj" />
   </ItemGroup>

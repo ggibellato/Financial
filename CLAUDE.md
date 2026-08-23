@@ -14,7 +14,7 @@ Financial.Api                                                ASP.NET Core, serve
 Financial.App                                                WPF desktop client
 Financial.Web                                                React + TypeScript SPA, separate from the .slnx
 Integrations/       GoogleCore, GoogleDrive, GoogleSheets, Observability, WebPageParser (vendor SDKs, no bounded-context types)
-Tools/              CashFlowSpreadsheetImport, ImportGoogleSpreadSheets
+Tools/              CashFlowSpreadsheetImport, ImportGoogleSpreadSheets, InvestmentSpreadsheetImport
 Tests/              One test project per Domain/Application/Infrastructure/Presentation project
 ```
 

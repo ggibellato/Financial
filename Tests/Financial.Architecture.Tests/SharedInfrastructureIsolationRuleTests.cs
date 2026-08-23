@@ -20,6 +20,7 @@ public class SharedInfrastructureIsolationRuleTests
         "Financial.Integrations.GoogleDrive",
         "Financial.Integrations.GoogleSheets",
         "Financial.Integrations.WebPageParser",
+        "Financial.Investment.SpreadsheetImport",
     };
 
     [Theory]

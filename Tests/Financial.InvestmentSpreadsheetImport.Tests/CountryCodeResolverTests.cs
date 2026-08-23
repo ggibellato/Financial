@@ -1,9 +1,9 @@
 using Financial.Investment.Domain.Entities;
 using Financial.Integrations.GoogleSheets;
-using Financial.Investment.Infrastructure.SpreadsheetImport;
+using Financial.Investment.SpreadsheetImport;
 using FluentAssertions;
 
-namespace Financial.Investment.Infrastructure.Tests.SpreadsheetImport;
+namespace Financial.InvestmentSpreadsheetImport.Tests;
 
 public class CountryCodeResolverTests
 {

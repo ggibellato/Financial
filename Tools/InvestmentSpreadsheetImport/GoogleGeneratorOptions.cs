@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Financial.Investment.Infrastructure.SpreadsheetImport;
+namespace Financial.Investment.SpreadsheetImport;
 
 public sealed record GoogleGeneratorOptions(
     IReadOnlyList<string> IgnoreSheetNames,

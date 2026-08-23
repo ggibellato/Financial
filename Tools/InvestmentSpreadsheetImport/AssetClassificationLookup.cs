@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Financial.Investment.Infrastructure.SpreadsheetImport;
+namespace Financial.Investment.SpreadsheetImport;
 
 internal readonly record struct AssetClassificationEntry(
     CountryCode Country,
@@ -40,7 +40,7 @@ internal static class AssetClassificationLookup
     private static IReadOnlyDictionary<string, AssetClassificationEntry> LoadEntries()
     {
         const string ResourceName =
-            "Financial.Investment.Infrastructure.SpreadsheetImport.AssetClassifications.json";
+            "Financial.Investment.SpreadsheetImport.AssetClassifications.json";
 
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(ResourceName)
             ?? throw new InvalidOperationException(

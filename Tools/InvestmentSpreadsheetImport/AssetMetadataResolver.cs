@@ -4,7 +4,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Financial.Investment.Infrastructure.SpreadsheetImport;
+namespace Financial.Investment.SpreadsheetImport;
 
 internal sealed class AssetMetadataResolver
 {

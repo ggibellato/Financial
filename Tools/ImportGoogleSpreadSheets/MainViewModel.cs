@@ -1,6 +1,6 @@
 using Financial.Integrations.GoogleDrive;
 using Financial.Integrations.GoogleSheets;
-using Financial.Investment.Infrastructure.SpreadsheetImport;
+using Financial.Investment.SpreadsheetImport;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using System;

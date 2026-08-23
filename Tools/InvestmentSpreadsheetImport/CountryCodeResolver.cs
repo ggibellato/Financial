@@ -1,6 +1,6 @@
 using Financial.Investment.Domain.Entities;
 
-namespace Financial.Investment.Infrastructure.SpreadsheetImport;
+namespace Financial.Investment.SpreadsheetImport;
 
 internal static class CountryCodeResolver
 {

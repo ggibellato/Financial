@@ -23,9 +23,7 @@ public class PresentationDependencyRuleTests
         "Financial.Shared.Abstractions",
         "Financial.Shared.Infrastructure",
         "Financial.Integrations.Observability",
-        "Financial.Integrations.GoogleCore",
         "Financial.Integrations.GoogleDrive",
-        "Financial.Integrations.GoogleSheets",
     };
 
     private static readonly IReadOnlyCollection<string> AppAllowedFinancialAssemblies = new[]
@@ -39,9 +37,7 @@ public class PresentationDependencyRuleTests
         "Financial.Shared.Abstractions",
         "Financial.Shared.Infrastructure",
         "Financial.Integrations.Observability",
-        "Financial.Integrations.GoogleCore",
         "Financial.Integrations.GoogleDrive",
-        "Financial.Integrations.GoogleSheets",
     };
 
     [Fact]

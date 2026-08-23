@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Financial.Investment.Infrastructure.SpreadsheetImport;
+namespace Financial.Investment.SpreadsheetImport;
 
 public sealed class GoogleGenerator
 {
