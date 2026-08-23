@@ -386,6 +386,34 @@ bridging the event-driven inline form back to the existing
 `Func<TData?>`). Delete still uses the dialog `Window` in read-only mode —
 confirmations are exempt from the inline-form rule.
 
+This shipped with clean build/tests but two real bugs, both invisible until
+the app was actually driven interactively (not just screenshotted after a
+static navigation) — same lesson as the original pilot, on a different
+control this time:
+
+- **The inline form never collapsed**, on open *or* close. Each embedding
+  (`<local:TransactionFormView Grid.Row="4" DataContext="{Binding
+  AssetDetails.TransactionFormViewModel}" Visibility="{Binding
+  AssetDetails.IsTransactionFormOpen, ...}"/>`) set `DataContext` and
+  `Visibility` on the *same* element — the `Visibility` binding then
+  resolved against the new local `DataContext` (`TransactionFormViewModel`,
+  which has no `AssetDetails` property), failed silently, and left
+  `Visibility` at its CLR default (`Visible`) permanently. Fixed by moving
+  `Visibility` onto a wrapping `Grid` bound at the parent's own
+  `DataContext`, with the child form's `DataContext` override staying on
+  the inner element only — see `docs/ui/wpf.md`.
+- **The "New Transaction"/"New Credit"/"New Price" buttons were never
+  blue.** They'd been a plain `Button` with a Segoe MDL2 glyph since before
+  this round — not something today's change broke, but a pre-existing gap
+  against the already-documented "Grid create/new actions" rule (primary
+  `ui:Button` + icon) that adding the inline form right next to them made
+  obvious. Fixed by converting to `ui:Button Appearance="Primary"
+  Icon="{ui:SymbolIcon Symbol=Add20}"`, which also meant adding the
+  `ui:ThemesDictionary`/`ui:ControlsDictionary` merge + accent brush
+  overrides to `TransactionsView.xaml`/`CreditsView.xaml`/
+  `PriceHistoryView.xaml` themselves — until now nothing in those three
+  files needed WPF-UI theming, only their embedded child forms did.
+
 **CashFlow forms the Expense pilot didn't reach**: migrating
 `ExpenseForm.tsx` to Fluent components didn't migrate its siblings on the
 same page. `IncomeForm.tsx`, `TransferForm.tsx`, and

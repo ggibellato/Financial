@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:oxy="http://oxyplot.org/wpf"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:local="clr-namespace:Financial.Presentation.App.Views.Investment">
     <!--
         Layout follows docs/ui/forms-data-and-visualisations.md's "Grid-and-chart
@@ -11,6 +12,15 @@
         (chart on top, full-width grid below).
     -->
     <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ui:ThemesDictionary Theme="Light"/>
+                <ui:ControlsDictionary/>
+            </ResourceDictionary.MergedDictionaries>
+            <!-- Matches Financial.Web's accent — see ExpenseFormView.xaml / ADR-005. -->
+            <SolidColorBrush x:Key="AccentButtonBackground" Color="#0F6CBD"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#115EA3"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#0C3B5E"/>
         <DataTemplate x:Key="TransactionsAssetTemplate">
             <Grid>
                 <Grid.RowDefinitions>
@@ -109,17 +119,22 @@
                               ResizeBehavior="PreviousAndNext"/>
 
                 <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="0,8,0,8">
-                    <Button Command="{Binding AssetDetails.AddTransactionCommand}" ToolTip="New transaction">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE710;" Margin="0,0,6,0"/>
-                            <TextBlock Text="New"/>
-                        </StackPanel>
-                    </Button>
+                    <ui:Button Content="New" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}"
+                               ToolTip="New transaction"
+                               Command="{Binding AssetDetails.AddTransactionCommand}"/>
                 </StackPanel>
 
-                <local:TransactionFormView Grid.Row="4"
-                                            DataContext="{Binding AssetDetails.TransactionFormViewModel}"
-                                            Visibility="{Binding AssetDetails.IsTransactionFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                <!--
+                    Visibility must bind at THIS Grid's own (inherited) DataContext, not
+                    TransactionFormView's — a Binding and a DataContext override on the
+                    SAME element resolve the Binding against the new local DataContext,
+                    not the inherited one, so Visibility would silently fail to resolve
+                    and the form would never collapse. See docs/ui/wpf.md.
+                -->
+                <Grid Grid.Row="4"
+                      Visibility="{Binding AssetDetails.IsTransactionFormOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <local:TransactionFormView DataContext="{Binding AssetDetails.TransactionFormViewModel}"/>
+                </Grid>
 
                 <DataGrid Grid.Row="5"
                           ItemsSource="{Binding AssetDetails.Transactions}"
@@ -305,6 +320,7 @@
                               SizeChanged="OnTransactionsPlotSizeChanged" />
             </Grid>
         </DataTemplate>
+        </ResourceDictionary>
     </UserControl.Resources>
     <ContentControl Content="{Binding}">
         <ContentControl.Style>

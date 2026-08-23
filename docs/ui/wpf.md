@@ -96,6 +96,25 @@ Do not use an old WPF pattern as the reason to diverge from the React target.
 - Disable or prevent duplicate saves while the save command executes.
 - Preserve values after failed saves.
 - Use automation properties where control purpose is not obvious.
+- Never set `DataContext` and another `Binding`-valued property (most often
+  `Visibility`) on the *same* element. Once `DataContext` is set locally on
+  an element, every other `Binding` on that same element resolves against
+  the new local value, not the inherited one — so
+  `Visibility="{Binding IsXFormOpen}"` next to
+  `DataContext="{Binding XFormViewModel}"` silently looks for `IsXFormOpen`
+  on `XFormViewModel` (which doesn't have it), fails to resolve, and
+  `Visibility` just sits at its CLR default (`Visible`) forever — the form
+  never collapses, on either open or close. This is exactly what happened
+  embedding `TransactionFormView`/`CreditFormView`/`PriceFormView` (see
+  "Dialogs and contextual UI" below): wrap the child in a plain `Grid` (or
+  any container), put `Visibility` on that wrapper — bound at the *parent's*
+  DataContext, where `IsXFormOpen` actually lives — and set `DataContext`
+  only on the inner form element:
+  ```xml
+  <Grid Visibility="{Binding AssetDetails.IsXFormOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+      <local:XFormView DataContext="{Binding AssetDetails.XFormViewModel}"/>
+  </Grid>
+  ```
 
 ## Data, trees, and charts
 

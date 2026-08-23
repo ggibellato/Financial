@@ -140,6 +140,15 @@ platforms, prefer sampling the actual rendered pixel color over eyeballing a
 screenshot (a generated accent ramp can look "close enough" and still be a
 different hex — see `docs/ui/decisions/ADR-005-brand-and-status-colors.md`).
 
+For any inline form (`IsXFormOpen`-toggled), "looked at it" means opened it
+*and* closed it — a static screenshot after navigating there once won't
+catch a broken toggle. The Investment dialog-to-inline-form conversion
+(2026-08-22–23, see `docs/ui/current-state-audit.md`) shipped a form that
+never collapsed on either open or close (a `DataContext`+`Visibility`
+binding conflict on the same element — see `docs/ui/wpf.md`'s "Forms"
+section) past a screenshot of the form sitting open, because opening it once
+was the only interaction actually exercised.
+
 Report:
 
 - UX decisions
