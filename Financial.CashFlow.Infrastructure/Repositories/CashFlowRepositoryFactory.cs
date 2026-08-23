@@ -36,7 +36,7 @@ public sealed class CashFlowRepositoryFactory
             CashFlowRepositoryProvider.LocalJson =>
                 _storageFactory.CreateLocal(options.LocalDataPath, DefaultDataFileName),
             CashFlowRepositoryProvider.GoogleDriveJson =>
-                _storageFactory.CreateGoogleDrive(
+                _storageFactory.CreateRemote(
                     options.GoogleDriveCredentialsPath,
                     options.GoogleDriveFilePath,
                     CashFlowRepositoryConfigurationKeys.GoogleDriveCredentialsPath,

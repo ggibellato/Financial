@@ -25,14 +25,14 @@ public sealed class JsonStorageFactory : IJsonStorageFactory
     public IJsonStorage CreateLocal(string? localDataPath, string defaultDataFileName) =>
         new LocalJsonStorage(localDataPath, defaultDataFileName);
 
-    public IJsonStorage CreateGoogleDrive(
+    public IJsonStorage CreateRemote(
         string? credentialsPath,
-        string? driveFilePath,
+        string? remoteFilePath,
         string credentialsConfigKey,
         string providerName)
     {
-        var storage = GoogleDriveStorageFactory.Create(
-            credentialsPath, driveFilePath, _remoteFileClientFactory, credentialsConfigKey, providerName, _tracer);
+        var storage = RemoteStorageFactory.Create(
+            credentialsPath, remoteFilePath, _remoteFileClientFactory, credentialsConfigKey, providerName, _tracer);
 
         return new DebouncedJsonStorage(storage, DebounceWindow, tracer: _tracer, logger: _logger);
     }

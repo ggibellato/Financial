@@ -107,7 +107,7 @@ public class InvestmentRepositoryFactoryTests
         Action act = () => Factory.Create(options);
 
         act.Should().Throw<FileNotFoundException>()
-            .WithMessage("*Google Drive credentials file path is required*");
+            .WithMessage("*Remote storage credentials file path is required*");
     }
 
     [Fact]
@@ -262,10 +262,10 @@ public class InvestmentRepositoryFactoryTests
 
         await repository.ApplyAndSaveAsync(() => true);
 
-        await WaitForAsync(() => tracer.Spans.Any(s => s.Name == "GoogleDrive.Upload"), TimeSpan.FromSeconds(15));
+        await WaitForAsync(() => tracer.Spans.Any(s => s.Name == "RemoteStorage.Upload"), TimeSpan.FromSeconds(15));
 
         tracer.Spans.Should().Contain(s => s.Name == "JsonStorage.Save");
-        tracer.Spans.Should().Contain(s => s.Name == "GoogleDrive.Upload");
+        tracer.Spans.Should().Contain(s => s.Name == "RemoteStorage.Upload");
     }
 
     private static async Task WaitForAsync(Func<bool> condition, TimeSpan timeout)

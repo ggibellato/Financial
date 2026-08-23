@@ -4,9 +4,9 @@ public interface IJsonStorageFactory
 {
     IJsonStorage CreateLocal(string? localDataPath, string defaultDataFileName);
 
-    IJsonStorage CreateGoogleDrive(
+    IJsonStorage CreateRemote(
         string? credentialsPath,
-        string? driveFilePath,
+        string? remoteFilePath,
         string credentialsConfigKey,
         string providerName);
 }
