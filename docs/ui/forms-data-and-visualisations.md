@@ -4,19 +4,23 @@
 
 ### Month/year selection
 
-Where a page's primary scope is one calendar month (e.g. CashFlow Monthly's
-top-of-page period filter), month and year are **one control**, not two
+Any place the user picks a month and year together — a page's primary scope
+(e.g. CashFlow Monthly's top-of-page period filter) **or** a form field
+(e.g. a credit-card expense's Invoice Month) — uses **one control**, not two
 separate fields the user operates independently. Web's native
 `<input type="month">` is the reference: a single edit surface that holds
 month and year together, with a built-in calendar affordance for picking the
 value visually rather than typing/spinning it. WPF must reach the same
 result with a genuine calendar picker restricted to month/year — not two
 `ComboBox`es, even visually unified ones (that was tried first and rejected:
-it reads as two fields, not one, and has no calendar affordance at all).
+it reads as two fields, not one, and has no calendar affordance at all), and
+not a bare `TextBox` showing "MM/yyyy" as raw text either (no picker
+affordance at all, and looks broken/unstyled next to every other field on
+the same form).
 
-`Financial.App/Components/MonthYearPicker.xaml` is the reference
-implementation: a flat, bordered field showing the selected period as
-`"MMMM yyyy"` (an outline-only `Border` around a `ui:Button` with
+`Financial.App/Components/MonthYearPicker.xaml` is the one reference
+implementation for both cases: a flat, bordered field showing the selected
+period as `"MMMM yyyy"` (an outline-only `Border` around a `ui:Button` with
 `Appearance="Transparent"` — not a raised/filled button, matching the plain
 look of Web's native `<input type="month">`), which opens a fixed-size
 popup: a year header with prev/next arrows, and a 4x3 grid of month cells.
@@ -28,9 +32,11 @@ control's `Year` view (both were tried first and rejected: a bare
 `Popup`, so it rendered full screen-width before a month was ever picked, and
 `ui:Button`'s default chrome/border made the grid read as a "board" of
 bordered buttons rather than flat text like the reference). This keeps the
-existing `SelectedYear`/`SelectedMonth` dependency-property API so
-`MonthlyView.xaml`, `MensaisView.xaml`, and `InvestmentSnapshotsView.xaml`
-need no changes to consume it.
+existing `SelectedYear`/`SelectedMonth` dependency-property API, so it drops
+into any consumer unchanged — the page-level filter
+(`MonthlyView.xaml`, `MensaisView.xaml`, `InvestmentSnapshotsView.xaml`) and
+a form field (`ExpenseFormView.xaml`'s Invoice Month, replacing the old
+`MonthYearTextBox`) alike.
 
 ### Default field order
 

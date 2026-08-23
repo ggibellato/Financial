@@ -47,6 +47,20 @@ Do not use an old WPF pattern as the reason to diverge from the React target.
   Confirmed the hard way during the CashFlow Monthly Expense pilot
   (2026-08-22): the grid silently auto-generated a raw column per DTO
   property alongside the intended ones.
+- A custom `UserControl`'s `DependencyProperty` that does arithmetic or
+  constructs a value type (e.g. `MonthYearPicker.SelectedYear`/
+  `SelectedMonth` building a `DateTime`) must tolerate its *bound* value
+  before the ViewModel has ever set it deliberately — not just the DP's own
+  declared default. A plain `int`/`decimal` ViewModel field defaults to `0`
+  until some command (e.g. "New Expense") first assigns it; the moment a
+  `TwoWay` binding activates (control `Loaded`, or the control simply
+  existing inside a `Visibility="Collapsed"` sibling that's already in the
+  visual tree), WPF pushes that `0` into the DP, overwriting its
+  `PropertyMetadata` default — a control that assumes "the DP default is
+  always valid" and does e.g. `new DateTime(SelectedYear, SelectedMonth, 1)`
+  unguarded will crash the whole app on startup. Clamp/fall back (to
+  `DateTime.Today`, or whatever's sensible) inside the control itself; don't
+  rely on the consumer never binding to an unset value.
 - To pin an exact brand/status hex so it matches Web pixel-for-pixel, define
   literal `SolidColorBrush` resources under the specific keys the target
   control template binds (for `Wpf.Ui.Controls.Button`'s `Primary`
@@ -138,4 +152,21 @@ Do not use an old WPF pattern as the reason to diverge from the React target.
 - Use descriptive titles.
 - Keep destructive actions distinct.
 - Do not use a modal window when inline or contextual interaction is more
-  efficient.
+  efficient — see `docs/ui/forms-data-and-visualisations.md`'s "'New X'
+  create actions are inline forms, not popup dialogs" rule for the create/
+  edit case specifically.
+- Converting an existing `Window`-based create/edit dialog to an inline form
+  keeps the same `*DialogViewModel` (state, validation, `ConfirmCommand`/
+  `CancelCommand`/`CloseRequested`) — it's still the right shape for an
+  inline form's state, "dialog" in the name is just historical. Only the
+  *hosting* changes: instead of `new XDialog(vm){Owner=...}.ShowDialog()`
+  blocking synchronously, wrap the show/close cycle in a
+  `TaskCompletionSource` — set an `IsXFormOpen` bool and an `XFormViewModel`
+  property, subscribe to `CloseRequested`, and complete the `TaskCompletionSource`
+  from that handler. This lets a `Func<Task<TData?>> showForm` slot into an
+  existing `Actions`-class method (`TransactionActions.Add`, etc.) with only
+  an `await` added — the request/validation/service-call logic underneath
+  doesn't change at all. Delete the `Window`/`.xaml.cs` only for the modes
+  you actually convert; a `Delete` confirmation can keep using the same
+  `Window` in read-only mode, since confirmations are exempt from the
+  inline-form rule.

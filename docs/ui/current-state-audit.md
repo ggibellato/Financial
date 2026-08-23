@@ -328,3 +328,75 @@ One difference intentionally left as-is: WPF's `DataGrid` got
 explicitly) while Web's plain `<th>` headers have no sort behavior at all.
 Column-header sorting isn't a designed feature on either platform yet — see
 `docs/ui/forms-data-and-visualisations.md`.
+
+## Investment Add/Update dialogs and CashFlow form catch-up (2026-08-22–23)
+
+Second round: converting WPF's Investment `TransactionDialog`/`CreditDialog`/
+`PriceDialog` popup `Window`s to inline forms, replacing the CashFlow Monthly
+month/year filter's two-`ComboBox` control with a real calendar-style picker,
+and catching the CashFlow forms the Expense pilot above didn't touch
+(Income, Transfer, Correct Balance) up to the same standard. As before, the
+general lessons are folded into `docs/ui/wpf.md`, `docs/ui/react.md`, and
+`docs/ui/forms-data-and-visualisations.md`; this section is the concrete
+history.
+
+**Month/year picker took three attempts**, each rejected only after actually
+opening the popup and looking at it:
+
+1. Two visually-unified `ComboBox`es (bordered container, thin divider). Build
+   and tests were clean; visually it still read as two fields, and had no
+   calendar affordance at all — rejected on sight.
+2. A native `Calendar` control opened directly in `DisplayMode="Year"` inside
+   a `Popup`. Two bugs, both invisible until actually opened: the `Popup`
+   rendered full screen-width the first time (a `Calendar`'s `Year` view has
+   no bounded natural size inside an unconstrained `Popup` on first layout),
+   and WPF-UI's day-selection highlight — a small circle sized for a
+   two-digit day number — clipped/overwrote full month names like
+   "September".
+3. **What shipped**: a custom fixed-width (`220px`) popup with a year header
+   (prev/next arrows) and a 4x3 `UniformGrid` of plain `Button`s using a
+   from-scratch flat `ControlTemplate` (no border/background at rest, a
+   solid rounded accent fill only on the selected month) — matching the
+   browser's own native month-picker popup pixel-for-pixel, per a reference
+   screenshot the user supplied directly. Neither `ui:Button` nor the native
+   `Calendar` could reach that exact look; both were replaced entirely
+   rather than styled further.
+
+Reusing that same picker for a **form field** (`ExpenseFormView`'s Invoice
+Month, previously a bare unstyled `MonthYearTextBox`) surfaced a fourth bug:
+the control crashed the whole app on startup, before any form was ever
+opened. `SelectedYear`/`SelectedMonth` bind `TwoWay` to plain `int`
+ViewModel fields that default to `0` until "New Expense" is clicked; the
+binding pushes that `0` into the control the moment it's constructed
+(`Visibility="Collapsed"` doesn't defer construction), and
+`new DateTime(0, 0, 1)` throws. Fixed by falling back to `DateTime.Today`
+for an out-of-range year/month instead of trusting the DP's own declared
+default — see `docs/ui/wpf.md`.
+
+**Investment dialogs → inline forms**: `TransactionDialog`/`CreditDialog`/
+`PriceDialog` (`Window`s, `ShowDialog()`) became
+`TransactionFormView`/`CreditFormView`/`PriceFormView` (`UserControl`s
+embedded directly in their tab), per the new "'New X' create actions are
+inline forms, not popup dialogs" rule. The existing `*DialogViewModel`
+classes (validation, `ConfirmCommand`/`CancelCommand`/`CloseRequested`)
+needed no changes — only the hosting changed, via a `TaskCompletionSource`
+bridging the event-driven inline form back to the existing
+`Func<Task<TData?>> showForm` shape the `TransactionActions`/`CreditActions`/
+`PriceActions` classes already expected (previously a synchronous
+`Func<TData?>`). Delete still uses the dialog `Window` in read-only mode —
+confirmations are exempt from the inline-form rule.
+
+**CashFlow forms the Expense pilot didn't reach**: migrating
+`ExpenseForm.tsx` to Fluent components didn't migrate its siblings on the
+same page. `IncomeForm.tsx`, `TransferForm.tsx`, and
+`BalanceAdjustmentForm.tsx` were still on the pre-`ADR-004` hand-rolled
+`monthly-page__form-*`/`monthly-page__submit-btn` CSS (a different blue,
+smaller font, no Fluent focus treatment) a full round later — easy to miss
+because they still looked like a finished page. WPF's equivalents
+(`IncomeFormView`, `TransferFormView`, `BalanceAdjustmentFormView`) had the
+same gap: pre-`ui:Button`, single-column label-left layout, `#CCCCCC`/
+`#FAFAFA` literal colors. Both platforms' three forms were rebuilt to match
+`ExpenseForm`/`ExpenseFormView` exactly. Separately, WPF's asset Summary
+panel showed a "Realized Gain/Loss" row in *active* scope that Web only
+ever shows in *historic* scope (under a "Realized" section) — a genuine
+content difference, not a styling one; removed from WPF to match.

@@ -50,6 +50,17 @@ is the reference.
 
 ## Forms
 
+- Migrating one form to the Fluent `Field`/`Input`/`Select`/`Button`
+  components (per `ADR-004`) does not migrate its sibling forms, even ones
+  that render on the same page and look done at a glance. `ExpenseForm.tsx`
+  moved to Fluent components first; `IncomeForm.tsx`, `TransferForm.tsx`,
+  and `BalanceAdjustmentForm.tsx` kept a legacy hand-rolled
+  `monthly-page__form-*`/`monthly-page__submit-btn` CSS-class button (small
+  font, a different blue, a different border-radius, no Fluent focus/hover
+  treatment) for a full round after the pilot, because they still *looked*
+  like part of a finished page. Grep for the component library actually
+  imported (`@fluentui/react-components`) rather than assuming a page-level
+  pilot covered every form rendered on that page.
 - Use visible labels.
 - Use semantic `form` elements where submission applies.
 - Use suitable HTML input type, input mode, autocomplete, and descriptive
