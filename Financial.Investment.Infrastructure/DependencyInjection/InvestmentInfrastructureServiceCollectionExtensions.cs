@@ -5,13 +5,10 @@ using Financial.Investment.Infrastructure.Interfaces;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Investment.Infrastructure.Repositories;
 using Financial.Investment.Infrastructure.Services;
-using Financial.Shared.Abstractions;
-using Financial.Shared.Infrastructure.Configuration;
-using Financial.Shared.Infrastructure.Hosting;
-using Financial.Shared.Infrastructure.Persistence;
+using Financial.Shared.Abstractions.Configuration;
+using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Financial.Investment.Infrastructure.DependencyInjection;
@@ -49,12 +46,9 @@ public static class InvestmentInfrastructureServiceCollectionExtensions
             var options = BuildRepositoryOptions(settings);
             return new InvestmentRepositoryFactory(
                 sp.GetRequiredService<IInvestmentsSerializer>(),
-                sp.GetService<IRemoteFileClientFactory>(),
-                sp.GetRequiredService<ITelemetryTracer>(),
-                sp.GetService<Microsoft.Extensions.Logging.ILogger<DebouncedJsonStorage>>()).Create(options);
+                sp.GetRequiredService<IJsonStorageFactory>()).Create(options);
         });
         services.AddSingleton<IAssetPriceService, AssetPriceService>();
-        services.AddHostedService<ShutdownFlushHostedService<IInvestmentRepository>>();
 
         return services;
     }

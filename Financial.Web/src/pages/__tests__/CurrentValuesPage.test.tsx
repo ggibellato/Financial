@@ -32,9 +32,9 @@ const makeBroker = (
       name: a.name ?? 'ASSET',
       ticker: a.ticker ?? 'TICK',
       exchange: a.exchange ?? 'BVMF',
-      country: 'Brazil',
+      country: 'BR',
       localTypeCode: 'FII',
-      class: a.class ?? 'RealEstateFund',
+      class: a.class ?? 'RealEstate',
       isin: 'BR000',
       quantity: 10,
       averagePrice: 100,
@@ -82,9 +82,9 @@ describe('CurrentValuesPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
 
     await waitFor(() => {
-      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstateFund', 'XPI', expect.any(String), expect.any(String), expect.any(String))
-      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'KLBN4', 'RealEstateFund', 'XPI', expect.any(String), expect.any(String), expect.any(String))
-      expect(getCurrentPriceMock).not.toHaveBeenCalledWith('BVMF', 'XXXX3', 'RealEstateFund', 'XPI', expect.any(String), expect.any(String), expect.any(String))
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstate', 'XPI', expect.any(String), expect.any(String), expect.any(String))
+      expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'KLBN4', 'RealEstate', 'XPI', expect.any(String), expect.any(String), expect.any(String))
+      expect(getCurrentPriceMock).not.toHaveBeenCalledWith('BVMF', 'XXXX3', 'RealEstate', 'XPI', expect.any(String), expect.any(String), expect.any(String))
     })
   })
 
@@ -103,7 +103,7 @@ describe('CurrentValuesPage', () => {
       expect(getCurrentPriceMock).toHaveBeenCalledWith(
         'BVMF',
         'KLBN4',
-        'RealEstateFund',
+        'RealEstate',
         'XPI',
         'KLBN4',
         'Acoes',
@@ -278,9 +278,9 @@ describe('CurrentValuesPage', () => {
     await waitFor(() => expect(screen.queryByText(/Completed!/)).toBeInTheDocument())
 
     expect(getCurrentPriceMock).toHaveBeenCalledTimes(3)
-    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstateFund', 'XPI', expect.any(String), expect.any(String), expect.any(String))
-    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'FLAT11', 'RealEstateFund', 'XPI', expect.any(String), expect.any(String), expect.any(String))
-    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'SHRT11', 'RealEstateFund', 'XPI', expect.any(String), expect.any(String), expect.any(String))
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstate', 'XPI', expect.any(String), expect.any(String), expect.any(String))
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'FLAT11', 'RealEstate', 'XPI', expect.any(String), expect.any(String), expect.any(String))
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'SHRT11', 'RealEstate', 'XPI', expect.any(String), expect.any(String), expect.any(String))
   })
 
   it('excludes assets with empty ticker or exchange', async () => {
@@ -303,7 +303,7 @@ describe('CurrentValuesPage', () => {
     await waitFor(() => expect(screen.queryByText(/Completed!/)).toBeInTheDocument())
 
     expect(getCurrentPriceMock).toHaveBeenCalledTimes(1)
-    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstateFund', 'XPI', expect.any(String), expect.any(String), expect.any(String))
+    expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstate', 'XPI', expect.any(String), expect.any(String), expect.any(String))
   })
 
   it('fetches Bitcoin under Coinbase/Cryptocurrency scope with assetClass and brokerName', async () => {

@@ -50,11 +50,9 @@ public partial class DividendCheckView : UserControl
         else
             col.Binding = new System.Windows.Data.Binding(propertyName) { StringFormat = "N2" };
 
-        var style = new System.Windows.Style(typeof(TextBlock));
-        style.Setters.Add(new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Right));
+        var style = new System.Windows.Style(typeof(TextBlock), FindSharedStyle("NumericColumnTextStyle"));
         style.Setters.Add(new Setter(TextBlock.FontWeightProperty, FontWeights.Bold));
         style.Setters.Add(new Setter(TextBlock.ForegroundProperty, System.Windows.Media.Brushes.Black));
-        style.Setters.Add(new Setter(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center));
         col.ElementStyle = style;
         return true;
     }
@@ -64,8 +62,14 @@ public partial class DividendCheckView : UserControl
         if (e.Column is not DataGridTextColumn col)
             return;
 
-        var style = new System.Windows.Style(typeof(TextBlock));
-        style.Setters.Add(new Setter(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center));
-        col.ElementStyle = style;
+        col.ElementStyle = new System.Windows.Style(typeof(TextBlock), FindSharedStyle("PlainColumnTextStyle"));
     }
+
+    /// <summary>
+    /// Auto-generated columns build their <c>ElementStyle</c> in code, so it must be based on the shared
+    /// keyed style the same way a static column's markup would via <c>BasedOn</c> - otherwise a future
+    /// change to the shared style (e.g. padding) silently stops applying here.
+    /// </summary>
+    private static System.Windows.Style FindSharedStyle(string resourceKey) =>
+        (System.Windows.Style)Application.Current.FindResource(resourceKey);
 }

@@ -21,7 +21,9 @@ COPY Financial.CashFlow.Domain/Financial.CashFlow.Domain.csproj Financial.CashFl
 COPY Financial.CashFlow.Infrastructure/Financial.CashFlow.Infrastructure.csproj Financial.CashFlow.Infrastructure/
 COPY Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj Financial.Shared.Infrastructure/
 COPY Financial.Shared.Abstractions/Financial.Shared.Abstractions.csproj Financial.Shared.Abstractions/
-COPY Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj Integrations/GoogleFinancialSupport/
+COPY Integrations/GoogleCore/GoogleCore.csproj Integrations/GoogleCore/
+COPY Integrations/GoogleDrive/GoogleDrive.csproj Integrations/GoogleDrive/
+COPY Integrations/GoogleSheets/GoogleSheets.csproj Integrations/GoogleSheets/
 COPY Integrations/WebPageParser/WebPageParser.csproj Integrations/WebPageParser/
 COPY Integrations/Observability/Observability.csproj Integrations/Observability/
 
@@ -36,7 +38,9 @@ COPY Financial.CashFlow.Domain/ Financial.CashFlow.Domain/
 COPY Financial.CashFlow.Infrastructure/ Financial.CashFlow.Infrastructure/
 COPY Financial.Shared.Infrastructure/ Financial.Shared.Infrastructure/
 COPY Financial.Shared.Abstractions/ Financial.Shared.Abstractions/
-COPY Integrations/GoogleFinancialSupport/ Integrations/GoogleFinancialSupport/
+COPY Integrations/GoogleCore/ Integrations/GoogleCore/
+COPY Integrations/GoogleDrive/ Integrations/GoogleDrive/
+COPY Integrations/GoogleSheets/ Integrations/GoogleSheets/
 COPY Integrations/WebPageParser/ Integrations/WebPageParser/
 COPY Integrations/Observability/ Integrations/Observability/
 

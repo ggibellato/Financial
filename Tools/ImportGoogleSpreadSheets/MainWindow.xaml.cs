@@ -1,4 +1,5 @@
-using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Integrations.GoogleDrive;
+using Financial.Integrations.GoogleSheets;
 using Financial.Investment.Infrastructure.Persistence;
 using System;
 using System.IO;
@@ -17,11 +18,11 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         var credentialsPath = ResolveCredentialsPath();
-        var service = TryCreateService(credentialsPath);
-        DataContext = new MainViewModel(service, new InvestmentsSerializerAdapter());
+        var (driveFiles, sheets) = TryCreateClients(credentialsPath);
+        DataContext = new MainViewModel(driveFiles, sheets, new InvestmentsSerializerAdapter());
     }
 
-    private GoogleService? TryCreateService(string? credentialsPath)
+    private (IGoogleDriveFileSource?, IGoogleSheetsDataSource?) TryCreateClients(string? credentialsPath)
     {
         if (string.IsNullOrWhiteSpace(credentialsPath) || !File.Exists(credentialsPath))
         {
@@ -31,18 +32,18 @@ public partial class MainWindow : Window
                 $"Resolved location:\n{credentialsPath ?? "(not set)"}\n\n" +
                 "Please ensure the credentials file exists before using this application.",
                 "Credentials File Missing", MessageBoxButton.OK, MessageBoxImage.Error);
-            return null;
+            return (null, null);
         }
 
         try
         {
-            return new GoogleService(credentialsPath);
+            return (new GoogleDriveFileClient(credentialsPath), new GoogleSheetsDataSource(credentialsPath));
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Error initializing Google service:\n{ex.Message}",
                 "Initialization Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            return null;
+            return (null, null);
         }
     }
 

@@ -2,8 +2,10 @@ using System.Diagnostics;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
+using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Persistence;
+using Financial.Shared.Abstractions.Sync;
 using Financial.Shared.Infrastructure.Persistence;
-using Financial.Shared.Infrastructure.Sync;
 using Financial.TestUtilities;
 using FluentAssertions;
 
@@ -12,13 +14,20 @@ namespace Financial.CashFlow.Infrastructure.Tests.Repositories;
 public class CashFlowRepositoryFactoryTests
 {
     private static readonly CashFlowRepositoryFactory Factory =
-        new(new CashFlowSerializerAdapter(), new StubRemoteFileClientFactory());
+        new(new CashFlowSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(), NoOpTelemetryTracer.Instance));
 
     [Fact]
     public void Constructor_WithNullSerializer_Throws()
     {
-        Action act = () => new CashFlowRepositoryFactory(null!);
+        Action act = () => new CashFlowRepositoryFactory(null!, new JsonStorageFactory(null, NoOpTelemetryTracer.Instance));
         act.Should().Throw<ArgumentNullException>().WithParameterName("serializer");
+    }
+
+    [Fact]
+    public void Constructor_WithNullStorageFactory_Throws()
+    {
+        Action act = () => new CashFlowRepositoryFactory(new CashFlowSerializerAdapter(), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("storageFactory");
     }
 
     [Fact]
@@ -71,7 +80,7 @@ public class CashFlowRepositoryFactoryTests
         Action act = () => Factory.Create(options);
 
         act.Should().Throw<FileNotFoundException>()
-            .WithMessage("*Google Drive credentials file path is required*");
+            .WithMessage("*Remote storage credentials file path is required*");
     }
 
     [Fact]
@@ -95,7 +104,8 @@ public class CashFlowRepositoryFactoryTests
         var credentialsPath = Path.GetTempFileName();
         try
         {
-            var factoryWithoutRemoteFileClient = new CashFlowRepositoryFactory(new CashFlowSerializerAdapter());
+            var factoryWithoutRemoteFileClient = new CashFlowRepositoryFactory(
+                new CashFlowSerializerAdapter(), new JsonStorageFactory(null, NoOpTelemetryTracer.Instance));
             var options = new CashFlowRepositorySelectionOptions(
                 CashFlowRepositoryProvider.GoogleDriveJson,
                 null,
@@ -165,7 +175,8 @@ public class CashFlowRepositoryFactoryTests
         var credentialsPath = Path.GetTempFileName();
         try
         {
-            var factory = new CashFlowRepositoryFactory(new CashFlowSerializerAdapter(), new StubRemoteFileClientFactory());
+            var factory = new CashFlowRepositoryFactory(
+                new CashFlowSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(), NoOpTelemetryTracer.Instance));
             var options = new CashFlowRepositorySelectionOptions(
                 CashFlowRepositoryProvider.GoogleDriveJson,
                 null,
@@ -197,7 +208,8 @@ public class CashFlowRepositoryFactoryTests
         var credentialsPath = Path.GetTempFileName();
         try
         {
-            var factory = new CashFlowRepositoryFactory(new CashFlowSerializerAdapter(), new StubRemoteFileClientFactory());
+            var factory = new CashFlowRepositoryFactory(
+                new CashFlowSerializerAdapter(), new JsonStorageFactory(new StubRemoteFileClientFactory(), NoOpTelemetryTracer.Instance));
             var options = new CashFlowRepositorySelectionOptions(
                 CashFlowRepositoryProvider.GoogleDriveJson,
                 null,
@@ -225,7 +237,8 @@ public class CashFlowRepositoryFactoryTests
         try
         {
             var remoteFileClient = new RecordingRemoteFileClient();
-            var factory = new CashFlowRepositoryFactory(new CashFlowSerializerAdapter(), new RecordingRemoteFileClientFactory(remoteFileClient));
+            var factory = new CashFlowRepositoryFactory(
+                new CashFlowSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), NoOpTelemetryTracer.Instance));
             var options = new CashFlowRepositorySelectionOptions(
                 CashFlowRepositoryProvider.GoogleDriveJson,
                 null,
@@ -267,7 +280,7 @@ public class CashFlowRepositoryFactoryTests
             var remoteFileClient = new RecordingRemoteFileClient();
             var tracer = new RecordingTelemetryTracer();
             var factory = new CashFlowRepositoryFactory(
-                new CashFlowSerializerAdapter(), new RecordingRemoteFileClientFactory(remoteFileClient), tracer);
+                new CashFlowSerializerAdapter(), new JsonStorageFactory(new RecordingRemoteFileClientFactory(remoteFileClient), tracer));
             var options = new CashFlowRepositorySelectionOptions(
                 CashFlowRepositoryProvider.GoogleDriveJson,
                 null,
@@ -280,10 +293,10 @@ public class CashFlowRepositoryFactoryTests
 
             await repository.ApplyAndSaveAsync(() => true);
 
-            await WaitForAsync(() => tracer.Spans.Any(s => s.Name == "GoogleDrive.Upload"), TimeSpan.FromSeconds(15));
+            await WaitForAsync(() => tracer.Spans.Any(s => s.Name == "RemoteStorage.Upload"), TimeSpan.FromSeconds(15));
 
             tracer.Spans.Should().Contain(s => s.Name == "JsonStorage.Save");
-            tracer.Spans.Should().Contain(s => s.Name == "GoogleDrive.Upload");
+            tracer.Spans.Should().Contain(s => s.Name == "RemoteStorage.Upload");
         }
         finally
         {
@@ -304,7 +317,7 @@ public class CashFlowRepositoryFactoryTests
         Action act = () => Factory.Create(options);
 
         act.Should().Throw<FileNotFoundException>()
-            .WithMessage("*Google Drive credentials file not found*");
+            .WithMessage("*Remote storage credentials file not found*");
     }
 
     private static async Task WaitForAsync(Func<bool> condition, TimeSpan timeout)

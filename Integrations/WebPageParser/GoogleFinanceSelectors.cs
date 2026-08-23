@@ -1,4 +1,4 @@
-namespace Financial.Investment.Infrastructure.Integrations.WebPageParser;
+namespace Financial.Integrations.WebPageParser;
 
 /// <summary>
 /// Configuration for Google Finance HTML selectors.

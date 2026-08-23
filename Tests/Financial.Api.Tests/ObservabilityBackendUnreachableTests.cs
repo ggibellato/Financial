@@ -1,5 +1,5 @@
 using System.Net;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.Integrations.Observability;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;

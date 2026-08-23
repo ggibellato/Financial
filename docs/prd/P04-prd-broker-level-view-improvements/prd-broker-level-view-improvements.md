@@ -478,7 +478,9 @@ graph TD
 - [x] `GET /summary/broker/{brokerName}` response includes `totalInvested`, equal to `totalBought − totalSold`
 - [x] `GET /summary/portfolio/{brokerName}/{portfolioName}` response includes `totalInvested`, equal to `totalBought − totalSold`
 - [x] Broker-level totals exclude all transactions and credits from assets in the Encerradas portfolio
-- [ ] Broker-level and Portfolio-level totals continue to exclude assets with `Quantity == 0`
+- [x] Broker-level and Portfolio-level totals continue to exclude assets with `Quantity == 0` — restored
+      in #561, scoped to `InvestmentScope.Active` only (see the Verification note below; Historic scope
+      must include every asset, since `Quantity == 0` is the defining property of a historic position)
 - [x] Selecting the Encerradas portfolio directly still returns its own unfiltered totals
 - [x] A broker with zero eligible portfolios after exclusion returns all totals as 0, not an error
 - [x] Existing HTTP 400 behaviour for missing/whitespace names is unchanged
@@ -679,18 +681,7 @@ entirely server-side so the two UIs cannot add or drop a slice; and F09/F10 cons
 `TransactionSummaryItemDTO` list directly with F04's shared period definitions.
 
 **Left unticked — superseded by the Active/Historic scope model**
-1. *"Broker-level and Portfolio-level totals continue to exclude assets with `Quantity == 0`."*
-   `SummaryService.Aggregate` (`:91-107`) sums **every** asset the repository returns for the scope,
-   with no quantity filter — and that is deliberate, not an oversight:
-   `SummaryServiceTests.GetBrokerSummary_IncludesEveryAssetInScope_ScopePurityComesFromRepository`
-   `:73` and `GetPortfolioSummary_IncludesEveryAssetInScope_…` `:215` assert it. In the common case
-   the outcome is unchanged, because a fully-closed position lives under `HistoricBrokers` and an
-   Active-scope query never sees it. But an asset sold down to zero inside an *active* portfolio is
-   now counted in that portfolio's and broker's totals, where this criterion says it should not be.
-   Unlike the Encerradas rule, this one has **no equivalent guarantee** under the new model, so it is
-   left unticked rather than re-interpreted. It needs a decision: restore the filter in `Aggregate`,
-   or retire the criterion against the two tests above.
-2. *"`GET /transactions/broker/{brokerName}` returns every transaction … across all portfolios
+1. *"`GET /transactions/broker/{brokerName}` returns every transaction … across all portfolios
    **including Encerradas**."* The PRD is explicit that no exclusion applies here, "since this is raw
    historical transaction history, not a live-capital total". The scope model overrode that:
    `TransactionEndpointsTests.GetTransactionsByBroker_DefaultScope_ExcludesHistoricAssetTransactions`
@@ -698,3 +689,17 @@ entirely server-side so the two UIs cannot add or drop a slice; and F09/F10 cons
    Closed-portfolio transactions are now reachable only through `?scope=historic` (`:234,246`). The
    endpoint is consistent with the rest of the API; the criterion simply describes the older contract
    and should be rewritten against scope rather than ticked.
+
+**Resolved in #561 — 2026-08-22.** *"Broker-level and Portfolio-level totals continue to exclude assets with
+`Quantity == 0`"* was left unticked above because `SummaryService.Aggregate` summed every asset with no
+quantity filter. Decision made (2026-08-22): restore the filter, but scoped to `InvestmentScope.Active`
+only — Historic scope must never apply it, since `Quantity == 0` is what makes a position historic in
+the first place, and filtering it there would zero out every Historic total.
+`Aggregate(IEnumerable<Asset> assets, InvestmentScope scope)` now takes the scope explicitly and applies
+`.Where(a => a.Quantity != 0)` only when `scope == InvestmentScope.Active`. The two tests cited above
+were renamed and their expected values updated to assert the exclusion for Active scope
+(`GetBrokerSummary_ActiveScope_ExcludesZeroQuantityAssetTotals`,
+`GetPortfolioSummary_ActiveScope_ExcludesZeroQuantityAssetTotals`); two new tests
+(`…HistoricScope_IncludesZeroQuantityAssetTotals`) assert the opposite for Historic scope, and were
+mutation-checked against a naive unconditional filter to confirm they'd catch the regression before this
+decision was implemented correctly.

@@ -13,7 +13,8 @@ Financial.Shared.Infrastructure                             JSON/Google Drive st
 Financial.Api                                                ASP.NET Core, serves REST API + hosts the built SPA
 Financial.App                                                WPF desktop client
 Financial.Web                                                React + TypeScript SPA, separate from the .slnx
-Integrations/       CashFlowSpreadsheetImport, GoogleFinancialSupport, ImportGoogleSpreadSheets, WebPageParser
+Integrations/       GoogleCore, GoogleDrive, GoogleSheets, Observability, WebPageParser (vendor SDKs, no bounded-context types)
+Tools/              CashFlowSpreadsheetImport, ImportGoogleSpreadSheets, InvestmentSpreadsheetImport
 Tests/              One test project per Domain/Application/Infrastructure/Presentation project
 ```
 
@@ -52,9 +53,13 @@ No coverage threshold is enforced; a drop never fails the build.
 
 The public API's shape is pinned by a committed OpenAPI snapshot
 (`Tests/Financial.Api.Tests/Contract/openapi-v1.snapshot.json`, asserted by `OpenApiContractTests`).
-Domain-facing controllers return Application DTOs directly, so reshaping one is a wire-format change
-for `Financial.Web` — whose `types.ts` is hand-written and will not fail to compile against it. When a
-change to the API is intended, regenerate the snapshot and review the diff:
+Domain-facing controllers return Application DTOs directly, so reshaping one is a wire-format change.
+`Program.cs` registers a schema transformer that strips the spurious `["number","string"]` alternative
+.NET's built-in generator adds to every decimal/int property — the wire format is always a plain JSON
+number (no `JsonNumberHandling.WriteAsString` is configured anywhere), so this keeps the document
+accurate rather than just permissive; `OpenApiContractTests.OpenApiDocument_NumericProperties_...`
+pins that it stays stripped. When a change to the API is intended, regenerate the snapshot and review
+the diff:
 
 ```powershell
 $env:UPDATE_OPENAPI_SNAPSHOT=1; dotnet test Tests/Financial.Api.Tests; Remove-Item Env:\UPDATE_OPENAPI_SNAPSHOT
@@ -67,11 +72,18 @@ instead of checking it. In bash it is a one-shot prefix, so there is nothing to 
 UPDATE_OPENAPI_SNAPSHOT=1 dotnet test Tests/Financial.Api.Tests
 ```
 
-Anything the diff shows as removed or renamed is a breaking change; update `types.ts` in the same PR.
-`Financial.Web/src/api/__tests__/contractDrift.test.ts` (run by `npm test`) checks this automatically: it
-matches each OpenAPI schema to its `types.ts` counterpart by name and fails naming any field only one
-side declares, so a snapshot update that isn't mirrored in `types.ts` fails in the same PR instead of
-only at runtime.
+`Financial.Web/src/api/types.ts` is **not** hand-written — it's a thin layer of type aliases
+(`export type ExpenseDto = Schema<'ExpenseDTO'>`, keeping the names every existing import already uses)
+over `Financial.Web/src/api/generated/openapi.ts`, generated from the snapshot above via
+`openapi-typescript`. After regenerating the backend snapshot, regenerate the frontend types the same
+way — `cd Financial.Web && npm run generate-api-types` — and commit the result; a small handful of
+frontend-only types with no backend counterpart (`SelectedNode`, `NodeType`, `InvestmentScope`) stay
+hand-written above the aliases. `src/api/generated/__tests__/openapiFreshness.test.ts` (run by
+`npm test`) fails if the committed generated file drifts from the snapshot, so forgetting this step is
+caught in the same PR rather than at runtime. From there, `tsc -b` (part of `npm run build`, already in
+the `web` CI job) is what actually tells you what to fix in the app: renaming or removing a field is a
+type error at every call site that reads it, naming file:line, the same way the C# compiler does for
+`Financial.App`.
 
 Run the API locally (serves API only, expects the SPA dev server separately):
 ```
@@ -90,6 +102,7 @@ npm run build           # tsc -b && vite build — run this (not just vitest) to
 npm test                 # vitest run
 npm run test:watch
 npm run smoke-test      # Playwright smoke test against a running API + web server (see .github/workflows/build.yml)
+npm run generate-api-types  # regenerate src/api/generated/openapi.ts from the OpenAPI snapshot; commit the result
 ```
 
 `API_BASE_URL` is read from `.env` (non-`VITE_`-prefixed, so it's explicitly wired into `vite.config.ts` via `define`) and must always be a relative path in Docker/production (`/api/v1/financial`) — never empty, or the SPA fallback route returns HTML instead of JSON for API calls.

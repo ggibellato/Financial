@@ -1,7 +1,7 @@
 using Financial.Api.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.Investment.Application.Interfaces;
-using Financial.Shared.Infrastructure.Sync;
+using Financial.Shared.Abstractions.Sync;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Controllers;

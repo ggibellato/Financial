@@ -1,9 +1,7 @@
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.Configuration;
 using Financial.Investment.Infrastructure.Persistence;
-using Financial.Shared.Abstractions;
-using Financial.Shared.Infrastructure.Persistence;
-using Microsoft.Extensions.Logging;
+using Financial.Shared.Abstractions.Persistence;
 
 namespace Financial.Investment.Infrastructure.Repositories;
 
@@ -12,20 +10,12 @@ public sealed class InvestmentRepositoryFactory
     private const string DefaultDataFileName = "data-investment.json";
 
     private readonly IInvestmentsSerializer _serializer;
-    private readonly IRemoteFileClientFactory? _remoteFileClientFactory;
-    private readonly ITelemetryTracer? _tracer;
-    private readonly ILogger? _storageLogger;
+    private readonly IJsonStorageFactory _storageFactory;
 
-    public InvestmentRepositoryFactory(
-        IInvestmentsSerializer serializer,
-        IRemoteFileClientFactory? remoteFileClientFactory = null,
-        ITelemetryTracer? tracer = null,
-        ILogger? storageLogger = null)
+    public InvestmentRepositoryFactory(IInvestmentsSerializer serializer, IJsonStorageFactory storageFactory)
     {
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
-        _remoteFileClientFactory = remoteFileClientFactory;
-        _tracer = tracer;
-        _storageLogger = storageLogger;
+        _storageFactory = storageFactory ?? throw new ArgumentNullException(nameof(storageFactory));
     }
 
     public IInvestmentRepository Create(InvestmentRepositorySelectionOptions options)
@@ -44,16 +34,13 @@ public sealed class InvestmentRepositoryFactory
         options.Provider switch
         {
             InvestmentRepositoryProvider.LocalJson =>
-                JsonStorageFactory.CreateLocal(options.LocalDataPath, DefaultDataFileName),
+                _storageFactory.CreateLocal(options.LocalDataPath, DefaultDataFileName),
             InvestmentRepositoryProvider.GoogleDriveJson =>
-                JsonStorageFactory.CreateGoogleDrive(
+                _storageFactory.CreateRemote(
                     options.GoogleDriveCredentialsPath,
                     options.GoogleDriveFilePath,
-                    _remoteFileClientFactory,
                     InvestmentRepositoryConfigurationKeys.GoogleDriveCredentialsPath,
-                    nameof(InvestmentRepositoryProvider.GoogleDriveJson),
-                    _tracer,
-                    _storageLogger),
+                    nameof(InvestmentRepositoryProvider.GoogleDriveJson)),
             _ => throw new ArgumentOutOfRangeException(
                     nameof(options.Provider), options.Provider, "Unsupported repository provider.")
         };

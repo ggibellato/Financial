@@ -1,12 +1,17 @@
 using Asp.Versioning;
 using Financial.Api.Middleware;
 using Financial.CashFlow.Application.DependencyInjection;
+using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
 using Financial.Integrations.Observability;
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DependencyInjection;
+using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
-using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Integrations.GoogleDrive;
+using Financial.Shared.Abstractions.Persistence;
+using Financial.Shared.Infrastructure.Hosting;
+using Financial.Shared.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
 using Serilog;
@@ -54,6 +59,18 @@ builder.Services
             document.Servers = [new OpenApiServer { Url = apiRoutePrefix }];
             return Task.CompletedTask;
         });
+
+        options.Document.AddSchemaTransformer((schema, _, _) =>
+        {
+            if (schema.Type is { } type && type.HasFlag(JsonSchemaType.String) &&
+                (type.HasFlag(JsonSchemaType.Number) || type.HasFlag(JsonSchemaType.Integer)))
+            {
+                schema.Type = type & ~JsonSchemaType.String;
+                schema.Pattern = null;
+            }
+
+            return Task.CompletedTask;
+        });
     });
 
 builder.Services.AddControllers(options => options.Filters.Add(new ProducesAttribute("application/json")));
@@ -84,9 +101,12 @@ builder.Services.Configure<AssetPriceFetchOptions>(configuration.GetSection(Asse
 builder.Services.AddObservability(configuration, serviceName: "Financial.Api");
 builder.Services.AddFinancialApplication();
 builder.Services.AddGoogleDriveFileClient();
+builder.Services.AddSingleton<IJsonStorageFactory, JsonStorageFactory>();
 builder.Services.AddFinancialInfrastructure(configuration);
 builder.Services.AddFinancialCashFlowApplication();
 builder.Services.AddFinancialCashFlowInfrastructure(configuration);
+builder.Services.AddHostedService<ShutdownFlushHostedService<ICashFlowRepository>>();
+builder.Services.AddHostedService<ShutdownFlushHostedService<IInvestmentRepository>>();
 
 var app = builder.Build();
 

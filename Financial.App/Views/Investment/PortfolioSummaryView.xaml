@@ -544,13 +544,13 @@
                                 </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Credits" Binding="{Binding DisplayLastMonthCredits}" Width="{Binding Source={StaticResource ColWidths}, Path=LastMonthCredits, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                     <DataGridTextColumn.CellStyle>
-                                        <Style TargetType="DataGridCell">
+                                        <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
                                             <Setter Property="BorderThickness" Value="3,0,0,0"/>
                                             <Setter Property="BorderBrush" Value="#007ACC"/>
                                         </Style>
                                     </DataGridTextColumn.CellStyle>
                                     <DataGridTextColumn.HeaderStyle>
-                                        <Style TargetType="DataGridColumnHeader">
+                                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
                                             <Setter Property="BorderThickness" Value="3,0,0,0"/>
                                             <Setter Property="BorderBrush" Value="#007ACC"/>
                                         </Style>
@@ -828,13 +828,13 @@
                                 </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Credits" Binding="{Binding DisplayLastMonthCredits}" Width="{Binding Source={StaticResource ColWidths}, Path=LastMonthCredits, Converter={StaticResource DoubleToDataGridLengthConverter}, Mode=TwoWay}">
                                     <DataGridTextColumn.CellStyle>
-                                        <Style TargetType="DataGridCell">
+                                        <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
                                             <Setter Property="BorderThickness" Value="3,0,0,0"/>
                                             <Setter Property="BorderBrush" Value="#007ACC"/>
                                         </Style>
                                     </DataGridTextColumn.CellStyle>
                                     <DataGridTextColumn.HeaderStyle>
-                                        <Style TargetType="DataGridColumnHeader">
+                                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
                                             <Setter Property="BorderThickness" Value="3,0,0,0"/>
                                             <Setter Property="BorderBrush" Value="#007ACC"/>
                                         </Style>

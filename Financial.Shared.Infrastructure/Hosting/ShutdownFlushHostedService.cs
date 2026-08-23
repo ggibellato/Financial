@@ -1,4 +1,4 @@
-using Financial.Shared.Infrastructure.Sync;
+using Financial.Shared.Abstractions.Sync;
 using Microsoft.Extensions.Hosting;
 
 namespace Financial.Shared.Infrastructure.Hosting;

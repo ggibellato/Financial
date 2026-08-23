@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 
 namespace Financial.TestUtilities;
 

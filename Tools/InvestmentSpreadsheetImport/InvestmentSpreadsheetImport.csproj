@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Financial.Investment.SpreadsheetImport</RootNamespace>
+    <AssemblyName>Financial.Investment.SpreadsheetImport</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Manifest name is RootNamespace + folder path, and AssetClassificationLookup.cs
+         hardcodes the result. -->
+    <EmbeddedResource Include="AssetClassifications.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Financial.Investment.Domain\Financial.Investment.Domain.csproj" />
+    <ProjectReference Include="..\..\Financial.Investment.Infrastructure\Financial.Investment.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Financial.Shared.Abstractions\Financial.Shared.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Integrations\GoogleDrive\GoogleDrive.csproj" />
+    <ProjectReference Include="..\..\Integrations\GoogleSheets\GoogleSheets.csproj" />
+  </ItemGroup>
+
+</Project>

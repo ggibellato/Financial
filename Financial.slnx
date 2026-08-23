@@ -15,13 +15,16 @@
 		<Project Path="Financial.Shared.Infrastructure/Financial.Shared.Infrastructure.csproj" />
 	</Folder>
 	<Folder Name="/Integrations/">
-		<Project Path="Integrations/GoogleFinancialSupport/GoogleFinancialSupport.csproj" />
+		<Project Path="Integrations/GoogleCore/GoogleCore.csproj" />
+		<Project Path="Integrations/GoogleDrive/GoogleDrive.csproj" />
+		<Project Path="Integrations/GoogleSheets/GoogleSheets.csproj" />
 		<Project Path="Integrations/Observability/Observability.csproj" />
 		<Project Path="Integrations/WebPageParser/WebPageParser.csproj" />
 	</Folder>
 	<Folder Name="/Tools/">
 		<Project Path="Tools/CashFlowSpreadsheetImport/CashFlowSpreadsheetImport.csproj" />
 		<Project Path="Tools/ImportGoogleSpreadSheets/ImportGoogleSpreadSheets.csproj" />
+		<Project Path="Tools/InvestmentSpreadsheetImport/InvestmentSpreadsheetImport.csproj" />
 	</Folder>
 	<Folder Name="/Tests/">
 		<Project Path="Tests/Financial.Investment.Application.Tests/Financial.Investment.Application.Tests.csproj" />
@@ -35,8 +38,13 @@
 		<Project Path="Tests/Financial.CashFlow.Application.Tests/Financial.CashFlow.Application.Tests.csproj" />
 		<Project Path="Tests/Financial.CashFlow.Infrastructure.Tests/Financial.CashFlow.Infrastructure.Tests.csproj" />
 		<Project Path="Tests/Financial.CashFlowSpreadsheetImport.Tests/Financial.CashFlowSpreadsheetImport.Tests.csproj" />
+		<Project Path="Tests/Financial.InvestmentSpreadsheetImport.Tests/Financial.InvestmentSpreadsheetImport.Tests.csproj" />
 		<Project Path="Tests/Financial.TestUtilities/Financial.TestUtilities.csproj" />
+	</Folder>
+	<Folder Name="/Tests/Integrations/">
+		<Project Path="Tests/Financial.GoogleIntegrations.Tests/Financial.GoogleIntegrations.Tests.csproj" />
 		<Project Path="Tests/Financial.Observability.Tests/Financial.Observability.Tests.csproj" />
+		<Project Path="Tests/Financial.WebPageParser.Tests/Financial.WebPageParser.Tests.csproj" />
 	</Folder>
 	<Folder Name="/Presentation/">
 		<Project Path="Financial.App/Financial.App.csproj" />

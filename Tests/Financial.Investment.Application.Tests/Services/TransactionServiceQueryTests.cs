@@ -1,6 +1,6 @@
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;

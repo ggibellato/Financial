@@ -1,5 +1,6 @@
 using System.Net.Http;
 using System.Net.Sockets;
+using Financial.Shared.Abstractions.Resilience;
 using Financial.Shared.Infrastructure.Resilience;
 using FluentAssertions;
 

@@ -74,17 +74,15 @@
                     <DataGrid.Columns>
                         <DataGridTextColumn Binding="{Binding Ticker}" Header="Ticker" Width="100">
                             <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}">
                                     <Setter Property="Padding" Value="8"/>
-                                    <Setter Property="VerticalAlignment" Value="Center"/>
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
                         <DataGridTextColumn Binding="{Binding Name}" Header="Name" Width="*">
                             <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource PlainColumnTextStyle}">
                                     <Setter Property="Padding" Value="8"/>
-                                    <Setter Property="VerticalAlignment" Value="Center"/>
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>

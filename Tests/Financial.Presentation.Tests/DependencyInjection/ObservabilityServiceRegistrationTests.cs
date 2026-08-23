@@ -3,7 +3,9 @@ using Financial.CashFlow.Application.DependencyInjection;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
 using Financial.Integrations.Observability;
-using Financial.Shared.Abstractions;
+using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Persistence;
+using Financial.Shared.Infrastructure.Persistence;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,6 +49,7 @@ public class ObservabilityServiceRegistrationTests
 
         var services = new ServiceCollection();
         services.AddObservability(configuration, serviceName: "Financial.App");
+        services.AddSingleton<IJsonStorageFactory, JsonStorageFactory>();
         services.AddFinancialCashFlowApplication();
         services.AddFinancialCashFlowInfrastructure(configuration);
 

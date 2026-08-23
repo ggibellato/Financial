@@ -1,9 +1,7 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.Configuration;
 using Financial.CashFlow.Infrastructure.Persistence;
-using Financial.Shared.Abstractions;
-using Financial.Shared.Infrastructure.Persistence;
-using Microsoft.Extensions.Logging;
+using Financial.Shared.Abstractions.Persistence;
 
 namespace Financial.CashFlow.Infrastructure.Repositories;
 
@@ -12,20 +10,12 @@ public sealed class CashFlowRepositoryFactory
     private const string DefaultDataFileName = "data-cashflow.json";
 
     private readonly ICashFlowSerializer _serializer;
-    private readonly IRemoteFileClientFactory? _remoteFileClientFactory;
-    private readonly ITelemetryTracer? _tracer;
-    private readonly ILogger? _storageLogger;
+    private readonly IJsonStorageFactory _storageFactory;
 
-    public CashFlowRepositoryFactory(
-        ICashFlowSerializer serializer,
-        IRemoteFileClientFactory? remoteFileClientFactory = null,
-        ITelemetryTracer? tracer = null,
-        ILogger? storageLogger = null)
+    public CashFlowRepositoryFactory(ICashFlowSerializer serializer, IJsonStorageFactory storageFactory)
     {
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
-        _remoteFileClientFactory = remoteFileClientFactory;
-        _tracer = tracer;
-        _storageLogger = storageLogger;
+        _storageFactory = storageFactory ?? throw new ArgumentNullException(nameof(storageFactory));
     }
 
     public ICashFlowRepository Create(CashFlowRepositorySelectionOptions options)
@@ -44,16 +34,13 @@ public sealed class CashFlowRepositoryFactory
         options.Provider switch
         {
             CashFlowRepositoryProvider.LocalJson =>
-                JsonStorageFactory.CreateLocal(options.LocalDataPath, DefaultDataFileName),
+                _storageFactory.CreateLocal(options.LocalDataPath, DefaultDataFileName),
             CashFlowRepositoryProvider.GoogleDriveJson =>
-                JsonStorageFactory.CreateGoogleDrive(
+                _storageFactory.CreateRemote(
                     options.GoogleDriveCredentialsPath,
                     options.GoogleDriveFilePath,
-                    _remoteFileClientFactory,
                     CashFlowRepositoryConfigurationKeys.GoogleDriveCredentialsPath,
-                    nameof(CashFlowRepositoryProvider.GoogleDriveJson),
-                    _tracer,
-                    _storageLogger),
+                    nameof(CashFlowRepositoryProvider.GoogleDriveJson)),
             _ => throw new ArgumentOutOfRangeException(
                     nameof(options.Provider), options.Provider, "Unsupported repository provider.")
         };
