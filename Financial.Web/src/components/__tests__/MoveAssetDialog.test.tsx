@@ -86,6 +86,17 @@ function renderDialog(
   )
 }
 
+/**
+ * The dialog paints its destination `<select>` immediately — empty and disabled — and fills it only
+ * once `getNavigationTree` resolves. So waiting for the combobox to *exist* proves nothing: it is
+ * already there on the first frame. Worse, `fireEvent.change` to an option that has not rendered yet
+ * is a silent no-op in jsdom, so the select keeps its default and the test reads as though the dialog
+ * ignored the choice. Wait for the options instead.
+ */
+async function waitForDestinations() {
+  await waitFor(() => expect(screen.getAllByRole('option').length).toBeGreaterThan(0))
+}
+
 describe('MoveAssetDialog', () => {
   beforeEach(() => {
     getNavigationTreeMock.mockReset()
@@ -101,7 +112,7 @@ describe('MoveAssetDialog', () => {
   it('offers the other portfolios of the broker, not the one the asset is in', async () => {
     renderDialog()
 
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    await waitForDestinations()
 
     const options = screen.getAllByRole('option').map((option) => option.textContent)
     expect(options).toEqual(['ISA', 'SIPP'])
@@ -111,7 +122,7 @@ describe('MoveAssetDialog', () => {
     const onMoved = vi.fn()
     renderDialog({ onMoved })
 
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    await waitForDestinations()
     fireEvent.change(screen.getByRole('combobox', { name: 'Destination portfolio' }), { target: { value: 'SIPP' } })
     fireEvent.click(screen.getByRole('button', { name: 'Move' }))
 
@@ -128,7 +139,7 @@ describe('MoveAssetDialog', () => {
   it('moves the asset into a portfolio named here, trimming the name', async () => {
     renderDialog()
 
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    await waitForDestinations()
     fireEvent.click(screen.getByRole('radio', { name: 'Move to a new portfolio' }))
     fireEvent.change(screen.getByRole('textbox', { name: 'New portfolio name' }), { target: { value: '  Pension  ' } })
     fireEvent.click(screen.getByRole('button', { name: 'Move' }))
@@ -153,7 +164,7 @@ describe('MoveAssetDialog', () => {
     )
     renderDialog()
 
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    await waitForDestinations()
     fireEvent.click(screen.getByRole('radio', { name: 'Move to a new portfolio' }))
     fireEvent.change(screen.getByRole('textbox', { name: 'New portfolio name' }), { target: { value: 'isa' } })
     fireEvent.click(screen.getByRole('button', { name: 'Move' }))
@@ -164,7 +175,7 @@ describe('MoveAssetDialog', () => {
   it('refuses a blank new name', async () => {
     renderDialog()
 
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    await waitForDestinations()
     fireEvent.click(screen.getByRole('radio', { name: 'Move to a new portfolio' }))
     fireEvent.change(screen.getByRole('textbox', { name: 'New portfolio name' }), { target: { value: '   ' } })
 
@@ -179,7 +190,7 @@ describe('MoveAssetDialog', () => {
     )
     renderDialog({ onMoved })
 
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    await waitForDestinations()
     fireEvent.click(screen.getByRole('button', { name: 'Move' }))
 
     await waitFor(() =>
@@ -191,7 +202,7 @@ describe('MoveAssetDialog', () => {
   it('does not offer archiving unless the asset can be archived', async () => {
     renderDialog()
 
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    await waitForDestinations()
     expect(screen.queryByRole('radio', { name: 'Archive to Historic Investments' })).not.toBeInTheDocument()
   })
 
@@ -260,7 +271,7 @@ describe('MoveAssetDialog', () => {
     const onMoved = vi.fn()
     renderDialog({ onMoved })
 
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    await waitForDestinations()
     fireEvent.click(screen.getByRole('button', { name: 'Move' }))
 
     await waitFor(() => expect(onMoved).toHaveBeenCalled())
@@ -272,7 +283,7 @@ describe('MoveAssetDialog', () => {
     getNavigationTreeMock.mockResolvedValue(treeWithEmptiedSource())
     renderDialog({ onMoved })
 
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    await waitForDestinations()
     fireEvent.click(screen.getByRole('button', { name: 'Move' }))
 
     await waitFor(() => expect(screen.getByText(/is now empty/)).toBeInTheDocument())
@@ -284,7 +295,7 @@ describe('MoveAssetDialog', () => {
     getNavigationTreeMock.mockResolvedValue(treeWithEmptiedSource())
     renderDialog({ onMoved })
 
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    await waitForDestinations()
     fireEvent.click(screen.getByRole('button', { name: 'Move' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
@@ -298,7 +309,7 @@ describe('MoveAssetDialog', () => {
     getNavigationTreeMock.mockResolvedValue(treeWithEmptiedSource())
     renderDialog({ onMoved })
 
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    await waitForDestinations()
     fireEvent.click(screen.getByRole('button', { name: 'Move' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'Keep' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Keep' }))
@@ -324,7 +335,7 @@ describe('MoveAssetDialog', () => {
     } as TreeNodeDto)
     renderDialog({ onMoved })
 
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    await waitForDestinations()
     fireEvent.click(screen.getByRole('button', { name: 'Move' }))
 
     await waitFor(() => expect(onMoved).toHaveBeenCalled())
@@ -337,7 +348,7 @@ describe('MoveAssetDialog', () => {
     deleteEmptyPortfolioMock.mockRejectedValue(new ApiError('Portfolio "Default" still holds 1 asset(s).', 409))
     renderDialog({ onMoved })
 
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    await waitForDestinations()
     fireEvent.click(screen.getByRole('button', { name: 'Move' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
@@ -350,7 +361,7 @@ describe('MoveAssetDialog', () => {
     const onCancel = vi.fn()
     renderDialog({ onCancel })
 
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Destination portfolio' })).toBeInTheDocument())
+    await waitForDestinations()
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(onCancel).toHaveBeenCalled()
