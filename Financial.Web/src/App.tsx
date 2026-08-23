@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { FluentProvider } from '@fluentui/react-components'
 import { setStoredDomain } from './utils/domainStorage'
 import Sidebar from './components/Sidebar'
 import Breadcrumb from './components/Breadcrumb'
+import LoadingState from './components/LoadingState'
 import SyncStatusBanner from './components/SyncStatusBanner'
 import { useSystemColorScheme } from './hooks/useSystemColorScheme'
 import { financialDarkTheme, financialLightTheme } from './theme/fluentTheme'
@@ -28,7 +29,10 @@ function App() {
         <main className="app__content">
           <SyncStatusBanner />
           <Breadcrumb />
-          <Outlet />
+          {/* Page components are lazy-loaded (see navigation/routes.tsx) to keep the initial bundle small. */}
+          <Suspense fallback={<LoadingState />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </FluentProvider>

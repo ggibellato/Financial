@@ -1,14 +1,16 @@
 import type { ReactElement } from 'react'
-import ActiveInvestmentsPage from '../pages/ActiveInvestmentsPage'
-import AnnualSummaryPage from '../pages/AnnualSummaryPage'
-import ControleMaePage from '../pages/ControleMaePage'
-import CurrentValuesPage from '../pages/CurrentValuesPage'
-import DividendCheckPage from '../pages/DividendCheckPage'
-import HistoricInvestmentsPage from '../pages/HistoricInvestmentsPage'
-import InvestmentSnapshotsPage from '../pages/InvestmentSnapshotsPage'
-import MensaisPage from '../pages/MensaisPage'
-import MonthlyPage from '../pages/MonthlyPage'
-import ReservaPage from '../pages/ReservaPage'
+import {
+  ActiveInvestmentsPage,
+  AnnualSummaryPage,
+  ControleMaePage,
+  CurrentValuesPage,
+  DividendCheckPage,
+  HistoricInvestmentsPage,
+  InvestmentSnapshotsPage,
+  MensaisPage,
+  MonthlyPage,
+  ReservaPage,
+} from './lazyPages'
 
 export interface PageRoute {
   /** Path relative to the app's root route, i.e. without the leading slash. */
