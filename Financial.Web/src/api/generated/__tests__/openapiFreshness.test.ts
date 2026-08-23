@@ -28,10 +28,20 @@ describe('generated OpenAPI types', () => {
         { stdio: 'pipe' }
       )
 
+      // Compare content, not line endings. The committed file is stored in git with LF, but a
+      // checkout converts it to CRLF wherever core.autocrlf is on - which is the default on
+      // Windows - while openapi-typescript always writes LF. Comparing raw bytes therefore fails
+      // on every Windows clone for a reason that has nothing to do with the types being stale,
+      // which is the only thing this test exists to catch.
+      const withoutLineEndings = (contents: string) => contents.replace(/\r\n/g, '\n')
+
       const fresh = readFileSync(freshPath, 'utf-8')
       const committed = readFileSync(committedPath, 'utf-8')
 
-      expect(fresh, 'run `npm run generate-api-types` and commit the result').toBe(committed)
+      expect(
+        withoutLineEndings(fresh),
+        'run `npm run generate-api-types` and commit the result',
+      ).toBe(withoutLineEndings(committed))
     } finally {
       rmSync(tempDir, { recursive: true, force: true })
     }
