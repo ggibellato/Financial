@@ -16,7 +16,7 @@ public class SharedInfrastructureIsolationRuleTests
     {
         "Financial.CashFlow.Infrastructure",
         "Financial.Investment.Infrastructure",
-        "Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport",
+        "Financial.Integrations.GoogleFinancialSupport",
         "Financial.Investment.Infrastructure.Integrations.WebPageParser",
     };
 

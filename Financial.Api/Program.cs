@@ -8,7 +8,7 @@ using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DependencyInjection;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
-using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Integrations.GoogleFinancialSupport;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.Hosting;
 using Financial.Shared.Infrastructure.Persistence;

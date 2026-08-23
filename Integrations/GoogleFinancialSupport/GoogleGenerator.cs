@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Integrations.GoogleFinancialSupport;
 
 public sealed class GoogleGenerator
 {

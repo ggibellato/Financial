@@ -1,4 +1,4 @@
-namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
+namespace Financial.Integrations.GoogleFinancialSupport.DTO;
 
 public class SheetDTO
 {

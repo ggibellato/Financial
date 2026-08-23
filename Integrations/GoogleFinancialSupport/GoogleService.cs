@@ -1,11 +1,11 @@
-using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
+using Financial.Integrations.GoogleFinancialSupport.DTO;
 using Financial.Shared.Abstractions.Persistence;
 using Google;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Integrations.GoogleFinancialSupport;
 
 public sealed class GoogleService : IRemoteFileClient, IGoogleSheetsDataSource
 {

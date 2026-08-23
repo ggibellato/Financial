@@ -1,7 +1,7 @@
 using Financial.Shared.Abstractions.Persistence;
 using Microsoft.Extensions.Logging;
 
-namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Integrations.GoogleFinancialSupport;
 
 public sealed class GoogleFileClientFactory : IRemoteFileClientFactory
 {

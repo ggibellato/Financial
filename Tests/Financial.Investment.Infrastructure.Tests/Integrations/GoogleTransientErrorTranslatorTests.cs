@@ -1,5 +1,5 @@
 using System.Net;
-using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Integrations.GoogleFinancialSupport;
 using Financial.Shared.Abstractions.Resilience;
 using FluentAssertions;
 using Google;

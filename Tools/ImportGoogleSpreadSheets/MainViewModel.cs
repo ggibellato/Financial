@@ -1,4 +1,4 @@
-using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+using Financial.Integrations.GoogleFinancialSupport;
 using Financial.Investment.Infrastructure.Persistence;
 using Financial.Shared.Infrastructure.Persistence;
 using System;

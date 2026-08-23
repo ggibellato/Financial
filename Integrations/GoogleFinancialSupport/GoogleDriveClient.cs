@@ -1,5 +1,5 @@
 #nullable enable
-using Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport.DTO;
+using Financial.Integrations.GoogleFinancialSupport.DTO;
 using Google.Apis.Drive.v3;
 using Microsoft.Extensions.Logging;
 using Google.Apis.Upload;
@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Financial.Investment.Infrastructure.Integrations.GoogleFinancialSupport;
+namespace Financial.Integrations.GoogleFinancialSupport;
 
 internal sealed class GoogleDriveClient
 {
