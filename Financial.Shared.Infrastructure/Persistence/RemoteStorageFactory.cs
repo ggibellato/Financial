@@ -3,11 +3,11 @@ using Financial.Shared.Abstractions.Persistence;
 
 namespace Financial.Shared.Infrastructure.Persistence;
 
-public static class GoogleDriveStorageFactory
+public static class RemoteStorageFactory
 {
     public static IJsonStorage Create(
         string? credentialsPath,
-        string? driveFilePath,
+        string? remoteFilePath,
         IRemoteFileClientFactory? remoteFileClientFactory,
         string credentialsConfigKey,
         string providerName,
@@ -19,11 +19,11 @@ public static class GoogleDriveStorageFactory
         {
             throw new InvalidOperationException(
                 $"Repository provider '{providerName}' requires an {nameof(IRemoteFileClientFactory)} " +
-                "to be registered (see AddGoogleDriveFileClient).");
+                "to be registered by the composition root (Financial.Api / Financial.App).");
         }
 
         var client = remoteFileClientFactory.Create(resolvedCredentialsPath);
-        return new GoogleDriveJsonStorage(client, driveFilePath, tracer);
+        return new RemoteJsonStorage(client, remoteFilePath, tracer);
     }
 
     private static string ResolveCredentialsPath(string? credentialsPath, string credentialsConfigKey)
@@ -31,7 +31,7 @@ public static class GoogleDriveStorageFactory
         if (string.IsNullOrWhiteSpace(credentialsPath))
         {
             throw new FileNotFoundException(
-                $"Google Drive credentials file path is required. Configure '{credentialsConfigKey}'.");
+                $"Remote storage credentials file path is required. Configure '{credentialsConfigKey}'.");
         }
 
         var resolvedPath = PathResolution.ResolveRelativeToBaseDirectory(credentialsPath);
@@ -39,7 +39,7 @@ public static class GoogleDriveStorageFactory
         if (!File.Exists(resolvedPath))
         {
             throw new FileNotFoundException(
-                $"Google Drive credentials file not found at '{resolvedPath}'. Configure '{credentialsConfigKey}'.",
+                $"Remote storage credentials file not found at '{resolvedPath}'. Configure '{credentialsConfigKey}'.",
                 resolvedPath);
         }
 

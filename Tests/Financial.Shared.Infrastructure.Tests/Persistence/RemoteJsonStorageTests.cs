@@ -5,12 +5,12 @@ using FluentAssertions;
 
 namespace Financial.Shared.Infrastructure.Tests.Persistence;
 
-public class GoogleDriveJsonStorageTests
+public class RemoteJsonStorageTests
 {
     /// <summary>The tracer is the same in every span test; the download/upload callbacks are what each test varies.</summary>
     private readonly RecordingTelemetryTracer _tracer;
 
-    public GoogleDriveJsonStorageTests()
+    public RemoteJsonStorageTests()
     {
         _tracer = new RecordingTelemetryTracer();
     }
@@ -18,7 +18,7 @@ public class GoogleDriveJsonStorageTests
     [Fact]
     public void Constructor_WithNullClient_ThrowsArgumentNullException()
     {
-        Action act = () => new GoogleDriveJsonStorage(null!, "some/path");
+        Action act = () => new RemoteJsonStorage(null!, "some/path");
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("client");
     }
@@ -26,16 +26,16 @@ public class GoogleDriveJsonStorageTests
     [Fact]
     public void Constructor_WithBlankDriveFilePath_ThrowsArgumentException()
     {
-        Action act = () => new GoogleDriveJsonStorage(_ => "content", (_, _) => { }, "");
+        Action act = () => new RemoteJsonStorage(_ => "content", (_, _) => { }, "");
 
-        act.Should().Throw<ArgumentException>().WithParameterName("driveFilePath");
+        act.Should().Throw<ArgumentException>().WithParameterName("remoteFilePath");
     }
 
     [Fact]
     public async Task ReadAsync_DelegatesToDownloadWithDriveFilePath()
     {
         string? capturedPath = null;
-        var storage = new GoogleDriveJsonStorage(
+        var storage = new RemoteJsonStorage(
             path => { capturedPath = path; return "{\"data\":true}"; },
             (_, _) => throw new InvalidOperationException("upload should not be called"),
             "Pessoais/Gleison/Financeiros");
@@ -51,7 +51,7 @@ public class GoogleDriveJsonStorageTests
     {
         string? capturedPath = null;
         string? capturedContent = null;
-        var storage = new GoogleDriveJsonStorage(
+        var storage = new RemoteJsonStorage(
             _ => throw new InvalidOperationException("download should not be called"),
             (path, content) => { capturedPath = path; capturedContent = content; },
             "Pessoais/Gleison/Financeiros");
@@ -65,7 +65,7 @@ public class GoogleDriveJsonStorageTests
     [Fact]
     public async Task ReadAsync_RecordsGoogleDriveDownloadSpan()
     {
-        var storage = new GoogleDriveJsonStorage(
+        var storage = new RemoteJsonStorage(
             _ => "{\"data\":true}",
             (_, _) => { },
             "Pessoais/Gleison/Financeiros",
@@ -74,14 +74,14 @@ public class GoogleDriveJsonStorageTests
         await storage.ReadAsync();
 
         var span = _tracer.Spans.Should().ContainSingle().Which;
-        span.Name.Should().Be("GoogleDrive.Download");
+        span.Name.Should().Be("RemoteStorage.Download");
         span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
     }
 
     [Fact]
     public async Task WriteAsync_RecordsGoogleDriveUploadSpan()
     {
-        var storage = new GoogleDriveJsonStorage(
+        var storage = new RemoteJsonStorage(
             _ => "{\"data\":true}",
             (_, _) => { },
             "Pessoais/Gleison/Financeiros",
@@ -90,14 +90,14 @@ public class GoogleDriveJsonStorageTests
         await storage.WriteAsync("{\"written\":true}");
 
         var span = _tracer.Spans.Should().ContainSingle().Which;
-        span.Name.Should().Be("GoogleDrive.Upload");
+        span.Name.Should().Be("RemoteStorage.Upload");
         span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
     }
 
     [Fact]
     public async Task ReadAsync_WhenDownloadThrows_RecordsFailedSpanWithException()
     {
-        var storage = new GoogleDriveJsonStorage(
+        var storage = new RemoteJsonStorage(
             _ => throw new InvalidOperationException("boom"),
             (_, _) => { },
             "Pessoais/Gleison/Financeiros",
