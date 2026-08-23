@@ -38,12 +38,14 @@ public class TransactionActionsTests
         UnitPrice: 25m,
         Fees: 1.5m);
 
+    private static Task<TransactionDialogData?> AsForm(TransactionDialogData? data) => Task.FromResult(data);
+
     [Fact]
     public async Task Add_NoContext_ShowsInfoAndDoesNotCallService()
     {
         var (actions, service, spy) = Build(hasContext: false);
 
-        await actions.Add(() => ValidDialogData());
+        await actions.Add(() => AsForm(ValidDialogData()));
 
         service.AddCallCount.Should().Be(0);
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Information);
@@ -54,7 +56,7 @@ public class TransactionActionsTests
     {
         var (actions, service, spy) = Build();
 
-        await actions.Add(() => null);
+        await actions.Add(() => AsForm(null));
 
         service.AddCallCount.Should().Be(0);
         spy.Messages.Should().BeEmpty();
@@ -65,7 +67,7 @@ public class TransactionActionsTests
     {
         var (actions, service, spy) = Build();
 
-        await actions.Add(() => ValidDialogData() with { Type = "NotAType" });
+        await actions.Add(() => AsForm(ValidDialogData() with { Type = "NotAType" }));
 
         service.AddCallCount.Should().Be(0);
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
@@ -77,7 +79,7 @@ public class TransactionActionsTests
         var service = new StubTransactionService { AddResult = null };
         var (actions, _, spy) = Build(service: service);
 
-        await actions.Add(() => ValidDialogData());
+        await actions.Add(() => AsForm(ValidDialogData()));
 
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
         spy.AppliedDetails.Should().BeNull();
@@ -90,7 +92,7 @@ public class TransactionActionsTests
         var service = new StubTransactionService { AddResult = expectedDetails };
         var (actions, _, spy) = Build(service: service);
 
-        await actions.Add(() => ValidDialogData());
+        await actions.Add(() => AsForm(ValidDialogData()));
 
         service.LastAddRequest.Should().NotBeNull();
         service.LastAddRequest!.BrokerName.Should().Be(BrokerName);
@@ -108,7 +110,7 @@ public class TransactionActionsTests
     {
         var (actions, service, _) = Build();
 
-        await actions.Update(null, () => ValidDialogData());
+        await actions.Update(null, () => AsForm(ValidDialogData()));
 
         service.UpdateCallCount.Should().Be(0);
     }
@@ -119,7 +121,7 @@ public class TransactionActionsTests
         var (actions, service, spy) = Build();
         var selected = new TransactionDTO { Id = Guid.Empty, Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
 
-        await actions.Update(selected, () => ValidDialogData());
+        await actions.Update(selected, () => AsForm(ValidDialogData()));
 
         service.UpdateCallCount.Should().Be(0);
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
@@ -131,7 +133,7 @@ public class TransactionActionsTests
         var (actions, service, _) = Build();
         var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
 
-        await actions.Update(selected, () => null);
+        await actions.Update(selected, () => AsForm(null));
 
         service.UpdateCallCount.Should().Be(0);
     }
@@ -142,7 +144,7 @@ public class TransactionActionsTests
         var (actions, service, spy) = Build();
         var selected = new TransactionDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
 
-        await actions.Update(selected, () => ValidDialogData(selected.Id) with { Type = "NotAType" });
+        await actions.Update(selected, () => AsForm(ValidDialogData(selected.Id) with { Type = "NotAType" }));
 
         service.UpdateCallCount.Should().Be(0);
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
@@ -157,7 +159,7 @@ public class TransactionActionsTests
         var id = Guid.NewGuid();
         var selected = new TransactionDTO { Id = id, Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
 
-        await actions.Update(selected, () => ValidDialogData(id) with { Type = "Sell", Quantity = 3m });
+        await actions.Update(selected, () => AsForm(ValidDialogData(id) with { Type = "Sell", Quantity = 3m }));
 
         service.LastUpdateRequest.Should().NotBeNull();
         service.LastUpdateRequest!.Id.Should().Be(id);
@@ -174,7 +176,7 @@ public class TransactionActionsTests
         var id = Guid.NewGuid();
         var selected = new TransactionDTO { Id = id, Date = DateTime.Today, Type = "Buy", Quantity = 1m, UnitPrice = 1m, Fees = 0m };
 
-        await actions.Update(selected, () => ValidDialogData(id));
+        await actions.Update(selected, () => AsForm(ValidDialogData(id)));
 
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
         spy.AppliedDetails.Should().BeNull();

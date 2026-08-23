@@ -1,3 +1,4 @@
+import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Text, makeStyles, tokens } from '@fluentui/react-components'
 import type { BankDto, CategoryDto, CreditCardDto } from '../api/types'
 import type { PaymentMode } from '../hooks/useExpenseForm'
 
@@ -36,6 +37,47 @@ interface ExpenseFormProps {
   onCancel: () => void
 }
 
+const useStyles = makeStyles({
+  panel: {
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalM,
+    padding: tokens.spacingVerticalM,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+    borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorNeutralBackground2,
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+    gap: tokens.spacingVerticalM,
+    '@media (max-width: 1023px)': {
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    },
+    '@media (max-width: 639px)': {
+      gridTemplateColumns: '1fr',
+    },
+  },
+  spanTwo: {
+    gridColumnEnd: 'span 2',
+  },
+  spanAll: {
+    gridColumnEnd: 'span 4',
+    '@media (max-width: 1023px)': {
+      gridColumnEnd: 'span 2',
+    },
+    '@media (max-width: 639px)': {
+      gridColumnEnd: 'span 1',
+    },
+  },
+  actions: {
+    display: 'flex',
+    gap: tokens.spacingHorizontalS,
+    alignItems: 'center',
+  },
+})
+
 export default function ExpenseForm({
   isEditing,
   date,
@@ -59,153 +101,132 @@ export default function ExpenseForm({
   onSave,
   onCancel,
 }: ExpenseFormProps) {
+  const styles = useStyles()
   const selectedBank = banks.find((b) => b.id === paymentSource)
   const showRoundUpField = paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
   const selectedCategory = categories.find((c) => c.id === categoryId)
   const showCountsAsTitheField = selectedCategory?.isTithe === true
   const invoiceDateDisplay = invoiceDate || (date ? date.slice(0, 7) : '')
+
   return (
-    <div className="monthly-page__form-panel">
-      <p className="monthly-page__form-title">{isEditing ? 'Edit Expense' : 'New Expense'}</p>
-      <div className="monthly-page__form">
-        <div className="monthly-page__form-field">
-          <label htmlFor="expense-date">Date</label>
-          <input
-            id="expense-date"
-            type="date"
-            value={date}
-            onChange={(e) => onFieldChange('date', e.target.value)}
-          />
-        </div>
-        <div className="monthly-page__form-field">
-          <label htmlFor="expense-description">Description</label>
-          <input
-            id="expense-description"
-            type="text"
-            value={description}
-            onChange={(e) => onFieldChange('description', e.target.value)}
-          />
-        </div>
-        <div className="monthly-page__form-field">
-          <label htmlFor="expense-category">Category</label>
-          <select
-            id="expense-category"
-            value={categoryId}
-            onChange={(e) => onFieldChange('categoryId', e.target.value)}
-          >
+    <div className={styles.panel}>
+      <Text as="h2" weight="semibold" size={400}>
+        {isEditing ? 'Edit Expense' : 'New Expense'}
+      </Text>
+
+      <div className={styles.grid}>
+        <Field label="Date">
+          <Input type="date" value={date} onChange={(e) => onFieldChange('date', e.target.value)} />
+        </Field>
+
+        <Field label="Category">
+          <Select value={categoryId} onChange={(e) => onFieldChange('categoryId', e.target.value)}>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>
             ))}
-          </select>
-        </div>
-        <div className="monthly-page__form-field">
-          <label htmlFor="expense-value">Value</label>
-          <input
-            id="expense-value"
+          </Select>
+        </Field>
+
+        <Field label="Description" className={styles.spanTwo}>
+          <Input value={description} onChange={(e) => onFieldChange('description', e.target.value)} />
+        </Field>
+
+        <Field label="Value">
+          <Input
             type="number"
             step="0.01"
             value={value}
             onChange={(e) => onFieldChange('value', e.target.value)}
           />
-        </div>
+        </Field>
+
         {showCountsAsTitheField && (
-          <div className="monthly-page__form-field">
-            <label htmlFor="expense-counts-as-tithe">Counts toward tithe</label>
-            <input
-              id="expense-counts-as-tithe"
-              type="checkbox"
+          <div className={styles.spanTwo}>
+            <Checkbox
+              label="Counts toward tithe"
               checked={countsAsTithe}
-              onChange={(e) => onFieldChange('countsAsTithe', e.target.checked ? 'true' : 'false')}
+              onChange={(_, data) => onFieldChange('countsAsTithe', data.checked ? 'true' : 'false')}
             />
           </div>
         )}
+
         {isSettled ? (
           <>
-            <div className="monthly-page__form-field">
-              <label>Payment</label>
-              <p className="monthly-page__settled-note">
+            <div className={styles.spanTwo}>
+              <Text as="p" size={200}>
                 Paid by {selectedBank?.name ?? paymentSource} via card {creditCardName || creditCardId}. Settled via its
                 card statement — unmark the statement paid to change these fields.
-              </p>
+              </Text>
             </div>
-            <div className="monthly-page__form-field">
-              <label htmlFor="expense-invoice-date">Invoice Month</label>
-              <input id="expense-invoice-date" type="month" value={invoiceDateDisplay} disabled />
-            </div>
+            <Field label="Invoice Month">
+              <Input type="month" value={invoiceDateDisplay} disabled />
+            </Field>
           </>
         ) : (
           <>
             {paymentMode === 'bank' ? (
               <>
-                <div className="monthly-page__form-field">
-                  <label htmlFor="expense-payment-source">Payment Source</label>
-                  <select
-                    id="expense-payment-source"
-                    value={paymentSource}
-                    onChange={(e) => onFieldChange('paymentSource', e.target.value)}
-                  >
+                <Field label="Payment Source">
+                  <Select value={paymentSource} onChange={(e) => onFieldChange('paymentSource', e.target.value)}>
                     {banks.map((b) => (
                       <option key={b.id} value={b.id}>
                         {b.name}
                       </option>
                     ))}
-                  </select>
-                </div>
+                  </Select>
+                </Field>
                 {showRoundUpField && (
-                  <div className="monthly-page__form-field">
-                    <label htmlFor="expense-round-up-amount">Round-Up</label>
-                    <input
-                      id="expense-round-up-amount"
+                  <Field label="Round-Up">
+                    <Input
                       type="number"
                       step="0.01"
                       value={roundUpAmount}
                       onChange={(e) => onFieldChange('roundUpAmount', e.target.value)}
                     />
-                  </div>
+                  </Field>
                 )}
               </>
             ) : (
               <>
-                <div className="monthly-page__form-field">
-                  <label htmlFor="expense-card-tag">Card</label>
-                  <select
-                    id="expense-card-tag"
-                    value={creditCardId}
-                    onChange={(e) => onFieldChange('creditCardId', e.target.value)}
-                  >
+                <Field label="Card">
+                  <Select value={creditCardId} onChange={(e) => onFieldChange('creditCardId', e.target.value)}>
                     <option value="">Select card…</option>
                     {creditCards.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
                       </option>
                     ))}
-                  </select>
-                </div>
-                <div className="monthly-page__form-field">
-                  <label htmlFor="expense-invoice-date">Invoice Month</label>
-                  <input
-                    id="expense-invoice-date"
+                  </Select>
+                </Field>
+                <Field label="Invoice Month">
+                  <Input
                     type="month"
                     value={invoiceDateDisplay}
                     onChange={(e) => onFieldChange('invoiceDate', e.target.value)}
                   />
-                </div>
+                </Field>
               </>
             )}
           </>
         )}
       </div>
-      <div className="monthly-page__form-actions">
-        <button className="monthly-page__submit-btn" type="button" disabled={isSaving} onClick={onSave}>
+
+      <div className={styles.actions}>
+        <Button appearance="primary" disabled={isSaving} onClick={onSave}>
           {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Expense'}
-        </button>
-        <button className="monthly-page__cancel-btn" type="button" onClick={onCancel}>
+        </Button>
+        <Button appearance="secondary" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
       </div>
-      {saveError && <p className="monthly-page__error">{saveError}</p>}
+
+      {saveError && (
+        <MessageBar intent="error">
+          <MessageBarBody>{saveError}</MessageBarBody>
+        </MessageBar>
+      )}
     </div>
   )
 }

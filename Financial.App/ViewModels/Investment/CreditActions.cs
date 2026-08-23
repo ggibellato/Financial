@@ -22,7 +22,7 @@ public sealed class CreditActions : AssetActionsBase
         _service = service;
     }
 
-    public async Task Add(Func<CreditDialogData?> showDialog)
+    public async Task Add(Func<Task<CreditDialogData?>> showForm)
     {
         if (!HasContext())
         {
@@ -35,7 +35,7 @@ public sealed class CreditActions : AssetActionsBase
             return;
         }
 
-        var dialogData = showDialog();
+        var dialogData = await showForm();
         if (dialogData == null)
         {
             return;
@@ -66,7 +66,7 @@ public sealed class CreditActions : AssetActionsBase
         ApplyDetails(updatedDetails);
     }
 
-    public async Task Update(CreditDTO? selectedCredit, Func<CreditDialogData?> showDialog)
+    public async Task Update(CreditDTO? selectedCredit, Func<Task<CreditDialogData?>> showForm)
     {
         if (_service == null || selectedCredit == null)
         {
@@ -79,7 +79,7 @@ public sealed class CreditActions : AssetActionsBase
             return;
         }
 
-        var dialogData = showDialog();
+        var dialogData = await showForm();
         if (dialogData == null)
         {
             return;

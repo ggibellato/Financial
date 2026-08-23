@@ -1,15 +1,14 @@
+using System.Globalization;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 
 namespace Financial.Presentation.App.Components;
 
 public partial class MonthYearPicker : UserControl
 {
-    private static readonly string[] MonthNames =
-    [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December",
-    ];
+    private readonly Button[] _monthButtons = new Button[12];
+    private int _displayYear;
 
     public static readonly DependencyProperty SelectedYearProperty = DependencyProperty.Register(
         nameof(SelectedYear), typeof(int), typeof(MonthYearPicker),
@@ -34,58 +33,81 @@ public partial class MonthYearPicker : UserControl
     public MonthYearPicker()
     {
         InitializeComponent();
-        monthComboBox.ItemsSource = MonthNames;
-        Loaded += (_, _) => SyncControlsFromProperties();
+        BuildMonthButtons();
+        Loaded += (_, _) => UpdateTriggerText();
+    }
+
+    private void BuildMonthButtons()
+    {
+        var flatStyle = (Style)FindResource("FlatMonthButtonStyle");
+        for (var month = 1; month <= 12; month++)
+        {
+            var button = new Button
+            {
+                Content = CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(month),
+                Tag = month,
+                Style = flatStyle,
+            };
+            AutomationProperties.SetName(button, CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month));
+            button.Click += OnMonthButtonClick;
+            _monthButtons[month - 1] = button;
+            monthsGrid.Children.Add(button);
+        }
     }
 
     private static void OnSelectedPeriodChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        ((MonthYearPicker)d).SyncControlsFromProperties();
+        ((MonthYearPicker)d).UpdateTriggerText();
     }
 
-    private void SyncControlsFromProperties()
+    private void UpdateTriggerText()
     {
-        RebuildYearItems();
+        // SelectedYear/SelectedMonth can transiently hold an unset ViewModel
+        // default (0) before a consuming form has ever been opened — e.g.
+        // ExpenseFormView's Invoice Month field binds these before "New
+        // Expense" is first clicked. Fall back to today rather than let an
+        // invalid DateTime crash the binding pipeline.
+        var year = SelectedYear is >= 1 and <= 9999 ? SelectedYear : DateTime.Today.Year;
+        var month = SelectedMonth is >= 1 and <= 12 ? SelectedMonth : DateTime.Today.Month;
+        triggerButton.Content = new DateTime(year, month, 1).ToString("MMMM yyyy");
+    }
 
-        if (monthComboBox.SelectedIndex != SelectedMonth - 1)
-        {
-            monthComboBox.SelectedIndex = SelectedMonth - 1;
-        }
+    private void OnTriggerButtonClick(object sender, RoutedEventArgs e)
+    {
+        _displayYear = SelectedYear;
+        RefreshPopupContent();
+        popup.IsOpen = true;
+    }
 
-        if (!Equals(yearComboBox.SelectedItem, SelectedYear))
+    private void OnPreviousYearClick(object sender, RoutedEventArgs e)
+    {
+        _displayYear--;
+        RefreshPopupContent();
+    }
+
+    private void OnNextYearClick(object sender, RoutedEventArgs e)
+    {
+        _displayYear++;
+        RefreshPopupContent();
+    }
+
+    private void RefreshPopupContent()
+    {
+        var flatStyle = (Style)FindResource("FlatMonthButtonStyle");
+        var selectedStyle = (Style)FindResource("SelectedMonthButtonStyle");
+        yearHeaderText.Text = _displayYear.ToString(CultureInfo.CurrentCulture);
+        for (var i = 0; i < _monthButtons.Length; i++)
         {
-            yearComboBox.SelectedItem = SelectedYear;
+            var isSelected = _displayYear == SelectedYear && i + 1 == SelectedMonth;
+            _monthButtons[i].Style = isSelected ? selectedStyle : flatStyle;
         }
     }
 
-    private void RebuildYearItems()
+    private void OnMonthButtonClick(object sender, RoutedEventArgs e)
     {
-        var years = Enumerable.Range(SelectedYear - 5, 7).ToList();
-        if (yearComboBox.ItemsSource is not List<int> existing || !existing.SequenceEqual(years))
-        {
-            yearComboBox.ItemsSource = years;
-        }
-    }
-
-    private void OnMonthSelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (monthComboBox.SelectedIndex < 0)
-        {
-            return;
-        }
-
-        var newMonth = monthComboBox.SelectedIndex + 1;
-        if (newMonth != SelectedMonth)
-        {
-            SelectedMonth = newMonth;
-        }
-    }
-
-    private void OnYearSelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (yearComboBox.SelectedItem is int newYear && newYear != SelectedYear)
-        {
-            SelectedYear = newYear;
-        }
+        var month = (int)((Button)sender).Tag;
+        SelectedYear = _displayYear;
+        SelectedMonth = month;
+        popup.IsOpen = false;
     }
 }

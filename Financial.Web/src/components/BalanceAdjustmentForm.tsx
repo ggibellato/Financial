@@ -1,3 +1,4 @@
+import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text, makeStyles, tokens } from '@fluentui/react-components'
 import type { BankDto } from '../api/types'
 import type { BalanceAdjustmentFormField } from '../hooks/mapBalanceAdjustmentErrorToField'
 import { formatN2 } from '../utils/formatters'
@@ -20,6 +21,35 @@ interface BalanceAdjustmentFormProps {
   onCancel: () => void
 }
 
+const useStyles = makeStyles({
+  panel: {
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalM,
+    padding: tokens.spacingVerticalM,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+    borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorNeutralBackground2,
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+    gap: tokens.spacingVerticalM,
+    '@media (max-width: 1023px)': {
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    },
+    '@media (max-width: 639px)': {
+      gridTemplateColumns: '1fr',
+    },
+  },
+  actions: {
+    display: 'flex',
+    gap: tokens.spacingHorizontalS,
+    alignItems: 'center',
+  },
+})
+
 export default function BalanceAdjustmentForm({
   isEditing,
   bankName,
@@ -37,18 +67,22 @@ export default function BalanceAdjustmentForm({
   onSave,
   onCancel,
 }: BalanceAdjustmentFormProps) {
+  const styles = useStyles()
+
   if (savedDelta !== null) {
     const sign = savedDelta < 0 ? '-' : ''
     return (
-      <div className="monthly-page__form-panel">
-        <p className="monthly-page__form-title">Balance Corrected</p>
-        <p>
+      <div className={styles.panel} data-testid="balance-adjustment-form-panel">
+        <Text as="h2" weight="semibold" size={400}>
+          Balance Corrected
+        </Text>
+        <Text as="p">
           Adjustment of {sign}£{formatN2(Math.abs(savedDelta))} recorded
-        </p>
-        <div className="monthly-page__form-actions">
-          <button className="monthly-page__submit-btn" type="button" onClick={onCancel}>
+        </Text>
+        <div className={styles.actions}>
+          <Button appearance="primary" onClick={onCancel}>
             Close
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -63,74 +97,78 @@ export default function BalanceAdjustmentForm({
   const saveDisabled = isSaving || (!isEditing && !bankChosen)
 
   return (
-    <div className="monthly-page__form-panel">
-      <p className="monthly-page__form-title">{isEditing ? 'Edit Balance Adjustment' : 'Correct Balance'}</p>
+    <div className={styles.panel} data-testid="balance-adjustment-form-panel">
+      <Text as="h2" weight="semibold" size={400}>
+        {isEditing ? 'Edit Balance Adjustment' : 'Correct Balance'}
+      </Text>
+
       {!isEditing && (
-        <div className="monthly-page__form-field">
-          <label htmlFor="adjustment-bank">Bank</label>
-          <select
-            id="adjustment-bank"
-            value={bankName}
-            onChange={(e) => onFieldChange('bankName', e.target.value)}
+        <div className={styles.grid}>
+          <Field
+            label="Bank"
+            validationState={fieldError('bankName') ? 'error' : 'none'}
+            validationMessage={fieldError('bankName')}
           >
-            <option value="">Select a bank</option>
-            {banks.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-          {fieldError('bankName') && <p className="monthly-page__error">{fieldError('bankName')}</p>}
+            <Select value={bankName} onChange={(e) => onFieldChange('bankName', e.target.value)}>
+              <option value="">Select a bank</option>
+              {banks.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
         </div>
       )}
+
       {bankChosen && (
         <>
-          <p className="monthly-page__form-reference">
+          <Text as="p" size={200}>
             Current calculated balance for {bankDisplayName}: £{formatN2(currentBalance)}
-          </p>
-          <div className="monthly-page__form">
-            <div className="monthly-page__form-field">
-              <label htmlFor="adjustment-date">Date</label>
-              <input
-                id="adjustment-date"
-                type="date"
-                value={date}
-                onChange={(e) => onFieldChange('date', e.target.value)}
-              />
-              {fieldError('date') && <p className="monthly-page__error">{fieldError('date')}</p>}
-            </div>
-            <div className="monthly-page__form-field">
-              <label htmlFor="adjustment-target-balance">Target Balance</label>
-              <input
-                id="adjustment-target-balance"
+          </Text>
+          <div className={styles.grid}>
+            <Field
+              label="Date"
+              validationState={fieldError('date') ? 'error' : 'none'}
+              validationMessage={fieldError('date')}
+            >
+              <Input type="date" value={date} onChange={(e) => onFieldChange('date', e.target.value)} />
+            </Field>
+
+            <Field
+              label="Target Balance"
+              validationState={fieldError('targetBalance') ? 'error' : 'none'}
+              validationMessage={fieldError('targetBalance')}
+            >
+              <Input
                 type="number"
                 step="0.01"
                 value={targetBalance}
                 onChange={(e) => onFieldChange('targetBalance', e.target.value)}
               />
-              {fieldError('targetBalance') && <p className="monthly-page__error">{fieldError('targetBalance')}</p>}
-            </div>
-            <div className="monthly-page__form-field">
-              <label htmlFor="adjustment-note">Note</label>
-              <input
-                id="adjustment-note"
-                type="text"
-                value={note}
-                onChange={(e) => onFieldChange('note', e.target.value)}
-              />
-            </div>
+            </Field>
+
+            <Field label="Note">
+              <Input value={note} onChange={(e) => onFieldChange('note', e.target.value)} />
+            </Field>
           </div>
         </>
       )}
-      <div className="monthly-page__form-actions">
-        <button className="monthly-page__submit-btn" type="button" disabled={saveDisabled} onClick={onSave}>
+
+      <div className={styles.actions}>
+        <Button appearance="primary" disabled={saveDisabled} onClick={onSave}>
           {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Correct Balance'}
-        </button>
-        <button className="monthly-page__cancel-btn" type="button" onClick={onCancel}>
+        </Button>
+        <Button appearance="secondary" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
       </div>
-      {generalError && <p className="monthly-page__error">{generalError}</p>}
+
+      {generalError && (
+        <MessageBar intent="error">
+          <MessageBarBody>{generalError}</MessageBarBody>
+        </MessageBar>
+      )}
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text, makeStyles, tokens } from '@fluentui/react-components'
 import type { BankDto } from '../api/types'
 import type { TransferFormField } from '../hooks/mapTransferErrorToField'
 
@@ -17,6 +18,35 @@ interface TransferFormProps {
   onCancel: () => void
 }
 
+const useStyles = makeStyles({
+  panel: {
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalM,
+    padding: tokens.spacingVerticalM,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+    borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorNeutralBackground2,
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+    gap: tokens.spacingVerticalM,
+    '@media (max-width: 1023px)': {
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    },
+    '@media (max-width: 639px)': {
+      gridTemplateColumns: '1fr',
+    },
+  },
+  actions: {
+    display: 'flex',
+    gap: tokens.spacingHorizontalS,
+    alignItems: 'center',
+  },
+})
+
 export default function TransferForm({
   isEditing,
   date,
@@ -32,6 +62,7 @@ export default function TransferForm({
   onSave,
   onCancel,
 }: TransferFormProps) {
+  const styles = useStyles()
   const sameBankError =
     sourceBank !== '' && destinationBank !== '' && sourceBank === destinationBank
       ? 'Source and destination must be different banks.'
@@ -47,80 +78,72 @@ export default function TransferForm({
   const generalError = saveErrorField === null ? saveError : null
 
   return (
-    <div className="monthly-page__form-panel">
-      <p className="monthly-page__form-title">{isEditing ? 'Edit Transfer' : 'Move Money'}</p>
-      <div className="monthly-page__form">
-        <div className="monthly-page__form-field">
-          <label htmlFor="transfer-date">Date</label>
-          <input
-            id="transfer-date"
-            type="date"
-            value={date}
-            onChange={(e) => onFieldChange('date', e.target.value)}
-          />
-          {fieldError('date') && <p className="monthly-page__error">{fieldError('date')}</p>}
-        </div>
-        <div className="monthly-page__form-field">
-          <label htmlFor="transfer-source-bank">From</label>
-          <select
-            id="transfer-source-bank"
-            value={sourceBank}
-            onChange={(e) => onFieldChange('sourceBank', e.target.value)}
-          >
+    <div className={styles.panel} data-testid="transfer-form-panel">
+      <Text as="h2" weight="semibold" size={400}>
+        {isEditing ? 'Edit Transfer' : 'Move Money'}
+      </Text>
+
+      <div className={styles.grid}>
+        <Field label="Date" validationState={fieldError('date') ? 'error' : 'none'} validationMessage={fieldError('date')}>
+          <Input type="date" value={date} onChange={(e) => onFieldChange('date', e.target.value)} />
+        </Field>
+
+        <Field
+          label="From"
+          validationState={fieldError('sourceBank') ? 'error' : 'none'}
+          validationMessage={fieldError('sourceBank')}
+        >
+          <Select value={sourceBank} onChange={(e) => onFieldChange('sourceBank', e.target.value)}>
             {banks.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
               </option>
             ))}
-          </select>
-          {fieldError('sourceBank') && <p className="monthly-page__error">{fieldError('sourceBank')}</p>}
-        </div>
-        <div className="monthly-page__form-field">
-          <label htmlFor="transfer-destination-bank">To</label>
-          <select
-            id="transfer-destination-bank"
-            value={destinationBank}
-            onChange={(e) => onFieldChange('destinationBank', e.target.value)}
-          >
+          </Select>
+        </Field>
+
+        <Field
+          label="To"
+          validationState={fieldError('destinationBank') ? 'error' : 'none'}
+          validationMessage={fieldError('destinationBank')}
+        >
+          <Select value={destinationBank} onChange={(e) => onFieldChange('destinationBank', e.target.value)}>
             <option value="">Select a bank</option>
             {destinationBanks.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
               </option>
             ))}
-          </select>
-          {fieldError('destinationBank') && <p className="monthly-page__error">{fieldError('destinationBank')}</p>}
-        </div>
-        <div className="monthly-page__form-field">
-          <label htmlFor="transfer-amount">Amount</label>
-          <input
-            id="transfer-amount"
-            type="number"
-            step="0.01"
-            value={amount}
-            onChange={(e) => onFieldChange('amount', e.target.value)}
-          />
-          {fieldError('amount') && <p className="monthly-page__error">{fieldError('amount')}</p>}
-        </div>
-        <div className="monthly-page__form-field">
-          <label htmlFor="transfer-note">Note</label>
-          <input id="transfer-note" type="text" value={note} onChange={(e) => onFieldChange('note', e.target.value)} />
-        </div>
-      </div>
-      <div className="monthly-page__form-actions">
-        <button
-          className="monthly-page__submit-btn"
-          type="button"
-          disabled={isSaving || sameBankError !== null}
-          onClick={onSave}
+          </Select>
+        </Field>
+
+        <Field
+          label="Amount"
+          validationState={fieldError('amount') ? 'error' : 'none'}
+          validationMessage={fieldError('amount')}
         >
-          {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Move Money'}
-        </button>
-        <button className="monthly-page__cancel-btn" type="button" onClick={onCancel}>
-          Cancel
-        </button>
+          <Input type="number" step="0.01" value={amount} onChange={(e) => onFieldChange('amount', e.target.value)} />
+        </Field>
+
+        <Field label="Note">
+          <Input value={note} onChange={(e) => onFieldChange('note', e.target.value)} />
+        </Field>
       </div>
-      {generalError && <p className="monthly-page__error">{generalError}</p>}
+
+      <div className={styles.actions}>
+        <Button appearance="primary" disabled={isSaving || sameBankError !== null} onClick={onSave}>
+          {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Move Money'}
+        </Button>
+        <Button appearance="secondary" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+
+      {generalError && (
+        <MessageBar intent="error">
+          <MessageBarBody>{generalError}</MessageBarBody>
+        </MessageBar>
+      )}
     </div>
   )
 }

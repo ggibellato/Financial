@@ -87,6 +87,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private decimal _footerTotalCredits;
     private decimal _footerCurrentMonthCredits;
     private string _footerCurrentMonthLabel = string.Empty;
+    private TransactionDialogViewModel? _transactionFormViewModel;
+    private bool _isTransactionFormOpen;
+    private CreditDialogViewModel? _creditFormViewModel;
+    private bool _isCreditFormOpen;
+    private PriceDialogViewModel? _priceFormViewModel;
+    private bool _isPriceFormOpen;
     private string _footerEstimatedAnnualCreditsDisplay = "—";
     private readonly List<(PortfolioAssetSummaryRowViewModel Row, PropertyChangedEventHandler Handler)> _rowSubscriptions = new();
     private TransactionDTO? _selectedTransaction;
@@ -378,6 +384,42 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public RelayCommand SelectCreditsChartTypeCommand => _selectCreditsChartTypeCommand;
     public RelayCommand SelectTransactionsFilterCommand => _selectTransactionsFilterCommand;
     public RelayCommand SelectTransactionsChartModeCommand => _selectTransactionsChartModeCommand;
+
+    public TransactionDialogViewModel? TransactionFormViewModel
+    {
+        get => _transactionFormViewModel;
+        private set => SetProperty(ref _transactionFormViewModel, value);
+    }
+
+    public bool IsTransactionFormOpen
+    {
+        get => _isTransactionFormOpen;
+        private set => SetProperty(ref _isTransactionFormOpen, value);
+    }
+
+    public CreditDialogViewModel? CreditFormViewModel
+    {
+        get => _creditFormViewModel;
+        private set => SetProperty(ref _creditFormViewModel, value);
+    }
+
+    public bool IsCreditFormOpen
+    {
+        get => _isCreditFormOpen;
+        private set => SetProperty(ref _isCreditFormOpen, value);
+    }
+
+    public PriceDialogViewModel? PriceFormViewModel
+    {
+        get => _priceFormViewModel;
+        private set => SetProperty(ref _priceFormViewModel, value);
+    }
+
+    public bool IsPriceFormOpen
+    {
+        get => _isPriceFormOpen;
+        private set => SetProperty(ref _isPriceFormOpen, value);
+    }
 
     public AssetDetailsViewModel(
         ITransactionService transactionService,
@@ -1314,19 +1356,19 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 
     private static string BuildBrokerKey(string brokerName) => $"Broker|{brokerName}";
 
-    private async void AddTransaction() => await _transactionActions.Add(ShowAddTransactionDialog);
-    private async void AddCredit() => await _creditActions.Add(ShowAddCreditDialog);
+    private async void AddTransaction() => await _transactionActions.Add(ShowAddTransactionFormAsync);
+    private async void AddCredit() => await _creditActions.Add(ShowAddCreditFormAsync);
 
     private async void UpdateTransaction(object? parameter)
     {
         if (parameter is TransactionDTO tx) SelectedTransaction = tx;
-        await _transactionActions.Update(SelectedTransaction, ShowUpdateTransactionDialog);
+        await _transactionActions.Update(SelectedTransaction, ShowUpdateTransactionFormAsync);
     }
 
     private async void UpdateCredit(object? parameter)
     {
         if (parameter is CreditDTO credit) SelectedCredit = credit;
-        await _creditActions.Update(SelectedCredit, ShowUpdateCreditDialog);
+        await _creditActions.Update(SelectedCredit, ShowUpdateCreditFormAsync);
     }
 
     private async void DeleteTransaction(object? parameter)
@@ -1341,12 +1383,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         await _creditActions.Delete(SelectedCredit, ShowDeleteCreditDialog);
     }
 
-    private async void AddPrice() => await _priceActions.Set(ShowAddPriceDialog);
+    private async void AddPrice() => await _priceActions.Set(ShowAddPriceFormAsync);
 
     private async void UpdatePrice(object? parameter)
     {
         if (parameter is AssetPriceSnapshotDTO entry) SelectedPriceEntry = entry;
-        await _priceActions.Set(ShowUpdatePriceDialog);
+        await _priceActions.Set(ShowUpdatePriceFormAsync);
     }
 
     private async void DeletePrice(object? parameter)
@@ -1370,28 +1412,42 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _copyAssetNameCommand.RaiseCanExecuteChanged();
     }
 
-    private bool ShowTransactionDialog(TransactionDialogViewModel viewModel)
+    // "New X" / edit actions open an inline form on the same tab instead of a
+    // modal dialog (docs/ui/forms-data-and-visualisations.md's "'New X' create
+    // actions are inline forms, not popup dialogs" rule) — the form's
+    // ConfirmCommand/CancelCommand raise CloseRequested exactly like the old
+    // dialog did, so this just awaits that event instead of a blocking
+    // ShowDialog() call. Delete stays a real (confirmation) dialog below.
+    private Task<TransactionDialogData?> ShowTransactionFormAsync(TransactionDialogViewModel vm)
     {
-        var dialog = new TransactionDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow };
-        return dialog.ShowDialog() == true;
+        var tcs = new TaskCompletionSource<TransactionDialogData?>();
+        void OnClosed(object? sender, bool? result)
+        {
+            vm.CloseRequested -= OnClosed;
+            IsTransactionFormOpen = false;
+            TransactionFormViewModel = null;
+            tcs.SetResult(result == true
+                ? new TransactionDialogData(vm.TransactionId, vm.Date, vm.Type, vm.Quantity, vm.UnitPrice, vm.Fees)
+                : null);
+        }
+
+        vm.CloseRequested += OnClosed;
+        TransactionFormViewModel = vm;
+        IsTransactionFormOpen = true;
+        return tcs.Task;
     }
 
-    private TransactionDialogData? ShowAddTransactionDialog()
-    {
-        var vm = TransactionDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
-        if (!ShowTransactionDialog(vm)) return null;
-        return new TransactionDialogData(vm.TransactionId, vm.Date, vm.Type, vm.Quantity, vm.UnitPrice, vm.Fees);
-    }
+    private Task<TransactionDialogData?> ShowAddTransactionFormAsync() =>
+        ShowTransactionFormAsync(TransactionDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName));
 
-    private TransactionDialogData? ShowUpdateTransactionDialog()
+    private Task<TransactionDialogData?> ShowUpdateTransactionFormAsync()
     {
-        if (SelectedTransaction == null) return null;
+        if (SelectedTransaction == null) return Task.FromResult<TransactionDialogData?>(null);
         var vm = TransactionDialogViewModel.CreateForUpdate(
             BrokerName, PortfolioName, AssetName,
             SelectedTransaction.Id, SelectedTransaction.Date, SelectedTransaction.Type,
             SelectedTransaction.Quantity, SelectedTransaction.UnitPrice, SelectedTransaction.Fees);
-        if (!ShowTransactionDialog(vm)) return null;
-        return new TransactionDialogData(vm.TransactionId, vm.Date, vm.Type, vm.Quantity, vm.UnitPrice, vm.Fees);
+        return ShowTransactionFormAsync(vm);
     }
 
     private bool ShowDeleteTransactionDialog()
@@ -1401,30 +1457,39 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             BrokerName, PortfolioName, AssetName,
             SelectedTransaction.Id, SelectedTransaction.Date, SelectedTransaction.Type,
             SelectedTransaction.Quantity, SelectedTransaction.UnitPrice, SelectedTransaction.Fees);
-        return ShowTransactionDialog(vm);
-    }
-
-    private bool ShowCreditDialog(CreditDialogViewModel viewModel)
-    {
-        var dialog = new CreditDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow };
+        var dialog = new TransactionDialog(vm) { Owner = System.Windows.Application.Current?.MainWindow };
         return dialog.ShowDialog() == true;
     }
 
-    private CreditDialogData? ShowAddCreditDialog()
+    private Task<CreditDialogData?> ShowCreditFormAsync(CreditDialogViewModel vm)
     {
-        var vm = CreditDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
-        if (!ShowCreditDialog(vm)) return null;
-        return new CreditDialogData(vm.CreditId, vm.Date, vm.Type, vm.Value);
+        var tcs = new TaskCompletionSource<CreditDialogData?>();
+        void OnClosed(object? sender, bool? result)
+        {
+            vm.CloseRequested -= OnClosed;
+            IsCreditFormOpen = false;
+            CreditFormViewModel = null;
+            tcs.SetResult(result == true
+                ? new CreditDialogData(vm.CreditId, vm.Date, vm.Type, vm.Value)
+                : null);
+        }
+
+        vm.CloseRequested += OnClosed;
+        CreditFormViewModel = vm;
+        IsCreditFormOpen = true;
+        return tcs.Task;
     }
 
-    private CreditDialogData? ShowUpdateCreditDialog()
+    private Task<CreditDialogData?> ShowAddCreditFormAsync() =>
+        ShowCreditFormAsync(CreditDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName));
+
+    private Task<CreditDialogData?> ShowUpdateCreditFormAsync()
     {
-        if (SelectedCredit == null) return null;
+        if (SelectedCredit == null) return Task.FromResult<CreditDialogData?>(null);
         var vm = CreditDialogViewModel.CreateForUpdate(
             BrokerName, PortfolioName, AssetName,
             SelectedCredit.Id, SelectedCredit.Date, SelectedCredit.Type, SelectedCredit.Value);
-        if (!ShowCreditDialog(vm)) return null;
-        return new CreditDialogData(vm.CreditId, vm.Date, vm.Type, vm.Value);
+        return ShowCreditFormAsync(vm);
     }
 
     private bool ShowDeleteCreditDialog()
@@ -1433,30 +1498,39 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         var vm = CreditDialogViewModel.CreateForDelete(
             BrokerName, PortfolioName, AssetName,
             SelectedCredit.Id, SelectedCredit.Date, SelectedCredit.Type, SelectedCredit.Value);
-        return ShowCreditDialog(vm);
-    }
-
-    private bool ShowPriceDialog(PriceDialogViewModel viewModel)
-    {
-        var dialog = new PriceDialog(viewModel) { Owner = System.Windows.Application.Current?.MainWindow };
+        var dialog = new CreditDialog(vm) { Owner = System.Windows.Application.Current?.MainWindow };
         return dialog.ShowDialog() == true;
     }
 
-    private PriceDialogData? ShowAddPriceDialog()
+    private Task<PriceDialogData?> ShowPriceFormAsync(PriceDialogViewModel vm)
     {
-        var vm = PriceDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName);
-        if (!ShowPriceDialog(vm)) return null;
-        return new PriceDialogData(DateOnly.FromDateTime(vm.Date), vm.Price);
+        var tcs = new TaskCompletionSource<PriceDialogData?>();
+        void OnClosed(object? sender, bool? result)
+        {
+            vm.CloseRequested -= OnClosed;
+            IsPriceFormOpen = false;
+            PriceFormViewModel = null;
+            tcs.SetResult(result == true
+                ? new PriceDialogData(DateOnly.FromDateTime(vm.Date), vm.Price)
+                : null);
+        }
+
+        vm.CloseRequested += OnClosed;
+        PriceFormViewModel = vm;
+        IsPriceFormOpen = true;
+        return tcs.Task;
     }
 
-    private PriceDialogData? ShowUpdatePriceDialog()
+    private Task<PriceDialogData?> ShowAddPriceFormAsync() =>
+        ShowPriceFormAsync(PriceDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName));
+
+    private Task<PriceDialogData?> ShowUpdatePriceFormAsync()
     {
-        if (SelectedPriceEntry == null) return null;
+        if (SelectedPriceEntry == null) return Task.FromResult<PriceDialogData?>(null);
         var vm = PriceDialogViewModel.CreateForUpdate(
             BrokerName, PortfolioName, AssetName,
             SelectedPriceEntry.Date.ToDateTime(TimeOnly.MinValue), SelectedPriceEntry.Price);
-        if (!ShowPriceDialog(vm)) return null;
-        return new PriceDialogData(DateOnly.FromDateTime(vm.Date), vm.Price);
+        return ShowPriceFormAsync(vm);
     }
 
     private bool ShowDeletePriceDialog()
@@ -1465,6 +1539,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         var vm = PriceDialogViewModel.CreateForDelete(
             BrokerName, PortfolioName, AssetName,
             SelectedPriceEntry.Date.ToDateTime(TimeOnly.MinValue), SelectedPriceEntry.Price);
-        return ShowPriceDialog(vm);
+        var dialog = new PriceDialog(vm) { Owner = System.Windows.Application.Current?.MainWindow };
+        return dialog.ShowDialog() == true;
     }
 }

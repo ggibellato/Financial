@@ -48,20 +48,6 @@
   color: #007acc;
 }
 
-.monthly-page__form-panel {
-  flex-shrink: 0;
-  padding: 12px 16px;
-  border: 1px solid var(--border, #e5e4e7);
-  border-radius: 6px;
-  background: var(--bg-subtle, #f9f9f9);
-}
-
-.monthly-page__form-title {
-  font-size: 13px;
-  font-weight: bold;
-  margin: 0 0 10px;
-}
-
 .monthly-page__content {
   flex: 1;
   min-height: 0;
@@ -97,12 +83,19 @@
 }
 
 .monthly-page__section--grid {
-  flex: 1 1 260px;
-  min-width: 260px;
-  max-height: 320px;
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+
+/* The equal-height stretch only makes sense when grids sit side by side (the
+   Summary tab's grids-row). A grid used standalone (e.g. the Expense tab's
+   BanksGrid) should size to its content instead of stretching to fill a
+   height meant for a multi-grid row it isn't part of. */
+.monthly-page__grids-row .monthly-page__section--grid {
+  flex: 1 1 260px;
+  min-width: 260px;
+  max-height: 320px;
 }
 
 .monthly-page__section--grid .monthly-page__table {
@@ -118,57 +111,6 @@
 .monthly-page__section-total {
   flex-shrink: 0;
   margin-top: 12px;
-}
-
-.monthly-page__form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  margin-bottom: 10px;
-}
-
-.monthly-page__form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.monthly-page__form-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.monthly-page__submit-btn {
-  font-size: 12px;
-  padding: 3px 12px;
-  cursor: pointer;
-  background: #007acc;
-  color: #fff;
-  border: none;
-  border-radius: 3px;
-}
-
-.monthly-page__submit-btn:hover {
-  background: #005fa3;
-}
-
-.monthly-page__submit-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.monthly-page__cancel-btn {
-  font-size: 12px;
-  padding: 3px 10px;
-  cursor: pointer;
-  background: none;
-  border: 1px solid var(--border, #e5e4e7);
-  border-radius: 3px;
-}
-
-.monthly-page__cancel-btn:hover {
-  background: var(--bg-hover, #f0f0f0);
 }
 
 .monthly-page__error {

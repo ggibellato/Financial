@@ -1,13 +1,39 @@
 <UserControl x:Class="Financial.Presentation.App.Views.CashFlow.BalanceAdjustmentFormView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Border BorderBrush="#CCCCCC" BorderThickness="1" Padding="12" Margin="0,0,0,12" Background="#FAFAFA">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ui:ThemesDictionary Theme="Light"/>
+                <ui:ControlsDictionary/>
+            </ResourceDictionary.MergedDictionaries>
+            <!-- Matches Financial.Web's accent — see ExpenseFormView.xaml / ADR-005. -->
+            <SolidColorBrush x:Key="AccentButtonBackground" Color="#0F6CBD"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#115EA3"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#0C3B5E"/>
+            <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
+                <Setter Property="Margin" Value="0,0,0,4"/>
+                <Setter Property="FontSize" Value="12"/>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <!--
+        Four equal-width columns, label-above-control per field — matches
+        ExpenseFormView's layout standard (docs/ui/forms-data-and-visualisations
+        .md's "Layout" rule) instead of the old single-column label-left row
+        stack.
+    -->
+    <Border BorderThickness="1" Padding="12" Margin="0,0,0,12"
+            BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+            Background="{DynamicResource ControlFillColorDefaultBrush}"
+            CornerRadius="4">
         <Grid>
             <StackPanel Visibility="{Binding HasAdjustmentResult, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock FontWeight="Bold" Text="Balance Corrected" Margin="0,0,0,8"/>
                 <TextBlock Text="{Binding AdjustmentSavedDelta, StringFormat='Adjustment of {0:N2} recorded'}"/>
-                <Button Content="Close" Width="90" HorizontalAlignment="Left" Margin="0,12,0,0"
-                        Command="{Binding DismissAdjustmentResultCommand}"/>
+                <ui:Button Content="Close" MinWidth="90" Appearance="Primary" HorizontalAlignment="Left" Margin="0,12,0,0"
+                           Command="{Binding DismissAdjustmentResultCommand}"/>
             </StackPanel>
 
             <Grid Visibility="{Binding ShowAdjustmentForm, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -16,13 +42,16 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="150"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.ColumnSpan="2" FontWeight="Bold" Margin="0,0,0,4">
+                <TextBlock Grid.Row="0" Grid.ColumnSpan="4" FontWeight="Bold" Margin="0,0,0,8">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="Text" Value="Correct Balance"/>
@@ -35,36 +64,40 @@
                     </TextBlock.Style>
                 </TextBlock>
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Bank:" VerticalAlignment="Center"/>
-                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
-                          SelectedValue="{Binding AdjustmentFormBankName, UpdateSourceTrigger=PropertyChanged}"
-                          SelectedValuePath="Id">
-                    <ComboBox.Style>
-                        <Style TargetType="ComboBox">
-                            <Setter Property="IsEnabled" Value="True"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsEditingAdjustment}" Value="True">
-                                    <Setter Property="IsEnabled" Value="False"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ComboBox.Style>
-                </ComboBox>
+                <!-- Row 1: Bank (disabled while editing an existing adjustment) -->
+                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
+                    <TextBlock Text="Bank" Style="{StaticResource FieldLabelStyle}"/>
+                    <ComboBox AutomationProperties.Name="Bank"
+                              ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
+                              SelectedValue="{Binding AdjustmentFormBankName, UpdateSourceTrigger=PropertyChanged}"
+                              SelectedValuePath="Id">
+                        <ComboBox.Style>
+                            <Style TargetType="ComboBox">
+                                <Setter Property="IsEnabled" Value="True"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsEditingAdjustment}" Value="True">
+                                        <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ComboBox.Style>
+                    </ComboBox>
+                </StackPanel>
 
-                <Grid Grid.Row="2" Grid.ColumnSpan="2" Visibility="{Binding IsAdjustmentBankSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid Grid.Row="2" Grid.ColumnSpan="4"
+                      Visibility="{Binding IsAdjustmentBankSelected, Converter={StaticResource BoolToVisibilityConverter}}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Margin="0,4,0,8">
+                    <TextBlock Grid.Row="0" Grid.ColumnSpan="4" Margin="0,4,0,8">
                         <TextBlock.Text>
                             <MultiBinding StringFormat="Current calculated balance for {0}: {1:N2}">
                                 <Binding Path="AdjustmentFormBankDisplayName"/>
@@ -73,26 +106,36 @@
                         </TextBlock.Text>
                     </TextBlock>
 
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Date:" VerticalAlignment="Center"/>
-                    <DatePicker Grid.Row="1" Grid.Column="1" SelectedDate="{Binding AdjustmentFormDate, UpdateSourceTrigger=PropertyChanged}"/>
+                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
+                        <TextBlock Text="Date" Style="{StaticResource FieldLabelStyle}"/>
+                        <DatePicker AutomationProperties.Name="Adjustment date"
+                                    SelectedDate="{Binding AdjustmentFormDate, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
 
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Target Balance:" VerticalAlignment="Center"/>
-                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding AdjustmentFormTargetBalance, UpdateSourceTrigger=LostFocus}"
-                             PreviewTextInput="OnDecimalTextBoxPreviewTextInput"
-                             DataObject.Pasting="OnDecimalTextBoxPasting"
-                             LostFocus="OnDecimalTextBoxLostFocus"/>
+                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,8,8">
+                        <TextBlock Text="Target Balance" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox AutomationProperties.Name="Target balance"
+                                 Text="{Binding AdjustmentFormTargetBalance, UpdateSourceTrigger=LostFocus}"
+                                 PreviewTextInput="OnDecimalTextBoxPreviewTextInput"
+                                 DataObject.Pasting="OnDecimalTextBoxPasting"
+                                 LostFocus="OnDecimalTextBoxLostFocus"/>
+                    </StackPanel>
 
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Note:" VerticalAlignment="Center"/>
-                    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding AdjustmentFormNote, UpdateSourceTrigger=PropertyChanged}"/>
-
-                    <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Foreground="Red" TextWrapping="Wrap"
-                               Text="{Binding AdjustmentSaveError}" Margin="0,8,0,0"/>
+                    <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Margin="0,0,0,8">
+                        <TextBlock Text="Note" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox AutomationProperties.Name="Note"
+                                 Text="{Binding AdjustmentFormNote, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
                 </Grid>
 
-                <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
-                    <Button Width="110" Command="{Binding SaveAdjustmentCommand}">
-                        <Button.Style>
-                            <Style TargetType="Button">
+                <TextBlock Grid.Row="3" Grid.ColumnSpan="4" TextWrapping="Wrap" Margin="0,0,0,8"
+                           Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                           Text="{Binding AdjustmentSaveError}"/>
+
+                <StackPanel Grid.Row="4" Grid.ColumnSpan="4" Orientation="Horizontal">
+                    <ui:Button MinWidth="110" Appearance="Primary" Command="{Binding SaveAdjustmentCommand}">
+                        <ui:Button.Style>
+                            <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
                                 <Setter Property="Content" Value="Correct Balance"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsEditingAdjustment}" Value="True">
@@ -103,9 +146,10 @@
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </Button.Style>
-                    </Button>
-                    <Button Content="Cancel" Width="90" Margin="8,0,0,0" Command="{Binding CancelAdjustmentFormCommand}"/>
+                        </ui:Button.Style>
+                    </ui:Button>
+                    <ui:Button Content="Cancel" MinWidth="90" Margin="8,0,0,0" Appearance="Secondary"
+                               Command="{Binding CancelAdjustmentFormCommand}"/>
                 </StackPanel>
             </Grid>
         </Grid>

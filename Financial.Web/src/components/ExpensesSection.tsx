@@ -1,6 +1,17 @@
+import { Button, makeStyles, tokens } from '@fluentui/react-components'
+import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { ExpenseDto } from '../api/types'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ExpensesSection.css'
+
+const useStyles = makeStyles({
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginBottom: tokens.spacingVerticalM,
+  },
+})
 
 interface ExpenseRowProps {
   expense: ExpenseDto
@@ -12,27 +23,22 @@ function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
   return (
     <tr>
       <td>
-        <button
-          className="data-table__action-btn"
-          type="button"
+        <Button
+          appearance="subtle"
+          size="small"
+          icon={<EditRegular />}
           aria-label="Edit expense"
           onClick={() => onEdit(expense)}
-        >
-          ✏
-        </button>
+        />
       </td>
       <td>
-        <button
-          className="data-table__action-btn"
-          type="button"
+        <Button
+          appearance="subtle"
+          size="small"
+          icon={<DeleteRegular />}
           aria-label="Delete expense"
           onClick={() => onDelete(expense.id)}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M20 20H7L3 16a2 2 0 0 1 0-2.83L14.59 1.58a2 2 0 0 1 2.83 0l4 4a2 2 0 0 1 0 2.83L8 20" />
-            <path d="M6.5 15.5 15 7" />
-          </svg>
-        </button>
+        />
       </td>
       <td>{formatShortDate(expense.date)}</td>
       <td>{expense.description}</td>
@@ -52,12 +58,13 @@ interface ExpensesSectionProps {
 }
 
 export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpense }: ExpensesSectionProps) {
+  const styles = useStyles()
   return (
     <section className="expenses-section">
-      <div className="expenses-section__header">
-        <button className="expenses-section__new-btn" type="button" onClick={onNewExpense}>
+      <div className={styles.header}>
+        <Button appearance="primary" icon={<AddRegular />} onClick={onNewExpense}>
           New Expense
-        </button>
+        </Button>
       </div>
       <div className="expenses-section__table-wrapper">
         <table className="expenses-section__table data-table">

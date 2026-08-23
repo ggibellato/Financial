@@ -1,8 +1,42 @@
 <UserControl x:Class="Financial.Presentation.App.Views.CashFlow.ExpenseFormView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:components="clr-namespace:Financial.Presentation.App.Components">
-    <Border BorderBrush="#CCCCCC" BorderThickness="1" Padding="12" Margin="0,0,0,12" Background="#FAFAFA">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ui:ThemesDictionary Theme="Light"/>
+                <ui:ControlsDictionary/>
+            </ResourceDictionary.MergedDictionaries>
+            <!--
+                WPF-UI's ApplicationAccentColorManager generates its own shade ramp from
+                a seed color rather than using it directly (see
+                https://github.com/lepoco/wpfui/issues/1481), so it can't be trusted to
+                reproduce an exact hex. These override the three brushes
+                Wpf.Ui.Controls.Button's Primary appearance actually binds
+                (AccentButtonBackground/PointerOver/Pressed) with the literal values of
+                Financial.Web's Fluent theme (webLightTheme.colorBrandBackground/Hover/
+                Pressed — see ADR-005) so both platforms render the same accent blue.
+            -->
+            <SolidColorBrush x:Key="AccentButtonBackground" Color="#0F6CBD"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#115EA3"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#0C3B5E"/>
+            <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
+                <Setter Property="Margin" Value="0,0,0,4"/>
+                <Setter Property="FontSize" Value="12"/>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <!--
+        Four equal-width columns, label-above-control per field: mirrors
+        Financial.Web's ExpenseForm CSS grid (docs/ui/decisions/ADR-002-responsive-form-layout.md)
+        instead of the old single-column label-left/one-field-per-row layout.
+    -->
+    <Border BorderThickness="1" Padding="12" Margin="0,0,0,12"
+            BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+            Background="{DynamicResource ControlFillColorDefaultBrush}"
+            CornerRadius="4">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -11,17 +45,15 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="130"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" FontWeight="Bold" Margin="0,0,0,8">
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="4" FontWeight="Bold" Margin="0,0,0,8">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
                         <Setter Property="Text" Value="New Expense"/>
@@ -34,93 +66,96 @@
                 </TextBlock.Style>
             </TextBlock>
 
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Date:" VerticalAlignment="Center"/>
-            <DatePicker Grid.Row="1" Grid.Column="1" SelectedDate="{Binding ExpenseFormDate, UpdateSourceTrigger=PropertyChanged}"/>
+            <!-- Row 1: Date | Category | Description (spans 2) -->
+            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
+                <TextBlock Text="Date" Style="{StaticResource FieldLabelStyle}"/>
+                <DatePicker AutomationProperties.Name="Expense date"
+                            SelectedDate="{Binding ExpenseFormDate, UpdateSourceTrigger=PropertyChanged}"/>
+            </StackPanel>
 
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="Description:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ExpenseFormDescription, UpdateSourceTrigger=PropertyChanged}"/>
+            <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,8,8">
+                <TextBlock Text="Category" Style="{StaticResource FieldLabelStyle}"/>
+                <ComboBox AutomationProperties.Name="Category"
+                          ItemsSource="{Binding ActiveCategories}" DisplayMemberPath="Name"
+                          SelectedValue="{Binding ExpenseFormCategoryId, UpdateSourceTrigger=PropertyChanged}"
+                          SelectedValuePath="Id"/>
+            </StackPanel>
 
-            <TextBlock Grid.Row="3" Grid.Column="0" Text="Category:" VerticalAlignment="Center"/>
-            <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding ActiveCategories}" DisplayMemberPath="Name"
-                      SelectedValue="{Binding ExpenseFormCategoryId, UpdateSourceTrigger=PropertyChanged}"
-                      SelectedValuePath="Id"/>
+            <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Margin="0,0,0,8">
+                <TextBlock Text="Description" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBox AutomationProperties.Name="Description"
+                         Text="{Binding ExpenseFormDescription, UpdateSourceTrigger=PropertyChanged}"/>
+            </StackPanel>
 
-            <TextBlock Grid.Row="4" Grid.Column="0" Text="Value:" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding ExpenseFormValue, UpdateSourceTrigger=LostFocus}"
-                     PreviewTextInput="OnSignedDecimalTextBoxPreviewTextInput"
-                     DataObject.Pasting="OnSignedDecimalTextBoxPasting"
-                     LostFocus="OnDecimalTextBoxLostFocus"/>
+            <!-- Row 2: Value | Card-or-PaymentSource | InvoiceMonth-or-RoundUp | Tithe -->
+            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,8">
+                <TextBlock Text="Value" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBox AutomationProperties.Name="Value"
+                         Text="{Binding ExpenseFormValue, UpdateSourceTrigger=LostFocus}"
+                         PreviewTextInput="OnSignedDecimalTextBoxPreviewTextInput"
+                         DataObject.Pasting="OnSignedDecimalTextBoxPasting"
+                         LostFocus="OnDecimalTextBoxLostFocus"/>
+            </StackPanel>
 
-            <TextBlock Grid.Row="5" Grid.Column="0" Text="Counts toward tithe:" VerticalAlignment="Center"
-                       Visibility="{Binding ShowCountsAsTitheField, Converter={StaticResource BoolToVisibilityConverter}}"/>
-            <CheckBox Grid.Row="5" Grid.Column="1" VerticalAlignment="Center"
+            <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,8,8"
+                        Visibility="{Binding ShowPaymentModeFields, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Visibility="{Binding IsCardPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="Card" Style="{StaticResource FieldLabelStyle}"/>
+                    <ComboBox AutomationProperties.Name="Card"
+                              ItemsSource="{Binding ActiveCreditCards}" DisplayMemberPath="Name"
+                              SelectedValue="{Binding ExpenseFormCreditCardId, UpdateSourceTrigger=PropertyChanged}"
+                              SelectedValuePath="Id"/>
+                </StackPanel>
+                <StackPanel Visibility="{Binding IsBankPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="Payment Source" Style="{StaticResource FieldLabelStyle}"/>
+                    <ComboBox AutomationProperties.Name="Payment source"
+                              ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
+                              SelectedValue="{Binding ExpenseFormPaymentSource, UpdateSourceTrigger=PropertyChanged}"
+                              SelectedValuePath="Id"/>
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,8,8">
+                <StackPanel Visibility="{Binding IsCardPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="Invoice Month" Style="{StaticResource FieldLabelStyle}"/>
+                    <components:MonthYearPicker AutomationProperties.Name="Invoice month"
+                                                 IsEnabled="{Binding ShowPaymentModeFields}"
+                                                 HorizontalAlignment="Left"
+                                                 SelectedYear="{Binding ExpenseFormInvoiceYear, Mode=TwoWay}"
+                                                 SelectedMonth="{Binding ExpenseFormInvoiceMonth, Mode=TwoWay}"/>
+                </StackPanel>
+                <StackPanel Visibility="{Binding ShowRoundUpField, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="Round-Up" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBox AutomationProperties.Name="Round-up amount"
+                             Text="{Binding ExpenseFormRoundUpAmount, UpdateSourceTrigger=LostFocus}"
+                             PreviewTextInput="OnDecimalTextBoxPreviewTextInput"
+                             DataObject.Pasting="OnDecimalTextBoxPasting"
+                             LostFocus="OnDecimalTextBoxLostFocus"/>
+                </StackPanel>
+            </StackPanel>
+
+            <CheckBox Grid.Row="2" Grid.Column="3" Margin="0,0,0,8" VerticalAlignment="Bottom"
+                      Content="Counts toward tithe" AutomationProperties.Name="Counts toward tithe"
                       Visibility="{Binding ShowCountsAsTitheField, Converter={StaticResource BoolToVisibilityConverter}}"
                       IsChecked="{Binding ExpenseFormCountsAsTithe, UpdateSourceTrigger=PropertyChanged}"/>
 
-            <TextBlock Grid.Row="6" Grid.Column="0" Text="Invoice Month:" VerticalAlignment="Center"
-                       Visibility="{Binding IsCardPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}"/>
-            <components:MonthYearTextBox Grid.Row="6" Grid.Column="1"
-                                          Visibility="{Binding IsCardPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}"
-                                          IsEnabled="{Binding ShowPaymentModeFields}"
-                                          HorizontalAlignment="Left"
-                                          SelectedYear="{Binding ExpenseFormInvoiceYear, Mode=TwoWay}"
-                                          SelectedMonth="{Binding ExpenseFormInvoiceMonth, Mode=TwoWay}"/>
-
-            <TextBlock Grid.Row="7" Grid.Column="0" Text="Payment:" VerticalAlignment="Top"
-                       Visibility="{Binding ExpenseFormIsSettled, Converter={StaticResource BoolToVisibilityConverter}}"/>
-            <TextBlock Grid.Row="7" Grid.Column="1" TextWrapping="Wrap"
+            <!-- Row 3: settled note, replaces the card/payment-source fields once the charge is locked -->
+            <TextBlock Grid.Row="3" Grid.ColumnSpan="4" TextWrapping="Wrap" Margin="0,0,0,8"
                        Visibility="{Binding ExpenseFormIsSettled, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Run Text="Paid via "/>
                 <Run Text="{Binding ExpenseFormCreditCardName, Mode=OneWay}"/>
                 <Run Text=". Settled via its card statement — unmark the statement paid to change this expense."/>
             </TextBlock>
 
-            <StackPanel Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2"
-                        Visibility="{Binding ShowPaymentModeFields, Converter={StaticResource BoolToVisibilityConverter}}">
-                <Grid Margin="0,8,0,0" Visibility="{Binding IsCardPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="130"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Card:" VerticalAlignment="Center"/>
-                    <ComboBox Grid.Column="1" ItemsSource="{Binding ActiveCreditCards}" DisplayMemberPath="Name"
-                              SelectedValue="{Binding ExpenseFormCreditCardId, UpdateSourceTrigger=PropertyChanged}"
-                              SelectedValuePath="Id"/>
-                </Grid>
+            <TextBlock Grid.Row="4" Grid.ColumnSpan="4" TextWrapping="Wrap" Margin="0,0,0,8"
+                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                       Text="{Binding ExpenseSaveError}"/>
 
-                <StackPanel Visibility="{Binding IsBankPaymentMode, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <Grid Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="130"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Payment Source:" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="1" ItemsSource="{Binding Banks}" DisplayMemberPath="Name"
-                                  SelectedValue="{Binding ExpenseFormPaymentSource, UpdateSourceTrigger=PropertyChanged}"
-                                  SelectedValuePath="Id"/>
-                    </Grid>
-                    <Grid Margin="0,8,0,0" Visibility="{Binding ShowRoundUpField, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="130"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Round-Up:" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Text="{Binding ExpenseFormRoundUpAmount, UpdateSourceTrigger=LostFocus}"
-                                 PreviewTextInput="OnDecimalTextBoxPreviewTextInput"
-                                 DataObject.Pasting="OnDecimalTextBoxPasting"
-                                 LostFocus="OnDecimalTextBoxLostFocus"/>
-                    </Grid>
-                </StackPanel>
-            </StackPanel>
-
-            <TextBlock Grid.Row="8" Grid.ColumnSpan="2" Foreground="Red" TextWrapping="Wrap"
-                       Text="{Binding ExpenseSaveError}" Margin="0,8,0,0"/>
-
-            <StackPanel Grid.Row="9" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,12,0,0">
-                <Button Width="90" Command="{Binding SaveExpenseCommand}"
-                        Visibility="{Binding ShowPaymentModeFields, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <Button.Style>
-                        <Style TargetType="Button">
+            <StackPanel Grid.Row="5" Grid.ColumnSpan="4" Orientation="Horizontal">
+                <ui:Button MinWidth="110" Appearance="Primary" Command="{Binding SaveExpenseCommand}"
+                           Visibility="{Binding ShowPaymentModeFields, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ui:Button.Style>
+                        <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
                             <Setter Property="Content" Value="Add Expense"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsEditingExpense}" Value="True">
@@ -131,9 +166,10 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </Button.Style>
-                </Button>
-                <Button Content="Cancel" Width="90" Margin="8,0,0,0" Command="{Binding CancelExpenseFormCommand}"/>
+                    </ui:Button.Style>
+                </ui:Button>
+                <ui:Button Content="Cancel" MinWidth="90" Margin="8,0,0,0" Appearance="Secondary"
+                           Command="{Binding CancelExpenseFormCommand}"/>
             </StackPanel>
         </Grid>
     </Border>

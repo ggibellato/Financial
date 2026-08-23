@@ -2,6 +2,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  LabelList,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -19,7 +20,10 @@ import type { PeriodFilterOption } from '../utils/periodFilter'
 import { formatN2, formatN8, formatShortDate } from '../utils/formatters'
 import './TransactionsTab.css'
 
-const CHART_COLOR = '#6b7280'
+// Matches the blue already established by CreditsTab/PriceHistoryTab
+// (docs/ui/forms-data-and-visualisations.md's "Series color" rule) — not a
+// neutral/grey, single-series charts are blue on both platforms.
+const CHART_COLOR = '#4682b4'
 
 interface TransactionRowProps {
   transaction: TransactionDto
@@ -233,7 +237,15 @@ function TransactionsChart({
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
               <Tooltip formatter={(v) => (typeof v === 'number' ? formatN2(v) : v)} />
-              <Bar dataKey="netInvested" fill={CHART_COLOR} />
+              <Bar dataKey="netInvested" fill={CHART_COLOR}>
+                <LabelList
+                  dataKey="netInvested"
+                  position="top"
+                  fill="#111"
+                  formatter={(v: unknown) => (typeof v === 'number' && v !== 0 ? formatN2(v) : '')}
+                  style={{ fontSize: 10 }}
+                />
+              </Bar>
             </BarChart>
           ) : (
             <LineChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>

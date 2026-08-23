@@ -10,7 +10,10 @@ internal static class TransactionsChartBuilder
     private const string TransactionsValueLabelTag = "TransactionsValueLabel";
     private const double BarWidth = 0.8;
     private const double MinLabelWidth = 52;
-    private static readonly OxyColor NeutralColor = OxyColor.FromRgb(107, 114, 128);
+    // Matches CreditsChartBuilder/PriceHistoryChartBuilder's OxyColors.SteelBlue
+    // (docs/ui/forms-data-and-visualisations.md's "Series color" rule) — not a
+    // neutral/grey, single-series charts are blue on both platforms.
+    private static readonly OxyColor SeriesColor = OxyColors.SteelBlue;
 
     public static PlotModel Build(IReadOnlyList<TransactionMonthNet> months, ChartTypeMode mode)
     {
@@ -34,13 +37,19 @@ internal static class TransactionsChartBuilder
         double plotWidth,
         IReadOnlyList<TransactionMonthNet> months)
     {
-        if (plotWidth <= 0) return;
-
         var categoryAxis = model.Axes.OfType<CategoryAxis>().FirstOrDefault();
         if (categoryAxis == null || categoryAxis.Labels.Count == 0) return;
 
-        var maxVisibleLabels = Math.Max(1, (int)Math.Floor(plotWidth / MinLabelWidth));
-        var step = Math.Max(1, (int)Math.Ceiling((double)categoryAxis.Labels.Count / maxVisibleLabels));
+        // plotWidth is 0 until the PlotView's first SizeChanged fires, which can
+        // happen after this is first called from Build(). Every month gets a
+        // label (step=1) until a real width arrives to thin them by density,
+        // rather than showing none at all in the meantime.
+        var step = 1;
+        if (plotWidth > 0)
+        {
+            var maxVisibleLabels = Math.Max(1, (int)Math.Floor(plotWidth / MinLabelWidth));
+            step = Math.Max(1, (int)Math.Ceiling((double)categoryAxis.Labels.Count / maxVisibleLabels));
+        }
         categoryAxis.MajorStep = step;
         categoryAxis.MinorStep = 1;
         UpdateValueLabels(model, step, months);
@@ -76,7 +85,7 @@ internal static class TransactionsChartBuilder
     {
         var series = new RectangleBarSeries
         {
-            FillColor = NeutralColor,
+            FillColor = SeriesColor,
             StrokeColor = OxyColors.SlateGray,
             StrokeThickness = 1
         };
@@ -99,11 +108,11 @@ internal static class TransactionsChartBuilder
     {
         var series = new LineSeries
         {
-            Color = NeutralColor,
+            Color = SeriesColor,
             StrokeThickness = 2,
             MarkerType = MarkerType.Circle,
             MarkerSize = 3,
-            MarkerFill = NeutralColor
+            MarkerFill = SeriesColor
         };
 
         for (var monthIndex = 0; monthIndex < months.Count; monthIndex++)

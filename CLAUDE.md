@@ -165,6 +165,46 @@ These bind at every stage — discovery, design, implementation, review. Everyth
 
 6. **Right-sized, not over-engineered.** Single-user, self-hosted, one install per person. Follow the standards; don't build for scale that will never arrive.
 
+# UI / UX invariants
+
+These bind whenever a change affects `Financial.Web`, `Financial.App`, shared
+presentation components, user-facing API error/validation contracts, or a
+workflow visible in either front end.
+
+1. **React-led UX with equivalent WPF outcomes.** `Financial.Web` (React) is
+   the UX source of truth. Define, validate, and improve intended user workflows
+   in React first. `Financial.App` (WPF) must provide equivalent user tasks,
+   terminology, information hierarchy, field order, validation, action priority,
+   status meaning, financial formatting, and outcomes. Equivalent does not mean
+   identical controls, markup, or desktop interaction mechanics. Platform-native
+   adaptation is allowed only when it preserves workflow meaning and usability.
+
+2. **Standards stack.** Use Microsoft Fluent 2 as the primary visual and
+   component design system; WCAG 2.2 AA as the accessibility baseline where
+   applicable; and Nielsen Norman Group usability heuristics to evaluate
+   workflow quality. Product/domain decisions in `docs/ui/` override general
+   design guidance. Accessibility, security, and confirmed product requirements
+   override visual preference and screenshot references.
+
+3. **Task-first financial UX.** Optimize for fast, accurate, low-friction
+   single-user financial workflows. Preserve context, prevent accidental data
+   loss, make loading/saving/errors visible, keep financial values and totals
+   unambiguous, and support dense data views without sacrificing readability.
+
+4. **No competing UI systems.** Reuse established React and WPF components,
+   themes, tokens, and resource systems. Do not add Material, Bootstrap, Ant
+   Design, Carbon, another WPF UI framework, or another styling system without
+   explicit approval and an ADR.
+
+5. **Mandatory state design.** Every applicable user-facing change defines
+   initial, loading, empty, validation, server-error, saving/progress, success,
+   disabled, and unsaved-changes behavior. Do not implement only the happy path.
+
+6. **Accessibility is implementation work.** UI changes must be keyboard
+   operable, show visible focus, have accessible names and labels, avoid
+   color-only meaning, support zoom/text scaling, and provide accessible
+   equivalents for important charts and status information.
+
 # Rule files
 
 Mandatory, not advisory. Read the file for the stage you are in **before producing output** — do not work from memory of it.
@@ -175,5 +215,7 @@ Mandatory, not advisory. Read the file for the stage you are in **before produci
 | Writing or changing any source file | `docs/rules/implementation.md` |
 | Writing or changing tests | `testing-guide-Financial` skill, then `docs/rules/implementation.md` §Tests |
 | Finishing a change | `docs/rules/implementation.md` §Definition of Done |
+| Designing, changing, reviewing, or refactoring any user-facing UI/workflow | `docs/rules/ui.md`, then the relevant documents in `docs/ui/`; use the `fluent-ui` skill for significant UI work |
+| Finishing a UI-affecting change | `docs/ui/review-checklist.md`, then `docs/rules/implementation.md` §Definition of Done |
 
 `.claude/agents/architecture-reviewer.md` reviews every change against these files.

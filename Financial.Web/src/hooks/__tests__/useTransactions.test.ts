@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetDetailsDto, SelectedNode, TransactionDto, TransactionSummaryItemDto } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
+import { formatMonthKey } from '../../utils/formatters'
 import { buildMonthlyNetInvested, useTransactions } from '../useTransactions'
 
 const getAssetDetailsMock = vi.fn<FinancialApiClient['getAssetDetails']>()
@@ -432,7 +433,7 @@ describe('buildMonthlyNetInvested', () => {
     const referenceDate = new Date(2024, 2, 15)
     const buckets = buildMonthlyNetInvested([SUMMARY_ITEM_A], 'last-12-months', referenceDate)
     expect(buckets.length).toBe(12)
-    const marchBucket = buckets.find((b) => b.month === formatMonth(referenceDate))
+    const marchBucket = buckets.find((b) => b.month === formatMonthKey(referenceDate))
     expect(marchBucket?.netInvested).toBe(420.5)
     const emptyMonths = buckets.filter((b) => b.netInvested === 0)
     expect(emptyMonths.length).toBe(11)
@@ -460,7 +461,3 @@ describe('buildMonthlyNetInvested', () => {
     expect(summaryResult.some((b) => b.netInvested === 420.5)).toBe(true)
   })
 })
-
-function formatMonth(date: Date): string {
-  return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
-}

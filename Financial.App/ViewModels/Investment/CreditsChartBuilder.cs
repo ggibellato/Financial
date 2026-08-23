@@ -51,13 +51,19 @@ internal static class CreditsChartBuilder
         CreditsTypeChartMode mode,
         CreditsChartType chartType)
     {
-        if (plotWidth <= 0) return;
-
         var categoryAxis = model.Axes.OfType<CategoryAxis>().FirstOrDefault();
         if (categoryAxis == null || categoryAxis.Labels.Count == 0) return;
 
-        var maxVisibleLabels = Math.Max(1, (int)Math.Floor(plotWidth / MinLabelWidth));
-        var step = Math.Max(1, (int)Math.Ceiling((double)categoryAxis.Labels.Count / maxVisibleLabels));
+        // plotWidth is 0 until the PlotView's first SizeChanged fires, which can
+        // happen after this is first called from Build(). Every month gets a
+        // label (step=1) until a real width arrives to thin them by density,
+        // rather than showing none at all in the meantime.
+        var step = 1;
+        if (plotWidth > 0)
+        {
+            var maxVisibleLabels = Math.Max(1, (int)Math.Floor(plotWidth / MinLabelWidth));
+            step = Math.Max(1, (int)Math.Ceiling((double)categoryAxis.Labels.Count / maxVisibleLabels));
+        }
         categoryAxis.MajorStep = step;
         categoryAxis.MinorStep = 1;
         UpdateValueLabels(model, step, chartMonths, chartTypes, mode, chartType);

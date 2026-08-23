@@ -1,6 +1,19 @@
+import { Button, makeStyles, tokens } from '@fluentui/react-components'
+import { AddRegular } from '@fluentui/react-icons'
 import type { IncomeDto } from '../api/types'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './IncomeSection.css'
+
+// Grid create/new actions: left-aligned primary button with an add icon,
+// matching ExpensesSection.tsx (docs/ui/forms-data-and-visualisations.md).
+const useStyles = makeStyles({
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginBottom: tokens.spacingVerticalM,
+  },
+})
 
 interface IncomeRowProps {
   income: IncomeDto
@@ -52,12 +65,13 @@ interface IncomeSectionProps {
 }
 
 export default function IncomeSection({ incomes, onEdit, onDelete, onNewIncome }: IncomeSectionProps) {
+  const styles = useStyles()
   return (
     <section className="income-section">
-      <div className="income-section__header">
-        <button className="income-section__new-btn" type="button" onClick={onNewIncome}>
+      <div className={styles.header}>
+        <Button appearance="primary" icon={<AddRegular />} onClick={onNewIncome}>
           New Income
-        </button>
+        </Button>
       </div>
       <div className="income-section__table-wrapper">
         <table className="income-section__table data-table">
