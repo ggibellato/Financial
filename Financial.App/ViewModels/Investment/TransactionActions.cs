@@ -22,7 +22,7 @@ public sealed class TransactionActions : AssetActionsBase
         _service = service;
     }
 
-    public async Task Add(Func<TransactionDialogData?> showDialog)
+    public async Task Add(Func<Task<TransactionDialogData?>> showForm)
     {
         if (!HasContext())
         {
@@ -35,7 +35,7 @@ public sealed class TransactionActions : AssetActionsBase
             return;
         }
 
-        var dialogData = showDialog();
+        var dialogData = await showForm();
         if (dialogData == null)
         {
             return;
@@ -68,7 +68,7 @@ public sealed class TransactionActions : AssetActionsBase
         ApplyDetails(updatedDetails);
     }
 
-    public async Task Update(TransactionDTO? selectedTransaction, Func<TransactionDialogData?> showDialog)
+    public async Task Update(TransactionDTO? selectedTransaction, Func<Task<TransactionDialogData?>> showForm)
     {
         if (_service == null || selectedTransaction == null)
         {
@@ -81,7 +81,7 @@ public sealed class TransactionActions : AssetActionsBase
             return;
         }
 
-        var dialogData = showDialog();
+        var dialogData = await showForm();
         if (dialogData == null)
         {
             return;

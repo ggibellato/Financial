@@ -21,7 +21,7 @@ public sealed class PriceActions : AssetActionsBase
         _service = service;
     }
 
-    public async Task Set(Func<PriceDialogData?> showDialog)
+    public async Task Set(Func<Task<PriceDialogData?>> showForm)
     {
         if (!HasContext())
         {
@@ -34,7 +34,7 @@ public sealed class PriceActions : AssetActionsBase
             return;
         }
 
-        var dialogData = showDialog();
+        var dialogData = await showForm();
         if (dialogData == null)
         {
             return;

@@ -302,6 +302,43 @@ secondary editing that should preserve the page context.
 
 Use a dedicated page for complex, long, or multi-stage workflows.
 
+### "New X" create actions are inline forms, not popup dialogs
+
+A "New X" / "+ New X" button (New Expense, New Income, New Transfer, New
+Transaction, New Credit, New Price, etc.) creating one row for the grid
+immediately below it **always expands an inline form in place on the same
+tab/page** — it never opens a separate modal `Window`/dialog. Web's pattern
+is the reference: `ExpensesSection.tsx`/`IncomeSection.tsx`/
+`BankOperationsSection.tsx` toggle a boolean (`isFormVisible` /
+`IsXFormOpen`-style) that shows/hides a form component positioned between the
+action button and the grid it feeds, so the user keeps the grid, chart, and
+totals in view while filling it in. `Financial.App`'s CashFlow tabs
+(`ExpenseSectionView.xaml`, `IncomeSectionView.xaml`,
+`CreditCardExpensesView.xaml`, `BankSectionView.xaml`) already follow this:
+a `<local:XFormView Visibility="{Binding IsXFormOpen, Converter=
+{StaticResource BoolToVisibilityConverter}}"/>` embedded directly in the
+tab's own `Grid`, toggled by the same command that shows the "New X" button.
+
+This is the standard for **both** platforms — do not use a `Window`/
+`ShowDialog()` popup for this class of action even where desktop convention
+might otherwise reach for one. A WPF `Window`-per-action (as
+`Views/Investment/TransactionDialog.xaml`, `CreditDialog.xaml`, and
+`PriceDialog.xaml` did) breaks this: it blocks the rest of the window,
+disconnects the form from the grid/chart it's populating, and gives the two
+platforms genuinely different task flows for the same action — not just a
+different control. Convert any such dialog into an inline form embedded in
+the view it creates rows for, following the existing CashFlow
+`IsXFormOpen`/`XFormView` pattern: a boolean VM property toggled by the
+"New X" command, a `UserControl` form bound to it, `Visibility` driven by
+`BoolToVisibilityConverter`, and the same form reused for Edit (populate its
+fields from the selected row instead of defaults) so Add and Edit don't need
+two separate implementations.
+
+A genuine confirmation ("Delete this transaction?") or another short,
+self-contained, blocking interaction unrelated to populating a specific grid
+row may still use a real dialog — this rule is specifically about the
+create/edit-a-row action, not dialogs in general.
+
 ### Transaction workspace default
 
 When users benefit from seeing a graph, entering a transaction, and immediately

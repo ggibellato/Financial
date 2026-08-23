@@ -1,7 +1,8 @@
 <UserControl x:Class="Financial.Presentation.App.Views.Investment.CreditsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:oxy="http://oxyplot.org/wpf">
+             xmlns:oxy="http://oxyplot.org/wpf"
+             xmlns:local="clr-namespace:Financial.Presentation.App.Views.Investment">
     <!--
         Layout follows docs/ui/forms-data-and-visualisations.md's "Grid-and-chart
         pages" rule: filters/mode controls at the top, then side by side (grid has
@@ -136,6 +137,7 @@
                     <Grid Grid.Column="0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
@@ -148,7 +150,11 @@
                             </Button>
                         </StackPanel>
 
-                        <DataGrid Grid.Row="1"
+                        <local:CreditFormView Grid.Row="1"
+                                               DataContext="{Binding AssetDetails.CreditFormViewModel}"
+                                               Visibility="{Binding AssetDetails.IsCreditFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                        <DataGrid Grid.Row="2"
                                   ItemsSource="{Binding AssetDetails.Credits}"
                                   SelectedItem="{Binding AssetDetails.SelectedCredit, Mode=TwoWay}"
                                   AutoGenerateColumns="False"

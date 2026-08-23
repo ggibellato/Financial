@@ -1,0 +1,88 @@
+<UserControl x:Class="Financial.Presentation.App.Views.Investment.CreditFormView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <!--
+        Inline form for the "New"/edit credit action — replaces the old
+        CreditDialog popup Window per docs/ui/forms-data-and-visualisations.md's
+        "'New X' create actions are inline forms, not popup dialogs" rule. Bound
+        directly to a CreditDialogViewModel instance (AssetDetails.
+        CreditFormViewModel) set as this control's own DataContext by its host
+        view, not the surrounding page's DataContext.
+    -->
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ui:ThemesDictionary Theme="Light"/>
+                <ui:ControlsDictionary/>
+            </ResourceDictionary.MergedDictionaries>
+            <!-- Matches Financial.Web's accent — see ExpenseFormView.xaml / ADR-005. -->
+            <SolidColorBrush x:Key="AccentButtonBackground" Color="#0F6CBD"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#115EA3"/>
+            <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#0C3B5E"/>
+            <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
+                <Setter Property="Margin" Value="0,0,0,4"/>
+                <Setter Property="FontSize" Value="12"/>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Border BorderThickness="1" Padding="12" Margin="0,0,0,12"
+            BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+            Background="{DynamicResource ControlFillColorDefaultBrush}"
+            CornerRadius="4">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="3" FontWeight="Bold" Margin="0,0,0,8" Text="{Binding Title}"/>
+
+            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
+                <TextBlock Text="Date" Style="{StaticResource FieldLabelStyle}"/>
+                <DatePicker AutomationProperties.Name="Credit date"
+                            SelectedDate="{Binding Date, UpdateSourceTrigger=PropertyChanged}"
+                            IsEnabled="{Binding IsEditable}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,8,8">
+                <TextBlock Text="Type" Style="{StaticResource FieldLabelStyle}"/>
+                <ComboBox AutomationProperties.Name="Type"
+                          SelectedValue="{Binding Type, UpdateSourceTrigger=PropertyChanged}"
+                          SelectedValuePath="Content"
+                          IsEnabled="{Binding IsEditable}">
+                    <ComboBoxItem Content="Dividend"/>
+                    <ComboBoxItem Content="Rent"/>
+                </ComboBox>
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,8">
+                <TextBlock Text="Value" Style="{StaticResource FieldLabelStyle}"/>
+                <TextBox AutomationProperties.Name="Value"
+                         Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
+                         IsReadOnly="{Binding IsReadOnly}"
+                         PreviewTextInput="OnDecimalTextBoxPreviewTextInput"
+                         DataObject.Pasting="OnDecimalTextBoxPasting"
+                         LostFocus="OnDecimalTextBoxLostFocus"/>
+            </StackPanel>
+
+            <TextBlock Grid.Row="2" Grid.ColumnSpan="3" TextWrapping="Wrap" Margin="0,0,0,8"
+                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                       Text="{Binding ValidationMessage}"/>
+
+            <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Orientation="Horizontal">
+                <ui:Button Content="{Binding ConfirmLabel}" MinWidth="110" Appearance="Primary"
+                           Command="{Binding ConfirmCommand}"/>
+                <ui:Button Content="Cancel" MinWidth="90" Margin="8,0,0,0" Appearance="Secondary"
+                           Command="{Binding CancelCommand}"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>
