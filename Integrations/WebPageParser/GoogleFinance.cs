@@ -2,7 +2,7 @@ using Financial.Investment.Domain.ValueObjects;
 using HtmlAgilityPack;
 using System.Text.RegularExpressions;
 
-namespace Financial.Investment.Infrastructure.Integrations.WebPageParser;
+namespace Financial.Integrations.WebPageParser;
 
 /// <summary>
 /// See GoogleFinance.Selectors.md for maintenance guide.

@@ -1,9 +1,9 @@
 using Financial.Investment.Domain.ValueObjects;
-using Financial.Investment.Infrastructure.Integrations.WebPageParser;
+using Financial.Integrations.WebPageParser;
 using FluentAssertions;
 using HtmlAgilityPack;
 
-namespace Financial.Investment.Infrastructure.Tests.Integrations;
+namespace Financial.WebPageParser.Tests;
 
 public class DadosMercadoDividendTests
 {

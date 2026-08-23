@@ -40,6 +40,7 @@
 	<Folder Name="/Tests/Integrations/">
 		<Project Path="Tests/Financial.GoogleFinancialSupport.Tests/Financial.GoogleFinancialSupport.Tests.csproj" />
 		<Project Path="Tests/Financial.Observability.Tests/Financial.Observability.Tests.csproj" />
+		<Project Path="Tests/Financial.WebPageParser.Tests/Financial.WebPageParser.Tests.csproj" />
 	</Folder>
 	<Folder Name="/Presentation/">
 		<Project Path="Financial.App/Financial.App.csproj" />

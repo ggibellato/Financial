@@ -2,7 +2,7 @@ using Financial.Investment.Domain.ValueObjects;
 using HtmlAgilityPack;
 using System.Globalization;
 
-namespace Financial.Investment.Infrastructure.Integrations.WebPageParser;
+namespace Financial.Integrations.WebPageParser;
 
 public sealed class DadosMercadoDividend
 {
