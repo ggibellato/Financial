@@ -37,13 +37,13 @@ public class JsonStorageFactoryTests
     }
 
     [Fact]
-    public void CreateGoogleDrive_WithoutRemoteFileClientFactory_ThrowsInvalidOperationException()
+    public void CreateRemote_WithoutRemoteFileClientFactory_ThrowsInvalidOperationException()
     {
         var factory = new JsonStorageFactory(null, NoOpTelemetryTracer.Instance);
         var credentialsPath = Path.GetTempFileName();
         try
         {
-            Action act = () => factory.CreateGoogleDrive(
+            Action act = () => factory.CreateRemote(
                 credentialsPath, "Pessoais/Gleison/Financeiros", "Test:CredentialsPath", "TestProvider");
 
             act.Should().Throw<InvalidOperationException>().WithMessage("*IRemoteFileClientFactory*");
@@ -55,17 +55,17 @@ public class JsonStorageFactoryTests
     }
 
     [Fact]
-    public void CreateGoogleDrive_WithRemoteFileClientFactory_ReturnsDebounceWrappedStorage()
+    public void CreateRemote_WithRemoteFileClientFactory_ReturnsDebounceWrappedStorage()
     {
         var factory = new JsonStorageFactory(new StubRemoteFileClientFactory(), NoOpTelemetryTracer.Instance);
         var credentialsPath = Path.GetTempFileName();
         try
         {
-            var storage = factory.CreateGoogleDrive(
+            var storage = factory.CreateRemote(
                 credentialsPath, "Pessoais/Gleison/Financeiros", "Test:CredentialsPath", "TestProvider");
 
             // DebouncedJsonStorage is the only IJsonStorage in this project that also implements
-            // ISyncStatusProvider - this is how CreateGoogleDrive's debounce-wrapping (vs CreateLocal's
+            // ISyncStatusProvider - this is how CreateRemote's debounce-wrapping (vs CreateLocal's
             // direct, unwrapped storage) is observable through the IJsonStorage-typed return value.
             var syncStatusProvider = storage.Should().BeAssignableTo<ISyncStatusProvider>().Which;
             syncStatusProvider.GetStatus().State.Should().Be(SyncState.Idle);

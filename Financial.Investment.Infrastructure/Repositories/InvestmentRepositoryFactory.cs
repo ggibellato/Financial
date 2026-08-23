@@ -36,7 +36,7 @@ public sealed class InvestmentRepositoryFactory
             InvestmentRepositoryProvider.LocalJson =>
                 _storageFactory.CreateLocal(options.LocalDataPath, DefaultDataFileName),
             InvestmentRepositoryProvider.GoogleDriveJson =>
-                _storageFactory.CreateGoogleDrive(
+                _storageFactory.CreateRemote(
                     options.GoogleDriveCredentialsPath,
                     options.GoogleDriveFilePath,
                     InvestmentRepositoryConfigurationKeys.GoogleDriveCredentialsPath,

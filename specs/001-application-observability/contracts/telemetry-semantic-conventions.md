@@ -7,7 +7,7 @@ This is the naming/attribute contract every span MUST follow — it's what makes
 | Origin | Naming pattern | Example |
 |---|---|---|
 | Application use case | `{BoundedContext}.{ServiceName}.{MethodName}` | `CashFlow.ExpenseService.CreateExpense` |
-| `Financial.Shared.Infrastructure` persistence code | `{StorageComponent}.{Operation}` | `JsonStorage.Load`, `GoogleDrive.Upload` |
+| `Financial.Shared.Infrastructure` persistence code | `{StorageComponent}.{Operation}` | `JsonStorage.Load`, `RemoteStorage.Upload` |
 | `Financial.Api` middleware | `Api.{Operation}` | `Api.DomainExceptionMapped` |
 | `Financial.App` WPF trace roots | `App.{ViewModelName}.{CommandName}` | `App.MonthlyViewModel.SaveExpense` |
 
