@@ -14,7 +14,7 @@
 - `Financial.CashFlow.Domain/Entities/Income.cs` — new `SplitToReserve` property, threaded through `Create`/`UpdateDetails`.
 - `Financial.CashFlow.Domain/Entities/ReserveMovement.cs` — new nullable `Income` navigation property, threaded through `Create` (not `Update` — a locked movement is never updated in place).
 - `Financial.CashFlow.Application/DTOs/IncomeCreateDTO.cs`, `IncomeUpdateDTO.cs` — new `SplitToReserve` (bool, default `false`).
-- `Financial.CashFlow.Application/DTOs/IncomeDTO.cs` — new `SplitToReserve` and `ReserveSplitMovements` (reuses `BucketSplitAmountDTO`).
+- `Financial.CashFlow.Application/DTOs/IncomeDTO.cs` — new `SplitToReserve`. (No split-movement summary is embedded here — see Section 3's PR-review revision.)
 - `Financial.CashFlow.Application/DTOs/ReserveMovementDTO.cs` — new nullable `IncomeId`.
 - `Financial.CashFlow.Application/Services/IncomeService.cs` — split-eligibility validation; split computation/fan-out on create; delete-and-recreate on update; cascade delete; atomic save with rollback.
 - `Financial.CashFlow.Application/Services/ReserveService.cs` — `PostIncomeSplitAsync` refactored to call the new shared fan-out helper (behavior unchanged); `UpdateMovementAsync`/`DeleteMovementAsync` gain a locked-movement guard; `DeleteMovementAsync`'s existing Date+Description group-delete excludes linked movements from the group.
@@ -26,8 +26,10 @@
 - `Financial.CashFlow.Infrastructure/Persistence/CashFlowTypeInfoResolver.cs` — `ReferenceProperties` gains an `IsRequired` flag per entry (all existing entries stay `true`; the new `ReserveMovement.Income → "IncomeId"` entry is `false`, the first optional reference property in the codebase) and a new `IncomeReferenceConverter` registration.
 - `Financial.Api/Middleware/DomainExceptionMappingMiddleware.cs` — maps `ReserveMovementLinkedToIncomeException` to 409, alongside the existing `OverdraftConfirmationRequiredException`/`InvestmentRuleViolationException` entries.
 - `Tests/Financial.Api.Tests/Contract/openapi-v1.snapshot.json`, `Financial.Web/src/api/generated/openapi.ts` — regenerated.
+- `Financial.CashFlow.Domain/Rules/TitheRule.cs` (**new**, PR review) — the 10% tithe rate and its two derived amounts (`CalculateTithe`, `NetOfTithe`), extracted so `IncomeService`'s split-base calculation and `TitheService`'s monthly calculation share one source of truth instead of each hardcoding the percentage.
+- `Financial.CashFlow.Application/Services/TitheService.cs` (PR review) — `GetTitheSummary` calls `TitheRule.CalculateTithe` instead of its own `TithePercentage` constant; still reads every `Income.NetValue` unconditionally (unchanged behavior, only the rate's source changed).
 
-**No change needed:** `IncomesController.cs`/`ReserveController.cs` (thin passthroughs — the new validation/locking surfaces through existing routes as exceptions the middleware already maps); `Financial.Web`/`Financial.App` (F03/F04's job); `TitheService.cs` (still reads every `Income.NetValue` unconditionally).
+**No change needed:** `IncomesController.cs`/`ReserveController.cs` (thin passthroughs — the new validation/locking surfaces through existing routes as exceptions the middleware already maps); `Financial.Web`/`Financial.App` (F03/F04's job).
 
 ```mermaid
 graph TD
@@ -58,6 +60,9 @@ graph TD
 | `DeleteMovementAsync`'s existing Date+Description group-delete vs. locked movements | The grouping query gains `&& m.Income is null`, and the target movement itself is checked for `Income is not null` *before* the group is even computed | Leave the group query as-is; rely only on the direct-target check | A manually created movement could coincidentally share the same Date+Description text as an automated split's movements; without excluding linked rows from the *group*, deleting the coincidental manual movement would still delete the linked ones as collateral damage |
 | Update rollback scope | `UpdateIncomeAsync` captures the income's pre-update field values and its currently-linked movements (the same object instances, not copies) *before* mutating anything; on a save failure it re-applies the old values via a second `UpdateDetails` call and re-adds the captured old movement instances, mirroring `PostIncomeSplitAsync`'s existing Add-then-compensate pattern extended to cover Update's delete+recreate | Do not roll back Update failures, matching every *other* existing `Update*Async` method in the codebase (none of which roll back today) | PRD Section 9 explicitly requires it: "A simulated failure during split-movement recreation on Update rolls back the entire operation." This is a deliberate, tested exception to the codebase's general Update behavior, not a new codebase-wide convention |
 | `DeleteIncomeAsync` rollback scope | No rollback on save failure — matches the *existing*, unchanged behavior of `DeleteIncomeAsync`/`DeleteMovementAsync` today | Add symmetric rollback, matching Create/Update | No PRD acceptance criterion requires it, and every existing delete path in this codebase already accepts this risk; adding it here would be new complexity the PRD never asked for |
+| *(PR review)* Where the 10% tithe rate lives | Extracted to `Financial.CashFlow.Domain/Rules/TitheRule.cs` (`Percentage`, `CalculateTithe`, `NetOfTithe`); both `TitheService` and `IncomeService` call it | Each service keeps its own private constant (`TitheService.TithePercentage` / `IncomeService.NetOfTithePercentage`, the original implementation) | The two constants encoded the same business fact independently — a rate change would need two edits that could silently drift apart. A single Domain-layer rule (matching the existing `Rules/` folder's `AnnualResultCalculator`/`YearScopedInvestmentAccountResolver` pattern) is the one place that number can live |
+| *(PR review)* `IncomeDTO`'s split-movement summary | Removed entirely — `IncomeDTO` carries only `SplitToReserve`; the created movements are read via the existing `GET /reserve/movements` | Keep `ReserveSplitMovements` (the original implementation) so the Income form could show confirmation feedback | No consumer needs it: the Reserve section already displays split movements, and F03's Income form has no requirement to duplicate that view. Keeping it would have meant deciding *now* whether Income and Reserve read-models should compose (edging toward a CQRS-style read-model split) for a need nobody has yet |
+| *(PR review)* Duplication across `AddIncomeAsync`/`UpdateIncomeAsync`/`DeleteIncomeAsync` | Extracted `SaveWithRollbackAsync(apply, rollback)` (shared by Create/Update's identical try/`ApplyAndSaveAsync`/catch/compensate shape) and `GetLinkedMovements(incomeId)` (shared by Update/Delete); merged `ValidateSplitEligibility` into `ValidateFields` since every caller invoked both together | Leave the original four separate call sites/blocks (the initial implementation) | The try/catch/compensate block was byte-for-byte identical in Create and Update apart from what `apply`/`rollback` did; a bug fix to the pattern itself would have needed two edits kept in sync by hand |
 
 ## 4. Component Overview
 
@@ -67,6 +72,7 @@ graph TD
 |-----------|--------------|---------|---------------------|
 | `Financial.CashFlow.Domain/Entities/Income.cs` | Modified | Core entity | Add `bool SplitToReserve { get; private set; } = false;`; `Create`/`UpdateDetails` accept an optional `bool splitToReserve = false` parameter |
 | `Financial.CashFlow.Domain/Entities/ReserveMovement.cs` | Modified | Core entity | Add `Income? Income { get; private set; }`; `Create` accepts an optional `Income? income = null` parameter; `Update` unchanged (never called on a linked movement) |
+| `Financial.CashFlow.Domain/Rules/TitheRule.cs` | **New**, PR review | Shared domain rule | `Percentage` (0.10m), `CalculateTithe(amount)`, `NetOfTithe(amount)` — single source of truth for the tithe rate |
 
 **Backend — Application:**
 
@@ -74,10 +80,10 @@ graph TD
 |-----------|--------------|---------|---------------------|
 | `Financial.CashFlow.Application/DTOs/IncomeCreateDTO.cs` | Modified | Create request DTO | Add `bool SplitToReserve { get; init; } = false;` |
 | `Financial.CashFlow.Application/DTOs/IncomeUpdateDTO.cs` | Modified | Update request DTO | Same shape change as Create DTO |
-| `Financial.CashFlow.Application/DTOs/IncomeDTO.cs` | Modified | Read model | Add `required bool SplitToReserve { get; init; }` and `required IReadOnlyList<BucketSplitAmountDTO> ReserveSplitMovements { get; init; }` (empty when not split) |
+| `Financial.CashFlow.Application/DTOs/IncomeDTO.cs` | Modified | Read model | Add `required bool SplitToReserve { get; init; }` only — no embedded split-movement summary (see Section 3) |
 | `Financial.CashFlow.Application/DTOs/ReserveMovementDTO.cs` | Modified | Read model | Add `Guid? IncomeId { get; init; }` (null when unlinked) |
 | `Financial.CashFlow.Application/Services/ReserveSplitMovementFactory.cs` | **New** | Shared fan-out primitive | `internal static List<ReserveMovement> Create(IEnumerable<ReserveBucket> activeBuckets, decimal amount, DateOnly date, string description, Income? income = null)` — one `ReserveMovement` per bucket via `bucket.CalculateSplitAmount(amount)`, no validation |
-| `Financial.CashFlow.Application/Services/IncomeService.cs` | Modified | Business logic | `ValidateFields` gains split-eligibility check; `AddIncomeAsync` computes the split base, builds movements via the factory, and saves Income + movements atomically with rollback-on-failure; `UpdateIncomeAsync` captures pre-update state, deletes old linked movements, builds new ones when still split, saves atomically with rollback-on-failure; `DeleteIncomeAsync` deletes linked movements in the same `ApplyAndSaveAsync` call; `ToDto` maps `SplitToReserve` and looks up linked movements to populate `ReserveSplitMovements` |
+| `Financial.CashFlow.Application/Services/IncomeService.cs` | Modified | Business logic | `ValidateFields` gains a `splitToReserve` parameter and performs the eligibility check inline (single validation pass, not a separate method call); `AddIncomeAsync` computes the split base, builds movements via the factory, and saves Income + movements atomically via a shared `SaveWithRollbackAsync` helper; `UpdateIncomeAsync` captures pre-update state, deletes old linked movements, builds new ones when still split, saves via the same helper; `DeleteIncomeAsync` deletes linked movements (found via a shared `GetLinkedMovements` helper, also used by Update) in the same `ApplyAndSaveAsync` call; `ToDto` maps `SplitToReserve` only |
 | `Financial.CashFlow.Application/Services/ReserveService.cs` | Modified | Business logic | `PostIncomeSplitAsync`'s fan-out loop replaced with a call to `ReserveSplitMovementFactory.Create` (behavior unchanged); `UpdateMovementAsync`/`DeleteMovementAsync` throw `ReserveMovementLinkedToIncomeException` when `movement.Income is not null`; `DeleteMovementAsync`'s group query adds `&& m.Income is null`; `ToDto` maps `IncomeId` |
 | `Financial.CashFlow.Application/Exceptions/ReserveMovementLinkedToIncomeException.cs` | **New** | Domain exception | Single-purpose exception, mirrors `OverdraftConfirmationRequiredException`'s shape (message-only constructor) |
 
@@ -131,12 +137,13 @@ No new endpoints. Four existing endpoints change request/response shape or gain 
 }
 ```
 
-**Response (Success - 200, new fields only):**
+**Response (Success - 200, new field only):**
 
 | Field | Type | Description |
 |-------|------|--------------|
 | `splitToReserve` | `boolean` | Echoes whether this income triggered a split |
-| `reserveSplitMovements` | `array` | One entry per active bucket the split posted to (`bucketId`, `bucketName`, `amount`); empty when `splitToReserve` is `false` |
+
+The resulting movements themselves are not embedded in the Income response — they're read via the existing `GET /reserve/movements` (filtered client-side by `incomeId`, see below), which is also where the Reserve section already displays them. Embedding a duplicate summary here was reconsidered during PR review as unnecessary coupling: the Income form has no requirement to show split details, only whether the entry is split.
 
 **Response Example:**
 ```json
@@ -150,13 +157,7 @@ No new endpoints. Four existing endpoints change request/response shape or gain 
   "bankId": "8f3b1c1a-2e3a-4b1a-9a7f-100000000001",
   "bankName": "Barclays",
   "description": "August salary",
-  "splitToReserve": true,
-  "reserveSplitMovements": [
-    { "bucketId": "8f3b1c1a-2e3a-4b1a-9a7f-300000000001", "bucketName": "Investimento", "amount": 735.10 },
-    { "bucketId": "8f3b1c1a-2e3a-4b1a-9a7f-300000000002", "bucketName": "HouseTreats", "amount": 735.10 },
-    { "bucketId": "8f3b1c1a-2e3a-4b1a-9a7f-300000000003", "bucketName": "Ariana", "amount": 367.58 },
-    { "bucketId": "8f3b1c1a-2e3a-4b1a-9a7f-300000000004", "bucketName": "Gleison", "amount": 367.42 }
-  ]
+  "splitToReserve": true
 }
 ```
 
@@ -222,6 +223,7 @@ Per `testing-guide-Financial`: `Income`/`ReserveMovement` entity tests for the n
 |-----------|-----------|--------|----------------|
 | `Tests/Financial.CashFlow.Domain.Tests/Entities/IncomeTests.cs` | Unit | `Income` entity | `SplitToReserve` defaults `false`; explicit `true` preserved; `UpdateDetails` replaces it |
 | `Tests/Financial.CashFlow.Domain.Tests/Entities/ReserveMovementTests.cs` | Unit | `ReserveMovement` entity | `Income` defaults `null`; explicit value preserved; `Update` leaves `Income` untouched |
+| `Tests/Financial.CashFlow.Domain.Tests/Rules/TitheRuleTests.cs` *(PR review)* | Unit | `TitheRule` | `CalculateTithe`/`NetOfTithe` return the correct 10%/90% split; the two sum back to the original amount |
 | `Tests/Financial.CashFlow.Application.Tests/Services/IncomeServiceTests.cs` | Unit | `IncomeService` | See key test cases below |
 | `Tests/Financial.CashFlow.Application.Tests/Services/ReserveServiceTests.cs` | Unit | `ReserveService` | Locked-movement guard on update/delete; group-delete excludes linked movements; `PostIncomeSplitAsync`'s existing behavior/tests unaffected by the factory refactor |
 | `Tests/Financial.CashFlow.Infrastructure.Tests/Persistence/CashFlowSerializerAdapterTests.cs` | Integration | Round-trip | A linked `ReserveMovement`'s `Income` round-trips to the same instance as its owning `Income`; an unlinked movement's `Income` round-trips as `null` |
@@ -257,7 +259,7 @@ Per `testing-guide-Financial`: `Income`/`ReserveMovement` entity tests for the n
 
 | Test Function | Description | Assertions |
 |----------------|-------------|------------|
-| `AddIncome_WithSplitForEligibleSource_ReturnsOkWithReserveSplitMovements` | New | 200; response `reserveSplitMovements` has one entry per seeded active bucket |
+| `AddIncome_WithSplitForEligibleSource_ReturnsOkAndCreatesLinkedReserveMovements` | New | 200; `GET /reserve/movements` has one entry per seeded active bucket linked to the new income |
 | `AddIncome_WithSplitForIneligibleSource_ReturnsBadRequest` | New | 400 |
 | `DeleteIncome_WithLinkedMovements_RemovesThemFromMovementHistory` | New | Subsequent `GET /reserve/movements` no longer lists the deleted income's movements |
 

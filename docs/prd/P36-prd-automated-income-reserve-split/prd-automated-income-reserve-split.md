@@ -118,8 +118,8 @@ The two records are now genuinely linked: editing a split-linked Income recalcul
 - `PUT /reserve/movements/{id}` and `DELETE /reserve/movements/{id}` reject any request targeting a `ReserveMovement` whose `IncomeId` is non-null. Movements with `IncomeId = null` — every movement that exists today, plus every movement created by the unchanged manual "New Income Split" feature — are completely unaffected and keep their current full edit/delete behavior, including the existing same-Date-and-Description group delete.
 
 **Experience:**
-- No new screen of its own; this is orchestration behind the Income form's existing Save action (F03) and behind the Reserve section's existing movement Edit/Delete actions (F04).
-- `IncomeDTO` (the Income read/response shape) includes `SplitToReserve` and a summary of the resulting split (per-bucket amounts and total, mirroring what the manual split's `IncomeSplitResultDTO` already returns), so the Income form can show confirmation feedback after a successful save.
+- No new screen of its own; this is orchestration behind the Income form's existing Save action (F03) and behind the Reserve section's existing movement Edit/Delete actions (F04). The resulting split itself is only ever shown in the Reserve section (existing behavior) — the Income form does not duplicate it.
+- `IncomeDTO` (the Income read/response shape) includes `SplitToReserve`, so the Income form can reflect whether a given entry is currently split.
 
 **Error Handling:**
 - Submitting `SplitToReserve = true` for an `IncomeSource` with `AutoSplitToReserve = false` → rejected with "This income source does not support automatic reserve splitting."
