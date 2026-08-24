@@ -29,7 +29,7 @@ public class CashFlowSerializerAdapterTests
         bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
         var destinationBank = Bank.Create("Trading212", roundUpEnabled: true);
         var investmentAccount = InvestmentAccount.Create("PlatinumVisa8003", isActive: true, isLiability: true);
-        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+        var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, autoSplitToReserve: true);
         var expense = Expense.Create(
             new DateOnly(2026, 7, 15),
             "Weekly groceries",
@@ -113,6 +113,7 @@ public class CashFlowSerializerAdapterTests
             resultIncomeSource.Name.Should().Be(incomeSource.Name);
             resultIncomeSource.IsActive.Should().Be(incomeSource.IsActive);
             resultIncomeSource.Group.Should().Be(incomeSource.Group);
+            resultIncomeSource.AutoSplitToReserve.Should().Be(incomeSource.AutoSplitToReserve);
             var resultIncome = result.Incomes.Should().ContainSingle().Which;
             resultIncome.Id.Should().Be(income.Id);
             resultIncome.Date.Should().Be(income.Date);

@@ -90,4 +90,38 @@ public class IncomeSourceMigratorTests
 
         act.Should().Throw<ArgumentNullException>();
     }
+
+    [Fact]
+    public void Migrate_OnEmptyData_SeedsAriana_WithAutoSplitToReserveTrue()
+    {
+        var data = CashFlowData.Create();
+
+        IncomeSourceMigrator.Migrate(data);
+
+        data.IncomeSources.Should().ContainSingle(s => s.Name == "Ariana" && s.AutoSplitToReserve);
+    }
+
+    [Fact]
+    public void Migrate_OnEmptyData_SeedsNonArianaSources_WithAutoSplitToReserveFalse()
+    {
+        var data = CashFlowData.Create();
+
+        IncomeSourceMigrator.Migrate(data);
+
+        data.IncomeSources.Where(s => s.Name != "Ariana").Should().OnlyContain(s => !s.AutoSplitToReserve);
+    }
+
+    [Fact]
+    public void Migrate_WithArianaAlreadyPresentWithoutFlag_LeavesExistingRecordUnchanged()
+    {
+        var data = CashFlowData.Create();
+        var preExistingAriana = IncomeSource.Create("Ariana", IncomeGroup.Salary);
+        data.AddIncomeSource(preExistingAriana);
+
+        var summary = IncomeSourceMigrator.Migrate(data);
+
+        summary.SourcesAlreadyPresentCount.Should().Be(1);
+        data.IncomeSources.Should().ContainSingle(s => s.Name == "Ariana").Which.Should().BeSameAs(preExistingAriana);
+        preExistingAriana.AutoSplitToReserve.Should().BeFalse();
+    }
 }

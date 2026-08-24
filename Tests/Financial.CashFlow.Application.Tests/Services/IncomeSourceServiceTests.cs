@@ -82,6 +82,23 @@ public class IncomeSourceServiceTests
     }
 
     [Fact]
+    public void GetIncomeSources_ReturnsAutoSplitToReserveField()
+    {
+        var ariana = IncomeSource.Create("Ariana", IncomeGroup.Salary, autoSplitToReserve: true);
+        var gleison = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+        _repository.IncomeSources.Add(ariana);
+        _repository.IncomeSources.Add(gleison);
+
+        var result = _sut.GetIncomeSources();
+
+        using (new AssertionScope())
+        {
+            result.Should().ContainSingle(s => s.Name == "Ariana").Which.AutoSplitToReserve.Should().BeTrue();
+            result.Should().ContainSingle(s => s.Name == "Gleison").Which.AutoSplitToReserve.Should().BeFalse();
+        }
+    }
+
+    [Fact]
     public void Constructor_WithNullLogger_Throws()
     {
         Action act = () => new IncomeSourceService(_repository, _tracer, null!);

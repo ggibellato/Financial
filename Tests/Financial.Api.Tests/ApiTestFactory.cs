@@ -104,10 +104,10 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000006", "Name": "RetiredTestCard", "IsActive": false }
           ],
           "IncomeSources": [
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000001", "Name": "Gleison", "IsActive": true, "Group": "Salary" },
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000002", "Name": "Ariana", "IsActive": true, "Group": "Salary" },
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000003", "Name": "Lottery", "IsActive": true, "Group": "NonReportable" },
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000004", "Name": "DividendoJuros", "IsActive": true, "Group": "DividendoJuros" }
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000001", "Name": "Gleison", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000002", "Name": "Ariana", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": true },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000003", "Name": "Lottery", "IsActive": true, "Group": "NonReportable", "AutoSplitToReserve": false },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000004", "Name": "DividendoJuros", "IsActive": true, "Group": "DividendoJuros", "AutoSplitToReserve": false }
           ],
           "ReserveBuckets": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000001", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 },
