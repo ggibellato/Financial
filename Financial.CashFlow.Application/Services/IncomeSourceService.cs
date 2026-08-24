@@ -50,6 +50,7 @@ public sealed class IncomeSourceService : IIncomeSourceService
         Id = source.Id,
         Name = source.Name,
         IsActive = source.IsActive,
-        Group = source.Group.ToString()
+        Group = source.Group.ToString(),
+        AutoSplitToReserve = source.AutoSplitToReserve
     };
 }

@@ -18,10 +18,10 @@ public class MonthlyViewModelTests
 
     private static readonly List<IncomeSourceDTO> DefaultIncomeSources =
     [
-        new() { Id = GleisonSourceId, Name = "Gleison", IsActive = true, Group = "Salary" },
-        new() { Id = ArianaSourceId, Name = "Ariana", IsActive = true, Group = "Salary" },
-        new() { Id = LotterySourceId, Name = "Lottery", IsActive = true, Group = "NonReportable" },
-        new() { Id = DividendoJurosSourceId, Name = "DividendoJuros", IsActive = true, Group = "DividendoJuros" },
+        new() { Id = GleisonSourceId, Name = "Gleison", IsActive = true, Group = "Salary", AutoSplitToReserve = false },
+        new() { Id = ArianaSourceId, Name = "Ariana", IsActive = true, Group = "Salary", AutoSplitToReserve = true },
+        new() { Id = LotterySourceId, Name = "Lottery", IsActive = true, Group = "NonReportable", AutoSplitToReserve = false },
+        new() { Id = DividendoJurosSourceId, Name = "DividendoJuros", IsActive = true, Group = "DividendoJuros", AutoSplitToReserve = false },
     ];
 
     private static readonly Guid BaAmexId = Guid.NewGuid();
@@ -442,10 +442,10 @@ public class MonthlyViewModelTests
         {
             IncomeSources =
             [
-                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "DividendoJuros", IsActive = true, Group = "DividendoJuros" },
-                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Lottery", IsActive = true, Group = "NonReportable" },
-                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Ariana", IsActive = true, Group = "Salary" },
-                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Gleison", IsActive = true, Group = "Salary" },
+                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "DividendoJuros", IsActive = true, Group = "DividendoJuros", AutoSplitToReserve = false },
+                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Lottery", IsActive = true, Group = "NonReportable", AutoSplitToReserve = false },
+                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Ariana", IsActive = true, Group = "Salary", AutoSplitToReserve = true },
+                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Gleison", IsActive = true, Group = "Salary", AutoSplitToReserve = false },
             ],
         };
         var (viewModel, _, _, _, _, _) = CreateViewModel(incomeSourceService: incomeSourceService);
@@ -462,8 +462,8 @@ public class MonthlyViewModelTests
         {
             IncomeSources =
             [
-                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Gleison", IsActive = true, Group = "Salary" },
-                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "RetiredSource", IsActive = false, Group = "NonReportable" },
+                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "Gleison", IsActive = true, Group = "Salary", AutoSplitToReserve = false },
+                new IncomeSourceDTO { Id = Guid.NewGuid(), Name = "RetiredSource", IsActive = false, Group = "NonReportable", AutoSplitToReserve = false },
             ],
         };
         var (viewModel, _, _, _, _, _) = CreateViewModel(incomeSourceService: incomeSourceService);

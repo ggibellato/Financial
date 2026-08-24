@@ -48,4 +48,20 @@ public class IncomeSourceTests
 
         act.Should().Throw<ArgumentException>();
     }
+
+    [Fact]
+    public void Create_WithoutAutoSplitToReserve_DefaultsToFalse()
+    {
+        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+
+        incomeSource.AutoSplitToReserve.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Create_WithAutoSplitToReserveTrue_AssignsTrue()
+    {
+        var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, autoSplitToReserve: true);
+
+        incomeSource.AutoSplitToReserve.Should().BeTrue();
+    }
 }

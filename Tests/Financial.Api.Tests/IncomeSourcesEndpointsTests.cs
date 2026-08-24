@@ -22,6 +22,18 @@ public class IncomeSourcesEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task GetIncomeSources_ReturnsAutoSplitToReserveInResponse()
+    {
+        var response = await Client.GetAsync("/api/v1/financial/income-sources");
+
+        var sources = await response.Content.ReadFromJsonAsync<List<IncomeSourceDTO>>();
+        sources.Should().ContainSingle(s => s.Name == "Ariana" && s.AutoSplitToReserve);
+        sources.Should().ContainSingle(s => s.Name == "Gleison" && !s.AutoSplitToReserve);
+        sources.Should().ContainSingle(s => s.Name == "Lottery" && !s.AutoSplitToReserve);
+        sources.Should().ContainSingle(s => s.Name == "DividendoJuros" && !s.AutoSplitToReserve);
+    }
+
+    [Fact]
     public async Task GetIncomeSources_RequiresNoParameters_AndReturnsFullUnfilteredList()
     {
         var response = await Client.GetAsync("/api/v1/financial/income-sources");

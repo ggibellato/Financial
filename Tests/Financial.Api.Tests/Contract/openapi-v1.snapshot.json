@@ -1522,6 +1522,9 @@
       },
       "IncomeSourceDTO": {
         "properties": {
+          "autoSplitToReserve": {
+            "type": "boolean"
+          },
           "group": {
             "type": "string"
           },
@@ -1540,7 +1543,8 @@
           "id",
           "name",
           "isActive",
-          "group"
+          "group",
+          "autoSplitToReserve"
         ],
         "type": "object"
       },

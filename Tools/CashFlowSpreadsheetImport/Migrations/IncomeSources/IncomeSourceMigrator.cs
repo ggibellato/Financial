@@ -10,12 +10,12 @@ namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migr
 /// </summary>
 public static class IncomeSourceMigrator
 {
-    private static readonly (string Name, IncomeGroup Group)[] SeededIncomeSources =
+    private static readonly (string Name, IncomeGroup Group, bool AutoSplitToReserve)[] SeededIncomeSources =
     [
-        ("Gleison", IncomeGroup.Salary),
-        ("Ariana", IncomeGroup.Salary),
-        ("Lottery", IncomeGroup.NonReportable),
-        ("DividendoJuros", IncomeGroup.DividendoJuros)
+        ("Gleison", IncomeGroup.Salary, false),
+        ("Ariana", IncomeGroup.Salary, true),
+        ("Lottery", IncomeGroup.NonReportable, false),
+        ("DividendoJuros", IncomeGroup.DividendoJuros, false)
     ];
 
     public static IncomeSourceMigrationSummary Migrate(CashFlowData data)
@@ -32,7 +32,7 @@ public static class IncomeSourceMigrator
 
     private static void SeedIncomeSources(CashFlowData data, IncomeSourceMigrationSummary summary)
     {
-        foreach (var (name, group) in SeededIncomeSources)
+        foreach (var (name, group, autoSplitToReserve) in SeededIncomeSources)
         {
             if (data.IncomeSources.Any(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)))
             {
@@ -40,7 +40,7 @@ public static class IncomeSourceMigrator
                 continue;
             }
 
-            data.AddIncomeSource(IncomeSource.Create(name, group));
+            data.AddIncomeSource(IncomeSource.Create(name, group, autoSplitToReserve: autoSplitToReserve));
             summary.CountSourceSeeded();
         }
     }
