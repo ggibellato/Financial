@@ -46,9 +46,7 @@ public sealed class ReserveService : IReserveService
                 throw new ArgumentException("No reserve bucket is currently active.");
             }
 
-            var movements = activeBuckets
-                .Select(bucket => ReserveMovement.Create(bucket, bucket.CalculateSplitAmount(request.Amount), request.Date, request.Description))
-                .ToList();
+            var movements = ReserveSplitMovementFactory.Create(activeBuckets, request.Amount, request.Date, request.Description);
 
             try
             {
@@ -234,6 +232,7 @@ public sealed class ReserveService : IReserveService
             }
 
             var movement = _repository.GetReserveMovements().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
+            EnsureNotLinkedToIncome(movement);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -259,11 +258,14 @@ public sealed class ReserveService : IReserveService
         try
         {
             var movement = _repository.GetReserveMovements().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
+            EnsureNotLinkedToIncome(movement);
 
-            // Movements from the same income split share Date+Description (see PostIncomeSplitAsync) -
-            // deleting one deletes the whole split, not just this bucket's line.
+            // Movements from the same manual split share Date+Description (see PostIncomeSplitAsync) -
+            // deleting one deletes the whole split, not just this bucket's line. Income-linked
+            // movements are excluded even if they coincidentally match, since they can only be
+            // changed by editing their parent income.
             var group = _repository.GetReserveMovements()
-                .Where(m => m.Date == movement.Date && m.Description == movement.Description)
+                .Where(m => m.Date == movement.Date && m.Description == movement.Description && m.Income is null)
                 .ToList();
 
             await _repository.ApplyAndSaveAsync(() =>
@@ -295,6 +297,15 @@ public sealed class ReserveService : IReserveService
     private decimal GetBalance(ReserveBucket bucket) =>
         _repository.GetReserveMovements().Where(m => m.Bucket == bucket).Sum(m => m.Amount);
 
+    private static void EnsureNotLinkedToIncome(ReserveMovement movement)
+    {
+        if (movement.Income is not null)
+        {
+            throw new ReserveMovementLinkedToIncomeException(
+                "This reserve movement is linked to an income and can only be changed by editing that income.");
+        }
+    }
+
     private static ReserveMovementDTO ToDto(ReserveMovement movement) => new()
     {
         Id = movement.Id,
@@ -302,6 +313,7 @@ public sealed class ReserveService : IReserveService
         BucketName = movement.Bucket.Name,
         Amount = movement.Amount,
         Date = movement.Date,
-        Description = movement.Description
+        Description = movement.Description,
+        IncomeId = movement.Income?.Id
     };
 }
