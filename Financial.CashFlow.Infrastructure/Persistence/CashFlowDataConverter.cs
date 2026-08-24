@@ -45,12 +45,18 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         foreach (var category in categories) data.AddCategory(category);
 
         foreach (var expense in DeserializeCollection<Expense>(root, "Expenses", resolvedOptions)) data.AddExpense(expense);
+
+        // Incomes must resolve - and populate context.Incomes - before ReserveMovements, since a
+        // linked movement's IncomeId reference converter reads that same lookup at Read time.
+        var incomes = DeserializeCollection<Income>(root, "Incomes", resolvedOptions);
+        foreach (var income in incomes) context.Incomes[income.Id] = income;
+        foreach (var income in incomes) data.AddIncome(income);
+
         foreach (var movement in DeserializeCollection<ReserveMovement>(root, "ReserveMovements", resolvedOptions)) data.AddReserveMovement(movement);
         foreach (var statement in DeserializeCollection<CardStatement>(root, "CardStatements", resolvedOptions)) data.AddCardStatement(statement);
         foreach (var bill in DeserializeCollection<RecurringBill>(root, "RecurringBills", resolvedOptions)) data.AddRecurringBill(bill);
         foreach (var entry in DeserializeCollection<MaeLedgerEntry>(root, "MaeLedgerEntries", resolvedOptions)) data.AddMaeLedgerEntry(entry);
         foreach (var snapshot in DeserializeCollection<InvestmentSnapshot>(root, "InvestmentSnapshots", resolvedOptions)) data.AddInvestmentSnapshot(snapshot);
-        foreach (var income in DeserializeCollection<Income>(root, "Incomes", resolvedOptions)) data.AddIncome(income);
         foreach (var transfer in DeserializeCollection<Transfer>(root, "Transfers", resolvedOptions)) data.AddTransfer(transfer);
         foreach (var adjustment in DeserializeCollection<BalanceAdjustment>(root, "BalanceAdjustments", resolvedOptions)) data.AddBalanceAdjustment(adjustment);
 
