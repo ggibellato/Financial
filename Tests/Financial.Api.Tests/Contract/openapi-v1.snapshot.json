@@ -1454,6 +1454,9 @@
           "netValue": {
             "format": "double",
             "type": "number"
+          },
+          "splitToReserve": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -1509,6 +1512,15 @@
           "netValue": {
             "format": "double",
             "type": "number"
+          },
+          "reserveSplitMovements": {
+            "items": {
+              "$ref": "#/components/schemas/BucketSplitAmountDTO"
+            },
+            "type": "array"
+          },
+          "splitToReserve": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -1516,7 +1528,9 @@
           "date",
           "incomeSourceId",
           "incomeSourceName",
-          "netValue"
+          "netValue",
+          "splitToReserve",
+          "reserveSplitMovements"
         ],
         "type": "object"
       },
@@ -1621,6 +1635,9 @@
           "netValue": {
             "format": "double",
             "type": "number"
+          },
+          "splitToReserve": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -2199,6 +2216,13 @@
           "id": {
             "format": "uuid",
             "type": "string"
+          },
+          "incomeId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "required": [
