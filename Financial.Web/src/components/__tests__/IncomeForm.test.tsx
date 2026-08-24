@@ -10,10 +10,10 @@ const BANKS: BankDto[] = [
 ]
 
 const INCOME_SOURCES: IncomeSourceDto[] = [
-  { id: '1', name: 'Gleison', isActive: true, group: 'Salary' },
-  { id: '2', name: 'Ariana', isActive: true, group: 'Salary' },
-  { id: '3', name: 'Lottery', isActive: true, group: 'NonReportable' },
-  { id: '4', name: 'DividendoJuros', isActive: true, group: 'DividendoJuros' },
+  { id: '1', name: 'Gleison', isActive: true, group: 'Salary', autoSplitToReserve: false },
+  { id: '2', name: 'Ariana', isActive: true, group: 'Salary', autoSplitToReserve: true },
+  { id: '3', name: 'Lottery', isActive: true, group: 'NonReportable', autoSplitToReserve: false },
+  { id: '4', name: 'DividendoJuros', isActive: true, group: 'DividendoJuros', autoSplitToReserve: false },
 ]
 
 const baseProps = {
@@ -89,7 +89,7 @@ describe('IncomeForm', () => {
   it('excludes an inactive income source from the dropdown', () => {
     const sources: IncomeSourceDto[] = [
       ...INCOME_SOURCES,
-      { id: '5', name: 'RetiredSource', isActive: false, group: 'NonReportable' },
+      { id: '5', name: 'RetiredSource', isActive: false, group: 'NonReportable', autoSplitToReserve: false },
     ]
     render(<IncomeForm {...baseProps} incomeSources={sources} />)
 

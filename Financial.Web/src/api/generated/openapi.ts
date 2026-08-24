@@ -4318,6 +4318,7 @@ export interface components {
             netValue: number;
         };
         IncomeSourceDTO: {
+            autoSplitToReserve: boolean;
             group: string;
             /** Format: uuid */
             id: string;
