@@ -24,6 +24,7 @@ const baseProps = {
   netValue: '',
   bank: 'bank-barclays',
   description: '',
+  splitToReserve: false,
   banks: BANKS,
   incomeSources: INCOME_SOURCES,
   isSaving: false,
@@ -122,5 +123,33 @@ describe('IncomeForm', () => {
 
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Updated note' } })
     expect(onFieldChange).toHaveBeenCalledWith('description', 'Updated note')
+  })
+
+  it('shows the split-to-reserve checkbox only for a source that allows it', () => {
+    const { rerender } = render(<IncomeForm {...baseProps} incomeSource="1" />)
+    expect(screen.queryByLabelText('Split to reserve')).not.toBeInTheDocument()
+
+    rerender(<IncomeForm {...baseProps} incomeSource="2" />)
+    expect(screen.getByLabelText('Split to reserve')).toBeInTheDocument()
+
+    rerender(<IncomeForm {...baseProps} incomeSource="3" />)
+    expect(screen.queryByLabelText('Split to reserve')).not.toBeInTheDocument()
+  })
+
+  it('reflects the splitToReserve prop as the checkbox state', () => {
+    const { rerender } = render(<IncomeForm {...baseProps} incomeSource="2" splitToReserve={true} />)
+    expect(screen.getByLabelText('Split to reserve')).toBeChecked()
+
+    rerender(<IncomeForm {...baseProps} incomeSource="2" splitToReserve={false} />)
+    expect(screen.getByLabelText('Split to reserve')).not.toBeChecked()
+  })
+
+  it('reports toggling the split checkbox via onFieldChange', () => {
+    const onFieldChange = vi.fn()
+    render(<IncomeForm {...baseProps} incomeSource="2" splitToReserve={true} onFieldChange={onFieldChange} />)
+
+    fireEvent.click(screen.getByLabelText('Split to reserve'))
+
+    expect(onFieldChange).toHaveBeenCalledWith('splitToReserve', 'false')
   })
 })

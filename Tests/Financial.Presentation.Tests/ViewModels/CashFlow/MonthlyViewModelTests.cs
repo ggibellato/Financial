@@ -588,6 +588,139 @@ public class MonthlyViewModelTests
     }
 
     [Fact]
+    public async Task ShowIncomeSplitField_ForEligibleSource_IsTrue()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+
+        viewModel.IncomeFormSource = ArianaSourceId;
+
+        viewModel.ShowIncomeSplitField.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ShowIncomeSplitField_ForIneligibleSource_IsFalse()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+
+        viewModel.IncomeFormSource = GleisonSourceId;
+
+        viewModel.ShowIncomeSplitField.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ShowCreateIncomeForm_DefaultsIncomeFormSplitToReserve_FromInitialSourceEligibility()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+
+        viewModel.IncomeFormSource.Should().Be(GleisonSourceId); // not eligible
+        viewModel.IncomeFormSplitToReserve.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SettingIncomeFormSource_ToEligibleSource_SetsIncomeFormSplitToReserveTrue()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+
+        viewModel.IncomeFormSource = ArianaSourceId;
+
+        viewModel.IncomeFormSplitToReserve.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SettingIncomeFormSource_BackToIneligibleSource_SetsIncomeFormSplitToReserveFalse()
+    {
+        var (viewModel, _, _, _, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+        viewModel.IncomeFormSource = ArianaSourceId;
+
+        viewModel.IncomeFormSource = GleisonSourceId;
+
+        viewModel.IncomeFormSplitToReserve.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ShowEditIncomeForm_PopulatesIncomeFormSplitToReserve_FromIncome()
+    {
+        var (viewModel, _, _, banks, _, _) = CreateViewModel();
+        var income = new IncomeDTO
+        {
+            Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = ArianaSourceId, IncomeSourceName = "Ariana",
+            NetValue = 2450m, BankId = banks.Banks[0].Id, BankName = banks.Banks[0].Name, Description = null,
+            SplitToReserve = true,
+        };
+        await viewModel.RefreshAsync();
+
+        viewModel.EditIncomeCommand.Execute(income);
+
+        viewModel.IncomeFormSplitToReserve.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SaveIncomeAsync_WithSplitChecked_SendsSplitToReserveTrue()
+    {
+        var (viewModel, _, incomes, banks, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormSource = ArianaSourceId;
+        viewModel.IncomeFormNetValue = "2450";
+        viewModel.IncomeFormBank = banks.Banks[0].Id;
+
+        await viewModel.SaveIncomeAsync();
+
+        incomes.LastCreateRequest.Should().NotBeNull();
+        incomes.LastCreateRequest!.SplitToReserve.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SaveIncomeAsync_WhenResponseSplitToReserveTrue_SetsConfirmationMessage()
+    {
+        var (viewModel, _, _, banks, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormSource = ArianaSourceId;
+        viewModel.IncomeFormNetValue = "2450";
+        viewModel.IncomeFormBank = banks.Banks[0].Id;
+
+        var saveTask = viewModel.SaveIncomeAsync();
+        // The confirmation message is set before the hide-delay awaits, so it's observable
+        // immediately once the save itself (not the delay) has completed.
+        await Task.Delay(50);
+
+        viewModel.IncomeSplitConfirmationMessage.Should().Be("Income saved and split to reserve");
+
+        await saveTask;
+    }
+
+    [Fact]
+    public async Task SaveIncomeAsync_WhenResponseSplitToReserveFalse_LeavesConfirmationMessageNull()
+    {
+        var (viewModel, _, incomes, banks, _, _) = CreateViewModel();
+        await viewModel.RefreshAsync();
+        viewModel.ShowCreateIncomeFormCommand.Execute(null);
+        viewModel.IncomeFormDate = DateTime.Today;
+        viewModel.IncomeFormSource = LotterySourceId;
+        viewModel.IncomeFormNetValue = "50";
+        viewModel.IncomeFormBank = banks.Banks[0].Id;
+
+        await viewModel.SaveIncomeAsync();
+
+        incomes.LastCreateRequest!.SplitToReserve.Should().BeFalse();
+        viewModel.IncomeSplitConfirmationMessage.Should().BeNull();
+    }
+
+    [Fact]
     public async Task EditExpense_ValidForm_CallsUpdateServiceAndRefreshes()
     {
         var (viewModel, expenses, _, banks, _, _) = CreateViewModel();

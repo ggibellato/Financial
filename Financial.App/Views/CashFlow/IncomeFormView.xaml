@@ -99,11 +99,16 @@
                           SelectedValuePath="Id"/>
             </StackPanel>
 
-            <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,0,0,8">
+            <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,8,8">
                 <TextBlock Text="Description" Style="{StaticResource FieldLabelStyle}"/>
                 <TextBox AutomationProperties.Name="Description"
                          Text="{Binding IncomeFormDescription, UpdateSourceTrigger=PropertyChanged}"/>
             </StackPanel>
+
+            <CheckBox Grid.Row="2" Grid.Column="3" Margin="0,0,0,8" VerticalAlignment="Bottom"
+                      Content="Split to reserve" AutomationProperties.Name="Split to reserve"
+                      Visibility="{Binding ShowIncomeSplitField, Converter={StaticResource BoolToVisibilityConverter}}"
+                      IsChecked="{Binding IncomeFormSplitToReserve, UpdateSourceTrigger=PropertyChanged}"/>
 
             <TextBlock Grid.Row="3" Grid.ColumnSpan="4" TextWrapping="Wrap" Margin="0,0,0,8"
                        Foreground="{DynamicResource SystemFillColorCriticalBrush}"

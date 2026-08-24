@@ -89,4 +89,24 @@ describe('IncomeSection', () => {
 
     expect(onNewIncome).toHaveBeenCalledOnce()
   })
+
+  it('shows the split confirmation message when present', () => {
+    render(
+      <IncomeSection
+        incomes={INCOMES}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onNewIncome={vi.fn()}
+        splitConfirmationMessage="Income saved and split to reserve"
+      />,
+    )
+
+    expect(screen.getByText('Income saved and split to reserve')).toBeInTheDocument()
+  })
+
+  it('renders nothing extra when the split confirmation message is absent', () => {
+    render(<IncomeSection incomes={INCOMES} onEdit={vi.fn()} onDelete={vi.fn()} onNewIncome={vi.fn()} />)
+
+    expect(screen.queryByText('Income saved and split to reserve')).not.toBeInTheDocument()
+  })
 })
