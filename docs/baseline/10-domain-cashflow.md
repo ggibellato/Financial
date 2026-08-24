@@ -180,7 +180,7 @@ No live bank-API sync — entirely user-entered/suggested (**CONFIRMED**, P13 §
 - Buckets are seeded reference data, no CRUD API (`GET /reserve-buckets` only) — **CONFIRMED** (P28).
 - A withdrawal exceeding a bucket's balance throws `OverdraftConfirmationRequiredException` (409) unless explicitly confirmed — **OBSERVED** (this is the confirmed home of that exception).
 - Deleting one movement from an income split deletes the entire split group (all movements sharing the same Date+Description) — **OBSERVED**, explicit code comment confirms intentional.
-- Default seeded buckets are `Investimento`, `HouseTreats`, `Ariana`, `Gleison`, sourced directly from the spreadsheet, which uses the same fixed set — **CONFIRMED, accepted as-is**. (P28 made buckets configurable entities rather than a fixed enum, but the 4 defaults match the spreadsheet's fixed list — this is fine, not a documentation defect requiring correction.)
+- Default seeded buckets are `Investimento`, `HouseTreats`, `Ariana`, `Gleison`, `Samuel`, sourced directly from the spreadsheet, which uses the same fixed set — **CONFIRMED, accepted as-is**. (P28 made buckets configurable entities rather than a fixed enum, but the 5 defaults match the spreadsheet's fixed list — this is fine, not a documentation defect requiring correction. `Samuel` was added as a 5th bucket with all buckets rebalanced to an equal 20% split, 2026-08-24.)
 
 **Known gap:** A non-blocking warning for when active bucket percentages don't sum to ~100% is a documented P28 objective but was not found implemented in `ReserveService`. **Confirmed missing** — it should be generated server-side and presented to the user in the UI. Not built as of this baseline.
 

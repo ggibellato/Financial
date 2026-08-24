@@ -20,7 +20,7 @@ The CashFlow domain must allow users to:
 
 * Record monthly expenses.
 * Record incomes.
-* Control Reserve buckets — a separate running balance for each of the specified buckets (Investimento, HouseTreats, Ariana, Gleison).
+* Control Reserve buckets — a separate running balance for each of the specified buckets (Investimento, HouseTreats, Ariana, Gleison, Samuel).
 * Control borrowed money between myself and my mother (an informal personal loan between us).
 * Record investments of quick access; these are not the same investments controlled by the Investment domain — they are more like reserve funds.
 * Record and control credit card expenses.
@@ -121,7 +121,7 @@ The following features are built as React pages only — the CashFlow domain has
 
 * **Monthly (Mensais)** — primary month-by-month view of income vs. expenses, with a category totals grid, gross/net income breakdown, and a dynamic credit-card-area scope.
 * **Banks & Cards** — tracks bank account balances and credit card statement balances per month.
-* **Reserve** — tracks movements in and out of four fixed savings-split buckets (`Investimento`, `HouseTreats`, `Ariana`, `Gleison`), each with its own running balance.
+* **Reserve** — tracks movements in and out of five fixed savings-split buckets (`Investimento`, `HouseTreats`, `Ariana`, `Gleison`, `Samuel`), each with its own running balance.
 * **Recurring Bills** — CRUD management of fixed recurring monthly bills.
 * **Investment Snapshots** — monthly snapshot of quick-access accounts (savings, ISAs, Trading 212 brokerage balance, etc.) for net-worth tracking; lighter-weight than the Investment domain's full transaction-level tracking.
 * **Annual Summary** — yearly rollups including gross-vs-net/after-tax salary comparisons (`SalaryAfterTaxes`/`TaxDifference`) and server-side Category Totals averages scoped to the correct months.

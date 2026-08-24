@@ -7,18 +7,19 @@ namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.ReserveBuckets;
 public class ReserveBucketMigratorTests
 {
     [Fact]
-    public void Migrate_OnEmptyData_SeedsAllFourBucketsWithCorrectPercentages()
+    public void Migrate_OnEmptyData_SeedsAllFiveBucketsWithCorrectPercentages()
     {
         var data = CashFlowData.Create();
 
         var summary = ReserveBucketMigrator.Migrate(data);
 
-        summary.BucketsSeededCount.Should().Be(4);
+        summary.BucketsSeededCount.Should().Be(5);
         summary.BucketsAlreadyPresentCount.Should().Be(0);
-        data.ReserveBuckets.Should().ContainSingle(b => b.Name == "Investimento" && b.SplitPercentage == 33.33m && b.IsActive);
-        data.ReserveBuckets.Should().ContainSingle(b => b.Name == "HouseTreats" && b.SplitPercentage == 33.33m && b.IsActive);
-        data.ReserveBuckets.Should().ContainSingle(b => b.Name == "Ariana" && b.SplitPercentage == 16.67m && b.IsActive);
-        data.ReserveBuckets.Should().ContainSingle(b => b.Name == "Gleison" && b.SplitPercentage == 16.67m && b.IsActive);
+        data.ReserveBuckets.Should().ContainSingle(b => b.Name == "Investimento" && b.SplitPercentage == 20m && b.IsActive);
+        data.ReserveBuckets.Should().ContainSingle(b => b.Name == "HouseTreats" && b.SplitPercentage == 20m && b.IsActive);
+        data.ReserveBuckets.Should().ContainSingle(b => b.Name == "Ariana" && b.SplitPercentage == 20m && b.IsActive);
+        data.ReserveBuckets.Should().ContainSingle(b => b.Name == "Gleison" && b.SplitPercentage == 20m && b.IsActive);
+        data.ReserveBuckets.Should().ContainSingle(b => b.Name == "Samuel" && b.SplitPercentage == 20m && b.IsActive);
     }
 
     [Fact]
@@ -31,8 +32,8 @@ public class ReserveBucketMigratorTests
         var secondSummary = ReserveBucketMigrator.Migrate(data);
 
         secondSummary.BucketsSeededCount.Should().Be(0);
-        secondSummary.BucketsAlreadyPresentCount.Should().Be(4);
-        data.ReserveBuckets.Should().HaveCount(4);
+        secondSummary.BucketsAlreadyPresentCount.Should().Be(5);
+        data.ReserveBuckets.Should().HaveCount(5);
         data.ReserveBuckets.Select(b => b.Id).OrderBy(id => id).Should().Equal(idsAfterFirstRun);
     }
 
@@ -40,13 +41,13 @@ public class ReserveBucketMigratorTests
     public void Migrate_WithSomeBucketsAlreadySeeded_OnlySeedsTheMissingOnes()
     {
         var data = CashFlowData.Create();
-        data.AddReserveBucket(ReserveBucket.Create("Investimento", 33.33m));
+        data.AddReserveBucket(ReserveBucket.Create("Investimento", 20m));
 
         var summary = ReserveBucketMigrator.Migrate(data);
 
-        summary.BucketsSeededCount.Should().Be(3);
+        summary.BucketsSeededCount.Should().Be(4);
         summary.BucketsAlreadyPresentCount.Should().Be(1);
-        data.ReserveBuckets.Should().HaveCount(4);
+        data.ReserveBuckets.Should().HaveCount(5);
     }
 
     [Fact]
@@ -106,10 +107,11 @@ public class ReserveBucketMigratorTests
     public void Migrate_WithInactiveBucketExcludedFromSum_StillReportsBalanced()
     {
         var data = CashFlowData.Create();
-        data.AddReserveBucket(ReserveBucket.Create("Investimento", 33.33m));
-        data.AddReserveBucket(ReserveBucket.Create("HouseTreats", 33.33m));
-        data.AddReserveBucket(ReserveBucket.Create("Ariana", 16.67m));
-        data.AddReserveBucket(ReserveBucket.Create("Gleison", 16.67m));
+        data.AddReserveBucket(ReserveBucket.Create("Investimento", 20m));
+        data.AddReserveBucket(ReserveBucket.Create("HouseTreats", 20m));
+        data.AddReserveBucket(ReserveBucket.Create("Ariana", 20m));
+        data.AddReserveBucket(ReserveBucket.Create("Gleison", 20m));
+        data.AddReserveBucket(ReserveBucket.Create("Samuel", 20m));
         data.AddReserveBucket(ReserveBucket.Create("Retired", 50m, isActive: false));
 
         var summary = ReserveBucketMigrator.Migrate(data);

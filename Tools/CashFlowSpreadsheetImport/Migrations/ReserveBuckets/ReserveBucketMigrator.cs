@@ -3,7 +3,7 @@ using Financial.CashFlow.Domain.Entities;
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.ReserveBuckets;
 
 /// <summary>
-/// Idempotently seeds the 4 tracked reserve buckets and audits every reserve movement's bucket
+/// Idempotently seeds the 5 tracked reserve buckets and audits every reserve movement's bucket
 /// against them. <see cref="ReserveMovement.Bucket"/> is a real <see cref="ReserveBucket"/>
 /// reference (F02), so a movement resolves exactly when its bucket is one of the seeded instances.
 /// </summary>
@@ -11,10 +11,11 @@ public static class ReserveBucketMigrator
 {
     private static readonly (string Name, decimal SplitPercentage)[] SeededBuckets =
     [
-        ("Investimento", 33.33m),
-        ("HouseTreats", 33.33m),
-        ("Ariana", 16.67m),
-        ("Gleison", 16.67m)
+        ("Investimento", 20m),
+        ("HouseTreats", 20m),
+        ("Ariana", 20m),
+        ("Gleison", 20m),
+        ("Samuel", 20m),
     ];
 
     public static ReserveBucketMigrationSummary Migrate(CashFlowData data)

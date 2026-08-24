@@ -7,11 +7,12 @@ namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Shee
 
 /// <summary>
 /// Parses the single continuous "Reservas" sheet (spanning every year) into
-/// <see cref="ReserveMovement"/> entities. Each row can populate any subset of the 4 bucket
+/// <see cref="ReserveMovement"/> entities. Each row can populate any subset of the 5 bucket
 /// columns; one movement is created per populated bucket column on that row, regardless of
-/// whether the row represents an income-split deposit (all 4 populated, proportioned per F05's
-/// tithe-then-thirds/sixths math) or a single-bucket withdrawal (one column populated) — both
-/// shapes reconstruct correct running balances this way without needing to be told apart.
+/// whether the row represents an income-split deposit (all bucket columns populated, proportioned
+/// per each bucket's own <see cref="ReserveBucket.SplitPercentage"/>) or a single-bucket
+/// withdrawal (one column populated) — both shapes reconstruct correct running balances this way
+/// without needing to be told apart.
 /// Column 4 (Dizimo/tithe) is a non-bucket intermediate value and is not imported.
 /// </summary>
 public static class ReservasSheetImporter
@@ -26,6 +27,7 @@ public static class ReservasSheetImporter
         (7, "HouseTreats"),
         (8, "Ariana"),
         (9, "Gleison"),
+        (10, "Samuel"),
     ];
 
     public static IReadOnlyList<ReserveMovement> Import(IXLWorksheet sheet, IReadOnlyCollection<ReserveBucket> buckets, ImportReport report)
