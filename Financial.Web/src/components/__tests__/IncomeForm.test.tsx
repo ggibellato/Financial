@@ -24,6 +24,7 @@ const baseProps = {
   netValue: '',
   bank: 'bank-barclays',
   description: '',
+  splitToReserve: false,
   banks: BANKS,
   incomeSources: INCOME_SOURCES,
   isSaving: false,

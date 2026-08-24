@@ -1,9 +1,12 @@
-import { useMemo, useReducer } from 'react'
+import { useEffect, useMemo, useReducer } from 'react'
 import { createFinancialApiClient } from '../api/financialApiClient'
 import type { IncomeDto, IncomeSourceDto } from '../api/types'
 import { getErrorMessage, parseValidatedNumber } from '../utils/formatters'
 
 export const INCOME_SOURCES_WITH_GROSS_VALUE = ['Gleison', 'Ariana']
+
+/** How long the post-save "split to reserve" confirmation stays visible before clearing itself. */
+export const SPLIT_CONFIRMATION_DELAY_MS = 4000
 
 /** Matches the previous hardcoded INCOME_SOURCES array's declaration order. Names outside this
  * list (unexpected but not invalid) sort last rather than being dropped or erroring. */
@@ -26,6 +29,10 @@ function resolveIncomeSourceName(sources: IncomeSourceDto[], incomeSourceId: str
   return sources.find((s) => s.id === incomeSourceId)?.name ?? ''
 }
 
+function resolveAutoSplitToReserve(sources: IncomeSourceDto[], incomeSourceId: string): boolean {
+  return sources.find((s) => s.id === incomeSourceId)?.autoSplitToReserve === true
+}
+
 export type CreateIncomeField =
   | 'createIncomeDate'
   | 'createIncomeSource'
@@ -33,6 +40,7 @@ export type CreateIncomeField =
   | 'createIncomeNetValue'
   | 'createIncomeBank'
   | 'createIncomeDescription'
+  | 'createIncomeSplitToReserve'
 export type EditIncomeField =
   | 'editIncomeDate'
   | 'editIncomeSource'
@@ -40,6 +48,7 @@ export type EditIncomeField =
   | 'editIncomeNetValue'
   | 'editIncomeBank'
   | 'editIncomeDescription'
+  | 'editIncomeSplitToReserve'
 
 interface IncomeFormState {
   isIncomeCreateFormOpen: boolean
@@ -49,6 +58,7 @@ interface IncomeFormState {
   createIncomeNetValue: string
   createIncomeBank: string
   createIncomeDescription: string
+  createIncomeSplitToReserve: string
   isCreatingIncome: boolean
   createIncomeError: string | null
   editingIncomeId: string | null
@@ -58,23 +68,26 @@ interface IncomeFormState {
   editIncomeNetValue: string
   editIncomeBank: string
   editIncomeDescription: string
+  editIncomeSplitToReserve: string
   isSavingIncome: boolean
   saveIncomeError: string | null
+  splitConfirmationMessage: string | null
 }
 
 type IncomeFormAction =
-  | { type: 'SHOW_CREATE_FORM'; payload: { source: string } }
+  | { type: 'SHOW_CREATE_FORM'; payload: { source: string; splitToReserve: string } }
   | { type: 'CANCEL_CREATE_FORM' }
   | { type: 'SET_CREATE_FIELD'; payload: { field: CreateIncomeField; value: string } }
   | { type: 'CREATE_START' }
-  | { type: 'CREATE_SUCCESS' }
+  | { type: 'CREATE_SUCCESS'; payload: IncomeDto }
   | { type: 'CREATE_ERROR'; payload: string }
   | { type: 'SHOW_EDIT_FORM'; payload: IncomeDto }
   | { type: 'CANCEL_EDIT' }
   | { type: 'SET_EDIT_FIELD'; payload: { field: EditIncomeField; value: string } }
   | { type: 'SAVE_START' }
-  | { type: 'SAVE_SUCCESS' }
+  | { type: 'SAVE_SUCCESS'; payload: IncomeDto }
   | { type: 'SAVE_ERROR'; payload: string }
+  | { type: 'DISMISS_SPLIT_CONFIRMATION' }
 
 const BLANK_CREATE_FORM = {
   createIncomeDate: '',
@@ -83,6 +96,7 @@ const BLANK_CREATE_FORM = {
   createIncomeNetValue: '',
   createIncomeBank: '',
   createIncomeDescription: '',
+  createIncomeSplitToReserve: 'false',
 } as const
 
 const BLANK_EDIT_FORM = {
@@ -93,6 +107,7 @@ const BLANK_EDIT_FORM = {
   editIncomeNetValue: '',
   editIncomeBank: '',
   editIncomeDescription: '',
+  editIncomeSplitToReserve: 'false',
 } as const
 
 const INITIAL_STATE: IncomeFormState = {
@@ -103,7 +118,10 @@ const INITIAL_STATE: IncomeFormState = {
   ...BLANK_EDIT_FORM,
   isSavingIncome: false,
   saveIncomeError: null,
+  splitConfirmationMessage: null,
 }
+
+const SPLIT_CONFIRMATION_MESSAGE = 'Income saved and split to reserve'
 
 function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormState {
   switch (action.type) {
@@ -114,6 +132,7 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         isIncomeCreateFormOpen: true,
         saveIncomeError: null,
         createIncomeSource: action.payload.source,
+        createIncomeSplitToReserve: action.payload.splitToReserve,
       }
     case 'CANCEL_CREATE_FORM':
       return { ...state, ...BLANK_CREATE_FORM, isIncomeCreateFormOpen: false, createIncomeError: null }
@@ -122,7 +141,13 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
     case 'CREATE_START':
       return { ...state, isCreatingIncome: true, createIncomeError: null }
     case 'CREATE_SUCCESS':
-      return { ...state, ...BLANK_CREATE_FORM, isIncomeCreateFormOpen: false, isCreatingIncome: false }
+      return {
+        ...state,
+        ...BLANK_CREATE_FORM,
+        isIncomeCreateFormOpen: false,
+        isCreatingIncome: false,
+        splitConfirmationMessage: action.payload.splitToReserve ? SPLIT_CONFIRMATION_MESSAGE : null,
+      }
     case 'CREATE_ERROR':
       return { ...state, isCreatingIncome: false, createIncomeError: action.payload }
     case 'SHOW_EDIT_FORM':
@@ -136,6 +161,7 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         editIncomeNetValue: String(action.payload.netValue),
         editIncomeBank: action.payload.bankId ?? '',
         editIncomeDescription: action.payload.description ?? '',
+        editIncomeSplitToReserve: String(action.payload.splitToReserve),
         saveIncomeError: null,
       }
     case 'CANCEL_EDIT':
@@ -145,9 +171,16 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
     case 'SAVE_START':
       return { ...state, isSavingIncome: true, saveIncomeError: null }
     case 'SAVE_SUCCESS':
-      return { ...state, ...BLANK_EDIT_FORM, isSavingIncome: false }
+      return {
+        ...state,
+        ...BLANK_EDIT_FORM,
+        isSavingIncome: false,
+        splitConfirmationMessage: action.payload.splitToReserve ? SPLIT_CONFIRMATION_MESSAGE : null,
+      }
     case 'SAVE_ERROR':
       return { ...state, isSavingIncome: false, saveIncomeError: action.payload }
+    case 'DISMISS_SPLIT_CONFIRMATION':
+      return { ...state, splitConfirmationMessage: null }
     default:
       return state
   }
@@ -161,6 +194,7 @@ export interface UseIncomeFormResult {
   createIncomeNetValue: string
   createIncomeBank: string
   createIncomeDescription: string
+  createIncomeSplitToReserve: string
   isCreatingIncome: boolean
   createIncomeError: string | null
   showCreateIncomeForm: () => void
@@ -174,32 +208,42 @@ export interface UseIncomeFormResult {
   editIncomeNetValue: string
   editIncomeBank: string
   editIncomeDescription: string
+  editIncomeSplitToReserve: string
   isSavingIncome: boolean
   saveIncomeError: string | null
   setEditIncomeField: (field: EditIncomeField, value: string) => void
   showEditIncomeForm: (income: IncomeDto) => void
   cancelEditIncome: () => void
   saveEditIncome: () => void
+  splitConfirmationMessage: string | null
 }
 
 export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => void): UseIncomeFormResult {
   const apiClient = useMemo(() => createFinancialApiClient(), [])
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
+  useEffect(() => {
+    if (!state.splitConfirmationMessage) return
+    const timeoutId = setTimeout(() => dispatch({ type: 'DISMISS_SPLIT_CONFIRMATION' }), SPLIT_CONFIRMATION_DELAY_MS)
+    return () => clearTimeout(timeoutId)
+  }, [state.splitConfirmationMessage])
+
   function showCreateIncomeForm() {
     const source = state.createIncomeSource || (selectActiveIncomeSources(incomeSources)[0]?.id ?? '')
-    dispatch({ type: 'SHOW_CREATE_FORM', payload: { source } })
+    const splitToReserve = resolveAutoSplitToReserve(incomeSources, source) ? 'true' : 'false'
+    dispatch({ type: 'SHOW_CREATE_FORM', payload: { source, splitToReserve } })
   }
 
   const cancelCreateIncomeForm = () => dispatch({ type: 'CANCEL_CREATE_FORM' })
 
   function setCreateIncomeField(field: CreateIncomeField, value: string) {
     dispatch({ type: 'SET_CREATE_FIELD', payload: { field, value } })
-    if (
-      field === 'createIncomeSource' &&
-      !INCOME_SOURCES_WITH_GROSS_VALUE.includes(resolveIncomeSourceName(incomeSources, value))
-    ) {
-      dispatch({ type: 'SET_CREATE_FIELD', payload: { field: 'createIncomeGrossValue', value: '' } })
+    if (field === 'createIncomeSource') {
+      if (!INCOME_SOURCES_WITH_GROSS_VALUE.includes(resolveIncomeSourceName(incomeSources, value))) {
+        dispatch({ type: 'SET_CREATE_FIELD', payload: { field: 'createIncomeGrossValue', value: '' } })
+      }
+      const splitToReserve = resolveAutoSplitToReserve(incomeSources, value) ? 'true' : 'false'
+      dispatch({ type: 'SET_CREATE_FIELD', payload: { field: 'createIncomeSplitToReserve', value: splitToReserve } })
     }
   }
 
@@ -211,6 +255,7 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
       createIncomeNetValue,
       createIncomeBank,
       createIncomeDescription,
+      createIncomeSplitToReserve,
     } = state
 
     if (!createIncomeDate.trim()) {
@@ -248,10 +293,10 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
         netValue,
         bankId: createIncomeBank || null,
         description: createIncomeDescription || null,
-        splitToReserve: false,
+        splitToReserve: createIncomeSplitToReserve === 'true',
       })
-      .then(() => {
-        dispatch({ type: 'CREATE_SUCCESS' })
+      .then((createdIncome) => {
+        dispatch({ type: 'CREATE_SUCCESS', payload: createdIncome })
         onSaved()
       })
       .catch((err: unknown) => {
@@ -261,11 +306,12 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
 
   const setEditIncomeField = (field: EditIncomeField, value: string) => {
     dispatch({ type: 'SET_EDIT_FIELD', payload: { field, value } })
-    if (
-      field === 'editIncomeSource' &&
-      !INCOME_SOURCES_WITH_GROSS_VALUE.includes(resolveIncomeSourceName(incomeSources, value))
-    ) {
-      dispatch({ type: 'SET_EDIT_FIELD', payload: { field: 'editIncomeGrossValue', value: '' } })
+    if (field === 'editIncomeSource') {
+      if (!INCOME_SOURCES_WITH_GROSS_VALUE.includes(resolveIncomeSourceName(incomeSources, value))) {
+        dispatch({ type: 'SET_EDIT_FIELD', payload: { field: 'editIncomeGrossValue', value: '' } })
+      }
+      const splitToReserve = resolveAutoSplitToReserve(incomeSources, value) ? 'true' : 'false'
+      dispatch({ type: 'SET_EDIT_FIELD', payload: { field: 'editIncomeSplitToReserve', value: splitToReserve } })
     }
   }
 
@@ -311,10 +357,10 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
         netValue,
         bankId: state.editIncomeBank || null,
         description: state.editIncomeDescription || null,
-        splitToReserve: false,
+        splitToReserve: state.editIncomeSplitToReserve === 'true',
       })
-      .then(() => {
-        dispatch({ type: 'SAVE_SUCCESS' })
+      .then((updatedIncome) => {
+        dispatch({ type: 'SAVE_SUCCESS', payload: updatedIncome })
         onSaved()
       })
       .catch((err: unknown) => {
@@ -330,6 +376,7 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
     createIncomeNetValue: state.createIncomeNetValue,
     createIncomeBank: state.createIncomeBank,
     createIncomeDescription: state.createIncomeDescription,
+    createIncomeSplitToReserve: state.createIncomeSplitToReserve,
     isCreatingIncome: state.isCreatingIncome,
     createIncomeError: state.createIncomeError,
     showCreateIncomeForm,
@@ -343,11 +390,13 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
     editIncomeNetValue: state.editIncomeNetValue,
     editIncomeBank: state.editIncomeBank,
     editIncomeDescription: state.editIncomeDescription,
+    editIncomeSplitToReserve: state.editIncomeSplitToReserve,
     isSavingIncome: state.isSavingIncome,
     saveIncomeError: state.saveIncomeError,
     setEditIncomeField,
     showEditIncomeForm,
     cancelEditIncome,
     saveEditIncome,
+    splitConfirmationMessage: state.splitConfirmationMessage,
   }
 }

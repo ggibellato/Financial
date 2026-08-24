@@ -1,8 +1,8 @@
-import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text, makeStyles, tokens } from '@fluentui/react-components'
+import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Text, makeStyles, tokens } from '@fluentui/react-components'
 import type { BankDto, IncomeSourceDto } from '../api/types'
 import { INCOME_SOURCES_WITH_GROSS_VALUE, selectActiveIncomeSources } from '../hooks/useIncomeForm'
 
-export type IncomeFormField = 'date' | 'incomeSource' | 'grossValue' | 'netValue' | 'bank' | 'description'
+export type IncomeFormField = 'date' | 'incomeSource' | 'grossValue' | 'netValue' | 'bank' | 'description' | 'splitToReserve'
 
 interface IncomeFormProps {
   isEditing: boolean
@@ -12,6 +12,7 @@ interface IncomeFormProps {
   netValue: string
   bank: string
   description: string
+  splitToReserve: boolean
   banks: BankDto[]
   incomeSources: IncomeSourceDto[]
   isSaving: boolean
@@ -58,6 +59,7 @@ export default function IncomeForm({
   netValue,
   bank,
   description,
+  splitToReserve,
   banks,
   incomeSources,
   isSaving,
@@ -71,6 +73,7 @@ export default function IncomeForm({
   const showGrossValueField = INCOME_SOURCES_WITH_GROSS_VALUE.includes(
     incomeSources.find((s) => s.id === incomeSource)?.name ?? '',
   )
+  const showSplitField = incomeSources.find((s) => s.id === incomeSource)?.autoSplitToReserve === true
 
   return (
     <div className={styles.panel}>
@@ -112,6 +115,16 @@ export default function IncomeForm({
             onChange={(e) => onFieldChange('netValue', e.target.value)}
           />
         </Field>
+
+        {showSplitField && (
+          <div>
+            <Checkbox
+              label="Split to reserve"
+              checked={splitToReserve}
+              onChange={(_, data) => onFieldChange('splitToReserve', data.checked ? 'true' : 'false')}
+            />
+          </div>
+        )}
 
         <Field label="Bank">
           <Select value={bank} onChange={(e) => onFieldChange('bank', e.target.value)}>

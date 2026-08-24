@@ -62,6 +62,7 @@ const CREATE_INCOME_FIELD_BY_FORM_FIELD: Record<IncomeFormField, CreateIncomeFie
   netValue: 'createIncomeNetValue',
   bank: 'createIncomeBank',
   description: 'createIncomeDescription',
+  splitToReserve: 'createIncomeSplitToReserve',
 }
 
 const EDIT_INCOME_FIELD_BY_FORM_FIELD: Record<IncomeFormField, EditIncomeField> = {
@@ -71,6 +72,7 @@ const EDIT_INCOME_FIELD_BY_FORM_FIELD: Record<IncomeFormField, EditIncomeField> 
   netValue: 'editIncomeNetValue',
   bank: 'editIncomeBank',
   description: 'editIncomeDescription',
+  splitToReserve: 'editIncomeSplitToReserve',
 }
 
 export default function MonthlyPage() {
@@ -180,6 +182,7 @@ export default function MonthlyPage() {
     createIncomeNetValue,
     createIncomeBank,
     createIncomeDescription,
+    createIncomeSplitToReserve,
     isCreatingIncome,
     createIncomeError,
     showCreateIncomeForm,
@@ -193,12 +196,14 @@ export default function MonthlyPage() {
     editIncomeNetValue,
     editIncomeBank,
     editIncomeDescription,
+    editIncomeSplitToReserve,
     isSavingIncome,
     saveIncomeError,
     setEditIncomeField,
     showEditIncomeForm,
     cancelEditIncome,
     saveEditIncome,
+    splitConfirmationMessage,
   } = useIncomeForm(incomeSources, retry)
 
   const bankOperations = useBankOperations(year, month, banks, retry)
@@ -379,6 +384,7 @@ export default function MonthlyPage() {
                   netValue={isIncomeEditing ? editIncomeNetValue : createIncomeNetValue}
                   bank={isIncomeEditing ? editIncomeBank : createIncomeBank}
                   description={isIncomeEditing ? editIncomeDescription : createIncomeDescription}
+                  splitToReserve={(isIncomeEditing ? editIncomeSplitToReserve : createIncomeSplitToReserve) === 'true'}
                   banks={banks}
                   incomeSources={incomeSources}
                   isSaving={isIncomeEditing ? isSavingIncome : isCreatingIncome}
@@ -398,6 +404,7 @@ export default function MonthlyPage() {
                 onEdit={showEditIncomeForm}
                 onDelete={confirmAndDeleteIncome}
                 onNewIncome={showCreateIncomeForm}
+                splitConfirmationMessage={splitConfirmationMessage}
               />
             </>
           )}

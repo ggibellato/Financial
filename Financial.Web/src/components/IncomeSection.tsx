@@ -1,4 +1,4 @@
-import { Button, makeStyles, tokens } from '@fluentui/react-components'
+import { Button, MessageBar, MessageBarBody, makeStyles, tokens } from '@fluentui/react-components'
 import { AddRegular } from '@fluentui/react-icons'
 import type { IncomeDto } from '../api/types'
 import { formatN2, formatShortDate } from '../utils/formatters'
@@ -62,9 +62,16 @@ interface IncomeSectionProps {
   onEdit: (income: IncomeDto) => void
   onDelete: (id: string) => void
   onNewIncome: () => void
+  splitConfirmationMessage?: string | null
 }
 
-export default function IncomeSection({ incomes, onEdit, onDelete, onNewIncome }: IncomeSectionProps) {
+export default function IncomeSection({
+  incomes,
+  onEdit,
+  onDelete,
+  onNewIncome,
+  splitConfirmationMessage,
+}: IncomeSectionProps) {
   const styles = useStyles()
   return (
     <section className="income-section">
@@ -73,6 +80,11 @@ export default function IncomeSection({ incomes, onEdit, onDelete, onNewIncome }
           New Income
         </Button>
       </div>
+      {splitConfirmationMessage && (
+        <MessageBar intent="success">
+          <MessageBarBody>{splitConfirmationMessage}</MessageBarBody>
+        </MessageBar>
+      )}
       <div className="income-section__table-wrapper">
         <table className="income-section__table data-table">
           <thead>
