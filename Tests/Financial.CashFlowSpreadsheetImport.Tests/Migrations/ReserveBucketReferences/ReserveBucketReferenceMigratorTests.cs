@@ -53,7 +53,7 @@ public class ReserveBucketReferenceMigratorTests
     }
 
     [Fact]
-    public void Migrate_LegacyFileWithNoSeededBuckets_BootstrapsTheCanonicalFourAndRewritesTheMovement()
+    public void Migrate_LegacyFileWithNoSeededBuckets_BootstrapsTheCanonicalFiveAndRewritesTheMovement()
     {
         var path = CreateTempFile(LegacyFixtureJson());
 
@@ -64,7 +64,7 @@ public class ReserveBucketReferenceMigratorTests
             using (new AssertionScope())
             {
                 summary.AlreadyCurrentShape.Should().BeFalse();
-                summary.BucketsBootstrappedCount.Should().Be(4);
+                summary.BucketsBootstrappedCount.Should().Be(5);
                 summary.MovementsMigratedCount.Should().Be(1);
                 summary.UnresolvedMovements.Should().BeEmpty();
             }
@@ -74,7 +74,7 @@ public class ReserveBucketReferenceMigratorTests
 
             using (new AssertionScope())
             {
-                rewritten.ReserveBuckets.Should().HaveCount(4);
+                rewritten.ReserveBuckets.Should().HaveCount(5);
                 var movement = rewritten.ReserveMovements.Should().ContainSingle().Which;
                 movement.Id.Should().Be(MovementId);
                 movement.Bucket.Name.Should().Be("Investimento");
