@@ -139,7 +139,7 @@ The two records are now genuinely linked: editing a split-linked Income recalcul
 - When rendered, the checkbox defaults to checked (`true`) for a new Income; the user can uncheck it to opt that specific entry out of splitting.
 - Changing the selected `IncomeSource` re-evaluates the checkbox's visibility and default immediately, without a form resubmit — selecting a non-eligible source hides the checkbox and clears its value; selecting an eligible source shows it, checked by default.
 - Editing an existing Income shows the checkbox in its current persisted `SplitToReserve` state (checked for a split Income, not rendered for a non-eligible source, unchecked for an eligible source the user previously chose not to split).
-- After a successful save that included a split, the form shows the resulting split confirmation (per-bucket amounts and total) surfaced by F02's response.
+- After a successful save where the saved `Income.SplitToReserve` came back `true`, the form shows a simple confirmation message (e.g. "Income saved and split to reserve") — no per-bucket amounts or total, since F02 (per its own PR review) does not surface a split summary in the Income response; the Reserve section (F04) is where the resulting movements are actually viewed.
 
 **Experience:**
 - Creating a new Income with an eligible source selected: the "Split to reserve" checkbox appears near the Net Value field, pre-checked; the user reviews and saves, or unchecks it first if this particular entry shouldn't split.
@@ -234,7 +234,7 @@ graph TD
 - [ ] Selecting a non-eligible `IncomeSource` on a new Income shows no split checkbox, and the submitted `SplitToReserve` is `false`.
 - [ ] Switching the selected `IncomeSource` from eligible to non-eligible (or back) updates the checkbox's visibility/default immediately without a page reload.
 - [ ] Opening an existing split Income for edit shows the checkbox checked; opening an existing unsplit Income for an eligible source shows it unchecked; opening an Income for a non-eligible source shows no checkbox.
-- [ ] After a save that triggers a split, the form displays the resulting per-bucket split amounts and total.
+- [ ] After a save where the response's `SplitToReserve` is `true`, the form shows a simple confirmation message (no per-bucket amounts or total).
 - [ ] The WPF Income form provides the same checkbox behavior, defaults, and visibility rules as the React form for the same scenarios.
 
 ### F04. Reserve Movement Lock & Indicator
@@ -246,5 +246,5 @@ graph TD
 ### Cross-Feature Integration
 - [x] F02's split validation correctly reads F01's `AutoSplitToReserve` flag: a request with `SplitToReserve = true` succeeds only when the referenced `IncomeSource.AutoSplitToReserve = true`, and is rejected otherwise.
 - [ ] F03's checkbox visibility and default state on the Income form correctly reflect the `AutoSplitToReserve` value returned by F01's `GET /income-sources` for the currently selected source.
-- [ ] Submitting F03's checked checkbox results in F02 creating the linked `ReserveMovement`s, and the resulting split summary returned by F02 renders correctly in F03's post-save confirmation.
+- [ ] Submitting F03's checked checkbox results in F02 creating the linked `ReserveMovement`s (verified via the Reserve section/API, since F02's Income response carries no split summary), and F03's post-save confirmation message appears whenever the response's `SplitToReserve` is `true`.
 - [ ] F04's lock indicator and disabled Edit/Delete state correctly reflect the `IncomeId` link created and maintained by F02 — a movement appears locked immediately after F02 creates it, and becomes unlocked (or disappears) immediately after F02 removes the link via an Income edit/delete.
