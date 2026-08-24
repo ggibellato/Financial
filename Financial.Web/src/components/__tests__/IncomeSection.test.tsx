@@ -16,7 +16,6 @@ const INCOMES: IncomeDto[] = [
     bankName: 'Barclays',
     description: 'Salary',
     splitToReserve: false,
-    reserveSplitMovements: [],
   },
   {
     id: 'i2',
@@ -29,7 +28,6 @@ const INCOMES: IncomeDto[] = [
     bankName: 'Chase',
     description: null,
     splitToReserve: false,
-    reserveSplitMovements: [],
   },
 ]
 
@@ -58,7 +56,6 @@ describe('IncomeSection', () => {
       bankName: null,
       description: null,
       splitToReserve: false,
-      reserveSplitMovements: [],
     }
     render(<IncomeSection incomes={[bankLessIncome]} onEdit={vi.fn()} onDelete={vi.fn()} onNewIncome={vi.fn()} />)
 

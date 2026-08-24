@@ -4317,7 +4317,6 @@ export interface components {
             incomeSourceName: string;
             /** Format: double */
             netValue: number;
-            reserveSplitMovements: components["schemas"]["BucketSplitAmountDTO"][];
             splitToReserve: boolean;
         };
         IncomeSourceDTO: {

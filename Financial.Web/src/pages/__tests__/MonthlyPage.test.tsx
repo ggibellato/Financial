@@ -165,7 +165,6 @@ const INCOMES: IncomeDto[] = [
     bankName: 'Barclays',
     description: null,
     splitToReserve: false,
-    reserveSplitMovements: [],
   },
 ]
 
@@ -340,7 +339,6 @@ describe('MonthlyPage', () => {
         bankName: 'Barclays',
         description: null,
         splitToReserve: false,
-        reserveSplitMovements: [],
       },
     ])
 
@@ -960,7 +958,6 @@ describe('MonthlyPage', () => {
         bankName: 'Barclays',
         description: null,
         splitToReserve: false,
-        reserveSplitMovements: [],
       },
     ])
 
@@ -1093,7 +1090,6 @@ describe('MonthlyPage', () => {
       bankName: 'Chase',
       description: null,
       splitToReserve: false,
-      reserveSplitMovements: [],
     })
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('button', { name: 'Income' }))
@@ -1115,7 +1111,6 @@ describe('MonthlyPage', () => {
       bankName: 'Chase',
       description: null,
       splitToReserve: false,
-      reserveSplitMovements: [],
     }])
     fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
 

@@ -1513,12 +1513,6 @@
             "format": "double",
             "type": "number"
           },
-          "reserveSplitMovements": {
-            "items": {
-              "$ref": "#/components/schemas/BucketSplitAmountDTO"
-            },
-            "type": "array"
-          },
           "splitToReserve": {
             "type": "boolean"
           }
@@ -1529,8 +1523,7 @@
           "incomeSourceId",
           "incomeSourceName",
           "netValue",
-          "splitToReserve",
-          "reserveSplitMovements"
+          "splitToReserve"
         ],
         "type": "object"
       },
