@@ -11,6 +11,7 @@ public class Income
     public decimal NetValue { get; private set; }
     public Bank? Bank { get; private set; }
     public string? Description { get; private set; }
+    public bool SplitToReserve { get; private set; } = false;
 
     private Income() { }
 
@@ -20,7 +21,8 @@ public class Income
         decimal? grossValue,
         decimal netValue,
         Bank? bank,
-        string? description = null)
+        string? description = null,
+        bool splitToReserve = false)
     {
         ValidateValues(grossValue, netValue);
         ValidateIncomeSource(incomeSource);
@@ -33,7 +35,8 @@ public class Income
             GrossValue = grossValue,
             NetValue = netValue,
             Bank = bank,
-            Description = NormalizeDescription(description)
+            Description = NormalizeDescription(description),
+            SplitToReserve = splitToReserve
         };
     }
 
@@ -43,7 +46,8 @@ public class Income
         decimal? grossValue,
         decimal netValue,
         Bank? bank,
-        string? description = null)
+        string? description = null,
+        bool splitToReserve = false)
     {
         ValidateValues(grossValue, netValue);
         ValidateIncomeSource(incomeSource);
@@ -54,6 +58,7 @@ public class Income
         NetValue = netValue;
         Bank = bank;
         Description = NormalizeDescription(description);
+        SplitToReserve = splitToReserve;
     }
 
     private static void ValidateValues(decimal? grossValue, decimal netValue)
