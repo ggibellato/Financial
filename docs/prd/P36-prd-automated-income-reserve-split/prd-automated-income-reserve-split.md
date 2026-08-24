@@ -210,10 +210,10 @@ graph TD
 ## 9. Acceptance Criteria
 
 ### F01. IncomeSource Auto-Split Eligibility Flag
-- [ ] An `IncomeSource` record absent from stored JSON's `AutoSplitToReserve` field loads with `AutoSplitToReserve = false`.
-- [ ] After running the updated import/migration tool against a fresh data file, the "Ariana" `IncomeSource` has `AutoSplitToReserve = true` and every other source has `AutoSplitToReserve = false`.
-- [ ] Running the updated import/migration tool against a data file where "Ariana" already exists without the flag leaves that existing record's `AutoSplitToReserve` untouched (no crash, no duplicate record) — correcting it is a manual, one-time hand-edit of the live data file, not tool behavior.
-- [ ] `GET /income-sources` returns `AutoSplitToReserve` for every income source.
+- [x] An `IncomeSource` record absent from stored JSON's `AutoSplitToReserve` field loads with `AutoSplitToReserve = false`.
+- [x] After running the updated import/migration tool against a fresh data file, the "Ariana" `IncomeSource` has `AutoSplitToReserve = true` and every other source has `AutoSplitToReserve = false`.
+- [x] Running the updated import/migration tool against a data file where "Ariana" already exists without the flag leaves that existing record's `AutoSplitToReserve` untouched (no crash, no duplicate record) — correcting it is a manual, one-time hand-edit of the live data file, not tool behavior.
+- [x] `GET /income-sources` returns `AutoSplitToReserve` for every income source.
 
 ### F02. Automated Income-to-Reserve Split Orchestration
 - [ ] Creating an Income with `SplitToReserve = true` for an eligible `IncomeSource` creates one `ReserveMovement` per active `ReserveBucket`, each with `Amount = CalculateSplitAmount(NetValue × 0.90)`, `Date = Income.Date`, `Description = Income.Description`, and `IncomeId` set to the new Income's id.
