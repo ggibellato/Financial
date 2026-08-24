@@ -22,14 +22,13 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <TextBlock Grid.Row="1" Margin="0,8,0,0">
-            <TextBlock.Text>
-                <MultiBinding StringFormat="Total Incoming: {0:N2} · Calculated Tithe: {1:N2} · Tithe Balance: {2:N2}">
-                    <Binding Path="TotalIncoming"/>
-                    <Binding Path="TitheSummary.CalculatedTithe"/>
-                    <Binding Path="TitheSummary.TitheBalance"/>
-                </MultiBinding>
-            </TextBlock.Text>
-        </TextBlock>
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,0">
+            <TextBlock Text="Total Incoming: "/>
+            <TextBlock Text="{Binding TotalIncoming, StringFormat=N2}" FontWeight="Bold"/>
+            <TextBlock Text=" · Calculated Tithe: "/>
+            <TextBlock Text="{Binding TitheSummary.CalculatedTithe, StringFormat=N2}" FontWeight="Bold"/>
+            <TextBlock Text=" · Tithe Balance: "/>
+            <TextBlock Text="{Binding TitheSummary.TitheBalance, StringFormat=N2}" FontWeight="Bold"/>
+        </StackPanel>
     </Grid>
 </UserControl>

@@ -129,13 +129,13 @@
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
-        <TextBlock Grid.Row="1" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding CardStatementError}"/>
-        <TextBlock Grid.Row="2" Foreground="#8A6D00" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding CardStatementWarning}"/>
-
-        <TextBlock Grid.Row="3" Margin="0,8,0,0"
-                   Text="{Binding AdjustmentTotal, StringFormat='Combined adjustment figure: {0:N2}'}"/>
-
-        <TextBlock Grid.Row="4" Foreground="Red" TextWrapping="Wrap" Margin="0,4,0,0" Text="{Binding CreditCardUpdateError}"
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,0">
+            <TextBlock Text="Combined adjustment figure: "/>
+            <TextBlock Text="{Binding AdjustmentTotal, StringFormat=N2}" FontWeight="Bold"/>
+        </StackPanel>
+        <TextBlock Grid.Row="2" Foreground="Red" TextWrapping="Wrap" Margin="0,4,0,0" Text="{Binding CreditCardUpdateError}"
                    Visibility="{Binding Data, Source={StaticResource ShowCardManagementColumnsProxy}, Converter={StaticResource BoolToVisibilityConverter}}"/>
+        <TextBlock Grid.Row="3" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding CardStatementError}"/>
+        <TextBlock Grid.Row="4" Foreground="#8A6D00" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding CardStatementWarning}"/>
     </Grid>
 </UserControl>
