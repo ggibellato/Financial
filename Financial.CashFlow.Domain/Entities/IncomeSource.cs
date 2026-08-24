@@ -9,10 +9,11 @@ public class IncomeSource
     public string Name { get; private set; } = string.Empty;
     public bool IsActive { get; private set; }
     public IncomeGroup Group { get; private set; }
+    public bool AutoSplitToReserve { get; private set; } = false;
 
     private IncomeSource() { }
 
-    public static IncomeSource Create(string name, IncomeGroup group, bool isActive = true)
+    public static IncomeSource Create(string name, IncomeGroup group, bool isActive = true, bool autoSplitToReserve = false)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -24,7 +25,8 @@ public class IncomeSource
             Id = Guid.NewGuid(),
             Name = name,
             IsActive = isActive,
-            Group = group
+            Group = group,
+            AutoSplitToReserve = autoSplitToReserve
         };
     }
 }

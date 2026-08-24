@@ -11,4 +11,7 @@ public sealed class IncomeSourceDTO
 
     /// <summary>Reporting group: "Salary", "DividendoJuros", or "NonReportable".</summary>
     public required string Group { get; init; }
+
+    /// <summary>Whether the Income form should offer a "split to reserve" option for this source.</summary>
+    public required bool AutoSplitToReserve { get; init; }
 }
