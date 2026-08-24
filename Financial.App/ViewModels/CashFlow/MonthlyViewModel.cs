@@ -723,6 +723,8 @@ public class MonthlyViewModel : ViewModelBase
 
     public const string NoBankOptionLabel = "(None)";
 
+    private const int IncomeSplitConfirmationHideDelayMs = 4000;
+
     private bool _isIncomeFormOpen;
     private Guid? _editingIncomeId;
     private DateTime? _incomeFormDate;
@@ -731,9 +733,11 @@ public class MonthlyViewModel : ViewModelBase
     private string _incomeFormNetValue = string.Empty;
     private Guid? _incomeFormBank;
     private string _incomeFormDescription = string.Empty;
+    private bool _incomeFormSplitToReserve;
     private bool _isSavingIncome;
     private string? _incomeSaveError;
     private string? _deletingIncomeError;
+    private string? _incomeSplitConfirmationMessage;
     private IReadOnlyList<IncomeBankOptionViewModel> _incomeBankOptions = BuildIncomeBankOptions([]);
 
     public bool IsIncomeFormOpen
@@ -758,12 +762,17 @@ public class MonthlyViewModel : ViewModelBase
             if (SetProperty(ref _incomeFormSource, value))
             {
                 OnPropertyChanged(nameof(ShowIncomeGrossValueField));
+                OnPropertyChanged(nameof(ShowIncomeSplitField));
+                IncomeFormSplitToReserve = ShowIncomeSplitField;
             }
         }
     }
 
     public bool ShowIncomeGrossValueField =>
         IncomeSourcesWithGrossValue.Contains(IncomeSources.FirstOrDefault(s => s.Id == IncomeFormSource)?.Name ?? string.Empty);
+
+    public bool ShowIncomeSplitField =>
+        IncomeSources.FirstOrDefault(s => s.Id == IncomeFormSource)?.AutoSplitToReserve == true;
 
     public string IncomeFormGrossValue
     {
@@ -787,6 +796,12 @@ public class MonthlyViewModel : ViewModelBase
     {
         get => _incomeFormDescription;
         set => SetProperty(ref _incomeFormDescription, value);
+    }
+
+    public bool IncomeFormSplitToReserve
+    {
+        get => _incomeFormSplitToReserve;
+        set => SetProperty(ref _incomeFormSplitToReserve, value);
     }
 
     public IReadOnlyList<IncomeBankOptionViewModel> IncomeBankOptions
@@ -813,6 +828,12 @@ public class MonthlyViewModel : ViewModelBase
         private set => SetProperty(ref _deletingIncomeError, value);
     }
 
+    public string? IncomeSplitConfirmationMessage
+    {
+        get => _incomeSplitConfirmationMessage;
+        private set => SetProperty(ref _incomeSplitConfirmationMessage, value);
+    }
+
     public RelayCommand ShowCreateIncomeFormCommand { get; private set; } = null!;
     public RelayCommand CancelIncomeFormCommand { get; private set; } = null!;
     public RelayCommand SaveIncomeCommand { get; private set; } = null!;
@@ -837,6 +858,7 @@ public class MonthlyViewModel : ViewModelBase
         IncomeFormNetValue = string.Empty;
         IncomeFormBank = null;
         IncomeFormDescription = string.Empty;
+        IncomeFormSplitToReserve = ShowIncomeSplitField;
         IncomeSaveError = null;
         OnPropertyChanged(nameof(IsEditingIncome));
         IsIncomeFormOpen = true;
@@ -856,6 +878,7 @@ public class MonthlyViewModel : ViewModelBase
         IncomeFormNetValue = income.NetValue.ToString("0.##");
         IncomeFormBank = income.BankId;
         IncomeFormDescription = income.Description ?? string.Empty;
+        IncomeFormSplitToReserve = income.SplitToReserve;
         IncomeSaveError = null;
         OnPropertyChanged(nameof(IsEditingIncome));
         IsIncomeFormOpen = true;
@@ -881,10 +904,12 @@ public class MonthlyViewModel : ViewModelBase
                 : null;
 
             var description = string.IsNullOrWhiteSpace(IncomeFormDescription) ? null : IncomeFormDescription;
+            var splitToReserve = ShowIncomeSplitField && IncomeFormSplitToReserve;
 
+            IncomeDTO savedIncome;
             if (_editingIncomeId is { } id)
             {
-                await _incomeService.UpdateIncomeAsync(id, new IncomeUpdateDTO
+                savedIncome = await _incomeService.UpdateIncomeAsync(id, new IncomeUpdateDTO
                 {
                     Date = date,
                     IncomeSourceId = IncomeFormSource!.Value,
@@ -892,11 +917,12 @@ public class MonthlyViewModel : ViewModelBase
                     NetValue = netValue,
                     BankId = IncomeFormBank,
                     Description = description,
+                    SplitToReserve = splitToReserve,
                 });
             }
             else
             {
-                await _incomeService.AddIncomeAsync(new IncomeCreateDTO
+                savedIncome = await _incomeService.AddIncomeAsync(new IncomeCreateDTO
                 {
                     Date = date,
                     IncomeSourceId = IncomeFormSource!.Value,
@@ -904,11 +930,19 @@ public class MonthlyViewModel : ViewModelBase
                     NetValue = netValue,
                     BankId = IncomeFormBank,
                     Description = description,
+                    SplitToReserve = splitToReserve,
                 });
             }
 
             CloseIncomeForm();
             await RefreshAsync();
+
+            if (savedIncome.SplitToReserve)
+            {
+                IncomeSplitConfirmationMessage = "Income saved and split to reserve";
+                await Task.Delay(IncomeSplitConfirmationHideDelayMs);
+                IncomeSplitConfirmationMessage = null;
+            }
         },
         SaveIncomeCommand.RaiseCanExecuteChanged);
 

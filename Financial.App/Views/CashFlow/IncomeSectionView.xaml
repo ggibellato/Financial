@@ -20,6 +20,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -33,7 +34,10 @@
         <TextBlock Grid.Row="2" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,8"
                    Text="{Binding DeletingIncomeError}"/>
 
-        <DataGrid Grid.Row="3" ItemsSource="{Binding Incomes}"
+        <TextBlock Grid.Row="3" Foreground="Green" TextWrapping="Wrap" Margin="0,0,0,8"
+                   Text="{Binding IncomeSplitConfirmationMessage}"/>
+
+        <DataGrid Grid.Row="4" ItemsSource="{Binding Incomes}"
                   AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeRows="False" CanUserSortColumns="True"
                   GridLinesVisibility="Horizontal" HeadersVisibility="Column" SelectionMode="Single">
             <DataGrid.Columns>
