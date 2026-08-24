@@ -48,3 +48,13 @@
   background: var(--bg-hover, #f0f0f0);
   color: var(--text, #333);
 }
+
+.data-table__action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.data-table__action-btn:disabled:hover {
+  background: none;
+  color: var(--text-muted, #888);
+}

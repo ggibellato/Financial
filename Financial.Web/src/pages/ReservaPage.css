@@ -197,6 +197,13 @@
   width: 100%;
 }
 
+.reserva-page__lock-icon {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 4px;
+  cursor: help;
+}
+
 .reserva-page__warning {
   margin: 8px 0;
   padding: 8px 12px;
