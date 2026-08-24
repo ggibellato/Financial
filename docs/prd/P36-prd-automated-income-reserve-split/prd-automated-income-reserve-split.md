@@ -238,13 +238,13 @@ graph TD
 - [x] The WPF Income form provides the same checkbox behavior, defaults, and visibility rules as the React form for the same scenarios.
 
 ### F04. Reserve Movement Lock & Indicator
-- [ ] A `ReserveMovement` with a non-null `IncomeId` shows a visual "linked to income" indicator in the Reserve section's movement list.
-- [ ] Edit and Delete controls are disabled for a locked movement, and attempting to use them shows an explanatory message.
-- [ ] A `ReserveMovement` with `IncomeId = null` shows no indicator and keeps fully working Edit/Delete, including the existing same-Date-and-Description group-delete warning.
-- [ ] The WPF Reserve views show the same lock indicator and disabled-action behavior as the React Reserve page for the same scenarios.
+- [x] A `ReserveMovement` with a non-null `IncomeId` shows a visual "linked to income" indicator in the Reserve section's movement list.
+- [x] Edit and Delete controls are disabled for a locked movement, and attempting to use them shows an explanatory message.
+- [x] A `ReserveMovement` with `IncomeId = null` shows no indicator and keeps fully working Edit/Delete, including the existing same-Date-and-Description group-delete warning.
+- [x] The WPF Reserve views show the same lock indicator and disabled-action behavior as the React Reserve page for the same scenarios.
 
 ### Cross-Feature Integration
 - [x] F02's split validation correctly reads F01's `AutoSplitToReserve` flag: a request with `SplitToReserve = true` succeeds only when the referenced `IncomeSource.AutoSplitToReserve = true`, and is rejected otherwise.
 - [x] F03's checkbox visibility and default state on the Income form correctly reflect the `AutoSplitToReserve` value returned by F01's `GET /income-sources` for the currently selected source.
 - [x] Submitting F03's checked checkbox results in F02 creating the linked `ReserveMovement`s (verified via the Reserve section/API, since F02's Income response carries no split summary), and F03's post-save confirmation message appears whenever the response's `SplitToReserve` is `true`.
-- [ ] F04's lock indicator and disabled Edit/Delete state correctly reflect the `IncomeId` link created and maintained by F02 — a movement appears locked immediately after F02 creates it, and becomes unlocked (or disappears) immediately after F02 removes the link via an Income edit/delete.
+- [x] F04's lock indicator and disabled Edit/Delete state correctly reflect the `IncomeId` link created and maintained by F02 — a movement appears locked immediately after F02 creates it, and becomes unlocked (or disappears) immediately after F02 removes the link via an Income edit/delete.
