@@ -88,7 +88,6 @@ internal sealed class StubIncomeService : IIncomeService
             BankId = request.BankId,
             BankName = request.BankId.ToString(),
             SplitToReserve = request.SplitToReserve,
-            ReserveSplitMovements = [],
         });
     }
 
@@ -106,7 +105,6 @@ internal sealed class StubIncomeService : IIncomeService
             BankId = request.BankId,
             BankName = request.BankId.ToString(),
             SplitToReserve = request.SplitToReserve,
-            ReserveSplitMovements = [],
         });
     }
 

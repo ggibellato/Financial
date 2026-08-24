@@ -356,7 +356,6 @@ public class IncomeServiceTests
         using (new AssertionScope())
         {
             result.SplitToReserve.Should().BeTrue();
-            result.ReserveSplitMovements.Should().HaveCount(4);
             repository.ReserveMovements.Should().HaveCount(4);
             foreach (var bucket in repository.ReserveBuckets)
             {
@@ -392,7 +391,6 @@ public class IncomeServiceTests
         using (new AssertionScope())
         {
             result.SplitToReserve.Should().BeTrue();
-            result.ReserveSplitMovements.Should().BeEmpty();
             repository.Incomes.Should().ContainSingle();
             repository.ReserveMovements.Should().BeEmpty();
         }
@@ -424,7 +422,6 @@ public class IncomeServiceTests
         using (new AssertionScope())
         {
             result.SplitToReserve.Should().BeFalse();
-            result.ReserveSplitMovements.Should().BeEmpty();
             repository.ReserveMovements.Should().BeEmpty();
         }
     }
@@ -442,7 +439,6 @@ public class IncomeServiceTests
         using (new AssertionScope())
         {
             result.SplitToReserve.Should().BeTrue();
-            result.ReserveSplitMovements.Should().HaveCount(4);
             repository.ReserveMovements.Should().HaveCount(4);
             repository.ReserveMovements.Should().OnlyContain(m => m.Income!.Id == added.Id);
         }

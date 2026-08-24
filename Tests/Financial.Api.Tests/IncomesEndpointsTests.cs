@@ -272,7 +272,7 @@ public class IncomesEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task AddIncome_WithSplitForEligibleSource_ReturnsOkWithReserveSplitMovements()
+    public async Task AddIncome_WithSplitForEligibleSource_ReturnsOkAndCreatesLinkedReserveMovements()
     {
         var request = new IncomeCreateDTO
         {
@@ -289,8 +289,10 @@ public class IncomesEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var income = await response.Content.ReadFromJsonAsync<IncomeDTO>();
         income!.SplitToReserve.Should().BeTrue();
-        income.ReserveSplitMovements.Should().HaveCount(4);
-        income.ReserveSplitMovements.Sum(m => m.Amount).Should().Be(2205.00m);
+        var movements = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
+        var linkedMovements = movements!.Where(m => m.IncomeId == income.Id).ToList();
+        linkedMovements.Should().HaveCount(4);
+        linkedMovements.Sum(m => m.Amount).Should().Be(2205.00m);
     }
 
     [Fact]
@@ -324,12 +326,13 @@ public class IncomesEndpointsTests : ApiEndpointTests
             SplitToReserve = true
         });
         var createdIncome = await created.Content.ReadFromJsonAsync<IncomeDTO>();
-        createdIncome!.ReserveSplitMovements.Should().NotBeEmpty();
+        var movementsBeforeDelete = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
+        movementsBeforeDelete!.Should().Contain(m => m.IncomeId == createdIncome!.Id);
 
-        var response = await Client.DeleteAsync($"/api/v1/financial/incomes/{createdIncome.Id}");
+        var response = await Client.DeleteAsync($"/api/v1/financial/incomes/{createdIncome!.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var movements = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
-        movements.Should().NotContain(m => createdIncome.ReserveSplitMovements.Any(sm => sm.BucketId == m.BucketId && m.IncomeId == createdIncome.Id));
+        var movementsAfterDelete = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
+        movementsAfterDelete.Should().NotContain(m => m.IncomeId == createdIncome.Id);
     }
 }

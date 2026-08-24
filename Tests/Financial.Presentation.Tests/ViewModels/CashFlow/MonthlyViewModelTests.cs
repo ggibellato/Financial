@@ -71,7 +71,7 @@ public class MonthlyViewModelTests
         var (viewModel, expenses, incomes, _, tithe, _) = CreateViewModel();
         expenses.Expenses = [new ExpenseDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), Description = "Test", Value = 10m, CategoryId = Guid.NewGuid(), CategoryName = "Mercado", PaymentSourceBankId = BarclaysId, PaymentSourceBankName = "Barclays", PaymentStatus = "ImmediatePayment" }];
         expenses.CategoryTotals = [new CategoryTotalDTO { Category = "Mercado", TotalValue = 10m }];
-        incomes.Incomes = [new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Gleison", NetValue = 100m, BankId = BarclaysId, BankName = "Barclays", SplitToReserve = false, ReserveSplitMovements = [] }];
+        incomes.Incomes = [new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Gleison", NetValue = 100m, BankId = BarclaysId, BankName = "Barclays", SplitToReserve = false }];
 
         await viewModel.RefreshAsync();
 
@@ -88,9 +88,9 @@ public class MonthlyViewModelTests
         var (viewModel, _, incomes, _, _, _) = CreateViewModel();
         incomes.Incomes =
         [
-            new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Gleison", GrossValue = 120m, NetValue = 100m, BankId = BarclaysId, BankName = "Barclays", SplitToReserve = false, ReserveSplitMovements = [] },
-            new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Gleison", GrossValue = 60m, NetValue = 50m, BankId = BarclaysId, BankName = "Barclays", SplitToReserve = false, ReserveSplitMovements = [] },
-            new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Ariana", NetValue = 30m, BankId = ChaseId, BankName = "Chase", SplitToReserve = false, ReserveSplitMovements = [] },
+            new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Gleison", GrossValue = 120m, NetValue = 100m, BankId = BarclaysId, BankName = "Barclays", SplitToReserve = false },
+            new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Gleison", GrossValue = 60m, NetValue = 50m, BankId = BarclaysId, BankName = "Barclays", SplitToReserve = false },
+            new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Ariana", NetValue = 30m, BankId = ChaseId, BankName = "Chase", SplitToReserve = false },
         ];
 
         await viewModel.RefreshAsync();
@@ -578,7 +578,7 @@ public class MonthlyViewModelTests
         {
             Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery",
             NetValue = 50m, BankId = banks.Banks[0].Id, BankName = banks.Banks[0].Name, Description = "Chip ISA dividend",
-            SplitToReserve = false, ReserveSplitMovements = [],
+            SplitToReserve = false,
         };
         await viewModel.RefreshAsync();
 
@@ -619,7 +619,7 @@ public class MonthlyViewModelTests
         {
             Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery",
             NetValue = 50m, BankId = BarclaysId, BankName = banks.Banks[0].Name,
-            SplitToReserve = false, ReserveSplitMovements = [],
+            SplitToReserve = false,
         };
         await viewModel.RefreshAsync();
 
@@ -638,7 +638,7 @@ public class MonthlyViewModelTests
     public async Task DeleteIncome_CallsServiceAndRefreshes()
     {
         var (viewModel, _, incomes, _, _, _) = CreateViewModel();
-        var income = new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery", NetValue = 10m, BankId = BarclaysId, BankName = "Barclays", SplitToReserve = false, ReserveSplitMovements = [] };
+        var income = new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery", NetValue = 10m, BankId = BarclaysId, BankName = "Barclays", SplitToReserve = false };
 
         await viewModel.DeleteIncomeAsync(income);
 
@@ -649,7 +649,7 @@ public class MonthlyViewModelTests
     public async Task DeleteIncome_ConfirmationDeclined_DoesNotCallService()
     {
         var (viewModel, _, incomes, _, _, _) = CreateViewModel(confirmDeletes: false);
-        var income = new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery", NetValue = 10m, BankId = BarclaysId, BankName = "Barclays", SplitToReserve = false, ReserveSplitMovements = [] };
+        var income = new IncomeDTO { Id = Guid.NewGuid(), Date = DateOnly.FromDateTime(DateTime.Today), IncomeSourceId = Guid.NewGuid(), IncomeSourceName = "Lottery", NetValue = 10m, BankId = BarclaysId, BankName = "Barclays", SplitToReserve = false };
 
         await viewModel.DeleteIncomeAsync(income);
 
