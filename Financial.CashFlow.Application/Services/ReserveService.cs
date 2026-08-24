@@ -46,7 +46,7 @@ public sealed class ReserveService : IReserveService
                 throw new ArgumentException("No reserve bucket is currently active.");
             }
 
-            var movements = ReserveSplitMovementFactory.Create(activeBuckets, request.Amount, request.Date, request.Description);
+            var movements = CreateSplitMovements(activeBuckets, request.Amount, request.Date, request.Description);
 
             try
             {
@@ -296,6 +296,15 @@ public sealed class ReserveService : IReserveService
 
     private decimal GetBalance(ReserveBucket bucket) =>
         _repository.GetReserveMovements().Where(m => m.Bucket == bucket).Sum(m => m.Amount);
+
+    /// <summary>The per-bucket fan-out shared with IncomeService's automated split: one movement
+    /// per active bucket, using each bucket's own percentage rule. No validation - callers apply
+    /// their own request-level rules first (see PostIncomeSplitAsync above).</summary>
+    internal static List<ReserveMovement> CreateSplitMovements(
+        IEnumerable<ReserveBucket> activeBuckets, decimal amount, DateOnly date, string description, Income? income = null) =>
+        activeBuckets
+            .Select(bucket => ReserveMovement.Create(bucket, bucket.CalculateSplitAmount(amount), date, description, income))
+            .ToList();
 
     private static void EnsureNotLinkedToIncome(ReserveMovement movement)
     {

@@ -37,23 +37,34 @@ public sealed class IncomeService : IIncomeService
                 ? BuildSplitMovements(income, request.NetValue, request.Date, request.Description)
                 : [];
 
-            await SaveWithRollbackAsync(
-                apply: () =>
+            try
+            {
+                await _repository.ApplyAndSaveAsync(() =>
                 {
                     _repository.AddIncome(income);
                     foreach (var movement in movements)
                     {
                         _repository.AddReserveMovement(movement);
                     }
-                },
-                rollback: () =>
+
+                    return true;
+                }).ConfigureAwait(false);
+            }
+            catch
+            {
+                await _repository.ApplyAndSaveAsync(() =>
                 {
                     _repository.DeleteIncome(income.Id);
                     foreach (var movement in movements)
                     {
                         _repository.DeleteReserveMovement(movement.Id);
                     }
+
+                    return false;
                 }).ConfigureAwait(false);
+
+                throw;
+            }
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, income.Id.ToString());
             span.MarkSuccess();
@@ -92,8 +103,9 @@ public sealed class IncomeService : IIncomeService
                 ? BuildSplitMovements(income, request.NetValue, request.Date, request.Description)
                 : [];
 
-            await SaveWithRollbackAsync(
-                apply: () =>
+            try
+            {
+                await _repository.ApplyAndSaveAsync(() =>
                 {
                     income.UpdateDetails(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description, request.SplitToReserve);
                     foreach (var movement in oldLinkedMovements)
@@ -105,8 +117,13 @@ public sealed class IncomeService : IIncomeService
                     {
                         _repository.AddReserveMovement(movement);
                     }
-                },
-                rollback: () =>
+
+                    return true;
+                }).ConfigureAwait(false);
+            }
+            catch
+            {
+                await _repository.ApplyAndSaveAsync(() =>
                 {
                     income.UpdateDetails(oldDate, oldIncomeSource, oldGrossValue, oldNetValue, oldBank, oldDescription, oldSplitToReserve);
                     foreach (var movement in newMovements)
@@ -118,7 +135,12 @@ public sealed class IncomeService : IIncomeService
                     {
                         _repository.AddReserveMovement(movement);
                     }
+
+                    return false;
                 }).ConfigureAwait(false);
+
+                throw;
+            }
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateIncome");
@@ -195,31 +217,6 @@ public sealed class IncomeService : IIncomeService
     private List<ReserveMovement> GetLinkedMovements(Guid incomeId) =>
         _repository.GetReserveMovements().Where(m => m.Income?.Id == incomeId).ToList();
 
-    /// <summary>Runs <paramref name="apply"/> under the repository's single save; if the save
-    /// fails, re-applies <paramref name="rollback"/> under an in-memory-only correction (mirrors
-    /// ReserveService.PostIncomeSplitAsync's existing create-then-compensate pattern).</summary>
-    private async Task SaveWithRollbackAsync(Action apply, Action rollback)
-    {
-        try
-        {
-            await _repository.ApplyAndSaveAsync(() =>
-            {
-                apply();
-                return true;
-            }).ConfigureAwait(false);
-        }
-        catch
-        {
-            await _repository.ApplyAndSaveAsync(() =>
-            {
-                rollback();
-                return false;
-            }).ConfigureAwait(false);
-
-            throw;
-        }
-    }
-
     private (IncomeSource IncomeSource, Bank? Bank) ValidateFields(Guid incomeSourceId, Guid? bankId, string? description, bool splitToReserve)
     {
         if (!EntityIdResolver.TryResolve(incomeSourceId, _repository.GetIncomeSources(), s => s.Id, out var resolvedIncomeSource))
@@ -249,7 +246,7 @@ public sealed class IncomeService : IIncomeService
     }
 
     private List<ReserveMovement> BuildSplitMovements(Income linkedIncome, decimal netValue, DateOnly date, string? description) =>
-        ReserveSplitMovementFactory.Create(
+        ReserveService.CreateSplitMovements(
             _repository.GetReserveBuckets().Where(b => b.IsActive),
             ComputeSplitBase(netValue),
             date,
