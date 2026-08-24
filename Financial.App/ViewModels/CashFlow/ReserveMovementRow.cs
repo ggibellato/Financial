@@ -7,7 +7,9 @@ namespace Financial.Presentation.App.ViewModels.CashFlow;
 /// Date+Description group (2+ movements) — how a split's total is shown when browsing
 /// history. <see cref="IsPartOfGroup"/> is set on every row of such a group (used to pick
 /// the delete-confirmation wording, since removing any one line of a split removes all of
-/// them). Mirrors Financial.Web's useReserva.ts buildMovementRows.
+/// them). <see cref="IsLocked"/> is set for a movement created by an automated income split
+/// (F02) — its Edit/Delete commands are disabled. Mirrors Financial.Web's useReserva.ts
+/// buildMovementRows.
 /// </summary>
 public sealed class ReserveMovementRow
 {
@@ -19,9 +21,12 @@ public sealed class ReserveMovementRow
     public required string Description { get; init; }
     public decimal? GroupTotal { get; init; }
     public bool IsPartOfGroup { get; init; }
+    public Guid? IncomeId { get; init; }
 
     /// <summary>Bindable in a DataTrigger without the nullable-value-type comparison pitfall of binding directly to GroupTotal.</summary>
     public bool HasGroupTotal => GroupTotal.HasValue;
+
+    public bool IsLocked => IncomeId.HasValue;
 
     public static List<ReserveMovementRow> BuildRows(IReadOnlyList<ReserveMovementDTO> movements)
     {
@@ -46,6 +51,7 @@ public sealed class ReserveMovementRow
                     Description = movement.Description,
                     GroupTotal = group.Count > 1 && group.LastIndex == index ? group.Total : null,
                     IsPartOfGroup = group.Count > 1,
+                    IncomeId = movement.IncomeId,
                 };
             })
             .ToList();

@@ -1,6 +1,7 @@
 <UserControl x:Class="Financial.Presentation.App.Views.CashFlow.ReservaView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:local="clr-namespace:Financial.Presentation.App.Views.CashFlow">
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -49,22 +50,57 @@
             <TextBlock Grid.Row="2" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding DeleteMovementError}"/>
 
             <DataGrid Grid.Row="3" ItemsSource="{Binding Movements}" AutoGenerateColumns="False" IsReadOnly="True">
+                <DataGrid.Resources>
+                    <sys:String x:Key="LockedMovementMessage">This reserve movement is linked to an income and can only be changed by editing that income.</sys:String>
+                </DataGrid.Resources>
                 <DataGrid.Columns>
-                    <DataGridTemplateColumn Header="" Width="34">
+                    <DataGridTemplateColumn Header="" Width="24">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="✏" ToolTip="Edit" Padding="4,0"
-                                        Command="{Binding DataContext.EditMovementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                        CommandParameter="{Binding}"/>
+                                <TextBlock Text="🔒" FontSize="12" Padding="4,0"
+                                           Visibility="{Binding IsLocked, Converter={StaticResource BoolToVisibilityConverter}}"
+                                           ToolTip="{StaticResource LockedMovementMessage}"
+                                           AutomationProperties.Name="{StaticResource LockedMovementMessage}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                     <DataGridTemplateColumn Header="" Width="34">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="🗑" ToolTip="Delete" Padding="4,0"
+                                <Button Content="✏" Padding="4,0" ToolTipService.ShowOnDisabled="True"
+                                        Command="{Binding DataContext.EditMovementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        CommandParameter="{Binding}">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="ToolTip" Value="Edit"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsLocked}" Value="True">
+                                                    <Setter Property="ToolTip" Value="{StaticResource LockedMovementMessage}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="" Width="34">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="🗑" Padding="4,0" ToolTipService.ShowOnDisabled="True"
                                         Command="{Binding DataContext.DeleteMovementCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                        CommandParameter="{Binding}"/>
+                                        CommandParameter="{Binding}">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="ToolTip" Value="Delete"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsLocked}" Value="True">
+                                                    <Setter Property="ToolTip" Value="{StaticResource LockedMovementMessage}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>

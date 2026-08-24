@@ -505,10 +505,10 @@ public class ReservaViewModel : ViewModelBase
 
     private void InitializeEditDeleteCommands()
     {
-        EditMovementCommand = new RelayCommand<ReserveMovementRow>(ShowEditForm);
+        EditMovementCommand = new RelayCommand<ReserveMovementRow>(ShowEditForm, row => row?.IsLocked != true);
         CancelEditFormCommand = new RelayCommand(CloseEditForm);
         SaveMovementEditCommand = new RelayCommand(async () => await SaveMovementEditAsync());
-        DeleteMovementCommand = new RelayCommand<ReserveMovementRow>(async row => await DeleteMovementAsync(row));
+        DeleteMovementCommand = new RelayCommand<ReserveMovementRow>(async row => await DeleteMovementAsync(row), row => row?.IsLocked != true);
     }
 
     private void ShowEditForm(ReserveMovementRow? row)
