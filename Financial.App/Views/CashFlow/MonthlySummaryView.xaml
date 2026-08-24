@@ -27,8 +27,10 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-            <TextBlock Grid.Row="1" Margin="0,8,0,0" FontWeight="Bold"
-                       Text="{Binding CategoryTotalsSum, StringFormat='Total: {0:N2}'}"/>
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,0">
+                <TextBlock Text="Total: "/>
+                <TextBlock Text="{Binding CategoryTotalsSum, StringFormat=N2}" FontWeight="Bold"/>
+            </StackPanel>
         </Grid>
 
         <local:CardsGridView Grid.Row="0" Grid.Column="1" Margin="12,0,0,0"/>
