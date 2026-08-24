@@ -6,7 +6,7 @@
         <helpers:BindingProxy x:Key="ShowCardManagementColumnsProxy"
                                Data="{Binding ShowCardManagementColumns, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
     </UserControl.Resources>
-    <Grid Margin="0,12,0,0">
+    <Grid Margin="0,0,0,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -15,10 +15,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding CardStatementError}"/>
-        <TextBlock Grid.Row="1" Foreground="#8A6D00" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding CardStatementWarning}"/>
-
-        <DataGrid Grid.Row="2" ItemsSource="{Binding CreditCardManagementRows}" AutoGenerateColumns="False">
+        <DataGrid Grid.Row="0" ItemsSource="{Binding CreditCardManagementRows}" AutoGenerateColumns="False">
             <DataGrid.Columns>
                 <DataGridTextColumn Binding="{Binding CreditCardName}" Header="Card" Width="180"
                                      ElementStyle="{StaticResource PlainColumnTextStyle}"/>
@@ -132,6 +129,8 @@
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
+        <TextBlock Grid.Row="1" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding CardStatementError}"/>
+        <TextBlock Grid.Row="2" Foreground="#8A6D00" TextWrapping="Wrap" Margin="0,0,0,4" Text="{Binding CardStatementWarning}"/>
 
         <TextBlock Grid.Row="3" Margin="0,8,0,0"
                    Text="{Binding AdjustmentTotal, StringFormat='Combined adjustment figure: {0:N2}'}"/>
