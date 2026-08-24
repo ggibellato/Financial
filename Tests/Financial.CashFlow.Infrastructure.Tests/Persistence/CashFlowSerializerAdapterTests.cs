@@ -38,12 +38,12 @@ public class CashFlowSerializerAdapterTests
             null,
             creditCard);
         expense.Settle(bank, new DateOnly(2026, 7, 31));
-        var reserveMovement = ReserveMovement.Create(reserveBucket, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split");
+        var income = Income.Create(new DateOnly(2026, 7, 25), incomeSource, 3200.00m, 2450.00m, bank, splitToReserve: true);
+        var reserveMovement = ReserveMovement.Create(reserveBucket, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split", income);
         var cardStatement = CardStatement.Create(creditCard, 2026, 7);
         var recurringBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
         var maeLedgerEntry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 15), "School supplies", "Note", Currency.BRL, 350m, 51.23m);
         var investmentSnapshot = InvestmentSnapshot.Create(investmentAccount, 2026, 7, 1250.00m);
-        var income = Income.Create(new DateOnly(2026, 7, 25), incomeSource, 3200.00m, 2450.00m, bank);
         var transfer = Transfer.Create(new DateOnly(2026, 7, 25), bank, destinationBank, 500.00m, "Round-up top-up");
         var balanceAdjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), bank, 2340.17m, -4.20m, "Matched against July statement");
 
@@ -119,6 +119,7 @@ public class CashFlowSerializerAdapterTests
             resultIncome.Date.Should().Be(income.Date);
             resultIncome.GrossValue.Should().Be(income.GrossValue);
             resultIncome.NetValue.Should().Be(income.NetValue);
+            resultIncome.SplitToReserve.Should().Be(income.SplitToReserve);
             var resultTransfer = result.Transfers.Should().ContainSingle().Which;
             resultTransfer.Id.Should().Be(transfer.Id);
             resultTransfer.Date.Should().Be(transfer.Date);
@@ -153,6 +154,7 @@ public class CashFlowSerializerAdapterTests
             resultExpense.CreditCard.Should().BeSameAs(resultCreditCard);
             resultCardStatement.CreditCard.Should().BeSameAs(resultCreditCard);
             resultExpense.Category.Should().BeSameAs(resultCategory);
+            resultMovement.Income.Should().BeSameAs(resultIncome);
         }
     }
 
@@ -229,6 +231,53 @@ public class CashFlowSerializerAdapterTests
         var act = () => _sut.Deserialize(json);
 
         act.Should().Throw<JsonException>().WithMessage($"*{missingBankId}*");
+    }
+
+    [Fact]
+    public void Deserialize_ReserveMovementMissingIncomeIdKeyEntirely_DefaultsToUnlinked()
+    {
+        var bucketId = Guid.NewGuid();
+        var json = $$"""
+            {
+              "Expenses": [], "CardStatements": [], "RecurringBills": [],
+              "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
+              "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [],
+              "Banks": [], "CreditCards": [], "Categories": [],
+              "ReserveBuckets": [{ "Id": "{{bucketId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 }],
+              "ReserveMovements": [{ "Id": "{{Guid.NewGuid()}}", "BucketId": "{{bucketId}}", "Amount": 50, "Date": "2026-07-01", "Description": "Legacy manual movement" }]
+            }
+            """;
+
+        var result = _sut.Deserialize(json);
+
+        result.ReserveMovements.Should().ContainSingle().Which.Income.Should().BeNull();
+    }
+
+    [Fact]
+    public void Deserialize_ReserveMovementWithIncomeIdReferencingAnIncomeDeserializedLater_ResolvesTheSameReference()
+    {
+        var incomeSourceId = Guid.NewGuid();
+        var incomeId = Guid.NewGuid();
+        var bucketId = Guid.NewGuid();
+        // "ReserveMovements" appears BEFORE "Incomes" in the text on purpose, to prove
+        // resolution doesn't depend on encountering Incomes first in the JSON text - only in the
+        // converter's own read order (Incomes before ReserveMovements), which is independent of
+        // JSON text order.
+        var json = $$"""
+            {
+              "Expenses": [], "CardStatements": [], "RecurringBills": [],
+              "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
+              "Transfers": [], "BalanceAdjustments": [], "Banks": [], "CreditCards": [], "Categories": [],
+              "ReserveBuckets": [{ "Id": "{{bucketId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 }],
+              "ReserveMovements": [{ "Id": "{{Guid.NewGuid()}}", "BucketId": "{{bucketId}}", "Amount": 50, "Date": "2026-07-01", "Description": "August salary", "IncomeId": "{{incomeId}}" }],
+              "IncomeSources": [{ "Id": "{{incomeSourceId}}", "Name": "Ariana", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": true }],
+              "Incomes": [{ "Id": "{{incomeId}}", "Date": "2026-07-01", "IncomeSourceId": "{{incomeSourceId}}", "NetValue": 50, "BankId": null, "SplitToReserve": true }]
+            }
+            """;
+
+        var result = _sut.Deserialize(json);
+
+        result.ReserveMovements.Should().ContainSingle().Which.Income.Should().BeSameAs(result.Incomes.Should().ContainSingle().Which);
     }
 
     [Fact]

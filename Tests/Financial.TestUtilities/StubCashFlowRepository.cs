@@ -76,7 +76,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public static IEnumerable<IncomeSource> DefaultIncomeSources() =>
     [
         IncomeSource.Create("Gleison", IncomeGroup.Salary),
-        IncomeSource.Create("Ariana", IncomeGroup.Salary),
+        IncomeSource.Create("Ariana", IncomeGroup.Salary, autoSplitToReserve: true),
         IncomeSource.Create("Lottery", IncomeGroup.NonReportable),
         IncomeSource.Create("DividendoJuros", IncomeGroup.DividendoJuros)
     ];

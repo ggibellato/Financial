@@ -1,4 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -57,5 +58,34 @@ public class ReserveMovementTests
             movement.Date.Should().Be(new DateOnly(2026, 7, 5));
             movement.Description.Should().Be("Corrected");
         }
+    }
+
+    [Fact]
+    public void Create_WithoutIncome_DefaultsToNull()
+    {
+        var movement = ReserveMovement.Create(Investimento, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split");
+
+        movement.Income.Should().BeNull();
+    }
+
+    [Fact]
+    public void Create_WithIncome_AssignsIncome()
+    {
+        var income = Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Create("Ariana", IncomeGroup.Salary, autoSplitToReserve: true), 3200m, 2450m, null, splitToReserve: true);
+
+        var movement = ReserveMovement.Create(Investimento, 815.05m, new DateOnly(2026, 7, 1), "August salary", income);
+
+        movement.Income.Should().BeSameAs(income);
+    }
+
+    [Fact]
+    public void Update_LeavesIncomeUntouched()
+    {
+        var income = Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Create("Ariana", IncomeGroup.Salary, autoSplitToReserve: true), 3200m, 2450m, null, splitToReserve: true);
+        var movement = ReserveMovement.Create(Investimento, 815.05m, new DateOnly(2026, 7, 1), "August salary", income);
+
+        movement.Update(Ariana, 25m, new DateOnly(2026, 7, 5), "Corrected");
+
+        movement.Income.Should().BeSameAs(income);
     }
 }
