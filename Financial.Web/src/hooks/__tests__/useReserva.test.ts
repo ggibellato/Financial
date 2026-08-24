@@ -105,6 +105,23 @@ describe('useReserva', () => {
     expect(result.current.movementRows.map((m) => m.isPartOfGroup)).toEqual([true, true, true, true])
   })
 
+  it('marks a movement with a non-null incomeId as locked', async () => {
+    getReserveMovementsMock.mockResolvedValue([
+      { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 100, date: '2026-07-25', description: 'Salary', incomeId: 'income-1' },
+    ])
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.movementRows[0].isLocked).toBe(true)
+  })
+
+  it('does not mark a movement with a null incomeId as locked', async () => {
+    const { result } = renderHook(() => useReserva())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.movementRows.every((m) => !m.isLocked)).toBe(true)
+  })
+
   it('computes the total balance across all buckets', async () => {
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

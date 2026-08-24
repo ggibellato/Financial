@@ -327,4 +327,36 @@ describe('ReservaPage', () => {
     await waitFor(() => expect(screen.getAllByText('Ramsay').length).toBe(4))
     expect(screen.queryByText(/Active bucket percentages sum to/)).not.toBeInTheDocument()
   })
+
+  it('shows a lock icon and disables Edit/Delete for a movement linked to an income', async () => {
+    getReserveMovementsMock.mockResolvedValue([
+      { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 200, date: '2026-07-25', description: 'Salary', incomeId: 'income-1' },
+    ])
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getByText('Salary')).toBeInTheDocument())
+
+    const lockMessage = 'This reserve movement is linked to an income and can only be changed by editing that income.'
+    expect(screen.getByLabelText(lockMessage)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Edit movement' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Delete movement' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Edit movement' })).toHaveAttribute('title', lockMessage)
+    expect(screen.getByRole('button', { name: 'Delete movement' })).toHaveAttribute('title', lockMessage)
+  })
+
+  it('shows no lock icon and keeps Edit/Delete enabled for a movement not linked to an income', async () => {
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getAllByText('Ramsay').length).toBe(4))
+
+    expect(
+      screen.queryByLabelText('This reserve movement is linked to an income and can only be changed by editing that income.'),
+    ).not.toBeInTheDocument()
+    for (const button of screen.getAllByRole('button', { name: 'Edit movement' })) {
+      expect(button).toBeEnabled()
+    }
+    for (const button of screen.getAllByRole('button', { name: 'Delete movement' })) {
+      expect(button).toBeEnabled()
+    }
+  })
 })

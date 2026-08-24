@@ -18,12 +18,17 @@ export type EditMovementField = 'editMovementBucketId' | 'editMovementAmount' | 
  * A movement row for display. `groupTotal` is set only on the last movement of a same
  * date+description group (2+ movements) — how a split's total is found when browsing history.
  * `isPartOfGroup` is set on every movement in such a group (used to warn before a cascading
- * delete, since removing any one line of a split removes all of them).
+ * delete, since removing any one line of a split removes all of them). `isLocked` is set for a
+ * movement created by an automated income split (F02) — its Edit/Delete controls are disabled.
  */
 export interface ReserveMovementRow extends ReserveMovementDto {
   groupTotal: number | null
   isPartOfGroup: boolean
+  isLocked: boolean
 }
+
+export const LOCKED_MOVEMENT_MESSAGE =
+  'This reserve movement is linked to an income and can only be changed by editing that income.'
 
 interface ReservaState {
   balances: ReserveBucketBalanceDto[]
@@ -312,6 +317,7 @@ function buildMovementRows(movements: ReserveMovementDto[]): ReserveMovementRow[
       ...m,
       groupTotal: group.count > 1 && group.lastIndex === index ? group.total : null,
       isPartOfGroup: group.count > 1,
+      isLocked: m.incomeId != null,
     }
   })
 }

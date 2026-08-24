@@ -1,7 +1,7 @@
 import { Fragment } from 'react'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
-import { useReserva } from '../hooks/useReserva'
+import { LOCKED_MOVEMENT_MESSAGE, useReserva } from '../hooks/useReserva'
 import type { EditMovementField, WithdrawalFormField } from '../hooks/useReserva'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './ReservaPage.css'
@@ -18,6 +18,7 @@ function BalanceColumns() {
 function MovementColumns() {
   return (
     <colgroup>
+      <col className="reserva-page__col-actions" />
       <col className="reserva-page__col-actions" />
       <col className="reserva-page__col-actions" />
       <col className="reserva-page__col-date" />
@@ -354,6 +355,7 @@ export default function ReservaPage() {
                   <tr>
                     <th />
                     <th />
+                    <th />
                     <th>Date</th>
                     <th>Bucket</th>
                     <th>Description</th>
@@ -365,10 +367,24 @@ export default function ReservaPage() {
                     <Fragment key={m.id}>
                       <tr>
                         <td>
+                          {m.isLocked && (
+                            <span
+                              className="reserva-page__lock-icon"
+                              role="img"
+                              aria-label={LOCKED_MOVEMENT_MESSAGE}
+                              title={LOCKED_MOVEMENT_MESSAGE}
+                            >
+                              🔒
+                            </span>
+                          )}
+                        </td>
+                        <td>
                           <button
                             className="data-table__action-btn"
                             type="button"
                             aria-label="Edit movement"
+                            disabled={m.isLocked}
+                            title={m.isLocked ? LOCKED_MOVEMENT_MESSAGE : undefined}
                             onClick={() => showEditMovementForm(m)}
                           >
                             ✏
@@ -379,7 +395,8 @@ export default function ReservaPage() {
                             className="data-table__action-btn"
                             type="button"
                             aria-label={deletingMovementId === m.id ? 'Deleting movement' : 'Delete movement'}
-                            disabled={deletingMovementId === m.id}
+                            disabled={m.isLocked || deletingMovementId === m.id}
+                            title={m.isLocked ? LOCKED_MOVEMENT_MESSAGE : undefined}
                             onClick={() => {
                               const warning = m.isPartOfGroup
                                 ? `Delete "${m.description}"? This is part of a split and will delete all 4 lines.`
@@ -402,6 +419,7 @@ export default function ReservaPage() {
                       </tr>
                       {m.groupTotal !== null && (
                         <tr className="reserva-page__totals-row">
+                          <td />
                           <td />
                           <td />
                           <td colSpan={3}>Total split for {m.description}</td>

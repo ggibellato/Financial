@@ -379,6 +379,86 @@ public class ReservaViewModelTests
     }
 
     [Fact]
+    public void BuildRows_WithIncomeId_SetsIsLockedTrue()
+    {
+        var movement = new ReserveMovementDTO
+        {
+            Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 100m,
+            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary", IncomeId = Guid.NewGuid(),
+        };
+
+        var rows = ReserveMovementRow.BuildRows([movement]);
+
+        rows.Single().IsLocked.Should().BeTrue();
+    }
+
+    [Fact]
+    public void BuildRows_WithoutIncomeId_SetsIsLockedFalse()
+    {
+        var movement = new ReserveMovementDTO
+        {
+            Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 100m,
+            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Groceries",
+        };
+
+        var rows = ReserveMovementRow.BuildRows([movement]);
+
+        rows.Single().IsLocked.Should().BeFalse();
+    }
+
+    [Fact]
+    public void EditMovementCommand_CanExecute_FalseForLockedRow()
+    {
+        var (viewModel, _) = CreateViewModel();
+        var row = new ReserveMovementRow
+        {
+            Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
+            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary", IncomeId = Guid.NewGuid(),
+        };
+
+        viewModel.EditMovementCommand.CanExecute(row).Should().BeFalse();
+    }
+
+    [Fact]
+    public void EditMovementCommand_CanExecute_TrueForUnlockedRow()
+    {
+        var (viewModel, _) = CreateViewModel();
+        var row = new ReserveMovementRow
+        {
+            Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
+            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary",
+        };
+
+        viewModel.EditMovementCommand.CanExecute(row).Should().BeTrue();
+    }
+
+    [Fact]
+    public void DeleteMovementCommand_CanExecute_FalseForLockedRow()
+    {
+        var (viewModel, _) = CreateViewModel();
+        var row = new ReserveMovementRow
+        {
+            Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
+            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary", IncomeId = Guid.NewGuid(),
+        };
+
+        viewModel.DeleteMovementCommand.CanExecute(row).Should().BeFalse();
+    }
+
+    [Fact]
+    public void DeleteMovementCommand_CanExecute_TrueForUnlockedRow()
+    {
+        var (viewModel, _) = CreateViewModel();
+        var row = new ReserveMovementRow
+        {
+            Id = Guid.NewGuid(), BucketId = InvestimentoId, BucketName = "Investimento", Amount = 10m,
+            Date = DateOnly.FromDateTime(DateTime.Today), Description = "Salary",
+        };
+
+        viewModel.DeleteMovementCommand.CanExecute(row).Should().BeTrue();
+    }
+
+    [Fact]
     public async Task RefreshAsync_BucketLookupFails_LogsAWarningWithTheErrorTypeOnly()
     {
         var logger = new RecordingLogger<ReservaViewModel>();
