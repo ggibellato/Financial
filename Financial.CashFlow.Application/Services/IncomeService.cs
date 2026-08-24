@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -29,14 +30,41 @@ public sealed class IncomeService : IIncomeService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var (incomeSource, bank) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description);
+            var (incomeSource, bank) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description, request.SplitToReserve);
 
-            var income = Income.Create(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description);
-            await _repository.ApplyAndSaveAsync(() =>
+            var income = Income.Create(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description, request.SplitToReserve);
+            var movements = request.SplitToReserve
+                ? BuildSplitMovements(income, request.NetValue, request.Date, request.Description)
+                : [];
+
+            try
             {
-                _repository.AddIncome(income);
-                return true;
-            }).ConfigureAwait(false);
+                await _repository.ApplyAndSaveAsync(() =>
+                {
+                    _repository.AddIncome(income);
+                    foreach (var movement in movements)
+                    {
+                        _repository.AddReserveMovement(movement);
+                    }
+
+                    return true;
+                }).ConfigureAwait(false);
+            }
+            catch
+            {
+                await _repository.ApplyAndSaveAsync(() =>
+                {
+                    _repository.DeleteIncome(income.Id);
+                    foreach (var movement in movements)
+                    {
+                        _repository.DeleteReserveMovement(movement.Id);
+                    }
+
+                    return false;
+                }).ConfigureAwait(false);
+
+                throw;
+            }
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, income.Id.ToString());
             span.MarkSuccess();
@@ -60,13 +88,59 @@ public sealed class IncomeService : IIncomeService
 
             var income = FindIncomeOrThrow(id);
 
-            var (incomeSource, bank) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description);
+            var (incomeSource, bank) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description, request.SplitToReserve);
 
-            await _repository.ApplyAndSaveAsync(() =>
+            var oldDate = income.Date;
+            var oldIncomeSource = income.IncomeSource;
+            var oldGrossValue = income.GrossValue;
+            var oldNetValue = income.NetValue;
+            var oldBank = income.Bank;
+            var oldDescription = income.Description;
+            var oldSplitToReserve = income.SplitToReserve;
+            var oldLinkedMovements = GetLinkedMovements(income.Id);
+
+            var newMovements = request.SplitToReserve
+                ? BuildSplitMovements(income, request.NetValue, request.Date, request.Description)
+                : [];
+
+            try
             {
-                income.UpdateDetails(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description);
-                return true;
-            }).ConfigureAwait(false);
+                await _repository.ApplyAndSaveAsync(() =>
+                {
+                    income.UpdateDetails(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description, request.SplitToReserve);
+                    foreach (var movement in oldLinkedMovements)
+                    {
+                        _repository.DeleteReserveMovement(movement.Id);
+                    }
+
+                    foreach (var movement in newMovements)
+                    {
+                        _repository.AddReserveMovement(movement);
+                    }
+
+                    return true;
+                }).ConfigureAwait(false);
+            }
+            catch
+            {
+                await _repository.ApplyAndSaveAsync(() =>
+                {
+                    income.UpdateDetails(oldDate, oldIncomeSource, oldGrossValue, oldNetValue, oldBank, oldDescription, oldSplitToReserve);
+                    foreach (var movement in newMovements)
+                    {
+                        _repository.DeleteReserveMovement(movement.Id);
+                    }
+
+                    foreach (var movement in oldLinkedMovements)
+                    {
+                        _repository.AddReserveMovement(movement);
+                    }
+
+                    return false;
+                }).ConfigureAwait(false);
+
+                throw;
+            }
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateIncome");
@@ -87,8 +161,15 @@ public sealed class IncomeService : IIncomeService
         {
             FindIncomeOrThrow(id);
 
+            var linkedMovements = GetLinkedMovements(id);
+
             await _repository.ApplyAndSaveAsync(() =>
             {
+                foreach (var movement in linkedMovements)
+                {
+                    _repository.DeleteReserveMovement(movement.Id);
+                }
+
                 _repository.DeleteIncome(id);
                 return true;
             }).ConfigureAwait(false);
@@ -133,11 +214,19 @@ public sealed class IncomeService : IIncomeService
     private Income FindIncomeOrThrow(Guid id) =>
         _repository.GetIncomes().FirstOrThrow(i => i.Id == id, "Income", id);
 
-    private (IncomeSource IncomeSource, Bank? Bank) ValidateFields(Guid incomeSourceId, Guid? bankId, string? description)
+    private List<ReserveMovement> GetLinkedMovements(Guid incomeId) =>
+        _repository.GetReserveMovements().Where(m => m.Income?.Id == incomeId).ToList();
+
+    private (IncomeSource IncomeSource, Bank? Bank) ValidateFields(Guid incomeSourceId, Guid? bankId, string? description, bool splitToReserve)
     {
         if (!EntityIdResolver.TryResolve(incomeSourceId, _repository.GetIncomeSources(), s => s.Id, out var resolvedIncomeSource))
         {
             throw new ArgumentException($"Income source '{incomeSourceId}' is not recognized.");
+        }
+
+        if (splitToReserve && !resolvedIncomeSource!.AutoSplitToReserve)
+        {
+            throw new ArgumentException("This income source does not support automatic reserve splitting.");
         }
 
         DescriptionValidator.EnsureWithinLimit(description);
@@ -156,6 +245,17 @@ public sealed class IncomeService : IIncomeService
         return (resolvedIncomeSource!, resolvedBank);
     }
 
+    private List<ReserveMovement> BuildSplitMovements(Income linkedIncome, decimal netValue, DateOnly date, string? description) =>
+        ReserveService.CreateSplitMovements(
+            _repository.GetReserveBuckets().Where(b => b.IsActive),
+            ComputeSplitBase(netValue),
+            date,
+            description ?? string.Empty,
+            linkedIncome);
+
+    private static decimal ComputeSplitBase(decimal netValue) =>
+        Math.Round(TitheRule.NetOfTithe(netValue), 2, MidpointRounding.AwayFromZero);
+
     private static IncomeDTO ToDto(Income income) => new()
     {
         Id = income.Id,
@@ -166,6 +266,7 @@ public sealed class IncomeService : IIncomeService
         NetValue = income.NetValue,
         BankId = income.Bank?.Id,
         BankName = income.Bank?.Name,
-        Description = income.Description
+        Description = income.Description,
+        SplitToReserve = income.SplitToReserve
     };
 }

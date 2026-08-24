@@ -118,8 +118,8 @@ The two records are now genuinely linked: editing a split-linked Income recalcul
 - `PUT /reserve/movements/{id}` and `DELETE /reserve/movements/{id}` reject any request targeting a `ReserveMovement` whose `IncomeId` is non-null. Movements with `IncomeId = null` — every movement that exists today, plus every movement created by the unchanged manual "New Income Split" feature — are completely unaffected and keep their current full edit/delete behavior, including the existing same-Date-and-Description group delete.
 
 **Experience:**
-- No new screen of its own; this is orchestration behind the Income form's existing Save action (F03) and behind the Reserve section's existing movement Edit/Delete actions (F04).
-- `IncomeDTO` (the Income read/response shape) includes `SplitToReserve` and a summary of the resulting split (per-bucket amounts and total, mirroring what the manual split's `IncomeSplitResultDTO` already returns), so the Income form can show confirmation feedback after a successful save.
+- No new screen of its own; this is orchestration behind the Income form's existing Save action (F03) and behind the Reserve section's existing movement Edit/Delete actions (F04). The resulting split itself is only ever shown in the Reserve section (existing behavior) — the Income form does not duplicate it.
+- `IncomeDTO` (the Income read/response shape) includes `SplitToReserve`, so the Income form can reflect whether a given entry is currently split.
 
 **Error Handling:**
 - Submitting `SplitToReserve = true` for an `IncomeSource` with `AutoSplitToReserve = false` → rejected with "This income source does not support automatic reserve splitting."
@@ -216,18 +216,18 @@ graph TD
 - [x] `GET /income-sources` returns `AutoSplitToReserve` for every income source.
 
 ### F02. Automated Income-to-Reserve Split Orchestration
-- [ ] Creating an Income with `SplitToReserve = true` for an eligible `IncomeSource` creates one `ReserveMovement` per active `ReserveBucket`, each with `Amount = CalculateSplitAmount(NetValue × 0.90)`, `Date = Income.Date`, `Description = Income.Description`, and `IncomeId` set to the new Income's id.
-- [ ] Creating an Income with `SplitToReserve = true` for a non-eligible `IncomeSource` is rejected and nothing is persisted.
-- [ ] Creating an Income with `SplitToReserve = true` when zero `ReserveBucket`s are active succeeds, saves the Income, and creates zero `ReserveMovement`s.
-- [ ] Updating a split-linked Income's `NetValue`, `Date`, or `Description` deletes its previously linked `ReserveMovement`s and recreates them with the new values, preserving the same set of active buckets' fan-out.
-- [ ] Unchecking `SplitToReserve` on an update to an existing split Income deletes its linked `ReserveMovement`s and leaves the Income with no linked movements.
-- [ ] Checking `SplitToReserve` on an update to an existing unsplit Income (eligible source) creates the linked `ReserveMovement`s for the first time.
-- [ ] Deleting a split-linked Income deletes all of its linked `ReserveMovement`s in the same operation.
-- [ ] A simulated failure during split-movement creation on Create rolls back the entire operation — no Income and no movement are persisted.
-- [ ] A simulated failure during split-movement recreation on Update rolls back the entire operation — the Income and its previously linked movements remain unchanged from before the edit.
-- [ ] `PUT /reserve/movements/{id}` on a movement with a non-null `IncomeId` is rejected.
-- [ ] `DELETE /reserve/movements/{id}` on a movement with a non-null `IncomeId` is rejected.
-- [ ] `PUT`/`DELETE /reserve/movements/{id}` on a movement with `IncomeId = null` succeeds exactly as it does today.
+- [x] Creating an Income with `SplitToReserve = true` for an eligible `IncomeSource` creates one `ReserveMovement` per active `ReserveBucket`, each with `Amount = CalculateSplitAmount(NetValue × 0.90)`, `Date = Income.Date`, `Description = Income.Description`, and `IncomeId` set to the new Income's id.
+- [x] Creating an Income with `SplitToReserve = true` for a non-eligible `IncomeSource` is rejected and nothing is persisted.
+- [x] Creating an Income with `SplitToReserve = true` when zero `ReserveBucket`s are active succeeds, saves the Income, and creates zero `ReserveMovement`s.
+- [x] Updating a split-linked Income's `NetValue`, `Date`, or `Description` deletes its previously linked `ReserveMovement`s and recreates them with the new values, preserving the same set of active buckets' fan-out.
+- [x] Unchecking `SplitToReserve` on an update to an existing split Income deletes its linked `ReserveMovement`s and leaves the Income with no linked movements.
+- [x] Checking `SplitToReserve` on an update to an existing unsplit Income (eligible source) creates the linked `ReserveMovement`s for the first time.
+- [x] Deleting a split-linked Income deletes all of its linked `ReserveMovement`s in the same operation.
+- [x] A simulated failure during split-movement creation on Create rolls back the entire operation — no Income and no movement are persisted.
+- [x] A simulated failure during split-movement recreation on Update rolls back the entire operation — the Income and its previously linked movements remain unchanged from before the edit.
+- [x] `PUT /reserve/movements/{id}` on a movement with a non-null `IncomeId` is rejected.
+- [x] `DELETE /reserve/movements/{id}` on a movement with a non-null `IncomeId` is rejected.
+- [x] `PUT`/`DELETE /reserve/movements/{id}` on a movement with `IncomeId = null` succeeds exactly as it does today.
 
 ### F03. Income Form Split Control
 - [ ] Selecting an eligible `IncomeSource` on a new Income shows the split checkbox, checked by default.
@@ -244,7 +244,7 @@ graph TD
 - [ ] The WPF Reserve views show the same lock indicator and disabled-action behavior as the React Reserve page for the same scenarios.
 
 ### Cross-Feature Integration
-- [ ] F02's split validation correctly reads F01's `AutoSplitToReserve` flag: a request with `SplitToReserve = true` succeeds only when the referenced `IncomeSource.AutoSplitToReserve = true`, and is rejected otherwise.
+- [x] F02's split validation correctly reads F01's `AutoSplitToReserve` flag: a request with `SplitToReserve = true` succeeds only when the referenced `IncomeSource.AutoSplitToReserve = true`, and is rejected otherwise.
 - [ ] F03's checkbox visibility and default state on the Income form correctly reflect the `AutoSplitToReserve` value returned by F01's `GET /income-sources` for the currently selected source.
 - [ ] Submitting F03's checked checkbox results in F02 creating the linked `ReserveMovement`s, and the resulting split summary returned by F02 renders correctly in F03's post-save confirmation.
 - [ ] F04's lock indicator and disabled Edit/Delete state correctly reflect the `IncomeId` link created and maintained by F02 — a movement appears locked immediately after F02 creates it, and becomes unlocked (or disappears) immediately after F02 removes the link via an Income edit/delete.

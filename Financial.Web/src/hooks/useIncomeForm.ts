@@ -248,6 +248,7 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
         netValue,
         bankId: createIncomeBank || null,
         description: createIncomeDescription || null,
+        splitToReserve: false,
       })
       .then(() => {
         dispatch({ type: 'CREATE_SUCCESS' })
@@ -310,6 +311,7 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
         netValue,
         bankId: state.editIncomeBank || null,
         description: state.editIncomeDescription || null,
+        splitToReserve: false,
       })
       .then(() => {
         dispatch({ type: 'SAVE_SUCCESS' })

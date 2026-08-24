@@ -1454,6 +1454,9 @@
           "netValue": {
             "format": "double",
             "type": "number"
+          },
+          "splitToReserve": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -1509,6 +1512,9 @@
           "netValue": {
             "format": "double",
             "type": "number"
+          },
+          "splitToReserve": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -1516,7 +1522,8 @@
           "date",
           "incomeSourceId",
           "incomeSourceName",
-          "netValue"
+          "netValue",
+          "splitToReserve"
         ],
         "type": "object"
       },
@@ -1621,6 +1628,9 @@
           "netValue": {
             "format": "double",
             "type": "number"
+          },
+          "splitToReserve": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -2199,6 +2209,13 @@
           "id": {
             "format": "uuid",
             "type": "string"
+          },
+          "incomeId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "required": [

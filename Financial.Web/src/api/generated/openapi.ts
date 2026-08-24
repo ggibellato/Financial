@@ -4299,6 +4299,7 @@ export interface components {
             incomeSourceId: string;
             /** Format: double */
             netValue: number;
+            splitToReserve?: boolean;
         };
         IncomeDTO: {
             /** Format: uuid */
@@ -4316,6 +4317,7 @@ export interface components {
             incomeSourceName: string;
             /** Format: double */
             netValue: number;
+            splitToReserve: boolean;
         };
         IncomeSourceDTO: {
             autoSplitToReserve: boolean;
@@ -4349,6 +4351,7 @@ export interface components {
             incomeSourceId: string;
             /** Format: double */
             netValue: number;
+            splitToReserve?: boolean;
         };
         InvestmentAccountAnnualDiffDTO: {
             account: string;
@@ -4524,6 +4527,8 @@ export interface components {
             description: string;
             /** Format: uuid */
             id: string;
+            /** Format: uuid */
+            incomeId?: null | string;
         };
         SetAssetPriceDTO: {
             assetName: string;

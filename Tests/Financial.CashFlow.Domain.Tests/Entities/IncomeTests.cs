@@ -167,4 +167,30 @@ public class IncomeTests
 
         income.Description.Should().Be("Updated note");
     }
+
+    [Fact]
+    public void Create_WithoutSplitToReserve_DefaultsToFalse()
+    {
+        var income = Income.Create(new DateOnly(2026, 7, 1), Ariana, 3200m, 2450m, Barclays);
+
+        income.SplitToReserve.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Create_WithSplitToReserveTrue_AssignsTrue()
+    {
+        var income = Income.Create(new DateOnly(2026, 7, 1), Ariana, 3200m, 2450m, Barclays, splitToReserve: true);
+
+        income.SplitToReserve.Should().BeTrue();
+    }
+
+    [Fact]
+    public void UpdateDetails_TogglingSplitToReserve_ReplacesValue()
+    {
+        var income = Income.Create(new DateOnly(2026, 7, 1), Ariana, 3200m, 2450m, Barclays, splitToReserve: true);
+
+        income.UpdateDetails(income.Date, income.IncomeSource, income.GrossValue, income.NetValue, income.Bank, income.Description, splitToReserve: false);
+
+        income.SplitToReserve.Should().BeFalse();
+    }
 }

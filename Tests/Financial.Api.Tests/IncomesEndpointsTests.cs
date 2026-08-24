@@ -270,4 +270,69 @@ public class IncomesEndpointsTests : ApiEndpointTests
         items.Should().HaveCount(2);
         items.Should().OnlyContain(i => i.Date.Month == 7);
     }
+
+    [Fact]
+    public async Task AddIncome_WithSplitForEligibleSource_ReturnsOkAndCreatesLinkedReserveMovements()
+    {
+        var request = new IncomeCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            IncomeSourceId = ArianaId,
+            GrossValue = null,
+            NetValue = 2450.00m,
+            BankId = ChaseId,
+            SplitToReserve = true
+        };
+
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/incomes", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var income = await response.Content.ReadFromJsonAsync<IncomeDTO>();
+        income!.SplitToReserve.Should().BeTrue();
+        var movements = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
+        var linkedMovements = movements!.Where(m => m.IncomeId == income.Id).ToList();
+        linkedMovements.Should().HaveCount(4);
+        linkedMovements.Sum(m => m.Amount).Should().Be(2205.00m);
+    }
+
+    [Fact]
+    public async Task AddIncome_WithSplitForIneligibleSource_ReturnsBadRequest()
+    {
+        var request = new IncomeCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            IncomeSourceId = GleisonId,
+            GrossValue = 3200.00m,
+            NetValue = 2450.00m,
+            BankId = BarclaysId,
+            SplitToReserve = true
+        };
+
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/incomes", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task DeleteIncome_WithLinkedMovements_RemovesThemFromMovementHistory()
+    {
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            IncomeSourceId = ArianaId,
+            GrossValue = null,
+            NetValue = 2450.00m,
+            BankId = ChaseId,
+            SplitToReserve = true
+        });
+        var createdIncome = await created.Content.ReadFromJsonAsync<IncomeDTO>();
+        var movementsBeforeDelete = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
+        movementsBeforeDelete!.Should().Contain(m => m.IncomeId == createdIncome!.Id);
+
+        var response = await Client.DeleteAsync($"/api/v1/financial/incomes/{createdIncome!.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var movementsAfterDelete = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
+        movementsAfterDelete.Should().NotContain(m => m.IncomeId == createdIncome.Id);
+    }
 }

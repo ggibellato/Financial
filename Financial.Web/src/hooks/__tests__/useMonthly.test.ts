@@ -114,6 +114,7 @@ const INCOMES: IncomeDto[] = [
     bankId: 'bank-barclays',
     bankName: 'Barclays',
     description: null,
+    splitToReserve: false,
   },
 ]
 
@@ -406,6 +407,7 @@ describe('useMonthly', () => {
         bankId: 'bank-chase',
         bankName: 'Chase',
         description: null,
+        splitToReserve: false,
       },
       {
         id: 'i2',
@@ -417,6 +419,7 @@ describe('useMonthly', () => {
         bankId: 'bank-chase',
         bankName: 'Chase',
         description: null,
+        splitToReserve: false,
       },
       {
         id: 'i3',
@@ -428,6 +431,7 @@ describe('useMonthly', () => {
         bankId: 'bank-chase',
         bankName: 'Chase',
         description: null,
+        splitToReserve: false,
       },
     ])
     const { result } = renderHook(() => useMonthly())

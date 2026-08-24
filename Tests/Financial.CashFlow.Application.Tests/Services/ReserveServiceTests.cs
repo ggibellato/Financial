@@ -5,6 +5,7 @@ using Financial.CashFlow.Application.Services;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -413,6 +414,67 @@ public class ReserveServiceTests
         act.Should().Throw<ArgumentNullException>();
     }
 
+    private static Income LinkedIncome() =>
+        Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Create("Ariana", IncomeGroup.Salary, autoSplitToReserve: true), null, 2450m, null, "August salary", splitToReserve: true);
+
+    [Fact]
+    public async Task UpdateMovementAsync_OnLinkedMovement_ThrowsReserveMovementLinkedToIncomeException()
+    {
+        var bucket = _repository.ReserveBuckets.First(b => b.Name == "Investimento");
+        var linked = ReserveMovement.Create(bucket, 100m, new DateOnly(2026, 7, 1), "August salary", LinkedIncome());
+        _repository.ReserveMovements.Add(linked);
+
+        var act = async () => await _sut.UpdateMovementAsync(linked.Id, new UpdateReserveMovementDTO
+        {
+            BucketId = BucketId("HouseTreats"),
+            Amount = 150m,
+            Date = new DateOnly(2026, 7, 5),
+            Description = "Corrected"
+        });
+
+        await act.Should().ThrowAsync<ReserveMovementLinkedToIncomeException>().WithMessage("*linked to an income*");
+        linked.Amount.Should().Be(100m);
+    }
+
+    [Fact]
+    public async Task DeleteMovementAsync_OnLinkedMovement_ThrowsReserveMovementLinkedToIncomeException()
+    {
+        var bucket = _repository.ReserveBuckets.First(b => b.Name == "Investimento");
+        var linked = ReserveMovement.Create(bucket, 100m, new DateOnly(2026, 7, 1), "August salary", LinkedIncome());
+        _repository.ReserveMovements.Add(linked);
+
+        var act = async () => await _sut.DeleteMovementAsync(linked.Id);
+
+        await act.Should().ThrowAsync<ReserveMovementLinkedToIncomeException>().WithMessage("*linked to an income*");
+        _repository.ReserveMovements.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task DeleteMovementAsync_OnUnlinkedMovementSharingDateAndDescriptionWithALinkedOne_DeletesOnlyTheUnlinkedGroup()
+    {
+        var investimento = _repository.ReserveBuckets.First(b => b.Name == "Investimento");
+        var houseTreats = _repository.ReserveBuckets.First(b => b.Name == "HouseTreats");
+        var sameDate = new DateOnly(2026, 7, 1);
+        var manual1 = ReserveMovement.Create(investimento, 50m, sameDate, "August salary");
+        var manual2 = ReserveMovement.Create(houseTreats, 50m, sameDate, "August salary");
+        var linked = ReserveMovement.Create(investimento, 100m, sameDate, "August salary", LinkedIncome());
+        _repository.ReserveMovements.AddRange([manual1, manual2, linked]);
+
+        await _sut.DeleteMovementAsync(manual1.Id);
+
+        using (new AssertionScope())
+        {
+            _repository.ReserveMovements.Should().ContainSingle().Which.Should().BeSameAs(linked);
+        }
+    }
+
+    [Fact]
+    public async Task PostIncomeSplitAsync_StillCreatesUnlinkedMovements()
+    {
+        await _sut.PostIncomeSplitAsync(ValidIncomeSplitRequest());
+
+        _repository.ReserveMovements.Should().OnlyContain(m => m.Income == null);
+    }
 }
 
 internal static class ReserveServiceTestsStubExtensions

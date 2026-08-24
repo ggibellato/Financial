@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
+using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -7,7 +8,6 @@ namespace Financial.CashFlow.Application.Services;
 
 public sealed class TitheService : ITitheService
 {
-    private const decimal TithePercentage = 0.10m;
     private const string EntityType = "TitheSummary";
 
     private readonly ICashFlowRepository _repository;
@@ -30,7 +30,7 @@ public sealed class TitheService : ITitheService
                 .Where(i => i.Date.Year == year && i.Date.Month == month)
                 .Sum(i => i.NetValue);
 
-            var calculatedTithe = titheBase * TithePercentage;
+            var calculatedTithe = TitheRule.CalculateTithe(titheBase);
 
             var dizimoTotal = _repository.GetExpenses()
                 .Where(e => e.Date.Year == year && e.Date.Month == month && e.Category.IsTithe && e.CountsAsTithe)

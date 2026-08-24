@@ -9,6 +9,8 @@ public class ReserveEndpointsTests : ApiEndpointTests
 {
     private static readonly Guid InvestimentoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-300000000001");
     private static readonly Guid ArianaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-300000000003");
+    private static readonly Guid ArianaIncomeSourceId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000002");
+    private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
 
     [Fact]
     public async Task PostIncomeSplit_ValidRequest_ReturnsOkWithComputedSplit()
@@ -240,5 +242,66 @@ public class ReserveEndpointsTests : ApiEndpointTests
         var response = await Client.DeleteAsync($"/api/v1/financial/reserve/movements/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    private async Task<Guid> CreateLinkedMovementIdAsync()
+    {
+        var income = await Client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            IncomeSourceId = ArianaIncomeSourceId,
+            GrossValue = null,
+            NetValue = 2450.00m,
+            BankId = ChaseId,
+            SplitToReserve = true
+        });
+        var incomeDto = await income.Content.ReadFromJsonAsync<IncomeDTO>();
+        var movements = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
+        return movements!.First(m => m.IncomeId == incomeDto!.Id).Id;
+    }
+
+    [Fact]
+    public async Task UpdateMovement_OnLinkedMovement_ReturnsConflict()
+    {
+        var linkedMovementId = await CreateLinkedMovementIdAsync();
+
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/reserve/movements/{linkedMovementId}", new UpdateReserveMovementDTO
+        {
+            BucketId = ArianaId,
+            Amount = 10m,
+            Date = new DateOnly(2026, 7, 1),
+            Description = "Attempted direct edit"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("linked to an income");
+    }
+
+    [Fact]
+    public async Task DeleteMovement_OnLinkedMovement_ReturnsConflict()
+    {
+        var linkedMovementId = await CreateLinkedMovementIdAsync();
+
+        var response = await Client.DeleteAsync($"/api/v1/financial/reserve/movements/{linkedMovementId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("linked to an income");
+    }
+
+    [Fact]
+    public async Task PostIncomeSplit_StillCreatesUnlinkedMovements()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", new IncomeSplitRequestDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            Amount = 1963m,
+            Description = "Ramsay"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var movements = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
+        movements.Should().OnlyContain(m => m.IncomeId == null);
     }
 }

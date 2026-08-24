@@ -28,21 +28,26 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         typeof(BalanceAdjustment)
     ];
 
-    // Maps each reference-typed property to its wire name; the reference converter itself is
-    // resolved separately per-property since it needs the resolver's own context instance.
-    private static readonly Dictionary<(Type OwningType, string PropertyName), string> ReferenceProperties = new()
+    // Maps each reference-typed property to its wire name and whether the key must be present in
+    // JSON; the reference converter itself is resolved separately per-property since it needs the
+    // resolver's own context instance. IsRequired is true for every property that was already
+    // present (even if null-valued) in every pre-existing record the day it was introduced -
+    // ReserveMovement.Income is the first exception: a brand-new key with zero prior occurrences,
+    // so an absent key must be tolerated (it just means "not linked") rather than rejected.
+    private static readonly Dictionary<(Type OwningType, string PropertyName), (string WireName, bool IsRequired)> ReferenceProperties = new()
     {
-        [(typeof(Income), nameof(Income.Bank))] = "BankId",
-        [(typeof(Income), nameof(Income.IncomeSource))] = "IncomeSourceId",
-        [(typeof(Expense), nameof(Expense.PaymentSourceBank))] = "PaymentSourceBankId",
-        [(typeof(Transfer), nameof(Transfer.SourceBank))] = "SourceBankId",
-        [(typeof(Transfer), nameof(Transfer.DestinationBank))] = "DestinationBankId",
-        [(typeof(BalanceAdjustment), nameof(BalanceAdjustment.Bank))] = "BankId",
-        [(typeof(InvestmentSnapshot), nameof(InvestmentSnapshot.Account))] = "InvestmentAccountId",
-        [(typeof(ReserveMovement), nameof(ReserveMovement.Bucket))] = "BucketId",
-        [(typeof(Expense), nameof(Expense.CreditCard))] = "CreditCardId",
-        [(typeof(CardStatement), nameof(CardStatement.CreditCard))] = "CreditCardId",
-        [(typeof(Expense), nameof(Expense.Category))] = "CategoryId",
+        [(typeof(Income), nameof(Income.Bank))] = ("BankId", true),
+        [(typeof(Income), nameof(Income.IncomeSource))] = ("IncomeSourceId", true),
+        [(typeof(Expense), nameof(Expense.PaymentSourceBank))] = ("PaymentSourceBankId", true),
+        [(typeof(Transfer), nameof(Transfer.SourceBank))] = ("SourceBankId", true),
+        [(typeof(Transfer), nameof(Transfer.DestinationBank))] = ("DestinationBankId", true),
+        [(typeof(BalanceAdjustment), nameof(BalanceAdjustment.Bank))] = ("BankId", true),
+        [(typeof(InvestmentSnapshot), nameof(InvestmentSnapshot.Account))] = ("InvestmentAccountId", true),
+        [(typeof(ReserveMovement), nameof(ReserveMovement.Bucket))] = ("BucketId", true),
+        [(typeof(Expense), nameof(Expense.CreditCard))] = ("CreditCardId", true),
+        [(typeof(CardStatement), nameof(CardStatement.CreditCard))] = ("CreditCardId", true),
+        [(typeof(Expense), nameof(Expense.Category))] = ("CategoryId", true),
+        [(typeof(ReserveMovement), nameof(ReserveMovement.Income))] = ("IncomeId", false),
     };
 
     private readonly ReferenceResolutionContext? _context;
@@ -76,11 +81,11 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
 
     private void ConfigureReferenceProperty(Type type, JsonPropertyInfo jsonProp)
     {
-        if (!ReferenceProperties.TryGetValue((type, jsonProp.Name), out var wireName))
+        if (!ReferenceProperties.TryGetValue((type, jsonProp.Name), out var reference))
             return;
 
-        jsonProp.Name = wireName;
-        jsonProp.IsRequired = true;
+        jsonProp.Name = reference.WireName;
+        jsonProp.IsRequired = reference.IsRequired;
         jsonProp.CustomConverter = CreateReferenceConverter(jsonProp.PropertyType);
     }
 
@@ -103,6 +108,9 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
 
         if (propertyType == typeof(Category))
             return new CategoryReferenceConverter(_context?.Categories);
+
+        if (propertyType == typeof(Income))
+            return new IncomeReferenceConverter(_context?.Incomes);
 
         throw new InvalidOperationException($"No reference converter registered for type {propertyType}.");
     }
