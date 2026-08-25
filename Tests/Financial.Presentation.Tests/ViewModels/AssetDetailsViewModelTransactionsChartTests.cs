@@ -205,7 +205,7 @@ public class AssetDetailsViewModelTransactionsChartTests
 
         vm.SelectTransactionsFilterCommand.Execute(PeriodFilter.Ytd);
 
-        vm.CreditsFilters.First(f => f.Filter == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
+        vm.Credits.CreditsFilters.First(f => f.Filter == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
     }
 
     [Fact]

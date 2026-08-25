@@ -6,6 +6,7 @@ public interface IAssetDetailsViewModel
 {
     bool IsPortfolioView { get; }
     bool IsBrokerView { get; }
+    CreditsTabViewModel Credits { get; }
     PriceHistoryTabViewModel PriceHistory { get; }
     void LoadAssetDetails(AssetDetailsDTO details, decimal? realizedPortfolioWeight = null);
     void LoadBrokerSummary(string brokerName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits);
@@ -16,7 +17,6 @@ public interface IAssetDetailsViewModel
     Task LoadPortfolioTransactions(string brokerName, string portfolioName);
     void Clear();
     Task EnsureTodayInfoLoadedAsync();
-    void UpdateCreditsPlotWidth(double plotWidth);
     void UpdateTransactionsPlotWidth(double plotWidth);
 }
 
