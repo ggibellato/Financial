@@ -2893,21 +2893,41 @@
           "content": {
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/ArchiveAssetRequestDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ArchiveAssetRequestDTO"
+                  }
+                ]
               }
             },
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ArchiveAssetRequestDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ArchiveAssetRequestDTO"
+                  }
+                ]
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/ArchiveAssetRequestDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ArchiveAssetRequestDTO"
+                  }
+                ]
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -2963,21 +2983,41 @@
           "content": {
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/MoveAssetRequestDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/MoveAssetRequestDTO"
+                  }
+                ]
               }
             },
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MoveAssetRequestDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/MoveAssetRequestDTO"
+                  }
+                ]
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/MoveAssetRequestDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/MoveAssetRequestDTO"
+                  }
+                ]
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -4073,21 +4113,41 @@
           "content": {
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/CreditDeleteDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CreditDeleteDTO"
+                  }
+                ]
               }
             },
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreditDeleteDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CreditDeleteDTO"
+                  }
+                ]
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreditDeleteDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CreditDeleteDTO"
+                  }
+                ]
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -4121,21 +4181,41 @@
           "content": {
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/CreditCreateDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CreditCreateDTO"
+                  }
+                ]
               }
             },
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreditCreateDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CreditCreateDTO"
+                  }
+                ]
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreditCreateDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CreditCreateDTO"
+                  }
+                ]
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -4169,21 +4249,41 @@
           "content": {
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/CreditUpdateDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CreditUpdateDTO"
+                  }
+                ]
               }
             },
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreditUpdateDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CreditUpdateDTO"
+                  }
+                ]
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreditUpdateDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CreditUpdateDTO"
+                  }
+                ]
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -5579,21 +5679,41 @@
           "content": {
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteAssetPriceDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DeleteAssetPriceDTO"
+                  }
+                ]
               }
             },
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteAssetPriceDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DeleteAssetPriceDTO"
+                  }
+                ]
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeleteAssetPriceDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DeleteAssetPriceDTO"
+                  }
+                ]
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -5627,21 +5747,41 @@
           "content": {
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/SetAssetPriceDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SetAssetPriceDTO"
+                  }
+                ]
               }
             },
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SetAssetPriceDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SetAssetPriceDTO"
+                  }
+                ]
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/SetAssetPriceDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SetAssetPriceDTO"
+                  }
+                ]
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -6403,21 +6543,41 @@
           "content": {
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/TransactionDeleteDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TransactionDeleteDTO"
+                  }
+                ]
               }
             },
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TransactionDeleteDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TransactionDeleteDTO"
+                  }
+                ]
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/TransactionDeleteDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TransactionDeleteDTO"
+                  }
+                ]
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -6451,21 +6611,41 @@
           "content": {
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/TransactionCreateDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TransactionCreateDTO"
+                  }
+                ]
               }
             },
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TransactionCreateDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TransactionCreateDTO"
+                  }
+                ]
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/TransactionCreateDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TransactionCreateDTO"
+                  }
+                ]
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -6499,21 +6679,41 @@
           "content": {
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/TransactionUpdateDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TransactionUpdateDTO"
+                  }
+                ]
               }
             },
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TransactionUpdateDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TransactionUpdateDTO"
+                  }
+                ]
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/TransactionUpdateDTO"
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TransactionUpdateDTO"
+                  }
+                ]
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
