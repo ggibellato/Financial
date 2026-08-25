@@ -1,4 +1,3 @@
-using Financial.Investment.Domain.ValueObjects;
 using HtmlAgilityPack;
 using System.Globalization;
 
@@ -12,10 +11,10 @@ public sealed class DadosMercadoDividend
     private const int MinimumColumnCount = 5;
     private const string DividendTypeCode = "Dividendo";
 
-    public static List<DividendValue> GetDividendInfo(string ticker)
+    public static List<WebDividendRecord> GetDividendInfo(string ticker)
     {
         var googleTickerSearch = $"https://www.dadosdemercado.com.br/bolsa/acoes/{ticker}/dividendos";
-        var result = new List<DividendValue>();
+        var result = new List<WebDividendRecord>();
         HtmlWeb htmlWeb = new HtmlWeb();
         HtmlDocument htmlDoc = htmlWeb.Load(googleTickerSearch);
         var table = htmlDoc.DocumentNode.SelectSingleNode("//table[contains(@class, 'normal-table')]");
@@ -34,20 +33,20 @@ public sealed class DadosMercadoDividend
         return result;
     }
 
-    internal static DividendValue ParseDividendRow(IReadOnlyList<HtmlNode> cells)
+    internal static WebDividendRecord ParseDividendRow(IReadOnlyList<HtmlNode> cells)
     {
         if (cells.Count < MinimumColumnCount)
         {
             throw new InvalidOperationException("Dividend row does not contain expected columns.");
         }
 
-        var dividendType = cells[DividendTypeColumn].InnerText == DividendTypeCode ? DividendType.Dividend : DividendType.JCP;
+        var dividendType = cells[DividendTypeColumn].InnerText == DividendTypeCode ? WebDividendType.Dividend : WebDividendType.JCP;
         var date = DateTime.ParseExact(cells[DividendDateColumn].InnerText.Trim(), "dd/MM/yyyy", CultureInfo.InvariantCulture);
         var value = decimal.Parse(
             cells[DividendValueColumn].InnerText.Replace(",", ".").Replace("* ", ""),
             CultureInfo.InvariantCulture);
 
-        return new DividendValue(dividendType, date, value);
+        return new WebDividendRecord(dividendType, date, value);
     }
 }
 

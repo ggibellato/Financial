@@ -1,4 +1,3 @@
-using Financial.Investment.Domain.ValueObjects;
 using Financial.Integrations.WebPageParser;
 using FluentAssertions;
 using HtmlAgilityPack;
@@ -14,7 +13,7 @@ public class DadosMercadoDividendTests
 
         var result = DadosMercadoDividend.ParseDividendRow(cells);
 
-        result.Type.Should().Be(DividendType.Dividend);
+        result.Type.Should().Be(WebDividendType.Dividend);
         result.Value.Should().Be(1.23m);
         result.Date.Should().Be(new DateTime(2024, 3, 1));
     }
@@ -26,7 +25,7 @@ public class DadosMercadoDividendTests
 
         var result = DadosMercadoDividend.ParseDividendRow(cells);
 
-        result.Type.Should().Be(DividendType.JCP);
+        result.Type.Should().Be(WebDividendType.JCP);
         result.Value.Should().Be(2.00m);
         result.Date.Should().Be(new DateTime(2024, 4, 2));
     }

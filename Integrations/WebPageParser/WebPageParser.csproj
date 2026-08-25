@@ -11,10 +11,6 @@
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.11.57" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\Financial.Investment.Domain\Financial.Investment.Domain.csproj" />
-  </ItemGroup>
 </Project>
 
 
