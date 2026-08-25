@@ -64,8 +64,8 @@ public class AssetDetailsViewModelTransactionsChartTests
         // (which sets IsTransactionsLoading = false) before this synchronous assertion runs -
         // a real, previously-observed race (flaked in CI 2026-08-21), not a hypothetical one.
         var vm = BuildViewModel(transactionQueryService: new BlockingTransactionQueryService());
-        _ = vm.LoadBrokerTransactions("XPI");
-        vm.IsTransactionsLoading.Should().BeTrue();
+        _ = vm.Transactions.LoadBroker("XPI");
+        vm.Transactions.IsTransactionsLoading.Should().BeTrue();
     }
 
     [Fact]
@@ -74,11 +74,11 @@ public class AssetDetailsViewModelTransactionsChartTests
         _transactionQueryService.BrokerTransactions = [new() { AssetName = "BBAS3", Date = DateTime.Today, Type = "Buy", TotalPrice = 1000m }];
         var vm = BuildViewModel();
 
-        await vm.LoadBrokerTransactions("XPI");
+        await vm.Transactions.LoadBroker("XPI");
 
-        vm.TransactionsPlotModel.Should().NotBeNull();
-        vm.TransactionsPlotModel!.Series.Should().HaveCount(1);
-        vm.IsTransactionsLoading.Should().BeFalse();
+        vm.Transactions.TransactionsPlotModel.Should().NotBeNull();
+        vm.Transactions.TransactionsPlotModel!.Series.Should().HaveCount(1);
+        vm.Transactions.IsTransactionsLoading.Should().BeFalse();
     }
 
     [Fact]
@@ -87,10 +87,10 @@ public class AssetDetailsViewModelTransactionsChartTests
         _transactionQueryService.ExceptionToThrow = new InvalidOperationException("boom");
         var vm = BuildViewModel();
 
-        await vm.LoadBrokerTransactions("XPI");
+        await vm.Transactions.LoadBroker("XPI");
 
-        vm.TransactionsError.Should().NotBeNull();
-        vm.IsTransactionsLoading.Should().BeFalse();
+        vm.Transactions.TransactionsError.Should().NotBeNull();
+        vm.Transactions.IsTransactionsLoading.Should().BeFalse();
     }
 
     [Fact]
@@ -98,7 +98,7 @@ public class AssetDetailsViewModelTransactionsChartTests
     {
         var vm = BuildViewModel();
 
-        await vm.LoadPortfolioTransactions("XPI", "Acoes");
+        await vm.Transactions.LoadPortfolio("XPI", "Acoes");
 
         _transactionQueryService.LastPortfolioBrokerName.Should().Be("XPI");
         _transactionQueryService.LastPortfolioName.Should().Be("Acoes");
@@ -109,7 +109,7 @@ public class AssetDetailsViewModelTransactionsChartTests
     {
         var vm = BuildViewModel();
 
-        await vm.LoadBrokerTransactions("XPI");
+        await vm.Transactions.LoadBroker("XPI");
 
         _transactionQueryService.LastBrokerScope.Should().Be(InvestmentScope.Active);
     }
@@ -119,7 +119,7 @@ public class AssetDetailsViewModelTransactionsChartTests
     {
         var vm = BuildViewModel(scope: InvestmentScope.Historic);
 
-        await vm.LoadBrokerTransactions("XPI");
+        await vm.Transactions.LoadBroker("XPI");
 
         _transactionQueryService.LastBrokerScope.Should().Be(InvestmentScope.Historic);
     }
@@ -129,7 +129,7 @@ public class AssetDetailsViewModelTransactionsChartTests
     {
         var vm = BuildViewModel(scope: InvestmentScope.Historic);
 
-        await vm.LoadPortfolioTransactions("XPI", "Acoes");
+        await vm.Transactions.LoadPortfolio("XPI", "Acoes");
 
         _transactionQueryService.LastPortfolioScope.Should().Be(InvestmentScope.Historic);
     }
@@ -143,8 +143,8 @@ public class AssetDetailsViewModelTransactionsChartTests
             new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Buy", Quantity = 100m, UnitPrice = 20m, Fees = 0m, TotalPrice = 2000m },
         ]));
 
-        vm.TransactionsPlotModel.Should().NotBeNull();
-        vm.TransactionsPlotModel!.Series.Should().HaveCount(1);
+        vm.Transactions.TransactionsPlotModel.Should().NotBeNull();
+        vm.Transactions.TransactionsPlotModel!.Series.Should().HaveCount(1);
         _transactionQueryService.LastBrokerName.Should().BeNull();
         _transactionQueryService.LastPortfolioBrokerName.Should().BeNull();
     }
@@ -154,7 +154,7 @@ public class AssetDetailsViewModelTransactionsChartTests
     {
         var vm = BuildViewModel();
         vm.LoadAssetDetails(BuildAssetDetails([]));
-        vm.IsTransactionsAggregateView.Should().BeFalse();
+        vm.Transactions.IsTransactionsAggregateView.Should().BeFalse();
     }
 
     [Fact]
@@ -162,7 +162,7 @@ public class AssetDetailsViewModelTransactionsChartTests
     {
         var vm = BuildViewModel();
         vm.LoadBrokerSummary("XPI", new AggregatedSummaryDTO(), []);
-        vm.IsTransactionsAggregateView.Should().BeTrue();
+        vm.Transactions.IsTransactionsAggregateView.Should().BeTrue();
     }
 
     [Fact]
@@ -171,14 +171,14 @@ public class AssetDetailsViewModelTransactionsChartTests
         var vm = BuildViewModel();
         vm.LoadBrokerSummary("BrokerA", new AggregatedSummaryDTO(), []);
 
-        vm.SelectTransactionsFilterCommand.Execute(PeriodFilter.Ytd);
-        vm.TransactionsFilters.First(f => f.Filter == PeriodFilter.Ytd).IsSelected.Should().BeTrue();
+        vm.Transactions.SelectTransactionsFilterCommand.Execute(PeriodFilter.Ytd);
+        vm.Transactions.TransactionsFilters.First(f => f.Filter == PeriodFilter.Ytd).IsSelected.Should().BeTrue();
 
         vm.LoadBrokerSummary("BrokerB", new AggregatedSummaryDTO(), []);
-        vm.TransactionsFilters.First(f => f.Filter == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
+        vm.Transactions.TransactionsFilters.First(f => f.Filter == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
 
         vm.LoadBrokerSummary("BrokerA", new AggregatedSummaryDTO(), []);
-        vm.TransactionsFilters.First(f => f.Filter == PeriodFilter.Ytd).IsSelected.Should().BeTrue();
+        vm.Transactions.TransactionsFilters.First(f => f.Filter == PeriodFilter.Ytd).IsSelected.Should().BeTrue();
     }
 
     [Fact]
@@ -187,14 +187,14 @@ public class AssetDetailsViewModelTransactionsChartTests
         var vm = BuildViewModel();
         vm.LoadBrokerSummary("BrokerA", new AggregatedSummaryDTO(), []);
 
-        vm.SelectTransactionsChartModeCommand.Execute(ChartTypeMode.Line);
-        vm.ChartTypeModes.First(m => m.Mode == ChartTypeMode.Line).IsSelected.Should().BeTrue();
+        vm.Transactions.SelectTransactionsChartModeCommand.Execute(ChartTypeMode.Line);
+        vm.Transactions.ChartTypeModes.First(m => m.Mode == ChartTypeMode.Line).IsSelected.Should().BeTrue();
 
         vm.LoadBrokerSummary("BrokerB", new AggregatedSummaryDTO(), []);
-        vm.ChartTypeModes.First(m => m.Mode == ChartTypeMode.Bar).IsSelected.Should().BeTrue();
+        vm.Transactions.ChartTypeModes.First(m => m.Mode == ChartTypeMode.Bar).IsSelected.Should().BeTrue();
 
         vm.LoadBrokerSummary("BrokerA", new AggregatedSummaryDTO(), []);
-        vm.ChartTypeModes.First(m => m.Mode == ChartTypeMode.Line).IsSelected.Should().BeTrue();
+        vm.Transactions.ChartTypeModes.First(m => m.Mode == ChartTypeMode.Line).IsSelected.Should().BeTrue();
     }
 
     [Fact]
@@ -203,7 +203,7 @@ public class AssetDetailsViewModelTransactionsChartTests
         var vm = BuildViewModel();
         vm.LoadBrokerSummary("BrokerA", new AggregatedSummaryDTO(), []);
 
-        vm.SelectTransactionsFilterCommand.Execute(PeriodFilter.Ytd);
+        vm.Transactions.SelectTransactionsFilterCommand.Execute(PeriodFilter.Ytd);
 
         vm.Credits.CreditsFilters.First(f => f.Filter == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
     }
@@ -214,14 +214,14 @@ public class AssetDetailsViewModelTransactionsChartTests
         _transactionQueryService.BrokerTransactions = [new() { AssetName = "BBAS3", Date = DateTime.Today, Type = "Buy", TotalPrice = 500m }];
         var vm = BuildViewModel();
         vm.LoadBrokerSummary("XPI", new AggregatedSummaryDTO(), []);
-        await vm.LoadBrokerTransactions("XPI");
+        await vm.Transactions.LoadBroker("XPI");
 
         vm.Clear();
 
-        vm.TransactionsPlotModel.Should().BeNull();
-        vm.IsTransactionsLoading.Should().BeFalse();
-        vm.TransactionsError.Should().BeNull();
-        vm.IsTransactionsAggregateView.Should().BeFalse();
+        vm.Transactions.TransactionsPlotModel.Should().BeNull();
+        vm.Transactions.IsTransactionsLoading.Should().BeFalse();
+        vm.Transactions.TransactionsError.Should().BeNull();
+        vm.Transactions.IsTransactionsAggregateView.Should().BeFalse();
     }
 
     private sealed class BlockingTransactionQueryService : ITransactionQueryService

@@ -113,8 +113,8 @@ public class MainNavigationViewModelBaseTests
         var brokerNode = BuildBrokerNode("XPI");
         _sut.SelectedNode = brokerNode;
 
-        _spy.WasBrokerTransactionsLoaded.Should().BeTrue();
-        _spy.LastBrokerTransactionsName.Should().Be("XPI");
+        _spy.TransactionsSpy.WasBrokerTransactionsLoaded.Should().BeTrue();
+        _spy.TransactionsSpy.LastBrokerTransactionsName.Should().Be("XPI");
     }
 
     [Fact]
@@ -123,9 +123,9 @@ public class MainNavigationViewModelBaseTests
         var portfolioNode = BuildPortfolioNode("XPI", "FII");
         _sut.SelectedNode = portfolioNode;
 
-        _spy.WasPortfolioTransactionsLoaded.Should().BeTrue();
-        _spy.LastPortfolioTransactionsBrokerName.Should().Be("XPI");
-        _spy.LastPortfolioTransactionsPortfolioName.Should().Be("FII");
+        _spy.TransactionsSpy.WasPortfolioTransactionsLoaded.Should().BeTrue();
+        _spy.TransactionsSpy.LastPortfolioTransactionsBrokerName.Should().Be("XPI");
+        _spy.TransactionsSpy.LastPortfolioTransactionsPortfolioName.Should().Be("FII");
     }
 
     [Fact]
@@ -210,8 +210,8 @@ public class MainNavigationViewModelBaseTests
         var assetNode = BuildAssetNode("XPI", "Acoes", "BBAS3");
         _sut.SelectedNode = assetNode;
 
-        _spy.WasBrokerTransactionsLoaded.Should().BeFalse();
-        _spy.WasPortfolioTransactionsLoaded.Should().BeFalse();
+        _spy.TransactionsSpy.WasBrokerTransactionsLoaded.Should().BeFalse();
+        _spy.TransactionsSpy.WasPortfolioTransactionsLoaded.Should().BeFalse();
     }
 
     [Fact]
@@ -502,13 +502,10 @@ public class MainNavigationViewModelBaseTests
         public bool WasBrokerSummaryLoaded { get; private set; }
         public string? LastBrokerBreakdownName { get; private set; }
         public bool WasBrokerBreakdownLoaded { get; private set; }
-        public string? LastBrokerTransactionsName { get; private set; }
-        public bool WasBrokerTransactionsLoaded { get; private set; }
-        public string? LastPortfolioTransactionsBrokerName { get; private set; }
-        public string? LastPortfolioTransactionsPortfolioName { get; private set; }
-        public bool WasPortfolioTransactionsLoaded { get; private set; }
         public bool IsPortfolioView => false;
         public bool IsBrokerView => false;
+        public SpyTransactionsTabViewModel TransactionsSpy { get; } = new();
+        public TransactionsTabViewModel Transactions => TransactionsSpy;
         public CreditsTabViewModel Credits { get; } = new(
             null, () => false, () => string.Empty, () => string.Empty, () => string.Empty,
             _ => { }, (_, _, _) => { });
@@ -537,13 +534,6 @@ public class MainNavigationViewModelBaseTests
             return Task.CompletedTask;
         }
 
-        public Task LoadBrokerTransactions(string brokerName)
-        {
-            LastBrokerTransactionsName = brokerName;
-            WasBrokerTransactionsLoaded = true;
-            return Task.CompletedTask;
-        }
-
         public void LoadPortfolioCredits(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits) { }
 
         public void LoadPortfolioSummary(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits, IReadOnlyList<PortfolioAssetSummaryItemDTO> assetItems)
@@ -553,18 +543,39 @@ public class MainNavigationViewModelBaseTests
             WasPortfolioSummaryLoaded = true;
         }
 
-        public Task LoadPortfolioTransactions(string brokerName, string portfolioName)
+        public void Clear() => WasCleared = true;
+        public Task EnsureTodayInfoLoadedAsync() => Task.CompletedTask;
+    }
+
+    internal sealed class SpyTransactionsTabViewModel : TransactionsTabViewModel
+    {
+        public string? LastBrokerTransactionsName { get; private set; }
+        public bool WasBrokerTransactionsLoaded { get; private set; }
+        public string? LastPortfolioTransactionsBrokerName { get; private set; }
+        public string? LastPortfolioTransactionsPortfolioName { get; private set; }
+        public bool WasPortfolioTransactionsLoaded { get; private set; }
+
+        public SpyTransactionsTabViewModel() : base(
+            null, new StubTransactionQueryService(), InvestmentScope.Active,
+            () => false, () => string.Empty, () => string.Empty, () => string.Empty,
+            _ => { }, (_, _, _) => { })
+        {
+        }
+
+        public override Task LoadBroker(string brokerName)
+        {
+            LastBrokerTransactionsName = brokerName;
+            WasBrokerTransactionsLoaded = true;
+            return Task.CompletedTask;
+        }
+
+        public override Task LoadPortfolio(string brokerName, string portfolioName)
         {
             LastPortfolioTransactionsBrokerName = brokerName;
             LastPortfolioTransactionsPortfolioName = portfolioName;
             WasPortfolioTransactionsLoaded = true;
             return Task.CompletedTask;
         }
-
-        public void Clear() => WasCleared = true;
-        public Task EnsureTodayInfoLoadedAsync() => Task.CompletedTask;
-        public void UpdateCreditsPlotWidth(double plotWidth) { }
-        public void UpdateTransactionsPlotWidth(double plotWidth) { }
     }
 
     private sealed class StubPortfolioAssetSummaryService : IPortfolioAssetSummaryService

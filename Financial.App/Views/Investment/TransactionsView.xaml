@@ -35,7 +35,7 @@
                 <StackPanel Grid.Row="0" Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="View:" Margin="0,0,8,0" Foreground="#666666"/>
-                        <ItemsControl ItemsSource="{Binding AssetDetails.ChartTypeModes}">
+                        <ItemsControl ItemsSource="{Binding AssetDetails.Transactions.ChartTypeModes}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <StackPanel Orientation="Horizontal"/>
@@ -43,7 +43,7 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Button Command="{Binding DataContext.AssetDetails.SelectTransactionsChartModeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    <Button Command="{Binding DataContext.AssetDetails.Transactions.SelectTransactionsChartModeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                             CommandParameter="{Binding}"
                                             Background="Transparent"
                                             BorderThickness="0"
@@ -69,7 +69,7 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </StackPanel>
-                    <ItemsControl ItemsSource="{Binding AssetDetails.TransactionsFilters}"
+                    <ItemsControl ItemsSource="{Binding AssetDetails.Transactions.TransactionsFilters}"
                                   HorizontalAlignment="Left"
                                   Margin="0,6,0,0">
                         <ItemsControl.ItemsPanel>
@@ -79,7 +79,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Button Command="{Binding DataContext.AssetDetails.SelectTransactionsFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                <Button Command="{Binding DataContext.AssetDetails.Transactions.SelectTransactionsFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                         CommandParameter="{Binding}"
                                         Background="Transparent"
                                         BorderThickness="0"
@@ -108,7 +108,7 @@
 
                 <oxy:PlotView Grid.Row="1"
                               Background="Transparent"
-                              Model="{Binding AssetDetails.TransactionsPlotModel}"
+                              Model="{Binding AssetDetails.Transactions.TransactionsPlotModel}"
                               SizeChanged="OnTransactionsPlotSizeChanged" />
 
                 <GridSplitter Grid.Row="2"
@@ -121,7 +121,7 @@
                 <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="0,8,0,8">
                     <ui:Button Content="New" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}"
                                ToolTip="New transaction"
-                               Command="{Binding AssetDetails.AddTransactionCommand}"/>
+                               Command="{Binding AssetDetails.Transactions.AddTransactionCommand}"/>
                 </StackPanel>
 
                 <!--
@@ -132,33 +132,33 @@
                     and the form would never collapse. See docs/ui/wpf.md.
                 -->
                 <Grid Grid.Row="4"
-                      Visibility="{Binding AssetDetails.IsTransactionFormOpen, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <local:TransactionFormView DataContext="{Binding AssetDetails.TransactionFormViewModel}"/>
+                      Visibility="{Binding AssetDetails.Transactions.IsTransactionFormOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <local:TransactionFormView DataContext="{Binding AssetDetails.Transactions.TransactionFormViewModel}"/>
                 </Grid>
 
                 <DataGrid Grid.Row="5"
-                          ItemsSource="{Binding AssetDetails.Transactions}"
-                          SelectedItem="{Binding AssetDetails.SelectedTransaction, Mode=TwoWay}"
+                          ItemsSource="{Binding AssetDetails.Transactions.Transactions}"
+                          SelectedItem="{Binding AssetDetails.Transactions.SelectedTransaction, Mode=TwoWay}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="True">
                     <DataGrid.InputBindings>
                         <MouseBinding MouseAction="LeftDoubleClick"
-                                      Command="{Binding AssetDetails.UpdateTransactionCommand}"/>
+                                      Command="{Binding AssetDetails.Transactions.UpdateTransactionCommand}"/>
                     </DataGrid.InputBindings>
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
-                                        <Button Command="{Binding DataContext.AssetDetails.UpdateTransactionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        <Button Command="{Binding DataContext.AssetDetails.Transactions.UpdateTransactionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
                                                 ToolTip="Update"
                                                 Padding="2"
                                                 Margin="0,0,4,0">
                                             <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE70F;"/>
                                         </Button>
-                                        <Button Command="{Binding DataContext.AssetDetails.DeleteTransactionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        <Button Command="{Binding DataContext.AssetDetails.Transactions.DeleteTransactionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
                                                 ToolTip="Delete"
                                                 Padding="2">
@@ -233,7 +233,7 @@
                 <StackPanel Grid.Row="0" Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="View:" Margin="0,0,8,0" Foreground="#666666"/>
-                        <ItemsControl ItemsSource="{Binding AssetDetails.ChartTypeModes}">
+                        <ItemsControl ItemsSource="{Binding AssetDetails.Transactions.ChartTypeModes}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <StackPanel Orientation="Horizontal"/>
@@ -241,7 +241,7 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Button Command="{Binding DataContext.AssetDetails.SelectTransactionsChartModeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    <Button Command="{Binding DataContext.AssetDetails.Transactions.SelectTransactionsChartModeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                             CommandParameter="{Binding}"
                                             Background="Transparent"
                                             BorderThickness="0"
@@ -267,7 +267,7 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </StackPanel>
-                    <ItemsControl ItemsSource="{Binding AssetDetails.TransactionsFilters}"
+                    <ItemsControl ItemsSource="{Binding AssetDetails.Transactions.TransactionsFilters}"
                                   HorizontalAlignment="Left"
                                   Margin="0,6,0,0">
                         <ItemsControl.ItemsPanel>
@@ -277,7 +277,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Button Command="{Binding DataContext.AssetDetails.SelectTransactionsFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                <Button Command="{Binding DataContext.AssetDetails.Transactions.SelectTransactionsFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                         CommandParameter="{Binding}"
                                         Background="Transparent"
                                         BorderThickness="0"
@@ -307,16 +307,16 @@
                 <TextBlock Grid.Row="1"
                            Text="Loading transactions..."
                            Margin="0,0,0,8"
-                           Visibility="{Binding AssetDetails.IsTransactionsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                           Visibility="{Binding AssetDetails.Transactions.IsTransactionsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
                 <TextBlock Grid.Row="2"
-                           Text="{Binding AssetDetails.TransactionsError}"
+                           Text="{Binding AssetDetails.Transactions.TransactionsError}"
                            Foreground="DarkRed"
                            Margin="0,0,0,8"
-                           Visibility="{Binding AssetDetails.HasTransactionsError, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                           Visibility="{Binding AssetDetails.Transactions.HasTransactionsError, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                 <oxy:PlotView Grid.Row="3"
                               Background="Transparent"
-                              Model="{Binding AssetDetails.TransactionsPlotModel}"
+                              Model="{Binding AssetDetails.Transactions.TransactionsPlotModel}"
                               SizeChanged="OnTransactionsPlotSizeChanged" />
             </Grid>
         </DataTemplate>
@@ -327,7 +327,7 @@
             <Style TargetType="ContentControl">
                 <Setter Property="ContentTemplate" Value="{StaticResource TransactionsAssetTemplate}"/>
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding AssetDetails.IsTransactionsAggregateView}" Value="True">
+                    <DataTrigger Binding="{Binding AssetDetails.Transactions.IsTransactionsAggregateView}" Value="True">
                         <Setter Property="ContentTemplate" Value="{StaticResource TransactionsAggregateTemplate}"/>
                     </DataTrigger>
                 </Style.Triggers>
