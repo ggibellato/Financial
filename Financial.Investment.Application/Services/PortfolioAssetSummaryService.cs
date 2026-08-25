@@ -41,9 +41,9 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
                 return [];
             }
 
-            var result = scope == InvestmentScope.Historic
-                ? PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, CalculateGrossBought)
-                : PortfolioAssetSummaryBuilder.Build(assets, DateTime.Today, CalculateNetInvested);
+            var result = PortfolioAssetSummaryBuilder.Build(
+                assets, DateTime.Today,
+                totals => AssetInvestedAmountSelector.Select(scope, totals.TotalBought, totals.TotalSold));
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetPortfolioAssetsSummary");
@@ -61,8 +61,4 @@ public sealed class PortfolioAssetSummaryService : IPortfolioAssetSummaryService
         _logger.LogInformation("{Operation} started", operationName);
         return _tracer.StartServiceSpan("Investment", nameof(PortfolioAssetSummaryService), operationName, EntityType);
     }
-
-    private static decimal CalculateNetInvested(AssetTotals totals) => totals.TotalBought - totals.TotalSold;
-
-    private static decimal CalculateGrossBought(AssetTotals totals) => totals.TotalBought;
 }

@@ -1,7 +1,6 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
-using Financial.Investment.Domain.Entities;
 using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
@@ -43,9 +42,11 @@ public sealed class BrokerBreakdownService : IBrokerBreakdownService
                 return [];
             }
 
-            var result = scope == InvestmentScope.Historic
-                ? BrokerBreakdownBuilder.Build(broker, CalculateGrossBought)
-                : BrokerBreakdownBuilder.Build(broker, CalculateNetInvested);
+            var result = BrokerBreakdownBuilder.Build(broker, asset =>
+            {
+                var (totalBought, totalSold, _) = AssetTotalsCalculator.CalculateTotals(asset);
+                return AssetInvestedAmountSelector.Select(scope, totalBought, totalSold);
+            });
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetBrokerBreakdown");
@@ -63,13 +64,4 @@ public sealed class BrokerBreakdownService : IBrokerBreakdownService
         _logger.LogInformation("{Operation} started", operationName);
         return _tracer.StartServiceSpan("Investment", nameof(BrokerBreakdownService), operationName, EntityType);
     }
-
-    private static decimal CalculateNetInvested(Asset asset)
-    {
-        var (totalBought, totalSold, _) = AssetTotalsCalculator.CalculateTotals(asset);
-        return totalBought - totalSold;
-    }
-
-    private static decimal CalculateGrossBought(Asset asset) =>
-        AssetTotalsCalculator.CalculateTotals(asset).TotalBought;
 }
