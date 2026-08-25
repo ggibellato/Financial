@@ -15,7 +15,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 {
     private readonly ICreditService _creditService;
     private readonly IAssetPriceLookupService? _priceLookupService;
-    private readonly IManualAssetPriceService? _manualPriceService;
+    private readonly IAssetPriceHistoryService? _priceHistoryService;
     private readonly IAssetPriceService _assetPriceService;
     private readonly IBrokerBreakdownService _brokerBreakdownService;
     private readonly IXirrCalculationService _xirrCalculationService;
@@ -266,11 +266,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         IProfitCalculationService profitCalculationService,
         InvestmentScope scope = InvestmentScope.Active,
         IAssetPriceLookupService? priceLookupService = null,
-        IManualAssetPriceService? manualPriceService = null)
+        IAssetPriceHistoryService? priceHistoryService = null)
     {
         _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
         _priceLookupService = priceLookupService;
-        _manualPriceService = manualPriceService;
+        _priceHistoryService = priceHistoryService;
         _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
         _brokerBreakdownService = brokerBreakdownService ?? throw new ArgumentNullException(nameof(brokerBreakdownService));
         _xirrCalculationService = xirrCalculationService ?? throw new ArgumentNullException(nameof(xirrCalculationService));
@@ -296,7 +296,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             details => LoadAssetDetails(details),
             (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
         PriceHistory = new PriceHistoryTabViewModel(
-            _manualPriceService,
+            _priceHistoryService,
             () => HasAssetContext,
             () => BrokerName,
             () => PortfolioName,

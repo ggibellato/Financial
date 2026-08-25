@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
 
-public class ManualAssetPriceServiceTests
+public class AssetPriceHistoryServiceTests
 {
     private const string BrokerName = "XPI";
     private const string PortfolioName = "Default";
@@ -246,7 +246,7 @@ public class ManualAssetPriceServiceTests
         }
     }
 
-    private static (ManualAssetPriceService Service, string TempFile) CreateService()
+    private static (AssetPriceHistoryService Service, string TempFile) CreateService()
     {
         var (service, _, tempFile) = CreateServiceWithRepository();
         return (service, tempFile);
@@ -265,11 +265,11 @@ public class ManualAssetPriceServiceTests
             new RecordingTelemetryTracer(), tempFile);
     }
 
-    private static (ManualAssetPriceService Service, InvestmentJsonRepository Repository, string TempFile) CreateServiceWithRepository()
+    private static (AssetPriceHistoryService Service, InvestmentJsonRepository Repository, string TempFile) CreateServiceWithRepository()
     {
         var (repository, tracer, tempFile) = CreateRepositoryOverTempCopy();
         var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
-        var service = new ManualAssetPriceService(repository, navigationService, tracer, NullLogger<ManualAssetPriceService>.Instance);
+        var service = new AssetPriceHistoryService(repository, navigationService, tracer, NullLogger<AssetPriceHistoryService>.Instance);
 
         return (service, repository, tempFile);
     }

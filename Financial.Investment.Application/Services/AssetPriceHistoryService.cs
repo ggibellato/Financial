@@ -5,20 +5,20 @@ using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
 
-public sealed class ManualAssetPriceService : IManualAssetPriceService
+public sealed class AssetPriceHistoryService : IAssetPriceHistoryService
 {
     private const string EntityType = "AssetPrice";
 
     private readonly IInvestmentRepository _repository;
     private readonly INavigationService _navigationService;
     private readonly ITelemetryTracer _tracer;
-    private readonly ILogger<ManualAssetPriceService> _logger;
+    private readonly ILogger<AssetPriceHistoryService> _logger;
 
-    public ManualAssetPriceService(
+    public AssetPriceHistoryService(
         IInvestmentRepository repository,
         INavigationService navigationService,
         ITelemetryTracer tracer,
-        ILogger<ManualAssetPriceService> logger)
+        ILogger<AssetPriceHistoryService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
@@ -95,6 +95,6 @@ public sealed class ManualAssetPriceService : IManualAssetPriceService
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        return _tracer.StartServiceSpan("Investment", nameof(ManualAssetPriceService), operationName, EntityType);
+        return _tracer.StartServiceSpan("Investment", nameof(AssetPriceHistoryService), operationName, EntityType);
     }
 }

@@ -12,12 +12,12 @@ namespace Financial.Api.Controllers;
 [Route("prices")]
 public sealed class AssetPricesController : ApiControllerBase
 {
-    private readonly IManualAssetPriceService _manualPriceService;
+    private readonly IAssetPriceHistoryService _priceHistoryService;
     private readonly IAssetPriceLookupService _priceLookupService;
 
-    public AssetPricesController(IManualAssetPriceService manualPriceService, IAssetPriceLookupService priceLookupService)
+    public AssetPricesController(IAssetPriceHistoryService priceHistoryService, IAssetPriceLookupService priceLookupService)
     {
-        _manualPriceService = manualPriceService ?? throw new ArgumentNullException(nameof(manualPriceService));
+        _priceHistoryService = priceHistoryService ?? throw new ArgumentNullException(nameof(priceHistoryService));
         _priceLookupService = priceLookupService ?? throw new ArgumentNullException(nameof(priceLookupService));
     }
 
@@ -85,7 +85,7 @@ public sealed class AssetPricesController : ApiControllerBase
             return BadRequest();
         }
 
-        var asset = await _manualPriceService.SetPriceAsync(request);
+        var asset = await _priceHistoryService.SetPriceAsync(request);
         return OkOrBadRequest(asset);
     }
 
@@ -102,7 +102,7 @@ public sealed class AssetPricesController : ApiControllerBase
             return BadRequest();
         }
 
-        var asset = await _manualPriceService.DeletePriceAsync(request);
+        var asset = await _priceHistoryService.DeletePriceAsync(request);
         return OkOrBadRequest(asset);
     }
 }
