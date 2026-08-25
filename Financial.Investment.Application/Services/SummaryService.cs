@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -105,7 +106,7 @@ public sealed class SummaryService : ISummaryService
 
         foreach (var asset in relevantAssets)
         {
-            var (bought, sold, credits) = NavigationMapper.CalculateTotals(asset);
+            var (bought, sold, credits) = AssetTotalsCalculator.CalculateTotals(asset);
             totalBought += bought;
             totalSold += sold;
             totalCredits += credits;

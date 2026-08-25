@@ -3,6 +3,7 @@ using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Validation;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -88,7 +89,7 @@ public sealed class NavigationService : INavigationService
                 .OrderByDescending(p => p.Date)
                 .ToList();
 
-            var (totalBought, totalSold, totalCredits) = NavigationMapper.CalculateTotals(asset);
+            var (totalBought, totalSold, totalCredits) = AssetTotalsCalculator.CalculateTotals(asset);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetAssetDetails");
