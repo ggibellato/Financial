@@ -1,11 +1,10 @@
 using Financial.Api.Controllers;
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Exceptions;
 using Financial.Investment.Application.Interfaces;
 using Financial.TestUtilities;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -19,15 +18,14 @@ public class DividendsControllerLoggingTests
     private const string ProviderMessage = "provider row said: account 12345 balance 999.99";
 
     [Fact]
-    public void GetDividendHistory_ServiceThrows_Returns404AndLogsTickerAndErrorTypeOnly()
+    public void GetDividendHistory_ServiceThrows_ThrowsDividendNotFoundAndLogsTickerAndErrorTypeOnly()
     {
         var logger = new RecordingLogger<DividendsController>();
         var controller = CreateController(logger);
 
-        var result = controller.GetDividendHistory("VWRL");
+        var act = () => controller.GetDividendHistory("VWRL");
 
-        result.Result.Should().BeAssignableTo<ObjectResult>()
-            .Which.StatusCode.Should().Be(StatusCodes.Status404NotFound);
+        act.Should().Throw<DividendNotFoundException>().WithMessage("*VWRL*");
         var entry = logger.Entries.Should().ContainSingle(e => e.Level == LogLevel.Warning).Which;
         entry.Message.Should().Contain("VWRL");
         entry.Message.Should().Contain(nameof(InvalidOperationException));
@@ -35,15 +33,14 @@ public class DividendsControllerLoggingTests
     }
 
     [Fact]
-    public void GetDividendSummary_ServiceThrows_Returns404AndLogsTickerAndErrorTypeOnly()
+    public void GetDividendSummary_ServiceThrows_ThrowsDividendNotFoundAndLogsTickerAndErrorTypeOnly()
     {
         var logger = new RecordingLogger<DividendsController>();
         var controller = CreateController(logger);
 
-        var result = controller.GetDividendSummary("VWRL");
+        var act = () => controller.GetDividendSummary("VWRL");
 
-        result.Result.Should().BeAssignableTo<ObjectResult>()
-            .Which.StatusCode.Should().Be(StatusCodes.Status404NotFound);
+        act.Should().Throw<DividendNotFoundException>().WithMessage("*VWRL*");
         var entry = logger.Entries.Should().ContainSingle(e => e.Level == LogLevel.Warning).Which;
         entry.Message.Should().Contain("VWRL");
         entry.Message.Should().Contain(nameof(InvalidOperationException));
