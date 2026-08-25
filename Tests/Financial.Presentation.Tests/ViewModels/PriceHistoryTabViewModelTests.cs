@@ -198,7 +198,7 @@ public class PriceHistoryTabViewModelTests
         public void ShowMessage(string message, string caption, MessageBoxImage image) => Messages.Add((message, caption, image));
     }
 
-    private sealed class StubPriceService : IAssetPriceCrudService
+    private sealed class StubPriceService : IManualAssetPriceService
     {
         public AssetDetailsDTO? SetResult { get; set; }
         public AssetDetailsDTO? DeleteResult { get; set; }

@@ -15,7 +15,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 {
     private readonly ICreditService _creditService;
     private readonly IAssetPriceLookupService? _priceLookupService;
-    private readonly IAssetPriceCrudService? _priceCrudService;
+    private readonly IManualAssetPriceService? _manualPriceService;
     private readonly IAssetPriceService _assetPriceService;
     private readonly IBrokerBreakdownService _brokerBreakdownService;
     private readonly IXirrCalculationService _xirrCalculationService;
@@ -266,11 +266,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         IProfitCalculationService profitCalculationService,
         InvestmentScope scope = InvestmentScope.Active,
         IAssetPriceLookupService? priceLookupService = null,
-        IAssetPriceCrudService? priceCrudService = null)
+        IManualAssetPriceService? manualPriceService = null)
     {
         _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
         _priceLookupService = priceLookupService;
-        _priceCrudService = priceCrudService;
+        _manualPriceService = manualPriceService;
         _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
         _brokerBreakdownService = brokerBreakdownService ?? throw new ArgumentNullException(nameof(brokerBreakdownService));
         _xirrCalculationService = xirrCalculationService ?? throw new ArgumentNullException(nameof(xirrCalculationService));
@@ -296,7 +296,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             details => LoadAssetDetails(details),
             (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
         PriceHistory = new PriceHistoryTabViewModel(
-            _priceCrudService,
+            _manualPriceService,
             () => HasAssetContext,
             () => BrokerName,
             () => PortfolioName,
