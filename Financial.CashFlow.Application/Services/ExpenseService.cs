@@ -32,7 +32,7 @@ public sealed class ExpenseService : IExpenseService
             ArgumentNullException.ThrowIfNull(request);
 
             var (category, paymentSource, creditCard) = ValidateFields(
-                request.Description, request.Value, request.CategoryId, request.PaymentSourceBankId, request.CreditCardId);
+                request.Description, request.CategoryId, request.PaymentSourceBankId, request.CreditCardId);
             ValidateRoundUpEligibility(request.RoundUpAmount, paymentSource);
 
             var expense = Expense.Create(request.Date, request.Description, request.Value, category, paymentSource, creditCard, request.InvoiceDate, request.CountsAsTithe);
@@ -66,7 +66,7 @@ public sealed class ExpenseService : IExpenseService
             var expense = FindExpenseOrThrow(id);
 
             var (category, paymentSource, creditCard) = ValidateFields(
-                request.Description, request.Value, request.CategoryId, request.PaymentSourceBankId, request.CreditCardId);
+                request.Description, request.CategoryId, request.PaymentSourceBankId, request.CreditCardId);
             ValidateRoundUpEligibility(request.RoundUpAmount, paymentSource);
 
             await _repository.ApplyAndSaveAsync(() =>
@@ -210,19 +210,9 @@ public sealed class ExpenseService : IExpenseService
         _repository.GetExpenses().FirstOrThrow(e => e.Id == id, "Expense", id);
 
     private (Category Category, Bank? PaymentSourceBank, CreditCardEntity? CreditCard) ValidateFields(
-        string description, decimal value, Guid categoryId, Guid? paymentSourceBankId, Guid? creditCardId)
+        string description, Guid categoryId, Guid? paymentSourceBankId, Guid? creditCardId)
     {
-        if (string.IsNullOrWhiteSpace(description))
-        {
-            throw new ArgumentException("Description is required.");
-        }
-
         DescriptionValidator.EnsureWithinLimit(description);
-
-        if (value == 0)
-        {
-            throw new ArgumentException("Value must not be zero.");
-        }
 
         if (!EntityIdResolver.TryResolve(categoryId, _repository.GetCategories(), c => c.Id, out var category))
         {

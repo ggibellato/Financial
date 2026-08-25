@@ -35,6 +35,26 @@ public class RecurringBillTests
         bill.MinimumWageValue.Should().BeNull();
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(32)]
+    public void Create_WithDueDayOutOfRange_Throws(int dueDay)
+    {
+        var act = () => RecurringBill.Create(dueDay, "INSS", 850m, Area.Brasil, string.Empty, null, null);
+
+        act.Should().Throw<ArgumentException>().WithMessage("*Due day must be between 1 and 31*");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Create_WithBlankDescription_Throws(string description)
+    {
+        var act = () => RecurringBill.Create(10, description, 850m, Area.Brasil, string.Empty, null, null);
+
+        act.Should().Throw<ArgumentException>().WithMessage("*Description is required*");
+    }
+
     [Fact]
     public void Create_TwoBills_HaveDifferentIds()
     {

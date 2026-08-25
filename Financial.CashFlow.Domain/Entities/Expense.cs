@@ -53,6 +53,7 @@ public class Expense
         DateOnly? invoiceDate = null,
         bool countsAsTithe = true)
     {
+        ValidateFields(description, value);
         ValidatePaymentShape(paymentSourceBank, creditCard);
 
         return new()
@@ -79,6 +80,8 @@ public class Expense
         CreditCard? creditCard,
         bool countsAsTithe = true)
     {
+        ValidateFields(description, value);
+
         if (PaymentStatus == ExpensePaymentStatus.CreditCardSettled)
         {
             if (paymentSourceBank?.Id != PaymentSourceBank?.Id || creditCard?.Id != CreditCard?.Id)
@@ -194,6 +197,19 @@ public class Expense
     }
 
     private static DateOnly FirstOfMonth(DateOnly date) => new(date.Year, date.Month, 1);
+
+    private static void ValidateFields(string description, decimal value)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            throw new ArgumentException("Description is required.");
+        }
+
+        if (value == 0)
+        {
+            throw new ArgumentException("Value must not be zero.");
+        }
+    }
 
     private static void ValidatePaymentShape(Bank? paymentSourceBank, CreditCard? creditCard)
     {
