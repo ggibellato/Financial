@@ -15,7 +15,7 @@ public partial class TransactionsView : UserControl
     {
         if (DataContext is IMainNavigationViewModel viewModel)
         {
-            viewModel.AssetDetails.UpdateTransactionsPlotWidth(e.NewSize.Width);
+            viewModel.AssetDetails.Transactions.UpdatePlotWidth(e.NewSize.Width);
         }
     }
 }
