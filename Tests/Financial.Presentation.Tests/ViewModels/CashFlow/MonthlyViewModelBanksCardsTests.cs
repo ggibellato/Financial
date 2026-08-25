@@ -9,6 +9,8 @@ public class MonthlyViewModelBanksCardsTests
 {
     private static readonly Guid BarclaysId = Guid.NewGuid();
     private static readonly Guid ChaseId = Guid.NewGuid();
+    private static readonly Guid BaAmexId = Guid.NewGuid();
+    private static readonly Guid ChaseCardId = Guid.NewGuid();
 
     private static (
         MonthlyViewModel ViewModel,
@@ -209,97 +211,64 @@ public class MonthlyViewModelBanksCardsTests
     }
 
     [Fact]
-    public async Task CardStatements_FooterShowsCombinedOutstandingTotal()
+    public async Task RefreshAsync_PopulatesCreditCards()
     {
-        var (viewModel, _, _, _, _, cards) = CreateViewModel();
-        cards.Statements =
-        [
-            new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 100m },
-            new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "ChaseMaster4023", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 50m },
-        ];
+        var (viewModel, _) = CreateViewModelWithCreditCards(
+            [
+                new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5) },
+                new() { Id = ChaseCardId, Name = "ChaseMaster4023", IsActive = false, NextInvoiceDueDate = null },
+            ]);
 
         await viewModel.RefreshAsync();
 
-        viewModel.AdjustmentTotal.Should().Be(150m);
+        viewModel.CreditCards.Should().HaveCount(2);
+        viewModel.CreditCards.Should().Contain(c => c.Name == "BaAmex" && c.IsActive);
     }
 
     [Fact]
-    public async Task MarkCardStatementPaid_RequiresBankSelected_ThenCallsService()
+    public async Task ActiveCreditCards_ExcludesInactiveCards()
     {
-        var (viewModel, _, banks, _, _, cards) = CreateViewModel();
-        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 100m };
-        cards.Statements = [statement];
+        var (viewModel, _) = CreateViewModelWithCreditCards(
+            [
+                new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5) },
+                new() { Id = ChaseCardId, Name = "ChaseMaster4023", IsActive = false, NextInvoiceDueDate = null },
+            ]);
+
         await viewModel.RefreshAsync();
 
-        viewModel.MarkStatementPaidCommand.CanExecute(statement).Should().BeFalse();
-
-        viewModel.SetMarkPaidSource(statement.Id, banks.Banks[0].Id);
-
-        viewModel.MarkStatementPaidCommand.CanExecute(statement).Should().BeTrue();
-        await viewModel.MarkStatementPaidAsync(statement);
-
-        cards.LastMarkPaidRequest.Should().NotBeNull();
-        cards.LastMarkPaidRequest!.Value.Id.Should().Be(statement.Id);
-        cards.LastMarkPaidRequest.Value.Request.PaymentSourceBankId.Should().Be(BarclaysId);
+        viewModel.Expense.ActiveCreditCards.Should().ContainSingle(c => c.Name == "BaAmex");
+        viewModel.Expense.ActiveCreditCards.Should().NotContain(c => c.Name == "ChaseMaster4023");
     }
 
-    /// <summary>
-    /// Web shows the same string through listActionWarning. Without it the WPF user gets the
-    /// silence the backlog item is about: the click reports nothing and nothing changed.
-    /// </summary>
     [Fact]
-    public async Task MarkCardStatementPaid_WhenTheServerWarnsNothingChanged_SurfacesItSeparatelyFromErrors()
+    public async Task DeactivatingACard_RemovesItFromActiveCreditCards_OnNextRefresh()
     {
-        var (viewModel, _, banks, _, _, cards) = CreateViewModel();
-        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = true, OutstandingTotal = 0m };
-        cards.Statements = [statement];
-        cards.NextWarning = "This statement was already marked paid; nothing changed.";
+        var (viewModel, _) = CreateViewModelWithCreditCards(
+            [
+                new() { Id = BaAmexId, Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 5) },
+            ]);
         await viewModel.RefreshAsync();
-        viewModel.SetMarkPaidSource(statement.Id, banks.Banks[0].Id);
+        var card = viewModel.CreditCards.Single(c => c.Name == "BaAmex");
 
-        await viewModel.MarkStatementPaidAsync(statement);
+        await viewModel.Cards.UpdateCreditCardAsync(card, card.NextInvoiceDueDate, isActive: false);
 
-        viewModel.CardStatementWarning.Should().Contain("already marked paid");
-        viewModel.CardStatementError.Should().BeNull("a no-op is not a failure and must not show in red");
+        viewModel.Expense.ActiveCreditCards.Should().NotContain(c => c.Name == "BaAmex");
     }
 
-    [Fact]
-    public async Task UnmarkCardStatementPaid_WhenTheServerWarnsNothingChanged_SurfacesTheWarning()
+    private static (MonthlyViewModel ViewModel, StubCreditCardService CreditCards) CreateViewModelWithCreditCards(List<CreditCardDTO> creditCards)
     {
-        var (viewModel, _, _, _, _, cards) = CreateViewModel();
-        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 0m };
-        cards.Statements = [statement];
-        cards.NextWarning = "This statement was not marked paid; nothing changed.";
-        await viewModel.RefreshAsync();
+        var expenses = new StubExpenseService();
+        var incomes = new StubIncomeService();
+        var banks = new StubBankService();
+        var incomeSources = new StubIncomeSourceService();
+        var tithe = new StubTitheService();
+        var transfers = new StubTransferService();
+        var adjustments = new StubBalanceAdjustmentService();
+        var cards = new StubCardStatementService();
+        var creditCardService = new StubCreditCardService { CreditCards = creditCards };
+        var categories = new StubCategoryService();
 
-        await viewModel.UnmarkStatementPaidAsync(statement);
-
-        viewModel.CardStatementWarning.Should().Contain("not marked paid");
-    }
-
-    [Fact]
-    public async Task MarkCardStatementPaid_WhenTheServerReportsNoWarning_LeavesTheWarningClear()
-    {
-        var (viewModel, _, banks, _, _, cards) = CreateViewModel();
-        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = false, OutstandingTotal = 100m };
-        cards.Statements = [statement];
-        await viewModel.RefreshAsync();
-        viewModel.SetMarkPaidSource(statement.Id, banks.Banks[0].Id);
-
-        await viewModel.MarkStatementPaidAsync(statement);
-
-        viewModel.CardStatementWarning.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task UnmarkCardStatementPaid_CallsService()
-    {
-        var (viewModel, _, _, _, _, cards) = CreateViewModel();
-        var statement = new CardStatementDTO { Id = Guid.NewGuid(), CreditCardId = Guid.NewGuid(), CreditCardName = "BaAmex", Year = DateTime.Today.Year, Month = DateTime.Today.Month, IsPaid = true, OutstandingTotal = 0m };
-        cards.Statements = [statement];
-
-        await viewModel.UnmarkStatementPaidAsync(statement);
-
-        cards.LastUnmarkedId.Should().Be(statement.Id);
+        var viewModel = new MonthlyViewModel(expenses, incomes, banks, incomeSources, tithe, transfers, adjustments, cards, creditCardService, categories, confirm: _ => true, new RecordingTelemetryTracer());
+        return (viewModel, creditCardService);
     }
 }

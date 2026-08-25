@@ -43,7 +43,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <local:CardsGridView Grid.Row="0" ShowCardManagementColumns="True"/>
+                    <local:CardsGridView Grid.Row="0" ShowCardManagementColumns="True" DataContext="{Binding Cards}"/>
                     <local:CreditCardExpensesView Grid.Row="1" DataContext="{Binding Expense}"/>
                 </Grid>
             </TabItem>

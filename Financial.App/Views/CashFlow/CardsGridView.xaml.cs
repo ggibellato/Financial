@@ -28,7 +28,7 @@ public partial class CardsGridView : UserControl
             return;
         }
 
-        if (comboBox.DataContext is not CreditCardManagementRow { Statement: { } statement } || DataContext is not MonthlyViewModel viewModel)
+        if (comboBox.DataContext is not CreditCardManagementRow { Statement: { } statement } || DataContext is not CardsWorkflowViewModel viewModel)
         {
             return;
         }
@@ -43,7 +43,7 @@ public partial class CardsGridView : UserControl
             return;
         }
 
-        if (DataContext is not MonthlyViewModel viewModel)
+        if (DataContext is not CardsWorkflowViewModel viewModel)
         {
             return;
         }
@@ -59,7 +59,7 @@ public partial class CardsGridView : UserControl
             return;
         }
 
-        if (DataContext is not MonthlyViewModel viewModel)
+        if (DataContext is not CardsWorkflowViewModel viewModel)
         {
             return;
         }

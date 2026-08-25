@@ -80,25 +80,14 @@ public class MonthlyViewModel : ViewModelBase
     public ObservableCollection<CategoryTotalDTO> CategoryTotals { get; } = [];
     public ObservableCollection<BankDTO> Banks { get; } = [];
     public ObservableCollection<BankTotalRow> BankTotals { get; } = [];
-    public ObservableCollection<CardStatementDTO> CardStatements { get; } = [];
     public ObservableCollection<IncomeTotalRow> IncomeTotals { get; } = [];
     public ObservableCollection<CreditCardDTO> CreditCards { get; } = [];
     public ObservableCollection<CategoryDTO> Categories { get; } = [];
-
-    public IEnumerable<CreditCardDTO> ActiveCreditCards => CreditCards.Where(c => c.IsActive);
-
-    public IEnumerable<CreditCardManagementRow> CreditCardManagementRows =>
-        CreditCards.Select(c => new CreditCardManagementRow
-        {
-            CreditCard = c,
-            Statement = CardStatements.FirstOrDefault(s => s.CreditCardId == c.Id),
-        });
 
     public IEnumerable<CategoryDTO> ActiveCategories => Categories.Where(c => c.Active);
 
     public decimal BankTotalsSum => BankTotals.Sum(b => b.Balance);
     public decimal RoundUpTotalsSum => BankTotals.Sum(b => b.RoundUpTotal);
-    public decimal AdjustmentTotal => CardStatements.Sum(s => s.OutstandingTotal);
     public decimal TotalIncoming => IncomeTotals.Sum(i => i.NetValue);
 
     private TitheSummaryDTO? _titheSummary;
@@ -115,6 +104,8 @@ public class MonthlyViewModel : ViewModelBase
     public IncomeWorkflowViewModel Income { get; }
 
     public ExpenseWorkflowViewModel Expense { get; }
+
+    public CardsWorkflowViewModel Cards { get; }
 
     private readonly Func<string, bool> _confirm;
 
@@ -151,10 +142,10 @@ public class MonthlyViewModel : ViewModelBase
         RetryCommand = new RelayCommand(async () => await RefreshAsync());
         Income = new IncomeWorkflowViewModel(incomeService, confirm, RefreshAsync);
         Expense = new ExpenseWorkflowViewModel(expenseService, Categories, Banks, CreditCards, confirm, tracer, RefreshAsync);
+        Cards = new CardsWorkflowViewModel(cardStatementService, creditCardService, Banks, CreditCards, RefreshAsync);
         InitializeBankCommands();
         InitializeTransferCommands();
         InitializeAdjustmentCommands();
-        InitializeCardCommands();
     }
 
     private int _refreshRequestId;
@@ -231,13 +222,11 @@ public class MonthlyViewModel : ViewModelBase
             BankFilterOptions = BuildBankFilterOptions(banks);
             ApplyBankFilter();
 
-            ReplaceAll(CardStatements, cardStatements);
-            OnPropertyChanged(nameof(AdjustmentTotal));
+            Cards.ApplyRefresh(cardStatements);
 
             ReplaceAll(CreditCards, creditCards);
-            OnPropertyChanged(nameof(ActiveCreditCards));
-            OnPropertyChanged(nameof(CreditCardManagementRows));
             Expense.NotifyCreditCardsChanged();
+            Cards.NotifyCreditCardsChanged();
 
             ReplaceAll(Categories, categories);
             OnPropertyChanged(nameof(ActiveCategories));
@@ -760,142 +749,4 @@ public class MonthlyViewModel : ViewModelBase
         },
         SaveAdjustmentCommand.RaiseCanExecuteChanged);
 
-    private string? _cardStatementError;
-
-    public string? CardStatementError
-    {
-        get => _cardStatementError;
-        private set => SetProperty(ref _cardStatementError, value);
-    }
-
-    private string? _cardStatementWarning;
-
-    /// <summary>
-    /// A completed call that changed nothing - marking a statement paid that already was, say.
-    /// Separate from <see cref="CardStatementError"/> because it is not a failure, and showing it
-    /// in red would teach the user to ignore red. Mirrors useMonthly.ts's listActionWarning.
-    /// </summary>
-    public string? CardStatementWarning
-    {
-        get => _cardStatementWarning;
-        private set => SetProperty(ref _cardStatementWarning, value);
-    }
-
-    public Dictionary<Guid, Guid> MarkPaidSources { get; } = [];
-
-    public RelayCommand<CardStatementDTO> MarkStatementPaidCommand { get; private set; } = null!;
-    public RelayCommand<CardStatementDTO> UnmarkStatementPaidCommand { get; private set; } = null!;
-
-    private void InitializeCardCommands()
-    {
-        MarkStatementPaidCommand = new RelayCommand<CardStatementDTO>(
-            async statement => await MarkStatementPaidAsync(statement),
-            statement => statement != null && MarkPaidSources.ContainsKey(statement.Id));
-        UnmarkStatementPaidCommand = new RelayCommand<CardStatementDTO>(async statement => await UnmarkStatementPaidAsync(statement));
-    }
-
-    public void SetMarkPaidSource(Guid statementId, Guid bankId)
-    {
-        MarkPaidSources[statementId] = bankId;
-        MarkStatementPaidCommand.RaiseCanExecuteChanged();
-    }
-
-    internal async Task MarkStatementPaidAsync(CardStatementDTO? statement)
-    {
-        if (statement is null || !MarkPaidSources.TryGetValue(statement.Id, out var paymentSource))
-        {
-            return;
-        }
-
-        CardStatementError = null;
-        CardStatementWarning = null;
-
-        try
-        {
-            var result = await _cardStatementService.MarkStatementPaidAsync(statement.Id, new MarkStatementPaidDTO { PaymentSourceBankId = paymentSource });
-            CardStatementWarning = result.Warning;
-            MarkPaidSources.Remove(statement.Id);
-            await RefreshAsync();
-        }
-        catch (Exception ex)
-        {
-            CardStatementError = ex.Message;
-        }
-    }
-
-    internal async Task UnmarkStatementPaidAsync(CardStatementDTO? statement)
-    {
-        if (statement is null)
-        {
-            return;
-        }
-
-        CardStatementError = null;
-        CardStatementWarning = null;
-
-        try
-        {
-            var result = await _cardStatementService.UnmarkStatementPaidAsync(statement.Id);
-            CardStatementWarning = result.Warning;
-            await RefreshAsync();
-        }
-        catch (Exception ex)
-        {
-            CardStatementError = ex.Message;
-        }
-    }
-
-    private string? _creditCardUpdateError;
-    private Guid? _updatingCreditCardId;
-
-    public string? CreditCardUpdateError
-    {
-        get => _creditCardUpdateError;
-        private set => SetProperty(ref _creditCardUpdateError, value);
-    }
-
-    public Guid? UpdatingCreditCardId
-    {
-        get => _updatingCreditCardId;
-        private set => SetProperty(ref _updatingCreditCardId, value);
-    }
-
-    internal async Task UpdateCreditCardAsync(CreditCardDTO? card, DateOnly? nextInvoiceDueDate, bool isActive)
-    {
-        if (card is null)
-        {
-            return;
-        }
-
-        // The grid's DatePicker/CheckBox bind one-way to this row and call back here on their
-        // change events - but WPF raises those same events when ReplaceAll(CreditCards, ...)
-        // below rebinds the row to its own current value, not just on a real user edit. Without
-        // this guard, that echo would call the update service and refresh again, which rebinds
-        // the row again, forever.
-        if (card.NextInvoiceDueDate == nextInvoiceDueDate && card.IsActive == isActive)
-        {
-            return;
-        }
-
-        CreditCardUpdateError = null;
-        UpdatingCreditCardId = card.Id;
-
-        try
-        {
-            await _creditCardService.UpdateCreditCardAsync(card.Id, new CreditCardUpdateDTO
-            {
-                NextInvoiceDueDate = nextInvoiceDueDate,
-                IsActive = isActive,
-            });
-            await RefreshAsync();
-        }
-        catch (Exception ex)
-        {
-            CreditCardUpdateError = ex.Message;
-        }
-        finally
-        {
-            UpdatingCreditCardId = null;
-        }
-    }
 }
