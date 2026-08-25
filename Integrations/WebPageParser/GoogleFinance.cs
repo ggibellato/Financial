@@ -1,4 +1,3 @@
-using Financial.Investment.Domain.ValueObjects;
 using HtmlAgilityPack;
 using System.Text.RegularExpressions;
 
@@ -10,10 +9,10 @@ namespace Financial.Integrations.WebPageParser;
 /// </summary>
 public static class GoogleFinance
 {
-    public static AssetValueSnapshot GetFinancialInfoSnapshot(string exchange, string ticker) =>
+    public static WebAssetQuote GetFinancialInfoSnapshot(string exchange, string ticker) =>
         FetchSnapshot(BuildStockQuoteUrl(exchange, ticker), ticker);
 
-    public static AssetValueSnapshot GetCryptocurrencyFinancialInfoSnapshot(string currency, string ticker) =>
+    public static WebAssetQuote GetCryptocurrencyFinancialInfoSnapshot(string currency, string ticker) =>
         FetchSnapshot(BuildCryptocurrencyQuoteUrl(currency, ticker), ticker);
 
     internal static string BuildStockQuoteUrl(string exchange, string ticker) =>
@@ -22,7 +21,7 @@ public static class GoogleFinance
     internal static string BuildCryptocurrencyQuoteUrl(string currency, string ticker) =>
         $"https://www.google.com/finance/beta/quote/{ticker}-{currency}";
 
-    private static AssetValueSnapshot FetchSnapshot(string url, string ticker)
+    private static WebAssetQuote FetchSnapshot(string url, string ticker)
     {
         HtmlWeb htmlWeb = new HtmlWeb();
         HtmlDocument htmlDoc = htmlWeb.Load(url);
@@ -34,7 +33,7 @@ public static class GoogleFinance
 
         var asOfText = ReadAsOfText(mainData);
         var asOf = GoogleFinanceParsing.TryParseAsOf(asOfText) ?? DateTimeOffset.Now;
-        return new AssetValueSnapshot(ticker, name, value, asOf);
+        return new WebAssetQuote(ticker, name, value, asOf);
     }
 
     private static HtmlNode GetMainData(HtmlDocument document) =>

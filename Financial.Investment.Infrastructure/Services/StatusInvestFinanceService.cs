@@ -9,7 +9,8 @@ public sealed class StatusInvestFinanceService : IFinanceService
 {
     private readonly Func<string, AssetValueSnapshot> _lookup;
 
-    public StatusInvestFinanceService() : this(StatusInvest.GetSellValue)
+    public StatusInvestFinanceService()
+        : this(name => WebPageParserMappers.ToAssetValueSnapshot(StatusInvest.GetSellValue(name)))
     {
     }
 

@@ -11,7 +11,9 @@ public sealed class GoogleFinanceService : IFinanceService
     private readonly Func<string, string, AssetValueSnapshot> _cryptoLookup;
 
     public GoogleFinanceService()
-        : this(GoogleFinance.GetFinancialInfoSnapshot, GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot)
+        : this(
+            (exchange, ticker) => WebPageParserMappers.ToAssetValueSnapshot(GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker)),
+            (currency, ticker) => WebPageParserMappers.ToAssetValueSnapshot(GoogleFinance.GetCryptocurrencyFinancialInfoSnapshot(currency, ticker)))
     {
     }
 
