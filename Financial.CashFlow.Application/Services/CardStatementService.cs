@@ -102,9 +102,8 @@ public sealed class CardStatementService : ICardStatementService
                 ? $"No credit card charges matched this statement's invoice period ({statement.Year:D4}-{statement.Month:D2}); marked paid with 0 linked charges."
                 : null;
 
-            try
-            {
-                await _repository.ApplyAndSaveAsync(() =>
+            await CompensatingSaveHelper.ApplyWithCompensationAsync(
+                () => _repository.ApplyAndSaveAsync(() =>
                 {
                     statement.MarkPaid();
                     foreach (var charge in charges)
@@ -113,13 +112,8 @@ public sealed class CardStatementService : ICardStatementService
                     }
 
                     return true;
-                }).ConfigureAwait(false);
-            }
-            catch
-            {
-                // The rollback edits the same graph, so it runs under the same exclusion. Reporting
-                // no change is what keeps it in memory only - the failed write must not be retried.
-                await _repository.ApplyAndSaveAsync(() =>
+                }),
+                () => _repository.ApplyAndSaveAsync(() =>
                 {
                     statement.MarkUnpaid();
                     foreach (var charge in charges)
@@ -128,10 +122,7 @@ public sealed class CardStatementService : ICardStatementService
                     }
 
                     return false;
-                }).ConfigureAwait(false);
-
-                throw;
-            }
+                })).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "MarkStatementPaid");
@@ -164,9 +155,8 @@ public sealed class CardStatementService : ICardStatementService
                 .Select(e => (Expense: e, PaymentSourceBank: e.PaymentSourceBank!, PaymentDate: e.Date))
                 .ToList();
 
-            try
-            {
-                await _repository.ApplyAndSaveAsync(() =>
+            await CompensatingSaveHelper.ApplyWithCompensationAsync(
+                () => _repository.ApplyAndSaveAsync(() =>
                 {
                     statement.MarkUnpaid();
                     foreach (var expense in settledExpenses)
@@ -175,11 +165,8 @@ public sealed class CardStatementService : ICardStatementService
                     }
 
                     return true;
-                }).ConfigureAwait(false);
-            }
-            catch
-            {
-                await _repository.ApplyAndSaveAsync(() =>
+                }),
+                () => _repository.ApplyAndSaveAsync(() =>
                 {
                     statement.MarkPaid();
                     foreach (var (expense, paymentSourceBank, paymentDate) in settlements)
@@ -188,10 +175,7 @@ public sealed class CardStatementService : ICardStatementService
                     }
 
                     return false;
-                }).ConfigureAwait(false);
-
-                throw;
-            }
+                })).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UnmarkStatementPaid");

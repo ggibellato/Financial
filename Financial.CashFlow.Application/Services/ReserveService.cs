@@ -48,9 +48,8 @@ public sealed class ReserveService : IReserveService
 
             var movements = CreateSplitMovements(activeBuckets, request.Amount, request.Date, request.Description);
 
-            try
-            {
-                await _repository.ApplyAndSaveAsync(() =>
+            await CompensatingSaveHelper.ApplyWithCompensationAsync(
+                () => _repository.ApplyAndSaveAsync(() =>
                 {
                     foreach (var movement in movements)
                     {
@@ -58,13 +57,8 @@ public sealed class ReserveService : IReserveService
                     }
 
                     return true;
-                }).ConfigureAwait(false);
-            }
-            catch
-            {
-                // The rollback edits the same graph, so it runs under the same exclusion. Reporting
-                // no change is what keeps it in memory only - the failed write must not be retried.
-                await _repository.ApplyAndSaveAsync(() =>
+                }),
+                () => _repository.ApplyAndSaveAsync(() =>
                 {
                     foreach (var movement in movements)
                     {
@@ -72,10 +66,7 @@ public sealed class ReserveService : IReserveService
                     }
 
                     return false;
-                }).ConfigureAwait(false);
-
-                throw;
-            }
+                })).ConfigureAwait(false);
 
             var splitAmounts = movements
                 .Select(movement => new BucketSplitAmountDTO
@@ -132,24 +123,17 @@ public sealed class ReserveService : IReserveService
 
             var movement = ReserveMovement.Create(bucket!, -request.Amount, request.Date, request.Description);
 
-            try
-            {
-                await _repository.ApplyAndSaveAsync(() =>
+            await CompensatingSaveHelper.ApplyWithCompensationAsync(
+                () => _repository.ApplyAndSaveAsync(() =>
                 {
                     _repository.AddReserveMovement(movement);
                     return true;
-                }).ConfigureAwait(false);
-            }
-            catch
-            {
-                await _repository.ApplyAndSaveAsync(() =>
+                }),
+                () => _repository.ApplyAndSaveAsync(() =>
                 {
                     _repository.DeleteReserveMovement(movement.Id);
                     return false;
-                }).ConfigureAwait(false);
-
-                throw;
-            }
+                })).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, movement.Id.ToString());
             span.MarkSuccess();
