@@ -182,6 +182,11 @@ public class Expense
                 "Round-up only applies to an expense paid directly from a bank, not a credit-card charge.");
         }
 
+        if (!PaymentSourceBank!.RoundUpEnabled)
+        {
+            throw new ArgumentException($"Bank '{PaymentSourceBank.Name}' does not support round-up.");
+        }
+
         if (Value <= 0)
         {
             throw new ArgumentException("Round-up does not apply to a negative (reimbursement) expense.");
