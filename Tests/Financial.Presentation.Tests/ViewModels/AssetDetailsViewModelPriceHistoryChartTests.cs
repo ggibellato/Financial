@@ -38,7 +38,7 @@ public class AssetDetailsViewModelPriceHistoryChartTests
 
         vm.LoadAssetDetails(BuildAssetDetails("XPI", "TEST", []));
 
-        vm.PriceHistoryFilters.First(f => f.Filter == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
+        vm.PriceHistory.PriceHistoryFilters.First(f => f.Filter == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
     }
 
     [Fact]
@@ -52,8 +52,8 @@ public class AssetDetailsViewModelPriceHistoryChartTests
 
         vm.LoadAssetDetails(BuildAssetDetails("XPI", "TEST", entries));
 
-        vm.PriceHistory.Should().ContainSingle(e => e.Price == 100m);
-        vm.PriceHistoryPlotModel.Should().NotBeNull();
+        vm.PriceHistory.PriceHistory.Should().ContainSingle(e => e.Price == 100m);
+        vm.PriceHistory.PriceHistoryPlotModel.Should().NotBeNull();
     }
 
     [Fact]
@@ -62,14 +62,14 @@ public class AssetDetailsViewModelPriceHistoryChartTests
         var vm = BuildViewModel();
         vm.LoadAssetDetails(BuildAssetDetails("XPI", "AssetA", []));
 
-        vm.SelectPriceHistoryFilterCommand.Execute(PeriodFilter.AllTime);
-        vm.PriceHistoryFilters.First(f => f.Filter == PeriodFilter.AllTime).IsSelected.Should().BeTrue();
+        vm.PriceHistory.SelectPriceHistoryFilterCommand.Execute(PeriodFilter.AllTime);
+        vm.PriceHistory.PriceHistoryFilters.First(f => f.Filter == PeriodFilter.AllTime).IsSelected.Should().BeTrue();
 
         vm.LoadAssetDetails(BuildAssetDetails("XPI", "AssetB", []));
-        vm.PriceHistoryFilters.First(f => f.Filter == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
+        vm.PriceHistory.PriceHistoryFilters.First(f => f.Filter == PeriodFilter.Last12Months).IsSelected.Should().BeTrue();
 
         vm.LoadAssetDetails(BuildAssetDetails("XPI", "AssetA", []));
-        vm.PriceHistoryFilters.First(f => f.Filter == PeriodFilter.AllTime).IsSelected.Should().BeTrue();
+        vm.PriceHistory.PriceHistoryFilters.First(f => f.Filter == PeriodFilter.AllTime).IsSelected.Should().BeTrue();
     }
 
     [Fact]
@@ -83,10 +83,10 @@ public class AssetDetailsViewModelPriceHistoryChartTests
         var vm = BuildViewModel();
         vm.LoadAssetDetails(BuildAssetDetails("XPI", "TEST", entries));
 
-        vm.SelectPriceHistoryFilterCommand.Execute(PeriodFilter.ThisMonth);
+        vm.PriceHistory.SelectPriceHistoryFilterCommand.Execute(PeriodFilter.ThisMonth);
 
-        vm.PriceHistoryPlotModel.Should().NotBeNull();
-        var line = vm.PriceHistoryPlotModel!.Series.OfType<OxyPlot.Series.LineSeries>().Single();
+        vm.PriceHistory.PriceHistoryPlotModel.Should().NotBeNull();
+        var line = vm.PriceHistory.PriceHistoryPlotModel!.Series.OfType<OxyPlot.Series.LineSeries>().Single();
         line.Points.Should().ContainSingle();
     }
 
@@ -98,8 +98,8 @@ public class AssetDetailsViewModelPriceHistoryChartTests
 
         vm.Clear();
 
-        vm.PriceHistory.Should().BeEmpty();
-        vm.PriceHistoryPlotModel.Should().BeNull();
-        vm.SelectedPriceEntry.Should().BeNull();
+        vm.PriceHistory.PriceHistory.Should().BeEmpty();
+        vm.PriceHistory.PriceHistoryPlotModel.Should().BeNull();
+        vm.PriceHistory.SelectedPriceEntry.Should().BeNull();
     }
 }

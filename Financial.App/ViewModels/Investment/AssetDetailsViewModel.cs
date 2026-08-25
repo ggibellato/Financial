@@ -26,7 +26,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private readonly TodayInfoTracker _todayInfo;
     private readonly TransactionActions _transactionActions;
     private readonly CreditActions _creditActions;
-    private readonly PriceActions _priceActions;
     private readonly RelayCommand _addTransactionCommand;
     private readonly RelayCommand _updateTransactionCommand;
     private readonly RelayCommand _deleteTransactionCommand;
@@ -40,10 +39,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private readonly RelayCommand _selectCreditsChartTypeCommand;
     private readonly RelayCommand _selectTransactionsFilterCommand;
     private readonly RelayCommand _selectTransactionsChartModeCommand;
-    private readonly RelayCommand _selectPriceHistoryFilterCommand;
-    private readonly RelayCommand _addPriceCommand;
-    private readonly RelayCommand _updatePriceCommand;
-    private readonly RelayCommand _deletePriceCommand;
     private string _assetName = string.Empty;
     private string _brokerName = string.Empty;
     private string _portfolioName = string.Empty;
@@ -91,8 +86,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private bool _isTransactionFormOpen;
     private CreditDialogViewModel? _creditFormViewModel;
     private bool _isCreditFormOpen;
-    private PriceDialogViewModel? _priceFormViewModel;
-    private bool _isPriceFormOpen;
     private string _footerEstimatedAnnualCreditsDisplay = "—";
     private readonly List<(PortfolioAssetSummaryRowViewModel Row, PropertyChangedEventHandler Handler)> _rowSubscriptions = new();
     private TransactionDTO? _selectedTransaction;
@@ -114,12 +107,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private IReadOnlyList<TransactionMonthNet> _transactionsChartMonths = Array.Empty<TransactionMonthNet>();
     private IReadOnlyList<AssetCashFlowDTO> _cashFlowsWithCredits = Array.Empty<AssetCashFlowDTO>();
     private IReadOnlyList<AssetCashFlowDTO> _cashFlowsWithoutCredits = Array.Empty<AssetCashFlowDTO>();
-    private PlotModel? _priceHistoryPlotModel;
-    private PeriodFilter _selectedPriceHistoryFilter = PeriodFilter.Last12Months;
-    private const string DefaultPriceHistoryContextKey = "default";
-    private readonly Dictionary<string, PriceHistoryViewState> _priceHistoryViewStateByKey = new(StringComparer.OrdinalIgnoreCase);
-    private string _priceHistoryContextKey = DefaultPriceHistoryContextKey;
-    private AssetPriceSnapshotDTO? _selectedPriceEntry;
 
     public string AssetName { get => _assetName; private set => SetProperty(ref _assetName, value); }
     public string BrokerName { get => _brokerName; private set => SetProperty(ref _brokerName, value); }
@@ -317,16 +304,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public ObservableCollection<CreditDTO> Credits { get; } = new();
     public ObservableCollection<KeyValuePair<string, decimal>> CreditsByMonthChart { get; } = new();
     public ObservableCollection<CreditsFilterOptionViewModel> CreditsFilters { get; } = new();
-    public ObservableCollection<AssetPriceSnapshotDTO> PriceHistory { get; } = new();
-    public ObservableCollection<PriceHistoryFilterOptionViewModel> PriceHistoryFilters { get; } = new();
 
-    public PlotModel? PriceHistoryPlotModel { get => _priceHistoryPlotModel; private set => SetProperty(ref _priceHistoryPlotModel, value); }
+    public PriceHistoryTabViewModel PriceHistory { get; }
 
-    public AssetPriceSnapshotDTO? SelectedPriceEntry
-    {
-        get => _selectedPriceEntry;
-        set { if (SetProperty(ref _selectedPriceEntry, value)) UpdateCommandStates(); }
-    }
     public ObservableCollection<CreditsTypeModeOptionViewModel> CreditsTypeModes { get; } = new();
     public ObservableCollection<CreditsChartTypeOptionViewModel> CreditsChartTypes { get; } = new();
 
@@ -376,10 +356,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     public RelayCommand RefreshTodayInfoCommand => _refreshTodayInfoCommand;
     public RelayCommand CopyAssetNameCommand => _copyAssetNameCommand;
     public RelayCommand SelectCreditsFilterCommand => _selectCreditsFilterCommand;
-    public RelayCommand SelectPriceHistoryFilterCommand => _selectPriceHistoryFilterCommand;
-    public RelayCommand AddPriceCommand => _addPriceCommand;
-    public RelayCommand UpdatePriceCommand => _updatePriceCommand;
-    public RelayCommand DeletePriceCommand => _deletePriceCommand;
     public RelayCommand SelectCreditsTypeModeCommand => _selectCreditsTypeModeCommand;
     public RelayCommand SelectCreditsChartTypeCommand => _selectCreditsChartTypeCommand;
     public RelayCommand SelectTransactionsFilterCommand => _selectTransactionsFilterCommand;
@@ -407,18 +383,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         get => _isCreditFormOpen;
         private set => SetProperty(ref _isCreditFormOpen, value);
-    }
-
-    public PriceDialogViewModel? PriceFormViewModel
-    {
-        get => _priceFormViewModel;
-        private set => SetProperty(ref _priceFormViewModel, value);
-    }
-
-    public bool IsPriceFormOpen
-    {
-        get => _isPriceFormOpen;
-        private set => SetProperty(ref _isPriceFormOpen, value);
     }
 
     public AssetDetailsViewModel(
@@ -458,7 +422,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             () => AssetName,
             details => LoadAssetDetails(details),
             (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
-        _priceActions = new PriceActions(
+        PriceHistory = new PriceHistoryTabViewModel(
             _priceService,
             () => HasAssetContext,
             () => BrokerName,
@@ -479,16 +443,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _selectCreditsChartTypeCommand = new RelayCommand(SelectCreditsChartType);
         _selectTransactionsFilterCommand = new RelayCommand(SelectTransactionsFilter);
         _selectTransactionsChartModeCommand = new RelayCommand(SelectTransactionsChartMode);
-        _selectPriceHistoryFilterCommand = new RelayCommand(SelectPriceHistoryFilter);
-        _addPriceCommand = new RelayCommand(AddPrice, CanAddPrice);
-        _updatePriceCommand = new RelayCommand(UpdatePrice, CanUpdatePrice);
-        _deletePriceCommand = new RelayCommand(DeletePrice, CanDeletePrice);
         InitializeCreditsFilters();
         InitializeCreditsTypeModes();
         InitializeCreditsChartTypes();
         InitializeTransactionsFilters();
         InitializeChartTypeModes();
-        InitializePriceHistoryFilters();
     }
 
     public void LoadPortfolioSummary(string brokerName, string portfolioName, AggregatedSummaryDTO summary, IReadOnlyList<CreditDTO> credits, IReadOnlyList<PortfolioAssetSummaryItemDTO> assetItems)
@@ -573,15 +532,10 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         SetTransactionsContext(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), rebuild: false);
         ApplyTransactionsFilter();
 
-        SetPriceHistoryContext(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), rebuild: false);
-        PriceHistory.Clear();
-        foreach (var entry in details.PriceHistory)
-            PriceHistory.Add(entry);
-        ApplyPriceHistoryFilter();
+        PriceHistory.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.PriceHistory);
 
         SelectedTransaction = null;
         SelectedCredit = null;
-        SelectedPriceEntry = null;
         UpdateCommandStates();
     }
 
@@ -605,8 +559,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         CreditsByMonthChart.Clear();
         CreditsPlotModel = null;
         PriceHistory.Clear();
-        PriceHistoryPlotModel = null;
-        SelectedPriceEntry = null;
         IsCreditsAggregateView = false;
         HasCreditsContext = false;
         _creditsContextKey = DefaultCreditsContextKey;
@@ -714,14 +666,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private bool CanUpdateCredit(object? parameter) => HasAssetContext && (parameter is CreditDTO || SelectedCredit != null);
     private bool CanDeleteCredit(object? parameter) => HasAssetContext && (parameter is CreditDTO || SelectedCredit != null);
 
-    // Automatic entries can't be edited/deleted here - correcting one is done by adding a
-    // manual entry for that date, which overwrites it (PriceActions.Delete enforces this too).
-    private bool CanAddPrice() => HasAssetContext;
-    private bool CanUpdatePrice(object? parameter) => HasAssetContext && ResolvePriceEntry(parameter)?.IsManual == true;
-    private bool CanDeletePrice(object? parameter) => HasAssetContext && ResolvePriceEntry(parameter)?.IsManual == true;
-
-    private AssetPriceSnapshotDTO? ResolvePriceEntry(object? parameter) =>
-        parameter as AssetPriceSnapshotDTO ?? SelectedPriceEntry;
     private bool CanRefreshTodayInfo() => _todayInfo.CanRefresh(HasAssetContext);
     private bool CanCopyAssetName() => HasAssetContext;
 
@@ -1155,88 +1099,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             _creditsViewStateByKey[_creditsContextKey] = new CreditsViewState(_selectedCreditsFilter, _selectedCreditsTypeMode, _selectedCreditsChartType);
     }
 
-    private void InitializePriceHistoryFilters()
-    {
-        PriceHistoryFilters.Clear();
-        foreach (var (label, filter) in PeriodFilterHelper.Options)
-            PriceHistoryFilters.Add(new PriceHistoryFilterOptionViewModel(label, filter));
-        SetPriceHistoryFilter(PeriodFilter.Last12Months, rebuild: false);
-    }
-
-    private void SelectPriceHistoryFilter(object? parameter)
-    {
-        if (parameter is PriceHistoryFilterOptionViewModel option) { SetPriceHistoryFilter(option.Filter); return; }
-        if (parameter is PeriodFilter filter) SetPriceHistoryFilter(filter);
-    }
-
-    private void SetPriceHistoryFilter(PeriodFilter filter, bool rebuild = true)
-    {
-        if (_selectedPriceHistoryFilter == filter && PriceHistoryFilters.Count > 0)
-        {
-            UpdatePriceHistoryFilterSelection();
-            return;
-        }
-        _selectedPriceHistoryFilter = filter;
-        UpdatePriceHistoryFilterSelection();
-        UpdatePriceHistoryViewState();
-        if (rebuild) ApplyPriceHistoryFilter();
-    }
-
-    private void UpdatePriceHistoryFilterSelection()
-    {
-        foreach (var option in PriceHistoryFilters)
-            option.IsSelected = option.Filter == _selectedPriceHistoryFilter;
-    }
-
-    private void ApplyPriceHistoryFilter()
-    {
-        RefreshPriceHistoryChart(FilterPriceHistory(PriceHistory, _selectedPriceHistoryFilter));
-    }
-
-    private static IEnumerable<AssetPriceSnapshotDTO> FilterPriceHistory(IEnumerable<AssetPriceSnapshotDTO> entries, PeriodFilter filter)
-    {
-        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, DateTime.Today);
-        if (start is null) return entries;
-        return entries.Where(entry =>
-        {
-            var date = entry.Date.ToDateTime(TimeOnly.MinValue);
-            return date >= start && date < endExclusive;
-        });
-    }
-
-    private void RefreshPriceHistoryChart(IEnumerable<AssetPriceSnapshotDTO> entries)
-    {
-        PriceHistoryPlotModel = PriceHistoryChartBuilder.Build(entries.ToList());
-    }
-
-    private void SetPriceHistoryContext(string contextKey, bool rebuild = true)
-    {
-        _priceHistoryContextKey = string.IsNullOrWhiteSpace(contextKey) ? DefaultPriceHistoryContextKey : contextKey;
-        var state = GetPriceHistoryViewState(_priceHistoryContextKey);
-        ApplyPriceHistoryViewState(state, rebuild);
-    }
-
-    private PriceHistoryViewState GetPriceHistoryViewState(string contextKey)
-    {
-        if (_priceHistoryViewStateByKey.TryGetValue(contextKey, out var state))
-            return state;
-        state = new PriceHistoryViewState(PeriodFilter.Last12Months);
-        _priceHistoryViewStateByKey[contextKey] = state;
-        return state;
-    }
-
-    private void ApplyPriceHistoryViewState(PriceHistoryViewState state, bool rebuild)
-    {
-        SetPriceHistoryFilter(state.Filter, rebuild: false);
-        if (rebuild) ApplyPriceHistoryFilter();
-    }
-
-    private void UpdatePriceHistoryViewState()
-    {
-        if (!string.IsNullOrWhiteSpace(_priceHistoryContextKey))
-            _priceHistoryViewStateByKey[_priceHistoryContextKey] = new PriceHistoryViewState(_selectedPriceHistoryFilter);
-    }
-
     private void InitializeTransactionsFilters()
     {
         TransactionsFilters.Clear();
@@ -1383,20 +1245,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         await _creditActions.Delete(SelectedCredit, ShowDeleteCreditDialog);
     }
 
-    private async void AddPrice() => await _priceActions.Set(ShowAddPriceFormAsync);
-
-    private async void UpdatePrice(object? parameter)
-    {
-        if (parameter is AssetPriceSnapshotDTO entry) SelectedPriceEntry = entry;
-        await _priceActions.Set(ShowUpdatePriceFormAsync);
-    }
-
-    private async void DeletePrice(object? parameter)
-    {
-        if (parameter is AssetPriceSnapshotDTO entry) SelectedPriceEntry = entry;
-        await _priceActions.Delete(SelectedPriceEntry, ShowDeletePriceDialog);
-    }
-
     private void UpdateCommandStates()
     {
         _addTransactionCommand.RaiseCanExecuteChanged();
@@ -1405,9 +1253,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _addCreditCommand.RaiseCanExecuteChanged();
         _updateCreditCommand.RaiseCanExecuteChanged();
         _deleteCreditCommand.RaiseCanExecuteChanged();
-        _addPriceCommand.RaiseCanExecuteChanged();
-        _updatePriceCommand.RaiseCanExecuteChanged();
-        _deletePriceCommand.RaiseCanExecuteChanged();
+        PriceHistory.UpdateCommandStates();
         _refreshTodayInfoCommand.RaiseCanExecuteChanged();
         _copyAssetNameCommand.RaiseCanExecuteChanged();
     }
@@ -1502,44 +1348,4 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         return dialog.ShowDialog() == true;
     }
 
-    private Task<PriceDialogData?> ShowPriceFormAsync(PriceDialogViewModel vm)
-    {
-        var tcs = new TaskCompletionSource<PriceDialogData?>();
-        void OnClosed(object? sender, bool? result)
-        {
-            vm.CloseRequested -= OnClosed;
-            IsPriceFormOpen = false;
-            PriceFormViewModel = null;
-            tcs.SetResult(result == true
-                ? new PriceDialogData(DateOnly.FromDateTime(vm.Date), vm.Price)
-                : null);
-        }
-
-        vm.CloseRequested += OnClosed;
-        PriceFormViewModel = vm;
-        IsPriceFormOpen = true;
-        return tcs.Task;
-    }
-
-    private Task<PriceDialogData?> ShowAddPriceFormAsync() =>
-        ShowPriceFormAsync(PriceDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName));
-
-    private Task<PriceDialogData?> ShowUpdatePriceFormAsync()
-    {
-        if (SelectedPriceEntry == null) return Task.FromResult<PriceDialogData?>(null);
-        var vm = PriceDialogViewModel.CreateForUpdate(
-            BrokerName, PortfolioName, AssetName,
-            SelectedPriceEntry.Date.ToDateTime(TimeOnly.MinValue), SelectedPriceEntry.Price);
-        return ShowPriceFormAsync(vm);
-    }
-
-    private bool ShowDeletePriceDialog()
-    {
-        if (SelectedPriceEntry == null) return false;
-        var vm = PriceDialogViewModel.CreateForDelete(
-            BrokerName, PortfolioName, AssetName,
-            SelectedPriceEntry.Date.ToDateTime(TimeOnly.MinValue), SelectedPriceEntry.Price);
-        var dialog = new PriceDialog(vm) { Owner = System.Windows.Application.Current?.MainWindow };
-        return dialog.ShowDialog() == true;
-    }
 }
