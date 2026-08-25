@@ -29,7 +29,10 @@ public class CashFlowServiceRegistrationTests
         provider.GetRequiredService<IMensaisService>().Should().NotBeNull();
         provider.GetRequiredService<IControleMaeService>().Should().NotBeNull();
         provider.GetRequiredService<IInvestmentSnapshotService>().Should().NotBeNull();
-        provider.GetRequiredService<IAnnualSummaryService>().Should().NotBeNull();
+        provider.GetRequiredService<ICategorySummaryService>().Should().NotBeNull();
+        provider.GetRequiredService<IInvestmentAnnualResultService>().Should().NotBeNull();
+        provider.GetRequiredService<IIncomeSummaryService>().Should().NotBeNull();
+        provider.GetRequiredService<IHistoricAverageService>().Should().NotBeNull();
         provider.GetRequiredService<ITitheService>().Should().NotBeNull();
     }
 

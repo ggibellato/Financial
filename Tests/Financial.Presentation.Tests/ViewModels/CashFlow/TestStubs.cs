@@ -582,7 +582,7 @@ internal sealed class StubInvestmentSnapshotService : IInvestmentSnapshotService
     }
 }
 
-internal sealed class StubAnnualSummaryService : IAnnualSummaryService
+internal sealed class StubCategorySummaryService : ICategorySummaryService
 {
     public CategoryTotalsAnnualDTO CategoryTotalsAnnual { get; set; } = new()
     {
@@ -598,6 +598,19 @@ internal sealed class StubAnnualSummaryService : IAnnualSummaryService
         ResultadoMonthly = new decimal[12], ResultadoAnnualTotal = 0m, ResultadoAverage = 0m,
     };
 
+    public int GetCategoryTotalsAnnualForYearCallCount { get; private set; }
+
+    public IReadOnlyList<CategoryAnnualTotalDTO> GetCategoryTotalsForYear(int year) => throw new NotImplementedException();
+
+    public CategoryTotalsAnnualDTO GetCategoryTotalsAnnualForYear(int year)
+    {
+        GetCategoryTotalsAnnualForYearCallCount++;
+        return CategoryTotalsAnnual;
+    }
+}
+
+internal sealed class StubInvestmentAnnualResultService : IInvestmentAnnualResultService
+{
     public InvestmentAnnualResultDTO InvestmentAnnualResult { get; set; } = new()
     {
         Accounts = [],
@@ -608,27 +621,24 @@ internal sealed class StubAnnualSummaryService : IAnnualSummaryService
         },
     };
 
+    public int GetInvestmentAnnualResultForYearCallCount { get; private set; }
+
+    public InvestmentAnnualResultDTO GetInvestmentAnnualResultForYear(int year)
+    {
+        GetInvestmentAnnualResultForYearCallCount++;
+        return InvestmentAnnualResult;
+    }
+}
+
+internal sealed class StubHistoricAverageService : IHistoricAverageService
+{
     public List<CategoryAnnualGroupValueDTO> HistoricSummaryAverage { get; set; } = [];
 
-    public int GetCategoryTotalsAnnualForYearCallCount { get; private set; }
-    public int GetInvestmentAnnualResultForYearCallCount { get; private set; }
     public int GetHistoricSummaryAverageFromYearCallCount { get; private set; }
 
     public IReadOnlyList<CategoryAnnualGroupValueDTO> GetHistoricSummaryAverageFromYear(int year)
     {
         GetHistoricSummaryAverageFromYearCallCount++;
         return HistoricSummaryAverage;
-    }
-
-    public CategoryTotalsAnnualDTO GetCategoryTotalsAnnualForYear(int year)
-    {
-        GetCategoryTotalsAnnualForYearCallCount++;
-        return CategoryTotalsAnnual;
-    }
-
-    public InvestmentAnnualResultDTO GetInvestmentAnnualResultForYear(int year)
-    {
-        GetInvestmentAnnualResultForYearCallCount++;
-        return InvestmentAnnualResult;
     }
 }

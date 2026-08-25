@@ -11,11 +11,18 @@ namespace Financial.Api.Controllers;
 [Route("annual-summary")]
 public sealed class AnnualSummaryController : ControllerBase
 {
-    private readonly IAnnualSummaryService _annualSummaryService;
+    private readonly ICategorySummaryService _categorySummaryService;
+    private readonly IInvestmentAnnualResultService _investmentAnnualResultService;
+    private readonly IHistoricAverageService _historicAverageService;
 
-    public AnnualSummaryController(IAnnualSummaryService annualSummaryService)
+    public AnnualSummaryController(
+        ICategorySummaryService categorySummaryService,
+        IInvestmentAnnualResultService investmentAnnualResultService,
+        IHistoricAverageService historicAverageService)
     {
-        _annualSummaryService = annualSummaryService ?? throw new ArgumentNullException(nameof(annualSummaryService));
+        _categorySummaryService = categorySummaryService ?? throw new ArgumentNullException(nameof(categorySummaryService));
+        _investmentAnnualResultService = investmentAnnualResultService ?? throw new ArgumentNullException(nameof(investmentAnnualResultService));
+        _historicAverageService = historicAverageService ?? throw new ArgumentNullException(nameof(historicAverageService));
     }
 
     /// <summary>Returns the historic average category values leading up to the given year.</summary>
@@ -25,7 +32,7 @@ public sealed class AnnualSummaryController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<CategoryAnnualGroupValueDTO>), StatusCodes.Status200OK)]
     public ActionResult<IReadOnlyList<CategoryAnnualGroupValueDTO>> GetHistoricSummaryAverages(int year)
     {
-        return Ok(_annualSummaryService.GetHistoricSummaryAverageFromYear(year));
+        return Ok(_historicAverageService.GetHistoricSummaryAverageFromYear(year));
     }
 
     /// <summary>Returns the category totals for a given year.</summary>
@@ -35,7 +42,7 @@ public sealed class AnnualSummaryController : ControllerBase
     [ProducesResponseType(typeof(CategoryTotalsAnnualDTO), StatusCodes.Status200OK)]
     public ActionResult<CategoryTotalsAnnualDTO> GetCategoryTotals(int year)
     {
-        return Ok(_annualSummaryService.GetCategoryTotalsAnnualForYear(year));
+        return Ok(_categorySummaryService.GetCategoryTotalsAnnualForYear(year));
     }
 
     /// <summary>Returns the investment result (contributions vs. growth) for a given year.</summary>
@@ -45,6 +52,6 @@ public sealed class AnnualSummaryController : ControllerBase
     [ProducesResponseType(typeof(InvestmentAnnualResultDTO), StatusCodes.Status200OK)]
     public ActionResult<InvestmentAnnualResultDTO> GetInvestmentAnnualResult(int year)
     {
-        return Ok(_annualSummaryService.GetInvestmentAnnualResultForYear(year));
+        return Ok(_investmentAnnualResultService.GetInvestmentAnnualResultForYear(year));
     }
 }

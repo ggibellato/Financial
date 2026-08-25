@@ -6,11 +6,17 @@ namespace Financial.Presentation.Tests.ViewModels.CashFlow;
 
 public class AnnualSummaryViewModelTests
 {
-    private static (AnnualSummaryViewModel ViewModel, StubAnnualSummaryService Service) CreateViewModel()
+    private static (
+        AnnualSummaryViewModel ViewModel,
+        StubCategorySummaryService CategoryService,
+        StubInvestmentAnnualResultService InvestmentService,
+        StubHistoricAverageService HistoricService) CreateViewModel()
     {
-        var service = new StubAnnualSummaryService();
-        var viewModel = new AnnualSummaryViewModel(service);
-        return (viewModel, service);
+        var categoryService = new StubCategorySummaryService();
+        var investmentService = new StubInvestmentAnnualResultService();
+        var historicService = new StubHistoricAverageService();
+        var viewModel = new AnnualSummaryViewModel(categoryService, investmentService, historicService);
+        return (viewModel, categoryService, investmentService, historicService);
     }
 
     private static decimal[] MonthlyArray(decimal value) => Enumerable.Repeat(value, 12).ToArray();
@@ -18,8 +24,8 @@ public class AnnualSummaryViewModelTests
     [Fact]
     public async Task RefreshAsync_BuildsCategoryTotalsRowsInCorrectOrderWithSpacersAndEmphasis()
     {
-        var (viewModel, service) = CreateViewModel();
-        service.CategoryTotalsAnnual = new CategoryTotalsAnnualDTO
+        var (viewModel, categoryService, _, _) = CreateViewModel();
+        categoryService.CategoryTotalsAnnual = new CategoryTotalsAnnualDTO
         {
             CategoryTotals =
             [
@@ -56,7 +62,7 @@ public class AnnualSummaryViewModelTests
     [Fact]
     public async Task RefreshAsync_BuildsInvestmentRowsWithLiabilitySuffixAndNullableCells()
     {
-        var (viewModel, service) = CreateViewModel();
+        var (viewModel, _, investmentService, _) = CreateViewModel();
         var monthlyDiffs = new decimal?[12];
         monthlyDiffs[0] = null;
         for (var i = 1; i < 12; i++)
@@ -64,7 +70,7 @@ public class AnnualSummaryViewModelTests
             monthlyDiffs[i] = 5m;
         }
 
-        service.InvestmentAnnualResult = new InvestmentAnnualResultDTO
+        investmentService.InvestmentAnnualResult = new InvestmentAnnualResultDTO
         {
             Accounts =
             [
@@ -93,8 +99,8 @@ public class AnnualSummaryViewModelTests
     [Fact]
     public async Task RefreshAsync_ExposesNetPositionSummaryFigures()
     {
-        var (viewModel, service) = CreateViewModel();
-        service.InvestmentAnnualResult = new InvestmentAnnualResultDTO
+        var (viewModel, _, investmentService, _) = CreateViewModel();
+        investmentService.InvestmentAnnualResult = new InvestmentAnnualResultDTO
         {
             Accounts = [],
             NetPosition = new NetPositionAnnualDiffDTO
@@ -114,8 +120,8 @@ public class AnnualSummaryViewModelTests
     [Fact]
     public async Task RefreshAsync_BuildsHistoricSummaryRowsWithSpacersAndEmphasis()
     {
-        var (viewModel, service) = CreateViewModel();
-        service.HistoricSummaryAverage =
+        var (viewModel, _, _, historicService) = CreateViewModel();
+        historicService.HistoricSummaryAverage =
         [
             new CategoryAnnualGroupValueDTO
             {
@@ -156,8 +162,8 @@ public class AnnualSummaryViewModelTests
     [Fact]
     public async Task RefreshAsync_ExposesAvailableYearsFromHistoricSummaryResponse()
     {
-        var (viewModel, service) = CreateViewModel();
-        service.HistoricSummaryAverage =
+        var (viewModel, _, _, historicService) = CreateViewModel();
+        historicService.HistoricSummaryAverage =
         [
             new CategoryAnnualGroupValueDTO { Year = 2023, AnnualAverages = [] },
             new CategoryAnnualGroupValueDTO { Year = 2024, AnnualAverages = [] },
@@ -172,17 +178,17 @@ public class AnnualSummaryViewModelTests
     [Fact]
     public async Task SettingYear_RefetchesAllThreeSubTabs()
     {
-        var (viewModel, service) = CreateViewModel();
+        var (viewModel, categoryService, investmentService, historicService) = CreateViewModel();
         await viewModel.RefreshAsync();
-        var categoryCallsBefore = service.GetCategoryTotalsAnnualForYearCallCount;
-        var investmentCallsBefore = service.GetInvestmentAnnualResultForYearCallCount;
-        var historicCallsBefore = service.GetHistoricSummaryAverageFromYearCallCount;
+        var categoryCallsBefore = categoryService.GetCategoryTotalsAnnualForYearCallCount;
+        var investmentCallsBefore = investmentService.GetInvestmentAnnualResultForYearCallCount;
+        var historicCallsBefore = historicService.GetHistoricSummaryAverageFromYearCallCount;
 
         viewModel.Year = viewModel.Year - 1;
         await viewModel.RefreshAsync();
 
-        service.GetCategoryTotalsAnnualForYearCallCount.Should().BeGreaterThan(categoryCallsBefore);
-        service.GetInvestmentAnnualResultForYearCallCount.Should().BeGreaterThan(investmentCallsBefore);
-        service.GetHistoricSummaryAverageFromYearCallCount.Should().BeGreaterThan(historicCallsBefore);
+        categoryService.GetCategoryTotalsAnnualForYearCallCount.Should().BeGreaterThan(categoryCallsBefore);
+        investmentService.GetInvestmentAnnualResultForYearCallCount.Should().BeGreaterThan(investmentCallsBefore);
+        historicService.GetHistoricSummaryAverageFromYearCallCount.Should().BeGreaterThan(historicCallsBefore);
     }
 }
