@@ -274,10 +274,24 @@ public class ControllerGuardClauseTests
     }
 
     [Fact]
-    public void AnnualSummaryController_NullService_Throws()
+    public void AnnualSummaryController_NullCategorySummaryService_Throws()
     {
-        Action act = () => new AnnualSummaryController(null!);
-        act.Should().Throw<ArgumentNullException>();
+        Action act = () => new AnnualSummaryController(null!, new StubInvestmentAnnualResultService(), new StubHistoricAverageService());
+        act.Should().Throw<ArgumentNullException>().WithParameterName("categorySummaryService");
+    }
+
+    [Fact]
+    public void AnnualSummaryController_NullInvestmentAnnualResultService_Throws()
+    {
+        Action act = () => new AnnualSummaryController(new StubCategorySummaryService(), null!, new StubHistoricAverageService());
+        act.Should().Throw<ArgumentNullException>().WithParameterName("investmentAnnualResultService");
+    }
+
+    [Fact]
+    public void AnnualSummaryController_NullHistoricAverageService_Throws()
+    {
+        Action act = () => new AnnualSummaryController(new StubCategorySummaryService(), new StubInvestmentAnnualResultService(), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("historicAverageService");
     }
 
     [Fact]
@@ -443,6 +457,22 @@ public class ControllerGuardClauseTests
     {
         public IReadOnlyList<DividendHistoryItemDTO> GetDividendHistory(DividendLookupRequestDTO request) => throw new NotImplementedException();
         public DividendSummaryDTO GetDividendSummary(DividendLookupRequestDTO request) => throw new NotImplementedException();
+    }
+
+    private sealed class StubCategorySummaryService : ICategorySummaryService
+    {
+        public IReadOnlyList<Financial.CashFlow.Application.DTOs.CategoryAnnualTotalDTO> GetCategoryTotalsForYear(int year) => throw new NotImplementedException();
+        public Financial.CashFlow.Application.DTOs.CategoryTotalsAnnualDTO GetCategoryTotalsAnnualForYear(int year) => throw new NotImplementedException();
+    }
+
+    private sealed class StubInvestmentAnnualResultService : IInvestmentAnnualResultService
+    {
+        public Financial.CashFlow.Application.DTOs.InvestmentAnnualResultDTO GetInvestmentAnnualResultForYear(int year) => throw new NotImplementedException();
+    }
+
+    private sealed class StubHistoricAverageService : IHistoricAverageService
+    {
+        public IReadOnlyList<Financial.CashFlow.Application.DTOs.CategoryAnnualGroupValueDTO> GetHistoricSummaryAverageFromYear(int year) => throw new NotImplementedException();
     }
 
     private sealed class StubBankService : IBankService

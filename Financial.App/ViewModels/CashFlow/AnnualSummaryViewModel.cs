@@ -10,7 +10,9 @@ public class AnnualSummaryViewModel : ViewModelBase
     private static readonly string[] MonthLabels =
         ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-    private readonly IAnnualSummaryService _annualSummaryService;
+    private readonly ICategorySummaryService _categorySummaryService;
+    private readonly IInvestmentAnnualResultService _investmentAnnualResultService;
+    private readonly IHistoricAverageService _historicAverageService;
 
     private int _year;
     private bool _isLoading = true;
@@ -85,9 +87,14 @@ public class AnnualSummaryViewModel : ViewModelBase
 
     public RelayCommand RetryCommand { get; }
 
-    public AnnualSummaryViewModel(IAnnualSummaryService annualSummaryService)
+    public AnnualSummaryViewModel(
+        ICategorySummaryService categorySummaryService,
+        IInvestmentAnnualResultService investmentAnnualResultService,
+        IHistoricAverageService historicAverageService)
     {
-        _annualSummaryService = annualSummaryService ?? throw new ArgumentNullException(nameof(annualSummaryService));
+        _categorySummaryService = categorySummaryService ?? throw new ArgumentNullException(nameof(categorySummaryService));
+        _investmentAnnualResultService = investmentAnnualResultService ?? throw new ArgumentNullException(nameof(investmentAnnualResultService));
+        _historicAverageService = historicAverageService ?? throw new ArgumentNullException(nameof(historicAverageService));
 
         _year = DateTime.Today.Year;
 
@@ -112,9 +119,9 @@ public class AnnualSummaryViewModel : ViewModelBase
         try
         {
             var year = Year;
-            var categoryTotalsTask = Task.Run(() => _annualSummaryService.GetCategoryTotalsAnnualForYear(year));
-            var investmentResultTask = Task.Run(() => _annualSummaryService.GetInvestmentAnnualResultForYear(year));
-            var historicSummaryTask = Task.Run(() => _annualSummaryService.GetHistoricSummaryAverageFromYear(year));
+            var categoryTotalsTask = Task.Run(() => _categorySummaryService.GetCategoryTotalsAnnualForYear(year));
+            var investmentResultTask = Task.Run(() => _investmentAnnualResultService.GetInvestmentAnnualResultForYear(year));
+            var historicSummaryTask = Task.Run(() => _historicAverageService.GetHistoricSummaryAverageFromYear(year));
 
             await Task.WhenAll(categoryTotalsTask, investmentResultTask, historicSummaryTask);
 
