@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
-using Financial.Investment.Domain.ValueObjects;
 using HtmlAgilityPack;
 
 namespace Financial.Integrations.WebPageParser;
@@ -16,7 +15,7 @@ public static class StatusInvest
 {
     private const string BaseUrl = "https://statusinvest.com.br/tesouro/";
 
-    public static AssetValueSnapshot GetSellValue(string bondTitle)
+    public static WebAssetQuote GetSellValue(string bondTitle)
     {
         var slug = DeriveSlug(bondTitle);
         var url = BaseUrl + slug;
@@ -35,7 +34,7 @@ public static class StatusInvest
         var price = ExtractSellPrice(htmlDoc.DocumentNode.InnerText)
             ?? throw new InvalidOperationException($"Valor Unitario (Venda) not found for '{bondTitle}'. The page structure may have changed.");
 
-        return new AssetValueSnapshot(bondTitle, bondTitle, price, DateTimeOffset.Now);
+        return new WebAssetQuote(bondTitle, bondTitle, price, DateTimeOffset.Now);
     }
 
     internal static string DeriveSlug(string bondTitle)

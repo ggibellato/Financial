@@ -8,7 +8,8 @@ public sealed class AssetSnapshotSourceAdapter : IAssetSnapshotSource
 {
     private readonly Func<string, string, AssetValueSnapshot> _lookup;
 
-    public AssetSnapshotSourceAdapter() : this(GoogleFinance.GetFinancialInfoSnapshot)
+    public AssetSnapshotSourceAdapter()
+        : this((exchange, ticker) => WebPageParserMappers.ToAssetValueSnapshot(GoogleFinance.GetFinancialInfoSnapshot(exchange, ticker)))
     {
     }
 
