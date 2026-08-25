@@ -46,7 +46,7 @@ public class TreeNodeViewModel : ViewModelBase
     /// one - the icon was hidden by its Visibility binding, but the Foreground binding was
     /// evaluated regardless.
     /// </remarks>
-    public string PositionType => GetMetadata<string>("PositionType") ?? string.Empty;
+    public string PositionType => GetMetadata<string>(NavigationMetadataKeys.PositionType) ?? string.Empty;
 
     /// <summary>
     /// Whether a drag is currently over this node and it would accept the drop.

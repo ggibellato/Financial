@@ -14,10 +14,10 @@ internal static class NavigationMapper
             DisplayName = $"{broker.Name} ({broker.Currency})",
             Metadata = new Dictionary<string, object>
             {
-                ["BrokerName"] = broker.Name,
-                ["Currency"] = broker.Currency,
-                ["PortfolioCount"] = broker.PortfolioCount,
-                ["TotalAssets"] = broker.TotalAssets
+                [NavigationMetadataKeys.BrokerName] = broker.Name,
+                [NavigationMetadataKeys.Currency] = broker.Currency,
+                [NavigationMetadataKeys.PortfolioCount] = broker.PortfolioCount,
+                [NavigationMetadataKeys.TotalAssets] = broker.TotalAssets
             }
         };
 
@@ -37,8 +37,8 @@ internal static class NavigationMapper
             DisplayName = $"{portfolio.Name} ({portfolio.AssetCount} assets)",
             Metadata = new Dictionary<string, object>
             {
-                ["PortfolioName"] = portfolio.Name,
-                ["AssetCount"] = portfolio.AssetCount
+                [NavigationMetadataKeys.PortfolioName] = portfolio.Name,
+                [NavigationMetadataKeys.AssetCount] = portfolio.AssetCount
             }
         };
 
@@ -58,18 +58,18 @@ internal static class NavigationMapper
             DisplayName = asset.Name,
             Metadata = new Dictionary<string, object>
             {
-                ["AssetName"] = asset.Name,
-                ["Ticker"] = asset.Ticker,
-                ["Exchange"] = asset.Exchange,
-                ["ISIN"] = asset.ISIN,
-                ["Country"] = asset.Country,
-                ["LocalTypeCode"] = asset.LocalTypeCode,
-                ["GlobalAssetClass"] = asset.Class,
-                ["Quantity"] = asset.Quantity,
-                ["AveragePrice"] = asset.AveragePrice,
-                ["PositionType"] = asset.PositionType.ToString(),
-                ["TransactionCount"] = asset.TransactionCount,
-                ["CreditCount"] = asset.CreditCount
+                [NavigationMetadataKeys.AssetName] = asset.Name,
+                [NavigationMetadataKeys.Ticker] = asset.Ticker,
+                [NavigationMetadataKeys.Exchange] = asset.Exchange,
+                [NavigationMetadataKeys.ISIN] = asset.ISIN,
+                [NavigationMetadataKeys.Country] = asset.Country,
+                [NavigationMetadataKeys.LocalTypeCode] = asset.LocalTypeCode,
+                [NavigationMetadataKeys.GlobalAssetClass] = asset.Class,
+                [NavigationMetadataKeys.Quantity] = asset.Quantity,
+                [NavigationMetadataKeys.AveragePrice] = asset.AveragePrice,
+                [NavigationMetadataKeys.PositionType] = asset.PositionType.ToString(),
+                [NavigationMetadataKeys.TransactionCount] = asset.TransactionCount,
+                [NavigationMetadataKeys.CreditCount] = asset.CreditCount
             }
         };
     }

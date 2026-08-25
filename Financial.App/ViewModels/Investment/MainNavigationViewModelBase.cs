@@ -94,15 +94,15 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
         var assetNode = SelectedNode!;
         var brokerName = BrokerNameOf(assetNode);
-        var portfolioName = assetNode.Parent!.GetMetadata<string>("PortfolioName") ?? string.Empty;
-        var assetName = assetNode.GetMetadata<string>("AssetName") ?? string.Empty;
+        var portfolioName = assetNode.Parent!.GetMetadata<string>(NavigationMetadataKeys.PortfolioName) ?? string.Empty;
+        var assetName = assetNode.GetMetadata<string>(NavigationMetadataKeys.AssetName) ?? string.Empty;
 
         // Only a closed position in Active Investments can be archived, so Historic destinations
         // are offered only then - and never for an asset already in Historic, which never comes
         // back out. The server refuses either way; this keeps the dialog from offering it.
         // The sentinel matters: GetMetadata defaults a missing decimal to 0, which reads as "closed"
         // and would offer archiving for every open position. Absent metadata must fail closed.
-        var quantity = assetNode.GetMetadata("Quantity", decimal.MinValue);
+        var quantity = assetNode.GetMetadata(NavigationMetadataKeys.Quantity, decimal.MinValue);
         var canArchive = _scope == InvestmentScope.Active && quantity == 0m;
 
         var dialog = new MoveAssetDialogViewModel(
@@ -246,13 +246,13 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
         var assetNode = dragged!;
         var brokerName = BrokerNameOf(assetNode);
-        var portfolioName = assetNode.Parent!.GetMetadata<string>("PortfolioName") ?? string.Empty;
-        var assetName = assetNode.GetMetadata<string>("AssetName") ?? string.Empty;
+        var portfolioName = assetNode.Parent!.GetMetadata<string>(NavigationMetadataKeys.PortfolioName) ?? string.Empty;
+        var assetName = assetNode.GetMetadata<string>(NavigationMetadataKeys.AssetName) ?? string.Empty;
 
         string destinationPortfolioName;
         if (target!.NodeType == TreeNodeType.Portfolio)
         {
-            destinationPortfolioName = target.GetMetadata<string>("PortfolioName") ?? string.Empty;
+            destinationPortfolioName = target.GetMetadata<string>(NavigationMetadataKeys.PortfolioName) ?? string.Empty;
         }
         else
         {
@@ -285,8 +285,8 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         }
 
         var portfolioNode = SelectedNode!;
-        var brokerName = portfolioNode.Parent!.GetMetadata<string>("BrokerName") ?? string.Empty;
-        var portfolioName = portfolioNode.GetMetadata<string>("PortfolioName") ?? string.Empty;
+        var brokerName = portfolioNode.Parent!.GetMetadata<string>(NavigationMetadataKeys.BrokerName) ?? string.Empty;
+        var portfolioName = portfolioNode.GetMetadata<string>(NavigationMetadataKeys.PortfolioName) ?? string.Empty;
 
         if (!ConfirmDeletePortfolio(portfolioName))
         {
@@ -335,16 +335,16 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     /// zero for missing metadata would offer to delete a portfolio that still holds assets.
     /// </summary>
     private bool IsPortfolioEmpty(string brokerName, string portfolioName) =>
-        FindPortfolioNode(brokerName, portfolioName)?.GetMetadata("AssetCount", int.MinValue) == 0;
+        FindPortfolioNode(brokerName, portfolioName)?.GetMetadata(NavigationMetadataKeys.AssetCount, int.MinValue) == 0;
 
     private TreeNodeViewModel? FindPortfolioNode(string brokerName, string portfolioName) =>
-        RootNodes.FirstOrDefault(node => node.GetMetadata<string>("BrokerName") == brokerName)?
-            .Children.FirstOrDefault(node => node.GetMetadata<string>("PortfolioName") == portfolioName);
+        RootNodes.FirstOrDefault(node => node.GetMetadata<string>(NavigationMetadataKeys.BrokerName) == brokerName)?
+            .Children.FirstOrDefault(node => node.GetMetadata<string>(NavigationMetadataKeys.PortfolioName) == portfolioName);
 
     private bool CanDeleteSelectedPortfolio() =>
         SelectedNode?.NodeType == TreeNodeType.Portfolio
         && SelectedNode.Parent is not null
-        && SelectedNode.GetMetadata("AssetCount", int.MinValue) == 0;
+        && SelectedNode.GetMetadata(NavigationMetadataKeys.AssetCount, int.MinValue) == 0;
 
     /// <summary>Seam for tests, which have no message pump to show a modal on.</summary>
     protected virtual bool ConfirmDeleteEmptiedPortfolio(string portfolioName) =>
@@ -374,7 +374,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
         SelectedNode?.NodeType == TreeNodeType.Asset && SelectedNode.Parent?.Parent is not null;
 
     private static string BrokerNameOf(TreeNodeViewModel assetNode) =>
-        assetNode.Parent?.Parent?.GetMetadata<string>("BrokerName") ?? string.Empty;
+        assetNode.Parent?.Parent?.GetMetadata<string>(NavigationMetadataKeys.BrokerName) ?? string.Empty;
 
     /// <summary>
     /// The broker's Historic portfolios, read from the navigation service rather than the tree -
@@ -389,7 +389,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     private static IEnumerable<string> PortfolioNamesOf(TreeNodeViewModel? brokerNode) =>
         brokerNode?.Children
             .Where(child => child.NodeType == TreeNodeType.Portfolio)
-            .Select(child => child.GetMetadata<string>("PortfolioName") ?? string.Empty)
+            .Select(child => child.GetMetadata<string>(NavigationMetadataKeys.PortfolioName) ?? string.Empty)
             .Where(name => name.Length > 0)
         ?? [];
 
@@ -399,9 +399,9 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     /// </summary>
     private void SelectAsset(string brokerName, string portfolioName, string assetName)
     {
-        var broker = RootNodes.FirstOrDefault(node => node.GetMetadata<string>("BrokerName") == brokerName);
-        var portfolio = broker?.Children.FirstOrDefault(node => node.GetMetadata<string>("PortfolioName") == portfolioName);
-        var asset = portfolio?.Children.FirstOrDefault(node => node.GetMetadata<string>("AssetName") == assetName);
+        var broker = RootNodes.FirstOrDefault(node => node.GetMetadata<string>(NavigationMetadataKeys.BrokerName) == brokerName);
+        var portfolio = broker?.Children.FirstOrDefault(node => node.GetMetadata<string>(NavigationMetadataKeys.PortfolioName) == portfolioName);
+        var asset = portfolio?.Children.FirstOrDefault(node => node.GetMetadata<string>(NavigationMetadataKeys.AssetName) == assetName);
 
         if (asset is null)
         {
@@ -472,7 +472,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
     {
         if (node.NodeType == TreeNodeType.Asset)
         {
-            if (node.Metadata.TryGetValue("GlobalAssetClass", out var value) && value is GlobalAssetClass assetClass)
+            if (node.Metadata.TryGetValue(NavigationMetadataKeys.GlobalAssetClass, out var value) && value is GlobalAssetClass assetClass)
             {
                 return assetClass == filter ? node : null;
             }
@@ -588,7 +588,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
     private void LoadAssetDetails(TreeNodeViewModel assetNode)
     {
-        var assetName = assetNode.GetMetadata<string>("AssetName");
+        var assetName = assetNode.GetMetadata<string>(NavigationMetadataKeys.AssetName);
 
         var portfolioNode = assetNode.Parent;
         var brokerNode = portfolioNode?.Parent;
@@ -598,8 +598,8 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
-        var portfolioName = portfolioNode.GetMetadata<string>("PortfolioName");
-        var brokerName = brokerNode.GetMetadata<string>("BrokerName");
+        var portfolioName = portfolioNode.GetMetadata<string>(NavigationMetadataKeys.PortfolioName);
+        var brokerName = brokerNode.GetMetadata<string>(NavigationMetadataKeys.BrokerName);
 
         if (portfolioName == null || brokerName == null)
         {
@@ -627,7 +627,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
     private void LoadPortfolioCredits(TreeNodeViewModel portfolioNode)
     {
-        var portfolioName = portfolioNode.GetMetadata<string>("PortfolioName");
+        var portfolioName = portfolioNode.GetMetadata<string>(NavigationMetadataKeys.PortfolioName);
         var brokerNode = portfolioNode.Parent;
 
         if (portfolioName == null || brokerNode == null)
@@ -636,7 +636,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
             return;
         }
 
-        var brokerName = brokerNode.GetMetadata<string>("BrokerName");
+        var brokerName = brokerNode.GetMetadata<string>(NavigationMetadataKeys.BrokerName);
         if (brokerName == null)
         {
             AssetDetails.Clear();
@@ -652,7 +652,7 @@ public abstract class MainNavigationViewModelBase<TAssetDetailsViewModel> : View
 
     private void LoadBrokerCredits(TreeNodeViewModel brokerNode)
     {
-        var brokerName = brokerNode.GetMetadata<string>("BrokerName");
+        var brokerName = brokerNode.GetMetadata<string>(NavigationMetadataKeys.BrokerName);
         if (brokerName == null)
         {
             AssetDetails.Clear();
