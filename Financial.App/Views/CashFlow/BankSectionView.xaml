@@ -32,14 +32,16 @@
         -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
             <ui:Button Content="Move Money" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}"
-                       Command="{Binding ShowMoveMoneyFormCommand}"/>
+                       Command="{Binding Transfer.ShowMoveMoneyFormCommand}"/>
             <ui:Button Content="Correct Balance" Margin="8,0,0,0" Appearance="Primary" Icon="{ui:SymbolIcon Symbol=Add20}"
-                       Command="{Binding ShowCorrectBalanceFormCommand}"/>
+                       Command="{Binding Adjustment.ShowCorrectBalanceFormCommand}"/>
         </StackPanel>
 
         <StackPanel Grid.Row="1">
-            <local:TransferFormView Visibility="{Binding IsTransferFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
-            <local:BalanceAdjustmentFormView Visibility="{Binding IsAdjustmentFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            <local:TransferFormView DataContext="{Binding Transfer}"
+                                     Visibility="{Binding IsTransferFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            <local:BalanceAdjustmentFormView DataContext="{Binding Adjustment}"
+                                              Visibility="{Binding IsAdjustmentFormOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
         </StackPanel>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,8">
@@ -82,7 +84,7 @@
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
                                 <Button Content="✏" ToolTip="Edit transfer" Padding="4,0"
-                                        Command="{Binding DataContext.EditTransferCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        Command="{Binding DataContext.Transfer.EditTransferCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                         CommandParameter="{Binding Transfer}">
                                     <Button.Style>
                                         <Style TargetType="Button">
@@ -96,7 +98,7 @@
                                     </Button.Style>
                                 </Button>
                                 <Button Content="✏" ToolTip="Edit balance adjustment" Padding="4,0"
-                                        Command="{Binding DataContext.EditAdjustmentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        Command="{Binding DataContext.Adjustment.EditAdjustmentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                         CommandParameter="{Binding Adjustment}">
                                     <Button.Style>
                                         <Style TargetType="Button">
