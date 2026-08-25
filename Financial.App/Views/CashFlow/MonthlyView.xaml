@@ -54,7 +54,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <local:IncomeTotalsGridView Grid.Row="0"/>
-                    <local:IncomeSectionView Grid.Row="1"/>
+                    <local:IncomeSectionView Grid.Row="1" DataContext="{Binding Income}"/>
                 </Grid>
             </TabItem>
             <TabItem Header="Bank">
