@@ -49,6 +49,10 @@ internal sealed class DomainExceptionMappingMiddleware
         {
             await HandleAsync(context, ex, StatusCodes.Status404NotFound);
         }
+        catch (DividendNotFoundException ex)
+        {
+            await HandleAsync(context, ex, StatusCodes.Status404NotFound);
+        }
         catch (ArgumentException ex)
         {
             await HandleAsync(context, ex, StatusCodes.Status400BadRequest);

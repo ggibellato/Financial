@@ -1,5 +1,6 @@
 using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Exceptions;
 using Financial.Investment.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -51,7 +52,7 @@ public sealed class DividendsController : ControllerBase
         {
             // error.type only, plus the public ticker symbol - never the provider's message (FR-014).
             _logger.LogWarning("Dividend history lookup for ticker {Ticker} failed with {ErrorType}; returning 404", ticker, ex.GetType().Name);
-            return DividendNotFound(ticker);
+            throw new DividendNotFoundException(NotFoundMessage(ticker));
         }
     }
 
@@ -81,15 +82,12 @@ public sealed class DividendsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogWarning("Dividend summary lookup for ticker {Ticker} failed with {ErrorType}; returning 404", ticker, ex.GetType().Name);
-            return DividendNotFound(ticker);
+            throw new DividendNotFoundException(NotFoundMessage(ticker));
         }
     }
 
-    private ObjectResult DividendNotFound(string ticker) =>
-        Problem(
-            title: "Dividend data not found",
-            detail: $"Could not find dividend data for '{ticker.Trim().ToUpperInvariant()}'. Check the ticker and try again.",
-            statusCode: StatusCodes.Status404NotFound);
+    private static string NotFoundMessage(string ticker) =>
+        $"Could not find dividend data for '{ticker.Trim().ToUpperInvariant()}'. Check the ticker and try again.";
 
     private DividendLookupRequestDTO BuildRequest(string ticker, string? exchange)
     {
