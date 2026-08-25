@@ -7,19 +7,19 @@ using System.Windows;
 
 namespace Financial.Presentation.Tests.ViewModels;
 
-public class CreditActionsTests
+public class CreditsTabViewModelTests
 {
     private const string BrokerName = "XPI";
     private const string PortfolioName = "Default";
     private const string AssetName = "BBAS3";
 
-    private static (CreditActions Actions, StubCreditService Service, Spy Spy) Build(
+    private static (CreditsTabViewModel ViewModel, StubCreditService Service, Spy Spy) Build(
         bool hasContext = true,
         ICreditService? service = null)
     {
         var stubService = service as StubCreditService ?? new StubCreditService();
         var spy = new Spy();
-        var actions = new CreditActions(
+        var viewModel = new CreditsTabViewModel(
             stubService,
             () => hasContext,
             () => BrokerName,
@@ -27,7 +27,7 @@ public class CreditActionsTests
             () => AssetName,
             spy.ApplyDetails,
             spy.ShowMessage);
-        return (actions, stubService, spy);
+        return (viewModel, stubService, spy);
     }
 
     private static CreditDialogData ValidDialogData(Guid? id = null) => new(
@@ -41,9 +41,9 @@ public class CreditActionsTests
     [Fact]
     public async Task Add_NoContext_ShowsInfoAndDoesNotCallService()
     {
-        var (actions, service, spy) = Build(hasContext: false);
+        var (viewModel, service, spy) = Build(hasContext: false);
 
-        await actions.Add(() => AsForm(ValidDialogData()));
+        await viewModel.Add(() => AsForm(ValidDialogData()));
 
         service.AddCallCount.Should().Be(0);
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Information);
@@ -52,9 +52,9 @@ public class CreditActionsTests
     [Fact]
     public async Task Add_DialogCancelled_DoesNotCallService()
     {
-        var (actions, service, spy) = Build();
+        var (viewModel, service, spy) = Build();
 
-        await actions.Add(() => AsForm(null));
+        await viewModel.Add(() => AsForm(null));
 
         service.AddCallCount.Should().Be(0);
         spy.Messages.Should().BeEmpty();
@@ -63,9 +63,9 @@ public class CreditActionsTests
     [Fact]
     public async Task Add_InvalidType_ShowsWarningAndDoesNotCallService()
     {
-        var (actions, service, spy) = Build();
+        var (viewModel, service, spy) = Build();
 
-        await actions.Add(() => AsForm(ValidDialogData() with { Type = "NotAType" }));
+        await viewModel.Add(() => AsForm(ValidDialogData() with { Type = "NotAType" }));
 
         service.AddCallCount.Should().Be(0);
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
@@ -75,9 +75,9 @@ public class CreditActionsTests
     public async Task Add_ServiceReturnsNull_ShowsWarningAndDoesNotApplyDetails()
     {
         var service = new StubCreditService { AddResult = null };
-        var (actions, _, spy) = Build(service: service);
+        var (viewModel, _, spy) = Build(service: service);
 
-        await actions.Add(() => AsForm(ValidDialogData()));
+        await viewModel.Add(() => AsForm(ValidDialogData()));
 
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
         spy.AppliedDetails.Should().BeNull();
@@ -88,9 +88,9 @@ public class CreditActionsTests
     {
         var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
         var service = new StubCreditService { AddResult = expectedDetails };
-        var (actions, _, spy) = Build(service: service);
+        var (viewModel, _, spy) = Build(service: service);
 
-        await actions.Add(() => AsForm(ValidDialogData()));
+        await viewModel.Add(() => AsForm(ValidDialogData()));
 
         service.LastAddRequest.Should().NotBeNull();
         service.LastAddRequest!.BrokerName.Should().Be(BrokerName);
@@ -104,9 +104,9 @@ public class CreditActionsTests
     [Fact]
     public async Task Update_NullSelectedCredit_DoesNotCallService()
     {
-        var (actions, service, _) = Build();
+        var (viewModel, service, _) = Build();
 
-        await actions.Update(null, () => AsForm(ValidDialogData()));
+        await viewModel.Update(null, () => AsForm(ValidDialogData()));
 
         service.UpdateCallCount.Should().Be(0);
     }
@@ -114,10 +114,10 @@ public class CreditActionsTests
     [Fact]
     public async Task Update_EmptyId_ShowsWarningAndDoesNotCallService()
     {
-        var (actions, service, spy) = Build();
+        var (viewModel, service, spy) = Build();
         var selected = new CreditDTO { Id = Guid.Empty, Date = DateTime.Today, Type = "Dividend", Value = 1m };
 
-        await actions.Update(selected, () => AsForm(ValidDialogData()));
+        await viewModel.Update(selected, () => AsForm(ValidDialogData()));
 
         service.UpdateCallCount.Should().Be(0);
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
@@ -126,10 +126,10 @@ public class CreditActionsTests
     [Fact]
     public async Task Update_DialogCancelled_DoesNotCallService()
     {
-        var (actions, service, _) = Build();
+        var (viewModel, service, _) = Build();
         var selected = new CreditDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 1m };
 
-        await actions.Update(selected, () => AsForm(null));
+        await viewModel.Update(selected, () => AsForm(null));
 
         service.UpdateCallCount.Should().Be(0);
     }
@@ -137,10 +137,10 @@ public class CreditActionsTests
     [Fact]
     public async Task Update_InvalidType_ShowsWarningAndDoesNotCallService()
     {
-        var (actions, service, spy) = Build();
+        var (viewModel, service, spy) = Build();
         var selected = new CreditDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 1m };
 
-        await actions.Update(selected, () => AsForm(ValidDialogData(selected.Id) with { Type = "NotAType" }));
+        await viewModel.Update(selected, () => AsForm(ValidDialogData(selected.Id) with { Type = "NotAType" }));
 
         service.UpdateCallCount.Should().Be(0);
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
@@ -151,11 +151,11 @@ public class CreditActionsTests
     {
         var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
         var service = new StubCreditService { UpdateResult = expectedDetails };
-        var (actions, _, spy) = Build(service: service);
+        var (viewModel, _, spy) = Build(service: service);
         var id = Guid.NewGuid();
         var selected = new CreditDTO { Id = id, Date = DateTime.Today, Type = "Dividend", Value = 1m };
 
-        await actions.Update(selected, () => AsForm(ValidDialogData(id) with { Type = "Rent", Value = 99m }));
+        await viewModel.Update(selected, () => AsForm(ValidDialogData(id) with { Type = "Rent", Value = 99m }));
 
         service.LastUpdateRequest.Should().NotBeNull();
         service.LastUpdateRequest!.Id.Should().Be(id);
@@ -168,11 +168,11 @@ public class CreditActionsTests
     public async Task Update_ServiceReturnsNull_ShowsWarningAndDoesNotApplyDetails()
     {
         var service = new StubCreditService { UpdateResult = null };
-        var (actions, _, spy) = Build(service: service);
+        var (viewModel, _, spy) = Build(service: service);
         var id = Guid.NewGuid();
         var selected = new CreditDTO { Id = id, Date = DateTime.Today, Type = "Dividend", Value = 1m };
 
-        await actions.Update(selected, () => AsForm(ValidDialogData(id)));
+        await viewModel.Update(selected, () => AsForm(ValidDialogData(id)));
 
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
         spy.AppliedDetails.Should().BeNull();
@@ -181,9 +181,9 @@ public class CreditActionsTests
     [Fact]
     public async Task Delete_NullSelectedCredit_DoesNotCallService()
     {
-        var (actions, service, _) = Build();
+        var (viewModel, service, _) = Build();
 
-        await actions.Delete(null, () => true);
+        await viewModel.Delete(null, () => true);
 
         service.DeleteCallCount.Should().Be(0);
     }
@@ -191,10 +191,10 @@ public class CreditActionsTests
     [Fact]
     public async Task Delete_EmptyId_ShowsWarningAndDoesNotCallService()
     {
-        var (actions, service, spy) = Build();
+        var (viewModel, service, spy) = Build();
         var selected = new CreditDTO { Id = Guid.Empty, Date = DateTime.Today, Type = "Dividend", Value = 1m };
 
-        await actions.Delete(selected, () => true);
+        await viewModel.Delete(selected, () => true);
 
         service.DeleteCallCount.Should().Be(0);
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
@@ -203,10 +203,10 @@ public class CreditActionsTests
     [Fact]
     public async Task Delete_NotConfirmed_DoesNotCallService()
     {
-        var (actions, service, _) = Build();
+        var (viewModel, service, _) = Build();
         var selected = new CreditDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 1m };
 
-        await actions.Delete(selected, () => false);
+        await viewModel.Delete(selected, () => false);
 
         service.DeleteCallCount.Should().Be(0);
     }
@@ -216,11 +216,11 @@ public class CreditActionsTests
     {
         var expectedDetails = new AssetDetailsDTO { Name = AssetName, BrokerName = BrokerName, PortfolioName = PortfolioName, Ticker = "T" };
         var service = new StubCreditService { DeleteResult = expectedDetails };
-        var (actions, _, spy) = Build(service: service);
+        var (viewModel, _, spy) = Build(service: service);
         var id = Guid.NewGuid();
         var selected = new CreditDTO { Id = id, Date = DateTime.Today, Type = "Dividend", Value = 1m };
 
-        await actions.Delete(selected, () => true);
+        await viewModel.Delete(selected, () => true);
 
         service.LastDeleteRequest.Should().NotBeNull();
         service.LastDeleteRequest!.Id.Should().Be(id);
@@ -232,10 +232,10 @@ public class CreditActionsTests
     public async Task Delete_ServiceReturnsNull_ShowsWarningAndDoesNotApplyDetails()
     {
         var service = new StubCreditService { DeleteResult = null };
-        var (actions, _, spy) = Build(service: service);
+        var (viewModel, _, spy) = Build(service: service);
         var selected = new CreditDTO { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Dividend", Value = 1m };
 
-        await actions.Delete(selected, () => true);
+        await viewModel.Delete(selected, () => true);
 
         spy.Messages.Should().ContainSingle(m => m.Image == MessageBoxImage.Warning);
         spy.AppliedDetails.Should().BeNull();

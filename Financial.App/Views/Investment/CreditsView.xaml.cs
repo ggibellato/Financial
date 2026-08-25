@@ -15,7 +15,7 @@ public partial class CreditsView : UserControl
     {
         if (DataContext is IMainNavigationViewModel viewModel)
         {
-            viewModel.AssetDetails.UpdateCreditsPlotWidth(e.NewSize.Width);
+            viewModel.AssetDetails.Credits.UpdatePlotWidth(e.NewSize.Width);
         }
     }
 }

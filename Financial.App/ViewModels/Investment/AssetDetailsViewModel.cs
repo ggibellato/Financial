@@ -25,18 +25,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private readonly InvestmentScope _scope;
     private readonly TodayInfoTracker _todayInfo;
     private readonly TransactionActions _transactionActions;
-    private readonly CreditActions _creditActions;
     private readonly RelayCommand _addTransactionCommand;
     private readonly RelayCommand _updateTransactionCommand;
     private readonly RelayCommand _deleteTransactionCommand;
-    private readonly RelayCommand _addCreditCommand;
-    private readonly RelayCommand _updateCreditCommand;
-    private readonly RelayCommand _deleteCreditCommand;
     private readonly RelayCommand _refreshTodayInfoCommand;
     private readonly RelayCommand _copyAssetNameCommand;
-    private readonly RelayCommand _selectCreditsFilterCommand;
-    private readonly RelayCommand _selectCreditsTypeModeCommand;
-    private readonly RelayCommand _selectCreditsChartTypeCommand;
     private readonly RelayCommand _selectTransactionsFilterCommand;
     private readonly RelayCommand _selectTransactionsChartModeCommand;
     private string _assetName = string.Empty;
@@ -59,15 +52,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private string _todayCurrentValueAsOf = string.Empty;
     private string _todayInfoMessage = string.Empty;
     private bool _todayCurrentValueIsManual;
-    private PlotModel? _creditsPlotModel;
-    private PeriodFilter _selectedCreditsFilter = PeriodFilter.Last12Months;
-    private CreditsTypeChartMode _selectedCreditsTypeMode = CreditsTypeChartMode.Stacked;
-    private CreditsChartType _selectedCreditsChartType = CreditsChartType.Bar;
-    private const string DefaultCreditsContextKey = "default";
-    private readonly Dictionary<string, CreditsViewState> _creditsViewStateByKey = new(StringComparer.OrdinalIgnoreCase);
-    private string _creditsContextKey = DefaultCreditsContextKey;
-    private double _creditsPlotWidth;
-    private bool _isCreditsAggregateView;
     private bool _hasCreditsContext;
     private bool _isPortfolioView;
     private bool _isBrokerView;
@@ -84,14 +68,9 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private string _footerCurrentMonthLabel = string.Empty;
     private TransactionDialogViewModel? _transactionFormViewModel;
     private bool _isTransactionFormOpen;
-    private CreditDialogViewModel? _creditFormViewModel;
-    private bool _isCreditFormOpen;
     private string _footerEstimatedAnnualCreditsDisplay = "—";
     private readonly List<(PortfolioAssetSummaryRowViewModel Row, PropertyChangedEventHandler Handler)> _rowSubscriptions = new();
     private TransactionDTO? _selectedTransaction;
-    private CreditDTO? _selectedCredit;
-    private IReadOnlyList<CreditsMonthTypeTotals> _creditsChartMonths = Array.Empty<CreditsMonthTypeTotals>();
-    private IReadOnlyList<string> _creditsChartTypes = Array.Empty<string>();
     private PlotModel? _transactionsPlotModel;
     private PeriodFilter _selectedTransactionsFilter = PeriodFilter.Last12Months;
     private ChartTypeMode _selectedTransactionsChartMode = ChartTypeMode.Bar;
@@ -154,14 +133,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         private set => SetProperty(ref _realizedGainLoss, value);
     }
 
-    public PlotModel? CreditsPlotModel { get => _creditsPlotModel; private set => SetProperty(ref _creditsPlotModel, value); }
-
-    public bool IsCreditsAggregateView
-    {
-        get => _isCreditsAggregateView;
-        private set { if (SetProperty(ref _isCreditsAggregateView, value)) OnPropertyChanged(nameof(IsCreditsAssetView)); }
-    }
-
     public bool HasCreditsContext
     {
         get => _hasCreditsContext;
@@ -175,7 +146,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         }
     }
 
-    public bool IsCreditsAssetView => HasCreditsContext && !IsCreditsAggregateView;
+    public bool IsCreditsAssetView => HasCreditsContext && !Credits.IsCreditsAggregateView;
     public bool ShouldShowEmptyState => !HasCreditsContext;
     public decimal Balance => TotalBought - TotalSold;
 
@@ -301,14 +272,10 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     }
 
     public ObservableCollection<TransactionDTO> Transactions { get; } = new();
-    public ObservableCollection<CreditDTO> Credits { get; } = new();
-    public ObservableCollection<KeyValuePair<string, decimal>> CreditsByMonthChart { get; } = new();
-    public ObservableCollection<CreditsFilterOptionViewModel> CreditsFilters { get; } = new();
+
+    public CreditsTabViewModel Credits { get; }
 
     public PriceHistoryTabViewModel PriceHistory { get; }
-
-    public ObservableCollection<CreditsTypeModeOptionViewModel> CreditsTypeModes { get; } = new();
-    public ObservableCollection<CreditsChartTypeOptionViewModel> CreditsChartTypes { get; } = new();
 
     public PlotModel? TransactionsPlotModel { get => _transactionsPlotModel; private set => SetProperty(ref _transactionsPlotModel, value); }
 
@@ -341,23 +308,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         set { if (SetProperty(ref _selectedTransaction, value)) UpdateCommandStates(); }
     }
 
-    public CreditDTO? SelectedCredit
-    {
-        get => _selectedCredit;
-        set { if (SetProperty(ref _selectedCredit, value)) UpdateCommandStates(); }
-    }
-
     public RelayCommand AddTransactionCommand => _addTransactionCommand;
     public RelayCommand UpdateTransactionCommand => _updateTransactionCommand;
     public RelayCommand DeleteTransactionCommand => _deleteTransactionCommand;
-    public RelayCommand AddCreditCommand => _addCreditCommand;
-    public RelayCommand UpdateCreditCommand => _updateCreditCommand;
-    public RelayCommand DeleteCreditCommand => _deleteCreditCommand;
     public RelayCommand RefreshTodayInfoCommand => _refreshTodayInfoCommand;
     public RelayCommand CopyAssetNameCommand => _copyAssetNameCommand;
-    public RelayCommand SelectCreditsFilterCommand => _selectCreditsFilterCommand;
-    public RelayCommand SelectCreditsTypeModeCommand => _selectCreditsTypeModeCommand;
-    public RelayCommand SelectCreditsChartTypeCommand => _selectCreditsChartTypeCommand;
     public RelayCommand SelectTransactionsFilterCommand => _selectTransactionsFilterCommand;
     public RelayCommand SelectTransactionsChartModeCommand => _selectTransactionsChartModeCommand;
 
@@ -371,18 +326,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     {
         get => _isTransactionFormOpen;
         private set => SetProperty(ref _isTransactionFormOpen, value);
-    }
-
-    public CreditDialogViewModel? CreditFormViewModel
-    {
-        get => _creditFormViewModel;
-        private set => SetProperty(ref _creditFormViewModel, value);
-    }
-
-    public bool IsCreditFormOpen
-    {
-        get => _isCreditFormOpen;
-        private set => SetProperty(ref _isCreditFormOpen, value);
     }
 
     public AssetDetailsViewModel(
@@ -414,7 +357,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             () => AssetName,
             details => LoadAssetDetails(details),
             (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
-        _creditActions = new CreditActions(
+        Credits = new CreditsTabViewModel(
             _creditService,
             () => HasAssetContext,
             () => BrokerName,
@@ -433,19 +376,10 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         _addTransactionCommand = new RelayCommand(AddTransaction, CanEditTransactions);
         _updateTransactionCommand = new RelayCommand(UpdateTransaction, CanUpdateTransaction);
         _deleteTransactionCommand = new RelayCommand(DeleteTransaction, CanDeleteTransaction);
-        _addCreditCommand = new RelayCommand(AddCredit, CanEditCredits);
-        _updateCreditCommand = new RelayCommand(UpdateCredit, CanUpdateCredit);
-        _deleteCreditCommand = new RelayCommand(DeleteCredit, CanDeleteCredit);
         _refreshTodayInfoCommand = new RelayCommand(RefreshTodayInfo, CanRefreshTodayInfo);
         _copyAssetNameCommand = new RelayCommand(CopyAssetName, CanCopyAssetName);
-        _selectCreditsFilterCommand = new RelayCommand(SelectCreditsFilter);
-        _selectCreditsTypeModeCommand = new RelayCommand(SelectCreditsTypeMode);
-        _selectCreditsChartTypeCommand = new RelayCommand(SelectCreditsChartType);
         _selectTransactionsFilterCommand = new RelayCommand(SelectTransactionsFilter);
         _selectTransactionsChartModeCommand = new RelayCommand(SelectTransactionsChartMode);
-        InitializeCreditsFilters();
-        InitializeCreditsTypeModes();
-        InitializeCreditsChartTypes();
         InitializeTransactionsFilters();
         InitializeChartTypeModes();
     }
@@ -516,18 +450,13 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         TotalCredits = details.TotalCredits;
         RealizedGainLoss = details.RealizedGainLoss;
         RealizedPortfolioWeight = realizedPortfolioWeight;
-        IsCreditsAggregateView = false;
         HasCreditsContext = true;
-        SetCreditsContext(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), rebuild: false);
 
         Transactions.Clear();
         foreach (var tx in details.Transactions)
             Transactions.Add(tx);
 
-        Credits.Clear();
-        foreach (var credit in details.Credits)
-            Credits.Add(credit);
-        ApplyCreditsFilter();
+        Credits.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.Credits);
 
         SetTransactionsContext(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), rebuild: false);
         ApplyTransactionsFilter();
@@ -535,7 +464,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         PriceHistory.Load(BuildCreditsAssetKey(details.BrokerName, details.PortfolioName, details.Name), details.PriceHistory);
 
         SelectedTransaction = null;
-        SelectedCredit = null;
         UpdateCommandStates();
     }
 
@@ -556,17 +484,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         CancelAndResetBreakdownFetch();
         ClearAssetContext();
         Credits.Clear();
-        CreditsByMonthChart.Clear();
-        CreditsPlotModel = null;
         PriceHistory.Clear();
-        IsCreditsAggregateView = false;
         HasCreditsContext = false;
-        _creditsContextKey = DefaultCreditsContextKey;
         IsTransactionsAggregateView = false;
         CancelAndResetTransactionsFetch();
         _transactionsContextKey = DefaultTransactionsContextKey;
         SelectedTransaction = null;
-        SelectedCredit = null;
         UpdateCommandStates();
     }
 
@@ -662,9 +585,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private bool CanEditTransactions() => HasAssetContext;
     private bool CanUpdateTransaction(object? parameter) => HasAssetContext && (parameter is TransactionDTO || SelectedTransaction != null);
     private bool CanDeleteTransaction(object? parameter) => HasAssetContext && (parameter is TransactionDTO || SelectedTransaction != null);
-    private bool CanEditCredits() => HasAssetContext;
-    private bool CanUpdateCredit(object? parameter) => HasAssetContext && (parameter is CreditDTO || SelectedCredit != null);
-    private bool CanDeleteCredit(object? parameter) => HasAssetContext && (parameter is CreditDTO || SelectedCredit != null);
 
     private bool CanRefreshTodayInfo() => _todayInfo.CanRefresh(HasAssetContext);
     private bool CanCopyAssetName() => HasAssetContext;
@@ -733,22 +653,16 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         ClearAssetContext();
         TotalBought = summary.TotalBought;
         TotalSold = summary.TotalSold;
-        IsCreditsAggregateView = true;
         HasCreditsContext = true;
-        SetCreditsContext(contextKey, rebuild: false);
 
-        Credits.Clear();
-        foreach (var credit in credits)
-            Credits.Add(credit);
+        Credits.LoadAggregate(contextKey, credits);
         TotalCredits = credits.Sum(credit => credit.Value);
-        ApplyCreditsFilter();
 
         IsTransactionsAggregateView = true;
         CancelAndResetTransactionsFetch();
         SetTransactionsContext(contextKey, rebuild: false);
 
         SelectedTransaction = null;
-        SelectedCredit = null;
         UpdateCommandStates();
     }
 
@@ -910,193 +824,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         Transactions.Clear();
     }
 
-    public void UpdateCreditsPlotWidth(double plotWidth)
-    {
-        if (plotWidth <= 0 || CreditsPlotModel == null) return;
-        _creditsPlotWidth = plotWidth;
-        CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _selectedCreditsTypeMode, _selectedCreditsChartType);
-    }
-
     public void UpdateTransactionsPlotWidth(double plotWidth)
     {
         if (plotWidth <= 0 || TransactionsPlotModel == null) return;
         _transactionsPlotWidth = plotWidth;
         TransactionsChartBuilder.ApplyLabelDensity(TransactionsPlotModel, _transactionsPlotWidth, _transactionsChartMonths);
-    }
-
-    private void InitializeCreditsFilters()
-    {
-        CreditsFilters.Clear();
-        foreach (var (label, filter) in PeriodFilterHelper.Options)
-            CreditsFilters.Add(new CreditsFilterOptionViewModel(label, filter));
-        SetCreditsFilter(PeriodFilter.Last12Months, rebuild: false);
-    }
-
-    private void InitializeCreditsTypeModes()
-    {
-        CreditsTypeModes.Clear();
-        CreditsTypeModes.Add(new CreditsTypeModeOptionViewModel("Stacked", CreditsTypeChartMode.Stacked));
-        CreditsTypeModes.Add(new CreditsTypeModeOptionViewModel("Grouped", CreditsTypeChartMode.Grouped));
-        SetCreditsTypeMode(CreditsTypeChartMode.Stacked, rebuild: false);
-    }
-
-    private void InitializeCreditsChartTypes()
-    {
-        CreditsChartTypes.Clear();
-        CreditsChartTypes.Add(new CreditsChartTypeOptionViewModel("Bar", CreditsChartType.Bar));
-        CreditsChartTypes.Add(new CreditsChartTypeOptionViewModel("Line", CreditsChartType.Line));
-        SetCreditsChartType(CreditsChartType.Bar, rebuild: false);
-    }
-
-    private void SelectCreditsFilter(object? parameter)
-    {
-        if (parameter is CreditsFilterOptionViewModel option) { SetCreditsFilter(option.Filter); return; }
-        if (parameter is PeriodFilter filter) SetCreditsFilter(filter);
-    }
-
-    private void SelectCreditsTypeMode(object? parameter)
-    {
-        if (parameter is CreditsTypeModeOptionViewModel option) { SetCreditsTypeMode(option.Mode); return; }
-        if (parameter is CreditsTypeChartMode mode) SetCreditsTypeMode(mode);
-    }
-
-    private void SelectCreditsChartType(object? parameter)
-    {
-        if (parameter is CreditsChartTypeOptionViewModel option) { SetCreditsChartType(option.ChartType); return; }
-        if (parameter is CreditsChartType chartType) SetCreditsChartType(chartType);
-    }
-
-    private void SetCreditsFilter(PeriodFilter filter, bool rebuild = true)
-    {
-        if (_selectedCreditsFilter == filter && CreditsFilters.Count > 0)
-        {
-            UpdateCreditsFilterSelection();
-            return;
-        }
-        _selectedCreditsFilter = filter;
-        UpdateCreditsFilterSelection();
-        UpdateCreditsViewState();
-        if (rebuild) ApplyCreditsFilter();
-    }
-
-    private void SetCreditsTypeMode(CreditsTypeChartMode mode, bool rebuild = true)
-    {
-        if (_selectedCreditsTypeMode == mode && CreditsTypeModes.Count > 0)
-        {
-            UpdateCreditsTypeModeSelection();
-            return;
-        }
-        _selectedCreditsTypeMode = mode;
-        UpdateCreditsTypeModeSelection();
-        UpdateCreditsViewState();
-        if (rebuild) ApplyCreditsFilter();
-    }
-
-    private void SetCreditsChartType(CreditsChartType chartType, bool rebuild = true)
-    {
-        if (_selectedCreditsChartType == chartType && CreditsChartTypes.Count > 0)
-        {
-            UpdateCreditsChartTypeSelection();
-            return;
-        }
-        _selectedCreditsChartType = chartType;
-        UpdateCreditsChartTypeSelection();
-        UpdateCreditsViewState();
-        if (rebuild) ApplyCreditsFilter();
-    }
-
-    private void UpdateCreditsFilterSelection()
-    {
-        foreach (var option in CreditsFilters)
-            option.IsSelected = option.Filter == _selectedCreditsFilter;
-    }
-
-    private void UpdateCreditsTypeModeSelection()
-    {
-        foreach (var option in CreditsTypeModes)
-            option.IsSelected = option.Mode == _selectedCreditsTypeMode;
-    }
-
-    private void UpdateCreditsChartTypeSelection()
-    {
-        foreach (var option in CreditsChartTypes)
-            option.IsSelected = option.ChartType == _selectedCreditsChartType;
-    }
-
-    private void ApplyCreditsFilter()
-    {
-        RefreshCreditsByMonthChart(FilterCredits(Credits, _selectedCreditsFilter));
-    }
-
-    private static IEnumerable<CreditDTO> FilterCredits(IEnumerable<CreditDTO> credits, PeriodFilter filter)
-    {
-        var (start, endExclusive) = PeriodFilterHelper.GetDateRange(filter, DateTime.Today);
-        if (start is null) return credits;
-        return credits.Where(credit => credit.Date >= start && credit.Date < endExclusive);
-    }
-
-    private void RefreshCreditsByMonthChart(IEnumerable<CreditDTO> credits)
-    {
-        CreditsByMonthChart.Clear();
-        var grouped = credits
-            .GroupBy(credit => new DateTime(credit.Date.Year, credit.Date.Month, 1))
-            .OrderBy(group => group.Key)
-            .Select(group =>
-            {
-                var totals = group
-                    .GroupBy(credit => credit.Type, StringComparer.CurrentCultureIgnoreCase)
-                    .OrderBy(typeGroup => typeGroup.Key, StringComparer.CurrentCultureIgnoreCase)
-                    .ToDictionary(
-                        typeGroup => typeGroup.Key,
-                        typeGroup => typeGroup.Sum(credit => credit.Value),
-                        StringComparer.CurrentCultureIgnoreCase);
-                return new CreditsMonthTypeTotals(group.Key, totals);
-            })
-            .ToList();
-
-        _creditsChartMonths = grouped;
-        _creditsChartTypes = grouped
-            .SelectMany(month => month.TotalsByType.Keys)
-            .Distinct(StringComparer.CurrentCultureIgnoreCase)
-            .OrderBy(type => type, StringComparer.CurrentCultureIgnoreCase)
-            .ToList();
-
-        foreach (var group in grouped)
-            CreditsByMonthChart.Add(new KeyValuePair<string, decimal>(group.Month.ToString("MM/yyyy"), group.Total));
-
-        CreditsPlotModel = CreditsChartBuilder.Build(grouped, _creditsChartTypes, _selectedCreditsTypeMode, _selectedCreditsChartType);
-        if (CreditsPlotModel != null)
-            CreditsChartBuilder.ApplyLabelDensity(CreditsPlotModel, _creditsPlotWidth, _creditsChartMonths, _creditsChartTypes, _selectedCreditsTypeMode, _selectedCreditsChartType);
-    }
-
-    private void SetCreditsContext(string contextKey, bool rebuild = true)
-    {
-        _creditsContextKey = string.IsNullOrWhiteSpace(contextKey) ? DefaultCreditsContextKey : contextKey;
-        var state = GetCreditsViewState(_creditsContextKey);
-        ApplyCreditsViewState(state, rebuild);
-    }
-
-    private CreditsViewState GetCreditsViewState(string contextKey)
-    {
-        if (_creditsViewStateByKey.TryGetValue(contextKey, out var state))
-            return state;
-        state = new CreditsViewState(PeriodFilter.Last12Months, CreditsTypeChartMode.Stacked, CreditsChartType.Bar);
-        _creditsViewStateByKey[contextKey] = state;
-        return state;
-    }
-
-    private void ApplyCreditsViewState(CreditsViewState state, bool rebuild)
-    {
-        SetCreditsFilter(state.Filter, rebuild: false);
-        SetCreditsTypeMode(state.Mode, rebuild: false);
-        SetCreditsChartType(state.ChartType, rebuild: false);
-        if (rebuild) ApplyCreditsFilter();
-    }
-
-    private void UpdateCreditsViewState()
-    {
-        if (!string.IsNullOrWhiteSpace(_creditsContextKey))
-            _creditsViewStateByKey[_creditsContextKey] = new CreditsViewState(_selectedCreditsFilter, _selectedCreditsTypeMode, _selectedCreditsChartType);
     }
 
     private void InitializeTransactionsFilters()
@@ -1219,18 +951,11 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
     private static string BuildBrokerKey(string brokerName) => $"Broker|{brokerName}";
 
     private async void AddTransaction() => await _transactionActions.Add(ShowAddTransactionFormAsync);
-    private async void AddCredit() => await _creditActions.Add(ShowAddCreditFormAsync);
 
     private async void UpdateTransaction(object? parameter)
     {
         if (parameter is TransactionDTO tx) SelectedTransaction = tx;
         await _transactionActions.Update(SelectedTransaction, ShowUpdateTransactionFormAsync);
-    }
-
-    private async void UpdateCredit(object? parameter)
-    {
-        if (parameter is CreditDTO credit) SelectedCredit = credit;
-        await _creditActions.Update(SelectedCredit, ShowUpdateCreditFormAsync);
     }
 
     private async void DeleteTransaction(object? parameter)
@@ -1239,20 +964,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         await _transactionActions.Delete(SelectedTransaction, ShowDeleteTransactionDialog);
     }
 
-    private async void DeleteCredit(object? parameter)
-    {
-        if (parameter is CreditDTO credit) SelectedCredit = credit;
-        await _creditActions.Delete(SelectedCredit, ShowDeleteCreditDialog);
-    }
-
     private void UpdateCommandStates()
     {
         _addTransactionCommand.RaiseCanExecuteChanged();
         _updateTransactionCommand.RaiseCanExecuteChanged();
         _deleteTransactionCommand.RaiseCanExecuteChanged();
-        _addCreditCommand.RaiseCanExecuteChanged();
-        _updateCreditCommand.RaiseCanExecuteChanged();
-        _deleteCreditCommand.RaiseCanExecuteChanged();
+        Credits.UpdateCommandStates();
         PriceHistory.UpdateCommandStates();
         _refreshTodayInfoCommand.RaiseCanExecuteChanged();
         _copyAssetNameCommand.RaiseCanExecuteChanged();
@@ -1304,47 +1021,6 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             SelectedTransaction.Id, SelectedTransaction.Date, SelectedTransaction.Type,
             SelectedTransaction.Quantity, SelectedTransaction.UnitPrice, SelectedTransaction.Fees);
         var dialog = new TransactionDialog(vm) { Owner = System.Windows.Application.Current?.MainWindow };
-        return dialog.ShowDialog() == true;
-    }
-
-    private Task<CreditDialogData?> ShowCreditFormAsync(CreditDialogViewModel vm)
-    {
-        var tcs = new TaskCompletionSource<CreditDialogData?>();
-        void OnClosed(object? sender, bool? result)
-        {
-            vm.CloseRequested -= OnClosed;
-            IsCreditFormOpen = false;
-            CreditFormViewModel = null;
-            tcs.SetResult(result == true
-                ? new CreditDialogData(vm.CreditId, vm.Date, vm.Type, vm.Value)
-                : null);
-        }
-
-        vm.CloseRequested += OnClosed;
-        CreditFormViewModel = vm;
-        IsCreditFormOpen = true;
-        return tcs.Task;
-    }
-
-    private Task<CreditDialogData?> ShowAddCreditFormAsync() =>
-        ShowCreditFormAsync(CreditDialogViewModel.CreateForAdd(BrokerName, PortfolioName, AssetName));
-
-    private Task<CreditDialogData?> ShowUpdateCreditFormAsync()
-    {
-        if (SelectedCredit == null) return Task.FromResult<CreditDialogData?>(null);
-        var vm = CreditDialogViewModel.CreateForUpdate(
-            BrokerName, PortfolioName, AssetName,
-            SelectedCredit.Id, SelectedCredit.Date, SelectedCredit.Type, SelectedCredit.Value);
-        return ShowCreditFormAsync(vm);
-    }
-
-    private bool ShowDeleteCreditDialog()
-    {
-        if (SelectedCredit == null) return false;
-        var vm = CreditDialogViewModel.CreateForDelete(
-            BrokerName, PortfolioName, AssetName,
-            SelectedCredit.Id, SelectedCredit.Date, SelectedCredit.Type, SelectedCredit.Value);
-        var dialog = new CreditDialog(vm) { Owner = System.Windows.Application.Current?.MainWindow };
         return dialog.ShowDialog() == true;
     }
 

@@ -120,7 +120,7 @@ public class AssetDetailsViewModelPortfolioSummaryTests
             new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Interest", Value = 50m }
         };
         vm.LoadPortfolioSummary("Broker", "Portfolio", new AggregatedSummaryDTO(), credits, BuildItems());
-        vm.Credits.Count.Should().Be(2);
+        vm.Credits.Credits.Count.Should().Be(2);
     }
 
     [Fact]

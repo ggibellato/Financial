@@ -509,6 +509,9 @@ public class MainNavigationViewModelBaseTests
         public bool WasPortfolioTransactionsLoaded { get; private set; }
         public bool IsPortfolioView => false;
         public bool IsBrokerView => false;
+        public CreditsTabViewModel Credits { get; } = new(
+            null, () => false, () => string.Empty, () => string.Empty, () => string.Empty,
+            _ => { }, (_, _, _) => { });
         public PriceHistoryTabViewModel PriceHistory { get; } = new(
             null, () => false, () => string.Empty, () => string.Empty, () => string.Empty,
             _ => { }, (_, _, _) => { });

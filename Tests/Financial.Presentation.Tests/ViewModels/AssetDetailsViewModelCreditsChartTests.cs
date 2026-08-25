@@ -26,7 +26,7 @@ public class AssetDetailsViewModelCreditsChartTests
     {
         var vm = BuildViewModel();
         vm.LoadBrokerSummary("XPI", new AggregatedSummaryDTO(), []);
-        vm.CreditsChartTypes.First(t => t.ChartType == CreditsChartType.Bar).IsSelected.Should().BeTrue();
+        vm.Credits.CreditsChartTypes.First(t => t.ChartType == CreditsChartType.Bar).IsSelected.Should().BeTrue();
     }
 
     [Fact]
@@ -35,14 +35,14 @@ public class AssetDetailsViewModelCreditsChartTests
         var vm = BuildViewModel();
         vm.LoadBrokerSummary("BrokerA", new AggregatedSummaryDTO(), []);
 
-        vm.SelectCreditsChartTypeCommand.Execute(CreditsChartType.Line);
-        vm.CreditsChartTypes.First(t => t.ChartType == CreditsChartType.Line).IsSelected.Should().BeTrue();
+        vm.Credits.SelectCreditsChartTypeCommand.Execute(CreditsChartType.Line);
+        vm.Credits.CreditsChartTypes.First(t => t.ChartType == CreditsChartType.Line).IsSelected.Should().BeTrue();
 
         vm.LoadBrokerSummary("BrokerB", new AggregatedSummaryDTO(), []);
-        vm.CreditsChartTypes.First(t => t.ChartType == CreditsChartType.Bar).IsSelected.Should().BeTrue();
+        vm.Credits.CreditsChartTypes.First(t => t.ChartType == CreditsChartType.Bar).IsSelected.Should().BeTrue();
 
         vm.LoadBrokerSummary("BrokerA", new AggregatedSummaryDTO(), []);
-        vm.CreditsChartTypes.First(t => t.ChartType == CreditsChartType.Line).IsSelected.Should().BeTrue();
+        vm.Credits.CreditsChartTypes.First(t => t.ChartType == CreditsChartType.Line).IsSelected.Should().BeTrue();
     }
 
     [Fact]
@@ -51,9 +51,9 @@ public class AssetDetailsViewModelCreditsChartTests
         var vm = BuildViewModel();
         vm.LoadBrokerSummary("BrokerA", new AggregatedSummaryDTO(), []);
 
-        vm.SelectCreditsChartTypeCommand.Execute(CreditsChartType.Line);
+        vm.Credits.SelectCreditsChartTypeCommand.Execute(CreditsChartType.Line);
 
-        vm.CreditsTypeModes.First(m => m.Mode == CreditsTypeChartMode.Stacked).IsSelected.Should().BeTrue();
+        vm.Credits.CreditsTypeModes.First(m => m.Mode == CreditsTypeChartMode.Stacked).IsSelected.Should().BeTrue();
     }
 
     [Fact]
@@ -65,13 +65,13 @@ public class AssetDetailsViewModelCreditsChartTests
         };
         var vm = BuildViewModel();
         vm.LoadBrokerSummary("XPI", new AggregatedSummaryDTO(), credits);
-        vm.CreditsPlotModel.Should().NotBeNull();
-        var barSeriesCount = vm.CreditsPlotModel!.Series.Count;
+        vm.Credits.CreditsPlotModel.Should().NotBeNull();
+        var barSeriesCount = vm.Credits.CreditsPlotModel!.Series.Count;
 
-        vm.SelectCreditsChartTypeCommand.Execute(CreditsChartType.Line);
+        vm.Credits.SelectCreditsChartTypeCommand.Execute(CreditsChartType.Line);
 
-        vm.CreditsPlotModel.Should().NotBeNull();
-        vm.CreditsPlotModel!.Series.Should().HaveCount(barSeriesCount);
+        vm.Credits.CreditsPlotModel.Should().NotBeNull();
+        vm.Credits.CreditsPlotModel!.Series.Should().HaveCount(barSeriesCount);
     }
 
 }

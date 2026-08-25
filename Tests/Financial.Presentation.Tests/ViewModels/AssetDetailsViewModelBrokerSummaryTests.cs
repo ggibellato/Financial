@@ -63,7 +63,7 @@ public class AssetDetailsViewModelBrokerSummaryTests
             new() { Id = Guid.NewGuid(), Date = DateTime.Today, Type = "Interest", Value = 50m }
         };
         vm.LoadBrokerSummary("XPI", new AggregatedSummaryDTO(), credits);
-        vm.Credits.Count.Should().Be(2);
+        vm.Credits.Credits.Count.Should().Be(2);
     }
 
     [Fact]
