@@ -29,7 +29,7 @@ internal static class PortfolioAssetSummaryBuilder
         DateTime today,
         Func<AssetTotals, decimal> weightBasisSelector)
     {
-        var (totalBought, totalSold, totalCredits) = NavigationMapper.CalculateTotals(asset);
+        var (totalBought, totalSold, totalCredits) = AssetTotalsCalculator.CalculateTotals(asset);
         var totals = new AssetTotals(totalBought, totalSold, totalCredits);
         var weightBasis = weightBasisSelector(totals);
         var realizedGainLoss = asset.RealizedGainLoss;

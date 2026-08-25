@@ -2,6 +2,7 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -65,10 +66,10 @@ public sealed class BrokerBreakdownService : IBrokerBreakdownService
 
     private static decimal CalculateNetInvested(Asset asset)
     {
-        var (totalBought, totalSold, _) = NavigationMapper.CalculateTotals(asset);
+        var (totalBought, totalSold, _) = AssetTotalsCalculator.CalculateTotals(asset);
         return totalBought - totalSold;
     }
 
     private static decimal CalculateGrossBought(Asset asset) =>
-        NavigationMapper.CalculateTotals(asset).TotalBought;
+        AssetTotalsCalculator.CalculateTotals(asset).TotalBought;
 }
