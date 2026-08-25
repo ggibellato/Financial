@@ -9,7 +9,7 @@ namespace Financial.Presentation.App.ViewModels.Investment;
 public class AssetPriceFetchViewModel : ViewModelBase
 {
     private readonly INavigationService _navigationService;
-    private readonly IPriceService _priceService;
+    private readonly IAssetPriceLookupService _priceService;
     private readonly IReadOnlyList<AssetPriceFetch> _portfolios;
     private readonly Action<string> _showError;
     private bool _isFetching;
@@ -41,7 +41,7 @@ public class AssetPriceFetchViewModel : ViewModelBase
 
     public AssetPriceFetchViewModel(
         INavigationService navigationService,
-        IPriceService priceService,
+        IAssetPriceLookupService priceService,
         IOptions<AssetPriceFetchOptions> options,
         Action<string> showError)
     {

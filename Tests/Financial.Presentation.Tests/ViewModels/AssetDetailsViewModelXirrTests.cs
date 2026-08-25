@@ -11,7 +11,7 @@ namespace Financial.Presentation.Tests.ViewModels;
 
 public class AssetDetailsViewModelXirrTests
 {
-    private static AssetDetailsViewModel BuildViewModel(IPriceService? priceService = null, InvestmentScope scope = InvestmentScope.Active)
+    private static AssetDetailsViewModel BuildViewModel(IAssetPriceLookupService? priceService = null, InvestmentScope scope = InvestmentScope.Active)
     {
         return new AssetDetailsViewModel(
             new StubTransactionService(),
@@ -296,7 +296,7 @@ public class AssetDetailsViewModelXirrTests
         vm.IsActiveScope.Should().BeTrue();
     }
 
-    private sealed class FixedPriceService : IPriceService
+    private sealed class FixedPriceService : IAssetPriceLookupService
     {
         private readonly decimal _price;
 
@@ -306,9 +306,6 @@ public class AssetDetailsViewModelXirrTests
         {
             _price = price;
         }
-
-        public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
-        public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
 
         public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request)
         {

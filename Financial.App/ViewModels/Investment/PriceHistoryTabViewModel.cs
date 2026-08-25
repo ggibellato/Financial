@@ -10,7 +10,7 @@ namespace Financial.Presentation.App.ViewModels.Investment;
 
 public class PriceHistoryTabViewModel : ViewModelBase
 {
-    private readonly IPriceService? _priceService;
+    private readonly IAssetPriceHistoryService? _priceService;
     private readonly Func<bool> _hasContext;
     private readonly Func<string> _brokerName;
     private readonly Func<string> _portfolioName;
@@ -33,7 +33,7 @@ public class PriceHistoryTabViewModel : ViewModelBase
     private bool _isPriceFormOpen;
 
     public PriceHistoryTabViewModel(
-        IPriceService? priceService,
+        IAssetPriceHistoryService? priceService,
         Func<bool> hasContext,
         Func<string> brokerName,
         Func<string> portfolioName,

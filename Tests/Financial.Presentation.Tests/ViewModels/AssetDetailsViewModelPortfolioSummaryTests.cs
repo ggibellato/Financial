@@ -11,7 +11,7 @@ namespace Financial.Presentation.Tests.ViewModels;
 
 public class AssetDetailsViewModelPortfolioSummaryTests
 {
-    private static AssetDetailsViewModel BuildViewModel(IPriceService? priceService = null, InvestmentScope scope = InvestmentScope.Active)
+    private static AssetDetailsViewModel BuildViewModel(IAssetPriceLookupService? priceService = null, InvestmentScope scope = InvestmentScope.Active)
     {
         return new AssetDetailsViewModel(
             new StubTransactionService(),
@@ -350,7 +350,7 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request) => throw new NotImplementedException();
     }
 
-    private sealed class NeverResolvingPriceService : IPriceService
+    private sealed class NeverResolvingPriceService : IAssetPriceLookupService
     {
         // Bounded, not infinite: every test using this leaves its background Task.Run
         // blocked on a thread-pool worker for the block's duration. Assertions that rely
@@ -361,9 +361,6 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         private readonly SemaphoreSlim _blocker = new SemaphoreSlim(0);
         private static readonly TimeSpan MaxBlockDuration = TimeSpan.FromSeconds(2);
 
-        public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
-        public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
-
         public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request)
         {
             _blocker.Wait(MaxBlockDuration);
@@ -371,12 +368,9 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         }
     }
 
-    private sealed class CountingPriceService : IPriceService
+    private sealed class CountingPriceService : IAssetPriceLookupService
     {
         public int CallCount { get; private set; }
-
-        public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
-        public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
 
         public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request)
         {
@@ -385,14 +379,11 @@ public class AssetDetailsViewModelPortfolioSummaryTests
         }
     }
 
-    private sealed class CapturingPriceService : IPriceService
+    private sealed class CapturingPriceService : IAssetPriceLookupService
     {
         private readonly TaskCompletionSource<AssetPriceRequestDTO> _tcs = new();
 
         public Task<AssetPriceRequestDTO> RequestReceived => _tcs.Task;
-
-        public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
-        public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
 
         public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request)
         {

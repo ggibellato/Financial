@@ -2,11 +2,8 @@ using Financial.Investment.Application.DTOs;
 
 namespace Financial.Investment.Application.Interfaces;
 
-public interface IPriceService
+public interface IAssetPriceLookupService
 {
-    Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request);
-    Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request);
-
     /// <summary>
     /// Returns the asset's current price, preferring a live fetch. A successful live fetch is
     /// recorded into the asset's Price History as an automatic entry (skipping the write when
