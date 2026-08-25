@@ -37,9 +37,8 @@ public sealed class IncomeService : IIncomeService
                 ? BuildSplitMovements(income, request.NetValue, request.Date, request.Description)
                 : [];
 
-            try
-            {
-                await _repository.ApplyAndSaveAsync(() =>
+            await CompensatingSaveHelper.ApplyWithCompensationAsync(
+                () => _repository.ApplyAndSaveAsync(() =>
                 {
                     _repository.AddIncome(income);
                     foreach (var movement in movements)
@@ -48,11 +47,8 @@ public sealed class IncomeService : IIncomeService
                     }
 
                     return true;
-                }).ConfigureAwait(false);
-            }
-            catch
-            {
-                await _repository.ApplyAndSaveAsync(() =>
+                }),
+                () => _repository.ApplyAndSaveAsync(() =>
                 {
                     _repository.DeleteIncome(income.Id);
                     foreach (var movement in movements)
@@ -61,10 +57,7 @@ public sealed class IncomeService : IIncomeService
                     }
 
                     return false;
-                }).ConfigureAwait(false);
-
-                throw;
-            }
+                })).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, income.Id.ToString());
             span.MarkSuccess();
@@ -103,9 +96,8 @@ public sealed class IncomeService : IIncomeService
                 ? BuildSplitMovements(income, request.NetValue, request.Date, request.Description)
                 : [];
 
-            try
-            {
-                await _repository.ApplyAndSaveAsync(() =>
+            await CompensatingSaveHelper.ApplyWithCompensationAsync(
+                () => _repository.ApplyAndSaveAsync(() =>
                 {
                     income.UpdateDetails(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description, request.SplitToReserve);
                     foreach (var movement in oldLinkedMovements)
@@ -119,11 +111,8 @@ public sealed class IncomeService : IIncomeService
                     }
 
                     return true;
-                }).ConfigureAwait(false);
-            }
-            catch
-            {
-                await _repository.ApplyAndSaveAsync(() =>
+                }),
+                () => _repository.ApplyAndSaveAsync(() =>
                 {
                     income.UpdateDetails(oldDate, oldIncomeSource, oldGrossValue, oldNetValue, oldBank, oldDescription, oldSplitToReserve);
                     foreach (var movement in newMovements)
@@ -137,10 +126,7 @@ public sealed class IncomeService : IIncomeService
                     }
 
                     return false;
-                }).ConfigureAwait(false);
-
-                throw;
-            }
+                })).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateIncome");
