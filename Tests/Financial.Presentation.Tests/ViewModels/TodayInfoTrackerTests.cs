@@ -170,11 +170,8 @@ public class TodayInfoTrackerTests
         applied[0].AsOf.Should().Be("—");
     }
 
-    private sealed class NoDatePriceService : IPriceService
+    private sealed class NoDatePriceService : IAssetPriceLookupService
     {
-        public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
-        public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
-
         public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request) =>
             Task.FromResult(new AssetPriceDTO
             {
@@ -187,7 +184,7 @@ public class TodayInfoTrackerTests
             });
     }
 
-    private sealed class StoredPriceService : IPriceService
+    private sealed class StoredPriceService : IAssetPriceLookupService
     {
         private readonly DateOnly _asOfDate;
 
@@ -195,9 +192,6 @@ public class TodayInfoTrackerTests
         {
             _asOfDate = asOfDate;
         }
-
-        public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
-        public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
 
         public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request) =>
             Task.FromResult(new AssetPriceDTO
@@ -211,7 +205,7 @@ public class TodayInfoTrackerTests
             });
     }
 
-    private sealed class StubPriceService : IPriceService
+    private sealed class StubPriceService : IAssetPriceLookupService
     {
         private readonly bool _isManual;
 
@@ -221,9 +215,6 @@ public class TodayInfoTrackerTests
         }
 
         public AssetPriceRequestDTO? LastRequest { get; private set; }
-
-        public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
-        public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
 
         public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request)
         {

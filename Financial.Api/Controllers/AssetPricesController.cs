@@ -12,11 +12,13 @@ namespace Financial.Api.Controllers;
 [Route("prices")]
 public sealed class AssetPricesController : ApiControllerBase
 {
-    private readonly IPriceService _priceService;
+    private readonly IAssetPriceCrudService _priceCrudService;
+    private readonly IAssetPriceLookupService _priceLookupService;
 
-    public AssetPricesController(IPriceService priceService)
+    public AssetPricesController(IAssetPriceCrudService priceCrudService, IAssetPriceLookupService priceLookupService)
     {
-        _priceService = priceService ?? throw new ArgumentNullException(nameof(priceService));
+        _priceCrudService = priceCrudService ?? throw new ArgumentNullException(nameof(priceCrudService));
+        _priceLookupService = priceLookupService ?? throw new ArgumentNullException(nameof(priceLookupService));
     }
 
     /// <summary>
@@ -56,7 +58,7 @@ public sealed class AssetPricesController : ApiControllerBase
             ? parsed
             : GlobalAssetClass.Unknown;
 
-        var result = await _priceService.GetCurrentPriceAsync(new AssetPriceRequestDTO
+        var result = await _priceLookupService.GetCurrentPriceAsync(new AssetPriceRequestDTO
         {
             Exchange = exchange?.Trim() ?? string.Empty,
             Ticker = ticker.Trim(),
@@ -83,7 +85,7 @@ public sealed class AssetPricesController : ApiControllerBase
             return BadRequest();
         }
 
-        var asset = await _priceService.SetPriceAsync(request);
+        var asset = await _priceCrudService.SetPriceAsync(request);
         return OkOrBadRequest(asset);
     }
 
@@ -100,7 +102,7 @@ public sealed class AssetPricesController : ApiControllerBase
             return BadRequest();
         }
 
-        var asset = await _priceService.DeletePriceAsync(request);
+        var asset = await _priceCrudService.DeletePriceAsync(request);
         return OkOrBadRequest(asset);
     }
 }

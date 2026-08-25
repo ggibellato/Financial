@@ -198,7 +198,7 @@ public class PriceHistoryTabViewModelTests
         public void ShowMessage(string message, string caption, MessageBoxImage image) => Messages.Add((message, caption, image));
     }
 
-    private sealed class StubPriceService : IPriceService
+    private sealed class StubPriceService : IAssetPriceCrudService
     {
         public AssetDetailsDTO? SetResult { get; set; }
         public AssetDetailsDTO? DeleteResult { get; set; }
@@ -220,8 +220,5 @@ public class PriceHistoryTabViewModelTests
             LastDeleteRequest = request;
             return Task.FromResult(DeleteResult);
         }
-
-        public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request) =>
-            throw new NotSupportedException();
     }
 }

@@ -21,16 +21,23 @@ namespace Financial.Api.Tests.Controllers;
 public class ControllerGuardClauseTests
 {
     [Fact]
-    public void AssetPricesController_NullPriceService_Throws()
+    public void AssetPricesController_NullPriceCrudService_Throws()
     {
-        Action act = () => new AssetPricesController(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("priceService");
+        Action act = () => new AssetPricesController(null!, new StubAssetPriceLookupService());
+        act.Should().Throw<ArgumentNullException>().WithParameterName("priceCrudService");
+    }
+
+    [Fact]
+    public void AssetPricesController_NullPriceLookupService_Throws()
+    {
+        Action act = () => new AssetPricesController(new StubAssetPriceCrudService(), null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("priceLookupService");
     }
 
     [Fact]
     public async Task AssetPricesController_SetPrice_NullRequest_ReturnsBadRequest()
     {
-        var controller = new AssetPricesController(new StubPriceService());
+        var controller = new AssetPricesController(new StubAssetPriceCrudService(), new StubAssetPriceLookupService());
 
         var result = await controller.SetPrice(null!);
 
@@ -40,7 +47,7 @@ public class ControllerGuardClauseTests
     [Fact]
     public async Task AssetPricesController_DeletePrice_NullRequest_ReturnsBadRequest()
     {
-        var controller = new AssetPricesController(new StubPriceService());
+        var controller = new AssetPricesController(new StubAssetPriceCrudService(), new StubAssetPriceLookupService());
 
         var result = await controller.DeletePrice(null!);
 
@@ -408,10 +415,14 @@ public class ControllerGuardClauseTests
         public IEnumerable<AssetNodeDTO> GetAssetsByBrokerPortfolio(string brokerName, string portfolioName) => throw new NotImplementedException();
     }
 
-    private sealed class StubPriceService : IPriceService
+    private sealed class StubAssetPriceCrudService : IAssetPriceCrudService
     {
         public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
         public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
+    }
+
+    private sealed class StubAssetPriceLookupService : IAssetPriceLookupService
+    {
         public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request) => throw new NotImplementedException();
     }
 

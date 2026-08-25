@@ -14,7 +14,8 @@ namespace Financial.Presentation.App.ViewModels.Investment;
 public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
 {
     private readonly ICreditService _creditService;
-    private readonly IPriceService? _priceService;
+    private readonly IAssetPriceLookupService? _priceLookupService;
+    private readonly IAssetPriceCrudService? _priceCrudService;
     private readonly IAssetPriceService _assetPriceService;
     private readonly IBrokerBreakdownService _brokerBreakdownService;
     private readonly IXirrCalculationService _xirrCalculationService;
@@ -264,10 +265,12 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         IXirrCalculationService xirrCalculationService,
         IProfitCalculationService profitCalculationService,
         InvestmentScope scope = InvestmentScope.Active,
-        IPriceService? priceService = null)
+        IAssetPriceLookupService? priceLookupService = null,
+        IAssetPriceCrudService? priceCrudService = null)
     {
         _creditService = creditService ?? throw new ArgumentNullException(nameof(creditService));
-        _priceService = priceService;
+        _priceLookupService = priceLookupService;
+        _priceCrudService = priceCrudService;
         _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
         _brokerBreakdownService = brokerBreakdownService ?? throw new ArgumentNullException(nameof(brokerBreakdownService));
         _xirrCalculationService = xirrCalculationService ?? throw new ArgumentNullException(nameof(xirrCalculationService));
@@ -293,7 +296,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
             details => LoadAssetDetails(details),
             (message, caption, image) => MessageBox.Show(message, caption, MessageBoxButton.OK, image));
         PriceHistory = new PriceHistoryTabViewModel(
-            _priceService,
+            _priceCrudService,
             () => HasAssetContext,
             () => BrokerName,
             () => PortfolioName,
@@ -468,7 +471,7 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
         }
 
         return _todayInfo.RefreshAsync(
-            forceRefresh, HasAssetContext, _priceService,
+            forceRefresh, HasAssetContext, _priceLookupService,
             Class, BrokerName,
             Exchange, Ticker, AssetName, PortfolioName, AssetName, message => TodayInfoMessage = message);
     }
@@ -530,13 +533,13 @@ public class AssetDetailsViewModel : ViewModelBase, IAssetDetailsViewModel
                 try
                 {
                     if (cancellationToken.IsCancellationRequested) return;
-                    if (_priceService == null)
+                    if (_priceLookupService == null)
                     {
                         capturedRow.MarkPriceFailed();
                         return;
                     }
 
-                    var price = await _priceService.GetCurrentPriceAsync(new AssetPriceRequestDTO
+                    var price = await _priceLookupService.GetCurrentPriceAsync(new AssetPriceRequestDTO
                     {
                         Exchange = capturedRow.Exchange,
                         Ticker = capturedRow.Ticker,

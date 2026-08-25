@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Financial.Investment.Application.Services;
 
-public sealed class PriceService : IPriceService
+public sealed class AssetPriceLookupService : IAssetPriceLookupService
 {
     private const string EntityType = "AssetPrice";
 
@@ -15,85 +15,19 @@ public sealed class PriceService : IPriceService
     private readonly INavigationService _navigationService;
     private readonly IAssetPriceService _assetPriceService;
     private readonly ITelemetryTracer _tracer;
-    private readonly ILogger<PriceService> _logger;
+    private readonly ILogger<AssetPriceLookupService> _logger;
 
-    public PriceService(
+    public AssetPriceLookupService(
         IInvestmentRepository repository,
         INavigationService navigationService,
         IAssetPriceService assetPriceService,
-        ITelemetryTracer tracer, ILogger<PriceService> logger)
+        ITelemetryTracer tracer, ILogger<AssetPriceLookupService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         _assetPriceService = assetPriceService ?? throw new ArgumentNullException(nameof(assetPriceService));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
-
-    public async Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request)
-    {
-        using var span = StartSpan("SetPrice");
-        try
-        {
-            var result = await AssetMutationHelper.ExecuteAssetMutationAsync(
-                _repository,
-                _navigationService,
-                request.BrokerName,
-                request.PortfolioName,
-                request.AssetName,
-                asset =>
-                {
-                    asset.SetPrice(request.Date, request.Price, isManual: true);
-                    return true;
-                }).ConfigureAwait(false);
-
-            span.MarkSuccess();
-            _logger.LogInformation("{Operation} completed", "SetPrice");
-            return result;
-        }
-        catch (Exception ex)
-        {
-            span.MarkFailed(ex);
-            throw;
-        }
-    }
-
-    public async Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request)
-    {
-        using var span = StartSpan("DeletePrice");
-        try
-        {
-            var result = await AssetMutationHelper.ExecuteAssetMutationAsync(
-                _repository,
-                _navigationService,
-                request.BrokerName,
-                request.PortfolioName,
-                request.AssetName,
-                asset =>
-                {
-                    var existing = asset.GetPriceForDate(request.Date);
-                    if (existing is null)
-                    {
-                        return true;
-                    }
-
-                    if (!existing.IsManual)
-                    {
-                        throw new ArgumentException("Automatic price entries can't be edited directly — add a manual entry for this date instead.");
-                    }
-
-                    return asset.RemovePrice(request.Date);
-                }).ConfigureAwait(false);
-
-            span.MarkSuccess();
-            _logger.LogInformation("{Operation} completed", "DeletePrice");
-            return result;
-        }
-        catch (Exception ex)
-        {
-            span.MarkFailed(ex);
-            throw;
-        }
     }
 
     public async Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request)
@@ -254,7 +188,7 @@ public sealed class PriceService : IPriceService
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        return _tracer.StartServiceSpan("Investment", nameof(PriceService), operationName, EntityType);
+        return _tracer.StartServiceSpan("Investment", nameof(AssetPriceLookupService), operationName, EntityType);
     }
 
     private Asset? ResolveAsset(AssetPriceRequestDTO request)

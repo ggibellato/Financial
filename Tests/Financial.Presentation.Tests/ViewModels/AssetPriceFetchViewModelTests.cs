@@ -213,7 +213,7 @@ public class AssetPriceFetchViewModelTests
             AssetsByBrokerPortfolio.TryGetValue((brokerName, portfolioName), out var assets) ? assets : [];
     }
 
-    private sealed class StubPriceService : IPriceService
+    private sealed class StubPriceService : IAssetPriceLookupService
     {
         private readonly TaskCompletionSource<AssetPriceRequestDTO> _tcs = new();
 
@@ -223,10 +223,6 @@ public class AssetPriceFetchViewModelTests
         /// <summary>Tickers in this set fail with <see cref="FailureMessage"/> instead of returning a price.</summary>
         public HashSet<string> TickersToFail { get; } = new();
         public string FailureMessage { get; set; } = "boom";
-
-        public Task<AssetDetailsDTO?> SetPriceAsync(SetAssetPriceDTO request) => throw new NotImplementedException();
-
-        public Task<AssetDetailsDTO?> DeletePriceAsync(DeleteAssetPriceDTO request) => throw new NotImplementedException();
 
         public Task<AssetPriceDTO> GetCurrentPriceAsync(AssetPriceRequestDTO request)
         {

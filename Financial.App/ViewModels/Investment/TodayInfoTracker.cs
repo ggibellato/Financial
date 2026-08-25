@@ -66,7 +66,7 @@ public sealed class TodayInfoTracker
     public async Task RefreshAsync(
         bool forceRefresh,
         bool hasAssetContext,
-        IPriceService? priceService,
+        IAssetPriceLookupService? priceService,
         GlobalAssetClass assetClass,
         string? brokerName,
         string exchange,

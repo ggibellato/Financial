@@ -17,241 +17,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
 
-public class PriceServiceTests
+public class AssetPriceLookupServiceTests
 {
     private const string BrokerName = "XPI";
     private const string PortfolioName = "Default";
     private const string AssetName = "BCIA11";
-
-    [Fact]
-    public async Task SetPriceAsync_NewDate_AddsManualEntry()
-    {
-        var (service, tempFile) = CreateService();
-        try
-        {
-            var date = new DateOnly(2026, 8, 15);
-
-            var result = await service.SetPriceAsync(new SetAssetPriceDTO
-            {
-                BrokerName = BrokerName,
-                PortfolioName = PortfolioName,
-                AssetName = AssetName,
-                Date = date,
-                Price = 1234.56m
-            });
-
-            result.Should().NotBeNull();
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
-    public async Task SetPriceAsync_ExistingDate_ReplacesEntry()
-    {
-        var (service, tempFile) = CreateService();
-        try
-        {
-            var date = new DateOnly(2026, 8, 15);
-            await service.SetPriceAsync(new SetAssetPriceDTO
-            {
-                BrokerName = BrokerName,
-                PortfolioName = PortfolioName,
-                AssetName = AssetName,
-                Date = date,
-                Price = 100m
-            });
-
-            var result = await service.SetPriceAsync(new SetAssetPriceDTO
-            {
-                BrokerName = BrokerName,
-                PortfolioName = PortfolioName,
-                AssetName = AssetName,
-                Date = date,
-                Price = 150m
-            });
-
-            result.Should().NotBeNull();
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
-    public async Task SetPriceAsync_UnknownAsset_ReturnsNull()
-    {
-        var (service, tempFile) = CreateService();
-        try
-        {
-            var result = await service.SetPriceAsync(new SetAssetPriceDTO
-            {
-                BrokerName = BrokerName,
-                PortfolioName = PortfolioName,
-                AssetName = "NoSuchAsset",
-                Date = new DateOnly(2026, 8, 15),
-                Price = 100m
-            });
-
-            result.Should().BeNull();
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
-    public async Task SetPriceAsync_ZeroPrice_Throws()
-    {
-        var (service, tempFile) = CreateService();
-        try
-        {
-            Func<Task> act = () => service.SetPriceAsync(new SetAssetPriceDTO
-            {
-                BrokerName = BrokerName,
-                PortfolioName = PortfolioName,
-                AssetName = AssetName,
-                Date = new DateOnly(2026, 8, 15),
-                Price = 0m
-            });
-
-            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Price must be greater than zero.");
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
-    public async Task SetPriceAsync_FutureDate_Throws()
-    {
-        var (service, tempFile) = CreateService();
-        try
-        {
-            Func<Task> act = () => service.SetPriceAsync(new SetAssetPriceDTO
-            {
-                BrokerName = BrokerName,
-                PortfolioName = PortfolioName,
-                AssetName = AssetName,
-                Date = DateOnly.FromDateTime(DateTime.Today).AddDays(1),
-                Price = 100m
-            });
-
-            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Price date cannot be in the future.");
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
-    public async Task DeletePriceAsync_ManualEntry_RemovesIt()
-    {
-        var (service, tempFile) = CreateService();
-        try
-        {
-            var date = new DateOnly(2026, 8, 15);
-            await service.SetPriceAsync(new SetAssetPriceDTO
-            {
-                BrokerName = BrokerName,
-                PortfolioName = PortfolioName,
-                AssetName = AssetName,
-                Date = date,
-                Price = 100m
-            });
-
-            var result = await service.DeletePriceAsync(new DeleteAssetPriceDTO
-            {
-                BrokerName = BrokerName,
-                PortfolioName = PortfolioName,
-                AssetName = AssetName,
-                Date = date
-            });
-
-            result.Should().NotBeNull();
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
-    public async Task DeletePriceAsync_NoEntryForDate_IsNoOpAndReturnsDetails()
-    {
-        var (service, tempFile) = CreateService();
-        try
-        {
-            var result = await service.DeletePriceAsync(new DeleteAssetPriceDTO
-            {
-                BrokerName = BrokerName,
-                PortfolioName = PortfolioName,
-                AssetName = AssetName,
-                Date = new DateOnly(2026, 8, 15)
-            });
-
-            result.Should().NotBeNull();
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
-    public async Task DeletePriceAsync_AutomaticEntry_Throws()
-    {
-        var (service, repository, tempFile) = CreateServiceWithRepository();
-        try
-        {
-            var date = new DateOnly(2026, 8, 15);
-            repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetPrice(date, 100m, isManual: false);
-            await repository.ApplyAndSaveAsync(() => true);
-
-            Func<Task> act = () => service.DeletePriceAsync(new DeleteAssetPriceDTO
-            {
-                BrokerName = BrokerName,
-                PortfolioName = PortfolioName,
-                AssetName = AssetName,
-                Date = date
-            });
-
-            await act.Should().ThrowAsync<ArgumentException>()
-                .WithMessage("Automatic price entries can't be edited directly*");
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
-    public async Task DeletePriceAsync_UnknownAsset_ReturnsNull()
-    {
-        var (service, tempFile) = CreateService();
-        try
-        {
-            var result = await service.DeletePriceAsync(new DeleteAssetPriceDTO
-            {
-                BrokerName = BrokerName,
-                PortfolioName = PortfolioName,
-                AssetName = "NoSuchAsset",
-                Date = new DateOnly(2026, 8, 15)
-            });
-
-            result.Should().BeNull();
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
 
     [Fact]
     public async Task GetCurrentPriceAsync_LiveFetchSucceeds_RecordsAutomaticEntryAndReturnsIsManualFalse()
@@ -744,7 +514,7 @@ public class PriceServiceTests
 
     /// <summary>As CreateRecordingService with failing writes, but hands back the repository so a
     /// test can inspect the in-memory graph rather than only the file.</summary>
-    private static (PriceService Service, InvestmentJsonRepository Repository, string TempFile)
+    private static (AssetPriceLookupService Service, InvestmentJsonRepository Repository, string TempFile)
         CreateFailingServiceWithRepository(IAssetPriceService assetPriceService)
     {
         var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
@@ -757,8 +527,8 @@ public class PriceServiceTests
         var tracer = new RecordingTelemetryTracer();
         var repository = new InvestmentJsonRepository(investments, storage, serializer);
         var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
-        var service = new PriceService(
-            repository, navigationService, assetPriceService, tracer, new RecordingLogger<PriceService>());
+        var service = new AssetPriceLookupService(
+            repository, navigationService, assetPriceService, tracer, new RecordingLogger<AssetPriceLookupService>());
 
         return (service, repository, tempFile);
     }
@@ -771,7 +541,7 @@ public class PriceServiceTests
         return repository.GetAsset(BrokerName, PortfolioName, AssetName);
     }
 
-    private static (PriceService Service, RecordingTelemetryTracer Tracer, RecordingLogger<PriceService> Logger, string TempFile)
+    private static (AssetPriceLookupService Service, RecordingTelemetryTracer Tracer, RecordingLogger<AssetPriceLookupService> Logger, string TempFile)
         CreateRecordingService(IAssetPriceService assetPriceService, bool failWrites = false)
     {
         var tempFile = Path.Combine(Path.GetTempPath(), $"data.test.{Guid.NewGuid():N}.json");
@@ -786,14 +556,14 @@ public class PriceServiceTests
         }
 
         var tracer = new RecordingTelemetryTracer();
-        var logger = new RecordingLogger<PriceService>();
+        var logger = new RecordingLogger<AssetPriceLookupService>();
         var repository = new InvestmentJsonRepository(investments, storage, serializer);
         var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
 
-        return (new PriceService(repository, navigationService, assetPriceService, tracer, logger), tracer, logger, tempFile);
+        return (new AssetPriceLookupService(repository, navigationService, assetPriceService, tracer, logger), tracer, logger, tempFile);
     }
 
-    private static (PriceService Service, RecordingTelemetryTracer Tracer, RecordingLogger<PriceService> Logger, string TempFile)
+    private static (AssetPriceLookupService Service, RecordingTelemetryTracer Tracer, RecordingLogger<AssetPriceLookupService> Logger, string TempFile)
         CreateServiceWithFailingStorage(IAssetPriceService assetPriceService) =>
         CreateRecordingService(assetPriceService, failWrites: true);
 
@@ -814,12 +584,6 @@ public class PriceServiceTests
             throw new IOException("The process cannot access the file because it is being used by another process.");
     }
 
-    private static (PriceService Service, string TempFile) CreateService()
-    {
-        var (service, _, tempFile) = CreateServiceWithRepository();
-        return (service, tempFile);
-    }
-
     /// <summary>Loads a repository over a private copy of the test data file, so a test that mutates
     /// it cannot affect any other.</summary>
     private static (InvestmentJsonRepository Repository, RecordingTelemetryTracer Tracer, string TempFile) CreateRepositoryOverTempCopy()
@@ -835,31 +599,22 @@ public class PriceServiceTests
 
     /// <summary>Same private temp copy as the other helpers, but with a recording logger and the
     /// repository exposed, for tests that seed price history before exercising the service.</summary>
-    private static (PriceService Service, InvestmentJsonRepository Repository, RecordingLogger<PriceService> Logger, string TempFile)
+    private static (AssetPriceLookupService Service, InvestmentJsonRepository Repository, RecordingLogger<AssetPriceLookupService> Logger, string TempFile)
         CreateRecordingServiceOverRepository(IAssetPriceService assetPriceService)
     {
         var (repository, tracer, tempFile) = CreateRepositoryOverTempCopy();
-        var logger = new RecordingLogger<PriceService>();
+        var logger = new RecordingLogger<AssetPriceLookupService>();
         var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
 
-        return (new PriceService(repository, navigationService, assetPriceService, tracer, logger), repository, logger, tempFile);
+        return (new AssetPriceLookupService(repository, navigationService, assetPriceService, tracer, logger), repository, logger, tempFile);
     }
 
-    private static (PriceService Service, InvestmentJsonRepository Repository, string TempFile) CreateServiceWithRepository()
-    {
-        var (repository, tracer, tempFile) = CreateRepositoryOverTempCopy();
-        var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
-        var service = new PriceService(repository, navigationService, StubAssetPriceService.NotUsed(), tracer, NullLogger<PriceService>.Instance);
-
-        return (service, repository, tempFile);
-    }
-
-    private static (PriceService Service, CountingRepository Repository, string TempFile) CreateServiceWithAssetPriceService(IAssetPriceService assetPriceService)
+    private static (AssetPriceLookupService Service, CountingRepository Repository, string TempFile) CreateServiceWithAssetPriceService(IAssetPriceService assetPriceService)
     {
         var (innerRepository, tracer, tempFile) = CreateRepositoryOverTempCopy();
         var repository = new CountingRepository(innerRepository);
         var navigationService = new NavigationService(repository, tracer, NullLogger<NavigationService>.Instance);
-        var service = new PriceService(repository, navigationService, assetPriceService, tracer, NullLogger<PriceService>.Instance);
+        var service = new AssetPriceLookupService(repository, navigationService, assetPriceService, tracer, NullLogger<AssetPriceLookupService>.Instance);
 
         return (service, repository, tempFile);
     }
